@@ -705,6 +705,9 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
     if (link_up)
     {
 #if defined(RT_OS_WINDOWS)
+        /*XXX: before renaming please make see define 
+         * fIcmp in slirp_state.h
+         */
         if (fIcmp)
             sorecvfrom(pData, &pData->icmp_socket);
 #else

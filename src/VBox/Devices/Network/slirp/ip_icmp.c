@@ -41,6 +41,18 @@
 #include <Iphlpapi.h>
 #endif
 
+#ifdef RT_OS_WINDOWS
+# ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+# define ICMP_SEND_ECHO(event, routine, addr, data, datasize, ipopt)                                        \
+                IcmpSendEcho2(pData->icmp_socket.sh, (event), NULL, NULL, (addr), (data), (datasize),       \
+                               (ipopt), pData->pvIcmpBuffer, pData->szIcmpBuffer, 1)
+# else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+# define ICMP_SEND_ECHO(event, routine, addr, data, datasize, ipopt)                                                        \
+                IcmpSendEcho2(pData->icmp_socket.s, NULL, (FARPROC)(routine), (void *)pData, (addr), (data), (datasize),    \
+                             (ipopt), pData->pvIcmpBuffer, pData->szIcmpBuffer, 1)
+static void WINAPI notify_slirp(void *);
+# endif /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+#endif /* RT_OS_WINDOWS */
 
 /* The message sent when emulating PING */
 /* Be nice and tell them it's just a psuedo-ping packet */
@@ -123,7 +135,9 @@ icmp_init(PNATState pData)
         return 1;
     }
     pData->icmp_socket.sh = IcmpCreateFile();
+# ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
+# endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
     pData->szIcmpBuffer = sizeof(ICMP_ECHO_REPLY) * 10;
     pData->pvIcmpBuffer = malloc(pData->szIcmpBuffer);
 #endif /* RT_OS_WINDOWS */
@@ -388,10 +402,8 @@ freeit:
                 pData->icmp_socket.so_icmp_seq = icp->icmp_seq;
                 memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
                 ipopt.Ttl = ip->ip_ttl;
-                status = IcmpSendEcho2(pData->icmp_socket.sh, pData->phEvents[VBOX_ICMP_EVENT_INDEX],
-                                       NULL, NULL, addr.sin_addr.s_addr, icp->icmp_data,
-                                       icmplen - offsetof(struct icmp, icmp_data) , &ipopt,
-                                       pData->pvIcmpBuffer, pData->szIcmpBuffer, 1);
+                status = ICMP_SEND_ECHO(pData->phEvents[VBOX_ICMP_EVENT_INDEX], notify_slirp, addr.sin_addr.s_addr, 
+                                icp->icmp_data, icmplen - ICMP_MINLEN, &ipopt);
                 if (status == 0 && (error = GetLastError()) != ERROR_IO_PENDING)
                 {
                     error = GetLastError();
@@ -614,3 +626,12 @@ icmp_reflect(PNATState pData, struct mbuf *m)
 
     icmpstat.icps_reflect++;
 }
+#if defined(RT_OS_WINDOWS) && !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
+static void WINAPI  
+notify_slirp(void *ctx)
+{
+    /* pData name is important see slirp_state.h */
+    PNATState pData = (PNATState)ctx;
+    fIcmp = 1;
+}
+#endif
