@@ -1197,11 +1197,6 @@ bool VBoxConsoleView::event (QEvent *e)
                     doResizeHint (mNormalSize);
                 }
 
-#ifdef Q_WS_MAC
-                /* Enable async resizing. */
-                ::darwinEnableAsyncDragForWindow (mMainWnd);
-#endif /* Q_WS_MAC */
-
                 return true;
             }
 
@@ -1594,10 +1589,30 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                     return true; /* stop further event handling */
                 break;
             }
+#ifdef Q_WS_MAC
+            case QEvent::Leave:
+            {
+                /* Enable mouse event compression if we leave the VM view. This
+                   is necessary for having smooth resizing of the VM/other
+                   windows. */
+                setMouseCoalescingEnabled (true);
+                break;
+            }
+            case QEvent::Enter:
+            {
+                /* Disable mouse event compression if we enter the VM view. So
+                   all mouse events are registered in the VM. Only do this if
+                   the keyboard/mouse is grabed (this is when we have a valid
+                   event handler). */
+                setMouseCoalescingEnabled (false);
+                break;
+            }
+#endif /* Q_WS_MAC */
             case QEvent::Resize:
             {
                 if (mMouseCaptured)
                     updateMouseClipping();
+                break;
             }
             default:
                 break;
@@ -2194,8 +2209,10 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
 {
     if (fGrab)
     {
-        ::SetMouseCoalescingEnabled (false, NULL);      //??
-        ::CGSetLocalEventsSuppressionInterval (0.0);    //??
+        /* Disable mouse event compression to get *really* all mouse events in
+           the VM. */
+        ::SetMouseCoalescingEnabled (false, NULL);
+        ::CGSetLocalEventsSuppressionInterval (0.0);
 
 #ifndef VBOX_WITH_HACKED_QT
 
@@ -3903,5 +3920,25 @@ void VBoxConsoleView::updateDockIcon()
         }
     }
 }
+
+void VBoxConsoleView::setMouseCoalescingEnabled (bool aOn)
+{
+
+    if (aOn)
+        /* Enable mouse event compression if we leave the VM view. This
+           is necessary for having smooth resizing of the VM/other
+           windows. */
+        ::SetMouseCoalescingEnabled (true, NULL);
+    else
+    {
+        /* Disable mouse event compression if we enter the VM view. So
+           all mouse events are registered in the VM. Only do this if
+           the keyboard/mouse is grabed (this is when we have a valid
+           event handler). */
+        if (mDarwinEventHandlerRef)
+            ::SetMouseCoalescingEnabled (false, NULL);
+    }
+}
+
 #endif
 

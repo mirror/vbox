@@ -128,6 +128,7 @@ public:
 #if defined(Q_WS_MAC)
     void updateDockIcon();
     void setDockIconEnabled (bool aOn) { mDockIconEnabled = aOn; };
+    void setMouseCoalescingEnabled (bool aOn);
 #endif
 
 signals:
