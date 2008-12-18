@@ -1017,6 +1017,7 @@ endif
 INCS += $(PATH_ROOT)/include $(PATH_OUT)
 DEFS += VBOX
 DEFS.debug := DEBUG DEBUG_$(subst $(subst _, ,_),_,$(USERNAME)) DEBUG_USERNAME=$(subst $(subst _, ,_),_,$(USERNAME))
+DEFS.dbgopt  = $(DEFS.debug)
 DEFS.profile = VBOX_WITH_STATISTICS
 DEFS.strict  = RT_STRICT VBOX_STRICT
 DEFS.x86     = RT_ARCH_X86 __X86__
