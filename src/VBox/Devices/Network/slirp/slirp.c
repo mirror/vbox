@@ -756,8 +756,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             /*
              * Check sockets for reading
              */
-            else if (CHECK_FD_SET(so, NetworkEvents, readfds)
-             || WIN_CHECK_FD_SET(so, NetworkEvents, acceptds))
+            else if (   CHECK_FD_SET(so, NetworkEvents, readfds)
+                     || WIN_CHECK_FD_SET(so, NetworkEvents, acceptds))
             {
                 /*
                  * Check for incoming connections
