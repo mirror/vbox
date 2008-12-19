@@ -4087,7 +4087,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1120"/>
         <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Voulez-vous vraiment libérer %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; de la liste de supports connus?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Voulez-vous vraiment enlever %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; de la liste de supports connus?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
@@ -4108,7 +4108,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <location filename="../src/VBoxProblemReporter.cpp" line="1143"/>
         <source>Remove</source>
         <comment>medium</comment>
-        <translation>Supprimer</translation>
+        <translation>Enlever</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
@@ -4616,7 +4616,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation>Él&amp;iminé l&apos;instantané actuel et l&apos;état</translation>
+        <translation>Re&amp;jeter l&apos;instantané actuel et l&apos;état</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="685"/>
