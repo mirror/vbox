@@ -1103,7 +1103,6 @@ VMMR0DECL(int)   HWACCMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestDebug64, 0, NULL);
 }
 
-# ifdef DEBUG
 /**
  * Test the 32->64 bits switcher
  *
@@ -1127,7 +1126,6 @@ VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);
     return rc;
 }
-# endif
 
 #endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL) */
 
