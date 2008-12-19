@@ -697,6 +697,12 @@ int main()
     GEN_CHECK_OFF(ATADevState, pControllerR3);
     GEN_CHECK_OFF(ATADevState, pControllerR0);
     GEN_CHECK_OFF(ATADevState, pControllerRC);
+    GEN_CHECK_OFF(ATADevState, abSerialNumber);
+    GEN_CHECK_OFF(ATADevState, abSerialNumber[19]);
+    GEN_CHECK_OFF(ATADevState, abFirmwareRevision);
+    GEN_CHECK_OFF(ATADevState, abFirmwareRevision[7]);
+    GEN_CHECK_OFF(ATADevState, abModelNumber);
+    GEN_CHECK_OFF(ATADevState, abModelNumber[39]);
     GEN_CHECK_SIZE(ATATransferRequest);
     GEN_CHECK_OFF(ATATransferRequest, iIf);
     GEN_CHECK_OFF(ATATransferRequest, iBeginTransfer);

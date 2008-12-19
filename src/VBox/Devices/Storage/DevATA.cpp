@@ -273,6 +273,17 @@ typedef struct ATADevState {
     PPDMDEVINSRC                        pDevInsRC;
     /** Pointer to controller instance. */
     RCPTRTYPE(struct ATACONTROLLER *)   pControllerRC;
+
+    /** The serial numnber to use for IDENTIFY DEVICE commands. */
+    int8_t                          abSerialNumber[20];
+    /** The firmware revision to use for IDENTIFY DEVICE commands. */
+    int8_t                          abFirmwareRevision[8];
+    /** The model number to use for IDENTIFY DEVICE commands. */
+    int8_t                          abModelNumber[40];
+
+#if HC_ARCH_BITS == 64
+    uint32_t                        Alignment1;
+#endif
 } ATADevState;
 
 
@@ -1089,17 +1100,6 @@ static bool ataIdentifySS(ATADevState *s)
 
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer == 512);
-    rc = s->pDrvBlock ? s->pDrvBlock->pfnGetUuid(s->pDrvBlock, &Uuid) : RTUuidClear(&Uuid);
-    if (RT_FAILURE(rc) || RTUuidIsNull(&Uuid))
-    {
-        PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
-        /* Generate a predictable serial for drives which don't have a UUID. */
-        RTStrPrintf(aSerial, sizeof(aSerial), "VB%x-%04x%04x",
-                    s->iLUN + ATADEVSTATE_2_DEVINS(s)->iInstance * 32,
-                    pCtl->IOPortBase1, pCtl->IOPortBase2);
-    }
-    else
-        RTStrPrintf(aSerial, sizeof(aSerial), "VB%08x-%08x", Uuid.au32[0], Uuid.au32[3]);
 
     p = (uint16_t *)s->CTX_SUFF(pbIOBuffer);
     memset(p, 0, 512);
@@ -1109,12 +1109,12 @@ static bool ataIdentifySS(ATADevState *s)
     /* Block size; obsolete, but required for the BIOS. */
     p[5] = RT_H2LE_U16(512);
     p[6] = RT_H2LE_U16(s->PCHSGeometry.cSectors);
-    ataPadString((uint8_t *)(p + 10), aSerial, 20); /* serial number */
+    ataPadString((uint8_t *)(p + 10), (const char *)s->abSerialNumber, 20); /* serial number */
     p[20] = RT_H2LE_U16(3); /* XXX: retired, cache type */
     p[21] = RT_H2LE_U16(512); /* XXX: retired, cache size in sectors */
     p[22] = RT_H2LE_U16(0); /* ECC bytes per sector */
-    ataPadString((uint8_t *)(p + 23), "1.0", 8); /* firmware version */
-    ataPadString((uint8_t *)(p + 27), "VBOX HARDDISK", 40); /* model */
+    ataPadString((uint8_t *)(p + 23), (const char *)s->abFirmwareRevision, 8); /* firmware version */
+    ataPadString((uint8_t *)(p + 27), (const char *)s->abModelNumber, 40); /* model */
 #if ATA_MAX_MULT_SECTORS > 1
     p[47] = RT_H2LE_U16(0x8000 | ATA_MAX_MULT_SECTORS);
 #endif
@@ -6119,17 +6119,100 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThis->aCts[i].DelayIRQMillies = (uint32_t)DelayIRQMillies;
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
         {
-            pThis->aCts[i].aIfs[j].iLUN = i * RT_ELEMENTS(pThis->aCts) + j;
-            pThis->aCts[i].aIfs[j].pDevInsR3 = pDevIns;
-            pThis->aCts[i].aIfs[j].pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-            pThis->aCts[i].aIfs[j].pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-            pThis->aCts[i].aIfs[j].pControllerR3 = &pThis->aCts[i];
-            pThis->aCts[i].aIfs[j].pControllerR0 = MMHyperR3ToR0(PDMDevHlpGetVM(pDevIns), &pThis->aCts[i]);
-            pThis->aCts[i].aIfs[j].pControllerRC = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), &pThis->aCts[i]);
-            pThis->aCts[i].aIfs[j].IBase.pfnQueryInterface = ataQueryInterface;
-            pThis->aCts[i].aIfs[j].IMountNotify.pfnMountNotify = ataMountNotify;
-            pThis->aCts[i].aIfs[j].IMountNotify.pfnUnmountNotify = ataUnmountNotify;
-            pThis->aCts[i].aIfs[j].Led.u32Magic = PDMLED_MAGIC;
+            ATADevState *pIf = &pThis->aCts[i].aIfs[j];
+
+            pIf->iLUN      = i * RT_ELEMENTS(pThis->aCts) + j;
+            pIf->pDevInsR3 = pDevIns;
+            pIf->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+            pIf->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+            pIf->pControllerR3 = &pThis->aCts[i];
+            pIf->pControllerR0 = MMHyperR3ToR0(PDMDevHlpGetVM(pDevIns), &pThis->aCts[i]);
+            pIf->pControllerRC = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), &pThis->aCts[i]);
+            pIf->IBase.pfnQueryInterface       = ataQueryInterface;
+            pIf->IMountNotify.pfnMountNotify   = ataMountNotify;
+            pIf->IMountNotify.pfnUnmountNotify = ataUnmountNotify;
+            pIf->Led.u32Magic                  = PDMLED_MAGIC;
+
+            /*
+             * Init vendor product data.
+             */
+            static const char *s_apszDescs[2][2] =
+            {
+                { "PrimaryMaster", "PrimarySlave" },
+                { "SecondaryMaster", "SecondarySlave" }
+            };
+            char aSerial[20];
+            RTUUID Uuid;
+            if (pIf->pDrvBlock)
+                rc = pIf->pDrvBlock->pfnGetUuid(pIf->pDrvBlock, &Uuid);
+            else
+                RTUuidClear(&Uuid);
+
+            if (RT_FAILURE(rc) || RTUuidIsNull(&Uuid))
+            {
+                /* Generate a predictable serial for drives which don't have a UUID. */
+                RTStrPrintf(aSerial, sizeof(aSerial), "VB%x-%04x%04x",
+                            pIf->iLUN + pDevIns->iInstance * 32,
+                            pThis->aCts[i].IOPortBase1, pThis->aCts[i].IOPortBase2);
+            }
+            else
+                RTStrPrintf(aSerial, sizeof(aSerial), "VB%08x-%08x", Uuid.au32[0], Uuid.au32[3]);
+            strncpy((char *)pIf->abSerialNumber, aSerial, 20);
+            strncpy((char *)pIf->abFirmwareRevision, "1.0", 8);
+            strncpy((char *)pIf->abModelNumber, "VBOX HARDDISK", 40);
+
+            /* Check if the user provided some values to overwrite. */
+            PCFGMNODE pCfgNode = CFGMR3GetChild(pCfgHandle, s_apszDescs[i][j]);
+            if (pCfgNode)
+            {
+                char *pszCFGMValue;
+
+                rc = CFGMR3QueryStringAlloc(pCfgNode, "SerialNumber", &pszCFGMValue);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Check length of the serial number. It shouldn't be longer than 20 bytes. */
+                    if (strlen(pszCFGMValue) > 20)
+                        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                    N_("PIIX3 configuration error: \"SerialNumber\" is longer than 20 bytes"));
+                    /* Copy the data over. */
+                    strncpy((char *)pIf->abSerialNumber, pszCFGMValue, 20);
+                    MMR3HeapFree(pszCFGMValue);
+                }
+                else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+                    return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("PIIX3 configuration error: failed to read \"SerialNumber\" as string"));
+
+                rc = CFGMR3QueryStringAlloc(pCfgNode, "FirmwareRevision", &pszCFGMValue);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Check length of the firmware revision. It shouldn't be longer than 8 bytes. */
+                    if (strlen(pszCFGMValue) > 8)
+                        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                    N_("PIIX3 configuration error: \"FirmwareRevision\" is longer than 8 bytes"));
+                    /* Copy the data over. */
+                    strncpy((char *)pIf->abFirmwareRevision, pszCFGMValue, 8);
+                    MMR3HeapFree(pszCFGMValue);
+                }
+                else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+                    return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("PIIX3 configuration error: failed to read \"FirmwareRevision\" as string"));
+
+                rc = CFGMR3QueryStringAlloc(pCfgNode, "ModelNumber", &pszCFGMValue);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Check length of the model number. It shouldn't be longer than 40 bytes. */
+                    if (strlen(pszCFGMValue) > 40)
+                        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                    N_("PIIX3 configuration error: \"ModelNumber\" is longer than 40 bytes"));
+                    /* Copy the data over. */
+                    strncpy((char *)pIf->abModelNumber, pszCFGMValue, 40);
+                    MMR3HeapFree(pszCFGMValue);
+                }
+                else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+                    return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("PIIX3 configuration error: failed to read \"ModelNumber\" as string"));
+            }
+
         }
     }
 
