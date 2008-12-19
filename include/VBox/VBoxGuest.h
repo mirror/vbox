@@ -915,7 +915,8 @@ typedef struct
 } VMMDevHGCMCall;
 #pragma pack()
 
-#define VMMDEV_HGCM_CALL_PARMS(a) ((HGCMFunctionParameter *)((uint8_t *)a + sizeof (VMMDevHGCMCall)))
+#define VMMDEV_HGCM_CALL_PARMS(a)   ((HGCMFunctionParameter *)((uint8_t *)a + sizeof (VMMDevHGCMCall)))
+#define VMMDEV_HGCM_CALL_PARMS32(a) ((HGCMFunctionParameter32 *)((uint8_t *)a + sizeof (VMMDevHGCMCall)))
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
 /* Explicit defines for the host code. */
@@ -1403,6 +1404,7 @@ typedef struct _VBoxGuestHGCMCallInfoTimed
 # endif /* VBOX_WITH_64_BITS_GUESTS */
 
 # define VBOXGUEST_HGCM_CALL_PARMS(a)       ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
+# define VBOXGUEST_HGCM_CALL_PARMS32(a)     ((HGCMFunctionParameter32 *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
 
 #endif /* VBOX_WITH_HGCM */
 

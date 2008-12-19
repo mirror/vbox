@@ -200,6 +200,22 @@ DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
 DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
                             VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
+/** Call a HGCM service. (32 bits packet structure in a 64 bits guest)
+ *
+ * @note This function can deal with cancelled requests.
+ *
+ * @param pCallInfo       The request data.
+ * @param pAsyncCallback  Required pointer to function that is called when
+ *                        host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
+ *                        implements waiting for an IRQ in this function.
+ * @param pvAsyncData     An arbitrary VBoxGuest pointer to be passed to callback.
+ * @param u32AsyncData    An arbitrary VBoxGuest 32 bit value to be passed to callback.
+ *
+ * @return VBox status code.
+ */
+DECLVBGL(int) VbglHGCMCall32 (VBoxGuestHGCMCallInfo *pCallInfo,
+                              VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+
 #else /* !VBGL_VBOXGUEST */
 
 struct VBGLHGCMHANDLEDATA;
