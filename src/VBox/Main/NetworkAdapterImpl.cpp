@@ -411,14 +411,9 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
 {
     /** @todo Validate input string length. r=dmik: do it in XML schema?*/
 
-#ifndef VBOX_WITH_UNIXY_TAP_NETWORKING
-    // we don't allow null strings for the host interface on Win32
-    // (because the @name attribute of <HostInterface> must be always present,
-    // but can be empty).
-    CheckComArgNotNull(aHostInterface);
-#else
-    CheckComArgStrNotEmptyOrNull(aHostInterface);
-#endif
+    /* we don't allow null strings for the host interface (because the @name
+     * attribute of <HostInterface> must be always present but can be empty). */
+    CheckComArgNotNull (aHostInterface);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -442,177 +437,6 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
 
     return S_OK;
 }
-
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-
-STDMETHODIMP NetworkAdapter::COMGETTER(TAPFileDescriptor)(LONG *aTAPFileDescriptor)
-{
-# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    CheckComArgOutPointerValid(aTAPFileDescriptor);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReadLock alock (this);
-
-    *aTAPFileDescriptor = mData->mTAPFD;
-
-    return S_OK;
-
-#else
-    ReturnComNotImplemented();
-#endif
-}
-
-STDMETHODIMP NetworkAdapter::COMSETTER(TAPFileDescriptor)(LONG aTAPFileDescriptor)
-{
-# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    /*
-     * Validate input.
-     */
-    RTFILE tapFD = aTAPFileDescriptor;
-    if (tapFD != NIL_RTFILE && (LONG)tapFD != aTAPFileDescriptor)
-    {
-        AssertMsgFailed(("Invalid file descriptor: %ld.\n", aTAPFileDescriptor));
-        return setError (E_INVALIDARG,
-            tr ("Invalid file descriptor: %ld"), aTAPFileDescriptor);
-    }
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
-
-    AutoWriteLock alock (this);
-
-    if (mData->mTAPFD != (RTFILE) aTAPFileDescriptor)
-    {
-        mData.backup();
-        mData->mTAPFD = aTAPFileDescriptor;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        mParent->onNetworkAdapterChange (this);
-    }
-
-    return S_OK;
-#else
-    ReturnComNotImplemented();
-#endif
-}
-
-STDMETHODIMP NetworkAdapter::COMGETTER(TAPSetupApplication) (
-    BSTR *aTAPSetupApplication)
-{
-# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    CheckComArgOutPointerValid(aTAPSetupApplication);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReadLock alock (this);
-
-    /* we don't have to be in TAP mode to support this call */
-    mData->mTAPSetupApplication.cloneTo (aTAPSetupApplication);
-
-    return S_OK;
-#else
-    ReturnComNotImplemented();
-#endif
-}
-
-STDMETHODIMP NetworkAdapter::COMSETTER(TAPSetupApplication) (
-    IN_BSTR aTAPSetupApplication)
-{
-# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    /* empty strings are not allowed as path names */
-    if (aTAPSetupApplication && !(*aTAPSetupApplication))
-        return E_INVALIDARG;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
-
-    AutoWriteLock alock (this);
-
-    if (mData->mTAPSetupApplication != aTAPSetupApplication)
-    {
-        mData.backup();
-        mData->mTAPSetupApplication = aTAPSetupApplication;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        mParent->onNetworkAdapterChange (this);
-    }
-
-    return S_OK;
-#else
-    ReturnComNotImplemented();
-#endif
-}
-
-STDMETHODIMP NetworkAdapter::COMGETTER(TAPTerminateApplication) (
-    BSTR *aTAPTerminateApplication)
-{
-# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    CheckComArgOutPointerValid(aTAPTerminateApplication);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReadLock alock (this);
-
-    /* we don't have to be in TAP mode to support this call */
-    mData->mTAPTerminateApplication.cloneTo(aTAPTerminateApplication);
-
-    return S_OK;
-#else
-    ReturnComNotImplemented();
-#endif
-}
-
-STDMETHODIMP NetworkAdapter::COMSETTER(TAPTerminateApplication) (
-    IN_BSTR aTAPTerminateApplication)
-{
-# ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    /* empty strings are not allowed as path names */
-    if (aTAPTerminateApplication && !(*aTAPTerminateApplication))
-        return E_INVALIDARG;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
-
-    AutoWriteLock alock (this);
-
-    if (mData->mTAPTerminateApplication != aTAPTerminateApplication)
-    {
-        mData.backup();
-        mData->mTAPTerminateApplication = aTAPTerminateApplication;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        mParent->onNetworkAdapterChange(this);
-    }
-
-    return S_OK;
-#else
-    ReturnComNotImplemented();
-#endif
-}
-
-#endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
 
 STDMETHODIMP NetworkAdapter::COMGETTER(InternalNetwork) (BSTR *aInternalNetwork)
 {
@@ -1063,18 +887,11 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         /* Host Interface Networking */
 
         Bstr name = attachmentNode.stringValue ("name");
-#ifndef VBOX_WITH_UNIXY_TAP_NETWORKING
         /* name can be empty, but not null */
         ComAssertRet (!name.isNull(), E_FAIL);
-#endif
+
         rc = COMSETTER(HostInterface) (name);
         CheckComRCReturnRC (rc);
-
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-        /* optopnal */
-        mData->mTAPSetupApplication = attachmentNode.stringValue ("TAPSetup");
-        mData->mTAPTerminateApplication = attachmentNode.stringValue ("TAPTerminate");
-#endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
 
         rc = AttachToHostInterface();
         CheckComRCReturnRC (rc);
@@ -1172,20 +989,8 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
         case NetworkAttachmentType_HostInterface:
         {
             Key attachmentNode = aAdapterNode.createKey ("HostInterface");
-#ifndef VBOX_WITH_UNIXY_TAP_NETWORKING
             Assert (!mData->mHostInterface.isNull());
-#else
-            if (!mData->mHostInterface.isEmpty())
-#endif
-                attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-            if (!mData->mTAPSetupApplication.isEmpty())
-                attachmentNode.setValue <Bstr> ("TAPSetup",
-                                                mData->mTAPSetupApplication);
-            if (!mData->mTAPTerminateApplication.isEmpty())
-                attachmentNode.setValue <Bstr> ("TAPTerminate",
-                                                mData->mTAPTerminateApplication);
-#endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
+            attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
             break;
         }
         case NetworkAttachmentType_Internal:
@@ -1341,13 +1146,7 @@ void NetworkAdapter::detach()
         case NetworkAttachmentType_HostInterface:
         {
             /* reset handle and device name */
-#ifndef VBOX_WITH_UNIXY_TAP_NETWORKING
             mData->mHostInterface = "";
-#endif
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-            mData->mHostInterface.setNull();
-            mData->mTAPFD = NIL_RTFILE;
-#endif
             break;
         }
         case NetworkAttachmentType_Internal:

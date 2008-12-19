@@ -34,9 +34,6 @@
 #   include <stdio.h>
 #   include <stdlib.h>
 #   include <string.h>
-#elif defined(VBOX_WITH_UNIXY_TAP_NETWORKING)
-#   include <sys/wait.h>
-#   include <sys/fcntl.h>
 #endif
 
 #include "ConsoleImpl.h"
@@ -269,16 +266,6 @@ HRESULT Console::FinalConstruct()
     memset(mapNetworkLeds, 0, sizeof(mapNetworkLeds));
     memset(&mapUSBLed, 0, sizeof(mapUSBLed));
     memset(&mapSharedFolderLed, 0, sizeof(mapSharedFolderLed));
-
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    Assert(RT_ELEMENTS(maTapFD) == RT_ELEMENTS(maTAPDeviceName));
-    Assert(RT_ELEMENTS(maTapFD) >= SchemaDefs::NetworkAdapterCount);
-    for (unsigned i = 0; i < RT_ELEMENTS(maTapFD); i++)
-    {
-        maTapFD[i] = NIL_RTFILE;
-        maTAPDeviceName[i] = "";
-    }
-#endif
 
     return S_OK;
 }

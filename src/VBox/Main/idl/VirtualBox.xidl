@@ -9705,11 +9705,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="hostInterface" type="wstring">
       <desc>
-        Name of the Host Network Interface that is currently in use. NULL will be returned
-        if no device has been allocated. On Linux, setting this refers to a permanent TAP
-        device. However, a file descriptor has precedence over the interface name on Linux.
-        Note that when VirtualBox allocates a TAP device, this property will not be set, i.e. the
-        interface name would have to be determined using the file descriptor and /proc/self/fd.
+        Name of the host network interface the VM is attached to.
       </desc>
     </attribute>
 
@@ -9760,10 +9756,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="attachToHostInterface">
       <desc>
-        Attach the network adapter to a host interface. On Linux, the TAP
-        setup application will be executed if configured and unless a device
-        name and/or file descriptor has been set, a new TAP interface will be
-        created.
+        Attach the network adapter to a host interface.
       </desc>
     </method>
 

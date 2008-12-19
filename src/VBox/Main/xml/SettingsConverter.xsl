@@ -127,6 +127,15 @@ The source version is not supported.
   </xsl:copy>
 </xsl:template>
 
+<!-- 1.5 => 1.6 -->
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.5']">
+  <xsl:copy>
+    <xsl:attribute name="version"><xsl:value-of select="concat('1.6','-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()" mode="v1.6"/>
+  </xsl:copy>
+</xsl:template>
+
+
 <!--
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *  1.1 => 1.2
@@ -771,9 +780,6 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
   </xsl:copy>
 </xsl:template>
 
-<!--
--->
-
 <xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.4']/
                      vb:Machine//vb:Hardware/vb:CPU"
               mode="v1.5">
@@ -785,6 +791,43 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
     <xsl:apply-templates select="node()[not(self::vb:CPUCount)]" mode="v1.5"/>
   </xsl:copy>
 </xsl:template>
+
+
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  1.5 => 1.6
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
+
+<!--
+ *  all non-root elements that are not explicitly matched are copied as is
+-->
+<xsl:template match="@*|node()[../..]" mode="v1.6">
+  <xsl:copy>
+    <xsl:apply-templates select="@*|node()[../..]" mode="v1.6"/>
+  </xsl:copy>
+</xsl:template>
+
+<!--
+ *  Global settings
+-->
+
+<!--
+ *  Machine settings
+-->
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.5' and
+                                   not(substring-after(@version,'-')='windows')]/
+                     vb:Machine//vb:Hardware/vb:Network/vb:Adapter/
+                     vb:HostInterface[@TAPSetup or @TAPTerminate]"
+              mode="v1.6">
+  <!-- just remove the node -->
+</xsl:template>
+
+
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
 
 
 <!-- @todo add lastStateChange with the current timestamp if missing.

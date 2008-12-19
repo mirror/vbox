@@ -586,6 +586,23 @@
 </xsd:complexType>
 
 <xsd:complexType name="TNetworkAdapter">
+  <xsd:choice minOccurs="0">
+    <xsd:element name="NAT">
+      <xsd:complexType>
+        <xsd:attribute name="network" type="xsd:string"/>
+      </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="HostInterface">
+      <xsd:complexType>
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
+      </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="InternalNetwork">
+      <xsd:complexType>
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:choice>
   <xsd:attribute name="type" type="TNetworkAdapterType" default="Am79C970A"/>
   <xsd:attribute name="slot" use="required">
     <xsd:simpleType>
@@ -609,6 +626,13 @@
   <xsd:attribute name="tracefile" type="xsd:string"/>
 </xsd:complexType>
 
+<xsd:complexType name="TNetwork">
+  <xsd:sequence>
+    <xsd:element name="Adapter" type="TNetworkAdapter"
+                 minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:sequence>
+</xsd:complexType>
+
 <xsd:complexType name="TUARTPort">
   <xsd:attribute name="slot" use="required">
     <xsd:simpleType>
@@ -628,14 +652,8 @@
 
 <xsd:complexType name="TUART">
   <xsd:sequence>
-    <xsd:element name="Port" minOccurs="0" maxOccurs="unbounded">
-      <xsd:complexType>
-        <xsd:complexContent>
-          <xsd:extension base="TUARTPort">
-          </xsd:extension>
-        </xsd:complexContent>
-      </xsd:complexType>
-    </xsd:element>
+    <xsd:element name="Port" type="TUARTPort"
+                 minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
 </xsd:complexType>
 
@@ -656,14 +674,8 @@
 
 <xsd:complexType name="TLPT">
   <xsd:sequence>
-    <xsd:element name="Port" minOccurs="0" maxOccurs="unbounded">
-      <xsd:complexType>
-        <xsd:complexContent>
-          <xsd:extension base="TLPTPort">
-          </xsd:extension>
-        </xsd:complexContent>
-      </xsd:complexType>
-    </xsd:element>
+    <xsd:element name="Port" type="TLPTPort"
+                 minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
 </xsd:complexType>
 
