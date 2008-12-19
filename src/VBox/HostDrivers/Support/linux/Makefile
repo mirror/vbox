@@ -227,11 +227,11 @@ ifndef CONFIG_VBOXDRV_FIXEDMAJOR
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  KFLAGS  += -DRT_ARCH_AMD64
- # must be consistent with Config.kmk!
- KFLAGS  += -DVBOX_WITH_64_BITS_GUESTS
 else
  KFLAGS  += -DRT_ARCH_X86
 endif
+# must be consistent with Config.kmk!
+KFLAGS  += -DVBOX_WITH_64_BITS_GUESTS
 ifeq ($(BUILD_TYPE),debug)
  KFLAGS  += -DDEBUG -DDEBUG_$(USER) -g
  # IPRT_DEBUG_SEMS indicates thread wrt sems state via the comm field.
@@ -250,17 +250,9 @@ ifdef VBOX_USE_INSERT_PAGE
  KFLAGS  += -DVBOX_USE_INSERT_PAGE
 endif
 
-ifeq ($(KERN_VERSION),24)
-# 2.4
-TOPDIR         = $(KERN_DIR)
-MODULE_EXT    := o
-EXTRA_CFLAGS  := -DVBOX_LINUX_2_4 -DEXPORT_SYMTAB
-$(MODULE)-objs = $(OBJS)
-else
 # 2.6 and later
 MODULE_EXT    := ko
 $(MODULE)-y   := $(OBJS)
-endif
 
 # build defs
 EXTRA_CFLAGS  += $(INCL) $(KFLAGS) $(KDEBUG)
@@ -271,17 +263,6 @@ obj-m += $(MODULE).o
 
 $(MODULE):
 	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
-
-ifeq ($(KERN_VERSION),24)
-#
-# 2.4 Module linking
-#
-$(MODULE).o: $(OBJS)
-	$(LD) -o $@ -r $(OBJS)
-
-include $(KERN_DIR)/Rules.make
-
-endif
 
 install: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
