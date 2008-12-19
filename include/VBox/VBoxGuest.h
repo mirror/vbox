@@ -1382,9 +1382,25 @@ typedef struct _VBoxGuestHGCMCallInfoTimed
 
 # define VBOXGUEST_IOCTL_HGCM_CONNECT             VBOXGUEST_IOCTL_CODE(16, sizeof(VBoxGuestHGCMConnectInfo))
 # define VBOXGUEST_IOCTL_HGCM_DISCONNECT          VBOXGUEST_IOCTL_CODE(17, sizeof(VBoxGuestHGCMDisconnectInfo))
-# define VBOXGUEST_IOCTL_HGCM_CALL(Size)          VBOXGUEST_IOCTL_CODE(18, (Size))
+/*@todo, r=Leonid 
+ *This change is made to allow guest driver to distinguish between 32 and 64 bit calls on 64bit vista.
+ *FIXME: "| VBOXGUEST_IOCTL_FLAG" should be moved into IOCTL_CODE define,
+ *but I'm more than sure it will require more changes in vboxguest.cpp
+ *Same goes for RT_OS_WINDOWS which is to make sure the change doesn't break something on other platforms.
+ */
+# ifdef RT_OS_WINDOWS
+#  define VBOXGUEST_IOCTL_HGCM_CALL(Size)          VBOXGUEST_IOCTL_CODE(18 | VBOXGUEST_IOCTL_FLAG, (Size))
+# else
+#  define VBOXGUEST_IOCTL_HGCM_CALL(Size)          VBOXGUEST_IOCTL_CODE(18, (Size))
+# endif
 # define VBOXGUEST_IOCTL_HGCM_CALL_TIMED(Size)    VBOXGUEST_IOCTL_CODE(20, (Size))
 # define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT        VBOXGUEST_IOCTL_CODE(19, sizeof(uint32_t))
+
+# ifdef VBOX_WITH_64_BITS_GUESTS
+#  ifndef VBOX_HGCM_HOST_CODE
+#     define  VBOXGUEST_IOCTL_HGCM_CALL_32(Size)   VBOXGUEST_IOCTL_CODE(18, (Size)) 
+#  endif /* !VBOX_HGCM_HOST_CODE */
+# endif /* VBOX_WITH_64_BITS_GUESTS */
 
 # define VBOXGUEST_HGCM_CALL_PARMS(a)       ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
 
