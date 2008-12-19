@@ -477,6 +477,8 @@ int handleConvertFromRaw(int argc, char *argv[])
         }
     }
 
+    if (!srcfilename || !dstfilename || (fReadFromStdIn && !filesize))
+        return errorSyntax(USAGE_CONVERTFROMRAW, "Incorrect number of parameters");
     RTPrintf("Converting from raw image file=\"%s\" to file=\"%s\"...\n",
              srcfilename, dstfilename);
 
