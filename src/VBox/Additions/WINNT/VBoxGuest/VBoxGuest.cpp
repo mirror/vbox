@@ -35,6 +35,7 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/mem.h>
 #include <stdio.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxGuestInternal.h>
@@ -1017,6 +1018,170 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
 
         } break;
+
+#ifdef VBOX_WITH_64_BITS_GUESTS
+        case VBOXGUEST_IOCTL_HGCM_CALL_32(0): /* (The size isn't relevant on NT.) */
+        {
+            dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_HGCM_CALL_32\n"));
+
+            Status = vboxHGCMVerifyIOBuffers (pStack,
+                                              sizeof (VBoxGuestHGCMCallInfo));
+
+            if (Status != STATUS_SUCCESS)
+            {
+                dprintf(("VBoxGuest::VBoxGuestDeviceControl: invalid parameter. Status: %p\n", Status));
+                break;
+            }
+
+            VBoxGuestHGCMCallInfo *ptr32 = (VBoxGuestHGCMCallInfo *)pBuf;
+            VBoxGuestHGCMCallInfo *ptr64;
+
+            unsigned cbPtr32 = sizeof(*ptr32)+ptr32->cParms*sizeof(HGCMFunctionParameter32);
+            unsigned cbPtr64 = sizeof(*ptr32)+ptr32->cParms*sizeof(HGCMFunctionParameter);
+
+            /*@todo r=Leonid, same should be applied to case VBOXGUEST_IOCTL_HGCM_CALL(0) as well,
+             * because vboxHGCMVerifyIOBuffers, checks for sizeof (VBoxGuestHGCMCallInfo) only.
+             */
+            if (pStack->Parameters.DeviceIoControl.InputBufferLength < cbPtr32)
+            {
+                dprintf(("VBoxGuest::vboxHGCMVerifyIOBuffers: InputBufferLength %d < %d\n",
+                        pStack->Parameters.DeviceIoControl.InputBufferLength, cbPtr32));
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            ptr64 = (VBoxGuestHGCMCallInfo *) RTMemTmpAlloc(cbPtr64);
+
+            if (!ptr64)
+            {
+                dprintf(("VBoxGuest::VBoxGuestDeviceControl: No memory\n"));
+                Status = STATUS_UNSUCCESSFUL;
+                break;      
+            }
+
+            /*copy 32bit call info into 64bit*/
+            {
+                unsigned iParm;
+                HGCMFunctionParameter   *pParm64;
+                HGCMFunctionParameter32 *pParm32;
+
+                /*copy header*/
+                memcpy(ptr64, ptr32, sizeof(VBoxGuestHGCMCallInfo));
+
+                pParm64 = VBOXGUEST_HGCM_CALL_PARMS(ptr64);
+                pParm32 = (HGCMFunctionParameter32*) VBOXGUEST_HGCM_CALL_PARMS(ptr32);
+
+                for (iParm = 0; iParm < ptr32->cParms; ++iParm)
+                {
+                    pParm64->type = pParm32->type;
+                    
+                    switch(pParm64->type)
+                    {
+                        case VMMDevHGCMParmType_PhysAddr:
+                            pParm64->u.Pointer.size = pParm32->u.Pointer.size;
+                            pParm64->u.Pointer.u.physAddr = pParm32->u.Pointer.u.physAddr;
+                            break;
+                        case VMMDevHGCMParmType_LinAddr:
+                        case VMMDevHGCMParmType_LinAddr_In:
+                        case VMMDevHGCMParmType_LinAddr_Out:
+                        case VMMDevHGCMParmType_LinAddr_Locked:
+                        case VMMDevHGCMParmType_LinAddr_Locked_In:
+                        case VMMDevHGCMParmType_LinAddr_Locked_Out:
+                            pParm64->u.Pointer.size = pParm32->u.Pointer.size;
+                            pParm64->u.Pointer.u.linearAddr = pParm32->u.Pointer.u.linearAddr;
+                            break;
+                        case VMMDevHGCMParmType_32bit:
+                            pParm64->u.value32 = pParm32->u.value32;
+                            break;
+                        case VMMDevHGCMParmType_64bit:
+                            pParm64->u.value64 = pParm32->u.value64;
+                            break;
+                        default:
+                            Status = STATUS_UNSUCCESSFUL;
+                            break;
+                    }
+
+                    ++pParm32;
+                    ++pParm64;
+                }
+
+                if (Status != STATUS_SUCCESS)
+                {
+                    dprintf(("VBoxGuest::VBoxGuestDeviceControl: invalid parameter. Status: %p\n", Status));
+                    break;
+                }
+            }
+
+            int rc = VbglHGCMCall (ptr64, VBoxHGCMCallback, pDevExt, RT_INDEFINITE_WAIT);
+
+            if (RT_FAILURE(rc))
+            {
+                dprintf(("VBOXGUEST_IOCTL_HGCM_CALL: vbox rc = %Rrc\n", rc));
+                Status = STATUS_UNSUCCESSFUL;
+            }
+            else
+            {
+                cbOut = pStack->Parameters.DeviceIoControl.OutputBufferLength;
+            }
+
+            /*copy results back*/
+            {
+                unsigned iParm;
+                HGCMFunctionParameter   *pParm64;
+                HGCMFunctionParameter32 *pParm32;
+
+                /*copy header*/
+                memcpy(ptr32, ptr64, sizeof(VBoxGuestHGCMCallInfo));
+
+                pParm64 = VBOXGUEST_HGCM_CALL_PARMS(ptr64);
+                pParm32 = (HGCMFunctionParameter32*) VBOXGUEST_HGCM_CALL_PARMS(ptr32);
+
+                /*@todo r=Leonid, FIXME: I think pointer values couldn't change but not sure so better play it safe*/
+                for (iParm = 0; iParm < ptr32->cParms; ++iParm)
+                {
+                    pParm32->type = pParm64->type;
+                    
+                    switch(pParm64->type)
+                    {
+                        case VMMDevHGCMParmType_PhysAddr:
+                            pParm32->u.Pointer.size = pParm64->u.Pointer.size;
+                            pParm32->u.Pointer.u.physAddr = pParm64->u.Pointer.u.physAddr;
+                            break;
+                        case VMMDevHGCMParmType_LinAddr:
+                        case VMMDevHGCMParmType_LinAddr_In:
+                        case VMMDevHGCMParmType_LinAddr_Out:
+                        case VMMDevHGCMParmType_LinAddr_Locked:
+                        case VMMDevHGCMParmType_LinAddr_Locked_In:
+                        case VMMDevHGCMParmType_LinAddr_Locked_Out:
+                            pParm32->u.Pointer.size = pParm64->u.Pointer.size;
+                            pParm32->u.Pointer.u.linearAddr = pParm64->u.Pointer.u.linearAddr;
+                            break;
+                        case VMMDevHGCMParmType_32bit:
+                            pParm32->u.value32 = pParm64->u.value32;
+                            break;
+                        case VMMDevHGCMParmType_64bit:
+                            pParm32->u.value64 = pParm64->u.value64;
+                            break;
+                        default:
+                            Status = STATUS_UNSUCCESSFUL;
+                            break;
+                    }
+
+                    ++pParm32;
+                    ++pParm64;
+                }
+
+                if (Status != STATUS_SUCCESS)
+                {
+                    dprintf(("VBoxGuest::VBoxGuestDeviceControl: invalid parameter. Status: %p\n", Status));
+                    break;
+                }
+            }
+
+            RTMemTmpFree(ptr64);
+
+        } break;
+#endif
 
         case VBOXGUEST_IOCTL_HGCM_CALL_TIMED(0): /* (The size isn't relevant on NT.) */
         {
