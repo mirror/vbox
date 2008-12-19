@@ -1214,51 +1214,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 hrc = pConsole->attachToHostInterface(networkAdapter);
                 if (SUCCEEDED(hrc))
                 {
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-                    Assert ((int)pConsole->maTapFD[ulInstance] >= 0);
-                    if ((int)pConsole->maTapFD[ulInstance] >= 0)
-                    {
-                        if (fSniffer)
-                        {
-                            rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0); RC_CHECK();
-                        }
-                        else
-                        {
-                            rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);         RC_CHECK();
-                        }
-                        rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface"); RC_CHECK();
-                        rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);             RC_CHECK();
-# if defined(RT_OS_SOLARIS)
-                        /* Device name/number is required for Solaris as we need it for TAP PPA. */
-                        Bstr tapDeviceName;
-                        networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
-                        if (!tapDeviceName.isEmpty())
-                            rc = CFGMR3InsertString(pCfg, "Device", Utf8Str(tapDeviceName)); RC_CHECK();
-
-                        /* TAP setup application/script */
-                        Bstr tapSetupApp;
-                        networkAdapter->COMGETTER(TAPSetupApplication)(tapSetupApp.asOutParam());
-                        if (!tapSetupApp.isEmpty())
-                            rc = CFGMR3InsertString(pCfg, "TAPSetupApplication", Utf8Str(tapSetupApp)); RC_CHECK();
-
-                        /* TAP terminate application/script */
-                        Bstr tapTerminateApp;
-                        networkAdapter->COMGETTER(TAPTerminateApplication)(tapTerminateApp.asOutParam());
-                        if (!tapTerminateApp.isEmpty())
-                            rc = CFGMR3InsertString(pCfg, "TAPTerminateApplication", Utf8Str(tapTerminateApp)); RC_CHECK();
-
-                        /* "FileHandle" must NOT be inserted here, it is done in DrvTAP.cpp */
-
-#  ifdef VBOX_WITH_CROSSBOW
-                        /* Crossbow: needs the MAC address for setting up TAP. */
-                        rc = CFGMR3InsertBytes(pCfg, "MAC", &Mac, sizeof(Mac));     RC_CHECK();
-#  endif
-# else
-                        rc = CFGMR3InsertInteger(pCfg, "FileHandle", pConsole->maTapFD[ulInstance]); RC_CHECK();
-# endif
-                    }
-
-#elif defined(VBOX_WITH_NETFLT)
+#if defined(VBOX_WITH_NETFLT)
                     /*
                      * This is the new VBoxNetFlt+IntNet stuff.
                      */

@@ -44,11 +44,7 @@ public:
             : mSlot (0), mEnabled (FALSE)
             , mAttachmentType (NetworkAttachmentType_Null)
             ,  mCableConnected (TRUE), mLineSpeed (0), mTraceEnabled (FALSE)
-#ifndef VBOX_WITH_UNIXY_TAP_NETWORKING
-            , mHostInterface ("") // cannot be null
-#else
-            , mTAPFD (NIL_RTFILE)
-#endif
+            , mHostInterface ("") /* cannot be null */
         {}
 
         bool operator== (const Data &that) const
@@ -62,11 +58,6 @@ public:
                     mLineSpeed == that.mLineSpeed &&
                     mTraceEnabled == that.mTraceEnabled &&
                     mHostInterface == that.mHostInterface &&
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-                    mTAPSetupApplication == that.mTAPSetupApplication &&
-                    mTAPTerminateApplication == that.mTAPTerminateApplication &&
-                    mTAPFD == that.mTAPFD &&
-#endif
                     mInternalNetwork == that.mInternalNetwork &&
                     mNATNetwork == that.mNATNetwork);
         }
@@ -81,11 +72,6 @@ public:
         BOOL mTraceEnabled;
         Bstr mTraceFile;
         Bstr mHostInterface;
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-        Bstr mTAPSetupApplication;
-        Bstr mTAPTerminateApplication;
-        RTFILE mTAPFD;
-#endif
         Bstr mInternalNetwork;
         Bstr mNATNetwork;
     };
@@ -125,14 +111,6 @@ public:
     STDMETHOD(COMGETTER(AttachmentType)) (NetworkAttachmentType_T *aAttachmentType);
     STDMETHOD(COMGETTER(HostInterface)) (BSTR *aHostInterface);
     STDMETHOD(COMSETTER(HostInterface)) (IN_BSTR aHostInterface);
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    STDMETHOD(COMGETTER(TAPFileDescriptor)) (LONG *aTAPFileDescriptor);
-    STDMETHOD(COMSETTER(TAPFileDescriptor)) (LONG aTAPFileDescriptor);
-    STDMETHOD(COMGETTER(TAPSetupApplication)) (BSTR *aTAPSetupApplication);
-    STDMETHOD(COMSETTER(TAPSetupApplication)) (IN_BSTR aTAPSetupApplication);
-    STDMETHOD(COMGETTER(TAPTerminateApplication)) (BSTR *aTAPTerminateApplication);
-    STDMETHOD(COMSETTER(TAPTerminateApplication)) (IN_BSTR aTAPTerminateApplication);
-#endif
     STDMETHOD(COMGETTER(InternalNetwork)) (BSTR *aInternalNetwork);
     STDMETHOD(COMSETTER(InternalNetwork)) (IN_BSTR aInternalNetwork);
     STDMETHOD(COMGETTER(NATNetwork)) (BSTR *aNATNetwork);

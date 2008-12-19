@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
  *  :tabSize=2:indentSize=2:noTabs=true:
  *  :folding=explicit:collapseFolds=1:
@@ -63,38 +64,6 @@
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
-</xsd:complexType>
-
-<xsd:complexType name="TNetwork">
-  <xsd:sequence>
-    <xsd:element name="Adapter" minOccurs="0" maxOccurs="unbounded">
-      <xsd:complexType>
-        <xsd:complexContent>
-          <xsd:extension base="TNetworkAdapter">
-            <xsd:choice minOccurs="0">
-              <xsd:element name="NAT">
-                <xsd:complexType>
-                  <xsd:attribute name="network" type="xsd:string"/>
-                </xsd:complexType>
-              </xsd:element>
-              <xsd:element name="HostInterface">
-                <xsd:complexType>
-                  <xsd:attribute name="name" type="TLocalFile"/>
-                  <xsd:attribute name="TAPSetup" type="TLocalFile"/>
-                  <xsd:attribute name="TAPTerminate" type="TLocalFile"/>
-                </xsd:complexType>
-              </xsd:element>
-              <xsd:element name="InternalNetwork">
-                <xsd:complexType>
-                  <xsd:attribute name="name" type="xsd:string" use="required"/>
-                </xsd:complexType>
-              </xsd:element>
-            </xsd:choice>
-          </xsd:extension>
-        </xsd:complexContent>
-      </xsd:complexType>
-    </xsd:element>
-  </xsd:sequence>
 </xsd:complexType>
 
 <xsd:complexType name="TAudioAdapter">
