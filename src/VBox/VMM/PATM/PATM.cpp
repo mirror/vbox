@@ -5843,7 +5843,14 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
         rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCurPatchInstrGC, &CpuOld, 0);
         if (    RT_FAILURE(rc)
             ||  !(CpuOld.pCurInstr->optype & OPTYPE_HARMLESS))
+        {
+            if (RT_SUCCESS(rc))
+                cbDirty += CpuOld.opsize;
+            else
+            if (!cbDirty)
+                cbDirty = 1;
             break;
+        }
 
 #ifdef DEBUG
         char szBuf[256];
@@ -5851,14 +5858,14 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
         DBGFR3DisasInstr(pVM, pCtx->cs, pCurPatchInstrGC, szBuf, sizeof(szBuf));
         Log(("DIRTY: %s\n", szBuf));
 #endif
+        /* Mark as clean; if we fail we'll let it always fault. */
+        pRec->fDirty      = false;
+
         /** Remove old lookup record. */
         patmr3RemoveP2GLookupRecord(pVM, &pPatch->patch, pCurPatchInstrGC);
 
         pCurPatchInstrGC += CpuOld.opsize;
         cbDirty          += CpuOld.opsize;
-
-        /* Mark as clean; if we fail we'll let it always fault. */
-        pRec->fDirty      = false;
 
         /* Let's see if there's another dirty instruction right after. */
         pRec = (PRECPATCHTOGUEST)RTAvlU32GetBestFit(&pPatch->patch.Patch2GuestAddrTree, pCurPatchInstrGC - pVM->patm.s.pPatchMemGC, true);
@@ -5952,8 +5959,11 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
     else
     {
         STAM_COUNTER_INC(&pVM->patm.s.StatInstrDirtyBad);
+        Assert(cbDirty);
+
         /* Mark the whole instruction stream with breakpoints. */
-        memset(pPatchInstrHC, 0xCC, cbDirty);
+        if (cbDirty)
+            memset(pPatchInstrHC, 0xCC, cbDirty);
 
         if (    pVM->patm.s.fOutOfMemory == false
             &&  (pPatch->patch.flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER|PATMFL_TRAPHANDLER)))
