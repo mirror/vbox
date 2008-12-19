@@ -255,9 +255,9 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     ip = ntohl(so->so_faddr.s_addr);
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %4d:(proto:%u) "
             "state=%04x ip=" IP4_ADDR_PRINTF_FORMAT ":%d name=" IP4_ADDR_PRINTF_FORMAT ":%d",
-            so->s, so->so_type, so->so_state, IP4_ADDR_PRINTF_DECOMP(ip), so->so_fport,
+            so->s, so->so_type, so->so_state, IP4_ADDR_PRINTF_DECOMP(ip), ntohs(so->so_fport),
             IP4_ADDR_PRINTF_DECOMP(((struct sockaddr_in *)&addr)->sin_addr.s_addr),
-            ((struct sockaddr_in *)&addr)->sin_port);
+            ntohs(((struct sockaddr_in *)&addr)->sin_port));
 }
 
 static DECLCALLBACK(size_t)
