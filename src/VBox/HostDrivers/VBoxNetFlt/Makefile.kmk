@@ -221,6 +221,7 @@ else if1of ($(KBUILD_TARGET), linux solaris) ## @todo merge this with the mixed 
 # vboxnetflt(.ko/.o/) - The lower case driver.
 # Note! On Solaris the name has to be <= 8 chars long.
 #
+ ifdef VBOX_WITH_VBOXDRV
 SYSMODS += vboxnetflt
 vboxnetflt_TEMPLATE      = VBOXR0DRV
 vboxnetflt_NAME.solaris  = vboxflt
@@ -246,6 +247,7 @@ vboxnetflt_LIBS = \
 vboxnetflt_SOURCES.linux = linux/VBoxNetFlt-linux.c
 vboxnetflt_SOURCES.solaris = solaris/VBoxNetFlt-solaris.c
 vboxnetflt_SOURCES = VBoxNetFlt.c
+ endif
 
 endif
 
