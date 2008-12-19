@@ -373,11 +373,6 @@ endif
 VBOX_WITH_SOLARIS_VBI = 1
 # Enable 64 bits guest pointers.
 VBOX_WITH_64_BITS_GUESTS = 1
-#if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.amd64 solaris.amd64 win.amd64)
-#VBOX_WITH_64_BITS_GUESTS = 1
-##else
-### VBOX_WITH_64_BITS_GUESTS = 1
-#endif
 # Enable SMP support in guests
 ##VBOX_WITH_SMP_GUESTS = 1
 # Allow more than 4G in guests
