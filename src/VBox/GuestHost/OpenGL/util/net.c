@@ -760,7 +760,7 @@ crNetSend(CRConnection *conn, void **bufp, const void *start, unsigned int len)
                             (unsigned char *) *bufp + conn->buffer_size );
     }
 
-#ifndef NDEBUG
+#ifdef DEBUG
     if ( conn->send_credits > CR_INITIAL_RECV_CREDITS )
     {
         crError( "crNetSend: send_credits=%u, looks like there is a leak (max=%u)",
@@ -793,7 +793,7 @@ void crNetBarf( CRConnection *conn, void **bufp,
                 (unsigned char *) *bufp + conn->buffer_size );
     }
 
-#ifndef NDEBUG
+#ifdef DEBUG
     if ( conn->send_credits > CR_INITIAL_RECV_CREDITS )
     {
         crError( "crNetBarf: send_credits=%u, looks like there is a "

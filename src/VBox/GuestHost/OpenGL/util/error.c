@@ -297,7 +297,7 @@ DECLEXPORT(void) crDebug( char *format, ... )
 #endif
             output = stderr;
         }
-#if NDEBUG
+#ifndef DEBUG
         /* Release mode: only emit crDebug messages if CR_DEBUG
          * or CR_DEBUG_FILE is set.
          */

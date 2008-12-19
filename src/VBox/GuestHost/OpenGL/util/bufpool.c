@@ -111,7 +111,7 @@ crBufferPoolPush( CRBufferPool *pool, void *buf, unsigned int bytes )
 {
     Buffer *b = crCalloc(sizeof(Buffer));
     if (b) {
-#ifndef NDEBUG
+#ifdef DEBUG
         /* check that the buffer to push isn't already in the pool! */
         {
             const Buffer *b;
