@@ -552,6 +552,10 @@ typedef struct HWACCMCPU
 #endif
     STAMPROFILEADV          StatInGC;
 
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+    STAMPROFILEADV          StatWorldSwitch3264;
+#endif
+
     STAMCOUNTER             StatIntInject;
 
     STAMCOUNTER             StatExitShadowNM;
