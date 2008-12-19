@@ -1118,10 +1118,13 @@ VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
 
     pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
 
+    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);   
     if (pVM->hwaccm.s.vmx.fSupported)
-        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
-
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
+        rc  = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
+    else
+        rc = SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);
+    return rc;
 }
 # endif
 
