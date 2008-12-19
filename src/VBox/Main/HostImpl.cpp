@@ -1301,7 +1301,7 @@ STDMETHODIMP Host::COMGETTER(UTCTime)(LONG64 *aUTCTime)
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef RT_OS_WINDOWS
-
+/** @todo REMOVE. OBSOLETE NOW. */
 /**
  * Returns TRUE if the Windows version is 6.0 or greater (i.e. it's Vista and
  * later OSes) and it has the UAC (User Account Control) feature enabled.
