@@ -116,7 +116,20 @@ static bool _crVBoxHGCMWriteBytes(CRConnection *conn, const void *buf, uint32_t 
 
     /* make sure there's host buffer and it's clear */
     CRASSERT(conn->pHostBuffer && !conn->cbHostBuffer);
-    CRASSERT(conn->cbHostBufferAllocated >= len);
+
+    if (conn->cbHostBufferAllocated < len)
+    {
+        crDebug("Host buffer too small %d out of requsted %d bytes, reallocating", conn->cbHostBufferAllocated, len);
+        crFree(conn->pHostBuffer);
+        conn->pHostBuffer = crAlloc(len);
+        if (!conn->pHostBuffer)
+        {
+            conn->cbHostBufferAllocated = 0;
+            crError("OUT_OF_MEMORY trying to allocate %d bytes", len);
+            return FALSE;
+        }
+        conn->cbHostBufferAllocated = len;
+    }
 
     crMemcpy(conn->pHostBuffer, buf, len);
     conn->cbHostBuffer = len;
@@ -313,6 +326,43 @@ static void crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned i
     }
 }
 
+static void crVBoxHGCMReadExact( CRConnection *conn, const void *buf, unsigned int len )
+{
+    CRVBOXHGCMREAD parms;
+    int rc;
+
+    parms.hdr.result      = VINF_SUCCESS;
+    parms.hdr.u32ClientID = conn->u32ClientID;
+    parms.hdr.u32Function = SHCRGL_GUEST_FN_READ;
+    parms.hdr.cParms      = SHCRGL_CPARMS_READ;
+
+    CRASSERT(!conn->pBuffer); //make sure there's no data to process
+    parms.pBuffer.type                   = VMMDevHGCMParmType_LinAddr_Out;
+    parms.pBuffer.u.Pointer.size         = conn->cbHostBufferAllocated;
+    parms.pBuffer.u.Pointer.u.linearAddr = (VMMDEVHYPPTR) conn->pHostBuffer;
+
+    parms.cbBuffer.type      = VMMDevHGCMParmType_32bit;
+    parms.cbBuffer.u.value32 = 0;
+
+    rc = crVBoxHGCMCall(&parms, sizeof(parms));
+
+    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
+    {
+        crDebug("SHCRGL_GUEST_FN_WRITE_READ failed with %x %x\n", rc, parms.hdr.result);
+        return;
+    }
+
+    if (parms.cbBuffer.u.value32)
+    {
+        conn->pBuffer  = (uint8_t*) parms.pBuffer.u.Pointer.u.linearAddr;
+        conn->cbBuffer = parms.cbBuffer.u.value32;
+    }
+
+    if (conn->cbBuffer)
+        crVBoxHGCMReceiveMessage(conn);
+
+}
+
 /* Same as crVBoxHGCMWriteExact, but combined with read of writeback data.
  * This halves the number of HGCM calls we do,
  * most likely crVBoxHGCMPollHost shouldn't be called at all now.
@@ -353,8 +403,28 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
 
     if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
     {
-        crDebug("SHCRGL_GUEST_FN_WRITE_READ failed with %x %x\n", rc, parms.hdr.result);
-        return;
+
+        if ((VERR_BUFFER_OVERFLOW == parms.hdr.result) && RT_SUCCESS(rc))
+        {
+            /* reallocate buffer and retry */
+
+            CRASSERT(parms.cbWriteback.u.value32>conn->cbHostBufferAllocated);
+
+            crDebug("Reallocating host buffer from %d to %d bytes", conn->cbHostBufferAllocated, parms.cbWriteback.u.value32);
+
+            crFree(conn->pHostBuffer);
+            conn->cbHostBufferAllocated = parms.cbWriteback.u.value32;
+            conn->pHostBuffer = crAlloc(conn->cbHostBufferAllocated);
+
+            crVBoxHGCMReadExact(conn, buf, len);
+
+            return;
+        }
+        else
+        {
+            crDebug("SHCRGL_GUEST_FN_WRITE_READ failed with %x %x\n", rc, parms.hdr.result);
+            return;
+        }
     }
 
     if (parms.cbWriteback.u.value32)
@@ -412,11 +482,6 @@ static void crVBoxHGCMSend(CRConnection *conn, void **bufp,
      * doesn't try to re-use the buffer.
      */
     *bufp = NULL;
-}
-
-static void crVBoxHGCMReadExact( CRConnection *conn, void *buf, unsigned int len )
-{
-    CRASSERT(FALSE);
 }
 
 static void crVBoxHGCMPollHost(CRConnection *conn)
@@ -899,7 +964,7 @@ void crVBoxHGCMConnection(CRConnection *conn)
     conn->allow_redir_ptr = 1;
 
     //@todo remove this crap at all later
-    conn->cbHostBufferAllocated = 100*1024;
+    conn->cbHostBufferAllocated = 1*1024;
     conn->pHostBuffer = (uint8_t*) crAlloc(conn->cbHostBufferAllocated);
     CRASSERT(conn->pHostBuffer);
     conn->cbHostBuffer = 0;

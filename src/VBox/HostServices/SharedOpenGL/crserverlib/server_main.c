@@ -459,7 +459,11 @@ int32_t crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t 
     {
         crWarning("crServer: [%lx] ClientRead u32ClientID=%d FAIL, host buffer too small %d of %d",
                   crThreadID(), u32ClientID, *pcbBuffer, pClient->conn->cbHostBuffer);
-        return VERR_INVALID_PARAMETER;
+
+        /* Return the size of needed buffer */
+        *pcbBuffer = pClient->conn->cbHostBuffer;
+
+        return VERR_BUFFER_OVERFLOW;
     }
 
     *pcbBuffer = pClient->conn->cbHostBuffer;
