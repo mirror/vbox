@@ -296,8 +296,10 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             {
                 /* Update parameters.*/
                 paParms[0].u.pointer.size = cbBuffer; //@todo guest doesn't see this change somehow?
-                paParms[1].u.uint32 = cbBuffer;
             }
+
+            /* Return the required buffer size always */
+            paParms[1].u.uint32 = cbBuffer;
 
             break;
         }
@@ -336,8 +338,9 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 {
                     /* Update parameters.*/
                     paParms[1].u.pointer.size = cbWriteback;
-                    paParms[2].u.uint32 = cbWriteback;
                 }
+                /* Return the required buffer size always */
+                paParms[2].u.uint32 = cbWriteback;
             }
             break;
         }
