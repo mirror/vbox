@@ -431,7 +431,7 @@ int handleConvertFromRaw(int argc, char *argv[])
 {
     VDIMAGETYPE enmImgType = VD_IMAGE_TYPE_NORMAL;
     bool fReadFromStdIn = false;
-    const char *format = NULL;
+    const char *format = "VDI";
     const char *srcfilename = NULL;
     const char *dstfilename = NULL;
     const char *filesize = NULL;
