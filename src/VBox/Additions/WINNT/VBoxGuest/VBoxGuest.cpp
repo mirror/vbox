@@ -1019,7 +1019,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
         } break;
 
-#ifdef VBOX_WITH_64_BITS_GUESTS
+#if defined(VBOX_WITH_64_BITS_GUESTS) && ARCH_BITS == 64
         case VBOXGUEST_IOCTL_HGCM_CALL_32(0): /* (The size isn't relevant on NT.) */
         {
             dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_HGCM_CALL_32\n"));
