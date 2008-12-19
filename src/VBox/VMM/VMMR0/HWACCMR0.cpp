@@ -1115,6 +1115,7 @@ VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
     PVMCPU   pVCpu = &pVM->aCpus[0];
     CPUMCTX *pCtx;
     uint32_t aParam[5] = {0, 1, 2, 3, 4};
+    int      rc;
 
     pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
 
