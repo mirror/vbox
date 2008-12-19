@@ -557,18 +557,6 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "\n");
     }
 
-    if (u64Cmd & USAGE_CREATEHOSTIF && fWin)
-    {
-        RTPrintf("VBoxManage createhostif     <name>\n"
-                 "\n");
-    }
-
-    if (u64Cmd & USAGE_REMOVEHOSTIF && fWin)
-    {
-        RTPrintf("VBoxManage removehostif     <uuid>|<name>\n"
-                 "\n");
-    }
-
     if (u64Cmd & USAGE_GETEXTRADATA)
     {
         RTPrintf("VBoxManage getextradata     global|<uuid>|<name>\n"
@@ -3604,107 +3592,6 @@ static int handleSnapshot(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-
-#ifdef RT_OS_WINDOWS
-static int handleCreateHostIF(int argc, char *argv[],
-                              ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
-{
-    if (argc != 1)
-        return errorSyntax(USAGE_CREATEHOSTIF, "Incorrect number of parameters");
-
-    HRESULT rc = S_OK;
-
-    do
-    {
-        ComPtr<IHost> host;
-        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
-
-        ComPtr<IHostNetworkInterface> hostif;
-        ComPtr<IProgress> progress;
-        CHECK_ERROR_BREAK(host,
-            CreateHostNetworkInterface(Bstr(argv[0]),
-                                       hostif.asOutParam(),
-                                       progress.asOutParam()));
-
-        showProgress(progress);
-        HRESULT result;
-        CHECK_ERROR_BREAK(progress, COMGETTER(ResultCode)(&result));
-        if (FAILED(result))
-        {
-            com::ProgressErrorInfo info(progress);
-            PRINT_ERROR_INFO(info);
-            rc = result;
-        }
-    }
-    while (0);
-
-    return SUCCEEDED(rc) ? 0 : 1;
-}
-
-static int handleRemoveHostIF(int argc, char *argv[],
-                              ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
-{
-    if (argc != 1)
-        return errorSyntax(USAGE_REMOVEHOSTIF, "Incorrect number of parameters");
-
-    HRESULT rc = S_OK;
-
-    do
-    {
-        ComPtr<IHost> host;
-        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
-
-        ComPtr<IHostNetworkInterface> hostif;
-
-        /* first guess is that it's a UUID */
-        Guid uuid(argv[0]);
-        if (uuid.isEmpty())
-        {
-            /* not a valid UUID, search for it */
-            Bstr strName(argv[0]);
-            com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
-            CHECK_ERROR_BREAK(host, COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
-            ComPtr <IHostNetworkInterface> hostif;
-            for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
-            {
-                Bstr name;
-                hostNetworkInterfaces[i]->COMGETTER(Name) (name.asOutParam());
-                if (name == strName)
-                {
-                    hostif = hostNetworkInterfaces[i];
-                    break;
-                }
-            }
-            if (hostif.isNull())
-            {
-                rc = E_INVALIDARG;
-                break;
-            }
-            CHECK_ERROR_BREAK(hostif, COMGETTER(Id)(uuid.asOutParam()));
-        }
-
-        ComPtr<IProgress> progress;
-        CHECK_ERROR_BREAK(host,
-            RemoveHostNetworkInterface(uuid,
-                                       hostif.asOutParam(),
-                                       progress.asOutParam()));
-
-        showProgress(progress);
-        HRESULT result;
-        CHECK_ERROR_BREAK(progress, COMGETTER(ResultCode)(&result));
-        if (FAILED(result))
-        {
-            com::ProgressErrorInfo info(progress);
-            PRINT_ERROR_INFO(info);
-            rc = result;
-        }
-    }
-    while (0);
-
-    return SUCCEEDED(rc) ? 0 : 1;
-}
-#endif /* RT_OS_WINDOWS */
-
 static int handleGetExtraData(int argc, char *argv[],
                               ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
@@ -4868,10 +4755,6 @@ int main(int argc, char *argv[])
         { "unregisterimage",  handleCloseMedium }, /* backward compatiblity */
         { "showhdinfo",       handleShowHardDiskInfo },
         { "showvdiinfo",      handleShowHardDiskInfo }, /* backward compatiblity */
-#ifdef RT_OS_WINDOWS
-        { "createhostif",     handleCreateHostIF },
-        { "removehostif",     handleRemoveHostIF },
-#endif
         { "getextradata",     handleGetExtraData },
         { "setextradata",     handleSetExtraData },
         { "setproperty",      handleSetProperty },
