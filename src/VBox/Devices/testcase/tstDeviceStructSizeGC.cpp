@@ -1136,6 +1136,12 @@ int main()
 #endif
     GEN_CHECK_OFF(AHCIPort, fNotificationSend);
     GEN_CHECK_OFF(AHCIPort, fPortReset);
+    GEN_CHECK_OFF(AHCIPort, abSerialNumber);
+    GEN_CHECK_OFF(AHCIPort, abSerialNumber[19]);
+    GEN_CHECK_OFF(AHCIPort, abFirmwareRevision);
+    GEN_CHECK_OFF(AHCIPort, abFirmwareRevision[7]);
+    GEN_CHECK_OFF(AHCIPort, abModelNumber);
+    GEN_CHECK_OFF(AHCIPort, abModelNumber[39]);
 
     GEN_CHECK_SIZE(AHCI);
     GEN_CHECK_OFF(AHCI, dev);
