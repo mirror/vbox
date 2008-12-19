@@ -30,6 +30,8 @@
 
 # define DO_CHECK_FD_SET(so, events, fdset) (FD_ISSET((so)->s, (fdset)))
 
+# define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0 /* specific for Windows Winsock API */
+
 # define ICMP_ENGAGE_EVENT(so, fdset)               \
     do {                                             \
         if (pData->icmp_socket.s != -1)              \
@@ -69,6 +71,9 @@
         continue;                                                           \
     }
 
+# define acceptds_win FD_ACCEPT
+# define acceptds_win_bit FD_ACCEPT_BIT
+
 # define readfds_win FD_READ
 # define readfds_win_bit FD_READ_BIT
 
@@ -81,6 +86,7 @@
 # define DO_CHECK_FD_SET(so, events, fdset)  \
     (((events).lNetworkEvents & fdset ## _win) && ((events).iErrorCode[fdset ## _win_bit] == 0))
 
+# define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), (fdset))
 
 #endif /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
 
@@ -101,6 +107,9 @@
 
 #define CHECK_FD_SET(so, events, set)           \
     (DO_CHECK_FD_SET((so), (events), set))
+
+#define WIN_CHECK_FD_SET(so, events, set)           \
+    (DO_WIN_CHECK_FD_SET((so), (events), set))
 
 /*
  * Loging macros
@@ -747,7 +756,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             /*
              * Check sockets for reading
              */
-            else if (CHECK_FD_SET(so, NetworkEvents, readfds))
+            else if (CHECK_FD_SET(so, NetworkEvents, readfds)
+             || WIN_CHECK_FD_SET(so, NetworkEvents, acceptds))
             {
                 /*
                  * Check for incoming connections
