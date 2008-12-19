@@ -48,7 +48,7 @@
                                (ipopt), pData->pvIcmpBuffer, pData->szIcmpBuffer, 1)
 # else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 # define ICMP_SEND_ECHO(event, routine, addr, data, datasize, ipopt)                                                        \
-                IcmpSendEcho2(pData->icmp_socket.s, NULL, (FARPROC)(routine), (void *)pData, (addr), (data), (datasize),    \
+                IcmpSendEcho2(pData->icmp_socket.sh, NULL, (FARPROC)(routine), (void *)pData, (addr), (data), (datasize),   \
                              (ipopt), pData->pvIcmpBuffer, pData->szIcmpBuffer, 1)
 static void WINAPI notify_slirp(void *);
 # endif /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
