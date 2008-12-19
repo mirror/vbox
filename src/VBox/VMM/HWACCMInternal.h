@@ -230,12 +230,10 @@ typedef struct HWACCM
     /* RC handler to setup the 64 bits debug state. */
     RTRCPTR                     pfnSaveGuestDebug64;
 
-# ifdef DEBUG
     /* Test handler */
     RTRCPTR                     pfnTest64;
 
     RTRCPTR                     uAlignment[1];
-# endif
 #elif defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     uint32_t                    u32Alignment[1];
 #endif
