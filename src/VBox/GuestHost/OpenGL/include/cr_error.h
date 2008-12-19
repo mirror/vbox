@@ -32,7 +32,8 @@ DECLEXPORT(void) crInfo( char *format, ... ) PRINTF;
 
 DECLEXPORT(void) crError( char *format, ... ) NORETURN_PRINTF;
 
-#ifndef NDEBUG
+/* Throw more info while opengl is not stable */
+#if defined(DEBUG) || 1
 #define CRASSERT( PRED ) ((PRED)?(void)0:crError( "Assertion failed: %s, file %s, line %d", #PRED, __FILE__, __LINE__))
 #define THREADASSERT( PRED ) ((PRED)?(void)0:crError( "Are you trying to run a threaded app ?\nBuild with 'make threadsafe'\nAssertion failed: %s, file %s, line %d", #PRED, __FILE__, __LINE__))
 #else
