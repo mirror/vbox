@@ -150,6 +150,10 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
  * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an alias for the current one.
  *
  * @remark  RTR0MemGetAddressR3() and RTR0MemGetAddress() will return the rounded down address.
+ * @remark  On Linux, this should never be used on heap memory, as pages locked down in this
+ *          way will be missing from the child's virtual address space after a fork() call.  This
+ *          is currently irreversible, and applies even if the fork takes place after the virtual
+ *          memory has been unlocked again.
  */
 RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process);
 
