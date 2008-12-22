@@ -475,7 +475,13 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
  * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
  * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an alias for the current one.
  *
- * @remark  RTR0MemGetAddressR3() and RTR0MemGetAddress() will return the rounded down address.
+ * @remarks RTR0MemGetAddressR3() and RTR0MemGetAddress() will return therounded
+ *          down address.
+ *
+ * @remarks Linux: This API requires that the memory begin locked is in a memory
+ *          mapping that is not required in any forked off child process. This
+ *          is not intented as permanent restriction, feel free to help out
+ *          lifting it.
  */
 RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
 {
