@@ -220,8 +220,8 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
      */
     if (mouseCaps & VMMDEV_MOUSEHOSTWANTSABS)
     {
-        mParent->getVMMDev()->getVMMDevPort()
-            ->pfnSetMouseCapabilities(mParent->getVMMDev()->getVMMDevPort(), uHostCaps);
+        mParent->getVMMDev()->getVMMDevPort()->pfnSetMouseCapabilities(
+            mParent->getVMMDev()->getVMMDevPort(), uHostCaps);
     }
 
     uint32_t fButtons = 0;
@@ -234,8 +234,9 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
 
     int vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, dx, dy, dz, fButtons);
     if (RT_FAILURE (vrc))
-        rc = setError (E_FAIL, tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
-                       vrc);
+        rc = setError (VBOX_E_IPRT_ERROR,
+            tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
+                vrc);
 
     return rc;
 }
@@ -276,9 +277,9 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
      */
     if (!(mouseCaps & VMMDEV_MOUSEHOSTWANTSABS))
     {
-        mParent->getVMMDev()->getVMMDevPort()
-            ->pfnSetMouseCapabilities(mParent->getVMMDev()->getVMMDevPort(),
-                                      uHostCaps | VMMDEV_MOUSEHOSTWANTSABS);
+        mParent->getVMMDev()->getVMMDevPort()->pfnSetMouseCapabilities(
+            mParent->getVMMDev()->getVMMDevPort(),
+            uHostCaps | VMMDEV_MOUSEHOSTWANTSABS);
     }
 
     Display *pDisplay = mParent->getDisplay();
@@ -295,14 +296,14 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
     uint32_t mouseYAbs = displayHeight? (y * 0xFFFF) / displayHeight: 0;
 
     /*
-     * Send the absolute mouse position to the VMM device
+     * Send the absolute mouse position to the VMM device.
      */
     int vrc = mParent->getVMMDev()->getVMMDevPort()
         ->pfnSetAbsoluteMouse(mParent->getVMMDev()->getVMMDevPort(),
                               mouseXAbs, mouseYAbs);
     ComAssertRCRet (vrc, E_FAIL);
 
-    // check if the guest actually wants absolute mouse positions
+    // Check if the guest actually wants absolute mouse positions.
     if (mouseCaps & VMMDEV_MOUSEGUESTWANTSABS)
     {
         uint32_t fButtons = 0;
@@ -316,8 +317,9 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
         vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 1, 1, dz,
                                           fButtons);
         if (RT_FAILURE (vrc))
-            rc = setError (E_FAIL, tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
-                           vrc);
+            rc = setError (VBOX_E_IPRT_ERROR,
+                tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
+                    vrc);
     }
 
     return rc;
