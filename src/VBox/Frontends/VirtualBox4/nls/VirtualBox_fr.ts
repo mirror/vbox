@@ -2513,7 +2513,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="322"/>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format)&amp;nbsp:&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format)&amp;nbsp;:&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="328"/>
@@ -4396,7 +4396,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1278"/>
         <source>Configure the selected virtual machine</source>
-        <translation>Configure la machine virtuelle sélectionnée</translation>
+        <translation>Configurer la machine virtuelle sélectionnée</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1282"/>
@@ -4689,7 +4689,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="687"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation>Rejeter l&apos;instantané choisis de la machine virtuelle</translation>
+        <translation>Rejeter l&apos;instantané choisi de la machine virtuelle</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="688"/>
@@ -4709,7 +4709,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="690"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation>Rejeter l&apos;instantané actuel et remettre l&apos;état de la machine sur celui qu&apos;elle avait avant ls saisie de l&apos;instantané</translation>
+        <translation>Rejeter l&apos;instantané actuel et remettre l&apos;état de la machine sur celui qu&apos;elle avait avant la saisie de l&apos;instantané</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="691"/>
@@ -4924,7 +4924,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="323"/>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Pas de description. Cliquer le bouton Editer pour ajouter une description.</translation>
+        <translation>Pas de description. Cliquer sur le bouton Editer pour ajouter une description.</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="325"/>
@@ -5718,7 +5718,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="645"/>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Si cette fonction est cochée, la machine virtuelle supportera l&apos;interface avancée de gestion et de configuration de l&apos;énergie (ACPI). &lt;b&gt;Note&amp;nbsp;: &lt;/b&gt; ne désactivez pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows:</translation>
+        <translation>Si cette fonction est cochée, la machine virtuelle supportera l&apos;interface avancée de gestion et de configuration de l&apos;énergie (ACPI). &lt;b&gt;Note&amp;nbsp;: &lt;/b&gt; ne désactivez pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="648"/>
@@ -5728,7 +5728,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="661"/>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Si cette fonction est cochée, la machine virtuelle supportera l&apos;APIC entrée/sortie (IO-APIC), ce qui peut légèrement diminuer la performance de la VM. &lt;b&gt;Note&amp;nbsp;: &lt;/b&gt; ne désactivez pas ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows:</translation>
+        <translation>Si cette fonction est cochée, la machine virtuelle supportera l&apos;APIC entrée/sortie (IO-APIC), ce qui peut légèrement diminuer la performance de la VM. &lt;b&gt;Note&amp;nbsp;: &lt;/b&gt; ne désactivez pas ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="664"/>
