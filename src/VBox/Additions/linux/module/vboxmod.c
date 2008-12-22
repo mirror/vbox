@@ -364,12 +364,71 @@ static int vboxadd_hgcm_disconnect(struct file *filp, unsigned long userspace_in
         return rc;
 }
 
+/** Jump buffer structure for hcgm guest-host data copies. */
+typedef struct hgcm_jump_buffer
+{
+    /** Kernel memory address. */
+    void *pKernel;
+    /** User memory address. */
+    void *pUser;
+    /** Buffer size. */
+    size_t cb;
+} hgcm_jump_buffer;
+
+/** Create a jump buffer in kernel space for user space memory. */
+static int vboxadd_hgcm_alloc_buffer(hgcm_jump_buffer **ppBuf, void *pUser,
+                                     size_t cb)
+{
+    hgcm_jump_buffer *pBuf = NULL;
+    void *pKernel = NULL;
+    int rc = 0;
+    AssertPtrReturn(ppBuf, -EINVAL);
+    AssertPtrReturn(pUser, -EINVAL);
+    pBuf = kmalloc(sizeof(*pBuf), GFP_KERNEL);
+    if (pBuf == NULL)
+        rc = -ENOMEM;
+    if (rc >= 0) {
+        pKernel = kmalloc(cb, GFP_KERNEL);
+        if (pKernel == NULL)
+            rc = -ENOMEM;
+    }
+    if (   rc >= 0
+        && copy_from_user(pKernel, pUser, cb) != 0)
+        rc = -EFAULT;
+    if (rc >= 0) {
+        pBuf->pKernel = pKernel;
+        pBuf->pUser = pUser;
+        pBuf->cb = cb;
+        *ppBuf = pBuf;
+    }
+    else {
+        kfree(pBuf);
+        kfree(pKernel);
+        LogFunc(("failed, returning %d\n", rc));
+    }
+    return rc;
+}
+
+/** Free a kernel space jump buffer for user space memory. */
+static int vboxadd_hgcm_free_buffer(hgcm_jump_buffer *pBuf)
+{
+    int rc = 0;
+    AssertPtrReturn(pBuf, -EINVAL);
+    if (copy_to_user(pBuf->pUser, pBuf->pKernel, pBuf->cb) != 0)
+        rc = -EFAULT;
+    kfree(pBuf->pKernel);  /* We want to do this whatever the outcome. */
+    kfree(pBuf);
+    if (rc < 0)
+        LogFunc(("failed, returning %d\n", rc));
+    return rc;
+}
+
 /** Lock down R3 memory as needed for the HGCM call.  Copied from
  * HGCMInternal.cpp and SysHlp.cpp */
-static int vboxadd_lock_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCallInfo)
+static int vboxadd_buffer_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCallInfo)
 {
     uint32_t cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter);
-    int rc = VINF_SUCCESS;
+    int rc = 0;
     unsigned iParm;
     HGCMFunctionParameter *pParm;
     memset (ppvCtx, 0, sizeof(void *) * pCallInfo->cParms);
@@ -396,30 +455,31 @@ static int vboxadd_lock_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCallIn
             case VMMDevHGCMParmType_LinAddr_Out:
             case VMMDevHGCMParmType_LinAddr:
             {
-                RTR3PTR pv = (RTR3PTR)pParm->u.Pointer.u.linearAddr;
+                void *pv = (void *) pParm->u.Pointer.u.linearAddr;
                 uint32_t u32Size = pParm->u.Pointer.size;
-                RTR0MEMOBJ MemObj;
-                rc = RTR0MemObjLockUser(&MemObj, pv, u32Size, NIL_RTR0PROCESS);
-                if (RT_SUCCESS(rc))
+                hgcm_jump_buffer *MemObj = NULL;
+                rc = vboxadd_hgcm_alloc_buffer(&MemObj, pv, u32Size);
+                if (rc >= 0) {
                     ppvCtx[iParm] = MemObj;
-                else
-                    ppvCtx[iParm] = NIL_RTR0MEMOBJ;
+                    pParm->u.Pointer.u.linearAddr = (uintptr_t)MemObj->pKernel;
+                } else
+                    ppvCtx[iParm] = NULL;
                 break;
             }
             default:
                 /* make gcc happy */
                 break;
             }
-            if (RT_FAILURE (rc))
+            if (rc < 0)
                 break;
         }
     }
-    return -RTErrConvertToErrno (rc);
+    return rc;
 }
 
 /** Unlock R3 memory after the HGCM call.  Copied from HGCMInternal.cpp and
  * SysHlp.cpp */
-static void vboxadd_unlock_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCallInfo)
+static void vboxadd_unbuffer_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCallInfo)
 {
     unsigned iParm;
     /* Unlock user buffers. */
@@ -433,9 +493,13 @@ static void vboxadd_unlock_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCal
         {
             if (ppvCtx[iParm] != NULL)
             {
-                RTR0MEMOBJ MemObj = (RTR0MEMOBJ)ppvCtx[iParm];
-                int rc = RTR0MemObjFree(MemObj, false);
-                AssertRC(rc);
+                hgcm_jump_buffer *MemObj = (hgcm_jump_buffer *)ppvCtx[iParm];
+#ifdef VBOX_STRICT
+                int rc = vboxadd_hgcm_free_buffer(MemObj);
+                Assert(rc >= 0);  /* vboxadd_hgcm_unbuffer_user logs this. */
+#else
+                vboxadd_hgcm_free_buffer(MemObj);
+#endif
             }
         }
         else
@@ -476,7 +540,7 @@ static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
         }
         if (rc >= 0) {
             haveParms = 1;
-            rc = vboxadd_lock_hgcm_parms(apvCtx, pInfo);
+            rc = vboxadd_buffer_hgcm_parms(apvCtx, pInfo);
         }
         if (rc >= 0) {
                 int vrc;
@@ -492,7 +556,7 @@ static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
                 }
         }
         if (haveParms)
-            vboxadd_unlock_hgcm_parms(apvCtx, pInfo);
+            vboxadd_unbuffer_hgcm_parms(apvCtx, pInfo);
         if (pInfo != NULL)
             kfree(pInfo);
         return rc;
@@ -532,7 +596,7 @@ static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
         }
         if (rc >= 0) {
             haveParms = 1;
-            rc = vboxadd_lock_hgcm_parms(apvCtx, &pInfo->info);
+            rc = vboxadd_buffer_hgcm_parms(apvCtx, &pInfo->info);
         }
         if (rc >= 0) {
                 int vrc;
@@ -549,7 +613,7 @@ static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
                 }
         }
         if (haveParms)
-            vboxadd_unlock_hgcm_parms(apvCtx, &pInfo->info);
+            vboxadd_unbuffer_hgcm_parms(apvCtx, &pInfo->info);
         if (pInfo != NULL)
             kfree(pInfo);
         return rc;
@@ -1375,4 +1439,4 @@ MODULE_DEVICE_TABLE(pci, vmmdev_pci_id);
  * c-plusplus: evil
  * End:
  */
-
+s
