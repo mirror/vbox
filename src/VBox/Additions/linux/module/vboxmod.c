@@ -1439,4 +1439,3 @@ MODULE_DEVICE_TABLE(pci, vmmdev_pci_id);
  * c-plusplus: evil
  * End:
  */
-s
