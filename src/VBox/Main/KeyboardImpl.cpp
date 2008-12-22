@@ -143,8 +143,9 @@ STDMETHODIMP Keyboard::PutScancode (LONG scancode)
     int vrc = mpDrv->pUpPort->pfnPutEvent (mpDrv->pUpPort, (uint8_t)scancode);
 
     if (RT_FAILURE (vrc))
-        rc = setError (E_FAIL, tr ("Could not send scan code 0x%08X to the virtual keyboard (%Rrc)"),
-                       scancode, vrc);
+        rc = setError (VBOX_E_IPRT_ERROR,
+            tr ("Could not send scan code 0x%08X to the virtual keyboard (%Rrc)"),
+                scancode, vrc);
 
     return rc;
 }
@@ -181,8 +182,9 @@ STDMETHODIMP Keyboard::PutScancodes (ComSafeArrayIn (LONG, scancodes),
         vrc = mpDrv->pUpPort->pfnPutEvent (mpDrv->pUpPort, (uint8_t)keys [i]);
 
     if (RT_FAILURE (vrc))
-        return setError (E_FAIL, tr ("Could not send all scan codes to the virtual keyboard (%Rrc)"),
-                         vrc);
+        return setError (VBOX_E_IPRT_ERROR,
+            tr ("Could not send all scan codes to the virtual keyboard (%Rrc)"),
+                vrc);
 
     /// @todo is it actually possible that not all scancodes can be transmitted?
     if (codesStored)

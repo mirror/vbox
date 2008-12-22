@@ -8883,22 +8883,43 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       The IKeyboard interface represents the virtual machine's keyboard. Used
       in <link to="IConsole::keyboard"/>.
 
-      Through this interface, the virtual machine's virtual keyboard can be controlled. One
-      can send keystrokes to the virtual machine and send the Ctrl-Alt-Del sequence to it.
+      Use this interface to send keystrokes or the Ctrl-Alt-Del sequence
+      to the virtual machine.
+
     </desc>
     <method name="putScancode">
-      <desc>Sends a scancode to the keyboard.</desc>
+      <desc>Sends a scancode to the keyboard.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not send scan code to virtual keyboard.
+        </result>
+
+      </desc>
       <param name="scancode" type="long" dir="in"/>
     </method>
 
     <method name="putScancodes">
-      <desc>Sends an array of scancode to the keyboard.</desc>
+      <desc>Sends an array of scancodes to the keyboard.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not send all scan codes to virtual keyboard.
+        </result>
+
+      </desc>
       <param name="scancodes" type="long" dir="in" safearray="yes"/>
       <param name="codesStored" type="unsigned long" dir="return"/>
     </method>
 
     <method name="putCAD">
-      <desc>Sends the Ctrl-Alt-Del sequence to the keyboard.</desc>
+      <desc>Sends the Ctrl-Alt-Del sequence to the keyboard. This
+      function is nothing special, it is just a convenience function
+      calling <link to="IKeyboard::putScancodes"/> with the proper scancodes.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not send all scan codes to virtual keyboard.
+        </result>
+
+      </desc>
     </method>
 
   </interface>
