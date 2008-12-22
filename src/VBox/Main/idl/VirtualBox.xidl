@@ -8978,6 +8978,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Initiates a mouse event using relative pointer movements
         along x and y axis.
+
+        <result name="E_ACCESSDENIED">
+          Console not powered up.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not send mouse event to virtual mouse.
+        </result>
+
       </desc>
 
       <param name="dx" type="long" dir="in">
@@ -9020,6 +9028,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         These coordinates are expressed in pixels and
         start from <tt>[1,1]</tt> which corresponds to the top left
         corner of the virtual display.
+
+        <result name="E_ACCESSDENIED">
+          Console not powered up.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not send mouse event to virtual mouse.
+        </result>
 
         <note>
           This method will have effect only if absolute mouse
