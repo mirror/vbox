@@ -3399,7 +3399,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
     case VERR_VMX_UNABLE_TO_RESUME_VM:
     {
         int         rc;
-        RTCCUINTREG exitReason, instrError, val;
+        RTCCUINTREG exitReason, instrError;
 
         rc  = VMXReadVMCS(VMX_VMCS32_RO_EXIT_REASON, &exitReason);
         rc |= VMXReadVMCS(VMX_VMCS32_RO_VM_INSTR_ERROR, &instrError);
@@ -3413,8 +3413,9 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
             pVCpu->hwaccm.s.vmx.lasterror.ulExitReason = exitReason;
 
 #ifdef VBOX_STRICT
-            RTGDTR     gdtr;
-            PX86DESCHC pDesc;
+            RTGDTR      gdtr;
+            PX86DESCHC  pDesc;
+            RTCCUINTREG val;
 
             ASMGetGDTR(&gdtr);
 
@@ -3584,7 +3585,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     if (    (pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER)
         &&  MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(pVM->hwaccm.s.vmx.msr.vmx_misc))
     {
-        uint32_t val;
+        uint32_t uBit, val;
 
         rc = VMXReadVMCS32(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, &val);
         AssertRC(rc);
@@ -3592,8 +3593,8 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, val);
         AssertRC(rc);
 
-        val = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(pVM->hwaccm.s.vmx.msr.vmx_misc);
-        val = 1000000 / val;
+        uBit = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(pVM->hwaccm.s.vmx.msr.vmx_misc);
+        val = 1000000 / RT_BIT(uBit);
         VMXWriteVMCS(VMX_VMCS32_GUEST_PREEMPTION_TIMER_VALUE, val);
     }
 
