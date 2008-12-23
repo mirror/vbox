@@ -2131,6 +2131,7 @@ ResumeExecution:
      *
      */
 
+
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatInGC, z);
 #ifdef VBOX_STRICT
@@ -2151,7 +2152,6 @@ ResumeExecution:
      * IMPORTANT: WE CAN'T DO ANY LOGGING OR OPERATIONS THAT CAN DO A LONGJMP BACK TO RING 3 *BEFORE* WE'VE SYNCED BACK (MOST OF) THE GUEST STATE
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      */
-
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, z);
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit1, v);
 
@@ -3006,6 +3006,13 @@ ResumeExecution:
         /* RIP is already set to the next instruction and the TPR has been synced back. Just resume. */
         goto ResumeExecution;
 
+    case VMX_EXIT_PREEMPTION_TIMER:     /* 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
+#ifdef RT_OS_WINDOWS
+        goto ResumeExecution;
+#else
+        break; /* enable interrupts again */
+#endif
+
     default:
         /* The rest is handled after syncing the entire CPU state. */
         break;
@@ -3019,6 +3026,7 @@ ResumeExecution:
     case VMX_EXIT_EXCEPTION:            /* 0 Exception or non-maskable interrupt (NMI). */
     case VMX_EXIT_EXTERNAL_IRQ:         /* 1 External interrupt. */
     case VMX_EXIT_EPT_VIOLATION:
+    case VMX_EXIT_PREEMPTION_TIMER:     /* 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
         /* Already handled above. */
         break;
 
@@ -3572,7 +3580,31 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache);
     aParam[5] = 0;
 
+    if (pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER)
+    {
+        uint32_t val;
+
+        rc = VMXReadVMCS32(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, &val);
+        AssertRC(rc);
+        val  = val | VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER;
+        rc = VMXWriteVMCS(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, val);
+        AssertRC(rc);
+
+        VMXWriteVMCS(VMX_VMCS32_GUEST_PREEMPTION_TIMER_VALUE, 0x10000);
+    }
+
     rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64, 6, &aParam[0]);
+
+    if (pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER)
+    {
+        uint32_t val;
+
+        rc = VMXReadVMCS32(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, &val);
+        AssertRC(rc);
+        val  = val & ~VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER;
+        rc = VMXWriteVMCS(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, val);
+        AssertRC(rc);
+    }
 
 #ifdef DEBUG
     AssertMsg(pCache->TestIn.pPageCpuPhys == pPageCpuPhys, ("%RHp vs %RHp\n", pCache->TestIn.pPageCpuPhys, pPageCpuPhys));
