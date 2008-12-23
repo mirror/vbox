@@ -9360,7 +9360,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Returns whether the given acceleration operation is supported
         by the IFramebuffer implementation. If not, the display object
         will not attempt to call the corresponding IFramebuffer entry
-        point. Even if an operation is indicated to supported, the
+        point. Even if an operation is indicated as supported, the
         IFramebuffer implementation always has the option to return non
         supported from the corresponding acceleration method in which
         case the operation will be performed by the display engine. This
@@ -9430,6 +9430,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           The address of the provided array must be in the process space of
           this IFramebuffer object.
         </note>
+        <note>
+          Method not yet implemented.
+        </note>
       </desc>
       <param name="rectangles" type="octet" mod="ptr" dir="in">
         <desc>Pointer to the <tt>RTRECT</tt> array to receive region data.</desc>
@@ -9458,6 +9461,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <note>
           The IFramebuffer implementation must make a copy of the provided
           array of rectangles.
+        </note>
+        <note>
+          Method not yet implemented.
         </note>
       </desc>
       <param name="rectangles" type="octet" mod="ptr" dir="in">
