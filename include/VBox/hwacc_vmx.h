@@ -572,6 +572,8 @@ typedef enum
 /** @name VMX MSRs - Misc VMX info.
  * @{
  */
+/** Relationship between the preemption timer and tsc; count down every time bit x of the tsc changes. */
+#define MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(a)                    (a & 0x1f)
 /** Activity states supported by the implementation. */
 #define MSR_IA32_VMX_MISC_ACTIVITY_STATES(a)                    ((a >> 6ULL) & 0x7)
 /** Number of CR3 target values supported by the processor. (0-256) */
