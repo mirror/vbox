@@ -1249,8 +1249,7 @@ void Display::VideoAccelFlush (void)
  */
 STDMETHODIMP Display::COMGETTER(Width) (ULONG *width)
 {
-    if (!width)
-        return E_POINTER;
+    CheckComArgSafeArrayNotNull(width);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1272,8 +1271,7 @@ STDMETHODIMP Display::COMGETTER(Width) (ULONG *width)
  */
 STDMETHODIMP Display::COMGETTER(Height) (ULONG *height)
 {
-    if (!height)
-        return E_POINTER;
+    CheckComArgNotNull(height);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1371,8 +1369,7 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
 
 STDMETHODIMP Display::LockFramebuffer (BYTE **address)
 {
-    if (!address)
-        return E_POINTER;
+    CheckComArgOutPointerValid(address);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1380,7 +1377,8 @@ STDMETHODIMP Display::LockFramebuffer (BYTE **address)
     AutoWriteLock alock (this);
 
     /* only allowed for internal framebuffers */
-    if (mInternalFramebuffer && !mFramebufferOpened && !maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer.isNull())
+    if (mInternalFramebuffer && !mFramebufferOpened
+        && !maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer.isNull())
     {
         CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1390,8 +1388,8 @@ STDMETHODIMP Display::LockFramebuffer (BYTE **address)
         return S_OK;
     }
 
-    return setError (E_FAIL,
-                     tr ("Framebuffer locking is allowed only for the internal framebuffer"));
+    return setError (VBOX_E_NOT_SUPPORTED,
+        tr ("Framebuffer locking is allowed only for the internal framebuffer"));
 }
 
 STDMETHODIMP Display::UnlockFramebuffer()
@@ -1410,16 +1408,15 @@ STDMETHODIMP Display::UnlockFramebuffer()
         return S_OK;
     }
 
-    return setError (E_FAIL,
-                     tr ("Framebuffer locking is allowed only for the internal framebuffer"));
+    return setError (VBOX_E_NOT_SUPPORTED,
+        tr ("Framebuffer locking is allowed only for the internal framebuffer"));
 }
 
 STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
 {
     LogFlowFunc (("\n"));
 
-    if (!frameBuf)
-        return E_POINTER;
+    CheckComArgNotNull(frameBuf);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1429,14 +1426,15 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
     {
-        /* Must leave the lock here because the changeFramebuffer will also obtain it. */
+        /* Must leave the lock here because the changeFramebuffer will
+         * also obtain it. */
         alock.leave ();
 
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
         int vrc = VMR3ReqCall (pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
-                               (PFNRT) changeFramebuffer, 4,
-                               this, frameBuf, false /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
+            (PFNRT) changeFramebuffer, 4, this, frameBuf, false /* aInternal */,
+            VBOX_VIDEO_PRIMARY_SCREEN);
         if (RT_SUCCESS (vrc))
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
@@ -1448,14 +1446,16 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
     else
     {
         /* No VM is created (VM is powered off), do a direct call */
-        int vrc = changeFramebuffer (this, frameBuf, false /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
+        int vrc = changeFramebuffer (this, frameBuf, false /* aInternal */,
+            VBOX_VIDEO_PRIMARY_SCREEN);
         ComAssertRCRet (vrc, E_FAIL);
     }
 
     return S_OK;
 }
 
-STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer *aFramebuffer)
+STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
+    IFramebuffer *aFramebuffer)
 {
     LogFlowFunc (("\n"));
 
@@ -1469,14 +1469,15 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer *aFramebuffe
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
     {
-        /* Must leave the lock here because the changeFramebuffer will also obtain it. */
+        /* Must leave the lock here because the changeFramebuffer will
+         * also obtain it. */
         alock.leave ();
 
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
         int vrc = VMR3ReqCall (pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
-                               (PFNRT) changeFramebuffer, 4,
-                               this, aFramebuffer, false /* aInternal */, aScreenId);
+            (PFNRT) changeFramebuffer, 4, this, aFramebuffer, false /* aInternal */,
+            aScreenId);
         if (RT_SUCCESS (vrc))
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
@@ -1488,14 +1489,16 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer *aFramebuffe
     else
     {
         /* No VM is created (VM is powered off), do a direct call */
-        int vrc = changeFramebuffer (this, aFramebuffer, false /* aInternal */, aScreenId);
+        int vrc = changeFramebuffer (this, aFramebuffer, false /* aInternal */,
+            aScreenId);
         ComAssertRCRet (vrc, E_FAIL);
     }
 
     return S_OK;
 }
 
-STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId, IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin)
+STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId,
+    IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin)
 {
     LogFlowFunc (("aScreenId = %d\n", aScreenId));
 
@@ -1520,7 +1523,8 @@ STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId, IFramebuffer **aFramebuff
     return S_OK;
 }
 
-STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel, ULONG aDisplay)
+STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight,
+    ULONG aBitsPerPixel, ULONG aDisplay)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1560,7 +1564,8 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsP
 //    if ((width * height * (bpp / 8)) > (vramSize * 1024 * 1024))
 //        return setError(E_FAIL, tr("Not enough VRAM for the selected video mode"));
 
-    /* Have to leave the lock because the pfnRequestDisplayChange will call EMT.  */
+    /* Have to leave the lock because the pfnRequestDisplayChange
+     * will call EMT.  */
     alock.leave ();
     if (mParent->getVMMDev())
         mParent->getVMMDev()->getVMMDevPort()->
@@ -1597,10 +1602,9 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     LogFlowFunc (("address=%p, width=%d, height=%d\n",
                   address, width, height));
 
-    if (!address)
-        return E_POINTER;
-    if (!width || !height)
-        return E_INVALIDARG;
+    CheckComArgNotNull(address);
+    CheckComArgExpr(width, width != 0);
+    CheckComArgExpr(height, height != 0);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1618,7 +1622,8 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
 
     /*
      * First try use the graphics device features for making a snapshot.
-     * This does not support stretching, is an optional feature (returns not supported).
+     * This does not support stretching, is an optional feature (returns
+     * not supported).
      *
      * Note: It may cause a display resize. Watch out for deadlocks.
      */
@@ -1629,8 +1634,8 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
         PVMREQ pReq;
         size_t cbData = RT_ALIGN_Z(width, 4) * 4 * height;
         rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
-                             (PFNRT)mpDrv->pUpPort->pfnSnapshot, 6, mpDrv->pUpPort,
-                             address, cbData, (uintptr_t)NULL, (uintptr_t)NULL, (uintptr_t)NULL);
+            (PFNRT)mpDrv->pUpPort->pfnSnapshot, 6, mpDrv->pUpPort,
+            address, cbData, (uintptr_t)NULL, (uintptr_t)NULL, (uintptr_t)NULL);
         if (RT_SUCCESS(rcVBox))
         {
             rcVBox = pReq->iStatus;
@@ -1644,11 +1649,11 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
      */
     if (rcVBox == VERR_NOT_SUPPORTED || rcVBox == VERR_NOT_IMPLEMENTED)
     {
-        /** @todo implement snapshot stretching and generic snapshot fallback. */
+        /** @todo implement snapshot stretching & generic snapshot fallback. */
         rc = setError (E_NOTIMPL, tr ("This feature is not implemented"));
     }
     else if (RT_FAILURE(rcVBox))
-        rc = setError (E_FAIL,
+        rc = setError (VBOX_E_IPRT_ERROR,
             tr ("Could not take a screenshot (%Rrc)"), rcVBox);
 
     LogFlowFunc (("rc=%08X\n", rc));
@@ -1667,12 +1672,11 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
 
     LogFlowFuncEnter();
     LogFlowFunc (("address=%p, x=%d, y=%d, width=%d, height=%d\n",
-                  address, x, y, width, height));
+                  (void *)address, x, y, width, height));
 
-    if (!address)
-        return E_POINTER;
-    if (!width || !height)
-        return E_INVALIDARG;
+    CheckComArgNotNull(address);
+    CheckComArgExpr(width, width != 0);
+    CheckComArgExpr(height, height != 0);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1690,8 +1694,8 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
      */
     PVMREQ pReq;
     int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
-                             (PFNRT)mpDrv->pUpPort->pfnDisplayBlt, 6, mpDrv->pUpPort,
-                             address, x, y, width, height);
+        (PFNRT)mpDrv->pUpPort->pfnDisplayBlt, 6, mpDrv->pUpPort,
+        address, x, y, width, height);
     if (RT_SUCCESS(rcVBox))
     {
         rcVBox = pReq->iStatus;
@@ -1709,7 +1713,7 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
         rc = E_NOTIMPL;
     }
     else if (RT_FAILURE(rcVBox))
-        rc = setError (E_FAIL,
+        rc = setError (VBOX_E_IPRT_ERROR,
             tr ("Could not draw to the screen (%Rrc)"), rcVBox);
 //@todo
 //    else
@@ -1750,12 +1754,12 @@ STDMETHODIMP Display::InvalidateAndUpdate()
     /* pdm.h says that this has to be called from the EMT thread */
     PVMREQ pReq;
     int rcVBox = VMR3ReqCallVoid(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
-                                 (PFNRT)mpDrv->pUpPort->pfnUpdateDisplayAll, 1, mpDrv->pUpPort);
+        (PFNRT)mpDrv->pUpPort->pfnUpdateDisplayAll, 1, mpDrv->pUpPort);
     if (RT_SUCCESS(rcVBox))
         VMR3ReqFree(pReq);
 
     if (RT_FAILURE(rcVBox))
-        rc = setError (E_FAIL,
+        rc = setError (VBOX_E_IPRT_ERROR,
             tr ("Could not invalidate and update the screen (%Rrc)"), rcVBox);
 
     LogFlowFunc (("rc=%08X\n", rc));
@@ -1786,12 +1790,14 @@ STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
 
     /* this is only valid for external framebuffers */
     if (mInternalFramebuffer)
-        return setError (E_FAIL,
+        return setError (VBOX_E_NOT_SUPPORTED,
             tr ("Resize completed notification is valid only "
                 "for external framebuffers"));
 
-    /* Set the flag indicating that the resize has completed and display data need to be updated. */
-    bool f = ASMAtomicCmpXchgU32 (&maFramebuffers[aScreenId].u32ResizeStatus, ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
+    /* Set the flag indicating that the resize has completed and display
+     * data need to be updated. */
+    bool f = ASMAtomicCmpXchgU32 (&maFramebuffers[aScreenId].u32ResizeStatus,
+        ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
     AssertRelease(f);NOREF(f);
 
     return S_OK;
@@ -1820,7 +1826,7 @@ STDMETHODIMP Display::UpdateCompleted()
 
     /* this is only valid for external framebuffers */
     if (mInternalFramebuffer)
-        return setError (E_FAIL,
+        return setError (VBOX_E_NOT_SUPPORTED,
             tr ("Resize completed notification is valid only "
                 "for external framebuffers"));
 

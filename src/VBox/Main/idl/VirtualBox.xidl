@@ -9563,6 +9563,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="lockFramebuffer">
       <desc>
         Requests access to the internal frame buffer.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Attempt to lock a non-internal frame buffer.
+        </result>
+
       </desc>
       <param name="address" type="octet" mod="ptr" dir="return"/>
     </method>
@@ -9570,6 +9575,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="unlockFramebuffer">
       <desc>
         Releases access to the internal frame buffer.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Attempt to unlock a non-internal frame buffer.
+        </result>
+
       </desc>
     </method>
 
@@ -9617,6 +9627,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         so on. If the multi-monitor configuration is not supported, @a display
         must be <tt>0</tt>.
 
+        <result name="E_INVALIDARG">
+          The @a display is not associated with any monitor.
+        </result>
+
       </desc>
       <param name="width" type="unsigned long" dir="in"/>
       <param name="height" type="unsigned long" dir="in"/>
@@ -9640,6 +9654,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Takes a screen shot of the requested size and copies it to the
         32-bpp buffer allocated by the caller.
+
+        <result name="E_NOTIMPL">
+          Feature not implemented.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not take a screenshot.
+        </result>
+
       </desc>
       <param name="address" type="octet" mod="ptr" dir="in"/>
       <param name="width" type="unsigned long" dir="in"/>
@@ -9650,6 +9672,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Draws a 32-bpp image of the specified size from the given buffer
         to the given point on the VM display.
+
+        <result name="E_NOTIMPL">
+          Feature not implemented.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not draw to screen.
+        </result>
+
       </desc>
       <param name="address" type="octet" mod="ptr" dir="in"/>
       <param name="x" type="unsigned long" dir="in"/>
@@ -9662,12 +9692,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Does a full invalidation of the VM display and instructs the VM
         to update it.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not invalidate and update screen.
+        </result>
+
       </desc>
     </method>
 
     <method name="resizeCompleted">
       <desc>
         Signals that a framebuffer has completed the resize operation.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Operation only valid for external frame buffers.
+        </result>
+
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
     </method>
@@ -9675,6 +9715,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="updateCompleted">
       <desc>
         Signals that a framebuffer has completed the update operation.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Operation only valid for external frame buffers.
+        </result>
+
       </desc>
     </method>
 
