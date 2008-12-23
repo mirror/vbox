@@ -777,6 +777,10 @@ typedef enum
 #define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT            RT_BIT(0)
 /** Non-maskable interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
 #define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT                RT_BIT(3)
+/** Virtual NMIs. */
+#define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_VIRTUAL_NMI             RT_BIT(5)
+/** Activate VMX preemption timer. */
+#define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER           RT_BIT(6)
 /* All other bits are reserved and must be set according to MSR IA32_VMX_PROCBASED_CTLS. */
 /** @} */
 
