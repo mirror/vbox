@@ -1781,12 +1781,12 @@ VMMDECL(int) IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped
     uint64_t fFlags;
     RTHCPHYS HCPhys;
     rc = PGMShwGetPage(pVM, (RTGCPTR)GCPhys, &fFlags, &HCPhys);
-    Assert(rc == VERR_PAGE_NOT_PRESENT);
+    Assert(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 #endif
 
     /* Mark it as writable and present so reads and writes no longer fault. */
     rc = PGMShwModifyPage(pVM, (RTGCPTR)GCPhys, 1, fPageFlags, ~fPageFlags);
-    AssertRC(rc);
+    Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
     return VINF_SUCCESS;
 }
