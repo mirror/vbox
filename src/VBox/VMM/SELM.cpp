@@ -1565,12 +1565,11 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
                 {
                     uint32_t offRedirBitmap;
                     
-                    AssertCompile(RT_OFFSETOF(VBOXTSS, IntRedirBitmap) + sizeof(tss.IntRedirBitmap) == sizeof(VBOXTSS));
                     /* Make sure the io bitmap offset is valid; anything less than sizeof(VBOXTSS) means there's none. */
-                    if (tss.offIoBitmap < sizeof(VBOXTSS))
+                    if (tss.offIoBitmap < RT_OFFSETOF(VBOXTSS, IntRedirBitmap) + sizeof(tss.IntRedirBitmap))
                     {
                         Log(("Invalid io bitmap offset detected (%x)!\n", tss.offIoBitmap));
-                        tss.offIoBitmap = sizeof(VBOXTSS);
+                        tss.offIoBitmap = RT_OFFSETOF(VBOXTSS, IntRedirBitmap) + sizeof(tss.IntRedirBitmap);
                     }
                         
                     offRedirBitmap = tss.offIoBitmap - sizeof(tss.IntRedirBitmap);
