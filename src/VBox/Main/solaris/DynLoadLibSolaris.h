@@ -23,7 +23,11 @@
 #define ____H_DYN_LOAD_LIB_SOLARIS
 
 #define LIB_DLPI "libdlpi.so"
+#ifdef RT_OS_SOLARIS_10
+#include <sys/dlpi.h>
+#else
 #include <libdlpi.h>
+#endif
 
 typedef boolean_t dlpi_walkfunc_t(const char*, void *);
 
