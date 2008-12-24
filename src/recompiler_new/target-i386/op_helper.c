@@ -1027,7 +1027,8 @@ DECLINLINE(bool) is_vme_irq_redirected(int intno)
         env->tr.limit < 103)
         goto fail;
     io_offset = lduw_kernel(env->tr.base + 0x66);
-    if (io_offset < 0x68)
+    /* Make sure the io bitmap offset is valid; anything less than sizeof(VBOXTSS) means there's none. */
+    if (io_offset < 0x68 + 0x20)
         io_offset = 0x68 + 0x20;
     /* the virtual interrupt redirection bitmap is located below the io bitmap */
     intredir_offset = io_offset - 0x20;
