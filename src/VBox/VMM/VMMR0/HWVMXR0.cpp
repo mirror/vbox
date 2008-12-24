@@ -321,16 +321,17 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0;
         /* Program which event cause VM-exits and which features we want to use. */
         val = val | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT
-                | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET
-                | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT
-                | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT
-                | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT;    /* don't execute mwait or else we'll idle inside the guest (host thinks the cpu load is high) */
+                  | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET
+                  | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT
+                  | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT
+                  | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT
+                  | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT;    /* don't execute mwait or else we'll idle inside the guest (host thinks the cpu load is high) */
 
         /* Without nested paging we should intercept invlpg and cr3 mov instructions. */
         if (!pVM->hwaccm.s.fNestedPaging)
-            val |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT
-                | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
-                | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
+            val |=    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT
+                   |  VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
+                   |  VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
 
         /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT might cause a vmlaunch failure with an invalid control fields error. (combined with some other exit reasons) */
         if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
