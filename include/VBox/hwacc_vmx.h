@@ -813,6 +813,8 @@ typedef enum
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT         RT_BIT(20)
 /** Use TPR shadow. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW         RT_BIT(21)
+/** VM Exit when virtual nmi blocking is disabled. */
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_NMI_WINDOW_EXIT        RT_BIT(22)
 /** VM Exit when executing a MOV DRx instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT            RT_BIT(23)
 /** VM Exit when executing IO instructions. */
@@ -838,6 +840,10 @@ typedef enum
 #define VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC                      RT_BIT(0)
 /** EPT supported/enabled. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_EPT                            RT_BIT(1)
+/** Descriptor table instructions cause VM-exits. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_INSTR_EXIT          RT_BIT(2)
+/** Virtualize x2APIC mode. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_X2APIC                         RT_BIT(4)
 /** VPID supported/enabled. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_VPID                           RT_BIT(5)
 /** VM Exit when executing the WBINVD instruction. */
