@@ -1011,7 +1011,6 @@ static int rtThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc, bool fAuto
             else
             {
                 rc = VERR_THREAD_NOT_WAITABLE;
-                AssertRC(rc);
             }
             rtThreadRelease(pThread);
         }
