@@ -361,7 +361,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **aDrives)
 #elif defined(RT_OS_LINUX)
     if (RT_SUCCESS (mHostDrives.updateDVDs()))
         for (DriveInfoList::const_iterator it = mHostDrives.DVDBegin();
-             SUCCEEDED (rc) && it != mHostDrives.DVDEnd(); ++it)        
+             SUCCEEDED (rc) && it != mHostDrives.DVDEnd(); ++it)
         {
             ComObjPtr<HostDVDDrive> hostDVDDriveObj;
             Bstr device (it->mDevice.c_str());
@@ -441,7 +441,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **aDrives
 #elif defined(RT_OS_LINUX)
     if (RT_SUCCESS (mHostDrives.updateFloppies()))
         for (DriveInfoList::const_iterator it = mHostDrives.FloppyBegin();
-             SUCCEEDED (rc) && it != mHostDrives.FloppyEnd(); ++it)        
+             SUCCEEDED (rc) && it != mHostDrives.FloppyEnd(); ++it)
         {
             ComObjPtr<HostFloppyDrive> hostFloppyDriveObj;
             Bstr device (it->mDevice.c_str());
@@ -996,7 +996,16 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut (IHostNetworkIn
                                 Assert(hr == S_OK);
                                 if(hr == S_OK)
                                 {
-                                    vboxNetWinAddComponent(&list, pMpNcc);
+                                    ULONG uComponentStatus;
+                                    hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
+                                    Assert(hr == S_OK);
+                                    if(hr == S_OK)
+                                    {
+                                        if(uComponentStatus == 0)
+                                        {
+                                            vboxNetWinAddComponent(&list, pMpNcc);
+                                        }
+                                    }
                                     VBoxNetCfgWinReleaseRef( pMpNcc );
                                 }
                                 VBoxNetCfgWinReleaseRef(pBi);

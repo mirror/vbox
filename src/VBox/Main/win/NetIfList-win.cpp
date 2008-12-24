@@ -397,7 +397,16 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                                 Assert(hr == S_OK);
                                 if(hr == S_OK)
                                 {
-                                    vboxNetWinAddComponent(&list, pMpNcc);
+                                    ULONG uComponentStatus;
+                                    hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
+                                    Assert(hr == S_OK);
+                                    if(hr == S_OK)
+                                    {
+                                        if(uComponentStatus == 0)
+                                        {
+                                            vboxNetWinAddComponent(&list, pMpNcc);
+                                        }
+                                    }
                                     VBoxNetCfgWinReleaseRef( pMpNcc );
                                 }
                                 VBoxNetCfgWinReleaseRef(pBi);
