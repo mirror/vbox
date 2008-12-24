@@ -1357,7 +1357,9 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_DARWIN_DEF_SDK_CFLAGS    := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
  VBOX_DARWIN_DEF_SDK_CXXFLAGS  := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
  VBOX_DARWIN_DEF_SDK_OBJCFLAGS := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
+ifndef VBOX_MACOS_10_5_WORKAROUND
  VBOX_DARWIN_DEF_SDK_LDFLAGS   := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK) $(VBOX_DARWIN_CLASSIC_LINKER)
+endif
 
  # specific versions.
  VBOX_PATH_MACOSX_SDK_10_4          ?= /Developer/SDKs/MacOSX10.4u.sdk
