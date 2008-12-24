@@ -1892,6 +1892,9 @@ ifeq ($(KBUILD_TARGET),solaris)
   # Solaris 10 does not include crossbow.
   VBOX_WITH_CROSSBOW =
   VBOX_SOLARIS_10 = 1
+  # We cannot compile additions on Solaris 10, due kernel interface deps
+  VBOX_WITHOUT_ADDITIONS := 1
+  VBOX_WITH_ADDITIONS = 
  endif
 endif
 
