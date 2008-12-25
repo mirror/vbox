@@ -546,14 +546,20 @@ DECLINLINE(int) intnetR0IfRetain(PINTNETIF pIf, PSUPDRVSESSION pSession)
  * Release an interface previously retained by intnetR0IfRetain or
  * by handle lookup/freeing.
  *
- * @returns VBox status code, can assume success in most situations.
+ * @returns false in case the pIf was deleted as a result of this call, false otherwise
  * @param   pIf                 The interface instance.
  * @param   pSession            The current session.
  */
-DECLINLINE(void) intnetR0IfRelease(PINTNETIF pIf, PSUPDRVSESSION pSession)
+DECLINLINE(bool) intnetR0IfRelease(PINTNETIF pIf, PSUPDRVSESSION pSession)
 {
     int rc = SUPR0ObjRelease(pIf->pvObj, pSession);
     AssertRC(rc);
+    if(!pIf->pvObj)
+    {
+        RTMemFree(pIf);
+        return false;
+    }
+    return true;
 }
 
 
@@ -3046,8 +3052,7 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
         ASMAtomicDecU32(&pIf->cSleepers);
         if (!pIf->fDestroying)
         {
-            intnetR0IfRelease(pIf, pSession);
-            if (pIf->hIf != hIf)
+            if(!intnetR0IfRelease(pIf, pSession))
                 rc = VERR_SEM_DESTROYED;
         }
         else
@@ -3107,10 +3112,11 @@ INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSE
      */
     RTSemEventSignal(pIf->Event);
 
-    void *pvObj = pIf->pvObj;
     intnetR0IfRelease(pIf, pSession); /* (RTHandleTableFreeWithCtx) */
 
-    int rc = SUPR0ObjRelease(pvObj, pSession);
+    intnetR0IfRelease(pIf, pSession);
+
+    int rc = VINF_SUCCESS;
     LogFlow(("INTNETR0IfClose: returns %Rrc\n", rc));
     return rc;
 }
@@ -3165,7 +3171,7 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
         AssertMsg(pvObj2 == pIf, ("%p, %p, hIf=%RX32 pSession=%p\n", pvObj2, pIf, hIf, pIf->pSession));
     }
 
-    /*
+     /*
      * If we've got a network deactivate and unlink ourselves from it.
      * Because of cleanup order we might be an orphan now.
      */
@@ -3258,7 +3264,11 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
      * The interface.
      */
     pIf->pvObj = NULL;
-    RTMemFree(pIf);
+    /*
+     * we are freeing it in
+     * intnetR0IfRelease
+     * RTMemFree(pIf);
+     */
 }
 
 
@@ -3385,7 +3395,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
                         return VINF_SUCCESS;
                     }
 
-                    SUPR0ObjRelease(pIf->pvObj, pSession);
+                    intnetR0IfRelease(pIf, pSession);
                     LogFlow(("intnetR0NetworkCreateIf: returns %Rrc\n", rc));
                     return rc;
                 }
