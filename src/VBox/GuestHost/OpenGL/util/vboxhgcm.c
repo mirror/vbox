@@ -901,14 +901,17 @@ void crVBoxHGCMBufferFree(void *data)
 
 void crVBoxHGCMTearDown(void)
 {
-    int32_t i;
+    int32_t i, cCons;
 
     if (!g_crvboxhgcm.initialized) return;
 
-    for (i=0; i<g_crvboxhgcm.num_conns; i++)
+    /* Connection count would be changed while we disconnect link, also the array of connections would be shifted*/
+    cCons = g_crvboxhgcm.num_conns;
+    for (i=0; i<cCons; i++)
     {
-        crNetDisconnect(g_crvboxhgcm.conns[i]);
+        crNetDisconnect(g_crvboxhgcm.conns[0]);
     }
+    CRASSERT(0==g_crvboxhgcm.num_conns);
 
 #ifdef CHROMIUM_THREADSAFE
     crFreeMutex(&g_crvboxhgcm.mutex);

@@ -292,6 +292,7 @@ crNetConnectToServer( const char *server, unsigned short default_port,
  */
 void crNetNewClient( CRConnection *conn, CRNetServer *ns )
 {
+    /*
     unsigned int len = sizeof(CRMessageNewClient);
     CRMessageNewClient msg;
 
@@ -303,6 +304,8 @@ void crNetNewClient( CRConnection *conn, CRNetServer *ns )
         msg.header.type = CR_MESSAGE_NEWCLIENT;
 
     crNetSend( conn, NULL, &msg, len );
+    */
+
     crNetServerConnect( ns );
 }
 
