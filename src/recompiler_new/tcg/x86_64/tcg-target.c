@@ -600,21 +600,21 @@ static void *qemu_st_helpers[4] = {
 
 #if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
 static void *vbox_ld_helpers[] = {
-    remR3PhysReadU8,
-    remR3PhysReadU16,
-    remR3PhysReadU32,
-    remR3PhysReadU64,
-    remR3PhysReadS8,
-    remR3PhysReadS16,
-    remR3PhysReadS32,
-    remR3PhysReadS64,
+    __ldub_vbox_phys,
+    __lduw_vbox_phys,
+    __ldul_vbox_phys,
+    __ldq_vbox_phys,
+    __ldb_vbox_phys,
+    __ldw_vbox_phys,
+    __ldl_vbox_phys,
+    __ldq_vbox_phys,
 };
 
 static void *vbox_st_helpers[] = {
-    remR3PhysWriteU8,
-    remR3PhysWriteU16,
-    remR3PhysWriteU32,
-    remR3PhysWriteU64
+    __stb_vbox_phys,
+    __stw_vbox_phys,
+    __stl_vbox_phys,
+    __stq_vbox_phys
 };
 
 static void tcg_out_vbox_phys_read(TCGContext *s, int index, int addr_reg, int data_reg) {

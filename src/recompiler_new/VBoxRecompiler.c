@@ -1297,7 +1297,12 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
 void *remR3TlbGCPhys2Ptr(CPUState *env1, target_ulong physAddr, int fWritable)
 {
     void *pv;
-    int rc = PGMR3PhysTlbGCPhys2Ptr(env1->pVM, physAddr, true /*fWritable*/, &pv);
+    int rc;
+
+    /* Address must be aligned enough to fiddle with lower bits */
+    Assert((physAddr & 0x3) == 0);
+
+    rc = PGMR3PhysTlbGCPhys2Ptr(env1->pVM, physAddr, true /*fWritable*/, &pv);
     Assert(   rc == VINF_SUCCESS
            || rc == VINF_PGM_PHYS_TLB_CATCH_WRITE
            || rc == VERR_PGM_PHYS_TLB_CATCH_ALL
@@ -1307,6 +1312,7 @@ void *remR3TlbGCPhys2Ptr(CPUState *env1, target_ulong physAddr, int fWritable)
     if (rc == VINF_PGM_PHYS_TLB_CATCH_WRITE)
         return (void *)((uintptr_t)pv | 2);
     return pv;
+    //return (void *)((uintptr_t)pv | 2);
 }
 
 target_ulong remR3HCVirt2GCPhys(CPUState *env1, void *addr)

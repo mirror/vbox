@@ -2152,6 +2152,9 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
     CPUTLBEntry *te;
     int i;
     target_phys_addr_t iotlb;
+#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
+    int read_mods = 0, write_mods = 0, code_mods = 0;
+#endif
 
     p = phys_page_find(paddr >> TARGET_PAGE_BITS);
     if (!p) {
@@ -2181,6 +2184,7 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
 					       pd & TARGET_PAGE_MASK,
 					       !!(prot & PAGE_WRITE));
 #endif
+
     if ((pd & ~TARGET_PAGE_MASK) <= IO_MEM_ROM) {
         /* Normal RAM.  */
         iotlb = pd & TARGET_PAGE_MASK;
@@ -2200,31 +2204,29 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
 
     code_address = address;
 
-#ifdef VBOX
-#  if !defined(REM_PHYS_ADDR_IN_TLB)
-    if (addend & 0x2)
+#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
+    if (addend & 0x3)
     {
-        /* catch write */
-        addend &= ~(target_ulong)0x3;
-        if ((pd & ~TARGET_PAGE_MASK) <= IO_MEM_ROM)
+        if (addend & 0x2)
         {
-/** @todo improve this, it's only avoid code reads right now! */
-            address |= TLB_MMIO;
-            iotlb = env->pVM->rem.s.iHandlerMemType + paddr;
+            /* catch write */
+            if ((pd & ~TARGET_PAGE_MASK) <= IO_MEM_ROM)
+                write_mods |= TLB_MMIO;
         }
-    }
-    else if (addend & 0x1)
-    {
-        /* catch all */
-        addend &= ~(target_ulong)0x3;
-        if ((pd & ~TARGET_PAGE_MASK) <= IO_MEM_ROM)
+        else if (addend & 0x1)
         {
-            address |= TLB_MMIO;
-            code_address |= TLB_MMIO;
-            iotlb = env->pVM->rem.s.iHandlerMemType + paddr;
+            /* catch all */
+            if ((pd & ~TARGET_PAGE_MASK) <= IO_MEM_ROM)
+            {
+                read_mods |= TLB_MMIO;
+                write_mods |= TLB_MMIO;
+                code_mods |= TLB_MMIO;
+            }
         }
+        if ((iotlb & ~TARGET_PAGE_MASK) == 0)
+            iotlb = env->pVM->rem.s.iHandlerMemType  + paddr;
+        addend &= ~(target_ulong)0x3;
     }
-#  endif
 #endif
 
     /* Make accesses to pages with watchpoints go via the
@@ -2267,6 +2269,16 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
     } else {
         te->addr_write = -1;
     }
+
+#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
+    if (prot & PAGE_READ)
+        te->addr_read |= read_mods;
+    if (prot & PAGE_EXEC)
+        te->addr_code |= code_mods;
+    if (prot & PAGE_WRITE)
+        te->addr_write |= write_mods;
+#endif
+
 #ifdef VBOX
     /* inform raw mode about TLB page change */
     remR3FlushPage(env, vaddr);

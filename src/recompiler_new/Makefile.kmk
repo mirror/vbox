@@ -106,7 +106,7 @@ $(REM_MOD)_TEMPLATE        = VBOXR3NP
 $(REM_MOD)_DEFS            =
 endif # !win
 $(REM_MOD)_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H
-$(REM_MOD)_DEFS           += REM_PHYS_ADDR_IN_TLB
+#$(REM_MOD)_DEFS           += REM_PHYS_ADDR_IN_TLB
 $(REM_MOD)_DEFS           += VBOX_WITH_NEW_RECOMPILER
 #$(REM_MOD)_DEFS           += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
 $(REM_MOD)_DEFS.linux      = _GNU_SOURCE
@@ -116,28 +116,28 @@ else
  $(REM_MOD)_DEFS.solaris   = HOST_SOLARIS=11
 endif
 
-$(REM_MOD)_INCS            = \
-	Sun \
-	target-i386 \
-	tcg \
-	fpu \
-	$(PATH_$(REM_MOD)) \
-	$(PATH_ROOT)/src/VBox/VMM \
+$(REM_MOD)_INCS            = 		\
+	Sun 				\
+	target-i386 			\
+	tcg 				\
+	fpu 				\
+	$(PATH_$(REM_MOD)) 		\
+	$(PATH_ROOT)/src/VBox/VMM 	\
 	.
 
-$(REM_MOD)_SOURCES         = \
-	VBoxRecompiler.c \
-	cpu-exec.c \
-	exec.c \
-	translate-all.c \
-	host-utils.c \
-	cutils.c \
-	tcg/tcg.c \
-	tcg/tcg-dyngen.c \
-	tcg/tcg-runtime.c \
-	fpu/softfloat-native.c \
-	target-i386/op_helper.c \
-	target-i386/helper.c \
+$(REM_MOD)_SOURCES         = 		\
+	VBoxRecompiler.c 		\
+	cpu-exec.c	 		\
+	exec.c 				\
+	translate-all.c 		\
+	host-utils.c 			\
+	cutils.c 			\
+	tcg/tcg.c 			\
+	tcg/tcg-dyngen.c 		\
+	tcg/tcg-runtime.c 		\
+	fpu/softfloat-native.c 		\
+	target-i386/op_helper.c 	\
+	target-i386/helper.c 		\
 	target-i386/translate.c
 
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
@@ -212,7 +212,6 @@ endif
 
 
 ifdef VBOX_USE_REM64
-## @todo Note to self: One should be the default config (VBoxREM) with a NAME, the 64 bit varian should be done like here.
  DLLS += VBoxREM32
  VBoxREM32_EXTENDS    = VBoxREM
  VBoxREM32_EXTENDS_BY = appending
@@ -286,7 +285,6 @@ testmath_LDFLAGS        = -g
 testmath_DEFS           = MATHTEST_STANDALONE
 testmath_DEFS          += VBOX_WITH_NEW_RECOMPILER
 testmath_SOURCES        = Sun/testmath.c
-#testmath_SOURCES        += $(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
 
 
 include $(KBUILD_PATH)/subfooter.kmk
