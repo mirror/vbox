@@ -118,6 +118,19 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
 
     RTUtf16Free(pwszPath);
 
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Remove trailing slash if the path may be pointing to a directory.
+         */
+        size_t cch = strlen(pszAbsPath);
+        if (    cch > 1
+            &&  RTPATH_IS_SLASH(pszAbsPath[cch - 1])
+            &&  !RTPATH_IS_VOLSEP(pszAbsPath[cch - 2])
+            &&  !RTPATH_IS_SLASH(pszAbsPath[cch - 2]))
+            pszAbsPath[cch - 1] = '\0';
+    }
+
     return rc;
 }
 
