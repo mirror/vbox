@@ -19,9 +19,9 @@
  * additional information or have any questions.
  */
 
-
-
 #include "USBControllerImpl.h"
+
+#include "Global.h"
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
 #include "HostImpl.h"
@@ -455,7 +455,7 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
     filter->mInList = true;
 
     /* notify the proxy (only when it makes sense) */
-    if (filter->data().mActive && adep.machineState() >= MachineState_Running)
+    if (filter->data().mActive && Global::IsOnline (adep.machineState()))
     {
         USBProxyService *service = mParent->virtualBox()->host()->usbProxyService();
         ComAssertRet (service, E_FAIL);
@@ -519,7 +519,7 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
     filter.queryInterfaceTo (aFilter);
 
     /* notify the proxy (only when it makes sense) */
-    if (filter->data().mActive && adep.machineState() >= MachineState_Running)
+    if (filter->data().mActive && Global::IsOnline (adep.machineState()))
     {
         USBProxyService *service = mParent->virtualBox()->host()->usbProxyService();
         ComAssertRet (service, E_FAIL);
@@ -845,8 +845,7 @@ bool USBController::rollback()
             {
                 /* notify the proxy (only when it makes sense) */
                 if ((*it)->data().mActive &&
-                    adep.machineState() >= MachineState_Running &&
-                    adep.machineState() < MachineState_Discarding)
+                    Global::IsOnline (adep.machineState()))
                 {
                     USBDeviceFilter *filter = *it;
                     ComAssertRet (filter->id() != NULL, false);
@@ -859,8 +858,7 @@ bool USBController::rollback()
             ++ it;
         }
 
-        if (adep.machineState() >= MachineState_Running &&
-            adep.machineState() < MachineState_Discarding)
+        if (Global::IsOnline (adep.machineState()))
         {
             /* find all removed old filters (absent in the new list)
              * and insert them back to the USB proxy */
@@ -1033,8 +1031,7 @@ void USBController::copyFrom (USBController *aThat)
     Machine::AutoAnyStateDependency adep (mParent);
     AssertComRCReturnVoid (adep.rc());
     /* Machine::copyFrom() may not be called when the VM is running */
-    AssertReturnVoid (adep.machineState() < MachineState_Running ||
-                      adep.machineState() >= MachineState_Discarding);
+    AssertReturnVoid (!Global::IsOnline (adep.machineState()));
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -1082,7 +1079,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
     AssertComRCReturnRC (adep.rc());
 
     /* nothing to do if the machine isn't running */
-    if (adep.machineState() < MachineState_Running)
+    if (!Global::IsOnline (adep.machineState()))
         return S_OK;
 
     /* we don't modify our data fields -- no need to lock */

@@ -37,6 +37,8 @@
 #endif
 
 #include "ConsoleImpl.h"
+
+#include "Global.h"
 #include "GuestImpl.h"
 #include "KeyboardImpl.h"
 #include "MouseImpl.h"
@@ -1351,9 +1353,7 @@ STDMETHODIMP Console::PowerDown()
 
     AutoWriteLock alock (this);
 
-    if (mMachineState != MachineState_Running &&
-        mMachineState != MachineState_Paused &&
-        mMachineState != MachineState_Stuck)
+    if (!Global::IsActive (mMachineState))
     {
         /* extra nice error message for a common case */
         if (mMachineState == MachineState_Saved)
@@ -1391,9 +1391,7 @@ STDMETHODIMP Console::PowerDownAsync (IProgress **aProgress)
 
     AutoWriteLock alock (this);
 
-    if (mMachineState != MachineState_Running &&
-        mMachineState != MachineState_Paused &&
-        mMachineState != MachineState_Stuck)
+    if (!Global::IsActive (mMachineState))
     {
         /* extra nice error message for a common case */
         if (mMachineState == MachineState_Saved)
@@ -1455,9 +1453,8 @@ STDMETHODIMP Console::Reset()
     AutoWriteLock alock (this);
 
     if (mMachineState != MachineState_Running)
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr ("Cannot reset the machine as it is not running "
-            "(machine state: %d)"), mMachineState);
+        return setError (VBOX_E_INVALID_VM_STATE,
+            tr ("Invalid machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1487,8 +1484,7 @@ STDMETHODIMP Console::Pause()
 
     if (mMachineState != MachineState_Running)
         return setError (VBOX_E_INVALID_VM_STATE,
-            tr ("Cannot pause the machine as it is not running "
-            "(machine state: %d)"), mMachineState);
+            tr ("Invalid machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1559,8 +1555,7 @@ STDMETHODIMP Console::PowerButton()
 
     if (mMachineState != MachineState_Running)
         return setError (VBOX_E_INVALID_VM_STATE,
-            tr ("Cannot power off the machine as it is not running "
-                "(machine state: %d)"), mMachineState);
+            tr ("Invalid machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1598,7 +1593,8 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
     AutoWriteLock alock (this);
 
     if (mMachineState != MachineState_Running)
-        return E_FAIL;
+        return setError (VBOX_E_INVALID_VM_STATE,
+            tr ("Invalid machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1641,8 +1637,7 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
 
     if (mMachineState != MachineState_Running)
         return setError (VBOX_E_INVALID_VM_STATE,
-            tr ("Cannot get guest ACPI mode as it is "
-            "not running (machine state: %d)"), mMachineState);
+            tr ("Invalid machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1676,8 +1671,7 @@ STDMETHODIMP Console::SleepButton()
 
     if (mMachineState != MachineState_Running)
         return setError (VBOX_E_INVALID_VM_STATE,
-            tr ("Cannot send the sleep button event as it is "
-            "not running (machine state: %d)"), mMachineState);
+            tr ("Invalid machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1719,7 +1713,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
     {
         return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot save the execution state as the machine "
-                "is not running (machine state: %d)"), mMachineState);
+                "is not running or paused (machine state: %d)"), mMachineState);
     }
 
     /* memorize the current machine state */
@@ -1986,27 +1980,11 @@ STDMETHODIMP Console::AttachUSBDevice (IN_GUID aId)
 
     AutoWriteLock alock (this);
 
-    /// @todo (r=dmik) is it legal to attach USB devices when the machine is
-    //  Paused, Starting, Saving, Stopping, etc? if not, we should make a
-    //  stricter check (mMachineState != MachineState_Running).
-    //
-    //  I'm changing it to the semi-strict check for the time being. We'll
-    //  consider the below later.
-    //
-    /* bird: It is not permitted to attach or detach while the VM is saving,
-     * is restoring or has stopped - definitely not.
-     *
-     * Attaching while starting, well, if you don't create any deadlock it
-     * should work...  Paused should work I guess, but we shouldn't push our
-     * luck if we're pausing because an runtime error condition was raised
-     * (which is one of the reasons there better be a separate state for that
-     * in the VMM).
-     */
     if (mMachineState != MachineState_Running &&
         mMachineState != MachineState_Paused)
         return setError (VBOX_E_INVALID_VM_STATE,
-            tr ("Cannot attach a USB device to the machine which is not running "
-                "(machine state: %d)"), mMachineState);
+            tr ("Cannot attach a USB device to the machine which is not "
+                "running or paused (machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -2240,7 +2218,7 @@ STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
 
     AutoWriteLock alock (this);
 
-    if (mMachineState > MachineState_Paused)
+    if (Global::IsTransient (mMachineState))
     {
         return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot take a snapshot of the machine "
@@ -2409,7 +2387,7 @@ STDMETHODIMP Console::DiscardSnapshot (IN_GUID aId, IProgress **aProgress)
 
     AutoWriteLock alock (this);
 
-    if (mMachineState >= MachineState_Running)
+    if (Global::IsOnlineOrTransient (mMachineState))
         return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot discard a snapshot of the running machine "
                 "(machine state: %d)"),
@@ -2430,7 +2408,7 @@ STDMETHODIMP Console::DiscardCurrentState (IProgress **aProgress)
 
     AutoWriteLock alock (this);
 
-    if (mMachineState >= MachineState_Running)
+    if (Global::IsOnlineOrTransient (mMachineState))
         return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot discard the current state of the running machine "
                 "(nachine state: %d)"),
@@ -2451,7 +2429,7 @@ STDMETHODIMP Console::DiscardCurrentSnapshotAndState (IProgress **aProgress)
 
     AutoWriteLock alock (this);
 
-    if (mMachineState >= MachineState_Running)
+    if (Global::IsOnlineOrTransient (mMachineState))
         return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot discard the current snapshot and state of the "
                 "running machine (machine state: %d)"),
@@ -4247,9 +4225,9 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
 
     AutoWriteLock alock (this);
 
-    if (mMachineState >= MachineState_Running)
+    if (Global::IsOnlineOrTransient (mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr ("Virtual machine is already running "
+            tr ("Virtual machine is already running or busy "
             "(machine state: %d)"), mMachineState);
 
     HRESULT rc = S_OK;
@@ -4909,18 +4887,18 @@ HRESULT Console::setMachineState (MachineState_T aMachineState,
 
         if (aUpdateServer)
         {
-            /*
-             *  Server notification MUST be done from under the lock; otherwise
-             *  the machine state here and on the server might go out of sync, that
-             *  can lead to various unexpected results (like the machine state being
-             *  >= MachineState_Running on the server, while the session state is
-             *  already SessionState_Closed at the same time there).
+            /* Server notification MUST be done from under the lock; otherwise
+             * the machine state here and on the server might go out of sync
+             * whihc can lead to various unexpected results (like the machine
+             * state being >= MachineState_Running on the server, while the
+             * session state is already SessionState_Closed at the same time
+             * there).
              *
-             *  Cross-lock conditions should be carefully watched out: calling
-             *  UpdateState we will require Machine and SessionMachine locks
-             *  (remember that here we're holding the Console lock here, and
-             *  also all locks that have been entered by the thread before calling
-             *  this method).
+             * Cross-lock conditions should be carefully watched out: calling
+             * UpdateState we will require Machine and SessionMachine locks
+             * (remember that here we're holding the Console lock here, and also
+             * all locks that have been entered by the thread before calling
+             * this method).
              */
             LogFlowThisFunc (("Doing mControl->UpdateState()...\n"));
             rc = mControl->UpdateState (aMachineState);
@@ -5440,7 +5418,7 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                 break;
 
             /* Guru respects only running VMs */
-            Assert ((that->mMachineState >= MachineState_Running));
+            Assert (Global::IsOnline (that->mMachineState));
 
             that->setMachineState (MachineState_Stuck);
 

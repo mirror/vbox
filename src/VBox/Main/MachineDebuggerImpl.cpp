@@ -22,6 +22,8 @@
  */
 
 #include "MachineDebuggerImpl.h"
+
+#include "Global.h"
 #include "ConsoleImpl.h"
 #include "Logging.h"
 
@@ -798,9 +800,7 @@ bool MachineDebugger::queueSettings() const
         // check if the machine is running
         MachineState_T machineState;
         mParent->COMGETTER(State) (&machineState);
-        if (    machineState != MachineState_Running
-            &&  machineState != MachineState_Paused
-            &&  machineState != MachineState_Stuck)
+        if (!Global::IsActive (machineState))
             // queue the request
             return true;
     }
