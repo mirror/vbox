@@ -481,15 +481,17 @@ DrvDescribeLayerPlane
 DrvDescribePixelFormat
 DrvGetLayerPaletteEntries
 DrvGetProcAddress = wglGetProcAddress_prox
+DrvPresentBuffers
 DrvRealizeLayerPalette
+DrvSetCallbackProcs
 DrvSetLayerPaletteEntries
 DrvShareLists
 DrvSwapBuffers
 DrvSwapLayerBuffers
-DrvReleaseContext@4 = DrvReleaseContext
-DrvSetContext@12 = DrvSetContext
-DrvValidateVersion@4 = DrvValidateVersion
-DrvSetPixelFormat@8 = DrvSetPixelFormat"""
+DrvReleaseContext
+DrvSetContext
+DrvValidateVersion
+DrvSetPixelFormat"""
 
 print """crCreateContext
 crMakeCurrent
