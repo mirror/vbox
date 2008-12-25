@@ -164,7 +164,9 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, size_t cchRealPat
 RTDECL(char *) RTPathRealDup(const char *pszPath);
 
 /**
- * Get the absolute path (no symlinks, no . or .. components), doesn't have to exist.
+ * Get the absolute path (starts from root, no . or .. components), doesn't have
+ * to exist. Note that this method is designed to never perform actual file
+ * system access, therefore symlinks are not resolved.
  *
  * @returns iprt status code.
  * @param   pszPath         The path to resolve.
