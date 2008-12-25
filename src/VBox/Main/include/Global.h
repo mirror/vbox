@@ -65,6 +65,53 @@ public:
     static const OSType sOSTypes [SchemaDefs::OSTypeId_COUNT];
 
     static const char *OSTypeId (VBOXOSTYPE aOSType);
+
+    /**
+     * Returns @c true if the given machine state is an online state. This is a
+     * recommended way to detect if the VM is online (being executed in a
+     * dedicated process) or not. Note that some online states are also
+     * transitional states (see #IsTransitional()).
+     */
+    static bool IsOnline (MachineState_T aState)
+    {
+        return aState >= MachineState_FirstOnline &&
+               aState <= MachineState_LastOnline;
+    }
+
+    /**
+     * Returns @c true if the given machine state is a transient state. This is
+     * a recommended way to detect if the VM is performing some potentially
+     * lengthy operation (such as starting, stopping, saving, discarding
+     * snapshot, etc.). Note some (but not all) transitional states are also
+     * online states (see #IsOnline()).
+     */
+    static bool IsTransient (MachineState_T aState)
+    {
+        return aState >= MachineState_FirstTransient &&
+               aState <= MachineState_LastTransient;
+    }
+
+    /**
+     * Shortcut to <tt>IsOnline (aState) || IsTransient (aState)</tt>. When it
+     * returns @false, the VM is turned off (no VM process) and not busy with
+     * another exclusive operation.
+     */
+    static bool IsOnlineOrTransient (MachineState_T aState)
+    {
+        return IsOnline (aState) || IsTransient (aState);
+    }
+
+    /**
+     * Shortcut to <tt>IsOnline (aState) && !IsTransient (aState)</tt>. This is
+     * a recommended way to detect if the VM emulation thread is in action
+     * (either running, suspended, or stuck). When this method returns @false,
+     * then either the VM is not online or the emulation thread is being started
+     * or stopped, etc.
+     */
+    static bool IsActive (MachineState_T aState)
+    {
+        return IsOnline (aState) && !IsTransient (aState);
+    }
 };
 
 #endif /* ____H_GLOBAL */

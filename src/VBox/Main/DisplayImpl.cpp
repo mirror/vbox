@@ -204,7 +204,7 @@ STDMETHODIMP Display::OnStateChange(MachineState_T machineState)
 {
     if (machineState == MachineState_Running)
     {
-        LogFlowFunc (("Machine running\n"));
+        LogFlowFunc (("Machine is running.\n"));
 
         mfMachineRunning = true;
     }

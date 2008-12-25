@@ -481,6 +481,17 @@
       it was Running or Paused, then Saving is an online state, otherwise it is
       an offline state. This inconsistency may be removed in one of the future
       versions of VirtualBox by adding a new state.
+
+      <note internal="yes">
+        For whoever decides to touch this enum: In order to keep the
+        comparisons involving FirstOnline and LastOnline pseudo-states valid,
+        the numeric values of these states must be correspondingly updated if
+        needed: for any online VM state, the condition
+        <tt>FirstOnline &lt;= state &lt;= LastOnline</tt> must be
+        <tt>true</tt>. The same relates to transient states for which
+        the condition <tt>FirstOnline &lt;= state &lt;= LastOnline</tt> must be
+        <tt>true</tt>.
+      </note>
     </desc>
 
     <const name="Null"                  value="0">
@@ -507,7 +518,7 @@
         The machine is currently being executed.
         <note internal="yes">
           For whoever decides to touch this enum: In order to keep the
-          comparisons in the source code valid, this state must immediately
+          comparisons in the old source code valid, this state must immediately
           precede the Paused state.
         </note>
       </desc>
@@ -517,7 +528,7 @@
         Execution of the machine has been paused.
         <note internal="yes">
           For whoever decides to touch this enum: In order to keep the
-          comparisons in the source code valid, this state must immediately
+          comparisons in the old source code valid, this state must immediately
           follow the Running state.
         </note>
       </desc>
@@ -566,27 +577,22 @@
     <const name="FirstOnline" value="4" wsmap="suppress"> <!-- Running -->
       <desc>
         Pseudo-state: first online state (for use in relational expressions).
-        <note internal="yes">
-          For whoever decides to touch this enum: In order to keep the
-          comparisons involving FirstOnline and LastOnline pseudo-states valid,
-          the numeric values of these states must be correspondingly updated if
-          needed: for any online VM state, the condition
-          <tt>FirstOnline &lt;= state &lt;= LastOnline</tt> must be
-          <tt>true</tt>.
-        </note>
       </desc>
     </const>
     <const name="LastOnline"  value="10" wsmap="suppress"> <!-- Restoring -->
       <desc>
         Pseudo-state: last online state (for use in relational expressions).
-        <note internal="yes">
-          For whoever decides to touch this enum: In order to keep the
-          comparisons involving FirstOnline and LastOnline pseudo-states valid,
-          the numeric values of these states must be correspondingly updated if
-          needed: for any online VM state, the condition
-          <tt>FirstOnline &lt;= state &lt;= LastOnline</tt> must be
-          <tt>true</tt>.
-        </note>
+      </desc>
+    </const>
+
+    <const name="FirstTransient" value="7" wsmap="suppress"> <!-- Starting -->
+      <desc>
+        Pseudo-state: first transient state (for use in relational expressions).
+      </desc>
+    </const>
+    <const name="LastTransient"  value="12" wsmap="suppress"> <!-- SettingUp -->
+      <desc>
+        Pseudo-state: last transient state (for use in relational expressions).
       </desc>
     </const>
 
