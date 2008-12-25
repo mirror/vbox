@@ -114,7 +114,7 @@ static void
 crServerDeleteClient( CRClient *client )
 {
     int i, j;
-	int32_t pos;
+    int32_t pos;
 
     crDebug("Deleting client %p (%d msgs left)", client,
                     crNetNumMessages(client->conn));
