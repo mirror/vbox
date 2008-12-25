@@ -100,8 +100,8 @@ int main()
     aRTPathAbsExTests[] =
     {
 #if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
-//  { NULL, "", VINF_SUCCESS, "%p" },
-//  { NULL, ".", VINF_SUCCESS, "%p" },
+    { NULL, "", VINF_SUCCESS, "%p" },
+    { NULL, ".", VINF_SUCCESS, "%p" },
     { NULL, "\\", VINF_SUCCESS, "%d\\" },
     { NULL, "\\..", VINF_SUCCESS, "%d\\" },
     { NULL, "/absolute/..", VINF_SUCCESS, "%d\\" },
@@ -113,8 +113,8 @@ int main()
     { "relative_base/dir\\", "\\from_root", VINF_SUCCESS, "%d\\from_root" },
     { "relative_base/dir/", "relative_also", VINF_SUCCESS, "%p\\relative_base\\dir\\relative_also" },
 #else
-//  { NULL, "", VINF_SUCCESS, "/" },
-//  { NULL, ".", VINF_SUCCESS, "%p" },
+    { NULL, "", VINF_SUCCESS, "%p" },
+    { NULL, ".", VINF_SUCCESS, "%p" },
     { NULL, "/", VINF_SUCCESS, "/" },
     { NULL, "/..", VINF_SUCCESS, "/" },
     { NULL, "/absolute/..", VINF_SUCCESS, "/" },

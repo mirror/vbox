@@ -98,6 +98,17 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, size_t cchRealPat
  */
 RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
 {
+    Assert(VALID_PTR(pszPath));
+
+    /*
+     * When the input path is just "", GetFullPathNameW() will return a full
+     * executable name instead of the current directory (as the POSIX sister .
+     * does). Go the POSIX way with the following workaround.
+     */
+    static const char szSingleDot[] = ".";
+    if (!pszPath[0])
+        pszPath = szSingleDot;
+
     /*
      * Convert to UTF-16, call Win32 API, convert back.
      */
