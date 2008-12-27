@@ -180,8 +180,11 @@ if_start(PNATState pData)
     for (;;)
     {
         /* check if we can really output */
-        if (!slirp_can_output(pData->pvUser))
+        if (!slirp_can_output(pData->pvUser)) 
+        {
+            Log(("if_start: can't send\n"));
             return;
+        }
 
         /*
          * See which queue to get next packet from
