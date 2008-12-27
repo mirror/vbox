@@ -966,7 +966,12 @@ void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 {
     struct ethhdr *eh = (struct ethhdr *)pkt;
     struct arphdr *ah = (struct arphdr *)(pkt + ETH_HLEN);
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+    size_t arp_reply_size = ETH_HLEN + sizeof(struct arphdr);
+    uint8_t *arp_reply = malloc(arp_reply_size); /*XXX: temporal solution, here should be mbuf used*/
+#else
     uint8_t arp_reply[ETH_HLEN + sizeof(struct arphdr)];
+#endif
     struct ethhdr *reh = (struct ethhdr *)arp_reply;
     struct arphdr *rah = (struct arphdr *)(arp_reply + ETH_HLEN);
     int ar_op;
@@ -1007,7 +1012,11 @@ void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
                 memcpy(rah->ar_sip, ah->ar_tip, 4);
                 memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
                 memcpy(rah->ar_tip, ah->ar_sip, 4);
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+                slirp_output(pData->pvUser, arp_reply, arp_reply_size);
+#else
                 slirp_output(pData->pvUser, arp_reply, sizeof(arp_reply));
+#endif
             }
             break;
         default:
@@ -1058,11 +1067,20 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 /* output the IP packet to the ethernet device */
 void if_encap(PNATState pData, const uint8_t *ip_data, int ip_data_len)
 {
-    uint8_t buf[1600];
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+    uint8_t *buf = malloc(1600); /* XXX:temporal solution */
+    struct ethhdr *eh = (struct ethhdr *)buf;
+
+    if (ip_data_len + ETH_HLEN > 1600)
+        return;
+#else
+    uint8_t buf[1600]; 
     struct ethhdr *eh = (struct ethhdr *)buf;
 
     if (ip_data_len + ETH_HLEN > sizeof(buf))
         return;
+#endif
+
 
     memcpy(eh->h_dest, client_ethaddr, ETH_ALEN);
     memcpy(eh->h_source, special_ethaddr, ETH_ALEN - 1);
