@@ -3105,6 +3105,7 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
                         mHWData->mGuestProperties.erase (it);
                     }
                     found = true;
+                    break; /* don't do ++it before we leave the loop */
                 }
         }
         if (found && SUCCEEDED (rc))
