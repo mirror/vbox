@@ -1030,7 +1030,7 @@ int  vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
     INIT_WORK(&pThis->u.s.XmitTask, vboxNetFltLinuxXmitTask);
 #else
-    INIT_WORK(&pThis->u.s.XmitTask, vboxNetFltLinuxXmitTask, NULL);
+    INIT_WORK(&pThis->u.s.XmitTask, vboxNetFltLinuxXmitTask, &pThis->u.s.XmitTask);
 #endif
 
     return VINF_SUCCESS;
