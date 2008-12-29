@@ -9,4 +9,4 @@
 #include <sys/select.h>
 #endif
 
-void if_encap(PNATState pData, const uint8_t *ip_data, int ip_data_len);
+void if_encap(PNATState pData, uint16_t eth_proto, const uint8_t *ip_data, int ip_data_len);

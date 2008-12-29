@@ -931,9 +931,6 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #define ETH_ALEN        6
 #define ETH_HLEN        14
 
-#define ETH_P_IP        0x0800          /* Internet Protocol packet     */
-#define ETH_P_ARP       0x0806          /* Address Resolution packet    */
-
 #define ARPOP_REQUEST   1               /* ARP request                  */
 #define ARPOP_REPLY     2               /* ARP reply                    */
 
@@ -962,21 +959,17 @@ struct arphdr
 };
 
 static
-void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
+void arp_input(PNATState pData, struct mbuf *m)
 {
-    struct ethhdr *eh = (struct ethhdr *)pkt;
-    struct arphdr *ah = (struct arphdr *)(pkt + ETH_HLEN);
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-    size_t arp_reply_size = ETH_HLEN + sizeof(struct arphdr);
-    uint8_t *arp_reply = malloc(arp_reply_size); /*XXX: temporal solution, here should be mbuf used*/
-#else
-    uint8_t arp_reply[ETH_HLEN + sizeof(struct arphdr)];
-#endif
-    struct ethhdr *reh = (struct ethhdr *)arp_reply;
-    struct arphdr *rah = (struct arphdr *)(arp_reply + ETH_HLEN);
+    struct ethhdr *eh = mtod(m, struct ethhdr *);
+    struct arphdr *ah = (struct arphdr *)&eh[1];
+    uint8_t arp_reply[sizeof(struct arphdr)];
+    struct arphdr *rah;
     int ar_op;
     struct ex_list *ex_ptr;
     uint32_t htip = ntohl(*(uint32_t*)ah->ar_tip);
+
+    rah = (struct arphdr *)arp_reply;
 
     ar_op = ntohs(ah->ar_op);
     switch(ar_op)
@@ -994,26 +987,28 @@ void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
                 }
                 return;
         arp_ok:
-                /* XXX: make an ARP request to have the client address */
-                memcpy(client_ethaddr, eh->h_source, ETH_ALEN);
-
-                /* ARP request for alias/dns mac address */
-                memcpy(reh->h_dest, pkt + ETH_ALEN, ETH_ALEN);
-                memcpy(reh->h_source, special_ethaddr, ETH_ALEN - 1);
-                reh->h_source[5] = ah->ar_tip[3];
-                reh->h_proto = htons(ETH_P_ARP);
 
                 rah->ar_hrd = htons(1);
                 rah->ar_pro = htons(ETH_P_IP);
                 rah->ar_hln = ETH_ALEN;
                 rah->ar_pln = 4;
                 rah->ar_op = htons(ARPOP_REPLY);
-                memcpy(rah->ar_sha, reh->h_source, ETH_ALEN);
+                memcpy(rah->ar_sha, special_ethaddr, ETH_ALEN);
+                switch (htip & ~pData->netmask) 
+                {
+                    case CTL_DNS:
+                    case CTL_ALIAS:
+                        rah->ar_sha[5] = (uint8_t)(htip & ~pData->netmask);
+                        break;
+                    default:;
+                }
+                
                 memcpy(rah->ar_sip, ah->ar_tip, 4);
                 memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
                 memcpy(rah->ar_tip, ah->ar_sip, 4);
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-                slirp_output(pData->pvUser, arp_reply, arp_reply_size);
+                if_encap(pData, ETH_P_ARP, arp_reply, sizeof(struct arphdr));
+                m_free(pData, m);
 #else
                 slirp_output(pData->pvUser, arp_reply, sizeof(arp_reply));
 #endif
@@ -1029,34 +1024,44 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     struct mbuf *m;
     int proto;
 
-    if (pkt_len < ETH_HLEN)
+    if (pkt_len < ETH_HLEN) 
+    {
+        LogRel(("packet having size %d has been ingnored\n", pkt_len));
         return;
+    }
+    
+    m = m_get(pData);
+    if (m == NULL)
+    {
+        LogRel(("can't allocate new mbuf\n"));
+    }
+    /* Note: we add to align the IP header */
+
+#if 0
+    m->m_data += 2 + ETH_HLEN;
+    m->m_len -= 2 + ETH_HLEN;
+#endif
 
     proto = ntohs(*(uint16_t *)(pkt + 12));
     switch(proto)
     {
         case ETH_P_ARP:
-            arp_input(pData, pkt, pkt_len);
+            memcpy(m->m_data, pkt, pkt_len);
+            m->m_len = pkt_len;
+            arp_input(pData, m);
             break;
         case ETH_P_IP:
             /* Update time. Important if the network is very quiet, as otherwise
              * the first outgoing connection gets an incorrect timestamp. */
             updtime(pData);
-
-            m = m_get(pData);
-            if (!m)
-                return;
-            /* Note: we add to align the IP header */
             if (M_FREEROOM(m) < pkt_len + 2)
             {
-                m_inc(m, pkt_len + 2);
+               m_inc(m, pkt_len + 2);
             }
             m->m_len = pkt_len + 2;
             memcpy(m->m_data + 2, pkt, pkt_len);
-
             m->m_data += 2 + ETH_HLEN;
             m->m_len -= 2 + ETH_HLEN;
-
             ip_input(pData, m);
             break;
         default:
@@ -1065,7 +1070,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 }
 
 /* output the IP packet to the ethernet device */
-void if_encap(PNATState pData, const uint8_t *ip_data, int ip_data_len)
+void if_encap(PNATState pData, uint16_t eth_proto, const uint8_t *ip_data, int ip_data_len)
 {
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     uint8_t *buf = malloc(1600); /* XXX:temporal solution */
@@ -1086,7 +1091,7 @@ void if_encap(PNATState pData, const uint8_t *ip_data, int ip_data_len)
     memcpy(eh->h_source, special_ethaddr, ETH_ALEN - 1);
     /* XXX: not correct */
     eh->h_source[5] = CTL_ALIAS;
-    eh->h_proto = htons(ETH_P_IP);
+    eh->h_proto = htons(eth_proto);
     memcpy(buf + sizeof(struct ethhdr), ip_data, ip_data_len);
     slirp_output(pData->pvUser, buf, ip_data_len + ETH_HLEN);
 }

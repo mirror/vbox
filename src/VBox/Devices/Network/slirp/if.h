@@ -29,4 +29,14 @@ extern  struct mbuf *next_m;
 
 #define ifs_init(ifm) ((ifm)->ifs_next = (ifm)->ifs_prev = (ifm))
 
+#ifdef ETH_P_ARP
+# undef ETH_P_ARP
+#endif /* ETH_P_ARP*/
+#define ETH_P_ARP       0x0806          /* Address Resolution packet    */
+
+#ifdef ETH_P_IP
+# undef ETH_P_IP
+#endif /* ETH_P_IP */
+#define ETH_P_IP        0x0800          /* Internet Protocol packet     */
+
 #endif

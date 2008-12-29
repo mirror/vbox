@@ -224,7 +224,7 @@ if_start(PNATState pData)
         }
 
         /* Encapsulate the packet for sending */
-        if_encap(pData, (const uint8_t *)ifm->m_data, ifm->m_len);
+        if_encap(pData, ETH_P_IP, (const uint8_t *)ifm->m_data, ifm->m_len);
 
         m_free(pData, ifm);
 
