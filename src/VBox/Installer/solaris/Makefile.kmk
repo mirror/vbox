@@ -340,8 +340,8 @@ ifdef VBOX_WITH_HARDENING
 endif
 	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(INSTALL) -m 0755 $(PATH_BIN)/rdesktop-vrdp                    $(SOLARIS_INST_DIR)/rdesktop-vrdp,)
 	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(INSTALL) -m 644 $(wildcard $(PATH_BIN)/rdesktop-vrdp-keymaps/*) $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps/,)
-	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(PATH_BIN)/vboxwebsrv $(SOLARIS_INST_DIR)/vboxwebsrv,)
-	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(PATH_BIN)/webtest    $(SOLARIS_INST_DIR)/webtest,)
+	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(PATH_BIN)/vboxwebsrv                         $(SOLARIS_INST_DIR)/vboxwebsrv,)
+	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(PATH_BIN)/webtest                            $(SOLARIS_INST_DIR)/webtest,)
 ifdef VBOX_DO_STRIP
 	$(call MSG_L1,Stripping binaries $(SOLARIS_INST_DIR))
 	strip $(foreach f,$(SOLARIS_STRIP_BINS),$(SOLARIS_INST_DIR)/$(f))
