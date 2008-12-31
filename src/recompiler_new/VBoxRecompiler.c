@@ -1312,7 +1312,6 @@ void *remR3TlbGCPhys2Ptr(CPUState *env1, target_ulong physAddr, int fWritable)
     if (rc == VINF_PGM_PHYS_TLB_CATCH_WRITE)
         return (void *)((uintptr_t)pv | 2);
     return pv;
-    //return (void *)((uintptr_t)pv | 2);
 }
 
 target_ulong remR3HCVirt2GCPhys(CPUState *env1, void *addr)
@@ -2974,19 +2973,24 @@ REMR3DECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys)
  * @param   addr        The virtual address.
  * @param   pTLBEntry   The TLB entry.
  */
-target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, CPUTLBEntry *pTLBEntry)
+target_ulong remR3PhysGetPhysicalAddressCode(CPUState*          env, 
+                                             target_ulong       addr, 
+                                             CPUTLBEntry*       pTLBEntry,
+                                             target_phys_addr_t ioTLBEntry)
 {
     PVM pVM = env->pVM;
-    if ((pTLBEntry->addr_code & ~TARGET_PAGE_MASK) == pVM->rem.s.iHandlerMemType)
+
+    if ((ioTLBEntry & ~TARGET_PAGE_MASK) == pVM->rem.s.iHandlerMemType)
     {
-        target_ulong ret = pTLBEntry->addend + addr;
-        AssertMsg2("remR3PhysGetPhysicalAddressCode: addr=%RGv addr_code=%RGv addend=%RGp ret=%RGp\n",
-                   (RTGCPTR)addr, (RTGCPTR)pTLBEntry->addr_code, (RTGCPHYS)pTLBEntry->addend, ret);
+        /* If code memory is being monitored, appropriate IOTLB entry will have 
+           handler IO type, and addend will provide real physical address, no 
+           matter if we store VA in TLB or not, as handlers are always passed PA */
+        target_ulong ret = (ioTLBEntry & TARGET_PAGE_MASK) + addr;
         return ret;
     }
-    LogRel(("\nTrying to execute code with memory type addr_code=%RGv addend=%RGp at %RGv! (iHandlerMemType=%#x iMMIOMemType=%#x)\n"
+    LogRel(("\nTrying to execute code with memory type addr_code=%RGv addend=%RGp at %RGv! (iHandlerMemType=%#x iMMIOMemType=%#x IOTLB=%RGp)\n"
             "*** handlers\n",
-            (RTGCPTR)pTLBEntry->addr_code, (RTGCPHYS)pTLBEntry->addend, (RTGCPTR)addr, pVM->rem.s.iHandlerMemType, pVM->rem.s.iMMIOMemType));
+            (RTGCPTR)pTLBEntry->addr_code, (RTGCPHYS)pTLBEntry->addend, (RTGCPTR)addr, pVM->rem.s.iHandlerMemType, pVM->rem.s.iMMIOMemType, (RTGCPHYS)ioTLBEntry));
     DBGFR3Info(pVM, "handlers", NULL, DBGFR3InfoLogRelHlp());
     LogRel(("*** mmio\n"));
     DBGFR3Info(pVM, "mmio", NULL, DBGFR3InfoLogRelHlp());
