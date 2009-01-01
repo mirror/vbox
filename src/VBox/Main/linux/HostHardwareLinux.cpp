@@ -46,6 +46,7 @@
  *       and the GLIBC tcpip headers. They have different declarations of the 4
  *       standard byte order functions. */
 // # define _LINUX_BYTEORDER_GENERIC_H
+# define _LINUX_BYTEORDER_SWABB_H
 # include <linux/cdrom.h>
 # ifdef VBOX_WITH_DBUS
 #  include <vbox-dbus.h>
