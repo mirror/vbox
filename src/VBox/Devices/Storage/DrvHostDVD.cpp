@@ -48,6 +48,7 @@
 # define _LINUX_BYTEORDER_GENERIC_H
 /* This is another hack for not bothering with C++ unfriendly byteswap macros. */
 # define _LINUX_BYTEORDER_SWAB_H
+# define _LINUX_BYTEORDER_SWABB_H
 /* Those macros that are needed are defined in the header below */
 # include "swab.h"
 # include <linux/cdrom.h>
