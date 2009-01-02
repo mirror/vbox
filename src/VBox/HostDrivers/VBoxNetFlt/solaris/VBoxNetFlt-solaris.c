@@ -2512,7 +2512,6 @@ static inline void vboxNetFltSolarisInitPacketId(PVBOXNETFLTPACKETID pTag, mblk_
  * @param   pThis               The instance.
  * @param   pPromiscStream      Pointer to the promiscuous stream.
  * @param   pMsg                Pointer to the message.
- * @remarks Warning!! Assumes caller has taken care of any locking necessary.
  */
 static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promisc_stream_t *pPromiscStream, mblk_t *pMsg)
 {
