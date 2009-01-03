@@ -1765,7 +1765,6 @@ Configuration:
 Paths:
   --with-gcc=PATH          location of the gcc compiler [$CC]
   --with-g++=PATH          location of the g++ compiler [$CXX]
-  --with-gcc-compat=PATH   location of the gcc compiler for recompiler [$CC]
   --with-kbuild=DIR        kbuild directory [$KBUILDDIR]
   --with-iasl=PATH         location of the iasl compiler [$IASL]
   --with-linux=DIR         Linux kernel source directory [$LINUX]
