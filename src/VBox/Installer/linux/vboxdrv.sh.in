@@ -95,7 +95,11 @@ else
             rc_status -v
         }
     elif [ "$system" = "gentoo" ]; then
-        . /sbin/functions.sh
+        if [ -f /sbin/functions.sh ]; then
+            . /sbin/functions.sh
+        elif [ -f /etc/init.d/functions.sh ]; then
+            . /etc/init.d/functions.sh
+        fi
         fail_msg() {
             eerror "$1"
         }

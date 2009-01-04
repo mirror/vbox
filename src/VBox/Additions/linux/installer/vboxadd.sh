@@ -51,12 +51,10 @@ if [ "$system" = "redhat" ]; then
         echo_failure
         echo
     }
-
     succ_msg() {
         echo_success
         echo
     }
-
     begin() {
         echo -n "$1"
     }
@@ -68,31 +66,30 @@ if [ "$system" = "suse" ]; then
         rc_failed 1
         rc_status -v
     }
-
     succ_msg() {
         rc_reset
         rc_status -v
     }
-
     begin() {
         echo -n "$1"
     }
 fi
 
 if [ "$system" = "gentoo" ]; then
-    . /sbin/functions.sh
+    if [ -f /sbin/functions.sh ]; then
+        . /sbin/functions.sh
+    elif [ -f /etc/init.d/functions.sh ]; then
+        . /etc/init.d/functions.sh
+    fi
     fail_msg() {
         eend 1
     }
-
     succ_msg() {
         eend $?
     }
-
     begin() {
         ebegin $1
     }
-
     if [ "`which $0`" = "/sbin/rc" ]; then
         shift
     fi
@@ -102,11 +99,9 @@ if [ "$system" = "other" ]; then
     fail_msg() {
         echo " ...fail!"
     }
-
     succ_msg() {
         echo " ...done."
     }
-
     begin() {
         echo -n $1
     }
