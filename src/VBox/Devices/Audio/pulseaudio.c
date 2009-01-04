@@ -36,6 +36,8 @@
 #include "audio_int.h"
 #include <stdio.h>
 
+#define MAX_LOG_REL_ERRORS 128
+
 /*
  * We use a g_pMainLoop in a separate thread g_pContext. We have to call functions for
  * manipulating objects either from callback functions or we have to protect
@@ -52,6 +54,7 @@ typedef struct PulseVoice
     void       *pPCMBuf;
     pa_stream  *pStream;
     int         fOpSuccess;
+    unsigned    cErrors;
 } PulseVoice;
 
 static struct
@@ -370,8 +373,9 @@ static int pulse_run_out (HWVoiceOut *hw)
     cbAvail = pa_stream_writable_size (pulse->pStream);
     if (cbAvail == (size_t)-1)
     {
-        LogRel(("Pulse: Failed to determine the writable size: %s\n",
-                pa_strerror(pa_context_errno(g_pContext))));
+        if (pulse->cErrors++ < MAX_LOG_REL_ERRORS)
+            LogRel(("Pulse: Failed to determine the writable size: %s\n",
+                    pa_strerror(pa_context_errno(g_pContext))));
         return 0;
     }
     
