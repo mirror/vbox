@@ -44,6 +44,7 @@
 class VBoxConsoleWnd;
 class MousePointerChangeEvent;
 class VBoxFrameBuffer;
+class VBoxDockIconPreview;
 
 class QPainter;
 class QLabel;
@@ -127,6 +128,7 @@ public:
 
 #if defined(Q_WS_MAC)
     void updateDockIcon();
+    void updateDockOverlay();
     void setDockIconEnabled (bool aOn) { mDockIconEnabled = aOn; };
     void setMouseCoalescingEnabled (bool aOn);
 #endif
@@ -322,7 +324,7 @@ private:
 
     QPixmap mPausedShot;
 #if defined(Q_WS_MAC)
-    CGImageRef mVirtualBoxLogo;
+    VBoxDockIconPreview *mDockIconPreview;
     bool mDockIconEnabled;
 #endif
     DesktopGeo mDesktopGeo;

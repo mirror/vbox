@@ -208,11 +208,6 @@ void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);
 /* Proxy icon creation */
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
 
-/* Special routines for the dock handling */
-CGImageRef darwinCreateDockBadge (const char *aSource);
-void darwinUpdateDockPreview (QWidget *aMainWindow, CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage = NULL);
-void darwinUpdateDockPreview (QWidget *aMainWindow, VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage, CGImageRef aStateImage = NULL);
-
 /* Icons in the menu of an mac application are unusual. */
 void darwinDisableIconsInMenus();
 

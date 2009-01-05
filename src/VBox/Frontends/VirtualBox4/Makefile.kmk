@@ -381,8 +381,8 @@ VirtualBox4_SOURCES.win += \
 VirtualBox4_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
 	src/darwin/VBoxUtils-darwin.cpp \
+	src/darwin/VBoxDockIconPreview.cpp \
 	src/VBoxFBQuartz2D.cpp
-#	src/darwin/VBoxAquaStyle.cpp
 
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox4_SOURCES.darwin += \
