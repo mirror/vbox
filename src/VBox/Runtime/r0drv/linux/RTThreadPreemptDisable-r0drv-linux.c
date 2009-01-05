@@ -39,6 +39,10 @@
 
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
+    AssertPtr(pState);
+    Assert(pState->uchDummy != 42);
+    pState->uchDummy = 42;
+
     /*
      * Note: This call is a NOP if CONFIG_PREEMPT is not enabled in the Linux kernel
      * configuration. In that case, schedule() is only called need_resched() is set
@@ -46,3 +50,4 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
      */
     preempt_disable();
 }
+
