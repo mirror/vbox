@@ -79,6 +79,7 @@ const int XKeyRelease = KeyRelease;
 #endif // Q_WS_X11
 
 #if defined (Q_WS_MAC)
+# include "VBoxDockIconPreview.h"
 # include "DarwinKeyboard.h"
 # ifdef VBOX_WITH_HACKED_QT
 #  include "QIApplication.h"
@@ -669,7 +670,6 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 # endif
     , mDarwinKeyModifiers (0)
     , mKeyboardGrabbed (false)
-    , mVirtualBoxLogo (NULL)
     , mDockIconEnabled (true)
 #endif
     , mDesktopGeo (DesktopGeo_Invalid)
@@ -682,7 +682,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
 #ifdef Q_WS_MAC
     /* Overlay logo for the dock icon */
-    mVirtualBoxLogo = ::darwinToCGImageRef ("VirtualBox_cube_42px.png");
+    //mVirtualBoxLogo = ::darwinToCGImageRef ("VirtualBox_cube_42px.png");
+    QString osTypeId = mConsole.GetGuest().GetOSTypeId();
+    mDockIconPreview = new VBoxDockIconPreview (mMainWnd, vboxGlobal().vmGuestOSTypeIcon (osTypeId));
 
     /* Install the event handler which will proceed external window handling */
     EventHandlerUPP eventHandler = ::NewEventHandlerUPP (::darwinOverlayWindowHandler);
@@ -884,7 +886,7 @@ VBoxConsoleView::~VBoxConsoleView()
         ::RemoveEventHandler (mDarwinWindowOverlayHandlerRef);
         mDarwinWindowOverlayHandlerRef = NULL;
     }
-    CGImageRelease (mVirtualBoxLogo);
+    delete mDockIconPreview;
 #endif
 }
 
@@ -3902,8 +3904,12 @@ void VBoxConsoleView::updateDockIcon()
     if (mDockIconEnabled)
     {
         if (!mPausedShot.isNull())
+        {
+            CGImageRef pauseImg = ::darwinToCGImageRef (&mPausedShot);
             /* Use the pause image as background */
-            ::darwinUpdateDockPreview (mMainWnd, ::darwinToCGImageRef (&mPausedShot), mVirtualBoxLogo, mMainWnd->dockImageState());
+            mDockIconPreview->updateDockPreview (pauseImg);
+            CGImageRelease (pauseImg);
+        }
         else
         {
 # if defined (VBOX_GUI_USE_QUARTZ2D)
@@ -3912,15 +3918,23 @@ void VBoxConsoleView::updateDockIcon()
                 /* If the render mode is Quartz2D we could use the CGImageRef
                  * of the framebuffer for the dock icon creation. This saves
                  * some conversion time. */
-                ::darwinUpdateDockPreview (mMainWnd, static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef(), mVirtualBoxLogo, mMainWnd->dockImageState());
+                mDockIconPreview->updateDockPreview (static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef());
             }
             else
 # endif
                 /* In image mode we have to create the image ref out of the
                  * framebuffer */
-                ::darwinUpdateDockPreview (mMainWnd, mFrameBuf, mVirtualBoxLogo, mMainWnd->dockImageState());
+                mDockIconPreview->updateDockPreview (mFrameBuf);
         }
     }
+}
+
+void VBoxConsoleView::updateDockOverlay()
+{
+    if (mDockIconEnabled)
+        updateDockIcon();
+    else
+        mDockIconPreview->updateDockOverlay ();
 }
 
 void VBoxConsoleView::setMouseCoalescingEnabled (bool aOn)

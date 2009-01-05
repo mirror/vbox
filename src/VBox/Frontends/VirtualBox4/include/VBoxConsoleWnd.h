@@ -110,9 +110,7 @@ public:
 
     void clearMask();
 
-#if defined (Q_WS_MAC)
-    CGImageRef dockImageState () const;
-#endif
+    KMachineState machineState() const { return machine_state; }
 
 public slots:
 
@@ -371,12 +369,6 @@ private:
     /* For seamless maximizing */
     QRect mNormalGeometry;
     Qt::WindowFlags mSavedFlags;
-    /* Dock images */
-    CGImageRef dockImgStatePaused;
-    CGImageRef dockImgStateSaving;
-    CGImageRef dockImgStateRestoring;
-    CGImageRef dockImgBack100x75;
-    CGImageRef dockImgOS;
     /* For the fade effect if the the window goes fullscreen */
     CGDisplayFadeReservationToken mFadeToken;
 #endif
