@@ -306,6 +306,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-webservice.xml         $(SOLARIS_INST_DIR)/virtualbox-webservice.xml,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh                 $(SOLARIS_INST_DIR)/smf-vboxwebsrv.sh,)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                          $(SOLARIS_INST_DIR)/virtualbox-zoneaccess.xml
+	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(INSTALL) -m 644 $(wildcard $(PATH_BIN)/rdesktop-vrdp-keymaps/*) $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps/,)
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_INST_DIR)/vnic_setup.sh,)
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_INST_DIR)/vnic_term.sh,)
 	$(QUIET)$(SED) \
