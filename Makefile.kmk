@@ -38,6 +38,20 @@ else
 endif
 
 
+#
+# Clean up global stuff that Config.kmk generates.
+#
+OTHER_CLEAN += \
+	$(VBOX_PACKAGE_HEADER) \
+	$(VBOX_LICENSE_VER_KMK) \
+	$(VBOX_VERSION_MK) \
+	$(VBOX_VERSION_HEADER) \
+	$(VBOX_VERSION_STAMP) \
+	$(wildcard $(PATH_OUT)/version-stamp-*.*.*) \
+	$(VBOX_SVN_REV_KMK).ts \
+	$(VBOX_SVN_REV_KMK)
+
+
 ifndef VBOX_ONLY_DOCS
 ifndef VBOX_ONLY_ADDITIONS
 
