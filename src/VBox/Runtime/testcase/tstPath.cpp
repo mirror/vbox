@@ -39,12 +39,6 @@
 #include <iprt/err.h>
 #include <iprt/param.h>
 
-#if defined (RT_OS_WINDOWS)
-# include <direct.h> // for getcwd
-#else
-# include <unistd.h> // for getcwd
-#endif
-#include <errno.h> // for getcwd
 
 #define CHECK_RC(method) \
     do { \
@@ -178,10 +172,10 @@ int main()
         {
             if (s_aRTPathAbsExTests[i].pcszOutput[0] == '%')
             {
-                /** @todo Use RTPathGetCurrent(). */
-                if (getcwd(szTmp, sizeof(szTmp)) == NULL)
+                rc = RTPathGetCurrent(szTmp, sizeof(szTmp));
+                if (RT_FAILURE(rc))
                 {
-                    RTPrintf("tstPath: getcwd failed with errno=%d!\n", errno);
+                    RTPrintf("tstPath: RTPathGetCurrent failed with rc=%Rrc!\n", rc);
                     cErrors++;
                     break;
                 }
