@@ -171,6 +171,14 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
     int rc;
 
     /*
+     * Validation.
+     */
+    AssertPtr(pszAbsPath);
+    AssertPtr(pszPath);
+    if (RT_UNLIKELY(!*pszPath))
+        return VERR_INVALID_PARAMETER;
+
+    /*
      * Make a clean working copy of the input.
      */
     size_t cchPath = strlen(pszPath);
@@ -184,9 +192,11 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
     memcpy(szTmpPath, pszPath, cchPath + 1);
     size_t cchTmpPath = fsCleanPath(szTmpPath);
 
-    /* fsCleanPath will leave the single dot alone, we don't need it here. */
+    /*
+     * Handle "." specially (fsCleanPath does).
+     */
     if (szTmpPath[0] == '.' && !szTmpPath[1])
-        szTmpPath[0] = '\0';
+        return RTPathGetCurrent(pszAbsPath, cchAbsPath);
 
     /*
      * Do we have a root slash?
