@@ -797,8 +797,6 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
 VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 {
     int             rc;
-    RTCPUID         idCpu = RTMpCpuId();
-    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
 
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
@@ -849,12 +847,17 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
         pVCpu->hwaccm.s.uCurrentASID              = 0;
     }
 
+    RTCCUINTREG     fFlags = ASMIntDisableFlags();
+    RTCPUID         idCpu = RTMpCpuId();
+    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
+
     ASMAtomicWriteBool(&pCpu->fInUse, true);
 
     /* Init a VT-x or AMD-V VM. */
     rc = HWACCMR0Globals.pfnInitVM(pVM);
 
     ASMAtomicWriteBool(&pCpu->fInUse, false);
+    ASMSetFlags(fFlags);
 
     return rc;
 }
@@ -869,8 +872,6 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
 {
     int             rc;
-    RTCPUID         idCpu = RTMpCpuId();
-    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
 
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
@@ -881,12 +882,17 @@ VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
     /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
 
+    RTCCUINTREG     fFlags = ASMIntDisableFlags();
+    RTCPUID         idCpu = RTMpCpuId();
+    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
+
     ASMAtomicWriteBool(&pCpu->fInUse, true);
 
     /* Terminate a VT-x or AMD-V VM. */
     rc = HWACCMR0Globals.pfnTermVM(pVM);
 
     ASMAtomicWriteBool(&pCpu->fInUse, false);
+    ASMSetFlags(fFlags);
     return rc;
 }
 
