@@ -497,10 +497,9 @@ static DECLCALLBACK(bool) drvNATQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
     PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)pItemCore;
     Log(("drvNATQueueConsumer(pItem:%p, pu8Buf:%p, cb:%d)\n", pItem, pItem->pu8Buf, pItem->cb));
     Log2(("drvNATQueueConsumer: pu8Buf:\n%.Rhxd\n", pItem->pu8Buf));
-    int rc =  pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
-    if (RT_FAILURE(rc)) {
-        return RT_FAILURE(rc);
-    }
+    int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
+    if (RT_FAILURE(rc))
+        return false;
     rc = pThis->pPort->pfnReceive(pThis->pPort, pItem->pu8Buf, pItem->cb);
     AssertRC(rc);
     RTMemFree((void *)pItem->pu8Buf); /* XXX: shouldn't free buffer here */
@@ -789,13 +788,15 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
 #else
             rc = RTReqCreateQueue(&pThis->pReqQueue);
-            if (RT_FAILURE(rc)) {
+            if (RT_FAILURE(rc))
+            {
                 LogRel(("Can't create request queue\n"));
                 return rc;
             }
 
             rc = pDrvIns->pDrvHlp->pfnPDMQueueCreate(pDrvIns, sizeof(DRVNATQUEUITEM), 50, 0, drvNATQueueConsumer, &pThis->pSendQueue);
-            if (RT_FAILURE(rc)){
+            if (RT_FAILURE(rc))
+            {
                 LogRel(("Can't create send queue\n"));
                 return rc;
             }
