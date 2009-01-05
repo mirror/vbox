@@ -1012,8 +1012,6 @@ RuntimeR0Drv_SOURCES.linux = \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/mppresent-generic.cpp \
-	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
-	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/assert-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
@@ -1022,6 +1020,8 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/mpnotification-r0drv-linux.c \
 	r0drv/linux/process-r0drv-linux.c \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.c \
+	r0drv/linux/RTThreadPreemptDisable-r0drv-linux.c \
+	r0drv/linux/RTThreadPreemptRestore-r0drv-linux.c \
 	r0drv/linux/semevent-r0drv-linux.c \
 	r0drv/linux/semeventmulti-r0drv-linux.c \
 	r0drv/linux/semfastmutex-r0drv-linux.c \
