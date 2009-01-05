@@ -848,17 +848,16 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     }
 
     RTCCUINTREG     fFlags = ASMIntDisableFlags();
-    RTCPUID         idCpu = RTMpCpuId();
-    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
+    PHWACCM_CPUINFO pCpu = HWACCMR0GetCurrentCpu();
 
+    /* @note Not correct as we can be rescheduled to a different cpu, but the fInUse case is mostly for debugging. */
     ASMAtomicWriteBool(&pCpu->fInUse, true);
+    ASMSetFlags(fFlags);
 
     /* Init a VT-x or AMD-V VM. */
     rc = HWACCMR0Globals.pfnInitVM(pVM);
 
     ASMAtomicWriteBool(&pCpu->fInUse, false);
-    ASMSetFlags(fFlags);
-
     return rc;
 }
 
@@ -882,17 +881,17 @@ VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
     /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
 
+    /* @note Not correct as we can be rescheduled to a different cpu, but the fInUse case is mostly for debugging. */
     RTCCUINTREG     fFlags = ASMIntDisableFlags();
-    RTCPUID         idCpu = RTMpCpuId();
-    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
+    PHWACCM_CPUINFO pCpu = HWACCMR0GetCurrentCpu();
 
     ASMAtomicWriteBool(&pCpu->fInUse, true);
+    ASMSetFlags(fFlags);
 
     /* Terminate a VT-x or AMD-V VM. */
     rc = HWACCMR0Globals.pfnTermVM(pVM);
 
     ASMAtomicWriteBool(&pCpu->fInUse, false);
-    ASMSetFlags(fFlags);
     return rc;
 }
 
