@@ -1249,7 +1249,7 @@ void Display::VideoAccelFlush (void)
  */
 STDMETHODIMP Display::COMGETTER(Width) (ULONG *width)
 {
-    CheckComArgSafeArrayNotNull(width);
+    CheckComArgNotNull(width);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
