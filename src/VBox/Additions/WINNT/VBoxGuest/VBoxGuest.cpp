@@ -904,6 +904,9 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         /* HGCM offers blocking IOCTLSs just like waitevent and actually
          * uses the same waiting code.
          */
+#ifdef RT_ARCH_AMD64
+        case VBOXGUEST_IOCTL_HGCM_CONNECT_32:
+#endif /* RT_ARCH_AMD64 */
         case VBOXGUEST_IOCTL_HGCM_CONNECT:
         {
             dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_HGCM_CONNECT\n"));
@@ -949,6 +952,9 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
         } break;
 
+#ifdef RT_ARCH_AMD64
+        case VBOXGUEST_IOCTL_HGCM_DISCONNECT_32:
+#endif /* RT_ARCH_AMD64 */
         case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
         {
             dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_HGCM_DISCONNECT\n"));
@@ -990,6 +996,49 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
         } break;
 
+#ifdef RT_ARCH_AMD64
+        case VBOXGUEST_IOCTL_HGCM_CALL_32(0): /* (The size isn't relevant on NT.) */
+        {
+            /* A 32 bit application call. */
+            int rc;
+
+            dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_HGCM_CALL_32\n"));
+
+            Status = vboxHGCMVerifyIOBuffers (pStack,
+                                              sizeof (VBoxGuestHGCMCallInfo));
+
+            if (Status != STATUS_SUCCESS)
+            {
+                dprintf(("VBoxGuest::VBoxGuestDeviceControl: invalid parameter. Status: %p\n", Status));
+                break;
+            }
+
+            /* @todo: Old guest OpenGL driver used the same IOCtl code for both 32 and 64 bit binaries.
+             *        This is a protection, and can be removed if there were no 64 bit driver.
+             */
+            if (!IoIs32bitProcess(pIrp))
+            {
+                Status = STATUS_UNSUCCESSFUL;
+                break;
+            }
+
+            VBoxGuestHGCMCallInfo *ptr = (VBoxGuestHGCMCallInfo *)pBuf;
+
+            rc = VbglHGCMCall32(ptr, VBoxHGCMCallback, pDevExt, RT_INDEFINITE_WAIT);
+
+            if (RT_FAILURE(rc))
+            {
+                dprintf(("VBOXGUEST_IOCTL_HGCM_CALL_32: vbox rc = %Rrc\n", rc));
+                Status = STATUS_UNSUCCESSFUL;
+            }
+            else
+            {
+                cbOut = pStack->Parameters.DeviceIoControl.OutputBufferLength;
+            }
+
+        } break;
+#endif /* RT_ARCH_AMD64 */
+
         case VBOXGUEST_IOCTL_HGCM_CALL(0): /* (The size isn't relevant on NT.) */
         {
             int rc;
@@ -1007,12 +1056,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             VBoxGuestHGCMCallInfo *ptr = (VBoxGuestHGCMCallInfo *)pBuf;
 
-# if ARCH_BITS == 64
-            if (IoIs32bitProcess(pIrp))
-                rc = VbglHGCMCall32(ptr, VBoxHGCMCallback, pDevExt, RT_INDEFINITE_WAIT);
-            else
-# endif
-                rc = VbglHGCMCall (ptr, VBoxHGCMCallback, pDevExt, RT_INDEFINITE_WAIT);
+            rc = VbglHGCMCall (ptr, VBoxHGCMCallback, pDevExt, RT_INDEFINITE_WAIT);
 
             if (RT_FAILURE(rc))
             {
