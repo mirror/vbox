@@ -302,6 +302,7 @@ $(PATH_VBOXCROGL_GENFILES)/glloader.c: $(PATH_SUB_CURRENT)/spu_loader/glloader.p
 $(PATH_VBOXCROGL_GENFILES)/spu_dispatch_table.h: $(PATH_SUB_CURRENT)/spu_loader/dispatchheader.py $(APIFILES) | $$(dir $$@)
 	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
 
+## @todo r=bird: This ain't working. the GEN_C_FILES reference in VBoxOGLspuload_CLEAN is expanded too late and GEN_C_FILES looks like it's reused. Please clean up the makefile ASAP (see other review comments).
 GEN_C_FILES := spuchange.c spucopy.c dispatch.c glloader.c
 GEN_C_FILES := $(addprefix $(PATH_VBOXCROGL_GENFILES)/, $(GEN_C_FILES))
 
