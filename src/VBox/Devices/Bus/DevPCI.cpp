@@ -395,8 +395,8 @@ static DECLCALLBACK(void) pci_default_write_config(PCIDevice *d, uint32_t addres
     for(i = 0; i < len; i++) {
         /* default read/write accesses */
         switch(d->config[0x0e]) {
-        case 0x00:
-        case 0x80:
+        case 0x00: /* normal device */
+        case 0x80: /* multi-function device */
             switch(addr) {
             case 0x00:
             case 0x01:
@@ -410,6 +410,8 @@ static DECLCALLBACK(void) pci_default_write_config(PCIDevice *d, uint32_t addres
             case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17: /* base */
             case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
             case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
+            case 0x2c: case 0x2d:                                                                   /* subsystem ID */
+            case 0x2e: case 0x2f:                                                                   /* vendor ID */
             case 0x30: case 0x31: case 0x32: case 0x33:                                             /* rom */
             case 0x3d:
                 can_write = 0;
@@ -420,7 +422,7 @@ static DECLCALLBACK(void) pci_default_write_config(PCIDevice *d, uint32_t addres
             }
             break;
         default:
-        case 0x01:
+        case 0x01: /* bridge */
             switch(addr) {
             case 0x00:
             case 0x01:
@@ -442,14 +444,18 @@ static DECLCALLBACK(void) pci_default_write_config(PCIDevice *d, uint32_t addres
             break;
         }
 #ifdef VBOX
-        /* status register: only clear bits by writing a '1' at the corresponding bit */
         if (addr == 0x06)
         {
+            /* don't change read-only bits => actually all lower bits are read-only */
+            val &= UINT32_C(~0xff);
+            /* status register, low part: clear bits by writing a '1' to the corresponding bit */
             d->config[addr] &= ~val;
-            d->config[addr] |= 0x08; /* interrupt status */
         }
         else if (addr == 0x07)
         {
+            /* don't change read-only bits */
+            val &= UINT32_C(~0x06);
+            /* status register, high part: clear bits by writing a '1' to the corresponding bit */
             d->config[addr] &= ~val;
         }
         else
