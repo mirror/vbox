@@ -1069,13 +1069,13 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
         rc = VERR_VD_IMAGE_READ_ONLY;
-        goto outfail;
+        goto out;
     }
 
     if (!VALID_PTR(pvBuf) || !cbToWrite)
     {
         rc = VERR_INVALID_PARAMETER;
-        goto outfail;
+        goto out;
     }
 
     /* No size check here, will do that later.  For dynamic images which are
@@ -1090,69 +1090,71 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     cbToWrite = RT_MIN(cbToWrite, getImageBlockSize(&pImage->Header) - offWrite);
     Assert(!(cbToWrite % 512));
 
-    if (!IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[uBlock]))
+    do
     {
-        /* Block is either free or zero. */
-        if (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_ZEROES)
-            && (   pImage->paBlocks[uBlock] == VDI_IMAGE_BLOCK_ZERO
-                || cbToWrite == getImageBlockSize(&pImage->Header)))
+        if (!IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[uBlock]))
         {
-            /* If the destination block is unallocated at this point, it's
-             * either a zero block or a block which hasn't been used so far
-             * (which also means that it's a zero block. Don't need to write
-             * anything to this block  if the data consists of just zeroes. */
-            Assert(!(cbToWrite % 4));
-            Assert(cbToWrite * 8 <= UINT32_MAX);
-            if (ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)cbToWrite * 8) == -1)
+            /* Block is either free or zero. */
+            if (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_ZEROES)
+                && (   pImage->paBlocks[uBlock] == VDI_IMAGE_BLOCK_ZERO
+                    || cbToWrite == getImageBlockSize(&pImage->Header)))
             {
-                pImage->paBlocks[uBlock] = VDI_IMAGE_BLOCK_ZERO;
-                goto out;
+                /* If the destination block is unallocated at this point, it's
+                 * either a zero block or a block which hasn't been used so far
+                 * (which also means that it's a zero block. Don't need to write
+                 * anything to this block  if the data consists of just zeroes. */
+                Assert(!(cbToWrite % 4));
+                Assert(cbToWrite * 8 <= UINT32_MAX);
+                if (ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)cbToWrite * 8) == -1)
+                {
+                    pImage->paBlocks[uBlock] = VDI_IMAGE_BLOCK_ZERO;
+                    break;
+                }
             }
-        }
 
-        if (cbToWrite == getImageBlockSize(&pImage->Header))
-        {
-            /* Full block write to previously unallocated block.
-             * Allocate block and write data. */
-            Assert(!offWrite);
-            unsigned cBlocksAllocated = getImageBlocksAllocated(&pImage->Header);
-            uint64_t u64Offset = (uint64_t)cBlocksAllocated * pImage->cbTotalBlockData
-                               + (pImage->offStartData + pImage->offStartBlockData);
-            rc = RTFileWriteAt(pImage->File, u64Offset, pvBuf, cbToWrite, NULL);
-            if (RT_FAILURE(rc))
-                goto outfail;
-            pImage->paBlocks[uBlock] = cBlocksAllocated;
-            setImageBlocksAllocated(&pImage->Header, cBlocksAllocated + 1);
+            if (cbToWrite == getImageBlockSize(&pImage->Header))
+            {
+                /* Full block write to previously unallocated block.
+                 * Allocate block and write data. */
+                Assert(!offWrite);
+                unsigned cBlocksAllocated = getImageBlocksAllocated(&pImage->Header);
+                uint64_t u64Offset = (uint64_t)cBlocksAllocated * pImage->cbTotalBlockData
+                                   + (pImage->offStartData + pImage->offStartBlockData);
+                rc = RTFileWriteAt(pImage->File, u64Offset, pvBuf, cbToWrite, NULL);
+                if (RT_FAILURE(rc))
+                    goto out;
+                pImage->paBlocks[uBlock] = cBlocksAllocated;
+                setImageBlocksAllocated(&pImage->Header, cBlocksAllocated + 1);
 
-            rc = vdiUpdateBlockInfo(pImage, uBlock);
-            if (RT_FAILURE(rc))
-                goto outfail;
+                rc = vdiUpdateBlockInfo(pImage, uBlock);
+                if (RT_FAILURE(rc))
+                    goto out;
 
-            *pcbPreRead = 0;
-            *pcbPostRead = 0;
+                *pcbPreRead = 0;
+                *pcbPostRead = 0;
+            }
+            else
+            {
+                /* Trying to do a partial write to an unallocated block. Don't do
+                 * anything except letting the upper layer know what to do. */
+                *pcbPreRead = offWrite % getImageBlockSize(&pImage->Header);
+                *pcbPostRead = getImageBlockSize(&pImage->Header) - cbToWrite - *pcbPreRead;
+                rc = VERR_VD_BLOCK_FREE;
+            }
         }
         else
         {
-            /* Trying to do a partial write to an unallocated block. Don't do
-             * anything except letting the upper layer know what to do. */
-            *pcbPreRead = offWrite % getImageBlockSize(&pImage->Header);
-            *pcbPostRead = getImageBlockSize(&pImage->Header) - cbToWrite - *pcbPreRead;
-            rc = VERR_VD_BLOCK_FREE;
+            /* Block present in image file, write relevant data. */
+            uint64_t u64Offset = (uint64_t)pImage->paBlocks[uBlock] * pImage->cbTotalBlockData
+                               + (pImage->offStartData + pImage->offStartBlockData + offWrite);
+            rc = RTFileWriteAt(pImage->File, u64Offset, pvBuf, cbToWrite, NULL);
         }
-    }
-    else
-    {
-        /* Block present in image file, write relevant data. */
-        uint64_t u64Offset = (uint64_t)pImage->paBlocks[uBlock] * pImage->cbTotalBlockData
-                           + (pImage->offStartData + pImage->offStartBlockData + offWrite);
-        rc = RTFileWriteAt(pImage->File, u64Offset, pvBuf, cbToWrite, NULL);
-    }
+    } while (0);
 
-out:
     if (pcbWriteProcess)
         *pcbWriteProcess = cbToWrite;
 
-outfail:
+out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
