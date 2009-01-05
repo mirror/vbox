@@ -336,7 +336,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
                const char *pszBootFile, void *pvUser)
 {
     int fNATfailed = 0;
-    PNATState pData = malloc(sizeof(NATState));
+    PNATState pData = RTMemAlloc(sizeof(NATState));
     *ppData = pData;
     if (!pData)
         return VERR_NO_MEMORY;
@@ -1069,7 +1069,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 void if_encap(PNATState pData, uint16_t eth_proto, const uint8_t *ip_data, int ip_data_len)
 {
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-    uint8_t *buf = malloc(1600); /* XXX:temporal solution */
+    uint8_t *buf = RTMemAlloc(1600); /* XXX:temporal solution */
     struct ethhdr *eh = (struct ethhdr *)buf;
 
     if (ip_data_len + ETH_HLEN > 1600)

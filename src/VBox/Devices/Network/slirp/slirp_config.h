@@ -51,9 +51,6 @@
  * You shouldn't need to touch any of these
  */
 
-/* Ignore this */
-#undef DUMMY_PPP
-
 #ifdef _MSC_VER
 #undef HAVE_UNISTD_H
 #else

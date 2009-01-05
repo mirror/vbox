@@ -114,7 +114,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
      * Allocate a new queue entry. If we can't, or hit the zone limit
      * just drop the pkt.
      */
-    te = malloc(sizeof(struct tseg_qent));
+    te = RTMemAlloc(sizeof(struct tseg_qent));
     if (te == NULL)
     {
         tcpstat.tcps_rcvmemdrop++;

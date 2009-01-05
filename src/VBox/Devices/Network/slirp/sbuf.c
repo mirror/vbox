@@ -18,7 +18,7 @@
 void
 sbfree(struct sbuf *sb)
 {
-    free(sb->sb_data);
+    RTMemFree(sb->sb_data);
 }
 
 void
@@ -45,7 +45,9 @@ sbreserve(struct sbuf *sb, int size)
         /* Already alloced, realloc if necessary */
         if (sb->sb_datalen != size)
         {
-            sb->sb_wptr = sb->sb_rptr = sb->sb_data = (char *)realloc(sb->sb_data, size);
+            sb->sb_wptr =
+            sb->sb_rptr =
+            sb->sb_data = (char *)RTMemRealloc(sb->sb_data, size);
             sb->sb_cc = 0;
             if (sb->sb_wptr)
                 sb->sb_datalen = size;
@@ -55,7 +57,7 @@ sbreserve(struct sbuf *sb, int size)
     }
     else
     {
-        sb->sb_wptr = sb->sb_rptr = sb->sb_data = (char *)malloc(size);
+        sb->sb_wptr = sb->sb_rptr = sb->sb_data = (char *)RTMemAlloc(size);
         sb->sb_cc = 0;
         if (sb->sb_wptr)
             sb->sb_datalen = size;

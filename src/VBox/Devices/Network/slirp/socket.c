@@ -59,7 +59,7 @@ socreate()
 {
     struct socket *so;
 
-    so = (struct socket *)malloc(sizeof(struct socket));
+    so = (struct socket *)RTMemAlloc(sizeof(struct socket));
     if(so)
     {
         memset(so, 0, sizeof(struct socket));

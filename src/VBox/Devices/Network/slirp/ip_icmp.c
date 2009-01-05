@@ -139,7 +139,7 @@ icmp_init(PNATState pData)
     pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
 # endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
     pData->szIcmpBuffer = sizeof(ICMP_ECHO_REPLY) * 10;
-    pData->pvIcmpBuffer = malloc(pData->szIcmpBuffer);
+    pData->pvIcmpBuffer = RTMemAlloc(pData->szIcmpBuffer);
 #endif /* RT_OS_WINDOWS */
     LIST_INIT(&pData->icmp_msg_head);
     return 0;
@@ -248,7 +248,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     sofound:
     if (found == 1 && icm == NULL)
     {
-        icm = malloc(sizeof(struct icmp_msg));
+        icm = RTMemAlloc(sizeof(struct icmp_msg));
         icm->im_m = so->so_m;
         icm->im_so = so;
         found = 1;
@@ -272,7 +272,7 @@ icmp_attach(PNATState pData, struct mbuf *m)
     struct ip *ip;
     ip = mtod(m, struct ip *);
     Assert(ip->ip_p == IPPROTO_ICMP);
-    icm = malloc(sizeof(struct icmp_msg));
+    icm = RTMemAlloc(sizeof(struct icmp_msg));
     icm->im_m = m;
     LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
     return 0;

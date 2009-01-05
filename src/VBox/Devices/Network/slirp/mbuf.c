@@ -56,7 +56,7 @@ m_get(PNATState pData)
 
     if (m_freelist.m_next == &m_freelist)
     {
-        m = (struct mbuf *)malloc(msize);
+        m = (struct mbuf *)RTMemAlloc(msize);
         if (m == NULL)
             goto end_error;
         mbuf_alloced++;
@@ -102,14 +102,14 @@ m_free(PNATState pData, struct mbuf *m)
 
         /* If it's M_EXT, free() it */
         if (m->m_flags & M_EXT)
-            free(m->m_ext);
+            RTMemFree(m->m_ext);
 
         /*
          * Either free() it or put it on the free list
          */
         if (m->m_flags & M_DOFREE)
         {
-            free(m);
+            RTMemFree(m);
             mbuf_alloced--;
         }
         else if ((m->m_flags & M_FREELIST) == 0)
@@ -154,7 +154,7 @@ m_inc(struct mbuf *m, int size)
     if (m->m_flags & M_EXT)
     {
         datasize = m->m_data - m->m_ext;
-        m->m_ext = (char *)realloc(m->m_ext, size);
+        m->m_ext = (char *)RTMemRealloc(m->m_ext, size);
 #if 0
         if (m->m_ext == NULL)
             return (struct mbuf *)NULL;
@@ -165,7 +165,7 @@ m_inc(struct mbuf *m, int size)
     {
         char *dat;
         datasize = m->m_data - m->m_dat;
-        dat = (char *)malloc(size);
+        dat = (char *)RTMemAlloc(size);
 #if 0
         if (dat == NULL)
             return (struct mbuf *)NULL;

@@ -307,7 +307,7 @@ found:
      */
     if (fp == NULL)
     {
-        fp = malloc(sizeof(struct ipq_t));
+        fp = RTMemAlloc(sizeof(struct ipq_t));
         if (fp == NULL)
             goto dropfrag;
         TAILQ_INSERT_HEAD(head, fp, ipq_list);

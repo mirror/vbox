@@ -185,7 +185,7 @@ tcp_newtcpcb(PNATState pData, struct socket *so)
 {
     register struct tcpcb *tp;
 
-    tp = (struct tcpcb *)malloc(sizeof(*tp));
+    tp = (struct tcpcb *)RTMemAlloc(sizeof(*tp));
     if (tp == NULL)
         return ((struct tcpcb *)0);
 
