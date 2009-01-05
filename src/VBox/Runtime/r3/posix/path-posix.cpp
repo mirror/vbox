@@ -208,35 +208,21 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
         /*
          * No, prepend the current directory to the relative path.
          */
-        /** @todo use RTPathGetCurrent */
-        char szNativeCurDir[PATH_MAX + 1];
-        if (getcwd(szNativeCurDir, sizeof(szNativeCurDir)) == NULL)
-        {
-            rc = RTErrConvertFromErrno(errno);
-            AssertMsgFailedReturn(("Couldn't get cwd! rc=%Rrc errno=%d\n", rc, errno), rc);
-        }
+        char szCurDir[RTPATH_MAX];
+        rc = RTPathGetCurrent(szCurDir, sizeof(szCurDir));
+        AssertRCReturn(rc, rc);
 
-        char *pszCurDir;
-        rc = rtPathFromNative(&pszCurDir, szNativeCurDir);
-        if (RT_FAILURE(rc))
-        {
-            LogFlow(("RTPathAbs(%p:{%s}, %p, %d): returns %Rrc\n", pszPath, pszPath, pszAbsPath, cchAbsPath, rc));
-            return rc;
-        }
-
-        size_t cchCurDir = fsCleanPath(pszCurDir); /* paranoia */
+        size_t cchCurDir = fsCleanPath(szCurDir); /* paranoia */
         if (cchCurDir + cchTmpPath + 1 > PATH_MAX)
         {
-            RTStrFree(pszCurDir);
             LogFlow(("RTPathAbs(%p:{%s}, %p, %d): returns %Rrc\n", pszPath, pszPath, pszAbsPath, cchAbsPath, VERR_FILENAME_TOO_LONG));
             return VERR_FILENAME_TOO_LONG;
         }
 
         memmove(szTmpPath + cchCurDir + 1, szTmpPath, cchTmpPath + 1);
-        memcpy(szTmpPath, pszCurDir, cchCurDir);
+        memcpy(szTmpPath, szCurDir, cchCurDir);
         szTmpPath[cchCurDir] = '/';
 
-        RTStrFree(pszCurDir);
 
 #ifdef HAVE_DRIVE
         if (pszCur[0] && RTPATH_IS_VOLSEP(pszCur[1]) && pszCur[2] == '/')
@@ -811,6 +797,34 @@ RTDECL(bool) RTPathExists(const char *pszPath)
         RTStrFree(pszNativePath);
     }
     return RT_SUCCESS(rc);
+}
+
+
+RTDECL(int)  RTPathGetCurrent(char *pszPath, size_t cchPath)
+{
+    int rc;
+    char szNativeCurDir[RTPATH_MAX];
+    if (getcwd(szNativeCurDir, sizeof(szNativeCurDir)) != NULL)
+    {
+        char *pszCurDir;
+        rc = rtPathFromNative(&pszCurDir, szNativeCurDir);
+        if (RT_SUCCESS(rc))
+        {
+            size_t cchCurDir = strlen(pszCurDir);
+            if (cchCurDir < cchPath)
+            {
+                memcpy(pszPath, pszCurDir, cchCurDir + 1);
+                RTStrFree(pszCurDir);
+                return VINF_SUCCESS;
+            }
+
+            rc = VERR_BUFFER_OVERFLOW;
+            RTStrFree(pszCurDir);
+        }
+    }
+    else
+        rc = RTErrConvertFromErrno(errno);
+    return rc;
 }
 
 
