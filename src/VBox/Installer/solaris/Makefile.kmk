@@ -303,6 +303,9 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQt3Support.so.4       $(SOLARIS_INST_DIR)/libVBoxQt3Support.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2 $(SOLARIS_INST_DIR)/libSDL-1.2.so.0,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/bin/qtconfig      $(SOLARIS_INST_DIR)/VBoxQtconfig,)
+	@# VBoxPython.so requires special handling as it is NOT in the correct out path to begin with. 
+	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(PATH_BIN)/VBoxPython.so $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST)VBoxPython.so)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(CP) $(foreach f,$(SOLARIS_NLS),$(PATH_BIN)/$(f)) $(SOLARIS_INST_DIR)/nls,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-webservice.xml         $(SOLARIS_INST_DIR)/virtualbox-webservice.xml,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh                 $(SOLARIS_INST_DIR)/smf-vboxwebsrv.sh,)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                          $(SOLARIS_INST_DIR)/virtualbox-zoneaccess.xml
@@ -377,7 +380,6 @@ $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 	@# -XXX- This must be fixed badly, we create directories needed for main package here!
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/additions
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/components
-	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/etc
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST),)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/accessible,)
