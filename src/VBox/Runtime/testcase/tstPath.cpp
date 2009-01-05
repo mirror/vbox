@@ -97,7 +97,7 @@ int main()
         int rc;
         const char *pcszOutput;
     }
-    aRTPathAbsExTests[] =
+    s_aRTPathAbsExTests[] =
     {
 #if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
     { NULL, "", VINF_SUCCESS, "%p" },
@@ -151,12 +151,12 @@ int main()
 #endif
     };
 
-    for (unsigned i = 0; i < RT_ELEMENTS(aRTPathAbsExTests); ++ i)
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aRTPathAbsExTests); ++ i)
     {
-        rc = RTPathAbsEx(aRTPathAbsExTests[i].pcszInputBase,
-                         aRTPathAbsExTests[i].pcszInputPath,
+        rc = RTPathAbsEx(s_aRTPathAbsExTests[i].pcszInputBase,
+                         s_aRTPathAbsExTests[i].pcszInputPath,
                          szPath, sizeof(szPath));
-        if (rc != aRTPathAbsExTests[i].rc)
+        if (rc != s_aRTPathAbsExTests[i].rc)
         {
             RTPrintf("tstPath: RTPathAbsEx unexpected result code!\n"
                      "   input base: '%s'\n"
@@ -164,20 +164,21 @@ int main()
                      "       output: '%s'\n"
                      "           rc: %Rrc\n"
                      "  expected rc: %Rrc\n",
-                     aRTPathAbsExTests[i].pcszInputBase,
-                     aRTPathAbsExTests[i].pcszInputPath,
+                     s_aRTPathAbsExTests[i].pcszInputBase,
+                     s_aRTPathAbsExTests[i].pcszInputPath,
                      szPath, rc,
-                     aRTPathAbsExTests[i].rc);
+                     s_aRTPathAbsExTests[i].rc);
             cErrors++;
             continue;
         }
 
         char szTmp[RTPATH_MAX];
         char *pszExpected = NULL;
-        if (aRTPathAbsExTests[i].pcszOutput != NULL)
+        if (s_aRTPathAbsExTests[i].pcszOutput != NULL)
         {
-            if (aRTPathAbsExTests[i].pcszOutput[0] == '%')
+            if (s_aRTPathAbsExTests[i].pcszOutput[0] == '%')
             {
+                /** @todo Use RTPathGetCurrent(). */
                 if (getcwd(szTmp, sizeof(szTmp)) == NULL)
                 {
                     RTPrintf("tstPath: getcwd failed with errno=%d!\n", errno);
@@ -187,23 +188,23 @@ int main()
 
                 pszExpected = szTmp;
 
-                if (aRTPathAbsExTests[i].pcszOutput[1] == 'p')
+                if (s_aRTPathAbsExTests[i].pcszOutput[1] == 'p')
                 {
                     size_t cch = strlen(szTmp);
-                    if (cch + strlen (aRTPathAbsExTests[i].pcszOutput) - 2 <= sizeof(szTmp))
-                        strcpy (szTmp + cch, aRTPathAbsExTests[i].pcszOutput + 2);
+                    if (cch + strlen(s_aRTPathAbsExTests[i].pcszOutput) - 2 <= sizeof(szTmp))
+                        strcpy(szTmp + cch, s_aRTPathAbsExTests[i].pcszOutput + 2);
                 }
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
-                else if (aRTPathAbsExTests[i].pcszOutput[1] == 'd')
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+                else if (s_aRTPathAbsExTests[i].pcszOutput[1] == 'd')
                 {
-                    if (2 + strlen (aRTPathAbsExTests[i].pcszOutput) - 2 <= sizeof(szTmp))
-                        strcpy (szTmp + 2, aRTPathAbsExTests[i].pcszOutput + 2);
+                    if (2 + strlen(s_aRTPathAbsExTests[i].pcszOutput) - 2 <= sizeof(szTmp))
+                        strcpy(szTmp + 2, s_aRTPathAbsExTests[i].pcszOutput + 2);
                 }
 #endif
             }
             else
             {
-                strcpy(szTmp, aRTPathAbsExTests[i].pcszOutput);
+                strcpy(szTmp, s_aRTPathAbsExTests[i].pcszOutput);
                 pszExpected = szTmp;
             }
 
@@ -214,10 +215,10 @@ int main()
                          "   input path: '%s'\n"
                          "       output: '%s'\n"
                          "     expected: '%s'\n",
-                         aRTPathAbsExTests[i].pcszInputBase,
-                         aRTPathAbsExTests[i].pcszInputPath,
+                         s_aRTPathAbsExTests[i].pcszInputBase,
+                         s_aRTPathAbsExTests[i].pcszInputPath,
                          szPath,
-                         aRTPathAbsExTests[i].pcszOutput);
+                         s_aRTPathAbsExTests[i].pcszOutput);
                 cErrors++;
             }
         }
@@ -227,7 +228,7 @@ int main()
      * RTPathStripFilename
      */
     RTPrintf("tstPath: RTPathStripFilename...\n");
-    static const char *apszStripFilenameTests[] =
+    static const char *s_apszStripFilenameTests[] =
     {
         "/usr/include///",              "/usr/include//",
         "/usr/include/",                "/usr/include",
@@ -241,10 +242,10 @@ int main()
         "C:\\OS2\\DLLS",                "C:\\OS2",
 #endif
     };
-    for (unsigned i = 0; i < RT_ELEMENTS(apszStripFilenameTests); i += 2)
+    for (unsigned i = 0; i < RT_ELEMENTS(s_apszStripFilenameTests); i += 2)
     {
-        const char *pszInput  = apszStripFilenameTests[i];
-        const char *pszExpect = apszStripFilenameTests[i + 1];
+        const char *pszInput  = s_apszStripFilenameTests[i];
+        const char *pszExpect = s_apszStripFilenameTests[i + 1];
         char szPath[RTPATH_MAX];
         strcpy(szPath, pszInput);
         RTPathStripFilename(szPath);
