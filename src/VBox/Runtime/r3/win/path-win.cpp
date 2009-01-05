@@ -121,27 +121,28 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
     RTUTF16 wsz[RTPATH_MAX];
     rc = GetFullPathNameW(pwszPath, RT_ELEMENTS(wsz), &wsz[0], &pwszFile);
     if (rc > 0 && rc < RT_ELEMENTS(wsz))
-        rc = RTUtf16ToUtf8Ex(&wsz[0], RTSTR_MAX, &pszAbsPath, cchAbsPath, NULL);
+    {
+        size_t cch;
+        rc = RTUtf16ToUtf8Ex(&wsz[0], RTSTR_MAX, &pszAbsPath, cchAbsPath, &cch);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Remove trailing slash if the path may be pointing to a directory.
+             * (See posix variant.)
+             */
+            if (    cch > 1
+                &&  RTPATH_IS_SLASH(pszAbsPath[cch - 1])
+                &&  !RTPATH_IS_VOLSEP(pszAbsPath[cch - 2])
+                &&  !RTPATH_IS_SLASH(pszAbsPath[cch - 2]))
+                pszAbsPath[cch - 1] = '\0';
+        }
+    }
     else if (rc <= 0)
         rc = RTErrConvertFromWin32(GetLastError());
     else
         rc = VERR_FILENAME_TOO_LONG;
 
     RTUtf16Free(pwszPath);
-
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Remove trailing slash if the path may be pointing to a directory.
-         */
-        size_t cch = strlen(pszAbsPath);
-        if (    cch > 1
-            &&  RTPATH_IS_SLASH(pszAbsPath[cch - 1])
-            &&  !RTPATH_IS_VOLSEP(pszAbsPath[cch - 2])
-            &&  !RTPATH_IS_SLASH(pszAbsPath[cch - 2]))
-            pszAbsPath[cch - 1] = '\0';
-    }
-
     return rc;
 }
 
