@@ -4076,7 +4076,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1107"/>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Êtes-vous sûre de vouloir libérer %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Ceci le détachera de la machine ou des machines virtuelles suivantes : lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Êtes-vous sûre de vouloir libérer %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Ceci le détachera de la machine ou des machines virtuelles suivantes : &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1111"/>
@@ -4391,7 +4391,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1276"/>
         <source>&amp;Settings...</source>
-        <translation>&amp;Préférences</translation>
+        <translation>&amp;Préférences...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1278"/>
@@ -4521,7 +4521,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1239"/>
         <source>&amp;Virtual Media Manager...</source>
-        <translation>Gestionnaire de supports &amp;virtuels</translation>
+        <translation>Gestionnaire de supports &amp;virtuels...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1241"/>
