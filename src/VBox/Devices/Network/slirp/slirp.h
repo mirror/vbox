@@ -40,11 +40,11 @@ typedef int socklen_t;
 #undef malloc
 #define malloc          dont_use_malloc
 #undef free
-#define free(a)         dont_use_free
+#define free            dont_use_free
 #undef realloc
-#define realloc(a,b)    dont_use_realloc
+#define realloc         dont_use_realloc
 #undef strdup
-#define strdup(a)       dont_use_strdup
+#define strdup          dont_use_strdup
 
 #include "slirp_config.h"
 
