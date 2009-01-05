@@ -271,10 +271,10 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
     {
         LIST_REMOVE(te, tqe_q);
         m_freem(pData, te->tqe_m);
-        free(te);
+        RTMemFree(te);
         tcp_reass_qsize--;
     }
-    free(tp);
+    RTMemFree(tp);
     so->so_tcpcb = 0;
     soisfdisconnected(so);
     /* clobber input socket cache if we're closing the cached connection */
@@ -467,7 +467,7 @@ tcp_connect(PNATState pData, struct socket *inso)
         }
         if (tcp_attach(pData, so) < 0)
         {
-            free(so); /* NOT sofree */
+            RTMemFree(so); /* NOT sofree */
             return;
         }
         so->so_laddr = inso->so_laddr;

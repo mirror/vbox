@@ -448,7 +448,7 @@ void slirp_term(PNATState pData)
 #ifdef RT_OS_WINDOWS
     pData->pfIcmpCloseHandle(pData->icmp_socket.sh);
     FreeLibrary(pData->hmIcmpLibrary);
-    free(pData->pvIcmpBuffer);
+    RTMemFree(pData->pvIcmpBuffer);
 # else
     closesocket(pData->icmp_socket.s);
 #endif
@@ -472,7 +472,7 @@ void slirp_term(PNATState pData)
          "\n"
          "\n"));
 #endif
-    free(pData);
+    RTMemFree(pData);
 }
 
 

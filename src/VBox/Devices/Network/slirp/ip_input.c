@@ -462,7 +462,7 @@ found:
     ip->ip_dst = fp->ipq_dst;
     TAILQ_REMOVE(head, fp, ipq_list);
     nipq--;
-    free(fp);
+    RTMemFree(fp);
 
     m->m_len += (ip->ip_hl << 2);
     m->m_data -= (ip->ip_hl << 2);
@@ -498,7 +498,7 @@ ip_freef(PNATState pData, struct ipqhead *fhp, struct ipq_t *fp)
         m_freem(pData, q);
     }
     TAILQ_REMOVE(fhp, fp, ipq_list);
-    free(fp);
+    RTMemFree(fp);
     nipq--;
 }
 
