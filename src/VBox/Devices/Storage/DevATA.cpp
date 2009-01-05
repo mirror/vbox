@@ -1788,7 +1788,7 @@ static bool atapiPassthroughSS(ATADevState *s)
     PDMCritSectLeave(&pCtl->lock);
 
     if (pProf) { STAM_PROFILE_ADV_START(pProf, b); }
-    if (cbTransfer > 100 * _1K)
+    if (cbTransfer > SCSI_MAX_BUFFER_SIZE)
     {
         /* Linux accepts commands with up to 100KB of data, but expects
          * us to handle commands with up to 128KB of data. The usual
@@ -1835,8 +1835,8 @@ static bool atapiPassthroughSS(ATADevState *s)
         cReqSectors = 0;
         for (uint32_t i = cSectors; i > 0; i -= cReqSectors)
         {
-            if (i * s->cbATAPISector > 100 * _1K)
-                cReqSectors = (100 * _1K) / s->cbATAPISector;
+            if (i * s->cbATAPISector > SCSI_MAX_BUFFER_SIZE)
+                cReqSectors = SCSI_MAX_BUFFER_SIZE / s->cbATAPISector;
             else
                 cReqSectors = i;
             cbCurrTX = s->cbATAPISector * cReqSectors;

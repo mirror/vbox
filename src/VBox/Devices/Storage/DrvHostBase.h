@@ -130,6 +130,12 @@ typedef struct DRVHOSTBASE
     DWORD                   fUnitMask;
 #endif
 
+#ifdef RT_OS_LINUX
+    /** Double buffer required for ioctl with the Linux kernel as long as we use
+     * remap_pfn_range() instead of vm_insert_page(). */
+    void                    *pbDoubleBuffer;
+#endif
+
 
     /**
      * Performs the locking / unlocking of the device.

@@ -55,6 +55,7 @@
 # include <sys/fcntl.h>
 # include <errno.h>
 # include <limits.h>
+# include <iprt/mem.h>
 # define USE_MEDIA_POLLING
 
 #elif defined(RT_OS_SOLARIS)
@@ -429,6 +430,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
             break;
         case PDMBLOCKTXDIR_FROM_DEVICE:
             Assert(*pcbBuf != 0);
+            Assert(*pcbBuf <= SCSI_MAX_BUFFER_SIZE);
             /* Make sure that the buffer is clear for commands reading
              * data. The actually received data may be shorter than what
              * we expect, and due to the unreliable feedback about how much
@@ -436,11 +438,13 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
              * prevent that. Returning previous buffer contents may cause
              * security problems inside the guest OS, if users can issue
              * commands to the CDROM device. */
-            memset(pvBuf, '\0', *pcbBuf);
+            memset(pThis->pbDoubleBuffer, '\0', *pcbBuf);
             direction = CGC_DATA_READ;
             break;
         case PDMBLOCKTXDIR_TO_DEVICE:
             Assert(*pcbBuf != 0);
+            Assert(*pcbBuf <= SCSI_MAX_BUFFER_SIZE);
+            memcpy(pThis->pbDoubleBuffer, pvBuf, *pcbBuf);
             direction = CGC_DATA_WRITE;
             break;
         default:
@@ -449,7 +453,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
     }
     memset(&cgc, '\0', sizeof(cgc));
     memcpy(cgc.cmd, pbCmd, CDROM_PACKET_SIZE);
-    cgc.buffer = (unsigned char *)pvBuf;
+    cgc.buffer = (unsigned char *)pThis->pbDoubleBuffer;
     cgc.buflen = *pcbBuf;
     cgc.stat = 0;
     Assert(cbSense >= sizeof(struct request_sense));
@@ -471,6 +475,14 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
                 cgc.sense->sense_key = SCSI_SENSE_ILLEGAL_REQUEST;
             Log2(("%s: error status %d, rc=%Rrc\n", __FUNCTION__, cgc.stat, rc));
         }
+    }
+    switch (enmTxDir)
+    {
+        case PDMBLOCKTXDIR_FROM_DEVICE:
+            memcpy(pvBuf, pThis->pbDoubleBuffer, *pcbBuf);
+            break;
+        default:
+            ;
     }
     Log2(("%s: after ioctl: cgc.buflen=%d txlen=%d\n", __FUNCTION__, cgc.buflen, *pcbBuf));
     /* The value of cgc.buflen does not reliably reflect the actual amount
@@ -721,6 +733,11 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
         /*
          * Override stuff.
          */
+#ifdef RT_OS_LINUX
+        pThis->pbDoubleBuffer = RTMemAlloc(SCSI_MAX_BUFFER_SIZE);
+        if (!pThis->pbDoubleBuffer)
+            return VERR_NO_MEMORY;
+#endif
 
 #ifndef RT_OS_L4 /* Passthrough is not supported on L4 yet */
         bool fPassthrough;
@@ -775,6 +792,20 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
     return rc;
 }
 
+/** @copydoc FNPDMDRVDESTRUCT */
+DECLCALLBACK(void) drvHostDvdDestruct(PPDMDRVINS pDrvIns)
+{
+#ifdef RT_OS_LINUX
+    PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
+
+    if (pThis->pbDoubleBuffer)
+    {
+        RTMemFree(pThis->pbDoubleBuffer);
+        pThis->pbDoubleBuffer = NULL;
+    }
+#endif
+    return DRVHostBaseDestruct(pDrvIns);
+}
 
 /**
  * Block driver registration record.
@@ -798,7 +829,7 @@ const PDMDRVREG g_DrvHostDVD =
     /* pfnConstruct */
     drvHostDvdConstruct,
     /* pfnDestruct */
-    DRVHostBaseDestruct,
+    drvHostDvdDestruct,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
