@@ -49,7 +49,8 @@ OTHER_CLEAN += \
 	$(VBOX_VERSION_STAMP) \
 	$(wildcard $(PATH_OUT)/version-stamp-*.*.*) \
 	$(VBOX_SVN_REV_KMK).ts \
-	$(VBOX_SVN_REV_KMK)
+	$(VBOX_SVN_REV_KMK) \
+	$(PATH_OUT)/GCCConfig.kmk
 
 
 ifndef VBOX_ONLY_DOCS
