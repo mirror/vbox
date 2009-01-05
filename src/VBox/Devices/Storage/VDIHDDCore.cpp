@@ -1069,13 +1069,13 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
         rc = VERR_VD_IMAGE_READ_ONLY;
-        goto out;
+        goto outfail;
     }
 
     if (!VALID_PTR(pvBuf) || !cbToWrite)
     {
         rc = VERR_INVALID_PARAMETER;
-        goto out;
+        goto outfail;
     }
 
     /* No size check here, will do that later.  For dynamic images which are
@@ -1120,13 +1120,13 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                                + (pImage->offStartData + pImage->offStartBlockData);
             rc = RTFileWriteAt(pImage->File, u64Offset, pvBuf, cbToWrite, NULL);
             if (RT_FAILURE(rc))
-                goto out;
+                goto outfail;
             pImage->paBlocks[uBlock] = cBlocksAllocated;
             setImageBlocksAllocated(&pImage->Header, cBlocksAllocated + 1);
 
             rc = vdiUpdateBlockInfo(pImage, uBlock);
             if (RT_FAILURE(rc))
-                goto out;
+                goto outfail;
 
             *pcbPreRead = 0;
             *pcbPostRead = 0;
@@ -1147,10 +1147,12 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                            + (pImage->offStartData + pImage->offStartBlockData + offWrite);
         rc = RTFileWriteAt(pImage->File, u64Offset, pvBuf, cbToWrite, NULL);
     }
+
+out:
     if (pcbWriteProcess)
         *pcbWriteProcess = cbToWrite;
 
-out:
+outfail:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
