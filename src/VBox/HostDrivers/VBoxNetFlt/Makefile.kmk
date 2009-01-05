@@ -267,7 +267,8 @@ ifeq ($(KBUILD_TARGET),linux)
 	$(PATH_VBoxNetFlt-src)/Makefile
  VBoxNetFlt-src_CLEAN   = \
 	$(PATH_VBoxNetFlt-src)/dkms.conf \
-	$(PATH_VBoxNetFlt-src)/Makefile
+	$(PATH_VBoxNetFlt-src)/Makefile	\
+	$(PATH_TARGET)/VBoxNetFlt-src-1.dep
 
  VBoxNetFlt-sh_INST    = bin/src/vboxnetflt/
  VBoxNetFlt-sh_MODE    = a+rx,u+w
