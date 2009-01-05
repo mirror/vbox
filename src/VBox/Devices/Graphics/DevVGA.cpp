@@ -1185,7 +1185,7 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
 #ifndef VBOX
         ret = s->vram_ptr[addr];
 #else /* VBOX */
-# ifdef IN_RING0
+# ifndef IN_RC
         /* If all planes are accessible, then map the page to the frame buffer and make it writable. */
         if (   (s->sr[2] & 3) == 3
             && !vga_is_dirty(s, addr))
@@ -1196,7 +1196,7 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
             vga_set_dirty(s, addr);
             s->fRemappedVGA = true;
         }
-# endif /* IN_RING0 */
+# endif /* IN_RC */
         VERIFY_VRAM_READ_OFF_RETURN(s, addr, *prc);
         ret = s->CTX_SUFF(vram_ptr)[addr];
 #endif /* VBOX */
