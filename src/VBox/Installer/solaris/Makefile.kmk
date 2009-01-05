@@ -57,7 +57,7 @@ VBIPKG_FILENAME = VirtualBoxKern-$(VBOX_VERSION_STRING)-SunOS-r$(VBOX_SVN_REV)
 #
 # Targets
 #
-PROGRAMS += VBoxZoneAccess
+PROGRAMS        += VBoxZoneAccess
 INSTALLS        += solaris-doc
 PACKING         += $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE)
 
@@ -73,7 +73,7 @@ VBoxZoneAccess_DEPS     = $(VBOX_SVN_REV_KMK)
 VBoxZoneAccess_SOURCES  = VBoxZoneAccess.c
 VBoxZoneAccess_LIBS     = $(LIB_RUNTIME)
 
-
+#
 # Solaris installs.
 #
 solaris-doc_INST = bin/
@@ -301,6 +301,8 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQtXml.so.4            $(SOLARIS_INST_DIR)/libVBoxQtXml.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQtSql.so.4            $(SOLARIS_INST_DIR)/libVBoxQtSql.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQt3Support.so.4       $(SOLARIS_INST_DIR)/libVBoxQt3Support.so.4,)
+	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2 $(SOLARIS_INST_DIR)/libSDL-1.2.so.0,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/bin/qtconfig      $(SOLARIS_INST_DIR)/VBoxQtconfig,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-webservice.xml         $(SOLARIS_INST_DIR)/virtualbox-webservice.xml,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh                 $(SOLARIS_INST_DIR)/smf-vboxwebsrv.sh,)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                          $(SOLARIS_INST_DIR)/virtualbox-zoneaccess.xml
