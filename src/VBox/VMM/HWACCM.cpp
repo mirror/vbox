@@ -376,6 +376,10 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
 # else
         Assert(pVCpu->hwaccm.s.paStatExitReasonR0 != NIL_RTR0PTR);
 # endif
+
+        PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
+        /* Magic marker for searching in crash dumps. */
+        strcpy((char *)pCache->aMagic, "VMCSCACHE Magic");
     }
 #endif /* VBOX_WITH_STATISTICS */
     return VINF_SUCCESS;
@@ -1209,7 +1213,6 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
 
         /* Magic marker for searching in crash dumps. */
         strcpy((char *)pCache->aMagic, "VMCSCACHE Magic");
-
     }
 }
 
