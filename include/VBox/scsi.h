@@ -32,6 +32,8 @@
 
 #include <iprt/assert.h>
 
+#define SCSI_MAX_BUFFER_SIZE (100 * _1K)
+
 
 /**
  * SCSI command opcode identifiers.
