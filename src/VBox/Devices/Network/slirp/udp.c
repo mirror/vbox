@@ -563,7 +563,7 @@ udp_emu(PNATState pData, struct socket *so, struct mbuf *m)
                 if (!req)
                 {
                     /* no entry for so, create new */
-                    req = (struct talk_request *)malloc(sizeof(struct talk_request));
+                    req = (struct talk_request *)RTMemAlloc(sizeof(struct talk_request));
                     req->udp_so = so;
                     req->tcp_so = solisten(0,
                                            OTOSIN(omsg, addr)->sin_addr.s_addr,

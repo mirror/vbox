@@ -69,11 +69,11 @@ add_exec(struct ex_list **ex_ptr, int do_pty, char *exec, int addr, int port)
     }
 
     tmp_ptr = *ex_ptr;
-    *ex_ptr = (struct ex_list *)malloc(sizeof(struct ex_list));
+    *ex_ptr = (struct ex_list *)RTMemAlloc(sizeof(struct ex_list));
     (*ex_ptr)->ex_fport = port;
     (*ex_ptr)->ex_addr = addr;
     (*ex_ptr)->ex_pty = do_pty;
-    (*ex_ptr)->ex_exec = strdup(exec);
+    (*ex_ptr)->ex_exec = RTStrDup(exec);
     (*ex_ptr)->ex_next = tmp_ptr;
     return 0;
 }

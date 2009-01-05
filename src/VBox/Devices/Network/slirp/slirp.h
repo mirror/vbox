@@ -27,9 +27,6 @@ typedef int socklen_t;
 #endif
 #define LOG_GROUP LOG_GROUP_DRV_NAT
 #include <VBox/log.h>
-#ifdef VBOX_WITH_SLIRP_MEMORY_CHECK
-# define RTMEM_WRAP_TO_EF_APIS
-#endif /* VBOX_WITH_SLIRP_MEMORY_CHECK */
 #include <iprt/mem.h>
 #ifdef RT_OS_WINDOWS
 # include <windows.h>
@@ -40,9 +37,14 @@ typedef int socklen_t;
 #include <iprt/dir.h>
 #include <VBox/types.h>
 
-#define malloc(a)       RTMemAlloc(a)
-#define free(a)         RTMemFree(a)
-#define realloc(a,b)    RTMemRealloc(a, b)
+#undef malloc
+#define malloc          dont_use_malloc
+#undef free
+#define free(a)         dont_use_free
+#undef realloc
+#define realloc(a,b)    dont_use_realloc
+#undef strdup
+#define strdup(a)       dont_use_strdup
 
 #include "slirp_config.h"
 
@@ -167,17 +169,6 @@ typedef unsigned char u_int8_t;
 
 #ifdef GETTIMEOFDAY_ONE_ARG
 # define gettimeofday(x, y) gettimeofday(x)
-#endif
-
-/* Systems lacking strdup() definition in <string.h>. */
-#if defined(ultrix)
-char *strdup _P((const char *));
-#endif
-
-/* Systems lacking malloc() definition in <stdlib.h>. */
-#if defined(ultrix) || defined(hcx)
-void *malloc _P((size_t arg));
-void free _P((void *ptr));
 #endif
 
 #ifndef HAVE_INET_ATON
