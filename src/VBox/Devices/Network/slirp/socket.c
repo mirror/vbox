@@ -87,7 +87,7 @@ sofree(PNATState pData, struct socket *so)
     if(so->so_next && so->so_prev)
         remque(pData, so);  /* crashes if so is not in a queue */
 
-    free(so);
+    RTMemFree(so);
 }
 
 /*
@@ -627,14 +627,14 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 
     if ((so = socreate()) == NULL)
     {
-        /* free(so);      Not sofree() ??? free(NULL) == NOP */
+        /* RTMemFree(so);      Not sofree() ??? free(NULL) == NOP */
         return NULL;
     }
 
     /* Don't tcp_attach... we don't need so_snd nor so_rcv */
     if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL)
     {
-        free(so);
+        RTMemFree(so);
         return NULL;
     }
     insque(pData, so,&tcb);
@@ -891,7 +891,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
             break;
         }
     }
-    free(icm);
+    RTMemFree(icm);
 }
 
 #ifdef RT_OS_WINDOWS

@@ -152,7 +152,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
                 tcpstat.tcps_rcvduppack++;
                 tcpstat.tcps_rcvdupbyte += *tlenp;
                 m_freem(pData, m);
-                free(te);
+                RTMemFree(te);
                 tp->t_segqlen--;
                 tcp_reass_qsize--;
                 /*
@@ -191,7 +191,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
         nq = LIST_NEXT(q, tqe_q);
         LIST_REMOVE(q, tqe_q);
         m_freem(pData, q->tqe_m);
-        free(q);
+        RTMemFree(q);
         tp->t_segqlen--;
         tcp_reass_qsize--;
         q = nq;
@@ -234,7 +234,7 @@ present:
             m_freem(pData, q->tqe_m);
         else
             sbappend(pData, so, q->tqe_m);
-        free(q);
+        RTMemFree(q);
         tp->t_segqlen--;
         tcp_reass_qsize--;
         q = nq;
@@ -419,7 +419,7 @@ findso:
             goto dropwithreset;
         if (tcp_attach(pData, so) < 0)
         {
-            free(so); /* Not sofree (if it failed, it's not insqued) */
+            RTMemFree(so); /* Not sofree (if it failed, it's not insqued) */
             goto dropwithreset;
         }
 

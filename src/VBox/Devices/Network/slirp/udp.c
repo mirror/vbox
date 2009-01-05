@@ -638,7 +638,7 @@ udp_emu(PNATState pData, struct socket *so, struct mbuf *m)
                 {
                     temp_req = req_tbl;
                     req_tbl = req_tbl->next;
-                    free(temp_req);
+                    RTMemFree(temp_req);
                 }
                 else
                 {
@@ -649,7 +649,7 @@ udp_emu(PNATState pData, struct socket *so, struct mbuf *m)
                         if (so == req->udp_so)
                         {
                             temp_req->next = req_next;
-                            free(req);
+                            RTMemFree(req);
                             break;
                         }
                         else
