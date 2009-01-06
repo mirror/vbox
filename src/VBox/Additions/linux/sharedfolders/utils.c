@@ -120,7 +120,7 @@ sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,
                 inode->i_nlink = 1;
         }
         else {
-                inode->i_mode  = sf_g->fmode != ~0 ? (sf_g->fmode & 0x777): mode;
+                inode->i_mode  = sf_g->fmode != ~0 ? (sf_g->fmode & 0777): mode;
                 inode->i_mode &= ~sf_g->fmask;
                 inode->i_mode |= S_IFREG;
                 inode->i_op    = &sf_reg_iops;
