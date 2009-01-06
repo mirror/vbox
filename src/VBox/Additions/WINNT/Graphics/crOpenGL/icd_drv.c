@@ -277,11 +277,3 @@ BOOL APIENTRY DrvSwapBuffers(HDC hdc)
     stubSwapBuffers( window, 0 );
     return 1;
 }
-
-void APIENTRY DrvPresentBuffers(void)
-{
-}
-
-void APIENTRY DrvSetCallbackProcs(void)
-{
-}
