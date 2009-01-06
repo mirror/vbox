@@ -772,7 +772,7 @@ static void crVBoxHGCMDoDisconnect( CRConnection *conn )
             g_crvboxhgcm.conns[conn->index]->index = conn->index;
         }
         else g_crvboxhgcm.conns[conn->index] = NULL;
-            
+
         conn->type = CR_NO_CONNECTION;
     }
 
@@ -909,7 +909,7 @@ void crVBoxHGCMTearDown(void)
     cCons = g_crvboxhgcm.num_conns;
     for (i=0; i<cCons; i++)
     {
-        crNetDisconnect(g_crvboxhgcm.conns[0]);
+        crNetDisconnect(g_crvboxhgcm.conns[i]);
     }
     CRASSERT(0==g_crvboxhgcm.num_conns);
 
