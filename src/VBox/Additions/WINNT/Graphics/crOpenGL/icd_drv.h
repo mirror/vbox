@@ -55,9 +55,4 @@ BOOL APIENTRY DrvRealizeLayerPalette(HDC hdc, int iLayerPlane, BOOL bRealize);
 BOOL APIENTRY DrvSwapLayerBuffers(HDC hdc, UINT fuPlanes);
 BOOL APIENTRY DrvSwapBuffers(HDC hdc);
 
-/*temp stub for vista64*/
-void APIENTRY DrvPresentBuffers(void);
-void APIENTRY DrvSetCallbackProcs(void);
-
-
 #endif /* __ICDDRV_H__ */
