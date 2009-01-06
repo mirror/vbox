@@ -131,7 +131,7 @@ ifeq ($(KERNELRELEASE),)
                  kernel. Specify KERN_INCL=<directory> and run Make again)
  endif
 
- # module install dir.
+ # module install dir, only for current kernel
  ifneq ($(filter install install_rpm,$(MAKECMDGOALS)),)
   ifndef MODULE_DIR
    MODULE_DIR_TST := /lib/modules/$(shell uname -r)
@@ -173,6 +173,7 @@ $(warning dbg: MODULE_DIR   = $(MODULE_DIR))
 $(warning dbg: KERN_VERSION = $(KERN_VERSION))
 endif
 
+KBUILD_VERBOSE ?= 1
 
 #
 # Compiler options
@@ -230,7 +231,7 @@ all: $(MODULE)
 obj-m += $(MODULE).o
 
 $(MODULE):
-	$(MAKE) KBUILD_VERBOSE=1 -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
+	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
 
 endif
 

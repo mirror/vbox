@@ -55,6 +55,11 @@ else
  VBOX_LNX_ADD_BIN_COPY_SYMBOLS      = objcopy -g -R .comment
 endif
 
+INSTALLS += GuestDrivers-src
+GuestDrivers-src_INST = bin/additions/src/
+GuestDrivers-src_MODE = a+r,u+w
+GuestDrivers-src_SOURCES = Makefile
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
 
