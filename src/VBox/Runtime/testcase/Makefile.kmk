@@ -109,6 +109,8 @@ PROGRAMS.linux += \
 	tstSemMutex
 PROGRAMS.l4 += \
 	tstIoCtl
+PROGRAMS.darwin += \
+	tstDarwinSched
 SYSMODS += \
 	tstLdrObj \
 	tstLdrObjR0
@@ -138,6 +140,8 @@ tstCritSect_SOURCES = tstCritSect.cpp
 
 tstCritSectW32_SOURCES = tstCritSect.cpp
 tstCritSectW32_DEFS = TRY_WIN32_CRIT
+
+tstDarwinSched_SOURCES = tstDarwinSched.cpp
 
 tstDeadlock_SOURCES = tstDeadlock.cpp
 
