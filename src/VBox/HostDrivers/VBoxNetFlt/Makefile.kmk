@@ -128,15 +128,13 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNotify.dll: $$(TARGET_VBoxNetFltNotif
 $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
 		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.sys \
 		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNotify.dll \
-		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf \
-		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat
+		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf
 	$(call MSG_TOOL,Inf2Cat,VBoxNetFlt-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
 $(PATH_TARGET)/VBoxNetFltMpCat.dir/VBoxNetFlt_m.cat: \
 		$(PATH_TARGET)/VBoxNetFltMpCat.dir/VBoxNetFlt.sys \
-		$(PATH_TARGET)/VBoxNetFltMpCat.dir/VBoxNetFlt_m.inf \
-		$(PATH_TARGET)/VBoxNetFltMpCat.dir/VBoxNetFlt_m.cat
+		$(PATH_TARGET)/VBoxNetFltMpCat.dir/VBoxNetFlt_m.inf
 	$(call MSG_TOOL,Inf2Cat,VBoxNetFlt-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
