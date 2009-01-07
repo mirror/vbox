@@ -10237,6 +10237,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The created filter can then be added to the list of filters using
         <link to="#insertDeviceFilter()"/>.
 
+        <result name="VBOX_E_INVALID_VM_STATE">
+          The virtual machine is not mutable.
+        </result>
+
         <see>#deviceFilters</see>
       </desc>
       <param name="name" type="wstring" dir="in">
@@ -10265,6 +10269,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           error.
         </note>
 
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is not mutable.
+        </result>
+        <result name="E_INVALIDARG">
+          USB device filter not created within this VirtualBox instance.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          USB device filter already in list.
+        </result>
+
         <see>#deviceFilters</see>
       </desc>
       <param name="position" type="unsigned long" dir="in">
@@ -10285,6 +10299,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         the list will produce an error.
 
         <see>#deviceFilters</see>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is not mutable.
+        </result>
+        <result name="E_INVALIDARG">
+          USB device filter list empty or invalid @a position.
+        </result>
+
       </desc>
       <param name="position" type="unsigned long" dir="in">
         <desc>Position to remove the filter from.</desc>
