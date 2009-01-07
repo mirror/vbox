@@ -155,6 +155,7 @@ NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadUserWaitNoResume
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpOnAll
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpOnOthers
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpOnSpecific
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpIsCpuWorkPending
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogRelDefaultInstance - not necessary.
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogSetDefaultInstanceThread
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogLogger            - can't wrap this buster.
