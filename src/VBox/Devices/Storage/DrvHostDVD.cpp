@@ -631,12 +631,14 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
     return rc;
 }
 
+
 #ifdef VBOX_WITH_SUID_WRAPPER
 /* These functions would have to go into a seperate solaris binary with
  * the setuid permission set, which would run the user-SCSI ioctl and
  * return the value. BUT... this might be prohibitively slow.
  */
-#ifdef RT_OS_SOLARIS
+# ifdef RT_OS_SOLARIS
+
 /**
  * Checks if the current user is authorized using Solaris' role-based access control.
  * Made as a seperate function with so that it need not be invoked each time we need
@@ -653,6 +655,7 @@ static int solarisCheckUserAuth()
 
     return VINF_SUCCESS;
 }
+
 
 /**
  * Setuid wrapper to gain root access.
@@ -675,6 +678,7 @@ static int solarisEnterRootMode(uid_t *pEffUserID)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Setuid wrapper to relinquish root access.
  *
@@ -696,10 +700,28 @@ static int solarisExitRootMode(uid_t *pEffUserID)
     }
     return VINF_SUCCESS;
 }
-#endif   /* RT_OS_SOLARIS */
-#endif
+
+# endif   /* RT_OS_SOLARIS */
+#endif /* VBOX_WITH_SUID_WRAPPER */
+
 
 /* -=-=-=-=- driver interface -=-=-=-=- */
+
+
+/** @copydoc FNPDMDRVDESTRUCT */
+DECLCALLBACK(void) drvHostDvdDestruct(PPDMDRVINS pDrvIns)
+{
+#ifdef RT_OS_LINUX
+    PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
+
+    if (pThis->pbDoubleBuffer)
+    {
+        RTMemFree(pThis->pbDoubleBuffer);
+        pThis->pbDoubleBuffer = NULL;
+    }
+#endif
+    return DRVHostBaseDestruct(pDrvIns);
+}
 
 
 /**
@@ -734,7 +756,7 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
          * Override stuff.
          */
 #ifdef RT_OS_LINUX
-        pThis->pbDoubleBuffer = RTMemAlloc(SCSI_MAX_BUFFER_SIZE);
+        pThis->pbDoubleBuffer = (uint8_t *)RTMemAlloc(SCSI_MAX_BUFFER_SIZE);
         if (!pThis->pbDoubleBuffer)
             return VERR_NO_MEMORY;
 #endif
@@ -792,20 +814,6 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
     return rc;
 }
 
-/** @copydoc FNPDMDRVDESTRUCT */
-DECLCALLBACK(void) drvHostDvdDestruct(PPDMDRVINS pDrvIns)
-{
-#ifdef RT_OS_LINUX
-    PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
-
-    if (pThis->pbDoubleBuffer)
-    {
-        RTMemFree(pThis->pbDoubleBuffer);
-        pThis->pbDoubleBuffer = NULL;
-    }
-#endif
-    return DRVHostBaseDestruct(pDrvIns);
-}
 
 /**
  * Block driver registration record.
