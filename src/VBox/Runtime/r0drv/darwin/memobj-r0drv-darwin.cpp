@@ -404,16 +404,19 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
 int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb)
 {
     /*
-     * Validate the address range and create a descriptor for it.
+     * Create a descriptor for it (the validation is always true on intel macs, but
+     * as it doesn't harm us keep it in).
      */
     int rc = VERR_ADDRESS_TOO_BIG;
-    IOPhysicalAddress PhysAddr = Phys;
-    if (PhysAddr == Phys)
+    IOAddressRange aRanges[1] = { Phys, cb };
+    if (    aRanges[0].address == Phys
+        &&  aRanges[0].length == cb)
     {
-        IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withPhysicalAddress(PhysAddr, cb, kIODirectionInOut);
+        IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddressRanges(&aRanges[0], RT_ELEMENTS(aRanges),
+                                                                             kIODirectionInOut, NULL /*task*/);
         if (pMemDesc)
         {
-            Assert(PhysAddr == pMemDesc->getPhysicalAddress());
+            Assert(Phys == pMemDesc->getPhysicalAddress());
 
             /*
              * Create the IPRT memory object.
@@ -421,7 +424,7 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
             PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_PHYS, NULL, cb);
             if (pMemDarwin)
             {
-                pMemDarwin->Core.u.Phys.PhysBase = PhysAddr;
+                pMemDarwin->Core.u.Phys.PhysBase = Phys;
                 pMemDarwin->Core.u.Phys.fAllocated = false;
                 pMemDarwin->pMemDesc = pMemDesc;
                 *ppMem = &pMemDarwin->Core;
@@ -431,9 +434,11 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
             rc = VERR_NO_MEMORY;
             pMemDesc->release();
         }
+        else
+            rc = VERR_MEMOBJ_INIT_FAILED;
     }
     else
-        AssertMsgFailed(("%#llx\n", (unsigned long long)Phys));
+        AssertMsgFailed(("%#llx %llx\n", (unsigned long long)Phys, (unsigned long long)cb));
     return rc;
 }
 
