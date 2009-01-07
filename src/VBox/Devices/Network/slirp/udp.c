@@ -237,10 +237,10 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         udp_emu(pData, so, m);
 
     ttl = ip->ip_ttl = save_ip.ip_ttl;
-    ret = setsockopt(so->s, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
-    if (ret < 0) {
-        LogRel(("NAT: Error (%s) occurred while setting TTL(%d) attribute of IP packet to socket %R[natsock]\n", strerror(errno), ip->ip_ttl, so));
-    }
+    ret = setsockopt(so->s, IPPROTO_IP, IP_TTL, (const char*)&ttl, sizeof(ttl));
+    if (ret < 0)
+        LogRel(("NAT: Error (%s) occurred while setting TTL(%d) attribute "
+                "of IP packet to socket %R[natsock]\n", strerror(errno), ip->ip_ttl, so));
 
     if (sosendto(pData, so, m) == -1)
     {
