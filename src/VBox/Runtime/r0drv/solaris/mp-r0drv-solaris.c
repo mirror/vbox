@@ -123,6 +123,11 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
     return ncpus_online;
 }
 
+RTDECL(bool) RTMpIsCpuWorkPending()
+{
+    /** @todo (not used on non-Windows platforms yet */
+    return false;
+}
 
 
 /**

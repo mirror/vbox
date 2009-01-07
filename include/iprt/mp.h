@@ -306,6 +306,15 @@ RTDECL(int) RTMpNotificationRegister(PFNRTMPNOTIFICATION pfnCallback, void *pvUs
  */
 RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pvUser);
 
+
+/**
+ * Check if there's work (DPCs on Windows) pending on the current CPU
+ *
+ * @return true if there's pending work on the current CPU, false otherwise
+ *
+ */
+RTDECL(bool) RTMpIsCpuWorkPending();
+
 #endif /* IN_RING0 */
 
 /** @} */
