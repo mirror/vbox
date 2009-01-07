@@ -1487,7 +1487,13 @@ static bool ataReadSectorsSS(ATADevState *s)
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
             LogRel(("PIIX3 ATA: LUN#%d: disk read error (rc=%Rrc iSector=%#RX64 cSectors=%#RX32)\n",
                     s->iLUN, rc, iLBA, cSectors));
-        ataCmdError(s, ID_ERR);
+
+        /*
+         * Check if we got interrupted. We don't need to set status variables
+         * because the request was aborted.
+         */
+        if (rc != VERR_INTERRUPTED)
+            ataCmdError(s, ID_ERR);
     }
     /** @todo implement redo for iSCSI */
     return false;
@@ -1534,7 +1540,13 @@ static bool ataWriteSectorsSS(ATADevState *s)
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
             LogRel(("PIIX3 ATA: LUN#%d: disk write error (rc=%Rrc iSector=%#RX64 cSectors=%#RX32)\n",
                     s->iLUN, rc, iLBA, cSectors));
-        ataCmdError(s, ID_ERR);
+
+        /*
+         * Check if we got interrupted. We don't need to set status variables
+         * because the request was aborted.
+         */
+        if (rc != VERR_INTERRUPTED)
+            ataCmdError(s, ID_ERR);
     }
     /** @todo implement redo for iSCSI */
     return false;
@@ -1750,7 +1762,13 @@ static bool atapiReadSS(ATADevState *s)
     {
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
             LogRel(("PIIX3 ATA: LUN#%d: CD-ROM read error, %d sectors at LBA %d\n", s->iLUN, cSectors, s->iATAPILBA));
-        atapiCmdErrorSimple(s, SCSI_SENSE_MEDIUM_ERROR, SCSI_ASC_READ_ERROR);
+
+        /*
+         * Check if we got interrupted. We don't need to set status variables
+         * because the request was aborted.
+         */
+        if (rc != VERR_INTERRUPTED)
+            atapiCmdErrorSimple(s, SCSI_SENSE_MEDIUM_ERROR, SCSI_ASC_READ_ERROR);
     }
     return false;
 }
@@ -3804,6 +3822,23 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
             val &= ~ATA_DEVCTL_HOB;
             Log2(("%s: ignored setting HOB\n", __FUNCTION__));
         }
+
+        /*
+         * The thread might be stuck in an I/O operation
+         * due to a high I/O load on the host. (see @bugref{3301})
+         * To perform the reset successfully
+         * we interrupt the operation by sending a signal to the thread.
+         * This works only on POSIX hosts (Windows has a CancelSynchronousIo function which
+         * does the same but it was introduced with Vista) but so far
+         * this hang was only observed on Linux and Mac OS X.
+         *
+         * This is a workaround and needs to be solved properly.
+         */
+#ifndef RT_OS_WINDOWS
+        RTThreadPoke(pCtl->AsyncIOThread);
+#endif
+
+        /* Issue the reset request now. */
         ataAsyncIOPutRequest(pCtl, &ataResetARequest);
 #else /* !IN_RING3 */
         AssertMsgFailed(("RESET handling is too complicated for GC\n"));
@@ -4267,6 +4302,11 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
         while (pCtl->fRedoIdle)
         {
             rc = RTSemEventWait(pCtl->SuspendIOSem, RT_INDEFINITE_WAIT);
+            /* Continue if we got a signal by RTThreadPoke(). 
+             * We will get notified if there is a request to process.
+             */
+            if (RT_UNLIKELY(rc == VERR_INTERRUPTED))
+                continue;
             if (RT_FAILURE(rc) || pCtl->fShutdown)
                 break;
 
@@ -4274,16 +4314,24 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
         }
 
         /* Wait for work.  */
-        if (pReq == NULL)
+        while (pReq == NULL)
         {
             LogBird(("ata: %x: going to sleep...\n", pCtl->IOPortBase1));
             rc = RTSemEventWait(pCtl->AsyncIOSem, RT_INDEFINITE_WAIT);
             LogBird(("ata: %x: waking up\n", pCtl->IOPortBase1));
-            if (RT_FAILURE(rc) || pCtl->fShutdown)
+            /* Continue if we got a signal by RTThreadPoke(). 
+             * We will get notified if there is a request to process.
+             */
+            if (RT_UNLIKELY(rc == VERR_INTERRUPTED))
+                continue;
+            if (RT_FAILURE(rc) || RT_UNLIKELY(pCtl->fShutdown))
                 break;
 
             pReq = ataAsyncIOGetCurrentRequest(pCtl);
         }
+
+        if (RT_FAILURE(rc) || pCtl->fShutdown)
+            break;
 
         if (pReq == NULL)
             continue;
