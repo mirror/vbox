@@ -337,8 +337,6 @@ static int ssmR3LazyInit(PVM pVM)
  */
 static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
 {
-    char szTmp[128];
-
     /*
      * String table containg pairs of variable and value string.
      * Terminated by two empty strings.

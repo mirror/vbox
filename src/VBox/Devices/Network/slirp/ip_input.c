@@ -525,7 +525,8 @@ ip_slowtimo(PNATState pData)
 
             fpp = fp;
             fp = TAILQ_NEXT(fp, ipq_list);
-            if(--fpp->ipq_ttl == 0) {
+            if(--fpp->ipq_ttl == 0)
+            {
                 ipstat.ips_fragtimeout += fpp->ipq_nfrags;
                 ip_freef(pData, &ipq[i], fpp);
             }

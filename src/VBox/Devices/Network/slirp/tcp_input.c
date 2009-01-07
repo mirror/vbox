@@ -514,7 +514,8 @@ findso:
          */
 #if 0
         if (ts_present && SEQ_LEQ(ti->ti_seq, tp->last_ack_sent) &&
-                SEQ_LT(tp->last_ack_sent, ti->ti_seq + ti->ti_len)) {
+                SEQ_LT(tp->last_ack_sent, ti->ti_seq + ti->ti_len))
+        {
             tp->ts_recent_age = tcp_now;
             tp->ts_recent = ts_val;
         }

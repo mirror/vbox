@@ -278,7 +278,8 @@ tcp_timers(PNATState pData, register struct tcpcb *tp, int timer)
             if (tp->t_state < TCPS_ESTABLISHED)
                 goto dropit;
 /*          if (tp->t_socket->so_options & SO_KEEPALIVE && */
-            if ((so_options) && tp->t_state <= TCPS_CLOSE_WAIT) {
+            if ((so_options) && tp->t_state <= TCPS_CLOSE_WAIT)
+            {
                 if (tp->t_idle >= tcp_keepidle + tcp_maxidle)
                     goto dropit;
                 /*
