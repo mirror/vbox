@@ -113,8 +113,8 @@ VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_LIB))
 .DELETE_ON_ERROR:
 
 # Notify about important kBuild updates.
-ifneq ($(call int-ge,$(KMK_REVISION),1777),1)
- $(error You must update kBuild! KMK_REVISION=$(KMK_REVISION) KBUILD_PATH=$(KBUILD_PATH))
+ifneq ($(call if-expr, $(KMK_REVISION) >= 2182 && $(KBUILD_KMK_REVISION) >= 2206,fine,old),fine)
+ $(error You must update kBuild! KMK_REVISION=$(KMK_REVISION) KBUILD_KMK_REVISION=$(KBUILD_KMK_REVISION) KBUILD_PATH=$(KBUILD_PATH))
 endif
 
 #
@@ -1895,7 +1895,7 @@ ifeq ($(KBUILD_TARGET),solaris)
   VBOX_SOLARIS_10 = 1
   # We cannot compile additions on Solaris 10, due kernel interface deps
   VBOX_WITHOUT_ADDITIONS := 1
-  VBOX_WITH_ADDITIONS = 
+  VBOX_WITH_ADDITIONS =
  endif
 endif
 
