@@ -687,7 +687,8 @@ Drivers_SOURCES.solaris = \
 	Audio/solaudio.c \
 	$(if $(VBOX_SOLARIS_10),,Network/DrvTAP.cpp) \
 	Storage/DrvHostBase.cpp \
-	Storage/DrvHostDVD.cpp
+	Storage/DrvHostDVD.cpp \
+	Serial/DrvHostSerial.cpp
  ifdef VBOX_WITH_CROSSBOW
   Drivers_SOURCES += Network/solaris/vbox-libdlpi.cpp
   Drivers_DEFS += VBOX_WITH_CROSSBOW
