@@ -435,7 +435,7 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
                 "this VirtualBox instance"));
 
     if (filter->mInList)
-        return setError (E_INVALIDARG,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("The given USB device filter is already in the list"));
 
     /* backup the list before modification */
