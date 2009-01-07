@@ -160,6 +160,7 @@ INTNETR3DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     {
         pRef->pfnDestructor(pRef, pRef->pvUser1, pRef->pvUser2);
         RTMemFree(pRef);
+        return VINF_OBJECT_DESTROYED;
     }
     return VINF_SUCCESS;
 }
