@@ -133,7 +133,7 @@ typedef struct DRVHOSTBASE
 #ifdef RT_OS_LINUX
     /** Double buffer required for ioctl with the Linux kernel as long as we use
      * remap_pfn_range() instead of vm_insert_page(). */
-    void                    *pbDoubleBuffer;
+    uint8_t                *pbDoubleBuffer;
 #endif
 
 
