@@ -88,10 +88,7 @@
 #include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/ldr.h>
-
-#if defined (Q_OS_MACX) || defined (Q_OS_SOLARIS) /* platform info */
 #include <iprt/system.h>
-#endif
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 #include <iprt/process.h>
@@ -2635,15 +2632,13 @@ QString VBoxGlobal::platformInfo()
         else
             distrib = QString ("Unknown %1");
     }
-    else
+    else /** @todo Windows Server 2008 == vista? Probably not... */
         distrib = QString ("Unknown %1");
     distrib = distrib.arg (sp);
     QString version = QString ("%1.%2").arg (major).arg (minor);
     QString kernel = QString ("%1").arg (build);
     platform += QString (" [Distribution: %1 | Version: %2 | Build: %3]")
         .arg (distrib).arg (version).arg (kernel);
-#elif defined (Q_OS_OS2)
-    // TODO: add sys info for os2 if any...
 #elif defined (Q_OS_LINUX)
     /* Get script path */
     char szAppPrivPath [RTPATH_MAX];
@@ -2654,22 +2649,24 @@ QString VBoxGlobal::platformInfo()
         Process::singleShot (QString (szAppPrivPath) + "/VBoxSysInfo.sh");
     if (!result.isNull())
         platform += QString (" [%1]").arg (QString (result).trimmed());
-#elif defined (Q_OS_MACX) || defined (Q_OS_SOLARIS) || defined (Q_OS_FREEBSD)
+#else
+    /* Use RTSystemQueryOSInfo. */
     char szTmp[256];
     QStringList components;
-    int vrc = RTSystemQueryOSInfo (RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
-    if (RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW)
+    int vrc = RTSystemQueryOSInfo (RTSYSOSINFO_PRODUCT, szTmp, sizeof (szTmp));
+    if ((RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
         components << QString ("Product: %1").arg (szTmp);
-    vrc = RTSystemQueryOSInfo (RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
-    if (RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW)
+    vrc = RTSystemQueryOSInfo (RTSYSOSINFO_RELEASE, szTmp, sizeof (szTmp));
+    if ((RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
         components << QString ("Release: %1").arg (szTmp);
-    vrc = RTSystemQueryOSInfo (RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
-    if (RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW)
+    vrc = RTSystemQueryOSInfo (RTSYSOSINFO_VERSION, szTmp, sizeof (szTmp));
+    if ((RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
         components << QString ("Version: %1").arg (szTmp);
-    vrc = RTSystemQueryOSInfo (RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
-    if (RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW)
+    vrc = RTSystemQueryOSInfo (RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof (szTmp));
+    if ((RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
         components << QString ("SP: %1").arg (szTmp);
-    platform += QString (" [%1]").arg (components.join (" | "));
+    if (!components.isEmpty())
+        platform += QString (" [%1]").arg (components.join (" | "));
 #endif
 
     return platform;
