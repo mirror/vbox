@@ -339,29 +339,6 @@ STDMETHODIMP MachineDebugger::COMSETTER(PATMEnabled) (BOOL aEnable)
 }
 
 /**
- * Set the new patch manager enabled flag.
- *
- * @returns COM status code
- * @param   new patch manager enabled flag
- */
-STDMETHODIMP MachineDebugger::InjectNMI()
-{
-    LogFlowThisFunc ((""));
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoWriteLock alock (this);
-
-    Console::SafeVMPtr pVM (mParent);
-    CheckComRCReturnRC (pVM.rc());
-
-    HWACCMR3InjectNMI(pVM);
-
-    return S_OK;
-}
-
-/**
  * Returns the current code scanner enabled flag.
  *
  * @returns COM status code
@@ -693,8 +670,10 @@ STDMETHODIMP MachineDebugger::ResetStats (IN_BSTR aPattern)
 {
     Console::SafeVMPtrQuiet pVM (mParent);
 
-    if (pVM.isOk())
-        STAMR3Reset (pVM, Utf8Str (aPattern).raw());
+    if (!pVM.isOk())
+        return E_FAIL;
+
+    STAMR3Reset (pVM, Utf8Str (aPattern).raw());
 
     return S_OK;
 }
@@ -709,8 +688,10 @@ STDMETHODIMP MachineDebugger::DumpStats (IN_BSTR aPattern)
 {
     Console::SafeVMPtrQuiet pVM (mParent);
 
-    if (pVM.isOk())
-        STAMR3Dump (pVM, Utf8Str (aPattern).raw());
+    if (!pVM.isOk())
+        return E_FAIL;
+
+    STAMR3Dump (pVM, Utf8Str (aPattern).raw());
 
     return S_OK;
 }
@@ -741,6 +722,29 @@ STDMETHODIMP MachineDebugger::GetStats (IN_BSTR aPattern, BOOL aWithDescriptions
      * Until that's done, this method is kind of useless for debugger statistics GUI because
      * of the amount statistics in a debug build. */
     Bstr (pszSnapshot).cloneTo (aStats);
+
+    return S_OK;
+}
+
+/**
+ * Set the new patch manager enabled flag.
+ *
+ * @returns COM status code
+ * @param   new patch manager enabled flag
+ */
+STDMETHODIMP MachineDebugger::InjectNMI()
+{
+    LogFlowThisFunc ((""));
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    Console::SafeVMPtr pVM (mParent);
+    CheckComRCReturnRC (pVM.rc());
+
+    HWACCMR3InjectNMI(pVM);
 
     return S_OK;
 }
