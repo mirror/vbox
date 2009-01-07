@@ -1821,8 +1821,8 @@ SUPR0DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBl
      */
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     AssertPtrReturn(pObj, VERR_INVALID_POINTER);
-    AssertMsgReturn(pObj->u32Magic == SUPDRVOBJ_MAGIC || pObj->u32Magic == SUPDRVOBJ_MAGIC + 1,
-                    ("Invalid pvObj=%p magic=%#x (expected %#x or %#x)\n", pvObj, pObj->u32Magic, SUPDRVOBJ_MAGIC, SUPDRVOBJ_MAGIC + 1),
+    AssertMsgReturn(pObj->u32Magic == SUPDRVOBJ_MAGIC || pObj->u32Magic == SUPDRVOBJ_MAGIC_DEAD,
+                    ("Invalid pvObj=%p magic=%#x (expected %#x or %#x)\n", pvObj, pObj->u32Magic, SUPDRVOBJ_MAGIC, SUPDRVOBJ_MAGIC_DEAD),
                     VERR_INVALID_PARAMETER);
 
     RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
@@ -1912,6 +1912,11 @@ SUPR0DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBl
  * The object is uniquely identified by pfnDestructor+pvUser1+pvUser2.
  *
  * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if not destroyed.
+ * @retval  VINF_OBJECT_DESTROYED if it's destroyed by this release call.
+ * @retval  VERR_INVALID_PARAMETER if the object isn't valid. Will assert in
+ *          string builds.
+ *
  * @param   pvObj           The identifier returned by SUPR0ObjRegister().
  * @param   pSession        The session which is referencing the object.
  */
@@ -1920,7 +1925,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     RTSPINLOCKTMP       SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
     PSUPDRVDEVEXT       pDevExt     = pSession->pDevExt;
     PSUPDRVOBJ          pObj        = (PSUPDRVOBJ)pvObj;
-    bool                fDestroy    = false;
+    int                 rc          = VERR_INVALID_PARAMETER;
     PSUPDRVUSAGE        pUsage;
     PSUPDRVUSAGE        pUsagePrev;
 
@@ -1944,6 +1949,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
         /*Log2(("SUPR0ObjRelease: pUsage=%p:{.pObj=%p, .pNext=%p}\n", pUsage, pUsage->pObj, pUsage->pNext));*/
         if (pUsage->pObj == pObj)
         {
+            rc = VINF_SUCCESS;
             AssertMsg(pUsage->cUsage >= 1 && pObj->cUsage >= pUsage->cUsage, ("glob %d; sess %d\n", pObj->cUsage, pUsage->cUsage));
             if (pUsage->cUsage > 1)
             {
@@ -1970,8 +1976,8 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
                     /*
                      * Object is to be destroyed, unlink it.
                      */
-                    pObj->u32Magic = SUPDRVOBJ_MAGIC + 1;
-                    fDestroy = true;
+                    pObj->u32Magic = SUPDRVOBJ_MAGIC_DEAD;
+                    rc = VINF_OBJECT_DESTROYED;
                     if (pDevExt->pObjs == pObj)
                         pDevExt->pObjs = pObj->pNext;
                     else
@@ -1996,7 +2002,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     /*
      * Call the destructor and free the object if required.
      */
-    if (fDestroy)
+    if (rc == VINF_OBJECT_DESTROYED)
     {
         Log(("SUPR0ObjRelease: destroying %p/%d (%p/%p) cpid=%RTproc pid=%RTproc dtor=%p\n",
              pObj, pObj->enmType, pObj->pvUser1, pObj->pvUser2, pObj->CreatorProcess, RTProcSelf(), pObj->pfnDestructor));
@@ -2010,7 +2016,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     }
 
     AssertMsg(pUsage, ("pvObj=%p\n", pvObj));
-    return pUsage ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
+    return rc;
 }
 
 
@@ -3572,7 +3578,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             for (pObj = pDevExt->pObjs; pObj; pObj = pObj->pNext)
                 if (RT_UNLIKELY((uintptr_t)pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImage))
                 {
-                    rc = VERR_SHARING_VIOLATION; /** @todo VERR_DANGLING_OBJECTS */
+                    rc = VERR_DANGLING_OBJECTS;
                     break;
                 }
         }
@@ -3582,7 +3588,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             for (pGenUsage = pSession->pUsage; pGenUsage; pGenUsage = pGenUsage->pNext)
                 if (RT_UNLIKELY((uintptr_t)pGenUsage->pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImage))
                 {
-                    rc = VERR_SHARING_VIOLATION; /** @todo VERR_DANGLING_OBJECTS */
+                    rc = VERR_DANGLING_OBJECTS;
                     break;
                 }
         }
@@ -3609,7 +3615,10 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
                 pImage->cUsage--;
         }
         else
+        {
             Log(("supdrvIOCtl_LdrFree: Dangling objects in %p/%s!\n", pImage->pvImage, pImage->szName));
+            rc = VINF_SUCCESS; /** @todo BRANCH-2.1: remove this after branching. */
+        }
     }
     else
     {
@@ -3621,7 +3630,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     }
 
     RTSemFastMutexRelease(pDevExt->mtxLdr);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 

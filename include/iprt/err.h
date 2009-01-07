@@ -494,6 +494,14 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VINF_END_OF_STRING                  83
 /** A page count is ouf of range. */
 #define VERR_PAGE_COUNT_OUT_OF_RANGE        (-84)
+/** Generic object destroyed status. */
+#define VERR_OBJECT_DESTROYED               (-85)
+/** Generic object was destroyed by the call status. */
+#define VINF_OBJECT_DESTROYED               85
+/** Generic dangling objects status. */
+#define VERR_DANGLING_OBJECTS               (-86)
+/** Generic dangling objects status. */
+#define VWRN_DANGLING_OBJECTS               86
 /** @} */
 
 
