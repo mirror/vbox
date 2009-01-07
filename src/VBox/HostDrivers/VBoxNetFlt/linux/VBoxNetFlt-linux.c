@@ -83,6 +83,10 @@
 # define VBOX_SKB_GSO_SEGMENT(skb) NULL
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) */
 
+#ifndef NET_IP_ALIGN
+# define NET_IP_ALIGN 2
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 12)
 unsigned dev_get_flags(const struct net_device *dev)
 {
