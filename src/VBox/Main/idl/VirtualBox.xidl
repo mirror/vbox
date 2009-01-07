@@ -11143,7 +11143,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="getRemoteConsole">
-      <desc>Returns the console object suitable for remote control.</desc>
+      <desc>
+        Returns the console object suitable for remote control.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
+      </desc>
       <param name="console" type="IConsole" dir="return"/>
     </method>
 
@@ -11151,7 +11161,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Assigns the machine object associated with this direct-type
         session or informs the session that it will be a remote one
-        (if machine = NULL).
+        (if @a machine == NULL).
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
       <param name="machine" type="IMachine" dir="in"/>
     </method>
@@ -11160,6 +11178,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Assigns the machine and the (remote) console object associated with
         this remote-type session.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+
       </desc>
       <param name="machine" type="IMachine" dir="in"/>
       <param name="console" type="IConsole" dir="in"/>
@@ -11170,6 +11193,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Updates the machine state in the VM process.
         Must be called only in certain cases
         (see the method implementation).
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
       <param name="aMachineState" type="MachineState" dir="in"/>
     </method>
@@ -11179,6 +11210,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Uninitializes (closes) this session. Used by VirtualBox to close
         the corresponding remote session when the direct session dies
         or gets closed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+
       </desc>
     </method>
 
@@ -11186,6 +11222,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Triggered when settings of the DVD drive object of the
         associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
     </method>
 
@@ -11193,6 +11237,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Triggered when settings of the floppy drive object of the
         associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
     </method>
 
@@ -11200,6 +11252,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Triggered when settings of a network adapter of the
         associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
       <param name="networkAdapter" type="INetworkAdapter" dir="in"/>
     </method>
@@ -11208,6 +11268,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Triggered when settings of a serial port of the
         associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
       <param name="serialPort" type="ISerialPort" dir="in"/>
     </method>
@@ -11216,6 +11284,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Triggered when settings of a parallel port of the
         associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
       <param name="parallelPort" type="IParallelPort" dir="in"/>
     </method>
@@ -11224,6 +11300,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Triggered when settings of the VRDP server object of the
         associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
     </method>
 
@@ -11231,6 +11315,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Triggered when settings of the USB controller object of the
         associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
     </method>
 
@@ -11244,6 +11336,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           therefore it could happen that these parameters were outdated by the
           time of processing this notification.
         </note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
       <param name="global" type="boolean" dir="in"/>
     </method>
@@ -11255,6 +11355,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <link to="IConsole::attachUSBDevice"/>) has completed.
         A @c null @a error object means success, otherwise it
         describes a failure.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
       <param name="device" type="IUSBDevice" dir="in"/>
       <param name="error" type="IVirtualBoxErrorInfo" dir="in"/>
@@ -11267,6 +11375,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         of machine termination or direct call to
         <link to="IConsole::detachUSBDevice"/>) has completed.
         A @c null @a error object means success, otherwise it
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
       <param name="id" type="uuid" dir="in"/>
       <param name="error" type="IVirtualBoxErrorInfo" dir="in"/>
@@ -11279,6 +11395,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         console callbacks
         <link to="IConsoleCallback::onCanShowWindow()"/>
         and <link to="IConsoleCallback::onShowWindow()"/>.
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
       </desc>
       <param name="check" type="boolean" dir="in"/>
       <param name="canShow" type="boolean" dir="out"/>
@@ -11290,6 +11411,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Called by <link to="IMachine::getGuestProperty()"/> and by
         <link to="IMachine::setGuestProperty()"/> in order to read and
         modify guest properties.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine session is not open.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type is not direct.
+        </result>
+
       </desc>
       <param name="name" type="wstring" dir="in"/>
       <param name="value" type="wstring" dir="in"/>
@@ -11304,6 +11433,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Return a list of the guest properties matching a set of patterns along
         with their values, time stamps and flags.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine session is not open.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type is not direct.
+        </result>
+
       </desc>
       <param name="patterns" type="wstring" dir="in">
         <desc>

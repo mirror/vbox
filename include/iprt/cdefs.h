@@ -801,7 +801,7 @@
  * @see RT_UNLIKELY
  */
 /** @def RT_UNLIKELY
- * Give the compiler a hint that an expression is highly unlikely hold true.
+ * Give the compiler a hint that an expression is highly unlikely to hold true.
  *
  * See the usage instructions give in the RT_LIKELY() docs.
  *
