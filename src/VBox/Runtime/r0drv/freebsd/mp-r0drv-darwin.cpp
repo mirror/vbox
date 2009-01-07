@@ -45,6 +45,12 @@ RTDECL(RTCPUID) RTMpCpuId(void)
     return curcpu; /** @todo is this right? */
 }
 
+RTDECL(bool) RTMpIsCpuWorkPending()
+{
+    /** @todo (not used on non-Windows platforms yet */
+    return false;
+}
+
 
 /** 
  * Wrapper between the native FreeBSD per-cpu callback and PFNRTWORKER 

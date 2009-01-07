@@ -113,6 +113,12 @@ RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
     return RTMpIsCpuOnline(idCpu);
 }
 
+RTDECL(bool) RTMpIsCpuWorkPending()
+{
+    /** @todo (not used on non-Windows platforms yet */
+    return false;
+}
+
 
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
