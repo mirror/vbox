@@ -132,11 +132,6 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 #endif
 }
 
-RTDECL(bool) RTMpIsCpuWorkPending()
-{
-    /** @todo (not used on non-Windows platforms yet */
-    return false;
-}
 
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
@@ -171,6 +166,13 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 #else
     return 1;
 #endif
+}
+
+
+RTDECL(bool) RTMpIsCpuWorkPending(void)
+{
+    /** @todo (not used on non-Windows platforms yet). */
+    return false;
 }
 
 

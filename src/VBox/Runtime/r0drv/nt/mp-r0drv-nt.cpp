@@ -113,7 +113,9 @@ RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
     return RTMpIsCpuOnline(idCpu);
 }
 
-RTDECL(bool) RTMpIsCpuWorkPending()
+
+/** @todo move down after RTMpGetOnlineCount. */
+RTDECL(bool) RTMpIsCpuWorkPending(void)
 {
     RTCPUID idCpuEntry = RTMpCpuId();
 

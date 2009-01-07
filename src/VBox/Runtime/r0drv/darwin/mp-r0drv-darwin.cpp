@@ -111,12 +111,6 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
     return RTMpIsCpuPossible(idCpu);
 }
 
-RTDECL(bool) RTMpIsCpuWorkPending()
-{
-    /** @todo (not used on non-Windows platforms yet */
-    return false;
-}
-
 
 RTDECL(PRTCPUSET) RTMpGetPresentSet(PRTCPUSET pSet)
 {
@@ -147,6 +141,13 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
 {
     /** @todo darwin R0 MP (rainy day) */
     return 0;
+}
+
+
+RTDECL(bool) RTMpIsCpuWorkPending(void)
+{
+    /** @todo (not used on non-Windows platforms yet). */
+    return false;
 }
 
 

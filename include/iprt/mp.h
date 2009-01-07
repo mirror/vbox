@@ -169,7 +169,6 @@ RTDECL(bool) RTMpIsCpuPresent(RTCPUID idCpu);
  */
 RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu);
 
-
 /**
  * Get the maximum frequency of a CPU.
  *
@@ -183,6 +182,14 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu);
 
 
 #ifdef IN_RING0
+
+/**
+ * Check if there's work (DPCs on Windows) pending on the current CPU.
+ *
+ * @return true if there's pending work on the current CPU, false otherwise.
+ */
+RTDECL(bool) RTMpIsCpuWorkPending(void);
+
 
 /**
  * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
@@ -305,15 +312,6 @@ RTDECL(int) RTMpNotificationRegister(PFNRTMPNOTIFICATION pfnCallback, void *pvUs
  * @param   pvUser          The user argument to the callback function.
  */
 RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pvUser);
-
-
-/**
- * Check if there's work (DPCs on Windows) pending on the current CPU
- *
- * @return true if there's pending work on the current CPU, false otherwise
- *
- */
-RTDECL(bool) RTMpIsCpuWorkPending();
 
 #endif /* IN_RING0 */
 
