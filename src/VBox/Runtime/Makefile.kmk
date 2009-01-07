@@ -1140,6 +1140,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	generic/mppresent-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm \
+	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
@@ -1191,6 +1192,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/RTMpIsCpuOnline-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
+	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
@@ -1267,6 +1269,7 @@ else  # !VBOX_WITH_SOLARIS_VBI
   	generic/RTMpGetOnlineSet-generic.cpp \
   	generic/RTMpGetSet-generic.cpp \
   	generic/RTMpIsCpuOnline-generic.cpp \
+	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
   	r0drv/generic/RTMpOn-r0drv-generic.cpp
  else
   # Use mp-r0drv-solaris.c.
@@ -1312,6 +1315,7 @@ RuntimeGuestR0_SOURCES.solaris = \
  	generic/RTMpIsCpuOnline-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/mppresent-generic.cpp \
+	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
  	r0drv/solaris/alloc-r0drv-solaris.c \
