@@ -11594,7 +11594,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         be set to <link to="MachineState_Aborted" /> on the server.
 
         Generally, it is recommended to close all open sessions explicitly
-        before terminating the application (no matter what is the reason of
+        before terminating the application (regardless of the reason for
         the termination).
 
         <note>
@@ -11605,6 +11605,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           automatically return to "Closed" once the VM is no longer executing,
           which can of course take a very long time.
         </note>
+
+        <result name="E_UNEXPECTED">
+          Session is not open.
+        </result>
+
       </desc>
     </method>
 
