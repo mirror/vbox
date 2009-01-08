@@ -84,6 +84,13 @@ typedef struct GVMHANDLE
 /** Pointer to a global VM handle. */
 typedef GVMHANDLE *PGVMHANDLE;
 
+/** Number of GVM handles (including the NIL handle). */
+#if HC_ARCH_BITS == 64
+# define GVMM_MAX_HANDLES   1024
+#else
+# define GVMM_MAX_HANDLES   128
+#endif
+
 /**
  * The GVMM instance data.
  */
@@ -109,7 +116,7 @@ typedef struct GVMM
     /** The handle array.
      * The size of this array defines the maximum number of currently running VMs.
      * The first entry is unused as it represents the NIL handle. */
-    GVMHANDLE           aHandles[128];
+    GVMHANDLE           aHandles[GVMM_MAX_HANDLES];
 
     /** @gcfgm{/GVMM/cVMsMeansCompany, 32-bit, 0, UINT32_MAX, 1}
      * The number of VMs that means we no longer consider ourselves alone on a CPU/Core.
