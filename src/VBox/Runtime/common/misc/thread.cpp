@@ -138,12 +138,10 @@ int rtThreadInit(void)
         if (RT_SUCCESS(rc))
         {
             rc = rtThreadNativeInit();
-#ifdef IN_RING3
             if (RT_SUCCESS(rc))
                 rc = rtThreadAdopt(RTTHREADTYPE_DEFAULT, 0, "main");
             if (RT_SUCCESS(rc))
                 rc = rtSchedNativeCalcDefaultPriority(RTTHREADTYPE_DEFAULT);
-#endif
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
 
