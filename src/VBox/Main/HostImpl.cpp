@@ -2350,7 +2350,7 @@ HRESULT Host::checkUSBProxyService()
         if (mUSBProxyService->getLastError() == VERR_FILE_NOT_FOUND)
             return setWarning (E_FAIL,
                 tr ("Could not load the Host USB Proxy Service (%Rrc). "
-                    "The service might be not installed on the host computer"),
+                    "The service might not be installed on the host computer"),
                 mUSBProxyService->getLastError());
         if (mUSBProxyService->getLastError() == VINF_SUCCESS)
             return setWarning (E_FAIL,
