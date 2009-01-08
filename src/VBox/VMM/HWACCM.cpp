@@ -290,7 +290,7 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
                              "/PROF/HWACCM/CPU%d/Switcher3264", i);
         AssertRC(rc);
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatTimeoutResume,           "/HWACCM/CPU%d/Timeout/Resume");
-        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatTimeoutSwitcher3264,     "/HWACCM/CPU%d/Timeout/Switcher3264");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatTimeoutSwitcher3264,     "/HWACCM/CPU%d/Timeout/Switch3264");
 # endif
 
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitShadowNM,           "/HWACCM/CPU%d/Exit/Trap/Shw/#NM");
