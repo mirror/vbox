@@ -380,7 +380,7 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
         /* Magic marker for searching in crash dumps. */
         strcpy((char *)pCache->aMagic, "VMCSCACHE Magic");
-        pCache->uMagic = 0xDEADBEEFDEADBEEF;
+        pCache->uMagic = UINT64_C(0xDEADBEEFDEADBEEF);
     }
 #endif /* VBOX_WITH_STATISTICS */
     return VINF_SUCCESS;
@@ -1215,7 +1215,7 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
 
         /* Magic marker for searching in crash dumps. */
         strcpy((char *)pCache->aMagic, "VMCSCACHE Magic");
-        pCache->uMagic = 0xDEADBEEFDEADBEEF;
+        pCache->uMagic = UINT64_C(0xDEADBEEFDEADBEEF);
     }
 }
 
