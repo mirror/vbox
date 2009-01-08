@@ -4629,6 +4629,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 
     if (unlikely(loglevel & CPU_LOG_TB_OP))
         tcg_gen_debug_insn_start(pc_start);
+
     s->pc = pc_start;
     prefixes = 0;
     aflag = s->code32;
@@ -8343,8 +8344,9 @@ DECLINLINE(void) gen_intermediate_code_internal(CPUState *env,
     dc->addseg = (flags >> HF_ADDSEG_SHIFT) & 1;
     dc->f_st = 0;
     dc->vm86 = (flags >> VM_SHIFT) & 1;
-#ifdef VBOX_WITH_CALL_RECORD
+#ifdef VBOX
     dc->vme = !!(env->cr[4] & CR4_VME_MASK);
+#ifdef VBOX_WITH_CALL_RECORD
     if (    !(env->state & CPU_RAW_RING0)
         &&  (env->cr[0] & CR0_PG_MASK)
         &&  !(env->eflags & X86_EFL_IF)
@@ -8352,6 +8354,7 @@ DECLINLINE(void) gen_intermediate_code_internal(CPUState *env,
         dc->record_call = 1;
     else
         dc->record_call = 0;
+#endif
 #endif
     dc->cpl = (flags >> HF_CPL_SHIFT) & 3;
     dc->iopl = (flags >> IOPL_SHIFT) & 3;
