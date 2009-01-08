@@ -38,7 +38,6 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
-#include <iprt/time.h>
 #include "HWVMXR0.h"
 
 /*******************************************************************************
@@ -1893,7 +1892,6 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
     RTGCUINTPTR errCode, instrInfo;
     bool        fSyncTPR = false;
-    bool        fPreemptPending = false;
     PHWACCM_CPUINFO pCpu = 0;
     unsigned    cResume = 0;
 #ifdef VBOX_STRICT
@@ -1968,9 +1966,6 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 #endif
 
-    /* Fetch the current time so we can bail out when necessary. */
-    pVCpu->hwaccm.s.u64TimeEntry = RTTimeNanoTS();
-
     /* We can jump to this point to resume execution after determining that a VM-exit is innocent.
      */
 ResumeExecution:
@@ -1984,11 +1979,8 @@ ResumeExecution:
     Assert(!HWACCMR0SuspendPending());
 
     /* Safety precaution; looping for too long here can have a very bad effect on the host */
-    if (    ++cResume > HWACCM_MAX_RESUME_LOOPS
-        ||  RTTimeNanoTS() - pVCpu->hwaccm.s.u64TimeEntry >= 2000000)
+    if (++cResume > HWACCM_MAX_RESUME_LOOPS)
     {
-        LogFlow(("delta %VX64\n", RTTimeNanoTS() - pVCpu->hwaccm.s.u64TimeEntry));
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTimeoutResume);
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitMaxResume);
         rc = VINF_EM_RAW_INTERRUPT;
         goto end;
@@ -2164,13 +2156,11 @@ ResumeExecution:
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, z);
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit1, v);
 
-    if (VBOX_FAILURE(rc))
+    if (rc != VINF_SUCCESS)
     {
         VMXR0ReportWorldSwitchError(pVM, pVCpu, rc, pCtx);
         goto end;
     }
-    if (rc == VINF_VMX_PREEMPT_PENDING)
-        fPreemptPending = true;
 
     /* Success. Query the guest state and figure out what has happened. */
 
@@ -2246,13 +2236,6 @@ ResumeExecution:
     if (fSyncTPR)
     {
         rc = PDMApicSetTPR(pVM, pVM->hwaccm.s.vmx.pAPIC[0x80] >> 4);
-        AssertRC(rc);
-    }
-
-    if (fPreemptPending)
-    {
-        fPreemptPending = false;
-        rc = VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_PREEMPT, 0);
         AssertRC(rc);
     }
 
@@ -3607,15 +3590,6 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     AssertMsg(pCache->TestIn.pCtx         == pCache->TestOut.pCtx, ("%RGv vs %RGv\n", pCache->TestIn.pCtx, pCache->TestOut.pCtx));
     Assert(!(pCache->TestOut.eflags & X86_EFL_IF));
 #endif
-
-    /* Check if we've been running too long. */
-    if (    rc == VINF_SUCCESS
-        &&  RTTimeNanoTS() - pVCpu->hwaccm.s.u64TimeEntry >= 2000000)
-    {
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTimeoutSwitcher3264);
-        LogFlow(("delta (2) %VX64\n", RTTimeNanoTS() - pVCpu->hwaccm.s.u64TimeEntry));
-        return VINF_VMX_PREEMPT_PENDING;
-    }
     return rc;
 }
 
