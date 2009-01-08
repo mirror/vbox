@@ -4719,7 +4719,11 @@ static DECLCALLBACK(int) vgaPortSnapshot(PPDMIDISPLAYPORT pInterface, void *pvDa
     fRenderVRAM = pThis->fRenderVRAM;
     pThis->fRenderVRAM = 1;             /* force the guest VRAM rendering to the given buffer. */
 
-    /* make the snapshot. */
+    /* make the snapshot.
+     * The second parameter is 'false' because the current display state, already updated by the 
+     * pfnUpdateDisplayAll call above, is being rendered to an external buffer using a fake connector.
+     * That is if display is blanked, we expect a black screen in the external buffer.
+     */
     int rc = vga_update_display(pThis, false);
 
     /* restore */
