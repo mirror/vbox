@@ -131,7 +131,7 @@
 #  define MAX_JIFFY_OFFSET ((~0UL >> 1)-1)
 # endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 29) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 29) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 
 DECLINLINE(unsigned int) jiffies_to_msecs(unsigned long cJiffies)
 {
