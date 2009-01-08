@@ -2419,6 +2419,13 @@ static void vga_draw_blank(VGAState *s, int full_update)
 #endif /* VBOX */
 }
 
+#ifdef VBOX
+static DECLCALLBACK(void) voidUpdateRect(PPDMIDISPLAYCONNECTOR pInterface, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
+{
+}
+#endif /* VBOX */
+
+
 #define GMODE_TEXT     0
 #define GMODE_GRAPH    1
 #define GMODE_BLANK 2
@@ -2461,8 +2468,50 @@ static int vga_update_display(PVGASTATE s)
             break;
         }
 
+#ifdef VBOX
+        if (s->graphic_mode == -1) {
+            /* A full update is requested. Special processing for a "blank" mode is required. */
+            typedef DECLCALLBACK(void) FNUPDATERECT(PPDMIDISPLAYCONNECTOR pInterface, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
+            typedef FNUPDATERECT *PFNUPDATERECT;
+
+            PFNUPDATERECT pfnUpdateRect = NULL;
+
+            /* Detect the "screen blank" conditions. */
+            int fBlank = 0;
+            if (!(s->ar_index & 0x20) || (s->sr[0x01] & 0x20)) {
+                fBlank = 1;
+            }
+
+            if (fBlank) {
+                /* Provide a void pfnUpdateRect callback. */
+                if (s->pDrv) {
+                    pfnUpdateRect = s->pDrv->pfnUpdateRect;
+                    s->pDrv->pfnUpdateRect = voidUpdateRect;
+                }
+            }
+
+            /* Do a complete redraw, which will pick up a new screen resolution. */
+            if (s->gr[6] & 1) {
+                s->graphic_mode = GMODE_GRAPH;
+                rc = vga_draw_graphic(s, 1);
+            } else {
+                s->graphic_mode = GMODE_TEXT;
+                rc = vga_draw_text(s, 1);
+            }
+
+            if (fBlank) {
+                /* Set the current mode and restore the callback. */
+                s->graphic_mode = GMODE_BLANK;
+                if (s->pDrv) {
+                    s->pDrv->pfnUpdateRect = pfnUpdateRect;
+                }
+            }
+            return rc;
+        }
+#endif /* VBOX */
+
         full_update = 0;
-        if (!(s->ar_index & 0x20)) {
+        if (!(s->ar_index & 0x20) || (s->sr[0x01] & 0x20)) {
             graphic_mode = GMODE_BLANK;
         } else {
             graphic_mode = s->gr[6] & 1;
