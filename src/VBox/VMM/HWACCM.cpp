@@ -281,6 +281,10 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
                              "/PROF/HWACCM/CPU%d/InGC", i);
         AssertRC(rc);
 
+# define HWACCM_REG_COUNTER(a, b) \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Profiling of vmlaunch", b, i); \
+        AssertRC(rc);
+
 # if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatWorldSwitch3264, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of the 32/64 switcher",
                              "/PROF/HWACCM/CPU%d/Switcher3264", i);
@@ -288,10 +292,6 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatTimeoutResume,           "/HWACCM/CPU%d/Timeout/Resume");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatTimeoutSwitcher3264,     "/HWACCM/CPU%d/Timeout/Switcher3264");
 # endif
-
-# define HWACCM_REG_COUNTER(a, b) \
-        rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Profiling of vmlaunch", b, i); \
-        AssertRC(rc);
 
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitShadowNM,           "/HWACCM/CPU%d/Exit/Trap/Shw/#NM");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestNM,            "/HWACCM/CPU%d/Exit/Trap/Gst/#NM");
