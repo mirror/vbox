@@ -409,6 +409,9 @@ typedef struct ATACONTROLLER
     uint32_t            Alignment0;
 #endif
 
+    /** Timestamp we started the reset. */
+    uint64_t            u64ResetTime;
+
     /* Statistics */
     STAMCOUNTER     StatAsyncOps;
     uint64_t        StatAsyncMinWait;
@@ -3730,6 +3733,32 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
                 cBusy = 0;
                 PDMCritSectLeave(&pCtl->lock);
 
+#ifndef RT_OS_WINDOWS
+                /*
+                 * The thread might be stuck in an I/O operation
+                 * due to a high I/O load on the host. (see @bugref{3301})
+                 * To perform the reset successfully
+                 * we interrupt the operation by sending a signal to the thread
+                 * if the thread didn't responded in 10ms.
+                 * This works only on POSIX hosts (Windows has a CancelSynchronousIo function which
+                 * does the same but it was introduced with Vista) but so far
+                 * this hang was only observed on Linux and Mac OS X.
+                 *
+                 * This is a workaround and needs to be solved properly.
+                 */
+                if (pCtl->fReset)
+                {
+                    uint64_t u64ResetTimeStop = RTTimeMilliTS();
+
+                    if ((u64ResetTimeStop - pCtl->u64ResetTime) >= 10)
+                    {
+                        LogRel(("PIIX3 ATA: Async I/O thread probably stuck in operation, interrupting\n"));
+                        pCtl->u64ResetTime = u64ResetTimeStop;
+                        RTThreadPoke(pCtl->AsyncIOThread);
+                    }
+                }
+#endif
+
                 RTThreadYield();
 
                 {
@@ -3823,20 +3852,8 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
             Log2(("%s: ignored setting HOB\n", __FUNCTION__));
         }
 
-        /*
-         * The thread might be stuck in an I/O operation
-         * due to a high I/O load on the host. (see @bugref{3301})
-         * To perform the reset successfully
-         * we interrupt the operation by sending a signal to the thread.
-         * This works only on POSIX hosts (Windows has a CancelSynchronousIo function which
-         * does the same but it was introduced with Vista) but so far
-         * this hang was only observed on Linux and Mac OS X.
-         *
-         * This is a workaround and needs to be solved properly.
-         */
-#ifndef RT_OS_WINDOWS
-        RTThreadPoke(pCtl->AsyncIOThread);
-#endif
+        /* Save the timestamp we started the reset. */
+        pCtl->u64ResetTime = RTTimeMilliTS();
 
         /* Issue the reset request now. */
         ataAsyncIOPutRequest(pCtl, &ataResetARequest);
