@@ -11642,13 +11642,28 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
     <method name="GetIDEEmulationPort">
-      <desc>Gets the corresponding port number which is emulated as an IDE device.</desc>
+      <desc>
+        Gets the corresponding port number which is emulated as an IDE device.
+
+        <result name="E_INVALIDARG">
+          The @a devicePosition is not in the range 0 to 3.
+        </result>
+
+      </desc>
       <param name="devicePosition" type="long" dir="in"/>
       <param name="portNumber" type="long" dir="return"/>
     </method>
 
     <method name="SetIDEEmulationPort">
-      <desc>Sets the port number which is emulated as an IDE device.</desc>
+      <desc>
+        Sets the port number which is emulated as an IDE device.
+
+        <result name="E_INVALIDARG">
+          The @a devicePosition is not in the range 0 to 3 or the
+          @a portNumber is not in the range 0 to 29.
+        </result>
+
+      </desc>
       <param name="devicePosition" type="long" dir="in"/>
       <param name="portNumber" type="long" dir="in"/>
     </method>
