@@ -57,6 +57,11 @@
 # include <stdio.h>
 # include <sys/types.h>
 # if defined(RT_OS_LINUX)
+#  undef USE_LIB_PCAP /* don't depend on libcap as we had to depend on either
+                         libcap1 or libcap2 */
+
+#  undef _POSIX_SOURCE
+#  include <linux/capability.h>
 #  include <sys/capability.h>
 #  include <sys/prctl.h>
 # elif defined(RT_OS_SOLARIS)
@@ -599,8 +604,20 @@ static void supR3HardenedMainGrabCapabilites(void)
      * We are about to drop all our privileges. Remove all capabilities but
      * keep the cap_net_raw capability for ICMP sockets for the NAT stack.
      */
+#  ifdef USE_LIB_PCAP
     if (!cap_set_proc(cap_from_text("all-eip cap_net_raw+ep")))
         prctl(PR_SET_KEEPCAPS, /*keep=*/1, 0, 0, 0);
+#  else
+    cap_user_header_t hdr = (cap_user_header_t)alloca(sizeof(*hdr));
+    cap_user_data_t   cap = (cap_user_data_t)alloca(sizeof(*cap));
+    memset(hdr, 0, sizeof(*hdr));
+    hdr->version = _LINUX_CAPABILITY_VERSION;
+    memset(cap, 0, sizeof(*cap));
+    cap->effective = CAP_TO_MASK(CAP_NET_RAW);
+    cap->permitted = CAP_TO_MASK(CAP_NET_RAW);
+    if (!capset(hdr, cap))
+        prctl(PR_SET_KEEPCAPS, /*keep=*/1, 0, 0, 0);
+#  endif
 
 # elif defined(RT_OS_SOLARIS)
     /*
@@ -703,8 +720,20 @@ static void supR3HardenedMainDropPrivileges(void)
     /*
      * Re-enable the cap_net_raw capability which was disabled during setresuid.
      */
+#  ifdef USE_LIB_PCAP
     /** @todo Warn if that does not work? */
     cap_set_proc(cap_from_text("cap_net_raw+ep"));
+#  else
+    cap_user_header_t hdr = (cap_user_header_t)alloca(sizeof(*hdr));
+    cap_user_data_t   cap = (cap_user_data_t)alloca(sizeof(*cap));
+    memset(hdr, 0, sizeof(*hdr));
+    hdr->version = _LINUX_CAPABILITY_VERSION;
+    memset(cap, 0, sizeof(*cap));
+    cap->effective = CAP_TO_MASK(CAP_NET_RAW);
+    cap->permitted = CAP_TO_MASK(CAP_NET_RAW);
+    /** @todo Warn if that does not work? */
+    capset(hdr, cap);
+#  endif
 # endif
 }
 
