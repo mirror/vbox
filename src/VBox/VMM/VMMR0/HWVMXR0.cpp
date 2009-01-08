@@ -1988,6 +1988,7 @@ ResumeExecution:
         ||  RTTimeNanoTS() - pVCpu->hwaccm.s.u64TimeEntry >= 2000000)
     {
         LogFlow(("delta %VX64\n", RTTimeNanoTS() - pVCpu->hwaccm.s.u64TimeEntry));
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTimeoutResume);
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitMaxResume);
         rc = VINF_EM_RAW_INTERRUPT;
         goto end;
@@ -3611,6 +3612,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     if (    rc == VINF_SUCCESS
         &&  RTTimeNanoTS() - pVCpu->hwaccm.s.u64TimeEntry >= 2000000)
     {
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTimeoutSwitcher3264);
         LogFlow(("delta (2) %VX64\n", RTTimeNanoTS() - pVCpu->hwaccm.s.u64TimeEntry));
         return VINF_VMX_PREEMPT_PENDING;
     }
