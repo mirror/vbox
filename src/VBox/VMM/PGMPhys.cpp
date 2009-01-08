@@ -2472,14 +2472,14 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
             {
                 if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
                 {
-                    Assert(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM);
+                    AssertMsg(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, ("GCPhys=%RGp type=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pPage)));
                     RTGCPHYS off = GCPhys - pRam->GCPhys;
                     unsigned iChunk = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
                     *pvPtr = (void *)(pRam->paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
                 }
                 else if (RT_LIKELY(pRam->pvR3))
                 {
-                    Assert(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM);
+                    AssertMsg(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, ("GCPhys=%RGp type=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pPage)));
                     RTGCPHYS off = GCPhys - pRam->GCPhys;
                     *pvPtr = (uint8_t *)pRam->pvR3 + off;
                 }
