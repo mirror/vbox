@@ -3608,7 +3608,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 
     /* Check if we've been running too long. */
     if (    rc == VINF_SUCCESS
-        &&  RTTimeNanoTS() - pVM->hwaccm.s.u64TimeEntry >= 2000000
+        &&  RTTimeNanoTS() - pVCpu->hwaccm.s.u64TimeEntry >= 2000000)
     {
         return VINF_VMX_PREEMPT_PENDING;
     }
