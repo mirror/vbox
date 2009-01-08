@@ -60,7 +60,7 @@ RTDECL(int) RTSystemQueryOSInfo(RTSYSOSINFO enmInfo, char *pszInfo, size_t cchIn
         case RTSYSOSINFO_VERSION:
         {
             struct utsname UtsInfo;
-            if (uname(&UtsInfo))
+            if (uname(&UtsInfo) < 0)
                 return RTErrConvertFromErrno(errno);
             const char *pszSrc;
             switch (enmInfo)
