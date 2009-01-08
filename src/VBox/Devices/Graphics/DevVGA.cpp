@@ -2435,7 +2435,7 @@ void vga_update_display(void)
 {
     VGAState *s = vga_state;
 #else /* VBOX */
-static int vga_update_display(PVGASTATE s)
+static int vga_update_display(PVGASTATE s, bool fUpdateAll)
 {
     int rc = VINF_SUCCESS;
 #endif /* VBOX */
@@ -2469,7 +2469,7 @@ static int vga_update_display(PVGASTATE s)
         }
 
 #ifdef VBOX
-        if (s->graphic_mode == -1) {
+        if (fUpdateAll) {
             /* A full update is requested. Special processing for a "blank" mode is required. */
             typedef DECLCALLBACK(void) FNUPDATERECT(PPDMIDISPLAYCONNECTOR pInterface, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
             typedef FNUPDATERECT *PFNUPDATERECT;
@@ -4564,7 +4564,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
 
     /* This should be called only in non VBVA mode. */
 
-    int rc = vga_update_display(pThis);
+    int rc = vga_update_display(pThis, false);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -4603,7 +4603,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
 
     pThis->graphic_mode = -1; /* force full update */
 
-    int rc = vga_update_display(pThis);
+    int rc = vga_update_display(pThis, true);
 
     /* The dirty bits array has been just cleared, reset handlers as well. */
     if (pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS32)
@@ -4720,7 +4720,7 @@ static DECLCALLBACK(int) vgaPortSnapshot(PPDMIDISPLAYPORT pInterface, void *pvDa
     pThis->fRenderVRAM = 1;             /* force the guest VRAM rendering to the given buffer. */
 
     /* make the snapshot. */
-    int rc = vga_update_display(pThis);
+    int rc = vga_update_display(pThis, false);
 
     /* restore */
     pThis->pDrv = pConnector;
