@@ -203,6 +203,7 @@ private:
     ULONG mBytesPerLine;
     ULONG mPixelFormat;
     BOOL mUsesGuestVRAM;
+    BOOL mfSameSizeRequested;
 
     /** the application Icon */
     SDL_Surface *mWMIcon;
