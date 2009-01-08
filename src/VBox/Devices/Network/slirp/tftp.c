@@ -368,6 +368,7 @@ static void tftp_handle_rrq(PNATState pData, struct tftp_t *tp, int pktlen)
             }
 
             tftp_send_oack(pData, spt, "tsize", tsize, tp);
+            return;
         }
     }
 
