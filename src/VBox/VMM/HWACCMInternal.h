@@ -439,9 +439,6 @@ typedef VMCSCACHE *PVMCSCACHE;
  */
 typedef struct HWACCMCPU
 {
-    /** Time of entry into the ring 0 world switcher code. */
-    uint64_t                    u64TimeEntry;
-
     /** Old style FPU reporting trap mask override performed (optimization) */
     bool                        fFPUOldStyleOverride;
 
@@ -615,8 +612,6 @@ typedef struct HWACCMCPU
     STAMCOUNTER             StatDRxContextSwitch;
     STAMCOUNTER             StatDRxIOCheck;
 
-    STAMCOUNTER             StatTimeoutSwitcher3264;
-    STAMCOUNTER             StatTimeoutResume;
 
     R3PTRTYPE(PSTAMCOUNTER) paStatExitReason;
     R0PTRTYPE(PSTAMCOUNTER) paStatExitReasonR0;
