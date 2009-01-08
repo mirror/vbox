@@ -4513,10 +4513,6 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
     PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
 
-#ifdef DEBUG_sunlover
-    LogFlow(("vgaPortUpdateDisplay\n"));
-#endif /* DEBUG_sunlover */
-
     /* This should be called only in non VBVA mode. */
 
     int rc = vga_update_display(pThis);
