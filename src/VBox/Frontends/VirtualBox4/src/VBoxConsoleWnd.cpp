@@ -2426,6 +2426,9 @@ void VBoxConsoleWnd::changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &
 void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
 {
 #ifdef Q_WS_MAC
+    /* setWindowState removes the window group connection somehow. So save it
+     * temporary. */
+    WindowGroupRef g = GetWindowGroup (::darwinToWindowRef (this));
     if (aSeamless)
         if (aOn)
         {
@@ -2446,6 +2449,8 @@ void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
     else
         /* Here we are going really fullscreen */
         setWindowState (windowState() ^ Qt::WindowFullScreen);
+    /* Reassign the correct window group. */
+    SetWindowGroup (::darwinToWindowRef (this), g);
 #else
     NOREF (aOn);
     NOREF (aSeamless);
