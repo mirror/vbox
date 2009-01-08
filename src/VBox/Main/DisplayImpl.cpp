@@ -294,7 +294,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
      */
     bool f = ASMAtomicCmpXchgU32 (&maFramebuffers[uScreenId].u32ResizeStatus,
                                   ResizeStatus_InProgress, ResizeStatus_Void);
-    AssertReleaseMsg(f, ("f = %d\n", f));NOREF(f);
+    AssertReleaseMsg(f, ("s = %d, id = %d, f = %d\n", maFramebuffers[uScreenId].u32ResizeStatus, uScreenId, f));NOREF(f);
 
     /* The framebuffer is locked in the state.
      * The lock is kept, because the framebuffer is in undefined state.
