@@ -40,41 +40,54 @@
 #include <time.h>
 
 #include <iprt/time.h>
+#include <iprt/assert.h>
 #include "internal/time.h"
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static struct mach_timebase_info    g_Info = { 0, 0 };
+static double                       g_rdFactor = 0.0;
+static bool                         g_fFailedToGetTimeBaseInfo = false;
+
+
+/**
+ * Perform lazy init (pray we're not racing anyone in a bad way).
+ */
+static void rtTimeDarwinLazyInit(void)
+{
+    struct mach_timebase_info Info;
+    if (mach_timebase_info(&Info) == KERN_SUCCESS)
+    {
+        g_rdFactor = (double)Info.numer / (double)Info.denom;
+        g_Info = Info;
+    }
+    else
+    {
+        g_fFailedToGetTimeBaseInfo = true;
+        Assert(g_Info.denom == 0 && g_Info.numer == 0 && g_rdFactor == 0.0);
+    }
+}
+
+
+/**
+ * Internal worker.
+ * @returns Nanosecond timestamp.
+ */
 DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 {
-    static struct mach_timebase_info    s_Info = { 0, 0 };
-    static double                       s_rdFactor = 0.0;
-
-    /* get the factors the first time (pray we're not racing anyone) */
-    if (s_Info.denom == 0)
-    {
-        static bool s_fFailedToGetTimeBaseInfo = false;
-        if (!s_fFailedToGetTimeBaseInfo)
-        {
-            struct mach_timebase_info Info;
-            if (mach_timebase_info(&Info) != KERN_SUCCESS)
-            {
-                s_rdFactor = (double)Info.numer / (double)Info.denom;
-                s_Info = Info;
-            }
-            else
-            {
-                s_Info.denom = s_Info.numer = 0;
-                s_fFailedToGetTimeBaseInfo = true;
-            }
-        }
-    }
+    /* Lazy init. */
+    if (RT_UNLIKELY(g_Info.denom == 0 && !g_fFailedToGetTimeBaseInfo))
+        rtTimeDarwinLazyInit();
 
     /* special case: absolute time is in nanoseconds */
-    if (s_Info.denom == 1 && s_Info.numer == 1)
+    if (g_Info.denom == 1 && g_Info.numer == 1)
         return mach_absolute_time();
 
     /* general case: multiply by factor to get nanoseconds. */
-    if (s_rdFactor != 0.0)
-        return mach_absolute_time() * s_rdFactor;
+    if (g_rdFactor != 0.0)
+        return mach_absolute_time() * g_rdFactor;
 
     /* worst case: fallback to gettimeofday(). */
     struct timeval tv;
