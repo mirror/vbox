@@ -434,6 +434,9 @@ typedef VMCSCACHE *PVMCSCACHE;
  */
 typedef struct HWACCMCPU
 {
+    /** Time of entry into the ring 0 world switcher code. */
+    uint64_t                    u64TimeEntry;
+
     /** Old style FPU reporting trap mask override performed (optimization) */
     bool                        fFPUOldStyleOverride;
 

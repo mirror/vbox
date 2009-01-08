@@ -107,6 +107,8 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_VM_SET_RUNTIME_ERROR,
     /** Signal a ring 0 assertion. */
     VMMCALLHOST_VM_R0_ASSERTION,
+    /** Ring switch to force preemption. */
+    VMMCALLHOST_VM_R0_PREEMPT,
     /** The usual 32-bit hack. */
     VMMCALLHOST_32BIT_HACK = 0x7fffffff
 } VMMCALLHOST;
