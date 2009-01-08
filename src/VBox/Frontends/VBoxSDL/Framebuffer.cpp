@@ -115,6 +115,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     mPtrVRAM        = NULL;
     mBitsPerPixel   = 0;
     mBytesPerLine   = 0;
+    mfSameSizeRequested = false;
 #ifdef VBOX_SECURELABEL
     mLabelFont      = NULL;
     mLabelHeight    = 0;
@@ -476,6 +477,25 @@ STDMETHODIMP VBoxSDLFB::RequestResize(ULONG aScreenId, ULONG pixelFormat, BYTE *
         return E_FAIL;
     }
 
+    /*
+     * Optimize the case when the guest has changed only the VRAM ptr
+     * and the framebuffer uses the guest VRAM as the source bitmap.
+     */
+    if (   mGuestXRes    == w
+        && mGuestYRes    == h
+        && mPixelFormat  == pixelFormat
+        && mBitsPerPixel == bitsPerPixel
+        && mBytesPerLine == bytesPerLine
+        && mUsesGuestVRAM
+       )
+    {
+        mfSameSizeRequested = true;
+    }
+    else
+    {
+        mfSameSizeRequested = false;
+    }
+
     mGuestXRes   = w;
     mGuestYRes   = h;
     mPixelFormat = pixelFormat;
@@ -701,6 +721,17 @@ void VBoxSDLFB::resizeGuest()
                                          Rmask, Gmask, Bmask, Amask);
     }
     LogFlow(("VBoxSDL:: created VRAM surface %p\n", mSurfVRAM));
+
+    if (mfSameSizeRequested && mUsesGuestVRAM)
+    {
+        /*
+         * Same size has been requested and the framebuffer still uses the guest VRAM.
+         * Reset the condition and return.
+         */
+        mfSameSizeRequested = false;
+        LogFlow(("VBoxSDL:: the same resolution requested, skipping the resize.\n"));
+        return;
+    }
 
     /* now adjust the SDL resolution */
     resizeSDL();
