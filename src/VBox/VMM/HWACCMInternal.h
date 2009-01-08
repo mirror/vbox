@@ -615,6 +615,8 @@ typedef struct HWACCMCPU
     STAMCOUNTER             StatDRxContextSwitch;
     STAMCOUNTER             StatDRxIOCheck;
 
+    STAMCOUNTER             StatTimeoutSwitcher3264;
+    STAMCOUNTER             StatTimeoutResume;
 
     R3PTRTYPE(PSTAMCOUNTER) paStatExitReason;
     R0PTRTYPE(PSTAMCOUNTER) paStatExitReasonR0;
