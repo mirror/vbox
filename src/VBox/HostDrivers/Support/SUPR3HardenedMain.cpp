@@ -64,6 +64,9 @@
 #  include <linux/capability.h>
 #  include <sys/capability.h>
 #  include <sys/prctl.h>
+#  ifndef CAP_TO_MASK
+#   define CAP_TO_MASK(cap) RT_BIT(cap)
+#  endif
 # elif defined(RT_OS_SOLARIS)
 #  include <priv.h>
 # endif
