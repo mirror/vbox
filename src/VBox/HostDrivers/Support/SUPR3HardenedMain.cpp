@@ -61,7 +61,6 @@
                          libcap1 or libcap2 */
 
 #  undef _POSIX_SOURCE
-#  include <linux/capability.h>
 #  include <sys/capability.h>
 #  include <sys/prctl.h>
 #  ifndef CAP_TO_MASK
