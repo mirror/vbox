@@ -142,7 +142,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mButtonBox->setCenterButtons (true);
     layout->addWidget (mButtonBox);
 
-    mButtonEsc = NULL;
+    mButtonEsc = 0;
 
     mButton0PB = createButton (aButton0);
     if (mButton0PB)
