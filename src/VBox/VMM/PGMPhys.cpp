@@ -2479,7 +2479,7 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
                 }
                 else if (RT_LIKELY(pRam->pvR3))
                 {
-                    AssertMsg(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, ("GCPhys=%RGp type=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pPage)));
+                    AssertMsg(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2, ("GCPhys=%RGp type=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pPage)));
                     RTGCPHYS off = GCPhys - pRam->GCPhys;
                     *pvPtr = (uint8_t *)pRam->pvR3 + off;
                 }
