@@ -2791,7 +2791,7 @@
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1067"/>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Drücken Sie &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Festplatte erstellt.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Drücken Sie &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Machine erzeugt.&lt;/p&gt;&lt;/p&gt;Sie können diese und andere Einstellungen der virtuellen Maschine jederzeit im Dialog &lt;b&gt;Einstellungen&lt;/b&gt; ausgehend vom Hauptfenster ändern.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1126"/>
