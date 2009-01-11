@@ -3084,28 +3084,33 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
         HWData::GuestProperty property;
         property.mFlags = NILFLAG;
         if (fFlags & TRANSIENT)
-            rc = setError (VBOX_E_INVALID_OBJECT_STATE, tr ("Cannot set a transient property when the machine is not running"));
+            rc = setError (VBOX_E_INVALID_OBJECT_STATE,
+                tr ("Cannot set a transient property when the "
+                    "machine is not running"));
         if (SUCCEEDED (rc))
         {
-            for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
-                (it != mHWData->mGuestProperties.end()) && !found; ++it)
+            for (HWData::GuestPropertyList::iterator it =
+                    mHWData->mGuestProperties.begin();
+                 it != mHWData->mGuestProperties.end(); ++ it)
                 if (it->mName == aName)
                 {
                     property = *it;
                     if (it->mFlags & (RDONLYHOST))
-                        rc = setError (E_ACCESSDENIED, tr ("The property '%ls' cannot be changed by the host"), aName);
+                        rc = setError (E_ACCESSDENIED,
+                            tr ("The property '%ls' cannot be changed by the host"),
+                            aName);
                     else
                     {
                         mHWData.backup();
-                        /* The backup() operation invalidates our iterator, so get a
-                        * new one. */
+                        /* The backup() operation invalidates our iterator, so
+                         * get a new one. */
                         for (it = mHWData->mGuestProperties.begin();
-                            it->mName != aName; ++it)
+                            it->mName != aName; ++ it)
                             ;
                         mHWData->mGuestProperties.erase (it);
                     }
                     found = true;
-                    break; /* don't do ++it before we leave the loop */
+                    break;
                 }
         }
         if (found && SUCCEEDED (rc))
