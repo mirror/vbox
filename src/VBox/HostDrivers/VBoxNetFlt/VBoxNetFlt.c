@@ -1024,7 +1024,8 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
             rc = vboxNetFltConnectIt(pCur, pSwitchPort, ppIfPort);
             break;
         case kVBoxNetFltInsState_Connected:
-            rc = VINF_SUCCESS;
+            Assert(0);
+            rc = VERR_INTNET_FLT_IF_BUSY;
             break;
         case kVBoxNetFltInsState_Disconnecting:
             Assert(0);
