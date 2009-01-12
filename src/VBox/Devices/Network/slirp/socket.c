@@ -460,6 +460,10 @@ sorecvfrom(PNATState pData, struct socket *so)
         if (!(m = m_get(pData)))
             return;
         m->m_data += if_maxlinkhdr;
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+        m->m_data += sizeof(struct udphdr) 
+                    + sizeof(struct ip); /*XXX: no options atm*/
+#endif
 
         /*
          * XXX Shouldn't FIONREAD packets destined for port 53,

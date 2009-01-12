@@ -46,7 +46,12 @@ void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr);
 
 /* you must provide the following functions: */
 int slirp_can_output(void * pvUser);
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+void slirp_output(void * pvUser, void *pvArg, const uint8_t *pkt, int pkt_len);
+void slirp_post_sent(PNATState pData, void *pvArg);
+#else
 void slirp_output(void * pvUser, const uint8_t *pkt, int pkt_len);
+#endif
 
 int slirp_redir(PNATState pData, int is_udp, int host_port,
                 struct in_addr guest_addr, int guest_port);
