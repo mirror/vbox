@@ -3047,7 +3047,7 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
         ASMAtomicDecU32(&pIf->cSleepers);
         if (!pIf->fDestroying)
         {
-            if (!intnetR0IfRelease(pIf, pSession))
+            if (intnetR0IfRelease(pIf, pSession))
                 rc = VERR_SEM_DESTROYED;
         }
         else
