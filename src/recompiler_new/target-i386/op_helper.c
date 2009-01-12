@@ -173,6 +173,11 @@ target_ulong helper_read_eflags_vme(void)
         eflags |= IF_MASK;
     else
         eflags &= ~IF_MASK;
+
+    /* According to AMD manual, should be read with IOPL == 3 */
+    eflags |= (3 << IOPL_SHIFT);
+
+    /* We only use helper_read_eflags_vme() in 16-bits mode */
     return eflags & 0xffff;
 }
 
