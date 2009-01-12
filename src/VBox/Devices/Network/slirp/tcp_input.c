@@ -322,6 +322,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
     if (cksum(m, len))
     {
         tcpstat.tcps_rcvbadsum++;
+        Log2(("checksum is invalid => drop\n"));
         goto drop;
     }
 
@@ -334,6 +335,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
         || off > tlen)
     {
         tcpstat.tcps_rcvbadoff++;
+        Log2(("ti_off(tlen(%d)<%d<(tcphdr(%d))) is invalid =>drop\n", tlen, off, sizeof(struct tcphdr)));
         goto drop;
     }
     tlen -= off;
@@ -446,8 +448,11 @@ findso:
      * a retransmit of the SYN.  Whether it's a retransmit SYN
      * or something else, we nuke it.
      */
-    if (so->so_state & SS_ISFCONNECTING)
+    if (so->so_state & SS_ISFCONNECTING) 
+    {
+        Log2(("so_state(%x) of %R[natsock] is still connecting =>drop\n", so->so_state, so));
         goto drop;
+    }
 
     tp = sototcpcb(so);
 
@@ -455,7 +460,10 @@ findso:
     if (tp == 0)
         goto dropwithreset;
     if (tp->t_state == TCPS_CLOSED)
+    {
+        Log2(("t_state(%x) is closed =>drop\n", tp->t_state));
         goto drop;
+    }
 
     /* Unscale the window into a 32-bit value. */
 /*  if ((tiflags & TH_SYN) == 0)
@@ -653,12 +661,17 @@ findso:
          */
         case TCPS_LISTEN:
         {
-            if (tiflags & TH_RST)
+            if (tiflags & TH_RST) {
+                Log2(("RST(%x) is on listen =>drop\n", tiflags));
                 goto drop;
+            }
             if (tiflags & TH_ACK)
                 goto dropwithreset;
-            if ((tiflags & TH_SYN) == 0)
+            if ((tiflags & TH_SYN) == 0) 
+            {
+                Log2(("SYN(%x) is off on listen =>drop\n", tiflags));
                 goto drop;
+            }
 
             /*
              * This has way too many gotos...
@@ -767,11 +780,15 @@ cont_input:
             {
                 if (tiflags & TH_ACK)
                     tp = tcp_drop(pData, tp,0); /* XXX Check t_softerror! */
+                Log2(("RST(%x) is on SYN_SENT =>drop\n", tiflags));
                 goto drop;
             }
 
-            if ((tiflags & TH_SYN) == 0)
+            if ((tiflags & TH_SYN) == 0) 
+            {
+                Log2(("SYN(%x) bit is off on SYN_SENT =>drop\n", tiflags));
                 goto drop;
+            }
             if (tiflags & TH_ACK)
             {
                 tp->snd_una = ti->ti_ack;
@@ -1019,6 +1036,7 @@ trimthenstep6:
             case TCPS_CLOSE_WAIT:
 /*              so->so_error = ECONNRESET; */
 close:
+                Log2(("closing...=>drop\n", tp->t_state)); 
                 tp->t_state = TCPS_CLOSED;
                 tcpstat.tcps_drops++;
                 tp = tcp_close(pData, tp);
@@ -1027,6 +1045,7 @@ close:
             case TCPS_CLOSING:
             case TCPS_LAST_ACK:
             case TCPS_TIME_WAIT:
+                Log2(("t_state is (%x) sort of close =>drop\n", tp->t_state)); 
                 tp = tcp_close(pData, tp);
                 goto drop;
         }
@@ -1044,8 +1063,11 @@ close:
     /*
      * If the ACK bit is off we drop the segment and return.
      */
-    if ((tiflags & TH_ACK) == 0)
+    if ((tiflags & TH_ACK) == 0) 
+    {
+        Log2(("ACK(%x) bit is off =>drop\n", tiflags)); 
         goto drop;
+    }
 
     /*
      * Ack processing.
@@ -1153,12 +1175,14 @@ close:
                             tp->t_maxseg * tp->t_dupacks;
                         if (SEQ_GT(onxt, tp->snd_nxt))
                             tp->snd_nxt = onxt;
+                        Log2(("t_dupacks(%d) == tcprexmtthresh(%d)=>drop\n", tp->t_dupacks, tcprexmtthresh));
                         goto drop;
                     }
                     else if (tp->t_dupacks > tcprexmtthresh)
                     {
                         tp->snd_cwnd += tp->t_maxseg;
                         (void) tcp_output(pData, tp);
+                        Log2(("t_dupacks(%d) > tcprexmtthresh(%d)=>drop\n", tp->t_dupacks, tcprexmtthresh));
                         goto drop;
                     }
                 }
@@ -1304,6 +1328,7 @@ synrx_to_est:
                 case TCPS_LAST_ACK:
                     if (ourfinisacked)
                     {
+                        Log2(("ourfinisacked=>drop\n"));
                         tp = tcp_close(pData, tp);
                         goto drop;
                     }
@@ -1527,6 +1552,7 @@ dodata:
     return;
 
 dropafterack:
+    Log2(("drop after ack\n"));
     /*
      * Generate an ACK dropping incoming segment if it occupies
      * sequence space, where the ACK reflects our state.
@@ -1540,6 +1566,7 @@ dropafterack:
 
 dropwithreset:
     /* reuses m if m!=NULL, m_free() unnecessary */
+    Log2(("drop with reset\n"));
     if (tiflags & TH_ACK)
         tcp_respond(pData, tp, ti, m, (tcp_seq)0, ti->ti_ack, TH_RST);
     else
@@ -1555,6 +1582,7 @@ drop:
     /*
      * Drop space held by incoming segment and return.
      */
+    Log2(("drop\n"));
     m_free(pData, m);
 
     return;

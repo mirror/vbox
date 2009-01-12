@@ -427,6 +427,10 @@ send:
             goto out;
         }
         m->m_data += if_maxlinkhdr;
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+        m->m_data += sizeof(struct ip) 
+            + sizeof(struct tcphdr);
+#endif
         m->m_len = hdrlen;
     }
 

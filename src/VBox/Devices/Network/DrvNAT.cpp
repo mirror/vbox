@@ -101,9 +101,10 @@ typedef struct DRVNATQUEUITEM
     /** The core part owned by the queue manager. */
     PDMQUEUEITEMCORE    Core;
     /** The buffer for output to guest. */
-    const uint8_t            *pu8Buf;
+    const uint8_t       *pu8Buf;
     /* size of buffer */
-    size_t             cb;
+    size_t              cb;
+    void                *mbuf;
 } DRVNATQUEUITEM, *PDRVNATQUEUITEM;
 
 /** Converts a pointer to NAT::INetworkConnector to a PRDVNAT. */
@@ -451,7 +452,11 @@ int slirp_can_output(void *pvUser)
 /**
  * Function called by slirp to feed incoming data to the network port.
  */
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
+#else
 void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
+#endif
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
 
@@ -475,6 +480,7 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
     {
         pItem->pu8Buf = pu8Buf;
         pItem->cb = cb;
+        pItem->mbuf = pvArg;
         Log2(("pItem:%p %.Rhxd\n", pItem, pItem->pu8Buf));
         PDMQueueInsert(pThis->pSendQueue, &pItem->Core);
         return;
@@ -495,14 +501,22 @@ static DECLCALLBACK(bool) drvNATQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)pItemCore;
+    PRTREQ pReq = NULL;
     Log(("drvNATQueueConsumer(pItem:%p, pu8Buf:%p, cb:%d)\n", pItem, pItem->pu8Buf, pItem->cb));
     Log2(("drvNATQueueConsumer: pu8Buf:\n%.Rhxd\n", pItem->pu8Buf));
     int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
     if (RT_FAILURE(rc))
         return false;
     rc = pThis->pPort->pfnReceive(pThis->pPort, pItem->pu8Buf, pItem->cb);
+
+    rc = RTReqAlloc(pThis->pReqQueue, &pReq, RTREQTYPE_INTERNAL);
+    AssertReleaseRC(rc);
+    pReq->u.Internal.pfn      = (PFNRT)slirp_post_sent;
+    pReq->u.Internal.cArgs    = 2;
+    pReq->u.Internal.aArgs[0] = (uintptr_t)pThis->pNATState;
+    pReq->u.Internal.aArgs[1] = (uintptr_t)pItem->mbuf;
+    pReq->fFlags              = RTREQFLAGS_VOID;
     AssertRC(rc);
-    RTMemFree((void *)pItem->pu8Buf); /* XXX: shouldn't free buffer here */
     return RT_SUCCESS(rc);
 }
 #endif

@@ -32,11 +32,15 @@
 
 # define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0 /* specific for Windows Winsock API */
 
-# define ICMP_ENGAGE_EVENT(so, fdset)               \
+# ifndef RT_OS_WINDOWS
+#  define ICMP_ENGAGE_EVENT(so, fdset)               \
     do {                                             \
         if (pData->icmp_socket.s != -1)              \
             DO_ENGAGE_EVENT1((so), (fdset), ICMP);   \
     } while (0)
+# else /* !RT_OS_WINDOWS */
+#  define ICMP_ENGAGE_EVENT(so, fdset) do {} while(0)
+#endif /* RT_OS_WINDOWS */
 
 #else /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
 
@@ -584,6 +588,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
              */
             if (so->so_state & SS_ISFCONNECTING)
             {
+                Log2(("connecting %R[natsock] engaged\n",so));
                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
                 TCP_ENGAGE_EVENT1(so, writefds);
             }
@@ -807,6 +812,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                  */
                 if (so->so_state & SS_ISFCONNECTING)
                 {
+                    Log2(("connecting %R[natsock] catched\n", so));
                     /* Connected */
                     so->so_state &= ~SS_ISFCONNECTING;
 
@@ -959,17 +965,38 @@ struct arphdr
 };
 
 static
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 void arp_input(PNATState pData, struct mbuf *m)
+#else
+void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
+#endif
 {
-    struct ethhdr *eh = mtod(m, struct ethhdr *);
-    struct arphdr *ah = (struct arphdr *)&eh[1];
-    uint8_t arp_reply[sizeof(struct arphdr)];
+    struct ethhdr *eh;
+    struct ethhdr *reh;
+    struct arphdr *ah;
     struct arphdr *rah;
     int ar_op;
     struct ex_list *ex_ptr;
-    uint32_t htip = ntohl(*(uint32_t*)ah->ar_tip);
+    uint32_t htip;
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+    uint8_t arp_reply[sizeof(struct arphdr) + ETH_HLEN];
+    eh = (struct ethhdr *)pkt;
+#else
+    struct mbuf *mr; 
+    eh = mtod(m, struct ethhdr *);
+#endif
+    ah = (struct arphdr *)&eh[1];
+    htip = ntohl(*(uint32_t*)ah->ar_tip);
 
-    rah = (struct arphdr *)arp_reply;
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+    mr = m_get(pData);
+    mr->m_data += if_maxlinkhdr;
+    mr->m_len = sizeof(struct arphdr);
+    rah = mtod(mr, struct arphdr *);
+#else
+    reh = (struct ethhdr *)arp_reply;
+    rah = (struct arphdr *)&reh[1];
+#endif
 
     ar_op = ntohs(ah->ar_op);
     switch(ar_op)
@@ -988,12 +1015,19 @@ void arp_input(PNATState pData, struct mbuf *m)
                 return;
         arp_ok:
 
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+                memcpy(reh->h_dest, eh->h_source, ETH_ALEN);
+                memcpy(reh->h_source, &special_addr, ETH_ALEN);
+                reh->h_source[5] = ah->ar_tip[3];
+                reh->h_proto = htons(ETH_P_ARP);
+#endif
                 rah->ar_hrd = htons(1);
                 rah->ar_pro = htons(ETH_P_IP);
                 rah->ar_hln = ETH_ALEN;
                 rah->ar_pln = 4;
                 rah->ar_op = htons(ARPOP_REPLY);
                 memcpy(rah->ar_sha, special_ethaddr, ETH_ALEN);
+
                 switch (htip & ~pData->netmask) 
                 {
                     case CTL_DNS:
@@ -1007,7 +1041,7 @@ void arp_input(PNATState pData, struct mbuf *m)
                 memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
                 memcpy(rah->ar_tip, ah->ar_sip, 4);
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-                if_encap(pData, ETH_P_ARP, arp_reply, sizeof(struct arphdr));
+                if_encap(pData, ETH_P_ARP, mr);
                 m_free(pData, m);
 #else
                 slirp_output(pData->pvUser, arp_reply, sizeof(arp_reply));
@@ -1037,25 +1071,30 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     }
     /* Note: we add to align the IP header */
 
-    if (M_FREEROOM(m) < pkt_len)
+    if (M_FREEROOM(m) < pkt_len + 2)
     {
-       m_inc(m, pkt_len);
+       m_inc(m, pkt_len + 2);
     }
-    m->m_len = pkt_len;
-    memcpy(m->m_data, pkt, pkt_len);
+    m->m_len = pkt_len + 2;
+    memcpy(m->m_data + 2, pkt, pkt_len);
 
     proto = ntohs(*(uint16_t *)(pkt + 12));
     switch(proto)
     {
         case ETH_P_ARP:
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
             arp_input(pData, m);
+#else
+            arp_input(pData, pkt, pkt_len);
+            m_free(pData, m);
+#endif
             break;
         case ETH_P_IP:
             /* Update time. Important if the network is very quiet, as otherwise
              * the first outgoing connection gets an incorrect timestamp. */
             updtime(pData);
-            m->m_data += ETH_HLEN;
-            m->m_len -= ETH_HLEN;
+            m->m_data += ETH_HLEN + 2;
+            m->m_len -= ETH_HLEN + 2;
             ip_input(pData, m);
             break;
         default:
@@ -1066,20 +1105,25 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 }
 
 /* output the IP packet to the ethernet device */
-void if_encap(PNATState pData, uint16_t eth_proto, const uint8_t *ip_data, int ip_data_len)
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
+#else
+void if_encap(PNATState pData, uint8_t *ip_data, int ip_data_len)
+#endif
 {
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-    uint8_t *buf = RTMemAlloc(1600); /* XXX:temporal solution */
-    struct ethhdr *eh = (struct ethhdr *)buf;
-
-    if (ip_data_len + ETH_HLEN > 1600)
-        return;
+    struct ethhdr *eh;
+    m->m_data -= if_maxlinkhdr;
+    m->m_len += ETH_HLEN;
+    eh = mtod(m, struct ethhdr *);
 #else
     uint8_t buf[1600]; 
     struct ethhdr *eh = (struct ethhdr *)buf;
 
     if (ip_data_len + ETH_HLEN > sizeof(buf))
         return;
+    
+    memcpy(buf + sizeof(struct ethhdr), ip_data, ip_data_len);
 #endif
 
 
@@ -1087,9 +1131,13 @@ void if_encap(PNATState pData, uint16_t eth_proto, const uint8_t *ip_data, int i
     memcpy(eh->h_source, special_ethaddr, ETH_ALEN - 1);
     /* XXX: not correct */
     eh->h_source[5] = CTL_ALIAS;
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     eh->h_proto = htons(eth_proto);
-    memcpy(buf + sizeof(struct ethhdr), ip_data, ip_data_len);
+    slirp_output(pData->pvUser, m, mtod(m, uint8_t *), m->m_len);
+#else
+    eh->h_proto = htons(ETH_P_IP);
     slirp_output(pData->pvUser, buf, ip_data_len + ETH_HLEN);
+#endif
 }
 
 int slirp_redir(PNATState pData, int is_udp, int host_port,
@@ -1143,4 +1191,15 @@ unsigned int slirp_get_timeout_ms(PNATState pData)
             return 500; /* see PR_SLOWHZ */
     }
     return 0;
+}
+
+/*
+ * this function called from NAT thread
+ */
+void slirp_post_sent(PNATState pData, void *pvArg)
+{
+    struct socket *so = 0; 
+    struct tcpcb *tp = 0;
+    struct mbuf *m = (struct mbuf *)pvArg;
+    m_free(pData, m); 
 }
