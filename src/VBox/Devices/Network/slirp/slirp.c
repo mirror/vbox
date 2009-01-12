@@ -1071,12 +1071,12 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     }
     /* Note: we add to align the IP header */
 
-    if (M_FREEROOM(m) < pkt_len + 2)
+    if (M_FREEROOM(m) < pkt_len)
     {
-       m_inc(m, pkt_len + 2);
+       m_inc(m, pkt_len);
     }
-    m->m_len = pkt_len + 2;
-    memcpy(m->m_data + 2, pkt, pkt_len);
+    m->m_len = pkt_len ;
+    memcpy(m->m_data, pkt, pkt_len);
 
     proto = ntohs(*(uint16_t *)(pkt + 12));
     switch(proto)
@@ -1093,8 +1093,8 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
             /* Update time. Important if the network is very quiet, as otherwise
              * the first outgoing connection gets an incorrect timestamp. */
             updtime(pData);
-            m->m_data += ETH_HLEN + 2;
-            m->m_len -= ETH_HLEN + 2;
+            m->m_data += ETH_HLEN;
+            m->m_len -= ETH_HLEN;
             ip_input(pData, m);
             break;
         default:
