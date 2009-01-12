@@ -144,6 +144,7 @@ typedef struct DisasContext {
     int vm86;   /* vm86 mode */
 #ifdef VBOX
     int vme;    /* CR4.VME */
+    int pvi;    /* CR4.PVI */
     int record_call;    /* record calls for CSAM or not? */
 #endif
     int cpl;
@@ -8346,6 +8347,7 @@ DECLINLINE(void) gen_intermediate_code_internal(CPUState *env,
     dc->vm86 = (flags >> VM_SHIFT) & 1;
 #ifdef VBOX
     dc->vme = !!(env->cr[4] & CR4_VME_MASK);
+    dc->pvi = !!(env->cr[4] & CR4_PVI_MASK);
 #ifdef VBOX_WITH_CALL_RECORD
     if (    !(env->state & CPU_RAW_RING0)
         &&  (env->cr[0] & CR0_PG_MASK)

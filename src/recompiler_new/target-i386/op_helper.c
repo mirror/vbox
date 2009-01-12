@@ -144,13 +144,15 @@ void helper_write_eflags_vme(target_ulong t0)
 {
     unsigned int new_eflags = t0;
 
+    assert(env->eflags & (1<<VM_SHIFT));
+
     /* if virtual interrupt pending and (virtual) interrupts will be enabled -> #GP */
     /* if TF will be set -> #GP */
     if (    ((new_eflags & IF_MASK) && (env->eflags & VIP_MASK))
         ||  (new_eflags & TF_MASK)) {
         raise_exception(EXCP0D_GPF);
     } else {
-        load_eflags(new_eflags, (TF_MASK | AC_MASK | ID_MASK | NT_MASK) & 0xffff);
+        load_eflags(new_eflags, TF_MASK | AC_MASK | ID_MASK | NT_MASK);
 
         if (new_eflags & IF_MASK) {
             env->eflags |= VIF_MASK;
@@ -5366,7 +5368,7 @@ void helper_sti(void)
 #ifdef VBOX
 void helper_cli_vme(void)
 {
-    env->eflags &= ~IF_MASK;
+    env->eflags &= ~VIF_MASK;
 }
 
 void helper_sti_vme(void)
@@ -5375,7 +5377,7 @@ void helper_sti_vme(void)
     if (env->eflags & VIP_MASK) {
         raise_exception(EXCP0D_GPF);
     }
-    env->eflags |= IF_MASK;
+    env->eflags |= VIF_MASK;
 }
 #endif
 
