@@ -122,7 +122,9 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
         struct sf_inode_info *sf_i = GET_INODE_INFO (inode);
         struct sf_glob_info *sf_g = GET_GLOB_INFO (inode->i_sb);
         struct sf_reg_info *sf_r = file->private_data;
-        loff_t pos = *off;
+        loff_t pos = (file->f_flags & O_APPEND)
+                       ? inode->i_size
+                       : *off;
 
         TRACE ();
         BUG_ON (!sf_i);
