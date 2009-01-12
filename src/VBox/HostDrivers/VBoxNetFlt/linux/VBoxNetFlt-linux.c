@@ -438,18 +438,29 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
  * @param   fSrc            Where the packet (allegedly) comes from, one INTNETTRUNKDIR_* value.
  * @param   eProtocol       The protocol.
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
 static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
                                         struct net_device *pSkbDev,
                                         struct packet_type *pPacketType,
                                         struct net_device *pOrigDev)
+#else
+static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
+                                        struct net_device *pSkbDev,
+                                        struct packet_type *pPacketType)
+#endif
 {
     PVBOXNETFLTINS pThis;
     struct net_device *pDev;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
+    Log2(("vboxNetFltLinuxPacketHandler: pBuf=%p pSkbDev=%p pPacketType=%p pOrigDev=%p\n",
+          pBuf, pSkbDev, pPacketType, pOrigDev));
+#else
+    Log2(("vboxNetFltLinuxPacketHandler: pBuf=%p pSkbDev=%p pPacketType=%p\n",
+          pBuf, pSkbDev, pPacketType));
+#endif
     /*
      * Drop it immediately?
      */
-    Log2(("vboxNetFltLinuxPacketHandler: pBuf=%p pSkbDev=%p pPacketType=%p pOrigDev=%p\n",
-          pBuf, pSkbDev, pPacketType, pOrigDev));
     if (!pBuf)
         return 0;
     pThis = VBOX_FLT_PT_TO_INST(pPacketType);
@@ -586,7 +597,11 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
      */
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
 static void vboxNetFltLinuxXmitTask(struct work_struct *pWork)
+#else
+static void vboxNetFltLinuxXmitTask(void *pWork)
+#endif
 {
     struct sk_buff *pBuf;
     bool fActive;
