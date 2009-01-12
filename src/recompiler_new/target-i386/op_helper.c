@@ -152,7 +152,8 @@ void helper_write_eflags_vme(target_ulong t0)
         ||  (new_eflags & TF_MASK)) {
         raise_exception(EXCP0D_GPF);
     } else {
-        load_eflags(new_eflags, TF_MASK | AC_MASK | ID_MASK | NT_MASK);
+        load_eflags(new_eflags, 
+                    (TF_MASK | AC_MASK | ID_MASK | NT_MASK) & 0xffff);
 
         if (new_eflags & IF_MASK) {
             env->eflags |= VIF_MASK;
@@ -170,7 +171,9 @@ target_ulong helper_read_eflags_vme(void)
     eflags |= env->eflags & ~(VM_MASK | RF_MASK);
     if (env->eflags & VIF_MASK)
         eflags |= IF_MASK;
-    return eflags;
+    else
+        eflags &= ~IF_MASK;
+    return eflags & 0xffff;
 }
 
 void helper_dump_state()
