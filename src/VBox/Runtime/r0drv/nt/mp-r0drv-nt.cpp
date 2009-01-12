@@ -114,28 +114,6 @@ RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 }
 
 
-/** @todo move down after RTMpGetOnlineCount. */
-RTDECL(bool) RTMpIsCpuWorkPending(void)
-{
-    RTCPUID idCpuEntry = RTMpCpuId();
-
-    Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
-
-    /** @todo the best solution is to check for pending DPCs, but there doesn't seem to be any documented way to do this.
-     *   The KPRCB or KPCR contains an undocumented entry, but it's too risky to make any assumptions about it.
-
-    /* Flush all pending DPCs. Not sure if we can get rescheduling as a direct result. */
-    KeFlushQueuedDpcs();
-
-    Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
-
-    if (idCpuEntry != RTMpCpuId())
-        return true;
-
-    /* We've stayed on the same CPU, so we can continue. */
-    return false;
-}
-
 
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
@@ -171,6 +149,46 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
     RTMpGetOnlineSet(&Set);
     return RTCpuSetCount(&Set);
 }
+
+
+#if 0
+/* Experiment with checking the undocumented KPRCB structure
+ * 'dt nt!_kprcb 0xaddress' shows the layout
+ */
+typedef struct
+{
+    LIST_ENTRY     DpcListHead;
+    ULONG_PTR      DpcLock;
+    volatile ULONG DpcQueueDepth;
+    ULONG          DpcQueueCount;
+} KDPC_DATA, *PKDPC_DATA;
+#endif
+
+RTDECL(bool) RTMpIsCpuWorkPending(void)
+{
+    uint8_t *pkprcb;
+    PKDPC_DATA pDpcData;
+
+    _asm {
+        mov eax, fs:0x20
+        mov pkprcb, eax
+    }
+    pDpcData = (PKDPC_DATA)(pkprcb + 0x19e0);
+    if (pDpcData->DpcQueueDepth)
+        return true;
+
+    pDpcData++;
+    if (pDpcData->DpcQueueDepth)
+        return true;
+    return false;
+}
+#else
+RTDECL(bool) RTMpIsCpuWorkPending(void)
+{
+    /** @todo not implemented */
+    return false;
+}
+#endif
 
 
 /**
