@@ -162,7 +162,6 @@ typedef struct
     volatile ULONG DpcQueueDepth;
     ULONG          DpcQueueCount;
 } KDPC_DATA, *PKDPC_DATA;
-#endif
 
 RTDECL(bool) RTMpIsCpuWorkPending(void)
 {
