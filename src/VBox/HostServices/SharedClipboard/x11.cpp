@@ -193,36 +193,38 @@ static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u
     VBOXCLIPBOARDCLIENTDATA *pClient = pCtx->pClient;
 
     LogFlowFunc(("u32Format=%02X\n", u32Format));
+    /* Assert that no other transfer is in process (requests are serialised)
+     * and that the last transfer cleaned up properly. */
+    AssertLogRelReturn(   pCtx->pClient->data.pv == NULL
+                       && pCtx->pClient->data.cb == 0
+                       && pCtx->pClient->data.u32Format == 0,
+                       VERR_WRONG_ORDER
+                      );
+    /* No one else (X11 or VBox) should currently be waiting.  The first because
+     * requests from X11 are serialised and the second because VBox previously
+     * grabbed the clipboard, so it should not be waiting for data from us. */
+    AssertLogRelReturn (ASMAtomicCmpXchgU32(&pCtx->waiter, 1, 0), VERR_DEADLOCK);
     if (pClient == 0)
     {
+        /* This can legitimately happen if we disconnect during a request for
+         * data from X11. */
         LogFunc(("host requested guest clipboard data after guest had disconnected.\n"));
         pCtx->guestFormats = 0;
         pCtx->waiter = 0;
         return VERR_TIMEOUT;
     }
-    if (!(   pCtx->pClient->data.pv == NULL
-          && pCtx->pClient->data.cb == 0
-          && pCtx->pClient->data.u32Format == 0))
-    {
-        LogRel(("vboxClipboardReadDataFromClient: a guest to host clipboard transfer has been requested, but another is in progress, or has not cleaned up properly.\n"));
-        AssertMsgFailed(("A guest to host clipboard transfer has been requested, but another is in progress, or has not cleaned up properly.\n"));
-    }
-
-    /* Only one of the guest and the host should be waiting at any one time */
-    if (!ASMAtomicCmpXchgU32(&pCtx->waiter, 1, 0))
-    {
-        LogRel(("vboxClipboardReadDataFromClient: deadlock situation - the host and the guest are both waiting for data from the other.\n"));
-        return VERR_DEADLOCK;
-    }
     /* Request data from the guest */
     vboxSvcClipboardReportMsg (pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, u32Format);
     /* Which will signal us when it is ready. */
-    if (RTSemEventWait(pCtx->waitForData, CLIPBOARDTIMEOUT) != VINF_SUCCESS)
+    int rc = RTSemEventWait(pCtx->waitForData, RT_INDEFINITE_WAIT);
+    AssertLogRelRCSuccess(rc);
+    if (RT_FAILURE(rc))
     {
-        LogRel(("vboxClipboardReadDataFromClient: vboxSvcClipboardReportMsg failed to complete within %d milliseconds\n", CLIPBOARDTIMEOUT));
+        /* I believe this should not happen.  Wait until the assertions arrive
+         * to prove the contrary. */
         pCtx->guestFormats = 0;
         pCtx->waiter = 0;
-        return VERR_TIMEOUT;
+        return rc;
     }
     pCtx->waiter = 0;
     LogFlowFunc(("wait completed.  Returning.\n"));
@@ -683,8 +685,6 @@ static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
 
     XtAppMainLoop(g_ctx.appContext);
     g_ctx.formatList.clear();
-    RTSemEventDestroy(g_ctx.waitForData);
-    RTSemMutexDestroy(g_ctx.asyncMutex);
     LogRel(("Shared clipboard: host clipboard thread terminated successfully\n"));
     return VINF_SUCCESS;
 }
@@ -847,6 +847,10 @@ void vboxClipboardDestroy (void)
 
     LogRel(("vboxClipboardDestroy: shutting down host clipboard\n"));
 
+    /* Drop the reference to the client, in case it is still there.  This will
+     * cause any outstanding clipboard data requests from X11 to fail
+     * immediately. */
+    g_ctx.pClient = NULL;
     /* Set the termination flag. */
     XtAppSetExitFlag(g_ctx.appContext);
     /* Wake up the event loop */
@@ -855,6 +859,14 @@ void vboxClipboardDestroy (void)
     ev.xclient.format = 8;
     XSendEvent(XtDisplay(g_ctx.widget), XtWindow(g_ctx.widget), false, 0, &ev);
     XFlush(XtDisplay(g_ctx.widget));
+    if (g_ctx.eOwner == GUEST)
+        /* X11 may be waiting for data from VBox.  At this point it is no
+         * longer going to arrive, and we must release it to allow the event
+         * loop to terminate.  In this case the buffer where VBox would have
+         * written the clipboard data will still be empty and we will just
+         * return "no data" to X11.  Any subsequent attempts to get the data
+         * from VBox will fail immediately as the client reference is gone. */
+        RTSemEventSignal(g_ctx.waitForData);
     do
     {
         rc = RTThreadWait(g_ctx.thread, 1000, &rcThread);
@@ -862,7 +874,19 @@ void vboxClipboardDestroy (void)
         Assert(RT_SUCCESS(rc) || ((VERR_TIMEOUT == rc) && (count != 5)));
     } while ((VERR_TIMEOUT == rc) && (count < 300));
     if (RT_SUCCESS(rc))
+    {
+        /*
+         * No one should be waiting on this by now.  Justification:
+         *  - Case 1: VBox is waiting for data from X11:
+         *      Not possible, as it would be waiting on this thread.
+         *  - Case 2: X11 is waiting for data from VBox:
+         *      Not possible, as we checked that the X11 event thread exited
+         *      successfully.
+         */
+        RTSemEventDestroy(g_ctx.waitForData);
+        RTSemMutexDestroy(g_ctx.asyncMutex);
         AssertRC(rcThread);
+    }
     else
         LogRel(("vboxClipboardDestroy: rc=%Rrc\n", rc));
     XtCloseDisplay(XtDisplay(g_ctx.widget));
@@ -888,11 +912,7 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
     LogFlow(("vboxClipboardConnect\n"));
 
     /* Only one client is supported for now */
-    if (g_ctx.pClient != 0)
-    {
-        LogRel(("vboxClipboardConnect: attempted to connect, but a client appears to be already running.\n"));
-        AssertReturn(g_ctx.pClient == 0, VERR_NOT_SUPPORTED);
-    }
+    AssertLogRelReturn(g_ctx.pClient == 0, VERR_NOT_SUPPORTED);
 
     pClient->pCtx = &g_ctx;
     pClient->pCtx->pClient = pClient;
@@ -1044,7 +1064,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
     {
         /* If vboxClipboardReadDataFromVBox fails then pClient may be invalid */
         LogRelFunc (("vboxClipboardReadDataFromVBox returned %Rrc%s\n", rc,
-                     RT_SUCCESS(rc) ? ", g_ctx.pClient->data.cb == 0" :  ""));
+                    RT_SUCCESS(rc) ? ", g_ctx.pClient->data.cb == 0" :  ""));
         vboxClipboardEmptyGuestBuffer();
         return false;
     }
@@ -1119,7 +1139,7 @@ static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
     {
         /* If vboxClipboardReadDataFromVBox fails then pClient may be invalid */
         LogRelFunc (("vboxClipboardReadDataFromVBox returned %Rrc%s\n", rc,
-                      RT_SUCCESS(rc) ? ", g_ctx.pClient->data.cb == 0" :  ""));
+                     RT_SUCCESS(rc) ? ", g_ctx.pClient->data.cb == 0" :  ""));
         vboxClipboardEmptyGuestBuffer();
         return false;
     }
@@ -1318,6 +1338,9 @@ static Boolean vboxClipboardConvertForX11(Widget, Atom *atomSelection,
     g_eClipboardFormats eFormat = INVALID;
 
     LogFlowFunc(("\n"));
+    /* Drop requests that we receive too late. */
+    if (g_ctx.eOwner != GUEST)
+        return false;
     if (   (*atomSelection != g_ctx.atomClipboard)
         && (*atomSelection != g_ctx.atomPrimary)
        )
@@ -1474,12 +1497,10 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
             *pcbActual = 0;
             return VERR_NO_DATA;  /* The guest thinks we have data and we don't */
         }
-        /* Only one of the host and the guest should ever be waiting. */
-        if (!ASMAtomicCmpXchgU32(&g_ctx.waiter, 1, 0))
-        {
-            LogRel(("vboxClipboardReadData: detected a deadlock situation - the host and the guest are waiting for each other.\n"));
-            return VERR_DEADLOCK;
-        }
+        /* No one else (VBox or X11) should currently be waiting.  The first because
+         * requests from VBox are serialised and the second because X11 previously
+         * grabbed the clipboard, so it should not be waiting for data from us. */
+        AssertLogRelReturn (ASMAtomicCmpXchgU32(&g_ctx.waiter, 1, 0), VERR_DEADLOCK);
         g_ctx.requestHostFormat = g_ctx.hostTextFormat;
         g_ctx.requestBuffer = pv;
         g_ctx.requestBufferSize = cb;
@@ -1491,29 +1512,14 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
         XtGetSelectionValue(g_ctx.widget, g_ctx.atomClipboard, g_ctx.atomHostTextFormat,
                             vboxClipboardGetDataFromX11, reinterpret_cast<XtPointer>(g_ctx.pClient),
                             CurrentTime);
-        /* When the data arrives, the vboxClipboardGetProc callback will be called.  The
+        /* When the data arrives, the vboxClipboardGetDataFromX11 callback will be called.  The
            callback will signal the event semaphore when it has processed the data for us. */
 
-#ifdef RT_OS_SOLARIS
-        /*
-         * Trusted Xorg requires a bigger timeout.
-         */
-        unsigned long cTimeoutMillies = CLIPBOARDTIMEOUT;
-        if (is_system_labeled())
-            cTimeoutMillies = 1000 * 120;
-
-        if (RTSemEventWait(g_ctx.waitForData, cTimeoutMillies) != VINF_SUCCESS)
-#else
-        if (RTSemEventWait(g_ctx.waitForData, CLIPBOARDTIMEOUT) != VINF_SUCCESS)
-#endif
+        int rc = RTSemEventWait(g_ctx.waitForData, RT_INDEFINITE_WAIT);
+        if (RT_FAILURE(rc))
         {
-            /* No need to polute the release log for this. */
-            // LogRel(("vboxClipboardReadDataFromClient: XtGetSelectionValue failed to complete within %d milliseconds\n", CLIPBOARDTIMEOUT));
-            /* A time out can legitimately occur if a client is temporarily too busy to answer fast */
-            // g_ctx.hostTextFormat = INVALID;
-            // g_ctx.hostBitmapFormat = INVALID;
             g_ctx.waiter = 0;
-            return VERR_TIMEOUT;
+            return rc;
         }
         g_ctx.waiter = 0;
     }
@@ -1541,16 +1547,11 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_
 
     LogFlowFunc (("called\n"));
 
-    /*
-     * The guest returns data that was requested in the WM_RENDERFORMAT handler.
-     */
-    if (!(   pClient->data.pv == NULL
-          && pClient->data.cb == 0
-          && pClient->data.u32Format == 0))
-    {
-        LogRel(("vboxClipboardWriteData: clipboard data has arrived from the guest, but another transfer is in process or has not cleaned up properly.\n"));
-        AssertMsgFailed(("vboxClipboardWriteData: clipboard data has arrived from the guest, but another transfer is in process or has not cleaned up properly.\n"));
-    }
+    /* Assert that no other transfer is in process (requests are serialised)
+     * or has not cleaned up properly. */
+    AssertLogRelReturnVoid (   pClient->data.pv == NULL
+                            && pClient->data.cb == 0
+                            && pClient->data.u32Format == 0);
 
     if (cb > 0)
     {
@@ -1566,3 +1567,4 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_
 
     RTSemEventSignal(g_ctx.waitForData);
 }
+
