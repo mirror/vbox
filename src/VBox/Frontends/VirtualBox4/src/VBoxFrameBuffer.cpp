@@ -546,15 +546,80 @@ void VBoxSDLFrameBuffer::paintEvent (QPaintEvent *pe)
 
 void VBoxSDLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 {
+    /* Check whether the guest resolution has not been changed. */
+    bool fSameResolutionRequested = (   width()  == re->width()
+                                     && height() == re->height()
+                                    );
+
+    /* Check if the guest VRAM can be used as the source bitmap. */
+    bool fallback = false;
+
+    Uint32 Rmask = 0;
+    Uint32 Gmask = 0;
+    Uint32 Bmask = 0;
+
+    if (re->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB)
+    {
+        switch (re->bitsPerPixel())
+        {
+            case 32:
+                Rmask = 0x00FF0000;
+                Gmask = 0x0000FF00;
+                Bmask = 0x000000FF;
+                break;
+            case 24:
+                Rmask = 0x00FF0000;
+                Gmask = 0x0000FF00;
+                Bmask = 0x000000FF;
+                break;
+            case 16:
+                Rmask = 0xF800;
+                Gmask = 0x07E0;
+                Bmask = 0x001F;
+                break;
+            default:
+                /* Unsupported format leads to the indirect buffer */
+                fallback = true;
+                break;
+        }
+    }
+    else
+    {
+        /* Unsupported format leads to the indirect buffer */
+        fallback = true;
+    }
+
     mWdt = re->width();
     mHgt = re->height();
 
-    /* close SDL so we can init it again */
+    /* Recreate the source surface. */
     if (mSurfVRAM)
     {
         SDL_FreeSurface(mSurfVRAM);
         mSurfVRAM = NULL;
     }
+
+    if (!fallback)
+    {
+        /* It is OK to create the source surface from the guest VRAM. */
+        mSurfVRAM = SDL_CreateRGBSurfaceFrom(re->VRAM(), re->width(), re->height(),
+                                             re->bitsPerPixel(),
+                                             re->bytesPerLine(),
+                                             Rmask, Gmask, Bmask, 0);
+        LogFlowFunc (("Created VRAM surface %p\n", mSurfVRAM));
+        if (mSurfVRAM == NULL)
+        {
+            fallback = true;
+        }
+    }
+
+    if (fSameResolutionRequested)
+    {
+        LogFlowFunc(("the same resolution requested, skipping the resize.\n")); 
+        return;
+    }
+
+    /* close SDL so we can init it again */
     if (mScreen)
     {
         X11ScreenSaverSettingsSave();
@@ -586,54 +651,6 @@ void VBoxSDLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 #endif
 
     LogFlowFunc (("Setting SDL video mode to %d x %d\n", mWdt, mHgt));
-
-    bool fallback = false;
-
-    Uint32 Rmask = 0;
-    Uint32 Gmask = 0;
-    Uint32 Bmask = 0;
-
-    if (re->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB)
-    {
-        switch (re->bitsPerPixel())
-        {
-            case 32:
-                Rmask = 0x00FF0000;
-                Gmask = 0x0000FF00;
-                Bmask = 0x000000FF;
-                break;
-            case 24:
-                Rmask = 0x00FF0000;
-                Gmask = 0x0000FF00;
-                Bmask = 0x000000FF;
-                break;
-            case 16:
-                Rmask = 0xF800;
-                Gmask = 0x07E0;
-                Bmask = 0x001F;
-            default:
-                /* Unsupported format leads to the indirect buffer */
-                fallback = true;
-                break;
-        }
-
-        if (!fallback)
-        {
-            /* Create a source surface from guest VRAM. */
-            mSurfVRAM = SDL_CreateRGBSurfaceFrom(re->VRAM(), mWdt, mHgt,
-                                                 re->bitsPerPixel(),
-                                                 re->bytesPerLine(),
-                                                 Rmask, Gmask, Bmask, 0);
-            LogFlowFunc (("Created VRAM surface %p\n", mSurfVRAM));
-            if (mSurfVRAM == NULL)
-                fallback = true;
-        }
-    }
-    else
-    {
-        /* Unsupported format leads to the indirect buffer */
-        fallback = true;
-    }
 
     /* Pixel format is RGB in any case */
     mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
