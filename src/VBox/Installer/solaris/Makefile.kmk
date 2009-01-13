@@ -287,7 +287,9 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_PACKAGE
 	$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_STRIP_BINS)) \
 	$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_STRIP_OBJS)) \
 	$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_NO_STRIP)) \
-	$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_QTLIBS))
+	$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_QTLIBS)) \
+	$(addprefix $(SOLARIS_INST_DIR_32)/,VBoxPython.so) \
+	$(addprefix $(SOLARIS_INST_DIR_64)/,VBoxPython.so)
 else
  SOLARIS_ARCH_DEPFILES = $(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_STRIP_EXES)) \
 	$(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_STRIP_BINS)) \
@@ -378,7 +380,6 @@ endif
 ifdef VBOX_WITH_SOLARIS_COMBINED_PACKAGE
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS)/solaris.x86//libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2    $(SOLARIS_INST_DIR_32)/libSDL-1.2.so.0,)
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS)/solaris.amd64/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2   $(SOLARIS_INST_DIR_64)/libSDL-1.2.so.0,)
-	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN_32)/VBoxPython.so    $(SOLARIS_INST_DIR_32)/VBoxPython.so,)
 	@# @todo -XXX- how to get rid of this manual MKDIR ?
 	$(QUIET)$(MKDIR) $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN_64)/VBoxPython.so    $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR)/VBoxPython.so,)
