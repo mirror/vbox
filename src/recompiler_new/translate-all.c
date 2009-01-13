@@ -181,11 +181,7 @@ int cpu_restore_state(TranslationBlock *tb,
 #endif
     tcg_func_start(s);
 
-#ifdef VBOX
     gen_intermediate_code_pc(env, tb);
-#else
-    gen_intermediate_code_pc(env, tb);
-#endif
 
     if (use_icount) {
         /* Reset the cycle counter to the start of the block.  */
