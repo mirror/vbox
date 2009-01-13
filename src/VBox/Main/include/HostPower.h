@@ -90,8 +90,10 @@ public:
 private:
 
     static DECLCALLBACK(int) powerChangeNotificationThread (RTTHREAD ThreadSelf, void *pInstance);
-    static void powerChangeNotificationHandler (void *pData, io_service_t service, natural_t messageType, void *pMessageArgument);
-    static OSErr lowPowerEventHandler (const AppleEvent * theAppleEvent, AppleEvent * replyAppleEvent, long refCon);
+    static void powerChangeNotificationHandler (void *pvData, io_service_t service, natural_t messageType, void *pMessageArgument);
+    static void lowPowerHandler (void *pvData);
+
+    void checkBatteryCriticalLevel (bool *pfCriticalChanged = NULL);
 
     /* Private member vars */
     RTTHREAD mThread; /* Our message thread. */
@@ -100,6 +102,8 @@ private:
     IONotificationPortRef mNotifyPort; /* Notification port allocated by IORegisterForSystemPower */
     io_object_t mNotifierObject; /* Notifier object, used to deregister later */
     CFRunLoopRef mRunLoop; /* A reference to the local thread run loop */
+
+    bool mCritical; /* Indicate if the battery was in the critical state last checked */
 };
 # endif /* RT_OS_DARWIN */
 
