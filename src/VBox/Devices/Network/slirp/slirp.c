@@ -1113,6 +1113,7 @@ void if_encap(PNATState pData, uint8_t *ip_data, int ip_data_len)
 {
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     struct ethhdr *eh;
+    uint8_t *buf = RTMemAlloc(1600);
     m->m_data -= if_maxlinkhdr;
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
@@ -1133,7 +1134,13 @@ void if_encap(PNATState pData, uint8_t *ip_data, int ip_data_len)
     eh->h_source[5] = CTL_ALIAS;
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     eh->h_proto = htons(eth_proto);
+#if 0
     slirp_output(pData->pvUser, m, mtod(m, uint8_t *), m->m_len);
+#else
+    memcpy(buf, mtod(m, uint8_t *), m->m_len); 
+    slirp_output(pData->pvUser, NULL, buf, m->m_len);
+    m_free(pData, m);
+#endif
 #else
     eh->h_proto = htons(ETH_P_IP);
     slirp_output(pData->pvUser, buf, ip_data_len + ETH_HLEN);
