@@ -243,8 +243,8 @@ setup()
             fail "Look at $LOG to find out what went wrong"
         fi
     fi
-    start
     succ_msg
+    start
     echo
     echo "You should reboot your guest to make sure the new modules are actually used"
 }
