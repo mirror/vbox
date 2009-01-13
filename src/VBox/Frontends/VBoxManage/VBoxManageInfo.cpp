@@ -365,7 +365,7 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("accelerate3d=\"%s\"\n", accelerate3d ? "on" : "off");
     else
-        RTPrintf("3D Acceleration:       %s\n", accelerate3d ? "on" : "off");
+        RTPrintf("3D Acceleration: %s\n", accelerate3d ? "on" : "off");
 
     ComPtr<IFloppyDrive> floppyDrive;
     rc = machine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
