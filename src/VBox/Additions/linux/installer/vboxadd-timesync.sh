@@ -45,7 +45,7 @@ elif [ -f /etc/debian_version ]; then
 elif [ -f /etc/gentoo-release ]; then
     system=gentoo
     PIDFILE="/var/run/vboxadd-timesync"
- elif [ -f /etc/arch-release ]; then
+elif [ -f /etc/arch-release ]; then
      system=arch
      PIDFILE="/var/run/vboxadd-timesync"
 elif [ -f /etc/slackware-version ]; then
@@ -69,6 +69,10 @@ if [ "$system" = "redhat" ]; then
         echo_success
         echo
     }
+
+    begin() {
+        echo -n "$1"
+    }
 fi
 
 if [ "$system" = "suse" ]; then
@@ -85,6 +89,10 @@ if [ "$system" = "suse" ]; then
     succ_msg() {
         rc_reset
         rc_status -v
+    }
+
+    begin() {
+        echo -n "$1"
     }
 fi
 
@@ -103,6 +111,10 @@ if [ "$system" = "debian" ]; then
 
     succ_msg() {
         echo " ...done."
+    }
+
+    begin() {
+        echo -n "$1"
     }
 fi
 
@@ -124,12 +136,17 @@ if [ "$system" = "gentoo" ]; then
         echo " ...done."
     }
 
+    begin() {
+        echo -n "$1"
+    }
+
     if [ "`which $0`" = "/sbin/rc" ]; then
         shift
     fi
 fi
 
 if [ "$system" = "arch" ]; then
+    USECOLOR=yes
     . /etc/rc.d/functions
     daemon() {
         $@
@@ -142,17 +159,17 @@ if [ "$system" = "arch" ]; then
     }
 
     fail_msg() {
-        echo " ...fail!"
+        stat_fail
     }
 
     succ_msg() {
-        echo " ...done."
+        stat_done
     }
 fi
  
 if [ "$system" = "slackware" ]; then
     daemon() {
-	$1 $2
+        $1 $2
     }
 
     killproc() {
@@ -206,7 +223,7 @@ vboxaddrunning() {
 
 start() {
     if ! test -f $PIDFILE; then
-        echo -n "Starting VirtualBox host to guest time synchronization ";
+        begin "Starting VirtualBox host to guest time synchronization ";
         vboxaddrunning || {
             echo "VirtualBox Additions module not loaded!"
             exit 1
@@ -221,7 +238,7 @@ start() {
 
 stop() {
     if test -f $PIDFILE; then
-        echo -n "Stopping VirtualBox host to guest time synchronisation ";
+        begin "Stopping VirtualBox host to guest time synchronisation ";
         vboxaddrunning || {
             echo "VirtualBox Additions module not loaded!"
             exit 1

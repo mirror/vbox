@@ -35,7 +35,9 @@ BUILDVBOXADD=`/bin/ls /usr/src/vboxadd*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
 BUILDVBOXVFS=`/bin/ls /usr/src/vboxvfs*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
 LOG="/var/log/vboxadd-install.log"
 
-if [ -f /etc/redhat-release ]; then
+if [ -f /etc/arch-release ]; then
+    system=arch
+elif [ -f /etc/redhat-release ]; then
     system=redhat
 elif [ -f /etc/SuSE-release ]; then
     system=suse
@@ -43,6 +45,22 @@ elif [ -f /etc/gentoo-release ]; then
     system=gentoo
 else
     system=other
+fi
+
+if [ "$system" = "arch" ]; then
+    USECOLOR=yes
+    . /etc/rc.d/functions
+    fail_msg() {
+        stat_fail
+    }
+
+    succ_msg() {
+        stat_done
+    }
+
+    begin() {
+        stat_busy "$1"
+    }
 fi
 
 if [ "$system" = "redhat" ]; then
