@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sun xVM VirtualBox
-# VirtualBox kernel module control script for Solaris.
+# VirtualBox kernel module control script, Solaris hosts.
 #
 # Copyright (C) 2007-2008 Sun Microsystems, Inc.
 #
@@ -21,7 +21,6 @@ CHECKARCH=""
 SILENTUNLOAD=""
 ALWAYSREMDRV=""
 
-
 MODNAME="vboxdrv"
 VBIMODNAME="vbi"
 FLTMODNAME="vboxflt"
@@ -41,7 +40,7 @@ info()
 
 warn()
 {
-    echo 1>&2 "WARNING!! $!"
+    echo 1>&2 "WARNING!! $1"
 }
 
 check_if_installed()

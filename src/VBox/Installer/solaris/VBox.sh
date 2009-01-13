@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sun xVM VirtualBox
-# VirtualBox startup script for Solaris
+# VirtualBox startup script, Solaris hosts.
 #
 # Copyright (C) 2007-2008 Sun Microsystems, Inc.
 #
@@ -17,7 +17,12 @@
 # additional information or have any questions.
 #
 
-INSTALL_DIR="/opt/VirtualBox"
+CURRENT_ISA=`isainfo -k`
+if test "$CURRENT_ISA" = "amd64"; then
+    INSTALL_DIR="/opt/VirtualBox/amd64"
+else
+    INSTALL_DIR="/opt/VirtualBox/i386"
+fi
 APP=`which $0`
 APP=`basename $APP`
 case "$APP" in
@@ -38,7 +43,10 @@ case "$APP" in
   ;;
   VBoxQtconfig)
     exec "$INSTALL_DIR/VBoxQtconfig" "$@"
-    ;;
+  ;;
+  VBoxBFE)
+    exec "$INSTALL_DIR/VBoxBFE" "$@"
+  ;;
   *)
     echo "Unknown application - $APP"
   ;;
