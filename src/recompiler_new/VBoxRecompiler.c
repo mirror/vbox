@@ -3674,9 +3674,14 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
  * @param   pvCode          Pointer to the code block.
  * @param   cb              Size of the code block.
  */
-void disas(FILE *phFileIgnored, void *pvCode, unsigned long cb)
+void disas(FILE *phFile, void *pvCode, unsigned long cb)
 {
+#ifdef DEBUG_ALL_LOGGING
+#define DISAS_PRINTF(x...) fprintf(phFile, x)
+#else
+#define DISAS_PRINTF(x...) RTLogPrintf(x)
     if (LogIs2Enabled())
+#endif
     {
         unsigned        off = 0;
         char            szOutput[256];
@@ -3689,15 +3694,15 @@ void disas(FILE *phFileIgnored, void *pvCode, unsigned long cb)
         Cpu.mode = CPUMODE_64BIT;
 #endif
 
-        RTLogPrintf("Recompiled Code: %p %#lx (%ld) bytes\n", pvCode, cb, cb);
+        DISAS_PRINTF("Recompiled Code: %p %#lx (%ld) bytes\n", pvCode, cb, cb);
         while (off < cb)
         {
             uint32_t cbInstr;
             if (RT_SUCCESS(DISInstr(&Cpu, (uintptr_t)pvCode + off, 0, &cbInstr, szOutput)))
-                RTLogPrintf("%s", szOutput);
+                DISAS_PRINTF("%s", szOutput);
             else
             {
-                RTLogPrintf("disas error\n");
+                DISAS_PRINTF("disas error\n");
                 cbInstr = 1;
 #ifdef RT_ARCH_AMD64 /** @todo remove when DISInstr starts supporing 64-bit code. */
                 break;
@@ -3706,7 +3711,8 @@ void disas(FILE *phFileIgnored, void *pvCode, unsigned long cb)
             off += cbInstr;
         }
     }
-    NOREF(phFileIgnored);
+
+#undef  DISAS_PRINTF
 }
 
 
@@ -3718,9 +3724,14 @@ void disas(FILE *phFileIgnored, void *pvCode, unsigned long cb)
  * @param   cb              Number of bytes to disassemble.
  * @param   fFlags          Flags, probably something which tells if this is 16, 32 or 64 bit code.
  */
-void target_disas(FILE *phFileIgnored, target_ulong uCode, target_ulong cb, int fFlags)
+void target_disas(FILE *phFile, target_ulong uCode, target_ulong cb, int fFlags)
 {
+#ifdef DEBUG_ALL_LOGGING
+#define DISAS_PRINTF(x...) fprintf(phFile, x)
+#else
+#define DISAS_PRINTF(x...) RTLogPrintf(x)
     if (LogIs2Enabled())
+#endif
     {
         PVM pVM = cpu_single_env->pVM;
         RTSEL cs;
@@ -3734,7 +3745,7 @@ void target_disas(FILE *phFileIgnored, target_ulong uCode, target_ulong cb, int 
         /*
          * Do the disassembling.
          */
-        RTLogPrintf("Guest Code: PC=%RGp %RGp bytes fFlags=%d\n", uCode, cb, fFlags);
+        DISAS_PRINTF("Guest Code: PC=%llx %llx bytes fFlags=%d\n", (uint64_t)uCode, (uint64_t)cb, fFlags);
         cs = cpu_single_env->segs[R_CS].selector;
         eip = uCode - cpu_single_env->segs[R_CS].base;
         for (;;)
@@ -3748,10 +3759,10 @@ void target_disas(FILE *phFileIgnored, target_ulong uCode, target_ulong cb, int 
                                         szBuf, sizeof(szBuf),
                                         &cbInstr);
             if (RT_SUCCESS(rc))
-                RTLogPrintf("%RGp %s\n", uCode, szBuf);
+                DISAS_PRINTF("%llx %s\n", (uint64_t)uCode, szBuf);
             else
             {
-                RTLogPrintf("%RGp %04x:%RGp: %s\n", uCode, cs, eip, szBuf);
+                DISAS_PRINTF("%llx %04x:%llx: %s\n", (uint64_t)uCode, cs, (uint64_t)eip, szBuf);
                 cbInstr = 1;
             }
 
@@ -3763,7 +3774,7 @@ void target_disas(FILE *phFileIgnored, target_ulong uCode, target_ulong cb, int 
             eip += cbInstr;
         }
     }
-    NOREF(phFileIgnored);
+#undef DISAS_PRINTF
 }
 
 
