@@ -213,7 +213,7 @@ GLOBALNAME IDEnterTarget
     mov     cr0, ebx
     DEBUG_CHAR('5')
 
-    ; Jump from compatability mode to 64-bit mode.
+    ; Jump from compatibility mode to 64-bit mode.
     FIXUP FIX_ID_FAR32_TO_64BIT_MODE, 1, NAME(IDEnter64Mode) - NAME(Start)
     jmp     0ffffh:0fffffffeh
 
@@ -283,16 +283,16 @@ gth_fpu_no:
     test    esi, CPUM_SYNC_DEBUG_STATE
     jz      near gth_debug_no
     
-    mov rax, qword [rdx + CPUMCPU.Guest.dr + 0*8]
-    mov dr0, rax
-    mov rax, qword [rdx + CPUMCPU.Guest.dr + 1*8]
-    mov dr1, rax
-    mov rax, qword [rdx + CPUMCPU.Guest.dr + 2*8]
-    mov dr2, rax
-    mov rax, qword [rdx + CPUMCPU.Guest.dr + 3*8]
-    mov dr3, rax
-    mov rax, qword [rdx + CPUMCPU.Guest.dr + 6*8]
-    mov dr6, rax    ; not required for AMD-V
+    mov     rax, qword [rdx + CPUMCPU.Guest.dr + 0*8]
+    mov     dr0, rax
+    mov     rax, qword [rdx + CPUMCPU.Guest.dr + 1*8]
+    mov     dr1, rax
+    mov     rax, qword [rdx + CPUMCPU.Guest.dr + 2*8]
+    mov     dr2, rax
+    mov     rax, qword [rdx + CPUMCPU.Guest.dr + 3*8]
+    mov     dr3, rax
+    mov     rax, qword [rdx + CPUMCPU.Guest.dr + 6*8]
+    mov     dr6, rax    ; not required for AMD-V
 
     and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_DEBUG_STATE
 
