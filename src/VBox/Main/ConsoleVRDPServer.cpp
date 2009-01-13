@@ -2046,6 +2046,9 @@ HRESULT RemoteDisplayInfo::init (Console *aParent)
 
     unconst (mParent) = aParent;
 
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
