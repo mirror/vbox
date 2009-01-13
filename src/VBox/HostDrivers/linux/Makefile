@@ -4,7 +4,7 @@
 
 #
 #
-# Copyright (C) 2008 Sun Microsystems, Inc.
+# Copyright (C) 2008-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -50,7 +50,15 @@ clean:
 	rm -f vboxdrv.ko vboxnetflt.ko
 
 load:
-	@/sbin/rmmod vboxnetflt || true
-	@/sbin/rmmod vboxdrv || true
-	@/sbin/insmod vboxdrv.ko
-	@if [ -f vboxnetflt.ko ]; then /sbin/insmod vboxnetflt.ko; fi
+	@for module in vboxnetflt vboxdrv; do \
+		if grep "^$$module " /proc/modules >/dev/null; then \
+			echo "Removing previously installed $$module module"; \
+			/sbin/rmmod $$module; \
+		fi; \
+	done
+	@for module in vboxdrv vboxnetflt; do \
+		if test -f $$module.ko; then \
+			echo "Installing $$module module"; \
+			/sbin/insmod $$module.ko; \
+		fi; \
+	done
