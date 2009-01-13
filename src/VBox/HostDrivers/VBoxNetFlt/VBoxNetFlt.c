@@ -610,14 +610,16 @@ NETFLT_DECL_CALLBACK(void) vboxNetFltPortDisconnectAndRelease(PINTNETTRUNKIFPORT
 /**
  * Destroy a device that has been disconnected from the switch.
  *
+ * @return true iff the instance is destroyed, false otherwise
  * @param   pThis               The instance to be destroyed. This is
  *                              no longer valid when this function returns.
  */
-static void vboxNetFltDestroyInstance(PVBOXNETFLTINS pThis)
+static bool vboxNetFltCheckDestroyInstance(PVBOXNETFLTINS pThis)
 {
     PVBOXNETFLTGLOBALS pGlobals = pThis->pGlobals;
     int rc;
-    LogFlow(("vboxNetFltDestroyInstance: pThis=%p (%s)\n", pThis, pThis->szName));
+    uint32_t cRefs = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->cRefs);
+    LogFlow(("vboxNetFltCheckDestroyInstance: pThis=%p (%s)\n", pThis, pThis->szName));
 
     /*
      * Validate the state.
@@ -639,7 +641,13 @@ static void vboxNetFltDestroyInstance(PVBOXNETFLTINS pThis)
      * do its part of the cleanup outside the mutex.
      */
     rc = RTSemFastMutexRequest(pGlobals->hFastMtx); AssertRC(rc);
-    vboxNetFltSetState(pThis, kVBoxNetFltInsState_Disconnecting);
+    if(cRefs != 0)
+    {
+        Assert(cRefs < UINT32_MAX / 2);
+        RTSemFastMutexRelease(pGlobals->hFastMtx);
+        return false;
+    }
+    vboxNetFltSetState(pThis, kVBoxNetFltInsState_Destroying);
     RTSemFastMutexRelease(pGlobals->hFastMtx);
 
     vboxNetFltOsDeleteInstance(pThis);
@@ -657,6 +665,7 @@ static void vboxNetFltDestroyInstance(PVBOXNETFLTINS pThis)
     RTSpinlockDestroy(pThis->hSpinlock);
     pThis->hSpinlock = NIL_RTSPINLOCK;
     RTMemFree(pThis);
+    return true;
 }
 
 
@@ -706,7 +715,7 @@ DECLHIDDEN(void) vboxNetFltRelease(PVBOXNETFLTINS pThis, bool fBusy)
      */
     cRefs = ASMAtomicDecU32(&pThis->cRefs);
     if (!cRefs)
-        vboxNetFltDestroyInstance(pThis);
+        vboxNetFltCheckDestroyInstance(pThis);
     else
         Assert(cRefs < UINT32_MAX / 2);
 }
@@ -960,31 +969,45 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
  */
 DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszName, PVBOXNETFLTINS *ppInstance, void * pContext)
 {
+    PINTNETTRUNKIFPORT pIfPort;
     int rc;
 
     rc = RTSemFastMutexRequest(pGlobals->hFastMtx);
     AssertRCReturn(rc, rc);
 
     *ppInstance = vboxNetFltFindInstanceLocked(pGlobals, pszName);
-    if(!(*ppInstance))
+    if(*ppInstance)
     {
-        PINTNETTRUNKIFPORT pIfPort;
+        VBOXNETFTLINSSTATE enmState = vboxNetFltGetState(*ppInstance);
+        if(enmState != kVBoxNetFltInsState_Destroying && enmState != kVBoxNetFltInsState_Destroyed)
+        {
+            vboxNetFltRetain(*ppInstance, false);
+            RTSemFastMutexRelease(pGlobals->hFastMtx);
+            return VINF_ALREADY_INITIALIZED;
+        }
 
-        RTSemFastMutexRelease(pGlobals->hFastMtx);
+        /*wait for the instance to be removed from the list */
 
-        rc = vboxNetFltNewInstance(pGlobals, pszName, NULL, &pIfPort, pContext);
-        if(RT_SUCCESS(rc))
-            *ppInstance =  IFPORT_2_VBOXNETFLTINS(pIfPort);
-        else
-            *ppInstance = NULL;
+        *ppInstance = NULL;
+
+        do
+        {
+            RTSemFastMutexRelease(pGlobals->hFastMtx);
+
+            RTSemEventWait(pGlobals->hTimerEvent, 2);
+
+            rc = RTSemFastMutexRequest(pGlobals->hFastMtx);
+            AssertRCReturn(rc, rc);
+        } while(vboxNetFltFindInstanceLocked(pGlobals, pszName));
     }
+
+    RTSemFastMutexRelease(pGlobals->hFastMtx);
+
+    rc = vboxNetFltNewInstance(pGlobals, pszName, NULL, &pIfPort, pContext);
+    if(RT_SUCCESS(rc))
+        *ppInstance =  IFPORT_2_VBOXNETFLTINS(pIfPort);
     else
-    {
-        RTSemFastMutexRelease(pGlobals->hFastMtx);
-        rc = VINF_ALREADY_INITIALIZED;
-    }
-
-
+        *ppInstance = NULL;
 
     return rc;
 }
@@ -1185,6 +1208,12 @@ DECLHIDDEN(void) vboxNetFltDeleteGlobalsBase(PVBOXNETFLTGLOBALS pGlobals)
      */
     RTSemFastMutexDestroy(pGlobals->hFastMtx);
     pGlobals->hFastMtx = NIL_RTSEMFASTMUTEX;
+
+#ifdef VBOXNETFLT_STATIC_CONFIG
+    RTSemEventDestroy(pGlobals->hTimerEvent);
+    pGlobals->hTimerEvent = NIL_RTSEMEVENT;
+#endif
+
 }
 
 /**
@@ -1221,13 +1250,24 @@ DECLHIDDEN(int) vboxNetFltInitGlobalsBase(PVBOXNETFLTGLOBALS pGlobals)
     int rc = RTSemFastMutexCreate(&pGlobals->hFastMtx);
     if (RT_SUCCESS(rc))
     {
-        pGlobals->pInstanceHead = NULL;
+#ifdef VBOXNETFLT_STATIC_CONFIG
+        rc = RTSemEventCreate(&pGlobals->hTimerEvent);
+        if (RT_SUCCESS(rc))
+        {
+#endif
+            pGlobals->pInstanceHead = NULL;
 
-        pGlobals->TrunkFactory.pfnRelease = vboxNetFltFactoryRelease;
-        pGlobals->TrunkFactory.pfnCreateAndConnect = vboxNetFltFactoryCreateAndConnect;
+            pGlobals->TrunkFactory.pfnRelease = vboxNetFltFactoryRelease;
+            pGlobals->TrunkFactory.pfnCreateAndConnect = vboxNetFltFactoryCreateAndConnect;
 
-        strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetFlt");
-        pGlobals->SupDrvFactory.pfnQueryFactoryInterface = vboxNetFltQueryFactoryInterface;
+            strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetFlt");
+            pGlobals->SupDrvFactory.pfnQueryFactoryInterface = vboxNetFltQueryFactoryInterface;
+
+            return rc;
+#ifdef VBOXNETFLT_STATIC_CONFIG
+        }
+        RTSemFastMutexDestroy(pGlobals->hFastMtx);
+#endif
     }
 
     return rc;
