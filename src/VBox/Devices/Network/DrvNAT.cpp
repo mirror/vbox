@@ -509,6 +509,7 @@ static DECLCALLBACK(bool) drvNATQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
         return false;
     rc = pThis->pPort->pfnReceive(pThis->pPort, pItem->pu8Buf, pItem->cb);
 
+#if 0
     rc = RTReqAlloc(pThis->pReqQueue, &pReq, RTREQTYPE_INTERNAL);
     AssertReleaseRC(rc);
     pReq->u.Internal.pfn      = (PFNRT)slirp_post_sent;
@@ -517,6 +518,11 @@ static DECLCALLBACK(bool) drvNATQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
     pReq->u.Internal.aArgs[1] = (uintptr_t)pItem->mbuf;
     pReq->fFlags              = RTREQFLAGS_VOID;
     AssertRC(rc);
+#else
+    /*Copy buffer again, till seeking good way of syncronization with slirp mbuf management code*/
+    AssertRelease(pItem->mbuf == NULL);
+    RTMemFree((void *)pItem->pu8Buf);
+#endif
     return RT_SUCCESS(rc);
 }
 #endif
