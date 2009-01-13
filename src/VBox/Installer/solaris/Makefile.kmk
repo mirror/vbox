@@ -33,35 +33,54 @@ VBOX_SOL_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
 # Globals
 #
 VBOX_PATH_SOL_INST_SRC := $(PATH_SUB_CURRENT)
-SOLARIS_INST_DIR := $(PATH_TARGET)/Installer/solaris/install
-SOLARIS_DBG_DIR  := $(PATH_TARGET)/Installer/solaris/installdbg
-SOLARIS_VBI_DIR  := $(PATH_TARGET)/Installer/solaris/installvbi
+SOLARIS_DIR_NAME_64    := amd64
+SOLARIS_DIR_NAME_32    := i386
+SOLARIS_INST_OUT_DIR   := $(PATH_TARGET)/Installer/solaris
+SOLARIS_INST_DIR       := $(PATH_TARGET)/Installer/solaris/install
+SOLARIS_INST_DIR_32    := $(SOLARIS_INST_DIR)/$(SOLARIS_DIR_NAME_32)
+SOLARIS_INST_DIR_64    := $(SOLARIS_INST_DIR)/$(SOLARIS_DIR_NAME_64)
+
+SOLARIS_OUT_BIN_64     := $(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin
+SOLARIS_OUT_BIN_32     := $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin
+SOLARIS_OUT_BIN        := $(PATH_BIN)
+
+SOLARIS_DBG_DIR        := $(PATH_TARGET)/Installer/solaris/installdbg
+SOLARIS_VBI_DIR        := $(PATH_TARGET)/Installer/solaris/installvbi
+
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
- SOL_DBG_OBJCOPY  := /usr/sfw/bin/gobjcopy --only-keep-debug
+ SOLARIS_INST_DIR_ISA  := $(SOLARIS_INST_DIR_64)
+ SOL_DBG_OBJCOPY       := /usr/sfw/bin/gobjcopy --only-keep-debug
 else
- SOL_DBG_OBJCOPY  := $(CP) -p    # Solaris ld/gobjcopy(2.15) don't get along on x86, works only on amd64. So just using cp for now.
+ SOLARIS_INST_DIR_ISA  := $(SOLARIS_INST_DIR_32)
+ SOL_DBG_OBJCOPY       := $(CP) -p    # Solaris ld/gobjcopy(2.15) don't get along on x86, works only on amd64. So just using cp for now.
 endif
-SOL_OBJCOPY      := /usr/sfw/bin/gobjcopy --strip-unneeded -R .comment
+SOL_OBJCOPY            := /usr/sfw/bin/gobjcopy --strip-unneeded -R .comment
 
 # Base package
 PKGINFO_ARCH     = $(shell uname -p)
 PKGINFO_REVSTAMP = $(date %Y.%m.%d.%H.%M)
-PKG_FILENAME     = VirtualBox-$(VBOX_VERSION_STRING)-SunOS-$(KBUILD_TARGET_ARCH)-r$(VBOX_SVN_REV)
+ifndef VBOX_WITH_COMBINED_SOLARIS_PACKAGE
+ PKG_FILENAME    = VirtualBox-$(VBOX_VERSION_STRING)-SunOS-$(KBUILD_TARGET_ARCH)-r$(VBOX_SVN_REV)
+else
+ PKG_FILENAME    = VirtualBox-$(VBOX_VERSION_STRING)-SunOS-r$(VBOX_SVN_REV)
+endif
 
 # Debug package
 DBG_ARCHIVE      = VirtualBoxDebug.tar.bz2
 
 # Kernel interface (vbi) package
-VBIPKG_FILENAME = VirtualBoxKern-$(VBOX_VERSION_STRING)-SunOS-r$(VBOX_SVN_REV)
+VBIPKG_FILENAME  = VirtualBoxKern-$(VBOX_VERSION_STRING)-SunOS-r$(VBOX_SVN_REV)
 
 #
 # Targets
 #
-PROGRAMS        += VBoxZoneAccess
-INSTALLS        += solaris-doc
-PACKING         += $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE)
+PROGRAMS         += VBoxZoneAccess VBoxISAExec
+INSTALLS         += solaris-doc
 
-OTHER_CLEAN     += $(addprefix $(SOLARIS_INST_DIR)/,\
+BLDDIRS          += $(SOLARIS_INST_OUT_DIR) $(SOLARIS_INST_DIR) $(SOLARIS_VBI_DIR) $(SOLARIS_DBG_DIR)
+PACKING          += $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE)
+
+OTHER_CLEAN      += $(addprefix $(SOLARIS_INST_DIR)/,\
 	vbox.pkginfo vbox.copyright vbox.space vbox.pkgresponse \
         makepackage.sh prototype postinstall.sh preremove.sh)
 
@@ -74,10 +93,17 @@ VBoxZoneAccess_SOURCES  = VBoxZoneAccess.c
 VBoxZoneAccess_LIBS     = $(LIB_RUNTIME)
 
 #
+# VBoxISAExec
+#
+VBoxISAExec_TEMPLATE = VBOXR3EXE
+VBoxISAExec_DEPS     = $(VBOX_SVN_REV_KMK)
+VBoxISAExec_SOURCES  = VBoxISAExec.c
+
+#
 # Solaris installs.
 #
-solaris-doc_INST = bin/
-solaris-doc_MODE = a+r,u+w
+solaris-doc_INST    = bin/
+solaris-doc_MODE    = a+r,u+w
 solaris-doc_SOURCES = \
 	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
 	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_64px.png=>VBox.png
@@ -144,56 +170,61 @@ SOLARIS_STRIP_OBJS = \
 	VMMGC.gc \
 	VMMR0.r0
 
-VBOX_SOL_PYTHON_INST =
+VBOX_SOL_PYTHON_DIR  =
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
- VBOX_SOL_PYTHON_INST = 64/
+ VBOX_SOL_PYTHON_DIR = 64
  SOL64_PKG = 1
-ifndef VBOX_WITH_NEW_RECOMPILER
- SOLARIS_STRIP_OBJS += \
+ ifndef VBOX_WITH_NEW_RECOMPILER
+  SOLARIS_STRIP_OBJS += \
  	VBoxREM2.rel
- NEED_REL = 1
-endif
+  NEED_REL = 1
+ endif
 endif
 
 # Do not strip anything of these files
 SOLARIS_NO_STRIP = \
 	components/VBoxXPCOMBase.xpt \
-	components/VirtualBox_XPCOM.xpt
+	components/VirtualBox_XPCOM.xpt \
+	$(if $(and $(VBOX_LICENSE_FILES),$(VBOX_WITH_QT4GUI)),$(VBOX_LICENSE_FILES))
 
 # Things packed explicitly, not from $(PATH_BIN), track these to clean-up properly
-# The extra Qt libs packed under EXTRAS are purely for running VBoxQtconfig
 SOLARIS_EXTRAS = \
 	$(if $(VBOX_OSE),,LICENSE) \
-	$(if $(and $(VBOX_LICENSE_FILES),$(VBOX_WITH_QT4GUI)),$(VBOX_LICENSE_FILES)) \
-	$(if $(VBOX_WITH_QT4GUI),VBoxQtconfig,) \
-	$(if $(VBOX_WITH_QT4GUI),virtualbox.desktop,) \
-	$(if $(VBOX_WITH_QT4GUI),libVBoxQtNetwork.so.4,) \
-	$(if $(VBOX_WITH_QT4GUI),libVBoxQtXml.so.4,) \
-	$(if $(VBOX_WITH_QT4GUI),libVBoxQtSql.so.4,) \
-	$(if $(VBOX_WITH_QT4GUI),libVBoxQt3Support.so.4,) \
-	$(if $(VBOX_WITH_VBOXSDL),libSDL-1.2.so.0,) \
 	VBox.png \
 	autoresponse \
 	vboxdrv.conf \
 	$(if $(VBOX_WITH_NETFLT),vboxflt.conf) \
 	vboxdrv.sh \
 	VBox.sh \
+	$(if $(VBOX_WITH_VBOXSDL),libSDL-1.2.so.0,) \
 	$(if $(not $(VBOX_WITH_NETFLT))vnic_setup.sh,) \
 	$(if $(not $(VBOX_WITH_NETFLT))vnic_term.sh,) \
+	$(if $(VBOX_WITH_QT4GUI),virtualbox.desktop,) \
 	virtualbox-webservice.xml \
 	virtualbox-zoneaccess.xml \
 	smf-vboxwebsrv.sh \
+	VBoxQtconfig \
+	VBoxISAExec \
 	vbox.copyright \
 	ReadMe.txt
 
+# These extra Qt libs are purely for running VBoxQtconfig
 ifdef VBOX_WITH_QT4GUI
- include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.kmk
- SOLARIS_NLS := $(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
+ SOLARIS_QTLIBS = libVBoxQtNetwork.so.4 \
+	libVBoxQtXml.so.4 \
+	libVBoxQtSql.so.4 \
+	libVBoxQt3Support.so.4
 endif
 
-# Documentation
+
+ifdef VBOX_WITH_QT4GUI
+ include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.kmk
+ SOLARIS_NO_STRIP += $(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
+endif
+
+# Documentation (packed as DOCS as they are arch. neutral)
 ifdef VBOX_WITH_DOCS_PACKING
- SOLARIS_NO_STRIP += \
+ SOLARIS_COMMON = \
  	VirtualBox.chm \
 	UserManual.pdf \
 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf)
@@ -204,11 +235,10 @@ ifdef VBOX_WITH_VRDP
  SOLARIS_STRIP_BINS += \
 	VBoxVRDP.so \
 	VRDPAuth.so
- SOLARIS_NO_STRIP += \
+ SOLARIS_COMMON += \
 	rdesktop-vrdp.tar.gz
  ifdef VBOX_WITH_VRDP_RDESKTOP
-  SOLARIS_NO_STRIP += \
-	rdesktop-vrdp-keymaps
+  SOLARIS_COMMON += $(addprefix rdesktop-vrdp-keymaps/,$(notdir $(wildcard $(SOLARIS_OUT_BIN)/rdesktop-vrdp-keymaps/*)))
   SOLARIS_STRIP_EXES += \
 	rdesktop-vrdp
  endif
@@ -233,8 +263,9 @@ SOLARIS_ARCH_FILES := \
 	$(SOLARIS_STRIP_BINS) \
 	$(SOLARIS_STRIP_OBJS) \
 	$(SOLARIS_NO_STRIP) \
-	$(SOLARIS_NLS) \
-	$(SOLARIS_EXTRAS)
+	$(SOLARIS_EXTRAS) \
+	$(SOLARIS_QTLIBS) \
+	$(SOLARIS_COMMON)
 
 OTHER_CLEAN += \
 	$(addprefix $(SOLARIS_INST_DIR)/, $(SOLARIS_ARCH_FILES)) \
@@ -246,8 +277,53 @@ OTHER_CLEAN += \
 	$(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).tar.gz \
 	$(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg
 
-include $(KBUILD_PATH)/subfooter.kmk
+ifdef VBOX_WITH_COMBINED_SOLARIS_PACKAGE
+ SOLARIS_ARCH_DEPFILES = $(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_STRIP_EXES)) \
+	$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_STRIP_BINS)) \
+	$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_STRIP_OBJS)) \
+	$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_NO_STRIP)) \
+	$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_QTLIBS)) \
+	$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_STRIP_EXES)) \
+	$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_STRIP_BINS)) \
+	$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_STRIP_OBJS)) \
+	$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_NO_STRIP)) \
+	$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_QTLIBS))
+else
+ SOLARIS_ARCH_DEPFILES = $(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_STRIP_EXES)) \
+	$(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_STRIP_BINS)) \
+	$(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_STRIP_OBJS)) \
+	$(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_NO_STRIP)) \
+	$(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_QTLIBS))
+endif
+SOLARIS_ARCH_DEPFILES += $(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_COMMON))
 
+BLDDIRS += $(foreach d,\
+	rdesktop-vrdp-keymaps \
+	$(SOLARIS_DIR_NAME_64) \
+	$(SOLARIS_DIR_NAME_64)/additions \
+	$(SOLARIS_DIR_NAME_64)/components \
+	$(SOLARIS_DIR_NAME_64)/nls \
+	$(SOLARIS_DIR_NAME_64)/accessible \
+	$(SOLARIS_DIR_NAME_64)/$(VBOX_SOL_PYTHON_DIR) \
+	$(SOLARIS_DIR_NAME_32) \
+	$(SOLARIS_DIR_NAME_32)/additions \
+	$(SOLARIS_DIR_NAME_32)/components \
+	$(SOLARIS_DIR_NAME_32)/nls \
+	$(SOLARIS_DIR_NAME_32)/accessible \
+,$(SOLARIS_INST_DIR)/$(d)/)
+
+BLDDIRS += $(foreach d,\
+	amd64 \
+,$(SOLARIS_VBI_DIR)/$(d)/)
+
+BLDDIRS += $(foreach d,\
+	additions \
+	components \
+	accessible \
+,$(SOLARIS_DBG_DIR)/$(d)/)
+
+
+include $(KBUILD_PATH)/subfooter.kmk
 
 #
 # -=-=-=-=-=-=-=- Main package -=-=-=-=-=-=-=-
@@ -277,13 +353,16 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(if $(VBOX_WITH_NETFLT),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf) \
 		$(if $(not $(VBOX_WITH_NETFLT))$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh,) \
 		$(if $(not $(VBOX_WITH_NETFLT))$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh,) \
-		$(addprefix $(PATH_BIN)/,$(filter-out $(SOLARIS_EXTRAS),$(SOLARIS_ARCH_FILES))) \
-		$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_STRIP_EXES)) \
-		$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_STRIP_BINS)) \
-		$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_STRIP_OBJS)) \
-		$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_NO_STRIP))
+		$(addprefix $(PATH_BIN)/,$(filter-out $(SOLARIS_EXTRAS) $(SOLARIS_QTLIBS),$(SOLARIS_ARCH_FILES))) \
+		VBoxISAExec \
+		$(SOLARIS_ARCH_DEPFILES)
 	$(call MSG_L1,Installing binaries $(SOLARIS_INST_DIR))
-	$(QUIET)$(if $(VBOX_WITH_ADDITIONS_PACKING),$(INSTALL) -m 0644 $(PATH_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARIS_INST_DIR)/additions/)
+ifdef VBOX_WITH_COMBINED_SOLARIS_PACKAGE
+	$(QUIET)$(if $(VBOX_WITH_ADDITIONS_PACKING),$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN_64)/additions/VBoxGuestAdditions.iso            $(SOLARIS_INST_DIR_64)/additions/)
+	$(QUIET)$(if $(VBOX_WITH_ADDITIONS_PACKING),$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN_32)/additions/VBoxGuestAdditions.iso            $(SOLARIS_INST_DIR_32)/additions/)
+else
+	$(QUIET)$(if $(VBOX_WITH_ADDITIONS_PACKING),$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARIS_INST_DIR_ISA)/additions/)
+endif
 	$(call MSG_L1,Installing files $(SOLARIS_INST_DIR))
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
@@ -296,20 +375,28 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf            $(SOLARIS_INST_DIR)/vboxflt.conf
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)
-	$(QUIET)$(if $(and $(VBOX_LICENSE_BINS),$(VBOX_WITH_QT4GUI)),$(INSTALL) -m 0644 $(VBOX_LICENSE_BINS)    $(SOLARIS_INST_DIR)/)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQtNetwork.so.4        $(SOLARIS_INST_DIR)/libVBoxQtNetwork.so.4,)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQtXml.so.4            $(SOLARIS_INST_DIR)/libVBoxQtXml.so.4,)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQtSql.so.4            $(SOLARIS_INST_DIR)/libVBoxQtSql.so.4,)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQt3Support.so.4       $(SOLARIS_INST_DIR)/libVBoxQt3Support.so.4,)
-	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2 $(SOLARIS_INST_DIR)/libSDL-1.2.so.0,)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/bin/qtconfig      $(SOLARIS_INST_DIR)/VBoxQtconfig,)
-	@# VBoxPython.so requires special handling as it is NOT in the correct out path to begin with. 
-	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(PATH_BIN)/VBoxPython.so $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST)VBoxPython.so)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(CP) $(foreach f,$(SOLARIS_NLS),$(PATH_BIN)/$(f)) $(SOLARIS_INST_DIR)/nls,)
+ifdef VBOX_WITH_SOLARIS_COMBINED_PACKAGE
+	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS)/solaris.x86//libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2    $(SOLARIS_INST_DIR_32)/libSDL-1.2.so.0,)
+	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS)/solaris.amd64/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2   $(SOLARIS_INST_DIR_64)/libSDL-1.2.so.0,)
+	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN_32)/VBoxPython.so    $(SOLARIS_INST_DIR_32)/VBoxPython.so,)
+	@# @todo -XXX- how to get rid of this manual MKDIR ?
+	$(QUIET)$(MKDIR) $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR)
+	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN_64)/VBoxPython.so    $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR)/VBoxPython.so,)
+	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN_64)/VBoxPython.so    $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR)/VBoxPython.so,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS)/solaris.x86/qt/v4.3.3-r1/bin/qtconfig           $(SOLARIS_INST_DIR_32)/VBoxQtconfig,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS)/solaris.amd64/qt/v4.3.3-r1/bin/qtconfig         $(SOLARIS_INST_DIR_64)/VBoxQtconfig,)
+	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN_32)/VBoxISAExec                                                         $(SOLARIS_INST_DIR)/VBoxISAExec
+else
+	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2    $(SOLARIS_INST_DIR_ISA)/libSDL-1.2.so.0,)
+	@# @todo -XXX- how to get rid of this manual MKDIR ?
+	$(QUIET)$(if $(SOL64_PKG),$(MKDIR) -p $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR),)
+	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN)/VBoxPython.so       $(SOLARIS_INST_DIR_ISA)/$(VBOX_SOL_PYTHON_DIR)/VBoxPython.so,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/bin/qtconfig                   $(SOLARIS_INST_DIR_ISA)/VBoxQtconfig,)
+	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN)/VBoxISAExec                                                            $(SOLARIS_INST_DIR)/VBoxISAExec
+endif
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                                       $(SOLARIS_INST_DIR)/virtualbox-zoneaccess.xml
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-webservice.xml         $(SOLARIS_INST_DIR)/virtualbox-webservice.xml,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh                 $(SOLARIS_INST_DIR)/smf-vboxwebsrv.sh,)
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                          $(SOLARIS_INST_DIR)/virtualbox-zoneaccess.xml
-	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(INSTALL) -m 644 $(wildcard $(PATH_BIN)/rdesktop-vrdp-keymaps/*) $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps/,)
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_INST_DIR)/vnic_setup.sh,)
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_INST_DIR)/vnic_term.sh,)
 	$(QUIET)$(SED) \
@@ -320,7 +407,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(RM) -f $(SOLARIS_INST_DIR)/vboxdrv.sh.tmp
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/VBox.sh                                            $(SOLARIS_INST_DIR)/VBox.sh
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop        $(SOLARIS_INST_DIR)/virtualbox.desktop,)
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBox.png                                                         $(SOLARIS_INST_DIR)/VBox.png
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/VBox.png                                                  $(SOLARIS_INST_DIR)/VBox.png
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_INST_DIR)/postinstall.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/preremove.sh                                       $(SOLARIS_INST_DIR)/preremove.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/makepackage.sh                                     $(SOLARIS_INST_DIR)/makepackage.sh
@@ -337,27 +424,65 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_SOL_INST_SRC) -- $(SOLARIS_INST_DIR)/makepackage.sh $(if $(VBOX_WITH_HARDENING),--hardened) \
 		$(SOLARIS_INST_DIR) \
 		$(PKG_FILENAME) \
-		$(KBUILD_TARGET_ARCH) \
+		$(if $(VBOX_WITH_SOLARIS_COMBINED_PACKAGE),neutral,$(KBUILD_TARGET_ARCH)) \
 		$(VBOX_SVN_REV) \
 		$(if $(VBOX_WITH_SOLARIS_VBI),$(VBIPKG_FILENAME).pkg,)
-	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_INST_DIR)/$(PKG_FILENAME).tar.gz $(PATH_BIN)
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_INST_DIR)/$(PKG_FILENAME).tar.gz $(SOLARIS_OUT_BIN)
 	@# Clean up files emitted as side-effect or result of packing
 	@#$(QUIET)$(RM) -Rf $(SOLARIS_INST_DIR)
 
 
-$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_STRIP_BINS)): \
-		$(SOLARIS_INST_DIR)/% : $(PATH_BIN)/% | $$(dir $$@)
+#
+# 32-bit
+#
+$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_STRIP_BINS)): \
+		$(SOLARIS_INST_DIR_32)/% : $(SOLARIS_OUT_BIN_32)/% | $$(dir $$@)
 	$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s,) $< $@
 
-$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_STRIP_EXES)): \
-		$(SOLARIS_INST_DIR)/% : $(PATH_BIN)/% | $$(dir $$@)
+$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_STRIP_EXES)): \
+		$(SOLARIS_INST_DIR_32)/% : $(SOLARIS_OUT_BIN_32)/% | $$(dir $$@)
 	$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
 
-$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_STRIP_OBJS)): \
-		$(SOLARIS_INST_DIR)/% : $(PATH_BIN)/% | $$(dir $$@)
+$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_STRIP_OBJS)): \
+		$(SOLARIS_INST_DIR_32)/% : $(SOLARIS_OUT_BIN_32)/% | $$(dir $$@)
 	$(if $(VBOX_DO_STRIP),$(SOL_OBJCOPY) $< $@, $(INSTALL) -m 0644 $< $@)
 
-$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_NO_STRIP)): \
+$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_NO_STRIP)): \
+		$(SOLARIS_INST_DIR_32)/% : $(SOLARIS_OUT_BIN_32)/% | $$(dir $$@)
+	$(INSTALL) -m 0644 $< $@
+
+$(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_QTLIBS)): \
+		$(SOLARIS_INST_DIR_32)/% : $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/% | $$(dir $$@)
+	$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s,) $< $@
+
+#
+# 64-bit
+#
+$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_STRIP_BINS)): \
+		$(SOLARIS_INST_DIR_64)/% : $(SOLARIS_OUT_BIN_64)/% | $$(dir $$@)
+	$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s,) $< $@
+
+$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_STRIP_EXES)): \
+		$(SOLARIS_INST_DIR_64)/% : $(SOLARIS_OUT_BIN_64)/% | $$(dir $$@)
+	$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
+
+$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_STRIP_OBJS)): \
+		$(SOLARIS_INST_DIR_64)/% : $(SOLARIS_OUT_BIN_64)/% | $$(dir $$@)
+	$(if $(VBOX_DO_STRIP),$(SOL_OBJCOPY) $< $@, $(INSTALL) -m 0644 $< $@)
+
+$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_NO_STRIP)): \
+		$(SOLARIS_INST_DIR_64)/% : $(SOLARIS_OUT_BIN_64)/% | $$(dir $$@)
+	$(INSTALL) -m 0644 $< $@
+
+$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_QTLIBS)): \
+		$(SOLARIS_INST_DIR_64)/% : $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/% | $$(dir $$@)
+	$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s,) $< $@
+
+
+#
+# Common (32-bit and 64-bit)
+#
+$(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_COMMON)): \
 		$(SOLARIS_INST_DIR)/% : $(PATH_BIN)/% | $$(dir $$@)
 	$(INSTALL) -m 0644 $< $@
 
@@ -378,18 +503,34 @@ $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 	$(call MSG_L1,Installing vbi binaries $(SOLARIS_VBI_DIR))
 	$(QUIET)$(RM) -Rf $(SOLARIS_VBI_DIR)
 	@# -XXX- This must be fixed badly, we create directories needed for main package here!
-	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/additions
-	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/components
-	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST),)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls,)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/accessible,)
-	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps,)
-	$(QUIET)$(MKDIR) -p $(SOLARIS_VBI_DIR)/amd64
-	@# -XXX- This must be fixed badly, we create directories needed for debug package here!
-	$(QUIET)$(MKDIR) -p $(SOLARIS_DBG_DIR)/additions
-	$(QUIET)$(MKDIR) -p $(SOLARIS_DBG_DIR)/components
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_DBG_DIR)/accessible,)
+ifdef VBOX_WITH_COMBINED_SOLARIS_PACKAGE
+	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_32)/additions
+	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_32)/components
+#	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR_32)/$(VBOX_SOL_PYTHON_INST),)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_32)/nls,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_32)/accessible,)
+#	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR_32)/rdesktop-vrdp-keymaps,)
+	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_64)/additions
+	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_64)/components
+#	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_INST),)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_64)/nls,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_64)/accessible,)
+#	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR_64)/rdesktop-vrdp-keymaps,)
+else
+#	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/additions
+#	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/components
+#	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/$(VBOX_SOL_PYTHON_INST),)
+#	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/nls,)
+#	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/accessible,)
+#	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/rdesktop-vrdp-keymaps,)
+endif
+#	$(QUIET)$(MKDIR) -p $(SOLARIS_VBI_DIR)/amd64
+#	@# -XXX- This must be fixed badly, we create directories needed for debug package here!
+#	$(QUIET)$(MKDIR) -p $(SOLARIS_DBG_DIR)/additions
+#	$(QUIET)$(MKDIR) -p $(SOLARIS_DBG_DIR)/components
+#	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_DBG_DIR)/accessible,)
 	@# Install VBI files
+	$(QUIET)$(MKDIR) -p $(SOLARIS_VBI_DIR)/amd64
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris/vbi/32/vbi                       $(SOLARIS_VBI_DIR)/vbi
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris/vbi/64/vbi                       $(SOLARIS_VBI_DIR)/amd64/vbi
 	$(call MSG_L1,Installing other files $(SOLARIS_VBI_DIR))
@@ -422,4 +563,5 @@ $(PATH_BIN)/$(DBG_ARCHIVE): \
 $(addprefix $(SOLARIS_DBG_DIR)/,$(SOLARIS_STRIP_BINS) $(SOLARIS_STRIP_EXES)): \
 		$(SOLARIS_DBG_DIR)/% : $(PATH_BIN)/% | $$(dir $$@)
 	$(QUIET)$(SOL_DBG_OBJCOPY) $< $@
+
 
