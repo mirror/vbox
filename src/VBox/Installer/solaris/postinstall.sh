@@ -83,10 +83,12 @@ fi
 if test -f "$VBOXBASEDIR/amd64/VBoxHeadless" || test -f "$VBOXBASEDIR/i386/VBoxHeadless"; then
     if test -d $VBOXBASEDIR/amd64; then
         /usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/amd64/rdesktop-vrdp-keymaps=$VBOXBASEDIR/rdesktop-vrdp-keymaps s
+        /usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/amd64/additions=$VBOXBASEDIR/additions s
     fi
     if test -d $VBOXBASEDIR/i386; then
         /usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/i386/rdesktop-vrdp-keymaps=$VBOXBASEDIR/rdesktop-vrdp-keymaps s
-    fi    
+        /usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/i386/additions=$VBOXBASEDIR/additions s
+    fi
     /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxHeadless=/$VBOXBASEDIR/VBox.sh s
     /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxVRDP=$VBOXBASEDIR/VBox.sh s
     /usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/VBoxHeadless f
