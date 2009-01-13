@@ -946,6 +946,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 break;
             case IP_SUCCESS: /* echo replied */
                 m = m_get(pData);
+                m->m_data += if_maxlinkhdr;
                 ip = mtod(m, struct ip *);
                 ip->ip_src.s_addr = icr[i].Address;
                 DO_ALIAS(&ip->ip_src);
