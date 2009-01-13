@@ -367,7 +367,7 @@ VBOX_WITH_PDM_ASYNC_COMPLETION = 1
 VBOX_WITH_NEW_USB_CODE_ON_DARWIN=1
 # Enable the hal/sysfs USB code on Linux.  This depends on VBOX_WITH_DBUS.
 ifdef VBOX_WITH_DBUS
-# VBOX_USB_WITH_SYSFS=1
+ VBOX_USB_WITH_SYSFS=1
 endif
 # Use the new VBI module on Solaris.
 VBOX_WITH_SOLARIS_VBI = 1
