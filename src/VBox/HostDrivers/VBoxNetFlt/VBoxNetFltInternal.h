@@ -199,6 +199,8 @@ typedef struct VBOXNETFLTINS
             PACKET_QUEUE_WORKER PacketQueueWorker;
             /** The MAC address of the interface. Caching MAC for performance reasons. */
             RTMAC Mac;
+            /** mutex used to synchronize ADAPT init/deinit */
+            RTSEMMUTEX hAdaptMutex;
             /** @}  */
 # else
 #  error "PORTME"
