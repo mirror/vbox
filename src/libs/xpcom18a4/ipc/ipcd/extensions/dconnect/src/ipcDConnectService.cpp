@@ -2798,7 +2798,7 @@ ipcDConnectService::CreateWorker()
     nsAutoLock lock(mLock);
 #ifdef VBOX /* tracking an illegal join in Shutdown. */
     NS_ASSERTION(!mDisconnected, "CreateWorker racing Shutdown");
-#endif 
+#endif
     if (!mWorkers.AppendElement(worker))
       rv = NS_ERROR_OUT_OF_MEMORY;
   }
@@ -3633,7 +3633,7 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
 
   const nsXPTMethodInfo *methodInfo;
   nsXPTCVariant *params = nsnull;
-  nsIInterfaceInfo *iinfo = nsnull;
+  nsCOMPtr<nsIInterfaceInfo> iinfo = nsnull;
   PRUint8 i, paramCount = 0, paramUsed = 0;
   nsresult rv;
 
