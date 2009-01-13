@@ -41,6 +41,12 @@
 #include "r0drv/mp-r0drv.h"
 
 
+RTDECL(bool) RTMpIsCpuWorkPending(void)
+{
+    return false;
+}
+
+
 RTDECL(RTCPUID) RTMpCpuId(void)
 {
     return vbi_cpu_id();
