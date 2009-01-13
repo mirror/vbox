@@ -429,7 +429,9 @@ endif
 		$(if $(VBOX_WITH_SOLARIS_VBI),$(VBIPKG_FILENAME).pkg,)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_INST_DIR)/$(PKG_FILENAME).tar.gz $(SOLARIS_OUT_BIN)
 	@# Clean up files emitted as side-effect or result of packing
-	@#$(QUIET)$(RM) -Rf $(SOLARIS_INST_DIR)
+	$(QUIET)$(RM) -f $(SOLARIS_INST_DIR)/$(PKG_FILENAME).tar.gz
+	$(QUIET)$(RM) -f $(SOLARIS_INST_DIR)/$(PKG_FILENAME).pkg
+	$(QUIET)$(if $(VBOX_WITH_SOLARIS_VBI),$(RM) -f $(SOLARIS_INST_DIR)/$(VBIPKG_FILENAME).pkg,)
 
 
 #
@@ -502,34 +504,6 @@ $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 		$(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris/vbi/64/vbi
 	$(call MSG_L1,Installing vbi binaries $(SOLARIS_VBI_DIR))
 	$(QUIET)$(RM) -Rf $(SOLARIS_VBI_DIR)
-	@# -XXX- This must be fixed badly, we create directories needed for main package here!
-ifdef VBOX_WITH_COMBINED_SOLARIS_PACKAGE
-	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_32)/additions
-	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_32)/components
-#	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR_32)/$(VBOX_SOL_PYTHON_INST),)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_32)/nls,)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_32)/accessible,)
-#	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR_32)/rdesktop-vrdp-keymaps,)
-	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_64)/additions
-	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_64)/components
-#	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_INST),)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_64)/nls,)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_64)/accessible,)
-#	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR_64)/rdesktop-vrdp-keymaps,)
-else
-#	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/additions
-#	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/components
-#	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/$(VBOX_SOL_PYTHON_INST),)
-#	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/nls,)
-#	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/accessible,)
-#	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR_ISA)/rdesktop-vrdp-keymaps,)
-endif
-#	$(QUIET)$(MKDIR) -p $(SOLARIS_VBI_DIR)/amd64
-#	@# -XXX- This must be fixed badly, we create directories needed for debug package here!
-#	$(QUIET)$(MKDIR) -p $(SOLARIS_DBG_DIR)/additions
-#	$(QUIET)$(MKDIR) -p $(SOLARIS_DBG_DIR)/components
-#	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_DBG_DIR)/accessible,)
-	@# Install VBI files
 	$(QUIET)$(MKDIR) -p $(SOLARIS_VBI_DIR)/amd64
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris/vbi/32/vbi                       $(SOLARIS_VBI_DIR)/vbi
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris/vbi/64/vbi                       $(SOLARIS_VBI_DIR)/amd64/vbi
