@@ -1119,7 +1119,7 @@ int main (int argc, char **argv)
             for (int i=iSize; i>0; i--)
                 putchar('*');
             printf ("\n%s\n", szBuf);
-            printf ("(C) 2008 Sun Microsystems, Inc.\n"
+            printf ("(C) 2008-2009 Sun Microsystems, Inc.\n"
                     "All rights reserved.\n");
 #ifdef DEBUG
             printf ("Debug version.\n");
