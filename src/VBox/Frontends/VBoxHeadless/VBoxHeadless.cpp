@@ -433,7 +433,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 
     LogFlow (("VBoxHeadless STARTED.\n"));
     RTPrintf ("VirtualBox Headless Interface %s\n"
-              "(C) 2008 Sun Microsystems, Inc.\n"
+              "(C) 2008-2009 Sun Microsystems, Inc.\n"
               "All rights reserved\n\n",
               VBOX_VERSION_STRING);
 

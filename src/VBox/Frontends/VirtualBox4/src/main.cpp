@@ -172,7 +172,7 @@ static void showHelp()
 #endif
 
     RTPrintf("Sun xVM VirtualBox Graphical User Interface "VBOX_VERSION_STRING"\n"
-            "(C) 2005-2008 Sun Microsystems, Inc.\n"
+            "(C) 2005-2009 Sun Microsystems, Inc.\n"
             "All rights reserved.\n"
             "\n"
             "Usage:\n"

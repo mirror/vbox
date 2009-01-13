@@ -223,7 +223,7 @@ static void showLogo(void)
     {
         RTPrintf("VirtualBox Command Line Management Interface Version "
                  VBOX_VERSION_STRING  "\n"
-                 "(C) 2005-2008 Sun Microsystems, Inc.\n"
+                 "(C) 2005-2009 Sun Microsystems, Inc.\n"
                  "All rights reserved.\n"
                  "\n");
         fShown = true;
