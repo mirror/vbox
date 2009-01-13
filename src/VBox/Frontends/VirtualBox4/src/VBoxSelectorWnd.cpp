@@ -590,28 +590,23 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
             h = winPos.section (',', 3, 3).toInt (&ok);
         if (ok)
             max = winPos.section (',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
-        if (ok && x > 0 && y > 0 /* to be sure it is not loaded out of the screen */)
+
+        QRect ar = ok ? QApplication::desktop()->availableGeometry (QPoint (x, y)) :
+                        QApplication::desktop()->availableGeometry (this);
+
+        if (ok /* previous parameters were read correctly */
+            && (y > 0) && (y < ar.bottom()) /* check vertical bounds */
+            && (x + w > ar.left()) && (x < ar.right()) /* & horizontal bounds */)
         {
-            QRect ar = QApplication::desktop()->availableGeometry (QPoint (x, y));
-
-            /* Do some position checks */
-            if (x < ar.left() || x > ar.right())
-                x = ar.left();
-            if (y < ar.top() || y > ar.bottom())
-                y = ar.top();
-
             mNormalGeo.moveTo (x, y);
             mNormalGeo.setSize (QSize (w, h).expandedTo (minimumSizeHint())
                                             .boundedTo (ar.size()));
             setGeometry (mNormalGeo);
-
-            if (max)
-                /* maximize if needed */
+            if (max) /* maximize if needed */
                 showMaximized();
         }
         else
         {
-            QRect ar = QApplication::desktop()->availableGeometry (this);
             mNormalGeo.setSize (QSize (770, 550).expandedTo (minimumSizeHint())
                                                 .boundedTo (ar.size()));
             mNormalGeo.moveCenter (ar.center());
