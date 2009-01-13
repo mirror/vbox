@@ -1490,7 +1490,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation>Affiche la touche utilisée comme touche hôte (&quot;Host&quot;) dans la fenêtre de la machine virtuelle. Activez le champs d&apos;entrée et choisissez une nouvelle touche hôte;. Notez que les touches d&apos;éditions et de mouvement du curseur ainsi que les touches alphanumériques ne peuvent pas être utilisées.</translation>
+        <translation>Affiche la touche utilisée comme touche hôte (&quot;Host&quot;) dans la fenêtre de la machine virtuelle. Activez le champs d&apos;entrée et choisissez une nouvelle touche hôte. Notez que les touches d&apos;éditions et de mouvement du curseur ainsi que les touches alphanumériques ne peuvent pas être utilisées.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="91"/>
@@ -4190,7 +4190,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1661"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>Les informations sur les nouvelles versions n&apos;ont pas pu être obtenus en raison de l&apos;erreur suivante :&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Les informations sur les nouvelles versions n&apos;ont pas pu être obtenus en raison de l&apos;erreur suivante : &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1817"/>
