@@ -263,12 +263,13 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
     struct socket *so = tp->t_socket;
     register struct mbuf *m;
 
-    struct tseg_qent *te;
+    struct tseg_qent *te = NULL;
     DEBUG_CALL("tcp_close");
     DEBUG_ARG("tp = %lx", (long )tp);
     /*XXX: freeing the reassembly queue */
-    LIST_FOREACH(te, &tp->t_segq, tqe_q)
+    while (!LIST_EMPTY(&tp->t_segq))
     {
+        te = LIST_FIRST(&tp->t_segq);
         LIST_REMOVE(te, tqe_q);
         m_freem(pData, te->tqe_m);
         RTMemFree(te);
