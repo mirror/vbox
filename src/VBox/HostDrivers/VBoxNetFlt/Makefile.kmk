@@ -157,7 +157,7 @@ PROGRAMS.win  += NetFltInstall
 NetFltInstall_TEMPLATE = VBOXR3STATIC
 NetFltInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
 NetFltInstall_SOURCES  = win/NetFltInstall.cpp
-NetFltInstall_LIBS     = $(PATH_LIB)/WinNetConfig.lib
+NetFltInstall_LIBS     = $(TARGET_WinNetConfig)
 
 
 #
@@ -167,7 +167,7 @@ PROGRAMS.win  += NetFltUninstall
 NetFltUninstall_TEMPLATE = VBOXR3STATIC
 NetFltUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
 NetFltUninstall_SOURCES  = win/NetFltUninstall.cpp
-NetFltUninstall_LIBS     = $(PATH_LIB)/WinNetConfig.lib
+NetFltUninstall_LIBS     = $(TARGET_WinNetConfig)
 
 
 #
