@@ -807,6 +807,40 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, bool fFatal, cons
 
 
 #ifdef IN_RING3
+
+/**
+ * @copydoc PDMDRVHLP::pfnPDMQueueCreate
+ */
+DECLINLINE(int) PDMDrvHlpPDMQueueCreate(PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
+                                        PFNPDMQUEUEDRV pfnCallback, PPDMQUEUE *ppQueue)
+{
+    return pDrvIns->pDrvHlp->pfnPDMQueueCreate(pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, ppQueue);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnGetVirtualFreq
+ */
+DECLINLINE(uint64_t) PDMDrvHlpTMGetVirtualFreq(PPDMDRVINS pDrvIns)
+{
+    return pDrvIns->pDrvHlp->pfnTMGetVirtualFreq(pDrvIns);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnTMGetVirtualTime
+ */
+DECLINLINE(uint64_t) PDMDrvHlpTMGetVirtualTime(PPDMDRVINS pDrvIns)
+{
+    return pDrvIns->pDrvHlp->pfnTMGetVirtualTime(pDrvIns);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnTMTimerCreate
+ */
+DECLINLINE(int) PDMDrvHlpTMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer)
+{
+    return pDrvIns->pDrvHlp->pfnTMTimerCreate(pDrvIns, enmClock, pfnCallback, pszDesc, ppTimer);
+}
+
 /**
  * @copydoc PDMDRVHLP::pfnSSMRegister
  */
@@ -817,14 +851,6 @@ DECLINLINE(int) PDMDrvHlpSSMRegister(PPDMDRVINS pDrvIns, const char *pszName, ui
     return pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, pszName, u32Instance, u32Version, cbGuess,
                                             pfnSavePrep, pfnSaveExec, pfnSaveDone,
                                             pfnLoadPrep, pfnLoadExec, pfnLoadDone);
-}
-
-/**
- * @copydoc PDMDRVHLPR3::pfnTMTimerCreate
- */
-DECLINLINE(int) PDMDrvHlpTMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer)
-{
-    return pDrvIns->pDrvHlp->pfnTMTimerCreate(pDrvIns, enmClock, pfnCallback, pszDesc, ppTimer);
 }
 
 /**
