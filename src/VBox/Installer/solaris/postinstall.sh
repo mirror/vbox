@@ -59,27 +59,9 @@ echo "Creating links..."
 if test -f "$VBOXBASEDIR/amd64/VirtualBox" || test -f "$VBOXBASEDIR/i386/VirtualBox"; then
     /usr/sbin/installf -c none $PKGINST /usr/bin/VirtualBox=$VBOXBASEDIR/VBox.sh s
     /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxQtconfig=$VBOXBASEDIR/VBox.sh s
-    /usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/VirtualBox f
-    /usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/VBoxQtconfig f
-    ln -f $VBOXBASEDIR/VBoxISAExec $VBOXBASEDIR/VirtualBox
-    ln -f $VBOXBASEDIR/VBoxISAExec $VBOXBASEDIR/VBoxQtconfig
 fi
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxManage=$VBOXBASEDIR/VBox.sh s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxSDL=$VBOXBASEDIR/VBox.sh s
-/usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/VBoxManage f
-/usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/VBoxSDL f
-/usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/vboxwebsrv f
-/usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/webtest f
-/usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/VBoxZoneAccess f
-ln -f $VBOXBASEDIR/VBoxISAExec $VBOXBASEDIR/VBoxManage
-ln -f $VBOXBASEDIR/VBoxISAExec $VBOXBASEDIR/VBoxSDL
-ln -f $VBOXBASEDIR/VBoxISAExec $VBOXBASEDIR/vboxwebsrv
-ln -f $VBOXBASEDIR/VBoxISAExec $VBOXBASEDIR/webtest
-ln -f $VBOXBASEDIR/VBoxISAExec $VBOXBASEDIR/VBoxZoneAccess
-if test -f "$VBOXBASEDIR/amd64/VBoxBFE" || test -f "$VBOXBASEDIR/i386/VBoxBFE"; then
-    /usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/VBoxBFE f
-    ln -f $VBOXBASEDIR/VBoxISAExec $VBOXBASEDIR/VBoxBFE
-fi
 if test -f "$VBOXBASEDIR/amd64/VBoxHeadless" || test -f "$VBOXBASEDIR/i386/VBoxHeadless"; then
     if test -d $VBOXBASEDIR/amd64; then
         /usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/amd64/rdesktop-vrdp-keymaps=$VBOXBASEDIR/rdesktop-vrdp-keymaps s
@@ -91,10 +73,6 @@ if test -f "$VBOXBASEDIR/amd64/VBoxHeadless" || test -f "$VBOXBASEDIR/i386/VBoxH
     fi
     /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxHeadless=/$VBOXBASEDIR/VBox.sh s
     /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxVRDP=$VBOXBASEDIR/VBox.sh s
-    /usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/VBoxHeadless f
-    /usr/sbin/installf -c none $PKGINST $VBOXBASEDIR/VBoxVRDP f
-    ln -f $VBOXBASEDIR/VBoxISAExec $VBOXBASEDIR/VBoxHeadless
-    ln -f $VBOXBASEDIR/VBoxISAExec $VBOXBASEDIR/VBoxVRDP
 fi
 
 if test "$currentzone" = "global"; then
