@@ -40,90 +40,118 @@
 #include "netif.h"
 #include "Logging.h"
 
-int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
+static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
 {
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock >= 0)
+    memset(pInfo, 0, sizeof(*pInfo));
+    struct ifreq Req;
+    memset(&Req, 0, sizeof(Req));
+    strncpy(Req.ifr_name, pszName, sizeof(Req.ifr_name) - 1);
+    if (ioctl(iSocket, SIOCGIFHWADDR, &Req) >= 0)
     {
-        char pBuffer[2048];
-        struct ifconf ifConf;
-        ifConf.ifc_len = sizeof(pBuffer);
-        ifConf.ifc_buf = pBuffer;
-        if (ioctl(sock, SIOCGIFCONF, &ifConf) >= 0)
+        switch (Req.ifr_hwaddr.sa_family)
         {
-            for (struct ifreq *pReq = ifConf.ifc_req; (char*)pReq < pBuffer + ifConf.ifc_len; pReq++)
+            case ARPHRD_ETHER:
+                pInfo->enmType = NETIF_T_ETHERNET;
+                break;
+            default:
+                pInfo->enmType = NETIF_T_UNKNOWN;
+                break;
+        }
+        /* Pick up some garbage from stack. */
+        RTUUID uuid;
+        Assert(sizeof(uuid) <= sizeof(Req));
+        memcpy(uuid.Gen.au8Node, &Req.ifr_hwaddr.sa_data, sizeof(uuid.Gen.au8Node));
+        pInfo->Uuid = uuid;
+        memcpy(&pInfo->MACAddress, Req.ifr_hwaddr.sa_data, sizeof(pInfo->MACAddress));
+
+        if (ioctl(iSocket, SIOCGIFADDR, &Req) >= 0)
+            memcpy(pInfo->IPAddress.au8,
+                   &((struct sockaddr_in *)&Req.ifr_addr)->sin_addr.s_addr,
+                   sizeof(pInfo->IPAddress.au8));
+
+        if (ioctl(iSocket, SIOCGIFNETMASK, &Req) >= 0)
+            memcpy(pInfo->IPNetMask.au8,
+                   &((struct sockaddr_in *)&Req.ifr_addr)->sin_addr.s_addr,
+                   sizeof(pInfo->IPNetMask.au8));
+
+        if (ioctl(iSocket, SIOCGIFFLAGS, &Req) >= 0)
+            pInfo->enmStatus = Req.ifr_flags & IFF_UP ? NETIF_S_UP : NETIF_S_DOWN;
+
+        FILE *fp = fopen("/proc/net/if_inet6", "r");
+        if (fp)
+        {
+            RTNETADDRIPV6 IPv6Address;
+            unsigned uIndex, uLength, uScope, uTmp;
+            char szName[30];
+            for (;;)
             {
-                if (ioctl(sock, SIOCGIFHWADDR, pReq) >= 0)
+                memset(szName, 0, sizeof(szName));
+                int n = fscanf(fp,
+                               "%08x%08x%08x%08x"
+                               " %02x %02x %02x %02x %20s\n",
+                               &IPv6Address.au32[0], &IPv6Address.au32[1],
+                               &IPv6Address.au32[2], &IPv6Address.au32[3],
+                               &uIndex, &uLength, &uScope, &uTmp, szName);
+                if (n == EOF)
+                    break;
+                if (n != 9 || uLength > 128)
                 {
-                    if (pReq->ifr_hwaddr.sa_family == ARPHRD_ETHER)
-                    {
-                        NETIFINFO Info;
-                        memset(&Info, 0, sizeof(Info));
-                        Info.enmType = NETIF_T_ETHERNET;
-                        /* Pick up some garbage from stack. */
-                        RTUUID uuid;
-                        Assert(sizeof(uuid) <= sizeof(*pReq));
-                        memcpy(uuid.Gen.au8Node, &pReq->ifr_hwaddr.sa_data, sizeof(uuid.Gen.au8Node));
-                        Info.Uuid = uuid;
-                        memcpy(&Info.MACAddress, pReq->ifr_hwaddr.sa_data, sizeof(Info.MACAddress));
-
-                        if (ioctl(sock, SIOCGIFADDR, pReq) >= 0)
-                            memcpy(Info.IPAddress.au8,
-                                   &((struct sockaddr_in *)&pReq->ifr_addr)->sin_addr.s_addr,
-                                   sizeof(Info.IPAddress.au8));
-
-                        if (ioctl(sock, SIOCGIFNETMASK, pReq) >= 0)
-                            memcpy(Info.IPNetMask.au8,
-                                   &((struct sockaddr_in *)&pReq->ifr_addr)->sin_addr.s_addr,
-                                   sizeof(Info.IPNetMask.au8));
-
-                        if (ioctl(sock, SIOCGIFFLAGS, pReq) >= 0)
-                            Info.enmStatus = pReq->ifr_flags & IFF_UP ? NETIF_S_UP : NETIF_S_DOWN;
-
-                        FILE *fp = fopen("/proc/net/if_inet6", "r");
-                        if (fp)
-                        {
-                            RTNETADDRIPV6 IPv6Address;
-                            unsigned uIndex, uLength, uScope, uTmp;
-                            char szName[30];
-                            for (;;)
-                            {
-                                memset(szName, 0, sizeof(szName));
-                                int n = fscanf(fp,
-                                               "%08x%08x%08x%08x"
-                                               " %02x %02x %02x %02x %20s\n",
-                                               &IPv6Address.au32[0], &IPv6Address.au32[1],
-                                               &IPv6Address.au32[2], &IPv6Address.au32[3],
-                                               &uIndex, &uLength, &uScope, &uTmp, szName);
-                                if (n == EOF)
-                                    break;
-                                if (n != 9 || uLength > 128)
-                                {
-                                    Log(("NetIfList: Error while reading /proc/net/if_inet6, n=%d uLength=%u\n",
-                                         n, uLength));
-                                    break;
-                                }
-                                if (!strcmp(pReq->ifr_name, szName))
-                                {
-                                    Info.IPv6Address.au32[0] = htonl(IPv6Address.au32[0]);
-                                    Info.IPv6Address.au32[1] = htonl(IPv6Address.au32[1]);
-                                    Info.IPv6Address.au32[2] = htonl(IPv6Address.au32[2]);
-                                    Info.IPv6Address.au32[3] = htonl(IPv6Address.au32[3]);
-                                    ASMBitSetRange(&Info.IPv6NetMask, 0, uLength);
-                                }
-                            }
-                            fclose(fp);
-                        }
-                        ComObjPtr<HostNetworkInterface> IfObj;
-                        IfObj.createObject();
-                        if (SUCCEEDED(IfObj->init(Bstr(pReq->ifr_name), &Info)))
-                            list.push_back(IfObj);
-                    }
+                    Log(("getInterfaceInfo: Error while reading /proc/net/if_inet6, n=%d uLength=%u\n",
+                         n, uLength));
+                    break;
+                }
+                if (!strcmp(Req.ifr_name, szName))
+                {
+                    pInfo->IPv6Address.au32[0] = htonl(IPv6Address.au32[0]);
+                    pInfo->IPv6Address.au32[1] = htonl(IPv6Address.au32[1]);
+                    pInfo->IPv6Address.au32[2] = htonl(IPv6Address.au32[2]);
+                    pInfo->IPv6Address.au32[3] = htonl(IPv6Address.au32[3]);
+                    ASMBitSetRange(&pInfo->IPv6NetMask, 0, uLength);
                 }
             }
+            fclose(fp);
         }
-        close(sock);
     }
     return VINF_SUCCESS;
 }
+
+int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
+{
+    int rc = VINF_SUCCESS;
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock >= 0)
+    {
+        FILE *fp = fopen("/proc/net/dev", "r");
+        if (fp)
+        {
+            char buf[256];
+            while (fgets(buf, sizeof(buf), fp))
+            {
+                char *pszEndOfName = strchr(buf, ':');
+                if (!pszEndOfName)
+                    continue;
+                *pszEndOfName = 0;
+                int iFirstNonWS = strspn(buf, " ");
+                char *pszName = buf+iFirstNonWS;
+                NETIFINFO Info;
+                rc = getInterfaceInfo(sock, pszName, &Info);
+                if (RT_FAILURE(rc))
+                    break;
+                if (Info.enmType == NETIF_T_ETHERNET)
+                {
+                    ComObjPtr<HostNetworkInterface> IfObj;
+                    IfObj.createObject();
+                    if (SUCCEEDED(IfObj->init(Bstr(pszName), &Info)))
+                        list.push_back(IfObj);
+                }
+
+            }
+            fclose(fp);
+        }
+        close(sock);
+    }
+
+    return rc;
+}
+
 
