@@ -1057,24 +1057,23 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 {
     struct mbuf *m;
     int proto;
+    static bool fWarnedIpv6;
 
     if (pkt_len < ETH_HLEN) 
     {
-        LogRel(("packet having size %d has been ingnored\n", pkt_len));
+        LogRel(("NAT: packet having size %d has been ingnored\n", pkt_len));
         return;
     }
     
     m = m_get(pData);
     if (m == NULL)
-    {
         LogRel(("can't allocate new mbuf\n"));
-    }
+
     /* Note: we add to align the IP header */
 
     if (M_FREEROOM(m) < pkt_len)
-    {
        m_inc(m, pkt_len);
-    }
+
     m->m_len = pkt_len ;
     memcpy(m->m_data, pkt, pkt_len);
 
@@ -1097,8 +1096,16 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
             m->m_len -= ETH_HLEN;
             ip_input(pData, m);
             break;
+        case ETH_P_IPV6:
+            m_free(pData, m);
+            if (!fWarnedIpv6)
+            {
+                LogRel(("NAT: IPv6 not supported\n"));
+                fWarnedIpv6 = true;
+            }
+            break;
         default:
-            LogRel(("Unsupported protocol %x\n", proto));
+            LogRel(("NAT: Unsupported protocol %x\n", proto));
             m_free(pData, m);
             break;
     }
