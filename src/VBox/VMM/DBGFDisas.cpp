@@ -336,8 +336,8 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
         SelInfo.fRealMode           = !!((pCtxCore && pCtxCore->eflags.Bits.u1VM) || enmMode == PGMMODE_REAL);
         SelInfo.Raw.au32[0]         = 0;
         SelInfo.Raw.au32[1]         = 0;
-        SelInfo.Raw.Gen.u16LimitLow = ~0;
-        SelInfo.Raw.Gen.u4LimitHigh = ~0;
+        SelInfo.Raw.Gen.u16LimitLow = 0xffff;
+        SelInfo.Raw.Gen.u4LimitHigh = 0xf;
         SelInfo.Raw.Gen.u1Present   = pHiddenSel->Attr.n.u1Present;
         SelInfo.Raw.Gen.u1Granularity = pHiddenSel->Attr.n.u1Granularity;;
         SelInfo.Raw.Gen.u1DefBig    = pHiddenSel->Attr.n.u1DefBig;
@@ -354,8 +354,8 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
         SelInfo.fRealMode           = false;
         SelInfo.Raw.au32[0]         = 0;
         SelInfo.Raw.au32[1]         = 0;
-        SelInfo.Raw.Gen.u16LimitLow = ~0;
-        SelInfo.Raw.Gen.u4LimitHigh = ~0;
+        SelInfo.Raw.Gen.u16LimitLow = 0xffff;
+        SelInfo.Raw.Gen.u4LimitHigh = 0xf;
 
         if (CPUMAreHiddenSelRegsValid(pVM))
         {   /* Assume the current CS defines the execution mode. */
@@ -388,8 +388,8 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
         SelInfo.fRealMode           = true;
         SelInfo.Raw.au32[0]         = 0;
         SelInfo.Raw.au32[1]         = 0;
-        SelInfo.Raw.Gen.u16LimitLow = ~0;
-        SelInfo.Raw.Gen.u4LimitHigh = ~0;
+        SelInfo.Raw.Gen.u16LimitLow = 0xffff;
+        SelInfo.Raw.Gen.u4LimitHigh = 0xf;
         SelInfo.Raw.Gen.u1Present   = 1;
         SelInfo.Raw.Gen.u1Granularity = 1;
         SelInfo.Raw.Gen.u1DefBig    = 0; /* 16 bits */
