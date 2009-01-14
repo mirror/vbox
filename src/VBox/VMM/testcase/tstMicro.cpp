@@ -170,8 +170,8 @@ static void SetupSelectors(PVM pVM)
         /* 32-bit code selector. */
         PX86DESC pGDTE = &paGDTEs[Sel >> X86_SEL_SHIFT];
         pGDTE->au32[0] = pGDTE->au32[1] = 0;
-        pGDTE->Gen.u16LimitLow  = ~0;
-        pGDTE->Gen.u4LimitHigh  = ~0;
+        pGDTE->Gen.u16LimitLow  = 0xffff;
+        pGDTE->Gen.u4LimitHigh  = 0xf;
         pGDTE->Gen.u1Granularity= 1;
         pGDTE->Gen.u1Present    = 1;
         pGDTE->Gen.u2Dpl        = i;
@@ -182,8 +182,8 @@ static void SetupSelectors(PVM pVM)
         /* 32-bit data selector. */
         pGDTE++;
         pGDTE->au32[0] = pGDTE->au32[1] = 0;
-        pGDTE->Gen.u16LimitLow  = ~0;
-        pGDTE->Gen.u4LimitHigh  = ~0;
+        pGDTE->Gen.u16LimitLow  = 0xffff;
+        pGDTE->Gen.u4LimitHigh  = 0xf;
         pGDTE->Gen.u1Granularity= 1;
         pGDTE->Gen.u1Present    = 1;
         pGDTE->Gen.u2Dpl        = i;
