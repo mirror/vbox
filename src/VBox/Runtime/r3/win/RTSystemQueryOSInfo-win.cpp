@@ -66,6 +66,8 @@ typedef enum RTWINOSTYPE
     kRTWinOSType_XP,
     kRTWinOSType_2003,
     kRTWinOSType_VISTA,
+    kRTWinOSType_2008,
+    kRTWinOSType_7,
     kRTWinOSType_NT_UNKNOWN = 199,
     kRTWinOSType_NT_LAST    = kRTWinOSType_UNKNOWN
 } RTWINOSTYPE;
@@ -146,6 +148,7 @@ CE 3.0         3              3               0
 static RTWINOSTYPE rtSystemWinOSType(OSVERSIONINFOEX const *pOSInfoEx)
 {
     RTWINOSTYPE enmVer         = kRTWinOSType_UNKNOWN;
+    BYTE  const bProductType   = pOSInfoEx->wProductType;
     DWORD const dwPlatformId   = pOSInfoEx->dwPlatformId;
     DWORD const dwMinorVersion = pOSInfoEx->dwMinorVersion;
     DWORD const dwMajorVersion = pOSInfoEx->dwMajorVersion;
@@ -196,8 +199,15 @@ static RTWINOSTYPE rtSystemWinOSType(OSVERSIONINFOEX const *pOSInfoEx)
             enmVer = kRTWinOSType_2003;
         else if (   dwMajorVersion == 6
                  && dwMinorVersion == 0)
-            enmVer = kRTWinOSType_VISTA;
-        /** @todo check Windows Server 2008! */
+        {
+            if (bProductType != VER_NT_WORKSTATION)
+                enmVer = kRTWinOSType_2008;
+            else
+                enmVer = kRTWinOSType_VISTA;
+        }
+        else if (   dwMajorVersion == 6
+                 && dwMinorVersion == 1)
+            enmVer = kRTWinOSType_7;
         else
             enmVer = kRTWinOSType_NT_UNKNOWN;
     }
@@ -363,6 +373,8 @@ static int rtSystemWinQueryOSVersion(RTSYSOSINFO enmInfo, char *pszInfo, size_t 
                     rtSystemWinAppendProductType(szTmp);
                     break;
                 }
+                case kRTWinOSType_2008:         strcpy(szTmp, "Windows 2008"); break;
+                case kRTWinOSType_7:            strcpy(szTmp, "Windows 7"); break;
 
                 case kRTWinOSType_NT_UNKNOWN:
                     RTStrPrintf(szTmp, sizeof(szTmp), "Unknown NT v%u.%u", OSInfoEx.dwMajorVersion, OSInfoEx.dwMinorVersion);
