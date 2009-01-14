@@ -81,6 +81,12 @@ filelist_fixup()
   mv -f "tmp-$1" "$1"
 }
 
+hardlink_fixup()
+{
+  "$VBOX_AWK" 'NF == 3 && $1=="l" && '"$2"' { '"$3"' } { print }' "$1" > "tmp-$1"
+  mv -f "tmp-$1" "$1"
+}
+
 # prepare file list
 cd "$VBOX_INSTALLED_DIR"
 echo 'i pkginfo=./vbox.pkginfo' > prototype
@@ -90,11 +96,30 @@ echo 'i space=./vbox.space' >> prototype
 if test -f "./vbox.copyright"; then
     echo 'i copyright=./vbox.copyright' >> prototype
 fi
+
+# Relative hardlinks
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxManage
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxSDL
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/vboxwebsrv
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/webtest
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxZoneAccess
+if test -f $VBOX_INSTALLED_DIR/amd64/VirtualBox || test -f $VBOX_INSTALLED_DIR/i386/VirtualBox; then
+    ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VirtualBox
+fi
+if test -f $VBOX_INSTALLED_DIR/amd64/VBoxBFE || test -f $VBOX_INSTALLED_DIR/i386/VBoxBFE; then
+    ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxBFE
+fi
+if test -f $VBOX_INSTALLED_DIR/amd64/VBoxHeadless || test -f $VBOX_INSTALLED_DIR/i386/VBoxHeadless; then
+    ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxHeadless
+    ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxVRDP
+fi
+
 find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
 
 # don't grok for the class files
 filelist_fixup prototype '$2 == "none"'                                                                 '$5 = "root"; $6 = "bin"'
 filelist_fixup prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3"="$3'
+hardlink_fixup prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3'
 
 # install the kernel modules to the right place.
 filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxdrv=i386/vboxdrv"'                             '$3 = "platform/i86pc/kernel/drv/vboxdrv=i386/vboxdrv"; $6 = "sys"'
