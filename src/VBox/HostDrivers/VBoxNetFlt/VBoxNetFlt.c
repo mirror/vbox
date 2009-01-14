@@ -1038,26 +1038,29 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
     if (pCur)
     {
 #ifdef VBOXNETFLT_STATIC_CONFIG
-        switch(vboxNetFltGetState(pCur))
+        switch (vboxNetFltGetState(pCur))
         {
-        case kVBoxNetFltInsState_Unconnected:
-            /* instance can be destroyed when it is neither used by the IntNet nor by the ndis filter driver mechanism
-             * (i.e. the driver is not bound to the specified adapter)*/
-            vboxNetFltRetain(pCur, false /* fBusy */);
-            rc = vboxNetFltConnectIt(pCur, pSwitchPort, ppIfPort);
-            break;
-        case kVBoxNetFltInsState_Connected:
-            Assert(0);
-            rc = VERR_INTNET_FLT_IF_BUSY;
-            break;
-        case kVBoxNetFltInsState_Disconnecting:
-            Assert(0);
-            rc = VERR_INTNET_FLT_IF_BUSY;
-            break;
-        default:
-            /** @todo: */
-            rc = VERR_INTNET_FLT_IF_BUSY;
+            case kVBoxNetFltInsState_Unconnected:
+                /* instance can be destroyed when it is neither used by the IntNet nor by the ndis filter driver mechanism
+                 * (i.e. the driver is not bound to the specified adapter)*/
+                vboxNetFltRetain(pCur, false /* fBusy */); /** @todo who releases this on failure? */
+                rc = vboxNetFltConnectIt(pCur, pSwitchPort, ppIfPort);
+                break;
+            case kVBoxNetFltInsState_Connected:
+                AssertFailed();
+                rc = VERR_INTNET_FLT_IF_BUSY;
+                break;
+            case kVBoxNetFltInsState_Disconnecting:
+                AssertFailed();
+                rc = VERR_INTNET_FLT_IF_BUSY;
+                break;
+            default:
+                /** @todo what? */
+                rc = VERR_INTNET_FLT_IF_BUSY;
+                break;
         }
+#else
+        rc = VERR_INTNET_FLT_IF_BUSY;
 #endif
         RTSemFastMutexRelease(pGlobals->hFastMtx);
         LogFlow(("vboxNetFltFactoryCreateAndConnect: returns %Rrc\n", rc));
