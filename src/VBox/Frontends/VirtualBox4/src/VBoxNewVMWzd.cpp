@@ -244,7 +244,7 @@ void VBoxNewVMWzd::revalidate (QIWidgetValidator *aWval)
     if (aWval->widget() == mPageMemory)
     {
         valid = true;
-        if (summarySize > 0.5 * memorySize)
+        if (summarySize > 0.75 * memorySize)
             valid = false;
     }
     else if (aWval->widget() == mPageHDD)
