@@ -1734,7 +1734,7 @@ ResumeExecution:
         uint32_t cbSize;
 
         Log2(("SVM: %RGv mov x, cr%d\n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_READ_CR0));
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCRxRead[exitCode - SVM_EXIT_WRITE_CR0]);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCRxRead[exitCode - SVM_EXIT_READ_CR0]);
         rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
         if (rc == VINF_SUCCESS)
         {
@@ -1756,7 +1756,7 @@ ResumeExecution:
         uint32_t cbSize;
 
         Log2(("SVM: %RGv mov dr%d, x\n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_WRITE_DR0));
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxRead);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxWrite);
 
         if (!DBGFIsStepping(pVM))
         {
@@ -1795,7 +1795,7 @@ ResumeExecution:
     {
         uint32_t cbSize;
 
-        Log2(("SVM: %RGv mov dr%d, x\n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_READ_DR0));
+        Log2(("SVM: %RGv mov x, dr%d\n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_READ_DR0));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxRead);
 
         if (!DBGFIsStepping(pVM))
