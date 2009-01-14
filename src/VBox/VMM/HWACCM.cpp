@@ -435,6 +435,11 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     {
         LogRel(("HWACCM: No VMX or SVM CPU extension found. Reason %Rrc\n", pVM->hwaccm.s.lLastError));
         LogRel(("HWACCM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hwaccm.s.vmx.msr.feature_ctrl));
+        VMSetRuntimeError(pVM, false, "HwaccmDisabled",
+                         N_("You are trying to execute this VM with VT-x/AMD-V enabled but this hardware "
+                            "extension is either not available or it is disabled in the BIOS. You might "
+                            "check the BIOS settings and/or update the BIOS. The VM will be executed "
+                            "without using this hardware extension"));
 #ifdef RT_OS_DARWIN
         if (VMMIsHwVirtExtForced(pVM))
             return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is not available.");
