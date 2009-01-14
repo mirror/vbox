@@ -1439,6 +1439,7 @@ else
 endif
 
 
+ifndef VBOX_NOINC_GCC_CONFIG_KMK
 #
 # GCC stuff properties.
 # Most of this is resolved on first kmk invocation and cached in PATH_OUT.
@@ -1545,6 +1546,7 @@ endif
 	$(APPEND) '$@' 'VBOX_GCC32_Wno-variadic-macros ?= $(call VBOX_GCC32_CHECK_CXX,-Wno-variadic-macros,)'
 
 include $(PATH_OUT)/GCCConfig.kmk
+endif # !VBOX_NOINC_GCC_CONFIG_KMK
 
 
 #
@@ -1921,7 +1923,9 @@ else
 endif
 TEMPLATE_VBOXGC_CFLAGS              = $(TEMPLATE_VBOXGC_CXXFLAGS)
 TEMPLATE_VBOXGC_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD
-include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
+ifndef VBOX_NOINC_MISC
+ include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
+endif
 TEMPLATE_VBOXGC_LIBS                = \
         $(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
 endif # pe
@@ -3634,34 +3638,34 @@ $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_VERSION_STRING = $(VBOX_VERSION_STRING)'
 	$(QUIET)$(MV) -f $@.tmp $@
 
-ifndef VBOX_OSE
-if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
-# VBOX_LICENSE_VER is used in several Makefiles
-VBOX_LICENSE_VER_KMK = $(PATH_OUT)/license-version.kmk
+if !defined(VBOX_OSE) && !defined(VBOX_NOINC_LICENSE_VER_KMK)
+ if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
+  # VBOX_LICENSE_VER is used in several Makefiles
+  VBOX_LICENSE_VER_KMK = $(PATH_OUT)/license-version.kmk
 $(VBOX_LICENSE_VER_KMK): $(VBOX_BRAND_LICENSE_HTML)
 	$(call MSG_GENERATE,,$(VBOX_LICENSE_VER_KMK))
 	$(QUIET)$(MKDIR) -p $(@D)
-ifdef VBOX_BRAND_LICENSE_VER
+  ifdef VBOX_BRAND_LICENSE_VER
 	$(QUIET)$(RM) -f '$@'
 	$(APPEND) '$@' 'VBOX_LICENSE_VER=$(VBOX_BRAND_LICENSE_VER)'
-else
+  else
 	$(QUIET)$(SED) -e "s/.*License version \([0-9.]*\) *[,&].*/VBOX_LICENSE_VER=\1/;t;d" --output $@ $(VBOX_BRAND_LICENSE_HTML)
-endif
--include $(VBOX_LICENSE_VER_KMK)
-VBOX_LICENSE_FILES = \
-	License-$(VBOX_LICENSE_VER).html \
-	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES),License-$(VBOX_LICENSE_VER)-$(f).html)
-VBOX_LICENSE_BINS = $(addprefix $(PATH_BIN)/,$(VBOX_LICENSE_FILES))
-endif
+  endif
+  -include $(VBOX_LICENSE_VER_KMK)
+  VBOX_LICENSE_FILES = \
+  	License-$(VBOX_LICENSE_VER).html \
+  	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES),License-$(VBOX_LICENSE_VER)-$(f).html)
+  VBOX_LICENSE_BINS = $(addprefix $(PATH_BIN)/,$(VBOX_LICENSE_FILES))
+ endif
 endif
 
 
+ifndef VBOX_NOINC_MISC
 # Force building of the version header file as the first thing anywhere in
 # the tree. This eliminates the need for manual dependencies on it.
 ## @todo there gotta be a better way of doing this.
 Makefile.kmk: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK) $(VBOX_PACKAGE_HEADER)
-Makefile: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK) $(VBOX_PACKAGE_HEADER)
-makefile: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK) $(VBOX_PACKAGE_HEADER)
+endif
 
 
 #
@@ -3698,7 +3702,9 @@ $(VBOX_SVN_REV_KMK).ts +| $(VBOX_SVN_REV_KMK): $(if $(VBOX_SVN_DEP), $(VBOX_SVN_
  endif
 	$(QUIET)$(CP) --changed -fv $@ $(VBOX_SVN_REV_KMK)
 
- include $(VBOX_SVN_REV_KMK)
+ ifndef VBOX_NOINC_SVN_REV_KMK
+  include $(VBOX_SVN_REV_KMK)
+ endif
 else
 # allow to overwrite VBOX_SVN_REV externally (mainly for building .debs/.rpms)
 $(VBOX_SVN_REV_KMK):
