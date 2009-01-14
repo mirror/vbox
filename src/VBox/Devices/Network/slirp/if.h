@@ -39,4 +39,9 @@ extern  struct mbuf *next_m;
 #endif /* ETH_P_IP */
 #define ETH_P_IP        0x0800          /* Internet Protocol packet     */
 
+#ifdef ETH_P_IPV6
+# undef ETH_P_IPV6
+#endif /* ETH_P_IPV6 */
+#define ETH_P_IPV6      0x86DD          /* IPv6 */
+
 #endif
