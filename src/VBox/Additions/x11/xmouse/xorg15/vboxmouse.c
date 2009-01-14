@@ -55,6 +55,7 @@
 #include <xf86.h>
 #include <xf86Xinput.h>
 #include <exevents.h>
+#include <mipointer.h>
 
 #include <xf86Module.h>
 
@@ -66,7 +67,9 @@ VBoxReadInput(InputInfoPtr pInfo)
 {
     uint32_t cx, cy, fFeatures;
 
-    if (RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy)))
+    /* The first test here is a workaround for an apparant bug in Xorg Server 1.5 */
+    if (   miPointerGetScreen(pInfo->dev) != NULL
+        && RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy)))
         /* send absolute movement */
         xf86PostMotionEvent(pInfo->dev, 1, 0, 2, cx, cy);
 }
