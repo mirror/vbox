@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -100,7 +100,7 @@
 # elif defined(__i386__) || defined(_M_IX86) || defined(__X86__)
 #  define RT_ARCH_X86
 # else /* PORTME: append test for new archs. */
-#  error "Check what predefined stuff your compiler uses to indicate architecture."
+#  error "Check what predefined macros your compiler uses to indicate architecture."
 # endif
 #elif defined(RT_ARCH_X86) && defined(RT_ARCH_AMD64) /* PORTME: append new archs. */
 # error "Both RT_ARCH_X86 and RT_ARCH_AMD64 cannot be defined at the same time!"
@@ -122,7 +122,7 @@
 # elif defined(RT_ARCH_X86)
 #  define __X86__
 # else
-#  error "Check what predefined stuff your compiler uses to indicate architecture."
+#  error "Check what predefined macros your compiler uses to indicate architecture."
 # endif
 #elif defined(__X86__) && defined(__AMD64__)
 # error "Both __X86__ and __AMD64__ cannot be defined at the same time!"
@@ -147,7 +147,7 @@
  * in the Raw-mode Context (implies R0).
  */
 #if !defined(IN_RING3) && !defined(IN_RING0) && !defined(IN_RC) && !defined(IN_RC)
-# error "You must defined which context the compiled code should run in; IN_RING3, IN_RING0 or IN_RC"
+# error "You must define which context the compiled code should run in; IN_RING3, IN_RING0 or IN_RC"
 #endif
 #if (defined(IN_RING3) && (defined(IN_RING0) || defined(IN_RC)) ) \
  || (defined(IN_RING0) && (defined(IN_RING3) || defined(IN_RC)) ) \
@@ -249,7 +249,7 @@
 #define RCPTRTYPE(RCType)       CTXTYPE(RCType, RTRCPTR, RTRCPTR)
 
 /** @def R3R0PTRTYPE
- * Declare a pointer which is used in HC, is explicitely valid in ring 3 and 0,
+ * Declare a pointer which is used in HC, is explicitly valid in ring 3 and 0,
  * but appears in structure(s) used by both HC and GC. The main purpose is to
  * make sure structures have the same size when built for different architectures.
  *
@@ -280,7 +280,7 @@
  * Adds the suffix of the current context to the passed in
  * identifier name. The suffix is HC or GC.
  *
- * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * This is macro should only be used in shared code to avoid a forest of ifdefs.
  * @param   var     Identifier name.
  * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
@@ -288,7 +288,7 @@
  * Adds the suffix of the other context to the passed in
  * identifier name. The suffix is HC or GC.
  *
- * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * This is macro should only be used in shared code to avoid a forest of ifdefs.
  * @param   var     Identifier name.
  * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
@@ -304,7 +304,7 @@
  * Adds the suffix of the current context to the passed in
  * identifier name. The suffix is R3, R0 or GC.
  *
- * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * This is macro should only be used in shared code to avoid a forest of ifdefs.
  * @param   var     Identifier name.
  * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
@@ -320,7 +320,7 @@
  * Adds the suffix of the current context to the passed in
  * identifier name. The suffix is R3, R0 or RC.
  *
- * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * This is macro should only be used in shared code to avoid a forest of ifdefs.
  * @param   var     Identifier name.
  *
  * @remark  This will replace CTXALLSUFF and CTXSUFF before long.
@@ -338,7 +338,7 @@
  * identifier name, combining RC and R0 into RZ.
  * The suffix thus is R3 or RZ.
  *
- * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * This is macro should only be used in shared code to avoid a forest of ifdefs.
  * @param   var     Identifier name.
  *
  * @remark  This will replace CTXALLSUFF and CTXSUFF before long.
@@ -354,7 +354,7 @@
  * Adds the current context as a middle name of an identifier name
  * The middle name is HC or GC.
  *
- * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * This is macro should only be used in shared code to avoid a forest of ifdefs.
  * @param   first   First name.
  * @param   last    Surname.
  */
@@ -362,7 +362,7 @@
  * Adds the other context as a middle name of an identifier name
  * The middle name is HC or GC.
  *
- * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * This is macro should only be used in shared code to avoid a forest of ifdefs.
  * @param   first   First name.
  * @param   last    Surname.
  * @deprecated use CTX_MID or CTX_MID_Z
@@ -379,7 +379,7 @@
  * Adds the current context as a middle name of an identifier name.
  * The middle name is R3, R0 or GC.
  *
- * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * This is macro should only be used in shared code to avoid a forest of ifdefs.
  * @param   first   First name.
  * @param   last    Surname.
  * @deprecated use CTX_MID or CTX_MID_Z
@@ -396,7 +396,7 @@
  * Adds the current context as a middle name of an identifier name.
  * The middle name is R3, R0 or RC.
  *
- * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * This is macro should only be used in shared code to avoid a forest of ifdefs.
  * @param   first   First name.
  * @param   last    Surname.
  */
@@ -413,7 +413,7 @@
  * and R0 into RZ.
  * The middle name thus is either R3 or RZ.
  *
- * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * This is macro should only be used in shared code to avoid a forest of ifdefs.
  * @param   first   First name.
  * @param   last    Surname.
  */
@@ -648,7 +648,7 @@
 
 
 /** @def IN_RT_STATIC
- * Used to inidicate whether we're linking against a static IPRT
+ * Used to indicate whether we're linking against a static IPRT
  * or not. The IPRT symbols will be declared as hidden (if
  * supported). Note that this define has no effect without setting
  * IN_RT_R0, IN_RT_R3 or IN_RT_GC indicators are set first.
@@ -745,7 +745,7 @@
  * In order to coexist in the same process as other CRTs, we need to
  * decorate the symbols such that they don't conflict the ones in the
  * other CRTs. The result of such conflicts / duplicate symbols can
- * confuse the dynamic loader on unix like systems.
+ * confuse the dynamic loader on Unix like systems.
  *
  * Define RT_WITHOUT_NOCRT_WRAPPERS to drop the wrapping.
  * Define RT_WITHOUT_NOCRT_WRAPPER_ALIASES to drop the aliases to the
@@ -787,9 +787,9 @@
  *        you happen to be a Dirk Gently.
  *
  *      - These macros are meant to be used in places that get executed a lot. It
- *        is wasteful to make predictions in code that is executed seldomly (e.g.
- *        at subsystem initialization time) as the basic block reording that this
- *        affecs can often generate larger code.
+ *        is wasteful to make predictions in code that is executed rarely (e.g.
+ *        at subsystem initialization time) as the basic block reordering that this
+ *        affects can often generate larger code.
  *
  *      - Note that RT_SUCCESS() and RT_FAILURE() already makes use of RT_LIKELY()
  *        and RT_UNLIKELY(). Should you wish for prediction free status checks,
@@ -862,7 +862,7 @@
  * @param   u           Value to align.
  * @param   uAlignment  The alignment. Power of two!
  * @param   type        Integer type to use while aligning.
- * @remark  This macro is the prefered alignment macro, it doesn't have any of the pitfalls RT_ALIGN has.
+ * @remark  This macro is the preferred alignment macro, it doesn't have any of the pitfalls RT_ALIGN has.
  */
 #define RT_ALIGN_T(u, uAlignment, type) ( ((type)(u) + ((uAlignment) - 1)) & ~(type)((uAlignment) - 1) )
 
@@ -932,7 +932,7 @@
  *
  * This differs from the usual offsetof() in that it's not relying on builtin
  * compiler stuff and thus can use variables in arrays the structure may
- * contain. If in this usful to determin the sizes of structures ending
+ * contain. This is useful to determine the sizes of structures ending
  * with a variable length field.
  *
  * @returns offset into the structure of the specified member. signed.
@@ -946,7 +946,7 @@
  *
  * This differs from the usual offsetof() in that it's not relying on builtin
  * compiler stuff and thus can use variables in arrays the structure may
- * contain. If in this usful to determin the sizes of structures ending
+ * contain. This is useful to determine the sizes of structures ending
  * with a variable length field.
  *
  * @returns offset into the structure of the specified member. unsigned.
@@ -1446,7 +1446,7 @@
  * Emit a debug breakpoint instruction.
  *
  * Use this for instrumenting a debugging session only!
- * No comitted code shall use Breakpoint().
+ * No committed code shall use Breakpoint().
  */
 #ifdef __GNUC__
 # define Breakpoint()           __asm__ __volatile__("int $3\n\t")
