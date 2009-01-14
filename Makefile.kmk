@@ -874,5 +874,3 @@ snapshot:
 	    -f $(TARBALLPATH)/$(TARBALLNAME) \
 	    $(TARBALLROOT)
 	$(QUIET)$(RM) $(TARBALLPATH)/$(TARBALLROOT)
-
-
