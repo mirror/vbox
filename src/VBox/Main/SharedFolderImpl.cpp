@@ -292,19 +292,14 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
     /* check whether the host path exists */
     Utf8Str hostPath = Utf8Str (mData.mHostPath);
     char hostPathFull [RTPATH_MAX];
-    int vrc = RTPathExists(hostPath) ? RTPathReal (hostPath, hostPathFull,
-                                                   sizeof (hostPathFull))
-                                     : VERR_PATH_NOT_FOUND;
+    int vrc = RTPathExists (hostPath) ? RTPathReal (hostPath, hostPathFull,
+                                                    sizeof (hostPathFull))
+                                      : VERR_PATH_NOT_FOUND;
     if (RT_SUCCESS (vrc))
     {
         *aAccessible = TRUE;
         return S_OK;
     }
-
-    HRESULT rc = S_OK;
-    if (vrc != VERR_PATH_NOT_FOUND)
-        rc = setError (E_FAIL,
-            tr ("Invalid shared folder path: '%s' (%Rrc)"), hostPath.raw(), vrc);
 
     LogWarningThisFunc (("'%s' is not accessible (%Rrc)\n", hostPath.raw(), vrc));
 

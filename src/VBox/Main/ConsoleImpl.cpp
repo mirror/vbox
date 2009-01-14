@@ -2105,14 +2105,6 @@ Console::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
     rc = sharedFolder->init (this, aName, aHostPath, aWritable);
     CheckComRCReturnRC (rc);
 
-    BOOL accessible = FALSE;
-    rc = sharedFolder->COMGETTER(Accessible) (&accessible);
-    CheckComRCReturnRC (rc);
-
-    if (!accessible)
-        return setError (VBOX_E_FILE_ERROR,
-            tr ("Shared folder host path '%ls' is not accessible"), aHostPath);
-
     /* protect mpVM (if not NULL) */
     AutoVMCallerQuietWeak autoVMCaller (this);
 
