@@ -814,7 +814,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                 return rc;
             }
 
-            rc = pDrvIns->pDrvHlp->pfnPDMQueueCreate(pDrvIns, sizeof(DRVNATQUEUITEM), 50, 0, drvNATQueueConsumer, &pThis->pSendQueue);
+            rc = PDMDrvHlpPDMQueueCreate(pDrvIns, sizeof(DRVNATQUEUITEM), 50, 0, drvNATQueueConsumer, &pThis->pSendQueue);
             if (RT_FAILURE(rc))
             {
                 LogRel(("Can't create send queue\n"));

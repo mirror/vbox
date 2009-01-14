@@ -202,7 +202,7 @@ uint64_t audio_get_clock (void)
     AudioState *s;
 
     s = &glob_audio_state;
-    return s->pDrvIns->pDrvHlp->pfnTMGetVirtualTime (s->pDrvIns);
+    return PDMDrvHlpTMGetVirtualTime (s->pDrvIns);
 }
 
 uint64_t audio_get_ticks_per_sec (void)
@@ -210,7 +210,7 @@ uint64_t audio_get_ticks_per_sec (void)
     AudioState *s;
 
     s = &glob_audio_state;
-    return s->pDrvIns->pDrvHlp->pfnTMGetVirtualFreq (s->pDrvIns);
+    return PDMDrvHlpTMGetVirtualFreq (s->pDrvIns);
 }
 
 #ifdef AUDIO_IS_FLAWLESS_AND_NO_CHECKS_ARE_REQURIED
@@ -1625,8 +1625,8 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
     LIST_INIT (&s->hw_head_in);
     LIST_INIT (&s->cap_head);
 
-    rc = pDrvIns->pDrvHlp->pfnTMTimerCreate (pDrvIns, TMCLOCK_VIRTUAL,
-                                             audio_timer_helper, "Audio timer", &s->ts);
+    rc = PDMDrvHlpTMTimerCreate (pDrvIns, TMCLOCK_VIRTUAL,
+                                 audio_timer_helper, "Audio timer", &s->ts);
     if (RT_FAILURE (rc))
         return rc;
 
