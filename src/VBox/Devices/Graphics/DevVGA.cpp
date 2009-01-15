@@ -5819,6 +5819,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                     AssertMsgFailed(("Configuration error: Invalid mode data '%s' for '%s'! cBits=%d\n", pszExtraData, szExtraDataKey, cBits));
                     return VERR_VGA_INVALID_CUSTOM_MODE;
                 }
+                /* Round up the X resolution to a multiple of eight. */
+                cx = (cx + 7) & ~7;
 # ifdef VRAM_SIZE_FIX
                 if (cx * cy * cBits / 8 >= pThis->vram_size)
                 {
