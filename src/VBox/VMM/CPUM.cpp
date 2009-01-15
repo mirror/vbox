@@ -655,7 +655,7 @@ VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
  */
 VMMR3DECL(int) CPUMR3Term(PVM pVM)
 {
-    /** @todo ? */
+    CPUMR3TermCPU(pVM);
     return 0;
 }
 
@@ -671,6 +671,16 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
  */
 VMMR3DECL(int) CPUMR3TermCPU(PVM pVM)
 {
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PCPUMCTX pCtx = CPUMQueryGuestCtxPtrEx(pVM, &pVM->aCpus[i]);
+
+        memset(pVM->aCpus[i].cpum.s.aMagic, 0, sizeof(pVM->aCpus[i].cpum.s.aMagic));
+        pVM->aCpus[i].cpum.s.uMagic     = 0;
+        pCtx->dr[5]                     = 0;
+    }
+#endif
     return 0;
 }
 
@@ -759,6 +769,13 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
         * The Intel docs don't mention it.
         */
         pCtx->msrEFER                   = 0;
+
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+        /* Magic marker for searching in crash dumps. */
+        strcpy((char *)pVM->aCpus[i].cpum.s.aMagic, "CPUMCPU Magic");
+        pVM->aCpus[i].cpum.s.uMagic     = UINT64_C(0xDEADBEEFDEADBEEF);
+        pCtx->dr[5]                     = UINT64_C(0xDEADBEEFDEADBEEF);
+#endif
     }
 }
 

@@ -279,6 +279,11 @@ typedef struct HWACCM
         /** Virtual address of the MSR entry load page (guest MSRs). */
         R0PTRTYPE(uint8_t *)        pMSREntryLoad;
 
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+        RTR0MEMOBJ                  pMemObjScratch;
+        RTHCPHYS                    pScratchPhys;
+        R0PTRTYPE(uint8_t *)        pScratch;
+#endif
         /** R0 memory object for the MSR exit store page (guest MSRs). */
         RTR0MEMOBJ                  pMemObjMSRExitStore;
         /** Physical address of the MSR exit store page (guest MSRs). */
@@ -384,12 +389,18 @@ typedef HWACCM *PHWACCM;
 /* Structure for storing read and write VMCS actions. */
 typedef struct VMCSCACHE
 {
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
     /* Magic marker for searching in crash dumps. */
     uint8_t         aMagic[16];
     uint64_t        uMagic;
+    uint64_t        u64TimeEntry;
+    uint64_t        u64TimeSwitch;
+    uint64_t        cResume;
+    uint64_t        interPD;
+    uint64_t        pSwitcher;
     uint32_t        uPos;
     uint32_t        idCpu;
-
+#endif
     /* CR2 is saved here for EPT syncing. */
     uint64_t        cr2;
     struct

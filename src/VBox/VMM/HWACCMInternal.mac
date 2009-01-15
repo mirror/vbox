@@ -25,10 +25,17 @@
 
 ; Structure for storing read and write VMCS actions. 
 struc VMCSCACHE
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
     .aMagic                   resb    16
     .uMagic                   resq    1
+    .u64TimeEntry             resq    1
+    .u64TimeSwitch            resq    1
+    .cResume                  resq    1
+    .interPD                  resq    1
+    .pSwitcher                resq    1
     .uPos                     resd    1
     .idCpu                    resd    1
+%endif
     .cr2                      resq    1
     .Write.cValidEntries      resd    1
     .Write.uAlignment         resd    1

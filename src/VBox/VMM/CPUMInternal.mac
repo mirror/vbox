@@ -305,6 +305,10 @@ struc CPUMCPU
     .Host.efer           resq    1
 %endif ; 64-bit
 
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    .aMagic              resb    56
+    .uMagic              resq    1
+%endif
     ;
     ; Guest context state
     ; (Identical to the .Hyper chunk above.)

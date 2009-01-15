@@ -121,6 +121,14 @@ BEGINPROC vmmR0HostToGuestAsm
     ;;      Skip eax, edx and ecx as these are not preserved over calls.
     ;;
     CPUMCPU_FROM_CPUM(edx)
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    ; phys address of scratch page
+    mov     eax, dword [edx + CPUMCPU.Guest.dr + 4*8]
+    mov     cr2, eax
+
+    mov dword [edx + CPUMCPU.Guest.dr + 4*8], 1
+%endif
+
     ; general registers.
     mov     [edx + CPUMCPU.Host.ebx], ebx
     mov     [edx + CPUMCPU.Host.edi], edi
@@ -139,6 +147,10 @@ BEGINPROC vmmR0HostToGuestAsm
     sgdt    [edx + CPUMCPU.Host.gdtr]
     str     [edx + CPUMCPU.Host.tr]
 
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    mov dword [edx + CPUMCPU.Guest.dr + 4*8], 2
+%endif
+
     ; control registers.
     mov     eax, cr0
     mov     [edx + CPUMCPU.Host.cr0], eax
@@ -156,9 +168,19 @@ BEGINPROC vmmR0HostToGuestAsm
     mov     [ebx + CPUMCPU.Host.efer + 4], edx
     mov     edx, ebx
 
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    mov dword [edx + CPUMCPU.Guest.dr + 4*8], 3
+%endif
+
     CPUM_FROM_CPUMCPU(edx)
     ; Load new gdt so we can do a far jump after going into 64 bits mode
     lgdt    [edx + CPUM.Hyper.gdtr]
+
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    CPUMCPU_FROM_CPUM(edx)
+    mov dword [edx + CPUMCPU.Guest.dr + 4*8], 4
+    CPUM_FROM_CPUMCPU(edx)
+%endif
 
     ;;
     ;; Load Intermediate memory context.
@@ -179,12 +201,17 @@ BEGINPROC vmmR0HostToGuestAsm
 ALIGNCODE(16)
 GLOBALNAME IDEnterTarget
     DEBUG_CHAR('2')
-        
+
     ; 1. Disable paging.
     mov     ebx, cr0
     and     ebx, ~X86_CR0_PG
     mov     cr0, ebx
     DEBUG_CHAR('2')
+
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    mov     eax, cr2
+    mov     dword [eax], 3
+%endif
 
     ; 2. Enable PAE.
     mov     ecx, cr4
@@ -197,6 +224,11 @@ GLOBALNAME IDEnterTarget
     mov     cr3, ecx
     DEBUG_CHAR('3')
 
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    mov     eax, cr2
+    mov     dword [eax], 4
+%endif
+
     ; 4. Enable long mode.
     mov     ebp, edx
     mov     ecx, MSR_K6_EFER
@@ -205,6 +237,11 @@ GLOBALNAME IDEnterTarget
     wrmsr
     mov     edx, ebp
     DEBUG_CHAR('4')
+
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    mov     eax, cr2
+    mov     dword [eax], 5
+%endif
 
     ; 5. Enable paging.
     or      ebx, X86_CR0_PG
@@ -235,6 +272,11 @@ NAME(pCpumIC):
 FIXUP FIX_GC_64_BIT_CPUM_OFF, 0, 0
 dq 0ffffffffffffffffh
 
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+NAME(pMarker):
+db 'Switch_marker'
+%endif
+
     ;
     ; When we arrive here we're in 64 bits mode in the intermediate context
     ;
@@ -252,12 +294,25 @@ GLOBALNAME ICEnterTarget
     mov     fs, rax
     mov     gs, rax
 
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    CPUMCPU_FROM_CPUM(edx)
+    mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 5
+    CPUM_FROM_CPUMCPU(edx)
+%endif
+
     ; Setup stack; use the lss_esp, ss pair for lss
     DEBUG_CHAR('7')
     mov     rsp, 0
     mov     eax, [rdx + CPUM.Hyper.esp]
     mov     [rdx + CPUM.Hyper.lss_esp], eax
     lss     esp, [rdx + CPUM.Hyper.lss_esp]
+
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    CPUMCPU_FROM_CPUM(edx)
+    mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 6
+    CPUM_FROM_CPUMCPU(edx)
+%endif
+
 
     ; load the hypervisor function address
     mov     r9, [rdx + CPUM.Hyper.eip]
@@ -268,6 +323,10 @@ GLOBALNAME ICEnterTarget
     mov     esi, [rdx + CPUMCPU.fUseFlags] ; esi == use flags.
     test    esi, CPUM_SYNC_FPU_STATE
     jz      near gth_fpu_no  
+
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 7
+%endif
 
     mov     rax, cr0
     mov     rcx, rax                    ; save old CR0
@@ -282,6 +341,10 @@ gth_fpu_no:
     ; Check if we need to restore the guest debug state
     test    esi, CPUM_SYNC_DEBUG_STATE
     jz      near gth_debug_no
+
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 8
+%endif
     
     mov     rax, qword [rdx + CPUMCPU.Guest.dr + 0*8]
     mov     dr0, rax
@@ -298,6 +361,10 @@ gth_fpu_no:
 
 gth_debug_no:
 
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 9
+%endif
+
     ; parameter for all helper functions (pCtx)    
     lea     rsi, [rdx + CPUMCPU.Guest.fpu]
     call    r9
@@ -305,9 +372,13 @@ gth_debug_no:
     ; Load CPUM pointer into rdx
     mov     rdx, [NAME(pCpumIC) wrt rip]
     CPUMCPU_FROM_CPUM(edx)
+
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 10
+%endif
     
     ; Save the return code
-    mov     [rdx + CPUMCPU.u32RetCode], eax
+    mov     dword [rdx + CPUMCPU.u32RetCode], eax
     
     ; now let's switch back
     jmp     NAME(VMMGCGuestToHostAsm)   ; rax = returncode.
