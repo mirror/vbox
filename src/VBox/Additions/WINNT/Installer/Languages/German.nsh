@@ -15,6 +15,8 @@ LangString VBOX_INNOTEK_REBOOT ${LANG_GERMAN}           "Es wird dringend empfoh
 
 LangString VBOX_REBOOT_REQUIRED ${LANG_GERMAN}          "Um alle Änderungen durchführen zu können, muss das System neu gestartet werden. Jetzt neu starten?"
 
+LangString VBOX_EXTRACTION_COMPLETE ${LANG_GERMAN}      "$(^Name): Die Dateien wurden erfolgreich nach $\"$INSTDIR$\" entpackt!"
+
 LangString VBOX_ERROR_INST_FAILED ${LANG_GERMAN}        "Es trat ein Fehler während der Installation auf!$\r$\nBitte werfen Sie einen Blick in die Log-Datei unter '$INSTDIR\install_ui.log' für mehr Informationen."
 
 LangString VBOX_UNINST_CONFIRM ${LANG_GERMAN}           "Wollen Sie wirklich die $(^Name) deinstallieren?"
