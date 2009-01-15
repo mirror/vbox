@@ -387,6 +387,8 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 VBOX_WITH_BUSLOGIC = 1
 # Enable LsiLogic SCSI host adapter
 VBOX_WITH_LSILOGIC = 1
+# Enable HPET device
+#VBOX_WITH_HPET = 1
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
 # Enable host network interface API.
