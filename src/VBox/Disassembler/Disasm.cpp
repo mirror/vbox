@@ -380,6 +380,12 @@ void disasmSprintf(char *pszOutput, RTUINTPTR pu8Instruction, PDISCPUSTATE pCpu,
                     disp = (int32_t)pParam1->parval;
                 }
                 else
+                if(pParam1->flags & USE_IMMEDIATE64_REL)
+                {
+                    /* @todo: is this correct? */
+                    disp = (int32_t)pParam1->parval;
+                }
+                else
                 {
                     AssertMsgFailed(("Oops!\n"));
                     return;
