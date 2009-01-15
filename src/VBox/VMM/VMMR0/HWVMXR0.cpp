@@ -205,6 +205,22 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         memset(pVM->hwaccm.s.vmx.pMSRBitmap, 0xff, PAGE_SIZE);
     }
 
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    {
+        rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjScratch, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        AssertRC(rc);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        pVM->hwaccm.s.vmx.pScratch     = (uint8_t *)RTR0MemObjAddress(pVM->hwaccm.s.vmx.pMemObjScratch);
+        pVM->hwaccm.s.vmx.pScratchPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.vmx.pMemObjScratch, 0);
+
+        ASMMemZero32(pVM->hwaccm.s.vmx.pScratch, PAGE_SIZE);
+        strcpy((char *)pVM->hwaccm.s.vmx.pScratch, "SCRATCH Magic");
+        *(uint64_t *)(pVM->hwaccm.s.vmx.pScratch + 16) = UINT64_C(0xDEADBEEFDEADBEEF);
+    }
+#endif
+
     /* Allocate VMCBs for all guest CPUs. */
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
@@ -268,6 +284,16 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
         pVM->hwaccm.s.vmx.pMSRBitmap       = 0;
         pVM->hwaccm.s.vmx.pMSRBitmapPhys   = 0;
     }
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    if (pVM->hwaccm.s.vmx.pMemObjScratch != NIL_RTR0MEMOBJ)
+    {
+        ASMMemZero32(pVM->hwaccm.s.vmx.pScratch, PAGE_SIZE);
+        RTR0MemObjFree(pVM->hwaccm.s.vmx.pMemObjScratch, false);
+        pVM->hwaccm.s.vmx.pMemObjScratch = NIL_RTR0MEMOBJ;
+        pVM->hwaccm.s.vmx.pScratch       = 0;
+        pVM->hwaccm.s.vmx.pScratchPhys   = 0;
+    }
+#endif
     return VINF_SUCCESS;
 }
 
@@ -1966,6 +1992,10 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 #endif
 
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    pVCpu->hwaccm.s.vmx.VMCSCache.u64TimeEntry = RTTimeNanoTS();
+#endif
+
     /* We can jump to this point to resume execution after determining that a VM-exit is innocent.
      */
 ResumeExecution:
@@ -2138,6 +2168,12 @@ ResumeExecution:
 #ifdef VBOX_STRICT
     Assert(idCpuCheck == RTMpCpuId());
 #endif
+
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    pVCpu->hwaccm.s.vmx.VMCSCache.cResume = cResume;
+    pVCpu->hwaccm.s.vmx.VMCSCache.u64TimeSwitch = RTTimeNanoTS();
+#endif
+
     TMNotifyStartOfExecution(pVM);
     rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu);
     TMNotifyEndOfExecution(pVM);
@@ -3562,6 +3598,12 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     pCpu = HWACCMR0GetCurrentCpu();
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
 
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    pCache->uPos = 1;
+    pCache->interPD = PGMGetInterPaeCR3(pVM);
+    pCache->pSwitcher = (uint64_t)pVM->hwaccm.s.pfnHost32ToGuest64R0;
+#endif
+
 #ifdef DEBUG
     pCache->TestIn.pPageCpuPhys = 0;
     pCache->TestIn.pVMCSPhys    = 0;
@@ -3579,7 +3621,17 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache);
     aParam[5] = 0;
 
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    pCtx->dr[4] = pVM->hwaccm.s.vmx.pScratchPhys + 16 + 8;
+    *(uint32_t *)(pVM->hwaccm.s.vmx.pScratch + 16 + 8) = 1;
+#endif
     rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64, 6, &aParam[0]);
+
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    Assert(*(uint32_t *)(pVM->hwaccm.s.vmx.pScratch + 16 + 8) == 5);
+    Assert(pCtx->dr[4] == 10);
+    *(uint32_t *)(pVM->hwaccm.s.vmx.pScratch + 16 + 8) = 0xff;
+#endif
 
 #ifdef DEBUG
     AssertMsg(pCache->TestIn.pPageCpuPhys == pPageCpuPhys, ("%RHp vs %RHp\n", pCache->TestIn.pPageCpuPhys, pPageCpuPhys));
@@ -3632,6 +3684,8 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 
     /* Leave VMX Root Mode. */
     VMXDisable();
+
+    ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
 
     CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
     CPUMSetHyperEIP(pVM, pfnHandler);

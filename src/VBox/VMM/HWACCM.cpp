@@ -376,13 +376,20 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
 # else
         Assert(pVCpu->hwaccm.s.paStatExitReasonR0 != NIL_RTR0PTR);
 # endif
+    }
+#endif /* VBOX_WITH_STATISTICS */
+
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    /* Magic marker for searching in crash dumps. */
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
 
         PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
-        /* Magic marker for searching in crash dumps. */
         strcpy((char *)pCache->aMagic, "VMCSCACHE Magic");
         pCache->uMagic = UINT64_C(0xDEADBEEFDEADBEEF);
     }
-#endif /* VBOX_WITH_STATISTICS */
+#endif
     return VINF_SUCCESS;
 }
 
@@ -1147,6 +1154,7 @@ VMMR3DECL(int) HWACCMR3Term(PVM pVM)
         PDMR3VMMDevHeapFree(pVM, pVM->hwaccm.s.vmx.pRealModeTSS);
         pVM->hwaccm.s.vmx.pRealModeTSS       = 0;
     }
+    HWACCMR3TermCPU(pVM);
     return 0;
 }
 
@@ -1171,7 +1179,11 @@ VMMR3DECL(int) HWACCMR3TermCPU(PVM pVM)
             pVCpu->hwaccm.s.paStatExitReason   = NULL;
             pVCpu->hwaccm.s.paStatExitReasonR0 = NIL_RTR0PTR;
         }
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+        memset(pVCpu->hwaccm.s.vmx.VMCSCache.aMagic, 0, sizeof(pVCpu->hwaccm.s.vmx.VMCSCache.aMagic));
+        pVCpu->hwaccm.s.vmx.VMCSCache.uMagic = 0;
         pVCpu->hwaccm.s.vmx.VMCSCache.uPos = 0xffffffff;
+#endif
     }
     return 0;
 }
@@ -1213,9 +1225,11 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
         for (unsigned j=0;j<pCache->Read.cValidEntries;j++)
             pCache->Read.aFieldVal[j] = 0;
 
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
         /* Magic marker for searching in crash dumps. */
         strcpy((char *)pCache->aMagic, "VMCSCACHE Magic");
         pCache->uMagic = UINT64_C(0xDEADBEEFDEADBEEF);
+#endif
     }
 }
 

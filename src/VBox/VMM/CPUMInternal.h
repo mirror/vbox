@@ -342,6 +342,11 @@ typedef struct CPUMCPU
      */
     CPUMHOSTCTX             Host;
 
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    uint8_t                 aMagic[56];
+    uint64_t                uMagic;
+#endif
+
     /**
      * Guest context.
      * Aligned on a 64-byte boundrary.
