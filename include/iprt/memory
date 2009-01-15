@@ -76,7 +76,7 @@ public:
     }
 };
 
-}; /* namespace cppx */
+} /* namespace cppx */
 
 
 #endif /* __cplusplus */
