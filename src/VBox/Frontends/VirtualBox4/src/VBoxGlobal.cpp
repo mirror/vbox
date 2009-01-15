@@ -5419,6 +5419,8 @@ void VBoxGlobal::init()
         {"WindowsVista_64", ":/os_winvista_64.png"},
         {"Windows2008",     ":/os_win2k8.png"},
         {"Windows2008_64",  ":/os_win2k8_64.png"},
+        {"Windows7",        ":/os_win7.png"},
+        {"Windows7_64",     ":/os_win7_64.png"},
         {"WindowsNT",       ":/os_win_other.png"},
         {"OS2Warp3",        ":/os_os2warp3.png"},
         {"OS2Warp4",        ":/os_os2warp4.png"},
