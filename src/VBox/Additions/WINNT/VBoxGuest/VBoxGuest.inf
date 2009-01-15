@@ -68,8 +68,9 @@ DelService = VBoxTray, 0x00000004
 [VBoxGuest_ServiceInstallSection]
 DisplayName    = %VBoxGuest_svcdesc%
 ServiceType    = 0x00000001 ; kernel driver
-StartType      = 0x00000003 ; demand start
+StartType      = 0x00000000 ; boot start
 ErrorControl   = 0x00000001 ; normal error handling
+LoadOrderGroup = Base
 ServiceBinary  = %12%\VBoxGuest.sys
 
 [VBoxTray_Add_Reg]
