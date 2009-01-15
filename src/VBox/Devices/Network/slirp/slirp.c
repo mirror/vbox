@@ -389,7 +389,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
  */
 void slirp_register_timers(PNATState pData, PPDMDRVINS pDrvIns)
 {
-#ifndef VBOX_WITHOUT_RELEASE_STATISTICS
+#ifdef VBOX_WITH_STATISTICS
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatFill, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
                            STAMUNIT_TICKS_PER_CALL, "Profiling slirp fills", "/Drivers/NAT%d/Fill", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPoll, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
@@ -406,7 +406,7 @@ void slirp_register_timers(PNATState pData, PPDMDRVINS pDrvIns)
                            STAMUNIT_COUNT, "UDP sockets", "/Drivers/NAT%d/SockUDP", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatUDPHot, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                            STAMUNIT_COUNT, "UDP sockets active", "/Drivers/NAT%d/SockUDPHot", pDrvIns->iInstance);
-#endif /* VBOX_WITHOUT_RELEASE_STATISTICS */
+#endif /* VBOX_WITH_STATISTICS */
 }
 
 /**
