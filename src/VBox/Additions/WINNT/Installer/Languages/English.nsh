@@ -15,6 +15,8 @@ LangString VBOX_INNOTEK_REBOOT ${LANG_ENGLISH}           "It is strongly recomme
 
 LangString VBOX_REBOOT_REQUIRED ${LANG_ENGLISH}          "To apply all changes, the system must be restarted. Restart Windows now?"
 
+LangString VBOX_EXTRACTION_COMPLETE ${LANG_ENGLISH}      "$(^Name): Files were successfully extracted to $\"$INSTDIR$\"!"
+
 LangString VBOX_ERROR_INST_FAILED ${LANG_ENGLISH}        "An error occurred while installing!$\r$\nPlease refer to the log file under '$INSTDIR\install_ui.log' for more information."
 
 LangString VBOX_UNINST_CONFIRM ${LANG_ENGLISH}           "Do you really want to uninstall $(^Name)?"
