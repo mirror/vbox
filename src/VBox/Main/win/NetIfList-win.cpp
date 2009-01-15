@@ -399,7 +399,9 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                                 {
                                     ULONG uComponentStatus;
                                     hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
+#ifndef DEBUG_bird
                                     Assert(hr == S_OK);
+#endif
                                     if(hr == S_OK)
                                     {
                                         if(uComponentStatus == 0)
