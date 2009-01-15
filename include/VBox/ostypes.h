@@ -64,6 +64,8 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_WinVista_x64     = 0x35100,
     VBOXOSTYPE_Win2k8           = 0x36000,
     VBOXOSTYPE_Win2k8_x64       = 0x36100,
+    VBOXOSTYPE_Win7             = 0x37000,
+    VBOXOSTYPE_Win7_x64         = 0x37100,
     VBOXOSTYPE_OS2              = 0x40000,
     VBOXOSTYPE_OS2Warp3         = 0x41000,
     VBOXOSTYPE_OS2Warp4         = 0x42000,
