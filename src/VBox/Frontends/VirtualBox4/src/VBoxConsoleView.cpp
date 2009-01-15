@@ -3931,10 +3931,16 @@ void VBoxConsoleView::updateDockIcon()
 
 void VBoxConsoleView::updateDockOverlay()
 {
-    if (mDockIconEnabled)
+    /* Only to an update to the realtime preview if this is enabled by the user
+     * & we are in an state where the framebuffer is likely valid. Otherwise to
+     * the overlay stuff only. */
+    if (mDockIconEnabled &&
+        (mLastState == KMachineState_Running ||
+         mLastState == KMachineState_Restoring ||
+         mLastState == KMachineState_Saving))
         updateDockIcon();
     else
-        mDockIconPreview->updateDockOverlay ();
+        mDockIconPreview->updateDockOverlay();
 }
 
 void VBoxConsoleView::setMouseCoalescingEnabled (bool aOn)
