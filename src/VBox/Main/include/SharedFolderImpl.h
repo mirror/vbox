@@ -42,10 +42,9 @@ public:
     {
         Data() {}
 
-        const Bstr name;
-        const Bstr hostPath;
-        BOOL       writable;
-        Bstr       lastAccessError;
+        const Bstr mName;
+        const Bstr mHostPath;
+        BOOL       mWritable;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (SharedFolder)
@@ -78,7 +77,6 @@ public:
     STDMETHOD(COMGETTER(HostPath)) (BSTR *aHostPath);
     STDMETHOD(COMGETTER(Accessible)) (BOOL *aAccessible);
     STDMETHOD(COMGETTER(Writable)) (BOOL *aWritable);
-    STDMETHOD(COMGETTER(LastAccessError)) (BSTR *aLastAccessError);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
@@ -86,9 +84,9 @@ public:
     // public methods that don't need a lock (because access constant data)
     // (ensure there is a caller added before calling them!)
 
-    const Bstr &name() const { return m.name; }
-    const Bstr &hostPath() const { return m.hostPath; }
-    BOOL writable() const { return m.writable; }
+    const Bstr &name() const { return mData.mName; }
+    const Bstr &hostPath() const { return mData.mHostPath; }
+    BOOL writable() const { return mData.mWritable; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"SharedFolder"; }
@@ -107,7 +105,7 @@ private:
     const ComObjPtr <Console, ComWeakRef> mConsole;
     const ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
 
-    Data m;
+    Data mData;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (SharedFolder)
