@@ -3,9 +3,6 @@
 # include <paths.h>
 #endif
 
-/* disable these counters for the final release */
-/* #define VBOX_WITHOUT_RELEASE_STATISTICS */
-
 #include <VBox/err.h>
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
@@ -520,7 +517,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 #endif
     int i;
 
-    STAM_REL_PROFILE_START(&pData->StatFill, a);
+    STAM_PROFILE_START(&pData->StatFill, a);
 
     nfds = *pnfds;
 
@@ -551,14 +548,14 @@ void slirp_select_fill(PNATState pData, int *pnfds,
         }
         ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
 
-        STAM_REL_COUNTER_RESET(&pData->StatTCP);
-        STAM_REL_COUNTER_RESET(&pData->StatTCPHot);
+        STAM_COUNTER_RESET(&pData->StatTCP);
+        STAM_COUNTER_RESET(&pData->StatTCPHot);
 
         for (so = tcb.so_next; so != &tcb; so = so_next)
         {
             so_next = so->so_next;
 
-            STAM_REL_COUNTER_INC(&pData->StatTCP);
+            STAM_COUNTER_INC(&pData->StatTCP);
 
             /*
              * See if we need a tcp_fasttimo
@@ -578,7 +575,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
              */
             if (so->so_state & SS_FACCEPTCONN)
             {
-                STAM_REL_COUNTER_INC(&pData->StatTCPHot);
+                STAM_COUNTER_INC(&pData->StatTCPHot);
                 TCP_ENGAGE_EVENT1(so, readfds);
                 continue;
             }
@@ -589,7 +586,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             if (so->so_state & SS_ISFCONNECTING)
             {
                 Log2(("connecting %R[natsock] engaged\n",so));
-                STAM_REL_COUNTER_INC(&pData->StatTCPHot);
+                STAM_COUNTER_INC(&pData->StatTCPHot);
                 TCP_ENGAGE_EVENT1(so, writefds);
             }
 
@@ -599,7 +596,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
              */
             if (CONN_CANFSEND(so) && so->so_rcv.sb_cc)
             {
-                STAM_REL_COUNTER_INC(&pData->StatTCPHot);
+                STAM_COUNTER_INC(&pData->StatTCPHot);
                 TCP_ENGAGE_EVENT1(so, writefds);
             }
 
@@ -609,7 +606,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
              */
             if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2)))
             {
-                STAM_REL_COUNTER_INC(&pData->StatTCPHot);
+                STAM_COUNTER_INC(&pData->StatTCPHot);
                 TCP_ENGAGE_EVENT2(so, readfds, xfds);
             }
         }
@@ -617,14 +614,14 @@ void slirp_select_fill(PNATState pData, int *pnfds,
         /*
          * UDP sockets
          */
-        STAM_REL_COUNTER_RESET(&pData->StatUDP);
-        STAM_REL_COUNTER_RESET(&pData->StatUDPHot);
+        STAM_COUNTER_RESET(&pData->StatUDP);
+        STAM_COUNTER_RESET(&pData->StatUDPHot);
 
         for (so = udb.so_next; so != &udb; so = so_next)
         {
             so_next = so->so_next;
 
-            STAM_REL_COUNTER_INC(&pData->StatUDP);
+            STAM_COUNTER_INC(&pData->StatUDP);
 
             /*
              * See if it's timed out
@@ -652,7 +649,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
              */
             if ((so->so_state & SS_ISFCONNECTED) && so->so_queued <= 4)
             {
-                STAM_REL_COUNTER_INC(&pData->StatUDPHot);
+                STAM_COUNTER_INC(&pData->StatUDPHot);
                 UDP_ENGAGE_EVENT(so, readfds);
             }
         }
@@ -665,7 +662,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
     *pnfds = VBOX_EVENT_COUNT;
 #endif
 
-    STAM_REL_PROFILE_STOP(&pData->StatFill, a);
+    STAM_PROFILE_STOP(&pData->StatFill, a);
 }
 
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
@@ -682,7 +679,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
     int error;
 #endif
 
-    STAM_REL_PROFILE_START(&pData->StatPoll, a);
+    STAM_PROFILE_START(&pData->StatPoll, a);
 
     /* Update time */
     updtime(pData);
@@ -694,18 +691,18 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
     {
         if (time_fasttimo && ((curtime - time_fasttimo) >= 2))
         {
-            STAM_REL_PROFILE_START(&pData->StatFastTimer, a);
+            STAM_PROFILE_START(&pData->StatFastTimer, a);
             tcp_fasttimo(pData);
             time_fasttimo = 0;
-            STAM_REL_PROFILE_STOP(&pData->StatFastTimer, a);
+            STAM_PROFILE_STOP(&pData->StatFastTimer, a);
         }
         if (do_slowtimo && ((curtime - last_slowtimo) >= 499))
         {
-            STAM_REL_PROFILE_START(&pData->StatSlowTimer, a);
+            STAM_PROFILE_START(&pData->StatSlowTimer, a);
             ip_slowtimo(pData);
             tcp_slowtimo(pData);
             last_slowtimo = curtime;
-            STAM_REL_PROFILE_STOP(&pData->StatSlowTimer, a);
+            STAM_PROFILE_STOP(&pData->StatSlowTimer, a);
         }
     }
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
@@ -931,7 +928,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
     if (if_queued && link_up)
         if_start(pData);
 
-    STAM_REL_PROFILE_STOP(&pData->StatPoll, a);
+    STAM_PROFILE_STOP(&pData->StatPoll, a);
 }
 
 #define ETH_ALEN        6
@@ -1066,8 +1063,11 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     }
     
     m = m_get(pData);
-    if (m == NULL)
+    if (!m)
+    {
         LogRel(("can't allocate new mbuf\n"));
+        return;
+    }
 
     /* Note: we add to align the IP header */
 
