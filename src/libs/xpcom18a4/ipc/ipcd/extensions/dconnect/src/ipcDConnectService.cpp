@@ -2901,10 +2901,24 @@ ipcDConnectService::Init()
   if (!mWaitingWorkersMon)
     return NS_ERROR_OUT_OF_MEMORY;
 
+#ifdef VBOX
+  /* The DConnectWorker::Run method checks the ipcDConnectService::mDisconnected.
+   * So mDisconnect must be set here to avoid an immediate exit of the worker thread.
+   */
+  mDisconnected = PR_FALSE;
+#endif /* VBOX */
+
   // create a single worker thread
   rv = CreateWorker();
   if (NS_FAILED(rv))
-      return rv;
+#ifndef VBOX
+    return rv;
+#else /* VBOX */
+  {
+    mDisconnected = PR_TRUE;
+    return rv;
+  }
+#endif /* VBOX */
 
 #endif
 
