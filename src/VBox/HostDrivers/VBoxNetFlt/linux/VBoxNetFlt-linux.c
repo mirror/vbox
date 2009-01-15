@@ -477,6 +477,22 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
         return 0;
     }
 
+#ifndef VBOXNETFLT_SG_SUPPORT
+    {
+        /*
+         * Get rid of fragmented packets, they cause too much trouble.
+         */
+        struct sk_buff *pCopy = skb_copy(pBuf, GFP_ATOMIC);
+        kfree_skb(pBuf);
+        if (!pCopy)
+        {
+            LogRel(("VBoxNetFlt: Failed to allocate packet buffer, dropping the packet.\n"));
+            return 0;
+        }
+        pBuf = pCopy;
+    }
+#endif
+
     /* Add the packet to transmit queue and schedule the bottom half. */
     skb_queue_tail(&pThis->u.s.XmitQueue, pBuf);
     schedule_work(&pThis->u.s.XmitTask);
@@ -551,20 +567,6 @@ static int vboxNetFltLinuxForwardSegment(PVBOXNETFLTINS pThis, struct sk_buff *p
 static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff *pBuf)
 {
     uint32_t fSrc = pBuf->pkt_type == PACKET_OUTGOING ? INTNETTRUNKDIR_HOST : INTNETTRUNKDIR_WIRE;
-
-#ifndef VBOXNETFLT_SG_SUPPORT
-    /*
-     * Get rid of fragmented packets, they cause too much trouble.
-     */
-    struct sk_buff *pCopy = skb_copy(pBuf, GFP_KERNEL);
-    kfree_skb(pBuf);
-    if (!pCopy)
-    {
-        LogRel(("VBoxNetFlt: Failed to allocate packet buffer, dropping the packet.\n"));
-        return;
-    }
-    pBuf = pCopy;
-#endif
 
     if (VBOX_SKB_IS_GSO(pBuf))
     {
