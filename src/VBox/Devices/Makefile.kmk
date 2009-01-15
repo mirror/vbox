@@ -327,6 +327,11 @@ DevicesR3_SOURCES      += \
 	Storage/DevLsiLogicSCSI.cpp
 endif
 
+ifdef VBOX_WITH_HPET
+DevicesR3_DEFS          += VBOX_WITH_HPET
+DevicesR3_SOURCES       += PC/DevHPET.cpp 
+endif
+
 ifdef VBOX_WITH_USB
 DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
 
@@ -424,6 +429,11 @@ VBoxDDGC_SOURCES       += \
 	Storage/DevLsiLogicSCSI.cpp
 endif
 
+ifdef VBOX_WITH_HPET
+VBoxDDGC_DEFS          += VBOX_WITH_HPET
+VBoxDDGC_SOURCES       += PC/DevHPET.cpp 
+endif
+
 ifeq ($(VBOX_LDR_FMT32),pe)
 VBoxDDGC_LDFLAGS        = -Entry:vgaMMIOWrite
 endif
@@ -494,13 +504,17 @@ VBoxDDR0_SOURCES       += \
 	Storage/DevLsiLogicSCSI.cpp
 endif
 
+ifdef VBOX_WITH_HPET
+VBoxDDR0_DEFS          += VBOX_WITH_HPET
+VBoxDDR0_SOURCES       += PC/DevHPET.cpp 
+endif
+
 ifeq ($(VBOX_LDR_FMT32),pe)
 VBoxDDR0_LDFLAGS        = -Entry:vgaMMIOWrite
 endif
 if1of ($(VBOX_LDR_FMT), pe lx)
 VBoxDDR0_LIBS           = $(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB)
 endif
-
 
 #
 # VBoxDD2GC (LGPL sysmod)
