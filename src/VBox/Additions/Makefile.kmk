@@ -153,66 +153,16 @@ endif
 ifdef VBOX_WITH_ADDITIONS_ISO.win.amd64
  VBOX_PATH_ADDITIONS.win.amd64 = $(PATH_OUT_BASE)/win.amd64/$(KBUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.win.amd64 = \
-	64Bit/Windows/Drivers/VBoxGuest/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxGuest.sys \
-	64Bit/Windows/Drivers/VBoxGuest/VBoxGuest.inf=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxGuest.inf \
-	64Bit/Windows/Drivers/VBoxGuest/VBoxTray.exe=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxTray.exe \
-	64Bit/Windows/Drivers/VBoxGuest/VBoxHook.dll=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxHook.dll \
-	64Bit/Windows/Drivers/VBoxGuest/VBoxControl.exe=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxControl.exe \
-	64Bit/Windows/Drivers/VBoxGuest/VBCoInst.dll=$(VBOX_PATH_ADDITIONS.win.amd64)/VBCoInst.dll \
-	64Bit/Windows/Drivers/VBoxGuest/VBoxMouse.sys=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxMouse.sys \
-	64Bit/Windows/Drivers/VBoxGuest/VBoxMouse.inf=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxMouse.inf \
-	64Bit/Windows/Drivers/VBoxVideo/VBoxVideo.sys=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxVideo.sys \
-	64Bit/Windows/Drivers/VBoxVideo/VBoxVideo.inf=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxVideo.inf \
-	64Bit/Windows/Drivers/VBoxVideo/VBoxDisp.dll=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxDisp.dll \
-	64Bit/Windows/Gina/VBoxGINA.dll=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxGINA.dll \
 	VBoxWindowsAdditions-amd64.exe=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxWindowsAdditions-amd64.exe
- ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
-  GUESTADDITIONS_FILESPEC.win.amd64 += \
-	64Bit/Windows/Drivers/VBoxSF/VBoxSF.sys=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxSF.sys \
-	64Bit/Windows/Drivers/VBoxSF/VBoxMRXNP.dll=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxMRXNP.dll
- endif
- ifdef VBOX_SIGNING_MODE
-  GUESTADDITIONS_FILESPEC.win.amd64 += \
-	64Bit/Windows/Drivers/VBoxGuest/VBoxGuest.cat=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxGuest.cat \
-	64Bit/Windows/Drivers/VBoxVideo/VBoxVideo.cat=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxVideo.cat \
-	64Bit/Windows/Drivers/VBoxGuest/VBoxMouse.cat=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxMouse.cat
- endif
 endif
 
 ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
  VBOX_PATH_ADDITIONS.win.x86 = $(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.win.x86 = \
-	32Bit/Windows/Drivers/VBoxGuest/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.sys \
-	32Bit/Windows/Drivers/VBoxGuest/VBoxGuest.inf=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.inf \
-	32Bit/Windows/Drivers/VBoxGuest/VBoxTray.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxTray.exe \
-	32Bit/Windows/Drivers/VBoxGuest/VBoxHook.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxHook.dll \
-	32Bit/Windows/Drivers/VBoxGuest/VBoxControl.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxControl.exe \
-	32Bit/Windows/Drivers/VBoxGuest/VBCoInst.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBCoInst.dll \
-	32Bit/Windows/Drivers/VBoxGuest/VBoxMouse.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.sys \
-	32Bit/Windows/Drivers/VBoxGuest/VBoxMouse.inf=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.inf \
-	32Bit/Windows/Drivers/VBoxVideo/VBoxVideo.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxVideo.sys \
-	32Bit/Windows/Drivers/VBoxVideo/VBoxVideo.inf=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxVideo.inf \
-	32Bit/Windows/Drivers/VBoxVideo/VBoxDisp.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxDisp.dll \
-	32Bit/Windows/Gina/VBoxGINA.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGINA.dll \
-	32Bit/Windows/3rdParty/AMD_PCnet/netamd.inf=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Network/AMD/netamd.inf \
-	32Bit/Windows/3rdParty/AMD_PCnet/pcntpci5.cat=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Network/AMD/pcntpci5.cat \
-	32Bit/Windows/3rdParty/AMD_PCnet/PCNTPCI5.sys=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Network/AMD/PCNTPCI5.sys \
 	VBoxWindowsAdditions-x86.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions-x86.exe \
 	VBoxWindowsAdditions.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions.exe \
 	AUTORUN.INF=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Installer/AUTORUN.INF
- ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
-  GUESTADDITIONS_FILESPEC.win.x86 += \
-	32Bit/Windows/Drivers/VBoxSF/VBoxSF.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxSF.sys \
-	32Bit/Windows/Drivers/VBoxSF/VBoxMRXNP.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMRXNP.dll
- endif
- ifdef VBOX_SIGNING_MODE
-  GUESTADDITIONS_FILESPEC.win.x86 += \
-	32Bit/Windows/Drivers/VBoxGuest/VBoxGuest.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.cat \
-	32Bit/Windows/Drivers/VBoxVideo/VBoxVideo.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxVideo.cat \
-	32Bit/Windows/Drivers/VBoxVideo/VBoxMouse.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.cat
- endif
 endif # win.x86
-
 
 #
 # Build the Guest Additions ISO image.
