@@ -729,9 +729,9 @@ static int VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp)
     /*
      * Only root is allowed to access the device, enforce it!
      */
-    if (vboxdrvLinuxEuid != 0 /* root */ )
+    if (vboxdrvLinuxEuid() != 0 /* root */ )
     {
-        Log(("VBoxDrvLinuxCreate: euid=%d, expected 0 (root)\n", vboxdrvLinuxEuid));
+        Log(("VBoxDrvLinuxCreate: euid=%d, expected 0 (root)\n", vboxdrvLinuxEuid()));
         return -EPERM;
     }
 #endif /* VBOX_WITH_HARDENING */
