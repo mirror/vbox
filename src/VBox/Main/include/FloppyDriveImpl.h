@@ -42,22 +42,22 @@ public:
     {
         Data()
         {
-            mEnabled    = true;
-            mState = DriveState_NotMounted;
+            enabled = true;
+            state = DriveState_NotMounted;
         }
 
         bool operator== (const Data &that) const
         {
             return this == &that ||
-                   (mState == that.mState &&
-                    mImage.equalsTo (that.mImage) &&
-                    mHostDrive.equalsTo (that.mHostDrive));
+                   (state == that.state &&
+                    image.equalsTo (that.image) &&
+                    hostDrive.equalsTo (that.hostDrive));
         }
 
-        BOOL mEnabled;
-        ComObjPtr <FloppyImage2> mImage;
-        ComPtr <IHostFloppyDrive> mHostDrive;
-        DriveState_T mState;
+        BOOL enabled;
+        ComObjPtr <FloppyImage2> image;
+        ComPtr <IHostFloppyDrive> hostDrive;
+        DriveState_T state;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (FloppyDrive)
@@ -101,8 +101,8 @@ public:
     HRESULT loadSettings (const settings::Key &aMachineNode);
     HRESULT saveSettings (settings::Key &aMachineNode);
 
-    bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
-    bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }
+    bool isModified() { AutoWriteLock alock (this); return m.isBackedUp(); }
+    bool isReallyModified() { AutoWriteLock alock (this); return m.hasActualChanges(); }
     bool rollback();
     void commit();
     void copyFrom (FloppyDrive *aThat);
@@ -112,7 +112,7 @@ public:
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
 
-    Backupable <Data> &data() { return mData; }
+    Backupable <Data> &data() { return m; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"FloppyDrive"; }
@@ -122,7 +122,7 @@ private:
     const ComObjPtr <Machine, ComWeakRef> mParent;
     const ComObjPtr <FloppyDrive> mPeer;
 
-    Backupable <Data> mData;
+    Backupable <Data> m;
 };
 
 #endif // ____H_FLOPPYDRIVEIMPL

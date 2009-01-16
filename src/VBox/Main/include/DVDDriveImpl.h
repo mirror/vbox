@@ -42,22 +42,22 @@ public:
     {
         Data()
         {
-            mState = DriveState_NotMounted;
-            mPassthrough = false;
+            state = DriveState_NotMounted;
+            passthrough = false;
         }
 
         bool operator== (const Data &that) const
         {
             return this == &that ||
-                   (mState == that.mState &&
-                    mImage.equalsTo (that.mImage) &&
-                    mHostDrive.equalsTo (that.mHostDrive));
+                   (state == that.state &&
+                    image.equalsTo (that.image) &&
+                    hostDrive.equalsTo (that.hostDrive));
         }
 
-        ComObjPtr <DVDImage2> mImage;
-        ComPtr <IHostDVDDrive> mHostDrive;
-        DriveState_T mState;
-        BOOL mPassthrough;
+        ComObjPtr <DVDImage2> image;
+        ComPtr <IHostDVDDrive> hostDrive;
+        DriveState_T state;
+        BOOL passthrough;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (DVDDrive)
@@ -101,8 +101,8 @@ public:
     HRESULT loadSettings (const settings::Key &aMachineNode);
     HRESULT saveSettings (settings::Key &aMachineNode);
 
-    bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
-    bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }
+    bool isModified() { AutoWriteLock alock (this); return m.isBackedUp(); }
+    bool isReallyModified() { AutoWriteLock alock (this); return m.hasActualChanges(); }
     bool rollback();
     void commit();
     void copyFrom (DVDDrive *aThat);
@@ -112,7 +112,7 @@ public:
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
 
-    Backupable <Data> &data() { return mData; }
+    Backupable <Data> &data() { return m; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"DVDDrive"; }
@@ -122,7 +122,7 @@ private:
     const ComObjPtr <Machine, ComWeakRef> mParent;
     const ComObjPtr <DVDDrive> mPeer;
 
-    Backupable <Data> mData;
+    Backupable <Data> m;
 };
 
 #endif // ____H_DVDDRIVEIMPL

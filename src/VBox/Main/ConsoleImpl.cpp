@@ -2508,7 +2508,7 @@ STDMETHODIMP Console::UnregisterCallback (IConsoleCallback *aCallback)
  */
 HRESULT Console::onDVDDriveChange()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFuncEnter();
 
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -2577,23 +2577,22 @@ HRESULT Console::onDVDDriveChange()
     }
 
     AssertComRC (rc);
-    if (FAILED (rc))
-    {
-        LogFlowThisFunc (("Returns %#x\n", rc));
-        return rc;
-    }
-
-    rc = doDriveChange ("piix3ide", 0, 2, eState, &meDVDState,
-                        Utf8Str (Path).raw(), fPassthrough);
-
-    /* notify console callbacks on success */
     if (SUCCEEDED (rc))
     {
-        CallbackList::iterator it = mCallbacks.begin();
-        while (it != mCallbacks.end())
-            (*it++)->OnDVDDriveChange();
+        rc = doDriveChange ("piix3ide", 0, 2, eState, &meDVDState,
+                            Utf8Str (Path).raw(), fPassthrough);
+
+        /* notify console callbacks on success */
+        if (SUCCEEDED (rc))
+        {
+            CallbackList::iterator it = mCallbacks.begin();
+            while (it != mCallbacks.end())
+                (*it++)->OnDVDDriveChange();
+        }
     }
 
+    LogFlowThisFunc (("Returns %Rhrc (%#x)\n", rc, rc));
+    LogFlowThisFuncLeave();
     return rc;
 }
 
@@ -2605,7 +2604,7 @@ HRESULT Console::onDVDDriveChange()
  */
 HRESULT Console::onFloppyDriveChange()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFuncEnter();
 
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -2679,23 +2678,22 @@ HRESULT Console::onFloppyDriveChange()
     }
 
     AssertComRC (rc);
-    if (FAILED (rc))
-    {
-        LogFlowThisFunc (("Returns %#x\n", rc));
-        return rc;
-    }
-
-    rc = doDriveChange ("i82078", 0, 0, eState, &meFloppyState,
-                        Utf8Str (Path).raw(), false);
-
-    /* notify console callbacks on success */
     if (SUCCEEDED (rc))
     {
-        CallbackList::iterator it = mCallbacks.begin();
-        while (it != mCallbacks.end())
-            (*it++)->OnFloppyDriveChange();
+        rc = doDriveChange ("i82078", 0, 0, eState, &meFloppyState,
+                            Utf8Str (Path).raw(), false);
+
+        /* notify console callbacks on success */
+        if (SUCCEEDED (rc))
+        {
+            CallbackList::iterator it = mCallbacks.begin();
+            while (it != mCallbacks.end())
+                (*it++)->OnFloppyDriveChange();
+        }
     }
 
+    LogFlowThisFunc (("Returns %Rhrc (%#x)\n", rc, rc));
+    LogFlowThisFuncLeave();
     return rc;
 }
 
