@@ -199,7 +199,7 @@ HRESULT VirtualBox::init()
             if (RT_SUCCESS (vrc))
                 vrc = RTFileWrite (handle,
                                    (void *) gDefaultGlobalConfig,
-                                   sizeof (gDefaultGlobalConfig), NULL);
+                                   strlen (gDefaultGlobalConfig), NULL);
             if (RT_FAILURE (vrc))
             {
                 rc = setError (E_FAIL, tr ("Could not create the default settings file "
