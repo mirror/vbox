@@ -299,14 +299,14 @@ static struct platform_device gPlatformDevice =
 #ifdef CONFIG_X86_LOCAL_APIC
 # ifdef DO_DISABLE_NMI
 /** Stop AMD NMI watchdog (x86_64 only). */
-static int StopK7Watchdog(void)
+static int vboxdrvStopK7Watchdog(void)
 {
     wrmsr(MSR_K7_EVNTSEL0, 0, 0);
     return 1;
 }
 
 /** Stop Intel P4 NMI watchdog (x86_64 only). */
-static int StopP4Watchdog(void)
+static int vboxdrvStopP4Watchdog(void)
 {
     wrmsr(MSR_P4_IQ_CCCR0,  0, 0);
     wrmsr(MSR_P4_IQ_CCCR1,  0, 0);
@@ -315,7 +315,7 @@ static int StopP4Watchdog(void)
 }
 
 /** The new method of detecting the event counter */
-static int StopIntelArchWatchdog(void)
+static int vboxdrvStopIntelArchWatchdog(void)
 {
     unsigned ebx;
 
@@ -326,7 +326,7 @@ static int StopIntelArchWatchdog(void)
 }
 
 /** Stop NMI watchdog. */
-static void VBoxStopApicNmiWatchdog(void *unused)
+static void vboxdrvStopApicNmiWatchdog(void *unused)
 {
     int stopped = 0;
 
@@ -342,15 +342,15 @@ static void VBoxStopApicNmiWatchdog(void *unused)
         case X86_VENDOR_AMD:
             if (strstr(boot_cpu_data.x86_model_id, "Screwdriver"))
                return;
-            stopped = StopK7Watchdog();
+            stopped = vboxdrvStopK7Watchdog();
             break;
         case X86_VENDOR_INTEL:
             if (cpu_has(&boot_cpu_data, X86_FEATURE_ARCH_PERFMON))
             {
-                stopped = StopIntelArchWatchdog();
+                stopped = vboxdrvStopIntelArchWatchdog();
                 break;
             }
-            stopped = StopP4Watchdog();
+            stopped = vboxdrvStopP4Watchdog();
             break;
         default:
             return;
@@ -369,7 +369,7 @@ static void DisableLapicNmiWatchdog(void)
     if (nmi_atomic_read(&nmi_active) <= 0)
         return;
 
-    on_each_cpu(VBoxStopApicNmiWatchdog, NULL, 1, 1);
+    on_each_cpu(vboxdrvStopApicNmiWatchdog, NULL, 1, 1);
 
     BUG_ON(nmi_atomic_read(&nmi_active) != 0);
 
