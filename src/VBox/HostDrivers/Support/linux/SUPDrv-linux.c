@@ -298,16 +298,15 @@ static struct platform_device gPlatformDevice =
 
 #ifdef CONFIG_X86_LOCAL_APIC
 # ifdef DO_DISABLE_NMI
-
 /** Stop AMD NMI watchdog (x86_64 only). */
-static int stop_k7_watchdog(void)
+static int StopK7Watchdog(void)
 {
     wrmsr(MSR_K7_EVNTSEL0, 0, 0);
     return 1;
 }
 
 /** Stop Intel P4 NMI watchdog (x86_64 only). */
-static int stop_p4_watchdog(void)
+static int StopP4Watchdog(void)
 {
     wrmsr(MSR_P4_IQ_CCCR0,  0, 0);
     wrmsr(MSR_P4_IQ_CCCR1,  0, 0);
@@ -316,7 +315,7 @@ static int stop_p4_watchdog(void)
 }
 
 /** The new method of detecting the event counter */
-static int stop_intel_arch_watchdog(void)
+static int StopIntelArchWatchdog(void)
 {
     unsigned ebx;
 
@@ -327,7 +326,7 @@ static int stop_intel_arch_watchdog(void)
 }
 
 /** Stop NMI watchdog. */
-static void vbox_stop_apic_nmi_watchdog(void *unused)
+static void VBoxStopApicNmiWatchdog(void *unused)
 {
     int stopped = 0;
 
@@ -343,15 +342,15 @@ static void vbox_stop_apic_nmi_watchdog(void *unused)
         case X86_VENDOR_AMD:
             if (strstr(boot_cpu_data.x86_model_id, "Screwdriver"))
                return;
-            stopped = stop_k7_watchdog();
+            stopped = StopK7Watchdog();
             break;
         case X86_VENDOR_INTEL:
             if (cpu_has(&boot_cpu_data, X86_FEATURE_ARCH_PERFMON))
             {
-                stopped = stop_intel_arch_watchdog();
+                stopped = StopIntelArchWatchdog();
                 break;
             }
-            stopped = stop_p4_watchdog();
+            stopped = StopP4Watchdog();
             break;
         default:
             return;
@@ -363,14 +362,14 @@ static void vbox_stop_apic_nmi_watchdog(void *unused)
 }
 
 /** Disable LAPIC NMI watchdog. */
-static void disable_lapic_nmi_watchdog(void)
+static void DisableLapicNmiWatchdog(void)
 {
     BUG_ON(nmi_watchdog != NMI_LOCAL_APIC);
 
     if (nmi_atomic_read(&nmi_active) <= 0)
         return;
 
-    on_each_cpu(vbox_stop_apic_nmi_watchdog, NULL, 1, 1);
+    on_each_cpu(VBoxStopApicNmiWatchdog, NULL, 1, 1);
 
     BUG_ON(nmi_atomic_read(&nmi_active) != 0);
 
@@ -379,7 +378,7 @@ static void disable_lapic_nmi_watchdog(void)
 }
 
 /** Shutdown NMI. */
-static void nmi_cpu_shutdown(void * dummy)
+static void vboxdrvNmiCpuShutdown(void * dummy)
 {
     unsigned int vERR, vPC;
 
@@ -394,13 +393,40 @@ static void nmi_cpu_shutdown(void * dummy)
     }
 }
 
-static void nmi_shutdown(void)
+static void vboxdrvNmiShutdown(void)
 {
-    on_each_cpu(nmi_cpu_shutdown, NULL, 0, 1);
+    on_each_cpu(vboxdrvNmiCpuShutdown, NULL, 0, 1);
 }
 # endif /* DO_DISABLE_NMI */
 #endif /* CONFIG_X86_LOCAL_APIC */
 
+
+DECLINLINE(RTUID) vboxdrvLinuxUid(void)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+    return current->cred->uid;
+#else
+    return current->uid;
+#endif
+}
+
+DECLINLINE(RTGID) vboxdrvLinuxGid(void)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+    return current->cred->gid;
+#else
+    return current->gid;
+#endif
+}
+
+DECLINLINE(RTUID) vboxdrvLinuxEuid(void)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+    return current->cred->euid;
+#else
+    return current->euid;
+#endif
+}
 
 /**
  * Initialize module.
@@ -435,7 +461,7 @@ static int __init VBoxDrvLinuxInit(void)
         switch (nmi_watchdog)
         {
             case NMI_LOCAL_APIC:
-                disable_lapic_nmi_watchdog();
+                DisableLapicNmiWatchdog();
                 break;
             case NMI_NONE:
                 nmi_atomic_dec(&nmi_active);
@@ -444,7 +470,7 @@ static int __init VBoxDrvLinuxInit(void)
 
         if (nmi_atomic_read(&nmi_active) == 0)
         {
-            nmi_shutdown();
+            vboxdrvNmiShutdown();
             printk(KERN_DEBUG DEVICE_NAME ": Successfully done.\n");
         }
         else
@@ -703,9 +729,9 @@ static int VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp)
     /*
      * Only root is allowed to access the device, enforce it!
      */
-    if (current->euid != 0 /* root */ )
+    if (vboxdrvLinuxEuid != 0 /* root */ )
     {
-        Log(("VBoxDrvLinuxCreate: euid=%d, expected 0 (root)\n", current->euid));
+        Log(("VBoxDrvLinuxCreate: euid=%d, expected 0 (root)\n", vboxdrvLinuxEuid));
         return -EPERM;
     }
 #endif /* VBOX_WITH_HARDENING */
@@ -716,8 +742,8 @@ static int VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp)
     rc = supdrvCreateSession(&g_DevExt, true /* fUser */, (PSUPDRVSESSION *)&pSession);
     if (!rc)
     {
-        pSession->Uid = current->uid;
-        pSession->Gid = current->gid;
+        pSession->Uid = vboxdrvLinuxUid();
+        pSession->Gid = vboxdrvLinuxGid();
     }
 
     pFilp->private_data = pSession;
@@ -962,7 +988,7 @@ EXPORT_SYMBOL(SUPDrvLinuxIDC);
 /**
  * Initializes any OS specific object creator fields.
  */
-void VBOXCALL   supdrvOSObjInitCreator(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession)
+void VBOXCALL supdrvOSObjInitCreator(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession)
 {
     NOREF(pObj);
     NOREF(pSession);
@@ -980,7 +1006,7 @@ void VBOXCALL   supdrvOSObjInitCreator(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession)
  * @param   pszObjName  The object name, can be NULL.
  * @param   prc         Where to store the result when returning true.
  */
-bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, const char *pszObjName, int *prc)
+bool VBOXCALL supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, const char *pszObjName, int *prc)
 {
     NOREF(pObj);
     NOREF(pSession);
@@ -990,7 +1016,7 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 }
 
 
-bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
+bool VBOXCALL supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 {
     return force_async_tsc != 0;
 }
@@ -1002,7 +1028,7 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
  * @returns corresponding linux error code.
  * @param   rc  supdrv error code (SUPDRV_ERR_* defines).
  */
-static int     VBoxDrvLinuxErr2LinuxErr(int rc)
+static int VBoxDrvLinuxErr2LinuxErr(int rc)
 {
     switch (rc)
     {
