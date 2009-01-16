@@ -1211,13 +1211,13 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode >= PGMMODE_PROTECTED
                     &&  enmGuestMode == PGMMODE_REAL)
                 {
-                    /* The limit must also be adjusted. */
-                    pCtx->csHid.u32Limit &= 0xffff;
-                    pCtx->dsHid.u32Limit &= 0xffff;
-                    pCtx->esHid.u32Limit &= 0xffff;
-                    pCtx->fsHid.u32Limit &= 0xffff;
-                    pCtx->gsHid.u32Limit &= 0xffff;
-                    pCtx->ssHid.u32Limit &= 0xffff;
+                    /* The limit must also be set to 0xffff. */
+                    pCtx->csHid.u32Limit = 0xffff;
+                    pCtx->dsHid.u32Limit = 0xffff;
+                    pCtx->esHid.u32Limit = 0xffff;
+                    pCtx->fsHid.u32Limit = 0xffff;
+                    pCtx->gsHid.u32Limit = 0xffff;
+                    pCtx->ssHid.u32Limit = 0xffff;
 
                     Assert(pCtx->csHid.u64Base <= 0xfffff);
                     Assert(pCtx->dsHid.u64Base <= 0xfffff);
