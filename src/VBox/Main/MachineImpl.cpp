@@ -101,7 +101,7 @@
  *  @note The template is NOT completely valid according to VBOX_XML_SCHEMA
  *  (when loading a newly created settings file, validation will be turned off)
  */
-static const char DefaultMachineConfig[] =
+static const char gDefaultMachineConfig[] =
 {
     "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" RTFILE_LINEFEED
     "<!-- Sun xVM VirtualBox Machine Configuration -->" RTFILE_LINEFEED
@@ -5802,8 +5802,8 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
         if (RT_SUCCESS (vrc))
         {
             vrc = RTFileWrite (mData->mHandleCfgFile,
-                               (void *) DefaultMachineConfig,
-                               sizeof (DefaultMachineConfig), NULL);
+                               (void *) gDefaultMachineConfig,
+                               strlen (gDefaultMachineConfig), NULL);
         }
         if (RT_FAILURE (vrc))
         {
