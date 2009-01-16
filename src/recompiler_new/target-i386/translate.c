@@ -2777,12 +2777,15 @@ DECLINLINE(void) gen_op_movl_seg_T0_vm(int seg_reg)
     tcg_gen_st_tl(cpu_T[0], cpu_env,
                   offsetof(CPUX86State,segs[seg_reg].base));
 #ifdef VBOX
-    /** @todo shouldn't we set the limit here too? (to 0xffff) */
     int flags = DESC_P_MASK | DESC_S_MASK | DESC_W_MASK;
     if (seg_reg == R_CS)
         flags |= DESC_CS_MASK;
     gen_op_movl_T0_im(flags);
     tcg_gen_st32_tl(cpu_T[0], cpu_env, offsetof(CPUX86State,segs[seg_reg].flags));
+
+    /* Set the limit to 0xffff. */
+    gen_op_movl_T0_im(0xffff);
+    tcg_gen_st32_tl(cpu_T[0], cpu_env, offsetof(CPUX86State,segs[seg_reg].limit));
 #endif
 }
 
