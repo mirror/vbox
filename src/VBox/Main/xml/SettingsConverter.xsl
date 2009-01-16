@@ -663,7 +663,7 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
     <!-- use the @defaultVDIFolder value for @defaultHardDiskFolder only when it
          differs from the default (VDI) and otherwise simply delete it to let
          VBoxSVC set the correct new default value -->
-    <xsl:if test="not(translate(@defaultVDIFolder,'vdi','VDI')='VDI')">
+    <xsl:if test="@defaultVDIFolder and not(translate(@defaultVDIFolder,'vdi','VDI')='VDI')">
       <xsl:attribute name="defaultHardDiskFolder">
         <xsl:value-of select="@defaultVDIFolder"/>
       </xsl:attribute>
