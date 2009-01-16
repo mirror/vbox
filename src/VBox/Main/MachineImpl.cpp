@@ -3170,14 +3170,10 @@ EnumerateGuestProperties (IN_BSTR aPatterns, ComSafeArrayOut (BSTR, aNames),
     if (!VALID_PTR (aPatterns) && (aPatterns != NULL))
         return E_POINTER;
 
-    if (ComSafeArrayOutIsNull (aNames))
-        return E_POINTER;
-    if (ComSafeArrayOutIsNull (aValues))
-        return E_POINTER;
-    if (ComSafeArrayOutIsNull (aTimestamps))
-        return E_POINTER;
-    if (ComSafeArrayOutIsNull (aFlags))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid (aNames);
+    CheckComArgOutSafeArrayPointerValid (aValues);
+    CheckComArgOutSafeArrayPointerValid (aTimestamps);
+    CheckComArgOutSafeArrayPointerValid (aFlags);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
