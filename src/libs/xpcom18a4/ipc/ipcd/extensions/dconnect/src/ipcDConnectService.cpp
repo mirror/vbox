@@ -2915,9 +2915,12 @@ ipcDConnectService::Init()
     return rv;
   }
 
-#endif
+#else
 
   mDisconnected = PR_FALSE;
+
+#endif
+
   mInstance = this;
 
   LOG(("ipcDConnectService::Init NS_OK.\n"));
