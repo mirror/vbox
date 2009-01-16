@@ -397,7 +397,11 @@ static PRThread* _PR_CreateThread(
         fFlags |= RTTHREADFLAGS_WAITABLE;
 #endif /* !VBOX_USE_IPRT_IN_NSPR */
 
+#ifndef VBOX_USE_IPRT_IN_NSPR
     if (0 == stackSize) stackSize = (64 * 1024);  /* default == 64K */
+#else
+    if (0 == stackSize) stackSize = (2 * 64 * 1024);  /* default == 128K */
+#endif /* VBOX_USE_IPRT_IN_NSPR */
 #ifdef _MD_MINIMUM_STACK_SIZE
     if (stackSize < _MD_MINIMUM_STACK_SIZE) stackSize = _MD_MINIMUM_STACK_SIZE;
 #endif
