@@ -28,6 +28,8 @@
 #include "HostDVDDriveImpl.h"
 #include "VirtualBoxImpl.h"
 
+#include "Global.h"
+
 #include "Logging.h"
 
 #include <iprt/string.h>
@@ -69,7 +71,7 @@ HRESULT DVDDrive::init (Machine *aParent)
     unconst (mParent) = aParent;
     /* mPeer is left null */
 
-    mData.allocate();
+    m.allocate();
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -104,7 +106,7 @@ HRESULT DVDDrive::init (Machine *aParent, DVDDrive *aThat)
     AssertComRCReturnRC (thatCaller.rc());
 
     AutoReadLock thatLock (aThat);
-    mData.share (aThat->mData);
+    m.share (aThat->m);
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -136,16 +138,16 @@ HRESULT DVDDrive::initCopy (Machine *aParent, DVDDrive *aThat)
     AssertComRCReturnRC (thatCaller.rc());
 
     AutoReadLock thatLock (aThat);
-    mData.attachCopy (aThat->mData);
+    m.attachCopy (aThat->m);
 
     /* at present, this must be a snapshot machine */
     Assert (!aParent->snapshotId().isEmpty());
 
-    if (mData->mState == DriveState_ImageMounted)
+    if (m->state == DriveState_ImageMounted)
     {
         /* associate the DVD image media with the snapshot */
-        HRESULT rc = mData->mImage->attachTo (aParent->id(),
-                                              aParent->snapshotId());
+        HRESULT rc = m->image->attachTo (aParent->id(),
+                                         aParent->snapshotId());
         AssertComRC (rc);
     }
 
@@ -170,19 +172,19 @@ void DVDDrive::uninit()
 
     if ((mParent->type() == Machine::IsMachine ||
          mParent->type() == Machine::IsSnapshotMachine) &&
-        mData->mState == DriveState_ImageMounted)
+        m->state == DriveState_ImageMounted)
     {
         /* Deassociate the DVD image (only when mParent is a real Machine or a
          * SnapshotMachine instance; SessionMachine instances
          * refer to real Machine hard disks). This is necessary for a clean
          * re-initialization of the VM after successfully re-checking the
          * accessibility state. */
-        HRESULT rc = mData->mImage->detachFrom (mParent->id(),
-                                                mParent->snapshotId());
+        HRESULT rc = m->image->detachFrom (mParent->id(),
+                                           mParent->snapshotId());
         AssertComRC (rc);
     }
 
-    mData.free();
+    m.free();
 
     unconst (mPeer).setNull();
     unconst (mParent).setNull();
@@ -200,7 +202,7 @@ STDMETHODIMP DVDDrive::COMGETTER(State) (DriveState_T *aState)
 
     AutoReadLock alock (this);
 
-    *aState = mData->mState;
+    *aState = m->state;
 
     return S_OK;
 }
@@ -214,7 +216,7 @@ STDMETHODIMP DVDDrive::COMGETTER(Passthrough) (BOOL *aPassthrough)
 
     AutoReadLock alock (this);
 
-    *aPassthrough = mData->mPassthrough;
+    *aPassthrough = m->passthrough;
 
     return S_OK;
 }
@@ -230,10 +232,10 @@ STDMETHODIMP DVDDrive::COMSETTER(Passthrough) (BOOL aPassthrough)
 
     AutoWriteLock alock (this);
 
-    if (mData->mPassthrough != aPassthrough)
+    if (m->passthrough != aPassthrough)
     {
-        mData.backup();
-        mData->mPassthrough = aPassthrough;
+        m.backup();
+        m->passthrough = aPassthrough;
     }
 
     return S_OK;
@@ -267,18 +269,29 @@ STDMETHODIMP DVDDrive::MountImage (IN_GUID aImageId)
 
     if (SUCCEEDED (rc))
     {
-        if (mData->mState != DriveState_ImageMounted ||
-            !mData->mImage.equalsTo (image))
+        if (m->state != DriveState_ImageMounted ||
+            !m->image.equalsTo (image))
         {
             rc = image->attachTo (mParent->id(), mParent->snapshotId());
             if (SUCCEEDED (rc))
             {
                 /* umount() will backup data */
                 rc = unmount();
+
                 if (SUCCEEDED (rc))
                 {
-                    mData->mImage = image;
-                    mData->mState = DriveState_ImageMounted;
+                    /* lock the image for reading if the VM is online. It will
+                     * be unlocked either when unmounted from this drive or by
+                     * SessionMachine::setMachineState() when the VM is
+                     * terminated */
+                    if (Global::IsOnline (adep.machineState()))
+                        rc = image->LockRead (NULL);
+                }
+
+                if (SUCCEEDED (rc))
+                {
+                    m->image = image;
+                    m->state = DriveState_ImageMounted;
 
                     /* leave the lock before informing callbacks */
                     alock.unlock();
@@ -305,15 +318,15 @@ STDMETHODIMP DVDDrive::CaptureHostDrive (IHostDVDDrive *aHostDVDDrive)
 
     AutoWriteLock alock (this);
 
-    if (mData->mState != DriveState_HostDriveCaptured ||
-        !mData->mHostDrive.equalsTo (aHostDVDDrive))
+    if (m->state != DriveState_HostDriveCaptured ||
+        !m->hostDrive.equalsTo (aHostDVDDrive))
     {
         /* umount() will backup data */
         HRESULT rc = unmount();
         if (SUCCEEDED (rc))
         {
-            mData->mHostDrive = aHostDVDDrive;
-            mData->mState = DriveState_HostDriveCaptured;
+            m->hostDrive = aHostDVDDrive;
+            m->state = DriveState_HostDriveCaptured;
 
             /* leave the lock before informing callbacks */
             alock.unlock();
@@ -336,13 +349,13 @@ STDMETHODIMP DVDDrive::Unmount()
 
     AutoWriteLock alock (this);
 
-    if (mData->mState != DriveState_NotMounted)
+    if (m->state != DriveState_NotMounted)
     {
         /* umount() will backup data */
         HRESULT rc = unmount();
         if (SUCCEEDED (rc))
         {
-            mData->mState = DriveState_NotMounted;
+            m->state = DriveState_NotMounted;
 
             /* leave the lock before informing callbacks */
             alock.unlock();
@@ -363,7 +376,7 @@ STDMETHODIMP DVDDrive::GetImage (IDVDImage2 **aDVDImage)
 
     AutoReadLock alock (this);
 
-    mData->mImage.queryInterfaceTo (aDVDImage);
+    m->image.queryInterfaceTo (aDVDImage);
 
     return S_OK;
 }
@@ -377,7 +390,7 @@ STDMETHODIMP DVDDrive::GetHostDrive(IHostDVDDrive **aHostDrive)
 
     AutoReadLock alock (this);
 
-    mData->mHostDrive.queryInterfaceTo (aHostDrive);
+    m->hostDrive.queryInterfaceTo (aHostDrive);
 
     return S_OK;
 }
@@ -421,7 +434,7 @@ HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
     Key dvdDriveNode = aMachineNode.key ("DVDDrive");
 
     /* optional, defaults to false */
-    mData->mPassthrough = dvdDriveNode.value <bool> ("passthrough");
+    m->passthrough = dvdDriveNode.value <bool> ("passthrough");
 
     Key typeNode;
 
@@ -489,16 +502,16 @@ HRESULT DVDDrive::saveSettings (settings::Key &aMachineNode)
 
     Key node = aMachineNode.createKey ("DVDDrive");
 
-    node.setValue <bool> ("passthrough", !!mData->mPassthrough);
+    node.setValue <bool> ("passthrough", !!m->passthrough);
 
-    switch (mData->mState)
+    switch (m->state)
     {
         case DriveState_ImageMounted:
         {
-            Assert (!mData->mImage.isNull());
+            Assert (!m->image.isNull());
 
             Guid id;
-            HRESULT rc = mData->mImage->COMGETTER(Id) (id.asOutParam());
+            HRESULT rc = m->image->COMGETTER(Id) (id.asOutParam());
             AssertComRC (rc);
             Assert (!id.isEmpty());
 
@@ -508,10 +521,10 @@ HRESULT DVDDrive::saveSettings (settings::Key &aMachineNode)
         }
         case DriveState_HostDriveCaptured:
         {
-            Assert (!mData->mHostDrive.isNull());
+            Assert (!m->hostDrive.isNull());
 
             Bstr name;
-            HRESULT  rc = mData->mHostDrive->COMGETTER(Name) (name.asOutParam());
+            HRESULT  rc = m->hostDrive->COMGETTER(Name) (name.asOutParam());
             AssertComRC (rc);
             Assert (!name.isEmpty());
 
@@ -523,7 +536,7 @@ HRESULT DVDDrive::saveSettings (settings::Key &aMachineNode)
             /* do nothing, i.e.leave the drive node empty */
             break;
         default:
-            ComAssertMsgFailedRet (("Invalid drive state: %d", mData->mState),
+            ComAssertMsgFailedRet (("Invalid drive state: %d", m->state),
                                     E_FAIL);
     }
 
@@ -539,29 +552,40 @@ bool DVDDrive::rollback()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), false);
 
+    /* we need adep for the state check */
+    Machine::AutoAnyStateDependency adep (mParent);
+    AssertComRCReturn (adep.rc(), false);
+
     AutoWriteLock alock (this);
 
     bool changed = false;
 
-    if (mData.isBackedUp())
+    if (m.isBackedUp())
     {
         /* we need to check all data to see whether anything will be changed
          * after rollback */
-        changed = mData.hasActualChanges();
+        changed = m.hasActualChanges();
 
         if (changed)
         {
-            Data *oldData = mData.backedUpData();
+            Data *oldData = m.backedUpData();
 
-            if (!mData->mImage.isNull() &&
-                !oldData->mImage.equalsTo (mData->mImage))
+            if (!m->image.isNull() &&
+                !oldData->image.equalsTo (m->image))
             {
                 /* detach the current image that will go away after rollback */
-                mData->mImage->detachFrom (mParent->id(), mParent->snapshotId());
+                m->image->detachFrom (mParent->id(), mParent->snapshotId());
+
+                /* unlock the image for reading if the VM is online */
+                if (Global::IsOnline (adep.machineState()))
+                {
+                    HRESULT rc = m->image->UnlockRead (NULL);
+                    AssertComRC (rc);
+                }
             }
         }
 
-        mData.rollback();
+        m.rollback();
     }
 
     return changed;
@@ -581,26 +605,37 @@ void DVDDrive::commit()
     AutoCaller peerCaller (mPeer);
     AssertComRCReturnVoid (peerCaller.rc());
 
+    /* we need adep for the state check */
+    Machine::AutoAnyStateDependency adep (mParent);
+    AssertComRCReturnVoid (adep.rc());
+
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
     AutoMultiWriteLock2 alock (mPeer, this);
 
-    if (mData.isBackedUp())
+    if (m.isBackedUp())
     {
-        Data *oldData = mData.backedUpData();
+        Data *oldData = m.backedUpData();
 
-        if (!oldData->mImage.isNull() &&
-            !oldData->mImage.equalsTo (mData->mImage))
+        if (!oldData->image.isNull() &&
+            !oldData->image.equalsTo (m->image))
         {
             /* detach the old image that will go away after commit */
-            oldData->mImage->detachFrom (mParent->id(), mParent->snapshotId());
+            oldData->image->detachFrom (mParent->id(), mParent->snapshotId());
+
+            /* unlock the image for reading if the VM is online */
+            if (Global::IsOnline (adep.machineState()))
+            {
+                HRESULT rc = oldData->image->UnlockRead (NULL);
+                AssertComRC (rc);
+            }
         }
 
-        mData.commit();
+        m.commit();
         if (mPeer)
         {
             /* attach new data to the peer and reshare it */
-            mPeer->mData.attach (mData);
+            mPeer->m.attach (m);
         }
     }
 }
@@ -626,7 +661,7 @@ void DVDDrive::copyFrom (DVDDrive *aThat)
     AutoMultiLock2 alock (aThat->rlock(), this->wlock());
 
     /* this will back up current data */
-    mData.assignCopy (aThat->mData);
+    m.assignCopy (aThat->m);
 }
 
 /**
@@ -638,14 +673,14 @@ HRESULT DVDDrive::unmount()
 {
     AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
-    mData.backup();
+    m.backup();
 
-    if (mData->mImage)
-        mData->mImage.setNull();
-    if (mData->mHostDrive)
-        mData->mHostDrive.setNull();
+    if (m->image)
+        m->image.setNull();
+    if (m->hostDrive)
+        m->hostDrive.setNull();
 
-    mData->mState = DriveState_NotMounted;
+    m->state = DriveState_NotMounted;
 
     return S_OK;
 }
