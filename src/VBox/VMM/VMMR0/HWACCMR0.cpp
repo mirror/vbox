@@ -540,7 +540,11 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
             /* Paranoia. */
             val = ASMRdMsr(MSR_K6_EFER);
             if (val & MSR_K6_EFER_SVME)
+            {
+                /* Restore previous value. */
+                ASMWrMsr(MSR_K6_EFER, val);
                 paRc[idCpu] = VINF_SUCCESS;
+            }
             else
                 paRc[idCpu] = VERR_SVM_ILLEGAL_EFER_MSR;
         }
