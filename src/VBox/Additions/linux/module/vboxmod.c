@@ -479,8 +479,9 @@ static int vboxadd_buffer_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCall
 
 /** Unlock R3 memory after the HGCM call.  Copied from HGCMInternal.cpp and
  * SysHlp.cpp */
-static void vboxadd_unbuffer_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCallInfo)
+static int vboxadd_unbuffer_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCallInfo)
 {
+    int rc = 0;
     unsigned iParm;
     /* Unlock user buffers. */
     HGCMFunctionParameter *pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
@@ -494,17 +495,20 @@ static void vboxadd_unbuffer_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pC
             if (ppvCtx[iParm] != NULL)
             {
                 hgcm_jump_buffer *MemObj = (hgcm_jump_buffer *)ppvCtx[iParm];
-#ifdef VBOX_STRICT
-                int rc = vboxadd_hgcm_free_buffer(MemObj);
-                Assert(rc >= 0);  /* vboxadd_hgcm_unbuffer_user logs this. */
-#else
-                vboxadd_hgcm_free_buffer(MemObj);
-#endif
+                int rc2 = vboxadd_hgcm_free_buffer(MemObj);
+                if (rc >= 0 && rc2 < 0)
+                    rc = rc2;  /* Report the first error. */
             }
         }
         else
-            Assert(!ppvCtx[iParm]);
+            if (ppvCtx[iParm] != NULL)
+            {
+                AssertFailed();
+                rc = -EOVERFLOW;  /* Something unlikely to turn up elsewhere so
+                                   * we can see where it's coming from. */
+            }
     }
+    return rc;
 }
 
 /**
@@ -556,7 +560,11 @@ static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
                 }
         }
         if (haveParms)
-            vboxadd_unbuffer_hgcm_parms(apvCtx, pInfo);
+        {
+            int rc2 = vboxadd_unbuffer_hgcm_parms(apvCtx, pInfo);
+            if (rc >= 0 && rc2 < 0)
+                rc = rc2;
+        }
         if (pInfo != NULL)
             kfree(pInfo);
         return rc;
@@ -613,7 +621,11 @@ static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
                 }
         }
         if (haveParms)
-            vboxadd_unbuffer_hgcm_parms(apvCtx, &pInfo->info);
+        {
+            int rc2 = vboxadd_unbuffer_hgcm_parms(apvCtx, &pInfo->info);
+            if (rc >= 0 && rc2 < 0)
+                rc = rc2;
+        }
         if (pInfo != NULL)
             kfree(pInfo);
         return rc;
