@@ -39,17 +39,19 @@
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  * @param   pAddress    Where to store the mixed address.
- * @param   cbRange     The number of bytes to scan.
+ * @param   pcbRange    The number of bytes to scan. Passed as a pointer because 
+ *                      it may be 64-bit.
  * @param   pabNeedle   What to search for - exact search.
  * @param   cbNeedle    Size of the search byte string.
  * @param   pHitAddress Where to put the address of the first hit.
  */
-static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle,
+static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, PCRTGCUINTPTR pcbRange, const uint8_t *pabNeedle, size_t cbNeedle,
                                        PDBGFADDRESS pHitAddress)
 {
     /*
      * Validate the input we use, PGM does the rest.
      */
+    RTGCUINTPTR cbRange = *pcbRange;
     if (!DBGFR3AddrIsValid(pVM, pAddress))
         return VERR_INVALID_POINTER;
     if (!VALID_PTR(pHitAddress))
@@ -113,7 +115,7 @@ VMMR3DECL(int) DBGFR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRang
 {
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3MemScan, 6,
-                         pVM, pAddress, cbRange, pabNeedle, cbNeedle, pHitAddress);
+                         pVM, pAddress, &cbRange, pabNeedle, cbNeedle, pHitAddress);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
