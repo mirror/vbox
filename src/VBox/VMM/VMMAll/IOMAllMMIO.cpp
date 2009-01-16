@@ -433,7 +433,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           (RTGCPTR *)&pu8Virt);
         if (RT_FAILURE(rc))
-            return VINF_EM_RAW_GUEST_TRAP;
+            return VINF_IOM_HC_MMIO_READ;
 
         /* Check if destination address is MMIO. */
         PIOMMMIORANGE pMMIODst;
