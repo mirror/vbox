@@ -542,7 +542,7 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
             if (val & MSR_K6_EFER_SVME)
             {
                 /* Restore previous value. */
-                ASMWrMsr(MSR_K6_EFER, val);
+                ASMWrMsr(MSR_K6_EFER, val & ~MSR_K6_EFER_SVME);
                 paRc[idCpu] = VINF_SUCCESS;
             }
             else
