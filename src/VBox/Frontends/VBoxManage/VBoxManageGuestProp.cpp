@@ -352,7 +352,7 @@ static int handleEnumGuestProperty(int argc, char *argv[],
 /*
  * Pack the patterns
  */
-    Utf8Str Utf8Patterns(argc > 2 ? argv[2] : "");
+    Utf8Str Utf8Patterns(argc > 2 ? argv[2] : "*");
     for (ssize_t i = 3; i < argc; ++i)
         Utf8Patterns = Utf8StrFmt ("%s,%s", Utf8Patterns.raw(), argv[i]);
 
