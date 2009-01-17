@@ -2206,7 +2206,7 @@ TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64     = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64)
 endif # Solaris
 
 ifeq ($(KBUILD_TARGET),freebsd)
-# x86 FreeBSD:
+# x86 FreeBSD (6.2 or something):
 #  cc -O2 -fno-strict-aliasing -pipe -Werror -D_KERNEL -DKLD_MODULE \
 #   -nostdinc -I- -I. -I@ -I@/contrib/altq -I@/../include -I/usr/include \
 #   -finline-limit=8000 -fno-common -mno-align-long-strings -mpreferred-stack-boundary=2 \
@@ -2218,6 +2218,17 @@ ifeq ($(KBUILD_TARGET),freebsd)
 #  awk -f /usr/src/sys/modules/my/../../conf/kmod_syms.awk my.kld export_syms | xargs -J% objcopy % my.kld
 #  ld -Bsharable -d warn-commnon -o my.ko my.kld
 #
+# AMD64 FreeBSD (7.1):
+#  cc -O2 -fno-strict-aliasing -pipe -D_KERNEL -DKLD_MODULE -std=c99 -nostdinc -I. -I@ -I@/contrib/altq \
+#  -finline-limit=8000 --param inline-unit-growth=100 --param large-function-growth=1000 -fno-common  \
+#  -fno-omit-frame-pointer -mcmodel=kernel -mno-red-zone -mfpmath=387 -mno-sse -mno-sse2 -mno-mmx \
+#  -mno-3dnow -msoft-float -fno-asynchronous-unwind-tables -ffreestanding \
+#  -Wall -Wredundant-decls -Wnested-externs -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Winline -Wcast-qual -Wundef -Wno-pointer-sign \
+#  -fformat-extensions -c /usr/src/sys/modules/my/../../dev/my/if_my.c
+#  ld  -d -warn-common -r -d -o if_my.ko if_my.o
+#  :> export_syms
+#  awk -f /usr/src/sys/modules/my/../../conf/kmod_syms.awk if_my.ko  export_syms | xargs -J% objcopy % if_my.ko
+
 # Note: @ -> /usr/src/sys  and  machine -> /usr/src/sys/i386/include
 
 ## The location of the FreeBSD kernel source.
@@ -2241,16 +2252,20 @@ TEMPLATE_VBOXR0DRV_CFLAGS              =  \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_OPT) $(VBOX_GCC_FP) \
 	-nostdinc -std=c99
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-align-long-strings -mpreferred-stack-boundary=2 -mno-mmx -mno-3dnow -mno-sse -mno-sse2
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 "Port me to amd64 FreeBSD"
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 --param inline-unit-growth=100 --param large-function-growth=1000 \
+	-fno-omit-frame-pointer -mcmodel=kernel -mno-red-zone -mfpmath=387 -mno-sse -mno-sse2 -mno-mmx \
+	-mno-3dnow -msoft-float -fno-asynchronous-unwind-tables -Wundef
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = -fno-exceptions -fno-rtti \
 	$(VBOX_GCC_WARN) -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
 	-O2 -fno-format-extensions -fno-strict-aliasing -fno-common -finline-limit=8000 \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_OPT) $(VBOX_GCC_FP) \
 	-nostdinc
+TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)
+TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64)
 TEMPLATE_VBOXR0DRV_SYSSUFF             = .ko
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -d --warn-common
 TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m elf_i386_fbsd
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64 "Port me to amd64 FreeBSD"
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64_fbsd
 
 TOOL_FREEBSDKMODLD = FreeBSD kernel module linker.
 # See kBuild/tools/GCC3.kmk for docs.
