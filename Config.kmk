@@ -2741,6 +2741,10 @@ TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
  else if1of ($(KBUILD_TARGET), freebsd netbsd openbsd)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
+TEMPLATE_VBOXMAINEXE_INCS               += \
+	/usr/include \
+	/usr/X11R6/include \
+	/usr/local/include
  else ifeq ($(KBUILD_TARGET),solaris)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXMAINEXE_DEFS               += _REENTRANT
@@ -3360,6 +3364,10 @@ TEMPLATE_VBOXBLDPROG_LIBS                =
  else if1of ($(KBUILD_HOST), freebsd netbsd openbsd)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3
 TEMPLATE_VBOXBLDPROG_LIBS                =
+TEMPLATE_VBOXBLDPROG_INCS               += \
+	/usr/include \
+	/usr/X11R6/include \
+	/usr/local/include
  else ifeq ($(KBUILD_HOST),solaris)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXBLDPROG_LIBS                = rt
