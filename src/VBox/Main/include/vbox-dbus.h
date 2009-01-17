@@ -84,39 +84,99 @@ typedef DBusHandlerResult (*DBusHandleMessageFunction) (DBusConnection *,
 typedef void (*DBusFreeFunction) (void *);
 
 /** The following are the symbols which we need from libdbus-1. */
-extern void (*dbus_error_init)(DBusError *);
-extern DBusConnection *(*dbus_bus_get)(DBusBusType, DBusError *);
-extern DBusConnection *(*dbus_bus_get_private)(DBusBusType, DBusError *);
-extern void (*dbus_error_free)(DBusError *);
-extern void (*dbus_connection_unref)(DBusConnection *);
-extern void (*dbus_connection_close)(DBusConnection *);
-extern void (*dbus_connection_set_exit_on_disconnect)(DBusConnection *, dbus_bool_t);
-extern dbus_bool_t (*dbus_bus_name_has_owner)(DBusConnection *, const char *,
-                                       DBusError *);
-extern void (*dbus_bus_add_match)(DBusConnection *, const char *, DBusError *);
-extern void (*dbus_bus_remove_match)(DBusConnection *, const char *, DBusError *);
-extern void (*dbus_message_unref)(DBusMessage *);
-extern DBusMessage* (*dbus_message_new_method_call)(const char *, const char *,
-                                             const char *, const char *);
-extern void (*dbus_message_iter_init_append)(DBusMessage *, DBusMessageIter *);
-extern dbus_bool_t (*dbus_message_iter_append_basic)(DBusMessageIter *, int,
-                                              const void *);
-extern DBusMessage * (*dbus_connection_send_with_reply_and_block)(DBusConnection *,
-                                                           DBusMessage *, int,
-                                                           DBusError *error);
-extern dbus_bool_t (*dbus_message_iter_init) (DBusMessage *, DBusMessageIter *);
-extern int (*dbus_message_iter_get_arg_type) (DBusMessageIter *);
-extern int (*dbus_message_iter_get_element_type) (DBusMessageIter *);
-extern void (*dbus_message_iter_recurse) (DBusMessageIter *, DBusMessageIter *);
-extern void (*dbus_message_iter_get_basic) (DBusMessageIter *, void *);
-extern dbus_bool_t (*dbus_message_iter_next) (DBusMessageIter *);
-extern dbus_bool_t (*dbus_connection_add_filter) (DBusConnection *, DBusHandleMessageFunction,
-                                                  void *, DBusFreeFunction);
-extern void (*dbus_connection_remove_filter) (DBusConnection *, DBusHandleMessageFunction,
-                                              void *);
-extern dbus_bool_t (*dbus_connection_read_write_dispatch) (DBusConnection *, int);
-extern dbus_bool_t (*dbus_message_is_signal) (DBusMessage *, const char *, const char *);
-extern DBusMessage *(*dbus_connection_pop_message)(DBusConnection *);
+extern void (*vbox_dbus_error_init)(DBusError *);
+inline void dbus_error_init(DBusError *error)
+{ vbox_dbus_error_init(error); }
+extern DBusConnection *(*vbox_dbus_bus_get)(DBusBusType, DBusError *);
+inline DBusConnection *dbus_bus_get(DBusBusType type, DBusError *error)
+{ return vbox_dbus_bus_get(type, error); }
+extern DBusConnection *(*vbox_dbus_bus_get_private)(DBusBusType, DBusError *);
+inline DBusConnection *dbus_bus_get_private(DBusBusType type, DBusError *error)
+{ return vbox_dbus_bus_get_private(type, error); }
+extern void (*vbox_dbus_error_free)(DBusError *);
+inline void dbus_error_free(DBusError *error)
+{ vbox_dbus_error_free(error); }
+extern void (*vbox_dbus_connection_unref)(DBusConnection *);
+inline void dbus_connection_unref(DBusConnection *connection)
+{ vbox_dbus_connection_unref(connection); }
+extern void (*vbox_dbus_connection_close)(DBusConnection *);
+inline void dbus_connection_close(DBusConnection *connection)
+{ vbox_dbus_connection_close(connection); }
+extern void (*vbox_dbus_connection_set_exit_on_disconnect)(DBusConnection *, dbus_bool_t);
+inline void dbus_connection_set_exit_on_disconnect(DBusConnection *connection, dbus_bool_t boolean)
+{ vbox_dbus_connection_set_exit_on_disconnect(connection, boolean); }
+extern dbus_bool_t (*vbox_dbus_bus_name_has_owner)(DBusConnection *, const char *,
+                                                   DBusError *);
+inline dbus_bool_t dbus_bus_name_has_owner(DBusConnection *connection, const char *string,
+                                                   DBusError *error)
+{ return vbox_dbus_bus_name_has_owner(connection, string, error); }
+extern void (*vbox_dbus_bus_add_match)(DBusConnection *, const char *, DBusError *);
+inline void dbus_bus_add_match(DBusConnection *connection, const char *string, DBusError *error)
+{ vbox_dbus_bus_add_match(connection, string, error); }
+extern void (*vbox_dbus_bus_remove_match)(DBusConnection *, const char *, DBusError *);
+inline void dbus_bus_remove_match(DBusConnection *connection, const char *string, DBusError *error)
+{ vbox_dbus_bus_remove_match(connection, string, error); }
+extern void (*vbox_dbus_message_unref)(DBusMessage *);
+inline void dbus_message_unref(DBusMessage *message)
+{ vbox_dbus_message_unref(message); }
+extern DBusMessage* (*vbox_dbus_message_new_method_call)(const char *, const char *,
+                                                         const char *, const char *);
+inline DBusMessage* dbus_message_new_method_call(const char *string1, const char *string2,
+                                                         const char *string3, const char *string4)
+{ return vbox_dbus_message_new_method_call(string1, string2, string3, string4); }
+extern void (*vbox_dbus_message_iter_init_append)(DBusMessage *, DBusMessageIter *);
+inline void dbus_message_iter_init_append(DBusMessage *message, DBusMessageIter *iter)
+{ vbox_dbus_message_iter_init_append(message, iter); }
+extern dbus_bool_t (*vbox_dbus_message_iter_append_basic)(DBusMessageIter *, int,
+                                                          const void *);
+inline dbus_bool_t dbus_message_iter_append_basic(DBusMessageIter *iter, int val,
+                                                          const void *string)
+{ return vbox_dbus_message_iter_append_basic(iter, val, string); }
+extern DBusMessage * (*vbox_dbus_connection_send_with_reply_and_block)(DBusConnection *,
+                                                                       DBusMessage *, int,
+                                                                       DBusError *error);
+inline DBusMessage * dbus_connection_send_with_reply_and_block(DBusConnection *connection,
+                                                               DBusMessage *message, int val,
+                                                               DBusError *error)
+{ return vbox_dbus_connection_send_with_reply_and_block(connection, message, val, error); }
+extern dbus_bool_t (*vbox_dbus_message_iter_init) (DBusMessage *, DBusMessageIter *);
+inline dbus_bool_t dbus_message_iter_init(DBusMessage *message, DBusMessageIter *iter)
+{ return vbox_dbus_message_iter_init(message, iter); }
+extern int (*vbox_dbus_message_iter_get_arg_type) (DBusMessageIter *);
+inline int dbus_message_iter_get_arg_type(DBusMessageIter *iter)
+{ return vbox_dbus_message_iter_get_arg_type(iter); }
+extern int (*vbox_dbus_message_iter_get_element_type) (DBusMessageIter *);
+inline int dbus_message_iter_get_element_type(DBusMessageIter *iter)
+{ return vbox_dbus_message_iter_get_element_type(iter); }
+extern void (*vbox_dbus_message_iter_recurse) (DBusMessageIter *, DBusMessageIter *);
+inline void dbus_message_iter_recurse(DBusMessageIter *iter1, DBusMessageIter *iter2)
+{ vbox_dbus_message_iter_recurse(iter1, iter2); }
+extern void (*vbox_dbus_message_iter_get_basic) (DBusMessageIter *, void *);
+inline void dbus_message_iter_get_basic(DBusMessageIter *iter, void *pvoid)
+{ vbox_dbus_message_iter_get_basic(iter, pvoid); }
+extern dbus_bool_t (*vbox_dbus_message_iter_next) (DBusMessageIter *);
+inline dbus_bool_t dbus_message_iter_next(DBusMessageIter *iter)
+{ return vbox_dbus_message_iter_next(iter); }
+extern dbus_bool_t (*vbox_dbus_connection_add_filter) (DBusConnection *, DBusHandleMessageFunction,
+                                                       void *, DBusFreeFunction);
+inline dbus_bool_t dbus_connection_add_filter(DBusConnection *connection,
+                                              DBusHandleMessageFunction function1,
+                                              void *pvoid, DBusFreeFunction function2)
+{ return vbox_dbus_connection_add_filter(connection, function1, pvoid, function2); }
+extern void (*vbox_dbus_connection_remove_filter) (DBusConnection *, DBusHandleMessageFunction,
+                                                   void *);
+inline void dbus_connection_remove_filter(DBusConnection *connection,
+                                          DBusHandleMessageFunction function, void *pvoid)
+{ vbox_dbus_connection_remove_filter(connection, function, pvoid); }
+extern dbus_bool_t (*vbox_dbus_connection_read_write_dispatch) (DBusConnection *, int);
+inline dbus_bool_t dbus_connection_read_write_dispatch(DBusConnection *connection, int val)
+{ return vbox_dbus_connection_read_write_dispatch(connection, val); }
+extern dbus_bool_t (*vbox_dbus_message_is_signal) (DBusMessage *, const char *, const char *);
+inline dbus_bool_t dbus_message_is_signal(DBusMessage *message, const char *string1, const char *string2)
+{ return vbox_dbus_message_is_signal(message, string1, string2); }
+extern DBusMessage *(*vbox_dbus_connection_pop_message)(DBusConnection *);
+inline DBusMessage *dbus_connection_pop_message(DBusConnection *connection)
+{ return vbox_dbus_connection_pop_message(connection); }
 
 /**
  * Checks whether libdbus is present and if so loads all symbols we need.  This
@@ -134,3 +194,4 @@ extern void VBoxDBusMessageUnref(DBusMessage *pMessage);
 
 #endif /* ____H_VBOX_DBUS not defined */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
+
