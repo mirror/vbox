@@ -97,22 +97,22 @@ if1of ($(KBUILD_TARGET), \
   #
   VBOX_AWK := /usr/bin/awk
   $$(PATH_VBoxGuest)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m
- 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
- 	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/bus_if.m $(PATH_VBoxGuest)/bus_if.m
- 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_VBoxGuest)/bus_if.m -h -p
- 	$(QUIET)$(RM) $(PATH_VBoxGuest)/bus_if.m
+	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
+	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/bus_if.m $(PATH_VBoxGuest)/bus_if.m
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_VBoxGuest)/bus_if.m -h -p
+	$(QUIET)$(RM) $(PATH_VBoxGuest)/bus_if.m
 
   $$(PATH_VBoxGuest)/device_if.h: $(VBOX_FREEBSD_SRC)/kern/device_if.m
- 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
- 	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/device_if.m $(PATH_VBoxGuest)/device_if.m
- 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_VBoxGuest)/device_if.m -h -p
- 	$(QUIET)$(RM) $(PATH_VBoxGuest)/device_if.m
+	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
+	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/device_if.m $(PATH_VBoxGuest)/device_if.m
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_VBoxGuest)/device_if.m -h -p
+	$(QUIET)$(RM) $(PATH_VBoxGuest)/device_if.m
 
   $$(PATH_VBoxGuest)/pci_if.h: $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m
- 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
- 	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m $(PATH_VBoxGuest)/pci_if.m
- 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_VBoxGuest)/pci_if.m -h -p
- 	$(QUIET)$(RM) $(PATH_VBoxGuest)/pci_if.m
+	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
+	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m $(PATH_VBoxGuest)/pci_if.m
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_VBoxGuest)/pci_if.m -h -p
+	$(QUIET)$(RM) $(PATH_VBoxGuest)/pci_if.m
  endif # FreeBSD
 
 endif # enabled
