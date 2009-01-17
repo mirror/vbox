@@ -178,10 +178,6 @@ ifdef IPRT_WITH_KSTUFF
 endif
 RuntimeR3_INCS.l4       = \
 	$(L4_INCDIR)
-# for iconv.h
-RuntimeR3_INCS.freebsd  = \
-	/usr/local/include
-
 
 # RuntimeR3_INCS.solaris  = \
 #    /usr/include
