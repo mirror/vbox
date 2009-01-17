@@ -1249,7 +1249,7 @@ VBOX_IASLCMD   ?= $(firstword $(wildcard $(PATH_DEVTOOLS_BLD)/bin/iasl$(HOSTSUFF
 
 # Bruce's C compile is a C-compiler for BIOS-related 8086 code
 ifndef VBOX_BCC
- if exist $(PATH_DEVTOOLS_BLD)/bin/bcc$(HOSTSUFF_EXE)
+ if exists "$(PATH_DEVTOOLS_BLD)/bin/bcc$(HOSTSUFF_EXE)"
 VBOX_BCC       := $(PATH_DEVTOOLS_BLD)/bin/bcc$(HOSTSUFF_EXE) -B $(PATH_DEVTOOLS_BLD)/bin/
  else
 VBOX_BCC       := bcc$(HOSTSUFF_EXE)
@@ -1258,7 +1258,7 @@ endif
 
 # Assembler for BIOS-related 8086 code
 ifndef VBOX_AS86
- if exist $(PATH_DEVTOOLS_BLD)/bin/as86$(HOSTSUFF_EXE)
+ if exists "$(PATH_DEVTOOLS_BLD)/bin/as86$(HOSTSUFF_EXE)"
 VBOX_AS86      := $(PATH_DEVTOOLS_BLD)/bin/as86$(HOSTSUFF_EXE)
  else
 VBOX_AS86      := as86$(HOSTSUFF_EXE)
