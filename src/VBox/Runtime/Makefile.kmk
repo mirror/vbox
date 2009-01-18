@@ -739,8 +739,6 @@ VBoxRT_LIBS.freebsd            = \
 	iconv
 VBoxRT_LIBS.solaris            = \
 	kstat
-VBoxRT_LIBPATH.freebsd         = \
-	/usr/local/lib
 VBoxRT_LDFLAGS.darwin          = -framework IOKit -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
 ifdef VBOX_USE_VCC80
 VBoxRT_LDFLAGS.win             = /MANIFEST

@@ -36,6 +36,8 @@ VBoxClient_SOURCES += \
 	clipboard.cpp
 VBoxClient_LIBPATH = \
 	$(VBOX_LIBPATH32_X11)
+VBoxClient_LIBS.freebsd = \
+	iconv
 VBoxClient_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
@@ -46,12 +48,6 @@ VBoxClient_LIBS = \
 VBoxClient_LIBS += \
 	supc++ \
 	gcc_eh
-
-## @todo r=bird: move to the template (that's what they are there for). ditto for VBoxService.
-VBoxClient_LIBPATH.freebsd += \
-	/usr/local/lib
-VBoxClient_LIBS.freebsd += \
-	iconv
 ifdef VBOX_X11_SEAMLESS_GUEST
  VBoxClient_DEFS += SEAMLESS_GUEST DYNAMIC_RESIZE
  VBoxClient_SOURCES += \
