@@ -21,23 +21,26 @@
  * additional information or have any questions.
  */
 
-#ifdef RT_OS_SOLARIS
-#include "../solaris/PerformanceSolaris.cpp"
+#ifdef RT_OS_DARWIN
+#include "../darwin/PerformanceDarwin.cpp"
+#endif
+#ifdef RT_OS_FREEBSD
+#include "../freebsd/PerformanceFreeBSD.cpp"
 #endif
 #ifdef RT_OS_LINUX
 #include "../linux/PerformanceLinux.cpp"
+#endif
+#ifdef RT_OS_OS2
+#include "../os2/PerformanceOS2.cpp"
+#endif
+#ifdef RT_OS_SOLARIS
+#include "../solaris/PerformanceSolaris.cpp"
 #endif
 #ifdef RT_OS_WINDOWS
 #define _WIN32_DCOM
 #include <objidl.h>
 #include <objbase.h>
 #include "../win/PerformanceWin.cpp"
-#endif
-#ifdef RT_OS_OS2
-#include "../os2/PerformanceOS2.cpp"
-#endif
-#ifdef RT_OS_DARWIN
-#include "../darwin/PerformanceDarwin.cpp"
 #endif
 
 #include <iprt/initterm.h>
