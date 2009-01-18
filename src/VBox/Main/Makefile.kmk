@@ -328,6 +328,7 @@ ifdef VBOX_WITH_RESOURCE_USAGE_API
  	PerformanceImpl.cpp \
  	Performance.cpp
  VBoxSVC_SOURCES.darwin  +=  darwin/PerformanceDarwin.cpp
+ VBoxSVC_SOURCES.freebsd += freebsd/PerformanceFreeBSD.cpp
  VBoxSVC_SOURCES.linux   +=   linux/PerformanceLinux.cpp
  VBoxSVC_SOURCES.os2     +=     os2/PerformanceOs2.cpp
  VBoxSVC_SOURCES.solaris += solaris/PerformanceSolaris.cpp
