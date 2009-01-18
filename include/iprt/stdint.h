@@ -45,12 +45,13 @@
 
 #include <iprt/cdefs.h>
 
-#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(__IBMC__) && !defined(__IBMCPP__) && !defined(IPRT_NO_CRT) && !defined(DOXYGEN_RUNNING)
+#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(__IBMC__) && !defined(__IBMCPP__) \
+  && !defined(IPRT_NO_CRT) && !defined(IPRT_DONT_USE_SYSTEM_STDINT_H) && !defined(DOXYGEN_RUNNING)
 # include <stdint.h>
 
 #else
 
-#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) || defined(IPRT_NO_CRT) || defined(DOXGEN_RUNNING)
+#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) || defined(IPRT_NO_CRT) || defined(IPRT_DONT_USE_SYSTEM_STDINT_H) || defined(DOXGEN_RUNNING)
 /* machine specific */
 typedef signed char         __int8_t;
 typedef unsigned char       __uint8_t;
@@ -166,6 +167,20 @@ typedef __uintptr_t             uintptr_t;
 #define UINT64_MAX  0xffffffffffffffffULL
 
 #endif /* !C++ || __STDC_CONSTANT_MACROS */
+
+#if defined(RT_OS_FREEBSD) && defined(IPRT_DONT_USE_SYSTEM_STDINT_H)
+/* This is a hack to get tstVMStructGC.cpp building on FreeBSD. */
+# define __uintptr_t __bad_uintptr_t
+# define __uint64_t __bad_uint64_t
+# define __uint32_t __bad_uint32_t
+# define __uint16_t __bad_uint16_t
+# define __uint8_t  __bad_uint8_t
+# define __intptr_t __bad_intptr_t
+# define __int64_t  __bad_int64_t
+# define __int32_t  __bad_int32_t
+# define __int16_t  __bad_int16_t
+# define __int8_t   __bad_int8_t
+#endif
 
 #endif /* ! have usable stdint.h */
 
