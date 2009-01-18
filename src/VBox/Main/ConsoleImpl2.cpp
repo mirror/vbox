@@ -1514,6 +1514,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
 #elif defined(RT_OS_LINUX)
 /// @todo aleksey: is there anything to be done here?
+#elif defined(RT_OS_FREEBSD)
+/** @todo FreeBSD: Check out this later (HIF networking). */
 #else
 # error "Port me"
 #endif
