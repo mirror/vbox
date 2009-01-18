@@ -2405,6 +2405,10 @@ TEMPLATE_VBOXR3EXE_INCS               += \
 	/usr/include \
 	/usr/X11R6/include \
 	/usr/local/include
+TEMPLATE_VBOXR3EXE_LIBPATH            += \
+	/usr/lib \
+	/usr/X11R6/lib \
+	/usr/local/lib
  else ifeq ($(KBUILD_TARGET),solaris)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG _REENTRANT # Avoid the GNU libiconv, for now at least.
@@ -2745,7 +2749,11 @@ TEMPLATE_VBOXMAINEXE_INCS               += \
 	/usr/include \
 	/usr/X11R6/include \
 	/usr/local/include
- else ifeq ($(KBUILD_TARGET),solaris)
+TEMPLATE_VBOXMAINEXE_LIBPATH            += \
+	/usr/lib \
+	/usr/X11R6/lib \
+	/usr/local/lib
+else ifeq ($(KBUILD_TARGET),solaris)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXMAINEXE_DEFS               += _REENTRANT
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt
@@ -2990,9 +2998,13 @@ else # the gcc guys:
 	$(VBOX_LIBPATH_X11)
   ifeq ($(KBUILD_TARGET),freebsd)
    TEMPLATE_VBOXQTGUIEXE_INCS += \
-	/usr/include \
-	/usr/X11R6/include \
-	/usr/local/include
+   	/usr/include \
+   	/usr/X11R6/include \
+   	/usr/local/include
+   TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
+   	/usr/lib \
+   	/usr/X11R6/lib \
+   	/usr/local/lib
   endif
   ifeq ($(KBUILD_TARGET),solaris)
    TEMPLATE_VBOXQTGUIEXE_LIBS += \
@@ -3215,9 +3227,13 @@ else # the gcc guys:
 	$(VBOX_LIBPATH_X11)
   ifeq ($(KBUILD_TARGET),freebsd)
    TEMPLATE_VBOXQT4GUIEXE_INCS += \
-	/usr/include \
-	/usr/X11R6/include \
-	/usr/local/include
+   	/usr/include \
+   	/usr/X11R6/include \
+   	/usr/local/include
+   TEMPLATE_VBOXQT4GUIEXE_LIBPATH += \
+   	/usr/lib \
+   	/usr/X11R6/lib \
+   	/usr/local/lib
   endif
   ifeq ($(KBUILD_TARGET),solaris)
    TEMPLATE_VBOXQT4GUIEXE_LIBS += \
@@ -3368,6 +3384,10 @@ TEMPLATE_VBOXBLDPROG_INCS               += \
 	/usr/include \
 	/usr/X11R6/include \
 	/usr/local/include
+TEMPLATE_VBOXBLDPROG_LIBPATH            += \
+	/usr/lib \
+	/usr/X11R6/lib \
+	/usr/local/lib
  else ifeq ($(KBUILD_HOST),solaris)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXBLDPROG_LIBS                = rt
@@ -3451,6 +3471,9 @@ TEMPLATE_VBOXGUESTR3EXE_INST      = $(INST_ADDITIONS)
 TEMPLATE_VBOXGUESTR3EXE_DEFS     := $(TEMPLATE_VBOXR3EXE_DEFS) IN_GUEST IN_GUEST_R3 IN_RT_R3
 ifeq ($(KBUILD_TARGET),linux) # As few libs as possible on linux.
  TEMPLATE_VBOXGUESTR3EXE_LIBS     = pthread rt m
+endif
+if1of ($(KBUILD_TARGET),freebsd netbsd openbsd)
+ TEMPLATE_VBOXGUESTR3EXE_LIBS     = $(TEMPLATE_VBOXR3EXE_LIBS) iconv
 endif
 
 #
