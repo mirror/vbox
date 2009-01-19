@@ -975,6 +975,19 @@ VMMR3DECL(void) PDMR3Suspend(PVM pVM)
      */
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
+        /*
+         * Some devices need to be notified first that the VM is suspended to ensure that that there are no pending
+         * requests from the guest which are still processed. Calling the drivers before these requests are finished
+         * might lead to errors otherwise. One example is the SATA controller which might still have I/O requests
+         * pending. But DrvVD sets the files into readonly mode and every request will fail then.
+         */
+        if (pDevIns->pDevReg->pfnSuspend && (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION))
+        {
+            LogFlow(("PDMR3Suspend: Notifying - device '%s'/%d\n",
+                     pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+            pDevIns->pDevReg->pfnSuspend(pDevIns);
+        }
+
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnSuspend)
@@ -984,7 +997,8 @@ VMMR3DECL(void) PDMR3Suspend(PVM pVM)
                     pDrvIns->pDrvReg->pfnSuspend(pDrvIns);
                 }
 
-        if (pDevIns->pDevReg->pfnSuspend)
+        /* Don't call the suspend notification again if it was already called. */
+        if (pDevIns->pDevReg->pfnSuspend && !(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION))
         {
             LogFlow(("PDMR3Suspend: Notifying - device '%s'/%d\n",
                      pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
@@ -1101,6 +1115,14 @@ VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
      */
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
+
+        if (pDevIns->pDevReg->pfnPowerOff && (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION))
+        {
+            LogFlow(("PDMR3PowerOff: Notifying - device '%s'/%d\n",
+                     pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+            pDevIns->pDevReg->pfnPowerOff(pDevIns);
+        }
+
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnPowerOff)
@@ -1110,7 +1132,7 @@ VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
                     pDrvIns->pDrvReg->pfnPowerOff(pDrvIns);
                 }
 
-        if (pDevIns->pDevReg->pfnPowerOff)
+        if (pDevIns->pDevReg->pfnPowerOff && !(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION))
         {
             LogFlow(("PDMR3PowerOff: Notifying - device '%s'/%d\n",
                      pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
