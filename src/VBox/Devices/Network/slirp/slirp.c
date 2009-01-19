@@ -280,8 +280,6 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         {
             if (!inet_aton(buff2, &tmp_addr))
                 continue;
-            if (tmp_addr.s_addr == loopback_addr.s_addr)
-                tmp_addr = our_addr;
             /* If it's the first one, set it to dns_addr */
             if (!found)
             {
