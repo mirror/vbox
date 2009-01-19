@@ -441,6 +441,39 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
 
     /*
+     * High Precision Event Timer (HPET)
+     */
+    BOOL fHpetEnabled;
+    /** @todo: implement appropriate getter */
+#ifdef VBOX_WITH_HPET
+    fHpetEnabled = true;
+#else
+    fHpetEnabled = false;
+#endif
+
+    /*
+     * System Management Controller (SMC)
+     */
+    BOOL fSmcEnabled;
+    /** @todo: implement appropriate getter */
+#ifdef VBOX_WITH_SMC
+    fSmcEnabled = true;
+#else
+    fSmcEnabled = false;
+#endif
+
+    /*
+     * Low Pin Count (LPC) bus
+     */
+    BOOL fLpcEnabled;
+    /** @todo: implement appropriate getter */
+#ifdef VBOX_WITH_LPC
+    fLpcEnabled = true;
+#else
+    fLpcEnabled = false;
+#endif
+
+    /*
      * PS/2 keyboard & mouse.
      */
     rc = CFGMR3InsertNode(pDevices, "pckbd", &pDev);                                RC_CHECK();
@@ -557,6 +590,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "FdcEnabled", fFdcEnabled);                 RC_CHECK();
+#ifdef VBOX_WITH_HPET
+        rc = CFGMR3InsertInteger(pCfg,  "HpetEnabled", fHpetEnabled);               RC_CHECK();
+#endif
+#ifdef VBOX_WITH_SMC
+        rc = CFGMR3InsertInteger(pCfg,  "SmcEnabled", fSmcEnabled);                 RC_CHECK();
+#endif
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();
         Assert(!afPciDeviceNo[7]);
         afPciDeviceNo[7] = true;
