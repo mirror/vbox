@@ -41,26 +41,11 @@
    * Kludge for the FreeBSD kernel:
    *  Some of the string.h stuff clashes with sys/libkern.h, so just wrap
    *  it up while including string.h to keep things quiet. It's nothing
-   *  important that's clashing, after all. Well, with 7.x it's more
-   *  essential stuff unforuntately...
+   *  important that's clashing, after all.
    */
-# define strdup  strdup_string_h
-# define memset  memset_string_h
-# define memcmp  memcmp_string_h
-# define strchr  strchr_string_h
-# define strrchr strrchr_string_h
-# define ffsl    ffsl_string_h
-# define fls     fls_string_h
-# define flsl    flsl_string_h
+# define strdup strdup_string_h
 # include <string.h>
 # undef strdup
-# undef memset
-# undef memcmp
-# undef strchr
-# undef strrchr
-# undef ffsl
-# undef fls
-# undef flsl
 #elif defined(RT_OS_SOLARIS) && defined(_KERNEL)
   /*
    * Same case as with FreeBSD kernel:
