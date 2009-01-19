@@ -332,6 +332,12 @@ DevicesR3_DEFS          += VBOX_WITH_HPET
 DevicesR3_SOURCES       += PC/DevHPET.cpp 
 endif
 
+ifdef VBOX_WITH_SMC
+DevicesR3_DEFS          += VBOX_WITH_SMC
+DevicesR3_SOURCES       += PC/DevSMC.cpp 
+endif
+
+
 ifdef VBOX_WITH_USB
 DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
 

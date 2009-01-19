@@ -97,7 +97,9 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_FDC,
     /** High Precision Event Timer Device group. */
     LOG_GROUP_DEV_HPET,
-    /** IDE Device group. */
+    /** System Management Controller Device group. */
+    LOG_GROUP_DEV_SMC,
+        /** IDE Device group. */
     LOG_GROUP_DEV_IDE,
     /** The internal networking IP stack Device group. */
     LOG_GROUP_DEV_INIP,
@@ -353,6 +355,7 @@ typedef enum LOGGROUP
     "DEV_E1000",    \
     "DEV_FDC",      \
     "DEV_HPET",     \
+    "DEV_SMC",      \
     "DEV_IDE",      \
     "DEV_INIP",     \
     "DEV_KBD",      \
