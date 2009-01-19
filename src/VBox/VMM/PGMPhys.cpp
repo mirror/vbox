@@ -2462,10 +2462,23 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
             if (0)
                 /* nothing */;
 #endif
-            else if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)) /* catches MMIO */
-                rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
-            else if (fWritable && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+            else if (PGM_PAGE_HAS_ANY_HANDLERS(pPage))
+            {
+                if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)) /* catches MMIO */
+                    rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
+                else if (fWritable && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                    rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+                else
+                {
+                    /* Temporariliy disabled phycial handler(s), since the recompiler
+                       doesn't get notified when it's reset we'll have to pretend its
+                       operating normally. */
+                    if (pgmHandlerPhysicalIsAll(pVM, GCPhys))
+                        rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
+                    else
+                        rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+                }
+            }
             else
                 rc = VINF_SUCCESS;
             if (RT_SUCCESS(rc))
