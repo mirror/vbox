@@ -72,12 +72,7 @@ using namespace com;
 #endif
 
 /** command handler type */
-typedef int (*PFNHANDLER)(int argc, char *argv[], ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
-
-#ifdef USE_XPCOM_QUEUE
-/** A pointer to the event queue, set by main() before calling any handlers. */
-nsCOMPtr<nsIEventQueue> g_pEventQ;
-#endif
+typedef int (*PFNHANDLER)(HandlerArg *a);
 
 /**
  * Quick IUSBDevice implementation for detaching / attaching
@@ -756,50 +751,48 @@ void showProgress(ComPtr<IProgress> progress)
     RTStrmFlush(g_pStdOut);
 }
 
-static int handleRegisterVM(int argc, char *argv[],
-                            ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleRegisterVM(HandlerArg *a)
 {
     HRESULT rc;
 
-    if (argc != 1)
+    if (a->argc != 1)
         return errorSyntax(USAGE_REGISTERVM, "Incorrect number of parameters");
 
     ComPtr<IMachine> machine;
-    CHECK_ERROR(virtualBox, OpenMachine(Bstr(argv[0]), machine.asOutParam()));
+    CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(a->argv[0]), machine.asOutParam()));
     if (SUCCEEDED(rc))
     {
         ASSERT(machine);
-        CHECK_ERROR(virtualBox, RegisterMachine(machine));
+        CHECK_ERROR(a->virtualBox, RegisterMachine(machine));
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleUnregisterVM(int argc, char *argv[],
-                              ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleUnregisterVM(HandlerArg *a)
 {
     HRESULT rc;
 
-    if ((argc != 1) && (argc != 2))
+    if ((a->argc != 1) && (a->argc != 2))
         return errorSyntax(USAGE_UNREGISTERVM, "Incorrect number of parameters");
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
     }
     if (machine)
     {
         Guid uuid;
         machine->COMGETTER(Id)(uuid.asOutParam());
         machine = NULL;
-        CHECK_ERROR(virtualBox, UnregisterMachine(uuid, machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, UnregisterMachine(uuid, machine.asOutParam()));
         if (SUCCEEDED(rc) && machine)
         {
             /* are we supposed to delete the config file? */
-            if ((argc == 2) && (strcmp(argv[1], "-delete") == 0))
+            if ((a->argc == 2) && (strcmp(a->argv[1], "-delete") == 0))
             {
                 CHECK_ERROR(machine, DeleteSettings());
             }
@@ -808,8 +801,7 @@ static int handleUnregisterVM(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleCreateVM(int argc, char *argv[],
-                          ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleCreateVM(HandlerArg *a)
 {
     HRESULT rc;
     Bstr baseFolder;
@@ -820,50 +812,50 @@ static int handleCreateVM(int argc, char *argv[],
     bool fRegister = false;
 
     RTUuidClear(&id);
-    for (int i = 0; i < argc; i++)
+    for (int i = 0; i < a->argc; i++)
     {
-        if (strcmp(argv[i], "-basefolder") == 0)
+        if (strcmp(a->argv[i], "-basefolder") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            baseFolder = argv[i];
+            baseFolder = a->argv[i];
         }
-        else if (strcmp(argv[i], "-settingsfile") == 0)
+        else if (strcmp(a->argv[i], "-settingsfile") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            settingsFile = argv[i];
+            settingsFile = a->argv[i];
         }
-        else if (strcmp(argv[i], "-name") == 0)
+        else if (strcmp(a->argv[i], "-name") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            name = argv[i];
+            name = a->argv[i];
         }
-        else if (strcmp(argv[i], "-ostype") == 0)
+        else if (strcmp(a->argv[i], "-ostype") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            osTypeId = argv[i];
+            osTypeId = a->argv[i];
         }
-        else if (strcmp(argv[i], "-uuid") == 0)
+        else if (strcmp(a->argv[i], "-uuid") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (RT_FAILURE(RTUuidFromStr(&id, argv[i])))
-                return errorArgument("Invalid UUID format %s\n", argv[i]);
+            if (RT_FAILURE(RTUuidFromStr(&id, a->argv[i])))
+                return errorArgument("Invalid UUID format %s\n", a->argv[i]);
         }
-        else if (strcmp(argv[i], "-register") == 0)
+        else if (strcmp(a->argv[i], "-register") == 0)
         {
             fRegister = true;
         }
         else
-            return errorSyntax(USAGE_CREATEVM, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+            return errorSyntax(USAGE_CREATEVM, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
     }
     if (!name)
         return errorSyntax(USAGE_CREATEVM, "Parameter -name is required");
@@ -876,16 +868,16 @@ static int handleCreateVM(int argc, char *argv[],
         ComPtr<IMachine> machine;
 
         if (!settingsFile)
-            CHECK_ERROR_BREAK(virtualBox,
+            CHECK_ERROR_BREAK(a->virtualBox,
                 CreateMachine(name, osTypeId, baseFolder, Guid(id), machine.asOutParam()));
         else
-            CHECK_ERROR_BREAK(virtualBox,
+            CHECK_ERROR_BREAK(a->virtualBox,
                 CreateLegacyMachine(name, osTypeId, settingsFile, Guid(id), machine.asOutParam()));
 
         CHECK_ERROR_BREAK(machine, SaveSettings());
         if (fRegister)
         {
-            CHECK_ERROR_BREAK(virtualBox, RegisterMachine(machine));
+            CHECK_ERROR_BREAK(a->virtualBox, RegisterMachine(machine));
         }
         Guid uuid;
         CHECK_ERROR_BREAK(machine, COMGETTER(Id)(uuid.asOutParam()));
@@ -927,8 +919,7 @@ static unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name)
 # pragma optimize("g", off)
 #endif
 
-static int handleModifyVM(int argc, char *argv[],
-                          ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleModifyVM(HandlerArg *a)
 {
     HRESULT rc;
     Bstr name;
@@ -979,20 +970,20 @@ static int handleModifyVM(int argc, char *argv[],
 
     /* VM ID + at least one parameter. Parameter arguments are checked
      * individually. */
-    if (argc < 2)
+    if (a->argc < 2)
         return errorSyntax(USAGE_MODIFYVM, "Not enough parameters");
 
     /* Get the number of network adapters */
     ULONG NetworkAdapterCount = 0;
     {
         ComPtr <ISystemProperties> info;
-        CHECK_ERROR_RET (virtualBox, COMGETTER(SystemProperties) (info.asOutParam()), 1);
+        CHECK_ERROR_RET (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()), 1);
         CHECK_ERROR_RET (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount), 1);
     }
     ULONG SerialPortCount = 0;
     {
         ComPtr <ISystemProperties> info;
-        CHECK_ERROR_RET (virtualBox, COMGETTER(SystemProperties) (info.asOutParam()), 1);
+        CHECK_ERROR_RET (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()), 1);
         CHECK_ERROR_RET (info, COMGETTER(SerialPortCount) (&SerialPortCount), 1);
     }
 
@@ -1011,460 +1002,460 @@ static int handleModifyVM(int argc, char *argv[],
     std::vector <ULONG>  uarts_irq (SerialPortCount, 0);
     std::vector <char *> uarts_path (SerialPortCount, 0);
 
-    for (int i = 1; i < argc; i++)
+    for (int i = 1; i < a->argc; i++)
     {
-        if (strcmp(argv[i], "-name") == 0)
+        if (strcmp(a->argv[i], "-name") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            name = argv[i];
+            name = a->argv[i];
         }
-        else if (strcmp(argv[i], "-ostype") == 0)
+        else if (strcmp(a->argv[i], "-ostype") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            ostype = argv[i];
+            ostype = a->argv[i];
         }
-        else if (strcmp(argv[i], "-memory") == 0)
+        else if (strcmp(a->argv[i], "-memory") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            memorySize = RTStrToUInt32(argv[i]);
+            memorySize = RTStrToUInt32(a->argv[i]);
         }
-        else if (strcmp(argv[i], "-vram") == 0)
+        else if (strcmp(a->argv[i], "-vram") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            vramSize = RTStrToUInt32(argv[i]);
+            vramSize = RTStrToUInt32(a->argv[i]);
         }
-        else if (strcmp(argv[i], "-acpi") == 0)
+        else if (strcmp(a->argv[i], "-acpi") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            acpi = argv[i];
+            acpi = a->argv[i];
         }
-        else if (strcmp(argv[i], "-ioapic") == 0)
+        else if (strcmp(a->argv[i], "-ioapic") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            ioapic = argv[i];
+            ioapic = a->argv[i];
         }
-        else if (strcmp(argv[i], "-hwvirtex") == 0)
+        else if (strcmp(a->argv[i], "-hwvirtex") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            hwvirtex = argv[i];
+            hwvirtex = a->argv[i];
         }
-        else if (strcmp(argv[i], "-nestedpaging") == 0)
+        else if (strcmp(a->argv[i], "-nestedpaging") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            nestedpaging = argv[i];
+            nestedpaging = a->argv[i];
         }
-        else if (strcmp(argv[i], "-vtxvpid") == 0)
+        else if (strcmp(a->argv[i], "-vtxvpid") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            vtxvpid = argv[i];
+            vtxvpid = a->argv[i];
         }
-        else if (strcmp(argv[i], "-pae") == 0)
+        else if (strcmp(a->argv[i], "-pae") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            pae = argv[i];
+            pae = a->argv[i];
         }
-        else if (strcmp(argv[i], "-monitorcount") == 0)
+        else if (strcmp(a->argv[i], "-monitorcount") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            monitorcount = RTStrToUInt32(argv[i]);
+            monitorcount = RTStrToUInt32(a->argv[i]);
         }
-        else if (strcmp(argv[i], "-accelerate3d") == 0)
+        else if (strcmp(a->argv[i], "-accelerate3d") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            accelerate3d = argv[i];
+            accelerate3d = a->argv[i];
         }
-        else if (strcmp(argv[i], "-bioslogofadein") == 0)
+        else if (strcmp(a->argv[i], "-bioslogofadein") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            bioslogofadein = argv[i];
+            bioslogofadein = a->argv[i];
         }
-        else if (strcmp(argv[i], "-bioslogofadeout") == 0)
+        else if (strcmp(a->argv[i], "-bioslogofadeout") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            bioslogofadeout = argv[i];
+            bioslogofadeout = a->argv[i];
         }
-        else if (strcmp(argv[i], "-bioslogodisplaytime") == 0)
+        else if (strcmp(a->argv[i], "-bioslogodisplaytime") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            bioslogodisplaytime = RTStrToUInt32(argv[i]);
+            bioslogodisplaytime = RTStrToUInt32(a->argv[i]);
         }
-        else if (strcmp(argv[i], "-bioslogoimagepath") == 0)
+        else if (strcmp(a->argv[i], "-bioslogoimagepath") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            bioslogoimagepath = argv[i];
+            bioslogoimagepath = a->argv[i];
         }
-        else if (strcmp(argv[i], "-biosbootmenu") == 0)
+        else if (strcmp(a->argv[i], "-biosbootmenu") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            biosbootmenumode = argv[i];
+            biosbootmenumode = a->argv[i];
         }
-        else if (strcmp(argv[i], "-biossystemtimeoffset") == 0)
+        else if (strcmp(a->argv[i], "-biossystemtimeoffset") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            biossystemtimeoffset = argv[i];
+            biossystemtimeoffset = a->argv[i];
         }
-        else if (strcmp(argv[i], "-biospxedebug") == 0)
+        else if (strcmp(a->argv[i], "-biospxedebug") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            biospxedebug = argv[i];
+            biospxedebug = a->argv[i];
         }
-        else if (strncmp(argv[i], "-boot", 5) == 0)
+        else if (strncmp(a->argv[i], "-boot", 5) == 0)
         {
             uint32_t n = 0;
-            if (!argv[i][5])
-                return errorSyntax(USAGE_MODIFYVM, "Missing boot slot number in '%s'", argv[i]);
-            if (VINF_SUCCESS != RTStrToUInt32Full(&argv[i][5], 10, &n))
-                return errorSyntax(USAGE_MODIFYVM, "Invalid boot slot number in '%s'", argv[i]);
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (!a->argv[i][5])
+                return errorSyntax(USAGE_MODIFYVM, "Missing boot slot number in '%s'", a->argv[i]);
+            if (VINF_SUCCESS != RTStrToUInt32Full(&a->argv[i][5], 10, &n))
+                return errorSyntax(USAGE_MODIFYVM, "Invalid boot slot number in '%s'", a->argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(argv[i], "none") == 0)
+            if (strcmp(a->argv[i], "none") == 0)
             {
                 bootDevice[n - 1] = DeviceType_Null;
             }
-            else if (strcmp(argv[i], "floppy") == 0)
+            else if (strcmp(a->argv[i], "floppy") == 0)
             {
                 bootDevice[n - 1] = DeviceType_Floppy;
             }
-            else if (strcmp(argv[i], "dvd") == 0)
+            else if (strcmp(a->argv[i], "dvd") == 0)
             {
                 bootDevice[n - 1] = DeviceType_DVD;
             }
-            else if (strcmp(argv[i], "disk") == 0)
+            else if (strcmp(a->argv[i], "disk") == 0)
             {
                 bootDevice[n - 1] = DeviceType_HardDisk;
             }
-            else if (strcmp(argv[i], "net") == 0)
+            else if (strcmp(a->argv[i], "net") == 0)
             {
                 bootDevice[n - 1] = DeviceType_Network;
             }
             else
-                return errorArgument("Invalid boot device '%s'", argv[i]);
+                return errorArgument("Invalid boot device '%s'", a->argv[i]);
 
             bootDeviceChanged[n - 1] = true;
         }
-        else if (strcmp(argv[i], "-hda") == 0)
+        else if (strcmp(a->argv[i], "-hda") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            hdds[0] = argv[i];
+            hdds[0] = a->argv[i];
         }
-        else if (strcmp(argv[i], "-hdb") == 0)
+        else if (strcmp(a->argv[i], "-hdb") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            hdds[1] = argv[i];
+            hdds[1] = a->argv[i];
         }
-        else if (strcmp(argv[i], "-hdd") == 0)
+        else if (strcmp(a->argv[i], "-hdd") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            hdds[2] = argv[i];
+            hdds[2] = a->argv[i];
         }
-        else if (strcmp(argv[i], "-dvd") == 0)
+        else if (strcmp(a->argv[i], "-dvd") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            dvd = argv[i];
+            dvd = a->argv[i];
         }
-        else if (strcmp(argv[i], "-dvdpassthrough") == 0)
+        else if (strcmp(a->argv[i], "-dvdpassthrough") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            dvdpassthrough = argv[i];
+            dvdpassthrough = a->argv[i];
         }
-        else if (strcmp(argv[i], "-idecontroller") == 0)
+        else if (strcmp(a->argv[i], "-idecontroller") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            idecontroller = argv[i];
+            idecontroller = a->argv[i];
         }
-        else if (strcmp(argv[i], "-floppy") == 0)
+        else if (strcmp(a->argv[i], "-floppy") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            floppy = argv[i];
+            floppy = a->argv[i];
         }
-        else if (strcmp(argv[i], "-audio") == 0)
+        else if (strcmp(a->argv[i], "-audio") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            audio = argv[i];
+            audio = a->argv[i];
         }
-        else if (strcmp(argv[i], "-audiocontroller") == 0)
+        else if (strcmp(a->argv[i], "-audiocontroller") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            audiocontroller = argv[i];
+            audiocontroller = a->argv[i];
         }
-        else if (strcmp(argv[i], "-clipboard") == 0)
+        else if (strcmp(a->argv[i], "-clipboard") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            clipboard = argv[i];
+            clipboard = a->argv[i];
         }
-        else if (strncmp(argv[i], "-cableconnected", 15) == 0)
+        else if (strncmp(a->argv[i], "-cableconnected", 15) == 0)
         {
-            unsigned n = parseNum(&argv[i][15], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][15], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
 
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
 
-            cableconnected[n - 1] = argv[i + 1];
+            cableconnected[n - 1] = a->argv[i + 1];
             i++;
         }
         /* watch for the right order of these -nic* comparisons! */
-        else if (strncmp(argv[i], "-nictracefile", 13) == 0)
+        else if (strncmp(a->argv[i], "-nictracefile", 13) == 0)
         {
-            unsigned n = parseNum(&argv[i][13], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][13], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
-            if (argc <= i + 1)
+            if (a->argc <= i + 1)
             {
-                return errorArgument("Missing argument to '%s'", argv[i]);
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             }
-            nictracefile[n - 1] = argv[i + 1];
+            nictracefile[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(argv[i], "-nictrace", 9) == 0)
+        else if (strncmp(a->argv[i], "-nictrace", 9) == 0)
         {
-            unsigned n = parseNum(&argv[i][9], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][9], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            nictrace[n - 1] = argv[i + 1];
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            nictrace[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(argv[i], "-nictype", 8) == 0)
+        else if (strncmp(a->argv[i], "-nictype", 8) == 0)
         {
-            unsigned n = parseNum(&argv[i][8], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][8], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            nictype[n - 1] = argv[i + 1];
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            nictype[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(argv[i], "-nicspeed", 9) == 0)
+        else if (strncmp(a->argv[i], "-nicspeed", 9) == 0)
         {
-            unsigned n = parseNum(&argv[i][9], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][9], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            nicspeed[n - 1] = argv[i + 1];
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            nicspeed[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(argv[i], "-nic", 4) == 0)
+        else if (strncmp(a->argv[i], "-nic", 4) == 0)
         {
-            unsigned n = parseNum(&argv[i][4], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][4], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            nics[n - 1] = argv[i + 1];
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            nics[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(argv[i], "-hostifdev", 10) == 0)
+        else if (strncmp(a->argv[i], "-hostifdev", 10) == 0)
         {
-            unsigned n = parseNum(&argv[i][10], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][10], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            hostifdev[n - 1] = argv[i + 1];
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            hostifdev[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(argv[i], "-intnet", 7) == 0)
+        else if (strncmp(a->argv[i], "-intnet", 7) == 0)
         {
-            unsigned n = parseNum(&argv[i][7], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][7], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            intnet[n - 1] = argv[i + 1];
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            intnet[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(argv[i], "-natnet", 7) == 0)
+        else if (strncmp(a->argv[i], "-natnet", 7) == 0)
         {
-            unsigned n = parseNum(&argv[i][7], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][7], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
 
-            if (!strcmp(argv[i + 1], "default"))
+            if (!strcmp(a->argv[i + 1], "default"))
                 natnet[n - 1] = "";
             else
             {
                 RTIPV4ADDR Network;
                 RTIPV4ADDR Netmask;
-                int rc = RTCidrStrToIPv4(argv[i + 1], &Network, &Netmask);
+                int rc = RTCidrStrToIPv4(a->argv[i + 1], &Network, &Netmask);
                 if (RT_FAILURE(rc))
-                    return errorArgument("Invalid IPv4 network '%s' specified -- CIDR notation expected.\n", argv[i + 1]);
+                    return errorArgument("Invalid IPv4 network '%s' specified -- CIDR notation expected.\n", a->argv[i + 1]);
                 if (Netmask & 0x1f)
                     return errorArgument("Prefix length of the NAT network must be less than 28.\n");
-                natnet[n - 1] = argv[i + 1];
+                natnet[n - 1] = a->argv[i + 1];
             }
             i++;
         }
-        else if (strncmp(argv[i], "-macaddress", 11) == 0)
+        else if (strncmp(a->argv[i], "-macaddress", 11) == 0)
         {
-            unsigned n = parseNum(&argv[i][11], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][11], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            macs[n - 1] = argv[i + 1];
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            macs[n - 1] = a->argv[i + 1];
             i++;
         }
 #ifdef VBOX_WITH_VRDP
-        else if (strcmp(argv[i], "-vrdp") == 0)
+        else if (strcmp(a->argv[i], "-vrdp") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            vrdp = argv[i];
+            vrdp = a->argv[i];
         }
-        else if (strcmp(argv[i], "-vrdpport") == 0)
+        else if (strcmp(a->argv[i], "-vrdpport") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(argv[i], "default") == 0)
+            if (strcmp(a->argv[i], "default") == 0)
                 vrdpport = 0;
             else
-                vrdpport = RTStrToUInt16(argv[i]);
+                vrdpport = RTStrToUInt16(a->argv[i]);
         }
-        else if (strcmp(argv[i], "-vrdpaddress") == 0)
+        else if (strcmp(a->argv[i], "-vrdpaddress") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            vrdpaddress = argv[i];
+            vrdpaddress = a->argv[i];
         }
-        else if (strcmp(argv[i], "-vrdpauthtype") == 0)
+        else if (strcmp(a->argv[i], "-vrdpauthtype") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            vrdpauthtype = argv[i];
+            vrdpauthtype = a->argv[i];
         }
-        else if (strcmp(argv[i], "-vrdpmulticon") == 0)
+        else if (strcmp(a->argv[i], "-vrdpmulticon") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            vrdpmulticon = argv[i];
+            vrdpmulticon = a->argv[i];
         }
-        else if (strcmp(argv[i], "-vrdpreusecon") == 0)
+        else if (strcmp(a->argv[i], "-vrdpreusecon") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            vrdpreusecon = argv[i];
+            vrdpreusecon = a->argv[i];
         }
 #endif /* VBOX_WITH_VRDP */
-        else if (strcmp(argv[i], "-usb") == 0)
+        else if (strcmp(a->argv[i], "-usb") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(argv[i], "on") == 0 || strcmp(argv[i], "enable") == 0)
+            if (strcmp(a->argv[i], "on") == 0 || strcmp(a->argv[i], "enable") == 0)
                 fUsbEnabled = 1;
-            else if (strcmp(argv[i], "off") == 0 || strcmp(argv[i], "disable") == 0)
+            else if (strcmp(a->argv[i], "off") == 0 || strcmp(a->argv[i], "disable") == 0)
                 fUsbEnabled = 0;
             else
-                return errorArgument("Invalid -usb argument '%s'", argv[i]);
+                return errorArgument("Invalid -usb argument '%s'", a->argv[i]);
         }
-        else if (strcmp(argv[i], "-usbehci") == 0)
+        else if (strcmp(a->argv[i], "-usbehci") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(argv[i], "on") == 0 || strcmp(argv[i], "enable") == 0)
+            if (strcmp(a->argv[i], "on") == 0 || strcmp(a->argv[i], "enable") == 0)
                 fUsbEhciEnabled = 1;
-            else if (strcmp(argv[i], "off") == 0 || strcmp(argv[i], "disable") == 0)
+            else if (strcmp(a->argv[i], "off") == 0 || strcmp(a->argv[i], "disable") == 0)
                 fUsbEhciEnabled = 0;
             else
-                return errorArgument("Invalid -usbehci argument '%s'", argv[i]);
+                return errorArgument("Invalid -usbehci argument '%s'", a->argv[i]);
         }
-        else if (strcmp(argv[i], "-snapshotfolder") == 0)
+        else if (strcmp(a->argv[i], "-snapshotfolder") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            snapshotFolder = argv[i];
+            snapshotFolder = a->argv[i];
         }
-        else if (strncmp(argv[i], "-uartmode", 9) == 0)
+        else if (strncmp(a->argv[i], "-uartmode", 9) == 0)
         {
-            unsigned n = parseNum(&argv[i][9], SerialPortCount, "UART");
+            unsigned n = parseNum(&a->argv[i][9], SerialPortCount, "UART");
             if (!n)
                 return 1;
             i++;
-            if (strcmp(argv[i], "disconnected") == 0)
+            if (strcmp(a->argv[i], "disconnected") == 0)
             {
-                uarts_mode[n - 1] = argv[i];
+                uarts_mode[n - 1] = a->argv[i];
             }
             else
             {
-                if (strcmp(argv[i], "server") == 0 || strcmp(argv[i], "client") == 0)
+                if (strcmp(a->argv[i], "server") == 0 || strcmp(a->argv[i], "client") == 0)
                 {
-                    uarts_mode[n - 1] = argv[i];
+                    uarts_mode[n - 1] = a->argv[i];
                     i++;
 #ifdef RT_OS_WINDOWS
-                    if (strncmp(argv[i], "\\\\.\\pipe\\", 9))
+                    if (strncmp(a->argv[i], "\\\\.\\pipe\\", 9))
                         return errorArgument("Uart pipe must start with \\\\.\\pipe\\");
 #endif
                 }
@@ -1472,135 +1463,135 @@ static int handleModifyVM(int argc, char *argv[],
                 {
                     uarts_mode[n - 1] = (char*)"device";
                 }
-                if (argc <= i)
+                if (a->argc <= i)
                     return errorArgument("Missing argument to -uartmode");
-                uarts_path[n - 1] = argv[i];
+                uarts_path[n - 1] = a->argv[i];
             }
         }
-        else if (strncmp(argv[i], "-uart", 5) == 0)
+        else if (strncmp(a->argv[i], "-uart", 5) == 0)
         {
-            unsigned n = parseNum(&argv[i][5], SerialPortCount, "UART");
+            unsigned n = parseNum(&a->argv[i][5], SerialPortCount, "UART");
             if (!n)
                 return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(argv[i], "off") == 0 || strcmp(argv[i], "disable") == 0)
+            if (strcmp(a->argv[i], "off") == 0 || strcmp(a->argv[i], "disable") == 0)
             {
                 uarts_base[n - 1] = (ULONG)-1;
             }
             else
             {
-                if (argc <= i + 1)
-                    return errorArgument("Missing argument to '%s'", argv[i-1]);
+                if (a->argc <= i + 1)
+                    return errorArgument("Missing argument to '%s'", a->argv[i-1]);
                 uint32_t uVal;
                 int vrc;
-                vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
+                vrc = RTStrToUInt32Ex(a->argv[i], NULL, 0, &uVal);
                 if (vrc != VINF_SUCCESS || uVal == 0)
-                    return errorArgument("Error parsing UART I/O base '%s'", argv[i]);
+                    return errorArgument("Error parsing UART I/O base '%s'", a->argv[i]);
                 uarts_base[n - 1] = uVal;
                 i++;
-                vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
+                vrc = RTStrToUInt32Ex(a->argv[i], NULL, 0, &uVal);
                 if (vrc != VINF_SUCCESS)
-                    return errorArgument("Error parsing UART IRQ '%s'", argv[i]);
+                    return errorArgument("Error parsing UART IRQ '%s'", a->argv[i]);
                 uarts_irq[n - 1]  = uVal;
             }
         }
 #ifdef VBOX_WITH_MEM_BALLOONING
-        else if (strncmp(argv[i], "-guestmemoryballoon", 19) == 0)
+        else if (strncmp(a->argv[i], "-guestmemoryballoon", 19) == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             uint32_t uVal;
             int vrc;
-            vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
+            vrc = RTStrToUInt32Ex(a->argv[i], NULL, 0, &uVal);
             if (vrc != VINF_SUCCESS)
-                return errorArgument("Error parsing guest memory balloon size '%s'", argv[i]);
+                return errorArgument("Error parsing guest memory balloon size '%s'", a->argv[i]);
             guestMemBalloonSize = uVal;
         }
 #endif
-        else if (strncmp(argv[i], "-gueststatisticsinterval", 24) == 0)
+        else if (strncmp(a->argv[i], "-gueststatisticsinterval", 24) == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             uint32_t uVal;
             int vrc;
-            vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
+            vrc = RTStrToUInt32Ex(a->argv[i], NULL, 0, &uVal);
             if (vrc != VINF_SUCCESS)
-                return errorArgument("Error parsing guest statistics interval '%s'", argv[i]);
+                return errorArgument("Error parsing guest statistics interval '%s'", a->argv[i]);
             guestStatInterval = uVal;
         }
-        else if (strcmp(argv[i], "-sata") == 0)
+        else if (strcmp(a->argv[i], "-sata") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(argv[i], "on") == 0 || strcmp(argv[i], "enable") == 0)
+            if (strcmp(a->argv[i], "on") == 0 || strcmp(a->argv[i], "enable") == 0)
                 fSataEnabled = 1;
-            else if (strcmp(argv[i], "off") == 0 || strcmp(argv[i], "disable") == 0)
+            else if (strcmp(a->argv[i], "off") == 0 || strcmp(a->argv[i], "disable") == 0)
                 fSataEnabled = 0;
             else
-                return errorArgument("Invalid -usb argument '%s'", argv[i]);
+                return errorArgument("Invalid -usb argument '%s'", a->argv[i]);
         }
-        else if (strcmp(argv[i], "-sataportcount") == 0)
+        else if (strcmp(a->argv[i], "-sataportcount") == 0)
         {
             unsigned n;
 
-            if (argc <= i + 1)
-                return errorArgument("Missing arguments to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing arguments to '%s'", a->argv[i]);
             i++;
 
-            n = parseNum(argv[i], 30, "SATA");
+            n = parseNum(a->argv[i], 30, "SATA");
             if (!n)
                 return 1;
             sataPortCount = n;
         }
-        else if (strncmp(argv[i], "-sataport", 9) == 0)
+        else if (strncmp(a->argv[i], "-sataport", 9) == 0)
         {
-            unsigned n = parseNum(&argv[i][9], 30, "SATA");
+            unsigned n = parseNum(&a->argv[i][9], 30, "SATA");
             if (!n)
                 return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            hdds[n-1+4] = argv[i];
+            hdds[n-1+4] = a->argv[i];
         }
-        else if (strncmp(argv[i], "-sataideemulation", 17) == 0)
+        else if (strncmp(a->argv[i], "-sataideemulation", 17) == 0)
         {
             unsigned bootDevicePos = 0;
             unsigned n;
 
-            bootDevicePos = parseNum(&argv[i][17], 4, "SATA");
+            bootDevicePos = parseNum(&a->argv[i][17], 4, "SATA");
             if (!bootDevicePos)
                 return 1;
             bootDevicePos--;
 
-            if (argc <= i + 1)
-                return errorArgument("Missing arguments to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing arguments to '%s'", a->argv[i]);
             i++;
 
-            n = parseNum(argv[i], 30, "SATA");
+            n = parseNum(a->argv[i], 30, "SATA");
             if (!n)
                 return 1;
 
             sataBootDevices[bootDevicePos] = n-1;
         }
         else
-            return errorSyntax(USAGE_MODIFYVM, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+            return errorSyntax(USAGE_MODIFYVM, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
     }
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Guid uuid (argv[0]);
+    Guid uuid (a->argv[0]);
     if (!uuid.isEmpty())
     {
-        CHECK_ERROR (virtualBox, GetMachine (uuid, machine.asOutParam()));
+        CHECK_ERROR (a->virtualBox, GetMachine (uuid, machine.asOutParam()));
     }
     else
     {
-        CHECK_ERROR (virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR (a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
         if (SUCCEEDED (rc))
             machine->COMGETTER(Id)(uuid.asOutParam());
     }
@@ -1608,12 +1599,12 @@ static int handleModifyVM(int argc, char *argv[],
         return 1;
 
     /* open a session for the VM */
-    CHECK_ERROR_RET (virtualBox, OpenSession(session, uuid), 1);
+    CHECK_ERROR_RET (a->virtualBox, OpenSession(a->session, uuid), 1);
 
     do
     {
         /* get the mutable session machine */
-        session->COMGETTER(Machine)(machine.asOutParam());
+        a->session->COMGETTER(Machine)(machine.asOutParam());
 
         ComPtr <IBIOSSettings> biosSettings;
         machine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
@@ -1623,7 +1614,7 @@ static int handleModifyVM(int argc, char *argv[],
         if (ostype)
         {
             ComPtr<IGuestOSType> guestOSType;
-            CHECK_ERROR(virtualBox, GetGuestOSType(ostype, guestOSType.asOutParam()));
+            CHECK_ERROR(a->virtualBox, GetGuestOSType(ostype, guestOSType.asOutParam()));
             if (SUCCEEDED(rc) && guestOSType)
             {
                 CHECK_ERROR(machine, COMSETTER(OSTypeId)(ostype));
@@ -1862,15 +1853,15 @@ static int handleModifyVM(int argc, char *argv[],
                 /* first guess is that it's a UUID */
                 Guid uuid(hdds[0]);
                 ComPtr<IHardDisk2> hardDisk;
-                rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+                rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(virtualBox, FindHardDisk2(Bstr(hdds[0]), hardDisk.asOutParam()));
+                    CHECK_ERROR(a->virtualBox, FindHardDisk2(Bstr(hdds[0]), hardDisk.asOutParam()));
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
-                        CHECK_ERROR(virtualBox, OpenHardDisk2(Bstr(hdds[0]), hardDisk.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenHardDisk2(Bstr(hdds[0]), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
@@ -1895,15 +1886,15 @@ static int handleModifyVM(int argc, char *argv[],
                 /* first guess is that it's a UUID */
                 Guid uuid(hdds[1]);
                 ComPtr<IHardDisk2> hardDisk;
-                rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+                rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(virtualBox, FindHardDisk2(Bstr(hdds[1]), hardDisk.asOutParam()));
+                    CHECK_ERROR(a->virtualBox, FindHardDisk2(Bstr(hdds[1]), hardDisk.asOutParam()));
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
-                        CHECK_ERROR(virtualBox, OpenHardDisk2(Bstr(hdds[1]), hardDisk.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenHardDisk2(Bstr(hdds[1]), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
@@ -1928,15 +1919,15 @@ static int handleModifyVM(int argc, char *argv[],
                 /* first guess is that it's a UUID */
                 Guid uuid(hdds[2]);
                 ComPtr<IHardDisk2> hardDisk;
-                rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+                rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(virtualBox, FindHardDisk2(Bstr(hdds[2]), hardDisk.asOutParam()));
+                    CHECK_ERROR(a->virtualBox, FindHardDisk2(Bstr(hdds[2]), hardDisk.asOutParam()));
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
-                        CHECK_ERROR(virtualBox, OpenHardDisk2(Bstr(hdds[2]), hardDisk.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenHardDisk2(Bstr(hdds[2]), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
@@ -1965,7 +1956,7 @@ static int handleModifyVM(int argc, char *argv[],
             else if (strncmp(dvd, "host:", 5) == 0)
             {
                 ComPtr<IHost> host;
-                CHECK_ERROR(virtualBox, COMGETTER(Host)(host.asOutParam()));
+                CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
                 ComPtr<IHostDVDDriveCollection> hostDVDs;
                 CHECK_ERROR(host, COMGETTER(DVDDrives)(hostDVDs.asOutParam()));
                 ComPtr<IHostDVDDrive> hostDVDDrive;
@@ -1995,16 +1986,16 @@ static int handleModifyVM(int argc, char *argv[],
                 /* first assume it's a UUID */
                 Guid uuid(dvd);
                 ComPtr<IDVDImage2> dvdImage;
-                rc = virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
+                rc = a->virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
                 if (FAILED(rc) || !dvdImage)
                 {
                     /* must be a filename, check if it's in the collection */
-                    rc = virtualBox->FindDVDImage(Bstr(dvd), dvdImage.asOutParam());
+                    rc = a->virtualBox->FindDVDImage(Bstr(dvd), dvdImage.asOutParam());
                     /* not registered, do that on the fly */
                     if (!dvdImage)
                     {
                         Guid emptyUUID;
-                        CHECK_ERROR(virtualBox, OpenDVDImage(Bstr(dvd), emptyUUID, dvdImage.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(dvd), emptyUUID, dvdImage.asOutParam()));
                     }
                 }
                 if (!dvdImage)
@@ -2068,7 +2059,7 @@ static int handleModifyVM(int argc, char *argv[],
                 else if (strncmp(floppy, "host:", 5) == 0)
                 {
                     ComPtr<IHost> host;
-                    CHECK_ERROR(virtualBox, COMGETTER(Host)(host.asOutParam()));
+                    CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
                     ComPtr<IHostFloppyDriveCollection> hostFloppies;
                     CHECK_ERROR(host, COMGETTER(FloppyDrives)(hostFloppies.asOutParam()));
                     ComPtr<IHostFloppyDrive> hostFloppyDrive;
@@ -2086,16 +2077,16 @@ static int handleModifyVM(int argc, char *argv[],
                     /* first assume it's a UUID */
                     Guid uuid(floppy);
                     ComPtr<IFloppyImage2> floppyImage;
-                    rc = virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
+                    rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
                     if (FAILED(rc) || !floppyImage)
                     {
                         /* must be a filename, check if it's in the collection */
-                        rc = virtualBox->FindFloppyImage(Bstr(floppy), floppyImage.asOutParam());
+                        rc = a->virtualBox->FindFloppyImage(Bstr(floppy), floppyImage.asOutParam());
                         /* not registered, do that on the fly */
                         if (!floppyImage)
                         {
                             Guid emptyUUID;
-                            CHECK_ERROR(virtualBox, OpenFloppyImage(Bstr(floppy), emptyUUID, floppyImage.asOutParam()));
+                            CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(floppy), emptyUUID, floppyImage.asOutParam()));
                         }
                     }
                     if (!floppyImage)
@@ -2622,15 +2613,15 @@ static int handleModifyVM(int argc, char *argv[],
                     /* first guess is that it's a UUID */
                     Guid uuid(hdds[i]);
                     ComPtr<IHardDisk2> hardDisk;
-                    rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+                    rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
                     /* not successful? Then it must be a filename */
                     if (!hardDisk)
                     {
-                        CHECK_ERROR(virtualBox, FindHardDisk2(Bstr(hdds[i]), hardDisk.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, FindHardDisk2(Bstr(hdds[i]), hardDisk.asOutParam()));
                         if (FAILED(rc))
                         {
                             /* open the new hard disk object */
-                            CHECK_ERROR(virtualBox, OpenHardDisk2(Bstr(hdds[i]), hardDisk.asOutParam()));
+                            CHECK_ERROR(a->virtualBox, OpenHardDisk2(Bstr(hdds[i]), hardDisk.asOutParam()));
                         }
                     }
                     if (hardDisk)
@@ -2675,7 +2666,7 @@ static int handleModifyVM(int argc, char *argv[],
     while (0);
 
     /* it's important to always close sessions */
-    session->Close();
+    a->session->Close();
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -2685,21 +2676,20 @@ static int handleModifyVM(int argc, char *argv[],
 # pragma optimize("", on)
 #endif
 
-static int handleStartVM(int argc, char *argv[],
-                         ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleStartVM(HandlerArg *a)
 {
     HRESULT rc;
 
-    if (argc < 1)
+    if (a->argc < 1)
         return errorSyntax(USAGE_STARTVM, "Not enough parameters");
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
     }
     if (machine)
     {
@@ -2709,22 +2699,22 @@ static int handleStartVM(int argc, char *argv[],
         /* default to GUI session type */
         Bstr sessionType = "gui";
         /* has a session type been specified? */
-        if ((argc > 2) && (strcmp(argv[1], "-type") == 0))
+        if ((a->argc > 2) && (strcmp(a->argv[1], "-type") == 0))
         {
-            if (strcmp(argv[2], "gui") == 0)
+            if (strcmp(a->argv[2], "gui") == 0)
             {
                 sessionType = "gui";
             }
-            else if (strcmp(argv[2], "vrdp") == 0)
+            else if (strcmp(a->argv[2], "vrdp") == 0)
             {
                 sessionType = "vrdp";
             }
-            else if (strcmp(argv[2], "capture") == 0)
+            else if (strcmp(a->argv[2], "capture") == 0)
             {
                 sessionType = "capture";
             }
             else
-                return errorArgument("Invalid session type argument '%s'", argv[2]);
+                return errorArgument("Invalid session type argument '%s'", a->argv[2]);
         }
 
         Bstr env;
@@ -2737,8 +2727,8 @@ static int handleStartVM(int argc, char *argv[],
         }
 #endif
         ComPtr<IProgress> progress;
-        CHECK_ERROR_RET(virtualBox, OpenRemoteSession(session, uuid, sessionType,
-                                                      env, progress.asOutParam()), rc);
+        CHECK_ERROR_RET(a->virtualBox, OpenRemoteSession(a->session, uuid, sessionType,
+                                                         env, progress.asOutParam()), rc);
         RTPrintf("Waiting for the remote session to open...\n");
         CHECK_ERROR_RET(progress, WaitForCompletion (-1), 1);
 
@@ -2762,29 +2752,28 @@ static int handleStartVM(int argc, char *argv[],
     }
 
     /* it's important to always close sessions */
-    session->Close();
+    a->session->Close();
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleControlVM(int argc, char *argv[],
-                           ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleControlVM(HandlerArg *a)
 {
     HRESULT rc;
 
-    if (argc < 2)
+    if (a->argc < 2)
         return errorSyntax(USAGE_CONTROLVM, "Not enough parameters");
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Guid uuid (argv[0]);
+    Guid uuid (a->argv[0]);
     if (!uuid.isEmpty())
     {
-        CHECK_ERROR (virtualBox, GetMachine (uuid, machine.asOutParam()));
+        CHECK_ERROR (a->virtualBox, GetMachine (uuid, machine.asOutParam()));
     }
     else
     {
-        CHECK_ERROR (virtualBox, FindMachine (Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR (a->virtualBox, FindMachine (Bstr(a->argv[0]), machine.asOutParam()));
         if (SUCCEEDED (rc))
             machine->COMGETTER(Id) (uuid.asOutParam());
     }
@@ -2792,35 +2781,35 @@ static int handleControlVM(int argc, char *argv[],
         return 1;
 
     /* open a session for the VM */
-    CHECK_ERROR_RET (virtualBox, OpenExistingSession (session, uuid), 1);
+    CHECK_ERROR_RET (a->virtualBox, OpenExistingSession (a->session, uuid), 1);
 
     do
     {
         /* get the associated console */
         ComPtr<IConsole> console;
-        CHECK_ERROR_BREAK (session, COMGETTER(Console)(console.asOutParam()));
+        CHECK_ERROR_BREAK (a->session, COMGETTER(Console)(console.asOutParam()));
         /* ... and session machine */
         ComPtr<IMachine> sessionMachine;
-        CHECK_ERROR_BREAK (session, COMGETTER(Machine)(sessionMachine.asOutParam()));
+        CHECK_ERROR_BREAK (a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
 
         /* which command? */
-        if (strcmp(argv[1], "pause") == 0)
+        if (strcmp(a->argv[1], "pause") == 0)
         {
             CHECK_ERROR_BREAK (console, Pause());
         }
-        else if (strcmp(argv[1], "resume") == 0)
+        else if (strcmp(a->argv[1], "resume") == 0)
         {
             CHECK_ERROR_BREAK (console, Resume());
         }
-        else if (strcmp(argv[1], "reset") == 0)
+        else if (strcmp(a->argv[1], "reset") == 0)
         {
             CHECK_ERROR_BREAK (console, Reset());
         }
-        else if (strcmp(argv[1], "poweroff") == 0)
+        else if (strcmp(a->argv[1], "poweroff") == 0)
         {
             CHECK_ERROR_BREAK (console, PowerDown());
         }
-        else if (strcmp(argv[1], "savestate") == 0)
+        else if (strcmp(a->argv[1], "savestate") == 0)
         {
             ComPtr<IProgress> progress;
             CHECK_ERROR_BREAK (console, SaveState(progress.asOutParam()));
@@ -2841,29 +2830,29 @@ static int handleControlVM(int argc, char *argv[],
                 }
             }
         }
-        else if (strcmp(argv[1], "acpipowerbutton") == 0)
+        else if (strcmp(a->argv[1], "acpipowerbutton") == 0)
         {
             CHECK_ERROR_BREAK (console, PowerButton());
         }
-        else if (strcmp(argv[1], "acpisleepbutton") == 0)
+        else if (strcmp(a->argv[1], "acpisleepbutton") == 0)
         {
             CHECK_ERROR_BREAK (console, SleepButton());
         }
-        else if (strcmp(argv[1], "injectnmi") == 0)
+        else if (strcmp(a->argv[1], "injectnmi") == 0)
         {
             /* get the machine debugger. */
             ComPtr <IMachineDebugger> debugger;
             CHECK_ERROR_BREAK(console, COMGETTER(Debugger)(debugger.asOutParam()));
             CHECK_ERROR_BREAK(debugger, InjectNMI());
         }
-        else if (strcmp(argv[1], "keyboardputscancode") == 0)
+        else if (strcmp(a->argv[1], "keyboardputscancode") == 0)
         {
             ComPtr<IKeyboard> keyboard;
             CHECK_ERROR_BREAK(console, COMGETTER(Keyboard)(keyboard.asOutParam()));
 
-            if (argc <= 1 + 1)
+            if (a->argc <= 1 + 1)
             {
-                errorArgument("Missing argument to '%s'. Expected IBM PC AT set 2 keyboard scancode(s) as hex byte(s).", argv[1]);
+                errorArgument("Missing argument to '%s'. Expected IBM PC AT set 2 keyboard scancode(s) as hex byte(s).", a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -2874,17 +2863,17 @@ static int handleControlVM(int argc, char *argv[],
 
             /* Process the command line. */
             int i;
-            for (i = 1 + 1; i < argc && cScancodes < (int)RT_ELEMENTS(alScancodes); i++, cScancodes++)
+            for (i = 1 + 1; i < a->argc && cScancodes < (int)RT_ELEMENTS(alScancodes); i++, cScancodes++)
             {
-                if (   RT_C_IS_XDIGIT (argv[i][0])
-                    && RT_C_IS_XDIGIT (argv[i][1])
-                    && argv[i][2] == 0)
+                if (   RT_C_IS_XDIGIT (a->argv[i][0])
+                    && RT_C_IS_XDIGIT (a->argv[i][1])
+                    && a->argv[i][2] == 0)
                 {
                     uint8_t u8Scancode;
-                    int rc = RTStrToUInt8Ex(argv[i], NULL, 16, &u8Scancode);
+                    int rc = RTStrToUInt8Ex(a->argv[i], NULL, 16, &u8Scancode);
                     if (RT_FAILURE (rc))
                     {
-                        RTPrintf("Error: converting '%s' returned %Rrc!\n", argv[i], rc);
+                        RTPrintf("Error: converting '%s' returned %Rrc!\n", a->argv[i], rc);
                         rc = E_FAIL;
                         break;
                     }
@@ -2893,7 +2882,7 @@ static int handleControlVM(int argc, char *argv[],
                 }
                 else
                 {
-                    RTPrintf("Error: '%s' is not a hex byte!\n", argv[i]);
+                    RTPrintf("Error: '%s' is not a hex byte!\n", a->argv[i]);
                     rc = E_FAIL;
                     break;
                 }
@@ -2903,7 +2892,7 @@ static int handleControlVM(int argc, char *argv[],
                 break;
 
             if (   cScancodes == RT_ELEMENTS(alScancodes)
-                && i < argc)
+                && i < a->argc)
             {
                 RTPrintf("Error: too many scancodes, maximum %d allowed!\n", RT_ELEMENTS(alScancodes));
                 rc = E_FAIL;
@@ -2919,23 +2908,23 @@ static int handleControlVM(int argc, char *argv[],
                 RTPrintf("Scancode[%d]: 0x%02X\n", i, alScancodes[i]);
             }
         }
-        else if (strncmp(argv[1], "setlinkstate", 12) == 0)
+        else if (strncmp(a->argv[1], "setlinkstate", 12) == 0)
         {
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = 0;
             ComPtr <ISystemProperties> info;
-            CHECK_ERROR_BREAK (virtualBox, COMGETTER(SystemProperties) (info.asOutParam()));
+            CHECK_ERROR_BREAK (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()));
             CHECK_ERROR_BREAK (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount));
 
-            unsigned n = parseNum(&argv[1][12], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[1][12], NetworkAdapterCount, "NIC");
             if (!n)
             {
                 rc = E_FAIL;
                 break;
             }
-            if (argc <= 1 + 1)
+            if (a->argc <= 1 + 1)
             {
-                errorArgument("Missing argument to '%s'", argv[1]);
+                errorArgument("Missing argument to '%s'", a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -2944,28 +2933,28 @@ static int handleControlVM(int argc, char *argv[],
             CHECK_ERROR_BREAK (sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
             if (adapter)
             {
-                if (strcmp(argv[2], "on") == 0)
+                if (strcmp(a->argv[2], "on") == 0)
                 {
                     CHECK_ERROR_BREAK (adapter, COMSETTER(CableConnected)(TRUE));
                 }
-                else if (strcmp(argv[2], "off") == 0)
+                else if (strcmp(a->argv[2], "off") == 0)
                 {
                     CHECK_ERROR_BREAK (adapter, COMSETTER(CableConnected)(FALSE));
                 }
                 else
                 {
-                    errorArgument("Invalid link state '%s'", Utf8Str(argv[2]).raw());
+                    errorArgument("Invalid link state '%s'", Utf8Str(a->argv[2]).raw());
                     rc = E_FAIL;
                     break;
                 }
             }
         }
 #ifdef VBOX_WITH_VRDP
-        else if (strcmp(argv[1], "vrdp") == 0)
+        else if (strcmp(a->argv[1], "vrdp") == 0)
         {
-            if (argc <= 1 + 1)
+            if (a->argc <= 1 + 1)
             {
-                errorArgument("Missing argument to '%s'", argv[1]);
+                errorArgument("Missing argument to '%s'", a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -2975,47 +2964,47 @@ static int handleControlVM(int argc, char *argv[],
             ASSERT(vrdpServer);
             if (vrdpServer)
             {
-                if (strcmp(argv[2], "on") == 0)
+                if (strcmp(a->argv[2], "on") == 0)
                 {
                     CHECK_ERROR_BREAK (vrdpServer, COMSETTER(Enabled)(TRUE));
                 }
-                else if (strcmp(argv[2], "off") == 0)
+                else if (strcmp(a->argv[2], "off") == 0)
                 {
                     CHECK_ERROR_BREAK (vrdpServer, COMSETTER(Enabled)(FALSE));
                 }
                 else
                 {
-                    errorArgument("Invalid vrdp server state '%s'", Utf8Str(argv[2]).raw());
+                    errorArgument("Invalid vrdp server state '%s'", Utf8Str(a->argv[2]).raw());
                     rc = E_FAIL;
                     break;
                 }
             }
         }
 #endif /* VBOX_WITH_VRDP */
-        else if (strcmp (argv[1], "usbattach") == 0 ||
-                 strcmp (argv[1], "usbdetach") == 0)
+        else if (strcmp (a->argv[1], "usbattach") == 0 ||
+                 strcmp (a->argv[1], "usbdetach") == 0)
         {
-            if (argc < 3)
+            if (a->argc < 3)
             {
                 errorSyntax(USAGE_CONTROLVM, "Not enough parameters");
                 rc = E_FAIL;
                 break;
             }
 
-            bool attach = strcmp (argv[1], "usbattach") == 0;
+            bool attach = strcmp (a->argv[1], "usbattach") == 0;
 
-            Guid usbId = argv [2];
+            Guid usbId = a->argv [2];
             if (usbId.isEmpty())
             {
                 // assume address
                 if (attach)
                 {
                     ComPtr <IHost> host;
-                    CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host) (host.asOutParam()));
+                    CHECK_ERROR_BREAK (a->virtualBox, COMGETTER(Host) (host.asOutParam()));
                     ComPtr <IHostUSBDeviceCollection> coll;
                     CHECK_ERROR_BREAK (host, COMGETTER(USBDevices) (coll.asOutParam()));
                     ComPtr <IHostUSBDevice> dev;
-                    CHECK_ERROR_BREAK (coll, FindByAddress (Bstr (argv [2]), dev.asOutParam()));
+                    CHECK_ERROR_BREAK (coll, FindByAddress (Bstr (a->argv [2]), dev.asOutParam()));
                     CHECK_ERROR_BREAK (dev, COMGETTER(Id) (usbId.asOutParam()));
                 }
                 else
@@ -3023,7 +3012,7 @@ static int handleControlVM(int argc, char *argv[],
                     ComPtr <IUSBDeviceCollection> coll;
                     CHECK_ERROR_BREAK (console, COMGETTER(USBDevices)(coll.asOutParam()));
                     ComPtr <IUSBDevice> dev;
-                    CHECK_ERROR_BREAK (coll, FindByAddress (Bstr (argv [2]), dev.asOutParam()));
+                    CHECK_ERROR_BREAK (coll, FindByAddress (Bstr (a->argv [2]), dev.asOutParam()));
                     CHECK_ERROR_BREAK (dev, COMGETTER(Id) (usbId.asOutParam()));
                 }
             }
@@ -3036,40 +3025,40 @@ static int handleControlVM(int argc, char *argv[],
                 CHECK_ERROR_BREAK (console, DetachUSBDevice (usbId, dev.asOutParam()));
             }
         }
-        else if (strcmp(argv[1], "setvideomodehint") == 0)
+        else if (strcmp(a->argv[1], "setvideomodehint") == 0)
         {
-            if (argc != 5 && argc != 6)
+            if (a->argc != 5 && a->argc != 6)
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
                 break;
             }
-            uint32_t xres = RTStrToUInt32(argv[2]);
-            uint32_t yres = RTStrToUInt32(argv[3]);
-            uint32_t bpp  = RTStrToUInt32(argv[4]);
+            uint32_t xres = RTStrToUInt32(a->argv[2]);
+            uint32_t yres = RTStrToUInt32(a->argv[3]);
+            uint32_t bpp  = RTStrToUInt32(a->argv[4]);
             uint32_t displayIdx = 0;
-            if (argc == 6)
-                displayIdx = RTStrToUInt32(argv[5]);
+            if (a->argc == 6)
+                displayIdx = RTStrToUInt32(a->argv[5]);
 
             ComPtr<IDisplay> display;
             CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
             CHECK_ERROR_BREAK(display, SetVideoModeHint(xres, yres, bpp, displayIdx));
         }
-        else if (strcmp(argv[1], "setcredentials") == 0)
+        else if (strcmp(a->argv[1], "setcredentials") == 0)
         {
             bool fAllowLocalLogon = true;
-            if (argc == 7)
+            if (a->argc == 7)
             {
-                if (strcmp(argv[5], "-allowlocallogon") != 0)
+                if (strcmp(a->argv[5], "-allowlocallogon") != 0)
                 {
-                    errorArgument("Invalid parameter '%s'", argv[5]);
+                    errorArgument("Invalid parameter '%s'", a->argv[5]);
                     rc = E_FAIL;
                     break;
                 }
-                if (strcmp(argv[6], "no") == 0)
+                if (strcmp(a->argv[6], "no") == 0)
                     fAllowLocalLogon = false;
             }
-            else if (argc != 5)
+            else if (a->argc != 5)
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
@@ -3078,11 +3067,11 @@ static int handleControlVM(int argc, char *argv[],
 
             ComPtr<IGuest> guest;
             CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
-            CHECK_ERROR_BREAK(guest, SetCredentials(Bstr(argv[2]), Bstr(argv[3]), Bstr(argv[4]), fAllowLocalLogon));
+            CHECK_ERROR_BREAK(guest, SetCredentials(Bstr(a->argv[2]), Bstr(a->argv[3]), Bstr(a->argv[4]), fAllowLocalLogon));
         }
-        else if (strcmp(argv[1], "dvdattach") == 0)
+        else if (strcmp(a->argv[1], "dvdattach") == 0)
         {
-            if (argc != 3)
+            if (a->argc != 3)
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
@@ -3093,19 +3082,19 @@ static int handleControlVM(int argc, char *argv[],
             ASSERT(dvdDrive);
 
             /* unmount? */
-            if (strcmp(argv[2], "none") == 0)
+            if (strcmp(a->argv[2], "none") == 0)
             {
                 CHECK_ERROR(dvdDrive, Unmount());
             }
             /* host drive? */
-            else if (strncmp(argv[2], "host:", 5) == 0)
+            else if (strncmp(a->argv[2], "host:", 5) == 0)
             {
                 ComPtr<IHost> host;
-                CHECK_ERROR(virtualBox, COMGETTER(Host)(host.asOutParam()));
+                CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
                 ComPtr<IHostDVDDriveCollection> hostDVDs;
                 CHECK_ERROR(host, COMGETTER(DVDDrives)(hostDVDs.asOutParam()));
                 ComPtr<IHostDVDDrive> hostDVDDrive;
-                rc = hostDVDs->FindByName(Bstr(argv[2] + 5), hostDVDDrive.asOutParam());
+                rc = hostDVDs->FindByName(Bstr(a->argv[2] + 5), hostDVDDrive.asOutParam());
                 if (!hostDVDDrive)
                 {
                     errorArgument("Invalid host DVD drive name");
@@ -3117,18 +3106,18 @@ static int handleControlVM(int argc, char *argv[],
             else
             {
                 /* first assume it's a UUID */
-                Guid uuid(argv[2]);
+                Guid uuid(a->argv[2]);
                 ComPtr<IDVDImage2> dvdImage;
-                rc = virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
+                rc = a->virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
                 if (FAILED(rc) || !dvdImage)
                 {
                     /* must be a filename, check if it's in the collection */
-                    rc = virtualBox->FindDVDImage(Bstr(argv[2]), dvdImage.asOutParam());
+                    rc = a->virtualBox->FindDVDImage(Bstr(a->argv[2]), dvdImage.asOutParam());
                     /* not registered, do that on the fly */
                     if (!dvdImage)
                     {
                         Guid emptyUUID;
-                        CHECK_ERROR(virtualBox, OpenDVDImage(Bstr(argv[2]), emptyUUID, dvdImage.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(a->argv[2]), emptyUUID, dvdImage.asOutParam()));
                     }
                 }
                 if (!dvdImage)
@@ -3140,9 +3129,9 @@ static int handleControlVM(int argc, char *argv[],
                 CHECK_ERROR(dvdDrive, MountImage(uuid));
             }
         }
-        else if (strcmp(argv[1], "floppyattach") == 0)
+        else if (strcmp(a->argv[1], "floppyattach") == 0)
         {
-            if (argc != 3)
+            if (a->argc != 3)
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
@@ -3154,19 +3143,19 @@ static int handleControlVM(int argc, char *argv[],
             ASSERT(floppyDrive);
 
             /* unmount? */
-            if (strcmp(argv[2], "none") == 0)
+            if (strcmp(a->argv[2], "none") == 0)
             {
                 CHECK_ERROR(floppyDrive, Unmount());
             }
             /* host drive? */
-            else if (strncmp(argv[2], "host:", 5) == 0)
+            else if (strncmp(a->argv[2], "host:", 5) == 0)
             {
                 ComPtr<IHost> host;
-                CHECK_ERROR(virtualBox, COMGETTER(Host)(host.asOutParam()));
+                CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
                 ComPtr<IHostFloppyDriveCollection> hostFloppies;
                 CHECK_ERROR(host, COMGETTER(FloppyDrives)(hostFloppies.asOutParam()));
                 ComPtr<IHostFloppyDrive> hostFloppyDrive;
-                rc = hostFloppies->FindByName(Bstr(argv[2] + 5), hostFloppyDrive.asOutParam());
+                rc = hostFloppies->FindByName(Bstr(a->argv[2] + 5), hostFloppyDrive.asOutParam());
                 if (!hostFloppyDrive)
                 {
                     errorArgument("Invalid host floppy drive name");
@@ -3178,18 +3167,18 @@ static int handleControlVM(int argc, char *argv[],
             else
             {
                 /* first assume it's a UUID */
-                Guid uuid(argv[2]);
+                Guid uuid(a->argv[2]);
                 ComPtr<IFloppyImage2> floppyImage;
-                rc = virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
+                rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
                 if (FAILED(rc) || !floppyImage)
                 {
                     /* must be a filename, check if it's in the collection */
-                    rc = virtualBox->FindFloppyImage(Bstr(argv[2]), floppyImage.asOutParam());
+                    rc = a->virtualBox->FindFloppyImage(Bstr(a->argv[2]), floppyImage.asOutParam());
                     /* not registered, do that on the fly */
                     if (!floppyImage)
                     {
                         Guid emptyUUID;
-                        CHECK_ERROR(virtualBox, OpenFloppyImage(Bstr(argv[2]), emptyUUID, floppyImage.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(a->argv[2]), emptyUUID, floppyImage.asOutParam()));
                     }
                 }
                 if (!floppyImage)
@@ -3202,9 +3191,9 @@ static int handleControlVM(int argc, char *argv[],
             }
         }
 #ifdef VBOX_WITH_MEM_BALLOONING
-        else if (strncmp(argv[1], "-guestmemoryballoon", 19) == 0)
+        else if (strncmp(a->argv[1], "-guestmemoryballoon", 19) == 0)
         {
-            if (argc != 3)
+            if (a->argc != 3)
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
@@ -3212,10 +3201,10 @@ static int handleControlVM(int argc, char *argv[],
             }
             uint32_t uVal;
             int vrc;
-            vrc = RTStrToUInt32Ex(argv[2], NULL, 0, &uVal);
+            vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
             if (vrc != VINF_SUCCESS)
             {
-                errorArgument("Error parsing guest memory balloon size '%s'", argv[2]);
+                errorArgument("Error parsing guest memory balloon size '%s'", a->argv[2]);
                 rc = E_FAIL;
                 break;
             }
@@ -3228,9 +3217,9 @@ static int handleControlVM(int argc, char *argv[],
                 CHECK_ERROR(guest, COMSETTER(MemoryBalloonSize)(uVal));
         }
 #endif
-        else if (strncmp(argv[1], "-gueststatisticsinterval", 24) == 0)
+        else if (strncmp(a->argv[1], "-gueststatisticsinterval", 24) == 0)
         {
-            if (argc != 3)
+            if (a->argc != 3)
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
@@ -3238,10 +3227,10 @@ static int handleControlVM(int argc, char *argv[],
             }
             uint32_t uVal;
             int vrc;
-            vrc = RTStrToUInt32Ex(argv[2], NULL, 0, &uVal);
+            vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
             if (vrc != VINF_SUCCESS)
             {
-                errorArgument("Error parsing guest statistics interval '%s'", argv[2]);
+                errorArgument("Error parsing guest statistics interval '%s'", a->argv[2]);
                 rc = E_FAIL;
                 break;
             }
@@ -3255,32 +3244,31 @@ static int handleControlVM(int argc, char *argv[],
         }
         else
         {
-            errorSyntax(USAGE_CONTROLVM, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
+            errorSyntax(USAGE_CONTROLVM, "Invalid parameter '%s'", Utf8Str(a->argv[1]).raw());
             rc = E_FAIL;
         }
     }
     while (0);
 
-    session->Close();
+    a->session->Close();
 
     return SUCCEEDED (rc) ? 0 : 1;
 }
 
-static int handleDiscardState(int argc, char *argv[],
-                              ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleDiscardState(HandlerArg *a)
 {
     HRESULT rc;
 
-    if (argc != 1)
+    if (a->argc != 1)
         return errorSyntax(USAGE_DISCARDSTATE, "Incorrect number of parameters");
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
     }
     if (machine)
     {
@@ -3289,15 +3277,15 @@ static int handleDiscardState(int argc, char *argv[],
             /* we have to open a session for this task */
             Guid guid;
             machine->COMGETTER(Id)(guid.asOutParam());
-            CHECK_ERROR_BREAK(virtualBox, OpenSession(session, guid));
+            CHECK_ERROR_BREAK(a->virtualBox, OpenSession(a->session, guid));
             do
             {
                 ComPtr<IConsole> console;
-                CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
+                CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
                 CHECK_ERROR_BREAK(console, DiscardSavedState());
             }
             while (0);
-            CHECK_ERROR_BREAK(session, Close());
+            CHECK_ERROR_BREAK(a->session, Close());
         }
         while (0);
     }
@@ -3305,21 +3293,20 @@ static int handleDiscardState(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleAdoptdState(int argc, char *argv[],
-                             ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleAdoptdState(HandlerArg *a)
 {
     HRESULT rc;
 
-    if (argc != 2)
+    if (a->argc != 2)
         return errorSyntax(USAGE_ADOPTSTATE, "Incorrect number of parameters");
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
     }
     if (machine)
     {
@@ -3328,15 +3315,15 @@ static int handleAdoptdState(int argc, char *argv[],
             /* we have to open a session for this task */
             Guid guid;
             machine->COMGETTER(Id)(guid.asOutParam());
-            CHECK_ERROR_BREAK(virtualBox, OpenSession(session, guid));
+            CHECK_ERROR_BREAK(a->virtualBox, OpenSession(a->session, guid));
             do
             {
                 ComPtr<IConsole> console;
-                CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
-                CHECK_ERROR_BREAK(console, AdoptSavedState (Bstr (argv[1])));
+                CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
+                CHECK_ERROR_BREAK(console, AdoptSavedState (Bstr (a->argv[1])));
             }
             while (0);
-            CHECK_ERROR_BREAK(session, Close());
+            CHECK_ERROR_BREAK(a->session, Close());
         }
         while (0);
     }
@@ -3344,23 +3331,22 @@ static int handleAdoptdState(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleSnapshot(int argc, char *argv[],
-                          ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleSnapshot(HandlerArg *a)
 {
     HRESULT rc;
 
     /* we need at least a VM and a command */
-    if (argc < 2)
+    if (a->argc < 2)
         return errorSyntax(USAGE_SNAPSHOT, "Not enough parameters");
 
     /* the first argument must be the VM */
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
     }
     if (!machine)
         return 1;
@@ -3370,32 +3356,32 @@ static int handleSnapshot(int argc, char *argv[],
     do
     {
         /* we have to open a session for this task. First try an existing session */
-        rc = virtualBox->OpenExistingSession(session, guid);
+        rc = a->virtualBox->OpenExistingSession(a->session, guid);
         if (FAILED(rc))
-            CHECK_ERROR_BREAK(virtualBox, OpenSession(session, guid));
+            CHECK_ERROR_BREAK(a->virtualBox, OpenSession(a->session, guid));
         ComPtr<IConsole> console;
-        CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
 
         /* switch based on the command */
-        if (strcmp(argv[1], "take") == 0)
+        if (strcmp(a->argv[1], "take") == 0)
         {
             /* there must be a name */
-            if (argc < 3)
+            if (a->argc < 3)
             {
                 errorSyntax(USAGE_SNAPSHOT, "Missing snapshot name");
                 rc = E_FAIL;
                 break;
             }
-            Bstr name(argv[2]);
-            if ((argc > 3) && ((argc != 5) || (strcmp(argv[3], "-desc") != 0)))
+            Bstr name(a->argv[2]);
+            if ((a->argc > 3) && ((a->argc != 5) || (strcmp(a->argv[3], "-desc") != 0)))
             {
                 errorSyntax(USAGE_SNAPSHOT, "Incorrect description format");
                 rc = E_FAIL;
                 break;
             }
             Bstr desc;
-            if (argc == 5)
-                desc = argv[4];
+            if (a->argc == 5)
+                desc = a->argv[4];
             ComPtr<IProgress> progress;
             CHECK_ERROR_BREAK(console, TakeSnapshot(name, desc, progress.asOutParam()));
 
@@ -3410,10 +3396,10 @@ static int handleSnapshot(int argc, char *argv[],
                     RTPrintf("Error: failed to take snapshot. No error message available!\n");
             }
         }
-        else if (strcmp(argv[1], "discard") == 0)
+        else if (strcmp(a->argv[1], "discard") == 0)
         {
             /* exactly one parameter: snapshot name */
-            if (argc != 3)
+            if (a->argc != 3)
             {
                 errorSyntax(USAGE_SNAPSHOT, "Expecting snapshot name only");
                 rc = E_FAIL;
@@ -3423,7 +3409,7 @@ static int handleSnapshot(int argc, char *argv[],
             ComPtr<ISnapshot> snapshot;
 
             /* assume it's a UUID */
-            Guid guid(argv[2]);
+            Guid guid(a->argv[2]);
             if (!guid.isEmpty())
             {
                 CHECK_ERROR_BREAK(machine, GetSnapshot(guid, snapshot.asOutParam()));
@@ -3431,7 +3417,7 @@ static int handleSnapshot(int argc, char *argv[],
             else
             {
                 /* then it must be a name */
-                CHECK_ERROR_BREAK(machine, FindSnapshot(Bstr(argv[2]), snapshot.asOutParam()));
+                CHECK_ERROR_BREAK(machine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
             }
 
             snapshot->COMGETTER(Id)(guid.asOutParam());
@@ -3450,18 +3436,18 @@ static int handleSnapshot(int argc, char *argv[],
                     RTPrintf("Error: failed to discard snapshot. No error message available!\n");
             }
         }
-        else if (strcmp(argv[1], "discardcurrent") == 0)
+        else if (strcmp(a->argv[1], "discardcurrent") == 0)
         {
-            if (   (argc != 3)
-                || (   (strcmp(argv[2], "-state") != 0)
-                    && (strcmp(argv[2], "-all") != 0)))
+            if (   (a->argc != 3)
+                || (   (strcmp(a->argv[2], "-state") != 0)
+                    && (strcmp(a->argv[2], "-all") != 0)))
             {
-                errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(argv[2]).raw());
+                errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[2]).raw());
                 rc = E_FAIL;
                 break;
             }
             bool fAll = false;
-            if (strcmp(argv[2], "-all") == 0)
+            if (strcmp(a->argv[2], "-all") == 0)
                 fAll = true;
 
             ComPtr<IProgress> progress;
@@ -3487,9 +3473,9 @@ static int handleSnapshot(int argc, char *argv[],
             }
 
         }
-        else if (strcmp(argv[1], "edit") == 0)
+        else if (strcmp(a->argv[1], "edit") == 0)
         {
-            if (argc < 3)
+            if (a->argc < 3)
             {
                 errorSyntax(USAGE_SNAPSHOT, "Missing snapshot name");
                 rc = E_FAIL;
@@ -3498,14 +3484,14 @@ static int handleSnapshot(int argc, char *argv[],
 
             ComPtr<ISnapshot> snapshot;
 
-            if (strcmp(argv[2], "-current") == 0)
+            if (strcmp(a->argv[2], "-current") == 0)
             {
                 CHECK_ERROR_BREAK(machine, COMGETTER(CurrentSnapshot)(snapshot.asOutParam()));
             }
             else
             {
                 /* assume it's a UUID */
-                Guid guid(argv[2]);
+                Guid guid(a->argv[2]);
                 if (!guid.isEmpty())
                 {
                     CHECK_ERROR_BREAK(machine, GetSnapshot(guid, snapshot.asOutParam()));
@@ -3513,48 +3499,48 @@ static int handleSnapshot(int argc, char *argv[],
                 else
                 {
                     /* then it must be a name */
-                    CHECK_ERROR_BREAK(machine, FindSnapshot(Bstr(argv[2]), snapshot.asOutParam()));
+                    CHECK_ERROR_BREAK(machine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
                 }
             }
 
             /* parse options */
-            for (int i = 3; i < argc; i++)
+            for (int i = 3; i < a->argc; i++)
             {
-                if (strcmp(argv[i], "-newname") == 0)
+                if (strcmp(a->argv[i], "-newname") == 0)
                 {
-                    if (argc <= i + 1)
+                    if (a->argc <= i + 1)
                     {
-                        errorArgument("Missing argument to '%s'", argv[i]);
+                        errorArgument("Missing argument to '%s'", a->argv[i]);
                         rc = E_FAIL;
                         break;
                     }
                     i++;
-                    snapshot->COMSETTER(Name)(Bstr(argv[i]));
+                    snapshot->COMSETTER(Name)(Bstr(a->argv[i]));
                 }
-                else if (strcmp(argv[i], "-newdesc") == 0)
+                else if (strcmp(a->argv[i], "-newdesc") == 0)
                 {
-                    if (argc <= i + 1)
+                    if (a->argc <= i + 1)
                     {
-                        errorArgument("Missing argument to '%s'", argv[i]);
+                        errorArgument("Missing argument to '%s'", a->argv[i]);
                         rc = E_FAIL;
                         break;
                     }
                     i++;
-                    snapshot->COMSETTER(Description)(Bstr(argv[i]));
+                    snapshot->COMSETTER(Description)(Bstr(a->argv[i]));
                 }
                 else
                 {
-                    errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+                    errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
                     rc = E_FAIL;
                     break;
                 }
             }
 
         }
-        else if (strcmp(argv[1], "showvminfo") == 0)
+        else if (strcmp(a->argv[1], "showvminfo") == 0)
         {
             /* exactly one parameter: snapshot name */
-            if (argc != 3)
+            if (a->argc != 3)
             {
                 errorSyntax(USAGE_SNAPSHOT, "Expecting snapshot name only");
                 rc = E_FAIL;
@@ -3564,7 +3550,7 @@ static int handleSnapshot(int argc, char *argv[],
             ComPtr<ISnapshot> snapshot;
 
             /* assume it's a UUID */
-            Guid guid(argv[2]);
+            Guid guid(a->argv[2]);
             if (!guid.isEmpty())
             {
                 CHECK_ERROR_BREAK(machine, GetSnapshot(guid, snapshot.asOutParam()));
@@ -3572,39 +3558,38 @@ static int handleSnapshot(int argc, char *argv[],
             else
             {
                 /* then it must be a name */
-                CHECK_ERROR_BREAK(machine, FindSnapshot(Bstr(argv[2]), snapshot.asOutParam()));
+                CHECK_ERROR_BREAK(machine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
             }
 
             /* get the machine of the given snapshot */
             ComPtr<IMachine> machine;
             snapshot->COMGETTER(Machine)(machine.asOutParam());
-            showVMInfo(virtualBox, machine, console);
+            showVMInfo(a->virtualBox, machine, console);
         }
         else
         {
-            errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
+            errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[1]).raw());
             rc = E_FAIL;
         }
     } while (0);
 
-    session->Close();
+    a->session->Close();
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleGetExtraData(int argc, char *argv[],
-                              ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleGetExtraData(HandlerArg *a)
 {
     HRESULT rc = S_OK;
 
-    if (argc != 2)
+    if (a->argc != 2)
         return errorSyntax(USAGE_GETEXTRADATA, "Incorrect number of parameters");
 
     /* global data? */
-    if (strcmp(argv[0], "global") == 0)
+    if (strcmp(a->argv[0], "global") == 0)
     {
         /* enumeration? */
-        if (strcmp(argv[1], "enumerate") == 0)
+        if (strcmp(a->argv[1], "enumerate") == 0)
         {
             Bstr extraDataKey;
 
@@ -3612,8 +3597,8 @@ static int handleGetExtraData(int argc, char *argv[],
             {
                 Bstr nextExtraDataKey;
                 Bstr nextExtraDataValue;
-                HRESULT rcEnum = virtualBox->GetNextExtraDataKey(extraDataKey, nextExtraDataKey.asOutParam(),
-                                                                 nextExtraDataValue.asOutParam());
+                HRESULT rcEnum = a->virtualBox->GetNextExtraDataKey(extraDataKey, nextExtraDataKey.asOutParam(),
+                                                                    nextExtraDataValue.asOutParam());
                 extraDataKey = nextExtraDataKey;
 
                 if (SUCCEEDED(rcEnum) && extraDataKey)
@@ -3623,7 +3608,7 @@ static int handleGetExtraData(int argc, char *argv[],
         else
         {
             Bstr value;
-            CHECK_ERROR(virtualBox, GetExtraData(Bstr(argv[1]), value.asOutParam()));
+            CHECK_ERROR(a->virtualBox, GetExtraData(Bstr(a->argv[1]), value.asOutParam()));
             if (value)
                 RTPrintf("Value: %lS\n", value.raw());
             else
@@ -3634,16 +3619,16 @@ static int handleGetExtraData(int argc, char *argv[],
     {
         ComPtr<IMachine> machine;
         /* assume it's a UUID */
-        rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+        rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
         if (FAILED(rc) || !machine)
         {
             /* must be a name */
-            CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
         }
         if (machine)
         {
             /* enumeration? */
-            if (strcmp(argv[1], "enumerate") == 0)
+            if (strcmp(a->argv[1], "enumerate") == 0)
             {
                 Bstr extraDataKey;
 
@@ -3664,7 +3649,7 @@ static int handleGetExtraData(int argc, char *argv[],
             else
             {
                 Bstr value;
-                CHECK_ERROR(machine, GetExtraData(Bstr(argv[1]), value.asOutParam()));
+                CHECK_ERROR(machine, GetExtraData(Bstr(a->argv[1]), value.asOutParam()));
                 if (value)
                     RTPrintf("Value: %lS\n", value.raw());
                 else
@@ -3675,21 +3660,20 @@ static int handleGetExtraData(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleSetExtraData(int argc, char *argv[],
-                              ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleSetExtraData(HandlerArg *a)
 {
     HRESULT rc = S_OK;
 
-    if (argc < 2)
+    if (a->argc < 2)
         return errorSyntax(USAGE_SETEXTRADATA, "Not enough parameters");
 
     /* global data? */
-    if (strcmp(argv[0], "global") == 0)
+    if (strcmp(a->argv[0], "global") == 0)
     {
-        if (argc < 3)
-            CHECK_ERROR(virtualBox, SetExtraData(Bstr(argv[1]), NULL));
-        else if (argc == 3)
-            CHECK_ERROR(virtualBox, SetExtraData(Bstr(argv[1]), Bstr(argv[2])));
+        if (a->argc < 3)
+            CHECK_ERROR(a->virtualBox, SetExtraData(Bstr(a->argv[1]), NULL));
+        else if (a->argc == 3)
+            CHECK_ERROR(a->virtualBox, SetExtraData(Bstr(a->argv[1]), Bstr(a->argv[2])));
         else
             return errorSyntax(USAGE_SETEXTRADATA, "Too many parameters");
     }
@@ -3697,18 +3681,18 @@ static int handleSetExtraData(int argc, char *argv[],
     {
         ComPtr<IMachine> machine;
         /* assume it's a UUID */
-        rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+        rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
         if (FAILED(rc) || !machine)
         {
             /* must be a name */
-            CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
         }
         if (machine)
         {
-            if (argc < 3)
-                CHECK_ERROR(machine, SetExtraData(Bstr(argv[1]), NULL));
-            else if (argc == 3)
-                CHECK_ERROR(machine, SetExtraData(Bstr(argv[1]), Bstr(argv[2])));
+            if (a->argc < 3)
+                CHECK_ERROR(machine, SetExtraData(Bstr(a->argv[1]), NULL));
+            else if (a->argc == 3)
+                CHECK_ERROR(machine, SetExtraData(Bstr(a->argv[1]), Bstr(a->argv[2])));
             else
                 return errorSyntax(USAGE_SETEXTRADATA, "Too many parameters");
         }
@@ -3716,96 +3700,94 @@ static int handleSetExtraData(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleSetProperty(int argc, char *argv[],
-                             ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleSetProperty(HandlerArg *a)
 {
     HRESULT rc;
 
     /* there must be two arguments: property name and value */
-    if (argc != 2)
+    if (a->argc != 2)
         return errorSyntax(USAGE_SETPROPERTY, "Incorrect number of parameters");
 
     ComPtr<ISystemProperties> systemProperties;
-    virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+    a->virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
 
-    if (strcmp(argv[0], "hdfolder") == 0)
+    if (strcmp(a->argv[0], "hdfolder") == 0)
     {
         /* reset to default? */
-        if (strcmp(argv[1], "default") == 0)
+        if (strcmp(a->argv[1], "default") == 0)
             CHECK_ERROR(systemProperties, COMSETTER(DefaultHardDiskFolder)(NULL));
         else
-            CHECK_ERROR(systemProperties, COMSETTER(DefaultHardDiskFolder)(Bstr(argv[1])));
+            CHECK_ERROR(systemProperties, COMSETTER(DefaultHardDiskFolder)(Bstr(a->argv[1])));
     }
-    else if (strcmp(argv[0], "machinefolder") == 0)
+    else if (strcmp(a->argv[0], "machinefolder") == 0)
     {
         /* reset to default? */
-        if (strcmp(argv[1], "default") == 0)
+        if (strcmp(a->argv[1], "default") == 0)
             CHECK_ERROR(systemProperties, COMSETTER(DefaultMachineFolder)(NULL));
         else
-            CHECK_ERROR(systemProperties, COMSETTER(DefaultMachineFolder)(Bstr(argv[1])));
+            CHECK_ERROR(systemProperties, COMSETTER(DefaultMachineFolder)(Bstr(a->argv[1])));
     }
-    else if (strcmp(argv[0], "vrdpauthlibrary") == 0)
+    else if (strcmp(a->argv[0], "vrdpauthlibrary") == 0)
     {
         /* reset to default? */
-        if (strcmp(argv[1], "default") == 0)
+        if (strcmp(a->argv[1], "default") == 0)
             CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(NULL));
         else
-            CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(Bstr(argv[1])));
+            CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(Bstr(a->argv[1])));
     }
-    else if (strcmp(argv[0], "websrvauthlibrary") == 0)
+    else if (strcmp(a->argv[0], "websrvauthlibrary") == 0)
     {
         /* reset to default? */
-        if (strcmp(argv[1], "default") == 0)
+        if (strcmp(a->argv[1], "default") == 0)
             CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(NULL));
         else
-            CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(Bstr(argv[1])));
+            CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(Bstr(a->argv[1])));
     }
-    else if (strcmp(argv[0], "hwvirtexenabled") == 0)
+    else if (strcmp(a->argv[0], "hwvirtexenabled") == 0)
     {
-        if (strcmp(argv[1], "yes") == 0)
+        if (strcmp(a->argv[1], "yes") == 0)
             CHECK_ERROR(systemProperties, COMSETTER(HWVirtExEnabled)(TRUE));
-        else if (strcmp(argv[1], "no") == 0)
+        else if (strcmp(a->argv[1], "no") == 0)
             CHECK_ERROR(systemProperties, COMSETTER(HWVirtExEnabled)(FALSE));
         else
-            return errorArgument("Invalid value '%s' for hardware virtualization extension flag", argv[1]);
+            return errorArgument("Invalid value '%s' for hardware virtualization extension flag", a->argv[1]);
     }
-    else if (strcmp(argv[0], "loghistorycount") == 0)
+    else if (strcmp(a->argv[0], "loghistorycount") == 0)
     {
         uint32_t uVal;
         int vrc;
-        vrc = RTStrToUInt32Ex(argv[1], NULL, 0, &uVal);
+        vrc = RTStrToUInt32Ex(a->argv[1], NULL, 0, &uVal);
         if (vrc != VINF_SUCCESS)
-            return errorArgument("Error parsing Log history count '%s'", argv[1]);
+            return errorArgument("Error parsing Log history count '%s'", a->argv[1]);
         CHECK_ERROR(systemProperties, COMSETTER(LogHistoryCount)(uVal));
     }
     else
-        return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", argv[0]);
+        return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", a->argv[0]);
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleUSBFilter (int argc, char *argv[],
-                            ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+static int handleUSBFilter (HandlerArg *a)
 {
     HRESULT rc = S_OK;
     USBFilterCmd cmd;
 
     /* at least: 0: command, 1: index, 2: -target, 3: <target value> */
-    if (argc < 4)
+    if (a->argc < 4)
         return errorSyntax(USAGE_USBFILTER, "Not enough parameters");
 
     /* which command? */
     cmd.mAction = USBFilterCmd::Invalid;
-    if      (strcmp (argv [0], "add") == 0)     cmd.mAction = USBFilterCmd::Add;
-    else if (strcmp (argv [0], "modify") == 0)  cmd.mAction = USBFilterCmd::Modify;
-    else if (strcmp (argv [0], "remove") == 0)  cmd.mAction = USBFilterCmd::Remove;
+    if      (strcmp (a->argv [0], "add") == 0)     cmd.mAction = USBFilterCmd::Add;
+    else if (strcmp (a->argv [0], "modify") == 0)  cmd.mAction = USBFilterCmd::Modify;
+    else if (strcmp (a->argv [0], "remove") == 0)  cmd.mAction = USBFilterCmd::Remove;
 
     if (cmd.mAction == USBFilterCmd::Invalid)
-        return errorSyntax(USAGE_USBFILTER, "Invalid parameter '%s'", argv[0]);
+        return errorSyntax(USAGE_USBFILTER, "Invalid parameter '%s'", a->argv[0]);
 
     /* which index? */
-    if (VINF_SUCCESS !=  RTStrToUInt32Full (argv[1], 10, &cmd.mIndex))
-        return errorSyntax(USAGE_USBFILTER, "Invalid index '%s'", argv[1]);
+    if (VINF_SUCCESS !=  RTStrToUInt32Full (a->argv[1], 10, &cmd.mIndex))
+        return errorSyntax(USAGE_USBFILTER, "Invalid index '%s'", a->argv[1]);
 
     switch (cmd.mAction)
     {
@@ -3813,7 +3795,7 @@ static int handleUSBFilter (int argc, char *argv[],
         case USBFilterCmd::Modify:
         {
             /* at least: 0: command, 1: index, 2: -target, 3: <target value>, 4: -name, 5: <name value> */
-            if (argc < 6)
+            if (a->argc < 6)
             {
                 if (cmd.mAction == USBFilterCmd::Add)
                     return errorSyntax(USAGE_USBFILTER_ADD, "Not enough parameters");
@@ -3827,120 +3809,120 @@ static int handleUSBFilter (int argc, char *argv[],
             if (cmd.mAction == USBFilterCmd::Add)
                 cmd.mFilter.mActive = true;
 
-            for (int i = 2; i < argc; i++)
+            for (int i = 2; i < a->argc; i++)
             {
-                if  (strcmp(argv [i], "-target") == 0)
+                if  (strcmp(a->argv [i], "-target") == 0)
                 {
-                    if (argc <= i + 1 || !*argv[i+1])
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1 || !*a->argv[i+1])
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    if (strcmp (argv [i], "global") == 0)
+                    if (strcmp (a->argv [i], "global") == 0)
                         cmd.mGlobal = true;
                     else
                     {
                         /* assume it's a UUID of a machine */
-                        rc = aVirtualBox->GetMachine(Guid(argv[i]), cmd.mMachine.asOutParam());
+                        rc = a->virtualBox->GetMachine(Guid(a->argv[i]), cmd.mMachine.asOutParam());
                         if (FAILED(rc) || !cmd.mMachine)
                         {
                             /* must be a name */
-                            CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[i]), cmd.mMachine.asOutParam()), 1);
+                            CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[i]), cmd.mMachine.asOutParam()), 1);
                         }
                     }
                 }
-                else if (strcmp(argv [i], "-name") == 0)
+                else if (strcmp(a->argv [i], "-name") == 0)
                 {
-                    if (argc <= i + 1 || !*argv[i+1])
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1 || !*a->argv[i+1])
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mName = argv [i];
+                    cmd.mFilter.mName = a->argv [i];
                 }
-                else if (strcmp(argv [i], "-active") == 0)
+                else if (strcmp(a->argv [i], "-active") == 0)
                 {
-                    if (argc <= i + 1)
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1)
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    if (strcmp (argv [i], "yes") == 0)
+                    if (strcmp (a->argv [i], "yes") == 0)
                         cmd.mFilter.mActive = true;
-                    else if (strcmp (argv [i], "no") == 0)
+                    else if (strcmp (a->argv [i], "no") == 0)
                         cmd.mFilter.mActive = false;
                     else
-                        return errorArgument("Invalid -active argument '%s'", argv[i]);
+                        return errorArgument("Invalid -active argument '%s'", a->argv[i]);
                 }
-                else if (strcmp(argv [i], "-vendorid") == 0)
+                else if (strcmp(a->argv [i], "-vendorid") == 0)
                 {
-                    if (argc <= i + 1)
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1)
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mVendorId = argv [i];
+                    cmd.mFilter.mVendorId = a->argv [i];
                 }
-                else if (strcmp(argv [i], "-productid") == 0)
+                else if (strcmp(a->argv [i], "-productid") == 0)
                 {
-                    if (argc <= i + 1)
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1)
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mProductId = argv [i];
+                    cmd.mFilter.mProductId = a->argv [i];
                 }
-                else if (strcmp(argv [i], "-revision") == 0)
+                else if (strcmp(a->argv [i], "-revision") == 0)
                 {
-                    if (argc <= i + 1)
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1)
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mRevision = argv [i];
+                    cmd.mFilter.mRevision = a->argv [i];
                 }
-                else if (strcmp(argv [i], "-manufacturer") == 0)
+                else if (strcmp(a->argv [i], "-manufacturer") == 0)
                 {
-                    if (argc <= i + 1)
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1)
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mManufacturer = argv [i];
+                    cmd.mFilter.mManufacturer = a->argv [i];
                 }
-                else if (strcmp(argv [i], "-product") == 0)
+                else if (strcmp(a->argv [i], "-product") == 0)
                 {
-                    if (argc <= i + 1)
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1)
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mProduct = argv [i];
+                    cmd.mFilter.mProduct = a->argv [i];
                 }
-                else if (strcmp(argv [i], "-remote") == 0)
+                else if (strcmp(a->argv [i], "-remote") == 0)
                 {
-                    if (argc <= i + 1)
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1)
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mRemote = argv[i];
+                    cmd.mFilter.mRemote = a->argv[i];
                 }
-                else if (strcmp(argv [i], "-serialnumber") == 0)
+                else if (strcmp(a->argv [i], "-serialnumber") == 0)
                 {
-                    if (argc <= i + 1)
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1)
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mSerialNumber = argv [i];
+                    cmd.mFilter.mSerialNumber = a->argv [i];
                 }
-                else if (strcmp(argv [i], "-maskedinterfaces") == 0)
+                else if (strcmp(a->argv [i], "-maskedinterfaces") == 0)
                 {
-                    if (argc <= i + 1)
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1)
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
                     uint32_t u32;
-                    rc = RTStrToUInt32Full(argv[i], 0, &u32);
+                    rc = RTStrToUInt32Full(a->argv[i], 0, &u32);
                     if (RT_FAILURE(rc))
-                        return errorArgument("Failed to convert the -maskedinterfaces value '%s' to a number, rc=%Rrc", argv[i], rc);
+                        return errorArgument("Failed to convert the -maskedinterfaces value '%s' to a number, rc=%Rrc", a->argv[i], rc);
                     cmd.mFilter.mMaskedInterfaces = u32;
                 }
-                else if (strcmp(argv [i], "-action") == 0)
+                else if (strcmp(a->argv [i], "-action") == 0)
                 {
-                    if (argc <= i + 1)
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1)
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    if (strcmp (argv [i], "ignore") == 0)
+                    if (strcmp (a->argv [i], "ignore") == 0)
                         cmd.mFilter.mAction = USBDeviceFilterAction_Ignore;
-                    else if (strcmp (argv [i], "hold") == 0)
+                    else if (strcmp (a->argv [i], "hold") == 0)
                         cmd.mFilter.mAction = USBDeviceFilterAction_Hold;
                     else
-                        return errorArgument("Invalid USB filter action '%s'", argv[i]);
+                        return errorArgument("Invalid USB filter action '%s'", a->argv[i]);
                 }
                 else
                     return errorSyntax(cmd.mAction == USBFilterCmd::Add ? USAGE_USBFILTER_ADD : USAGE_USBFILTER_MODIFY,
-                                       "Unknown option '%s'", argv[i]);
+                                       "Unknown option '%s'", a->argv[i]);
             }
 
             if (cmd.mAction == USBFilterCmd::Add)
@@ -3966,26 +3948,26 @@ static int handleUSBFilter (int argc, char *argv[],
         case USBFilterCmd::Remove:
         {
             /* at least: 0: command, 1: index, 2: -target, 3: <target value> */
-            if (argc < 4)
+            if (a->argc < 4)
                 return errorSyntax(USAGE_USBFILTER_REMOVE, "Not enough parameters");
 
-            for (int i = 2; i < argc; i++)
+            for (int i = 2; i < a->argc; i++)
             {
-                if  (strcmp(argv [i], "-target") == 0)
+                if  (strcmp(a->argv [i], "-target") == 0)
                 {
-                    if (argc <= i + 1 || !*argv[i+1])
-                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    if (a->argc <= i + 1 || !*a->argv[i+1])
+                        return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    if (strcmp (argv [i], "global") == 0)
+                    if (strcmp (a->argv [i], "global") == 0)
                         cmd.mGlobal = true;
                     else
                     {
                         /* assume it's a UUID of a machine */
-                        rc = aVirtualBox->GetMachine(Guid(argv[i]), cmd.mMachine.asOutParam());
+                        rc = a->virtualBox->GetMachine(Guid(a->argv[i]), cmd.mMachine.asOutParam());
                         if (FAILED(rc) || !cmd.mMachine)
                         {
                             /* must be a name */
-                            CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[i]), cmd.mMachine.asOutParam()), 1);
+                            CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[i]), cmd.mMachine.asOutParam()), 1);
                         }
                     }
                 }
@@ -4006,15 +3988,15 @@ static int handleUSBFilter (int argc, char *argv[],
     ComPtr <IHost> host;
     ComPtr <IUSBController> ctl;
     if (cmd.mGlobal)
-        CHECK_ERROR_RET (aVirtualBox, COMGETTER(Host) (host.asOutParam()), 1);
+        CHECK_ERROR_RET (a->virtualBox, COMGETTER(Host) (host.asOutParam()), 1);
     else
     {
         Guid uuid;
         cmd.mMachine->COMGETTER(Id)(uuid.asOutParam());
         /* open a session for the VM */
-        CHECK_ERROR_RET (aVirtualBox, OpenSession(aSession, uuid), 1);
+        CHECK_ERROR_RET (a->virtualBox, OpenSession(a->session, uuid), 1);
         /* get the mutable session machine */
-        aSession->COMGETTER(Machine)(cmd.mMachine.asOutParam());
+        a->session->COMGETTER(Machine)(cmd.mMachine.asOutParam());
         /* and get the USB controller */
         CHECK_ERROR_RET (cmd.mMachine, COMGETTER(USBController) (ctl.asOutParam()), 1);
     }
@@ -4154,38 +4136,37 @@ static int handleUSBFilter (int argc, char *argv[],
     {
         /* commit and close the session */
         CHECK_ERROR(cmd.mMachine, SaveSettings());
-        aSession->Close();
+        a->session->Close();
     }
 
     return SUCCEEDED (rc) ? 0 : 1;
 }
 
-static int handleSharedFolder (int argc, char *argv[],
-                               ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+static int handleSharedFolder (HandlerArg *a)
 {
     HRESULT rc;
 
     /* we need at least a command and target */
-    if (argc < 2)
+    if (a->argc < 2)
         return errorSyntax(USAGE_SHAREDFOLDER, "Not enough parameters");
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = aVirtualBox->GetMachine(Guid(argv[1]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Guid(a->argv[1]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(aVirtualBox, FindMachine(Bstr(argv[1]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[1]), machine.asOutParam()));
     }
     if (!machine)
         return 1;
     Guid uuid;
     machine->COMGETTER(Id)(uuid.asOutParam());
 
-    if (strcmp(argv[0], "add") == 0)
+    if (strcmp(a->argv[0], "add") == 0)
     {
         /* we need at least four more parameters */
-        if (argc < 5)
+        if (a->argc < 5)
             return errorSyntax(USAGE_SHAREDFOLDER_ADD, "Not enough parameters");
 
         char *name = NULL;
@@ -4193,32 +4174,32 @@ static int handleSharedFolder (int argc, char *argv[],
         bool fTransient = false;
         bool fWritable = true;
 
-        for (int i = 2; i < argc; i++)
+        for (int i = 2; i < a->argc; i++)
         {
-            if (strcmp(argv[i], "-name") == 0)
+            if (strcmp(a->argv[i], "-name") == 0)
             {
-                if (argc <= i + 1 || !*argv[i+1])
-                    return errorArgument("Missing argument to '%s'", argv[i]);
+                if (a->argc <= i + 1 || !*a->argv[i+1])
+                    return errorArgument("Missing argument to '%s'", a->argv[i]);
                 i++;
-                name = argv[i];
+                name = a->argv[i];
             }
-            else if (strcmp(argv[i], "-hostpath") == 0)
+            else if (strcmp(a->argv[i], "-hostpath") == 0)
             {
-                if (argc <= i + 1 || !*argv[i+1])
-                    return errorArgument("Missing argument to '%s'", argv[i]);
+                if (a->argc <= i + 1 || !*a->argv[i+1])
+                    return errorArgument("Missing argument to '%s'", a->argv[i]);
                 i++;
-                hostpath = argv[i];
+                hostpath = a->argv[i];
             }
-            else if (strcmp(argv[i], "-readonly") == 0)
+            else if (strcmp(a->argv[i], "-readonly") == 0)
             {
                 fWritable = false;
             }
-            else if (strcmp(argv[i], "-transient") == 0)
+            else if (strcmp(a->argv[i], "-transient") == 0)
             {
                 fTransient = true;
             }
             else
-                return errorSyntax(USAGE_SHAREDFOLDER_ADD, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+                return errorSyntax(USAGE_SHAREDFOLDER_ADD, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
         }
 
         if (NULL != strstr(name, " "))
@@ -4235,57 +4216,57 @@ static int handleSharedFolder (int argc, char *argv[],
             ComPtr <IConsole> console;
 
             /* open an existing session for the VM */
-            CHECK_ERROR_RET(aVirtualBox, OpenExistingSession (aSession, uuid), 1);
+            CHECK_ERROR_RET(a->virtualBox, OpenExistingSession (a->session, uuid), 1);
             /* get the session machine */
-            CHECK_ERROR_RET(aSession, COMGETTER(Machine)(machine.asOutParam()), 1);
+            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
             /* get the session console */
-            CHECK_ERROR_RET(aSession, COMGETTER(Console)(console.asOutParam()), 1);
+            CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), 1);
 
             CHECK_ERROR(console, CreateSharedFolder(Bstr(name), Bstr(hostpath), fWritable));
 
             if (console)
-                aSession->Close();
+                a->session->Close();
         }
         else
         {
             /* open a session for the VM */
-            CHECK_ERROR_RET (aVirtualBox, OpenSession(aSession, uuid), 1);
+            CHECK_ERROR_RET (a->virtualBox, OpenSession(a->session, uuid), 1);
 
             /* get the mutable session machine */
-            aSession->COMGETTER(Machine)(machine.asOutParam());
+            a->session->COMGETTER(Machine)(machine.asOutParam());
 
             CHECK_ERROR(machine, CreateSharedFolder(Bstr(name), Bstr(hostpath), fWritable));
 
             if (SUCCEEDED(rc))
                 CHECK_ERROR(machine, SaveSettings());
 
-            aSession->Close();
+            a->session->Close();
         }
     }
-    else if (strcmp(argv[0], "remove") == 0)
+    else if (strcmp(a->argv[0], "remove") == 0)
     {
         /* we need at least two more parameters */
-        if (argc < 3)
+        if (a->argc < 3)
             return errorSyntax(USAGE_SHAREDFOLDER_REMOVE, "Not enough parameters");
 
         char *name = NULL;
         bool fTransient = false;
 
-        for (int i = 2; i < argc; i++)
+        for (int i = 2; i < a->argc; i++)
         {
-            if (strcmp(argv[i], "-name") == 0)
+            if (strcmp(a->argv[i], "-name") == 0)
             {
-                if (argc <= i + 1 || !*argv[i+1])
-                    return errorArgument("Missing argument to '%s'", argv[i]);
+                if (a->argc <= i + 1 || !*a->argv[i+1])
+                    return errorArgument("Missing argument to '%s'", a->argv[i]);
                 i++;
-                name = argv[i];
+                name = a->argv[i];
             }
-            else if (strcmp(argv[i], "-transient") == 0)
+            else if (strcmp(a->argv[i], "-transient") == 0)
             {
                 fTransient = true;
             }
             else
-                return errorSyntax(USAGE_SHAREDFOLDER_REMOVE, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+                return errorSyntax(USAGE_SHAREDFOLDER_REMOVE, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
         }
 
         /* required arguments */
@@ -4297,55 +4278,54 @@ static int handleSharedFolder (int argc, char *argv[],
             ComPtr <IConsole> console;
 
             /* open an existing session for the VM */
-            CHECK_ERROR_RET(aVirtualBox, OpenExistingSession (aSession, uuid), 1);
+            CHECK_ERROR_RET(a->virtualBox, OpenExistingSession (a->session, uuid), 1);
             /* get the session machine */
-            CHECK_ERROR_RET(aSession, COMGETTER(Machine)(machine.asOutParam()), 1);
+            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
             /* get the session console */
-            CHECK_ERROR_RET(aSession, COMGETTER(Console)(console.asOutParam()), 1);
+            CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), 1);
 
             CHECK_ERROR(console, RemoveSharedFolder(Bstr(name)));
 
             if (console)
-                aSession->Close();
+                a->session->Close();
         }
         else
         {
             /* open a session for the VM */
-            CHECK_ERROR_RET (aVirtualBox, OpenSession(aSession, uuid), 1);
+            CHECK_ERROR_RET (a->virtualBox, OpenSession(a->session, uuid), 1);
 
             /* get the mutable session machine */
-            aSession->COMGETTER(Machine)(machine.asOutParam());
+            a->session->COMGETTER(Machine)(machine.asOutParam());
 
             CHECK_ERROR(machine, RemoveSharedFolder(Bstr(name)));
 
             /* commit and close the session */
             CHECK_ERROR(machine, SaveSettings());
-            aSession->Close();
+            a->session->Close();
         }
     }
     else
-        return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", Utf8Str(argv[0]).raw());
+        return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", Utf8Str(a->argv[0]).raw());
 
     return 0;
 }
 
-static int handleVMStatistics(int argc, char *argv[],
-                              ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+static int handleVMStatistics(HandlerArg *a)
 {
     HRESULT rc;
 
     /* at least one option: the UUID or name of the VM */
-    if (argc < 1)
+    if (a->argc < 1)
         return errorSyntax(USAGE_VM_STATISTICS, "Incorrect number of parameters");
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Guid uuid (argv[0]);
+    Guid uuid (a->argv[0]);
     if (!uuid.isEmpty())
-        CHECK_ERROR(aVirtualBox, GetMachine(uuid, machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, GetMachine(uuid, machine.asOutParam()));
     else
     {
-        CHECK_ERROR(aVirtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
         if (SUCCEEDED (rc))
             machine->COMGETTER(Id)(uuid.asOutParam());
     }
@@ -4356,35 +4336,35 @@ static int handleVMStatistics(int argc, char *argv[],
     bool fReset = false;
     bool fWithDescriptions = false;
     const char *pszPattern = NULL; /* all */
-    for (int i = 1; i < argc; i++)
+    for (int i = 1; i < a->argc; i++)
     {
-        if (!strcmp(argv[i], "-pattern"))
+        if (!strcmp(a->argv[i], "-pattern"))
         {
             if (pszPattern)
                 return errorSyntax(USAGE_VM_STATISTICS, "Multiple -patterns options is not permitted");
-            if (i + 1 >= argc)
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            pszPattern = argv[++i];
+            if (i + 1 >= a->argc)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            pszPattern = a->argv[++i];
         }
-        else if (!strcmp(argv[i], "-descriptions"))
+        else if (!strcmp(a->argv[i], "-descriptions"))
             fWithDescriptions = true;
         /* add: -file <filename> and -formatted */
-        else if (!strcmp(argv[i], "-reset"))
+        else if (!strcmp(a->argv[i], "-reset"))
             fReset = true;
         else
-            return errorSyntax(USAGE_VM_STATISTICS, "Unknown option '%s'", argv[i]);
+            return errorSyntax(USAGE_VM_STATISTICS, "Unknown option '%s'", a->argv[i]);
     }
     if (fReset && fWithDescriptions)
         return errorSyntax(USAGE_VM_STATISTICS, "The -reset and -descriptions options does not mix");
 
 
     /* open an existing session for the VM. */
-    CHECK_ERROR(aVirtualBox, OpenExistingSession(aSession, uuid));
+    CHECK_ERROR(a->virtualBox, OpenExistingSession(a->session, uuid));
     if (SUCCEEDED(rc))
     {
         /* get the session console. */
         ComPtr <IConsole> console;
-        CHECK_ERROR(aSession, COMGETTER(Console)(console.asOutParam()));
+        CHECK_ERROR(a->session, COMGETTER(Console)(console.asOutParam()));
         if (SUCCEEDED(rc))
         {
             /* get the machine debugger. */
@@ -4408,7 +4388,7 @@ static int handleVMStatistics(int argc, char *argv[],
                     }
                 }
             }
-            aSession->Close();
+            a->session->Close();
         }
     }
 
@@ -4715,11 +4695,18 @@ int main(int argc, char *argv[])
      * after the session is closed) */
 
 #ifdef USE_XPCOM_QUEUE
-    NS_GetMainEventQ(getter_AddRefs(g_pEventQ));
+    nsCOMPtr<nsIEventQueue> eventQ;
+    NS_GetMainEventQ(getter_AddRefs(eventQ));
 #endif
 
     if (!checkForAutoConvertedSettings (virtualBox, session, fConvertSettings))
         break;
+
+#ifdef USE_XPCOM_QUEUE
+    HandlerArg handlerArg = { 0, NULL, eventQ, virtualBox, session };
+#else
+    HandlerArg handlerArg = { 0, NULL, virtualBox, session };
+#endif
 
     /*
      * All registered command handlers
@@ -4773,7 +4760,9 @@ int main(int argc, char *argv[])
     {
         if (strcmp(commandHandlers[commandIndex].command, argv[iCmd]) == 0)
         {
-            rc = commandHandlers[commandIndex].handler(argc - iCmdArg, &argv[iCmdArg], virtualBox, session);
+            handlerArg.argc = argc - iCmdArg;
+            handlerArg.argv = &argv[iCmdArg];
+            rc = commandHandlers[commandIndex].handler(&handlerArg);
             break;
         }
     }
@@ -4790,7 +4779,7 @@ int main(int argc, char *argv[])
     session->Close();
 
 #ifdef USE_XPCOM_QUEUE
-    g_pEventQ->ProcessPendingEvents();
+    eventQ->ProcessPendingEvents();
 #endif
 
     // end "all-stuff" scope

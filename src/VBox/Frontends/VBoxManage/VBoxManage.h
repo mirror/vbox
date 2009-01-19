@@ -89,15 +89,20 @@
 
 typedef uint64_t USAGECATEGORY;
 
+/** command handler argument */
+struct HandlerArg
+{
+    int argc;
+    char **argv;
+#ifdef USE_XPCOM_QUEUE
+    nsCOMPtr<nsIEventQueue> eventQ;
+#endif
+    ComPtr<IVirtualBox> virtualBox;
+    ComPtr<ISession> session;
+};
+
 /** flag whether we're in internal mode */
 extern bool g_fInternalMode;
-
-#ifndef VBOX_ONLY_DOCS
-# ifdef USE_XPCOM_QUEUE
-/** A pointer to the event queue, set by main() before calling any handlers. */
-extern nsCOMPtr<nsIEventQueue> g_pEventQ;
-# endif
-#endif /* !VBOX_ONLY_DOCS */
 
 /** showVMInfo details */
 typedef enum
@@ -112,6 +117,7 @@ typedef enum
 /*
  * Prototypes
  */
+
 /* VBoxManage.cpp */
 int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...);
 int errorArgument(const char *pszFormat, ...);
@@ -121,49 +127,36 @@ void printUsageInternal(USAGECATEGORY u64Cmd);
 #ifndef VBOX_ONLY_DOCS
 void showProgress(ComPtr<IProgress> progress);
 
-int handleInternalCommands(int argc, char *argv[],
-                           ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
+int handleInternalCommands(HandlerArg *a);
 #endif /* !VBOX_ONLY_DOCS */
 
 /* VBoxManageGuestProp.cpp */
 extern void usageGuestProperty(void);
 #ifndef VBOX_ONLY_DOCS
-extern int handleGuestProperty(int argc, char *argv[],
-                               ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
+extern int handleGuestProperty(HandlerArg *a);
 
 /* VBoxManageVMInfo.cpp */
 void showSnapshots(ComPtr<ISnapshot> rootSnapshot, VMINFO_DETAILS details, const com::Bstr &prefix = "", int level = 0);
-int handleShowVMInfo(int argc, char *argv[],
-                     ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+int handleShowVMInfo(HandlerArg *a);
 HRESULT showVMInfo(ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
                    ComPtr <IConsole> console = ComPtr <IConsole> (),
                    VMINFO_DETAILS details = VMINFO_NONE);
 
 /* VBoxManageList.cpp */
-int handleList(int argc, char *argv[],
-               ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+int handleList(HandlerArg *a);
 
 /* VBoxManageMetrics.cpp */
-int handleMetrics(int argc, char *argv[],
-                  ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+int handleMetrics(HandlerArg *a);
 
 /* VBoxManageDisk.cpp */
-int handleCreateHardDisk(int argc, char *argv[],
-                         ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
-int handleModifyHardDisk(int argc, char *argv[],
-                         ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
-int handleCloneHardDisk(int argc, char *argv[],
-                        ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
-int handleConvertHardDisk(int argc, char **argv);
+int handleCreateHardDisk(HandlerArg *a);
+int handleModifyHardDisk(HandlerArg *a);
+int handleCloneHardDisk(HandlerArg *a);
 int handleConvertFromRaw(int argc, char *argv[]);
-int handleAddiSCSIDisk(int argc, char *argv[],
-                       ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
-int handleShowHardDiskInfo(int argc, char *argv[],
-                           ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
-int handleOpenMedium(int argc, char *argv[],
-                     ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
-int handleCloseMedium(int argc, char *argv[],
-                      ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+int handleAddiSCSIDisk(HandlerArg *a);
+int handleShowHardDiskInfo(HandlerArg *a);
+int handleOpenMedium(HandlerArg *a);
+int handleCloseMedium(HandlerArg *a);
 
 /* VBoxManageUSB.cpp */
 /* VBoxManageTODO.cpp */

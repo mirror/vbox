@@ -1856,25 +1856,24 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
 # pragma optimize("", on)
 #endif
 
-int handleShowVMInfo(int argc, char *argv[],
-                     ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+int handleShowVMInfo(HandlerArg *a)
 {
     HRESULT rc;
 
     /* at least one option: the UUID or name of the VM */
-    if (argc < 1)
+    if (a->argc < 1)
         return errorSyntax(USAGE_SHOWVMINFO, "Incorrect number of parameters");
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Guid uuid (argv[0]);
+    Guid uuid (a->argv[0]);
     if (!uuid.isEmpty())
     {
-        CHECK_ERROR (virtualBox, GetMachine (uuid, machine.asOutParam()));
+        CHECK_ERROR (a->virtualBox, GetMachine (uuid, machine.asOutParam()));
     }
     else
     {
-        CHECK_ERROR (virtualBox, FindMachine (Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR (a->virtualBox, FindMachine (Bstr(a->argv[0]), machine.asOutParam()));
         if (SUCCEEDED (rc))
             machine->COMGETTER(Id) (uuid.asOutParam());
     }
@@ -1886,14 +1885,14 @@ int handleShowVMInfo(int argc, char *argv[],
     bool fDetails = false;
     bool fStatistics = false;
     bool fMachinereadable = false;
-    for (int i=1;i<argc;i++)
+    for (int i=1;i<a->argc;i++)
     {
-        if (!strcmp(argv[i], "-details"))
+        if (!strcmp(a->argv[i], "-details"))
             fDetails = true;
         else
-        if (!strcmp(argv[i], "-statistics"))
+        if (!strcmp(a->argv[i], "-statistics"))
             fStatistics = true;
-        if (!strcmp(argv[1], "-machinereadable"))
+        if (!strcmp(a->argv[1], "-machinereadable"))
             fMachinereadable = true;
     }
     if (fMachinereadable)
@@ -1911,18 +1910,18 @@ int handleShowVMInfo(int argc, char *argv[],
     ComPtr <IConsole> console;
 
     /* open an existing session for the VM */
-    rc = virtualBox->OpenExistingSession (session, uuid);
+    rc = a->virtualBox->OpenExistingSession (a->session, uuid);
     if (SUCCEEDED(rc))
         /* get the session machine */
-        rc = session->COMGETTER(Machine)(machine.asOutParam());
+        rc = a->session->COMGETTER(Machine)(machine.asOutParam());
     if (SUCCEEDED(rc))
         /* get the session console */
-        rc = session->COMGETTER(Console)(console.asOutParam());
+        rc = a->session->COMGETTER(Console)(console.asOutParam());
 
-    rc = showVMInfo (virtualBox, machine, console, details);
+    rc = showVMInfo (a->virtualBox, machine, console, details);
 
     if (console)
-        session->Close();
+        a->session->Close();
 
     return SUCCEEDED (rc) ? 0 : 1;
 }

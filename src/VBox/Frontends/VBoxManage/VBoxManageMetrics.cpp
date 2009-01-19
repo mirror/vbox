@@ -522,28 +522,27 @@ static int handleMetricsCollect(int argc, char *argv[],
     return 0;
 }
 
-int handleMetrics(int argc, char *argv[],
-                  ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+int handleMetrics(HandlerArg *a)
 {
     int rc;
 
     /* at least one option: subcommand name */
-    if (argc < 1)
+    if (a->argc < 1)
         return errorSyntax(USAGE_METRICS, "Subcommand missing");
 
     ComPtr<IPerformanceCollector> performanceCollector;
-    CHECK_ERROR(aVirtualBox, COMGETTER(PerformanceCollector)(performanceCollector.asOutParam()));
+    CHECK_ERROR(a->virtualBox, COMGETTER(PerformanceCollector)(performanceCollector.asOutParam()));
 
-    if (!strcmp(argv[0], "list"))
-        rc = handleMetricsList(argc, argv, aVirtualBox, performanceCollector);
-    else if (!strcmp(argv[0], "setup"))
-        rc = handleMetricsSetup(argc, argv, aVirtualBox, performanceCollector);
-    else if (!strcmp(argv[0], "query"))
-        rc = handleMetricsQuery(argc, argv, aVirtualBox, performanceCollector);
-    else if (!strcmp(argv[0], "collect"))
-        rc = handleMetricsCollect(argc, argv, aVirtualBox, performanceCollector);
+    if (!strcmp(a->argv[0], "list"))
+        rc = handleMetricsList(a->argc, a->argv, a->virtualBox, performanceCollector);
+    else if (!strcmp(a->argv[0], "setup"))
+        rc = handleMetricsSetup(a->argc, a->argv, a->virtualBox, performanceCollector);
+    else if (!strcmp(a->argv[0], "query"))
+        rc = handleMetricsQuery(a->argc, a->argv, a->virtualBox, performanceCollector);
+    else if (!strcmp(a->argv[0], "collect"))
+        rc = handleMetricsCollect(a->argc, a->argv, a->virtualBox, performanceCollector);
     else
-        return errorSyntax(USAGE_METRICS, "Invalid subcommand '%s'", argv[0]);
+        return errorSyntax(USAGE_METRICS, "Invalid subcommand '%s'", a->argv[0]);
 
     return rc;
 }

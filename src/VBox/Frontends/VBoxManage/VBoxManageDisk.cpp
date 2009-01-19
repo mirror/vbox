@@ -53,8 +53,7 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
 }
 
 
-int handleCreateHardDisk(int argc, char *argv[],
-                         ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+int handleCreateHardDisk(HandlerArg *a)
 {
     HRESULT rc;
     Bstr filename;
@@ -66,53 +65,53 @@ int handleCreateHardDisk(int argc, char *argv[],
     const char *type = "normal";
 
     /* let's have a closer look at the arguments */
-    for (int i = 0; i < argc; i++)
+    for (int i = 0; i < a->argc; i++)
     {
-        if (strcmp(argv[i], "-filename") == 0)
+        if (strcmp(a->argv[i], "-filename") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            filename = argv[i];
+            filename = a->argv[i];
         }
-        else if (strcmp(argv[i], "-size") == 0)
+        else if (strcmp(a->argv[i], "-size") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            sizeMB = RTStrToUInt64(argv[i]);
+            sizeMB = RTStrToUInt64(a->argv[i]);
         }
-        else if (strcmp(argv[i], "-format") == 0)
+        else if (strcmp(a->argv[i], "-format") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            format = argv[i];
+            format = a->argv[i];
         }
-        else if (strcmp(argv[i], "-static") == 0)
+        else if (strcmp(a->argv[i], "-static") == 0)
         {
             fStatic = true;
         }
-        else if (strcmp(argv[i], "-comment") == 0)
+        else if (strcmp(a->argv[i], "-comment") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            comment = argv[i];
+            comment = a->argv[i];
         }
-        else if (strcmp(argv[i], "-register") == 0)
+        else if (strcmp(a->argv[i], "-register") == 0)
         {
             fRegister = true;
         }
-        else if (strcmp(argv[i], "-type") == 0)
+        else if (strcmp(a->argv[i], "-type") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            type = argv[i];
+            type = a->argv[i];
         }
         else
-            return errorSyntax(USAGE_CREATEHD, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+            return errorSyntax(USAGE_CREATEHD, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
     }
     /* check the outcome */
     if (!filename || (sizeMB == 0))
@@ -122,7 +121,7 @@ int handleCreateHardDisk(int argc, char *argv[],
         return errorArgument("Invalid hard disk type '%s' specified", Utf8Str(type).raw());
 
     ComPtr<IHardDisk2> hardDisk;
-    CHECK_ERROR(virtualBox, CreateHardDisk2(format, filename, hardDisk.asOutParam()));
+    CHECK_ERROR(a->virtualBox, CreateHardDisk2(format, filename, hardDisk.asOutParam()));
     if (SUCCEEDED(rc) && hardDisk)
     {
         /* we will close the hard disk after the storage has been successfully
@@ -206,40 +205,39 @@ static DECLCALLBACK(int) hardDiskProgressCallback(PVM pVM, unsigned uPercent, vo
 #endif
 
 
-int handleModifyHardDisk(int argc, char *argv[],
-                         ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+int handleModifyHardDisk(HandlerArg *a)
 {
     HRESULT rc;
 
     /* The uuid/filename and a command */
-    if (argc < 2)
+    if (a->argc < 2)
         return errorSyntax(USAGE_MODIFYHD, "Incorrect number of parameters");
 
     ComPtr<IHardDisk2> hardDisk;
     Bstr filepath;
 
     /* first guess is that it's a UUID */
-    Guid uuid(argv[0]);
-    rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+    Guid uuid(a->argv[0]);
+    rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
     /* no? then it must be a filename */
     if (!hardDisk)
     {
-        filepath = argv[0];
-        CHECK_ERROR(virtualBox, FindHardDisk2(filepath, hardDisk.asOutParam()));
+        filepath = a->argv[0];
+        CHECK_ERROR(a->virtualBox, FindHardDisk2(filepath, hardDisk.asOutParam()));
     }
 
     /* let's find out which command */
-    if (strcmp(argv[1], "settype") == 0)
+    if (strcmp(a->argv[1], "settype") == 0)
     {
         /* hard disk must be registered */
         if (SUCCEEDED(rc) && hardDisk)
         {
             char *type = NULL;
 
-            if (argc <= 2)
+            if (a->argc <= 2)
                 return errorArgument("Missing argument to for settype");
 
-            type = argv[2];
+            type = a->argv[2];
 
             HardDiskType_T hddType;
             CHECK_ERROR(hardDisk, COMGETTER(Type)(&hddType));
@@ -268,7 +266,7 @@ int handleModifyHardDisk(int argc, char *argv[],
         else
             return errorArgument("Hard disk image not registered");
     }
-    else if (strcmp(argv[1], "compact") == 0)
+    else if (strcmp(a->argv[1], "compact") == 0)
     {
 #if 1
         RTPrintf("Error: Shrink hard disk operation is temporarily unavailable!\n");
@@ -277,7 +275,7 @@ int handleModifyHardDisk(int argc, char *argv[],
         /* the hard disk image might not be registered */
         if (!hardDisk)
         {
-            virtualBox->OpenHardDisk2(Bstr(argv[0]), hardDisk.asOutParam());
+            a->virtualBox->OpenHardDisk2(Bstr(a->argv[0]), hardDisk.asOutParam());
             if (!hardDisk)
                 return errorArgument("Hard disk image not found");
         }
@@ -305,13 +303,12 @@ int handleModifyHardDisk(int argc, char *argv[],
 #endif
     }
     else
-        return errorSyntax(USAGE_MODIFYHD, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
+        return errorSyntax(USAGE_MODIFYHD, "Invalid parameter '%s'", Utf8Str(a->argv[1]).raw());
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-int handleCloneHardDisk(int argc, char *argv[],
-                        ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+int handleCloneHardDisk(HandlerArg *a)
 {
     Bstr src, dst;
     Bstr format;
@@ -320,33 +317,33 @@ int handleCloneHardDisk(int argc, char *argv[],
     HRESULT rc;
 
     /* Parse the arguments. */
-    for (int i = 0; i < argc; i++)
+    for (int i = 0; i < a->argc; i++)
     {
-        if (strcmp(argv[i], "-format") == 0)
+        if (strcmp(a->argv[i], "-format") == 0)
         {
-            if (argc <= i + 1)
+            if (a->argc <= i + 1)
             {
-                return errorArgument("Missing argument to '%s'", argv[i]);
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             }
             i++;
-            format = argv[i];
+            format = a->argv[i];
         }
-        else if (strcmp(argv[i], "-remember") == 0 ||
-                 strcmp(argv[i], "-register") == 0 /* backward compatiblity */)
+        else if (strcmp(a->argv[i], "-remember") == 0 ||
+                 strcmp(a->argv[i], "-register") == 0 /* backward compatiblity */)
         {
             remember = true;
         }
         else if (src.isEmpty())
         {
-            src = argv[i];
+            src = a->argv[i];
         }
         else if (dst.isEmpty())
         {
-            dst = argv[i];
+            dst = a->argv[i];
         }
         else
         {
-            return errorSyntax(USAGE_CLONEHD, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+            return errorSyntax(USAGE_CLONEHD, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
         }
     }
 
@@ -361,15 +358,15 @@ int handleCloneHardDisk(int argc, char *argv[],
 
     /* first guess is that it's a UUID */
     Guid uuid(Utf8Str(src).raw());
-    rc = virtualBox->GetHardDisk2(uuid, srcDisk.asOutParam());
+    rc = a->virtualBox->GetHardDisk2(uuid, srcDisk.asOutParam());
     /* no? then it must be a filename */
     if (FAILED (rc))
     {
-        rc = virtualBox->FindHardDisk2(src, srcDisk.asOutParam());
+        rc = a->virtualBox->FindHardDisk2(src, srcDisk.asOutParam());
         /* no? well, then it's an unkwnown image */
         if (FAILED (rc))
         {
-            CHECK_ERROR(virtualBox, OpenHardDisk2(src, srcDisk.asOutParam()));
+            CHECK_ERROR(a->virtualBox, OpenHardDisk2(src, srcDisk.asOutParam()));
             if (SUCCEEDED (rc))
             {
                 unknown = true;
@@ -388,7 +385,7 @@ int handleCloneHardDisk(int argc, char *argv[],
             CHECK_ERROR_BREAK(srcDisk, COMGETTER(Format) (format.asOutParam()));
         }
 
-        CHECK_ERROR_BREAK(virtualBox, CreateHardDisk2(format, dst, dstDisk.asOutParam()));
+        CHECK_ERROR_BREAK(a->virtualBox, CreateHardDisk2(format, dst, dstDisk.asOutParam()));
 
         ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK(srcDisk, CloneTo(dstDisk, progress.asOutParam()));
@@ -590,8 +587,7 @@ out:
     return RT_FAILURE(rc);
 }
 
-int handleAddiSCSIDisk(int argc, char *argv[],
-                       ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+int handleAddiSCSIDisk(HandlerArg *a)
 {
     HRESULT rc;
     Bstr server;
@@ -604,75 +600,75 @@ int handleAddiSCSIDisk(int argc, char *argv[],
     bool fIntNet = false;
 
     /* at least server and target */
-    if (argc < 4)
+    if (a->argc < 4)
         return errorSyntax(USAGE_ADDISCSIDISK, "Not enough parameters");
 
     /* let's have a closer look at the arguments */
-    for (int i = 0; i < argc; i++)
+    for (int i = 0; i < a->argc; i++)
     {
-        if (strcmp(argv[i], "-server") == 0)
+        if (strcmp(a->argv[i], "-server") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            server = argv[i];
+            server = a->argv[i];
         }
-        else if (strcmp(argv[i], "-target") == 0)
+        else if (strcmp(a->argv[i], "-target") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            target = argv[i];
+            target = a->argv[i];
         }
-        else if (strcmp(argv[i], "-port") == 0)
+        else if (strcmp(a->argv[i], "-port") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            port = argv[i];
+            port = a->argv[i];
         }
-        else if (strcmp(argv[i], "-lun") == 0)
+        else if (strcmp(a->argv[i], "-lun") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            lun = argv[i];
+            lun = a->argv[i];
         }
-        else if (strcmp(argv[i], "-encodedlun") == 0)
+        else if (strcmp(a->argv[i], "-encodedlun") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            lun = BstrFmt("enc%s", argv[i]);
+            lun = BstrFmt("enc%s", a->argv[i]);
         }
-        else if (strcmp(argv[i], "-username") == 0)
+        else if (strcmp(a->argv[i], "-username") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            username = argv[i];
+            username = a->argv[i];
         }
-        else if (strcmp(argv[i], "-password") == 0)
+        else if (strcmp(a->argv[i], "-password") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            password = argv[i];
+            password = a->argv[i];
         }
-        else if (strcmp(argv[i], "-comment") == 0)
+        else if (strcmp(a->argv[i], "-comment") == 0)
         {
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            comment = argv[i];
+            comment = a->argv[i];
         }
-        else if (strcmp(argv[i], "-intnet") == 0)
+        else if (strcmp(a->argv[i], "-intnet") == 0)
         {
             i++;
             fIntNet = true;
         }
         else
-            return errorSyntax(USAGE_ADDISCSIDISK, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+            return errorSyntax(USAGE_ADDISCSIDISK, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
     }
 
     /* check for required options */
@@ -682,7 +678,7 @@ int handleAddiSCSIDisk(int argc, char *argv[],
     do
     {
         ComPtr<IHardDisk2> hardDisk;
-        CHECK_ERROR_BREAK (aVirtualBox,
+        CHECK_ERROR_BREAK (a->virtualBox,
             CreateHardDisk2(Bstr ("iSCSI"),
                             BstrFmt ("%ls/%ls", server.raw(), target.raw()),
                             hardDisk.asOutParam()));
@@ -744,12 +740,11 @@ int handleAddiSCSIDisk(int argc, char *argv[],
 }
 
 
-int handleShowHardDiskInfo(int argc, char *argv[],
-                           ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+int handleShowHardDiskInfo(HandlerArg *a)
 {
     HRESULT rc;
 
-    if (argc != 1)
+    if (a->argc != 1)
         return errorSyntax(USAGE_SHOWHDINFO, "Incorrect number of parameters");
 
     ComPtr<IHardDisk2> hardDisk;
@@ -758,17 +753,17 @@ int handleShowHardDiskInfo(int argc, char *argv[],
     bool unknown = false;
 
     /* first guess is that it's a UUID */
-    Guid uuid(argv[0]);
-    rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+    Guid uuid(a->argv[0]);
+    rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
     /* no? then it must be a filename */
     if (FAILED (rc))
     {
-        filepath = argv[0];
-        rc = virtualBox->FindHardDisk2(filepath, hardDisk.asOutParam());
+        filepath = a->argv[0];
+        rc = a->virtualBox->FindHardDisk2(filepath, hardDisk.asOutParam());
         /* no? well, then it's an unkwnown image */
         if (FAILED (rc))
         {
-            CHECK_ERROR(virtualBox, OpenHardDisk2(filepath, hardDisk.asOutParam()));
+            CHECK_ERROR(a->virtualBox, OpenHardDisk2(filepath, hardDisk.asOutParam()));
             if (SUCCEEDED (rc))
             {
                 unknown = true;
@@ -839,7 +834,7 @@ int handleShowHardDiskInfo(int argc, char *argv[],
             for (size_t j = 0; j < machineIds.size(); ++ j)
             {
                 ComPtr<IMachine> machine;
-                CHECK_ERROR(virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
+                CHECK_ERROR(a->virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
                 ASSERT(machine);
                 Bstr name;
                 machine->COMGETTER(Name)(name.asOutParam());
@@ -868,35 +863,34 @@ int handleShowHardDiskInfo(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-int handleOpenMedium(int argc, char *argv[],
-                     ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+int handleOpenMedium(HandlerArg *a)
 {
     HRESULT rc;
 
-    if (argc < 2)
+    if (a->argc < 2)
         return errorSyntax(USAGE_REGISTERIMAGE, "Not enough parameters");
 
-    Bstr filepath(argv[1]);
+    Bstr filepath(a->argv[1]);
 
-    if (strcmp(argv[0], "disk") == 0)
+    if (strcmp(a->argv[0], "disk") == 0)
     {
         const char *type = NULL;
         /* there can be a type parameter */
-        if ((argc > 2) && (argc != 4))
+        if ((a->argc > 2) && (a->argc != 4))
             return errorSyntax(USAGE_REGISTERIMAGE, "Incorrect number of parameters");
-        if (argc == 4)
+        if (a->argc == 4)
         {
-            if (strcmp(argv[2], "-type") != 0)
-                return errorSyntax(USAGE_REGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(argv[2]).raw());
-            if (   (strcmp(argv[3], "normal") != 0)
-                && (strcmp(argv[3], "immutable") != 0)
-                && (strcmp(argv[3], "writethrough") != 0))
-                return errorArgument("Invalid hard disk type '%s' specified", Utf8Str(argv[3]).raw());
-            type = argv[3];
+            if (strcmp(a->argv[2], "-type") != 0)
+                return errorSyntax(USAGE_REGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(a->argv[2]).raw());
+            if (   (strcmp(a->argv[3], "normal") != 0)
+                && (strcmp(a->argv[3], "immutable") != 0)
+                && (strcmp(a->argv[3], "writethrough") != 0))
+                return errorArgument("Invalid hard disk type '%s' specified", Utf8Str(a->argv[3]).raw());
+            type = a->argv[3];
         }
 
         ComPtr<IHardDisk2> hardDisk;
-        CHECK_ERROR(virtualBox, OpenHardDisk2(filepath, hardDisk.asOutParam()));
+        CHECK_ERROR(a->virtualBox, OpenHardDisk2(filepath, hardDisk.asOutParam()));
         if (SUCCEEDED(rc) && hardDisk)
         {
             /* change the type if requested */
@@ -911,41 +905,40 @@ int handleOpenMedium(int argc, char *argv[],
             }
         }
     }
-    else if (strcmp(argv[0], "dvd") == 0)
+    else if (strcmp(a->argv[0], "dvd") == 0)
     {
         ComPtr<IDVDImage2> dvdImage;
-        CHECK_ERROR(virtualBox, OpenDVDImage(filepath, Guid(), dvdImage.asOutParam()));
+        CHECK_ERROR(a->virtualBox, OpenDVDImage(filepath, Guid(), dvdImage.asOutParam()));
     }
-    else if (strcmp(argv[0], "floppy") == 0)
+    else if (strcmp(a->argv[0], "floppy") == 0)
     {
         ComPtr<IFloppyImage2> floppyImage;
-        CHECK_ERROR(virtualBox, OpenFloppyImage(filepath, Guid(), floppyImage.asOutParam()));
+        CHECK_ERROR(a->virtualBox, OpenFloppyImage(filepath, Guid(), floppyImage.asOutParam()));
     }
     else
-        return errorSyntax(USAGE_REGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
+        return errorSyntax(USAGE_REGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(a->argv[1]).raw());
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-int handleCloseMedium(int argc, char *argv[],
-                      ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+int handleCloseMedium(HandlerArg *a)
 {
     HRESULT rc;
 
-    if (argc != 2)
+    if (a->argc != 2)
         return errorSyntax(USAGE_UNREGISTERIMAGE, "Incorrect number of parameters");
 
     /* first guess is that it's a UUID */
-    Guid uuid(argv[1]);
+    Guid uuid(a->argv[1]);
 
-    if (strcmp(argv[0], "disk") == 0)
+    if (strcmp(a->argv[0], "disk") == 0)
     {
         ComPtr<IHardDisk2> hardDisk;
-        rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+        rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
         if (!hardDisk)
         {
-            CHECK_ERROR(virtualBox, FindHardDisk2(Bstr(argv[1]), hardDisk.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindHardDisk2(Bstr(a->argv[1]), hardDisk.asOutParam()));
         }
         if (SUCCEEDED(rc) && hardDisk)
         {
@@ -953,14 +946,14 @@ int handleCloseMedium(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "dvd") == 0)
+    if (strcmp(a->argv[0], "dvd") == 0)
     {
         ComPtr<IDVDImage2> dvdImage;
-        rc = virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
+        rc = a->virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
         if (!dvdImage)
         {
-            CHECK_ERROR(virtualBox, FindDVDImage(Bstr(argv[1]), dvdImage.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindDVDImage(Bstr(a->argv[1]), dvdImage.asOutParam()));
         }
         if (SUCCEEDED(rc) && dvdImage)
         {
@@ -968,14 +961,14 @@ int handleCloseMedium(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "floppy") == 0)
+    if (strcmp(a->argv[0], "floppy") == 0)
     {
         ComPtr<IFloppyImage2> floppyImage;
-        rc = virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
+        rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
         if (!floppyImage)
         {
-            CHECK_ERROR(virtualBox, FindFloppyImage(Bstr(argv[1]), floppyImage.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindFloppyImage(Bstr(a->argv[1]), floppyImage.asOutParam()));
         }
         if (SUCCEEDED(rc) && floppyImage)
         {
@@ -983,7 +976,7 @@ int handleCloseMedium(int argc, char *argv[],
         }
     }
     else
-        return errorSyntax(USAGE_UNREGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
+        return errorSyntax(USAGE_UNREGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(a->argv[1]).raw());
 
     return SUCCEEDED(rc) ? 0 : 1;
 }

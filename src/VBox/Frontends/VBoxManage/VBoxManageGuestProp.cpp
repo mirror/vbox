@@ -213,25 +213,23 @@ void usageGuestProperty(void)
              "\n");
 }
 
-static int handleGetGuestProperty(int argc, char *argv[],
-                                  ComPtr<IVirtualBox> aVirtualBox,
-                                  ComPtr<ISession> aSession)
+static int handleGetGuestProperty(HandlerArg *a)
 {
     HRESULT rc = S_OK;
 
     bool verbose = false;
-    if ((3 == argc) && (0 == strcmp(argv[2], "-verbose")))
+    if ((3 == a->argc) && (0 == strcmp(a->argv[2], "-verbose")))
         verbose = true;
-    else if (argc != 2)
+    else if (a->argc != 2)
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = aVirtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(aVirtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
     }
     if (machine)
     {
@@ -239,16 +237,16 @@ static int handleGetGuestProperty(int argc, char *argv[],
         machine->COMGETTER(Id)(uuid.asOutParam());
 
         /* open a session for the VM - new or existing */
-        if (FAILED (aVirtualBox->OpenSession(aSession, uuid)))
-            CHECK_ERROR_RET (aVirtualBox, OpenExistingSession(aSession, uuid), 1);
+        if (FAILED (a->virtualBox->OpenSession(a->session, uuid)))
+            CHECK_ERROR_RET (a->virtualBox, OpenExistingSession(a->session, uuid), 1);
 
         /* get the mutable session machine */
-        aSession->COMGETTER(Machine)(machine.asOutParam());
+        a->session->COMGETTER(Machine)(machine.asOutParam());
 
         Bstr value;
         uint64_t u64Timestamp;
         Bstr flags;
-        CHECK_ERROR(machine, GetGuestProperty(Bstr(argv[1]), value.asOutParam(),
+        CHECK_ERROR(machine, GetGuestProperty(Bstr(a->argv[1]), value.asOutParam(),
                     &u64Timestamp, flags.asOutParam()));
         if (!value)
             RTPrintf("No value set!\n");
@@ -263,9 +261,7 @@ static int handleGetGuestProperty(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleSetGuestProperty(int argc, char *argv[],
-                                  ComPtr<IVirtualBox> aVirtualBox,
-                                  ComPtr<ISession> aSession)
+static int handleSetGuestProperty(HandlerArg *a)
 {
     HRESULT rc = S_OK;
 
@@ -277,33 +273,33 @@ static int handleSetGuestProperty(int argc, char *argv[],
     const char *pszName = NULL;
     const char *pszValue = NULL;
     const char *pszFlags = NULL;
-    if (3 == argc)
+    if (3 == a->argc)
     {
-        pszValue = argv[2];
+        pszValue = a->argv[2];
     }
-    else if (4 == argc)
+    else if (4 == a->argc)
         usageOK = false;
-    else if (5 == argc)
+    else if (5 == a->argc)
     {
-        pszValue = argv[2];
-        if (strcmp(argv[3], "-flags") != 0)
+        pszValue = a->argv[2];
+        if (strcmp(a->argv[3], "-flags") != 0)
             usageOK = false;
-        pszFlags = argv[4];
+        pszFlags = a->argv[4];
     }
-    else if (argc != 2)
+    else if (a->argc != 2)
         usageOK = false;
     if (!usageOK)
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
     /* This is always needed. */
-    pszName = argv[1];
+    pszName = a->argv[1];
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = aVirtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(aVirtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
     }
     if (machine)
     {
@@ -311,11 +307,11 @@ static int handleSetGuestProperty(int argc, char *argv[],
         machine->COMGETTER(Id)(uuid.asOutParam());
 
         /* open a session for the VM - new or existing */
-        if (FAILED (aVirtualBox->OpenSession(aSession, uuid)))
-            CHECK_ERROR_RET (aVirtualBox, OpenExistingSession(aSession, uuid), 1);
+        if (FAILED (a->virtualBox->OpenSession(a->session, uuid)))
+            CHECK_ERROR_RET (a->virtualBox, OpenExistingSession(a->session, uuid), 1);
 
         /* get the mutable session machine */
-        aSession->COMGETTER(Machine)(machine.asOutParam());
+        a->session->COMGETTER(Machine)(machine.asOutParam());
 
         if ((NULL == pszValue) && (NULL == pszFlags))
             CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName), NULL));
@@ -327,7 +323,7 @@ static int handleSetGuestProperty(int argc, char *argv[],
         if (SUCCEEDED(rc))
             CHECK_ERROR(machine, SaveSettings());
 
-        aSession->Close();
+        a->session->Close();
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -338,34 +334,33 @@ static int handleSetGuestProperty(int argc, char *argv[],
  * @returns 0 on success, 1 on failure
  * @note see the command line API description for parameters
  */
-static int handleEnumGuestProperty(int argc, char *argv[],
-                                   ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+static int handleEnumGuestProperty(HandlerArg *a)
 {
 /*
  * Check the syntax.  We can deduce the correct syntax from the number of
  * arguments.
  */
-    if ((argc < 1) || (2 == argc) ||
-        ((argc > 3) && strcmp(argv[1], "-patterns") != 0))
+    if ((a->argc < 1) || (2 == a->argc) ||
+        ((a->argc > 3) && strcmp(a->argv[1], "-patterns") != 0))
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 
 /*
  * Pack the patterns
  */
-    Utf8Str Utf8Patterns(argc > 2 ? argv[2] : "*");
-    for (ssize_t i = 3; i < argc; ++i)
-        Utf8Patterns = Utf8StrFmt ("%s,%s", Utf8Patterns.raw(), argv[i]);
+    Utf8Str Utf8Patterns(a->argc > 2 ? a->argv[2] : "*");
+    for (ssize_t i = 3; i < a->argc; ++i)
+        Utf8Patterns = Utf8StrFmt ("%s,%s", Utf8Patterns.raw(), a->argv[i]);
 
 /*
  * Make the actual call to Main.
  */
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    HRESULT rc = aVirtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    HRESULT rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(aVirtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
     }
     if (machine)
     {
@@ -373,11 +368,11 @@ static int handleEnumGuestProperty(int argc, char *argv[],
         machine->COMGETTER(Id)(uuid.asOutParam());
 
         /* open a session for the VM - new or existing */
-        if (FAILED (aVirtualBox->OpenSession(aSession, uuid)))
-            CHECK_ERROR_RET (aVirtualBox, OpenExistingSession(aSession, uuid), 1);
+        if (FAILED (a->virtualBox->OpenSession(a->session, uuid)))
+            CHECK_ERROR_RET (a->virtualBox, OpenExistingSession(a->session, uuid), 1);
 
         /* get the mutable session machine */
-        aSession->COMGETTER(Machine)(machine.asOutParam());
+        a->session->COMGETTER(Machine)(machine.asOutParam());
 
         com::SafeArray <BSTR> names;
         com::SafeArray <BSTR> values;
@@ -406,8 +401,7 @@ static int handleEnumGuestProperty(int argc, char *argv[],
  * @returns 0 on success, 1 on failure
  * @note see the command line API description for parameters
  */
-static int handleWaitGuestProperty(int argc, char *argv[],
-                                   ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+static int handleWaitGuestProperty(HandlerArg *a)
 {
 
 /*
@@ -416,26 +410,26 @@ static int handleWaitGuestProperty(int argc, char *argv[],
     const char *pszPatterns = NULL;
     uint32_t u32Timeout = RT_INDEFINITE_WAIT;
     bool usageOK = true;
-    if (argc < 2)
+    if (a->argc < 2)
         usageOK = false;
     else
-        pszPatterns = argv[1];
+        pszPatterns = a->argv[1];
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    HRESULT rc = aVirtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    HRESULT rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(aVirtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
     }
     if (!machine)
         usageOK = false;
-    for (int i = 2; usageOK && i < argc; ++i)
+    for (int i = 2; usageOK && i < a->argc; ++i)
     {
-        if (strcmp(argv[i], "-timeout") == 0)
+        if (strcmp(a->argv[i], "-timeout") == 0)
         {
-            if (   i + 1 >= argc
-                || RTStrToUInt32Full(argv[i + 1], 10, &u32Timeout)
+            if (   i + 1 >= a->argc
+                || RTStrToUInt32Full(a->argv[i + 1], 10, &u32Timeout)
                        != VINF_SUCCESS
                )
                 usageOK = false;
@@ -455,10 +449,10 @@ static int handleWaitGuestProperty(int argc, char *argv[],
     machine->COMGETTER(Id)(uuid.asOutParam());
     GuestPropertyCallback *callback = new GuestPropertyCallback(pszPatterns, uuid);
     callback->AddRef();
-    aVirtualBox->RegisterCallback (callback);
+    a->virtualBox->RegisterCallback (callback);
     bool stop = false;
 #ifdef USE_XPCOM_QUEUE
-    int max_fd = g_pEventQ->GetEventQueueSelectFD();
+    int max_fd = a->eventQ->GetEventQueueSelectFD();
 #endif
     for (; !stop && u32Timeout > 0; u32Timeout -= RT_MIN(u32Timeout, 1000))
     {
@@ -482,7 +476,7 @@ static int handleWaitGuestProperty(int argc, char *argv[],
         {
             uint64_t u64NextTime = RTTimeSpecGetMilli(RTTimeNow(&TimeNow));
             u32Timeout += (uint32_t)(u64Time + 1000 - u64NextTime);
-            g_pEventQ->ProcessPendingEvents();
+            a->eventQ->ProcessPendingEvents();
             if (callback->Signalled())
                 stop = true;
         }
@@ -498,7 +492,7 @@ static int handleWaitGuestProperty(int argc, char *argv[],
 /*
  * Clean up the callback.
  */
-    aVirtualBox->UnregisterCallback (callback);
+    a->virtualBox->UnregisterCallback (callback);
     if (!callback->Signalled())
         RTPrintf("Time out or interruption while waiting for a notification.\n");
     callback->Release ();
@@ -515,19 +509,22 @@ static int handleWaitGuestProperty(int argc, char *argv[],
  * @returns 0 on success, 1 on failure
  * @note see the command line API description for parameters
  */
-int handleGuestProperty(int argc, char *argv[],
-                        ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+int handleGuestProperty(HandlerArg *a)
 {
-    if (0 == argc)
+    HandlerArg arg = *a;
+    arg.argc = a->argc - 1;
+    arg.argv = a->argv + 1;
+
+    if (0 == a->argc)
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
-    if (0 == strcmp(argv[0], "get"))
-        return handleGetGuestProperty(argc - 1, argv + 1, aVirtualBox, aSession);
-    else if (0 == strcmp(argv[0], "set"))
-        return handleSetGuestProperty(argc - 1, argv + 1, aVirtualBox, aSession);
-    else if (0 == strcmp(argv[0], "enumerate"))
-        return handleEnumGuestProperty(argc - 1, argv + 1, aVirtualBox, aSession);
-    else if (0 == strcmp(argv[0], "wait"))
-        return handleWaitGuestProperty(argc - 1, argv + 1, aVirtualBox, aSession);
+    if (0 == strcmp(a->argv[0], "get"))
+        return handleGetGuestProperty(&arg);
+    else if (0 == strcmp(a->argv[0], "set"))
+        return handleSetGuestProperty(&arg);
+    else if (0 == strcmp(a->argv[0], "enumerate"))
+        return handleEnumGuestProperty(&arg);
+    else if (0 == strcmp(a->argv[0], "wait"))
+        return handleWaitGuestProperty(&arg);
     /* else */
     return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 }

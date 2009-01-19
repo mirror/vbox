@@ -1651,35 +1651,34 @@ int CmdModInstall(void)
 /**
  * Wrapper for handling internal commands
  */
-int handleInternalCommands(int argc, char *argv[],
-                           ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+int handleInternalCommands(HandlerArg *a)
 {
     g_fInternalMode = true;
 
     /* at least a command is required */
-    if (argc < 1)
+    if (a->argc < 1)
         return errorSyntax(USAGE_ALL, "Command missing");
 
     /*
      * The 'string switch' on command name.
      */
-    const char *pszCmd = argv[0];
+    const char *pszCmd = a->argv[0];
     if (!strcmp(pszCmd, "loadsyms"))
-        return CmdLoadSyms(argc - 1, &argv[1], aVirtualBox, aSession);
+        return CmdLoadSyms(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     //if (!strcmp(pszCmd, "unloadsyms"))
-    //    return CmdUnloadSyms(argc - 1 , &argv[1]);
+    //    return CmdUnloadSyms(argc - 1 , &a->argv[1]);
     if (!strcmp(pszCmd, "sethduuid") || !strcmp(pszCmd, "setvdiuuid"))
-        return handleSetHDUUID(argc - 1, &argv[1], aVirtualBox, aSession);
+        return handleSetHDUUID(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "listpartitions"))
-        return CmdListPartitions(argc - 1, &argv[1], aVirtualBox, aSession);
+        return CmdListPartitions(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "createrawvmdk"))
-        return CmdCreateRawVMDK(argc - 1, &argv[1], aVirtualBox, aSession);
+        return CmdCreateRawVMDK(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "renamevmdk"))
-        return CmdRenameVMDK(argc - 1, &argv[1], aVirtualBox, aSession);
+        return CmdRenameVMDK(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "converttoraw"))
-        return CmdConvertToRaw(argc - 1, &argv[1], aVirtualBox, aSession);
+        return CmdConvertToRaw(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "converthd"))
-        return CmdConvertHardDisk(argc - 1, &argv[1], aVirtualBox, aSession);
+        return CmdConvertHardDisk(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
 
     if (!strcmp(pszCmd, "modinstall"))
         return CmdModInstall();
@@ -1687,6 +1686,6 @@ int handleInternalCommands(int argc, char *argv[],
         return CmdModUninstall();
 
     /* default: */
-    return errorSyntax(USAGE_ALL, "Invalid command '%s'", Utf8Str(argv[0]).raw());
+    return errorSyntax(USAGE_ALL, "Invalid command '%s'", Utf8Str(a->argv[0]).raw());
 }
 
