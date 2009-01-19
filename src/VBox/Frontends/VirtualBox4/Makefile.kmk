@@ -93,14 +93,14 @@ $(PATH_BIN)/vboxkeyboard.tar.gz: $(abspathex \
 		src/X11/keyboard-tables.h \
 		src/X11/keyboard-types.h \
 		src/X11/Makefile \
-		,$(PATH_SUB_CURRENT))
+		,$(PATH_SUB_CURRENT)) | $(PATH_TARGET)/VBoxKeyboard/
 	$(call MSG_TOOL,tar/gzip,,$@)
-	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard $@
-	$(QUIET)$(LN_SYMLINK) $(VBOX_VIRTUALBOX4_SRC)/src/X11/ $(PATH_TARGET)/vboxkeyboard
-	$(QUIET)cd $(PATH_TARGET) \
+	$(QUIET2)$(RM) -f $(PATH_TARGET)/VBoxKeyboard/vboxkeyboard $@
+	$(QUIET)$(LN_SYMLINK) $(VBOX_VIRTUALBOX4_SRC)/src/X11/ $(PATH_TARGET)/VBoxKeyboard/vboxkeyboard
+	$(QUIET)cd $(PATH_TARGET)/VBoxKeyboard \
 		&& tar -chvf - $(addprefix vboxkeyboard/,$(notdir $^)) \
 		   | gzip - > $@
-	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard
+	$(QUIET2)$(RM) -f $(PATH_TARGET)/VBoxKeyboard/vboxkeyboard
 
 OTHER_CLEAN += \
 	$(PATH_BIN)/vboxkeyboard.tar.gz
