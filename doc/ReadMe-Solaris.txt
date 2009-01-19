@@ -24,7 +24,7 @@ After extracting the contents of the tar.gz file perform the following steps:
 2. Install the packages (in this order):
 
    (*) First, the VirtualBox kernel interface package:
-   
+
         pkgadd -G -d VirtualBoxKern-@VBOX_VERSION_STRING@-SunOS-r@VBOX_SVN_REV@.pkg
 
         To perform an unattended (non-interactive) installation of this package add
