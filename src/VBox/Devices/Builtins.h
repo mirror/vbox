@@ -72,6 +72,9 @@ extern const PDMDEVREG g_DevicePCIBridge;
 #ifdef VBOX_WITH_LSILOGIC
 extern const PDMDEVREG g_DeviceLsiLogicSCSI;
 #endif
+#ifdef VBOX_WITH_SMC
+extern const PDMDEVREG g_DeviceSMC;
+#endif
 
 extern const PDMDRVREG g_DrvMouseQueue;
 extern const PDMDRVREG g_DrvKeyboardQueue;
