@@ -63,23 +63,22 @@ static const char *getHostIfStatusText(HostNetworkInterfaceStatus_T enmStatus)
 }
 #endif
 
-int handleList(int argc, char *argv[],
-               ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+int handleList(HandlerArg *a)
 {
     HRESULT rc = S_OK;
 
     /* exactly one option: the object */
-    if (argc != 1)
+    if (a->argc != 1)
         return errorSyntax(USAGE_LIST, "Incorrect number of parameters");
 
     /* which object? */
-    if (strcmp(argv[0], "vms") == 0)
+    if (strcmp(a->argv[0], "vms") == 0)
     {
         /*
          * Get the list of all registered VMs
          */
         com::SafeIfaceArray <IMachine> machines;
-        rc = virtualBox->COMGETTER(Machines2)(ComSafeArrayAsOutParam (machines));
+        rc = a->virtualBox->COMGETTER(Machines2)(ComSafeArrayAsOutParam (machines));
         if (SUCCEEDED(rc))
         {
             /*
@@ -88,18 +87,18 @@ int handleList(int argc, char *argv[],
             for (size_t i = 0; i < machines.size(); ++ i)
             {
                 if (machines [i])
-                    rc = showVMInfo(virtualBox, machines [i]);
+                    rc = showVMInfo(a->virtualBox, machines [i]);
             }
         }
     }
     else
-    if (strcmp(argv[0], "runningvms") == 0)
+    if (strcmp(a->argv[0], "runningvms") == 0)
     {
         /*
          * Get the list of all _running_ VMs
          */
         com::SafeIfaceArray <IMachine> machines;
-        rc = virtualBox->COMGETTER(Machines2)(ComSafeArrayAsOutParam (machines));
+        rc = a->virtualBox->COMGETTER(Machines2)(ComSafeArrayAsOutParam (machines));
         if (SUCCEEDED(rc))
         {
             /*
@@ -131,11 +130,11 @@ int handleList(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "ostypes") == 0)
+    if (strcmp(a->argv[0], "ostypes") == 0)
     {
         ComPtr<IGuestOSTypeCollection> coll;
         ComPtr<IGuestOSTypeEnumerator> enumerator;
-        CHECK_ERROR(virtualBox, COMGETTER(GuestOSTypes)(coll.asOutParam()));
+        CHECK_ERROR(a->virtualBox, COMGETTER(GuestOSTypes)(coll.asOutParam()));
         if (SUCCEEDED(rc) && coll)
         {
             CHECK_ERROR(coll, Enumerate(enumerator.asOutParam()));
@@ -154,10 +153,10 @@ int handleList(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "hostdvds") == 0)
+    if (strcmp(a->argv[0], "hostdvds") == 0)
     {
         ComPtr<IHost> host;
-        CHECK_ERROR(virtualBox, COMGETTER(Host)(host.asOutParam()));
+        CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
         ComPtr<IHostDVDDriveCollection> coll;
         ComPtr<IHostDVDDriveEnumerator> enumerator;
         CHECK_ERROR(host, COMGETTER(DVDDrives)(coll.asOutParam()));
@@ -176,10 +175,10 @@ int handleList(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "hostfloppies") == 0)
+    if (strcmp(a->argv[0], "hostfloppies") == 0)
     {
         ComPtr<IHost> host;
-        CHECK_ERROR(virtualBox, COMGETTER(Host)(host.asOutParam()));
+        CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
         ComPtr<IHostFloppyDriveCollection> coll;
         ComPtr<IHostFloppyDriveEnumerator> enumerator;
         CHECK_ERROR(host, COMGETTER(FloppyDrives)(coll.asOutParam()));
@@ -198,12 +197,12 @@ int handleList(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "hostifs") == 0)
+    if (strcmp(a->argv[0], "hostifs") == 0)
     {
         ComPtr<IHost> host;
-        CHECK_ERROR(virtualBox, COMGETTER(Host)(host.asOutParam()));
+        CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
         com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
-        CHECK_ERROR(host, 
+        CHECK_ERROR(host,
                     COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
         for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
         {
@@ -255,10 +254,10 @@ int handleList(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "hostinfo") == 0)
+    if (strcmp(a->argv[0], "hostinfo") == 0)
     {
         ComPtr<IHost> Host;
-        CHECK_ERROR (virtualBox, COMGETTER(Host)(Host.asOutParam()));
+        CHECK_ERROR (a->virtualBox, COMGETTER(Host)(Host.asOutParam()));
 
         RTPrintf("Host Information:\n\n");
 
@@ -310,10 +309,10 @@ int handleList(int argc, char *argv[],
     #endif
     }
     else
-    if (strcmp(argv[0], "hddbackends") == 0)
+    if (strcmp(a->argv[0], "hddbackends") == 0)
     {
         ComPtr<ISystemProperties> systemProperties;
-        CHECK_ERROR(virtualBox,
+        CHECK_ERROR(a->virtualBox,
                     COMGETTER(SystemProperties) (systemProperties.asOutParam()));
         com::SafeIfaceArray <IHardDiskFormat> hardDiskFormats;
         CHECK_ERROR(systemProperties,
@@ -386,10 +385,10 @@ int handleList(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "hdds") == 0)
+    if (strcmp(a->argv[0], "hdds") == 0)
     {
         com::SafeIfaceArray <IHardDisk2> hdds;
-        CHECK_ERROR(virtualBox, COMGETTER(HardDisks2)(ComSafeArrayAsOutParam (hdds)));
+        CHECK_ERROR(a->virtualBox, COMGETTER(HardDisks2)(ComSafeArrayAsOutParam (hdds)));
         for (size_t i = 0; i < hdds.size(); ++ i)
         {
             ComPtr<IHardDisk2> hdd = hdds[i];
@@ -412,7 +411,7 @@ int handleList(int argc, char *argv[],
             for (size_t j = 0; j < machineIds.size(); ++ j)
             {
                 ComPtr<IMachine> machine;
-                CHECK_ERROR(virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
+                CHECK_ERROR(a->virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
                 ASSERT(machine);
                 Bstr name;
                 machine->COMGETTER(Name)(name.asOutParam());
@@ -428,10 +427,10 @@ int handleList(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "dvds") == 0)
+    if (strcmp(a->argv[0], "dvds") == 0)
     {
         com::SafeIfaceArray<IDVDImage2> dvds;
-        CHECK_ERROR(virtualBox, COMGETTER(DVDImages)(ComSafeArrayAsOutParam(dvds)));
+        CHECK_ERROR(a->virtualBox, COMGETTER(DVDImages)(ComSafeArrayAsOutParam(dvds)));
         for (size_t i = 0; i < dvds.size(); ++ i)
         {
             ComPtr<IDVDImage2> dvdImage = dvds[i];
@@ -449,10 +448,10 @@ int handleList(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "floppies") == 0)
+    if (strcmp(a->argv[0], "floppies") == 0)
     {
         com::SafeIfaceArray<IFloppyImage2> floppies;
-        CHECK_ERROR(virtualBox, COMGETTER(FloppyImages)(ComSafeArrayAsOutParam(floppies)));
+        CHECK_ERROR(a->virtualBox, COMGETTER(FloppyImages)(ComSafeArrayAsOutParam(floppies)));
         for (size_t i = 0; i < floppies.size(); ++ i)
         {
             ComPtr<IFloppyImage2> floppyImage = floppies[i];
@@ -470,10 +469,10 @@ int handleList(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "usbhost") == 0)
+    if (strcmp(a->argv[0], "usbhost") == 0)
     {
         ComPtr<IHost> Host;
-        CHECK_ERROR_RET (virtualBox, COMGETTER(Host)(Host.asOutParam()), 1);
+        CHECK_ERROR_RET (a->virtualBox, COMGETTER(Host)(Host.asOutParam()), 1);
 
         ComPtr<IHostUSBDeviceCollection> CollPtr;
         CHECK_ERROR_RET (Host, COMGETTER(USBDevices)(CollPtr.asOutParam()), 1);
@@ -561,12 +560,12 @@ int handleList(int argc, char *argv[],
         }
     }
     else
-    if (strcmp(argv[0], "usbfilters") == 0)
+    if (strcmp(a->argv[0], "usbfilters") == 0)
     {
         RTPrintf("Global USB Device Filters:\n\n");
 
         ComPtr <IHost> host;
-        CHECK_ERROR_RET (virtualBox, COMGETTER(Host) (host.asOutParam()), 1);
+        CHECK_ERROR_RET (a->virtualBox, COMGETTER(Host) (host.asOutParam()), 1);
 
         ComPtr<IHostUSBDeviceFilterCollection> coll;
         CHECK_ERROR_RET (host, COMGETTER (USBDeviceFilters)(coll.asOutParam()), 1);
@@ -636,10 +635,10 @@ int handleList(int argc, char *argv[],
             index ++;
         }
     }
-    else if (strcmp(argv[0], "systemproperties") == 0)
+    else if (strcmp(a->argv[0], "systemproperties") == 0)
     {
         ComPtr<ISystemProperties> systemProperties;
-        virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+        a->virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
 
         Bstr str;
         ULONG ulValue;
@@ -669,7 +668,7 @@ int handleList(int argc, char *argv[],
 
     }
     else
-        return errorSyntax(USAGE_LIST, "Invalid parameter '%s'", Utf8Str(argv[0]).raw());
+        return errorSyntax(USAGE_LIST, "Invalid parameter '%s'", Utf8Str(a->argv[0]).raw());
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
