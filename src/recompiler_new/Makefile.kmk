@@ -126,6 +126,7 @@ $(REM_MOD)_INCS            = 		\
 	$(PATH_ROOT)/src/VBox/VMM 	\
 	.
 ifn1of ($($(REM_MOD)_DEFS),DEBUG_TMP_LOGGING)
+$(REM_MOD)_DEFS           += LOG_USE_C99
 $(REM_MOD)_INCS           <= \
 	Sun/crt
 endif
