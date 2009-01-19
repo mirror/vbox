@@ -99,7 +99,7 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_HPET,
     /** System Management Controller Device group. */
     LOG_GROUP_DEV_SMC,
-        /** IDE Device group. */
+    /** IDE Device group. */
     LOG_GROUP_DEV_IDE,
     /** The internal networking IP stack Device group. */
     LOG_GROUP_DEV_INIP,
