@@ -1145,6 +1145,7 @@ int main()
 #endif
     GEN_CHECK_OFF(AHCIPort, fNotificationSend);
     GEN_CHECK_OFF(AHCIPort, fPortReset);
+    GEN_CHECK_OFF(AHCIPort, fAsyncIOThreadIdle);
     GEN_CHECK_OFF(AHCIPort, szSerialNumber);
     GEN_CHECK_OFF(AHCIPort, szSerialNumber[AHCI_SERIAL_NUMBER_LENGTH]); /* One additional byte for the termination.*/
     GEN_CHECK_OFF(AHCIPort, szFirmwareRevision);
