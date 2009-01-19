@@ -1095,7 +1095,7 @@ bool pgmHandlerPhysicalIsAll(PVM pVM, RTGCPHYS GCPhys)
            ||   pCur->enmType == PGMPHYSHANDLERTYPE_MMIO); /* sanity */
     /* Only whole pages can be disabled. */
     Assert(   pCur->Core.Key     <= (GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK)
-           && pCur->Core.KeyLast >= (GCPhys | PAGE_OFFSET_MASK);
+           && pCur->Core.KeyLast >= (GCPhys | PAGE_OFFSET_MASK));
     return pCur->enmType != PGMPHYSHANDLERTYPE_PHYSICAL_WRITE;
 }
 
