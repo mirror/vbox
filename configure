@@ -1991,6 +1991,11 @@ if [ "$OS" = "darwin" ]; then
   BUILD_LIBXML2=1
 fi
 
+if [ "$OS" = "freebsd" ]; then
+  # Qt3 will be gone before the FreeBSD port is completed, so just drop it.
+  WITH_QT3=0
+fi
+
 # emit disable directives corresponding to any --disable-xxx options.
 [ $WITH_XPCOM -eq 0 ]   && cnf_append "VBOX_WITH_MAIN" ""
 [ $WITH_QT3 -eq 0   ]   && cnf_append "VBOX_WITH_QTGUI" ""
@@ -2017,7 +2022,7 @@ check_gcc
 # build openssl on Darwin in every case
 [ "$OS" != "darwin" -a $OSE -eq 0 ] && check_ssl
 [ "$OS" != "darwin"  ] && check_z
-[ "$OS" != "darwin"  ] && check_png
+[ "$OS" != "darwin" -a "$OS" != "freebsd" ] && check_png
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
 [ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
