@@ -755,7 +755,7 @@ ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64)
 else
 	$(call MSG_L1,Building Windows/amd64 additions)
-	rsync -av --no-owner --no-group --delete --delete-excluded --exclude .svn/ --exclude out/ --exclude tinderclient.log . 192.168.27.5:/cygdrive/e/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
+	rsync -av --no-owner --no-group --delete --delete-excluded --exclude .svn/ --exclude tinderclient.log . 192.168.27.5:/cygdrive/e/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 c:/psexec/psexec.exe \\\\\\\\addvm -u vbox -p $(WIN64PASSWORD) c:\\\\cygwin\\\\bin\\\\bash.exe -c \''PATH=/usr/bin:/bin e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64) > e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME).log 2>&1'\'; \
 	rc=$$?; \
 	rsync -av --delete 192.168.27.5:/cygdrive/e/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/win.amd64/ out/win.amd64; \
