@@ -109,6 +109,7 @@ $(REM_MOD)_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H
 #$(REM_MOD)_DEFS           += REM_PHYS_ADDR_IN_TLB
 $(REM_MOD)_DEFS           += VBOX_WITH_NEW_RECOMPILER
 #$(REM_MOD)_DEFS           += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
+#$(REM_MOD)_DEFS           += DEBUG_TMP_LOGGING # log qemu parts to "/tmp/vbox-qemu.log" - does not work with VBoxREM2.
 $(REM_MOD)_DEFS.linux      = _GNU_SOURCE
 ifdef VBOX_SOLARIS_10
  $(REM_MOD)_DEFS.solaris   = HOST_SOLARIS=10
@@ -124,6 +125,10 @@ $(REM_MOD)_INCS            = 		\
 	$(PATH_$(REM_MOD)) 		\
 	$(PATH_ROOT)/src/VBox/VMM 	\
 	.
+ifn1of ($($(REM_MOD)_DEFS),DEBUG_TMP_LOGGING)
+$(REM_MOD)_INCS           <= \
+	Sun/crt
+endif
 
 $(REM_MOD)_SOURCES         = 		\
 	VBoxRecompiler.c 		\
