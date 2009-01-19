@@ -609,13 +609,13 @@ static void supR3HardenedMainGrabCapabilites(void)
      * We are about to drop all our privileges. Remove all capabilities but
      * keep the cap_net_raw capability for ICMP sockets for the NAT stack.
      */
-#  ifdef USE_LIB_PCAP
-    /* XXX cap_net_bind_service */
-    if (!cap_set_proc(cap_from_text("all-eip cap_net_raw+ep")))
-        prctl(PR_SET_KEEPCAPS, /*keep=*/1, 0, 0, 0);
-#  else
     if (g_uCaps != 0)
     {
+#  ifdef USE_LIB_PCAP
+        /* XXX cap_net_bind_service */
+        if (!cap_set_proc(cap_from_text("all-eip cap_net_raw+ep")))
+            prctl(PR_SET_KEEPCAPS, /*keep=*/1, 0, 0, 0);
+#  else
         cap_user_header_t hdr = (cap_user_header_t)alloca(sizeof(*hdr));
         cap_user_data_t   cap = (cap_user_data_t)alloca(sizeof(*cap));
         memset(hdr, 0, sizeof(*hdr));
@@ -625,8 +625,8 @@ static void supR3HardenedMainGrabCapabilites(void)
         cap->permitted = g_uCaps;
         if (!capset(hdr, cap))
             prctl(PR_SET_KEEPCAPS, /*keep=*/1, 0, 0, 0);
+#  endif /* !USE_LIB_PCAP */
     }
-#  endif
 
 # elif defined(RT_OS_SOLARIS)
     /*
@@ -672,24 +672,31 @@ static void supR3GrabOptions(void)
     g_uCaps = 0;
 
     /*
-     * CAP_NET_RAW.
-     * Default: enabled.
-     * Can be disabled with 'export VBOX_HARD_CAP_NET_RAW=0'.
+     * Do _not_ perform any capability-related system calls for root processes
+     * (leaving g_uCaps at 0).
      */
-    pszOpt = getenv("VBOX_HARD_CAP_NET_RAW");
-    if (   !pszOpt
-        || memcmp(pszOpt, "0", sizeof("0")) != 0)
-        g_uCaps = CAP_TO_MASK(CAP_NET_RAW);
+    if (getuid() != 0)
+    {
+        /*
+         * CAP_NET_RAW.
+         * Default: enabled.
+         * Can be disabled with 'export VBOX_HARD_CAP_NET_RAW=0'.
+         */
+        pszOpt = getenv("VBOX_HARD_CAP_NET_RAW");
+        if (   !pszOpt
+                || memcmp(pszOpt, "0", sizeof("0")) != 0)
+            g_uCaps = CAP_TO_MASK(CAP_NET_RAW);
 
-    /*
-     * CAP_NET_BIND_SERVICE.
-     * Default: disabled.
-     * Can be enabled with 'export VBOX_HARD_CAP_NET_BIND_SERVICE=1'.
-     */
-    pszOpt = getenv("VBOX_HARD_CAP_NET_BIND_SERVICE");
-    if (   pszOpt
-        && memcmp(pszOpt, "0", sizeof("0")) != 0)
-        g_uCaps |= CAP_TO_MASK(CAP_NET_BIND_SERVICE);
+        /*
+         * CAP_NET_BIND_SERVICE.
+         * Default: disabled.
+         * Can be enabled with 'export VBOX_HARD_CAP_NET_BIND_SERVICE=1'.
+         */
+        pszOpt = getenv("VBOX_HARD_CAP_NET_BIND_SERVICE");
+        if (   pszOpt
+                && memcmp(pszOpt, "0", sizeof("0")) != 0)
+            g_uCaps |= CAP_TO_MASK(CAP_NET_BIND_SERVICE);
+    }
 # endif
 }
 
@@ -761,13 +768,13 @@ static void supR3HardenedMainDropPrivileges(void)
     /*
      * Re-enable the cap_net_raw capability which was disabled during setresuid.
      */
-#  ifdef USE_LIB_PCAP
-    /** @todo Warn if that does not work? */
-    /* XXX cap_net_bind_service */
-    cap_set_proc(cap_from_text("cap_net_raw+ep"));
-#  else
     if (g_uCaps != 0)
     {
+#  ifdef USE_LIB_PCAP
+        /** @todo Warn if that does not work? */
+        /* XXX cap_net_bind_service */
+        cap_set_proc(cap_from_text("cap_net_raw+ep"));
+#  else
         cap_user_header_t hdr = (cap_user_header_t)alloca(sizeof(*hdr));
         cap_user_data_t   cap = (cap_user_data_t)alloca(sizeof(*cap));
         memset(hdr, 0, sizeof(*hdr));
@@ -777,8 +784,8 @@ static void supR3HardenedMainDropPrivileges(void)
         cap->permitted = g_uCaps;
         /** @todo Warn if that does not work? */
         capset(hdr, cap);
+#  endif /* !USE_LIB_PCAP */
     }
-#  endif
 # endif
 }
 
