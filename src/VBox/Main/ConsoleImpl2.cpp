@@ -557,8 +557,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "FdcEnabled", fFdcEnabled);                 RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "HpetEnabled", 0);                          RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "SmcEnabled", 0);                           RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();
         Assert(!afPciDeviceNo[7]);
         afPciDeviceNo[7] = true;
