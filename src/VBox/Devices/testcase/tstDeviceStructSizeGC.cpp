@@ -446,8 +446,6 @@ int main()
     GEN_CHECK_OFF(ACPIState, pDevIns);
     GEN_CHECK_OFF(ACPIState, pDrvBase);
     GEN_CHECK_OFF(ACPIState, pDrv);
-    GEN_CHECK_OFF(ACPIState, u8UseHpet);
-    GEN_CHECK_OFF(ACPIState, u8UseSmc);
 
     /* PC/DevPIC.cpp */
     GEN_CHECK_SIZE(PicState);
