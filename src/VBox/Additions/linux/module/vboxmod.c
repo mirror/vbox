@@ -414,7 +414,7 @@ static int vboxadd_hgcm_free_buffer(hgcm_jump_buffer *pBuf)
 {
     int rc = 0;
     AssertPtrReturn(pBuf, -EINVAL);
-    if (copy_to_user(pBuf->pUser, pBuf->pKernel, pBuf->cb) != 0)
+    if (copy_to_user(pBuf->pUser, pBuf->pKernel, pBuf->cb) != 0) /** @todo r=bird: This isn't entirely correct for LinAddr_In buffers. */
         rc = -EFAULT;
     kfree(pBuf->pKernel);  /* We want to do this whatever the outcome. */
     kfree(pBuf);
