@@ -2293,21 +2293,38 @@ TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64_fbsd
 
 TOOL_FREEBSDKMODLD = FreeBSD kernel module linker.
 # See kBuild/tools/GCC3.kmk for docs.
-TOOL_FREEBSDKMODLD_LINK_SYSMOD_OUTPUT = $(outbase).kld
 TOOL_FREEBSDKMODLD_LINK_SYSMOD_OUTPUT_MAYBE = $(outbase).map
 TOOL_FREEBSDKMODLD_LINK_SYSMOD_DEPEND = $(foreach lib,$(libs),$(if $(findstring $(lib),$(subst /,x,$(lib))),, $(lib)))
 TOOL_FREEBSDKMODLD_LINK_SYSMOD_DEPORD =
+ ifeq ($(KBUILD_TARGET_ARCH),amd64)
+TOOL_FREEBSDKMODLD_LINK_SYSMOD_OUTPUT =
 define TOOL_FREEBSDKMODLD_LINK_SYSMOD_CMDS
-	@# Link intermediate .kld (a relocatable object).
+# Link intermediate .kld (a relocatable object).
+	ld $(flags) -r -o  $(out) $(objs) \
+		$(foreach p,$(libpath), -L$(p))\
+		$(foreach lib,$(libs), $(if $(findstring $(lib),$(subst /,x,$(lib))), -l$(patsubst lib%,%,$(basename $(lib))), $(lib)))
+# Strip non-exported symbols private and localize the exported ones.
+	awk -f $(VBOX_FREEBSD_SRC)/conf/kmod_syms.awk  $(out) $(if $(othersrc), $(othersrc),/dev/null) \
+		| xargs -J% objcopy % $(out)
+
+## Strip debug info (comment out if debugging or something).
+#	objcopy --strip-debug $(out)
+endef
+ else # x86
+TOOL_FREEBSDKMODLD_LINK_SYSMOD_OUTPUT = $(outbase).kld
+define TOOL_FREEBSDKMODLD_LINK_SYSMOD_CMDS
+# Link intermediate .kld (a relocatable object).
 	ld $(flags) -r -o $(outbase).kld $(objs) \
 		$(foreach p,$(libpath), -L$(p))\
 		$(foreach lib,$(libs), $(if $(findstring $(lib),$(subst /,x,$(lib))), -l$(patsubst lib%,%,$(basename $(lib))), $(lib)))
-	@# Strip non-exported symbols private and localize the exported ones.
+# Strip non-exported symbols private and localize the exported ones.
 	awk -f $(VBOX_FREEBSD_SRC)/conf/kmod_syms.awk $(outbase).kld $(if $(othersrc), $(othersrc),/dev/null) \
 		| xargs -J% objcopy % $(outbase).kld
-	@# Link the final .ko (a shared object).
+
+# Link the final .ko (a shared object).
 	ld $(flags) -Bshareable -o $(out) $(outbase).kld
 endef
+ endif # x86
 
 endif # FreeBSD
 
