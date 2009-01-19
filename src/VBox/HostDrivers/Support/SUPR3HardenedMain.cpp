@@ -674,6 +674,7 @@ static void supR3GrabOptions(void)
     /*
      * Do _not_ perform any capability-related system calls for root processes
      * (leaving g_uCaps at 0).
+     * (Hint: getuid gets the real user id, not the efficient.)
      */
     if (getuid() != 0)
     {
@@ -684,7 +685,7 @@ static void supR3GrabOptions(void)
          */
         pszOpt = getenv("VBOX_HARD_CAP_NET_RAW");
         if (   !pszOpt
-                || memcmp(pszOpt, "0", sizeof("0")) != 0)
+            || memcmp(pszOpt, "0", sizeof("0")) != 0)
             g_uCaps = CAP_TO_MASK(CAP_NET_RAW);
 
         /*
@@ -694,7 +695,7 @@ static void supR3GrabOptions(void)
          */
         pszOpt = getenv("VBOX_HARD_CAP_NET_BIND_SERVICE");
         if (   pszOpt
-                && memcmp(pszOpt, "0", sizeof("0")) != 0)
+            && memcmp(pszOpt, "0", sizeof("0")) != 0)
             g_uCaps |= CAP_TO_MASK(CAP_NET_BIND_SERVICE);
     }
 # endif
