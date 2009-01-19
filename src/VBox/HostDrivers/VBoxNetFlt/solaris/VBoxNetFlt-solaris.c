@@ -761,7 +761,6 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
             /*
              * Request the physical address (we cache the acknowledgement).
              */
-            /** @todo take a look at DLPI notifications additionally for these things. */
             rc = vboxNetFltSolarisPhysAddrReq(pStream->pReadQueue);
             if (RT_LIKELY(RT_SUCCESS(rc)))
             {
