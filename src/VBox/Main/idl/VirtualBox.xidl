@@ -1646,6 +1646,9 @@
           to save all current machine settings before registering it.
         </note>
 
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No matching virtual machine found.
+        </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Virtual machine was not created within this VirtualBox instance.
         </result>
@@ -1660,7 +1663,7 @@
         To look up a machine by name, use <link to="IVirtualBox::findMachine" />
         instead.
 
-        <result name="VBOX_E_FILE_ERROR">
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
           Could not find registered machine matching @a id.
         </result>
 
@@ -1675,7 +1678,7 @@
         To look up a machine by UUID, use <link to="IVirtualBox::getMachine" />
         instead.
 
-        <result name="VBOX_E_FILE_ERROR">
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
           Could not find registered machine matching @a name.
         </result>
 
@@ -1711,7 +1714,7 @@
           <b>any</b> method will return the "Object not ready" error.
         </note>
 
-        <result name="VBOX_E_FILE_ERROR">
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
           Could not find registered machine matching @a id.
         </result>
         <result name="VBOX_E_INVALID_VM_STATE">
@@ -2303,6 +2306,9 @@
         </result>
         <result name="E_ACCESSDENIED">
           Process not started by OpenRemoteSession.
+        </result>
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No matching virtual machine found.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Session already open or being opened.
