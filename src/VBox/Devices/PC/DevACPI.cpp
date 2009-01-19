@@ -65,6 +65,7 @@
 #define SYSI_INDEX      0x00004048
 #define SYSI_DATA       0x0000404c
 #define ACPI_RESET_BLK  0x00004050
+#define FDC_STATUS      0x00004054
 
 /* PM1x status register bits */
 #define TMR_STS         RT_BIT(0)
@@ -130,10 +131,7 @@ enum
 {
     SYSTEM_INFO_INDEX_MEMORY_LENGTH     = 0,
     SYSTEM_INFO_INDEX_USE_IOAPIC        = 1,
-    SYSTEM_INFO_INDEX_HPET_STATUS       = 2,
-    SYSTEM_INFO_INDEX_SMC_STATUS        = 3,
-    SYSTEM_INFO_INDEX_FDC_STATUS        = 4,
-    SYSTEM_INFO_INDEX_LAST              = 5,
+    SYSTEM_INFO_INDEX_LAST              = 2,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -144,11 +142,11 @@ enum
 #define BAT_TECH_PRIMARY                        1
 #define BAT_TECH_SECONDARY                      2
 
-#define STA_DEVICE_PRESENT_MASK                 RT_BIT(0) /**< present */
-#define STA_DEVICE_ENABLED_MASK                 RT_BIT(1) /**< enabled and decodes its resources */
-#define STA_DEVICE_SHOW_IN_UI_MASK              RT_BIT(2) /**< should be shown in UI */
-#define STA_DEVICE_FUNCTIONING_PROPERLY_MASK    RT_BIT(3) /**< functioning properly */
-#define STA_BATTERY_PRESENT_MASK                RT_BIT(4) /**< the battery is present */
+#define STA_DEVICE_PRESENT_MASK                 RT_BIT(0)
+#define STA_DEVICE_ENABLED_MASK                 RT_BIT(1)
+#define STA_DEVICE_SHOW_IN_UI_MASK              RT_BIT(2)
+#define STA_DEVICE_FUNCTIONING_PROPERLY_MASK    RT_BIT(3)
+#define STA_BATTERY_PRESENT_MASK                RT_BIT(4)
 
 struct ACPIState
 {
@@ -197,13 +195,6 @@ struct ACPIState
     R3PTRTYPE(PPDMIBASE) pDrvBase;
     /** Pointer to the driver connector interface */
     R3PTRTYPE(PPDMIACPICONNECTOR) pDrv;
-
-    /* If High Precision Event Timer device should be supported */
-    uint8_t             u8UseHpet;
-    /* If System Management Controller device should be supported */
-    uint8_t             u8UseSmc;
-
-    uint32_t            Alignment0; /**< Structure size alignment. */
 };
 
 #pragma pack(1)
@@ -541,6 +532,7 @@ IO_WRITE_PROTO (acpiPM1aCtlWrite);
 IO_WRITE_PROTO (acpiSmiWrite);
 IO_WRITE_PROTO (acpiBatIndexWrite);
 IO_READ_PROTO  (acpiBatDataRead);
+IO_READ_PROTO  (acpiFdcStatusRead);
 IO_READ_PROTO  (acpiSysInfoDataRead);
 IO_WRITE_PROTO (acpiSysInfoDataWrite);
 IO_READ_PROTO  (acpiGpe0EnRead);
@@ -1253,6 +1245,26 @@ IO_READ_PROTO (acpiBatDataRead)
     return VINF_SUCCESS;
 }
 
+IO_READ_PROTO (acpiFdcStatusRead)
+{
+    ACPIState *s = (ACPIState *)pvUser;
+
+    switch (cb)
+    {
+        case 4:
+            *pu32 = s->u8UseFdc
+                ?   STA_DEVICE_PRESENT_MASK                 /* present */
+                  | STA_DEVICE_ENABLED_MASK                 /* enabled and decodes its resources */
+                  | STA_DEVICE_SHOW_IN_UI_MASK              /* should be shown in UI */
+                  | STA_DEVICE_FUNCTIONING_PROPERLY_MASK    /* functioning properly */
+                : 0;                                        /* device not present */
+            break;
+        default:
+            return VERR_IOM_IOPORT_UNUSED;
+    }
+    return VINF_SUCCESS;
+}
+
 IO_WRITE_PROTO (acpiSysInfoIndexWrite)
 {
     ACPIState *s = (ACPIState *)pvUser;
@@ -1264,19 +1276,6 @@ IO_WRITE_PROTO (acpiSysInfoIndexWrite)
             s->uSystemInfoIndex = u32;
         else
         {
-            /* see comment at the declaration of u8IndexShift */
-            if (s->u8IndexShift == 0)
-            {
-                uint32_t u32Index;
-                for (u32Index = 0; u32Index < SYSTEM_INFO_INDEX_LAST; u32Index++)
-                {
-                    if (u32 == (u32Index << 2))
-                    {
-                        s->u8IndexShift = 2;
-                        break;
-                    }
-                }
-            }
             u32 >>= s->u8IndexShift;
             Assert (u32 < SYSTEM_INFO_INDEX_LAST);
             s->uSystemInfoIndex = u32;
@@ -1293,10 +1292,10 @@ IO_WRITE_PROTO (acpiSysInfoIndexWrite)
 IO_READ_PROTO (acpiSysInfoDataRead)
 {
     ACPIState *s = (ACPIState *)pvUser;
-  
+
     switch (cb)
     {
-        case 4:            
+        case 4:
             switch (s->uSystemInfoIndex)
             {
                 case SYSTEM_INFO_INDEX_MEMORY_LENGTH:
@@ -1306,31 +1305,7 @@ IO_READ_PROTO (acpiSysInfoDataRead)
                 case SYSTEM_INFO_INDEX_USE_IOAPIC:
                     *pu32 = s->u8UseIOApic;
                     break;
-
-                case SYSTEM_INFO_INDEX_HPET_STATUS:
-                    *pu32 = s->u8UseHpet ? (  STA_DEVICE_PRESENT_MASK
-                                            | STA_DEVICE_ENABLED_MASK
-                                            | STA_DEVICE_SHOW_IN_UI_MASK
-                                            | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
-                                         : 0;
-                    break;
                     
-                case SYSTEM_INFO_INDEX_SMC_STATUS:
-                    *pu32 = s->u8UseSmc ? (  STA_DEVICE_PRESENT_MASK
-                                           | STA_DEVICE_ENABLED_MASK
-                                           /* no need to show this device in the UI */
-                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
-                                        : 0;
-                    break;
-               
-                case SYSTEM_INFO_INDEX_FDC_STATUS:
-                    *pu32 = s->u8UseFdc ? (  STA_DEVICE_PRESENT_MASK
-                                           | STA_DEVICE_ENABLED_MASK
-                                           | STA_DEVICE_SHOW_IN_UI_MASK
-                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
-                                        : 0;
-                    break;
-
                 /* Solaris 9 tries to read from this index */
                 case SYSTEM_INFO_INDEX_INVALID:
                     *pu32 = 0;
@@ -1778,9 +1753,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
                                "NumCPUs\0"
                                "GCEnabled\0"
                                "R0Enabled\0"
-                               "FdcEnabled\0"
-                               "HpetEnabled\0"
-                               "SmcEnabled\0"))
+                               "FdcEnabled\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config key for ACPI device"));
 
@@ -1793,17 +1766,6 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     else if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
-
-    /* query whether we are supposed to present HPET */
-    rc = CFGMR3QueryU8Def (pCfgHandle, "HpetEnabled", &s->u8UseHpet, 0);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"HpetEnabled\""));
-     /* query whether we are supposed to present SMC */
-    rc = CFGMR3QueryU8Def (pCfgHandle, "SmcEnabled", &s->u8UseSmc, 0);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"SmcEnabled\"")); 
 
     rc = CFGMR3QueryU16Def(pCfgHandle, "NumCPUs", &s->cCpus, 1);
     if (RT_FAILURE(rc))
@@ -1868,6 +1830,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     R (BAT_DATA,       1, NULL,                  acpiBatDataRead,     "ACPI Battery status data");
     R (SYSI_INDEX,     1, acpiSysInfoIndexWrite, NULL,                "ACPI system info index");
     R (SYSI_DATA,      1, acpiSysInfoDataWrite,  acpiSysInfoDataRead, "ACPI system info data");
+    R (FDC_STATUS,     1, NULL,                  acpiFdcStatusRead,   "ACPI FDC status index");
     R (GPE0_BLK + L,   L, acpiGpe0EnWrite,       acpiGpe0EnRead,      "ACPI GPE0 Enable");
     R (GPE0_BLK,       L, acpiGpe0StsWrite,      acpiGpe0StsRead,     "ACPI GPE0 Status");
     R (ACPI_RESET_BLK, 1, acpiResetWrite,        NULL,                "ACPI Reset");
@@ -1903,13 +1866,16 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     acpiPMTimerReset (s);
 
     dev = &s->dev;
-    PCIDevSetVendorId(dev, 0x8086); /* Intel */
-    PCIDevSetDeviceId(dev, 0x7113); /* 82371AB */
+    dev->config[0x00] = 0x86;
+    dev->config[0x01] = 0x80;
 
-    dev->config[0x04] = 0x01; /* command */
+    dev->config[0x02] = 0x13;
+    dev->config[0x03] = 0x71;
+
+    dev->config[0x04] = 0x01;
     dev->config[0x05] = 0x00;
 
-    dev->config[0x06] = 0x80; /* status */
+    dev->config[0x06] = 0x80;
     dev->config[0x07] = 0x02;
     dev->config[0x08] = 0x08;
     dev->config[0x09] = 0x00;
