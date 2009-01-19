@@ -716,10 +716,12 @@ additions-fetch:
 
 
 ## @todo Currently combined solaris additions building assumes that amd64 is
-# built first. Do not change the order of dependencies here without testing.
+# built first. The windows amd64 additions need some x86 files, so don't change
+# the order of the windows builds.
+# Do not change the order of dependencies here without testing.
 additions-build: \
-	additions-build-win.amd64 \
 	additions-build-win.x86 \
+	additions-build-win.amd64 \
 	additions-build-solaris.amd64 \
 	additions-build-solaris.x86 \
 	additions-build-os2.x86 \
