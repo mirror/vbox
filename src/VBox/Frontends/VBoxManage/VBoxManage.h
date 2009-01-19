@@ -88,8 +88,6 @@
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
-using namespace com;
-
 typedef uint64_t USAGECATEGORY;
 
 /** command handler argument */
@@ -100,8 +98,10 @@ struct HandlerArg
 #ifdef USE_XPCOM_QUEUE
     nsCOMPtr<nsIEventQueue> eventQ;
 #endif
+#ifndef VBOX_ONLY_DOCS
     ComPtr<IVirtualBox> virtualBox;
     ComPtr<ISession> session;
+#endif
 };
 
 /** flag whether we're in internal mode */
