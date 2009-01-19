@@ -270,7 +270,7 @@ static void VBoxDrvFreeBSDClone(void *pvArg, struct ucred *pCred, char *pszName,
  * @param   pFd     The file descriptor. FreeBSD 7.0 and later.
  * @param   iFd     The file descriptor index(?). Pre FreeBSD 7.0.
  */
-#if FreeBSD >= 700 /* figure when and how to check properly */
+#if __FreeBSD__ >= 7
 static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd, struct file *pFd)
 #else
 static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd, int iFd)
@@ -370,7 +370,7 @@ static int VBoxDrvFreeBSDIOCtl(struct cdev *pDev, u_long ulCmd, caddr_t pvData, 
     if (    ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
         ||  ulCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
         ||  ulCmd == SUP_IOCTL_FAST_DO_NOP)
-        return supdrvIOCtlFast(uCmd, *(uint32_t *)pvData, &g_VBoxDrvFreeBSDDevExt, pSession);
+        return supdrvIOCtlFast(ulCmd, *(uint32_t *)pvData, &g_VBoxDrvFreeBSDDevExt, pSession);
 
     return VBoxDrvFreeBSDIOCtlSlow(pSession, ulCmd, pvData, pTd);
 }
