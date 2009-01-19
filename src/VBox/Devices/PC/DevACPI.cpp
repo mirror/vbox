@@ -144,11 +144,11 @@ enum
 #define BAT_TECH_PRIMARY                        1
 #define BAT_TECH_SECONDARY                      2
 
-#define STA_DEVICE_PRESENT_MASK                 RT_BIT(0)
-#define STA_DEVICE_ENABLED_MASK                 RT_BIT(1)
-#define STA_DEVICE_SHOW_IN_UI_MASK              RT_BIT(2)
-#define STA_DEVICE_FUNCTIONING_PROPERLY_MASK    RT_BIT(3)
-#define STA_BATTERY_PRESENT_MASK                RT_BIT(4)
+#define STA_DEVICE_PRESENT_MASK                 RT_BIT(0) /**< present */
+#define STA_DEVICE_ENABLED_MASK                 RT_BIT(1) /**< enabled and decodes its resources */
+#define STA_DEVICE_SHOW_IN_UI_MASK              RT_BIT(2) /**< should be shown in UI */
+#define STA_DEVICE_FUNCTIONING_PROPERLY_MASK    RT_BIT(3) /**< functioning properly */
+#define STA_BATTERY_PRESENT_MASK                RT_BIT(4) /**< the battery is present */
 
 struct ACPIState
 {
@@ -1308,15 +1308,27 @@ IO_READ_PROTO (acpiSysInfoDataRead)
                     break;
 
                 case SYSTEM_INFO_INDEX_HPET_STATUS:
-                    *pu32 = s->u8UseHpet ? 0xf : 0;
+                    *pu32 = s->u8UseHpet ? (  STA_DEVICE_PRESENT_MASK
+                                            | STA_DEVICE_ENABLED_MASK
+                                            | STA_DEVICE_SHOW_IN_UI_MASK
+                                            | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
+                                         : 0;
                     break;
                     
                 case SYSTEM_INFO_INDEX_SMC_STATUS:
-                    *pu32 = s->u8UseSmc ? 0xb  : 0; /* No need to show in UI */
+                    *pu32 = s->u8UseSmc ? (  STA_DEVICE_PRESENT_MASK
+                                           | STA_DEVICE_ENABLED_MASK
+                                           /* no need to show this device in the UI */
+                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
+                                        : 0;
                     break;
                
                 case SYSTEM_INFO_INDEX_FDC_STATUS:
-                    *pu32 = s->u8UseFdc ? 0xf  : 0;
+                    *pu32 = s->u8UseFdc ? (  STA_DEVICE_PRESENT_MASK
+                                           | STA_DEVICE_ENABLED_MASK
+                                           | STA_DEVICE_SHOW_IN_UI_MASK
+                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
+                                        : 0;
                     break;
 
                 /* Solaris 9 tries to read from this index */
@@ -1891,16 +1903,13 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     acpiPMTimerReset (s);
 
     dev = &s->dev;
-    dev->config[0x00] = 0x86;
-    dev->config[0x01] = 0x80;
+    PCIDevSetVendorId(dev, 0x8086); /* Intel */
+    PCIDevSetDeviceId(dev, 0x7113); /* 82371AB */
 
-    dev->config[0x02] = 0x13;
-    dev->config[0x03] = 0x71;
-
-    dev->config[0x04] = 0x01;
+    dev->config[0x04] = 0x01; /* command */
     dev->config[0x05] = 0x00;
 
-    dev->config[0x06] = 0x80;
+    dev->config[0x06] = 0x80; /* status */
     dev->config[0x07] = 0x02;
     dev->config[0x08] = 0x08;
     dev->config[0x09] = 0x00;
