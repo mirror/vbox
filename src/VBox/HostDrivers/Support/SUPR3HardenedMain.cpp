@@ -674,7 +674,7 @@ static void supR3GrabOptions(void)
     /*
      * Do _not_ perform any capability-related system calls for root processes
      * (leaving g_uCaps at 0).
-     * (Hint: getuid gets the real user id, not the efficient.)
+     * (Hint: getuid gets the real user id, not the effective.)
      */
     if (getuid() != 0)
     {
