@@ -344,6 +344,12 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 
 /** Indicates that the devices support PAE36 on a 32-bit guest. */
 #define PDM_DEVREG_FLAGS_PAE36                  0x00001000
+
+/** Indicates that the device needs to be notified before the drivers when suspending. */
+#define PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION 0x00002000
+
+/** Indicates that the device needs to be notified before the drivers when powering off. */
+#define PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION 0x00004000
 /** @} */
 
 
