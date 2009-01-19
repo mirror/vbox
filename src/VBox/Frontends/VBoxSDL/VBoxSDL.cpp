@@ -1890,7 +1890,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #endif
 
     // create our SDL framebuffer instance
-    gpFrameBuffer = new VBoxSDLFB(fFullscreen, fResizable, fShowSDLConfig,
+    gpFrameBuffer = new VBoxSDLFB(fFullscreen, fResizable, fShowSDLConfig, false,
                                   fixedWidth, fixedHeight, fixedBPP);
 
     if (!gpFrameBuffer)
