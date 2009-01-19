@@ -23,6 +23,7 @@
 #define ___H_VBOXMANAGE
 
 #ifndef VBOX_ONLY_DOCS
+#include <VBox/com/com.h>
 #include <VBox/com/ptr.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/EventQueue.h>
@@ -86,6 +87,8 @@
 #define USAGE_CONVERTHD             RT_BIT_64(43)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
+
+using namespace com;
 
 typedef uint64_t USAGECATEGORY;
 
