@@ -329,14 +329,13 @@ endif
 
 ifdef VBOX_WITH_HPET
 DevicesR3_DEFS          += VBOX_WITH_HPET
-DevicesR3_SOURCES       += PC/DevHPET.cpp 
+DevicesR3_SOURCES       += PC/DevHPET.cpp
 endif
 
 ifdef VBOX_WITH_SMC
 DevicesR3_DEFS          += VBOX_WITH_SMC
-DevicesR3_SOURCES       += PC/DevSMC.cpp 
+DevicesR3_SOURCES       += PC/DevSMC.cpp
 endif
-
 
 ifdef VBOX_WITH_USB
 DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
@@ -437,7 +436,7 @@ endif
 
 ifdef VBOX_WITH_HPET
 VBoxDDGC_DEFS          += VBOX_WITH_HPET
-VBoxDDGC_SOURCES       += PC/DevHPET.cpp 
+VBoxDDGC_SOURCES       += PC/DevHPET.cpp
 endif
 
 ifeq ($(VBOX_LDR_FMT32),pe)
@@ -512,7 +511,7 @@ endif
 
 ifdef VBOX_WITH_HPET
 VBoxDDR0_DEFS          += VBOX_WITH_HPET
-VBoxDDR0_SOURCES       += PC/DevHPET.cpp 
+VBoxDDR0_SOURCES       += PC/DevHPET.cpp
 endif
 
 ifeq ($(VBOX_LDR_FMT32),pe)
