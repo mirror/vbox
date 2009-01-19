@@ -36,9 +36,9 @@
 
 #define fflush(file)            RTLogFlush(NULL)
 #define printf(...)             LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
-/* If DEBUG_ALL_LOGGING - goes to QEMU log file */
-#ifndef DEBUG_ALL_LOGGING
- #define fprintf(logfile, ...)   LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
+/* If DEBUG_TMP_LOGGING - goes to QEMU log file */
+#ifndef DEBUG_TMP_LOGGING
+# define fprintf(logfile, ...)  LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
 #endif
 
 #define assert(cond) Assert(cond)
@@ -125,7 +125,7 @@ void *get_mmap_addr(unsigned long size);
 #ifdef __i386__
 #ifdef _MSC_VER
 /** @todo: maybe wrong, or slow */
-#define REGPARM 
+#define REGPARM
 #else
 #define REGPARM __attribute((regparm(3)))
 #endif
@@ -164,7 +164,7 @@ typedef struct timeval qemu_timeval;
 #ifdef VBOX
 #ifdef _MSC_VER
 #define ALIGNED_MEMBER(type, name, bytes) type name
-#define ALIGNED_MEMBER_DEF(type, name) type name  
+#define ALIGNED_MEMBER_DEF(type, name) type name
 #define PACKED_STRUCT(name) struct name
 #define REGISTER_BOUND_GLOBAL(type, var, reg) type var
 #define SAVE_GLOBAL_REGISTER(reg, var)

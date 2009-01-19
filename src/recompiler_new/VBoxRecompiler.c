@@ -389,7 +389,9 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 
 #ifdef DEBUG_ALL_LOGGING
     loglevel = ~0;
+# ifdef DEBUG_TMP_LOGGING
     logfile = fopen("/tmp/vbox-qemu.log", "w");
+# endif
 #endif
 
     return rc;
@@ -2973,8 +2975,8 @@ REMR3DECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys)
  * @param   addr        The virtual address.
  * @param   pTLBEntry   The TLB entry.
  */
-target_ulong remR3PhysGetPhysicalAddressCode(CPUState*          env, 
-                                             target_ulong       addr, 
+target_ulong remR3PhysGetPhysicalAddressCode(CPUState*          env,
+                                             target_ulong       addr,
                                              CPUTLBEntry*       pTLBEntry,
                                              target_phys_addr_t ioTLBEntry)
 {
@@ -2982,8 +2984,8 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState*          env,
 
     if ((ioTLBEntry & ~TARGET_PAGE_MASK) == pVM->rem.s.iHandlerMemType)
     {
-        /* If code memory is being monitored, appropriate IOTLB entry will have 
-           handler IO type, and addend will provide real physical address, no 
+        /* If code memory is being monitored, appropriate IOTLB entry will have
+           handler IO type, and addend will provide real physical address, no
            matter if we store VA in TLB or not, as handlers are always passed PA */
         target_ulong ret = (ioTLBEntry & TARGET_PAGE_MASK) + addr;
         return ret;
@@ -3676,10 +3678,10 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
  */
 void disas(FILE *phFile, void *pvCode, unsigned long cb)
 {
-#ifdef DEBUG_ALL_LOGGING
-#define DISAS_PRINTF(x...) fprintf(phFile, x)
+#ifdef DEBUG_TMP_LOGGING
+# define DISAS_PRINTF(x...) fprintf(phFile, x)
 #else
-#define DISAS_PRINTF(x...) RTLogPrintf(x)
+# define DISAS_PRINTF(x...) RTLogPrintf(x)
     if (LogIs2Enabled())
 #endif
     {
@@ -3726,10 +3728,10 @@ void disas(FILE *phFile, void *pvCode, unsigned long cb)
  */
 void target_disas(FILE *phFile, target_ulong uCode, target_ulong cb, int fFlags)
 {
-#ifdef DEBUG_ALL_LOGGING
-#define DISAS_PRINTF(x...) fprintf(phFile, x)
+#ifdef DEBUG_TMP_LOGGING
+# define DISAS_PRINTF(x...) fprintf(phFile, x)
 #else
-#define DISAS_PRINTF(x...) RTLogPrintf(x)
+# define DISAS_PRINTF(x...) RTLogPrintf(x)
     if (LogIs2Enabled())
 #endif
     {
