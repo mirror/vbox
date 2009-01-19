@@ -34,6 +34,8 @@
 #define LOG_GROUP RTLOGGROUP_PROCESS
 #include <unistd.h>
 #include <errno.h>
+#include <dlfcn.h>
+#include <link.h>
 
 #include <iprt/string.h>
 #include <iprt/assert.h>
@@ -67,8 +69,38 @@ DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath)
     }
 
     int err = errno;
+
+    /*
+     * Fall back on the dynamic linker since /proc is optional.
+     */
+    void *hExe = dlopen(NULL, 0);
+    if (hExe)
+    {
+        struct link_map const *pLinkMap = 0;
+        if (dlinfo(hExe, RTLD_DI_LINKMAP, &pLinkMap) == 0)
+        {
+            const char *pszImageName = pLinkMap->l_name;
+            if (*pszImageName == '/') /* this may not always be absolute, despite the docs. :-( */
+            {
+                char *pszTmp = NULL;
+                int rc = rtPathFromNative(&pszTmp, pszImageName);
+                AssertMsgRCReturn(rc, ("rc=%Rrc pszImageName=\"%s\"\n", rc, pszImageName), rc);
+
+                size_t cch = strlen(pszTmp);
+                AssertReturn(cch <= cchPath, VERR_BUFFER_OVERFLOW);
+
+                memcpy(pszPath, pszTmp, cch + 1);
+                RTStrFree(pszTmp);
+
+                return VINF_SUCCESS;
+            }
+            /** @todo Try search the PATH for the file name or append the current
+             *        directory, which ever makes sense... */
+        }
+    }
+
     int rc = RTErrConvertFromErrno(err);
-    AssertMsgFailed(("rc=%Rrc err=%d cchLink=%d\n", rc, err, cchLink));
+    AssertMsgFailed(("rc=%Rrc err=%d cchLink=%d hExe=%p\n", rc, err, cchLink, hExe));
     return rc;
 }
 
