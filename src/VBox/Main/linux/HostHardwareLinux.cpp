@@ -938,6 +938,10 @@ int getUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess)
     {
         rc = halFindDeviceStringMatch (dbusConnection.get(), "info.subsystem",
                                        "usb_device", &replyFind);
+        if (RT_SUCCESS(rc) && !replyFind)  /* "Old" syntax. */
+            rc = halFindDeviceStringMatch (dbusConnection.get(),
+                                           "linux.subsystem", "usb_device",
+                                           &replyFind);
         if (!replyFind)
             halSuccess = false;
     }
