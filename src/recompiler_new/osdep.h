@@ -4,7 +4,9 @@
 #ifdef VBOX
 
 #include <iprt/alloc.h>
-//#include <iprt/alloca.h>
+#ifndef RT_OS_WINDOWS
+# include <iprt/alloca.h>
+#endif
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
 
