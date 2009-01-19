@@ -129,7 +129,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
 
     Scope (\_SB)
     {
-        OperationRegion (SYSI, SystemIO, 0x4048, 0x8)
+        OperationRegion (SYSI, SystemIO, 0x4048, 0x08)
         Field (SYSI, DwordAcc, NoLock, Preserve)
         {
             IDX0, 32,
@@ -140,9 +140,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         {
             MEML, 32,
             UIOA, 32,
-            UHPT, 32,
-            USMC, 32,
-            UFDC, 32,
             Offset (0x80),
             ININ, 32,
             Offset (0x200),
@@ -156,12 +153,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             HEX4 (MEML)
             DBG ("UIOA: ")
             HEX4 (UIOA)
-            DBG ("UHPT: ")
-            HEX4 (UHPT)
-            DBG ("USMC: ")
-            HEX4 (USMC)
-            DBG ("UFDC: ")
-            HEX4 (UFDC)
         }
 
         // PCI PIC IRQ Routing table
@@ -497,56 +488,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         {
             IRQ (Level, ActiveLow, Shared) {5,9,10,11}
         })
-        
-        // High Precision Event Timer
-        Device (HPET)
-        {
-            Name (_HID, EisaId ("PNP0103"))
-            Name (_CID, 0x010CD041)
-            Name (BUF0, ResourceTemplate ()
-            {
-                IRQNoFlags ()
-                    {2}
-                IRQNoFlags ()
-                    {8}
-                Memory32Fixed (ReadOnly,
-                    0xFED00000,         // Address Base
-                    0x00000400,         // Address Length
-                    _Y16)
-            })
-            Method (_STA, 0, NotSerialized)
-            {
-                Return (UHPT)
-            }
-            Method (_CRS, 0, Serialized)
-            {
-                Return (BUF0)
-            }
-        }
-
-        // System Management Controller
-        Device (SMC)
-        {
-            Name (_HID, EisaId ("APP0001"))
-            Name (_CID, "smc-napa")
-
-            Method (_STA, 0, NotSerialized)
-            {
-                Return (USMC)
-            }
-            Name (_CRS, ResourceTemplate ()
-            {
-                IO (Decode16,
-                    0x0300,             // Range Minimum
-                    0x0300,             // Range Maximum
-                    0x01,               // Alignment
-                    0x20,               // Length
-                    )
-                IRQNoFlags ()
-                    {6}
-            })
-        }
-
 
         // PCI bus 0
         Device (PCI0)
@@ -622,10 +563,17 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 {
                     Name (_HID, EisaId ("PNP0700"))
 
+                    OperationRegion (CFDC, SystemIO, 0x4054, 0x08)
+                    Field (CFDC, DwordAcc, NoLock, Preserve)
+                    {
+                        FSTA, 32,
+                    }
+
                     Method (_STA, 0, NotSerialized)
                     {
-                          Return (UFDC)           
+                        Return (FSTA)
                     }
+
                     // Current resource settings
                     Name (_CRS, ResourceTemplate ()
                     {
