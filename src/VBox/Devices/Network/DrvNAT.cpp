@@ -48,7 +48,11 @@
 # include <iprt/req.h>
 #endif
 
-//#define VBOX_NAT_DELAY_HACK
+/**
+ * @todo: This is a bad hack to prevent freezing the guest during high network
+ *        activity. This needs to be fixed properly.
+ */
+#define VBOX_NAT_DELAY_HACK
 
 
 /*******************************************************************************
