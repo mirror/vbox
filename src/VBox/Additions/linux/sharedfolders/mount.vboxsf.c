@@ -56,7 +56,8 @@
         switch(0) { case 0: case (a): ; } \
     } while (0)
 
-struct opts {
+struct opts
+{
     int  uid;
     int  gid;
     int  ttl;
@@ -105,7 +106,8 @@ safe_atoi (const char *s, size_t size, int base)
     char *endptr;
     long long int val = strtoll (s, &endptr, base);
 
-    if (val < INT_MIN || val > INT_MAX || endptr < s + size) {
+    if (val < INT_MIN || val > INT_MAX || endptr < s + size)
+    {
         errno = ERANGE;
         panic_err ("could not convert %.*s to integer, result = %d",
                    (int)size, s, (int) val);
@@ -138,14 +140,18 @@ process_mount_opts (const char *s, struct opts *opts)
         HODEV,
         HONOSUID,
         HOSUID,
-        HOREMOUNT
+        HOREMOUNT,
+        HONOAUTO
     } handler_opt;
-    struct {
+    struct
+    {
         const char *name;
         handler_opt opt;
         int has_arg;
         const char *desc;
-    } handlers[] = {
+    } handlers[]
+    =
+    {
         {"rw",        HORW,        0, "mount read write (default)"},
         {"ro",        HORO,        0, "mount read only"},
         {"uid",       HOUID,       1, "default file owner user id"},
@@ -165,31 +171,37 @@ process_mount_opts (const char *s, struct opts *opts)
         {"nosuid",    HONOSUID,    0, 0 },
         {"suid",      HOSUID,      0, 0 },
         {"remount",   HOREMOUNT,   0, 0 },
+        {"noauto",    HONOAUTO,    0, 0 },
         {NULL, 0, 0, NULL}
     }, *handler;
 
-    while (next) {
+    while (next)
+    {
         const char *val;
         size_t key_len, val_len;
 
         s = next;
         next = strchr (s, ',');
-        if (!next) {
+        if (!next)
+        {
             len = strlen (s);
         }
-        else {
+        else
+        {
             len = next - s;
             next += 1;
-            if (!*next) {
+            if (!*next)
                 next = 0;
-            }
         }
 
         val = NULL;
         val_len = 0;
-        for (key_len = 0; key_len < len; ++key_len) {
-            if (s[key_len] == '=') {
-                if (key_len + 1 < len) {
+        for (key_len = 0; key_len < len; ++key_len)
+        {
+            if (s[key_len] == '=')
+            {
+                if (key_len + 1 < len)
+                {
                     val = s + key_len + 1;
                     val_len = len - key_len - 1;
                 }
@@ -197,14 +209,18 @@ process_mount_opts (const char *s, struct opts *opts)
             }
         }
 
-        for (handler = handlers; handler->name; ++handler) {
+        for (handler = handlers; handler->name; ++handler)
+        {
             size_t j;
             for (j = 0; j < key_len && handler->name[j] == s[j]; ++j)
                 ;
 
-            if (j == key_len && !handler->name[j]) {
-                if (handler->has_arg) {
-                    if (!(val && *val)) {
+            if (j == key_len && !handler->name[j])
+            {
+                if (handler->has_arg)
+                {
+                    if (!(val && *val))
+                    {
                         panic ("%.*s requires an argument (i.e. %.*s=<arg>)\n",
                                (int)len, s, (int)len, s);
                     }
@@ -264,7 +280,8 @@ process_mount_opts (const char *s, struct opts *opts)
                     opts->fmask = safe_atoi (val, val_len, 8);
                     break;
                 case HOIOCHARSET:
-                    if (val_len + 1 > sizeof (opts->nls_name)) {
+                    if (val_len + 1 > sizeof (opts->nls_name))
+                    {
                         panic ("iocharset name too long\n");
                     }
                     memcpy (opts->nls_name, val, val_len);
@@ -272,11 +289,14 @@ process_mount_opts (const char *s, struct opts *opts)
                     break;
                 case HOCONVERTCP:
                     opts->convertcp = malloc (val_len + 1);
-                    if (!opts->convertcp) {
+                    if (!opts->convertcp)
+                    {
                         panic_err ("could not allocate memory");
                     }
                     memcpy (opts->convertcp, val, val_len);
                     opts->convertcp[val_len] = 0;
+                    break;
+                case HONOAUTO:
                     break;
                 }
                 break;
@@ -284,11 +304,13 @@ process_mount_opts (const char *s, struct opts *opts)
             continue;
         }
 
-        if (!handler->name) {
+        if (!handler->name)
+        {
             fprintf (stderr, "unknown mount option `%.*s'\n", (int)len, s);
             fprintf (stderr, "valid options:\n");
 
-            for (handler = handlers; handler->name; ++handler) {
+            for (handler = handlers; handler->name; ++handler)
+            {
                 if (handler->desc)
                     fprintf (stderr, "  %-10s%s %s\n", handler->name,
                          handler->has_arg ? "=<arg>" : "", handler->desc);
@@ -373,14 +395,17 @@ convertcp (char *in_codeset, char *host_name, struct vbsf_mount_info_new *info)
     iconv_t cd;
 
     cd = iconv_open ("UTF-8", in_codeset);
-    if (cd == (iconv_t) -1) {
+    if (cd == (iconv_t) -1)
+    {
         panic_err ("could not convert share name, iconv_open `%s' failed",
                    in_codeset);
     }
 
-    while (ib) {
+    while (ib)
+    {
         size_t c = iconv (cd, &i, &ib, &o, &ob);
-        if (c == (size_t) -1) {
+        if (c == (size_t) -1)
+        {
             panic_err ("could not convert share name(%s) at %d",
                        host_name, (int)(strlen (host_name) - ib));
         }
@@ -468,8 +493,10 @@ main (int argc, char **argv)
     CT_ASSERT(sizeof(uid_t) == sizeof(int));
     CT_ASSERT(sizeof(gid_t) == sizeof(int));
 
-    while ((c = getopt (argc, argv, "rwno:h")) != -1) {
-        switch (c) {
+    while ((c = getopt (argc, argv, "rwno:h")) != -1)
+    {
+        switch (c)
+        {
             default:
                 fprintf (stderr, "unknown option `%c:%#x'\n", c, c);
             case '?':
