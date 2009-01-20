@@ -172,7 +172,6 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         /* Restore the state on entry as we need to be in 64 bits mode to access the full state. */
         pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_FPU_STATE;
-RTLogPrintf("setting CPUM_SYNC_FPU_STATE\n");
     }
     else
 #endif
@@ -262,8 +261,6 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
 if (!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE))
-     RTLogPrintf("CPUMR0SaveGuestFPU: CPUM_SYNC_FPU_STATE is clear...\n");
-else RTLogPrintf("CPUMR0SaveGuestFPU: CPUM_SYNC_FPU_STATE is still set\n");
         if (!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE))
             HWACCMR0SaveFPUState(pVM, pVCpu, pCtx);
 
