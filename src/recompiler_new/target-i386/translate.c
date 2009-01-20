@@ -646,7 +646,7 @@ DECLINLINE(void) gen_op_seg_check(int reg, bool keepA0)
 
     /* For other segments this check is waste of time, and also TCG is unable to cope with this code,
        for data/stack segments, as expects alive cpu_T[0] */
-    if (reg != R_GS) 
+    if (reg != R_GS)
         return;
 
     if (keepA0)
@@ -663,9 +663,9 @@ DECLINLINE(void) gen_op_seg_check(int reg, bool keepA0)
     tcg_gen_brcondi_i32(TCG_COND_EQ, t0, 0, skip_label);
     tcg_gen_ld32u_tl(t0, cpu_env, offsetof(CPUState, eflags) + REG_L_OFFSET);
     tcg_gen_andi_tl(t0, t0, VM_MASK);
-    tcg_gen_brcondi_i32(TCG_COND_NE, t0, 0, skip_label);    
+    tcg_gen_brcondi_i32(TCG_COND_NE, t0, 0, skip_label);
     tcg_gen_movi_tl(t0, reg);
-    
+
     tcg_gen_helper_0_1(helper_sync_seg, t0);
 
     tcg_temp_free(t0);
@@ -4137,8 +4137,9 @@ static void gen_sse(DisasContext *s, int b, target_ulong pc_start, int rex_r)
                         break;
                     case 0x21: case 0x31: /* pmovsxbd, pmovzxbd */
                     case 0x24: case 0x34: /* pmovsxwq, pmovzxwq */
-                        tcg_gen_qemu_ld32u(cpu_tmp2_i32, cpu_A0,
+                        tcg_gen_qemu_ld32u(cpu_tmp0, cpu_A0,
                                           (s->mem_index >> 2) - 1);
+                        tcg_gen_trunc_tl_i32(cpu_tmp2_i32, cpu_tmp0);
                         tcg_gen_st_i32(cpu_tmp2_i32, cpu_env, op2_offset +
                                         offsetof(XMMReg, XMM_L(0)));
                         break;
