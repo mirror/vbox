@@ -485,6 +485,8 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
         PDMQueueInsert(pThis->pSendQueue, &pItem->Core);
         return;
     }
+    LogRel(("NAT:Couldn't alloc the new queue item to send\n"));
+    RTMemFree((void *)pItem->pu8Buf);
 #endif
 }
 
