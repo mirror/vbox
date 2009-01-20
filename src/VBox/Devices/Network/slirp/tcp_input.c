@@ -236,7 +236,8 @@ present:
         {
             if (so->so_emu)
             {
-                if (tcp_emu(pData, so, q->tqe_m)) sbappend(pData, so, q->tqe_m); 
+                if (tcp_emu(pData, so, q->tqe_m))
+                    sbappend(pData, so, q->tqe_m); 
             }
             else
                 sbappend(pData, so, q->tqe_m);
@@ -1467,10 +1468,11 @@ dodata:
             {
                 if (so->so_emu) 
                 {
-                    if (tcp_emu(pData, so,m)) sbappend(pData, so, m);
-                } 
+                    if (tcp_emu(pData, so,m))
+                        sbappend(pData, so, m);
+                }
                 else
-                sbappend(pData, so, m);
+                    sbappend(pData, so, m);
             }
         }
         else
