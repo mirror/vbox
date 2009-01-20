@@ -6425,6 +6425,17 @@
         List of all hard disk storage formats supported by this VirtualBox
         installation.
 
+        Keep in mind that the hard disk format identifier
+        (<link to="IHardDiskFormat::id"/>) used in other API calls like
+        <link to="IVirtualBox::createHardDisk2()"/> to refer to a particular
+        hard disk format is a case-insensitive string. This means that, for
+        example, all of the following strings:
+        <pre>
+          "VDI"
+          "vdi"
+          "VdI"</pre>
+        refer to the same hard disk format.
+
         Note that the virtual hard disk framework is backend-based, therefore
         the list of supported formats depends on what backends are currently
         installed.
@@ -8635,6 +8646,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="id" type="wstring" readonly="yes">
       <desc>
         Identifier of this format.
+
+        The format identifier is a non-null non-empty ASCII string. Note that
+        this string is case-insensitive. This means that, for example, all of
+        the following strings:
+        <pre>
+          "VDI"
+          "vdi"
+          "VdI"</pre>
+        refer to the same hard disk format.
 
         This string is used in methods of other interfaces where it is necessary
         to specify a hard disk format, such as
