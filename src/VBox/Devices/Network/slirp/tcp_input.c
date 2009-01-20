@@ -233,7 +233,14 @@ present:
         if (so->so_state & SS_FCANTSENDMORE)
             m_freem(pData, q->tqe_m);
         else
-            sbappend(pData, so, q->tqe_m);
+        {
+            if (so->so_emu)
+            {
+                if (tcp_emu(pData, so, q->tqe_m)) sbappend(pData, so, q->tqe_m); 
+            }
+            else
+                sbappend(pData, so, q->tqe_m);
+        }
         RTMemFree(q);
         tp->t_segqlen--;
         tcp_reass_qsize--;
@@ -1456,8 +1463,15 @@ dodata:
             tcpstat.tcps_rcvbyte += tlen;
             if (so->so_state & SS_FCANTRCVMORE)
                 m_freem(pData, m);
-            else
+            else 
+            {
+                if (so->so_emu) 
+                {
+                    if (tcp_emu(pData, so,m)) sbappend(pData, so, m);
+                } 
+                else
                 sbappend(pData, so, m);
+            }
         }
         else
         {
