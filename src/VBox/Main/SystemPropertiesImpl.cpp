@@ -617,7 +617,7 @@ ComObjPtr <HardDiskFormat> SystemProperties::hardDiskFormat (CBSTR aFormat)
     {
         /* HardDiskFormat is all const, no need to lock */
 
-        if ((*it)->id() == aFormat)
+        if ((*it)->id().compareIgnoreCase (aFormat) == 0)
         {
             format = *it;
             break;
