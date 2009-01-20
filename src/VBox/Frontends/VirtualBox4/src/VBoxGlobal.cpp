@@ -1707,7 +1707,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
             AssertFailedBreak();
     }
 
-    Assert (!device.isNull());
+    Assert ((aBus == KStorageBus_SATA && device.isNull()) || !device.isNull());
     return device;
 }
 
