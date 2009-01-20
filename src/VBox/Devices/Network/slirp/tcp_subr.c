@@ -671,7 +671,7 @@ tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
                 struct sockaddr_in addr;
                 socklen_t addrlen = sizeof addr;
 
-                if ( getsockname(so->s,(struct sockaddr *)&addr,&addrlen))
+                if (getsockname(so->s, (struct sockaddr *)&addr, &addrlen))
                     return 1;
 
                 x = sscanf(bptr, "ORT %u,%u,%u,%u,%u,%u\r\n%256[^\177]",
@@ -710,7 +710,7 @@ tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
                 struct sockaddr_in addr;
                 socklen_t addrlen = sizeof addr;
 
-                if ( getsockname(so->s,(struct sockaddr *)&addr,&addrlen))
+                if (getsockname(so->s, (struct sockaddr *)&addr, &addrlen))
                     return 1;
 
                 x = sscanf(bptr, "27 Entering Passive Mode (%u,%u,%u,%u,%u,%u)\r\n%256[^\177]",
