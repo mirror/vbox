@@ -68,6 +68,7 @@ struct DBusMessageIter
 typedef struct DBusMessageIter DBusMessageIter;
 
 #define DBUS_ERROR_NO_MEMORY                  "org.freedesktop.DBus.Error.NoMemory"
+#define DBUS_TYPE_INVALID       ((int) '\0')
 #define DBUS_TYPE_STRING        ((int) 's')
 #define DBUS_TYPE_ARRAY         ((int) 'a')
 #define DBUS_TYPE_DICT_ENTRY    ((int) 'e')
