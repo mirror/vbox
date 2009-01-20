@@ -5015,7 +5015,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="230"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>Legt die Größe des Speichers für die virtuelle Maschine fest. Wenn Sie zu viel angeben, kann die virtuelle Maschine nicht starten.</translation>
+        <translation>Legt die Größe des Hauptspeichers für die virtuelle Maschine fest. Wenn dieser Wert zu groß ist, kann die virtuelle Maschine nicht starten.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="349"/>
@@ -5110,7 +5110,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="693"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>Zeigt, ob virtuelle Maschinen einen speziellen Modus der CPU für die Virtualisierung (Intel VT-x bzw. AMD-V) per Voreinstellung nutzen sollen oder nicht.</translation>
+        <translation>Durch Aktivieren dieser Option wird die virtuelle Maschine einen speziellen Modus der CPU für die Virtualisierung (Intel VT-x bzw. AMD-V) verwenden, falls dieser Modus verfügbar ist.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="696"/>
@@ -5200,7 +5200,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="454"/>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation>Durch Auswählen dieser Checkbox bekommt die virtuelle Maschine Zugriff auf 3D-Grafik-Beschleunigung auf dem Host.</translation>
+        <translation>Durch Aktivieren dieser Checkbox bekommt die virtuelle Maschine Zugriff auf 3D-Grafik-Beschleunigung auf dem Host.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="457"/>
