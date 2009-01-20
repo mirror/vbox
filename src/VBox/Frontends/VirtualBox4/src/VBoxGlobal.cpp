@@ -1700,14 +1700,15 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
         case KStorageBus_SATA:
         {
             AssertMsgBreak (aDevice == 0, ("Invalid device %d\n", aDevice));
-            /* always zero so far for SATA */
+            /* always empty so far for SATA */
+            device = "";
             break;
         }
         default:
             AssertFailedBreak();
     }
 
-    Assert ((aBus == KStorageBus_SATA && device.isNull()) || !device.isNull());
+    Assert (!device.isNull());
     return device;
 }
 
