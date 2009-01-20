@@ -62,8 +62,8 @@ VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG 
             {
                 pVM->dbgf.s.iActiveBp = pVM->dbgf.s.aHwBreakpoints[iBp].iBp;
                 pVM->dbgf.s.fSingleSteppingRaw = false;
-                LogFlow(("DBGFR0Trap03Handler: hit hw breakpoint %d at %04x:%08x\n",
-                         pVM->dbgf.s.aHwBreakpoints[iBp].iBp, pRegFrame->cs, pRegFrame->eip));
+                LogFlow(("DBGFR0Trap03Handler: hit hw breakpoint %d at %04x:%RGv\n",
+                         pVM->dbgf.s.aHwBreakpoints[iBp].iBp, pRegFrame->cs, pRegFrame->rip));
 
                 return VINF_EM_DBG_BREAKPOINT;
             }
@@ -78,7 +78,7 @@ VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG 
         &&  (pVM->dbgf.s.fSingleSteppingRaw))
     {
         pVM->dbgf.s.fSingleSteppingRaw = false;
-        LogFlow(("DBGFR0Trap01Handler: single step at %04x:%08x\n", pRegFrame->cs, pRegFrame->eip));
+        LogFlow(("DBGFR0Trap01Handler: single step at %04x:%RGv\n", pRegFrame->cs, pRegFrame->rip));
         return VINF_EM_DBG_STEPPED;
     }
 
@@ -86,10 +86,10 @@ VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG 
      * Currently we only implement single stepping in the guest,
      * so we'll bitch if this is not a BS event.
      */
-    AssertMsg(uDr6 & X86_DR6_BS, ("hey! we're not doing guest BPs yet! dr6=%RTreg %04x:%08x\n",
-                                  uDr6, pRegFrame->cs, pRegFrame->eip));
+    AssertMsg(uDr6 & X86_DR6_BS, ("hey! we're not doing guest BPs yet! dr6=%RTreg %04x:%RGv\n",
+                                  uDr6, pRegFrame->cs, pRegFrame->rip));
     /** @todo virtualize DRx. */
-    LogFlow(("DBGFR0Trap01Handler: guest debug event %RTreg at %04x:%08x!\n", uDr6, pRegFrame->cs, pRegFrame->eip));
+    LogFlow(("DBGFR0Trap01Handler: guest debug event %RTreg at %04x:%RGv!\n", uDr6, pRegFrame->cs, pRegFrame->rip));
     return VINF_EM_RAW_GUEST_TRAP;
 }
 
@@ -114,8 +114,7 @@ VMMR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame)
     {
         RTGCPTR pPc;
         int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
-                                              (RTGCPTR)((RTGCUINTPTR)pRegFrame->eip - 1),
-                                              &pPc);
+                                              (RTGCPTR)pRegFrame->rip /* no -1 in R0 */, &pPc);
         AssertRCReturn(rc, rc);
 
         for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
@@ -126,8 +125,8 @@ VMMR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame)
                 pVM->dbgf.s.aBreakpoints[iBp].cHits++;
                 pVM->dbgf.s.iActiveBp = pVM->dbgf.s.aBreakpoints[iBp].iBp;
 
-                LogFlow(("DBGFR0Trap03Handler: hit breakpoint %d at %RGv (%04x:%08x) cHits=0x%RX64\n",
-                         pVM->dbgf.s.aBreakpoints[iBp].iBp, pPc, pRegFrame->cs, pRegFrame->eip,
+                LogFlow(("DBGFR0Trap03Handler: hit breakpoint %d at %RGv (%04x:%RGv) cHits=0x%RX64\n",
+                         pVM->dbgf.s.aBreakpoints[iBp].iBp, pPc, pRegFrame->cs, pRegFrame->rip,
                          pVM->dbgf.s.aBreakpoints[iBp].cHits));
                 return VINF_EM_DBG_BREAKPOINT;
             }
