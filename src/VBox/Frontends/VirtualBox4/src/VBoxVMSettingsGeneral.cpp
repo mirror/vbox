@@ -90,6 +90,8 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
                                                        QTreeWidgetItem*)),
              this, SLOT (onCurrentBootItemChanged (QTreeWidgetItem*,
                                                    QTreeWidgetItem*)));
+    connect (mCbVirt, SIGNAL (stateChanged (int)),
+             this, SLOT (stateChangedVirt (int)));
 
     /* Setup iconsets */
     mTbBootItemUp->setIcon (VBoxGlobal::iconSet (":/list_moveup_16px.png",
@@ -207,7 +209,8 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
         mCbVirt->setCheckState (Qt::Unchecked);
 
     /* Nested Paging */
-    mCbNestedPaging->setEnabled (fVTxAMDVSupported);
+    mCbNestedPaging->setEnabled (   fVTxAMDVSupported
+                                 && aMachine.GetHWVirtExEnabled() == KTSBool_True);
     mCbNestedPaging->setChecked (aMachine.GetHWVirtExNestedPagingEnabled());
 
     /* PAE/NX */
@@ -449,6 +452,11 @@ void VBoxVMSettingsGeneral::valueChangedVRAM (int aVal)
 void VBoxVMSettingsGeneral::textChangedVRAM (const QString &aText)
 {
     mSlVideo->setValue (aText.toInt());
+}
+
+void VBoxVMSettingsGeneral::stateChangedVirt (int aState)
+{
+    mCbNestedPaging->setEnabled (mCbVirt->checkState());
 }
 
 void VBoxVMSettingsGeneral::moveBootItemUp()

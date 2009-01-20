@@ -59,6 +59,8 @@ private slots:
     void valueChangedVRAM (int aVal);
     void textChangedVRAM (const QString &aText);
 
+    void stateChangedVirt (int aState);
+
     void moveBootItemUp();
     void moveBootItemDown();
     void onCurrentBootItemChanged (QTreeWidgetItem *aItem,
