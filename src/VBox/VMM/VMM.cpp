@@ -1392,6 +1392,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
          */
         case VMMCALLHOST_VMM_LOGGER_FLUSH:
             pVM->vmm.s.rcCallHost = VINF_SUCCESS;
+            LogAlways(("*FLUSH*\n"));
             break;
 
         /*
