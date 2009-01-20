@@ -668,6 +668,12 @@ tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
                 /*
                  * Need to emulate the PORT command
                  */
+                struct sockaddr_in addr;
+                socklen_t addrlen = sizeof addr;
+
+                if ( getsockname(so->s,(struct sockaddr *)&addr,&addrlen))
+                    return 1;
+
                 x = sscanf(bptr, "ORT %u,%u,%u,%u,%u,%u\r\n%256[^\177]",
                            &n1, &n2, &n3, &n4, &n5, &n6, buff);
                 if (x < 6)
@@ -684,7 +690,7 @@ tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
                 n5 = (n6 >> 8) & 0xff;
                 n6 &= 0xff;
 
-                laddr = ntohl(so->so_faddr.s_addr);
+                laddr = ntohl(addr.sin_addr.s_addr);
 
                 n1 = ((laddr >> 24) & 0xff);
                 n2 = ((laddr >> 16) & 0xff);
@@ -701,6 +707,12 @@ tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
                 /*
                  * Need to emulate the PASV response
                  */
+                struct sockaddr_in addr;
+                socklen_t addrlen = sizeof addr;
+
+                if ( getsockname(so->s,(struct sockaddr *)&addr,&addrlen))
+                    return 1;
+
                 x = sscanf(bptr, "27 Entering Passive Mode (%u,%u,%u,%u,%u,%u)\r\n%256[^\177]",
                            &n1, &n2, &n3, &n4, &n5, &n6, buff);
                 if (x < 6)
@@ -717,7 +729,7 @@ tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
                 n5 = (n6 >> 8) & 0xff;
                 n6 &= 0xff;
 
-                laddr = ntohl(so->so_faddr.s_addr);
+                laddr = ntohl(addr.sin_addr.s_addr);
 
                 n1 = ((laddr >> 24) & 0xff);
                 n2 = ((laddr >> 16) & 0xff);
