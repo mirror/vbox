@@ -328,6 +328,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 # ifdef RT_OS_WINDOWS
     DWORD   event;
     HANDLE  *phEvents;
+    unsigned int cBreak;
 # endif
 
     LogFlow(("drvNATAsyncIoThread: pThis=%p\n", pThis));
@@ -393,6 +394,13 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         slirp_select_poll(pThis->pNATState, /* fTimeout=*/false, /* fIcmp=*/(event == WSA_WAIT_EVENT_0));
         /* process _all_ outstanding requests but don't wait */
         RTReqProcess(pThis->pReqQueue, 0);
+#  ifdef VBOX_NAT_DELAY_HACK
+        if (cBreak++ > 64)
+        {
+            cBreak = 0;
+            RTThreadSleep(2);
+        }
+#  endif
 # endif /* RT_OS_WINDOWS */
     }
 
