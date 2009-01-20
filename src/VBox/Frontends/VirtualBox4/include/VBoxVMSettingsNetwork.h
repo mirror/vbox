@@ -160,6 +160,9 @@ protected:
 private slots:
 
     void updateNetworksList();
+#if defined (VBOX_WITH_NETFLT)
+    void updateInterfaceList();
+#endif
 #if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
     void onCurrentPageChanged (int);
     void onCurrentInterfaceChanged (const QString &);

@@ -759,6 +759,10 @@ void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
         lastFocusWidget = page->setOrderAfter (lastFocusWidget);
 
         /* Setup connections */
+#if defined (VBOX_WITH_NETFLT)
+        connect (page->mCbNAType, SIGNAL (activated (int)),
+                 this, SLOT (updateInterfaceList()));
+#endif
         connect (page->mCbNetwork, SIGNAL (editTextChanged (const QString&)),
                  this, SLOT (updateNetworksList()));
     }
@@ -878,6 +882,19 @@ void VBoxVMSettingsNetworkPage::updateNetworksList()
     mLockNetworkListUpdate = false;
 }
 
+#if defined (VBOX_WITH_NETFLT)
+void VBoxVMSettingsNetworkPage::updateInterfaceList()
+{
+    VBoxVMSettingsNetwork *page =
+        static_cast <VBoxVMSettingsNetwork*> (mTwAdapters->currentWidget());
+
+    bool isHostInterfaceAttached = vboxGlobal().toNetworkAttachmentType (
+        page->mCbNAType->currentText()) == KNetworkAttachmentType_HostInterface;
+
+    mNIList->setEnabled (isHostInterfaceAttached);
+}
+#endif
+
 #if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
 void VBoxVMSettingsNetworkPage::onCurrentPageChanged (int aIndex)
 {
@@ -885,6 +902,10 @@ void VBoxVMSettingsNetworkPage::onCurrentPageChanged (int aIndex)
         static_cast<VBoxVMSettingsNetwork*> (mTwAdapters->widget (aIndex));
     Assert (page);
     mNIList->setCurrentInterface (page->interfaceName());
+
+#if defined (VBOX_WITH_NETFLT)
+    updateInterfaceList();
+#endif
 }
 
 void VBoxVMSettingsNetworkPage::onCurrentInterfaceChanged (const QString &aName)
