@@ -34,6 +34,7 @@
 #include <VBox/log.h>
 #include <VBox/selm.h>
 #include <VBox/iom.h>
+#include <VBox/rem.h>
 #include <iprt/param.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -1182,6 +1183,12 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
                     &&  enmGuestMode >= PGMMODE_PROTECTED)
                 {
+                    /* Flush the recompiler code cache as it's not unlikely
+                     * the guest will rewrite code it will later execute in real
+                     * mode (OpenBSD 4.0 is one such example)
+                     */
+                    REMFlushTBs(pVM);
+
                     /* DPL of all hidden selector registers must match the current CPL (0). */
                     pCtx->csHid.Attr.n.u2Dpl  = 0;
                     pCtx->csHid.Attr.n.u4Type = X86_SEL_TYPE_CODE | X86_SEL_TYPE_RW_ACC;
