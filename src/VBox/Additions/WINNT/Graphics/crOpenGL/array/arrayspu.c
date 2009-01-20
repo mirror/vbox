@@ -12,11 +12,15 @@
 
 ArraySPU array_spu;
 
+#ifdef CHROMIUM_THREADSAFE
+CRmutex _ArrayMutex;
+#endif
+
 static void ARRAYSPU_APIENTRY arrayspu_ArrayElement( GLint index )
 {
-    const CRClientState *c = &(array_spu.ctx->client);
+    const CRClientState *c = &(crStateGetCurrent()->client);
     const CRVertexArrays *array = &(c->array);
-    const GLboolean vpEnabled = array_spu.ctx->program.vpEnabled;
+    const GLboolean vpEnabled = crStateGetCurrent()->program.vpEnabled;
     unsigned char *p;
     unsigned int unit, attr;
 
@@ -102,7 +106,7 @@ static void ARRAYSPU_APIENTRY arrayspu_ArrayElement( GLint index )
     }
 
     /* Now do conventional arrays, unless overriden by generic arrays above */
-    for (unit = 0 ; unit < array_spu.ctx->limits.maxTextureUnits ; unit++)
+    for (unit = 0 ; unit < crStateGetCurrent()->limits.maxTextureUnits ; unit++)
     {
         if (array->t[unit].enabled && !(vpEnabled && array->a[VERT_ATTRIB_TEX0+unit].enabled))
         {
@@ -449,7 +453,7 @@ static void ARRAYSPU_APIENTRY arrayspu_DrawElements(GLenum mode, GLsizei count,
     int i;
     GLubyte *p = (GLubyte *)indices;
 #ifdef CR_ARB_vertex_buffer_object
-    CRBufferObject *elementsBuffer = array_spu.ctx->bufferobject.elementsBuffer;
+    CRBufferObject *elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
 #endif
 
     if (count < 0)
@@ -621,7 +625,7 @@ static void ARRAYSPU_APIENTRY arrayspu_MultiDrawElementsEXT(GLenum mode, GLsizei
 static void ARRAYSPU_APIENTRY arrayspu_Enable(GLenum cap)
 {
      if (cap == GL_VERTEX_PROGRAM_NV) {
-            array_spu.ctx->program.vpEnabled = GL_TRUE;
+            crStateGetCurrent()->program.vpEnabled = GL_TRUE;
      }
      array_spu.child.Enable(cap);
 }
@@ -630,7 +634,7 @@ static void ARRAYSPU_APIENTRY arrayspu_Enable(GLenum cap)
 static void ARRAYSPU_APIENTRY arrayspu_Disable(GLenum cap)
 {
      if (cap == GL_VERTEX_PROGRAM_NV) {
-            array_spu.ctx->program.vpEnabled = GL_FALSE;
+            crStateGetCurrent()->program.vpEnabled = GL_FALSE;
      }
      array_spu.child.Disable(cap);
 }
@@ -753,6 +757,93 @@ arrayspu_InterleavedArrays(GLenum format, GLsizei stride, const GLvoid *p)
     crStateInterleavedArrays(format, stride, p);
 }
 
+static GLint ARRAYSPU_APIENTRY
+arrayspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
+{
+    GLint ctx, slot;
+
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&_ArrayMutex);
+#endif
+
+    ctx = array_spu.child.CreateContext(dpyName, visual, shareCtx);
+
+    /* find an empty context slot */
+    for (slot = 0; slot < array_spu.numContexts; slot++) {
+        if (!array_spu.context[slot].clientState) {
+            /* found empty slot */
+            break;
+        }
+    }
+    if (slot == array_spu.numContexts) {
+        array_spu.numContexts++;
+    }
+
+    array_spu.context[slot].clientState = crStateCreateContext(NULL, visual, NULL);
+    array_spu.context[slot].clientCtx = ctx;
+#ifdef CR_ARB_vertex_buffer_object
+    array_spu.context[slot].clientState->bufferobject.retainBufferData = GL_TRUE;
+#endif
+
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&_ArrayMutex);
+#endif
+
+    return ctx;
+}
+
+static void ARRAYSPU_APIENTRY
+arrayspu_MakeCurrent( GLint window, GLint nativeWindow, GLint ctx )
+{
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&_ArrayMutex);
+#endif
+    array_spu.child.MakeCurrent(window, nativeWindow, ctx);
+
+    if (ctx) {
+        int slot;
+
+        for (slot=0; slot<array_spu.numContexts; ++slot)
+            if (array_spu.context[slot].clientCtx == ctx) break;
+        CRASSERT(slot < array_spu.numContexts);
+
+        crStateMakeCurrent(array_spu.context[slot].clientState);
+    }
+    else 
+    {
+        crStateMakeCurrent(NULL);
+    }
+
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&_ArrayMutex);
+#endif
+}
+
+static void ARRAYSPU_APIENTRY
+arrayspu_DestroyContext( GLint ctx )
+{
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&_ArrayMutex);
+#endif
+    array_spu.child.DestroyContext(ctx);
+
+    if (ctx) {
+        int slot;
+
+        for (slot=0; slot<array_spu.numContexts; ++slot)
+            if (array_spu.context[slot].clientCtx == ctx) break;
+        CRASSERT(slot < array_spu.numContexts);
+
+        crStateDestroyContext(array_spu.context[slot].clientState);
+
+        array_spu.context[slot].clientState = NULL;
+        array_spu.context[slot].clientCtx = 0;
+    }
+
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&_ArrayMutex);
+#endif
+}
 
 SPUNamedFunctionTable _cr_array_table[] = {
     { "ArrayElement", (SPUGenericFunction) arrayspu_ArrayElement },
@@ -792,5 +883,8 @@ SPUNamedFunctionTable _cr_array_table[] = {
     { "GetBufferParameterivARB", (SPUGenericFunction) arrayspu_GetBufferParameterivARB},
     { "GetBufferPointervARB", (SPUGenericFunction) arrayspu_GetBufferPointervARB},
     { "InterleavedArrays", (SPUGenericFunction) arrayspu_InterleavedArrays},
+    { "CreateContext", (SPUGenericFunction) arrayspu_CreateContext},
+    { "MakeCurrent", (SPUGenericFunction) arrayspu_MakeCurrent},
+    { "DestroyContext", (SPUGenericFunction) arrayspu_DestroyContext},
     { NULL, NULL }
 };

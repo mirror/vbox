@@ -6,6 +6,7 @@
 
 #include "cr_spu.h"
 #include "arrayspu.h"
+#include "cr_mem.h"
 #include <stdio.h>
 
 extern SPUNamedFunctionTable _cr_array_table[];
@@ -26,6 +27,10 @@ static SPUFunctions *arraySPUInit( int id, SPU *child, SPU *self,
     (void) context_id;
     (void) num_contexts;
 
+#ifdef CHROMIUM_THREADSAFE
+    crInitMutex(&_ArrayMutex);
+#endif
+
     array_spu.id = id;
     array_spu.has_child = 0;
     if (child)
@@ -39,13 +44,17 @@ static SPUFunctions *arraySPUInit( int id, SPU *child, SPU *self,
     arrayspuSetVBoxConfiguration();
 
     crStateInit();
-    array_spu.ctx = crStateCreateContext( NULL, 0, NULL );
+/*@todo seems default context ain't needed at all*/
+    array_spu.defaultctx = crStateCreateContext( NULL, 0, NULL );
 #ifdef CR_ARB_vertex_buffer_object
-    array_spu.ctx->bufferobject.retainBufferData = GL_TRUE;
+    array_spu.defaultctx->bufferobject.retainBufferData = GL_TRUE;
 #endif
     /* we call SetCurrent instead of MakeCurrent as the differencer
      * isn't setup yet anyway */
-    crStateSetCurrent( array_spu.ctx );
+    crStateSetCurrent( array_spu.defaultctx );
+
+    array_spu.numContexts = 0;
+    crMemZero(array_spu.context, CR_MAX_CONTEXTS * sizeof(ContextInfo));
 
     return &array_functions;
 }
