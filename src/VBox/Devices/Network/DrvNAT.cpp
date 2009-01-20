@@ -48,6 +48,8 @@
 # include <iprt/req.h>
 #endif
 
+//#define VBOX_NAT_DELAY_HACK
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -328,7 +330,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 # ifdef RT_OS_WINDOWS
     DWORD   event;
     HANDLE  *phEvents;
-    unsigned int cBreak;
+    unsigned int cBreak = 0;
 # endif
 
     LogFlow(("drvNATAsyncIoThread: pThis=%p\n", pThis));
@@ -395,7 +397,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         /* process _all_ outstanding requests but don't wait */
         RTReqProcess(pThis->pReqQueue, 0);
 #  ifdef VBOX_NAT_DELAY_HACK
-        if (cBreak++ > 64)
+        if (cBreak++ > 128)
         {
             cBreak = 0;
             RTThreadSleep(2);
