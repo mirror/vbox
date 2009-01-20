@@ -465,6 +465,29 @@ SYMFILETYPE dbgfR3ModuleProbe(FILE *pFile)
             )
             return SYMFILETYPE_LINUX_SYSTEM_MAP;
 
+        if (   isxdigit(szHead[0])
+            && isxdigit(szHead[1])
+            && isxdigit(szHead[2])
+            && isxdigit(szHead[3])
+            && isxdigit(szHead[4])
+            && isxdigit(szHead[5])
+            && isxdigit(szHead[6])
+            && isxdigit(szHead[7])
+            && isxdigit(szHead[8])
+            && isxdigit(szHead[9])
+            && isxdigit(szHead[10])
+            && isxdigit(szHead[11])
+            && isxdigit(szHead[12])
+            && isxdigit(szHead[13])
+            && isxdigit(szHead[14])
+            && isxdigit(szHead[15])
+            && szHead[16] == ' '
+            && isalpha(szHead[17])
+            && szHead[18] == ' '
+            && (isalpha(szHead[19]) || szHead[19] == '_' || szHead[19] == '$')
+            )
+            return SYMFILETYPE_LINUX_SYSTEM_MAP;
+
         if (strstr(szHead, "Microsoft C/C++ MSF") == szHead)
             return SYMFILETYPE_PDB;
 
@@ -495,10 +518,14 @@ static int dbgfR3LoadLinuxSystemMap(PVM pVM, FILE *pFile, RTGCUINTPTR ModuleAddr
         /* parse the line: <address> <type> <name> */
         const char *psz = dbgfR3Strip(szLine);
         char *pszEnd = NULL;
-        RTGCUINTPTR Address = strtoul(psz, &pszEnd, 16);
-        if (    pszEnd && (*pszEnd == ' ' || *pszEnd == '\t')
-            &&  Address != 0
-            &&  Address != (RTGCUINTPTR)~0)
+        uint64_t u64Address;
+        int rc = RTStrToUInt64Ex(psz, &pszEnd, 16, &u64Address);
+        RTGCUINTPTR Address = u64Address;
+        if (    RT_SUCCESS(rc)
+            &&  (*pszEnd == ' ' || *pszEnd == '\t')
+            &&  Address == u64Address
+            &&  u64Address != 0
+            &&  u64Address != (RTGCUINTPTR)~0)
         {
             pszEnd++;
             if (    isalpha(*pszEnd)
