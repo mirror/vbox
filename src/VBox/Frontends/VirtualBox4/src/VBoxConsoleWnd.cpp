@@ -1175,9 +1175,9 @@ void VBoxConsoleWnd::popupMainMenu (bool aCenter)
         pos.setY (pos.y() - mMainMenu->frameGeometry().height());
     }
 
+    mMainMenu->setActiveAction (mMainMenu->actions().first());
     mMainMenu->popup (pos);
     mMainMenu->activateWindow();
-    mMainMenu->setActiveAction (mMainMenu->actions().first());
 }
 
 //
