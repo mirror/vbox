@@ -364,8 +364,8 @@ static int vboxadd_hgcm_disconnect(struct file *filp, unsigned long userspace_in
         return rc;
 }
 
-/** Jump buffer structure for hcgm guest-host data copies. */
-typedef struct hgcm_jump_buffer
+/** Bounce buffer structure for hcgm guest-host data copies. */
+typedef struct hgcm_bounce_buffer
 {
     /** Kernel memory address. */
     void *pKernel;
@@ -373,13 +373,13 @@ typedef struct hgcm_jump_buffer
     void *pUser;
     /** Buffer size. */
     size_t cb;
-} hgcm_jump_buffer;
+} hgcm_bounce_buffer;
 
-/** Create a jump buffer in kernel space for user space memory. */
-static int vboxadd_hgcm_alloc_buffer(hgcm_jump_buffer **ppBuf, void *pUser,
-                                     size_t cb)
+/** Create a bounce buffer in kernel space for user space memory. */
+static int vboxadd_hgcm_alloc_buffer(hgcm_bounce_buffer **ppBuf, void *pUser,
+                                     size_t cb, bool copy)
 {
-    hgcm_jump_buffer *pBuf = NULL;
+    hgcm_bounce_buffer *pBuf = NULL;
     void *pKernel = NULL;
     int rc = 0;
     AssertPtrReturn(ppBuf, -EINVAL);
@@ -393,6 +393,7 @@ static int vboxadd_hgcm_alloc_buffer(hgcm_jump_buffer **ppBuf, void *pUser,
             rc = -ENOMEM;
     }
     if (   rc >= 0
+        && copy
         && copy_from_user(pKernel, pUser, cb) != 0)
         rc = -EFAULT;
     if (rc >= 0) {
@@ -409,12 +410,12 @@ static int vboxadd_hgcm_alloc_buffer(hgcm_jump_buffer **ppBuf, void *pUser,
     return rc;
 }
 
-/** Free a kernel space jump buffer for user space memory. */
-static int vboxadd_hgcm_free_buffer(hgcm_jump_buffer *pBuf)
+/** Free a kernel space bounce buffer for user space memory. */
+static int vboxadd_hgcm_free_buffer(hgcm_bounce_buffer *pBuf, bool copy)
 {
     int rc = 0;
     AssertPtrReturn(pBuf, -EINVAL);
-    if (copy_to_user(pBuf->pUser, pBuf->pKernel, pBuf->cb) != 0) /** @todo r=bird: This isn't entirely correct for LinAddr_In buffers. */
+    if (copy && copy_to_user(pBuf->pUser, pBuf->pKernel, pBuf->cb) != 0)
         rc = -EFAULT;
     kfree(pBuf->pKernel);  /* We want to do this whatever the outcome. */
     kfree(pBuf);
@@ -457,8 +458,9 @@ static int vboxadd_buffer_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCall
             {
                 void *pv = (void *) pParm->u.Pointer.u.linearAddr;
                 uint32_t u32Size = pParm->u.Pointer.size;
-                hgcm_jump_buffer *MemObj = NULL;
-                rc = vboxadd_hgcm_alloc_buffer(&MemObj, pv, u32Size);
+                hgcm_bounce_buffer *MemObj = NULL;
+                rc = vboxadd_hgcm_alloc_buffer(&MemObj, pv, u32Size,
+                         pParm->type != VMMDevHGCMParmType_LinAddr_Out /* copy */);
                 if (rc >= 0) {
                     ppvCtx[iParm] = MemObj;
                     pParm->u.Pointer.u.linearAddr = (uintptr_t)MemObj->pKernel;
@@ -494,8 +496,9 @@ static int vboxadd_unbuffer_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCa
         {
             if (ppvCtx[iParm] != NULL)
             {
-                hgcm_jump_buffer *MemObj = (hgcm_jump_buffer *)ppvCtx[iParm];
-                int rc2 = vboxadd_hgcm_free_buffer(MemObj);
+                hgcm_bounce_buffer *MemObj = (hgcm_bounce_buffer *)ppvCtx[iParm];
+                int rc2 = vboxadd_hgcm_free_buffer(MemObj,
+                                  pParm->type != VMMDevHGCMParmType_LinAddr_In /* copy */);
                 if (rc >= 0 && rc2 < 0)
                     rc = rc2;  /* Report the first error. */
             }
