@@ -47,10 +47,6 @@
  *      Adam Jackson (ajax@redhat.com)
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <VBox/VBoxGuest.h>
 #include <xf86.h>
 #include <xf86Xinput.h>
@@ -77,16 +73,21 @@ VBoxReadInput(InputInfoPtr pInfo)
 static int
 VBoxInit(DeviceIntPtr device)
 {
+    CARD8 map[2] = { 0, 1 };
     InputInfoPtr pInfo;
 
     pInfo = device->public.devicePrivate;
 
-    if (!InitValuatorClassDeviceStruct(device, 2, GetMotionHistory,
-                                       GetMotionHistorySize(), Absolute)) {
-        xf86Msg(X_ERROR, "%s: InitValuatorClassDeviceStruct failed\n",
-                pInfo->name);
-        return BadAlloc;
-    }
+    if (!InitValuatorClassDeviceStruct(device, 2,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
+                                       GetMotionHistory,
+#endif
+                                       GetMotionHistorySize(), Absolute))
+        return !Success;
+
+    /* Pretend we have buttons so the server accepts us as a pointing device. */
+    if (!InitButtonClassDeviceStruct(device, 2 /* number of buttons */, map))
+        return !Success;
 
     /* Tell the server about the range of axis values we report */
     xf86InitValuatorAxisStruct(device, 0, 0 /* min X */, 65536 /* max X */,
@@ -184,7 +185,7 @@ VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     /* Unlike evdev, we set this unconditionally, as we don't handle keyboards. */
     pInfo->type_name = XI_MOUSE;
     pInfo->flags = XI86_POINTER_CAPABLE | XI86_SEND_DRAG_EVENTS |
-            XI86_ALWAYS_CORE | XI86_OPEN_ON_INIT;
+            XI86_ALWAYS_CORE;
 
     xf86CollectInputOptions(pInfo, NULL, NULL);
     xf86ProcessCommonOptions(pInfo, pInfo->options); 
