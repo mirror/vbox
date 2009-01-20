@@ -190,12 +190,28 @@ vboxvideo_drv_14_SOURCES  = \
 DLLS += vboxvideo_drv_15
 vboxvideo_drv_15_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_15_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
-vboxvideo_drv_15_DEFS := $(vboxvideo_drv_70_DEFS) NO_ANSIC PCIACCESS
+vboxvideo_drv_15_DEFS := $(vboxvideo_drv_70_DEFS) NO_ANSIC PCIACCESS VBOX_NO_LOW_COLOUR
 vboxvideo_drv_15_INCS = \
 	$(VBOX_PATH_X11_XORG_1_5) \
 	$(VBOX_PATH_X11_XORG_1_5)/X11 \
 	$(VBOX_PATH_X11_XORG_1_5)/xorg
 vboxvideo_drv_15_SOURCES  = \
+	vboxvideo_15.c \
+	vboxutils.c
+
+
+#
+# vboxvideo_drv_16
+#
+DLLS += vboxvideo_drv_16
+vboxvideo_drv_16_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_16_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
+vboxvideo_drv_16_DEFS := $(vboxvideo_drv_15_DEFS)
+vboxvideo_drv_16_INCS = \
+	$(VBOX_PATH_X11_XORG_1_6) \
+	$(VBOX_PATH_X11_XORG_1_6)/X11 \
+	$(VBOX_PATH_X11_XORG_1_6)/xorg
+vboxvideo_drv_16_SOURCES  = \
 	vboxvideo_15.c \
 	vboxutils.c
 

@@ -81,11 +81,8 @@
 
 /* VBE/DDC support */
 #include "vbe.h"
-#include "vbeModes.h"
 
 /* ShadowFB support */
-#include "shadow.h"
-
 #include "shadowfb.h"
 
 /* VBox video related defines */
@@ -104,23 +101,12 @@
 #define VBE_DISPI_ENABLED               0x01
 #define VBE_DISPI_LFB_ENABLED           0x40
 
-/* Int 10 support */
-#include "xf86int10.h"
-
-/* bank switching */
-#include "mibank.h"
-
 /* Dga definitions */
 #include "dgaproc.h"
 
-#include "xf86Resources.h"
 #include "xf86RAC.h"
 
-#include "xf1bpp.h"
-#include "xf4bpp.h"
 #include "fb.h"
-#include "afb.h"
-#include "mfb.h"
 
 #define VBOX_VERSION		4000
 #include "xf86Cursor.h"
