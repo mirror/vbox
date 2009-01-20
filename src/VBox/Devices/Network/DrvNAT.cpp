@@ -485,7 +485,12 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
         PDMQueueInsert(pThis->pSendQueue, &pItem->Core);
         return;
     }
-    LogRel(("NAT:Couldn't alloc the new queue item to send\n"));
+    static unsigned cDroppedPackets;
+    if (cDroppedPackets < 64)
+    {
+        cDroppedPackets++;
+        LogRel(("NAT: Dropping package (couldn't alloc queue item to)\n"));
+    }
     RTMemFree((void *)pItem->pu8Buf);
 #endif
 }
