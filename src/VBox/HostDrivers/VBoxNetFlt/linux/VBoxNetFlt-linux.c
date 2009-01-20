@@ -126,14 +126,14 @@ static void     VBoxNetFltLinuxUnload(void);
 /**
  * Memory for the executable memory heap (in IPRT).
  */
-extern uint8_t g_abExecMemory[1572864]; /* 1.5 MB */
+extern uint8_t g_abExecMemory[4096]; /* cannot donate less than one page */
 __asm__(".section execmemory, \"awx\", @progbits\n\t"
         ".align 32\n\t"
         ".globl g_abExecMemory\n"
         "g_abExecMemory:\n\t"
-        ".zero 1572864\n\t"
+        ".zero 4096\n\t"
         ".type g_abExecMemory, @object\n\t"
-        ".size g_abExecMemory, 1572864\n\t"
+        ".size g_abExecMemory, 4096\n\t"
         ".text\n\t");
 #endif
 
