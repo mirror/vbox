@@ -209,7 +209,7 @@ void usageGuestProperty(void)
              "                            [-patterns <patterns>]\n"
              "\n");
     RTPrintf("VBoxManage guestproperty    wait <vmname>|<uuid> <patterns>\n"
-             "                            [--timeout <timeout>]\n"
+             "                            [-timeout <timeout>]\n"
              "\n");
 }
 
