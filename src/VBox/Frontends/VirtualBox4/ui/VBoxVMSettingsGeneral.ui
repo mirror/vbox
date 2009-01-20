@@ -698,6 +698,22 @@
           </widget>
          </item>
          <item>
+          <widget class="QCheckBox" name="mCbNestedPaging" >
+           <property name="sizePolicy" >
+            <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="whatsThis" >
+            <string>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</string>
+           </property>
+           <property name="text" >
+            <string>Enable Nested Pa&amp;ging</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QCheckBox" name="mCbPae" >
            <property name="sizePolicy" >
             <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >

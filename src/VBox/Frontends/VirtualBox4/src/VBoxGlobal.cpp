@@ -2125,17 +2125,18 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             + QString (sSectionItemTpl2).arg (tr ("ACPI", "details report"), "%6")
             + QString (sSectionItemTpl2).arg (tr ("IO APIC", "details report"), "%7")
             + QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), "%8")
-            + QString (sSectionItemTpl2).arg (tr ("PAE/NX", "details report"), "%9")
-            + QString (sSectionItemTpl2).arg (tr ("3D Acceleration", "details report"), "%10");
+            + QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), "%9")
+            + QString (sSectionItemTpl2).arg (tr ("PAE/NX", "details report"), "%10")
+            + QString (sSectionItemTpl2).arg (tr ("3D Acceleration", "details report"), "%11");
 
         sGeneralFullHrefTpl = QString (sSectionHrefTpl)
-            .arg (2 + 10) /* rows */
+            .arg (2 + 11) /* rows */
             .arg (":/machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
                   generalItems); /* items */
         sGeneralFullBoldTpl = QString (sSectionBoldTpl)
-            .arg (2 + 10) /* rows */
+            .arg (2 + 11) /* rows */
             .arg (":/machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
@@ -2241,6 +2242,11 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                        tr ("Enabled", "details report (VT-x/AMD-V)") :
                        tr ("Disabled", "details report (VT-x/AMD-V)");
 
+        /* Nested Paging */
+        QString nested = aMachine.GetHWVirtExNestedPagingEnabled()
+            ? tr ("Enabled", "details report (Nested Paging)")
+            : tr ("Disabled", "details report (Nested Paging)");
+
         /* PAE/NX */
         QString pae = aMachine.GetPAEEnabled()
             ? tr ("Enabled", "details report (PAE/NX)")
@@ -2262,6 +2268,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                 .arg (acpi)
                 .arg (ioapic)
                 .arg (virt)
+                .arg (nested)
                 .arg (pae)
                 .arg (acc3d)
             + hardDisks;
