@@ -133,7 +133,7 @@ static uid_t g_uid;
 /** The real GID at startup. */
 static gid_t g_gid;
 # ifdef RT_OS_LINUX
-static __u32 g_uCaps;
+static uint32_t g_uCaps;
 # endif
 #endif
 
