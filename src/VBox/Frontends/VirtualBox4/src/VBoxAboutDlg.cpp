@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -49,7 +49,7 @@ void VBoxAboutDlg::retranslateUi()
     QString versionText = tr ("Version %1");
 #if VBOX_OSE
     mAboutText = aboutText + " " + versionText.arg (mVersion) + "\n" +
-                 QString ("%1 2004-2008 Sun Microsystems, Inc.").arg (QChar (0xa9));
+                 QString ("%1 2004-2009 Sun Microsystems, Inc.").arg (QChar (0xa9));
 #else /* VBOX_OSE */
     mAboutText = aboutText + "\n" +
                  versionText.arg (mVersion);
