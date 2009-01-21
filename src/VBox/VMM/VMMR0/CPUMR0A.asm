@@ -65,7 +65,65 @@ BEGINCODE
 
 
 ;;
-; Restores the host's FPU/XMM state
+; Saves the guest FPU/XMM state and restores the host one.
+;
+; @returns  0
+; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
+;
+align 16
+BEGINPROC cpumR0SaveHostRestoreGuestFPUState
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     xDX, rcx
+ %else
+    mov     xDX, rdi
+ %endif
+%else
+    mov     xDX, dword [esp + 4]
+%endif
+
+    ; Switch the state.
+    or      dword [xDX + CPUMCPU.fUseFlags], CPUM_USED_FPU
+
+    mov     xAX, cr0                    ; Make sure its safe to access the FPU state.
+    mov     xCX, xAX                    ; save old CR0
+    and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
+    mov     cr0, xAX                    ;; @todo optimize this.
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+    cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
+
+    fxsave  [xDX + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor
+    fxrstor [xDX + CPUMCPU.Guest.fpu]
+
+.done:
+    mov     cr0, xCX                    ; and restore old CR0 again ;; @todo optimize this.
+.fpu_not_used:
+    xor     eax, eax
+    ret
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ALIGNCODE(16)
+BITS 64
+.sixtyfourbit_mode:
+    and     edx, 0ffffffffh
+    fxsave  [rdx + CPUMCPU.Host.fpu]
+    fxrstor [rdx + CPUMCPU.Guest.fpu]
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif
+ENDPROC   cpumR0SaveHostRestoreGuestFPUState
+
+
+;;
+; Saves the guest FPU/XMM state and restores the host one.
 ;
 ; @returns  0
 ; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
@@ -82,15 +140,15 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
     mov     xDX, dword [esp + 4]
 %endif
 
-    ; Restore FPU if guest has used it.
+    ; Only restore FPU if guest has used it.
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
     test    dword [xDX + CPUMCPU.fUseFlags], CPUM_USED_FPU
     jz short .fpu_not_used
 
-    mov     xAX, cr0
+    mov     xAX, cr0                    ; Make sure it's safe to access the FPU state.
     mov     xCX, xAX                    ; save old CR0
     and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
-    mov     cr0, xAX
+    mov     cr0, xAX                    ;; @todo optimize this.
 
 %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
@@ -100,11 +158,11 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
 .legacy_mode:
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
-    fxsave  [xDX + CPUMCPU.Guest.fpu]
+    fxsave  [xDX + CPUMCPU.Guest.fpu]   ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor
     fxrstor [xDX + CPUMCPU.Host.fpu]
 
 .done:
-    mov     cr0, xCX                    ; and restore old CR0 again
+    mov     cr0, xCX                    ; and restore old CR0 again ;; @todo optimize this.
     and     dword [xDX + CPUMCPU.fUseFlags], ~CPUM_USED_FPU
 .fpu_not_used:
     xor     eax, eax
@@ -123,6 +181,7 @@ BITS 64
 BITS 32
 %endif
 ENDPROC   cpumR0SaveGuestRestoreHostFPUState
+
 
 ;;
 ; Sets the host's FPU/XMM state
