@@ -600,7 +600,7 @@ static int VMXR0InjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t intIn
 
 #ifdef VBOX_STRICT
     if (iGate == 0xE)
-        LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %RGv error code=%08x CR2=%08x intInfo=%08x\n", iGate, (RTGCPTR)pCtx->rip, errCode, pCtx->cr2, intInfo));
+        LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %RGv error code=%08x CR2=%RGv intInfo=%08x\n", iGate, (RTGCPTR)pCtx->rip, errCode, pCtx->cr2, intInfo));
     else
     if (iGate < 0x20)
         LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %RGv error code=%08x\n", iGate, (RTGCPTR)pCtx->rip, errCode));
@@ -1087,10 +1087,12 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVCpu->hwaccm.s.fFPUOldStyleOverride = true;
     }
 
-#ifdef DEBUG
+#ifdef DEBUG /* till after branching, enable it by default then. */
     /* Intercept X86_XCPT_DB if stepping is enabled */
     if (DBGFIsStepping(pVM))
         u32TrapMask |= RT_BIT(X86_XCPT_DB);
+    /** @todo Don't trap it unless the debugger has armed breakpoints.  */
+    u32TrapMask |= RT_BIT(X86_XCPT_BP);
 #endif
 
 #ifdef VBOX_STRICT
@@ -2502,6 +2504,24 @@ ResumeExecution:
                 /* Return to ring 3 to deal with the debug exit code. */
                 break;
             }
+
+#ifdef DEBUG /* till after branching, enable by default after that. */
+            case X86_XCPT_BP:   /* Breakpoint. */
+            {
+                rc = DBGFR0Trap03Handler(pVM, CPUMCTX2CORE(pCtx));
+                if (rc == VINF_EM_RAW_GUEST_TRAP)
+                {
+                    Log(("Guest #BP at %04x:%RGv\n", pCtx->cs, pCtx->rip));
+                    rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                    AssertRC(rc);
+                    goto ResumeExecution;
+                }
+                if (rc == VINF_SUCCESS)
+                    goto ResumeExecution;
+                Log(("Debugger BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs, pCtx->rip, rc));
+                break;
+            }
+#endif
 
             case X86_XCPT_GP:   /* General protection failure exception.*/
             {
