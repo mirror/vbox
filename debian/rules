@@ -65,9 +65,6 @@ else
 endif
 endif
 
-gccver   := $(subst ., ,$(shell gcc -dumpversion))
-gccvmaj  := $(word 1,$(gccver))
-gccvmin  := $(word 2,$(gccver))
 debcfgs  := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\""
 
 # Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
@@ -78,7 +75,6 @@ debian/configure-stamp:
 	    $(NOQT),--disable-qt,) $(if \
 	    $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) $(if \
 	    $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) $(if \
-	    $(shell test $(gccvmaj) -eq 4 -a $(gccvmin) -gt 2 -o $(gccvmaj) -gt 4 && echo "yes"),--with-gcc=gcc-4.2 --with-g++=g++-4.2,) $(if \
 	    $(filter _xandros4.1 _ucs1.3,$(debrel)),--disable-sdl-ttf,) $(if \
 	    $(HEADLESS),--build-headless,) $(if $(DEBUG),--build-debug,)
 	touch debian/configure-stamp
