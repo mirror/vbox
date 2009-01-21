@@ -68,6 +68,7 @@ endif
 debcfgs  := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\""
 
 # Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
+# Ubuntu gutsy:  gcc-4.1 does not work for the webservices, use gcc-4.2 instead
 configure: debian/configure-stamp
 debian/configure-stamp:
 	dh_testdir
@@ -75,6 +76,7 @@ debian/configure-stamp:
 	    $(NOQT),--disable-qt,) $(if \
 	    $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) $(if \
 	    $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) $(if \
+	    $(filter _Ubuntu_gutsy,$(debrel)),--with-gcc=gcc-4.2 --with-g++=g++-4.2,) $(if \
 	    $(filter _xandros4.1 _ucs1.3,$(debrel)),--disable-sdl-ttf,) $(if \
 	    $(HEADLESS),--build-headless,) $(if $(DEBUG),--build-debug,)
 	touch debian/configure-stamp
@@ -183,9 +185,10 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
-	    $(if $(NOQT),,VirtualBox) \
-	    VBoxHeadless $(if $(ose),,vboxwebsrv webtest); do \
+	    $(if $(NOQT),,VirtualBox) VBoxHeadless; do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
+	[ -f $(archdir)/vboxwebsrv ] && mv $(archdir)/vboxwebsrv $(prefix)/usr/lib/$(package)
+	[ -f $(archdir)/webtest ] && mv $(archdir)/webtest $(prefix)/usr/lib/$(package)
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
 	    install -D -g 0 -o 0 -m 0644 \
