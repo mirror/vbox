@@ -83,7 +83,7 @@ BEGINPROC cpumR0SaveHostRestoreGuestFPUState
 %endif
 
     ; Switch the state.
-    or      dword [xDX + CPUMCPU.fUseFlags], CPUM_USED_FPU
+    or      dword [xDX + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
 
     mov     xAX, cr0                    ; Make sure its safe to access the FPU state.
     mov     xCX, xAX                    ; save old CR0
