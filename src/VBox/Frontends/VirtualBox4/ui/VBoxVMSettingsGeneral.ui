@@ -698,20 +698,40 @@
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="mCbNestedPaging" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="whatsThis" >
-            <string>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</string>
-           </property>
-           <property name="text" >
-            <string>Enable Nested Pa&amp;ging</string>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" >
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeType" >
+              <enum>QSizePolicy::Fixed</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>20</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="mCbNestedPaging" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="whatsThis" >
+              <string>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</string>
+             </property>
+             <property name="text" >
+              <string>Enable Nested Pa&amp;ging</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <widget class="QCheckBox" name="mCbPae" >
