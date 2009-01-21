@@ -2057,9 +2057,6 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     /** @todo CS */
     /** @todo FPUDP */
     /** @todo DS */
-    /** @todo Fix MXCSR support in QEMU so we don't overwrite MXCSR with 0 when we shouldn't! */
-    pCtx->fpu.MXCSR         = 0;
-    pCtx->fpu.MXCSR_MASK    = 0;
 
     /** @todo check if FPU/XMM was actually used in the recompiler */
     restore_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->fpu);
