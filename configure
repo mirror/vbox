@@ -55,6 +55,7 @@ TARGET_CPU=""
 WITH_XPCOM=1
 WITH_PYTHON=1
 WITH_LIBIDL=1
+WITH_GSOAP=1
 WITH_QT3=1
 WITH_QT4=1
 WITH_SDL=1
@@ -83,6 +84,7 @@ BUILD_LIBXSLT=
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
 LIBCAP="-lcap"
+GSOAP=""
 LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib -lXext -lX11"
 INCX11="/usr/local/include"
 LIBXCURSOR="-lXcursor"
@@ -1692,6 +1694,28 @@ setup_wine()
   log_success "found"
 }
 
+#
+#
+#
+check_gsoap()
+{
+  test_header "GSOAP compiler"
+  if [ -z "$GSOAP" ]; then
+    GSOAP="/usr/bin"
+  fi
+  if which_wrapper "$GSOAP/soapcpp2" > /dev/null; then
+    if which_wrapper "$GSOAP/wsdl2h" > /dev/null; then
+      cnf_append "VBOX_GSOAP_INSTALLED" "1"
+      cnf_append "VBOX_PATH_GSOAP"      "$GSOAP"
+      log_success "found"
+    else
+      log_failure "wsdl2h not found -- disabling webservice"
+    fi
+  else
+    log_failure "soapcpp2 not found -- disabling webservice"
+  fi
+}
+
 
 #
 # Determines the Darwin version.
@@ -1758,6 +1782,7 @@ Configuration:
   --disable-dbus           don't use DBus and hal for hardware detection
   --disable-kmods          don't build Linux kernel modules (host and guest)
   --disable-hardening      don't be strict about /dev/vboxdrv access
+  --disable-webservice     don't build the webservice stuff
   --build-libxml2          build libxml2 from sources
   --build-libxslt          build libxslt from sources
   --setup-wine             setup a Wine directory and register the hhc hack
@@ -1771,6 +1796,7 @@ Paths:
   --with-mkisofs=PATH      location of mkisofs [$MKISOFS]
   --with-qt-dir=DIR        directory for Qt3 headers/libraries [$QT3DIR]
   --with-qt4-dir=DIR       directory for Qt4 headers/libraries [pkgconfig]
+  --with-gsoap-dir=PATH    directory for SOAP compiler (soapcpp2 and wsdl2h)
 
 Build type:
   -d, --build-debug        build with debugging symbols and assertions
@@ -1817,6 +1843,9 @@ for option in $*; do
       QT4DIR=`echo $option | cut -d'=' -f2`
       QT4DIR_PKGCONFIG=0
       ;;
+    --with-gsoap-dir=*)
+      GSOAP=`echo $option | cut -d'=' -f2`
+      ;;
     --with-iasl=*)
       IASL=`echo $option | cut -d'=' -f2`
       ;;
@@ -1862,6 +1891,9 @@ for option in $*; do
       ;;
     --enable-hardening)
       WITH_HARDENING=2
+      ;;
+    --disable-webservice)
+      WITH_GSOAP=0
       ;;
     --build-debug|-d)
       BUILD_TYPE=debug
@@ -2064,6 +2096,8 @@ if [ "$OS" = "linux" ]; then
 fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
+
+[ $WITH_GSOAP -eq 1 ] && check_gsoap
 
 # Darwin-specific
 if [ "$OS" = "darwin" ]; then
