@@ -1334,6 +1334,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
     }
 #endif /* 0 */
     STAM_PROFILE_START(&pVM->em.s.StatREMEmu, a);
+    Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
     rc = REMR3EmulateInstruction(pVM);
     STAM_PROFILE_STOP(&pVM->em.s.StatREMEmu, a);
 
