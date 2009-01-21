@@ -287,7 +287,7 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
 
 STDMETHODIMP Guest::GetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG *aStatVal)
 {
-    CheckComArgExpr(aCpuId, aCpuId = 0);
+    CheckComArgExpr(aCpuId, aCpuId == 0);
     CheckComArgExpr(aStatistic, aStatistic < GuestStatisticType_MaxVal);
     CheckComArgOutPointerValid(aStatVal);
 
