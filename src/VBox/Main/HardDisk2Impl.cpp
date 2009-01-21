@@ -1153,7 +1153,7 @@ STDMETHODIMP HardDisk2::CreateDynamicStorage (ULONG64 aLogicalSize,
     progress.createObject();
     HRESULT rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
         BstrFmt (tr ("Creating dynamic hard disk storage unit '%ls'"),
-                 m.location.raw()),
+                 m.locationFull.raw()),
         FALSE /* aCancelable */);
     CheckComRCReturnRC (rc);
 
@@ -1208,7 +1208,7 @@ STDMETHODIMP HardDisk2::CreateFixedStorage (ULONG64 aLogicalSize,
     progress.createObject();
     HRESULT rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
         BstrFmt (tr ("Creating fixed hard disk storage unit '%ls'"),
-                 m.location.raw()),
+                 m.locationFull.raw()),
         FALSE /* aCancelable */);
     CheckComRCReturnRC (rc);
 
@@ -1269,7 +1269,9 @@ STDMETHODIMP HardDisk2::CreateDiffStorage (IHardDisk2 *aTarget, IProgress **aPro
     AutoWriteLock alock (this);
 
     if (mm.type == HardDiskType_Writethrough)
-        return setError (E_FAIL, tr ("Hard disk '%ls' is Writethrough"));
+        return setError (E_FAIL,
+            tr ("Hard disk '%ls' is Writethrough"),
+            m.locationFull.raw());
 
     /* We want to be locked for reading as long as our diff child is being
      * created */
@@ -1330,8 +1332,8 @@ STDMETHODIMP HardDisk2::CloneTo (IHardDisk2 *aTarget, IProgress **aProgress)
 
         progress.createObject();
         rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
-            BstrFmt (tr ("Creating a clone hard disk '%s'"),
-                     target->name().raw()),
+            BstrFmt (tr ("Creating clone hard disk '%ls'"),
+                     target->m.locationFull.raw()),
             FALSE /* aCancelable */);
         CheckComRCThrowRC (rc);
 
@@ -2043,7 +2045,7 @@ HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
             progress.createObject();
             rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
                 BstrFmt (tr ("Deleting hard disk storage unit '%ls'"),
-                         name().raw()),
+                         m.locationFull.raw()),
                 FALSE /* aCancelable */);
             CheckComRCReturnRC (rc);
         }
@@ -2161,7 +2163,7 @@ HRESULT HardDisk2::createDiffStorage (ComObjPtr <HardDisk2> &aTarget,
                     tr ("Hard disk '%ls' is attached to a virtual machine "
                         "with UUID {%RTuuid}. No differencing hard disks "
                         "based on it may be created until it is detached"),
-                    m.location.raw(), it->machineId.raw());
+                    m.locationFull.raw(), it->machineId.raw());
             }
 
             Assert (it->snapshotIds.size() == 1);
@@ -2181,7 +2183,7 @@ HRESULT HardDisk2::createDiffStorage (ComObjPtr <HardDisk2> &aTarget,
             progress.createObject();
             rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
                 BstrFmt (tr ("Creating differencing hard disk storage unit '%ls'"),
-                         aTarget->name().raw()),
+                         aTarget->m.locationFull.raw()),
                 FALSE /* aCancelable */);
             CheckComRCReturnRC (rc);
         }
@@ -2425,7 +2427,7 @@ HRESULT HardDisk2::mergeTo (MergeChain *aChain,
 
             progress.createObject();
             rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
-                BstrFmt (tr ("Merging hard disk '%ls' to '%ls'"),
+                BstrFmt (tr ("Merging hard disk '%s' to '%s'"),
                          name().raw(), aChain->target()->name().raw()),
                 FALSE /* aCancelable */);
             CheckComRCReturnRC (rc);
@@ -3534,7 +3536,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
             MergeChain *chain = task->d.chain.get();
 
-#if 1
+#if 0
             LogFlow (("*** MERGE forward = %RTbool\n", chain->isForward()));
 #endif
 
@@ -3579,7 +3581,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                                       (*it)->mm.vdDiskIfaces);
                         if (RT_FAILURE (vrc))
                             throw vrc;
-#if 1
+#if 0
                         LogFlow (("*** MERGE disk = %ls\n",
                                   (*it)->m.locationFull.raw()));
 #endif
@@ -3592,7 +3594,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                         0 : chain->size() - 1;
                     unsigned end = chain->isForward() ?
                         chain->size() - 1 : 0;
-#if 1
+#if 0
                     LogFlow (("*** MERGE from %d to %d\n", start, end));
 #endif
                     vrc = VDMerge (hdd, start, end, that->mm.vdDiskIfaces);
