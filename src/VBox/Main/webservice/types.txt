@@ -1,0 +1,28 @@
+
+ XIDL               IPRT        COM         XPCOM           WSDL                gSOAP default
+
+ boolean                        BOOL        PRBool          xsd:boolean         bool
+
+ octet              uint8_t     BYTE        PRUint8
+
+ short              int16_t     SHORT       PRInt16         xsd:short           short
+ unsigned short     uint16_t    USHORT      PRUint16        xsd:unsignedShort   unsigned short
+ long               int32_t     LONG        PRInt32         xsd:int             int
+ unsigned long      uint32_t    ULONG       PRUint32        xsd:unsignedInt     unsigned int
+ long long          int64_t     LONG64      PRInt64         xsd:long            long long
+ unsigned long long uint64_t    ULONG64     PRUint64        xsd:unsignedLong    unsigned long long
+
+ double                                                     xsd:double          double
+ float                                                      xsd:float           float
+
+ wstring                        BSTR        PRUnichar*      xsd:string          std::string
+
+ result                                                     xsd:unsignedInt(1)  (undefined)
+
+ uuid                                                       xsd:string(1)       (undefined)
+
+
+(1) my definition
+
+
+

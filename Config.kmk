@@ -624,7 +624,6 @@ endif
 # Disable components that are not open sourced.
 #
 ifdef VBOX_OSE
- VBOX_WITH_WEBSERVICES=
  VBOX_WITH_VRDP=
  VBOX_WITH_USB=
  VBOX_WITH_EHCI=
