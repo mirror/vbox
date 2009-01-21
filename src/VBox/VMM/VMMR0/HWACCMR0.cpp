@@ -1024,6 +1024,7 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
         CPUMR0SaveGuestFPU(pVM, pVCpu, pCtx);
 
         pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
+        Assert(!CPUMIsGuestFPUStateActive(pVCpu));
     }
 
     rc = HWACCMR0Globals.pfnLeaveSession(pVM, pVCpu, pCtx);
