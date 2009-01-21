@@ -1723,9 +1723,6 @@ REMR3DECL(int)  REMR3State(PVM pVM)
                   | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_LDTR | CPUM_CHANGED_TR
                   | CPUM_CHANGED_FPU_REM | CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_CPUID))
     {
-        if (fFlags & CPUM_CHANGED_FPU_REM)
-            save_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->fpu); /* 'save' is an excellent name. */
-
         if (fFlags & CPUM_CHANGED_GLOBAL_TLB_FLUSH)
         {
             pVM->rem.s.fIgnoreCR3Load = true;
@@ -1817,6 +1814,10 @@ REMR3DECL(int)  REMR3State(PVM pVM)
             CPUMGetGuestCpuId(pVM,          1, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext_features, &pVM->rem.s.Env.cpuid_features);
             CPUMGetGuestCpuId(pVM, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext2_features);
         }
+
+        /* Sync FPU state after CR4 and CPUID. */
+        if (fFlags & CPUM_CHANGED_FPU_REM)
+            save_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->fpu); /* 'save' is an excellent name. */
     }
 
     /*
