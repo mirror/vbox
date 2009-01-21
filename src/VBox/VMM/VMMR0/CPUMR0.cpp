@@ -170,13 +170,35 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
-        /* Restore the state on entry as we need to be in 64 bits mode to access the full state. */
-        pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_FPU_STATE;
+        /* Save/Restore the state on entry as we need to be in 64 bits mode to access the full state. */
+        pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_FPU_STATE | CPUM_USED_FPU;
     }
     else
 #endif
     {
 #ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL /** @todo remove the #else here and move cpumHandleLazyFPUAsm back to VMMGC after branching out 2.1. */
+        /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
+        uint64_t SavedEFER = 0;
+        if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
+        {
+            SavedEFER = ASMRdMsr(MSR_K6_EFER);
+            if (SavedEFER & MSR_K6_EFER_FFXSR)
+            {
+                ASMWrMsr(MSR_K6_EFER, SavedEFER & ~MSR_K6_EFER_FFXSR);
+                pVCpu->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
+            }
+        }
+
+        /* Do the job and record that we've switched FPU state. */
+        cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
+        pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU;
+
+        /* Restore EFER. */
+        if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+            ASMWrMsr(MSR_K6_EFER, SavedEFER);
+
+# else
         uint64_t oldMsrEFERHost = 0;
         uint32_t oldCR0 = ASMGetCR0();
 
@@ -203,8 +225,9 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
             ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost);
 
- 	    /* CPUMHandleLazyFPU could have changed CR0; restore it. */
+        /* CPUMHandleLazyFPU could have changed CR0; restore it. */
         ASMSetCR0(oldCR0);
+# endif
 
 #else  /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
 
@@ -235,10 +258,11 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 pVCpu->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
             }
         }
+
 #endif /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
     }
 
-    pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU;
+    pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU; /** @todo clean up, this is done above by the ASM worker. */
     return VINF_SUCCESS;
 }
 

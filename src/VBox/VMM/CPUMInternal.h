@@ -389,6 +389,7 @@ __BEGIN_DECLS
 DECLASM(int)      cpumHandleLazyFPUAsm(PCPUMCPU pCPUM);
 
 #ifdef IN_RING0
+DECLASM(int)      cpumR0SaveHostRestoreGuestFPUState(PCPUMCPU pCPUM);
 DECLASM(int)      cpumR0SaveGuestRestoreHostFPUState(PCPUMCPU pCPUM);
 DECLASM(int)      cpumR0RestoreHostFPUState(PCPUMCPU pCPUM);
 DECLASM(void)     cpumR0LoadFPU(PCPUMCTX pCtx);

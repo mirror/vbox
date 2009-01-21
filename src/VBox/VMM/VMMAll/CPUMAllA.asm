@@ -155,8 +155,7 @@ hlfpua_switch_fpu_ctx:
     mov     cr0, xAX                            ; clear flags so we don't trap here.
 %endif
 %ifndef RT_ARCH_AMD64
-    mov     eax, edx
-    ; Calculate the PCPUM pointer
+    mov     eax, edx                            ; Calculate the PCPUM pointer
     sub     eax, [edx + CPUMCPU.ulOffCPUM]
     test    dword [eax + CPUM.CPUFeatures.edx], X86_CPUID_FEATURE_EDX_FXSR
     jz short hlfpua_no_fxsave
@@ -178,10 +177,10 @@ hlfpua_finished_switch:
 hlfpua_no_fxsave:
     fnsave  [xDX + CPUMCPU.Host.fpu]
     or      dword [xDX + CPUMCPU.fUseFlags], dword (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM) ; yasm / nasm
-    mov     eax, [xDX + CPUMCPU.Guest.fpu]    ; control word
+    mov     eax, [xDX + CPUMCPU.Guest.fpu]      ; control word
     not     eax                                 ; 1 means exception ignored (6 LS bits)
     and     eax, byte 03Fh                      ; 6 LS bits only
-    test    eax, [xDX + CPUMCPU.Guest.fpu + 4]; status word
+    test    eax, [xDX + CPUMCPU.Guest.fpu + 4]  ; status word
     jz short hlfpua_no_exceptions_pending
     ; technically incorrect, but we certainly don't want any exceptions now!!
     and     dword [xDX + CPUMCPU.Guest.fpu + 4], ~03Fh
