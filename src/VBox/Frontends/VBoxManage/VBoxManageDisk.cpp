@@ -269,7 +269,7 @@ int handleModifyHardDisk(HandlerArg *a)
     else if (strcmp(a->argv[1], "compact") == 0)
     {
 #if 1
-        RTPrintf("Error: Shrink hard disk operation is temporarily unavailable!\n");
+        RTPrintf("Error: Shrink hard disk operation is not implemented!\n");
         return 1;
 #else
         /* the hard disk image might not be registered */
