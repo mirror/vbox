@@ -82,12 +82,23 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
     {
         case DLL_PROCESS_ATTACH:
         {
+            RTR3Init();
+            VbglR3Init();
+            LogRel(("VBoxGina: DLL loaded.\n"));
+
             DisableThreadLibraryCalls(hInstance);
             hDllInstance = hInstance;
             break;
         }
 
         case DLL_PROCESS_DETACH:
+        {
+            LogRel(("VBOXNP: DLL unloaded.\n"));
+            VbglR3Term();
+            /// @todo RTR3Term();
+            break;
+        }
+
         default:
             break;
     }

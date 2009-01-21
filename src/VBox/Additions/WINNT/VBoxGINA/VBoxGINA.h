@@ -20,7 +20,11 @@
 #ifndef __H_VBOXGINA
 #define __H_VBOXGINA
 
-#include <VBox/log.h>
+#include <iprt/initterm.h>
+#include <iprt/log.h>
+
+#include <VBox/VBoxGuest.h>
+#include <VBox/Log.h>
 
 /** Handle to Winlogon service */
 extern HANDLE hGinaWlx;
