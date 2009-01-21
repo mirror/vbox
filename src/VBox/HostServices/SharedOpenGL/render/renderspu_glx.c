@@ -425,6 +425,12 @@ renderspu_SystemInitVisual( VisualInfo *visual )
     else
         dpyName = NULL;
 
+    if (!dpyName)
+    {
+        crWarning("Render SPU: no display, aborting");
+        return GL_FALSE;
+    }
+
     crDebug("Render SPU: Opening display %s", dpyName);
 
     if (dpyName &&
