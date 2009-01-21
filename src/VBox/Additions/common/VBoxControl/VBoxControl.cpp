@@ -1344,7 +1344,7 @@ int main(int argc, char **argv)
         RTPrintf("VirtualBox Guest Additions Command Line Management Interface Version "
                  VBOX_VERSION_STRING "\n"
                  "(C) 2008 Sun Microsystems, Inc.\n"
-                 "All rights reserved\n\n");
+                 "All rights reserved.\n\n");
     if (dohelp)
         usage();
 
