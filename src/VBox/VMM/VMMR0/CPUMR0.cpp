@@ -170,6 +170,8 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
+        Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
+
         /* Save the host state and record the fact (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM). */
         cpumR0SaveHostFPUState(&pVCpu->cpum.s);
 
