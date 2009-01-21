@@ -760,7 +760,7 @@ void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
 
         /* Setup connections */
 #if defined (VBOX_WITH_NETFLT)
-        connect (page->mCbNAType, SIGNAL (activated (int)),
+        connect (page->mCbNAType, SIGNAL (currentIndexChanged (int)),
                  this, SLOT (updateInterfaceList()));
 #endif
         connect (page->mCbNetwork, SIGNAL (editTextChanged (const QString&)),
