@@ -177,15 +177,12 @@ static int pit_get_count(PITChannelState *s)
     if (s->mode == 2)
     {
         if (s->u64NextTS == UINT64_MAX)
-        {
-            d = ASMMultU64ByU32DivByU32(TMTimerGet(pTimer) - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
-            return s->count - (d % s->count); /** @todo check this value. */
-        }
+            return 1; /** @todo check this value. */
         d = TMTimerGet(pTimer);
         d = ASMMultU64ByU32DivByU32(d - s->u64ReloadTS, s->count, s->u64NextTS - s->u64ReloadTS);
         if (d >= s->count)
             return 1;
-        return  s->count - d;
+        return s->count - d;
     }
     d = ASMMultU64ByU32DivByU32(TMTimerGet(pTimer) - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
     switch(s->mode) {
@@ -868,7 +865,6 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
         s->rw_mode = 0;
         s->bcd = 0;
 #endif
-        s->u64NextTS = UINT64_MAX;
         s->cRelLogEntries = 0;
         s->mode = 3;
         s->gate = (i != 2);
