@@ -5975,7 +5975,6 @@ DECLINLINE(void) helper_fstt_raw(CPU86_LDouble f, uint8_t *ptr)
 #define stw(a,b) *(uint16_t *)(a) = (uint16_t)(b)
 #define stl(a,b) *(uint32_t *)(a) = (uint32_t)(b)
 #define stq(a,b) *(uint64_t *)(a) = (uint64_t)(b)
-#define data64 0
 
 //*****************************************************************************
 void restore_raw_fp_state(CPUX86State *env, uint8_t *ptr)
@@ -5983,6 +5982,7 @@ void restore_raw_fp_state(CPUX86State *env, uint8_t *ptr)
     int fpus, fptag, i, nb_xmm_regs;
     CPU86_LDouble tmp;
     uint8_t *addr;
+    int data64 = !!(env->hflags & HF_LMA_MASK);
 
     if (env->cpuid_features & CPUID_FXSR)
     {
@@ -6060,6 +6060,7 @@ void save_raw_fp_state(CPUX86State *env, uint8_t *ptr)
     int i, fpus, fptag, nb_xmm_regs;
     CPU86_LDouble tmp;
     uint8_t *addr;
+    int data64 = !!(env->hflags & HF_LMA_MASK);
 
     if (env->cpuid_features & CPUID_FXSR)
     {
