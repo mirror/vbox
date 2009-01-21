@@ -187,8 +187,12 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
 	    $(if $(NOQT),,VirtualBox) VBoxHeadless; do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
-	[ -f $(archdir)/vboxwebsrv ] && mv $(archdir)/vboxwebsrv $(prefix)/usr/lib/$(package)
-	[ -f $(archdir)/webtest ] && mv $(archdir)/webtest $(prefix)/usr/lib/$(package)
+	if [ -f $(archdir)/vboxwebsrv ]; then \
+	  mv $(archdir)/vboxwebsrv $(prefix)/usr/lib/$(package); \
+	fi
+	if [ -f $(archdir)/webtest ]; then \
+	  mv $(archdir)/webtest $(prefix)/usr/lib/$(package); \
+	fi
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
 	    install -D -g 0 -o 0 -m 0644 \
