@@ -327,10 +327,11 @@ int WINAPI WlxLoggedOnSAS(PVOID pWlxContext, DWORD dwSasType, PVOID pReserved)
 {
     HKEY hKey;
     DWORD dwValue = 1;
-    DWORD dwSize;
-    DWORD dwType;
+    DWORD dwSize = 0;
+    DWORD dwType = 0;
+    int iRet = WLX_SAS_ACTION_NONE;
 
-    Log(("VBoxGINA::WlxLoggedOnSAS\n"));
+    Log(("VBoxGINA::WlxLoggedOnSAS: SaSType = %ld\n", dwSasType));
 
     /* Winlogon registry path */
     static TCHAR szPath[] = TEXT("Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon");
@@ -342,13 +343,33 @@ int WINAPI WlxLoggedOnSAS(PVOID pWlxContext, DWORD dwSasType, PVOID pReserved)
         RegCloseKey(hKey);
     }
     else
-        Log(("VBoxGINA::WlxLoggedOnSAS: could not open registry key! last error: %d\n", GetLastError()));
+    {
+        Log(("VBoxGINA::WlxLoggedOnSAS: Could not open registry key! Last error: %d\n", GetLastError()));
+    }
 
     if (dwValue)
-        return WLX_SAS_ACTION_NONE;
+    {
+        switch (dwSasType)
+        {
+
+        case WLX_SAS_TYPE_CTRL_ALT_DEL:     /* User pressed CTRL-ALT-DEL. */
+
+            /* Show the task list (or whatever the OS wants to do here). */
+            iRet = WLX_SAS_ACTION_TASKLIST;
+            break;
+
+        default:
+            break;
+        }
+    }
     else
-        /* forward call to MSGINA */
+    {
+        /* Forward call to MSGINA. */
+        Log(("VBoxGINA::WlxLoggedOnSAS: Forwarding call to MSGINA ...\n"));
         return GWlxLoggedOnSAS(pWlxContext, dwSasType, pReserved);
+    }
+
+    return iRet;
 }
 
 VOID WINAPI WlxDisplayLockedNotice(PVOID pWlxContext)
@@ -430,7 +451,8 @@ BOOL WINAPI WlxScreenSaverNotify(PVOID pWlxContext, BOOL *pSecure)
 BOOL WINAPI WlxStartApplication(PVOID pWlxContext, PWSTR pszDesktopName,
                                 PVOID pEnvironment, PWSTR pszCmdLine)
 {
-    Log(("VBoxGINA::WlxStartApplication\n"));
+    Log(("VBoxGINA::WlxStartApplication: pWlxCtx=%p, pszDesktopName=%ls, pEnvironment=%p, pszCmdLine=%ls\n",
+        pWlxContext, pszDesktopName, pEnvironment, pszCmdLine));
 
     /* forward to MSGINA if present */
     if (GWlxStartApplication)
