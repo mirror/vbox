@@ -172,6 +172,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         /* Save/Restore the state on entry as we need to be in 64 bits mode to access the full state. */
         pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_FPU_STATE | CPUM_USED_FPU;
+        /** @todo who is saving the host state??  */
     }
     else
 #endif
@@ -262,7 +263,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
     }
 
-    pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU; /** @todo clean up, this is done above by the ASM worker. */
+    pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM; /** @todo clean up, this is done above by the ASM worker. */
     return VINF_SUCCESS;
 }
 
