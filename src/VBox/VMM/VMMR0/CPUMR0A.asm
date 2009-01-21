@@ -65,7 +65,7 @@ BEGINCODE
 
 
 ;;
-; Saves the guest FPU/XMM state and restores the host one.
+; Saves the host FPU/XMM state and restores the guest state.
 ;
 ; @returns  0
 ; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
@@ -98,7 +98,7 @@ BEGINPROC cpumR0SaveHostRestoreGuestFPUState
 .legacy_mode:
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
-    fxsave  [xDX + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor
+    fxsave  [xDX + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
     fxrstor [xDX + CPUMCPU.Guest.fpu]
 
 .done:
@@ -121,9 +121,39 @@ BITS 32
 %endif
 ENDPROC   cpumR0SaveHostRestoreGuestFPUState
 
+%ifndef RT_ARCH_AMD64
+%ifdef  VBOX_WITH_64_BITS_GUESTS
+%ifndef VBOX_WITH_HYBRID_32BIT_KERNEL
+;;
+; Saves the host FPU/XMM state
+;
+; @returns  0
+; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
+;
+align 16
+BEGINPROC cpumR0SaveHostFPUState
+    mov     xDX, dword [esp + 4]
+
+    ; Switch the state.
+    or      dword [xDX + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
+
+    mov     xAX, cr0                    ; Make sure its safe to access the FPU state.
+    mov     xCX, xAX                    ; save old CR0
+    and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
+    mov     cr0, xAX                    ;; @todo optimize this.
+
+    fxsave  [xDX + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
+
+    mov     cr0, xCX                    ; and restore old CR0 again ;; @todo optimize this.
+    xor     eax, eax
+    ret
+ENDPROC   cpumR0SaveHostFPUState
+%endif
+%endif
+%endif
 
 ;;
-; Saves the guest FPU/XMM state and restores the host one.
+; Saves the guest FPU/XMM state and restores the host state.
 ;
 ; @returns  0
 ; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
@@ -158,7 +188,7 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
 .legacy_mode:
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
-    fxsave  [xDX + CPUMCPU.Guest.fpu]   ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor
+    fxsave  [xDX + CPUMCPU.Guest.fpu]   ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
     fxrstor [xDX + CPUMCPU.Host.fpu]
 
 .done:

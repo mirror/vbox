@@ -170,9 +170,11 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
-        /* Save/Restore the state on entry as we need to be in 64 bits mode to access the full state. */
-        pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_FPU_STATE | CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM;
-        /** @todo who is saving the host state??  */
+        /* Save the host state and record the fact (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM). */
+        cpumR0SaveHostFPUState(&pVCpu->cpum.s);
+
+        /* Restore the state on entry as we need to be in 64 bits mode to access the full state. */
+        pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_FPU_STATE;
     }
     else
 #endif
@@ -262,7 +264,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
     }
 
-    pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM; /** @todo clean up, this is done above by the ASM worker. */
+    Assert(pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM) == (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM));
     return VINF_SUCCESS;
 }
 
@@ -285,8 +287,11 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
         if (!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE))
+        {
             HWACCMR0SaveFPUState(pVM, pVCpu, pCtx);
-        cpumR0RestoreHostFPUState(&pVCpu->cpum.s);
+            cpumR0RestoreHostFPUState(&pVCpu->cpum.s);
+        }
+        /* else nothing to do; we didn't perform a world switch */
     }
     else
 #endif
