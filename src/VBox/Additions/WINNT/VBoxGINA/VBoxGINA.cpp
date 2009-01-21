@@ -93,7 +93,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 
         case DLL_PROCESS_DETACH:
         {
-            LogRel(("VBOXNP: DLL unloaded.\n"));
+            LogRel(("VBoxGina: DLL unloaded.\n"));
             VbglR3Term();
             /// @todo RTR3Term();
             break;
