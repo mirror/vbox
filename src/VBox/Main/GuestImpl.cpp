@@ -300,7 +300,7 @@ STDMETHODIMP Guest::GetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
 
 STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG aStatVal)
 {
-    CheckComArgExpr(aCpuId, aCpuId = 0);
+    CheckComArgExpr(aCpuId, aCpuId == 0);
     CheckComArgExpr(aStatistic, aStatistic < GuestStatisticType_MaxVal);
 
     /* internal method assumes that the caller knows what he's doing (no boundary checks) */
