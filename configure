@@ -1710,9 +1710,11 @@ check_gsoap()
       log_success "found"
     else
       log_failure "wsdl2h not found -- disabling webservice"
+      cnf_append "VBOX_WITH_WEBSERVICES" ""
     fi
   else
     log_failure "soapcpp2 not found -- disabling webservice"
+    cnf_append "VBOX_WITH_WEBSERVICES" ""
   fi
 }
 
@@ -2097,7 +2099,11 @@ fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
 
-[ $WITH_GSOAP -eq 1 ] && check_gsoap
+if [ $WITH_GSOAP -eq 1 ]; then
+  check_gsoap
+else
+  cnf_append "VBOX_WITH_WEBSERVICES" ""
+fi
 
 # Darwin-specific
 if [ "$OS" = "darwin" ]; then
