@@ -1047,7 +1047,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1743"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Indique la touche hôte actuellement configurée. &lt;br&gt;Cette touche. activée toute seule, commute l&apos;état de capture. Elle peu également être utilisée en combinaison avec d&apos;autres touches pour accéder rapidement aux actions du menu principal.</translation>
+        <translation>Indique la touche hôte actuellement configurée. &lt;br&gt;Cette touche, activée toute seule, commute l&apos;état de capture. Elle peu également être utilisée en combinaison avec d&apos;autres touches pour accéder rapidement aux actions du menu principal.</translation>
     </message>
 </context>
 <context>
@@ -1716,13 +1716,13 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="2233"/>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>Activé</translation>
+        <translation>Activée</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2233"/>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>Désactivé</translation>
+        <translation>Désactivée</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2238"/>
@@ -1794,7 +1794,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="2375"/>
         <source>Audio</source>
         <comment>details report</comment>
-        <translation>Audio</translation>
+        <translation>Son</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="591"/>
@@ -2045,7 +2045,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="3379"/>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>Pilote Audio null</translation>
+        <translation>Pilote audio null</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3381"/>
@@ -2241,7 +2241,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="3369"/>
         <source>Disconnected</source>
         <comment>PortMode</comment>
-        <translation>Déconnecté</translation>
+        <translation>déconnectée</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3370"/>
@@ -2283,25 +2283,25 @@ Version %1</source>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="428"/>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Activé</translation>
+        <translation>Activée</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="429"/>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Désactivé</translation>
+        <translation>Désactivée</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2253"/>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation>Activé</translation>
+        <translation>Activée</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2253"/>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation>Désactivé</translation>
+        <translation>Désactivée</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2362"/>
@@ -2587,13 +2587,13 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="2258"/>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation>Activé</translation>
+        <translation>Activée</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2258"/>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation>Désactivé</translation>
+        <translation>Désactivée</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3335"/>
@@ -5247,13 +5247,13 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxConsoleWnd.cpp" line="2053"/>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Activé</translation>
+        <translation>Activée</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2054"/>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Désactivé</translation>
+        <translation>Désactivée</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2058"/>
@@ -5374,12 +5374,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="33"/>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation>Si cette case est cochée, la carte PCI audio virtuelle insérée dans la machine virtuelle sera utilisée pour la communication avec la carte audio de l&apos;ordinateur.</translation>
+        <translation>Si cette case est cochée, la carte son PCI virtuelle insérée dans la machine virtuelle sera utilisée pour la communication avec la carte audio de l&apos;ordinateur.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="36"/>
         <source>Enable &amp;Audio</source>
-        <translation>Activer l&apos;&amp;audio</translation>
+        <translation>Activer le son</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="77"/>
@@ -5389,7 +5389,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="90"/>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>Controle le pilote de sortie audio. Le &lt;b&gt;Pilote Nul&lt;/b&gt; audio simule une carte audio, toutefois les accès à celle ci sont ignorés.</translation>
+        <translation>Controle le pilote de sortie audio. Le &lt;b&gt;Pilote audio null&lt;/b&gt; simule une carte son, toutefois les accès à celle ci sont ignorés.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="97"/>
@@ -5399,7 +5399,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="110"/>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation>Choisit le type de la carte son virtuelle. Selon cette valeur, VirtualBox fournira  différent matériel audio à la machine virtuelle.</translation>
+        <translation>Choisit le type de la carte son virtuelle. Cette valeur déterminera la carte son que VirtualBox fournira à la machine virtuelle.</translation>
     </message>
 </context>
 <context>
@@ -5510,7 +5510,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="427"/>
         <source>Audio</source>
-        <translation>Audio</translation>
+        <translation>Son</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="430"/>
@@ -6343,7 +6343,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="156"/>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation>Contrôle le mode de fonctionnement de cette interface série. Si vous choisissez &lt;b&gt;Déconnecté&lt;/b&gt;, le système d´exploitation invité détectera cette interface série mais ne sera pas en mesure de l&apos;utiliser.</translation>
+        <translation>Contrôle le mode de fonctionnement de cette interface série. Si vous choisissez &lt;b&gt;Déconnectée&lt;/b&gt;, le système d´exploitation invité détectera cette interface série mais ne sera pas en mesure de l&apos;utiliser.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="176"/>
