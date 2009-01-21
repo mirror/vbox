@@ -281,6 +281,7 @@ setup()
         --no-print-directory install >> $LOG 2>&1; then
         failure "Look at $LOG to find out what went wrong"
     fi
+    rm -f /etc/vbox/module_not_compiled
     succ_msg
     start
 }
