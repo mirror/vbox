@@ -103,6 +103,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_INIP,
     /** KeyBoard Controller Device group. */
     LOG_GROUP_DEV_KBD,
+    /** Low Pin Count Device group. */
+    LOG_GROUP_DEV_LPC,
     /** LsiLogic SCSI controller Device group. */
     LOG_GROUP_DEV_LSILOGICSCSI,
     /** NE2000 Device group. */
@@ -358,6 +360,7 @@ typedef enum LOGGROUP
     "DEV_IDE",      \
     "DEV_INIP",     \
     "DEV_KBD",      \
+    "DEV_LPC",      \
     "DEV_LSILOGICSCSI", \
     "DEV_NE2000",   \
     "DEV_PARALLEL", \
@@ -469,4 +472,3 @@ typedef enum LOGGROUP
 
 /** @} */
 #endif
-

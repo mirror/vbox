@@ -75,6 +75,18 @@
 # undef LOG_GROUP
 # include "../Storage/DevLsiLogicSCSI.cpp"
 #endif
+#ifdef VBOX_WITH_HPET
+# undef LOG_GROUP
+# include "../PC/DevHPET.cpp"
+#endif
+#ifdef VBOX_WITH_LPC
+# undef LOG_GROUP
+# include "../PC/DevLPC.cpp"
+#endif
+#ifdef VBOX_WITH_SMC
+# undef LOG_GROUP
+# include "../PC/DevSMC.cpp"
+#endif
 
 #include <stdio.h>
 
@@ -263,4 +275,3 @@ int main()
         printf("tstDeviceStructSize: SUCCESS\n");
     return rc;
 }
-

@@ -337,6 +337,11 @@ DevicesR3_DEFS          += VBOX_WITH_SMC
 DevicesR3_SOURCES       += PC/DevSMC.cpp
 endif
 
+ifdef VBOX_WITH_LPC
+DevicesR3_DEFS          += VBOX_WITH_LPC
+DevicesR3_SOURCES       += PC/DevLPC.cpp
+endif
+
 ifdef VBOX_WITH_USB
 DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
 

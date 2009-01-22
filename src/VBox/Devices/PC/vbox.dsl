@@ -140,6 +140,9 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         {
             MEML, 32,
             UIOA, 32,
+            UHPT, 32,
+            USMC, 32,
+            UFDC, 32,
             Offset (0x80),
             ININ, 32,
             Offset (0x200),
@@ -153,6 +156,12 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             HEX4 (MEML)
             DBG ("UIOA: ")
             HEX4 (UIOA)
+            DBG ("UHPT: ")
+            HEX4 (UHPT)
+            DBG ("USMC: ")
+            HEX4 (USMC)
+            DBG ("UFDC: ")
+            HEX4 (UFDC)
         }
 
         // PCI PIC IRQ Routing table
@@ -563,15 +572,9 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 {
                     Name (_HID, EisaId ("PNP0700"))
 
-                    OperationRegion (CFDC, SystemIO, 0x4054, 0x08)
-                    Field (CFDC, DwordAcc, NoLock, Preserve)
-                    {
-                        FSTA, 32,
-                    }
-
                     Method (_STA, 0, NotSerialized)
                     {
-                        Return (FSTA)
+                        Return (UFDC)
                     }
 
                     // Current resource settings
@@ -851,6 +854,48 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
 
     Scope (\_SB)
     {
+         // High Precision Event Timer
+        Device(HPET) {
+            Name(_HID,  EISAID("PNP0103"))
+            Name(_UID, 0)
+            Method (_STA, 0, NotSerialized) {
+                    Return(UHPT)
+            }
+            Name(_CRS, ResourceTemplate() {
+                DWordMemory(
+                    ResourceConsumer, PosDecode, MinFixed, MaxFixed,
+                    NonCacheable, ReadWrite,
+                    0x00000000,
+                    0xFED00000,
+                    0xFED003FF,
+                    0x00000000,
+                    0x00000400 /* 1K memory: FED00000 - FED003FF */
+                )
+            })
+        }
+ 
+       // System Management Controller
+       Device (SMC)
+       {
+            Name (_HID, EisaId ("APP0001"))
+            Name (_CID, "smc-napa")
+
+            Method (_STA, 0, NotSerialized)
+            {
+                Return (USMC)
+            }
+            Name (_CRS, ResourceTemplate ()
+            {
+                IO (Decode16,
+                    0x0300,             // Range Minimum
+                    0x0300,             // Range Maximum
+                    0x01,               // Alignment
+                    0x20,               // Length
+                    )
+                //IRQNoFlags () {8}
+            })
+        }
+
         // Fields within PIIX3 configuration[0x60..0x63] with
         // IRQ mappings
         Field (\_SB.PCI0.SBRG.PCIC, ByteAcc, NoLock, Preserve)
