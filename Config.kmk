@@ -276,7 +276,7 @@ VBOX_WITH_VBOXSDL = 1
 # The basic frontend (w/o Main).
 VBOX_WITH_VBOXBFE = 1
 # The Qt 4 GUI.
-VBOX_WITH_QT4GUI = 1
+VBOX_WITH_QTGUI = 1
 # The headless frontend.
 VBOX_WITH_HEADLESS = 1
 ## the Direct Framebuffer GUI
@@ -479,15 +479,15 @@ VBOX_BRAND_LICENSE_HTML              := $(PATH_ROOT)/doc/License.html
 VBOX_BRAND_LICENSE_RTF               := $(PATH_ROOT)/doc/License.rtf
 VBOX_BRAND_LICENSE_TXT               := $(PATH_ROOT)/doc/License.txt
 VBOX_BRAND_LICENSE_VER               :=
-VBOX_BRAND_GUI_ABOUT_PNG             := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about.png
-VBOX_BRAND_GUI_ABOUT_16PX_PNG        := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about_16px.png
-VBOX_BRAND_GUI_VBOX_16PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_16px.png
-VBOX_BRAND_GUI_VBOX_20PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_20px.png
-VBOX_BRAND_GUI_VBOX_32PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_32px.png
-VBOX_BRAND_GUI_VBOX_40PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_40px.png
-VBOX_BRAND_GUI_VBOX_48PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_48px.png
-VBOX_BRAND_GUI_VBOX_64PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_64px.png
-VBOX_BRAND_GUI_CUBE_42PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_cube_42px.png
+VBOX_BRAND_GUI_ABOUT_PNG             := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/about.png
+VBOX_BRAND_GUI_ABOUT_16PX_PNG        := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/about_16px.png
+VBOX_BRAND_GUI_VBOX_16PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/VirtualBox_16px.png
+VBOX_BRAND_GUI_VBOX_20PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/VirtualBox_20px.png
+VBOX_BRAND_GUI_VBOX_32PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/VirtualBox_32px.png
+VBOX_BRAND_GUI_VBOX_40PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/VirtualBox_40px.png
+VBOX_BRAND_GUI_VBOX_48PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/VirtualBox_48px.png
+VBOX_BRAND_GUI_VBOX_64PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/VirtualBox_64px.png
+VBOX_BRAND_GUI_CUBE_42PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/VirtualBox_cube_42px.png
 VBOX_BRAND_WIN_INST_DLGBMP           := $(PATH_ROOT)/src/VBox/Installer/win/Binary/Dialog.bmp
 VBOX_BRAND_WIN_INST_EXT              :=
 VBOX_BRAND_WIN_ADD_INST_DLGBMP       := $(PATH_ROOT)/src/VBox/Additions/WINNT/Installer/welcome.bmp
@@ -507,7 +507,7 @@ ifdef VBOX_QUICK
  VBOX_WITH_MAIN =
  VBOX_WITH_VBOXSDL =
  VBOX_WITH_VBOXBFE =
- VBOX_WITH_QT4GUI =
+ VBOX_WITH_QTGUI =
  VBOX_WITH_DEBUGGER_GUI =
  VBOX_WITH_DOCS =
 endif # VBOX_QUICK
@@ -542,7 +542,7 @@ ifeq ($(KBUILD_TARGET),l4)
  VBOX_WITH_VRDP=
  VBOX_WITH_HEADLESS=
  VBOX_WITH_VBOXSDL=
- VBOX_WITH_QT4GUI=
+ VBOX_WITH_QTGUI=
  VBOX_WITH_MAIN=
  VBOX_WITH_DOCS=
  VBOX_WITH_ISCSI=
@@ -559,7 +559,7 @@ ifeq ($(KBUILD_TARGET),os2)
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
  VBOX_WITH_TESTSUITE=
- VBOX_WITH_QT4GUI=
+ VBOX_WITH_QTGUI=
  VBOX_WITH_USB=
  VBOX_WITH_EHCI=
  VBOX_WITH_DOCS=
@@ -652,15 +652,15 @@ ifdef VBOX_OSE
  VBOX_WITH_SCSI=
  # branding
  VBOX_BRAND_BIOS_LOGO          := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/ose_logo.bmp
- VBOX_BRAND_GUI_ABOUT_PNG      := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/about.png
- VBOX_BRAND_GUI_ABOUT_16PX_PNG := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/about_16px.png
- VBOX_BRAND_GUI_VBOX_16PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_16px.png
- VBOX_BRAND_GUI_VBOX_20PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_20px.png
- VBOX_BRAND_GUI_VBOX_32PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_32px.png
- VBOX_BRAND_GUI_VBOX_40PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_40px.png
- VBOX_BRAND_GUI_VBOX_48PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_48px.png
- VBOX_BRAND_GUI_VBOX_64PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_64px.png
- VBOX_BRAND_GUI_CUBE_42PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_cube_42px.png
+ VBOX_BRAND_GUI_ABOUT_PNG      := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/about.png
+ VBOX_BRAND_GUI_ABOUT_16PX_PNG := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/about_16px.png
+ VBOX_BRAND_GUI_VBOX_16PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_16px.png
+ VBOX_BRAND_GUI_VBOX_20PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_20px.png
+ VBOX_BRAND_GUI_VBOX_32PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_32px.png
+ VBOX_BRAND_GUI_VBOX_40PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_40px.png
+ VBOX_BRAND_GUI_VBOX_48PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_48px.png
+ VBOX_BRAND_GUI_VBOX_64PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_64px.png
+ VBOX_BRAND_GUI_CUBE_42PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_cube_42px.png
 endif
 
 #
@@ -729,7 +729,7 @@ endif
 # Disable components for headless
 #
 ifdef VBOX_HEADLESS
- VBOX_WITH_QT4GUI=
+ VBOX_WITH_QTGUI=
  VBOX_WITH_VBOXSDL=
  VBOX_WITH_VBOXBFE=
  VBOX_WITH_OGL=
@@ -742,12 +742,12 @@ endif
 ifndef VBOX_WITH_MAIN
  VBOX_WITH_VRDP=
  VBOX_WITH_VBOXSDL=
- VBOX_WITH_QT4GUI=
+ VBOX_WITH_QTGUI=
  VBOX_WITH_DEBUGGER_GUI=
  VBOX_WITH_HEADLESS=
 endif
 
-ifndef VBOX_WITH_QT4GUI
+ifndef VBOX_WITH_QTGUI
  VBOX_WITH_KCHMVIEWER=
 endif
 
@@ -2878,7 +2878,7 @@ endif
 #
 # Template for building Qt GUI executables.
 #
-TEMPLATE_VBOXQT4GUIEXE = VBox Qt4 GUI Executable
+TEMPLATE_VBOXQT4GUIEXE = VBox Qt GUI Executable
 TEMPLATE_VBOXQT4GUIEXE_USES = qt4
 TEMPLATE_VBOXQT4GUIEXE_QTTOOL = QT4
 TEMPLATE_VBOXQT4GUIEXE_MOCTOOL = QT4
@@ -3023,9 +3023,9 @@ endif # COM
 
 
 #
-# Template for building Qt4 GUI components.
+# Template for building Qt GUI components.
 #
-TEMPLATE_VBOXQT4GUI = VBox Qt4 GUI Components
+TEMPLATE_VBOXQT4GUI = VBox Qt GUI Components
 TEMPLATE_VBOXQT4GUI_EXTENDS = VBOXQT4GUIEXE
 TEMPLATE_VBOXQT4GUI_LIBS = $(filter-out $(QTMAIN),$(TEMPLATE_VBOXQT4GUIEXE_LIBS))
 ifeq ($(KBUILD_TARGET),darwin)

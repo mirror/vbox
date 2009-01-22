@@ -792,23 +792,20 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         if (ok)
             max = str.section (',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
 
-        QRect ar = ok ? QApplication::desktop()->availableGeometry (QPoint (x, y)) :
-                        QApplication::desktop()->availableGeometry (this);
-
-        if (ok /* previous parameters were read correctly */)
+        QRect ar = QApplication::desktop()->availableGeometry (QPoint (x, y));
+        if (ok)
         {
+            /* Do some position checks */
+            if (x < ar.left() || x > ar.right())
+                x = ar.left();
+            if (y < ar.top() || y > ar.bottom())
+                y = ar.top();
+
             mNormalGeo = QRect (x, y, w, h);
             setGeometry (mNormalGeo);
 
             /* Normalize to the optimal size */
             console->normalizeGeometry (true /* adjustPosition */);
-
-            if (max)
-            {
-                /* Maximize if needed */
-                setWindowState (windowState() | Qt::WindowMaximized);
-                was_max = max;
-            }
         }
         else
         {
@@ -821,6 +818,10 @@ bool VBoxConsoleWnd::openView (const CSession &session)
             setGeometry (mNormalGeo);
         }
 
+        /* Maximize if needed */
+        if (max)
+            setWindowState (windowState() | Qt::WindowMaximized);
+        was_max = max;
         show();
 
         /* Process show & possible maximize events */

@@ -57,6 +57,6 @@ void QIDialog::showEvent (QShowEvent * /* aEvent */)
 
     /* Explicit widget centering relatively to it's parent
      * if any or desktop if parent is missed. */
-    VBoxGlobal::centerWidget (this, parentWidget(), false);
+    vboxGlobal().centerWidget (this, parentWidget(), false);
 }
 
