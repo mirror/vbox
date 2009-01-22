@@ -559,18 +559,20 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Init the Ring-3 components and do a round of relocations with 0 delta.
+                 * Init the ring-3 components and ring-3 per cpu data, finishing it off
+                 * by a relocation round (intermediate context finalization will do this).
                  */
                 rc = vmR3InitRing3(pVM, pUVM);
                 if (RT_SUCCESS(rc))
                 {
-                    VMR3Relocate(pVM, 0);
-                    LogFlow(("Ring-3 init succeeded\n"));
-
-                    /* Initialize the VMCPU components. */
                     rc = vmR3InitVMCpu(pVM);
                     if (RT_SUCCESS(rc))
+                        rc = PGMR3FinalizeMappings(pVM);
+                    if (RT_SUCCESS(rc))
                     {
+
+                        LogFlow(("Ring-3 init succeeded\n"));
+
                         /*
                          * Init the Ring-0 components.
                          */
