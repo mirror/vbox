@@ -3833,10 +3833,10 @@ QRect VBoxGlobal::normalizeGeometry (const QRect &aRectangle, const QRegion &aBo
                                      flip (aBoundRegion), aCanResize)).boundingRect());
 
     /* Calculate shift from starting position for both variants */
-    double length1 = sqrt (pow (var1.x() - aRectangle.x(), 2) +
-                           pow (var1.y() - aRectangle.y(), 2));
-    double length2 = sqrt (pow (var2.x() - aRectangle.x(), 2) +
-                           pow (var2.y() - aRectangle.y(), 2));
+    double length1 = sqrt (pow ((double) (var1.x() - aRectangle.x()), (double) 2) +
+                           pow ((double) (var1.y() - aRectangle.y()), (double) 2));
+    double length2 = sqrt (pow ((double) (var2.x() - aRectangle.x()), (double) 2) +
+                           pow ((double) (var2.y() - aRectangle.y()), (double) 2));
 
     /* Return minimum shifted variant */
     return length1 > length2 ? var2 : var1;
