@@ -99,6 +99,44 @@ typedef xmlError *xmlErrorPtr;
 namespace xml
 {
 
+// Helpers
+//////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Temporary holder for the formatted string.
+ *
+ * Instances of this class are used for passing the formatted string as an
+ * argument to an Error constructor or to another function that takes
+ * <tr>const char *</tr> and makes a copy of the string it points to.
+ */
+class VBOXXML_CLASS FmtStr
+{
+public:
+
+    /**
+     * Creates a formatted string using the format string and a set of
+     * printf-like arguments.
+     */
+    FmtStr(const char *aFmt, ...)
+    {
+        va_list args;
+        va_start(args, aFmt);
+        RTStrAPrintfV(&mStr, aFmt, args);
+        va_end(args);
+    }
+
+    ~FmtStr() { RTStrFree (mStr); }
+
+    operator const char *() { return mStr; }
+
+private:
+
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (FmtStr)
+
+    char *mStr;
+};
+
+
 // Exceptions
 //////////////////////////////////////////////////////////////////////////////
 
@@ -445,6 +483,95 @@ private:
 };
 
 /*
+ * Node
+ *
+ */
+
+class Node;
+typedef std::list<const Node*> NodesList;
+
+class VBOXXML_CLASS Node
+{
+public:
+    Node();
+    ~Node();
+
+    const char* getName() const;
+    const char* getValue() const;
+    bool copyValue(int32_t &i) const;
+    bool copyValue(uint32_t &i) const;
+    bool copyValue(int64_t &i) const;
+    bool copyValue(uint64_t &i) const;
+
+    int getLineNumber() const;
+
+    int getChildElements(NodesList &children,
+                         const char *pcszMatch = NULL) const;
+
+    const Node* findChildElement(const char *pcszMatch) const;
+    const Node* findChildElementFromId(const char *pcszId) const;
+
+    const Node* findAttribute(const char *pcszMatch) const;
+    bool getAttributeValue(const char *pcszMatch, std::string &str) const;
+    bool getAttributeValue(const char *pcszMatch, int64_t &i) const;
+    bool getAttributeValue(const char *pcszMatch, uint64_t &i) const;
+
+private:
+    friend class Document;
+    friend class XmlFileParser;
+
+    Node(const Node &x);      // no copying
+
+    void buildChildren();
+
+    /* Obscure class data */
+    struct Data;
+    Data *m;
+};
+
+/*
+ * NodesLoop
+ *
+ */
+
+class VBOXXML_CLASS NodesLoop
+{
+public:
+    NodesLoop(const Node &node, const char *pcszMatch = NULL);
+    ~NodesLoop();
+    const Node* forAllNodes() const;
+
+private:
+    struct Data;
+    Data *m;
+};
+
+/*
+ * Document
+ *
+ */
+
+class VBOXXML_CLASS Document
+{
+public:
+    Document();
+    ~Document();
+    Document(const Document &x);
+    Document& operator=(const Document &x);
+
+    const Node* getRootElement() const;
+
+private:
+    friend class XmlFileParser;
+
+    void refreshInternals();
+
+    /* Obscure class data */
+    struct Data;
+    Data *m;
+};
+
+/*
  * XmlParserBase
  *
  */
@@ -469,7 +596,7 @@ public:
     XmlFileParser();
     ~XmlFileParser();
 
-    void read(const char *pcszFilename);
+    void read(const char *pcszFilename, Document &doc);
 
 private:
     /* Obscure class data */

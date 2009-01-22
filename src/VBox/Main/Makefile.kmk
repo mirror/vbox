@@ -250,6 +250,7 @@ VBoxSVC_SOURCES = \
 	VirtualBoxErrorInfoImpl.cpp \
 	VirtualBoxImpl.cpp \
 	VirtualBoxImplExtra.cpp \
+	ApplianceImpl.cpp \
 	MachineImpl.cpp \
 	SnapshotImpl.cpp \
 	MediumImpl.cpp \
@@ -428,6 +429,22 @@ endif # VBOX_WITH_XPCOM
 
 
 #
+# VBoxSettings
+#
+DLLS += VBoxSettings
+VBoxSettings_TEMPLATE	= VBOXMAINDLL
+VBoxSettings_NAME       = $(basename $(notdir $(LIB_SETTINGS)))
+VBoxSettings_SDKS       = VBOX_LIBXSLT VBOX_LIBXML2 VBOX_ZLIB VBOX_BOOST
+VBoxSettings_DEFS       = IN_VBOXXML_R3
+VBoxSettings_INCS       = \
+	include
+VBoxSettings_SOURCES    = \
+	xml/xml.cpp \
+	xml/Settings.cpp
+VBoxSettings_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(notdir $(LIB_SETTINGS)) -Wl,-x # no debug info please.
+
+
+#
 # VBoxC module
 #
 DLLS += VBoxC
@@ -552,22 +569,6 @@ VBoxC_CLEAN.win  += $(PATH_VBoxC)/VBoxC.rgs
 
 $$(PATH_VBoxC)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(PATH_VBoxC)/
 	$(VBOX_XSLTPROC) --stringparam Module VBoxC -o $@ $< $(VBOX_XIDL_FILE)
-
-
-#
-# VBoxSettings
-#
-DLLS += VBoxSettings
-VBoxSettings_TEMPLATE	= VBOXMAINDLL
-VBoxSettings_NAME       = $(basename $(notdir $(LIB_SETTINGS)))
-VBoxSettings_SDKS       = VBOX_LIBXSLT VBOX_LIBXML2 VBOX_ZLIB
-VBoxSettings_DEFS       = IN_VBOXXML_R3
-VBoxSettings_INCS       = \
-	include
-VBoxSettings_SOURCES    = \
-	xml/xml.cpp \
-	xml/Settings.cpp
-VBoxSettings_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(notdir $(LIB_SETTINGS)) -Wl,-x # no debug info please.
 
 
 #

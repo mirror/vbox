@@ -54,6 +54,7 @@ class Progress;
 class ProgressCollection;
 class Host;
 class SystemProperties;
+class IAppliance;
 
 #ifdef RT_OS_WINDOWS
 class SVCHlpClient;
@@ -145,6 +146,7 @@ public:
     STDMETHOD(GetMachine) (IN_GUID aId, IMachine **aMachine);
     STDMETHOD(FindMachine) (IN_BSTR aName, IMachine **aMachine);
     STDMETHOD(UnregisterMachine) (IN_GUID aId, IMachine **aMachine);
+    STDMETHOD(OpenAppliance) (IN_BSTR aName, IAppliance **anAppliance);
 
     STDMETHOD(CreateHardDisk2) (IN_BSTR aFormat, IN_BSTR aLocation,
                                 IHardDisk2 **aHardDisk);

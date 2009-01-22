@@ -35,12 +35,17 @@
 #include <libxml/xmlschemas.h>
 
 #include <string>
+#include <list>
+#include <map>
+
+#include "boost/shared_ptr.hpp"
 
 #include "VBox/xml.h"
 
 
 /**
- * Global module initialization structure.
+ * Global module initialization structure. This is to wrap non-reentrant bits
+ * of libxml, among other things.
  *
  * The constructor and destructor of this structure are used to perform global
  * module initiaizaton and cleanup. Thee must be only one global variable of
@@ -108,9 +113,9 @@ XmlError::XmlError(xmlErrorPtr aErr)
     if (!aErr)
         throw EInvalidArg (RT_SRC_POS);
 
-    char *msg = Format (aErr);
-    setWhat (msg);
-    RTStrFree (msg);
+    char *msg = Format(aErr);
+    setWhat(msg);
+    RTStrFree(msg);
 }
 
 /**
@@ -121,14 +126,14 @@ XmlError::XmlError(xmlErrorPtr aErr)
 char *XmlError::Format(xmlErrorPtr aErr)
 {
     const char *msg = aErr->message ? aErr->message : "<none>";
-    size_t msgLen = strlen (msg);
+    size_t msgLen = strlen(msg);
     /* strip spaces, trailing EOLs and dot-like char */
-    while (msgLen && strchr (" \n.?!", msg [msgLen - 1]))
-        -- msgLen;
+    while (msgLen && strchr(" \n.?!", msg [msgLen - 1]))
+        --msgLen;
 
     char *finalMsg = NULL;
-    RTStrAPrintf (&finalMsg, "%.*s.\nLocation: '%s', line %d (%d), column %d",
-                    msgLen, msg, aErr->file, aErr->line, aErr->int1, aErr->int2);
+    RTStrAPrintf(&finalMsg, "%.*s.\nLocation: '%s', line %d (%d), column %d",
+                 msgLen, msg, aErr->file, aErr->line, aErr->int1, aErr->int2);
 
     return finalMsg;
 }
@@ -388,6 +393,492 @@ xmlParserInput* GlobalLock::callDefaultLoader(const char *aURI,
 }
 
 /*
+ * Node
+ *
+ *
+ */
+
+struct Node::Data
+{
+    xmlNode     *plibNode;          // != NULL if this is an element
+    xmlAttr     *plibAttr;          // != NULL if this is an element
+
+    Node     *pParent;       // NULL only for the root element
+    const char  *pcszName;          // points either into plibNode or plibAttr
+
+    struct compare_const_char
+    {
+        bool operator()(const char* s1, const char* s2) const
+        {
+            return strcmp(s1, s2) < 0;
+        }
+    };
+
+    // attributes, if this is an element; can be empty
+    typedef std::map<const char*, boost::shared_ptr<Node>, compare_const_char > AttributesMap;
+    AttributesMap attribs;
+
+    // child elements, if this is an element; can be empty
+    typedef std::list< boost::shared_ptr<Node> > InternalNodesList;
+    InternalNodesList children;
+};
+
+Node::Node()
+    : m(new Data)
+{
+    m->plibNode = NULL;
+    m->plibAttr = NULL;
+    m->pParent = NULL;
+}
+
+Node::~Node()
+{
+    delete m;
+}
+
+void Node::buildChildren()       // private
+{
+    // go thru this element's attributes
+    xmlAttr *plibAttr = m->plibNode->properties;
+    while (plibAttr)
+    {
+        const char *pcszAttribName = (const char*)plibAttr->name;
+        boost::shared_ptr<Node> pNew(new Node);
+        pNew->m->plibAttr = plibAttr;
+        pNew->m->pcszName = (const char*)plibAttr->name;
+        pNew->m->pParent = this;
+        // store
+        m->attribs[pcszAttribName] = pNew;
+
+        plibAttr = plibAttr->next;
+    }
+
+    // go thru this element's child elements
+    xmlNodePtr plibNode = m->plibNode->children;
+    while (plibNode)
+    {
+        // create a new Node for this child element
+        boost::shared_ptr<Node> pNew(new Node);
+        pNew->m->plibNode = plibNode;
+        pNew->m->pcszName = (const char*)plibNode->name;
+        pNew->m->pParent = this;
+        // store
+        m->children.push_back(pNew);
+
+        // recurse for this child element to get its own children
+        pNew->buildChildren();
+
+        plibNode = plibNode->next;
+    }
+}
+
+const char* Node::getName() const
+{
+    return m->pcszName;
+}
+
+/**
+ * Returns the value of a node. If this node is an attribute, returns
+ * the attribute value; if this node is an element, then this returns
+ * the element text content.
+ * @return
+ */
+const char* Node::getValue() const
+{
+    if (    (m->plibAttr)
+         && (m->plibAttr->children)
+       )
+        // libxml hides attribute values in another node created as a
+        // single child of the attribute node, and it's in the content field
+        return (const char*)m->plibAttr->children->content;
+
+    if (    (m->plibNode)
+         && (m->plibNode->children)
+       )
+        return (const char*)m->plibNode->children->content;
+
+    return NULL;
+}
+
+/**
+ * Copies the value of a node into the given integer variable.
+ * Returns TRUE only if a value was found and was actually an
+ * integer of the given type.
+ * @return
+ */
+bool Node::copyValue(int32_t &i) const
+{
+    const char *pcsz;
+    if (    ((pcsz = getValue()))
+         && (VINF_SUCCESS == RTStrToInt32Ex(pcsz, NULL, 10, &i))
+       )
+        return true;
+
+    return false;
+}
+
+/**
+ * Copies the value of a node into the given integer variable.
+ * Returns TRUE only if a value was found and was actually an
+ * integer of the given type.
+ * @return
+ */
+bool Node::copyValue(uint32_t &i) const
+{
+    const char *pcsz;
+    if (    ((pcsz = getValue()))
+         && (VINF_SUCCESS == RTStrToUInt32Ex(pcsz, NULL, 10, &i))
+       )
+        return true;
+
+    return false;
+}
+
+/**
+ * Copies the value of a node into the given integer variable.
+ * Returns TRUE only if a value was found and was actually an
+ * integer of the given type.
+ * @return
+ */
+bool Node::copyValue(int64_t &i) const
+{
+    const char *pcsz;
+    if (    ((pcsz = getValue()))
+         && (VINF_SUCCESS == RTStrToInt64Ex(pcsz, NULL, 10, &i))
+       )
+        return true;
+
+    return false;
+}
+
+/**
+ * Copies the value of a node into the given integer variable.
+ * Returns TRUE only if a value was found and was actually an
+ * integer of the given type.
+ * @return
+ */
+bool Node::copyValue(uint64_t &i) const
+{
+    const char *pcsz;
+    if (    ((pcsz = getValue()))
+         && (VINF_SUCCESS == RTStrToUInt64Ex(pcsz, NULL, 10, &i))
+       )
+        return true;
+
+    return false;
+}
+
+/**
+ * Returns the line number of the current node in the source XML file.
+ * Useful for error messages.
+ * @return
+ */
+int Node::getLineNumber() const
+{
+    if (m->plibAttr)
+        return m->pParent->m->plibNode->line;
+
+    return m->plibNode->line;
+}
+
+/**
+ * Builds a list of direct child elements of the current element that
+ * match the given string; if pcszMatch is NULL, all direct child
+ * elements are returned.
+ * @param children out: list of nodes to which children will be appended.
+ * @param pcszMatch in: match string, or NULL to return all children.
+ * @return Number of items appended to the list (0 if none).
+ */
+int Node::getChildElements(NodesList &children,
+                              const char *pcszMatch /*= NULL*/)
+    const
+{
+    int i = 0;
+    Data::InternalNodesList::const_iterator
+        it,
+        last = m->children.end();
+    for (it = m->children.begin();
+         it != last;
+         ++it)
+    {
+        // export this child node if ...
+        if (    (!pcszMatch)    // the caller wants all nodes or
+             || (!strcmp(pcszMatch, (**it).getName())) // the element name matches
+           )
+        {
+            children.push_back((*it).get());
+            ++i;
+        }
+    }
+    return i;
+}
+
+/**
+ * Returns the first child element whose name matches pcszMatch.
+ * @param pcszMatch
+ * @return
+ */
+const Node* Node::findChildElement(const char *pcszMatch)
+    const
+{
+    Data::InternalNodesList::const_iterator
+        it,
+        last = m->children.end();
+    for (it = m->children.begin();
+         it != last;
+         ++it)
+    {
+        if (!strcmp(pcszMatch, (**it).getName())) // the element name matches
+            return (*it).get();
+    }
+
+    return NULL;
+}
+
+/**
+ * Returns the first child element whose "id" attribute matches pcszId.
+ * @param pcszId identifier to look for.
+ * @return child element or NULL if not found.
+ */
+const Node* Node::findChildElementFromId(const char *pcszId) const
+{
+    Data::InternalNodesList::const_iterator
+        it,
+        last = m->children.end();
+    for (it = m->children.begin();
+         it != last;
+         ++it)
+    {
+        const Node *pElem = (*it).get();
+        const Node *pAttr;
+        if (    ((pAttr = pElem->findAttribute("id")))
+             && (!strcmp(pAttr->getValue(), pcszId))
+           )
+            return pElem;
+    }
+
+    return NULL;
+}
+
+/**
+ *
+ * @param pcszMatch
+ * @return
+ */
+const Node* Node::findAttribute(const char *pcszMatch) const
+{
+    Data::AttributesMap::const_iterator it;
+
+    it = m->attribs.find(pcszMatch);
+    if (it != m->attribs.end())
+        return it->second.get();
+
+    return NULL;
+}
+
+/**
+ * Convenience method which attempts to find the attribute with the given
+ * name and returns its value as a string.
+ *
+ * @param pcszMatch name of attribute to find.
+ * @param str out: attribute value
+ * @return TRUE if attribute was found and str was thus updated.
+ */
+bool Node::getAttributeValue(const char *pcszMatch, std::string &str) const
+{
+    const Node* pAttr;
+    if ((pAttr = findAttribute(pcszMatch)))
+    {
+        str = pAttr->getValue();
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Convenience method which attempts to find the attribute with the given
+ * name and returns its value as a signed long integer. This calls
+ * RTStrToInt64Ex internally and will only output the integer if that
+ * function returns no error.
+ *
+ * @param pcszMatch name of attribute to find.
+ * @param i out: attribute value
+ * @return TRUE if attribute was found and str was thus updated.
+ */
+bool Node::getAttributeValue(const char *pcszMatch, int64_t &i) const
+{
+    std::string str;
+    if (    (getAttributeValue(pcszMatch, str))
+         && (VINF_SUCCESS == RTStrToInt64Ex(str.c_str(), NULL, 10, &i))
+       )
+        return true;
+
+    return false;
+}
+
+/**
+ * Convenience method which attempts to find the attribute with the given
+ * name and returns its value as an unsigned long integer.This calls
+ * RTStrToUInt64Ex internally and will only output the integer if that
+ * function returns no error.
+ *
+ * @param pcszMatch name of attribute to find.
+ * @param i out: attribute value
+ * @return TRUE if attribute was found and str was thus updated.
+ */
+bool Node::getAttributeValue(const char *pcszMatch, uint64_t &i) const
+{
+    std::string str;
+    if (    (getAttributeValue(pcszMatch, str))
+         && (VINF_SUCCESS == RTStrToUInt64Ex(str.c_str(), NULL, 10, &i))
+       )
+        return true;
+
+    return false;
+}
+
+/*
+ * NodesLoop
+ *
+ */
+
+struct NodesLoop::Data
+{
+    NodesList listElements;
+    NodesList::const_iterator it;
+};
+
+NodesLoop::NodesLoop(const Node &node, const char *pcszMatch /* = NULL */)
+{
+    m = new Data;
+    node.getChildElements(m->listElements, pcszMatch);
+    m->it = m->listElements.begin();
+}
+
+NodesLoop::~NodesLoop()
+{
+    delete m;
+}
+
+
+/**
+ * Handy convenience helper for looping over all child elements. Create an
+ * instance of NodesLoop on the stack and call this method until it returns
+ * NULL, like this:
+ * <code>
+ *      xml::Node node;         // should point to an element
+ *      xml::NodesLoop loop(node, "child");  // find all "child" elements under node
+ *      const xml::Node *pChild = NULL;
+ *      while (pChild = loop.forAllNodes())
+ *          ...;
+ * </code>
+ * @param node
+ * @param pcszMatch
+ * @return
+ */
+const Node* NodesLoop::forAllNodes() const
+{
+    const Node *pNode = NULL;
+
+    if (m->it != m->listElements.end())
+    {
+        pNode = *(m->it);
+        ++(m->it);
+    }
+
+    return pNode;
+}
+
+/*
+ * Document
+ *
+ *
+ */
+
+struct Document::Data
+{
+    xmlDocPtr   pDocument;
+    Node     *pRootElement;
+
+    Data()
+    {
+        pDocument = NULL;
+        pRootElement = NULL;
+    }
+
+    ~Data()
+    {
+        reset();
+    }
+
+    void reset()
+    {
+        if (pDocument)
+        {
+            xmlFreeDoc(pDocument);
+            pDocument = NULL;
+        }
+        if (pRootElement)
+        {
+            delete pRootElement;
+            pRootElement = NULL;
+        }
+    }
+
+    void copyFrom(const Document::Data *p)
+    {
+        if (p->pDocument)
+        {
+            pDocument = xmlCopyDoc(p->pDocument,
+                                   1);      // recursive == copy all
+        }
+    }
+};
+
+Document::Document()
+    : m(new Data)
+{
+}
+
+Document::Document(const Document &x)
+    : m(new Data)
+{
+    m->copyFrom(x.m);
+};
+
+Document& Document::operator=(const Document &x)
+{
+    m->reset();
+    m->copyFrom(x.m);
+    return *this;
+};
+
+Document::~Document()
+{
+    delete m;
+}
+
+/**
+ * private method to refresh all internal structures after the internal pDocument
+ * has changed. Called from XmlFileParser::read(). m->reset() must have been
+ * called before to make sure all members except the internal pDocument are clean.
+ */
+void Document::refreshInternals() // private
+{
+    m->pRootElement = new Node();
+    m->pRootElement->m->plibNode = xmlDocGetRootElement(m->pDocument);
+    m->pRootElement->m->pcszName = (const char*)m->pRootElement->m->plibNode->name;
+
+    m->pRootElement->buildChildren();
+}
+
+const Node* Document::getRootElement() const
+{
+    return m->pRootElement;
+}
+
+/*
  * XmlParserBase
  *
  *
@@ -461,47 +952,35 @@ struct ReadContext
     }
 };
 
-void XmlFileParser::read(const char *pcszFilename)
+/**
+ * Reads the given file and fills the given Document object with its contents.
+ * Throws XmlError on parsing errors.
+ *
+ * The document that is passed in will be reset before being filled if not empty.
+ *
+ * @param pcszFilename in: name fo file to parse.
+ * @param doc out: document to be reset and filled with data according to file contents.
+ */
+void XmlFileParser::read(const char *pcszFilename,
+                         Document &doc)
 {
     GlobalLock lock();
 //     global.setExternalEntityLoader(ExternalEntityLoader);
 
-    xmlDocPtr doc = NULL;
-    ReadContext *pContext = NULL;
-
     m->strXmlFilename = pcszFilename;
 
-    try
-    {
-        pContext = new ReadContext(pcszFilename);
-        doc = xmlCtxtReadIO(m->ctxt,
-                            ReadCallback,
-                            CloseCallback,
-                            pContext,
-                            pcszFilename,
-                            NULL,       // encoding
-                            XML_PARSE_NOBLANKS);
-        if (doc == NULL)
-        {
-            throw XmlError(xmlCtxtGetLastError(m->ctxt));
-        }
+    ReadContext context(pcszFilename);
+    doc.m->reset();
+    if (!(doc.m->pDocument = xmlCtxtReadIO(m->ctxt,
+                                           ReadCallback,
+                                           CloseCallback,
+                                           &context,
+                                           pcszFilename,
+                                           NULL,       // encoding = auto
+                                           XML_PARSE_NOBLANKS)))
+        throw XmlError(xmlCtxtGetLastError(m->ctxt));
 
-        xmlFreeDoc(doc);
-        doc = NULL;
-
-        delete pContext;
-        pContext = NULL;
-    }
-    catch (...)
-    {
-        if (doc != NULL)
-            xmlFreeDoc(doc);
-
-        if (pContext)
-            delete pContext;
-
-        throw;
-    }
+    doc.refreshInternals();
 }
 
 // static

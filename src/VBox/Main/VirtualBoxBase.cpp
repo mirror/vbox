@@ -1269,7 +1269,7 @@ template<> com::Guid FromString <com::Guid> (const char *aValue)
     if (aValue == NULL || *aValue != '{' ||
         strlen (aValue) != RTUUID_STR_LENGTH + 1 ||
         aValue [RTUUID_STR_LENGTH] != '}')
-        throw ENoConversion (FmtStr ("'%s' is not Guid", aValue));
+        throw ENoConversion(xml::FmtStr("'%s' is not Guid", aValue));
 
     /* strip { and } */
     memcpy (buf, aValue + 1, RTUUID_STR_LENGTH - 1);
@@ -1279,7 +1279,7 @@ template<> com::Guid FromString <com::Guid> (const char *aValue)
     RTUUID uuid;
     int vrc = RTUuidFromStr (&uuid, buf);
     if (RT_FAILURE (vrc))
-        throw ENoConversion (FmtStr ("'%s' is not Guid (%Rrc)", aValue, vrc));
+        throw ENoConversion(xml::FmtStr("'%s' is not Guid (%Rrc)", aValue, vrc));
 
     return com::Guid (uuid);
 }
