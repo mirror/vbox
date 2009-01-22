@@ -43,7 +43,7 @@
  *      - Avoid using plain unsigned and int.
  *
  *      - Use static wherever possible. This makes the namespace less polluted
- *        and avoid nasty name clash problems which can occure, especially on
+ *        and avoid nasty name clash problems which can occur, especially on
  *        Unix like systems. (1)
  *
  *      - Public names are on the form Domain[Subdomain[]]Method using mixed
@@ -60,9 +60,9 @@
  *      - Typedefs are all uppercase and contain no underscores to distinguish
  *        them from defines.
  *
- *      - Pointer typedefs start with 'P'. If pointer to const value then 'PC'.
+ *      - Pointer typedefs start with 'P'. If pointer to const then 'PC'.
  *
- *      - Function typedefs start with 'FN'. If pointer to one then 'PFN'.
+ *      - Function typedefs start with 'FN'. If pointer to FN then 'PFN'.
  *
  *      - All files are case sensitive.
  *
@@ -70,11 +70,11 @@
  *
  *      - char strings are UTF-8.
  *
- *      - All functions returns VBox status codes. There are three general exceptions
- *        from this:
- *              -# Predicate functions. These are function which are boolean in nature
- *                 and usage. They return bool. The function name will include
- *                 'Has', 'Is' or similar.
+ *      - All functions return VBox status codes. There are three general
+ *        exceptions from this:
+ *              -# Predicate functions. These are function which are boolean in
+ *                 nature and usage. They return bool. The function name will
+ *                 include 'Has', 'Is' or similar.
  *              -# Functions which by nature cannot possibly fail.
  *                 These return void.
  *              -# "Get"-functions which return what they ask for.
@@ -90,7 +90,7 @@
  *
  *      - Other useful constructs are also put in the IPRT.
  *
- *      - The code shall not cause compiler warnings. Check this with on ALL
+ *      - The code shall not cause compiler warnings. Check this on ALL
  *        the platforms.
  *
  *      - All files have file headers with $Id and a file tag which describes
@@ -98,21 +98,22 @@
  *        Note: Remember to enable keyword expansion when adding files to svn.
  *
  *      - All public functions are fully documented in Doxygen style using the
- *        javadoc dialect (using the 'at' insdead of the 'slash' as commandprefix.)
+ *        javadoc dialect (using the 'at' instead of the 'slash' as
+ *        commandprefix.)
  *
- *      - All structures in header files are described, including all of their
+ *      - All structures in header files are described, including all their
  *        members.
  *
  *      - All modules have a documentation 'page' in the main source file which
  *        describes the intent and actual implementation.
  *
- *      - Code which is doing things that are not immediatly comprehendable
- *        shall include explanatory comments!
+ *      - Code which is doing things that are not immediately comprehensible
+ *        shall include explanatory comments.
  *
  *      - Documentation and comments are kept up to date.
  *
- *      - Headers in /include/VBox shall not contain any slash-slash C++ comments,
- *        only ansi C comments!
+ *      - Headers in /include/VBox shall not contain any slash-slash C++
+ *        comments, only ANSI C comments!
  *
  *
  * (1) It is common practice on Unix to have a single symbol namespace for an
@@ -122,7 +123,7 @@
  * (2) This is common practice among most projects dealing with modules in
  *     shared libraries. The Windows / PE __declspect(import) and
  *     __declspect(export) constructs are the main reason for this.
- *     OTH, we do perhaps have a bit too detailed graining of this in VMM...
+ *     OTOH, we do perhaps have a bit too detailed graining of this in VMM...
  *
  *
  *
@@ -152,7 +153,7 @@
  *        NT/Windows types, there is the choice of ULONG_PTR and DWORD_PTR.
  *
  *      - RT_OS_WINDOWS is defined to indicate Windows. Do not use __WIN32__,
- *        __WIN64__ and __WIN__ because they are all deprecated and schedule
+ *        __WIN64__ and __WIN__ because they are all deprecated and scheduled
  *        for removal (if not removed already). Do not use the compiler
  *        defined _WIN32, _WIN64, or similar either. The bitness can be
  *        determined by testing ARCH_BITS.
@@ -180,7 +181,7 @@
  *        Do not use __x86__, __X86__, __[Ii]386__, __[Ii]586__, or similar
  *        for this purpose.
  *
- *      - RT_ARCH_AMD64 is defined when compiling for the AMD64 the architecture.
+ *      - RT_ARCH_AMD64 is defined when compiling for the AMD64 architecture.
  *        Do not use __AMD64__, __amd64__ or __x64_86__.
  *
  *      - Take care and use size_t when you have to, esp. when passing a pointer
@@ -199,8 +200,8 @@
  *
  * @section sec_vbox_guideline_optional         Optional
  *
- * First part is the actual coding style and all the prefixes the second part is
- * the a bunch of good advice.
+ * First part is the actual coding style and all the prefixes. The second part
+ * is a bunch of good advice.
  *
  *
  * @subsection sec_vbox_guideline_optional_layout   The code layout
@@ -216,10 +217,11 @@
  *              if (PATMR3IsPatchGCAddr(pVM, GCPtr))
  *        @endcode
  *
- *      - The else of an if is always first statement on a line. (No curly
+ *      - The else of an if is always the first statement on a line. (No curly
  *        stuff before it!)
  *
- *      - else and if goes on the same line if no curly stuff is needed around the if.
+ *      - else and if go on the same line if no { compound statement }
+ *        follows the if.
  *        Example:
  *        @code
  *              if (fFlags & MYFLAGS_1)
@@ -253,7 +255,7 @@
  *        @endcode
  *
  *      - In a do while construction, the while is on the same line as the
- *        closing bracket if any are used.
+ *        closing "}" if any are used.
  *        Example:
  *        @code
  *              do
@@ -266,7 +268,7 @@
  *      - Comments are in C style. C++ style comments are used for temporary
  *        disabling a few lines of code.
  *
- *      - Sligtly complex boolean expressions are splitt into multiple lines,
+ *      - Slightly complex boolean expressions are split into multiple lines,
  *        putting the operators first on the line and indenting it all according
  *        to the nesting of the expression. The purpose is to make it as easy as
  *        possible to read.
@@ -337,7 +339,7 @@
  *
  *      - When writing code think as the compiler.
  *
- *      - When reading code think as that it's fully of bugs - find them and fix them.
+ *      - When reading code think as if it's full of bugs - find them and fix them.
  *
  *      - Pointer within range tests like:
  *        @code
@@ -349,11 +351,12 @@
  *        @endcode
  *        Which is shorter and potentially faster. (1)
  *
- *      - Avoid unnecessary casting. All pointers automatically casts down to void *,
- *        at least for non class instance pointers.
+ *      - Avoid unnecessary casting. All pointers automatically cast down to
+ *        void *, at least for non class instance pointers.
  *
  *      - It's very very bad practise to write a function larger than a
- *        screen full (1024x768) without any comprehendable and explaining comments.
+ *        screen full (1024x768) without any comprehensibility and explaining
+ *        comments.
  *
  *      - More to come....
  *
@@ -392,8 +395,8 @@ int main()
     return 0;
 }
 @endcode
- * If I understood it correctly, the compiler will convert a to an unsigned long before
- * doing the compare.
+ * If I understood it correctly, the compiler will convert a to an
+ * unsigned long before doing the compare.
  *
  *
  * @section sec_vbox_guideline_svn          Subversion Commit Rules
@@ -406,12 +409,13 @@ int main()
  *        help make the responsible person fix it.
  *        NEVER CHECK IN TO A BROKEN BUILD.
  *
- *      - When checking in keep in mind that a commit is atomical and that the Tinderbox and
+ *      - When checking in keep in mind that a commit is atomic and that the Tinderbox and
  *        developers are constantly checking out the tree. Therefore do not split up the
- *        commit unless it's into 100% indepentant parts. If you need to split it up in order
+ *        commit unless it's into 100% independent parts. If you need to split it up in order
  *        to have sensible commit comments, make the sub-commits as rapid as possible.
  *
- *      - Make sure you add an entry to the ChangeLog file.
+ *      - If you make a user visible change, such as fixing a reported bug,
+ *        make sure you add an entry to doc/manual/user_ChangeLogImpl.xml.
  *
  *
  * After checking in:
