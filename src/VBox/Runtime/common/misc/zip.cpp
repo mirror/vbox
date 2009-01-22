@@ -247,25 +247,28 @@ typedef struct RTZIPDECOMP
 
 
 #ifdef RTZIP_USE_STORE
+#include <stdio.h>
 
 /**
  * @copydoc RTZipCompress
  */
 static DECLCALLBACK(int) rtZipStoreCompress(PRTZIPCOMP pZip, const void *pvBuf, size_t cbBuf)
 {
+    uint8_t *pbDst = pZip->u.Store.pb;
     while (cbBuf)
     {
         /*
          * Flush.
          */
-        size_t cb = (uintptr_t)&pZip->abBuffer[sizeof(pZip->abBuffer)] - (uintptr_t)pZip->u.Store.pb;
-        if (cb <= 0)
+        size_t cb = sizeof(pZip->abBuffer) - (size_t)(pbDst - &pZip->abBuffer[0]); /* careful here, g++ 4.1.2 screws up easily */
+        if (cb == 0)
         {
             int rc = pZip->pfnOut(pZip->pvUser, &pZip->abBuffer[0], sizeof(pZip->abBuffer));
             if (RT_FAILURE(rc))
                 return rc;
+
             cb = sizeof(pZip->abBuffer);
-            pZip->u.Store.pb = &pZip->abBuffer[0];
+            pbDst = &pZip->abBuffer[0];
         }
 
         /*
@@ -273,11 +276,13 @@ static DECLCALLBACK(int) rtZipStoreCompress(PRTZIPCOMP pZip, const void *pvBuf, 
          */
         if (cbBuf < cb)
             cb = cbBuf;
-        memcpy(pZip->u.Store.pb, pvBuf, cb);
-        pZip->u.Store.pb += cb;
+        memcpy(pbDst, pvBuf, cb);
+
+        pbDst += cb;
         cbBuf -= cb;
         pvBuf = (uint8_t *)pvBuf + cb;
     }
+    pZip->u.Store.pb = pbDst;
     return VINF_SUCCESS;
 }
 
