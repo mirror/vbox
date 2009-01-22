@@ -938,8 +938,12 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 {
     struct net_device * pDev;
 
-    LogFlow(("vboxNetFltPortOsSetActive: pThis=%p (%s), fActive=%s\n",
-             pThis, pThis->szName, fActive?"true":"false"));
+    LogFlow(("vboxNetFltPortOsSetActive: pThis=%p (%s), fActive=%s, fDisablePromiscuous=%s\n",
+             pThis, pThis->szName, fActive?"true":"false",
+             pThis->fDisablePromiscuous?"true":"false"));
+
+    if (pThis->fDisablePromiscuous)
+        return;
 
     pDev = vboxNetFltLinuxRetainNetDev(pThis);
     if (pDev)
@@ -950,59 +954,19 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
          * Also, we have a bit or race conditions wrt the maintance of
          * host the interface promiscuity for vboxNetFltPortOsIsPromiscuous.
          */
-        u_int16_t fIf;
 #ifdef LOG_ENABLED
+        u_int16_t fIf;
         unsigned const cPromiscBefore = VBOX_GET_PCOUNT(pDev);
 #endif
         if (fActive)
         {
             Assert(!pThis->u.s.fPromiscuousSet);
 
-#if 0
-            /*
-             * Try bring the interface up and running if it's down.
-             */
-            fIf = dev_get_flags(pDev);
-            if ((fIf & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING))
-            {
-                rtnl_lock();
-                int err = dev_change_flags(pDev, fIf | IFF_UP);
-                rtnl_unlock();
-                fIf = dev_get_flags(pDev);
-            }
-
-            /*
-             * Is it already up?  If it isn't, leave it to the link event or
-             * we'll upset if_pcount (as stated above, ifnet_set_promiscuous is weird).
-             */
-            if ((fIf & (IFF_UP | IFF_RUNNING)) == (IFF_UP | IFF_RUNNING)
-                && !ASMAtomicReadBool(&pThis->u.s.fPromiscuousSet))
-            {
-#endif
-                rtnl_lock();
-                dev_set_promiscuity(pDev, 1);
-                rtnl_unlock();
-                pThis->u.s.fPromiscuousSet = true;
-                Log(("vboxNetFltPortOsSetActive: enabled promiscuous mode on %s (%d)\n", pThis->szName, VBOX_GET_PCOUNT(pDev)));
-#if 0
-                /* check if it actually worked, this stuff is not always behaving well. */
-                if (!(dev_get_flags(pDev) & IFF_PROMISC))
-                {
-                    err = dev_change_flags(pDev, fIf | IFF_PROMISC);
-                    if (!err)
-                        Log(("vboxNetFlt: fixed IFF_PROMISC on %s (%d->%d)\n", pThis->szName, cPromiscBefore, VBOX_GET_PCOUNT(pDev)));
-                    else
-                        Log(("VBoxNetFlt: failed to fix IFF_PROMISC on %s, err=%d (%d->%d)\n",
-                             pThis->szName, err, cPromiscBefore, VBOX_GET_PCOUNT(pDev)));
-                }
-#endif
-#if 0
-            }
-            else if (!err)
-                Log(("VBoxNetFlt: Waiting for the link to come up... (%d->%d)\n", cPromiscBefore, VBOX_GET_PCOUNT(pDev)));
-            if (err)
-                LogRel(("VBoxNetFlt: Failed to put '%s' into promiscuous mode, err=%d (%d->%d)\n", pThis->szName, err, cPromiscBefore, VBOX_GET_PCOUNT(pDev)));
-#endif
+            rtnl_lock();
+            dev_set_promiscuity(pDev, 1);
+            rtnl_unlock();
+            pThis->u.s.fPromiscuousSet = true;
+            Log(("vboxNetFltPortOsSetActive: enabled promiscuous mode on %s (%d)\n", pThis->szName, VBOX_GET_PCOUNT(pDev)));
         }
         else
         {
@@ -1015,8 +979,10 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
             }
             pThis->u.s.fPromiscuousSet = false;
 
+#ifdef LOG_ENABLED
             fIf = dev_get_flags(pDev);
             Log(("VBoxNetFlt: fIf=%#x; %d->%d\n", fIf, cPromiscBefore, VBOX_GET_PCOUNT(pDev)));
+#endif
         }
 
         vboxNetFltLinuxReleaseNetDev(pThis, pDev);
