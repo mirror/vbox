@@ -35,6 +35,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 
 int main()
 {
@@ -132,9 +133,17 @@ int main()
     VBoxMainHotplugWaiter waiter;
     RTPrintf ("Waiting for hotplug events.  Note that DBus often seems to deliver duplicate events in close succession.\n");
     RTPrintf ("Waiting for a hotplug event for five seconds...\n");
-    waiter.Wait (5000);
+    if (RT_FAILURE(waiter.Wait (5000)))
+    {
+        RTPrintf("Failed!\n");
+        exit(1);
+    }
     RTPrintf ("Waiting for a hotplug event, Ctrl-C to abort...\n");
-    waiter.Wait(RT_INDEFINITE_WAIT);
+    if (RT_FAILURE(waiter.Wait(RT_INDEFINITE_WAIT)))
+    {
+        RTPrintf("Failed!\n");
+        exit(1);
+    }    
 #endif  /* VBOX_USB_WITH_SYSFS */
     return 0;
 }
