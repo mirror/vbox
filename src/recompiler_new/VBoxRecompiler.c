@@ -1815,7 +1815,7 @@ REMR3DECL(int)  REMR3State(PVM pVM)
             CPUMGetGuestCpuId(pVM, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext2_features);
         }
 
-        /* Sync FPU state after CR4 and CPUID. */
+        /* Sync FPU state after CR4, CPUID and EFER (!). */
         if (fFlags & CPUM_CHANGED_FPU_REM)
             save_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->fpu); /* 'save' is an excellent name. */
     }
