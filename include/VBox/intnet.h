@@ -594,17 +594,19 @@ typedef struct INTNETTRUNKFACTORY
      *                              this interface is being connected to.
      * @param   ppIfPort            Where to store the pointer to the interface port
      *                              on success.
+     * @param   fNoPromisc          Do not put the interface into promiscuous mode.
      *
      * @remarks Called while owning the network and the out-bound trunk semaphores.
      */
     DECLR0CALLBACKMEMBER(int, pfnCreateAndConnect,(struct INTNETTRUNKFACTORY *pIfFactory, const char *pszName,
-                                                   PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort));
+                                                   PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort,
+                                                   bool fNoPromisc));
 } INTNETTRUNKFACTORY;
 /** Pointer to the trunk factory. */
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
 /** The UUID for the (current) trunk factory. (case sensitive) */
-#define INTNETTRUNKFACTORY_UUID_STR     "ae8fcb95-280c-42f4-a8f1-09f84e3bdab3"
+#define INTNETTRUNKFACTORY_UUID_STR     "a200dee8-ad4a-4e32-b875-425f74103a22"
 
 
 /**
