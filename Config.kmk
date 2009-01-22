@@ -3557,4 +3557,3 @@ st stat status:
 quick:
 	$(MAKE) VBOX_QUICK=1
 
-
