@@ -498,6 +498,7 @@ int main()
     GEN_CHECK_OFF(PGM, pMappingsR3);
     GEN_CHECK_OFF(PGM, pMappingsRC);
     GEN_CHECK_OFF(PGM, pMappingsR0);
+    GEN_CHECK_OFF(PGM, fFinalizedMappings);
     GEN_CHECK_OFF(PGM, fMappingsFixed);
     GEN_CHECK_OFF(PGM, GCPtrMappingFixed);
     GEN_CHECK_OFF(PGM, cbMappingFixed);

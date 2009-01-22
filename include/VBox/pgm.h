@@ -540,6 +540,7 @@ VMMR3DECL(int)      PGMR3PhysSetFlags(PVM pVM, RTGCPHYS GCPhys, size_t cb, unsig
 VMMDECL(void)       PGMR3PhysSetA20(PVM pVM, bool fEnable);
 VMMR3DECL(int)      PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc);
 VMMR3DECL(int)      PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr);
+VMMR3DECL(int)      PGMR3FinalizeMappings(PVM pVM);
 VMMR3DECL(int)      PGMR3MappingsSize(PVM pVM, uint32_t *pcb);
 VMMR3DECL(int)      PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb);
 VMMR3DECL(int)      PGMR3MappingsUnfix(PVM pVM);

@@ -113,18 +113,18 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
      * Check for conflicts with intermediate mappings.
      */
     const unsigned iPageDir = GCPtr >> X86_PD_SHIFT;
-    const unsigned cPTs = cb >> X86_PD_SHIFT;
-    unsigned    i;
-    for (i = 0; i < cPTs; i++)
+    const unsigned cPTs     = cb >> X86_PD_SHIFT;
+    if (pVM->pgm.s.fFinalizedMappings)
     {
-        if (pVM->pgm.s.pInterPD->a[iPageDir + i].n.u1Present)
-        {
-            AssertMsgFailed(("Address %#x is already in use by an intermediate mapping.\n", GCPtr + (i << PAGE_SHIFT)));
-            LogRel(("VERR_PGM_MAPPING_CONFLICT: Address %#x is already in use by an intermediate mapping.\n", GCPtr + (i << PAGE_SHIFT)));
-            return VERR_PGM_MAPPING_CONFLICT;
-        }
+        for (unsigned i = 0; i < cPTs; i++)
+            if (pVM->pgm.s.pInterPD->a[iPageDir + i].n.u1Present)
+            {
+                AssertMsgFailed(("Address %#x is already in use by an intermediate mapping.\n", GCPtr + (i << PAGE_SHIFT)));
+                LogRel(("VERR_PGM_MAPPING_CONFLICT: Address %#x is already in use by an intermediate mapping.\n", GCPtr + (i << PAGE_SHIFT)));
+                return VERR_PGM_MAPPING_CONFLICT;
+            }
+        /** @todo AMD64: add check in PAE structures too, so we can remove all the 32-Bit paging stuff there. */
     }
-    /** @todo AMD64: add check in PAE structures too, so we can remove all the 32-Bit paging stuff there. */
 
     /*
      * Allocate and initialize the new list node.
@@ -157,7 +157,7 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
      * Init the page tables and insert them into the page directories.
      */
     Log4(("PGMR3MapPT: GCPtr=%RGv cPTs=%u pbPTs=%p\n", GCPtr, cPTs, pbPTs));
-    for (i = 0; i < cPTs; i++)
+    for (unsigned i = 0; i < cPTs; i++)
     {
         /*
          * 32-bit.
@@ -182,7 +182,9 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
         Log4(("PGMR3MapPT: i=%d: paPaePTsR#=%RHv paPaePTsRC=%RRv paPaePTsR#=%RHv HCPhysPaePT0=%RHp HCPhysPaePT1=%RHp\n",
               i, pNew->aPTs[i].paPaePTsR3, pNew->aPTs[i].paPaePTsRC, pNew->aPTs[i].paPaePTsR0, pNew->aPTs[i].HCPhysPaePT0, pNew->aPTs[i].HCPhysPaePT1));
     }
-    pgmR3MapSetPDEs(pVM, pNew, iPageDir);
+    if (pVM->pgm.s.fFinalizedMappings)
+        pgmR3MapSetPDEs(pVM, pNew, iPageDir);
+    /* else PGMR3FinalizeMappings() */
 
     /*
      * Insert the new mapping.
@@ -218,6 +220,7 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
 VMMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr)
 {
     LogFlow(("PGMR3UnmapPT: GCPtr=%#x\n", GCPtr));
+    AssertReturn(pVM->pgm.s.fFinalizedMappings, VERR_WRONG_ORDER);
 
     /*
      * Find it.
@@ -267,6 +270,195 @@ VMMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr)
 
     AssertMsgFailed(("No mapping for %#x found!\n", GCPtr));
     return VERR_INVALID_PARAMETER;
+}
+
+
+/**
+ * Checks whether a range of PDEs in the intermediate
+ * memory context are unused.
+ *
+ * We're talking 32-bit PDEs here.
+ *
+ * @returns true/false.
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   iPD         The first PDE in the range.
+ * @param   cPTs        The number of PDEs in the range.
+ */
+DECLINLINE(bool) pgmR3AreIntermediatePDEsUnused(PVM pVM, unsigned iPD, unsigned cPTs)
+{
+    if (pVM->pgm.s.pInterPD->a[iPD].n.u1Present)
+        return false;
+    while (cPTs > 1)
+    {
+        iPD++;
+        if (pVM->pgm.s.pInterPD->a[iPD].n.u1Present)
+            return false;
+        cPTs--;
+    }
+    return true;
+}
+
+
+/**
+ * Unlinks the mapping.
+ *
+ * The mapping *must* be in the list.
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pMapping        The mapping to unlink.
+ */
+static void pgmR3MapUnlink(PVM pVM, PPGMMAPPING pMapping)
+{
+    PPGMMAPPING pAfterThis = pVM->pgm.s.pMappingsR3;
+    if (pAfterThis == pMapping)
+    {
+        /* head */
+        pVM->pgm.s.pMappingsR3 = pMapping->pNextR3;
+        pVM->pgm.s.pMappingsRC = pMapping->pNextRC;
+        pVM->pgm.s.pMappingsR0 = pMapping->pNextR0;
+    }
+    else
+    {
+        /* in the list */
+        while (pAfterThis->pNextR3 != pMapping)
+        {
+            pAfterThis = pAfterThis->pNextR3;
+            AssertReleaseReturnVoid(pAfterThis);
+        }
+
+        pAfterThis->pNextR3 = pMapping->pNextR3;
+        pAfterThis->pNextRC = pMapping->pNextRC;
+        pAfterThis->pNextR0 = pMapping->pNextR0;
+    }
+}
+
+
+/**
+ * Links the mapping.
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pMapping        The mapping to linked.
+ */
+static void pgmR3MapLink(PVM pVM, PPGMMAPPING pMapping)
+{
+    /*
+     * Find the list location (it's sorted by GCPhys) and link it in.
+     */
+    if (    !pVM->pgm.s.pMappingsR3
+        ||  pVM->pgm.s.pMappingsR3->GCPtr > pMapping->GCPtr)
+    {
+        /* head */
+        pMapping->pNextR3 = pVM->pgm.s.pMappingsR3;
+        pMapping->pNextRC = pVM->pgm.s.pMappingsRC;
+        pMapping->pNextR0 = pVM->pgm.s.pMappingsR0;
+        pVM->pgm.s.pMappingsR3 = pMapping;
+        pVM->pgm.s.pMappingsRC = MMHyperR3ToRC(pVM, pMapping);
+        pVM->pgm.s.pMappingsR0 = MMHyperR3ToR0(pVM, pMapping);
+    }
+    else
+    {
+        /* in the list */
+        PPGMMAPPING pAfterThis  = pVM->pgm.s.pMappingsR3;
+        PPGMMAPPING pBeforeThis = pAfterThis->pNextR3;
+        while (pBeforeThis && pBeforeThis->GCPtr <= pMapping->GCPtr)
+        {
+            pAfterThis = pBeforeThis;
+            pBeforeThis = pBeforeThis->pNextR3;
+        }
+
+        pMapping->pNextR3 = pAfterThis->pNextR3;
+        pMapping->pNextRC = pAfterThis->pNextRC;
+        pMapping->pNextR0 = pAfterThis->pNextR0;
+        pAfterThis->pNextR3 = pMapping;
+        pAfterThis->pNextRC = MMHyperR3ToRC(pVM, pMapping);
+        pAfterThis->pNextR0 = MMHyperR3ToR0(pVM, pMapping);
+    }
+}
+
+
+/**
+ * Finalizes the intermediate context.
+ *
+ * This is called at the end of the ring-3 init and will construct the
+ * intermediate paging structures, relocating all the mappings in the process.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the shared VM structure.
+ * @thread  EMT(0)
+ */
+VMMR3DECL(int) PGMR3FinalizeMappings(PVM pVM)
+{
+    AssertReturn(!pVM->pgm.s.fFinalizedMappings, VERR_WRONG_ORDER);
+    pVM->pgm.s.fFinalizedMappings = true;
+
+    /*
+     * Loop until all mappings have been finalized.
+     */
+    /*unsigned    iPDNext = UINT32_C(0xc0000000) >> X86_PD_SHIFT;*/ /* makes CSAM/PATM freak out booting linux. :-/ */
+#if 0
+    unsigned    iPDNext = MM_HYPER_AREA_ADDRESS >> X86_PD_SHIFT;
+#else
+    unsigned    iPDNext = 1 << X86_PD_SHIFT; /* no hint, map them from the top. */
+#endif
+    PPGMMAPPING pCur;
+    do
+    {
+        pCur = pVM->pgm.s.pMappingsR3;
+        while (pCur)
+        {
+            if (!pCur->fFinalized)
+            {
+                /*
+                 * Find a suitable location.
+                 */
+                RTGCPTR const   GCPtrOld = pCur->GCPtr;
+                const unsigned  cPTs     = pCur->cPTs;
+                unsigned        iPDNew   = iPDNext;
+                if (    iPDNew + cPTs >= X86_PG_ENTRIES /* exclude the last PD */
+                    ||  !pgmR3AreIntermediatePDEsUnused(pVM, iPDNew, cPTs)
+                    ||  !pCur->pfnRelocate(pVM, GCPtrOld, (RTGCPTR)iPDNew << X86_PD_SHIFT, PGMRELOCATECALL_SUGGEST, pCur->pvUser))
+                {
+                    /* No luck, just scan down from 4GB-4MB, giving up at 4MB. */
+                    iPDNew = X86_PG_ENTRIES - cPTs - 1;
+                    while (     iPDNew > 0
+                           &&   (   !pgmR3AreIntermediatePDEsUnused(pVM, iPDNew, cPTs)
+                                 || !pCur->pfnRelocate(pVM, GCPtrOld, (RTGCPTR)iPDNew << X86_PD_SHIFT, PGMRELOCATECALL_SUGGEST, pCur->pvUser))
+                           )
+                        iPDNew--;
+                    AssertLogRelReturn(iPDNew != 0, VERR_PGM_INTERMEDIATE_PAGING_CONFLICT);
+                }
+
+                /*
+                 * Relocate it (something akin to pgmR3MapRelocate).
+                 */
+                pgmR3MapSetPDEs(pVM, pCur, iPDNew);
+
+                /* unlink the mapping, update the entry and relink it. */
+                pgmR3MapUnlink(pVM, pCur);
+
+                RTGCPTR const GCPtrNew = (RTGCPTR)iPDNew << X86_PD_SHIFT;
+                pCur->GCPtr      = GCPtrNew;
+                pCur->GCPtrLast  = GCPtrNew + pCur->cb - 1;
+                pCur->fFinalized = true;
+
+                pgmR3MapLink(pVM, pCur);
+
+                /* Finally work the callback. */
+                pCur->pfnRelocate(pVM, GCPtrOld, GCPtrNew, PGMRELOCATECALL_RELOCATE, pCur->pvUser);
+
+                /*
+                 * The list order might have changed, start from the beginning again.
+                 */
+                iPDNext = iPDNew + cPTs;
+                break;
+            }
+
+            /* next */
+            pCur = pCur->pNextR3;
+        }
+    } while (pCur);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -525,9 +717,11 @@ VMMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, un
     AssertMsg(pVM->pgm.s.pInterPD, ("Bad init order, paging.\n"));
     AssertMsg(cbPages <= (512 << PAGE_SHIFT), ("The mapping is too big %d bytes\n", cbPages));
     AssertMsg(HCPhys < _4G && HCPhys + cbPages < _4G, ("Addr=%RTptr HCPhys=%RHp cbPages=%d\n", Addr, HCPhys, cbPages));
+    AssertReturn(!pVM->pgm.s.fFinalizedMappings, VERR_WRONG_ORDER);
 
     /*
      * Check for internal conflicts between the virtual address and the physical address.
+     * A 1:1 mapping is fine, but partial overlapping is a no-no.
      */
     if (    uAddress != HCPhys
         &&  (   uAddress < HCPhys
@@ -536,16 +730,6 @@ VMMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, un
             )
        )
         AssertLogRelMsgFailedReturn(("Addr=%RTptr HCPhys=%RHp cbPages=%d\n", Addr, HCPhys, cbPages),
-                                    VERR_PGM_INTERMEDIATE_PAGING_CONFLICT);
-
-    /* The intermediate mapping must not conflict with our default hypervisor address. */
-    size_t  cbHyper;
-    RTGCPTR pvHyperGC = MMHyperGetArea(pVM, &cbHyper);
-    if (uAddress < pvHyperGC
-        ? uAddress + cbPages > pvHyperGC
-        : pvHyperGC + cbHyper > uAddress
-       )
-        AssertLogRelMsgFailedReturn(("Addr=%RTptr HyperGC=%RGv cbPages=%zu\n", Addr, pvHyperGC, cbPages),
                                     VERR_PGM_INTERMEDIATE_PAGING_CONFLICT);
 
     const unsigned cPages = cbPages >> PAGE_SHIFT;
