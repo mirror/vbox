@@ -757,7 +757,6 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int iCmd, int Mode, 
      * Process the IOCtl.
      */
     rc = supdrvIOCtl(iCmd, &g_DevExt, pSession, pHdr);
-    PFNRT a = RTMpIsCpuWorkPending;
     
     /*
      * Copy ioctl data and output buffer back to user space.
