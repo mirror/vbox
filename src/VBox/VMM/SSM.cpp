@@ -2255,6 +2255,7 @@ static int ssmR3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
         {
             //int rc = RTZipCompCreate(&pSSM->pZipComp, pSSM, ssmR3WriteOut, RTZIPTYPE_ZLIB, RTZIPLEVEL_FAST);
             int rc = RTZipCompCreate(&pSSM->pZipComp, pSSM, ssmR3WriteOut, RTZIPTYPE_LZF, RTZIPLEVEL_FAST);
+            //int rc = RTZipCompCreate(&pSSM->pZipComp, pSSM, ssmR3WriteOut, RTZIPTYPE_STORE, RTZIPLEVEL_FAST);
             if (RT_FAILURE(rc))
                 return rc;
         }
