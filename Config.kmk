@@ -1748,6 +1748,9 @@ else
  SDK_VBOX_FFMPEG_LIBS ?= avutil avcodec avformat
 endif
 
+SDK_VBOX_BOOST        = .
+SDK_VBOX_BOOST_INCS  ?= $(PATH_ROOT)/src/libs/boost-1.37.0/boost
+
 #
 # Special SDK for the problematic NTDLL.LIB.
 #
