@@ -972,16 +972,7 @@ void VBoxConsoleView::normalizeGeometry (bool adjustPosition /* = false */)
 
     if (adjustPosition)
     {
-        QRegion ar;
-        QDesktopWidget *dwt = QApplication::desktop();
-        if (dwt->isVirtualDesktop())
-            /* Compose complex available region */
-            for (int i = 0; i < dwt->numScreens(); ++ i)
-                ar += dwt->availableGeometry (i);
-        else
-            /* Get just a simple available rectangle */
-            ar = dwt->availableGeometry (tlw->pos());
-
+        QRect ar = QApplication::desktop()->availableGeometry (tlw->pos());
         fr = VBoxGlobal::normalizeGeometry (
             fr, ar, mode != VBoxDefs::SDLMode /* canResize */);
     }

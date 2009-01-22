@@ -952,7 +952,7 @@ void VBoxSelectorWnd::vmStart (const QUuid &aUuid /*= QUuid_null*/)
     }
 #endif
 
-    CProgress progress = vbox.OpenRemoteSession (session, id, "GUI/Qt4", env);
+    CProgress progress = vbox.OpenRemoteSession (session, id, "GUI/Qt", env);
     if (!vbox.isOk())
     {
         vboxProblem().cannotOpenSession (vbox, item->machine());

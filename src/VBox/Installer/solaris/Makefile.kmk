@@ -106,7 +106,7 @@ solaris-doc_INST    = bin/
 solaris-doc_MODE    = a+r,u+w
 solaris-doc_SOURCES = \
 	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
-	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_64px.png=>VBox.png
+	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_64px.png=>VBox.png
 
 #
 # Note: Other than the files produced during packing (.pkg, .gzip etc.) all files that
@@ -116,7 +116,7 @@ solaris-doc_SOURCES = \
 # Strip these executables
 SOLARIS_STRIP_EXES = \
 	VBoxZoneAccess \
-	$(if $(VBOX_WITH_QT4GUI),VirtualBox,) \
+	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
 	VBoxManage \
 	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
@@ -138,10 +138,11 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_SHARED_FOLDERS),VBoxSharedFolders.so,) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD),VBoxSharedClipboard.so,) \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so,) \
-	$(if $(VBOX_WITH_QT4GUI),VBoxKeyboard.so,) \
-	$(if $(VBOX_WITH_QT4GUI),libVBoxQtCore.so.4,) \
-	$(if $(VBOX_WITH_QT4GUI),libVBoxQtGui.so.4,) \
-	$(if $(VBOX_WITH_QT4GUI),accessible/libqtaccessiblewidgets.so,) \
+	$(if $(VBOX_WITH_QTGUI),\
+	  VBoxKeyboard.so \
+	  libVBoxQtCore.so.4 \
+	  libVBoxQtGui.so.4 \
+	  accessible/libqtaccessiblewidgets.so,) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,) \
 	$(if $(VBOX_WITH_CROGL),\
 	  VBoxOGLhostcrutil.so \
@@ -156,7 +157,7 @@ ifdef VBOX_WITH_HARDENING
 SOLARIS_STRIP_BINS += \
 	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE.so) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL.so,) \
-	$(if $(VBOX_WITH_QT4GUI),VirtualBox.so,)
+	$(if $(VBOX_WITH_QTGUI),VirtualBox.so,)
 endif
 
 # Do not remove relocation information of these binaries
@@ -183,7 +184,7 @@ VBOX_SOL_PYTHON_DIR_64 = 64
 SOLARIS_NO_STRIP = \
 	components/VBoxXPCOMBase.xpt \
 	components/VirtualBox_XPCOM.xpt \
-	$(if $(and $(VBOX_LICENSE_FILES),$(VBOX_WITH_QT4GUI)),$(VBOX_LICENSE_FILES))
+	$(if $(and $(VBOX_LICENSE_FILES),$(VBOX_WITH_QTGUI)),$(VBOX_LICENSE_FILES))
 
 # Things packed explicitly, not from $(PATH_BIN), track these to clean-up properly
 SOLARIS_EXTRAS = \
@@ -197,7 +198,7 @@ SOLARIS_EXTRAS = \
 	$(if $(VBOX_WITH_VBOXSDL),libSDL-1.2.so.0,) \
 	$(if $(not $(VBOX_WITH_NETFLT))vnic_setup.sh,) \
 	$(if $(not $(VBOX_WITH_NETFLT))vnic_term.sh,) \
-	$(if $(VBOX_WITH_QT4GUI),virtualbox.desktop,) \
+	$(if $(VBOX_WITH_QTGUI),virtualbox.desktop,) \
 	virtualbox-webservice.xml \
 	virtualbox-zoneaccess.xml \
 	smf-vboxwebsrv.sh \
@@ -207,7 +208,7 @@ SOLARIS_EXTRAS = \
 	ReadMe.txt
 
 # These extra Qt libs are purely for running VBoxQtconfig
-ifdef VBOX_WITH_QT4GUI
+ifdef VBOX_WITH_QTGUI
  SOLARIS_QTLIBS = libVBoxQtNetwork.so.4 \
 	libVBoxQtXml.so.4 \
 	libVBoxQtSql.so.4 \
@@ -215,8 +216,8 @@ ifdef VBOX_WITH_QT4GUI
 endif
 
 
-ifdef VBOX_WITH_QT4GUI
- include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.kmk
+ifdef VBOX_WITH_QTGUI
+ include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.kmk
  SOLARIS_NO_STRIP += $(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
 endif
 
@@ -351,7 +352,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(if $(VBOX_WITH_SOLARIS_VBI),$(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg,) \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
 		$(if $(VBOX_OSE),,$(PATH_BIN)/LICENSE) \
-		$(if $(and $(VBOX_LICENSE_BINS),$(VBOX_WITH_QT4GUI)),$(VBOX_LICENSE_BINS),) \
+		$(if $(and $(VBOX_LICENSE_BINS),$(VBOX_WITH_QTGUI)),$(VBOX_LICENSE_BINS),) \
 		$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf \
 		$(if $(VBOX_WITH_NETFLT),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf) \
 		$(if $(not $(VBOX_WITH_NETFLT))$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh,) \
@@ -384,8 +385,8 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_PACKAGE
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR_64)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN_32)/VBoxPython.so    $(SOLARIS_INST_DIR_32)/VBoxPython.so,)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN_64)/VBoxPython.so    $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR_64)/VBoxPython.so,)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS)/solaris.x86/qt/v4.3.3-r1/bin/qtconfig           $(SOLARIS_INST_DIR_32)/VBoxQtconfig,)
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS)/solaris.amd64/qt/v4.3.3-r1/bin/qtconfig         $(SOLARIS_INST_DIR_64)/VBoxQtconfig,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS)/solaris.x86/qt/v4.3.3-r1/bin/qtconfig            $(SOLARIS_INST_DIR_32)/VBoxQtconfig,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS)/solaris.amd64/qt/v4.3.3-r1/bin/qtconfig          $(SOLARIS_INST_DIR_64)/VBoxQtconfig,)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN_32)/VBoxISAExec                                                         $(SOLARIS_INST_DIR)/VBoxISAExec
 else
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2    $(SOLARIS_INST_DIR_ISA)/libSDL-1.2.so.0,)
@@ -394,7 +395,7 @@ else
 	$(QUIET)$(if $(SOL64_PKG),$(MKDIR) -p $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR_64),)
 	$(QUIET)$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN)/VBoxPython.so       $(SOLARIS_INST_DIR_ISA)/$(if $(SOL64_PKG),$(VBOX_SOL_PYTHON_DIR_64)/,)VBoxPython.so
  endif
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/bin/qtconfig                   $(SOLARIS_INST_DIR_ISA)/VBoxQtconfig,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/bin/qtconfig                    $(SOLARIS_INST_DIR_ISA)/VBoxQtconfig,)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN)/VBoxISAExec                                                            $(SOLARIS_INST_DIR)/VBoxISAExec
 endif
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                                       $(SOLARIS_INST_DIR)/virtualbox-zoneaccess.xml
@@ -409,7 +410,7 @@ endif
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_INST_DIR)/vboxdrv.sh.tmp                                           $(SOLARIS_INST_DIR)/vboxdrv.sh
 	$(QUIET)$(RM) -f $(SOLARIS_INST_DIR)/vboxdrv.sh.tmp
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/VBox.sh                                            $(SOLARIS_INST_DIR)/VBox.sh
-	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop        $(SOLARIS_INST_DIR)/virtualbox.desktop,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop         $(SOLARIS_INST_DIR)/virtualbox.desktop,)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/VBox.png                                                  $(SOLARIS_INST_DIR)/VBox.png
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_INST_DIR)/postinstall.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/preremove.sh                                       $(SOLARIS_INST_DIR)/preremove.sh

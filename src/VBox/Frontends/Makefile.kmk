@@ -39,8 +39,8 @@ ifndef VBOX_ONLY_DOCS
  ifdef VBOX_WITH_HEADLESS
   include $(PATH_SUB_CURRENT)/VBoxHeadless/Makefile.kmk
  endif
- ifdef VBOX_WITH_QT4GUI
-  include $(PATH_SUB_CURRENT)/VirtualBox4/Makefile.kmk
+ ifdef VBOX_WITH_QTGUI
+  include $(PATH_SUB_CURRENT)/VirtualBox/Makefile.kmk
  endif
 endif # !VBOX_ONLY_DOCS
 

@@ -3669,9 +3669,9 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 
     Bstr type (aType);
 
-    /* Qt4 is default */
-#ifdef VBOX_WITH_QT4GUI
-    if (type == "gui" || type == "GUI/Qt4")
+    /* Qt is default */
+#ifdef VBOX_WITH_QTGUI
+    if (type == "gui" || type == "GUI/Qt")
     {
 # ifdef RT_OS_DARWIN /* Avoid Launch Services confusing this with the selector by using a helper app. */
         const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
@@ -3690,10 +3690,10 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 # endif
         vrc = RTProcCreate (path, args, env, 0, &pid);
     }
-#else /* !VBOX_WITH_QT4GUI */
+#else /* !VBOX_WITH_QTGUI */
     if (0)
         ;
-#endif /* VBOX_WITH_QT4GUI */
+#endif /* VBOX_WITH_QTGUI */
 
     else
 

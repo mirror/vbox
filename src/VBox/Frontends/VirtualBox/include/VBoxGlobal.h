@@ -899,11 +899,8 @@ public:
 
     static void setTextLabel (QToolButton *aToolButton, const QString &aTextLabel);
 
-    static QRect normalizeGeometry (const QRect &aRectangle, const QRegion &aBoundRegion,
+    static QRect normalizeGeometry (const QRect &aRect, const QRect &aBoundRect,
                                     bool aCanResize = true);
-    static QRect getNormalized (const QRect &aRectangle, const QRegion &aBoundRegion,
-                                bool aCanResize = true);
-    static QRegion flip (const QRegion &aRegion);
 
     static void centerWidget (QWidget *aWidget, QWidget *aRelative,
                               bool aCanResize = true);

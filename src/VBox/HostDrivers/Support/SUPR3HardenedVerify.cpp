@@ -151,7 +151,7 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxFFmpegFB" SUPLIB_DLL_SUFF },
 //#endif
 
-//#ifdef VBOX_WITH_QT4GUI
+//#ifdef VBOX_WITH_QTGUI
     {   kSupIFT_Exe,  kSupID_AppBin,             true, "VirtualBox" SUPLIB_EXE_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VirtualBox" SUPLIB_DLL_SUFF },
 # if !defined(RT_OS_DARWIN) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)

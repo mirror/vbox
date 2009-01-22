@@ -72,9 +72,9 @@ INSTALLS += linux-misc
 linux-misc_INST = bin/
 linux-misc_MODE = a+r,u+w
 linux-misc_SOURCES = \
-	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_32px.png=>VBox.png \
+	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_32px.png=>VBox.png \
 	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
-	$(if $(VBOX_WITH_QT4GUI),$(PATH_linux-misc)/VirtualBox.desktop,)
+	$(if $(VBOX_WITH_QTGUI),$(PATH_linux-misc)/VirtualBox.desktop,)
 linux-misc_CLEAN = $(PATH_linux-misc)/VirtualBox.desktop
 
 $$(PATH_linux-misc)/VirtualBox.desktop: $(PATH_SUB_CURRENT)/VirtualBox.desktop $(VBOX_VERSION_STAMP) | $$(dir $$@)
@@ -147,8 +147,8 @@ VBOX_LNX_NO_STRIP = \
 	src
 
 # Qt4 GUI
-ifdef VBOX_WITH_QT4GUI
- include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.kmk
+ifdef VBOX_WITH_QTGUI
+ include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.kmk
  VBOX_LNX_STRIP_BIN += \
  	VBoxKeyboard.so \
  	VirtualBox \

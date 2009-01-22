@@ -26,7 +26,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Globals.
 #
 VBOX_VIRTUALBOX4_SRC := $(PATH_SUB_CURRENT)
-VBOX_VIRTUALBOX4_OUT_DIR := $(PATH_TARGET)/VirtualBox4/misc
+VBOX_VIRTUALBOX4_OUT_DIR := $(PATH_TARGET)/VirtualBox/misc
 
 VBOX_WITH_REGISTRATION := 1
 
@@ -43,10 +43,10 @@ VBOX_WITH_UPDATE_REQUEST := 1
 # The targets.
 #
 ifdef VBOX_WITH_HARDENING
-PROGRAMS += VirtualBox4Hardened
-DLLS += VirtualBox4
+PROGRAMS += VirtualBoxHardened
+DLLS += VirtualBox
 else
-PROGRAMS += VirtualBox4
+PROGRAMS += VirtualBox
 endif
 
 ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
@@ -55,7 +55,7 @@ ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X1
  OTHERS += $(PATH_BIN)/vboxkeyboard.tar.gz
  CLEAN += $(PATH_BIN)/vboxkeyboard.tar.gz
 endif
-INSTALLS += VirtualBox4.nls
+INSTALLS += VirtualBox.nls
 
 
 #
@@ -107,40 +107,40 @@ OTHER_CLEAN += \
 
 
 #
-# Hardened VirtualBox4.
+# Hardened VirtualBox.
 #
-VirtualBox4Hardened_TEMPLATE = VBOXR3HARDENEDEXE
-VirtualBox4Hardened_SOURCES = src/hardenedmain.cpp
-VirtualBox4Hardened_NAME = VirtualBox
+VirtualBoxHardened_TEMPLATE = VBOXR3HARDENEDEXE
+VirtualBoxHardened_SOURCES = src/hardenedmain.cpp
+VirtualBoxHardened_NAME = VirtualBox
 ifeq ($(KBUILD_TARGET),darwin) ## @todo use .darwin when ticket 36 has been fixed.
- #VirtualBox4Hardened_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
- VirtualBox4Hardened_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
+ #VirtualBoxHardened_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
+ VirtualBoxHardened_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 endif
 
 
 #
 # Include Qt project file, we'll use FORMS and TRANSLATIONS in
-# the VirtualBox4 setup below.
+# the VirtualBox setup below.
 #
 SAVED_TEMPLATE := $(TEMPLATE)
 include $(PATH_SUB_CURRENT)/VBoxUI.pro
 
 
 #
-# VirtualBox4 - The GUI program.
+# VirtualBox - The GUI program.
 #
 USES += qt4
-VirtualBox4_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQT4GUI,VBOXQT4GUIEXE)
-VirtualBox4_NAME = VirtualBox
+VirtualBox_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQT4GUI,VBOXQT4GUIEXE)
+VirtualBox_NAME = VirtualBox
 ifndef VBOX_WITH_HARDENING      # For the launch trick we need different inode numbers.
  ifeq ($(KBUILD_TARGET),darwin) ## @todo use .darwin when ticket 36 has been fixed.
-  #VirtualBox4_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
-  VirtualBox4_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
+  #VirtualBox_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
+  VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
  endif
 endif
-VirtualBox4_SDKS.win = WINPSDK DXSDK
+VirtualBox_SDKS.win = WINPSDK DXSDK
 ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(KBUILD_TARGET)),) # X11 + os2 ## @todo solaris
- VirtualBox4_SDKS += LIBSDL
+ VirtualBox_SDKS += LIBSDL
 endif
 
 ifdef VBOX_WITH_ICHAT_THEATER
@@ -148,26 +148,26 @@ ifdef VBOX_WITH_ICHAT_THEATER
  VBOX_PATH_MACOSX_SDK = /Developer/SDKs/MacOSX10.5.sdk
 endif
 
-VirtualBox4_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
-VirtualBox4_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
-VirtualBox4_DEFS.darwin    = VBOX_GUI_USE_QUARTZ2D VBOX_GUI_USE_QIMAGE VBOX_WITHOUT_QHTTP
-VirtualBox4_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox4_DEFS.linux     = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox4_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox4_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox4_DEFS.solaris   = VBOX_GUI_USE_QIMAGE #VBOX_GUI_USE_SDL
-VirtualBox4_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
-VirtualBox4_DEFS.win.amd64 = VBOX_WITHOUT_QHTTP
+VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
+VirtualBox_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
+VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QUARTZ2D VBOX_GUI_USE_QIMAGE VBOX_WITHOUT_QHTTP
+VirtualBox_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
+VirtualBox_DEFS.linux     = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
+VirtualBox_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
+VirtualBox_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
+VirtualBox_DEFS.solaris   = VBOX_GUI_USE_QIMAGE #VBOX_GUI_USE_SDL
+VirtualBox_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
+VirtualBox_DEFS.win.amd64 = VBOX_WITHOUT_QHTTP
 ## @todo VBOX_WITH_HACKED_QT doesn't apply to Qt4, so why is this still here?
-VirtualBox4_DEFS.darwin  += VBOX_WITH_HACKED_QT
+VirtualBox_DEFS.darwin  += VBOX_WITH_HACKED_QT
 ifdef VBOX_WITH_ICHAT_THEATER
- VirtualBox4_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
+ VirtualBox_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
 endif
 ifneq ($(KBUILD_TYPE),release)
  # non-release builds has some extra features.
- VirtualBox4_DEFS.win     += VBOX_GUI_USE_DDRAW
+ VirtualBox_DEFS.win     += VBOX_GUI_USE_DDRAW
 endif
-VirtualBox4_DEFS          += \
+VirtualBox_DEFS          += \
 	$(if $(VBOX_WITH_REGISTRATION),VBOX_WITH_REGISTRATION) \
 	$(if $(VBOX_WITH_REGISTRATION_REQUEST),VBOX_WITH_REGISTRATION_REQUEST) \
 	$(if $(VBOX_WITH_UPDATE_REQUEST),VBOX_WITH_UPDATE_REQUEST) \
@@ -176,46 +176,46 @@ VirtualBox4_DEFS          += \
 	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000) \
 	$(if $(VBOX_WITH_NETFLT)$(eq $(KBUILD_TARGET),freebsd),VBOX_WITH_NETFLT)
 if "$(KBUILD_TYPE)" != "release" && defined(VBOX_WITH_DEBUGGER_GUI)
- VirtualBox4_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
+ VirtualBox_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
 endif
 
-VirtualBox4_src/main.cpp_DEFS += VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
-VirtualBox4_src/main.cpp_DEPS += $(VBOX_VERSION_MK)
+VirtualBox_src/main.cpp_DEFS += VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
+VirtualBox_src/main.cpp_DEPS += $(VBOX_VERSION_MK)
 
-VirtualBox4_INCS           = \
+VirtualBox_INCS           = \
 	./include \
-	$(PATH_VirtualBox4)/include
+	$(PATH_VirtualBox)/include
 
 # Necessary for the hdd backend enumeration
-VirtualBox4_LIBS = $(LIB_DDU)
+VirtualBox_LIBS = $(LIB_DDU)
 
 ifeq ($(KBUILD_TYPE),release)
- VirtualBox4_LDFLAGS.win  += /SUBSYSTEM:windows
+ VirtualBox_LDFLAGS.win  += /SUBSYSTEM:windows
 else
- VirtualBox4_LDFLAGS.linux+= -rdynamic # for backtrace_symbols()
+ VirtualBox_LDFLAGS.linux+= -rdynamic # for backtrace_symbols()
  ifeq ($(USERNAME),dmik)
-  VirtualBox4_LDFLAGS.win += /SUBSYSTEM:windows
+  VirtualBox_LDFLAGS.win += /SUBSYSTEM:windows
  else
-  VirtualBox4_LDFLAGS.win += /SUBSYSTEM:console
+  VirtualBox_LDFLAGS.win += /SUBSYSTEM:console
  endif
 endif
 # r=bird: what is -lz doing here? it belongs in LIBS.
-VirtualBox4_LDFLAGS.darwin = -lz \
+VirtualBox_LDFLAGS.darwin = -lz \
 	-framework IOKit -framework AppKit -framework ApplicationServices -framework Foundation -framework Carbon -framework QuickTime \
 	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBox.dylib)
 ifdef VBOX_WITH_ICHAT_THEATER
- VirtualBox4_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
+ VirtualBox_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
 endif
-VirtualBox4_LIBS.win       = \
+VirtualBox_LIBS.win       = \
 	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
- VirtualBox4_LIBS         += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
+ VirtualBox_LIBS         += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
 
 # Headers containing definitions of classes that use the Q_OBJECT macro.
-VirtualBox4_QT_MOCHDRS = \
+VirtualBox_QT_MOCHDRS = \
 	include/QIHttp.h \
 	include/QIWidgetValidator.h \
 	include/QIHotKeyEdit.h \
@@ -280,16 +280,16 @@ VirtualBox4_QT_MOCHDRS = \
 	include/VBoxSettingsSelector.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
-VirtualBox4_QT_MOCSRCS = \
+VirtualBox_QT_MOCSRCS = \
 	src/VBoxSelectorWnd.cpp \
 	src/VBoxConsoleWnd.cpp \
 	src/VBoxMediaManagerDlg.cpp
 ifdef VBOX_WITH_XPCOM
- VirtualBox4_QT_MOCSRCS += \
+ VirtualBox_QT_MOCSRCS += \
 	src/COMDefs.cpp
 endif
 
-VirtualBox4_SOURCES = \
+VirtualBox_SOURCES = \
 	src/main.cpp \
 	src/COMDefs.cpp \
 	src/QIWidgetValidator.cpp \
@@ -356,61 +356,61 @@ VirtualBox4_SOURCES = \
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
  ifndef VBOX_OSE
-  VirtualBox4_QT_MOCHDRS += \
+  VirtualBox_QT_MOCHDRS += \
   	include/VBoxLicenseViewer.h
-  VirtualBox4_SOURCES += \
+  VirtualBox_SOURCES += \
   	src/VBoxLicenseViewer.cpp
  else
-  VirtualBox4_VBOX_EXTRA_NLS_SOURCES += \
+  VirtualBox_VBOX_EXTRA_NLS_SOURCES += \
     include/VBoxLicenseViewer.h \
   	src/VBoxLicenseViewer.cpp
  endif
- VirtualBox4_SOURCES += \
+ VirtualBox_SOURCES += \
  	src/X11/XKeyboard-new.cpp \
 	src/VBoxX11Helper.cpp
 else
- VirtualBox4_VBOX_EXTRA_NLS_SOURCES += \
+ VirtualBox_VBOX_EXTRA_NLS_SOURCES += \
     include/VBoxLicenseViewer.h \
   	src/VBoxLicenseViewer.cpp
 endif
 
-VirtualBox4_SOURCES.win += \
+VirtualBox_SOURCES.win += \
 	src/VBoxFBDDRAW.cpp \
-	$(PATH_VirtualBox4)/VirtualBox4.rc
+	$(PATH_VirtualBox)/VirtualBox.rc
 
-VirtualBox4_SOURCES.darwin = \
+VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
 	src/darwin/VBoxUtils-darwin.cpp \
 	src/darwin/VBoxDockIconPreview.cpp \
 	src/VBoxFBQuartz2D.cpp
 
 ifdef VBOX_WITH_ICHAT_THEATER
- VirtualBox4_SOURCES.darwin += \
+ VirtualBox_SOURCES.darwin += \
 	 src/darwin/VBoxIChatTheaterWrapper.m
 endif
 
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
-VirtualBox4_QT_MODULES = Core Gui Network
+VirtualBox_QT_MODULES = Core Gui Network
 
 # Import QDesigner UI sources and translations from VBoxUI.pro.
 ifndef VBOX_WITH_REGISTRATION
  FORMS := $(filter-out ui/VBoxRegistrationDlg.ui,$(FORMS))
 endif
-$(eval VirtualBox4_SOURCES += $(FORMS))
+$(eval VirtualBox_SOURCES += $(FORMS))
 
 # Resource files with some OSE differences (VirtualBoxBrand.qrc is created further down).
-VirtualBox4_SOURCES += VirtualBox.qrc
-VirtualBox4_SOURCES += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
+VirtualBox_SOURCES += VirtualBox.qrc
+VirtualBox_SOURCES += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
 $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name BRAND
 
 # Import the translation source from VBoxUI.pro and add the qt_xx_YY counterparts
-VirtualBox4_QT_TRANSLATIONS := $(TRANSLATIONS) \
+VirtualBox_QT_TRANSLATIONS := $(TRANSLATIONS) \
 	$(patsubst nls/VirtualBox_%.ts,nls/qt_%.ts, $(filter nls/VirtualBox_%.ts,$(TRANSLATIONS)))
 # Compress the translation units.
-VirtualBox4_LRCFLAGS = -silent
-# Where to install the translations (a separate install target, VirtualBox4-nls-inst is created).
-VirtualBox4_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
+VirtualBox_LRCFLAGS = -silent
+# Where to install the translations (a separate install target, VirtualBox-nls-inst is created).
+VirtualBox_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
 
 
 ## @todo how to detect what tool is used?
@@ -418,33 +418,33 @@ VirtualBox4_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
 #  more generic -Wno-extra
 # bird: What about $(if $(VBOX_GCC_Wno-missing-base-class-initializer),$(VBOX_GCC_Wno-missing-base-class-initializer),$(VBOX_GCC_Wno-extra))?
 ifdef VBOX_WITH_XPCOM
- VirtualBox4_src/COMDefs.cpp_CXXFLAGS  = $(VBOX_GCC_Wno-extra)
+ VirtualBox_src/COMDefs.cpp_CXXFLAGS  = $(VBOX_GCC_Wno-extra)
 endif
 
 
 #
 # Generate the COM wrappers.
 #
-VirtualBox4_BLDDIRS       += $(PATH_VirtualBox4)/include
-VirtualBox4_INTERMEDIATES += $(PATH_VirtualBox4)/include/COMWrappers.h
-VirtualBox4_CLEAN         += $(PATH_VirtualBox4)/include/COMWrappers.h
+VirtualBox_BLDDIRS       += $(PATH_VirtualBox)/include
+VirtualBox_INTERMEDIATES += $(PATH_VirtualBox)/include/COMWrappers.h
+VirtualBox_CLEAN         += $(PATH_VirtualBox)/include/COMWrappers.h
 
-$$(PATH_VirtualBox4)/include/COMWrappers.h: \
+$$(PATH_VirtualBox)/include/COMWrappers.h: \
 		$(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl \
 		$(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl \
 		| $$(dir $$@)
-	$(call MSG_GENERATE,VirtualBox4,$<,$@)
+	$(call MSG_GENERATE,VirtualBox,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl $<
 
 # alias for generating the COM Wrappers file.
-testwrappers:: $$(PATH_VirtualBox4)/include/COMWrappers.h
+testwrappers:: $$(PATH_VirtualBox)/include/COMWrappers.h
 
 
 #
 # Generate qrc file with branded icons.
 #
-VirtualBox4_BLDDIRS       += $(VBOX_VIRTUALBOX4_OUT_DIR)
-VirtualBox4_CLEAN         += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
+VirtualBox_BLDDIRS       += $(VBOX_VIRTUALBOX4_OUT_DIR)
+VirtualBox_CLEAN         += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
 if "$(KBUILD_HOST)" == "win" ## @todo remove when kBuild ticket #52 has been fixed and deployed.
  VBOX_DRIVE_HACK := $(firstword $(subst :, ,$(PATH_ROOT))):
 else
@@ -453,7 +453,7 @@ endif
 $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc: \
 		$(VBOX_VIRTUALBOX4_SRC)/VirtualBoxBrand.qrc \
 		| $$(dir $$@)
-	$(call MSG_GENERATE,VirtualBox4,$<,$@)
+	$(call MSG_GENERATE,VirtualBox,$<,$@)
 	$(QUIET)$(SED) \
 		-e 's;@VBOX_ABOUT_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_ABOUT_PNG));g' \
 		-e 's;@VBOX_ABOUT_16PX_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_ABOUT_16PX_PNG));g' \
@@ -473,11 +473,11 @@ ifeq ($(KBUILD_TARGET),win)
 # On Windows we'll have to generate/edit the resource file.
 # The IDI_ICON1 name is Qt specific.
 #
-$$(PATH_VirtualBox4)/VirtualBox4.rc: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
+$$(PATH_VirtualBox)/VirtualBox.rc: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
-VirtualBox4_CLEAN.win += $$(PATH_VirtualBox4)/VirtualBox4.rc
+VirtualBox_CLEAN.win += $$(PATH_VirtualBox)/VirtualBox.rc
 endif # win
 
 
@@ -486,25 +486,25 @@ ifeq ($(KBUILD_TARGET),darwin)
 # Create directories for each approved language or the application
 # menu won't be translated.
 #
-INSTALLS += VirtualBox4.lproj
-VirtualBox4.lproj_INST = $(INST_VIRTUALBOX)Contents/Resources/
-VirtualBox4.lproj_MODE = 755
-VirtualBox4.lproj_DIRS := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES_ALL))
+INSTALLS += VirtualBox.lproj
+VirtualBox.lproj_INST = $(INST_VIRTUALBOX)Contents/Resources/
+VirtualBox.lproj_MODE = 755
+VirtualBox.lproj_DIRS := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES_ALL))
 
 #
 # On OS X (darwin) we need to install icon resources and compulsory bundle contents.
 # The VirtualBoxVM.app helper is for launching VMs (fixes some issues with the dock).
 #
-INSTALLS += VirtualBox4.app
-VirtualBox4.app_INST = $(INST_VIRTUALBOX)Contents/
-VirtualBox4.app_MODE = 644
-VirtualBox4.app_SOURCES = \
+INSTALLS += VirtualBox.app
+VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
+VirtualBox.app_MODE = 644
+VirtualBox.app_SOURCES = \
 	src/darwin/PkgInfo \
-	$(PATH_VirtualBox4.app)/Info.plist \
+	$(PATH_VirtualBox.app)/Info.plist \
 	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns
 
-$$(PATH_VirtualBox4.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
-	$(call MSG_GENERATE,VirtualBox4.app,$<,$@)
+$$(PATH_VirtualBox.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
@@ -513,18 +513,18 @@ $$(PATH_VirtualBox4.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
 		$< > $@
 
-INSTALLS += VirtualBox4VM.app
-VirtualBox4VM.app_INST = $(VirtualBox4.app_INST)Resources/VirtualBoxVM.app/Contents/
-VirtualBox4VM.app_MODE = 644
-VirtualBox4VM.app_SOURCES = \
+INSTALLS += VirtualBoxVM.app
+VirtualBoxVM.app_INST = $(VirtualBox.app_INST)Resources/VirtualBoxVM.app/Contents/
+VirtualBoxVM.app_MODE = 644
+VirtualBoxVM.app_SOURCES = \
 	src/darwin/VM-PkgInfo=>PkgInfo \
-	$(PATH_VirtualBox4VM.app)/VM-Info.plist=>Info.plist
-VirtualBox4VM.app_SYMLINKS = \
+	$(PATH_VirtualBoxVM.app)/VM-Info.plist=>Info.plist
+VirtualBoxVM.app_SYMLINKS = \
 	MacOS=>../../../MacOS/ \
 	Resources=>../../../Resources/
 
-$$(PATH_VirtualBox4VM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
-	$(call MSG_GENERATE,VirtualBox4VM.app,$<,$@)
+$$(PATH_VirtualBoxVM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
@@ -573,12 +573,12 @@ include $(KBUILD_PATH)/subfooter.kmk
 # languages and should never be actually translated or installed.
 #
 updatenls:: \
-		$(filter-out %.qrc,$(VirtualBox4_SOURCES) $(VirtualBox4_VBOX_EXTRA_NLS_SOURCES)) \
+		$(filter-out %.qrc,$(VirtualBox_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES)) \
 		$(wildcard include/*.h)
 	$(call MSG_L1,lupdate all languages (nls/*.ts))
 	$(QUIET)$(TOOL_QT4_LUPDATE) \
 		$^ \
 		-ts \
-		$(filter-out nls/qt_%.ts,$(VirtualBox4_QT_TRANSLATIONS)) \
+		$(filter-out nls/qt_%.ts,$(VirtualBox_QT_TRANSLATIONS)) \
 		nls/VirtualBox_xx_YY.ts
 
