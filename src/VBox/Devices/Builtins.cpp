@@ -83,6 +83,16 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (RT_FAILURE(rc))
         return rc;
 #endif
+#ifdef VBOX_WITH_SMC
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceSMC);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
+#ifdef VBOX_WITH_LPC
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceLPC);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceMC146818);
     if (RT_FAILURE(rc))
         return rc;
@@ -302,4 +312,3 @@ extern "C" DECLEXPORT(int) VBoxUsbRegister(PCPDMUSBREGCB pCallbacks, uint32_t u3
     return VINF_SUCCESS;
 }
 #endif
-

@@ -85,6 +85,10 @@
 # undef LOG_GROUP
 # include "../Storage/DevLsiLogicSCSI.cpp"
 #endif
+#ifdef VBOX_WITH_HPET
+# undef LOG_GROUP
+# include "../PC/DevHPET.cpp"
+#endif
 
 /* we don't use iprt here because we're pretending to be in GC! */
 #include <stdio.h>
@@ -441,6 +445,9 @@ int main()
     GEN_CHECK_OFF(ACPIState, au8RSDPPage);
     GEN_CHECK_OFF(ACPIState, u8IndexShift);
     GEN_CHECK_OFF(ACPIState, u8UseIOApic);
+    GEN_CHECK_OFF(ACPIState, u8UseFdc);
+    GEN_CHECK_OFF(ACPIState, u8UseHpet);
+    GEN_CHECK_OFF(ACPIState, u8UseSmc);
     GEN_CHECK_OFF(ACPIState, IBase);
     GEN_CHECK_OFF(ACPIState, IACPIPort);
     GEN_CHECK_OFF(ACPIState, pDevIns);
@@ -1420,6 +1427,31 @@ int main()
     GEN_CHECK_OFF(LSILOGICSCSI, pTaskCache);
 #endif /* VBOX_WITH_LSILOGIC */
 
+#ifdef VBOX_WITH_HPET
+    GEN_CHECK_SIZE(HPETState);
+    GEN_CHECK_OFF(HPETState, pDevInsR3);
+    GEN_CHECK_OFF(HPETState, pDevInsR0);
+    GEN_CHECK_OFF(HPETState, pDevInsRC);
+    GEN_CHECK_OFF(HPETState, hpet_offset);
+    GEN_CHECK_OFF(HPETState, capability);
+    GEN_CHECK_OFF(HPETState, config);
+    GEN_CHECK_OFF(HPETState, isr);
+    GEN_CHECK_OFF(HPETState, hpet_counter);
+
+    GEN_CHECK_SIZE(HPETTimer);
+    GEN_CHECK_OFF(HPETTimer, pTimerR3);
+    GEN_CHECK_OFF(HPETTimer, pHpetR3);
+    GEN_CHECK_OFF(HPETTimer, pTimerR0);
+    GEN_CHECK_OFF(HPETTimer, pHpetR0);
+    GEN_CHECK_OFF(HPETTimer, pTimerRC);
+    GEN_CHECK_OFF(HPETTimer, pHpetRC);
+    GEN_CHECK_OFF(HPETTimer, tn);
+    GEN_CHECK_OFF(HPETTimer, config);
+    GEN_CHECK_OFF(HPETTimer, cmp);
+    GEN_CHECK_OFF(HPETTimer, fsb);
+    GEN_CHECK_OFF(HPETTimer, period);
+    GEN_CHECK_OFF(HPETTimer, wrap_flag);
+#endif
+
     return (0);
 }
-

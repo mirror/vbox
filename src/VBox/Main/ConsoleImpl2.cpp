@@ -473,6 +473,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     fLpcEnabled = false;
 #endif
 
+    if (fLpcEnabled)
+    {
+        rc = CFGMR3InsertNode(pDevices, "lpc", &pDev);                       RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                        RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */   RC_CHECK();
+    }
+
     /*
      * PS/2 keyboard & mouse.
      */
