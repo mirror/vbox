@@ -159,14 +159,6 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
 # endif
 //#endif
 
-//#ifdef VBOX_WITH_QTGUI
-    {   kSupIFT_Exe,  kSupID_AppBin,             true, "VirtualBox3" SUPLIB_EXE_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VirtualBox3" SUPLIB_DLL_SUFF },
-# if !defined(RT_OS_DARWIN) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxKeyboard3" SUPLIB_DLL_SUFF },
-# endif
-//#endif
-
 //#ifdef VBOX_WITH_VBOXSDL
     {   kSupIFT_Exe,  kSupID_AppBin,             true, "VBoxSDL" SUPLIB_EXE_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxSDL" SUPLIB_DLL_SUFF },

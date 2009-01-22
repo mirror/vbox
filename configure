@@ -56,7 +56,6 @@ WITH_XPCOM=1
 WITH_PYTHON=1
 WITH_LIBIDL=1
 WITH_GSOAP=0
-WITH_QT3=1
 WITH_QT4=1
 WITH_SDL=1
 WITH_SDL_TTF=1
@@ -94,8 +93,6 @@ INCPNG=""
 LIBPNG="-lpng"
 PKGCONFIG="`which_wrapper pkg-config`"
 PYTHONDIR="/usr /usr/local"
-QT3DIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3"
-QT3DIR="$QT3DIR /usr/lib64/qt-3.3 /usr/X11R6 /usr/lib/qt"
 QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr/lib64/qt4 /usr"
 QT4DIR_PKGCONFIG=1
 QT4UIC3DIR="/usr/bin"
@@ -1185,76 +1182,6 @@ EOF
 
 
 #
-# Check for the Qt3 library, needed by VirtualBox
-#
-check_qt3()
-{
-  test_header Qt3
-  cat > .tmp_src.cc << EOF
-#include <cstdio>
-#include <qglobal.h>
-extern "C" int main(void)
-{
-  printf("found version %s", QT_VERSION_STR);
-#if QT_VERSION >= 0x030305
-  printf(", OK.\n");
-  return 0;
-#elif QT_VERSION >= 0x030300
-  printf("\n  ** WARNING: QT < 3.3.5 has known problems!\n");
-#else
-  printf(", expected version 3.3.0 or higher\n");
-  return 1;
-#endif
-}
-EOF
-  found_qt=0
-  libs="lib"
-  [ "$LIB" = "lib64" ] && libs="$libs lib64"
-  for q in $QT3DIR; do
-    for l in $libs; do
-      echo "compiling the following source file:" >> $LOG
-      cat .tmp_src.cc >> $LOG
-      echo "using the following command line:" >> $LOG
-      echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$l -lqt-mt $LIBPTHREAD" >> $LOG
-      $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$l -lqt-mt $LIBPTHREAD >> $LOG 2>&1
-      if [ $? -eq 0 ]; then
-        if test_execute; then
-          cnf_append "PATH_SDK_QT3" "`cd $q ; pwd`"
-          found_qt=1
-          break
-        fi
-      fi
-    done
-    if [ $found_qt -eq 1 ]; then
-      break
-    fi
-  done
-  if [ $found_qt -ne 1 ]; then
-    echo
-    echo "  Qt3 not found at \"$QT3DIR\" or Qt3 headers not found"
-    echo "  Check the file $LOG for detailed error information."
-    fail
-    return 1
-  fi
-  test_header "Qt3 devtools"
-  if check_avail "$q/bin/moc" QT3DIR/bin; then
-    moc_ver=`$q/bin/moc 2>&1 -v|sed 's+^.*(Qt \(.*\))+\1+'`
-    if [ $? -ne 0 ]; then
-      log_failure "not found"
-      fail
-    else
-      log_success "found version $moc_ver"
-      # cnf_append "VBOX_PATH_QT3" "$q" - later/never?
-      cnf_append "PATH_SDK_QT3"      "$q"
-      cnf_append "PATH_SDK_QT3_LIB"  "$q/$l"
-      cnf_append "PATH_SDK_QT3_INC"  "$q/include"
-      cnf_append "PATH_TOOL_QT3_BIN" "$q/bin"
-    fi
-  fi
-}
-
-
-#
 # Check for the Qt4 library, needed by VirtualBox4
 #
 # Currently not fatal.
@@ -1275,7 +1202,7 @@ check_qt4()
       LIBQT4=
       FLGQT4="-framework QtCore"
     else
-      log_failure "Qt4 framework not found (can be disable using --disable-qt4)"
+      log_failure "Qt4 framework not found (can be disabled using --disable-qt4)"
       fail
     fi
   else
@@ -1796,8 +1723,7 @@ Paths:
   --with-iasl=PATH         location of the iasl compiler [$IASL]
   --with-linux=DIR         Linux kernel source directory [$LINUX]
   --with-mkisofs=PATH      location of mkisofs [$MKISOFS]
-  --with-qt-dir=DIR        directory for Qt3 headers/libraries [$QT3DIR]
-  --with-qt4-dir=DIR       directory for Qt4 headers/libraries [pkgconfig]
+  --with-qt-dir=DIR        directory for Qt4 headers/libraries [pkgconfig]
   --with-gsoap-dir=PATH    directory for SOAP compiler (soapcpp2 and wsdl2h)
 
 Build type:
@@ -1838,10 +1764,7 @@ for option in $*; do
         exit 1
       fi
       ;;
-    --with-qt-dir=*)
-      QT3DIR=`echo $option | cut -d'=' -f2`
-      ;;
-    --with-qt4-dir=*)
+    --with-qt-dir=*|--with-qt4-dir=*)
       QT4DIR=`echo $option | cut -d'=' -f2`
       QT4DIR_PKGCONFIG=0
       ;;
@@ -1867,11 +1790,7 @@ for option in $*; do
       WITH_SDL_TTF=0
       ;;
     --disable-qt)
-      WITH_QT3=0
       WITH_QT4=0
-      ;;
-    --disable-qt3)
-      WITH_QT3=0
       ;;
     --disable-qt4)
       WITH_QT4=0
@@ -1914,7 +1833,6 @@ for option in $*; do
       WITH_SDL=0
       WITH_SDL_TTF=0
       WITH_X11=0
-      WITH_QT3=0
       WITH_QT4=0
       ;;
     --ose)
@@ -2020,19 +1938,12 @@ if [ "$OS" = "darwin" ]; then
   # Darwin as we disable the Qt3 here anyway.
   # (Qt3 builds for Intel Macs are usually not threaded or for X11. And they
   #  don't contain our patches, which means the result isn't really usable.)
-  WITH_QT3=0
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
 fi
 
-if [ "$OS" = "freebsd" ]; then
-  # Qt3 will be gone before the FreeBSD port is completed, so just drop it.
-  WITH_QT3=0
-fi
-
 # emit disable directives corresponding to any --disable-xxx options.
 [ $WITH_XPCOM -eq 0 ]   && cnf_append "VBOX_WITH_MAIN" ""
-[ $WITH_QT3 -eq 0   ]   && cnf_append "VBOX_WITH_QTGUI" ""
 [ $WITH_QT4 -eq 0   ]   && cnf_append "VBOX_WITH_QT4GUI" ""
 [ $WITH_SDL_TTF -eq 0 ] && cnf_append "VBOX_WITH_SECURELABEL" ""
 [ $WITH_HARDENING -eq 0 ] && cnf_append "VBOX_WITHOUT_HARDENING" "1"
@@ -2065,7 +1976,6 @@ check_gcc
 # TODO check for mesa-common-dev (GL/glx.h)
 # TODO check for libglu1-mesa-dev (GL/glu.h)
 [ $WITH_X11    -eq 1 ] && check_xcursor
-[ $WITH_QT3    -eq 1 ] && check_qt3
 [ $WITH_QT4    -eq 1 ] && check_qt4
 [ $WITH_PYTHON -eq 1 -a "$OS" != "darwin" ] && check_python
 

@@ -275,8 +275,6 @@ VBOX_WITH_WEBSERVICES = 1
 VBOX_WITH_VBOXSDL = 1
 # The basic frontend (w/o Main).
 VBOX_WITH_VBOXBFE = 1
-# The Qt GUI.
-VBOX_WITH_QTGUI = 1
 # The Qt 4 GUI.
 VBOX_WITH_QT4GUI = 1
 # The headless frontend.
@@ -509,7 +507,6 @@ ifdef VBOX_QUICK
  VBOX_WITH_MAIN =
  VBOX_WITH_VBOXSDL =
  VBOX_WITH_VBOXBFE =
- VBOX_WITH_QTGUI =
  VBOX_WITH_QT4GUI =
  VBOX_WITH_DEBUGGER_GUI =
  VBOX_WITH_DOCS =
@@ -532,7 +529,6 @@ ifeq ($(KBUILD_TARGET),freebsd)
  VBOX_WITH_SECURELABEL=
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
- VBOX_WITH_QTGUI=
  VBOX_WITH_TESTSUITE=
  VBOX_WITH_USB=
  VBOX_WITH_EHCI=
@@ -546,7 +542,6 @@ ifeq ($(KBUILD_TARGET),l4)
  VBOX_WITH_VRDP=
  VBOX_WITH_HEADLESS=
  VBOX_WITH_VBOXSDL=
- VBOX_WITH_QTGUI=
  VBOX_WITH_QT4GUI=
  VBOX_WITH_MAIN=
  VBOX_WITH_DOCS=
@@ -646,10 +641,6 @@ ifdef VBOX_OSE
  VBOX_WITH_INTEL_PXE=
  VBOX_WITH_FFMPEG=
  VBOX_WITH_CROGL=
- ifeq ($(KBUILD_TARGET),darwin)
-  # Qt/Mac v3.3.x requires patching to work for us.
-  VBOX_WITH_QTGUI=
- endif
  ifn1of ($(KBUILD_TARGET), linux solaris)
   # Only the Linux, Solaris installers are public
   VBOX_WITH_INSTALLER=
@@ -738,7 +729,6 @@ endif
 # Disable components for headless
 #
 ifdef VBOX_HEADLESS
- VBOX_WITH_QTGUI=
  VBOX_WITH_QT4GUI=
  VBOX_WITH_VBOXSDL=
  VBOX_WITH_VBOXBFE=
@@ -752,7 +742,6 @@ endif
 ifndef VBOX_WITH_MAIN
  VBOX_WITH_VRDP=
  VBOX_WITH_VBOXSDL=
- VBOX_WITH_QTGUI=
  VBOX_WITH_QT4GUI=
  VBOX_WITH_DEBUGGER_GUI=
  VBOX_WITH_HEADLESS=
@@ -1764,104 +1753,6 @@ endif
 #
 SDK_VBOX_NTDLL = Requires W2K3DDK
 SDK_VBOX_NTDLL_LIBS ?= $(PATH_SDK_W2K3DDK_LIB)/ntdll.lib
-
-
-#
-# Qt build tools and libraries.
-# For *NIX we require it to be present on the system.
-#
-## @todo convert this into SDK and integrate the Qt stuff into kBuild.
-## @todo remove this section when win and darwin cases are moved to kBuild/units/qt3.kmk.
-##       vbox/Makefile.kmk that uses VBX_DLL_QT and others needs to be corrected too
-ifeq ($(KBUILD_TARGET),win)
- VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v3.*)))
- VBOX_DLL_QT ?= $(firstword $(wildcard $(VBOX_PATH_QT)/bin/VBoxQt3*.dll) \
-                            $(wildcard $(VBOX_PATH_QT)/bin/qtmt3*.dll) \
-                            $(wildcard $(VBOX_PATH_QT)/bin/qt-mt3*.dll) \
-                            $(wildcard $(VBOX_PATH_QT)/lib/qt-mt3*.dll))
- ifneq ($(wildcard $(VBOX_PATH_QT)/bin/accessible/VBoxQtWidgets100.dll),)
-  VBOX_QT_BINARIES += \
-    $(VBOX_PATH_QT)/bin/accessible/VBoxQtWidgets100.dll=>accessible/VBoxQtWidgets100.dll
- endif
- LIB_QT ?= $(firstword $(wildcard $(VBOX_PATH_QT)/lib/VBoxQt3*.lib) \
-                       $(wildcard $(VBOX_PATH_QT)/lib/qt-mt3*.lib) \
-                       $(wildcard $(VBOX_PATH_QT)/lib/dynamic/qt-mt3*.lib))
- LIB_QT_PRL ?= $(firstword $(wildcard $(VBOX_PATH_QT)/lib/VBoxQt.prl) \
-                           $(wildcard $(VBOX_PATH_QT)/lib/qt-mt.prl) \
-                           $(wildcard $(VBOX_PATH_QT)/lib/dynamic/qt-mt.prl))
- LIB_QTMAIN ?= $(firstword $(wildcard $(VBOX_PATH_QT)/lib/qtmain.lib) \
-                           $(wildcard $(VBOX_PATH_QT)/lib/dynamic/qtmain.lib))
- QTDIR ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_BLD)/qt/v3.*)))
-else ifeq ($(KBUILD_TARGET),os2)
- QTDIR ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.1
- VBOX_PATH_QT ?= $(QTDIR)
- VBOX_DLL_QT ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/bin/*qt*.dll)))
- LIB_QT ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/lib/*qt*.lib)))
- LIB_QT_PRL ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/lib/*qt*.prl)))
- QTDIR := $(VBOX_PATH_QT)
-else ifeq ($(KBUILD_TARGET),darwin)
- ifndef VBOX_PATH_QT
-  VBOX_PATH_QT := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v3.*)))
-  VBOX_PATH_QT ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.8-r1
- endif
- VBOX_MUST_INSTALL_LIB_QT ?= 1
- LIB_QT ?= $(VBOX_PATH_QT)/lib/libqt-mt.3.dylib
- LIB_QTMAIN ?= $(NO_SUCH_VARIABLE)
- ifndef QTDIR
-  QTDIR := $(sort $(wildcard $(PATH_DEVTOOLS_BLD)/v*))
-  QTDIR := $(call lastword,$(QTDIR))
- endif
-else
- ifndef QTDIR
-  ifndef VBOX_PATH_QT
-   # If QTDIR and VBOX_WITH_QTGUI aren't defined, we'll first
-   # look in the tools tree and then on the system. If in the
-   # tools, we'll have to install it.
-   # Results are exported to avoid having to do this for every make file.
-   VBOX_PATH_QT := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v3.*)))
-   ifneq ($(VBOX_PATH_QT),)
-    export VBOX_PATH_QT
-    export VBOX_MUST_INSTALL_LIB_QT := 1
-    export LIB_QT := $(VBOX_PATH_QT)/lib/libqt-mt.so.3
-    export LD_LIBRARY_PATH := $(VBOX_PATH_QT)/lib:$(LD_LIBRARY_PATH)
-   else
-    QTDIR := $(wildcard /usr/share/qt3)
-    ifeq ($(QTDIR),)
-     QTDIR := $(patsubst %/bin/moc,%,$(firstword $(wildcard /usr/bin/moc /usr/local/bin/moc /usr/X11R6/bin/moc)))
-    endif
-    ifneq ($(QTDIR),)
-     export QTDIR
-    endif
-   endif
-  else
-   QTDIR := $(VBOX_PATH_QT)
-   export QTDIR
-  endif
- endif
-endif
-ifndef VBOX_PATH_QT
- VBOX_PATH_QT := $(QTDIR)
- LIB_QT ?= qt-mt
-endif
-ifeq ($(KBUILD_HOST),$(KBUILD_TARGET))
- VBOX_PATH_QT_HOST ?= $(VBOX_PATH_QT)
-else
- VBOX_PATH_QT_HOST ?= $(QTDIR)
-endif
-VBOX_UIC      ?= $(VBOX_PATH_QT_HOST)/bin/uic$(HOSTSUFF_EXE)
-VBOX_MOC      ?= $(VBOX_PATH_QT_HOST)/bin/moc$(HOSTSUFF_EXE)
-VBOX_LUPDATE  ?= $(VBOX_PATH_QT_HOST)/bin/lupdate$(HOSTSUFF_EXE)
-VBOX_LRELEASE ?= $(VBOX_PATH_QT_HOST)/bin/lrelease$(HOSTSUFF_EXE)
-
-ifeq ($(KBUILD_TARGET),os2)
- # search DLLs in the EXE directory first (unless VBOX_DLL_QT is set)
- VBOX_DLL_QT_PATH := $(dir $(VBOX_DLL_QT))
- VBOX_DLL_QT_PATH := $(if $(VBOX_DLL_QT_PATH),$(VBOX_DLL_QT_PATH);,)
- VBOX_UIC      := BEGINLIBPATH="$(VBOX_DLL_QT_PATH)$(dir $(VBOX_UIC));$$BEGINLIBPATH" $(VBOX_UIC)
- VBOX_MOC      := BEGINLIBPATH="$(VBOX_DLL_QT_PATH)$(dir $(VBOX_MOC));$$BEGINLIBPATH" $(VBOX_MOC)
- VBOX_LUPDATE  := BEGINLIBPATH="$(VBOX_DLL_QT_PATH)$(dir $(VBOX_LUPDATE));$$BEGINLIBPATH" $(VBOX_LUPDATE)
- VBOX_LRELEASE := BEGINLIBPATH="$(VBOX_DLL_QT_PATH)$(dir $(VBOX_LRELEASE));$$BEGINLIBPATH" $(VBOX_LRELEASE)
-endif
 
 #
 # The linux kernel headers(/sources).
@@ -2926,176 +2817,6 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
  endif
 endif
 TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS.darwin))
-
-
-#
-# Template for building Qt GUI executables.
-#
-TEMPLATE_VBOXQTGUIEXE = VBox Qt GUI Executable
-TEMPLATE_VBOXQTGUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT $(ARCH_BITS_DEFS)
-TEMPLATE_VBOXQTGUIEXE_INCS = \
-	$(VBOX_PATH_QT)/include
-
-ifeq ($(KBUILD_TARGET),win)
- # drag in library configuration (we need QMAKE_PRL_DEFINES)
- ifneq ($(LIB_QT_PRL),)
-  include $(LIB_QT_PRL)
- endif
- TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_VCC_TOOL)
- TEMPLATE_VBOXQTGUIEXE_QT_PREFIX = VBox
- TEMPLATE_VBOXQTGUIEXE_DEFS += \
-    _WIN32_WINNT=0x0500 UNICODE _UNICODE \
-    QT_DLL _CRT_SECURE_NO_DEPRECATE \
-    $(QMAKE_PRL_DEFINES)
- ## @todo VCC70 flags?
- ifdef VBOX_USE_VCC80
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
-	-nologo -Zm200 -W3 -MD -Zi -EHsc -Zc:wchar_t-
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
- else
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
-	-nologo -Zm200 -W3 -MD -Zi -GX
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -GZ
- endif
- TEMPLATE_VBOXQTGUIEXE_INCS += \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC)
- TEMPLATE_VBOXQTGUIEXE_LDFLAGS = \
-	/NOD /NOLOGO /INCREMENTAL:NO /MAPINFO:EXPORTS /DEBUG \
-	/DELAYLOAD:oleaut32.dll
- TEMPLATE_VBOXQTGUIEXE_SDKS = WINPSDK
- TEMPLATE_VBOXQTGUIEXE_LIBS = \
-	$(LIB_QT) \
-	$(LIB_QTMAIN) \
-	$(LIB_RUNTIME) \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
- TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
-
-else # the gcc guys:
- TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_GCC_TOOL)
- TEMPLATE_VBOXQTGUIEXE_DEFS.linux = _REENTRANT
- TEMPLATE_VBOXQTGUIEXE_DEFS.solaris = _REENTRANT
-
- TEMPLATE_VBOXQTGUIEXE_INCS += \
-	$(LIB_SDL_INC)
- TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
-	-pipe $(VBOX_GCC_WARN) -frtti -fno-exceptions -Wno-non-virtual-dtor \
-	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
-	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
- TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86 = -m32
- TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64 = -m64
- TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
- TEMPLATE_VBOXQTGUIEXE_LDFLAGS.x86 = -m32
- TEMPLATE_VBOXQTGUIEXE_LDFLAGS.amd64 = -m64
- TEMPLATE_VBOXQTGUIEXE_LIBS += \
-	$(LIB_SDL) \
-	$(LIB_RUNTIME) \
-	$(LIB_REM) \
-	$(LIB_VMM)
-
- ifeq ($(KBUILD_TARGET),linux)
-  TEMPLATE_VBOXQTGUIEXE_LDFLAGS += $(VBOX_LD_as_needed)
- else ifeq ($(KBUILD_TARGET),darwin)
-  TEMPLATE_VBOXQTGUIEXE_DEFS += $(VBOX_DARWIN_DEF_SDK_DEFS)
-  TEMPLATE_VBOXQTGUIEXE_CFLAGS += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
-  TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS += $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
-  TEMPLATE_VBOXQTGUIEXE_LDFLAGS.darwin += -bind_at_load
-  TEMPLATE_VBOXQTGUIEXE_LIBS +=
-  TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
- else ifeq ($(KBUILD_TARGET),os2)
-  # drag in library configuration (we need QMAKE_PRL_DEFINES)
-  ifneq ($(LIB_QT_PRL),)
-   include $(LIB_QT_PRL)
-  endif
-  TEMPLATE_VBOXQTGUIEXE_DEFS += $(QMAKE_PRL_DEFINES)
-  TEMPLATE_VBOXQTGUIEXE_LIBS +=
-  TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
- else
-  TEMPLATE_VBOXQTGUIEXE_INCS += \
-	$(VBOX_XCURSOR_INCS)
-  TEMPLATE_VBOXQTGUIEXE_LIBS += \
-	$(VBOX_XCURSOR_LIBS) \
-	Xext \
-	X11 \
-	m \
-	$(LIB_PTHREAD)
-  TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
-	$(VBOX_LIBPATH_X11)
-  ifeq ($(KBUILD_TARGET),freebsd)
-   TEMPLATE_VBOXQTGUIEXE_INCS += \
-   	/usr/include \
-   	/usr/X11R6/include \
-   	/usr/local/include
-   TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
-   	/usr/lib \
-   	/usr/X11R6/lib \
-   	/usr/local/lib
-  endif
-  ifeq ($(KBUILD_TARGET),solaris)
-   TEMPLATE_VBOXQTGUIEXE_LIBS += \
-	rt socket nsl
-  endif
- endif
- ifdef VBOX_WITH_RUNPATH
-  ifeq ($(KBUILD_TARGET),solaris)
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH):$(VBOX_WITH_RUNPATH)/qtgcc/lib'
-  else
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
-  endif
- else ifdef VBOX_WITH_ORIGIN
-  ifeq ($(KBUILD_TARGET),solaris)
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN):$$(VBOX_ORIGIN)/qtgcc/lib'
-  else
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
-  endif
- endif
-
-endif # !win
-
-# Add COM/XPCOM stuff
-TEMPLATE_VBOXQTGUIEXE_LIBS += \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
-ifdef VBOX_WITH_XPCOM
- ## @todo may be worth creating the VBOX_XPCOM SDK def
- TEMPLATE_VBOXQTGUIEXE_DEFS += VBOX_WITH_XPCOM
- ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-  TEMPLATE_VBOXQTGUIEXE_DEFS += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
- endif
- TEMPLATE_VBOXQTGUIEXE_INCS += \
-	$(VBOX_XPCOM_INCS)
- TEMPLATE_VBOXQTGUIEXE_LIBS += \
-	$(LIB_XPCOM)
- TEMPLATE_VBOXQTGUIEXE_INTERMEDIATES += \
-	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
-else
- TEMPLATE_VBOXQTGUIEXE_INCS += \
- 	$(VBOX_PATH_SDK)/bindings/mscom/include
- TEMPLATE_VBOXQTGUIEXE_INTERMEDIATES += \
- 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
-endif
-
-#
-# Template for building Qt GUI components.
-#
-TEMPLATE_VBOXQTGUI = VBox Qt GUI Components
-TEMPLATE_VBOXQTGUI_EXTENDS = VBOXQTGUIEXE
-TEMPLATE_VBOXQTGUI_LIBS = $(filter-out $(QTMAIN),$(TEMPLATE_VBOXQTGUIEXE_LIBS))
-ifeq ($(KBUILD_TARGET),darwin)
- TEMPLATE_VBOXQTGUI_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXQTGUIEXE_LDFLAGS.darwin)) \
-	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
-endif
-ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
- ifneq ($(KBUILD_TARGET),win)
-  TEMPLATE_VBOXQTGUI_DEFS     = PIC $(TEMPLATE_VBOXQTGUIEXE_DEFS)
-  TEMPLATE_VBOXQTGUI_CFLAGS   = -fPIC $(TEMPLATE_VBOXQTGUIEXE_CFLAGS)
-  TEMPLATE_VBOXQTGUI_CXXFLAGS = -fPIC $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS)
-  TEMPLATE_VBOXQTGUI_LDFLAGS  = -fPIC $(TEMPLATE_VBOXQTGUIEXE_LDFLAGS)
- endif
-endif
 
 
 #
