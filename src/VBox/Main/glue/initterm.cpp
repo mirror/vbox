@@ -212,7 +212,7 @@ HRESULT Initialize()
     /// i.e. the problem appears when this checkbox is checked and disappears
     /// if you clear it. For this reason, we disable the code below and
     /// instead initialize COM in MTA as early as possible, before 3rd party
-    /// libraries we use have done so (i.e. Qt3).
+    /// libraries we use have done so (i.e. Qt).
 #if 0
     /* If we fail to set the necessary apartment model, it may mean that some
      * DLL that was indirectly loaded by the process calling this function has
