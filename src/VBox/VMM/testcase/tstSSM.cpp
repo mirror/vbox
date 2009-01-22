@@ -24,6 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/ssm.h>
+#include "../VMInternal.h" /* createFakeVM */
 #include <VBox/vm.h>
 #include <VBox/uvm.h>
 #include <VBox/mm.h>
@@ -39,6 +40,8 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#include <iprt/thread.h>
+#include <iprt/path.h>
 
 
 const uint8_t gabPage[PAGE_SIZE] = {0};
@@ -562,6 +565,8 @@ DECLCALLBACK(int) Item04Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Ve
  *
  * @returns 0 on success, 1 on failure.
  * @param   ppVM    Where to store the VM handle.
+ *
+ * @todo    Move this to VMM/VM since it's stuff done by several testcases.
  */
 static int createFakeVM(PVM *ppVM)
 {
@@ -571,36 +576,48 @@ static int createFakeVM(PVM *ppVM)
     PUVM pUVM = (PUVM)RTMemAllocZ(sizeof(*pUVM));
     AssertReturn(pUVM, 1);
     pUVM->u32Magic = UVM_MAGIC;
-
-    int rc = STAMR3InitUVM(pUVM);
+    pUVM->vm.s.idxTLS = RTTlsAlloc();
+    int rc = RTTlsSet(pUVM->vm.s.idxTLS, &pUVM->aCpus[0]);
     if (RT_SUCCESS(rc))
     {
-        rc = MMR3InitUVM(pUVM);
+        pUVM->aCpus[0].pUVM = pUVM;
+        pUVM->aCpus[0].vm.s.NativeThreadEMT = RTThreadNativeSelf();
+
+        rc = STAMR3InitUVM(pUVM);
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Allocate and init the VM structure.
-             */
-            PVM pVM;
-            rc = SUPPageAlloc((sizeof(*pVM) + PAGE_SIZE - 1) >> PAGE_SHIFT, (void **)&pVM);
+            rc = MMR3InitUVM(pUVM);
             if (RT_SUCCESS(rc))
             {
-                pVM->enmVMState = VMSTATE_CREATED;
-                pVM->pVMR3 = pVM;
-                pVM->pUVM = pUVM;
+                /*
+                 * Allocate and init the VM structure.
+                 */
+                PVM pVM;
+                rc = SUPPageAlloc((sizeof(*pVM) + PAGE_SIZE - 1) >> PAGE_SHIFT, (void **)&pVM);
+                if (RT_SUCCESS(rc))
+                {
+                    pVM->enmVMState = VMSTATE_CREATED;
+                    pVM->pVMR3 = pVM;
+                    pVM->pUVM = pUVM;
+                    pVM->cCPUs = 1;
+                    pVM->aCpus[0].pVMR3 = pVM;
+                    pVM->aCpus[0].hNativeThread = RTThreadNativeSelf();
 
-                pUVM->pVM = pVM;
-                *ppVM = pVM;
-                return 0;
+                    pUVM->pVM = pVM;
+                    *ppVM = pVM;
+                    return 0;
+                }
+
+                RTPrintf("Fatal error: failed to allocated pages for the VM structure, rc=%Rrc\n", rc);
             }
-
-            RTPrintf("Fatal error: failed to allocated pages for the VM structure, rc=%Rrc\n", rc);
+            else
+                RTPrintf("Fatal error: MMR3InitUVM failed, rc=%Rrc\n", rc);
         }
         else
-            RTPrintf("Fatal error: MMR3InitUVM failed, rc=%Rrc\n", rc);
+            RTPrintf("Fatal error: SSMR3InitUVM failed, rc=%Rrc\n", rc);
     }
     else
-        RTPrintf("Fatal error: SSMR3InitUVM failed, rc=%Rrc\n", rc);
+        RTPrintf("Fatal error: RTTlsSet failed, rc=%Rrc\n", rc);
 
     *ppVM = NULL;
     return 1;
@@ -681,6 +698,15 @@ int main(int argc, char **argv)
     }
     uint64_t u64Elapsed = RTTimeNanoTS() - u64Start;
     RTPrintf("tstSSM: Saved in %RI64 ns\n", u64Elapsed);
+
+    RTFSOBJINFO Info;
+    rc = RTPathQueryInfo(pszFilename, &Info, RTFSOBJATTRADD_NOTHING);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstSSM: failed to query file size: %Rrc\n", rc);
+        return 1;
+    }
+    RTPrintf("tstSSM: file size %RI64 bytes\n", Info.cbObject);
 
     /*
      * Attempt a load.
