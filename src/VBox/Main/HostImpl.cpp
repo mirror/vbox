@@ -2347,6 +2347,10 @@ HRESULT Host::checkUSBProxyService()
         /* disable the USB controller completely to avoid assertions if the
          * USB proxy service could not start. */
 
+        Bstr message;
+        if (   SUCCEEDED(mUSBProxyService->getLastErrorMessage(message.asOutParam()))
+            && !message.isNull())
+            return setWarning (E_FAIL, Utf8Str(message).raw());
         if (mUSBProxyService->getLastError() == VERR_FILE_NOT_FOUND)
             return setWarning (E_FAIL,
                 tr ("Could not load the Host USB Proxy Service (%Rrc). "
