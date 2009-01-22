@@ -157,6 +157,7 @@ HRESULT Display::init (Console *aParent)
         maFramebuffers[ul].fDefaultFormat = false;
 
         memset (&maFramebuffers[ul].dirtyRect, 0 , sizeof (maFramebuffers[ul].dirtyRect));
+        memset (&maFramebuffers[ul].pendingResize, 0 , sizeof (maFramebuffers[ul].pendingResize));
     }
 
     mParent->RegisterCallback (this);
@@ -294,7 +295,28 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
      */
     bool f = ASMAtomicCmpXchgU32 (&maFramebuffers[uScreenId].u32ResizeStatus,
                                   ResizeStatus_InProgress, ResizeStatus_Void);
-    AssertReleaseMsg(f, ("s = %d, id = %d, f = %d\n", maFramebuffers[uScreenId].u32ResizeStatus, uScreenId, f));NOREF(f);
+    if (!f)
+    {
+        /* This could be a result of the screenshot taking call Display::TakeScreenShot:
+         * if the framebuffer is processing the resize request and GUI calls the TakeScreenShot
+         * and the guest has reprogrammed the virtual VGA devices again so a new resize is required.
+         *
+         * Save the resize information and return.
+         *
+         * Note: the resize information is only accessed on EMT so no serialization is required.
+         */
+        LogRel (("Display::handleDisplayResize(): Warning: resize postponed.\n"));
+
+        maFramebuffers[uScreenId].pendingResize.fPending    = true;
+        maFramebuffers[uScreenId].pendingResize.pixelFormat = pixelFormat;
+        maFramebuffers[uScreenId].pendingResize.pvVRAM      = pvVRAM;
+        maFramebuffers[uScreenId].pendingResize.bpp         = bpp;
+        maFramebuffers[uScreenId].pendingResize.cbLine      = cbLine;
+        maFramebuffers[uScreenId].pendingResize.w           = w;
+        maFramebuffers[uScreenId].pendingResize.h           = h;
+        
+        return VINF_SUCCESS;
+    }
 
     /* The framebuffer is locked in the state.
      * The lock is kept, because the framebuffer is in undefined state.
@@ -317,6 +339,8 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
     f = ASMAtomicCmpXchgU32 (&maFramebuffers[uScreenId].u32ResizeStatus,
                              ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
     AssertRelease(f);NOREF(f);
+
+    AssertRelease(!maFramebuffers[uScreenId].pendingResize.fPending);
 
     /* The method also unlocks the framebuffer. */
     handleResizeCompletedEMT();
@@ -345,6 +369,21 @@ void Display::handleResizeCompletedEMT (void)
         if (f == false)
         {
             /* This is not the display that has completed resizing. */
+            continue;
+        }
+
+        /* Check whether a resize is pending for this framebuffer. */
+        if (pFBInfo->pendingResize.fPending)
+        {
+            /* Reset the condition, call the display resize with saved data and continue. 
+             *
+             * Note: handleDisplayResize can call handleResizeCompletedEMT back,
+             *       but infinite recursion is not possible, because when the handleResizeCompletedEMT
+             *       is called, the pFBInfo->pendingResize.fPending is equal to false.
+             */
+            pFBInfo->pendingResize.fPending = false;
+            handleDisplayResize (uScreenId, pFBInfo->pendingResize.bpp, pFBInfo->pendingResize.pvVRAM,
+                                 pFBInfo->pendingResize.cbLine, pFBInfo->pendingResize.w, pFBInfo->pendingResize.h);
             continue;
         }
 
