@@ -1254,6 +1254,74 @@ int main(int argc, char *argv[])
         session->Close();
     } while (false);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+#if 1
+    // check of OVF appliance handling
+    ///////////////////////////////////////////////////////////////////////////
+    do
+    {
+        Bstr ovf = L"/home/poetzsch/projects/out.ovf";
+        //Bstr ovf = L"/home/poetzsch/projects/someOVF.ovf";
+//        Bstr ovf = L"/Users/poetzsch/projects/someOVF.ovf";
+//        Bstr ovf = L"/Users/poetzsch/projects/out.ovf";
+//        Bstr name = argc > 1 ? argv [1] : "dsl";
+        printf ("Try to open %ls ...\n", ovf.raw());
+
+        ComPtr <IAppliance> appliance;
+        CHECK_ERROR_BREAK (virtualBox,
+                           OpenAppliance (ovf, appliance.asOutParam()));
+        Bstr path;
+        CHECK_ERROR_BREAK (appliance, COMGETTER (Path)(path.asOutParam()));
+        printf ("Successfully opened %ls.\n", path.raw());
+        printf ("Appliance:\n");
+        // Fetch all disks
+        com::SafeArray<BSTR> retDisks;
+        ULONG diskCount = 0;
+        CHECK_ERROR_BREAK (appliance,
+                           GetDisks (ComSafeArrayAsOutParam  (retDisks), (&diskCount)));
+        if (retDisks.size() > 0)
+        {
+            printf ("Disks:");
+            for (unsigned i = 0; i < retDisks.size(); i++)
+                printf (" %ls", Bstr (retDisks [i]).raw());
+            printf ("\n");
+        }
+        /* Fetch all virtual system descriptions */
+        com::SafeIfaceArray<IVirtualSystemDescription> retVSD;
+        CHECK_ERROR_BREAK (appliance,
+                           COMGETTER (VirtualSystemDescriptions) (ComSafeArrayAsOutParam (retVSD)));
+        if (retVSD.size() > 0)
+        {
+            for (unsigned i = 0; i < retVSD.size(); ++i)
+            {
+                com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
+                com::SafeArray<ULONG> retRefs;
+                com::SafeArray<BSTR> retOrigValues;
+                com::SafeArray<BSTR> retAutoValues;
+                com::SafeArray<BSTR> retConfiguration;
+                CHECK_ERROR_BREAK (retVSD [i],
+                                   GetDescription (ComSafeArrayAsOutParam (retTypes),
+                                                   ComSafeArrayAsOutParam (retRefs),
+                                                   ComSafeArrayAsOutParam (retOrigValues),
+                                                   ComSafeArrayAsOutParam (retAutoValues),
+                                                   ComSafeArrayAsOutParam (retConfiguration)));
+
+                printf ("VirtualSystemDescription:\n");
+                for (unsigned a = 0; a < retTypes.size(); ++a)
+                {
+                    printf (" %d %u %ls %ls %ls\n",
+                            retTypes [a],
+                            retRefs [a],
+                            Bstr (retOrigValues [a]).raw(),
+                            Bstr (retAutoValues [a]).raw(),
+                            Bstr (retConfiguration [a]).raw());
+                }
+            }
+            printf ("\n");
+        }
+    }
+    while (FALSE);
+    printf ("\n");
+#endif
 
     printf ("Press enter to release Session and VirtualBox instances...");
     getchar();

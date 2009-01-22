@@ -1728,6 +1728,44 @@
       </param>
     </method>
 
+    <method name="openAppliance">
+      <desc>
+        Attempts to open the given appliance, which must be in Open Virtual Machine Format (OVF).
+
+        As prescribed by the OVF standard, VirtualBox supports OVF in two formats:
+
+        <ol>
+          <li>If the OVF is distributed as a set of files, then @a file must be a fully qualified
+          path name to an existing OVF descriptor file with an <tt>.ovf</tt> file extension. If
+          this descriptor file references other files, as OVF appliances distributed as a set of
+          files most likely do, those files must be in the same directory as the descriptor file.</li>
+
+          <li>If the OVF is distributed as a single file, it must be in TAR format and have the
+          <tt>.ova</tt> file extension. This TAR file must then contain at least the OVF descriptor
+          files and optionally other files.</li>
+        </ol>
+
+        In both cases, VirtualBox will open the OVF descriptor file, parse its contents and create a
+        new instance of IAppliance representing the OVF file.
+
+        This method succeeds if the OVF is syntactically valid and, by itself, without errors. The
+        returned IAppliance object can then be used to retrieve information about the appliance and
+        import it into VirtualBox. The mere fact that this method returns successfully does not mean
+        that VirtualBox supports all features requested by the appliance; see the documentation for
+        <link to="IAppliance" /> for details.
+
+      </desc>
+      <param name="file" type="wstring" dir="in">
+        <desc>
+          Name of appliance file to open (either with an <tt>.ovf</tt> or <tt>.ova</tt> extension, depending
+          on whether the appliance is distributed as a set of files or as a single file, respectively).
+        </desc>
+      </param>
+      <param name="machine" type="IAppliance" dir="return">
+        <desc>New appliance.</desc>
+      </param>
+    </method>
+
     <method name="createHardDisk2">
       <desc>
         Creates a new base hard disk object that will use the given storage
@@ -2690,6 +2728,287 @@
     </method>
 
   </interface>
+
+  <!--
+  // IAppliance
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <enum
+    name="CIMOSType"
+    uuid="86ef5f8c-18b2-4db8-a314-33721b59f89b"
+  >
+    <desc>
+      OVF operating system values according to CIM V2.20 (as of Nov 2008); http://www.dmtf.org/standards/cim/cim_schema_v220
+    </desc>
+
+    <const name="CIMOS_Unknown" value="0" />      <!-- "Unknown" -->
+    <const name="CIMOS_Other" value="1" />      <!-- "Other" -->
+    <const name="CIMOS_MACOS" value="2" />      <!-- "MACOS" -->
+    <const name="CIMOS_ATTUNIX" value="3" />      <!-- "ATTUNIX" -->
+    <const name="CIMOS_DGUX" value="4" />      <!-- "DGUX" -->
+    <const name="CIMOS_DECNT" value="5" />      <!-- "DECNT" -->
+    <const name="CIMOS_Tru64UNIX" value="6" />      <!-- "Tru64 UNIX" -->
+    <const name="CIMOS_OpenVMS" value="7" />      <!-- "OpenVMS" -->
+    <const name="CIMOS_HPUX" value="8" />      <!-- "HPUX" -->
+    <const name="CIMOS_AIX" value="9" />      <!-- "AIX" -->
+    <const name="CIMOS_MVS" value="10" />      <!-- "MVS" -->
+    <const name="CIMOS_OS400" value="11" />      <!-- "OS400" -->
+    <const name="CIMOS_OS2" value="12" />      <!-- "OS/2" -->
+    <const name="CIMOS_JavaVM" value="13" />      <!-- "JavaVM" -->
+    <const name="CIMOS_MSDOS" value="14" />      <!-- "MSDOS" -->
+    <const name="CIMOS_WIN3x" value="15" />      <!-- "WIN3x" -->
+    <const name="CIMOS_WIN95" value="16" />      <!-- "WIN95" -->
+    <const name="CIMOS_WIN98" value="17" />      <!-- "WIN98" -->
+    <const name="CIMOS_WINNT" value="18" />      <!-- "WINNT" -->
+    <const name="CIMOS_WINCE" value="19" />      <!-- "WINCE" -->
+    <const name="CIMOS_NCR3000" value="20" />      <!-- "NCR3000" -->
+    <const name="CIMOS_NetWare" value="21" />      <!-- "NetWare" -->
+    <const name="CIMOS_OSF" value="22" />      <!-- "OSF" -->
+    <const name="CIMOS_DCOS" value="23" />      <!-- "DC/OS" -->
+    <const name="CIMOS_ReliantUNIX" value="24" />      <!-- "Reliant UNIX" -->
+    <const name="CIMOS_SCOUnixWare" value="25" />      <!-- "SCO UnixWare" -->
+    <const name="CIMOS_SCOOpenServer" value="26" />      <!-- "SCO OpenServer" -->
+    <const name="CIMOS_Sequent" value="27" />      <!-- "Sequent" -->
+    <const name="CIMOS_IRIX" value="28" />      <!-- "IRIX" -->
+    <const name="CIMOS_Solaris" value="29" />      <!-- "Solaris" -->
+    <const name="CIMOS_SunOS" value="30" />      <!-- "SunOS" -->
+    <const name="CIMOS_U6000" value="31" />      <!-- "U6000" -->
+    <const name="CIMOS_ASERIES" value="32" />      <!-- "ASERIES" -->
+    <const name="CIMOS_HPNonStopOS" value="33" />      <!-- "HP NonStop OS" -->
+    <const name="CIMOS_HPNonStopOSS" value="34" />      <!-- "HP NonStop OSS" -->
+    <const name="CIMOS_BS2000" value="35" />      <!-- "BS2000" -->
+    <const name="CIMOS_LINUX" value="36" />      <!-- "LINUX" -->
+    <const name="CIMOS_Lynx" value="37" />      <!-- "Lynx" -->
+    <const name="CIMOS_XENIX" value="38" />      <!-- "XENIX" -->
+    <const name="CIMOS_VM" value="39" />      <!-- "VM" -->
+    <const name="CIMOS_InteractiveUNIX" value="40" />      <!-- "Interactive UNIX" -->
+    <const name="CIMOS_BSDUNIX" value="41" />      <!-- "BSDUNIX" -->
+    <const name="CIMOS_FreeBSD" value="42" />      <!-- "FreeBSD" -->
+    <const name="CIMOS_NetBSD" value="43" />      <!-- "NetBSD" -->
+    <const name="CIMOS_GNUHurd" value="44" />      <!-- "GNU Hurd" -->
+    <const name="CIMOS_OS9" value="45" />      <!-- "OS9" -->
+    <const name="CIMOS_MACHKernel" value="46" />      <!-- "MACH Kernel" -->
+    <const name="CIMOS_Inferno" value="47" />      <!-- "Inferno" -->
+    <const name="CIMOS_QNX" value="48" />      <!-- "QNX" -->
+    <const name="CIMOS_EPOC" value="49" />      <!-- "EPOC" -->
+    <const name="CIMOS_IxWorks" value="50" />      <!-- "IxWorks" -->
+    <const name="CIMOS_VxWorks" value="51" />      <!-- "VxWorks" -->
+    <const name="CIMOS_MiNT" value="52" />      <!-- "MiNT" -->
+    <const name="CIMOS_BeOS" value="53" />      <!-- "BeOS" -->
+    <const name="CIMOS_HPMPE" value="54" />      <!-- "HP MPE" -->
+    <const name="CIMOS_NextStep" value="55" />      <!-- "NextStep" -->
+    <const name="CIMOS_PalmPilot" value="56" />      <!-- "PalmPilot" -->
+    <const name="CIMOS_Rhapsody" value="57" />      <!-- "Rhapsody" -->
+    <const name="CIMOS_Windows2000" value="58" />      <!-- "Windows 2000" -->
+    <const name="CIMOS_Dedicated" value="59" />      <!-- "Dedicated" -->
+    <const name="CIMOS_OS390" value="60" />      <!-- "OS/390" -->
+    <const name="CIMOS_VSE" value="61" />      <!-- "VSE" -->
+    <const name="CIMOS_TPF" value="62" />      <!-- "TPF" -->
+    <const name="CIMOS_WindowsMe" value="63" />      <!-- "Windows (R) Me" -->
+    <const name="CIMOS_CalderaOpenUNIX" value="64" />      <!-- "Caldera Open UNIX" -->
+    <const name="CIMOS_OpenBSD" value="65" />      <!-- "OpenBSD" -->
+    <const name="CIMOS_NotApplicable" value="66" />      <!-- "Not Applicable" -->
+    <const name="CIMOS_WindowsXP" value="67" />      <!-- "Windows XP" -->
+    <const name="CIMOS_zOS" value="68" />      <!-- "z/OS" -->
+    <const name="CIMOS_MicrosoftWindowsServer2003" value="69" />      <!-- "Microsoft Windows Server 2003" -->
+    <const name="CIMOS_MicrosoftWindowsServer2003_64" value="70" />      <!-- "Microsoft Windows Server 2003 64-Bit" -->
+    <const name="CIMOS_WindowsXP_64" value="71" />      <!-- "Windows XP 64-Bit" -->
+    <const name="CIMOS_WindowsXPEmbedded" value="72" />      <!-- "Windows XP Embedded" -->
+    <const name="CIMOS_WindowsVista" value="73" />      <!-- "Windows Vista" -->
+    <const name="CIMOS_WindowsVista_64" value="74" />      <!-- "Windows Vista 64-Bit" -->
+    <const name="CIMOS_WindowsEmbeddedforPointofService" value="75" />      <!-- "Windows Embedded for Point of Service" -->
+    <const name="CIMOS_MicrosoftWindowsServer2008" value="76" />      <!-- "Microsoft Windows Server 2008" -->
+    <const name="CIMOS_MicrosoftWindowsServer2008_64" value="77" />      <!-- "Microsoft Windows Server 2008 64-Bit" -->
+    <const name="CIMOS_FreeBSD_64" value="78" />      <!-- "FreeBSD 64-Bit" -->
+    <const name="CIMOS_RedHatEnterpriseLinux" value="79" />      <!-- "RedHat Enterprise Linux" -->
+    <const name="CIMOS_RedHatEnterpriseLinux_64" value="80" />      <!-- "RedHat Enterprise Linux 64-Bit" -->
+    <const name="CIMOS_Solaris_64" value="81" />      <!-- "Solaris 64-Bit" -->
+    <const name="CIMOS_SUSE" value="82" />      <!-- "SUSE" -->
+    <const name="CIMOS_SUSE_64" value="83" />      <!-- "SUSE 64-Bit" -->
+    <const name="CIMOS_SLES" value="84" />      <!-- "SLES" -->
+    <const name="CIMOS_SLES_64" value="85" />      <!-- "SLES 64-Bit" -->
+    <const name="CIMOS_NovellOES" value="86" />      <!-- "Novell OES" -->
+    <const name="CIMOS_NovellLinuxDesktop" value="87" />      <!-- "Novell Linux Desktop" -->
+    <const name="CIMOS_SunJavaDesktopSystem" value="88" />      <!-- "Sun Java Desktop System" -->
+    <const name="CIMOS_Mandriva" value="89" />      <!-- "Mandriva" -->
+    <const name="CIMOS_Mandriva_64" value="90" />      <!-- "Mandriva 64-Bit" -->
+    <const name="CIMOS_TurboLinux" value="91" />      <!-- "TurboLinux" -->
+    <const name="CIMOS_TurboLinux_64" value="92" />      <!-- "TurboLinux 64-Bit" -->
+    <const name="CIMOS_Ubuntu" value="93" />      <!-- "Ubuntu" -->
+    <const name="CIMOS_Ubuntu_64" value="94" />      <!-- "Ubuntu 64-Bit" -->
+    <const name="CIMOS_Debian" value="95" />      <!-- "Debian" -->
+    <const name="CIMOS_Debian_64" value="96" />      <!-- "Debian 64-Bit" -->
+    <const name="CIMOS_Linux_2_4_x" value="97" />      <!-- "Linux 2.4.x" -->
+    <const name="CIMOS_Linux_2_4_x_64" value="98" />      <!-- "Linux 2.4.x 64-Bit" -->
+    <const name="CIMOS_Linux_2_6_x" value="99" />      <!-- "Linux 2.6.x" -->
+    <const name="CIMOS_Linux_2_6_x_64" value="100" />      <!-- "Linux 2.6.x 64-Bit" -->
+    <const name="CIMOS_Linux_64" value="101" />      <!-- "Linux 64-Bit" -->
+    <const name="CIMOS_Other_64" value="102" />      <!-- "Other 64-Bit" -->
+  </enum>
+
+  <enum
+    name="OVFResourceType"
+    uuid="646a78d7-6f04-49f4-82c4-75c28a75a4cd"
+  >
+    <desc>
+      OVF resource type.
+    </desc>
+
+    <const name="Other" value="1" />
+    <const name="ComputerSystem" value="2" />
+    <const name="Processor" value="3" />
+    <const name="Memory" value="4" />
+    <const name="IdeCController" value="5" />
+    <const name="ParallelScsiHba" value="6" />
+    <const name="FcHba" value="7" />
+    <const name="iScsiHba" value="8" />
+    <const name="IbHca" value="9" />
+    <const name="EthernetAdapter" value="10" />
+    <const name="OtherNetworkAdapter" value="11" />
+    <const name="IoSlot" value="12" />
+    <const name="IoDevice" value="13" />
+    <const name="FloppyDrive" value="14" />
+    <const name="CdDrive" value="15" />
+    <const name="DvdDrive" value="16" />
+    <const name="HardDisk" value="17" />
+  </enum>
+
+  <interface
+     name="IAppliance" extends="$unknown"
+     uuid="f3aa3a74-7b66-425b-9d3d-973924ddf163"
+     wsmap="managed"
+     >
+    <desc>
+        Represents an appliance in OVF format. An instance of this is returned by
+        <link to="IVirtualBox::openAppliance" />.
+
+        Opening an appliance is a two-step process with VirtualBox: first
+        <link to="IVirtualBox::openAppliance" /> is called, which succeeds if the
+        appliance file is syntactically valid, irrespective of whether VirtualBox
+        can handle the appliance.
+
+        Once that method has returned an IAppliance instance, one can inspect the
+        member data of that instance to determine whether VirtualBox can handle
+        the requirements of that appliance and create local virtual machines
+        accordingly.
+    </desc>
+
+    <attribute name="path" type="wstring" readonly="yes">
+      <desc>Path to the main file of the OVF appliance, which is either the <tt>.ovf</tt> or
+      the <tt>.ova</tt> file passed to <link to="IVirtualBox::openAppliance" />.</desc>
+    </attribute>
+
+    <attribute name="virtualSystemDescriptions" type="IVirtualSystemDescription" readonly="yes" safearray="yes">
+      <desc></desc>
+    </attribute>
+
+    <method name="getDisks">
+      <desc>
+        Returns disk information from the appliance specification in a string
+        array. Each array item represents one piece of disk information, with the
+        information fields separated by tab (\t) characters.
+
+        The caller should be prepared for additional fields being appended to
+        this string in future versions of VirtualBox and therefore check for
+        the number of tabs in the strings returned.
+
+        In the current version, the following eight fields are returned per string
+        in the array:
+
+        <ol>
+            <li>Disk ID (unique string identifier given to disk)</li>
+            <li>Capacity (unsigned integer indicating the maximum capacity of the disk)</li>
+            <li>Populated size (optional unsigned integer indicating the current size of the
+            disk; can be approximate; -1 if unspecified)</li>
+            <li>Format (string identifying the disk format, typically
+            "http://www.vmware.com/specifications/vmdk.html#sparse")</li>
+            <li>Reference (where to find the disk image, typically a file name; if empty,
+            then the disk should be created on import)</li>
+            <li>Image size (optional unsigned integer indicating the size of the image,
+            which need not necessarily be the same as the values specified above, since
+            the image may be compressed or sparse; -1 if not specified)</li>
+            <li>Chunk size (optional unsigned integer if the image is split into chunks;
+            presently unsupported and always -1)</li>
+            <li>Compression (optional string equalling "gzip" if the image is gzip-compressed)</li>
+        </ol>
+
+      </desc>
+
+      <param name="aDisks" type="wstring" dir="out" safearray="yes">
+        <desc>Array of strings to receive disk information.</desc>
+      </param>
+
+      <param name="cDisks" type="unsigned long" dir="return">
+        <desc>Count of array items returned in aDisks.</desc>
+      </param>
+    </method>
+
+    <method name="importAppliance">
+    </method>
+
+  </interface>
+
+  <enum
+    name="VirtualSystemDescriptionType"
+    uuid="36209b5a-8f96-44de-a0af-1bb037cef324"
+  >
+    <desc>
+    </desc>
+
+    <const name="OS" value="0" />
+    <const name="CPU" value="1" />
+    <const name="Memory" value="2" />
+    <const name="HarddiskControllerIDE" value="3" />
+    <const name="HarddiskControllerSATA" value="4" />
+    <const name="HarddiskControllerSCSI" value="5" />
+    <const name="Harddisk" value="6" />
+    <const name="NetworkAdapter" value="7" />
+
+  </enum>
+
+  <interface
+     name="IVirtualSystemDescription" extends="$unknown"
+     uuid="c76de96b-b316-4a42-9afb-18ce08cce0c9"
+     wsmap="managed"
+     >
+
+    <method name="getDescription">
+      <desc></desc>
+
+      <param name="aTypes" type="VirtualSystemDescriptionType" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
+      <param name="aRefs" type="unsigned long" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
+      <param name="aOrigValues" type="wstring" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
+      <param name="aAutoValues" type="wstring" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
+      <param name="aConfiguration" type="wstring" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
+    </method>
+
+    <method name="SetFinalValues">
+      <desc></desc>
+
+      <param name="aFinaleValues" type="wstring" dir="in" safearray="yes">
+        <desc></desc>
+      </param>
+
+    </method>
+
+  </interface>
+
 
   <!--
   // IMachine
