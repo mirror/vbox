@@ -54,7 +54,6 @@ class Progress;
 class ProgressCollection;
 class Host;
 class SystemProperties;
-class IAppliance;
 
 #ifdef RT_OS_WINDOWS
 class SVCHlpClient;
