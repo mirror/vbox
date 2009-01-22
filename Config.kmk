@@ -1749,7 +1749,7 @@ else
 endif
 
 SDK_VBOX_BOOST        = .
-SDK_VBOX_BOOST_INCS  ?= $(PATH_ROOT)/src/libs/boost-1.37.0/boost
+SDK_VBOX_BOOST_INCS  ?= $(PATH_ROOT)/src/libs/boost-1.37.0
 
 #
 # Special SDK for the problematic NTDLL.LIB.
