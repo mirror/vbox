@@ -48,6 +48,8 @@
 #include <QThread>
 #include <QPainter>
 
+#include <math.h>
+
 #ifdef Q_WS_X11
 #ifndef VBOX_OSE
 # include "VBoxLicenseViewer.h"
@@ -3814,40 +3816,150 @@ void VBoxGlobal::setTextLabel (QToolButton *aToolButton,
 }
 
 /**
- *  Ensures that the given rectangle \a aRect is fully contained within the
- *  rectangle \a aBoundRect by moving \a aRect if necessary. If \a aRect is
- *  larger than \a aBoundRect, its top left corner is simply aligned with the
- *  top left corner of \a aRect and, if \a aCanResize is true, \a aRect is
- *  shrinked to become fully visible.
+ *  Performs direct and flipped search of position for \a aRectangle to make sure
+ *  it is fully contained inside \a aBoundRegion region by moving & resizing
+ *  \a aRectangle if necessary. Selects the minimum shifted result between direct
+ *  and flipped variants.
  */
 /* static */
-QRect VBoxGlobal::normalizeGeometry (const QRect &aRect, const QRect &aBoundRect,
+QRect VBoxGlobal::normalizeGeometry (const QRect &aRectangle, const QRegion &aBoundRegion,
                                      bool aCanResize /* = true */)
 {
-    QRect fr = aRect;
+    /* Direct search for normalized rectangle */
+    QRect var1 (getNormalized (aRectangle, aBoundRegion, aCanResize));
 
-    /* make the bottom right corner visible */
-    int rd = aBoundRect.right() - fr.right();
-    int bd = aBoundRect.bottom() - fr.bottom();
-    fr.translate (rd < 0 ? rd : 0, bd < 0 ? bd : 0);
+    /* Flipped search for normalized rectangle */
+    QRect var2 (flip (getNormalized (flip (aRectangle).boundingRect(),
+                                     flip (aBoundRegion), aCanResize)).boundingRect());
 
-    /* ensure the top left corner is visible */
-    int ld = fr.left() - aBoundRect.left();
-    int td = fr.top() - aBoundRect.top();
-    fr.translate (ld < 0 ? -ld : 0, td < 0 ? -td : 0);
+    /* Calculate shift from starting position for both variants */
+    double length1 = sqrt (pow (var1.x() - aRectangle.x(), 2) +
+                           pow (var1.y() - aRectangle.y(), 2));
+    double length2 = sqrt (pow (var2.x() - aRectangle.x(), 2) +
+                           pow (var2.y() - aRectangle.y(), 2));
 
-    if (aCanResize)
+    /* Return minimum shifted variant */
+    return length1 > length2 ? var2 : var1;
+}
+
+/**
+ *  Ensures that the given rectangle \a aRectangle is fully contained within the
+ *  region \a aBoundRegion by moving \a aRectangle if necessary. If \a aRectangle is
+ *  larger than \a aBoundRegion, top left corner of \a aRectangle is aligned with the
+ *  top left corner of maximum available rectangle and, if \a aCanResize is true,
+ *  \a aRectangle is shrinked to become fully visible.
+ */
+/* static */
+QRect VBoxGlobal::getNormalized (const QRect &aRectangle, const QRegion &aBoundRegion,
+                                 bool aCanResize /* = true */)
+{
+    /* Storing available horizontal sub-rectangles & vertical shifts */
+    int windowVertical = aRectangle.center().y();
+    QVector <QRect> rectanglesVector (aBoundRegion.rects());
+    QList <QRect> rectanglesList;
+    QList <int> shiftsList;
+    foreach (QRect currentItem, rectanglesVector)
     {
-        /* adjust the size to make the rectangle fully contained */
-        rd = aBoundRect.right() - fr.right();
-        bd = aBoundRect.bottom() - fr.bottom();
-        if (rd < 0)
-            fr.setRight (fr.right() + rd);
-        if (bd < 0)
-            fr.setBottom (fr.bottom() + bd);
+        int currentDelta = qAbs (windowVertical - currentItem.center().y());
+        int shift2Top = currentItem.top() - aRectangle.top();
+        int shift2Bot = currentItem.bottom() - aRectangle.bottom();
+
+        int itemPosition = 0;
+        foreach (QRect item, rectanglesList)
+        {
+            int delta = qAbs (windowVertical - item.center().y());
+            if (delta > currentDelta) break; else ++ itemPosition;
+        }
+        rectanglesList.insert (itemPosition, currentItem);
+
+        int shift2TopPos = 0;
+        foreach (int shift, shiftsList)
+            if (qAbs (shift) > qAbs (shift2Top)) break; else ++ shift2TopPos;
+        shiftsList.insert (shift2TopPos, shift2Top);
+
+        int shift2BotPos = 0;
+        foreach (int shift, shiftsList)
+            if (qAbs (shift) > qAbs (shift2Bot)) break; else ++ shift2BotPos;
+        shiftsList.insert (shift2BotPos, shift2Bot);
     }
 
-    return fr;
+    /* Trying to find the appropriate place for window */
+    QRect result;
+    for (int i = -1; i < shiftsList.size(); ++ i)
+    {
+        /* Move to appropriate vertical */
+        QRect rectangle (aRectangle);
+        if (i >= 0) rectangle.translate (0, shiftsList [i]);
+
+        /* Search horizontal shift */
+        int maxShift = 0;
+        foreach (QRect item, rectanglesList)
+        {
+            QRect trectangle (rectangle.translated (item.left() - rectangle.left(), 0));
+            if (!item.intersects (trectangle))
+                continue;
+
+            if (rectangle.left() < item.left())
+            {
+                int shift = item.left() - rectangle.left();
+                maxShift = qAbs (shift) > qAbs (maxShift) ? shift : maxShift;
+            }
+            else if (rectangle.right() > item.right())
+            {
+                int shift = item.right() - rectangle.right();
+                maxShift = qAbs (shift) > qAbs (maxShift) ? shift : maxShift;
+            }
+        }
+
+        /* Shift across the horizontal direction */
+        rectangle.translate (maxShift, 0);
+
+        /* Check the translated rectangle to feat the rules */
+        if (aBoundRegion.united (rectangle) == aBoundRegion)
+            result = rectangle;
+
+        if (!result.isNull()) break;
+    }
+
+    if (result.isNull())
+    {
+        /* Resize window to feat desirable size
+         * using max of available rectangles */
+        QRect maxRectangle;
+        quint64 maxSquare = 0;
+        foreach (QRect item, rectanglesList)
+        {
+            quint64 square = item.width() * item.height();
+            if (square > maxSquare)
+            {
+                maxSquare = square;
+                maxRectangle = item;
+            }
+        }
+
+        result = aRectangle;
+        result.moveTo (maxRectangle.x(), maxRectangle.y());
+        if (maxRectangle.right() < result.right())
+            result.setRight (maxRectangle.right());
+        if (maxRectangle.bottom() < result.bottom())
+            result.setBottom (maxRectangle.bottom());
+    }
+
+    return result;
+}
+
+/**
+ *  Returns the flipped (transposed) region.
+ */
+/* static */
+QRegion VBoxGlobal::flip (const QRegion &aRegion)
+{
+    QRegion result;
+    QVector <QRect> rectangles (aRegion.rects());
+    foreach (QRect rectangle, rectangles)
+        result += QRect (rectangle.y(), rectangle.x(),
+                         rectangle.height(), rectangle.width());
+    return result;
 }
 
 /**

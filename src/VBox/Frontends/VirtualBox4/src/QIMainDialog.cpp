@@ -225,7 +225,7 @@ void QIMainDialog::showEvent (QShowEvent *aEvent)
 
     /* Explicit widget centering relatively to it's centering
      * widget if any or desktop if centering widget is missed. */
-    vboxGlobal().centerWidget (this, mCenterWidget, false);
+    VBoxGlobal::centerWidget (this, mCenterWidget, false);
 }
 
 void QIMainDialog::resizeEvent (QResizeEvent *aEvent)
