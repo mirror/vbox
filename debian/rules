@@ -72,7 +72,7 @@ debcfgs  := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\""
 configure: debian/configure-stamp
 debian/configure-stamp:
 	dh_testdir
-	cd $(vboxroot) && ./configure --odir=$(current)/debian --disable-qt3 $(if \
+	cd $(vboxroot) && ./configure --odir=$(current)/debian $(if \
 	    $(NOQT),--disable-qt,) $(if \
 	    $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) $(if \
 	    $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) $(if \
