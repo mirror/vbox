@@ -3404,7 +3404,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="690"/>
         <source>Failed to access the USB subsystem.</source>
-        <translation>Erreur d&apos;accès au sous système USB.</translation>
+        <translation>Erreur d&apos;accès au sous-système USB.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="701"/>
