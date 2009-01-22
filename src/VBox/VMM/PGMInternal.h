@@ -370,9 +370,8 @@ typedef struct PGMMAPPING
     R0PTRTYPE(struct PGMMAPPING *)      pNextR0;
     /** Pointer to next entry. */
     RCPTRTYPE(struct PGMMAPPING *)      pNextRC;
-#if GC_ARCH_BITS == 64
-    RTRCPTR                             padding0;
-#endif
+    /** Indicate whether this entry is finalized. */
+    bool                                fFinalized;
     /** Start Virtual address. */
     RTGCPTR                             GCPtr;
     /** Last Virtual address (inclusive). */
@@ -386,9 +385,9 @@ typedef struct PGMMAPPING
     /** Mapping description / name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
     /** Number of page tables. */
-    RTUINT                              cPTs;
+    uint32_t                            cPTs;
 #if HC_ARCH_BITS != GC_ARCH_BITS || GC_ARCH_BITS == 64
-    RTUINT                              uPadding1; /**< Alignment padding. */
+    uint32_t                            uPadding1; /**< Alignment padding. */
 #endif
     /** Array of page table mapping data. Each entry
      * describes one page table. The array can be longer
@@ -2453,6 +2452,9 @@ typedef struct PGM
      */
     R0PTRTYPE(PPGMMAPPING)          pMappingsR0;
 
+    /** Indicates that PGMR3FinalizeMappings has been called and that further
+     * PGMR3MapIntermediate calls will be rejected. */
+    bool                            fFinalizedMappings;
     /** If set no conflict checks are required.  (boolean) */
     bool                            fMappingsFixed;
     /** If set, then no mappings are put into the shadow page table. (boolean) */
