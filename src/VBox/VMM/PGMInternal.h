@@ -2226,9 +2226,14 @@ typedef struct PGM
 #endif
     /** @} */
 
-    /** @name 32-bit Shadow Paging
+    /** @name Shadow paging
      * @{ */
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    /** The root page table - R3 Ptr. */
+    R3PTRTYPE(void *)               pShwRootR3;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    /** The root page table - R0 Ptr. */
+    R0PTRTYPE(void *)               pShwRootR0;
+# endif
     /** The Physical Address (HC) of the current active shadow CR3. */
     RTHCPHYS                        HCPhysShwCR3;
     /** Pointer to the page of the current active CR3 - R3 Ptr. */
@@ -2240,7 +2245,10 @@ typedef struct PGM
 # if HC_ARCH_BITS == 64
     RTRCPTR                         alignment6; /**< structure size alignment. */
 # endif
-#else
+    /** @} */
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    /** @name 32-bit Shadow Paging
+     * @{ */
     /** The 32-Bit PD - R3 Ptr. */
     R3PTRTYPE(PX86PD)               pShw32BitPdR3;
     /** The 32-Bit PD - R0 Ptr. */
@@ -2283,23 +2291,6 @@ typedef struct PGM
 # if HC_ARCH_BITS == 64
     RTRCPTR                         alignment5; /**< structure size alignment. */
 # endif
-
-    /** @name AMD64 Shadow Paging
-     * Extends PAE Paging.
-     * @{ */
-    /** The Page Map Level 4 table - R3 Ptr. */
-    R3PTRTYPE(PX86PML4)             pShwPaePml4R3;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    /** The Page Map Level 4 table - R0 Ptr. */
-    R0PTRTYPE(PX86PML4)             pShwPaePml4R0;
-# endif
-    /** The Physical Address (HC) of the Page Map Level 4 table. */
-    RTHCPHYS                        HCPhysShwPaePml4;
-    /** The pgm pool page descriptor for the current active CR3 - R3 Ptr. */
-    R3PTRTYPE(PPGMPOOLPAGE)         pShwAmd64CR3R3;
-    /** The pgm pool page descriptor for the current active CR3 - R0 Ptr. */
-    R0PTRTYPE(PPGMPOOLPAGE)         pShwAmd64CR3R0;
-    /** @}*/
 
     /** @name Nested Shadow Paging
      * @{ */
@@ -4308,8 +4299,8 @@ DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGM pPGM)
     AssertRCReturn(rc, 0);
     return pShwPml4;
 # else
-    Assert(pPGM->CTX_SUFF(pShwPaePml4));
-    return pPGM->CTX_SUFF(pShwPaePml4);
+    Assert(pPGM->CTX_SUFF(pShwRoot));
+    return (PX86PML4)pPGM->CTX_SUFF(pShwRoot);
 # endif
 #endif
 }

@@ -516,23 +516,23 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                  */
                 /** @todo Move this into PGMAllBth.h. */
                 PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-                if (pVM->pgm.s.CTX_SUFF(pShwAmd64CR3))
+                if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
                 {
                     /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
                     /** @todo Coordinate this better with the pool. */
-                    if (pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->enmKind != PGMPOOLKIND_FREE)
-                        pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3), PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->GCPhys >> PAGE_SHIFT);
-                    pVM->pgm.s.pShwAmd64CR3R3   = 0;
-                    pVM->pgm.s.pShwAmd64CR3R0   = 0;
-                    pVM->pgm.s.pShwPaePml4R3    = 0;
+                    if (pVM->pgm.s.CTX_SUFF(pShwPageCR3)->enmKind != PGMPOOLKIND_FREE)
+                        pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->GCPhys >> PAGE_SHIFT);
+                    pVM->pgm.s.pShwPageCR3R3 = 0;
+                    pVM->pgm.s.pShwPageCR3R0 = 0;
+                    pVM->pgm.s.pShwRootR3    = 0;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-                    pVM->pgm.s.pShwPaePml4R0    = 0;
+                    pVM->pgm.s.pShwRootR0    = 0;
 #  endif
-                    pVM->pgm.s.HCPhysShwPaePml4 = 0;
+                    pVM->pgm.s.HCPhysShwCR3  = 0;
                 }
 
                 Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
-                rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4, PGMPOOL_IDX_AMD64_CR3, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
+                rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4, PGMPOOL_IDX_AMD64_CR3, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
                 if (rc == VERR_PGM_POOL_FLUSHED)
                 {
                     Log(("MapCR3: PGM pool flushed -> signal sync cr3\n"));
@@ -541,16 +541,16 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                 }
                 AssertRCReturn(rc, rc);
 #  ifdef IN_RING0
-                pVM->pgm.s.pShwAmd64CR3R3 = MMHyperCCToR3(pVM, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
+                pVM->pgm.s.pShwPageCR3R3 = MMHyperCCToR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 #  else
-                pVM->pgm.s.pShwAmd64CR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
+                pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 #  endif
-                pVM->pgm.s.pShwPaePml4R3 = (R3PTRTYPE(PX86PML4))pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->pvPageR3;
-                Assert(pVM->pgm.s.pShwPaePml4R3);
+                pVM->pgm.s.pShwRootR3    = (R3PTRTYPE(void *))pVM->pgm.s.CTX_SUFF(pShwPageCR3)->pvPageR3;
+                Assert(pVM->pgm.s.pShwRootR3);
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-                pVM->pgm.s.pShwPaePml4R0 = (R0PTRTYPE(PX86PML4))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
+                pVM->pgm.s.pShwRootR0    = (R0PTRTYPE(void *))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 #  endif
-                pVM->pgm.s.HCPhysShwPaePml4 = pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->Core.Key;
+                pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
                 rc = VINF_SUCCESS; /* clear it - pgmPoolAlloc returns hints. */
             }
 # endif
@@ -610,17 +610,17 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
 # endif
     if (!HWACCMIsNestedPagingActive(pVM))
     {
-        pVM->pgm.s.pShwPaePml4R3 = 0;
+        pVM->pgm.s.pShwRootR3 = 0;
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-        pVM->pgm.s.pShwPaePml4R0 = 0;
+        pVM->pgm.s.pShwRootR0 = 0;
 # endif
-        pVM->pgm.s.HCPhysShwPaePml4 = 0;
-        if (pVM->pgm.s.CTX_SUFF(pShwAmd64CR3))
+        pVM->pgm.s.HCPhysShwCR3 = 0;
+        if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
         {
             PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-            pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3), PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->GCPhys >> PAGE_SHIFT);
-            pVM->pgm.s.pShwAmd64CR3R3 = 0;
-            pVM->pgm.s.pShwAmd64CR3R0 = 0;
+            pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->GCPhys >> PAGE_SHIFT);
+            pVM->pgm.s.pShwPageCR3R3 = 0;
+            pVM->pgm.s.pShwPageCR3R0 = 0;
         }
     }
 
