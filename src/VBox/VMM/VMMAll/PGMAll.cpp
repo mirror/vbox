@@ -930,11 +930,11 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
             /** @todo why are we looking up the guest PML4E here?  Isn't pGstPml4e
              *        trustworthy? (Remove pgmGstGetLongModePML4E if pGstPml4e and pGstPdpe
              *        are fine.) */
-            Assert(pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
+            Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
             Pml4eGst = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4);
 
             rc = pgmPoolAlloc(pVM, Pml4eGst.u & X86_PML4E_PG_MASK,
-                              PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->idx, iPml4, &pShwPage);
+                              PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, &pShwPage);
         }
         else
         {
@@ -1274,7 +1274,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
 
         case PGMMODE_AMD64:
         case PGMMODE_AMD64_NX:
-            return pVM->pgm.s.HCPhysShwPaePml4;
+            return pVM->pgm.s.HCPhysShwCR3;
 
         case PGMMODE_EPT:
             return pVM->pgm.s.HCPhysShwNestedRoot;
@@ -1307,7 +1307,7 @@ VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
 
         case PGMMODE_AMD64:
         case PGMMODE_AMD64_NX:
-            return pVM->pgm.s.HCPhysShwPaePml4;
+            return pVM->pgm.s.HCPhysShwCR3;
 
         default:
             AssertMsgFailed(("enmShadowMode=%d\n", enmShadowMode));
@@ -1356,7 +1356,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperPaeCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperAmd64CR3(PVM pVM)
 {
-    return pVM->pgm.s.HCPhysShwPaePml4;
+    return pVM->pgm.s.HCPhysShwCR3;
 }
 
 
