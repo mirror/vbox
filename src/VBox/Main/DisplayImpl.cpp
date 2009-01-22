@@ -1751,12 +1751,17 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 
     LogFlowFunc (("Sending DPYUPDATE request\n"));
 
+    /* Have to leave the lock when calling EMT.  */
+    alock.leave ();
+
     /* pdm.h says that this has to be called from the EMT thread */
     PVMREQ pReq;
     int rcVBox = VMR3ReqCallVoid(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
         (PFNRT)mpDrv->pUpPort->pfnUpdateDisplayAll, 1, mpDrv->pUpPort);
     if (RT_SUCCESS(rcVBox))
         VMR3ReqFree(pReq);
+
+    alock.enter ();
 
     if (RT_FAILURE(rcVBox))
         rc = setError (VBOX_E_IPRT_ERROR,
