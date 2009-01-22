@@ -170,8 +170,14 @@ ifdef VBOX_MAIN_RELEASE_LOG ## @todo (dmik): temporary, until RTThreadSelf/RTThr
  RuntimeR3_DEFS         += RTCRITSECT_STRICT
 endif
 RuntimeR3_INCS          = \
-	include \
+	include
+ifdef VBOX_WITH_NEW_LIBLZF
+RuntimeR3_INCS         += \
+	$(PATH_ROOT)/src/libs/liblzf-3.4
+else
+RuntimeR3_INCS         += \
 	$(PATH_ROOT)/src/libs/liblzf-1.51
+endif
 ifdef IPRT_WITH_KSTUFF
  RuntimeR3_INCS        += \
 	$(PATH_ROOT)/src/libs/kStuff/kStuff/include
