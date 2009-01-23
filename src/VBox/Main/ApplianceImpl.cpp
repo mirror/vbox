@@ -1014,6 +1014,9 @@ HRESULT Appliance::construeAppliance()
         rc = vsd->init();
         ComAssertComRCThrowRC(rc);
 
+        /* VM name */
+        vsd->addEntry(VirtualSystemDescriptionType_Name, 0, vs.strName, vs.strName);
+
         string osTypeVBox = SchemaDefs_OSTypeId_Other;
         /* Guest OS type */
         switch (vs.cimos)

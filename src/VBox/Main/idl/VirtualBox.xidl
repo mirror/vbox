@@ -2956,14 +2956,15 @@
     <desc>
     </desc>
 
-    <const name="OS" value="0" />
-    <const name="CPU" value="1" />
-    <const name="Memory" value="2" />
-    <const name="HarddiskControllerIDE" value="3" />
-    <const name="HarddiskControllerSATA" value="4" />
-    <const name="HarddiskControllerSCSI" value="5" />
-    <const name="Harddisk" value="6" />
-    <const name="NetworkAdapter" value="7" />
+    <const name="Name" value="1" />
+    <const name="OS" value="2" />
+    <const name="CPU" value="3" />
+    <const name="Memory" value="4" />
+    <const name="HarddiskControllerIDE" value="5" />
+    <const name="HarddiskControllerSATA" value="6" />
+    <const name="HarddiskControllerSCSI" value="7" />
+    <const name="Harddisk" value="8" />
+    <const name="NetworkAdapter" value="9" />
 
   </enum>
 
@@ -6589,38 +6590,38 @@
       </param>
     </method>
 
-    <method name="findHostNetworkInterfaceByName"> 
-      <desc> 
+    <method name="findHostNetworkInterfaceByName">
+      <desc>
         Searches through all host network interfaces for an interface with
-        the given name. 
-        <note> 
-          The method returns an error if the given name does not 
-          correspond to any host network interface. 
-        </note> 
-      </desc> 
-      <param name="name" type="wstring" dir="in"> 
-        <desc>Name of the host network interface to search for.</desc> 
-      </param> 
-      <param name="networkInterface" type="IHostNetworkInterface" dir="return"> 
-        <desc>Found host network interface object.</desc> 
-      </param> 
-    </method> 
-    <method name="findHostNetworkInterfaceById"> 
-      <desc> 
+        the given name.
+        <note>
+          The method returns an error if the given name does not
+          correspond to any host network interface.
+        </note>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the host network interface to search for.</desc>
+      </param>
+      <param name="networkInterface" type="IHostNetworkInterface" dir="return">
+        <desc>Found host network interface object.</desc>
+      </param>
+    </method>
+    <method name="findHostNetworkInterfaceById">
+      <desc>
         Searches through all host network interfaces for an interface with
-        the given GUID. 
-        <note> 
-          The method returns an error if the given GUID does not 
-          correspond to any host network interface. 
-        </note> 
-      </desc> 
-      <param name="id" type="uuid" dir="in"> 
-        <desc>GUID of the host network interface to search for.</desc> 
-      </param> 
-      <param name="networkInterface" type="IHostNetworkInterface" dir="return"> 
-        <desc>Found host network interface object.</desc> 
-      </param> 
-    </method> 
+        the given GUID.
+        <note>
+          The method returns an error if the given GUID does not
+          correspond to any host network interface.
+        </note>
+      </desc>
+      <param name="id" type="uuid" dir="in">
+        <desc>GUID of the host network interface to search for.</desc>
+      </param>
+      <param name="networkInterface" type="IHostNetworkInterface" dir="return">
+        <desc>Found host network interface object.</desc>
+      </param>
+    </method>
   </interface>
 
   <!--
