@@ -38,6 +38,7 @@
 #undef max
 
 #include <iprt/mem.h>
+#include <string>
 
 #ifndef IN_RING3
 # error "There are no XML APIs available in Ring-0 Context!"
