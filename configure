@@ -126,7 +126,7 @@ fi
 
 cleanup()
 {
-  rm -f .tmp_src.cc .tmp_src.c .tmp_out .test_execute.log
+  rm -f $ODIR.tmp_src.cc $ODIR.tmp_src.c $ODIR.tmp_out $ODIR.test_execute.log
 }
 
 fail()
@@ -214,10 +214,10 @@ test_header()
 test_compile()
 {
   echo "compiling the following source file:" >> $LOG
-  cat .tmp_src.cc >> $LOG
+  cat $ODIR.tmp_src.cc >> $LOG
   echo "using the following command line:" >> $LOG
-  echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc \"$1\"" >> $LOG
-  $CXX -O -Wall -o .tmp_out .tmp_src.cc $1 >> $LOG 2>&1
+  echo "$CXX -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc \"$1\"" >> $LOG
+  $CXX -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc $1 >> $LOG 2>&1
   if [ $? -ne 0 ]; then
     if [ -z "$4" ]; then
       echo
@@ -239,9 +239,9 @@ test_compile()
 test_execute()
 {
   echo "executing the binary" >> $LOG
-  ./.tmp_out > .test_execute.log
+  $ODIR.tmp_out > $ODIR.test_execute.log
   rc=$?
-  cat .test_execute.log | tee -a $LOG
+  cat $ODIR.test_execute.log | tee -a $LOG
   if [ $rc -ne 0 ]; then
     fail $1
     return 1
@@ -256,9 +256,9 @@ test_execute()
 test_execute_path()
 {
   echo "executing the binary (LD_LIBRARY_PATH=$1)" >> $LOG
-  LD_LIBRARY_PATH=$1 ./.tmp_out > .test_execute.log
+  LD_LIBRARY_PATH=$1 $ODIR.tmp_out > $ODIR.test_execute.log
   rc=$?
-  cat .test_execute.log | tee -a $LOG
+  cat $ODIR.test_execute.log | tee -a $LOG
   if [ $rc -ne 0 ]; then
     fail
     return 1
@@ -447,19 +447,19 @@ check_bcc()
       fail
     else
       echo "compiling the following source file:" >> $LOG
-      cat > .tmp_src.c << EOF
+      cat > $ODIR.tmp_src.c << EOF
 int foo(a)
   int a;
 {
   return 0;
 }
 EOF
-      cat .tmp_src.c >> $LOG
+      cat $ODIR.tmp_src.c >> $LOG
       bcc_path=`which_wrapper $BCC`
       bcc_dir="`dirname $bcc_path`/"
       echo "using the following command line:" >> $LOG
-      echo "$BCC -B $bcc_dir -C-c -3 -S -o .tmp_out .tmp_src.c" >> $LOG
-      $BCC -B $bcc_dir -C-c -3 -S -o .tmp_out .tmp_src.c >> $LOG 2>&1
+      echo "$BCC -B $bcc_dir -C-c -3 -S -o $ODIR.tmp_out $ODIR.tmp_src.c" >> $LOG
+      $BCC -B $bcc_dir -C-c -3 -S -o $ODIR.tmp_out $ODIR.tmp_src.c >> $LOG 2>&1
       if [ $? -ne 0 ]; then
         log_failure "not found"
         fail
@@ -603,7 +603,7 @@ check_libxml2()
         FLGXML2=`pkg-config libxml-2.0 --cflags`
         INCXML2=`strip_I "$FLGXML2"`
         LIBXML2=`pkg-config libxml-2.0 --libs`
-        cat > .tmp_src.cc << EOF
+        cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <libxml/xmlversion.h>
 extern "C" int main(void)
@@ -636,7 +636,7 @@ EOF
         FLGXML2=`xml2-config --cflags`
         INCXML2=`strip_I "$FLGXML2"`
         LIBXML2=`xml2-config --libs`
-        cat > .tmp_src.cc << EOF
+        cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <libxml/xmlversion.h>
 extern "C" int main(void)
@@ -685,7 +685,7 @@ check_libxslt()
         FLGXSLT=`pkg-config libxslt --cflags`
         INCXSLT=`strip_I "$FLGXSLT"`
         LIBXSLT=`pkg-config libxslt --libs`
-        cat > .tmp_src.cc << EOF
+        cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <libxslt/xsltconfig.h>
 extern "C" int main(void)
@@ -718,7 +718,7 @@ EOF
         FLGXSLT=`xslt-config --cflags`
         INCXSLT=`strip_I "$FLGXSLT"`
         LIBXSLT=`xslt-config --libs`
-        cat > .tmp_src.cc << EOF
+        cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <libxslt/xsltconfig.h>
 extern "C" int main(void)
@@ -785,7 +785,7 @@ check_libidl()
 check_ssl()
 {
   test_header ssl
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <openssl/opensslv.h>
 extern "C" int main(void)
@@ -815,7 +815,7 @@ EOF
 check_pthread()
 {
   test_header pthread
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <pthread.h>
 extern "C" int main(void)
@@ -850,7 +850,7 @@ EOF
 check_z()
 {
   test_header zlib
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <zlib.h>
 extern "C" int main(void)
@@ -881,7 +881,7 @@ EOF
 check_png()
 {
   test_header libpng
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <png.h>
 extern "C" int main(void)
@@ -917,7 +917,7 @@ EOF
 check_pam()
 {
   test_header pam
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <security/pam_appl.h>
 extern "C" int main(void)
@@ -941,7 +941,7 @@ EOF
     fi
   fi
   test_header linux_pam
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <security/pam_appl.h>
 extern "C" int main(void)
@@ -998,7 +998,7 @@ check_sdl()
   fi
   [ "$OS" = "linux" -o "$OS" = "darwin" -o "$OS" = "solaris" ] && LIBSDLMAIN=""
   if [ -n "$foundsdl" ]; then
-    cat > .tmp_src.cc << EOF
+    cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <SDL.h>
 #include <SDL_main.h>
@@ -1039,7 +1039,7 @@ EOF
 check_sdl_ttf()
 {
   test_header SDL_ttf
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <SDL_ttf.h>
 #ifndef SDL_TTF_MAJOR_VERSION
@@ -1076,7 +1076,7 @@ EOF
 check_alsa()
 {
   test_header ALSA
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <alsa/asoundlib.h>
 extern "C" int main(void)
@@ -1104,7 +1104,7 @@ EOF
 check_pulse()
 {
   test_header "PulseAudio"
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <pulse/version.h>
 extern "C" int main(void)
@@ -1131,7 +1131,7 @@ EOF
 check_xcursor()
 {
   test_header Xcursor
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <X11/Xlib.h>
 #include <X11/Xcursor/Xcursor.h>
@@ -1156,7 +1156,7 @@ EOF
 check_x()
 {
   test_header "X libraries"
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <X11/Xlib.h>
 extern "C" int main(void)
@@ -1233,7 +1233,7 @@ check_qt4()
       fi
     else
       # do it the old way (e.g. user has specified QT4DIR)
-      cat > .tmp_src.cc << EOF
+      cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <QtGlobal>
 extern "C" int main(void)
@@ -1266,7 +1266,7 @@ EOF
     fi
   fi
   if [ -n "$foundqt4" ]; then
-    cat > .tmp_src.cc << EOF
+    cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <QtGlobal>
 extern "C" int main(void)
@@ -1335,7 +1335,7 @@ check_staticlibstdcxx()
 {
   test_header "static stc++ library"
   libstdcxx=`$CXX -print-file-name=libstdc++.a`
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <string>
 
 extern "C" int main(void)
@@ -1356,7 +1356,7 @@ EOF
 check_linux()
 {
   test_header "Linux kernel sources"
-  cat > .tmp_src.c << EOF
+  cat > $ODIR.tmp_src.c << EOF
 #include <linux/version.h>
 int printf(const char *format, ...);
 int main(void)
@@ -1374,10 +1374,10 @@ int main(void)
 }
 EOF
   echo "compiling the following source file:" >> $LOG
-  cat .tmp_src.c >> $LOG
+  cat $ODIR.tmp_src.c >> $LOG
   echo "using the following command line:" >> $LOG
-  echo "$CC -O -Wall -o .tmp_out .tmp_src.c -nostdinc -I$LINUX/include" >> $LOG
-  $CC -O -Wall -o .tmp_out .tmp_src.c -nostdinc -I$LINUX/include >> $LOG 2>&1
+  echo "$CC -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.c -nostdinc -I$LINUX/include" >> $LOG
+  $CC -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.c -nostdinc -I$LINUX/include >> $LOG 2>&1
   if [ $? -ne 0 ]; then
     echo
     echo "  Linux kernel headers not found at $LINUX"
@@ -1473,7 +1473,7 @@ check_compiler_h()
 check_libcap()
 {
   test_header "libcap library"
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <sys/capability.h>
 
@@ -1498,7 +1498,7 @@ EOF
 check_32bit()
 {
   test_header "32-bit support"
-  cat > .tmp_src.c << EOF
+  cat > $ODIR.tmp_src.c << EOF
 #include <stdint.h>
 int main(void)
 {
@@ -1506,10 +1506,10 @@ int main(void)
 }
 EOF
   echo "compiling the following source file:" >> $LOG
-  cat .tmp_src.c >> $LOG
+  cat $ODIR.tmp_src.c >> $LOG
   echo "using the following command line:" >> $LOG
-  echo "$CC -m32 -O -Wall -o .tmp_out .tmp_src.c" >> $LOG
-  $CC -m32 -O -Wall -o .tmp_out .tmp_src.c >> $LOG 2>&1
+  echo "$CC -m32 -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.c" >> $LOG
+  $CC -m32 -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.c >> $LOG 2>&1
   if [ $? -ne 0 ]; then
     echo
     echo "  Cannot compile 32-bit applications (missing headers and/or libraries)!"
@@ -1526,7 +1526,7 @@ EOF
 check_python()
 {
   test_header "python support"
-  cat > .tmp_src.cc << EOF
+  cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <Python.h>
 extern "C" int main(void)
@@ -1547,10 +1547,10 @@ EOF
     for d in python2.6 python2.5 python2.4 python2.3; do
       for b in lib64 lib/64 lib; do
         echo "compiling the following source file:" >> $LOG
-        cat .tmp_src.cc >> $LOG
+        cat $ODIR.tmp_src.cc >> $LOG
         echo "using the following command line:" >> $LOG
-        echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc -I$p/include/$d $p/$b/lib$d.so" >> $LOG
-        $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$p/include/$d $p/$b/lib$d.so >> $LOG 2>&1
+        echo "$CXX -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc -I$p/include/$d $p/$b/lib$d.so" >> $LOG
+        $CXX -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc -I$p/include/$d $p/$b/lib$d.so >> $LOG 2>&1
         if [ $? -eq 0 ]; then
           found=1
           break
