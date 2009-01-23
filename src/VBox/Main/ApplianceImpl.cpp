@@ -799,7 +799,7 @@ STDMETHODIMP Appliance::COMGETTER(Path)(BSTR *aPath)
     return S_OK;
 }
 
-STDMETHODIMP Appliance::GetDisks (ComSafeArrayOut(BSTR, aDisks), ULONG *cDisks)
+STDMETHODIMP Appliance::GetDisks(ComSafeArrayOut(BSTR, aDisks), ULONG *cDisks)
 {
     CheckComArgOutSafeArrayPointerValid(aDisks);
 
@@ -851,7 +851,7 @@ STDMETHODIMP Appliance::GetDisks (ComSafeArrayOut(BSTR, aDisks), ULONG *cDisks)
     return S_OK;
 }
 
-STDMETHODIMP Appliance::COMGETTER (VirtualSystemDescriptions)(ComSafeArrayOut (IVirtualSystemDescription*, aVirtualSystemDescriptions))
+STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVirtualSystemDescription*, aVirtualSystemDescriptions))
 {
     CheckComArgOutSafeArrayPointerValid (aVirtualSystemDescriptions);
 
@@ -978,7 +978,6 @@ HRESULT Appliance::construeAppliance()
     //  - COM error handling
     //  - don't use COM methods but the methods directly (faster, but needs appropriate locking of that objects itself (s. HardDisk2))
     //  - Appropriate handle errors like not supported file formats
-    //  - Maybe it is better to replace std::string with Utf8Str's on some places?
 
     /* Clear any previous virtual system descriptions */
     // @todo: have the entries deleted also?
@@ -1207,16 +1206,17 @@ HRESULT Appliance::construeAppliance()
         vsd->addEntry (VirtualSystemDescriptionType_CPU, 0, toString<ULONG> (vs.cCPUs), toString<ULONG> (cpuCountVBox));
 
         /* RAM */
-        ULONG memSizeVBox = vs.ullMemorySize; /** @todo r=bird/MSC: this will overflow at 4GB, use 64-bit type. */
+        uint64_t ullMemSizeVBox = vs.ullMemorySize; /** @todo r=bird/MSC: this will overflow at 4GB, use 64-bit type. */
         if (vs.ullMemorySize == 0)
         {
             /* If the RAM of the OVF is zero, use our predefined values */
-            rc = osType->COMGETTER(RecommendedRAM) (&memSizeVBox);
+            ULONG memSizeVBox2;
+            rc = osType->COMGETTER(RecommendedRAM)(&memSizeVBox2);
             ComAssertComRCThrowRC (rc);
             /* VBox stores that in MByte */
-            memSizeVBox *= _1M;
+            ullMemSizeVBox = memSizeVBox2 * _1M;
         }
-        vsd->addEntry (VirtualSystemDescriptionType_Memory, 0, toString<ULONG> (vs.ullMemorySize), toString<ULONG> (memSizeVBox));
+        vsd->addEntry (VirtualSystemDescriptionType_Memory, 0, toString<uint64_t> (vs.ullMemorySize), toString<uint64_t> (ullMemSizeVBox));
 
         /* Hard disk Controller */
         ControllersMap::const_iterator hdcIt;
