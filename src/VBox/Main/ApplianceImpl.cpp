@@ -140,6 +140,8 @@ struct VirtualDisk
 
 struct VirtualSystem
 {
+    string              strName;                // copy of VirtualSystem/@id
+
     CIMOSType_T         cimos;
     string              strVirtualSystemType;
 
@@ -416,6 +418,10 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                               const xml::Node *pelmVirtualSystem)
 {
     VirtualSystem d;
+
+    const xml::Node *pIdAttr = pelmVirtualSystem->findAttribute("type");
+    if (pIdAttr)
+        d.strName = pIdAttr->getValue();
 
     xml::NodesLoop loop(*pelmVirtualSystem);      // all child elements
     const xml::Node *pelmThis;
