@@ -105,6 +105,12 @@ void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
 # ifdef IN_RC
     switch (pPage->idx)
     {
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOL_IDX_PD:
+        case PGMPOOL_IDX_PDPT:
+        case PGMPOOL_IDX_AMD64_CR3:
+            return pPGM->pShwRootRC;
+#  else
         case PGMPOOL_IDX_PD:
             return pPGM->pShw32BitPdRC;
         case PGMPOOL_IDX_PAE_PD:
@@ -118,6 +124,7 @@ void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
             return pPGM->apShwPaePDsRC[3];
         case PGMPOOL_IDX_PDPT:
             return pPGM->pShwPaePdptRC;
+#  endif
         default:
             AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));
             return NULL;
@@ -127,6 +134,17 @@ void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
     RTHCPHYS HCPhys;
     switch (pPage->idx)
     {
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOL_IDX_PD:
+        case PGMPOOL_IDX_PDPT:
+        case PGMPOOL_IDX_AMD64_CR3:
+            HCPhys = pPGM->HCPhysShwCR3;
+            break;
+
+        case PGMPOOL_IDX_NESTED_ROOT:
+            HCPhys = pPGM->HCPhysShwNestedRoot;
+            break;
+#  else
         case PGMPOOL_IDX_PD:
             HCPhys = pPGM->HCPhysShw32BitPD;
             break;
@@ -151,6 +169,7 @@ void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
         case PGMPOOL_IDX_PAE_PD:
             AssertReleaseMsgFailed(("PGMPOOL_IDX_PAE_PD is not usable in VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 context\n"));
             return NULL;
+#  endif
         default:
             AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));
             return NULL;
@@ -387,7 +406,11 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 break;
             }
 
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+            case PGMPOOLKIND_32BIT_PD:
+#  else
             case PGMPOOLKIND_ROOT_32BIT_PD:
+#  endif
             {
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 const unsigned iShw = off / sizeof(X86PTE);         // ASSUMING 32-bit guest paging!
@@ -427,6 +450,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 break;
             }
 
+#  ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
             case PGMPOOLKIND_ROOT_PAE_PD:
             {
                 unsigned iGst     = off / sizeof(X86PDE);           // ASSUMING 32-bit guest paging!
@@ -473,6 +497,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 }
                 break;
             }
+#  endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
             case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
             {
@@ -535,7 +560,11 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 break;
             }
 
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+            case PGMPOOLKIND_PAE_PDPT:
+#  else
             case PGMPOOLKIND_ROOT_PDPT:
+#  endif
             {
                 /*
                  * Hopefully this doesn't happen very often:
@@ -1303,9 +1332,11 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
         /*
          * These cannot be flushed, and it's common to reuse the PDs as PTs.
          */
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
         case PGMPOOLKIND_ROOT_PDPT:
+#endif
         case PGMPOOLKIND_ROOT_NESTED:
             return false;
 
@@ -1498,9 +1529,14 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
                 case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
                 case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                case PGMPOOLKIND_32BIT_PD:
+                case PGMPOOLKIND_PAE_PDPT:
+#else
                 case PGMPOOLKIND_ROOT_32BIT_PD:
                 case PGMPOOLKIND_ROOT_PAE_PD:
                 case PGMPOOLKIND_ROOT_PDPT:
+#endif
                 {
                     /* find the head */
                     while (pPage->iMonitoredPrev != NIL_PGMPOOL_IDX)
@@ -1562,7 +1598,12 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_32BIT_PD:
+        case PGMPOOLKIND_PAE_PDPT:
+#else
         case PGMPOOLKIND_ROOT_PDPT:
+#endif
             break;
 
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
@@ -1579,8 +1620,10 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
+#endif
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #endif
@@ -1650,7 +1693,12 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_32BIT_PD:
+        case PGMPOOLKIND_PAE_PDPT:
+#else
         case PGMPOOLKIND_ROOT_PDPT:
+#endif
             break;
 
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
@@ -1667,8 +1715,10 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
+#endif
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #endif
@@ -2376,7 +2426,11 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_32BIT_PD:
+#else
         case PGMPOOLKIND_ROOT_32BIT_PD:
+#endif
             return 4;
 
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
@@ -2389,8 +2443,11 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_ROOT_PAE_PD:
         case PGMPOOLKIND_ROOT_PDPT:
+#endif
+        case PGMPOOLKIND_PAE_PDPT:
         case PGMPOOLKIND_ROOT_NESTED:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
@@ -2420,7 +2477,11 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
     {
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_32BIT_PD:
+#else
         case PGMPOOLKIND_ROOT_32BIT_PD:
+#endif
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
@@ -2432,8 +2493,12 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_PAE_PDPT:
+#else
         case PGMPOOLKIND_ROOT_PAE_PD:
         case PGMPOOLKIND_ROOT_PDPT:
+#endif
             return 8;
 
         case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
@@ -2775,17 +2840,25 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
      */
     switch (pUserPage->enmKind)
     {
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_32BIT_PD:
+# else
         case PGMPOOLKIND_ROOT_32BIT_PD:
+# endif
             Assert(iUserTable < X86_PG_ENTRIES);
             Assert(!(u.pau32[iUserTable] & PGM_PDFLAGS_MAPPING));
             break;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+# if !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) && !defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
         case PGMPOOLKIND_ROOT_PAE_PD:
             Assert(iUserTable < 2048 && pUser->iUser == PGMPOOL_IDX_PAE_PD);
             AssertMsg(!(u.pau64[iUserTable] & PGM_PDFLAGS_MAPPING), ("%llx %d\n", u.pau64[iUserTable], iUserTable));
             break;
 # endif
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_PAE_PDPT:
+# else
         case PGMPOOLKIND_ROOT_PDPT:
+# endif
             Assert(iUserTable < 4);
             Assert(!(u.pau64[iUserTable] & PGM_PLXFLAGS_PERMANENT));
             break;
@@ -2831,7 +2904,11 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     switch (pUserPage->enmKind)
     {
         /* 32-bit entries */
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_32BIT_PD:
+#else
         case PGMPOOLKIND_ROOT_32BIT_PD:
+#endif
             u.pau32[iUserTable] = 0;
             break;
 
@@ -2843,10 +2920,14 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+# if !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) && !defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
         case PGMPOOLKIND_ROOT_PAE_PD:
 #endif
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_PAE_PDPT:
+#else
         case PGMPOOLKIND_ROOT_PDPT:
+#endif
         case PGMPOOLKIND_ROOT_NESTED:
         case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
@@ -3640,6 +3721,7 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
          */
         switch (pPage->enmKind)
         {
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
             case PGMPOOLKIND_ROOT_32BIT_PD:
                 u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 for (unsigned iPage = 0; iPage < X86_PG_ENTRIES; iPage++)
@@ -3657,6 +3739,7 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
             case PGMPOOLKIND_ROOT_PDPT:
                 /* Not root of shadowed pages currently, ignore it. */
                 break;
+#endif
 
             case PGMPOOLKIND_ROOT_NESTED:
                 u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);

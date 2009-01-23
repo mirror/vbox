@@ -53,6 +53,11 @@
  * @{
  */
 
+/*
+ * Enable to use the PGM pool for all levels in the paging chain in all paging modes.
+ */
+//#define VBOX_WITH_PGMPOOL_PAGING_ONLY
+
 /**
  * Solve page is out of sync issues inside Guest Context (in PGMGC.cpp).
  * Comment it if it will break something.
@@ -1404,8 +1409,6 @@ typedef PGMMAPSET *PPGMMAPSET;
 #define NIL_PGMPOOL_IDX                 0
 /** The first normal index. */
 #define PGMPOOL_IDX_FIRST_SPECIAL       1
-/** Page directory (32-bit root). */
-#define PGMPOOL_IDX_PD                  1
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
 /** Page directory (32-bit root). */
 #define PGMPOOL_IDX_PD                  1
@@ -1418,6 +1421,8 @@ typedef PGMMAPSET *PPGMMAPSET;
 /** The first normal index. */
 #define PGMPOOL_IDX_FIRST               5
 #else
+/** Page directory (32-bit root). */
+#define PGMPOOL_IDX_PD                  1
 /** The extended PAE page directory (2048 entries, works as root currently). */
 #define PGMPOOL_IDX_PAE_PD              2
 /** PAE Page Directory Table 0. */
@@ -1820,10 +1825,6 @@ typedef struct PGMPOOL
     PGMPOOLPAGE                 aPages[PGMPOOL_IDX_FIRST];
 } PGMPOOL, *PPGMPOOL, **PPPGMPOOL;
 
-
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage);
-#endif
 
 /** @def PGMPOOL_PAGE_2_PTR
  * Maps a pool page pool into the current context.
@@ -2233,6 +2234,11 @@ typedef struct PGM
     /** The root page table - R0 Ptr. */
     R0PTRTYPE(void *)               pShwRootR0;
 # endif
+    /** The root page table - RC Ptr. */
+    RCPTRTYPE(void *)               pShwRootRC;
+# if HC_ARCH_BITS == 64
+    uint32_t                        u32Padding1; /**< alignment padding. */
+# endif
     /** The Physical Address (HC) of the current active shadow CR3. */
     RTHCPHYS                        HCPhysShwCR3;
     /** Pointer to the page of the current active CR3 - R3 Ptr. */
@@ -2255,7 +2261,7 @@ typedef struct PGM
     /** The 32-Bit PD - RC Ptr. */
     RCPTRTYPE(PX86PD)               pShw32BitPdRC;
 # if HC_ARCH_BITS == 64
-    uint32_t                        u32Padding1; /**< alignment padding. */
+    uint32_t                        u32Padding10; /**< alignment padding. */
 # endif
     /** The Physical Address (HC) of the 32-Bit PD. */
     RTHCPHYS                        HCPhysShw32BitPD;
@@ -2290,7 +2296,7 @@ typedef struct PGM
 # if HC_ARCH_BITS == 64
     RTRCPTR                         alignment5; /**< structure size alignment. */
 # endif
-
+#endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
     /** @name Nested Shadow Paging
      * @{ */
     /** Root table; format depends on the host paging mode (AMD-V) or EPT - R3 pointer. */
@@ -2301,7 +2307,6 @@ typedef struct PGM
 # endif
     /** The Physical Address (HC) of the nested paging root. */
     RTHCPHYS                        HCPhysShwNestedRoot;
-#endif
     /** @}  */
 
     /** @name Function pointers for Shadow paging.
@@ -2964,6 +2969,31 @@ int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
 
 __END_DECLS
 
+
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+/**
+ * Maps the page into current context (RC and maybe R0).
+ *
+ * @returns pointer to the mapping.
+ * @param   pVM         Pointer to the PGM instance data.
+ * @param   pPage       The page.
+ */
+DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
+{
+    if (pPage->idx >= PGMPOOL_IDX_FIRST)
+    {
+        Assert(pPage->idx < pPGM->CTX_SUFF(pPool)->cCurPages);
+        void *pv;
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        pgmR0DynMapHCPageInlined(pPGM, pPage->Core.Key, &pv);
+# else
+        PGMDynMapHCPage(PGM2VM(pPGM), pPage->Core.Key, &pv);
+# endif
+        return pv;
+    }
+    return pgmPoolMapPageFallback(pPGM, pPage);
+}
+#endif
 
 /**
  * Gets the PGMRAMRANGE structure for a guest page.
@@ -4282,7 +4312,6 @@ DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
 }
 
 #ifndef IN_RC
-
 /**
  * Gets the shadow page map level-4 pointer.
  *
@@ -4640,33 +4669,6 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     }
 }
 #endif /* PGMPOOL_WITH_CACHE */
-
-
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-/**
- * Maps the page into current context (RC and maybe R0).
- *
- * @returns pointer to the mapping.
- * @param   pVM         Pointer to the PGM instance data.
- * @param   pPage       The page.
- */
-DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
-{
-    if (pPage->idx >= PGMPOOL_IDX_FIRST)
-    {
-        Assert(pPage->idx < pPGM->CTX_SUFF(pPool)->cCurPages);
-        void *pv;
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        pgmR0DynMapHCPageInlined(pPGM, pPage->Core.Key, &pv);
-# else
-        PGMDynMapHCPage(PGM2VM(pPGM), pPage->Core.Key, &pv);
-# endif
-        return pv;
-    }
-    return pgmPoolMapPageFallback(pPGM, pPage);
-}
-#endif
-
 
 /**
  * Tells if mappings are to be put into the shadow page table or not

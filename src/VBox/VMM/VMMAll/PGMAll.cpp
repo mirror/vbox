@@ -73,7 +73,9 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
 DECLINLINE(int) pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
 DECLINLINE(int) pgmShwSyncPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
 DECLINLINE(int) pgmShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
-
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGM pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
+#endif
 
 /*
  * Shadow - 32-bit mode
@@ -702,7 +704,9 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
         Assert(!pVM->pgm.s.fMappingsFixed);
         Assert(pVM->pgm.s.GCPhysCR3 == pVM->pgm.s.GCPhysGstCR3Monitored);
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
+#endif
     }
 
     /*
@@ -891,6 +895,32 @@ DECLINLINE(int) pgmShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;
 }
+
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+/**
+ * Gets the pointer to the shadow page directory entry for an address, PAE.
+ *
+ * @returns Pointer to the PDE.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ * @param   ppShwPde    Receives the address of the pgm pool page for the shadow page directory
+ */
+DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGM pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde)
+{
+    const unsigned  iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pPGM);
+    AssertReturn(pPdpt, VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT);    /* can't happen */
+    if (!pPdpt->a[iPdPt].n.u1Present)
+        return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
+
+    /* Fetch the pgm pool shadow descriptor. */
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(PGM2VM(pPGM), pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
+    AssertReturn(pShwPde, VERR_INTERNAL_ERROR);
+
+    *ppShwPde = pShwPde;
+    return VINF_SUCCESS;
+}
+#endif
 
 #ifndef IN_RC
 
@@ -1254,6 +1284,9 @@ VMMDECL(X86PDPE) PGMGstGetPaePDPtr(PVM pVM, unsigned iPdpt)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
 {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    return pVM->pgm.s.HCPhysShwCR3;
+#else
     PGMMODE enmShadowMode = pVM->pgm.s.enmShadowMode;
     switch (enmShadowMode)
     {
@@ -1278,6 +1311,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
             AssertMsgFailed(("enmShadowMode=%d\n", enmShadowMode));
             return ~0;
     }
+#endif
 }
 
 
@@ -1288,6 +1322,9 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
 {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    return pVM->pgm.s.HCPhysShwCR3;
+#else
     switch (enmShadowMode)
     {
         case PGMMODE_32_BIT:
@@ -1305,6 +1342,7 @@ VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
             AssertMsgFailed(("enmShadowMode=%d\n", enmShadowMode));
             return ~0;
     }
+#endif
 }
 
 
@@ -1326,7 +1364,11 @@ VMMDECL(RTHCPHYS) PGMGetEPTCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetHyper32BitCR3(PVM pVM)
 {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    return pVM->pgm.s.HCPhysShwCR3;
+#else
     return pVM->pgm.s.HCPhysShw32BitPD;
+#endif
 }
 
 
@@ -1337,7 +1379,11 @@ VMMDECL(RTHCPHYS) PGMGetHyper32BitCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperPaeCR3(PVM pVM)
 {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    return pVM->pgm.s.HCPhysShwCR3;
+#else
     return pVM->pgm.s.HCPhysShwPaePdpt;
+#endif
 }
 
 
@@ -1348,9 +1394,12 @@ VMMDECL(RTHCPHYS) PGMGetHyperPaeCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperAmd64CR3(PVM pVM)
 {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     return pVM->pgm.s.HCPhysShwCR3;
+#else
+    return pVM->pgm.s.HCPhysShwCR3;
+#endif
 }
-
 
 /**
  * Gets the current CR3 register value for the HC intermediate memory context.
@@ -1495,7 +1544,9 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
             if (!pVM->pgm.s.fMappingsFixed)
             {
                 pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, GCPhysCR3);
+#endif
             }
         }
         else
@@ -1522,7 +1573,9 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
         {
             pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
             Assert(!pVM->pgm.s.fMappingsFixed);
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
             rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, GCPhysCR3);
+#endif
         }
         if (fGlobal)
             STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,FlushTLBSameCR3Global));
@@ -1689,7 +1742,9 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool 
             pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
             Assert(!pVM->pgm.s.fMappingsFixed);
             Assert(pVM->pgm.s.GCPhysCR3 == pVM->pgm.s.GCPhysGstCR3Monitored);
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
             rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
+#endif
         }
     }
 

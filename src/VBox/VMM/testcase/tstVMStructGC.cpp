@@ -430,22 +430,24 @@ int main()
     GEN_CHECK_OFF(PGM, apGstPaePDsRC);
     GEN_CHECK_OFF(PGM, aGCPhysGstPaePDs);
     GEN_CHECK_OFF(PGM, aGCPhysGstPaePDsMonitored);
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     GEN_CHECK_OFF(PGM, pShw32BitPdR3);
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGM, pShw32BitPdR0);
-#endif
+# endif
     GEN_CHECK_OFF(PGM, pShw32BitPdRC);
     GEN_CHECK_OFF(PGM, HCPhysShw32BitPD);
     GEN_CHECK_OFF(PGM, apShwPaePDsR3);
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGM, apShwPaePDsR0);
-#endif
+# endif
     GEN_CHECK_OFF(PGM, apShwPaePDsRC);
     GEN_CHECK_OFF(PGM, aHCPhysPaePDs);
     GEN_CHECK_OFF(PGM, pShwPaePdptR3);
     GEN_CHECK_OFF(PGM, pShwPaePdptR0);
     GEN_CHECK_OFF(PGM, pShwPaePdptRC);
     GEN_CHECK_OFF(PGM, HCPhysShwPaePdpt);
+#endif
     GEN_CHECK_OFF(PGM, pShwRootR3);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGM, pShwRootR0);
@@ -462,8 +464,10 @@ int main()
     GEN_CHECK_OFF(PGM, pfnRCShwModifyPage);
     GEN_CHECK_OFF(PGM, pfnR3GstRelocate);
     GEN_CHECK_OFF(PGM, pfnR3GstExit);
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     GEN_CHECK_OFF(PGM, pfnR3GstMonitorCR3);
     GEN_CHECK_OFF(PGM, pfnR3GstUnmonitorCR3);
+#endif
     GEN_CHECK_OFF(PGM, pfnR3GstMapCR3);
     GEN_CHECK_OFF(PGM, pfnR3GstUnmapCR3);
     GEN_CHECK_OFF(PGM, pfnR3GstGetPage);
