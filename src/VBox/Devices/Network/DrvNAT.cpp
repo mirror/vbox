@@ -505,7 +505,7 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
         cDroppedPackets++;
         LogRel(("NAT: Dropping package (couldn't alloc queue item to)\n"));
     }
-    RTMemFree((void *)pItem->pu8Buf);
+    RTMemFree((void *)pu8Buf);
 #endif
 }
 
