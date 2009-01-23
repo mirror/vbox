@@ -54,7 +54,7 @@ typedef struct RTSEMFASTMUTEXINTERNAL
     /** Magic value (RTSEMFASTMUTEX_MAGIC). */
     uint32_t            u32Magic;
     /** The Solaris mutex. */
-    kmutex_t            Mtx;
+    krwlock_t           Mtx;
 } RTSEMFASTMUTEXINTERNAL, *PRTSEMFASTMUTEXINTERNAL;
 
 
@@ -67,7 +67,7 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
     if (pFastInt)
     {
         pFastInt->u32Magic = RTSEMFASTMUTEX_MAGIC;
-        mutex_init (&pFastInt->Mtx, "IPRT Fast Mutex Semaphore", MUTEX_DRIVER, NULL);
+        rw_init (&pFastInt->Mtx, "RWLOCK", RW_DRIVER, NULL);
         *pMutexSem = pFastInt;
         return VINF_SUCCESS;
     }
@@ -86,7 +86,7 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
                     VERR_INVALID_PARAMETER);
 
     ASMAtomicXchgU32(&pFastInt->u32Magic, RTSEMFASTMUTEX_MAGIC_DEAD);
-    mutex_destroy(&pFastInt->Mtx);
+    rw_destroy(&pFastInt->Mtx);
     RTMemFree(pFastInt);
 
     return VINF_SUCCESS;
@@ -101,7 +101,7 @@ RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
                     ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
 
-    mutex_enter(&pFastInt->Mtx);
+    rw_enter(&pFastInt->Mtx, RW_WRITER);
     return VINF_SUCCESS;
 }
 
@@ -114,7 +114,7 @@ RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem)
                     ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
 
-    mutex_exit(&pFastInt->Mtx);
+    rw_exit(&pFastInt->Mtx);
     return VINF_SUCCESS;
 }
 
