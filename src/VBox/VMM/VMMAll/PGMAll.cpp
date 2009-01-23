@@ -917,7 +917,6 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
     PX86PML4E      pPml4e        = pgmShwGetLongModePML4EPtr(pPGM, iPml4);
     bool           fNestedPaging = HWACCMIsNestedPagingActive(pVM);
     PPGMPOOLPAGE   pShwPage;
-    X86PML4E       Pml4eGst;
     int            rc;
 
     /* Allocate page directory pointer table if not present. */
@@ -927,17 +926,15 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
         Assert(!(pPml4e->u & X86_PML4E_PG_MASK));
         if (!fNestedPaging)
         {
-            /** @todo why are we looking up the guest PML4E here?  Isn't pGstPml4e
-             *        trustworthy? (Remove pgmGstGetLongModePML4E if pGstPml4e and pGstPdpe
-             *        are fine.) */
+            Assert(pGstPml4e && pGstPdpe);
             Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-            Pml4eGst = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4);
 
-            rc = pgmPoolAlloc(pVM, Pml4eGst.u & X86_PML4E_PG_MASK,
+            rc = pgmPoolAlloc(pVM, pGstPml4e->u & X86_PML4E_PG_MASK,
                               PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, &pShwPage);
         }
         else
         {
+            /* AMD-V nested paging. (Intel EPT never comes here) */
             RTGCPTR64 GCPml4 = (RTGCPTR64)iPml4 << EPT_PML4_SHIFT;
             rc = pgmPoolAlloc(pVM, GCPml4 + RT_BIT_64(63) /* hack: make the address unique */,
                               PGMPOOLKIND_64BIT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4, &pShwPage);
@@ -971,19 +968,14 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
     {
         if (!fNestedPaging)
         {
-            /** @todo why are we looking up the guest PDPTE here?  Isn't pGstPdpe
-             *        trustworthy? */
-            Pml4eGst = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4);
-            PX86PDPT pPdptGst;
-            rc = PGM_GCPHYS_2_PTR(pVM, Pml4eGst.u & X86_PML4E_PG_MASK, &pPdptGst);
-            AssertRCReturn(rc, rc);
-
+            Assert(pGstPml4e && pGstPdpe);
             Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
             /* Create a reference back to the PDPT by using the index in its shadow page. */
-            rc = pgmPoolAlloc(pVM, pPdptGst->a[iPdPt].u & X86_PDPE_PG_MASK, PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD, pShwPage->idx, iPdPt, &pShwPage);
+            rc = pgmPoolAlloc(pVM, pGstPdpe->u & X86_PDPE_PG_MASK, PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD, pShwPage->idx, iPdPt, &pShwPage);
         }
         else
         {
+            /* AMD-V nested paging. (Intel EPT never comes here) */
             RTGCPTR64 GCPdPt = (RTGCPTR64)iPdPt << EPT_PDPT_SHIFT;
 
             rc = pgmPoolAlloc(pVM, GCPdPt + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_64BIT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
