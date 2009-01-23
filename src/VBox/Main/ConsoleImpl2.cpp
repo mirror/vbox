@@ -1321,25 +1321,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     const char *pszTrunk = szTrunk;
 
 # elif defined(RT_OS_WINDOWS)
-                    com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
-                    hrc = host->COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces));
-                    if(FAILED(hrc))
-                    {
-                        LogRel(("NetworkAttachmentType_HostInterface: COMGETTER(NetworkInterfaces) failed, hrc (0x%x)", hrc));
-                        H();
-                    }
                     ComPtr<IHostNetworkInterface> hostInterface;
-                    for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
-                    {
-                        Bstr name;
-                        hostNetworkInterfaces[i]->COMGETTER(Name) (name.asOutParam());
-                        if (name == HifName)
-                        {
-                            hostInterface = hostNetworkInterfaces[i];
-                            break;
-                        }
-                    }
-                    if (hostInterface.isNull())
+                    rc = host->FindHostNetworkInterfaceByName(HifName, hostInterface.asOutParam());
+                    if (!SUCCEEDED(rc))
                     {
                         AssertBreakpoint();
                         LogRel(("NetworkAttachmentType_HostInterface: FindByName failed, rc (0x%x)", rc));
@@ -1517,20 +1501,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
                     Bstr hostInterfaceName;
                     hrc = networkAdapter->COMGETTER(HostInterface)(hostInterfaceName.asOutParam()); H();
-                    com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
-                    hrc = host->COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)); H();
                     ComPtr<IHostNetworkInterface> hostInterface;
-                    for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
-                    {
-                        Bstr name;
-                        hostNetworkInterfaces[i]->COMGETTER(Name) (name.asOutParam());
-                        if (name == hostInterfaceName)
-                        {
-                            hostInterface = hostNetworkInterfaces[i];
-                            break;
-                        }
-                    }
-                    if (hostInterface.isNull())
+                    rc = host->FindHostNetworkInterfaceByName(hostInterfaceName, hostInterface.asOutParam());
+                    if (!SUCCEEDED(rc))
                     {
                         AssertMsgFailed(("Cannot get GUID for host interface '%ls'\n", hostInterfaceName));
                         hrc = networkAdapter->Detach();                             H();

@@ -1385,19 +1385,10 @@ Host::CreateHostNetworkInterface (IN_BSTR aName,
 
     /* first check whether an interface with the given name already exists */
     {
-        com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
-        rc = COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces));
-        CheckComRCReturnRC (rc);
-        for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
-        {
-            Bstr name;
-            hostNetworkInterfaces[i]->COMGETTER(Name) (name.asOutParam());
-            if (name == aName)
-            {
-                return setError (E_INVALIDARG,
-                                 tr ("Host network interface '%ls' already exists"), aName);
-            }
-        }
+        ComPtr <IHostNetworkInterface> iface;
+        if (SUCCEEDED (FindHostNetworkInterfaceByName (aName, iface.asOutParam())))
+            return setError (E_INVALIDARG,
+                             tr ("Host network interface '%ls' already exists"), aName);
     }
 
     /* create a progress object */
@@ -1453,21 +1444,8 @@ Host::RemoveHostNetworkInterface (IN_GUID aId,
 
     /* first check whether an interface with the given name already exists */
     {
-        com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
-        rc = COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces));
-        CheckComRCReturnRC (rc);
         ComPtr <IHostNetworkInterface> iface;
-        for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
-        {
-            Guid guid;
-            hostNetworkInterfaces[i]->COMGETTER(Id) (guid.asOutParam());
-            if (guid == aId)
-            {
-                iface = hostNetworkInterfaces[i];
-                break;
-            }
-        }
-        if (iface.isNull())
+        if (FAILED (FindHostNetworkInterfaceById (aId, iface.asOutParam())))
             return setError (VBOX_E_OBJECT_NOT_FOUND,
                 tr ("Host network interface with UUID {%RTuuid} does not exist"),
                 Guid (aId).raw());
