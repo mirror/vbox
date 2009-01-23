@@ -205,7 +205,7 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         && bootp_filename)
         RTStrPrintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
 
-    saddr.sin_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
+    saddr.sin_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_TFTP);
     saddr.sin_port = htons(BOOTP_SERVER);
 
     daddr.sin_port = htons(BOOTP_CLIENT);

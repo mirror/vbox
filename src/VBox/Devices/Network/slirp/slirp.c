@@ -999,8 +999,9 @@ void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         case ARPOP_REQUEST:
             if ((htip & pData->netmask) == ntohl(special_addr.s_addr))
             {
-                if (   (htip & ~pData->netmask) == CTL_DNS
-                    || (htip & ~pData->netmask) == CTL_ALIAS)
+                if (   CTL_CHECK(htip,CTL_DNS)
+                    || CTL_CHECK(htip, CTL_ALIAS)
+                    || CTL_CHECK(htip, CTL_TFTP))
                     goto arp_ok;
                 for (ex_ptr = exec_list; ex_ptr; ex_ptr = ex_ptr->ex_next)
                 {
