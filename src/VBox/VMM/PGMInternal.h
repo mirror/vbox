@@ -2970,31 +2970,6 @@ int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
 __END_DECLS
 
 
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-/**
- * Maps the page into current context (RC and maybe R0).
- *
- * @returns pointer to the mapping.
- * @param   pVM         Pointer to the PGM instance data.
- * @param   pPage       The page.
- */
-DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
-{
-    if (pPage->idx >= PGMPOOL_IDX_FIRST)
-    {
-        Assert(pPage->idx < pPGM->CTX_SUFF(pPool)->cCurPages);
-        void *pv;
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        pgmR0DynMapHCPageInlined(pPGM, pPage->Core.Key, &pv);
-# else
-        PGMDynMapHCPage(PGM2VM(pPGM), pPage->Core.Key, &pv);
-# endif
-        return pv;
-    }
-    return pgmPoolMapPageFallback(pPGM, pPage);
-}
-#endif
-
 /**
  * Gets the PGMRAMRANGE structure for a guest page.
  *
@@ -3389,7 +3364,30 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
 
 #endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+/**
+ * Maps the page into current context (RC and maybe R0).
+ *
+ * @returns pointer to the mapping.
+ * @param   pVM         Pointer to the PGM instance data.
+ * @param   pPage       The page.
+ */
+DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
+{
+    if (pPage->idx >= PGMPOOL_IDX_FIRST)
+    {
+        Assert(pPage->idx < pPGM->CTX_SUFF(pPool)->cCurPages);
+        void *pv;
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        pgmR0DynMapHCPageInlined(pPGM, pPage->Core.Key, &pv);
+# else
+        PGMDynMapHCPage(PGM2VM(pPGM), pPage->Core.Key, &pv);
+# endif
+        return pv;
+    }
+    return pgmPoolMapPageFallback(pPGM, pPage);
+}
+
 /**
  * Temporarily maps one host page specified by HC physical address, returning
  * pointer within the page.
