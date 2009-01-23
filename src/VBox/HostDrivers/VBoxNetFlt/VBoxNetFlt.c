@@ -846,8 +846,9 @@ static int vboxNetFltConnectIt(PVBOXNETFLTINS pThis, PINTNETTRUNKSWPORT pSwitchP
  * @param   pszName             The instance name.
  * @param   pSwitchPort         The port on the switch that we're connected with (dynamic only).
  * @param   ppIfPort            Where to store the pointer to our port interface (dynamic only).
+ * @param   fNoPromisc          Do not attempt going into promiscuous mode.
  */
-static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszName, PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort
+static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszName, PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort, bool fNoPromisc
 #ifdef VBOXNETFLT_STATIC_CONFIG
         , void * pContext
 #endif
@@ -880,6 +881,7 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
     pNew->fActive                       = false;
     pNew->fDisconnectedFromHost         = false;
     pNew->fRediscoveryPending           = false;
+    pNew->fDisablePromiscuous           = fNoPromisc;
     pNew->NanoTSLastRediscovery         = INT64_MAX;
     pNew->cRefs                         = 1;
     pNew->cBusy                         = 0;
@@ -1003,7 +1005,7 @@ DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, cons
 
     RTSemFastMutexRelease(pGlobals->hFastMtx);
 
-    rc = vboxNetFltNewInstance(pGlobals, pszName, NULL, &pIfPort, pContext);
+    rc = vboxNetFltNewInstance(pGlobals, pszName, NULL, &pIfPort, false, pContext);
     if(RT_SUCCESS(rc))
         *ppInstance =  IFPORT_2_VBOXNETFLTINS(pIfPort);
     else
@@ -1045,6 +1047,7 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
                  * (i.e. the driver is not bound to the specified adapter)*/
                 /* Prevent setting promiscuous mode for WiFi adapters. */
                 pCur->fDisablePromiscuous = fNoPromisc;
+                LogAleksey(("fNoPromisc=%d\n", pCur->fDisablePromiscuous));
                 vboxNetFltRetain(pCur, false /* fBusy */); /** @todo who releases this on failure? */
                 rc = vboxNetFltConnectIt(pCur, pSwitchPort, ppIfPort);
                 break;
@@ -1077,7 +1080,7 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
     /*
      * Dynamically create a new instance.
      */
-    rc = vboxNetFltNewInstance(pGlobals, pszName, pSwitchPort, ppIfPort);
+    rc = vboxNetFltNewInstance(pGlobals, pszName, pSwitchPort, ppIfPort, fNoPromisc);
 #endif
     LogFlow(("vboxNetFltFactoryCreateAndConnect: returns %Rrc\n", rc));
     return rc;
