@@ -301,7 +301,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
          * if the framebuffer is processing the resize request and GUI calls the TakeScreenShot
          * and the guest has reprogrammed the virtual VGA devices again so a new resize is required.
          *
-         * Save the resize information and return.
+         * Save the resize information and return the pending status code.
          *
          * Note: the resize information is only accessed on EMT so no serialization is required.
          */
@@ -315,7 +315,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
         maFramebuffers[uScreenId].pendingResize.w           = w;
         maFramebuffers[uScreenId].pendingResize.h           = h;
         
-        return VINF_SUCCESS;
+        return VINF_VGA_RESIZE_IN_PROGRESS;
     }
 
     /* The framebuffer is locked in the state.
