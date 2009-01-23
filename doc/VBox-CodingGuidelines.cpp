@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,10 +43,10 @@
  *      - Avoid using plain unsigned and int.
  *
  *      - Use static wherever possible. This makes the namespace less polluted
- *        and avoid nasty name clash problems which can occur, especially on
- *        Unix like systems. (1)
+ *        and avoids nasty name clash problems which can occur, especially on
+ *        Unix-like systems. (1)
  *
- *      - Public names are on the form Domain[Subdomain[]]Method using mixed
+ *      - Public names are of the form Domain[Subdomain[]]Method, using mixed
  *        casing to mark the words. The main domain is all uppercase.
  *        (Think like java, mapping domain and subdomain to packages/classes.)
  *
