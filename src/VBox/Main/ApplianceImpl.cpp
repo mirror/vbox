@@ -159,6 +159,9 @@ struct VirtualSystem
     list<VirtualDisk>   llVirtualDisks;
             // (one for each VirtualSystem/Item[@ResourceType=17] element with accumulated data from children)
 
+    string              strLicenceInfo;     // license info if any; receives contents of VirtualSystem/EulaSection/Info
+    string              strLicenceText;     // license info if any; receives contents of VirtualSystem/EulaSection/License
+
     VirtualSystem()
         : ullMemorySize(0), cCPUs(1)
     {
@@ -332,8 +335,8 @@ HRESULT Appliance::HandleDiskSection(const char *pcszPath,
                 // look up corresponding /References/File nodes (list built above)
                 const xml::Node *pFileElem;
                 if (    pReferencesElem
-                    && ((pFileElem = pReferencesElem->findChildElementFromId(strFileRef.c_str())))
-                )
+                     && ((pFileElem = pReferencesElem->findChildElementFromId(strFileRef.c_str())))
+                   )
                 {
                     // copy remaining values from file node then
                     const char *pcszBadInFile = NULL;
@@ -424,7 +427,19 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
 
         if (!strcmp(pcszElemName, "EulaSection"))
         {
-            // TODO
+         /* <EulaSection>
+                <Info ovf:msgid="6">License agreement for the Virtual System.</Info>
+                <License ovf:msgid="1">License terms can go in here.</License>
+            </EulaSection> */
+
+            const xml::Node *pelmInfo, *pelmLicense;
+            if (    ((pelmInfo = pelmThis->findChildElement("Info")))
+                 && ((pelmLicense = pelmThis->findChildElement("License")))
+               )
+            {
+                d.strLicenceInfo = pelmInfo->getValue();
+                d.strLicenceText = pelmLicense->getValue();
+            }
         }
         else if (    (!strcmp(pcszElemName, "VirtualHardwareSection"))
                   || (!strcmp(pcszTypeAttr, "ovf:VirtualHardwareSection_Type"))
