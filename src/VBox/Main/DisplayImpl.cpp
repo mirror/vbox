@@ -2102,8 +2102,12 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             LogFlowFunc (("ResizeStatus_UpdateDisplayData %d\n", uScreenId));
             /* The framebuffer was resized and display data need to be updated. */
             pDisplay->handleResizeCompletedEMT ();
+            if (pFBInfo->u32ResizeStatus != ResizeStatus_Void)
+            {
+                /* The resize status could be not Void here because a pending resize is issued. */
+                continue;
+            }
             /* Continue with normal processing because the status here is ResizeStatus_Void. */
-            Assert (pFBInfo->u32ResizeStatus == ResizeStatus_Void);
             if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
             {
                 /* Repaint the display because VM continued to run during the framebuffer resize. */
