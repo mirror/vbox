@@ -3330,4 +3330,77 @@ void Host::unregisterMetrics (PerformanceCollector *aCollector)
     aCollector->unregisterBaseMetricsFor (this);
 };
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
+STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInterface **networkInterface) 
+{ 
+#ifndef VBOX_WITH_HOSTNETIF_API
+    return E_NOTIMPL;
+#else
+    if (!name) 
+        return E_INVALIDARG; 
+    if (!networkInterface) 
+        return E_POINTER; 
+    
+    *networkInterface = NULL; 
+    ComObjPtr <HostNetworkInterface> found;
+    std::list <ComObjPtr <HostNetworkInterface> > list;
+    int rc = NetIfList(list);
+    if (RT_FAILURE(rc))
+    {
+        Log(("Failed to get host network interface list with rc=%Vrc\n", rc));
+        return E_FAIL;
+    }
+    std::list <ComObjPtr <HostNetworkInterface> >::iterator it;
+    for (it = list.begin(); it != list.end(); ++it)
+    {
+        Bstr n;
+        (*it)->COMGETTER(Name) (n.asOutParam());
+        if (n == name)
+            found = *it;
+    }
+
+    if (!found) 
+        return setError (E_INVALIDARG, HostNetworkInterface::tr ( 
+                             "The host network interface with the given name could not be found")); 
+	 	 
+    return found.queryInterfaceTo (networkInterface); 
+#endif
+} 
+	 	 
+STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_GUID id, IHostNetworkInterface **networkInterface) 
+{ 
+#ifndef VBOX_WITH_HOSTNETIF_API
+    return E_NOTIMPL;
+#else
+    if (Guid(id).isEmpty()) 
+        return E_INVALIDARG; 
+    if (!networkInterface) 
+        return E_POINTER; 
+	 	 
+    *networkInterface = NULL; 
+    ComObjPtr <HostNetworkInterface> found;
+    std::list <ComObjPtr <HostNetworkInterface> > list;
+    int rc = NetIfList(list);
+    if (RT_FAILURE(rc))
+    {
+        Log(("Failed to get host network interface list with rc=%Vrc\n", rc));
+        return E_FAIL;
+    }
+    std::list <ComObjPtr <HostNetworkInterface> >::iterator it;
+    for (it = list.begin(); it != list.end(); ++it)
+    { 
+        Guid g; 
+        (*it)->COMGETTER(Id) (g.asOutParam()); 
+        if (g == Guid(id)) 
+            found = *it; 
+    } 
+	 	 
+    if (!found) 
+        return setError (E_INVALIDARG, HostNetworkInterface::tr ( 
+                             "The host network interface with the given GUID could not be found")); 
+	 	 
+    return found.queryInterfaceTo (networkInterface); 
+#endif
+} 
+	 	 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

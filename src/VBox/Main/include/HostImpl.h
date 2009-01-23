@@ -109,6 +109,9 @@ public:
     STDMETHOD(InsertUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter *aFilter);
     STDMETHOD(RemoveUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter **aFilter);
 
+    STDMETHOD(FindHostNetworkInterfaceByName) (IN_BSTR aName, IHostNetworkInterface **networkInterface);
+    STDMETHOD(FindHostNetworkInterfaceById) (IN_GUID id, IHostNetworkInterface **networkInterface);
+
     // public methods only for internal purposes
 
     HRESULT loadSettings (const settings::Key &aGlobal);

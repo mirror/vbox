@@ -1126,7 +1126,7 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
-#if 1
+#if 0
     do {
         // Get host
         ComPtr <IHost> host;
@@ -1137,6 +1137,47 @@ int main(int argc, char *argv[])
         printf("Total memory (MB): %u\n", uMemSize);
         CHECK_ERROR_BREAK (host, COMGETTER(MemoryAvailable) (&uMemAvail));
         printf("Free memory (MB): %u\n", uMemAvail);
+    } while (0);
+#endif
+
+#if 1
+    do {
+        // Get host
+        ComPtr <IHost> host;
+        CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host) (host.asOutParam()));
+
+        com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
+        CHECK_ERROR_BREAK(host,
+                          COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
+        if (hostNetworkInterfaces.size() > 0)
+        {
+            ComPtr<IHostNetworkInterface> networkInterface = hostNetworkInterfaces[0];
+            Bstr interfaceName;
+            networkInterface->COMGETTER(Name)(interfaceName.asOutParam());
+            printf("Found %d network interfaces, testing with %lS...\n", hostNetworkInterfaces.size(), interfaceName.raw());
+            Guid interfaceGuid;
+            networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
+            // Find the interface by its name
+            networkInterface.setNull();
+            CHECK_ERROR_BREAK(host,
+                              FindHostNetworkInterfaceByName (interfaceName, networkInterface.asOutParam()));
+            Guid interfaceGuid2;
+            networkInterface->COMGETTER(Id)(interfaceGuid2.asOutParam());
+            if (interfaceGuid2 != interfaceGuid)
+                printf("Failed to retrive an interface by name %lS.\n", interfaceName.raw());
+            // Find the interface by its guid
+            networkInterface.setNull();
+            CHECK_ERROR_BREAK(host,
+                              FindHostNetworkInterfaceById (interfaceGuid, networkInterface.asOutParam()));
+            Bstr interfaceName2;
+            networkInterface->COMGETTER(Name)(interfaceName2.asOutParam());
+            if (interfaceName != interfaceName2)
+                printf("Failed to retrive an interface by GUID %lS.\n", Bstr(interfaceGuid.toString()).raw());
+        }
+        else
+        {
+            printf("No network interfaces found!\n");
+        }
     } while (0);
 #endif
 
@@ -1254,7 +1295,7 @@ int main(int argc, char *argv[])
         session->Close();
     } while (false);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
-#if 1
+#if 0
     // check of OVF appliance handling
     ///////////////////////////////////////////////////////////////////////////
     do
