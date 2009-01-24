@@ -113,4 +113,10 @@ struct bootp_t
     uint8_t        bp_vend[DHCP_OPT_LEN];
 };
 
+struct bootp_ext
+{
+    uint8_t bpe_tag;
+    uint8_t bpe_len;
+};
+
 void bootp_input(PNATState, struct mbuf *m);
