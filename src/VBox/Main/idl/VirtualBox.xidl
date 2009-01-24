@@ -11418,7 +11418,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="ISharedFolder" extends="$unknown"
-     uuid="8b0c5f70-9139-4f97-a421-64d5e9c335d5"
+     uuid="ef41869b-ef31-4b30-8e8f-95af35c0e378"
      wsmap="struct"
      >
     <desc>
@@ -11493,6 +11493,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Whether the folder defined by the host path is writable or
         not.
+      </desc>
+    </attribute>
+
+    <attribute name="lastAccessError" type="wstring" readonly="yes">
+      <desc>
+        Text message that represents the result of the last accessibility
+        check.
+
+        Accessibility checks are performed each time the <link to="#accessible"/>
+        attribute is read. A @c null string is returned if the last
+        accessibility check was successful. A non-null string indicates a
+        failure and should normally describe a reason of the failure (for
+        example, a file read error).
       </desc>
     </attribute>
 
