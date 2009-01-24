@@ -138,6 +138,15 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     struct in_addr requested_ip; /* the requested IP in DHCPREQUEST */
     int send_nak = 0;
 
+#define FILL_BOOTP_EXT(q, tag, len, pvalue)                     \
+    do {                                                        \
+        struct bootp_ext *be = (struct bootp_ext *)(q);         \
+        be->bpe_tag = (tag);                                    \
+        be->bpe_len = (len);                                    \
+        memcpy(&be[1], (pvalue), (len));                        \
+        (q) = (uint8_t *)(&be[1]) + (len);                      \
+    }while(0)
+
     /* extract exact DHCP msg type */
     requested_ip.s_addr = 0xffffffff;
     dhcp_decode(bp->bp_vend, DHCP_OPT_LEN, &dhcp_msg_type, &requested_ip);
@@ -250,60 +259,37 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     else
         LogRel(("NAT: DHCP offered IP address %R[IP4]\n",
                 &daddr.sin_addr));
-
     if (   dhcp_msg_type == DHCPDISCOVER
         || dhcp_msg_type == DHCPREQUEST)
     {
-        *q++ = RFC2132_SRV_ID;
-        *q++ = 4;
-        memcpy(q, &saddr.sin_addr, 4);
-        q += 4;
+        FILL_BOOTP_EXT(q, RFC2132_SRV_ID, 4, &saddr.sin_addr);
     }
 
     if (!send_nak &&
         (   dhcp_msg_type == DHCPDISCOVER
          || dhcp_msg_type == DHCPREQUEST))
     {
-        *q++ = RFC1533_NETMASK;
-        *q++ = 4;
-        *q++ = (pData->netmask & 0xff000000) >> 24;
-        *q++ = (pData->netmask & 0x00ff0000) >> 16;
-        *q++ = (pData->netmask & 0x0000ff00) >>  8;
-        *q++ = (pData->netmask & 0x000000ff);
+        uint32_t lease_time = htonl(LEASE_TIME);
+        uint32_t netmask = htonl(pData->netmask);
 
-        *q++ = RFC1533_GATEWAY;
-        *q++ = 4;
-        memcpy(q, &saddr.sin_addr, 4);
-        q += 4;
+        FILL_BOOTP_EXT(q, RFC1533_NETMASK, 4, &netmask);
+        FILL_BOOTP_EXT(q, RFC1533_GATEWAY, 4, &saddr.sin_addr);
 
-        *q++ = RFC1533_DNS;
-        *q++ = 4;
         dns_addr_dhcp.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
-        memcpy(q, &dns_addr_dhcp, 4);
-        q += 4;
+        FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &dns_addr_dhcp.s_addr);
 
-        *q++ = RFC2132_LEASE_TIME;
-        *q++ = 4;
-        val = htonl(LEASE_TIME);
-        memcpy(q, &val, 4);
-        q += 4;
+        FILL_BOOTP_EXT(q, RFC2132_LEASE_TIME, 4, &lease_time);
 
         if (*slirp_hostname)
         {
             val = (int)strlen(slirp_hostname);
-            *q++ = RFC1533_HOSTNAME;
-            *q++ = val;
-            memcpy(q, slirp_hostname, val);
-            q += val;
+            FILL_BOOTP_EXT(q, RFC1533_HOSTNAME, val, slirp_hostname);
         }
 
         if (pData->pszDomain && pData->fPassDomain)
         {
             val = (int)strlen(pData->pszDomain);
-            *q++ = RFC1533_DOMAINNAME;
-            *q++ = val;
-            memcpy(q, pData->pszDomain, val);
-            q += val;
+            FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, val, pData->pszDomain);
         }
     }
     *q++ = RFC1533_END;
