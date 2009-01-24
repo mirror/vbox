@@ -103,8 +103,8 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
 
     unconst (mMachine) = aMachine;
 
-    HRESULT rc = protectedInit (aMachine, aThat->mData.mName,
-                                aThat->mData.mHostPath, aThat->mData.mWritable);
+    HRESULT rc = protectedInit (aMachine, aThat->m.name,
+                                aThat->m.hostPath, aThat->m.writable);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED (rc))
@@ -221,9 +221,9 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
     /* register with parent */
     mParent->addDependentChild (this);
 
-    unconst (mData.mName) = aName;
-    unconst (mData.mHostPath) = hostPath;
-    mData.mWritable = aWritable;
+    unconst (m.name) = aName;
+    unconst (m.hostPath) = hostPath;
+    m.writable = aWritable;
 
     return S_OK;
 }
@@ -262,7 +262,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Name) (BSTR *aName)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* mName is constant during life time, no need to lock */
-    mData.mName.cloneTo (aName);
+    m.name.cloneTo (aName);
 
     return S_OK;
 }
@@ -275,14 +275,14 @@ STDMETHODIMP SharedFolder::COMGETTER(HostPath) (BSTR *aHostPath)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* mHostPath is constant during life time, no need to lock */
-    mData.mHostPath.cloneTo (aHostPath);
+    m.hostPath.cloneTo (aHostPath);
 
     return S_OK;
 }
 
 STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
 {
-    CheckComArgOutPointerValid(aAccessible);
+    CheckComArgOutPointerValid (aAccessible);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -290,7 +290,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
     /* mName and mHostPath are constant during life time, no need to lock */
 
     /* check whether the host path exists */
-    Utf8Str hostPath = Utf8Str (mData.mHostPath);
+    Utf8Str hostPath = Utf8Str (m.hostPath);
     char hostPathFull [RTPATH_MAX];
     int vrc = RTPathExists (hostPath) ? RTPathReal (hostPath, hostPathFull,
                                                     sizeof (hostPathFull))
@@ -301,7 +301,12 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
         return S_OK;
     }
 
-    LogWarningThisFunc (("'%s' is not accessible (%Rrc)\n", hostPath.raw(), vrc));
+    AutoWriteLock alock (this);
+
+    m.lastAccessError = BstrFmt (
+        tr ("'%s' is not accessible (%Rrc)"), hostPath.raw(), vrc);
+
+    LogWarningThisFunc (("m.lastAccessError=\"%ls\"\n", m.lastAccessError.raw()));
 
     *aAccessible = FALSE;
     return S_OK;
@@ -311,8 +316,23 @@ STDMETHODIMP SharedFolder::COMGETTER(Writable) (BOOL *aWritable)
 {
     CheckComArgOutPointerValid(aWritable);
 
-    *aWritable = mData.mWritable;
+    *aWritable = m.writable;
 
     return S_OK;
 }
+
+STDMETHODIMP SharedFolder::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
+{
+    CheckComArgOutPointerValid (aLastAccessError);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    m.lastAccessError.cloneTo (aLastAccessError);
+
+    return S_OK;
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
