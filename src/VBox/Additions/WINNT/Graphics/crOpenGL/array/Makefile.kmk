@@ -49,7 +49,7 @@ VBoxOGLarrayspu_SOURCES    = \
 	arrayspu_init.c
 VBoxOGLarrayspu_SOURCES.win = arrayspu.def
 VBoxOGLarrayspu_LIBS.win    = \
-	$(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB) \
+	$(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris darwin)

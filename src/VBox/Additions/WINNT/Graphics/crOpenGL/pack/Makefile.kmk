@@ -77,7 +77,7 @@ VBoxOGLpackspu_DEPS       := \
 	$(GEN_H_FILES)
 VBoxOGLpackspu_CLEAN      := $(GEN_C_FILES) $(GEN_H_FILES)
 VBoxOGLpackspu_LIBS.win    = \
-	$(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB) \
+	$(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/additions/VBoxOGLcrpacker$(VBOX_SUFF_LIB)
