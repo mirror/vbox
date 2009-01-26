@@ -155,6 +155,15 @@ endif
 ifdef VBOX_WITH_LSILOGIC
  VBoxDD_DEFS           += VBOX_WITH_LSILOGIC
 endif
+ifdef VBOX_WITH_HPET
+ VBoxDD_DEFS           += VBOX_WITH_HPET
+endif
+ifdef VBOX_WITH_SMC
+ VBoxDD_DEFS           += VBOX_WITH_SMC
+endif
+ifdef VBOX_WITH_LPC
+ VBoxDD_DEFS           += VBOX_WITH_LPC
+endif
 ifdef VBOX_WITH_FAULT_INJECTION
  VBoxDD_DEFS           += VBOX_WITH_FAULT_INJECTION
 endif

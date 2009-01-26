@@ -1457,6 +1457,13 @@ static int pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const
         if (    !strcmp(pszName, "piix3ide")
             &&  !pBus->devices[9])
             iDev = 9;
+#ifdef VBOX_WITH_LPC
+        /* LPC bus expected to be there by some guests, better make an additional argument to PDM
+           device helpers, but requires significant rewrite */
+        else if (!strcmp(pszName, "lpc")
+             &&  !pBus->devices[0xf8])
+            iDev = 0xf8;
+#endif
         else
         {
             Assert(!(pBus->iDevSearch % 8));
