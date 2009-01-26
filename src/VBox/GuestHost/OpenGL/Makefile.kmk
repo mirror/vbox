@@ -22,43 +22,15 @@
 SUB_DEPTH = ../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-## @todo r=bird: Move to Config.kmk, before the SDKs or somewhere like that.
-ifndef VBOX_BLD_PYTHON
- if1of ($(KBUILD_HOST), win)
-  VBOX_BLD_PYTHON := $(firstword $(rsort $(wildcard $(PATH_DEVTOOLS)/win.x86/python/v*/python$(HOSTSUFF_EXE))) python-not-found.exe)
- else
-  VBOX_BLD_PYTHON := python$(HOSTSUFF_EXE)
- endif
-endif
-
-## @todo r=bird: Prefix with VBox + makefile qualifier.
-GLAPI_PATH := $(PATH_SUB_CURRENT)/glapi_parser
-
-## @todo r=bird: messing with the environment like this doesn't work in the non-recursive make setup (which is default now).
-# Do it as part of the python invocation (using REDIRECT by all means, no shell stuff please).
-# For example:
-# VBOX_PYTHON_ENV = $(REDIRECT) $(if $1,-E 'PYTHONPATH=$1',) $(if $2,-o $2,) $(if $3,-i $3) --
-# VBOX_CROGL_PYTHONPATH = $(VBOX_CROGL_GLAPI_PATH);$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer;$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
-#
-# $(PATH_VBOXCROGL_GENFILES)/errorspu.c: $(PATH_SUB_CURRENT)/error/error.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
-# 	$(call VBOX_PYTHON_ENV,$(VBOX_CROGL_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(GLAPI_PATH)
 if1of ($(KBUILD_HOST), win)
- export PYTHONPATH := $(GLAPI_PATH);$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer;$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
+VBOX_CROGL_GUEST_HOST_PYTHONPATH := $(VBOX_PATH_CROGL_GLAPI);$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer;$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
 else
- export PYTHONPATH := $(GLAPI_PATH):$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer:$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
+VBOX_CROGL_GUEST_HOST_PYTHONPATH := $(VBOX_PATH_CROGL_GLAPI):$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer:$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
 endif
-
-## @todo r=bird: Prefix. All single word variables are off limit (VB_CROGL_API_FILES or VBOX_CROGL_API_FILES).
-APIFILES := $(GLAPI_PATH)/apiutil.py $(GLAPI_PATH)/APIspec.txt
-
-## @todo r=bird: VBOXCROGL_GENFILES is only used once, what's the point?
-VBOXCROGL_GENFILES      := VBoxOGLgen
-## @todo r=bird: PATH_VBOXCROGL_GENFILES should be VBOX_PATH_CROGL_GENFILES, see Main/Makefile.kmk and others for examples). [Yes, I know non of this is documented anywhere. No time, and according to some its not a priority...]
-PATH_VBOXCROGL_GENFILES := $(PATH_TARGET)/$(VBOXCROGL_GENFILES)
 
 BLDDIRS += \
-	$(PATH_VBOXCROGL_GENFILES)/ \
-	$(PATH_VBOXCROGL_GENFILES)/state/
+	$(VBOX_PATH_CROGL_GENFILES)/ \
+	$(VBOX_PATH_CROGL_GENFILES)/state/
 
 ifdef VBOX_WITH_ADDITIONS
 DLLS      += VBoxOGLcrutil
@@ -76,32 +48,28 @@ LIBRARIES += VBoxOGLhostspuload
 LIBRARIES += VBoxOGLhostcrstate
 endif
 
-## VBoxOGLGuestHostBase ##
-VBoxOGLGuestHostBase_DEFS            = CHROMIUM_THREADSAFE VBOX_WITH_HGCM
-VBoxOGLGuestHostBase_DEFS.win        = _WIN32_WINNT=0x0500 WINDOWS=1
-VBoxOGLGuestHostBase_DEFS.linux      = Linux=1
-VBoxOGLGuestHostBase_DEFS.solaris    = SunOS=1 GLEXT_64_TYPES_DEFINED
-VBoxOGLGuestHostBase_DEFS.darwin     = DARWIN=1 GL_GLEXT_LEGACY
-# @todo this is not working for some reason
-#VBoxOGLGuestHostBase_INCS           := $(PATH_SUB_CURRENT)/include $(PATH_VBOXCROGL_GENFILES)
-#VBoxOGLGuestHostBase_INCS.darwin    += $(PATH_OUT)/obj/VBoxOGL
-VBoxOGLGuestHostBase_LDFLAGS.darwin += -framework Carbon -framework OpenGL
+## VBOXOGLR3GUESTHOST ##
+TEMPLATE_VBOXOGLR3GUESTHOST                = VBox OpenGL GuestHost DLLs/Libraries
+TEMPLATE_VBOXOGLR3GUESTHOST_EXTENDS        = VBOXR3NP
+TEMPLATE_VBOXOGLR3GUESTHOST_DEFS           = $(TEMPLATE_VBOXR3NP_DEFS) CHROMIUM_THREADSAFE VBOX_WITH_HGCM
+TEMPLATE_VBOXOGLR3GUESTHOST_DEFS.win       = $(TEMPLATE_VBOXOGLR3GUESTHOST_DEFS) _WIN32_WINNT=0x0500 WINDOWS=1
+TEMPLATE_VBOXOGLR3GUESTHOST_DEFS.linux     = $(TEMPLATE_VBOXOGLR3GUESTHOST_DEFS) Linux=1
+TEMPLATE_VBOXOGLR3GUESTHOST_DEFS.solaris   = $(TEMPLATE_VBOXOGLR3GUESTHOST_DEFS) SunOS=1 GLEXT_64_TYPES_DEFINED
+TEMPLATE_VBOXOGLR3GUESTHOST_DEFS.darwin    = $(TEMPLATE_VBOXOGLR3GUESTHOST_DEFS) DARWIN=1 GL_GLEXT_LEGACY
+TEMPLATE_VBOXOGLR3GUESTHOST_INCS           = $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
+TEMPLATE_VBOXOGLR3GUESTHOST_INCS.darwin    = $(PATH_OUT)/obj/VBoxOGL
+TEMPLATE_VBOXOGLR3GUESTHOST_LDFLAGS.linux  = -Wl,--no-as-needed
+TEMPLATE_VBOXOGLR3GUESTHOST_LDFLAGS.darwin = -framework Carbon -framework OpenGL -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+TEMPLATE_VBOXOGLR3GUESTHOST_BLDDIRS        = $(VBOX_PATH_CROGL_GENFILES)/
 
 #
 # VBoxOGLcrutil
 #
 
-## @todo r=bird: next target
-$(PATH_VBOXCROGL_GENFILES)/debug_opcodes.c: $(PATH_SUB_CURRENT)/util/debug_opcodes.py $(APIFILES)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-VBoxOGLcrutil_TEMPLATE     = VBOXGUESTR3NPDLL
-VBoxOGLcrutil_EXTENDS      = VBoxOGLGuestHostBase
-VBoxOGLcrutil_INCS        := $(PATH_SUB_CURRENT)/include $(PATH_VBOXCROGL_GENFILES)
-VBoxOGLcrutil_INCS.darwin += $(PATH_OUT)/obj/VBoxOGL
-VBoxOGLcrutil_SDKS.win     = DXSDK
-VBoxOGLcrutil_INTERMEDIATES = $(PATH_VBOXCROGL_GENFILES)/cr_opcodes.h
-VBoxOGLcrutil_SOURCES      = \
+VBoxOGLcrutil_TEMPLATE      = VBOXOGLR3GUESTHOST
+VBoxOGLcrutil_SDKS.win      = DXSDK
+VBoxOGLcrutil_INTERMEDIATES = $(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h
+VBoxOGLcrutil_SOURCES       = \
 	bbox.c \
 	bufpool.c \
 	calllists.c \
@@ -128,9 +96,9 @@ VBoxOGLcrutil_SOURCES      = \
 	url.c \
 	warp.c \
 	vboxhgcm.c
-VBoxOGLcrutil_SOURCES    := $(addprefix util/, $(VBoxOGLcrutil_SOURCES)) $(PATH_VBOXCROGL_GENFILES)/debug_opcodes.c
+VBoxOGLcrutil_SOURCES    := $(addprefix util/, $(VBoxOGLcrutil_SOURCES)) $(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
 VBoxOGLcrutil_SOURCES.win.x86 = util/util.def
-VBoxOGLcrutil_CLEAN      := $(PATH_VBOXCROGL_GENFILES)/debug_opcodes.c
+VBoxOGLcrutil_CLEAN      := $(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
 VBoxOGLcrutil_LIBS.win    = \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
@@ -139,7 +107,7 @@ VBoxOGLcrutil_LIBS.win    = \
 VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
 VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 
-VBoxOGLhostcrutil_TEMPLATE = VBOXR3NP
+VBoxOGLhostcrutil_TEMPLATE = VBOXOGLR3GUESTHOST
 VBoxOGLhostcrutil_EXTENDS = VBoxOGLcrutil
 VBoxOGLhostcrutil_LDFLAGS.darwin += $(VBoxOGLcrutil_LDFLAGS.darwin) -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhostcrutil.dylib -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 # hostcrutil_NAME = crutil - possible, but it creates conflicting library files in PATH_LIB.
@@ -149,317 +117,251 @@ VBoxOGLhostcrutil_LDFLAGS.darwin += $(VBoxOGLcrutil_LDFLAGS.darwin) -install_nam
 VBoxOGLhostcrutil_LIBS    += $(LIB_RUNTIME)
 VBoxOGLhostcrutil_LIBS.win = $(VBoxOGLcrutil_LIBS.win)
 
+$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c: $(PATH_SUB_CURRENT)/util/debug_opcodes.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
 #
 # VBoxOGLcrpacker
 #
 
-## r=bird: (a) Have to make sure the output directory actually exists, append to pre req list of each:
-#		| $$(dir $$@)
-# That means the output directory is an order-only dependency.
-# (b) VBOX_BLD_PYTHON
-# (c) Rules generating stuff for a target goes *after* the target config. [Another convention which hasn't been written down anywhere.]
-$(PATH_VBOXCROGL_GENFILES)/packer.def: $(PATH_SUB_CURRENT)/packer/packer_defs.py $(APIFILES)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/cr_packfunctions.h: $(PATH_SUB_CURRENT)/packer/pack_header.py $(PATH_SUB_CURRENT)/packer/packer_special $(API_FILES) | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/cr_opcodes.h: $(PATH_SUB_CURRENT)/packer/opcodes.py $(APIFILES)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state/cr_currentpointers.h: $(PATH_SUB_CURRENT)/packer/pack_currentheader.py $(PATH_SUB_CURRENT)/packer/pack_currenttypes.py | $$(dir $(PATH_VBOXCROGL_GENFILES)) $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< > $@
-
-$(PATH_VBOXCROGL_GENFILES)/packer.c: $(PATH_SUB_CURRENT)/packer/packer.py $(PATH_SUB_CURRENT)/packer/packer_special $(APIFILES)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/pack_bbox.c: $(PATH_SUB_CURRENT)/packer/packer_bbox.py
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/pack_current.c: $(PATH_SUB_CURRENT)/packer/pack_current.py $(PATH_SUB_CURRENT)/packer/pack_currenttypes.py
-	$(VBOX_BLD_PYTHON) $< > $@
-
-$(PATH_VBOXCROGL_GENFILES)/%_swap.c: $(PATH_SUB_CURRENT)/packer/%.c $(PATH_SUB_CURRENT)/packer/pack_swap.py
-	$(VBOX_BLD_PYTHON) $(<D)/pack_swap.py $< > $@
-
-## @todo r=bird: GEN_C_FILES and GEN_H_FILES is reused by every target which is very confusing.
-# Just push all this down to the SOURCES, INTERMEDIATES and CLEAN. Don't worry about repeating something in the CLEAN list.
-GEN_C_FILES := \
-	pack_bbox.c \
-	pack_current.c \
-	packer.c
-GEN_C_FILES := $(addprefix $(PATH_VBOXCROGL_GENFILES)/, $(GEN_C_FILES))
-
-GEN_C_FILES.win =
-#GEN_C_FILES.win = packer.def
-GEN_C_FILES.win := $(addprefix $(PATH_VBOXCROGL_GENFILES)/, $(GEN_C_FILES.win))
-
-GEN_H_FILES := \
-	cr_packfunctions.h \
-	cr_opcodes.h \
-	state/cr_currentpointers.h
-GEN_H_FILES := $(addprefix $(PATH_VBOXCROGL_GENFILES)/, $(GEN_H_FILES))
-
-## @todo r=bird: This magic needs a sentence (or five) explaining what the heck it is all about.
-# After looking at it, what's the point here really? NORMAL_FILES is only referenced in the +.c bit, and
-# NORMAL_C_FILES is only references in the SOURCES. Looks like an extremely convoluted way of avoiding a bit of typing.
-NORMAL_FILES := \
-	pack_arrays \
-	pack_beginend \
-	pack_bounds \
-	pack_buffer \
-	pack_bufferobject \
-	pack_client \
-	pack_clipplane \
-	pack_context \
-	pack_error \
-	pack_extensions \
-	pack_feedback \
-	pack_fence \
-	pack_fog \
-	pack_init \
-	pack_lights \
-	pack_lists \
-	pack_swap_lists \
-	pack_map \
-	pack_point \
-	pack_swap_map \
-	pack_misc \
-	pack_materials \
-	pack_matrices \
-	pack_pixels \
-	pack_pixelmap \
-	pack_swap_pixelmap \
-	pack_program \
-	pack_regcombiner \
-	pack_stipple \
-	pack_texture \
-	pack_swap_texture \
-	pack_visibleregion
-NORMAL_C_FILES := $(addsuffix .c, $(NORMAL_FILES))
-NORMAL_C_FILES := $(addprefix packer/, $(NORMAL_C_FILES))
-
-## @todo r=bird: ditto.
-SWAP_FILES := pack_arrays \
-	pack_bounds \
-	pack_bufferobject \
-	pack_client \
-	pack_clipplane \
-	pack_fog \
-	pack_lights \
-	pack_materials \
-	pack_matrices \
-	pack_misc \
-	pack_pixels \
-	pack_point \
-	pack_program \
-	pack_regcombiner \
-	pack_stipple
-NAMED_SWAP_FILES := $(addsuffix _swap, $(SWAP_FILES))
-SWAP_C_FILES := $(addsuffix .c, $(NAMED_SWAP_FILES))
-SWAP_C_FILES := $(addprefix $(PATH_VBOXCROGL_GENFILES)/, $(SWAP_C_FILES))
-
-VBoxOGLcrpacker_TEMPLATE     = VBOXGUESTR3NPLIB
-VBoxOGLcrpacker_EXTENDS      = VBoxOGLGuestHostBase
-VBoxOGLcrpacker_INCS        := $(PATH_SUB_CURRENT)/include $(PATH_VBOXCROGL_GENFILES) $(PATH_SUB_CURRENT)/packer
-VBoxOGLcrpacker_INCS.darwin += $(PATH_OUT)/obj/VBoxOGL
-VBoxOGLcrpacker_SOURCES     := $(NORMAL_C_FILES) $(SWAP_C_FILES) $(GEN_C_FILES)
-VBoxOGLcrpacker_SOURCES.win := $(GEN_C_FILES.win)
-## @todo r=bird: No need to have these as DEPS, INTERMEDIATES suffices.
-VBoxOGLcrpacker_DEPS        := $(GEN_H_FILES) $(PATH_VBOXCROGL_GENFILES)/spu_dispatch_table.h
-VBoxOGLcrpacker_CLEAN       := $(SWAP_C_FILES) $(GEN_C_FILES) $(GEN_H_FILES)
-VBoxOGLcrpacker_CLEAN.win   := $(GEN_C_FILES.win)
-VBoxOGLcrpacker_INTERMEDIATES = $(GEN_H_FILES)
-VBoxOGLcrpacker_LIBS.win     = $(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB)
+VBoxOGLcrpacker_TEMPLATE       = VBOXOGLR3GUESTHOST
+VBoxOGLcrpacker_INCS          := $(PATH_SUB_CURRENT)/packer
+VBoxOGLcrpacker_SOURCES       := \
+	packer/pack_arrays.c \
+	packer/pack_beginend.c \
+	packer/pack_bounds.c \
+	packer/pack_buffer.c \
+	packer/pack_bufferobject.c \
+	packer/pack_client.c \
+	packer/pack_clipplane.c \
+	packer/pack_context.c \
+	packer/pack_error.c \
+	packer/pack_extensions.c \
+	packer/pack_feedback.c \
+	packer/pack_fence.c \
+	packer/pack_fog.c \
+	packer/pack_init.c \
+	packer/pack_lights.c \
+	packer/pack_lists.c \
+	packer/pack_swap_lists.c \
+	packer/pack_map.c \
+	packer/pack_point.c \
+	packer/pack_swap_map.c \
+	packer/pack_misc.c \
+	packer/pack_materials.c \
+	packer/pack_matrices.c \
+	packer/pack_pixels.c \
+	packer/pack_pixelmap.c \
+	packer/pack_swap_pixelmap.c \
+	packer/pack_program.c \
+	packer/pack_regcombiner.c \
+	packer/pack_stipple.c \
+	packer/pack_texture.c \
+	packer/pack_swap_texture.c \
+	packer/pack_visibleregion.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_arrays_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_bounds_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_bufferobject_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_client_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_clipplane_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_fog_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_lights_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_materials_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_matrices_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_misc_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_pixels_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_point_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_program_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_regcombiner_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_stipple_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_bbox.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_current.c \
+	$(VBOX_PATH_CROGL_GENFILES)/packer.c
+VBoxOGLcrpacker_INTERMEDIATES := \
+	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
+	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
+	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
+	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
+VBoxOGLcrpacker_CLEAN         := \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_arrays_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_bounds_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_bufferobject_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_client_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_clipplane_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_fog_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_lights_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_materials_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_matrices_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_misc_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_pixels_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_point_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_program_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_regcombiner_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_stipple_swap.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_bbox.c \
+	$(VBOX_PATH_CROGL_GENFILES)/pack_current.c \
+	$(VBOX_PATH_CROGL_GENFILES)/packer.c \
+	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
+	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
+	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h
+VBoxOGLcrpacker_LIBS.win       = $(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris darwin)
- VBoxOGLcrpacker_LIBS        = $(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
+ VBoxOGLcrpacker_LIBS = $(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
 endif
 
-VBoxOGLhostcrpacker_TEMPLATE = VBOXR3NP
+VBoxOGLhostcrpacker_TEMPLATE = VBOXOGLR3GUESTHOST
 VBoxOGLhostcrpacker_EXTENDS  = VBoxOGLcrpacker
 VBoxOGLhostcrpacker_LIBS.win = $(PATH_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
-VBoxOGLhostcrpacker_LDFLAGS.linux += -Wl,--no-as-needed
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLhostcrpacker_LIBS    = $(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
 endif
+
+$(VBOX_PATH_CROGL_GENFILES)/packer.def: $(PATH_SUB_CURRENT)/packer/packer_defs.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
+$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h: $(PATH_SUB_CURRENT)/packer/pack_header.py $(PATH_SUB_CURRENT)/packer/packer_special $(API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h: $(PATH_SUB_CURRENT)/packer/opcodes.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
+$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h: $(PATH_SUB_CURRENT)/packer/pack_currentheader.py $(PATH_SUB_CURRENT)/packer/pack_currenttypes.py | $$(dir $(VBOX_PATH_CROGL_GENFILES)) $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $<
+
+$(VBOX_PATH_CROGL_GENFILES)/packer.c: $(PATH_SUB_CURRENT)/packer/packer.py $(PATH_SUB_CURRENT)/packer/packer_special $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/pack_bbox.c: $(PATH_SUB_CURRENT)/packer/packer_bbox.py | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
+$(VBOX_PATH_CROGL_GENFILES)/pack_current.c: $(PATH_SUB_CURRENT)/packer/pack_current.py $(PATH_SUB_CURRENT)/packer/pack_currenttypes.py | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $<
+
+$(VBOX_PATH_CROGL_GENFILES)/%_swap.c: $(PATH_SUB_CURRENT)/packer/%.c $(PATH_SUB_CURRENT)/packer/pack_swap.py | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/pack_swap.py $<
 
 #
 # VBoxOGLspuload
 #
 
-$(PATH_VBOXCROGL_GENFILES)/dispatch.c: $(PATH_SUB_CURRENT)/spu_loader/dispatch.py $(APIFILES)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/spucopy.c: $(PATH_SUB_CURRENT)/spu_loader/spucopy.py $(APIFILES)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/spuchange.c: $(PATH_SUB_CURRENT)/spu_loader/spuchange.py $(APIFILES)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/glloader.c: $(PATH_SUB_CURRENT)/spu_loader/glloader.py $(APIFILES)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/spu_dispatch_table.h: $(PATH_SUB_CURRENT)/spu_loader/dispatchheader.py $(APIFILES) | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-## @todo r=bird: This ain't working. the GEN_C_FILES reference in VBoxOGLspuload_CLEAN is expanded too late and GEN_C_FILES looks like it's reused. Please clean up the makefile ASAP (see other review comments).
-GEN_C_FILES := spuchange.c spucopy.c dispatch.c glloader.c
-GEN_C_FILES := $(addprefix $(PATH_VBOXCROGL_GENFILES)/, $(GEN_C_FILES))
-
-VBoxOGLspuload_TEMPLATE   = VBOXGUESTR3NPLIB
-VBoxOGLspuload_EXTENDS    = VBoxOGLGuestHostBase
-VBoxOGLspuload_INCS      := $(PATH_SUB_CURRENT)/include $(PATH_VBOXCROGL_GENFILES)
-VBoxOGLspuload_INCS.darwin += $(PATH_OUT)/obj/VBoxOGL
-VBoxOGLspuload_SOURCES   := \
+VBoxOGLspuload_TEMPLATE   = VBOXOGLR3GUESTHOST
+VBoxOGLspuload_SOURCES    = \
 	spu_loader/spuinit.c \
 	spu_loader/spuload.c \
 	spu_loader/choosevisual.c \
-	$(GEN_C_FILES)
-#VBoxOGLspuload_SOURCES.win = loader.def
-VBoxOGLspuload_DEPS      := $(PATH_VBOXCROGL_GENFILES)/spu_dispatch_table.h
-VBoxOGLspuload_CLEAN      = $(GEN_C_FILES) $(PATH_VBOXCROGL_GENFILES)/spu_dispatch_table.h
+	$(VBOX_PATH_CROGL_GENFILES)/spuchange.c \
+	$(VBOX_PATH_CROGL_GENFILES)/spucopy.c \
+	$(VBOX_PATH_CROGL_GENFILES)/dispatch.c \
+	$(VBOX_PATH_CROGL_GENFILES)/glloader.c
+VBoxOGLspuload_DEPS      := $(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
+VBoxOGLspuload_CLEAN      = \
+	$(VBOX_PATH_CROGL_GENFILES)/spuchange.c \
+	$(VBOX_PATH_CROGL_GENFILES)/spucopy.c \
+	$(VBOX_PATH_CROGL_GENFILES)/dispatch.c \
+	$(VBOX_PATH_CROGL_GENFILES)/glloader.c \
+	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
 VBoxOGLspuload_LIBS.win   = $(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLspuload_LIBS += \
 	$(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
 endif
 
-VBoxOGLhostspuload_TEMPLATE = VBOXR3NP
+VBoxOGLhostspuload_TEMPLATE = VBOXOGLR3GUESTHOST
 VBoxOGLhostspuload_EXTENDS  = VBoxOGLspuload
 VBoxOGLhostspuload_LIBS.win = $(PATH_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
-VBoxOGLhostspuload_LDFLAGS.linux += -Wl,--no-as-needed
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLhostspuload_LIBS += \
 	$(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
 endif
 
+$(VBOX_PATH_CROGL_GENFILES)/dispatch.c: $(PATH_SUB_CURRENT)/spu_loader/dispatch.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
+$(VBOX_PATH_CROGL_GENFILES)/spucopy.c: $(PATH_SUB_CURRENT)/spu_loader/spucopy.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
+$(VBOX_PATH_CROGL_GENFILES)/spuchange.c: $(PATH_SUB_CURRENT)/spu_loader/spuchange.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
+$(VBOX_PATH_CROGL_GENFILES)/glloader.c: $(PATH_SUB_CURRENT)/spu_loader/glloader.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
+$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h: $(PATH_SUB_CURRENT)/spu_loader/dispatchheader.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
 #
 #  VBoxOGLcrstate
 #
 
-$(PATH_VBOXCROGL_GENFILES)/state_buffer_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_buffer.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py buffer Buffer $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_client_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_client.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py client Client $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_current_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_current.py convert.py) $(APIFILES)
-	$(VBOX_BLD_PYTHON) $(<D)/state_current.py > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_fog_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_fog.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py fog Fog $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_hint_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_hint.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py hint Hint $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_lighting_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_lighting.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py lighting Lighting $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_line_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_line.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py line Line $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_multisample_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_multisample.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py multisample Multisample $(<D) >$@
-
-$(PATH_VBOXCROGL_GENFILES)/state_point_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_point.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py point Point $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_polygon_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_polygon.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py polygon Polygon $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_regcombiner_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_regcombiner.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py regcombiner RegCombiner $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_stencil_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_stencil.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py stencil Stencil $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_viewport_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_viewport.txt gendiffcode.py)
-	$(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py viewport Viewport $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_get.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_get.py state_get.txt state_extensions_get.txt) $(APIFILES)
-	$(VBOX_BLD_PYTHON) $(<D)/state_get.py $(GLAPI_PATH) $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state_isenabled.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_isenabled.py state_isenabled.txt state_extensions_isenabled.txt) $(APIFILES)
-	$(VBOX_BLD_PYTHON) $(<D)/state_isenabled.py $(GLAPI_PATH) $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state.def: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_defs.py state_special state_select_special state_feedback_special) $(APIFILES)
-	$(VBOX_BLD_PYTHON) $(<D)/state_defs.py $(GLAPI_PATH) $(<D) > $@
-
-$(PATH_VBOXCROGL_GENFILES)/state/cr_statefuncs.h: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_funcs.py state_special state_feedback_special state_select_special) $(APIFILES) | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $(<D)/state_funcs.py $(GLAPI_PATH) $(<D) > $@
-
-GEN_FILES := buffer \
-	current \
-	fog \
-	hint \
-	lighting \
-	line \
-	multisample \
-	point \
-	polygon \
-	regcombiner \
-	stencil \
-	viewport
-GEN_FILES   := $(addprefix state_, $(GEN_FILES))
-GEN_C_FILES := $(addsuffix _gen.c, $(GEN_FILES))
-GEN_C_FILES := state_get.c state_isenabled.c $(GEN_C_FILES)
-GEN_C_FILES := $(addprefix $(PATH_VBOXCROGL_GENFILES)/, $(GEN_C_FILES))
-
-#GEN_C_FILES.win := state.def
-GEN_C_FILES.win :=
-GEN_C_FILES.win := $(addprefix $(PATH_VBOXCROGL_GENFILES)/, $(GEN_C_FILES.win))
-
-GEN_H_FILES := state/cr_statefuncs.h
-GEN_H_FILES := $(addprefix $(PATH_VBOXCROGL_GENFILES)/, $(GEN_H_FILES))
-
-VBoxOGLcrstate_TEMPLATE     = VBOXGUESTR3NPLIB
-VBoxOGLcrstate_EXTENDS      = VBoxOGLGuestHostBase
-VBoxOGLcrstate_INCS        :=   \
-	$(PATH_SUB_CURRENT)/include \
-	$(PATH_VBOXCROGL_GENFILES)  \
-	$(PATH_SUB_CURRENT)/state_tracker
-VBoxOGLcrstate_INCS.darwin += $(PATH_OUT)/obj/VBoxOGL
-VBoxOGLcrstate_LDFLAGS.darwin += -framework Carbon -framework OpenGL
-VBoxOGLcrstate_SOURCES   := \
-	state_attrib.c \
-	state_buffer.c \
-	state_bufferobject.c \
-	state_client.c \
-	state_current.c \
-	state_diff.c \
-	state_enable.c \
-	state_error.c \
-	state_evaluators.c \
-	state_feedback.c \
-	state_fence.c \
-	state_flush.c \
-	state_fog.c \
-	state_getstring.c \
-	state_hint.c \
-	state_init.c \
-	state_lighting.c \
-	state_limits.c \
-	state_line.c \
-	state_lists.c \
-	state_multisample.c \
-	state_occlude.c \
-	state_pixel.c \
-	state_point.c \
-	state_polygon.c \
-	state_program.c \
-	state_rasterpos.c \
-	state_regcombiner.c \
-	state_stencil.c \
-	state_texture.c \
-	state_teximage.c \
-	state_texdiff.c \
-	state_transform.c \
-	state_viewport.c
-VBoxOGLcrstate_SOURCES     := $(addprefix state_tracker/, $(VBoxOGLcrstate_SOURCES)) $(GEN_C_FILES)
-VBoxOGLcrstate_SOURCES.win := $(GEN_C_FILES.win)
-VBoxOGLcrstate_DEPS        := $(GEN_H_FILES)
-VBoxOGLcrstate_CLEAN       := $(GEN_C_FILES) $(GEN_H_FILES)
-VBoxOGLcrstate_LIBS.win     = \
+VBoxOGLcrstate_TEMPLATE       = VBOXOGLR3GUESTHOST
+VBoxOGLcrstate_INCS          := $(PATH_SUB_CURRENT)/state_tracker
+VBoxOGLcrstate_SOURCES       := \
+	state_tracker/state_attrib.c \
+	state_tracker/state_buffer.c \
+	state_tracker/state_bufferobject.c \
+	state_tracker/state_client.c \
+	state_tracker/state_current.c \
+	state_tracker/state_diff.c \
+	state_tracker/state_enable.c \
+	state_tracker/state_error.c \
+	state_tracker/state_evaluators.c \
+	state_tracker/state_feedback.c \
+	state_tracker/state_fence.c \
+	state_tracker/state_flush.c \
+	state_tracker/state_fog.c \
+	state_tracker/state_getstring.c \
+	state_tracker/state_hint.c \
+	state_tracker/state_init.c \
+	state_tracker/state_lighting.c \
+	state_tracker/state_limits.c \
+	state_tracker/state_line.c \
+	state_tracker/state_lists.c \
+	state_tracker/state_multisample.c \
+	state_tracker/state_occlude.c \
+	state_tracker/state_pixel.c \
+	state_tracker/state_point.c \
+	state_tracker/state_polygon.c \
+	state_tracker/state_program.c \
+	state_tracker/state_rasterpos.c \
+	state_tracker/state_regcombiner.c \
+	state_tracker/state_stencil.c \
+	state_tracker/state_texture.c \
+	state_tracker/state_teximage.c \
+	state_tracker/state_texdiff.c \
+	state_tracker/state_transform.c \
+	state_tracker/state_viewport.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_buffer_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_current_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_fog_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_hint_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_lighting_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_line_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_multisample_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_point_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_polygon_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_regcombiner_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_stencil_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_viewport_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_get.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_isenabled.c
+VBoxOGLcrstate_INTERMEDIATES := $(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
+VBoxOGLcrstate_CLEAN         := \
+	$(VBOX_PATH_CROGL_GENFILES)/state_buffer_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_current_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_fog_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_hint_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_lighting_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_line_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_multisample_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_point_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_polygon_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_regcombiner_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_stencil_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_viewport_gen.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_get.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state_isenabled.c \
+	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
+VBoxOGLcrstate_LIBS.win      = \
 	$(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxOGLspuload$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris darwin)
@@ -468,14 +370,13 @@ if1of ($(KBUILD_TARGET), linux solaris darwin)
 	$(VBOX_PATH_ADDITIONS)/VBoxOGLspuload$(VBOX_SUFF_DLL)
 endif
 
-VBoxOGLhostcrstate_TEMPLATE = VBOXR3NP
+VBoxOGLhostcrstate_TEMPLATE = VBOXOGLR3GUESTHOST
 VBoxOGLhostcrstate_EXTENDS  = VBoxOGLcrstate
 VBoxOGLhostcrstate_SOURCES  = $(VBoxOGLcrstate_SOURCES) state_tracker/state_snapshot.c
 VBoxOGLhostcrstate_LIBS.win = \
 	$(PATH_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
 	$(LIB_VMM)
-VBoxOGLhostcrstate_LDFLAGS.linux += -Wl,--no-as-needed
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLhostcrstate_LIBS += \
 	$(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL) \
@@ -483,40 +384,87 @@ if1of ($(KBUILD_TARGET), linux solaris darwin)
 	$(LIB_VMM)
 endif
 
+$(VBOX_PATH_CROGL_GENFILES)/state_buffer_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_buffer.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py buffer Buffer $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_client_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_client.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py client Client $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_current_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_current.py convert.py) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/state_current.py
+
+$(VBOX_PATH_CROGL_GENFILES)/state_fog_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_fog.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py fog Fog $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_hint_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_hint.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py hint Hint $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_lighting_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_lighting.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py lighting Lighting $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_line_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_line.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py line Line $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_multisample_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_multisample.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py multisample Multisample $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_point_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_point.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py point Point $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_polygon_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_polygon.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py polygon Polygon $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_regcombiner_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_regcombiner.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py regcombiner RegCombiner $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_stencil_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_stencil.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py stencil Stencil $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_viewport_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_viewport.txt gendiffcode.py) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py viewport Viewport $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_get.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_get.py state_get.txt state_extensions_get.txt) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/state_get.py $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state_isenabled.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_isenabled.py state_isenabled.txt state_extensions_isenabled.txt) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/state_isenabled.py $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state.def: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_defs.py state_special state_select_special state_feedback_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/state_defs.py $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_funcs.py state_special state_feedback_special state_select_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/state_funcs.py $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
 #
 # VBoxOGLerrorspu
 #
 
-$(PATH_VBOXCROGL_GENFILES)/errorspu.c: $(PATH_SUB_CURRENT)/error/error.py $(APIFILES)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-VBoxOGLerrorspu_TEMPLATE   = VBOXGUESTR3NPDLL
-VBoxOGLerrorspu_EXTENDS    = VBoxOGLGuestHostBase
-VBoxOGLerrorspu_INCS      := $(PATH_SUB_CURRENT)/include $(PATH_VBOXCROGL_GENFILES)
-VBoxOGLerrorspu_DEPS.darwin += $(PATH_OUT)/obj/VBoxOGL/GL/gl.h $(PATH_OUT)/obj/VBoxOGL/GL/glu.h
-VBoxOGLerrorspu_INCS.darwin += $(PATH_OUT)/obj/VBoxOGL
-VBoxOGLerrorspu_INTERMEDIATES = $(PATH_VBOXCROGL_GENFILES)/spu_dispatch_table.h
-VBoxOGLerrorspu_SOURCES    = \
-	$(PATH_VBOXCROGL_GENFILES)/errorspu.c \
+VBoxOGLerrorspu_TEMPLATE      = VBOXOGLR3GUESTHOST
+VBoxOGLerrorspu_DEPS.darwin  += $(PATH_OUT)/obj/VBoxOGL/GL/gl.h $(PATH_OUT)/obj/VBoxOGL/GL/glu.h
+VBoxOGLerrorspu_INTERMEDIATES = $(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
+VBoxOGLerrorspu_SOURCES       = \
+	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c \
 	error/errorspu_init.c
 VBoxOGLerrorspu_SOURCES.win.x86 = error/error.def
-VBoxOGLerrorspu_CLEAN     := $(PATH_VBOXCROGL_GENFILES)/errorspu.c
-VBoxOGLerrorspu_LIBS.win   = $(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB)
+VBoxOGLerrorspu_CLEAN        := $(VBOX_PATH_CROGL_GENFILES)/errorspu.c
+VBoxOGLerrorspu_LIBS.win      = $(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLerrorspu_LIBS += \
 	$(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
 endif
 
-VBoxOGLhosterrorspu_TEMPLATE = VBOXR3NP
+VBoxOGLhosterrorspu_TEMPLATE = VBOXOGLR3GUESTHOST
 VBoxOGLhosterrorspu_EXTENDS  = VBoxOGLerrorspu
 VBoxOGLhosterrorspu_LIBS    += $(LIB_RUNTIME)
 VBoxOGLhosterrorspu_LIBS.win = $(PATH_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
 VBoxOGLhosterrorspu_LDFLAGS.darwin += $(VBoxOGLerrorspu_LDFLAGS.darwin) -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhosterrorspu.dylib -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
-VBoxOGLhosterrorspu_LDFLAGS.linux += -Wl,--no-as-needed
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLhosterrorspu_LIBS += \
 	$(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
 endif
+
+$(VBOX_PATH_CROGL_GENFILES)/errorspu.c: $(PATH_SUB_CURRENT)/error/error.py $(VBOX_CROGL_API_FILES)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
