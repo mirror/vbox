@@ -9495,7 +9495,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="FramebufferPixelFormat"
-    uuid="6b27d1fc-4f2c-4e9c-a166-01d06540305d"
+    uuid="7acfd5ed-29e3-45e3-8136-73c9224f3d2d"
   >
     <desc>
       Format of the video memory buffer. Constants represented by this enum can
@@ -9506,7 +9506,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       See also www.fourcc.org for more information about FOURCC pixel formats.
     </desc>
 
-    <const name="Opaque"                  value="0xFFFFFFFF">
+    <const name="Opaque"                  value="0">
       <desc>
         Unknown buffer format (the user may not assume any particular format of
         the buffer).
