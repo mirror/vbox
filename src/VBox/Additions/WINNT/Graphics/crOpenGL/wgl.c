@@ -459,7 +459,8 @@ BOOL WINAPI wglGetPixelFormatAttribfvEXT_prox(HDC hdc, int iPixelFormat, int iLa
 
 const GLubyte * WINAPI wglGetExtensionsStringEXT_prox( HDC hdc )
 {
-    static GLubyte *retval = "WGL_EXT_pixel_format WGL_ARB_multisample";
+    /*static GLubyte *retval = "WGL_EXT_pixel_format WGL_ARB_multisample";*/
+    static GLubyte *retval = "WGL_ARB_multisample";
 
     (void) hdc;
 

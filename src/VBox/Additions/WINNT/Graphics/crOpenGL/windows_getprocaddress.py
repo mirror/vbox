@@ -17,6 +17,7 @@ print """
 #include "stub.h"
 #include "icd_drv.h"
 #include "cr_gl.h"
+#include "cr_error.h"
 
 #ifdef WINDOWS
 #pragma warning( disable: 4055 )
@@ -90,9 +91,13 @@ print """
     { NULL, NULL }
 };
 
+extern const GLubyte * WINAPI wglGetExtensionsStringEXT_prox( HDC hdc );
+
 CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 {
     int i;
+    wglGetExtensionsStringEXTFunc_t wglGetExtensionsStringEXT = wglGetExtensionsStringEXT_prox;
+
     stubInit();
 
     for (i = 0; functions[i].name; i++) {
@@ -100,7 +105,10 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
             return functions[i].address;
         }
     }
+    
+    if (!crStrcmp( name, "wglGetExtensionsStringARB" )) return (CR_PROC) wglGetExtensionsStringEXT;
 
+    crDebug("Returning GetProcAddress:NULL for %s", name);
     return NULL;
 }
 
@@ -109,7 +117,6 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 
 
 # XXX should crGetProcAddress really handle WGL/GLX functions???
-
 print_foo = """
 /* As these are Windows specific (i.e. wgl), define these now.... */
 #ifdef WINDOWS
