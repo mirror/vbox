@@ -124,8 +124,16 @@ enum ControllerSystemType { IDE, SATA, SCSI };
 struct HardDiskController
 {
     uint32_t             idController;           // instance ID (Item/InstanceId); this gets referenced from HardDisk
-    ControllerSystemType controllerSystem;       // @todo: figure out of OVF (IDE;SATA;SCSI)
-    string               strControllerType;      // controller type (Item/ResourceSubType); e.g. "LsiLogic"
+    ControllerSystemType controllerSystem;       // one of IDE, SATA, SCSI
+    string               strControllerType;      // controller type (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
+    string               strAddress;             // for IDE
+    uint32_t             ulBusNumber;            // for IDE
+
+    HardDiskController()
+        : idController(0),
+          ulBusNumber(0)
+    {
+    }
 };
 
 typedef map<uint32_t, HardDiskController> ControllersMap;
@@ -583,6 +591,25 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                             i.strAllocationUnits.c_str(),
                                             i.ulLineNumber);
                     break;
+
+                    case OVFResourceType_IdeController:          // 5       IdeController
+                    {
+                        /*  <Item>
+                                <rasd:Caption>ideController0</rasd:Caption>
+                                <rasd:Description>IDE Controller</rasd:Description>
+                                <rasd:InstanceId>5</rasd:InstanceId>
+                                <rasd:ResourceType>5</rasd:ResourceType>
+                                <rasd:Address>0</rasd:Address>
+                                <rasd:BusNumber>0</rasd:BusNumber>
+                            </Item> */
+                        HardDiskController hdc;
+                        hdc.idController = i.ulInstanceID;
+                        hdc.controllerSystem = IDE;
+                        hdc.strAddress = i.strAddress;
+                        hdc.ulBusNumber = i.ulBusNumber;
+
+                        d.mapControllers[i.ulInstanceID] = hdc;
+                    }
 
                     case OVFResourceType_ParallelScsiHba:        // 6       SCSI controller
                     {
