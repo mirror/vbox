@@ -943,19 +943,22 @@ STDMETHODIMP Appliance::ImportAppliance()
         ComAssertComRCThrowRC (rc);
 
         /* CPU count (ignored for now) */
+        /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxCPUCount) */
         // list<VirtualSystemDescriptionEntry> vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
 
         /* RAM */
+        /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
         list<VirtualSystemDescriptionEntry> vsdeRAM = vsd->findByType (VirtualSystemDescriptionType_Memory);
         Assert (vsdeRAM.size() == 1);
         string memoryVBox = vsdeRAM.front().strFinalValue;
-        uint32_t tt = RTStrToUInt32 (memoryVBox.c_str()) / _1M;
+        uint64_t tt = RTStrToUInt64 (memoryVBox.c_str()) / _1M;
 
         rc = newMachine->COMSETTER(MemorySize)(tt);
         ComAssertComRCThrowRC (rc);
 
         /* VRAM */
-        /* Get the recommended VRAM for this guest os type */
+        /* Get the recommended VRAM for this guest OS type */
+        /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestVRAM) */
         ULONG vramVBox;
         rc = osType->COMGETTER(RecommendedVRAM) (&vramVBox);
         ComAssertComRCThrowRC (rc);
@@ -977,9 +980,11 @@ STDMETHODIMP Appliance::ImportAppliance()
         else
         {
             list<VirtualSystemDescriptionEntry>::const_iterator nwIt;
+            /* Iterate through all network cards. We support 8 network adapters
+             * at the maximum. (@todo: warn if it are more!) */
             size_t a = 0;
             for (nwIt = vsdeNW.begin();
-                 (nwIt != vsdeNW.end() && a < 9);
+                 (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
                  ++nwIt, ++a)
             {
                 string nwTypeVBox = nwIt->strFinalValue;
@@ -1237,9 +1242,8 @@ HRESULT Appliance::construeAppliance()
         string nameVBox = vs.strName;
         if (nameVBox == "")
             nameVBox = osTypeVBox;
-        /* @todo: make sure the name is unique (add some numbers if not) */
         searchUniqueVMName (nameVBox);
-        vsd->addEntry(VirtualSystemDescriptionType_Name, 0, nameVBox, nameVBox);
+        vsd->addEntry (VirtualSystemDescriptionType_Name, 0, vs.strName, nameVBox);
 
         /* Now that we know the base system get our internal defaults based on that. */
         IGuestOSType *osType = NULL;
@@ -1247,12 +1251,14 @@ HRESULT Appliance::construeAppliance()
         ComAssertComRCThrowRC (rc);
 
         /* CPU count */
+        /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxCPUCount) */
         ULONG cpuCountVBox = vs.cCPUs;
         if (vs.cCPUs == 0)
             cpuCountVBox = 1;
         vsd->addEntry (VirtualSystemDescriptionType_CPU, 0, toString<ULONG> (vs.cCPUs), toString<ULONG> (cpuCountVBox));
 
         /* RAM */
+        /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
         uint64_t ullMemSizeVBox = vs.ullMemorySize; /** @todo r=bird/MSC: this will overflow at 4GB, use 64-bit type. */
         if (vs.ullMemorySize == 0)
         {
@@ -1280,9 +1286,9 @@ HRESULT Appliance::construeAppliance()
                         // @todo: figure out the IDE types
                         /* Use PIIX4 as default */
                         IDEControllerType_T hdcController = IDEControllerType_PIIX4;
-                        if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX3"))
+                        if (!RTStrICmp (hdc.strControllerType.c_str(), "PIIX3"))
                             hdcController = IDEControllerType_PIIX3;
-                        else if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX4"))
+                        else if (!RTStrICmp (hdc.strControllerType.c_str(), "PIIX4"))
                             hdcController = IDEControllerType_PIIX4;
                         vsd->addEntry (VirtualSystemDescriptionType_HarddiskControllerIDE, hdc.idController, hdc.strControllerType, toString<ULONG> (hdcController));
                         break;
@@ -1298,9 +1304,9 @@ HRESULT Appliance::construeAppliance()
                     {
                         string hdcController = "LsiLogic";
                         // @todo: figure out the SCSI types
-                        if (!RTStrICmp(hdc.strControllerType.c_str(), "LsiLogic"))
+                        if (!RTStrICmp (hdc.strControllerType.c_str(), "LsiLogic"))
                             hdcController = "LsiLogic";
-                        else if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
+                        else if (!RTStrICmp (hdc.strControllerType.c_str(), "BusLogic"))
                             hdcController = "BusLogic";
                         vsd->addEntry (VirtualSystemDescriptionType_HarddiskControllerSCSI, hdc.idController, hdc.strControllerType, hdcController);
                         break;
@@ -1315,7 +1321,7 @@ HRESULT Appliance::construeAppliance()
             //  - strHref could be empty (construct a new default file name)
             //  - check that the filename is unique to vbox in any case
             list<VirtualDisk>::const_iterator hdIt;
-            /* Iterate through all hard disks */
+            /* Iterate through all hard disks ()*/
             for (hdIt = vs.llVirtualDisks.begin();
                  hdIt != vs.llVirtualDisks.end();
                  ++hdIt)
@@ -1329,10 +1335,10 @@ HRESULT Appliance::construeAppliance()
                 //  - figure out all possible vmdk formats we also support
                 //  - figure out if there is a url specifier for vhd already
                 //  - we need a url specifier for the vdi format
-                if (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#sparse"))
+                if (!RTStrICmp (di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#sparse"))
                     fSupported = true;
                 /* enable compressed formats for the first tests also */
-                else if (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed"))
+                else if (!RTStrICmp (di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed"))
                     fSupported = true;
                 if (fSupported)
                 {
@@ -1347,15 +1353,17 @@ HRESULT Appliance::construeAppliance()
         // @todo: is there no hardware specified in the OVF-Format?
         if (vs.llNetworkNames.size() > 0)
         {
-            /* Get the default network adapter type for the selected guest os */
+            /* Get the default network adapter type for the selected guest OS */
             NetworkAdapterType_T nwAdapterVBox = NetworkAdapterType_Am79C970A;
             rc = osType->COMGETTER(AdapterType) (&nwAdapterVBox);
             ComAssertComRCThrowRC (rc);
             list<string>::const_iterator nwIt;
-            /* Iterate through all abstract networks */
+            /* Iterate through all abstract networks. We support 8 network
+             * adapters at the maximum. (@todo: warn if it are more!) */
+            size_t a = 0;
             for (nwIt = vs.llNetworkNames.begin();
-                 nwIt != vs.llNetworkNames.end();
-                 ++nwIt)
+                 nwIt != vs.llNetworkNames.end() && a < SchemaDefs::NetworkAdapterCount;
+                 ++nwIt, ++a)
             {
                 // string nwController = *nwIt; // @todo: not used yet
                 vsd->addEntry (VirtualSystemDescriptionType_NetworkAdapter, 0, "", toString<ULONG> (nwAdapterVBox));
