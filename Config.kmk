@@ -334,7 +334,7 @@ ifeq ($(KBUILD_TARGET),linux)
 endif
 # Enable crOpenGL service
 if1of ($(KBUILD_TARGET),win linux solaris darwin)
-VBOX_WITH_CROGL = 1
+ VBOX_WITH_CROGL = 1
 endif
 # Enable OpenGL service
 VBOX_WITH_OGL = 1
@@ -470,9 +470,6 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_WITH_NETFLT = 1
  VBOX_SOLARIS_NSL_RESOLVED = 1
 endif
-
-# Enable Shared Chromium OpenGL extensions
-#VBOX_WITH_CROGL =1
 
 #
 # Branding
@@ -643,7 +640,6 @@ ifdef VBOX_OSE
  VBOX_WITH_TESTSUITE=
  VBOX_WITH_INTEL_PXE=
  VBOX_WITH_FFMPEG=
- VBOX_WITH_CROGL=
  ifn1of ($(KBUILD_TARGET), linux solaris)
   # Only the Linux, Solaris installers are public
   VBOX_WITH_INSTALLER=
