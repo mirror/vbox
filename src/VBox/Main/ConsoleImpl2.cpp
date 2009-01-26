@@ -451,6 +451,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     fHpetEnabled = false;
 #endif
 
+    if (fHpetEnabled)
+    {
+        rc = CFGMR3InsertNode(pDevices, "hpet", &pDev);                      RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                        RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */   RC_CHECK();
+    }
+
     /*
      * System Management Controller (SMC)
      */
@@ -461,6 +468,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #else
     fSmcEnabled = false;
 #endif
+    if (fSmcEnabled)
+    {
+        rc = CFGMR3InsertNode(pDevices, "smc", &pDev);                       RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                        RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */   RC_CHECK();
+    }
 
     /*
      * Low Pin Count (LPC) bus
