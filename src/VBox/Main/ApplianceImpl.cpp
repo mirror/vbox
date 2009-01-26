@@ -692,13 +692,13 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                         // ovf://disk/lamp
                         // 12345678901234
                         if (i.strHostResource.substr(0, 11) == "ovf://disk/")
-                        {
                             vd.strDiskId = i.strHostResource.substr(11);
-                            if (m->mapDisks.find(vd.strDiskId) != m->mapDisks.end())
-                                fFound = true;
-                        }
+                        else if (i.strHostResource.substr(0, 6) == "/disk/")
+                            vd.strDiskId = i.strHostResource.substr(6);
 
-                        if (!fFound)
+                        if (    !(vd.strDiskId.length())
+                             || (m->mapDisks.find(vd.strDiskId) == m->mapDisks.end())
+                           )
                             return setError(VBOX_E_FILE_ERROR,
                                             tr("Error reading \"%s\": Hard disk item with instance ID %d specifies invalid host resource \"%s\", line %d"),
                                             pcszPath,
