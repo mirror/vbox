@@ -38,31 +38,31 @@ static struct name_address functions[] = {
 
 keys = apiutil.GetAllFunctions(sys.argv[1]+"/APIspec.txt")
 for func_name in keys:
-	if "Chromium" == apiutil.Category(func_name):
-		continue
-	if func_name == "BoundsInfoCR":
-		continue
-	if "GL_chromium" == apiutil.Category(func_name):
-		pass #continue
+    if "Chromium" == apiutil.Category(func_name):
+        continue
+    if func_name == "BoundsInfoCR":
+        continue
+    if "GL_chromium" == apiutil.Category(func_name):
+        pass #continue
 
-	wrap = apiutil.GetCategoryWrapper(func_name)
-	name = "gl" + func_name
-	address = "cr_gl" + func_name
-	if wrap:
-		print '#ifdef CR_%s' % wrap
-	print '\t{ "%s", (CR_PROC) %s },' % (name, address)
-	if wrap:
-		print '#endif'
+    wrap = apiutil.GetCategoryWrapper(func_name)
+    name = "gl" + func_name
+    address = "cr_gl" + func_name
+    if wrap:
+        print '#ifdef CR_%s' % wrap
+    print '\t{ "%s", (CR_PROC) %s },' % (name, address)
+    if wrap:
+        print '#endif'
 
 
 print "\t/* Chromium binding/glue functions */"
 
 for func_name in keys:
-	if (func_name == "Writeback" or
-		func_name == "BoundsInfoCR"):
-		continue
-	if apiutil.Category(func_name) == "Chromium":
-		print '\t{ "cr%s", (CR_PROC) cr%s },' % (func_name, func_name)
+    if (func_name == "Writeback" or
+        func_name == "BoundsInfoCR"):
+        continue
+    if apiutil.Category(func_name) == "Chromium":
+        print '\t{ "cr%s", (CR_PROC) cr%s },' % (func_name, func_name)
 
 print "\t/* Windows ICD functions */"
 
@@ -79,29 +79,29 @@ for func_name in ( "CopyContext",
     "ShareLists",
     "SwapBuffers",
     "SwapLayerBuffers",
-	"ReleaseContext",
-	"SetContext",
-	"ValidateVersion"):
-	print '\t{ "Drv%s", (CR_PROC) Drv%s },' % (func_name, func_name)
+    "ReleaseContext",
+    "SetContext",
+    "ValidateVersion"):
+    print '\t{ "Drv%s", (CR_PROC) Drv%s },' % (func_name, func_name)
 
 print '\t{ "DrvGetProcAddress", (CR_PROC) wglGetProcAddress_prox },'
 
 print """
-	{ NULL, NULL }
+    { NULL, NULL }
 };
 
 CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 {
-	int i;
-	stubInit();
+    int i;
+    stubInit();
 
-	for (i = 0; functions[i].name; i++) {
-		if (crStrcmp(name, functions[i].name) == 0) {
-			return functions[i].address;
-		}
-	}
+    for (i = 0; functions[i].name; i++) {
+        if (crStrcmp(name, functions[i].name) == 0) {
+            return functions[i].address;
+        }
+    }
 
-	return NULL;
+    return NULL;
 }
 
 """
@@ -113,15 +113,15 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 print_foo = """
 /* As these are Windows specific (i.e. wgl), define these now.... */
 #ifdef WINDOWS
-	{
-		wglGetExtensionsStringEXTFunc_t wglGetExtensionsStringEXT = NULL;
-		wglChoosePixelFormatFunc_t wglChoosePixelFormatEXT = NULL;
-		wglGetPixelFormatAttribivEXTFunc_t wglGetPixelFormatAttribivEXT = NULL;
-		wglGetPixelFormatAttribfvEXTFunc_t wglGetPixelFormatAttribfvEXT = NULL;
-		if (!crStrcmp( name, "wglGetExtensionsStringEXT" )) return (CR_PROC) wglGetExtensionsStringEXT;
-		if (!crStrcmp( name, "wglChoosePixelFormatEXT" )) return (CR_PROC) wglChoosePixelFormatEXT;
-		if (!crStrcmp( name, "wglGetPixelFormatAttribivEXT" )) return (CR_PROC) wglGetPixelFormatAttribivEXT;
-		if (!crStrcmp( name, "wglGetPixelFormatAttribfvEXT" )) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
-	}
+    {
+        wglGetExtensionsStringEXTFunc_t wglGetExtensionsStringEXT = NULL;
+        wglChoosePixelFormatFunc_t wglChoosePixelFormatEXT = NULL;
+        wglGetPixelFormatAttribivEXTFunc_t wglGetPixelFormatAttribivEXT = NULL;
+        wglGetPixelFormatAttribfvEXTFunc_t wglGetPixelFormatAttribfvEXT = NULL;
+        if (!crStrcmp( name, "wglGetExtensionsStringEXT" )) return (CR_PROC) wglGetExtensionsStringEXT;
+        if (!crStrcmp( name, "wglChoosePixelFormatEXT" )) return (CR_PROC) wglChoosePixelFormatEXT;
+        if (!crStrcmp( name, "wglGetPixelFormatAttribivEXT" )) return (CR_PROC) wglGetPixelFormatAttribivEXT;
+        if (!crStrcmp( name, "wglGetPixelFormatAttribfvEXT" )) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
+    }
 #endif
 """
