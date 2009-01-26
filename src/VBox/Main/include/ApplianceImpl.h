@@ -26,6 +26,8 @@
 
 #include "VirtualBoxBase.h"
 
+class VirtualBox;
+
 class ATL_NO_VTABLE Appliance :
     public VirtualBoxBaseWithChildrenNEXT,
     public VirtualBoxSupportErrorInfoImpl <Appliance, IAppliance>,
@@ -54,7 +56,7 @@ public:
     HRESULT FinalConstruct() { return S_OK; }
     void FinalRelease() { uninit(); }
 
-    HRESULT init(IN_BSTR &path);
+    HRESULT init (VirtualBox *aVirtualBox, IN_BSTR &path);
     void uninit();
 
     // for VirtualBoxSupportErrorInfoImpl
@@ -74,6 +76,9 @@ public:
 
     /* private instance data */
 private:
+    /** weak VirtualBox parent */
+    const ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
+
     struct Data;            // obscure, defined in AppliannceImpl.cpp
     Data *m;
 
@@ -83,6 +88,7 @@ private:
     HRESULT HandleVirtualSystemContent(const char *pcszPath, const xml::Node *pContentElem);
 
     HRESULT construeAppliance();
+    HRESULT searchUniqueVMName (std::string& aName);
 };
 
 
