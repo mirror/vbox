@@ -757,7 +757,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             rc = RTFileRead(pThis->DeviceFileR, abBuffer, sizeof(abBuffer), &cbRead);
             if (RT_FAILURE(rc))
             {
-                LogRel(("HostSerial#%d: Read failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
+                LogRel(("HostSerial#%d: (1) Read failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
                 rcThread = rc;
                 break;
             }
@@ -795,7 +795,11 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             rc = RTFileRead(pThis->DeviceFile, abBuffer, sizeof(abBuffer), &cbRead);
             if (RT_FAILURE(rc))
             {
-                LogRel(("HostSerial#%d: Read failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
+                /* don't terminate worker thread when data unavailable */
+                if (rc == VERR_TRY_AGAIN)
+                    continue;
+
+                LogRel(("HostSerial#%d: (2) Read failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
                 rcThread = rc;
                 break;
             }
