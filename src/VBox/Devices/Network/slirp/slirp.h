@@ -338,6 +338,7 @@ int errno_func(const char *file, int line);
 # endif
 #endif
 
+#ifndef VBOX_WITH_MULTI_DNS
 #define DO_ALIAS(paddr)                                                     \
 do {                                                                        \
     if ((paddr)->s_addr == dns_addr.s_addr)                                 \
@@ -345,4 +346,7 @@ do {                                                                        \
         (paddr)->s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);      \
     }                                                                       \
 } while(0)
+#else
+#define DO_ALIAS(paddr) do {} while (0)
+#endif
 #endif

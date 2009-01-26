@@ -572,11 +572,13 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
                 break;
 #endif
             case CTL_DNS:
+#ifndef VBOX_WITH_MULTI_DNS
                 if (!get_dns_addr(pData, &dns_addr))
                     addr.sin_addr = dns_addr;
                 else
                     addr.sin_addr = loopback_addr;
                 break;
+#endif
             case CTL_ALIAS:
             default:
                 if (last_byte == ~pData->netmask)

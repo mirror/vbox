@@ -151,6 +151,10 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     DWORD ret;
     IP_ADDR_STRING *pIPAddr;
     struct in_addr tmp_addr;
+#ifdef VBOX_WITH_MULTI_DNS
+    struct in_addr local_mask;
+    struct in_addr local_network;
+#endif
 
     FixedInfo = (FIXED_INFO *)GlobalAlloc(GPTR, sizeof(FIXED_INFO));
     BufLen = sizeof(FIXED_INFO);
@@ -180,6 +184,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         goto get_dns_prefix;
     }
 
+#ifndef VBOX_WITH_MULTI_DNS
     pIPAddr = &(FixedInfo->DnsServerList);
     inet_aton(pIPAddr->IpAddress.String, &tmp_addr);
     Log(("nat: DNS Servers:\n"));
@@ -194,6 +199,26 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             LogRel(("NAT: ignored DNS address: %s\n", pIPAddr ->IpAddress.String));
         pIPAddr = pIPAddr ->Next;
     }
+#else
+    /*localhost mask */
+    inet_aton("255.0.0.0", &local_mask);
+    inet_aton("127.0.0.0", &local_network);
+    for (pIPAddr = &FixedInfo->DnsServerList; pIPAddr != NULL; pIPAddr = pIPAddr->Next) 
+    {
+        struct dns_entry *da = RTMemAllocZ(sizeof (struct dns_entry));	
+        if (da == NULL) 
+        {
+            LogRel(("can't alloc memory for DNS entry\n"));
+            return -1;
+        }
+        /*check */
+        inet_aton(pIPAddr->IpAddress.String, &da->de_addr);
+        if ((ntohl(da->de_addr.s_addr) & ntohl(local_mask.s_addr)) == ntohl(local_network.s_addr)) {
+            da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS); 
+        }
+        LIST_INSERT_HEAD(&pData->dns_list_head, da, de_list);
+    }
+#endif
     if (FixedInfo)
     {
         GlobalFree(FixedInfo);
@@ -369,15 +394,20 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     /* Initialise mbufs *after* setting the MTU */
     m_init(pData);
 
+    inet_aton(pszNetAddr, &special_addr);
+    alias_addr.s_addr = special_addr.s_addr | htonl(CTL_ALIAS);
+
     /* set default addresses */
     inet_aton("127.0.0.1", &loopback_addr);
+#ifndef VBOX_WITH_MULTI_DNS
     inet_aton("127.0.0.1", &dns_addr);
 
     if (get_dns_addr_domain(pData, true, &dns_addr, &pData->pszDomain) < 0)
+#else
+    if (get_dns_addr_domain(pData, true, NULL, &pData->pszDomain) < 0)
+#endif
         fNATfailed = 1;
 
-    inet_aton(pszNetAddr, &special_addr);
-    alias_addr.s_addr = special_addr.s_addr | htonl(CTL_ALIAS);
     getouraddr(pData);
     return fNATfailed ? VINF_NAT_DNS : VINF_SUCCESS;
 }
