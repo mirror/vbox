@@ -53,6 +53,9 @@ KBUILD_BLD_TYPES += dbgopt
 BLD_TYPE_dbgopt_EXTENDS = debug
 BLD_TYPE_dbgopt_EXTENDS_BY = appending
 
+# Temporary hack for kBuild ticket #83.
+## @todo kBuild: remove after closing ticket #83.
+PROPS_ACCUMULATE_L_LNK += INTERMEDIATES
 
 # Install paths.
 PATH_INS              = $(PATH_OUT)
