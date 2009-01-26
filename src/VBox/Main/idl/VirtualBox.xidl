@@ -2881,22 +2881,31 @@
         Represents an appliance in OVF format. An instance of this is returned by
         <link to="IVirtualBox::openAppliance" />.
 
-        Opening an appliance is a three-step process with VirtualBox: first
-        <link to="IVirtualBox::openAppliance" /> is called, which succeeds if the
-        appliance file is syntactically valid, irrespective of whether VirtualBox
-        can handle the appliance.
+        Importing an OVF appliance into VirtualBox is a three-step process:
 
-        As a second step, the caller should then invoke <link to="IAppliance::interpret" />,
-        which analyzes the OVF data and sets up the contents of the IAppliance attributes
-        accordingly. These can be inspected by a VirtualBox front-end such as the GUI,
-        and the suggestions can be displayed to the user. For example, the virtual system
-        will contain the virtual hardware prescribed by the OVF (network and hardware
-        adapters, virtual disk images, memory size and so on), and the GUI can then give
-        the user the option to confirm and/or change these suggestions.
+        <ol>
+          <li>
+          Call <link to="IVirtualBox::openAppliance" /> with the full path of the OVF
+          file. So long as the appliance file is syntactically valid, this will succeed
+          and return an instance of IAppliance that contains the parsed data from the
+          OVF file.
+          </li>
 
-        As a third step, the caller should invoke <link to="#Import" />, which will create
-        virtual machines in VirtualBox as instances of <link to="IMachine" /> that match the
-        information in the virtual system descriptions.
+          <li>The caller should then invoke <link to="#interpret" />, which
+          analyzes the OVF data and sets up the contents of the IAppliance attributes
+          accordingly. These can be inspected by a VirtualBox front-end such as the GUI,
+          and the suggestions can be displayed to the user. For example, the virtual system
+          will contain the virtual hardware prescribed by the OVF (network and hardware
+          adapters, virtual disk images, memory size and so on), and the GUI can then give
+          the user the option to confirm and/or change these suggestions.
+          </li>
+
+          <li>Finally, the caller should invoke <link to="#importAppliance" />, which will
+          create virtual machines in VirtualBox as instances of <link to="IMachine" /> that
+          match the information in the virtual system descriptions.
+          </li>
+        </ol>
+
     </desc>
 
     <attribute name="path" type="wstring" readonly="yes">
@@ -2904,29 +2913,11 @@
       the <tt>.ova</tt> file passed to <link to="IVirtualBox::openAppliance" />.</desc>
     </attribute>
 
-    <attribute name="virtualSystemDescriptions" type="IVirtualSystemDescription" readonly="yes" safearray="yes">
+    <attribute name="disks" type="wstring" readonly="yes" safearray="yes">
       <desc>
-      Array of virtual system descriptions. One such description gets created by
-      <link to="#interpret" /> for each virtual system found in the OVF.
-      </desc>
-    </attribute>
-
-    <method name="interpret">
-      <desc>
-        Interprets the OVF data that was read when the appliance was constructed. After
-        calling this method, one can call
-        <link to="#getDisks" /> to retrieve disk information and also inspect the
-        <link to="#virtualSystemDescriptions" /> array attribute, which will then contain
-        one <link to="IVirtualSystemDescription" /> for each virtual machine found in
-        the appliance.
-      </desc>
-    </method>
-
-    <method name="getDisks">
-      <desc>
-        Returns disk information from the appliance specification in a string
-        array. Each array item represents one piece of disk information, with the
-        information fields separated by tab (\t) characters.
+        Array of virtual disk definitions. One such description exists for each
+        disk definition in the OVF; each string array item represents one such piece of
+        disk information, with the information fields separated by tab (\t) characters.
 
         The caller should be prepared for additional fields being appended to
         this string in future versions of VirtualBox and therefore check for
@@ -2951,19 +2942,40 @@
             presently unsupported and always -1)</li>
             <li>Compression (optional string equalling "gzip" if the image is gzip-compressed)</li>
         </ol>
-
       </desc>
+    </attribute>
 
-      <param name="aDisks" type="wstring" dir="out" safearray="yes">
-        <desc>Array of strings to receive disk information.</desc>
-      </param>
+    <attribute name="virtualSystemDescriptions" type="IVirtualSystemDescription" readonly="yes" safearray="yes">
+      <desc>
+      Array of virtual system descriptions. One such description is created
+      for each virtual system found in the OVF. The array is empty until after <link to="#interpret" />
+      has been called.
+      </desc>
+    </attribute>
 
-      <param name="cDisks" type="unsigned long" dir="return">
-        <desc>Count of array items returned in aDisks.</desc>
-      </param>
+    <method name="interpret">
+      <desc>
+        Interprets the OVF data that was read when the appliance was constructed. After
+        calling this method, one can inspect the
+        <link to="#virtualSystemDescriptions" /> array attribute, which will then contain
+        one <link to="IVirtualSystemDescription" /> for each virtual machine found in
+        the appliance.
+
+        Calling this method is the second step of importing an appliance into VirtualBox;
+        see <link to="IAppliance" /> for an overview.
+      </desc>
     </method>
 
     <method name="importAppliance">
+      <desc>
+        Imports the appliance into VirtualBox by creating instances of <link to="IMachine" />
+        and other interfaces that match the information contained in the appliance as
+        closely as possible, as represented by the import instructions in the
+        <link to="#virtualSystemDescriptions" /> array.
+
+        Calling this method is the final step of importing an appliance into VirtualBox;
+        see <link to="IAppliance" /> for an overview.
+      </desc>
     </method>
 
   </interface>
@@ -2972,8 +2984,8 @@
     name="VirtualSystemDescriptionType"
     uuid="36209b5a-8f96-44de-a0af-1bb037cef324"
   >
-    <desc>
-    </desc>
+    <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
+    a configuration value.</desc>
 
     <const name="Name" value="1" />
     <const name="OS" value="2" />
@@ -2993,8 +3005,66 @@
      wsmap="managed"
      >
 
+    <desc>This interface is used in the <link to="IAppliance::virtualSystemDescriptions" /> array.
+    After <link to="IAppliance::interpret" /> has been called, that array contains
+    information about how the virtual systems described in the OVF should best be imported into VirtualBox
+    virtual machines. See <link to="IAppliance" /> for the steps required to import an OVF
+    into VirtualBox.
+    </desc>
+
     <method name="getDescription">
-      <desc></desc>
+      <desc>Returns information about the virtual system as arrays of instruction items. In each array, the
+      items with the same indices correspond and jointly represent an import instruction for VirtualBox.
+
+      The list below identifies the value sets that are possible depending on the
+      <link to="VirtualSystemDescriptionType" /> enum value in the array item in aTypes[]. In each case,
+      the array item with the same index in aOrigValues[] will contain the original value as contained
+      in the OVF file, and the corresponding item in aAutoValues[] will contain a suggested value to
+      be used for VirtualBox. Items in the other arrays will be empty, unless specified otherwise below:
+
+      <ul>
+      <li>
+        "OS": then the corresponding item in aAutoValues[] contains the suggested guest operating system
+        for VirtualBox. The corresponding item in aOrigValues[] will contain a numerical value that
+        described the operating system in the OVF (see <link to="CIMOSType" />).
+      </li>
+      <li>
+        "Name": then the correponding item im aOrigValues[] will contain the suggested virtual machine name
+        from the OVF file, and aAutoValues[] will contain a suggestion for a unique VirtualBox
+        <link to="IMachine" /> name that does not exist yet.
+      </li>
+      <li>
+        "CPU": number of CPUs.
+      </li>
+      <li>
+        "Memory": amount of memory, in bytes.
+      </li>
+      <li>
+        "HarddiskControllerSCSI": a SCSI hard disk controller. Here the items in aOrigValues[] and aAutoValues[] will either be
+        "LsiLogic" or "BusLogic". The matching item in the aRefValue[] array will contain a numerical
+        index that other items of the "Harddisk" type can use to specify which hard disk controller
+        a virtual disk should be connected to.
+      </li>
+      <li>
+        "HarddiskControllerIDE": an IDE hard disk controller. This has no value in aOrigValues[] or aAutoValues[];
+        as with SCSI controllers, the matching item in the aRefValues[] array will contain a numerical
+        index that other items of the "Harddisk" type can use to specify which hard disk controller
+        a virtual disk should be connected to.
+      </li>
+      <li>
+        "Harddisk": a virtual hard disk, most probably as a reference to an image file. The array item
+        in aOrigValues[] will contain the file specification from the OVF file, whereas the item
+        in aAutoValues[] will contain the fully qualified path to the image, which VirtualBox has verified
+        to exist.
+        The item in the aRefValues[] array specifies the hard disk controller to connect to and has the
+        same value as another aRefValues[] array item of the types listed above.
+      </li>
+      <li>
+        "NetworkAdapter": a network adapter. (todo document)
+      </li>
+      </ul>
+
+      </desc>
 
       <param name="aTypes" type="VirtualSystemDescriptionType" dir="out" safearray="yes">
         <desc></desc>

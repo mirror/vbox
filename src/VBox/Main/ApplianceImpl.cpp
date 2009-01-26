@@ -73,29 +73,35 @@ struct VirtualHardwareItem
     uint32_t ulInstanceID;
     uint32_t ulParent;
 
-    string strHostResource;
     OVFResourceType_T resourceType;
     string strOtherResourceType;
     string strResourceSubType;
+
+    string strHostResource;             // "Abstractly specifies how a device shall connect to a resource on the deployment platform.
+                                        // Not all devices need a backing." Used with disk items, for which this references a virtual
+                                        // disk from the Disks section.
     bool fAutomaticAllocation;
     bool fAutomaticDeallocation;
-    string strConnection;           // for ethernet
-    string strAddress;
-    string strAddressOnParent;
-    string strAllocationUnits;
-    uint64_t ullVirtualQuantity;
-    uint64_t ullReservation;
-    uint64_t ullLimit;
-    uint64_t ullWeight;
+    string strConnection;               // "All Ethernet adapters that specify the same abstract network connection name within an OVF
+                                        // package shall be deployed on the same network. The abstract network connection name shall be
+                                        // listed in the NetworkSection at the outermost envelope level."
+    string strAddress;                  // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
+    string strAddressOnParent;          // "For a device, this specifies its location on the controller."
+    string strAllocationUnits;          // "Specifies the units of allocation used. For example, “byte * 2^20”."
+    uint64_t ullVirtualQuantity;        // "Specifies the quantity of resources presented. For example, “256”."
+    uint64_t ullReservation;            // "Specifies the minimum quantity of resources guaranteed to be available."
+    uint64_t ullLimit;                  // "Specifies the maximum quantity of resources that will be granted."
+    uint64_t ullWeight;                 // "Specifies a relative priority for this allocation in relation to other allocations."
+
     string strConsumerVisibility;
     string strMappingBehavior;
     string strPoolID;
-    uint32_t ulBusNumber;
+    uint32_t ulBusNumber;               // seen with IDE controllers, but not listed in OVF spec
 
-    uint32_t ulLineNumber;          // line number of <Item> element in XML source
+    uint32_t ulLineNumber;              // line number of <Item> element in XML source; cached for error messages
 
     VirtualHardwareItem()
-        : ulInstanceID(0), fAutomaticAllocation(false), fAutomaticDeallocation(false), ullVirtualQuantity(0), ullReservation(0), ullLimit(0), ullWeight(0)
+        : ulInstanceID(0), fAutomaticAllocation(false), fAutomaticDeallocation(false), ullVirtualQuantity(0), ullReservation(0), ullLimit(0), ullWeight(0), ulBusNumber(0), ulLineNumber(0)
     {};
 };
 
@@ -834,7 +840,7 @@ STDMETHODIMP Appliance::COMGETTER(Path)(BSTR *aPath)
     return S_OK;
 }
 
-STDMETHODIMP Appliance::GetDisks(ComSafeArrayOut(BSTR, aDisks), ULONG *cDisks)
+STDMETHODIMP Appliance::COMGETTER(Disks)(ComSafeArrayOut(BSTR, aDisks))
 {
     CheckComArgOutSafeArrayPointerValid(aDisks);
 
@@ -879,8 +885,6 @@ STDMETHODIMP Appliance::GetDisks(ComSafeArrayOut(BSTR, aDisks), ULONG *cDisks)
         RTStrFree(psz);
     }
 
-    *cDisks = (ULONG)i;
-
     sfaDisks.detachTo(ComSafeArrayOutArg(aDisks));
 
     return S_OK;
@@ -897,117 +901,6 @@ STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVi
 
     SafeIfaceArray<IVirtualSystemDescription> sfaVSD(m->virtualSystemDescriptions);
     sfaVSD.detachTo(ComSafeArrayOutArg(aVirtualSystemDescriptions));
-
-    return S_OK;
-}
-
-STDMETHODIMP Appliance::ImportAppliance()
-{
-    HRESULT rc = S_OK;
-
-    list<VirtualSystem>::const_iterator it;
-    list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
-    /* Iterate through all appliances */
-    size_t i = 0;
-    for (it = m->llVirtualSystems.begin(),
-         it1 = m->virtualSystemDescriptions.begin();
-         it != m->llVirtualSystems.end();
-         ++it, ++it1, ++i)
-    {
-        const VirtualSystem &vs = *it;
-        ComObjPtr<VirtualSystemDescription> vsd = (*it1);
-
-        /* Guest OS type */
-        list<VirtualSystemDescriptionEntry> vsdeOS = vsd->findByType(VirtualSystemDescriptionType_OS);
-        Assert(vsdeOS.size() == 1);
-        string osTypeVBox = vsdeOS.front().strFinalValue;
-
-        /* Now that we know the base system get our internal defaults based on that. */
-        IGuestOSType *osType = NULL;
-        rc = mVirtualBox->GetGuestOSType(Bstr(Utf8Str(osTypeVBox.c_str())), &osType);
-        ComAssertComRCThrowRC(rc);
-
-        /* Create the machine */
-        /* First get the name */
-        list<VirtualSystemDescriptionEntry> vsdeName = vsd->findByType(VirtualSystemDescriptionType_Name);
-        Assert(vsdeName.size() == 1);
-        string nameVBox = vsdeName.front().strFinalValue;
-        IMachine *newMachine = NULL;
-        rc = mVirtualBox->CreateMachine(Bstr(nameVBox.c_str()), Bstr(osTypeVBox.c_str()),
-                                        Bstr(), Guid(),
-                                        &newMachine);
-        ComAssertComRCThrowRC(rc);
-
-        /* CPU count (ignored for now) */
-        /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxCPUCount) */
-        // list<VirtualSystemDescriptionEntry> vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
-
-        /* RAM */
-        /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
-        list<VirtualSystemDescriptionEntry> vsdeRAM = vsd->findByType(VirtualSystemDescriptionType_Memory);
-        Assert(vsdeRAM.size() == 1);
-        string memoryVBox = vsdeRAM.front().strFinalValue;
-        uint64_t tt = RTStrToUInt64(memoryVBox.c_str()) / _1M;
-
-        rc = newMachine->COMSETTER(MemorySize)(tt);
-        ComAssertComRCThrowRC(rc);
-
-        /* VRAM */
-        /* Get the recommended VRAM for this guest OS type */
-        /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestVRAM) */
-        ULONG vramVBox;
-        rc = osType->COMGETTER(RecommendedVRAM)(&vramVBox);
-        ComAssertComRCThrowRC(rc);
-        /* Set the VRAM */
-        rc = newMachine->COMSETTER(VRAMSize)(vramVBox);
-        ComAssertComRCThrowRC(rc);
-
-        /* Change the network adapters */
-        list<VirtualSystemDescriptionEntry> vsdeNW = vsd->findByType(VirtualSystemDescriptionType_NetworkAdapter);
-        if (vsdeNW.size() == 0)
-        {
-            /* No network adapters, so we have to disable our default one */
-            INetworkAdapter *nwVBox = NULL;
-            rc = newMachine->GetNetworkAdapter(0, &nwVBox);
-            ComAssertComRCThrowRC(rc);
-            rc = nwVBox->COMSETTER(Enabled)(false);
-            ComAssertComRCThrowRC(rc);
-        }
-        else
-        {
-            list<VirtualSystemDescriptionEntry>::const_iterator nwIt;
-            /* Iterate through all network cards. We support 8 network adapters
-             * at the maximum. (@todo: warn if it are more!) */
-            size_t a = 0;
-            for (nwIt = vsdeNW.begin();
-                 (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
-                 ++nwIt, ++a)
-            {
-                string nwTypeVBox = nwIt->strFinalValue;
-                uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
-                INetworkAdapter *nwVBox = NULL;
-                rc = newMachine->GetNetworkAdapter((ULONG)a, &nwVBox);
-                ComAssertComRCThrowRC(rc);
-                /* Enable the network card & set the adapter type */
-                /* NAT is set as default */
-                rc = nwVBox->COMSETTER(Enabled)(true);
-                ComAssertComRCThrowRC(rc);
-                rc = nwVBox->COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1));
-                ComAssertComRCThrowRC(rc);
-            }
-        }
-        /* Now its time to register the machine before we add any hard disks */
-        rc = mVirtualBox->RegisterMachine(newMachine);
-        ComAssertComRCThrowRC(rc);
-
-        /* @todo: Unregister on failure */
-#if 0
-        vbox.UnregisterMachine (machineId);
-        if (vbox.isOk())
-            mMachine.DeleteSettings();
-        return false;
-#endif
-    }
 
     return S_OK;
 }
@@ -1366,6 +1259,117 @@ STDMETHODIMP Appliance::Interpret()
             }
         }
         m->virtualSystemDescriptions.push_back(vsd);
+    }
+
+    return S_OK;
+}
+
+STDMETHODIMP Appliance::ImportAppliance()
+{
+    HRESULT rc = S_OK;
+
+    list<VirtualSystem>::const_iterator it;
+    list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
+    /* Iterate through all appliances */
+    size_t i = 0;
+    for (it = m->llVirtualSystems.begin(),
+         it1 = m->virtualSystemDescriptions.begin();
+         it != m->llVirtualSystems.end();
+         ++it, ++it1, ++i)
+    {
+        const VirtualSystem &vs = *it;
+        ComObjPtr<VirtualSystemDescription> vsd = (*it1);
+
+        /* Guest OS type */
+        list<VirtualSystemDescriptionEntry> vsdeOS = vsd->findByType(VirtualSystemDescriptionType_OS);
+        Assert(vsdeOS.size() == 1);
+        string osTypeVBox = vsdeOS.front().strFinalValue;
+
+        /* Now that we know the base system get our internal defaults based on that. */
+        IGuestOSType *osType = NULL;
+        rc = mVirtualBox->GetGuestOSType(Bstr(Utf8Str(osTypeVBox.c_str())), &osType);
+        ComAssertComRCThrowRC(rc);
+
+        /* Create the machine */
+        /* First get the name */
+        list<VirtualSystemDescriptionEntry> vsdeName = vsd->findByType(VirtualSystemDescriptionType_Name);
+        Assert(vsdeName.size() == 1);
+        string nameVBox = vsdeName.front().strFinalValue;
+        IMachine *newMachine = NULL;
+        rc = mVirtualBox->CreateMachine(Bstr(nameVBox.c_str()), Bstr(osTypeVBox.c_str()),
+                                        Bstr(), Guid(),
+                                        &newMachine);
+        ComAssertComRCThrowRC(rc);
+
+        /* CPU count (ignored for now) */
+        /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxCPUCount) */
+        // list<VirtualSystemDescriptionEntry> vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
+
+        /* RAM */
+        /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
+        list<VirtualSystemDescriptionEntry> vsdeRAM = vsd->findByType(VirtualSystemDescriptionType_Memory);
+        Assert(vsdeRAM.size() == 1);
+        string memoryVBox = vsdeRAM.front().strFinalValue;
+        uint64_t tt = RTStrToUInt64(memoryVBox.c_str()) / _1M;
+
+        rc = newMachine->COMSETTER(MemorySize)(tt);
+        ComAssertComRCThrowRC(rc);
+
+        /* VRAM */
+        /* Get the recommended VRAM for this guest OS type */
+        /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestVRAM) */
+        ULONG vramVBox;
+        rc = osType->COMGETTER(RecommendedVRAM)(&vramVBox);
+        ComAssertComRCThrowRC(rc);
+        /* Set the VRAM */
+        rc = newMachine->COMSETTER(VRAMSize)(vramVBox);
+        ComAssertComRCThrowRC(rc);
+
+        /* Change the network adapters */
+        list<VirtualSystemDescriptionEntry> vsdeNW = vsd->findByType(VirtualSystemDescriptionType_NetworkAdapter);
+        if (vsdeNW.size() == 0)
+        {
+            /* No network adapters, so we have to disable our default one */
+            INetworkAdapter *nwVBox = NULL;
+            rc = newMachine->GetNetworkAdapter(0, &nwVBox);
+            ComAssertComRCThrowRC(rc);
+            rc = nwVBox->COMSETTER(Enabled)(false);
+            ComAssertComRCThrowRC(rc);
+        }
+        else
+        {
+            list<VirtualSystemDescriptionEntry>::const_iterator nwIt;
+            /* Iterate through all network cards. We support 8 network adapters
+             * at the maximum. (@todo: warn if it are more!) */
+            size_t a = 0;
+            for (nwIt = vsdeNW.begin();
+                 (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
+                 ++nwIt, ++a)
+            {
+                string nwTypeVBox = nwIt->strFinalValue;
+                uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
+                INetworkAdapter *nwVBox = NULL;
+                rc = newMachine->GetNetworkAdapter((ULONG)a, &nwVBox);
+                ComAssertComRCThrowRC(rc);
+                /* Enable the network card & set the adapter type */
+                /* NAT is set as default */
+                rc = nwVBox->COMSETTER(Enabled)(true);
+                ComAssertComRCThrowRC(rc);
+                rc = nwVBox->COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1));
+                ComAssertComRCThrowRC(rc);
+            }
+        }
+        /* Now its time to register the machine before we add any hard disks */
+        rc = mVirtualBox->RegisterMachine(newMachine);
+        ComAssertComRCThrowRC(rc);
+
+        /* @todo: Unregister on failure */
+#if 0
+        vbox.UnregisterMachine (machineId);
+        if (vbox.isOk())
+            mMachine.DeleteSettings();
+        return false;
+#endif
     }
 
     return S_OK;
