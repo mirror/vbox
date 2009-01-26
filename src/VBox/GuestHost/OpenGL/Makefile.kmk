@@ -109,6 +109,7 @@ VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 
 VBoxOGLhostcrutil_TEMPLATE = VBOXOGLR3GUESTHOST
 VBoxOGLhostcrutil_EXTENDS = VBoxOGLcrutil
+VBoxOGLhostcrutil_INTERMEDIATES = $(VBoxOGLcrutil_INTERMEDIATES)
 VBoxOGLhostcrutil_LDFLAGS.darwin += $(VBoxOGLcrutil_LDFLAGS.darwin) -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhostcrutil.dylib -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 # hostcrutil_NAME = crutil - possible, but it creates conflicting library files in PATH_LIB.
 ## @todo kBuild bug, possibly same as ticket #51: PATH_SDK_DXSDK_LIB is expanded too early.
@@ -211,6 +212,7 @@ endif
 
 VBoxOGLhostcrpacker_TEMPLATE = VBOXOGLR3GUESTHOST
 VBoxOGLhostcrpacker_EXTENDS  = VBoxOGLcrpacker
+VBoxOGLhostcrpacker_INTERMEDIATES = $(VBoxOGLcrpacker_INTERMEDIATES)
 VBoxOGLhostcrpacker_LIBS.win = $(PATH_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLhostcrpacker_LIBS    = $(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
@@ -372,6 +374,7 @@ endif
 
 VBoxOGLhostcrstate_TEMPLATE = VBOXOGLR3GUESTHOST
 VBoxOGLhostcrstate_EXTENDS  = VBoxOGLcrstate
+VBoxOGLhostcrstate_INTERMEDIATES = $(VBoxOGLcrstate_INTERMEDIATES)
 VBoxOGLhostcrstate_SOURCES  = $(VBoxOGLcrstate_SOURCES) state_tracker/state_snapshot.c
 VBoxOGLhostcrstate_LIBS.win = \
 	$(PATH_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB) \
@@ -455,6 +458,7 @@ endif
 
 VBoxOGLhosterrorspu_TEMPLATE = VBOXOGLR3GUESTHOST
 VBoxOGLhosterrorspu_EXTENDS  = VBoxOGLerrorspu
+VBoxOGLhosterrorspu_INTERMEDIATES = $(VBoxOGLerrorspu_INTERMEDIATES)
 VBoxOGLhosterrorspu_LIBS    += $(LIB_RUNTIME)
 VBoxOGLhosterrorspu_LIBS.win = $(PATH_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
 VBoxOGLhosterrorspu_LDFLAGS.darwin += $(VBoxOGLerrorspu_LDFLAGS.darwin) -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhosterrorspu.dylib -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
