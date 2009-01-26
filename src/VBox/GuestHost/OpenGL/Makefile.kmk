@@ -58,7 +58,6 @@ TEMPLATE_VBOXOGLR3GUESTHOST_DEFS.solaris   = $(TEMPLATE_VBOXOGLR3GUESTHOST_DEFS)
 TEMPLATE_VBOXOGLR3GUESTHOST_DEFS.darwin    = $(TEMPLATE_VBOXOGLR3GUESTHOST_DEFS) DARWIN=1 GL_GLEXT_LEGACY
 TEMPLATE_VBOXOGLR3GUESTHOST_INCS           = $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
 TEMPLATE_VBOXOGLR3GUESTHOST_INCS.darwin    = $(PATH_OUT)/obj/VBoxOGL
-TEMPLATE_VBOXOGLR3GUESTHOST_LDFLAGS.linux  = -Wl,--no-as-needed
 TEMPLATE_VBOXOGLR3GUESTHOST_LDFLAGS.darwin = -framework Carbon -framework OpenGL -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 TEMPLATE_VBOXOGLR3GUESTHOST_BLDDIRS        = $(VBOX_PATH_CROGL_GENFILES)/
 
@@ -214,6 +213,7 @@ VBoxOGLhostcrpacker_TEMPLATE = VBOXOGLR3GUESTHOST
 VBoxOGLhostcrpacker_EXTENDS  = VBoxOGLcrpacker
 VBoxOGLhostcrpacker_INTERMEDIATES = $(VBoxOGLcrpacker_INTERMEDIATES)
 VBoxOGLhostcrpacker_LIBS.win = $(PATH_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
+VBoxOGLhostcrpacker_LDFLAGS.linux += -Wl,--no-as-needed
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLhostcrpacker_LIBS    = $(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
 endif
@@ -271,6 +271,7 @@ endif
 VBoxOGLhostspuload_TEMPLATE = VBOXOGLR3GUESTHOST
 VBoxOGLhostspuload_EXTENDS  = VBoxOGLspuload
 VBoxOGLhostspuload_LIBS.win = $(PATH_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
+VBoxOGLhostspuload_LDFLAGS.linux += -Wl,--no-as-needed
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLhostspuload_LIBS += \
 	$(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
@@ -380,6 +381,7 @@ VBoxOGLhostcrstate_LIBS.win = \
 	$(PATH_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
 	$(LIB_VMM)
+VBoxOGLhostcrstate_LDFLAGS.linux += -Wl,--no-as-needed
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLhostcrstate_LIBS += \
 	$(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL) \
@@ -462,6 +464,7 @@ VBoxOGLhosterrorspu_INTERMEDIATES = $(VBoxOGLerrorspu_INTERMEDIATES)
 VBoxOGLhosterrorspu_LIBS    += $(LIB_RUNTIME)
 VBoxOGLhosterrorspu_LIBS.win = $(PATH_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
 VBoxOGLhosterrorspu_LDFLAGS.darwin += $(VBoxOGLerrorspu_LDFLAGS.darwin) -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhosterrorspu.dylib -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+VBoxOGLhosterrorspu_LDFLAGS.linux += -Wl,--no-as-needed
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLhosterrorspu_LIBS += \
 	$(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
