@@ -1140,7 +1140,7 @@ int main(int argc, char *argv[])
     } while (0);
 #endif
 
-#if 1
+#if 0
     do {
         // Get host
         ComPtr <IHost> host;
@@ -1164,7 +1164,7 @@ int main(int argc, char *argv[])
             Guid interfaceGuid2;
             networkInterface->COMGETTER(Id)(interfaceGuid2.asOutParam());
             if (interfaceGuid2 != interfaceGuid)
-                printf("Failed to retrive an interface by name %lS.\n", interfaceName.raw());
+                printf("Failed to retrieve an interface by name %lS.\n", interfaceName.raw());
             // Find the interface by its guid
             networkInterface.setNull();
             CHECK_ERROR_BREAK(host,
@@ -1172,7 +1172,7 @@ int main(int argc, char *argv[])
             Bstr interfaceName2;
             networkInterface->COMGETTER(Name)(interfaceName2.asOutParam());
             if (interfaceName != interfaceName2)
-                printf("Failed to retrive an interface by GUID %lS.\n", Bstr(interfaceGuid.toString()).raw());
+                printf("Failed to retrieve an interface by GUID %lS.\n", Bstr(interfaceGuid.toString()).raw());
         }
         else
         {
@@ -1300,11 +1300,7 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        Bstr ovf = L"/home/poetzsch/projects/out.ovf";
-        //Bstr ovf = L"/home/poetzsch/projects/someOVF.ovf";
-//        Bstr ovf = L"/Users/poetzsch/projects/someOVF.ovf";
-//        Bstr ovf = L"/Users/poetzsch/projects/out.ovf";
-//        Bstr name = argc > 1 ? argv [1] : "dsl";
+        Bstr ovf = argc > 1 ? argv [1] : "someOVF.ovf";
         printf ("Try to open %ls ...\n", ovf.raw());
 
         ComPtr <IAppliance> appliance;
@@ -1313,6 +1309,9 @@ int main(int argc, char *argv[])
         Bstr path;
         CHECK_ERROR_BREAK (appliance, COMGETTER (Path)(path.asOutParam()));
         printf ("Successfully opened %ls.\n", path.raw());
+        CHECK_ERROR_BREAK (appliance,
+                           Interpret());
+        printf ("Successfully interpreted %ls.\n", path.raw());
         printf ("Appliance:\n");
         // Fetch all disks
         com::SafeArray<BSTR> retDisks;
@@ -1359,6 +1358,8 @@ int main(int argc, char *argv[])
             }
             printf ("\n");
         }
+        CHECK_ERROR_BREAK (appliance,
+                           ImportAppliance());
     }
     while (FALSE);
     printf ("\n");
