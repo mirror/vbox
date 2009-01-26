@@ -183,17 +183,18 @@ struct ACPIState
      *  (ACPI spec 6.3.7, _STA). See the special case for BAT_DEVICE_STATUS in
      *  acpiBatIndexWrite() for handling this. */
     uint8_t             u8IndexShift;
+    /** provide an I/O-APIC */
     uint8_t             u8UseIOApic;
-    uint8_t             u8UseFdc;
+    /** provide a floppy controller */
+    bool                fUseFdc;
     /** If High Precision Event Timer device should be supported */
-    uint8_t             u8UseHpet;
+    bool                fUseHpet;
     /** If System Management Controller device should be supported */
-    uint8_t             u8UseSmc;
-/** @todo conver the above to bool where possible.  */
-
+    bool                fUseSmc;
+    /** the guest handled the last power button event */
     bool                fPowerButtonHandled;
     /** Aligning IBase. */
-    bool                afAlignment[6];
+    bool                afAlignment[3];
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -1305,26 +1306,26 @@ IO_READ_PROTO (acpiSysInfoDataRead)
                     break;
 
                 case SYSTEM_INFO_INDEX_HPET_STATUS:
-                    *pu32 = s->u8UseHpet ? (  STA_DEVICE_PRESENT_MASK
-                                            | STA_DEVICE_ENABLED_MASK
-                                            | STA_DEVICE_SHOW_IN_UI_MASK
-                                            | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
+                    *pu32 = s->fUseHpet ? (  STA_DEVICE_PRESENT_MASK
+                                           | STA_DEVICE_ENABLED_MASK
+                                           | STA_DEVICE_SHOW_IN_UI_MASK
+                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
                             : 0;
                     break;
 
                 case SYSTEM_INFO_INDEX_SMC_STATUS:
-                    *pu32 = s->u8UseSmc ? (  STA_DEVICE_PRESENT_MASK
-                                           | STA_DEVICE_ENABLED_MASK
-                                           /* no need to show this device in the UI */
-                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
+                    *pu32 = s->fUseSmc ? (  STA_DEVICE_PRESENT_MASK
+                                          | STA_DEVICE_ENABLED_MASK
+                                          /* no need to show this device in the UI */
+                                          | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
                             : 0;
                     break;
 
                 case SYSTEM_INFO_INDEX_FDC_STATUS:
-                    *pu32 = s->u8UseFdc ? (  STA_DEVICE_PRESENT_MASK
-                                           | STA_DEVICE_ENABLED_MASK
-                                           | STA_DEVICE_SHOW_IN_UI_MASK
-                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
+                    *pu32 = s->fUseFdc ? (  STA_DEVICE_PRESENT_MASK
+                                          | STA_DEVICE_ENABLED_MASK
+                                          | STA_DEVICE_SHOW_IN_UI_MASK
+                                          | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
                             : 0;
                     break;
 
@@ -1786,10 +1787,8 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     s->pDevIns = pDevIns;
 
     /* query whether we are supposed to present an IOAPIC */
-    rc = CFGMR3QueryU8 (pCfgHandle, "IOAPIC", &s->u8UseIOApic);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        s->u8UseIOApic = 1;
-    else if (RT_FAILURE (rc))
+    rc = CFGMR3QueryU8Def (pCfgHandle, "IOAPIC", &s->u8UseIOApic, 1);
+    if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
 
@@ -1799,20 +1798,18 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
 
     /* query whether we are supposed to present an FDC controller */
-    rc = CFGMR3QueryU8 (pCfgHandle, "FdcEnabled", &s->u8UseFdc);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        s->u8UseFdc = 1;
-    else if (RT_FAILURE (rc))
+    rc = CFGMR3QueryBoolDef (pCfgHandle, "FdcEnabled", &s->fUseFdc, true);
+    if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"FdcEnabled\""));
 
     /* query whether we are supposed to present HPET */
-    rc = CFGMR3QueryU8Def (pCfgHandle, "HpetEnabled", &s->u8UseHpet, 0);
+    rc = CFGMR3QueryBoolDef (pCfgHandle, "HpetEnabled", &s->fUseHpet, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"HpetEnabled\""));
     /* query whether we are supposed to present SMC */
-    rc = CFGMR3QueryU8Def (pCfgHandle, "SmcEnabled", &s->u8UseSmc, 0);
+    rc = CFGMR3QueryBoolDef (pCfgHandle, "SmcEnabled", &s->fUseSmc, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"SmcEnabled\""));
