@@ -9856,7 +9856,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IFramebufferOverlay" extends="IFrameBuffer"
+     name="IFramebufferOverlay" extends="IFramebuffer"
      uuid="0bcc1c7e-e415-47d2-bfdb-e4c705fb0f47"
      wsmap="suppress"
      >
