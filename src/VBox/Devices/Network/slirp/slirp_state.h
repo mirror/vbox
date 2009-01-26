@@ -51,6 +51,14 @@ struct tftp_session
     int timestamp;
 };
 
+#ifdef VBOX_WITH_MULTI_DNS
+struct dns_entry
+{
+        struct in_addr de_addr;
+        LIST_ENTRY(dns_entry) de_list; 
+};
+LIST_HEAD(dns_list_head, dns_entry);
+#endif
 
 /** Main state/configuration structure for slirp NAT. */
 typedef struct NATState
@@ -91,7 +99,11 @@ typedef struct NATState
     struct in_addr our_addr;
     struct in_addr alias_addr;
     struct in_addr special_addr;
+#ifndef VBOX_WITH_MULTI_DNS
     struct in_addr dns_addr;
+#else
+    struct dns_list_head dns_list_head;
+#endif
     struct in_addr loopback_addr;
     uint32_t netmask;
     uint8_t client_ethaddr[6];

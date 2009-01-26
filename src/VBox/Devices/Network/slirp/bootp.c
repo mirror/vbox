@@ -269,14 +269,24 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         (   dhcp_msg_type == DHCPDISCOVER
          || dhcp_msg_type == DHCPREQUEST))
     {
+#ifdef VBOX_WITH_MULTI_DNS
+        struct dns_entry *de = NULL;
+#endif
         uint32_t lease_time = htonl(LEASE_TIME);
         uint32_t netmask = htonl(pData->netmask);
 
         FILL_BOOTP_EXT(q, RFC1533_NETMASK, 4, &netmask);
         FILL_BOOTP_EXT(q, RFC1533_GATEWAY, 4, &saddr.sin_addr);
 
+#ifndef VBOX_WITH_MULTI_DNS
         dns_addr_dhcp.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
         FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &dns_addr_dhcp.s_addr);
+#else
+        LIST_FOREACH(de, &pData->dns_list_head, de_list)
+        {
+            FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &de->de_addr.s_addr);
+        }
+#endif
 
         FILL_BOOTP_EXT(q, RFC2132_LEASE_TIME, 4, &lease_time);
 

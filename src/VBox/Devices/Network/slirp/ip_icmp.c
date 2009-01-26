@@ -355,8 +355,10 @@ freeit:
                     switch (ntohl(ip->ip_dst.s_addr) & ~pData->netmask)
                     {
                         case CTL_DNS:
+#ifndef VBOX_WITH_MULTI_DNS
                             addr.sin_addr = dns_addr;
                             break;
+#endif
                         case CTL_ALIAS:
                         default:
                             addr.sin_addr = loopback_addr;
