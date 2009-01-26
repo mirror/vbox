@@ -71,10 +71,10 @@ typedef struct PGMHVUSTATE
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
 DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
 DECLINLINE(int) pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
-DECLINLINE(int) pgmShwSyncPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
 DECLINLINE(int) pgmShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
 DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGM pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
+DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
 #endif
 
 /*
@@ -808,62 +808,6 @@ VMMDECL(int) PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags
 
 
 /**
- * Syncs the SHADOW page directory pointer for the specified address.
- *
- * Allocates backing pages in case the PDPT entry is missing.
- *
- * @returns VBox status.
- * @param   pVM         VM handle.
- * @param   GCPtr       The address.
- * @param   pGstPdpe    Guest PDPT entry
- * @param   ppPD        Receives address of page directory
- * @remarks Unused.
- */
-DECLINLINE(int) pgmShwSyncPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
-{
-    PPGM           pPGM   = &pVM->pgm.s;
-    PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
-    PPGMPOOLPAGE   pShwPage;
-    int            rc;
-
-    Assert(!HWACCMIsNestedPagingActive(pVM));
-
-    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
-    PX86PDPT  pPdpt = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
-    PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
-
-    /* Allocate page directory if not present. */
-    if (    !pPdpe->n.u1Present
-        &&  !(pPdpe->u & X86_PDPE_PG_MASK))
-    {
-        PX86PDPE pPdptGst = pgmGstGetPaePDPEPtr(pPGM, GCPtr);
-
-        Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
-        /* Create a reference back to the PDPT by using the index in its shadow page. */
-        rc = pgmPoolAlloc(pVM, pPdptGst->u & X86_PDPE_PG_MASK, PGMPOOLKIND_PAE_PD_FOR_PAE_PD, PGMPOOL_IDX_PDPT, iPdPt, &pShwPage);
-        if (rc == VERR_PGM_POOL_FLUSHED)
-        {
-            Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-            return VINF_PGM_SYNC_CR3;
-        }
-        AssertRCReturn(rc, rc);
-    }
-    else
-    {
-        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
-        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
-    }
-    /* The PD was cached or created; hook it up now. */
-    pPdpe->u |= pShwPage->Core.Key
-             |  (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
-
-    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Gets the SHADOW page directory pointer for the specified address.
  *
  * @returns VBox status.
@@ -897,6 +841,67 @@ DECLINLINE(int) pgmShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86
 }
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+
+/**
+ * Gets the shadow page directory for the specified address, PAE.
+ *
+ * @returns Pointer to the shadow PD.
+ * @param   pVM         VM handle.
+ * @param   GCPtr       The address.
+ * @param   pGstPdpe    Guest PDPT entry
+ * @param   ppPD        Receives address of page directory
+ */
+DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
+{
+    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    PX86PDPT       pPdpt = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
+    PX86PDPE       pPdpe = &pPdpt->a[iPdPt];
+    PPGMPOOL       pPool         = pVM->pgm.s.CTX_SUFF(pPool);
+    bool           fNestedPaging = HWACCMIsNestedPagingActive(pVM);
+    PPGMPOOLPAGE   pShwPage;
+    int            rc;
+
+    /* Allocate page directory if not present. */
+    if (    !pPdpe->n.u1Present
+        &&  !(pPdpe->u & X86_PDPE_PG_MASK))
+    {
+        if (!fNestedPaging)
+        {
+            Assert(pGstPdpe);
+            Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
+            /* Create a reference back to the PDPT by using the index in its shadow page. */
+            rc = pgmPoolAlloc(pVM, pGstPdpe->u & X86_PDPE_PG_MASK, PGMPOOLKIND_PAE_PD_FOR_PAE_PD, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPdPt, &pShwPage);
+        }
+        else
+        {
+            /* AMD-V nested paging. (Intel EPT never comes here) */
+            RTGCPTR64 GCPdPt = (RTGCPTR64)iPdPt << EPT_PDPT_SHIFT;
+
+            rc = pgmPoolAlloc(pVM, GCPdPt + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_PAE_PD_PHYS_PROT, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPdPt, &pShwPage);
+        }
+
+        if (rc == VERR_PGM_POOL_FLUSHED)
+        {
+            Log(("pgmShwSyncPaePDPtr: PGM pool flushed -> signal sync cr3\n"));
+            Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
+            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+            return VINF_PGM_SYNC_CR3;
+        }
+        AssertRCReturn(rc, rc);
+    }
+    else
+    {
+        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
+        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+    }
+    /* The PD was cached or created; hook it up now. */
+    pPdpe->u |= pShwPage->Core.Key
+             | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
+
+    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    return VINF_SUCCESS;
+}
+
 /**
  * Gets the pointer to the shadow page directory entry for an address, PAE.
  *

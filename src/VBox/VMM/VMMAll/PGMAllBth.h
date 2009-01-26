@@ -108,7 +108,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
 #    if PGM_GST_TYPE == PGM_TYPE_PAE
     unsigned        iPDSrc;
+#     ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    X86PDPE         PdpeSrc;
+    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, pvFault, &iPDSrc, &PdpeSrc);
+#     else
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, pvFault, &iPDSrc, NULL);
+#     endif
 
 #    elif PGM_GST_TYPE == PGM_TYPE_AMD64
     unsigned        iPDSrc;
@@ -119,7 +124,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     pPDSrc = pgmGstGetLongModePDPtr(&pVM->pgm.s, pvFault, &pPml4eSrc, &PdpeSrc, &iPDSrc);
     Assert(pPml4eSrc);
 #    endif
-    /* Quick check for a valid guest trap. */
+
+    /* Quick check for a valid guest trap. (PAE & AMD64) */
     if (!pPDSrc)
     {
 #    if PGM_GST_TYPE == PGM_TYPE_AMD64 && GC_ARCH_BITS == 64
@@ -145,6 +151,24 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPDDst = (pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK;   /* pPDDst index, not used with the pool. */
+
+#   ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#    if PGM_GST_TYPE != PGM_TYPE_PAE
+    PX86PDPAE       pPDDst;
+    X86PDPE         PdpeSrc;
+
+    /* Fake PDPT entry; access control handled on the page table level, so allow everything. */
+    PdpeSrc.u  = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_A;
+#    endif
+    rc = pgmShwSyncPaePDPtr(pVM, pvFault, &PdpeSrc, &pPDDst);
+    if (rc != VINF_SUCCESS)
+    {
+        AssertRC(rc);
+        return rc;
+    }
+    Assert(pPDDst);
+
+#   else
     PX86PDPAE       pPDDst = pgmShwGetPaePDPtr(&pVM->pgm.s, pvFault);
 
     /* Did we mark the PDPT as not present in SyncCR3? */
@@ -152,6 +176,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     PX86PDPT        pPdptDst = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
     if (!pPdptDst->a[iPdpt].n.u1Present)
         pPdptDst->a[iPdpt].n.u1Present = 1;
+#   endif
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst = ((pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
