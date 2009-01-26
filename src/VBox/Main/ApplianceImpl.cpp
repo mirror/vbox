@@ -184,25 +184,23 @@ template <class T> inline std::string toString(const T& val)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Implementation for IAppliance::openAppliance. Loads the given appliance (see API reference).
+ * Implementation for IVirtualBox::openAppliance. Loads the given appliance (see API reference).
  *
  * @param bstrPath Appliance to open (either .ovf or .ova file, see API reference)
  * @param anAppliance IAppliance object created if S_OK is returned.
  * @return S_OK or error.
  */
-STDMETHODIMP VirtualBox::OpenAppliance(IN_BSTR bstrPath, IAppliance** anAppliance)
+STDMETHODIMP VirtualBox::OpenAppliance (IN_BSTR bstrPath, IAppliance** anAppliance)
 {
     HRESULT rc;
 
     ComObjPtr<Appliance> appliance;
     appliance.createObject();
-    rc = appliance->init(bstrPath);
+    rc = appliance->init (this, bstrPath);
 //     ComAssertComRCThrowRC(rc);
 
     if (SUCCEEDED(rc))
-    {
         appliance.queryInterfaceTo(anAppliance);
-    }
 
     return rc;
 }
@@ -714,13 +712,16 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
  * @return
  */
 
-HRESULT Appliance::init(IN_BSTR &path)
+HRESULT Appliance::init (VirtualBox *aVirtualBox, IN_BSTR &path)
 {
     HRESULT rc;
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn (autoInitSpan.isOk(), E_FAIL);
+
+    /* Weakly reference to a VirtualBox object */
+    unconst (mVirtualBox) = aVirtualBox;
 
     // initialize data
     m = new Data;
@@ -874,10 +875,7 @@ STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVi
 
 STDMETHODIMP Appliance::ImportAppliance()
 {
-    /* We need a virtualbox object */
-    ComPtr <IVirtualBox> virtualBox;
-    HRESULT rc = virtualBox.createLocalObject (CLSID_VirtualBox);
-    ComAssertComRCThrowRC (rc);
+    HRESULT rc = S_OK;
 
     list<VirtualSystem>::const_iterator it;
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
@@ -898,14 +896,18 @@ STDMETHODIMP Appliance::ImportAppliance()
 
         /* Now that we know the base system get our internal defaults based on that. */
         IGuestOSType *osType = NULL;
-        rc = virtualBox->GetGuestOSType (Bstr (Utf8Str (osTypeVBox.c_str())), &osType);
+        rc = mVirtualBox->GetGuestOSType (Bstr (Utf8Str (osTypeVBox.c_str())), &osType);
         ComAssertComRCThrowRC (rc);
 
         /* Create the machine */
+        /* First get the name */
+        list<VirtualSystemDescriptionEntry> vsdeName = vsd->findByType (VirtualSystemDescriptionType_Name);
+        Assert (vsdeName.size() == 1);
+        string nameVBox = vsdeName.front().strFinalValue;
         IMachine *newMachine = NULL;
-        rc = virtualBox->CreateMachine (Bstr (Utf8StrFmt ("tescht_%d", i)), Bstr (Utf8Str (osTypeVBox.c_str())),
-                                        Bstr (), Guid(),
-                                        &newMachine);
+        rc = mVirtualBox->CreateMachine (Bstr (nameVBox.c_str()), Bstr (osTypeVBox.c_str()),
+                                         Bstr (), Guid(),
+                                         &newMachine);
         ComAssertComRCThrowRC (rc);
 
         /* CPU count (ignored for now) */
@@ -962,7 +964,7 @@ STDMETHODIMP Appliance::ImportAppliance()
             }
         }
         /* Now its time to register the machine before we add any hard disks */
-        rc = virtualBox->RegisterMachine (newMachine);
+        rc = mVirtualBox->RegisterMachine (newMachine);
         ComAssertComRCThrowRC (rc);
 
         /* @todo: Unregister on failure */
@@ -985,18 +987,15 @@ HRESULT Appliance::construeAppliance()
     //  - don't use COM methods but the methods directly (faster, but needs appropriate locking of that objects itself (s. HardDisk2))
     //  - Appropriate handle errors like not supported file formats
 
+    HRESULT rc = S_OK;
+
     /* Clear any previous virtual system descriptions */
     // @todo: have the entries deleted also?
     m->virtualSystemDescriptions.clear();
 
-    /* We need a virtualbox object */
-    ComPtr <IVirtualBox> virtualBox;
-    HRESULT rc = virtualBox.createLocalObject (CLSID_VirtualBox);
-    ComAssertComRCThrowRC (rc);
-
     /* We need the default path for storing disk images */
     ISystemProperties *systemProps = NULL;
-    rc = virtualBox->COMGETTER(SystemProperties) (&systemProps);
+    rc = mVirtualBox->COMGETTER(SystemProperties) (&systemProps);
     ComAssertComRCThrowRC (rc);
     BSTR defaultHardDiskLocation;
     rc = systemProps->COMGETTER(DefaultHardDiskFolder) (&defaultHardDiskLocation);
@@ -1013,9 +1012,6 @@ HRESULT Appliance::construeAppliance()
         vsd.createObject();
         rc = vsd->init();
         ComAssertComRCThrowRC(rc);
-
-        /* VM name */
-        vsd->addEntry(VirtualSystemDescriptionType_Name, 0, vs.strName, vs.strName);
 
         string osTypeVBox = SchemaDefs_OSTypeId_Other;
         /* Guest OS type */
@@ -1203,9 +1199,19 @@ HRESULT Appliance::construeAppliance()
         }
         vsd->addEntry (VirtualSystemDescriptionType_OS, 0, toString<ULONG> (vs.cimos), osTypeVBox);
 
+        /* VM name */
+        /* If the there isn't any name specified create a default one out of
+         * the OS type */
+        string nameVBox = vs.strName;
+        if (nameVBox == "")
+            nameVBox = osTypeVBox;
+        /* @todo: make sure the name is unique (add some numbers if not) */
+        searchUniqueVMName (nameVBox);
+        vsd->addEntry(VirtualSystemDescriptionType_Name, 0, nameVBox, nameVBox);
+
         /* Now that we know the base system get our internal defaults based on that. */
         IGuestOSType *osType = NULL;
-        rc = virtualBox->GetGuestOSType (Bstr (Utf8Str (osTypeVBox.c_str())), &osType);
+        rc = mVirtualBox->GetGuestOSType (Bstr (Utf8Str (osTypeVBox.c_str())), &osType);
         ComAssertComRCThrowRC (rc);
 
         /* CPU count */
@@ -1325,6 +1331,24 @@ HRESULT Appliance::construeAppliance()
         }
         m->virtualSystemDescriptions.push_back (vsd);
     }
+
+    return S_OK;
+}
+
+HRESULT Appliance::searchUniqueVMName (std::string& aName)
+{
+    IMachine *machine = NULL;
+    char *tmpName = RTStrDup (aName.c_str());
+    int i = 1;
+    /* @todo: Maybe to cost intensive; try to find a lighter way */
+    while (mVirtualBox->FindMachine (Bstr (tmpName), &machine) != VBOX_E_OBJECT_NOT_FOUND)
+    {
+        RTStrFree (tmpName);
+        RTStrAPrintf (&tmpName, "%s_%d", aName.c_str(), i);
+        ++i;
+    }
+    aName = tmpName;
+    RTStrFree (tmpName);
 
     return S_OK;
 }
