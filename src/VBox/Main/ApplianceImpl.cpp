@@ -205,7 +205,7 @@ STDMETHODIMP VirtualBox::OpenAppliance (IN_BSTR bstrPath, IAppliance** anApplian
 
     ComObjPtr<Appliance> appliance;
     appliance.createObject();
-    rc = appliance->init (this, bstrPath);
+    rc = appliance->init(this, bstrPath);
 //     ComAssertComRCThrowRC(rc);
 
     if (SUCCEEDED(rc))
@@ -426,7 +426,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
 {
     VirtualSystem d;
 
-    const xml::Node *pIdAttr = pelmVirtualSystem->findAttribute("type");
+    const xml::Node *pIdAttr = pelmVirtualSystem->findAttribute("id");
     if (pIdAttr)
         d.strName = pIdAttr->getValue();
 
@@ -744,16 +744,16 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
  * @return
  */
 
-HRESULT Appliance::init (VirtualBox *aVirtualBox, IN_BSTR &path)
+HRESULT Appliance::init(VirtualBox *aVirtualBox, IN_BSTR &path)
 {
     HRESULT rc;
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     /* Weakly reference to a VirtualBox object */
-    unconst (mVirtualBox) = aVirtualBox;
+    unconst(mVirtualBox) = aVirtualBox;
 
     // initialize data
     m = new Data;
@@ -808,7 +808,7 @@ HRESULT Appliance::init (VirtualBox *aVirtualBox, IN_BSTR &path)
     }
 
     rc = construeAppliance();
-    if (FAILED (rc))
+    if (FAILED(rc))
         return rc;
 
     /* Confirm a successful initialization */
@@ -892,15 +892,15 @@ STDMETHODIMP Appliance::GetDisks(ComSafeArrayOut(BSTR, aDisks), ULONG *cDisks)
 
 STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVirtualSystemDescription*, aVirtualSystemDescriptions))
 {
-    CheckComArgOutSafeArrayPointerValid (aVirtualSystemDescriptions);
+    CheckComArgOutSafeArrayPointerValid(aVirtualSystemDescriptions);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    SafeIfaceArray<IVirtualSystemDescription> sfaVSD (m->virtualSystemDescriptions);
-    sfaVSD.detachTo (ComSafeArrayOutArg (aVirtualSystemDescriptions));
+    SafeIfaceArray<IVirtualSystemDescription> sfaVSD(m->virtualSystemDescriptions);
+    sfaVSD.detachTo(ComSafeArrayOutArg(aVirtualSystemDescriptions));
 
     return S_OK;
 }
@@ -922,25 +922,25 @@ STDMETHODIMP Appliance::ImportAppliance()
         ComObjPtr<VirtualSystemDescription> vsd = (*it1);
 
         /* Guest OS type */
-        list<VirtualSystemDescriptionEntry> vsdeOS = vsd->findByType (VirtualSystemDescriptionType_OS);
-        Assert (vsdeOS.size() == 1);
+        list<VirtualSystemDescriptionEntry> vsdeOS = vsd->findByType(VirtualSystemDescriptionType_OS);
+        Assert(vsdeOS.size() == 1);
         string osTypeVBox = vsdeOS.front().strFinalValue;
 
         /* Now that we know the base system get our internal defaults based on that. */
         IGuestOSType *osType = NULL;
-        rc = mVirtualBox->GetGuestOSType (Bstr (Utf8Str (osTypeVBox.c_str())), &osType);
-        ComAssertComRCThrowRC (rc);
+        rc = mVirtualBox->GetGuestOSType(Bstr(Utf8Str(osTypeVBox.c_str())), &osType);
+        ComAssertComRCThrowRC(rc);
 
         /* Create the machine */
         /* First get the name */
-        list<VirtualSystemDescriptionEntry> vsdeName = vsd->findByType (VirtualSystemDescriptionType_Name);
-        Assert (vsdeName.size() == 1);
+        list<VirtualSystemDescriptionEntry> vsdeName = vsd->findByType(VirtualSystemDescriptionType_Name);
+        Assert(vsdeName.size() == 1);
         string nameVBox = vsdeName.front().strFinalValue;
         IMachine *newMachine = NULL;
-        rc = mVirtualBox->CreateMachine (Bstr (nameVBox.c_str()), Bstr (osTypeVBox.c_str()),
-                                         Bstr (), Guid(),
-                                         &newMachine);
-        ComAssertComRCThrowRC (rc);
+        rc = mVirtualBox->CreateMachine(Bstr(nameVBox.c_str()), Bstr(osTypeVBox.c_str()),
+                                        Bstr(), Guid(),
+                                        &newMachine);
+        ComAssertComRCThrowRC(rc);
 
         /* CPU count (ignored for now) */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxCPUCount) */
@@ -948,34 +948,34 @@ STDMETHODIMP Appliance::ImportAppliance()
 
         /* RAM */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
-        list<VirtualSystemDescriptionEntry> vsdeRAM = vsd->findByType (VirtualSystemDescriptionType_Memory);
-        Assert (vsdeRAM.size() == 1);
+        list<VirtualSystemDescriptionEntry> vsdeRAM = vsd->findByType(VirtualSystemDescriptionType_Memory);
+        Assert(vsdeRAM.size() == 1);
         string memoryVBox = vsdeRAM.front().strFinalValue;
-        uint64_t tt = RTStrToUInt64 (memoryVBox.c_str()) / _1M;
+        uint64_t tt = RTStrToUInt64(memoryVBox.c_str()) / _1M;
 
         rc = newMachine->COMSETTER(MemorySize)(tt);
-        ComAssertComRCThrowRC (rc);
+        ComAssertComRCThrowRC(rc);
 
         /* VRAM */
         /* Get the recommended VRAM for this guest OS type */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestVRAM) */
         ULONG vramVBox;
-        rc = osType->COMGETTER(RecommendedVRAM) (&vramVBox);
-        ComAssertComRCThrowRC (rc);
+        rc = osType->COMGETTER(RecommendedVRAM)(&vramVBox);
+        ComAssertComRCThrowRC(rc);
         /* Set the VRAM */
-        rc = newMachine->COMSETTER(VRAMSize) (vramVBox);
-        ComAssertComRCThrowRC (rc);
+        rc = newMachine->COMSETTER(VRAMSize)(vramVBox);
+        ComAssertComRCThrowRC(rc);
 
         /* Change the network adapters */
-        list<VirtualSystemDescriptionEntry> vsdeNW = vsd->findByType (VirtualSystemDescriptionType_NetworkAdapter);
+        list<VirtualSystemDescriptionEntry> vsdeNW = vsd->findByType(VirtualSystemDescriptionType_NetworkAdapter);
         if (vsdeNW.size() == 0)
         {
             /* No network adapters, so we have to disable our default one */
             INetworkAdapter *nwVBox = NULL;
-            rc = newMachine->GetNetworkAdapter (0, &nwVBox);
-            ComAssertComRCThrowRC (rc);
-            rc = nwVBox->COMSETTER(Enabled) (false);
-            ComAssertComRCThrowRC (rc);
+            rc = newMachine->GetNetworkAdapter(0, &nwVBox);
+            ComAssertComRCThrowRC(rc);
+            rc = nwVBox->COMSETTER(Enabled)(false);
+            ComAssertComRCThrowRC(rc);
         }
         else
         {
@@ -988,21 +988,21 @@ STDMETHODIMP Appliance::ImportAppliance()
                  ++nwIt, ++a)
             {
                 string nwTypeVBox = nwIt->strFinalValue;
-                uint32_t tt1 = RTStrToUInt32 (nwTypeVBox.c_str());
+                uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
                 INetworkAdapter *nwVBox = NULL;
-                rc = newMachine->GetNetworkAdapter ((ULONG)a, &nwVBox);
-                ComAssertComRCThrowRC (rc);
+                rc = newMachine->GetNetworkAdapter((ULONG)a, &nwVBox);
+                ComAssertComRCThrowRC(rc);
                 /* Enable the network card & set the adapter type */
                 /* NAT is set as default */
-                rc = nwVBox->COMSETTER(Enabled) (true);
-                ComAssertComRCThrowRC (rc);
-                rc = nwVBox->COMSETTER(AdapterType) (static_cast<NetworkAdapterType_T> (tt1));
-                ComAssertComRCThrowRC (rc);
+                rc = nwVBox->COMSETTER(Enabled)(true);
+                ComAssertComRCThrowRC(rc);
+                rc = nwVBox->COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1));
+                ComAssertComRCThrowRC(rc);
             }
         }
         /* Now its time to register the machine before we add any hard disks */
-        rc = mVirtualBox->RegisterMachine (newMachine);
-        ComAssertComRCThrowRC (rc);
+        rc = mVirtualBox->RegisterMachine(newMachine);
+        ComAssertComRCThrowRC(rc);
 
         /* @todo: Unregister on failure */
 #if 0
@@ -1032,11 +1032,11 @@ HRESULT Appliance::construeAppliance()
 
     /* We need the default path for storing disk images */
     ISystemProperties *systemProps = NULL;
-    rc = mVirtualBox->COMGETTER(SystemProperties) (&systemProps);
-    ComAssertComRCThrowRC (rc);
+    rc = mVirtualBox->COMGETTER(SystemProperties)(&systemProps);
+    ComAssertComRCThrowRC(rc);
     BSTR defaultHardDiskLocation;
-    rc = systemProps->COMGETTER(DefaultHardDiskFolder) (&defaultHardDiskLocation);
-    ComAssertComRCThrowRC (rc);
+    rc = systemProps->COMGETTER(DefaultHardDiskFolder)(&defaultHardDiskLocation);
+    ComAssertComRCThrowRC(rc);
 
     list<VirtualSystem>::const_iterator it;
     /* Iterate through all appliances */
@@ -1234,7 +1234,7 @@ HRESULT Appliance::construeAppliance()
                     osTypeVBox = SchemaDefs_OSTypeId_Other;
                 }
         }
-        vsd->addEntry (VirtualSystemDescriptionType_OS, 0, toString<ULONG> (vs.cimos), osTypeVBox);
+        vsd->addEntry(VirtualSystemDescriptionType_OS, 0, toString<ULONG>(vs.cimos), osTypeVBox);
 
         /* VM name */
         /* If the there isn't any name specified create a default one out of
@@ -1242,20 +1242,20 @@ HRESULT Appliance::construeAppliance()
         string nameVBox = vs.strName;
         if (nameVBox == "")
             nameVBox = osTypeVBox;
-        searchUniqueVMName (nameVBox);
-        vsd->addEntry (VirtualSystemDescriptionType_Name, 0, vs.strName, nameVBox);
+        searchUniqueVMName(nameVBox);
+        vsd->addEntry(VirtualSystemDescriptionType_Name, 0, vs.strName, nameVBox);
 
         /* Now that we know the base system get our internal defaults based on that. */
         IGuestOSType *osType = NULL;
-        rc = mVirtualBox->GetGuestOSType (Bstr (Utf8Str (osTypeVBox.c_str())), &osType);
-        ComAssertComRCThrowRC (rc);
+        rc = mVirtualBox->GetGuestOSType(Bstr(Utf8Str(osTypeVBox.c_str())), &osType);
+        ComAssertComRCThrowRC(rc);
 
         /* CPU count */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxCPUCount) */
         ULONG cpuCountVBox = vs.cCPUs;
         if (vs.cCPUs == 0)
             cpuCountVBox = 1;
-        vsd->addEntry (VirtualSystemDescriptionType_CPU, 0, toString<ULONG> (vs.cCPUs), toString<ULONG> (cpuCountVBox));
+        vsd->addEntry(VirtualSystemDescriptionType_CPU, 0, toString<ULONG>(vs.cCPUs), toString<ULONG>(cpuCountVBox));
 
         /* RAM */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
@@ -1265,11 +1265,11 @@ HRESULT Appliance::construeAppliance()
             /* If the RAM of the OVF is zero, use our predefined values */
             ULONG memSizeVBox2;
             rc = osType->COMGETTER(RecommendedRAM)(&memSizeVBox2);
-            ComAssertComRCThrowRC (rc);
+            ComAssertComRCThrowRC(rc);
             /* VBox stores that in MByte */
             ullMemSizeVBox = memSizeVBox2 * _1M;
         }
-        vsd->addEntry (VirtualSystemDescriptionType_Memory, 0, toString<uint64_t> (vs.ullMemorySize), toString<uint64_t> (ullMemSizeVBox));
+        vsd->addEntry(VirtualSystemDescriptionType_Memory, 0, toString<uint64_t>(vs.ullMemorySize), toString<uint64_t>(ullMemSizeVBox));
 
         /* Hard disk Controller */
         ControllersMap::const_iterator hdcIt;
@@ -1286,29 +1286,29 @@ HRESULT Appliance::construeAppliance()
                         // @todo: figure out the IDE types
                         /* Use PIIX4 as default */
                         IDEControllerType_T hdcController = IDEControllerType_PIIX4;
-                        if (!RTStrICmp (hdc.strControllerType.c_str(), "PIIX3"))
+                        if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX3"))
                             hdcController = IDEControllerType_PIIX3;
-                        else if (!RTStrICmp (hdc.strControllerType.c_str(), "PIIX4"))
+                        else if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX4"))
                             hdcController = IDEControllerType_PIIX4;
-                        vsd->addEntry (VirtualSystemDescriptionType_HarddiskControllerIDE, hdc.idController, hdc.strControllerType, toString<ULONG> (hdcController));
+                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerIDE, hdc.idController, hdc.strControllerType, toString<ULONG>(hdcController));
                         break;
                     }
                 case SATA:
                     {
                         // @todo: figure out the SATA types
                         /* We only support a plain AHCI controller, so use them always */
-                        vsd->addEntry (VirtualSystemDescriptionType_HarddiskControllerSATA, hdc.idController, hdc.strControllerType, "AHCI");
+                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerSATA, hdc.idController, hdc.strControllerType, "AHCI");
                         break;
                     }
                 case SCSI:
                     {
                         string hdcController = "LsiLogic";
                         // @todo: figure out the SCSI types
-                        if (!RTStrICmp (hdc.strControllerType.c_str(), "LsiLogic"))
+                        if (!RTStrICmp(hdc.strControllerType.c_str(), "LsiLogic"))
                             hdcController = "LsiLogic";
-                        else if (!RTStrICmp (hdc.strControllerType.c_str(), "BusLogic"))
+                        else if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
                             hdcController = "BusLogic";
-                        vsd->addEntry (VirtualSystemDescriptionType_HarddiskControllerSCSI, hdc.idController, hdc.strControllerType, hdcController);
+                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerSCSI, hdc.idController, hdc.strControllerType, hdcController);
                         break;
                     }
             }
@@ -1335,16 +1335,16 @@ HRESULT Appliance::construeAppliance()
                 //  - figure out all possible vmdk formats we also support
                 //  - figure out if there is a url specifier for vhd already
                 //  - we need a url specifier for the vdi format
-                if (!RTStrICmp (di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#sparse"))
+                if (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#sparse"))
                     fSupported = true;
                 /* enable compressed formats for the first tests also */
-                else if (!RTStrICmp (di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed"))
+                else if (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed"))
                     fSupported = true;
                 if (fSupported)
                 {
                     /* Construct the path */
-                    string path = Utf8StrFmt ("%ls%c%s", defaultHardDiskLocation, RTPATH_DELIMITER, di.strHref.c_str()).raw();
-                    vsd->addEntry (VirtualSystemDescriptionType_Harddisk, hd.idController, di.strHref, path);
+                    string path = Utf8StrFmt("%ls%c%s", defaultHardDiskLocation, RTPATH_DELIMITER, di.strHref.c_str()).raw();
+                    vsd->addEntry(VirtualSystemDescriptionType_Harddisk, hd.idController, di.strHref, path);
                 }
             }
         }
@@ -1355,8 +1355,8 @@ HRESULT Appliance::construeAppliance()
         {
             /* Get the default network adapter type for the selected guest OS */
             NetworkAdapterType_T nwAdapterVBox = NetworkAdapterType_Am79C970A;
-            rc = osType->COMGETTER(AdapterType) (&nwAdapterVBox);
-            ComAssertComRCThrowRC (rc);
+            rc = osType->COMGETTER(AdapterType)(&nwAdapterVBox);
+            ComAssertComRCThrowRC(rc);
             list<string>::const_iterator nwIt;
             /* Iterate through all abstract networks. We support 8 network
              * adapters at the maximum. (@todo: warn if it are more!) */
@@ -1366,29 +1366,29 @@ HRESULT Appliance::construeAppliance()
                  ++nwIt, ++a)
             {
                 // string nwController = *nwIt; // @todo: not used yet
-                vsd->addEntry (VirtualSystemDescriptionType_NetworkAdapter, 0, "", toString<ULONG> (nwAdapterVBox));
+                vsd->addEntry(VirtualSystemDescriptionType_NetworkAdapter, 0, "", toString<ULONG>(nwAdapterVBox));
             }
         }
-        m->virtualSystemDescriptions.push_back (vsd);
+        m->virtualSystemDescriptions.push_back(vsd);
     }
 
     return S_OK;
 }
 
-HRESULT Appliance::searchUniqueVMName (std::string& aName)
+HRESULT Appliance::searchUniqueVMName(std::string& aName)
 {
     IMachine *machine = NULL;
-    char *tmpName = RTStrDup (aName.c_str());
+    char *tmpName = RTStrDup(aName.c_str());
     int i = 1;
     /* @todo: Maybe to cost intensive; try to find a lighter way */
-    while (mVirtualBox->FindMachine (Bstr (tmpName), &machine) != VBOX_E_OBJECT_NOT_FOUND)
+    while (mVirtualBox->FindMachine(Bstr(tmpName), &machine) != VBOX_E_OBJECT_NOT_FOUND)
     {
-        RTStrFree (tmpName);
-        RTStrAPrintf (&tmpName, "%s_%d", aName.c_str(), i);
+        RTStrFree(tmpName);
+        RTStrAPrintf(&tmpName, "%s_%d", aName.c_str(), i);
         ++i;
     }
     aName = tmpName;
-    RTStrFree (tmpName);
+    RTStrFree(tmpName);
 
     return S_OK;
 }
@@ -1407,8 +1407,8 @@ struct VirtualSystemDescription::Data
 HRESULT VirtualSystemDescription::init()
 {
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     /* Initialize data */
     m = new Data();
@@ -1425,30 +1425,30 @@ void VirtualSystemDescription::uninit()
     m = NULL;
 }
 
-STDMETHODIMP VirtualSystemDescription::GetDescription (ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
-                                                       ComSafeArrayOut(ULONG, aRefs),
-                                                       ComSafeArrayOut(BSTR, aOrigValues),
-                                                       ComSafeArrayOut(BSTR, aAutoValues),
-                                                       ComSafeArrayOut(BSTR, aConfigurations))
+STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
+                                                      ComSafeArrayOut(ULONG, aRefs),
+                                                      ComSafeArrayOut(BSTR, aOrigValues),
+                                                      ComSafeArrayOut(BSTR, aAutoValues),
+                                                      ComSafeArrayOut(BSTR, aConfigurations))
 {
-    if (ComSafeArrayOutIsNull (aTypes) ||
-        ComSafeArrayOutIsNull (aRefs) ||
-        ComSafeArrayOutIsNull (aOrigValues) ||
-        ComSafeArrayOutIsNull (aAutoValues) ||
-        ComSafeArrayOutIsNull (aConfigurations))
+    if (ComSafeArrayOutIsNull(aTypes) ||
+        ComSafeArrayOutIsNull(aRefs) ||
+        ComSafeArrayOutIsNull(aOrigValues) ||
+        ComSafeArrayOutIsNull(aAutoValues) ||
+        ComSafeArrayOutIsNull(aConfigurations))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     ULONG c = (ULONG)m->descriptions.size();
-    com::SafeArray<VirtualSystemDescriptionType_T> sfaTypes (c);
-    com::SafeArray<ULONG> sfaRefs (c);
-    com::SafeArray<BSTR> sfaOrigValues (c);
-    com::SafeArray<BSTR> sfaAutoValues (c);
-    com::SafeArray<BSTR> sfaConfigurations (c);
+    com::SafeArray<VirtualSystemDescriptionType_T> sfaTypes(c);
+    com::SafeArray<ULONG> sfaRefs(c);
+    com::SafeArray<BSTR> sfaOrigValues(c);
+    com::SafeArray<BSTR> sfaAutoValues(c);
+    com::SafeArray<BSTR> sfaConfigurations(c);
 
     list<VirtualSystemDescriptionEntry>::const_iterator it;
     size_t i = 0;
@@ -1462,35 +1462,35 @@ STDMETHODIMP VirtualSystemDescription::GetDescription (ComSafeArrayOut(VirtualSy
         /* Refs */
         sfaRefs [i] = vsde.ref;
         /* Original value */
-        Bstr bstr = Utf8Str (vsde.strOriginalValue.c_str());
-        bstr.cloneTo (&sfaOrigValues [i]);
+        Bstr bstr = Utf8Str(vsde.strOriginalValue.c_str());
+        bstr.cloneTo(&sfaOrigValues [i]);
         /* Auto value */
-        bstr = Utf8Str (vsde.strAutoValue.c_str());
-        bstr.cloneTo (&sfaAutoValues [i]);
+        bstr = Utf8Str(vsde.strAutoValue.c_str());
+        bstr.cloneTo(&sfaAutoValues [i]);
         /* Configuration */
-        bstr = Utf8Str (vsde.strConfiguration.c_str());
-        bstr.cloneTo (&sfaConfigurations [i]);
+        bstr = Utf8Str(vsde.strConfiguration.c_str());
+        bstr.cloneTo(&sfaConfigurations [i]);
     }
 
-    sfaTypes.detachTo (ComSafeArrayOutArg (aTypes));
-    sfaRefs.detachTo (ComSafeArrayOutArg (aRefs));
-    sfaOrigValues.detachTo (ComSafeArrayOutArg (aOrigValues));
-    sfaAutoValues.detachTo (ComSafeArrayOutArg (aAutoValues));
-    sfaConfigurations.detachTo (ComSafeArrayOutArg (aConfigurations));
+    sfaTypes.detachTo(ComSafeArrayOutArg(aTypes));
+    sfaRefs.detachTo(ComSafeArrayOutArg(aRefs));
+    sfaOrigValues.detachTo(ComSafeArrayOutArg(aOrigValues));
+    sfaAutoValues.detachTo(ComSafeArrayOutArg(aAutoValues));
+    sfaConfigurations.detachTo(ComSafeArrayOutArg(aConfigurations));
 
     return S_OK;
 }
 
-STDMETHODIMP VirtualSystemDescription::SetFinalValues (ComSafeArrayIn (IN_BSTR, aFinalValues))
+STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(IN_BSTR, aFinalValues))
 {
-    CheckComArgSafeArrayNotNull (aFinalValues);
+    CheckComArgSafeArrayNotNull(aFinalValues);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
-    com::SafeArray <IN_BSTR> values (ComSafeArrayInArg (aFinalValues));
+    com::SafeArray <IN_BSTR> values(ComSafeArrayInArg(aFinalValues));
     if (values.size() != m->descriptions.size())
         return E_INVALIDARG;
 
@@ -1501,13 +1501,13 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues (ComSafeArrayIn (IN_BSTR, 
          ++it, ++i)
     {
         VirtualSystemDescriptionEntry vsde = (*it);
-        vsde.strFinalValue = Utf8Str (values [i]).raw();
+        vsde.strFinalValue = Utf8Str(values[i]).raw();
     }
 
     return S_OK;
 }
 
-void VirtualSystemDescription::addEntry (VirtualSystemDescriptionType_T aType, ULONG aRef, std::string aOrigValue, std::string aAutoValue)
+void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType, ULONG aRef, std::string aOrigValue, std::string aAutoValue)
 {
     VirtualSystemDescriptionEntry vsde;
     vsde.type = aType;
@@ -1517,10 +1517,10 @@ void VirtualSystemDescription::addEntry (VirtualSystemDescriptionType_T aType, U
     /* For now we add the auto value as final value also */
     vsde.strFinalValue = aAutoValue;
 
-    m->descriptions.push_back (vsde);
+    m->descriptions.push_back(vsde);
 }
 
-list<VirtualSystemDescriptionEntry> VirtualSystemDescription::findByType (VirtualSystemDescriptionType_T aType)
+list<VirtualSystemDescriptionEntry> VirtualSystemDescription::findByType(VirtualSystemDescriptionType_T aType)
 {
     list<VirtualSystemDescriptionEntry> vsd;
 
@@ -1529,7 +1529,7 @@ list<VirtualSystemDescriptionEntry> VirtualSystemDescription::findByType (Virtua
          it != m->descriptions.end();
          ++it)
         if (it->type == aType)
-            vsd.push_back (*it);
+            vsd.push_back(*it);
 
     return vsd;
 }
