@@ -1203,6 +1203,15 @@ ifeq ($(KBUILD_TARGET),win)
 endif
 VBOX_LIB_SUPHARDENED = $(PATH_LIB)/SUPR3HardenedStatic$(VBOX_SUFF_LIB)
 
+# Python
+ifndef VBOX_BLD_PYTHON
+ if1of ($(KBUILD_HOST), win)
+  VBOX_BLD_PYTHON := $(firstword $(rsort $(wildcard $(PATH_DEVTOOLS)/win.x86/python/v*/python$(HOSTSUFF_EXE))) python-not-found.exe)
+ else
+  VBOX_BLD_PYTHON := python$(HOSTSUFF_EXE)
+ endif
+endif
+
 # Define the macro for win path conversion.
 ifndef VBOX_ONLY_SDK
   VBOX_FN_MAKE_WIN_PATH = $(subst /,\\,$(1))
@@ -1412,6 +1421,17 @@ VBOX_PATH_X11_XORG_1_6  = $(VBOX_PATH_X11_ROOT)/1.6
 #
 # Various other variables.
 #
+
+#
+# crOpenGL related paths and variables.
+#
+ifdef VBOX_WITH_CROGL
+ VBOX_PATH_CROGL_GLAPI    = $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/glapi_parser
+ VBOX_PATH_CROGL_GENFILES = $(PATH_OBJ)/VBoxOGLgen
+ VBOX_PATH_CROGL_INCLUDE  = $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/include
+ VBOX_CROGL_API_FILES     = $(VBOX_PATH_CROGL_GLAPI)/apiutil.py $(VBOX_PATH_CROGL_GLAPI)/APIspec.txt
+ VBOX_CROGL_PYTHON_ENV    = $(REDIRECT) $(if $1,-E 'PYTHONPATH=$1',) $(if $2,-o $2,) $(if $3,-i $3) --
+endif
 
 # Two helper variables for the VBOX_WITH_ORIGIN stuff:
 # 	VBOX_ORIGIN - Indirect expansion trick.
