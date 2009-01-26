@@ -958,7 +958,7 @@ HRESULT Session::grabIPCSemaphore()
     Utf8Str semName = ipcId;
     char *pszSemName = NULL;
     RTStrUtf8ToCurrentCP (&pszSemName, semName);
-    key_t key = ::ftok (pszSemName, 0);
+    key_t key = ::ftok (pszSemName, 'V');
     RTStrFree (pszSemName);
 
     mIPCSem = ::semget (key, 0, 0);
