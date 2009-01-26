@@ -127,7 +127,7 @@ VBoxOGL_LIBS.win = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
 	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB)
+	$(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris) ## @todo r=bird: See dll comment else where.
  VBoxOGL_LIBS += \
 	$(VBOX_LIB_IPRT_GUEST_R3) \

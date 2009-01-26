@@ -42,7 +42,7 @@ VBoxOGLpassthroughspu_SOURCES    = \
 	$(PATH_VBoxOGLpassthroughspu)/passthroughspu.c
 VBoxOGLpassthroughspu_SOURCES.win =  passthrough.def
 VBoxOGLpassthroughspu_CLEAN       = $(PATH_VBoxOGLpassthroughspu)/passthroughspu.c
-VBoxOGLpassthroughspu_LIBS.win    = $(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB)
+VBoxOGLpassthroughspu_LIBS.win    = $(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris) ## @todo See other make file; if win then implib; else dll;
  VBoxOGLpassthroughspu_LIBS       = $(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
 endif
