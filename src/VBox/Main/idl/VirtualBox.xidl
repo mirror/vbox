@@ -2859,7 +2859,7 @@
     <const name="ComputerSystem" value="2" />
     <const name="Processor" value="3" />
     <const name="Memory" value="4" />
-    <const name="IdeCController" value="5" />
+    <const name="IdeController" value="5" />
     <const name="ParallelScsiHba" value="6" />
     <const name="FcHba" value="7" />
     <const name="iScsiHba" value="8" />
