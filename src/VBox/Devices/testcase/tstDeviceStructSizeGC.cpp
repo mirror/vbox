@@ -1428,29 +1428,29 @@ int main()
 #endif /* VBOX_WITH_LSILOGIC */
 
 #ifdef VBOX_WITH_HPET
-    GEN_CHECK_SIZE(HPETState);
-    GEN_CHECK_OFF(HPETState, pDevInsR3);
-    GEN_CHECK_OFF(HPETState, pDevInsR0);
-    GEN_CHECK_OFF(HPETState, pDevInsRC);
-    GEN_CHECK_OFF(HPETState, hpet_offset);
-    GEN_CHECK_OFF(HPETState, capability);
-    GEN_CHECK_OFF(HPETState, config);
-    GEN_CHECK_OFF(HPETState, isr);
-    GEN_CHECK_OFF(HPETState, hpet_counter);
+    GEN_CHECK_SIZE(HpetState);
+    GEN_CHECK_OFF(HpetState, pDevInsR3);
+    GEN_CHECK_OFF(HpetState, pDevInsR0);
+    GEN_CHECK_OFF(HpetState, pDevInsRC);
+    GEN_CHECK_OFF(HpetState, u64HpetOffset);
+    GEN_CHECK_OFF(HpetState, u64Capabilities);
+    GEN_CHECK_OFF(HpetState, u64Config);
+    GEN_CHECK_OFF(HpetState, u64Isr);
+    GEN_CHECK_OFF(HpetState, u64HpetCounter);
 
-    GEN_CHECK_SIZE(HPETTimer);
-    GEN_CHECK_OFF(HPETTimer, pTimerR3);
-    GEN_CHECK_OFF(HPETTimer, pHpetR3);
-    GEN_CHECK_OFF(HPETTimer, pTimerR0);
-    GEN_CHECK_OFF(HPETTimer, pHpetR0);
-    GEN_CHECK_OFF(HPETTimer, pTimerRC);
-    GEN_CHECK_OFF(HPETTimer, pHpetRC);
-    GEN_CHECK_OFF(HPETTimer, tn);
-    GEN_CHECK_OFF(HPETTimer, config);
-    GEN_CHECK_OFF(HPETTimer, cmp);
-    GEN_CHECK_OFF(HPETTimer, fsb);
-    GEN_CHECK_OFF(HPETTimer, period);
-    GEN_CHECK_OFF(HPETTimer, wrap_flag);
+    GEN_CHECK_SIZE(HpetTimer);
+    GEN_CHECK_OFF(HpetTimer, pTimerR3);
+    GEN_CHECK_OFF(HpetTimer, pHpetR3);
+    GEN_CHECK_OFF(HpetTimer, pTimerR0);
+    GEN_CHECK_OFF(HpetTimer, pHpetR0);
+    GEN_CHECK_OFF(HpetTimer, pTimerRC);
+    GEN_CHECK_OFF(HpetTimer, pHpetRC);
+    GEN_CHECK_OFF(HpetTimer, u8TimerNumber);
+    GEN_CHECK_OFF(HpetTimer, u64Config);
+    GEN_CHECK_OFF(HpetTimer, u64Cmp);
+    GEN_CHECK_OFF(HpetTimer, u64Fsb);
+    GEN_CHECK_OFF(HpetTimer, u64Period);
+    GEN_CHECK_OFF(HpetTimer, u8Wrap);
 #endif
 
     return (0);
