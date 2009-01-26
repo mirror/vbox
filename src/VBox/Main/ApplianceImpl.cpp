@@ -90,6 +90,7 @@ struct VirtualHardwareItem
     string strConsumerVisibility;
     string strMappingBehavior;
     string strPoolID;
+    uint32_t ulBusNumber;
 
     uint32_t ulLineNumber;          // line number of <Item> element in XML source
 
@@ -482,7 +483,9 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                         i.strCaption = pelmItemChild->getValue();
                     else if (!strcmp(pcszItemChildName, "ElementName"))
                         i.strElementName = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "InstanceID"))
+                    else if (    (!strcmp(pcszItemChildName, "InstanceID"))
+                              || (!strcmp(pcszItemChildName, "InstanceId"))
+                            )
                         pelmItemChild->copyValue(i.ulInstanceID);
                     else if (!strcmp(pcszItemChildName, "HostResource"))
                         i.strHostResource = pelmItemChild->getValue();
@@ -524,6 +527,8 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                         i.strMappingBehavior = pelmItemChild->getValue();
                     else if (!strcmp(pcszItemChildName, "PoolID"))
                         i.strPoolID = pelmItemChild->getValue();
+                    else if (!strcmp(pcszItemChildName, "BusNumber"))
+                        pelmItemChild->copyValue(i.ulBusNumber);
                     else
                         return setError(VBOX_E_FILE_ERROR,
                                         tr("Error reading \"%s\": unknown element \"%s\" under Item element, line %d"),
