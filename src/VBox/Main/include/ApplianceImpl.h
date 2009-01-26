@@ -64,15 +64,12 @@ public:
 
     /* IAppliance properties */
     STDMETHOD(COMGETTER(Path))(BSTR *aPath);
-
-    STDMETHOD(COMGETTER(VirtualSystemDescriptions))(ComSafeArrayOut (IVirtualSystemDescription*, aVirtualSystemDescriptions));
+    STDMETHOD(COMGETTER(Disks))(ComSafeArrayOut(BSTR, aDisks));
+    STDMETHOD(COMGETTER(VirtualSystemDescriptions))(ComSafeArrayOut(IVirtualSystemDescription*, aVirtualSystemDescriptions));
 
     /* IAppliance methods */
     /* void interpret (); */
     STDMETHOD(Interpret)(void);
-
-    /* void getDisks (out unsigned long aDisksSize, [array, size_is (aDisksSize)] out wstring aDisks, [retval] out unsigned long cDisks); */
-    STDMETHOD(GetDisks)(ComSafeArrayOut(BSTR, aDisks), ULONG *cDisks);
 
     /* public methods only for internal purposes */
     STDMETHOD(ImportAppliance)();
@@ -141,12 +138,12 @@ public:
     /* IVirtualSystemDescription properties */
 
     /* IVirtualSystemDescription methods */
-    STDMETHOD(GetDescription) (ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
-                               ComSafeArrayOut(ULONG, aRefs),
-                               ComSafeArrayOut(BSTR, aOrigValues),
-                               ComSafeArrayOut(BSTR, aAutoValues),
-                               ComSafeArrayOut(BSTR, aConfigurations));
-    STDMETHOD(SetFinalValues) (ComSafeArrayIn (IN_BSTR, aFinalValues));
+    STDMETHOD(GetDescription)(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
+                              ComSafeArrayOut(ULONG, aRefs),
+                              ComSafeArrayOut(BSTR, aOrigValues),
+                              ComSafeArrayOut(BSTR, aAutoValues),
+                              ComSafeArrayOut(BSTR, aConfigurations));
+    STDMETHOD(SetFinalValues)(ComSafeArrayIn(IN_BSTR, aFinalValues));
 
     /* public methods only for internal purposes */
 
