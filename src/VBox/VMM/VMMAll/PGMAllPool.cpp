@@ -418,6 +418,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 {
                     Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
                     VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                    STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                 }
                 /* paranoia / a bit assumptive. */
@@ -431,6 +432,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         &&  uShw.pPD->a[iShw2].u & PGM_PDFLAGS_MAPPING)
                     {
                         Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                        STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                         VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                     }
@@ -507,6 +509,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 {
                     Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
                     VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                    STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                 }
 #ifdef PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES
@@ -542,6 +545,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     {
                         Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
                         VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                        STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                     }
 #ifdef PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES
@@ -578,6 +582,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPDPT->a[iShw].u & PGM_PLXFLAGS_MAPPING)
                     {
                         Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                        STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                         VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                     }
@@ -592,6 +597,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                             &&  uShw.pPDPT->a[iShw2].u & PGM_PLXFLAGS_MAPPING)
                         {
                             Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                            STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                             VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                             LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                         }
