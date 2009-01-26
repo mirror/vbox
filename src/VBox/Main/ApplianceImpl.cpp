@@ -807,10 +807,6 @@ HRESULT Appliance::init(VirtualBox *aVirtualBox, IN_BSTR &path)
                         x.what());
     }
 
-    rc = construeAppliance();
-    if (FAILED(rc))
-        return rc;
-
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
@@ -1016,7 +1012,7 @@ STDMETHODIMP Appliance::ImportAppliance()
     return S_OK;
 }
 
-HRESULT Appliance::construeAppliance()
+STDMETHODIMP Appliance::Interpret()
 {
     // @todo:
     //  - Locking

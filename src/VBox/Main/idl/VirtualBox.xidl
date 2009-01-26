@@ -2881,15 +2881,22 @@
         Represents an appliance in OVF format. An instance of this is returned by
         <link to="IVirtualBox::openAppliance" />.
 
-        Opening an appliance is a two-step process with VirtualBox: first
+        Opening an appliance is a three-step process with VirtualBox: first
         <link to="IVirtualBox::openAppliance" /> is called, which succeeds if the
         appliance file is syntactically valid, irrespective of whether VirtualBox
         can handle the appliance.
 
-        Once that method has returned an IAppliance instance, one can inspect the
-        member data of that instance to determine whether VirtualBox can handle
-        the requirements of that appliance and create local virtual machines
-        accordingly.
+        As a second step, the caller should then invoke <link to="IAppliance::interpret" />,
+        which analyzes the OVF data and sets up the contents of the IAppliance attributes
+        accordingly. These can be inspected by a VirtualBox front-end such as the GUI,
+        and the suggestions can be displayed to the user. For example, the virtual system
+        will contain the virtual hardware prescribed by the OVF (network and hardware
+        adapters, virtual disk images, memory size and so on), and the GUI can then give
+        the user the option to confirm and/or change these suggestions.
+
+        As a third step, the caller should invoke <link to="#Import" />, which will create
+        virtual machines in VirtualBox as instances of <link to="IMachine" /> that match the
+        information in the virtual system descriptions.
     </desc>
 
     <attribute name="path" type="wstring" readonly="yes">
@@ -2898,8 +2905,22 @@
     </attribute>
 
     <attribute name="virtualSystemDescriptions" type="IVirtualSystemDescription" readonly="yes" safearray="yes">
-      <desc></desc>
+      <desc>
+      Array of virtual system descriptions. One such description gets created by
+      <link to="#interpret" /> for each virtual system found in the OVF.
+      </desc>
     </attribute>
+
+    <method name="interpret">
+      <desc>
+        Interprets the OVF data that was read when the appliance was constructed. After
+        calling this method, one can call
+        <link to="#getDisks" /> to retrieve disk information and also inspect the
+        <link to="#virtualSystemDescriptions" /> array attribute, which will then contain
+        one <link to="IVirtualSystemDescription" /> for each virtual machine found in
+        the appliance.
+      </desc>
+    </method>
 
     <method name="getDisks">
       <desc>
