@@ -2305,9 +2305,12 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
 #ifdef VBOX_WITH_USB
 /**
  *  Checks for the presense and status of the USB Proxy Service.
- *  Returns S_OK when the Proxy is present and OK, or E_FAIL and a
- *  corresponding error message otherwise. Intended to be used by methods
- *  that rely on the Proxy Service availability.
+ *  Returns S_OK when the Proxy is present and OK, VBOX_E_HOST_ERROR (as a
+ *  warning) if the proxy service is not available due to the way the host is
+ *  configured (at present, that means that usbfs and hal/DBus are not
+ *  available on a Linux host) or E_FAIL and a corresponding error message
+ *  otherwise. Intended to be used by methods that rely on the Proxy Service
+ *  availability.
  *
  *  @note This method may return a warning result code. It is recommended to use
  *        MultiError to store the return value.
