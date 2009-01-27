@@ -3736,6 +3736,7 @@ QIcon VBoxGlobal::iconSet (const char *aNormal,
 {
     QIcon iconSet;
 
+    Assert (aNormal != NULL);
     iconSet.addFile (aNormal, QSize(),
                      QIcon::Normal);
     if (aDisabled != NULL)
@@ -3744,6 +3745,33 @@ QIcon VBoxGlobal::iconSet (const char *aNormal,
     if (aActive != NULL)
         iconSet.addFile (aActive, QSize(),
                          QIcon::Active);
+    return iconSet;
+}
+
+/* static */
+QIcon VBoxGlobal::iconSetOnOff (const char *aNormal, const char *aNormalOff,
+                                const char *aDisabled /* = NULL */,
+                                const char *aDisabledOff /* = NULL */,
+                                const char *aActive /* = NULL */,
+                                const char *aActiveOff /* = NULL */)
+{
+    QIcon iconSet;
+
+    Assert (aNormal != NULL);
+    iconSet.addFile (aNormal, QSize(), QIcon::Normal, QIcon::On);
+    if (aNormalOff != NULL)
+        iconSet.addFile (aNormalOff, QSize(), QIcon::Normal, QIcon::Off);
+
+    if (aDisabled != NULL)
+        iconSet.addFile (aDisabled, QSize(), QIcon::Disabled, QIcon::On);
+    if (aDisabledOff != NULL)
+        iconSet.addFile (aDisabledOff, QSize(), QIcon::Disabled, QIcon::Off);
+
+    if (aActive != NULL)
+        iconSet.addFile (aActive, QSize(), QIcon::Active, QIcon::On);
+    if (aActiveOff != NULL)
+        iconSet.addFile (aActive, QSize(), QIcon::Active, QIcon::Off);
+
     return iconSet;
 }
 
@@ -3757,13 +3785,17 @@ QIcon VBoxGlobal::iconSetFull (const QSize &aNormalSize, const QSize &aSmallSize
 {
     QIcon iconSet;
 
+    Assert (aNormal != NULL);
+    Assert (aSmallNormal != NULL);
     iconSet.addFile (aNormal, aNormalSize, QIcon::Normal);
     iconSet.addFile (aSmallNormal, aSmallSize, QIcon::Normal);
+
     if (aSmallDisabled != NULL)
     {
         iconSet.addFile (aDisabled, aNormalSize, QIcon::Disabled);
         iconSet.addFile (aSmallDisabled, aSmallSize, QIcon::Disabled);
     }
+
     if (aSmallActive != NULL)
     {
         iconSet.addFile (aActive, aNormalSize, QIcon::Active);
