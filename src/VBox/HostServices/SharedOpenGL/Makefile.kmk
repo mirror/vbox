@@ -53,29 +53,36 @@ TEMPLATE_VBOXOGLR3HOST_DEFS.win       = _WIN32_WINNT=0x0500 WINDOWS=1
 TEMPLATE_VBOXOGLR3HOST_DEFS.linux     = Linux
 TEMPLATE_VBOXOGLR3HOST_DEFS.solaris   = SunOS
 TEMPLATE_VBOXOGLR3HOST_DEFS.darwin    = DARWIN GL_GLEXT_LEGACY
-TEMPLATE_VBOXOGLR3HOST_INCS.darwin    = $(VBOX_PATH_DARWIN_OPENGL)/..
-TEMPLATE_VBOXOGLR3HOST_INCS           = $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
-## @todo r=bird: try INTERMEDIATES.darwin here.
-TEMPLATE_VBOXOGLR3HOST_DEPS.darwin    = $(addprefix $(VBOX_PATH_DARWIN_OPENGL)/,$(VBOX_DARWIN_OPENGL_HEADERS))
+TEMPLATE_VBOXOGLR3HOST_INCS           = \
+	$(VBOX_PATH_CROGL_INCLUDE) \
+	$(VBOX_PATH_CROGL_GENFILES)
 TEMPLATE_VBOXOGLR3HOST_LDFLAGS.linux  = -Wl,--no-as-needed
 TEMPLATE_VBOXOGLR3HOST_LDFLAGS.darwin = -framework Carbon -framework OpenGL -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 TEMPLATE_VBOXOGLR3HOST_BLDDIRS.darwin = $(VBOX_PATH_DARWIN_OPENGL)
 
 
 ifeq ($(KBUILD_TARGET),darwin)
-#
-# We have to symlink the system headers of OpenGl cause they have some
-# different directory hierarchy on Mac OS X (no /GL sub directory).
-#
-VBOX_DARWIN_OPENGL_HEADERS := gl.h glu.h
-VBOX_PATH_DARWIN_OPENGL    := $(PATH_OBJ)/VBoxOGL/GL
+ #
+ # We have to symlink the system headers of OpenGl cause they have some
+ # different directory hierarchy on Mac OS X (no /GL sub directory).
+ #
+ VBOX_DARWIN_OPENGL_HEADERS := gl.h glu.h
+ VBOX_PATH_DARWIN_OPENGL    := $(PATH_OUT)/obj/VBoxOGL/GL
 
-$(foreach hdr, $(VBOX_DARWIN_OPENGL_HEADERS), \
-$(VBOX_PATH_DARWIN_OPENGL)/$(hdr): \
-	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Headers/$(hdr) \
-	| $(VBOX_PATH_DARWIN_OPENGL)/ \
-	; $$(LN_SYMLINK) $$< $$@ \
-$(NL))
+ # Install target for creating the symlinks.
+ INSTALLS += DarwinOpenGLHdrs
+ DarwinOpenGLHdrs_INST := \
+ 	$(patsubst $(PATH_OUT)/%,%/,$(VBOX_PATH_DARWIN_OPENGL))
+ DarwinOpenGLHdrs_SYMLINKS := \
+ 	$(foreach hdr, $(VBOX_DARWIN_OPENGL_HEADERS),\
+ 		$(hdr)=>$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Headers/$(hdr))
+
+ # Update the template.
+ TEMPLATE_VBOXOGLR3HOST_INCS.darwin := \
+	$(dir $(VBOX_PATH_DARWIN_OPENGL))
+ TEMPLATE_VBOXOGLR3HOST_INTERMEDIATES.darwin := \
+	$(addprefix $(VBOX_PATH_DARWIN_OPENGL)/./,$(VBOX_DARWIN_OPENGL_HEADERS))
+
 endif # darwin
 
 #
