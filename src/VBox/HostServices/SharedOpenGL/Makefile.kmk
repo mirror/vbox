@@ -74,7 +74,8 @@ $(foreach hdr, $(VBOX_DARWIN_OPENGL_HEADERS), \
 $(VBOX_PATH_DARWIN_OPENGL)/$(hdr): \
 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Headers/$(hdr) \
 	| $(VBOX_PATH_DARWIN_OPENGL)/ \
-	; $$(LN_SYMLINK) $$< $$@ )
+	; $$(LN_SYMLINK) $$< $$@ \
+$(NL))
 endif # darwin
 
 #
