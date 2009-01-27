@@ -203,10 +203,10 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     /*localhost mask */
     inet_aton("255.0.0.0", &local_mask);
     inet_aton("127.0.0.0", &local_network);
-    for (pIPAddr = &FixedInfo->DnsServerList; pIPAddr != NULL; pIPAddr = pIPAddr->Next) 
+    for (pIPAddr = &FixedInfo->DnsServerList; pIPAddr != NULL; pIPAddr = pIPAddr->Next)
     {
-        struct dns_entry *da = RTMemAllocZ(sizeof (struct dns_entry));	
-        if (da == NULL) 
+        struct dns_entry *da = RTMemAllocZ(sizeof (struct dns_entry));
+        if (da == NULL)
         {
             LogRel(("can't alloc memory for DNS entry\n"));
             return -1;
@@ -214,7 +214,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         /*check */
         inet_aton(pIPAddr->IpAddress.String, &da->de_addr);
         if ((ntohl(da->de_addr.s_addr) & ntohl(local_mask.s_addr)) == ntohl(local_network.s_addr)) {
-            da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS); 
+            da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
         }
         LIST_INSERT_HEAD(&pData->dns_list_head, da, de_list);
     }
@@ -373,8 +373,6 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     tftp_prefix = pszTFTPPrefix;
     bootp_filename = pszBootFile;
     pData->netmask = u32Netmask;
-    /* @todo: add ability to configurate this staff */
-    pData->tftp_server.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_TFTP);
 
 #ifdef RT_OS_WINDOWS
     {
@@ -398,6 +396,8 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
 
     inet_aton(pszNetAddr, &special_addr);
     alias_addr.s_addr = special_addr.s_addr | htonl(CTL_ALIAS);
+    /* @todo: add ability to configure this staff */
+    pData->tftp_server.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_TFTP);
 
     /* set default addresses */
     inet_aton("127.0.0.1", &loopback_addr);
@@ -746,7 +746,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
     if (link_up)
     {
 #if defined(RT_OS_WINDOWS)
-        /*XXX: before renaming please make see define 
+        /*XXX: before renaming please make see define
          * fIcmp in slirp_state.h
          */
         if (fIcmp)
@@ -1009,7 +1009,7 @@ void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     uint8_t arp_reply[sizeof(struct arphdr) + ETH_HLEN];
     eh = (struct ethhdr *)pkt;
 #else
-    struct mbuf *mr; 
+    struct mbuf *mr;
     eh = mtod(m, struct ethhdr *);
 #endif
     ah = (struct arphdr *)&eh[1];
@@ -1056,7 +1056,7 @@ void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
                 rah->ar_op = htons(ARPOP_REPLY);
                 memcpy(rah->ar_sha, special_ethaddr, ETH_ALEN);
 
-                switch (htip & ~pData->netmask) 
+                switch (htip & ~pData->netmask)
                 {
                     case CTL_DNS:
                     case CTL_ALIAS:
@@ -1064,7 +1064,7 @@ void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
                         break;
                     default:;
                 }
-                
+
                 memcpy(rah->ar_sip, ah->ar_tip, 4);
                 memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
                 memcpy(rah->ar_tip, ah->ar_sip, 4);
@@ -1087,12 +1087,12 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     int proto;
     static bool fWarnedIpv6;
 
-    if (pkt_len < ETH_HLEN) 
+    if (pkt_len < ETH_HLEN)
     {
         LogRel(("NAT: packet having size %d has been ingnored\n", pkt_len));
         return;
     }
-    
+
     m = m_get(pData);
     if (!m)
     {
@@ -1156,12 +1156,12 @@ void if_encap(PNATState pData, uint8_t *ip_data, int ip_data_len)
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
 #else
-    uint8_t buf[1600]; 
+    uint8_t buf[1600];
     struct ethhdr *eh = (struct ethhdr *)buf;
 
     if (ip_data_len + ETH_HLEN > sizeof(buf))
         return;
-    
+
     memcpy(buf + sizeof(struct ethhdr), ip_data, ip_data_len);
 #endif
 
@@ -1175,7 +1175,7 @@ void if_encap(PNATState pData, uint8_t *ip_data, int ip_data_len)
 #if 0
     slirp_output(pData->pvUser, m, mtod(m, uint8_t *), m->m_len);
 #else
-    memcpy(buf, mtod(m, uint8_t *), m->m_len); 
+    memcpy(buf, mtod(m, uint8_t *), m->m_len);
     slirp_output(pData->pvUser, NULL, buf, m->m_len);
     m_free(pData, m);
 #endif
@@ -1243,8 +1243,8 @@ unsigned int slirp_get_timeout_ms(PNATState pData)
  */
 void slirp_post_sent(PNATState pData, void *pvArg)
 {
-    struct socket *so = 0; 
+    struct socket *so = 0;
     struct tcpcb *tp = 0;
     struct mbuf *m = (struct mbuf *)pvArg;
-    m_free(pData, m); 
+    m_free(pData, m);
 }

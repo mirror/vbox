@@ -214,7 +214,8 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         && bootp_filename)
         RTStrPrintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
 
-    saddr.sin_addr.s_addr = pData->tftp_server.s_addr; 
+    /* Address/port of the DHCP server. */
+    saddr.sin_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
     saddr.sin_port = htons(BOOTP_SERVER);
 
     daddr.sin_port = htons(BOOTP_CLIENT);
@@ -226,10 +227,7 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     memcpy(rbp->bp_hwaddr, bp->bp_hwaddr, 6);
 
     rbp->bp_yiaddr = daddr.sin_addr; /* Client IP address */
-    rbp->bp_siaddr = saddr.sin_addr; /* Server IP address */
-
-    /*XXX: latter it used for initialization of gateway*/
-    saddr.sin_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS); 
+    rbp->bp_siaddr = pData->tftp_server; /* Next Server IP address, i.e. TFTP */
 
     q = rbp->bp_vend;
     memcpy(q, rfc1533_cookie, 4);
