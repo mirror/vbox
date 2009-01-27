@@ -373,6 +373,8 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     tftp_prefix = pszTFTPPrefix;
     bootp_filename = pszBootFile;
     pData->netmask = u32Netmask;
+    /* @todo: add ability to configurate this staff */
+    pData->tftp_server.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_TFTP);
 
 #ifdef RT_OS_WINDOWS
     {
