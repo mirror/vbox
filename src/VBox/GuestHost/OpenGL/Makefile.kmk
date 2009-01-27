@@ -359,7 +359,9 @@ VBoxOGLcrstate_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLcrstate_INCS = \
 	state_tracker
 VBoxOGLcrstate_INTERMEDIATES = \
-	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
+	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h \
+	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
+	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
 VBoxOGLcrstate_SOURCES = \
 	state_tracker/state_attrib.c \
 	state_tracker/state_buffer.c \
