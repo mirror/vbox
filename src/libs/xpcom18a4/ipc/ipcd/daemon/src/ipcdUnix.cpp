@@ -44,6 +44,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef RT_OS_SOLARIS
+# include <sys/resource.h>
+#endif
+
 #include "prio.h"
 #include "prerror.h"
 #include "prthread.h"
@@ -472,6 +476,24 @@ int main(int argc, char **argv)
         IPC_GetDefaultSocketPath(addr.local.path, sizeof(addr.local.path));
     else
         PL_strncpyz(addr.local.path, argv[1], sizeof(addr.local.path));
+
+#ifdef RT_OS_SOLARIS
+        struct rlimit lim;
+        if (getrlimit(RLIMIT_NOFILE, &lim) == 0)
+        {
+            if (lim.rlim_cur < 2048)
+            {
+                lim.rlim_cur = 2048;
+                if (setrlimit(RLIMIT_NOFILE, &lim) != 0)
+                {
+                    getrlimit(RLIMIT_NOFILE, &lim);
+                    printf ("WARNING: failed to increase per-process file-descriptor limit to 2048\n", lim.rlim_cur);
+                }
+            }
+        }
+        else
+            printf ("WARNING: failed to obtain per-process file-descriptor limit.\n");
+#endif
 
 #ifdef IPC_USE_FILE_LOCK
     Status status = InitDaemonDir(addr.local.path);
