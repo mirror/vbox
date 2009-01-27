@@ -73,8 +73,8 @@ public:
 
     void refreshView();
 
-    bool isWindowMaximized() const 
-    { 
+    bool isWindowMaximized() const
+    {
 #ifdef Q_WS_MAC
         /* On Mac OS X we didn't really jump to the fullscreen mode but
          * maximize the window. This situation has to be considered when
@@ -82,10 +82,10 @@ public:
         return !(isTrueSeamless()) && QMainWindow::isMaximized();
 #else /* Q_WS_MAC */
         return QMainWindow::isMaximized();
-#endif /* Q_WS_MAC */ 
+#endif /* Q_WS_MAC */
     }
-    bool isWindowFullScreen() const 
-    { 
+    bool isWindowFullScreen() const
+    {
 #ifdef Q_WS_MAC
         /* On Mac OS X we didn't really jump to the fullscreen mode but
          * maximize the window. This situation has to be considered when
@@ -93,7 +93,7 @@ public:
         return isTrueFullscreen() || isTrueSeamless();
 #else /* Q_WS_MAC */
         return QMainWindow::isFullScreen();
-#endif /* Q_WS_MAC */ 
+#endif /* Q_WS_MAC */
     }
 
     bool isTrueFullscreen() const { return mIsFullscreen; }
@@ -216,6 +216,7 @@ private slots:
     void updateUsbState();
     void updateMediaDriveState (VBoxDefs::MediaType aType);
     void updateSharedFoldersState();
+    void updateACPIStatus();
 
     void tryClose();
 
@@ -324,6 +325,9 @@ private:
     QTimer *idle_timer;
     KMachineState machine_state;
     QString caption_prefix;
+
+    QTimer *mACPITimer;
+    bool mACPIEnabled : 1;
 
     bool no_auto_close : 1;
 

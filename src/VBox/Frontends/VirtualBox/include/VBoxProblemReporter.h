@@ -231,6 +231,8 @@ public:
     void cannotDeleteMachine (const CVirtualBox &vbox, const CMachine &machine);
     void cannotDiscardSavedState (const CConsole &console);
 
+    void cannotSendACPIToMachine();
+
     void cannotSetSnapshotFolder (const CMachine &aMachine, const QString &aPath);
     void cannotDiscardSnapshot (const CConsole &aConsole,
                                 const QString &aSnapshotName);

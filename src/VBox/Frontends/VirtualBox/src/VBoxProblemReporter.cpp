@@ -921,6 +921,13 @@ void VBoxProblemReporter::cannotDiscardSavedState (const CConsole &console)
         formatErrorInfo (res));
 }
 
+void VBoxProblemReporter::cannotSendACPIToMachine()
+{
+    message (mainWindowShown(),  Warning,
+        tr ("Cannot send the ACPI Power Button press event to the "
+            "virtual machine because ACPI is not available now."));
+}
+
 void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine,
                                                    const QString &aPath)
 {
