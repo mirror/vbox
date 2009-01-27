@@ -518,8 +518,8 @@ $(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h: $(addprefix $(PATH_SUB_CURREN
 #
 VBoxOGLerrorspu_TEMPLATE = VBOXCROGLR3GUESTDLL
 VBoxOGLerrorspu_INTERMEDIATES.darwin = \
-	$(PATH_OUT)/obj/VBoxOGL/GL/gl.h \
-	$(PATH_OUT)/obj/VBoxOGL/GL/glu.h
+	$(PATH_OUT)/obj/VBoxOGL/GL/./gl.h \
+	$(PATH_OUT)/obj/VBoxOGL/GL/./glu.h
 VBoxOGLerrorspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
 VBoxOGLerrorspu_SOURCES = \
