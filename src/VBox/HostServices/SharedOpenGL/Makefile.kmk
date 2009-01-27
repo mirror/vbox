@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for the VirtualBox Windows Chromium OpenGL ICD.
+# Sub-Makefile for the VirtualBox HGCM Service.
 #
 
 #
