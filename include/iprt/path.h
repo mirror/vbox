@@ -47,7 +47,7 @@ __BEGIN_DECLS
 
 
 /** @def RTPATH_SLASH
- * The prefered slash character.
+ * The preferred slash character.
  *
  * @remark IPRT will always accept unix slashes. So, normally you would
  *         never have to use this define.
@@ -63,7 +63,7 @@ __BEGIN_DECLS
 
 
 /** @def RTPATH_SLASH_STR
- * The prefered slash character as a string, handy for concatenations
+ * The preferred slash character as a string, handy for concatenations
  * with other strings.
  *
  * @remark IPRT will always accept unix slashes. So, normally you would
@@ -92,7 +92,7 @@ __BEGIN_DECLS
 /** @def RTPATH_IS_VOLSEP
  * Checks if a character marks the end of the volume specification.
  *
- * @remark  This is sufficent for the drive letter consept on PC.
+ * @remark  This is sufficient for the drive letter concept on PC.
  *          However it might be insufficient on other platforms
  *          and even on PC a UNC volume spec won't be detected this way.
  *          Use the RTPath@<too be created@>() instead.
@@ -304,9 +304,9 @@ RTDECL(bool) RTPathHavePath(const char *pszPath);
  * </ul>
  *
  * File system details are currently ignored. This means that you won't get
- * case-insentive compares on unix systems when a path goes into a case-insensitive
+ * case-insensitive compares on unix systems when a path goes into a case-insensitive
  * filesystem like FAT, HPFS, HFS, NTFS, JFS, or similar. For NT, OS/2 and similar
- * you'll won't get case-sensitve compares on a case-sensitive file system.
+ * you'll won't get case-sensitive compares on a case-sensitive file system.
  *
  * @param   pszPath1    Path to compare (must be an absolute path).
  * @param   pszPath2    Path to compare (must be an absolute path).
@@ -335,7 +335,7 @@ RTDECL(int) RTPathCompare(const char *pszPath1, const char *pszPath2);
  *          are identical), or |false| otherwise.
  *
  * @remark  This API doesn't currently handle root directory compares in a manner
- *          consistant with the other APIs. RTPathStartsWith(pszSomePath, "/") will
+ *          consistent with the other APIs. RTPathStartsWith(pszSomePath, "/") will
  *          not work if pszSomePath isn't "/".
  */
 RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
@@ -474,7 +474,7 @@ RTR3DECL(int) RTPathGetMode(const char *pszPath, PRTFMODE pfMode);
  * @returns iprt status code.
  * @param   pszPath             Path to the file system object.
  * @param   pAccessTime         Pointer to the new access time.
- * @param   pModificationTime   Pointer to the new modifcation time.
+ * @param   pModificationTime   Pointer to the new modification time.
  * @param   pChangeTime         Pointer to the new change time. NULL if not to be changed.
  * @param   pBirthTime          Pointer to the new time of birth. NULL if not to be changed.
  *
@@ -498,7 +498,7 @@ RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRT
  * @returns iprt status code.
  * @param   pszPath             Path to the file system object.
  * @param   pAccessTime         Where to store the access time. NULL is ok.
- * @param   pModificationTime   Where to store the modifcation time. NULL is ok.
+ * @param   pModificationTime   Where to store the modification time. NULL is ok.
  * @param   pChangeTime         Where to store the change time. NULL is ok.
  * @param   pBirthTime          Where to store the creation time. NULL is ok.
  *
