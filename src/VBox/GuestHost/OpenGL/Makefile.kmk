@@ -138,8 +138,6 @@ VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 #
 VBoxOGLhostcrutil_EXTENDS  = VBoxOGLcrutil
 VBoxOGLhostcrutil_TEMPLATE = VBOXCROGLR3HOST
-## @todo kBuild: Check this.
-VBoxOGLhostcrutil_INTERMEDIATES  = $(VBoxOGLcrutil_INTERMEDIATES)
 VBoxOGLhostcrutil_LDFLAGS.darwin = $(VBoxOGLcrutil_LDFLAGS.darwin) \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhostcrutil.dylib \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
@@ -254,7 +252,6 @@ endif
 #
 VBoxOGLhostcrpacker_EXTENDS  = VBoxOGLcrpacker
 VBoxOGLhostcrpacker_TEMPLATE = VBOXCROGLR3HOST
-VBoxOGLhostcrpacker_INTERMEDIATES = $(VBoxOGLcrpacker_INTERMEDIATES)
 ## @todo r=bird: this is used by all VBOXCROGLR3HOST users execpt VBoxOGLhostcrutil. Any reason why it's not using it? If not, then move it to the template.
 VBoxOGLhostcrpacker_LDFLAGS.linux += -Wl,--no-as-needed
 ifeq ($(KBUILD_TARGET),win)
@@ -443,8 +440,6 @@ endif
 #
 VBoxOGLhostcrstate_EXTENDS  = VBoxOGLcrstate
 VBoxOGLhostcrstate_TEMPLATE = VBOXCROGLR3HOST
-VBoxOGLhostcrstate_INTERMEDIATES = \
-	$(VBoxOGLcrstate_INTERMEDIATES)
 VBoxOGLhostcrstate_SOURCES = \
 	$(VBoxOGLcrstate_SOURCES) \
 	state_tracker/state_snapshot.c
@@ -547,8 +542,6 @@ endif
 #
 VBoxOGLhosterrorspu_EXTENDS  = VBoxOGLerrorspu
 VBoxOGLhosterrorspu_TEMPLATE = VBOXCROGLR3HOST
-VBoxOGLhosterrorspu_INTERMEDIATES = \
-	$(VBoxOGLerrorspu_INTERMEDIATES)
 VBoxOGLhosterrorspu_LDFLAGS.darwin += $(VBoxOGLerrorspu_LDFLAGS.darwin) \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhosterrorspu.dylib \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
