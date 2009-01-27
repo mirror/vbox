@@ -2041,7 +2041,7 @@ int
 SOAP_FMAC2
 soap_new_block(struct soap *soap)
 { struct soap_blist *p;
-  DBGLOG(TEST, SOAP_MESSAGE(fdebug, "New block sequence (prev=%p)\n", soap->blist));
+  DBGLOG(TEST, SOAP_MESSAGE(fdebug, "New block sequence (prev=%p)\n", (void *)soap->blist));
   if (!(p = (struct soap_blist*)SOAP_MALLOC(soap, sizeof(struct soap_blist))))
     return SOAP_EOM;
   p->next = soap->blist;
@@ -2123,7 +2123,7 @@ soap_update_ptrs(struct soap *soap, char *start, char *end, char *p1, char *p2)
       }
       for (fp = ip->flist; fp; fp = fp->next)
       { if ((char*)fp->ptr >= start && (char*)fp->ptr < end)
-        { DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Copy list update id='%s' %p\n", ip->id, fp));
+        { DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Copy list update id='%s' %p\n", ip->id, (void *)fp));
           fp->ptr = (char*)fp->ptr + (p1-p2);
         }
       }
@@ -2132,7 +2132,7 @@ soap_update_ptrs(struct soap *soap, char *start, char *end, char *p1, char *p2)
 #ifndef WITH_LEANER
   for (xp = soap->xlist; xp; xp = xp->next)
   { if (xp->ptr && (char*)xp->ptr >= start && (char*)xp->ptr < end)
-    { DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Update id='%s' %p -> %p\n", xp->id?xp->id:"", xp->ptr, (char*)xp->ptr + (p1-p2)));
+    { DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Update id='%s' %p -> %p\n", xp->id?xp->id:"", (void *)xp->ptr, (char*)xp->ptr + (p1-p2)));
       xp->ptr = (unsigned char**)((char*)xp->ptr + (p1-p2));
       xp->size = (int*)((char*)xp->size + (p1-p2));
       xp->type = (char**)((char*)xp->type + (p1-p2));
@@ -2191,7 +2191,7 @@ soap_resolve(struct soap *soap)
         while (q)
         { p = *q;
           *q = r;
-          DBGLOG(TEST,SOAP_MESSAGE(fdebug, "... link %p -> %p\n", q, r));
+          DBGLOG(TEST,SOAP_MESSAGE(fdebug, "... link %p -> %p\n", (void *)q, r));
           q = (void**)p;
         }
       }
@@ -2213,7 +2213,7 @@ soap_resolve(struct soap *soap)
             DBGLOG(TEST, if (q) SOAP_MESSAGE(fdebug, "Traversing copy chain to resolve id='%s'\n", ip->id));
             ip->copy = NULL;
             do
-            { DBGLOG(TEST, SOAP_MESSAGE(fdebug, "... copy %p -> %p (%u bytes)\n", ip->ptr, q, (unsigned int)ip->size));
+            { DBGLOG(TEST, SOAP_MESSAGE(fdebug, "... copy %p -> %p (%u bytes)\n", ip->ptr, (void *)q, (unsigned int)ip->size));
               p = *q;
               memcpy(q, ip->ptr, ip->size);
               q = (void**)p;
@@ -2229,7 +2229,7 @@ soap_resolve(struct soap *soap)
               if (!q)
                 return soap->error;
               *q = p;
-              DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Descending one level, new location=%p holds=%p...\n", q, *q));
+              DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Descending one level, new location=%p holds=%p...\n", (void *)q, *q));
               p = (void*)q;
               k--;
             }
@@ -5670,7 +5670,7 @@ soap_id_lookup(struct soap *soap, const char *id, void **p, int t, size_t n, uns
   ip = soap_lookup(soap, id); /* lookup pointer to hash table entry for string id */
   if (!ip)
   { ip = soap_enter(soap, id); /* new hash table entry for string id */
-    DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Forwarding first href='%s' type=%d %p (%u bytes)\n", id, t, p, (unsigned int)n));
+    DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Forwarding first href='%s' type=%d %p (%u bytes)\n", id, t, (void *)p, (unsigned int)n));
     ip->type = t;
     ip->size = n;
     ip->link = p;
@@ -5722,7 +5722,7 @@ soap_id_lookup(struct soap *soap, const char *id, void **p, int t, size_t n, uns
     *p = (void*)q;
   }
   else
-  { DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Forwarded href='%s' type=%d location=%p (%u bytes)\n", id, t, p, (unsigned int)n));
+  { DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Forwarded href='%s' type=%d location=%p (%u bytes)\n", id, t, (void *)p, (unsigned int)n));
     while (ip->level < k)
     { q = (void**)soap_malloc(soap, sizeof(void*));
       *p = q;
@@ -8203,7 +8203,7 @@ SOAP_FMAC2
 soap_string_out(struct soap *soap, const char *s, int flag)
 { register const char *t;
   register soap_wchar c;
-  register soap_wchar mask = 0xFFFFFF80UL;
+  register unsigned long mask = 0xFFFFFF80UL;
 #ifdef WITH_DOM
   if ((soap->mode & SOAP_XML_DOM) && soap->dom)
   { soap->dom->data = soap_strdup(soap, s);
