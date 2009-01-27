@@ -924,8 +924,9 @@ void VBoxProblemReporter::cannotDiscardSavedState (const CConsole &console)
 void VBoxProblemReporter::cannotSendACPIToMachine()
 {
     message (mainWindowShown(),  Warning,
-        tr ("Cannot send the ACPI Power Button press event to the "
-            "virtual machine because ACPI is not available now."));
+        tr ("You are trying to shut down the guest with the ACPI power "
+            "button. This is currently not possible because the guest "
+            "does not use the ACPI subsystem."));
 }
 
 void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine,
