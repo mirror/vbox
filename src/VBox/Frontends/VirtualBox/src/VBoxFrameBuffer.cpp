@@ -40,7 +40,7 @@
 
 #if !defined (Q_OS_WIN32)
 NS_DECL_CLASSINFO (VBoxFrameBuffer)
-NS_IMPL_ISUPPORTS1_CI (VBoxFrameBuffer, IFramebuffer)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VBoxFrameBuffer, IFramebuffer)
 #endif
 
 VBoxFrameBuffer::VBoxFrameBuffer (VBoxConsoleView *aView)
@@ -141,7 +141,7 @@ STDMETHODIMP VBoxFrameBuffer::COMGETTER(WinId) (ULONG64 *winId)
 {
     if (!winId)
         return E_POINTER;
-    *winId = (mView && mView->viewport()) ? (ULONG64) mView->viewport()->winId() : 0;	
+    *winId = (mView && mView->viewport()) ? (ULONG64) mView->viewport()->winId() : 0;
     return S_OK;
 }
 
@@ -615,7 +615,7 @@ void VBoxSDLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 
     if (fSameResolutionRequested)
     {
-        LogFlowFunc(("the same resolution requested, skipping the resize.\n")); 
+        LogFlowFunc(("the same resolution requested, skipping the resize.\n"));
         return;
     }
 
