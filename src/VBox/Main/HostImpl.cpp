@@ -2325,18 +2325,24 @@ HRESULT Host::checkUSBProxyService()
         /* disable the USB controller completely to avoid assertions if the
          * USB proxy service could not start. */
 
-        Bstr message;
-        if (   SUCCEEDED(mUSBProxyService->getLastErrorMessage(message.asOutParam()))
-            && !message.isNull())
-            return setWarning (E_FAIL, Utf8Str(message).raw());
         if (mUSBProxyService->getLastError() == VERR_FILE_NOT_FOUND)
             return setWarning (E_FAIL,
                 tr ("Could not load the Host USB Proxy Service (%Rrc). "
                     "The service might not be installed on the host computer"),
                 mUSBProxyService->getLastError());
         if (mUSBProxyService->getLastError() == VINF_SUCCESS)
+#ifdef RT_OS_LINUX
+            return setWarning (VBOX_E_HOST_ERROR,
+# ifdef VBOX_WITH_DBUS
+                tr ("The USB Proxy Service could not be started, because neither the USB file system (usbfs) nor the hardware information service (hal) is available")
+# else
+                tr ("The USB Proxy Service could not be started, because the USB file system (usbfs) is not available")
+# endif
+                              );
+#else
             return setWarning (E_FAIL,
                 tr ("The USB Proxy Service has not yet been ported to this host"));
+#endif
         return setWarning (E_FAIL,
             tr ("Could not load the Host USB Proxy service (%Rrc)"),
             mUSBProxyService->getLastError());
