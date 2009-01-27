@@ -64,8 +64,9 @@ TEMPLATE_VBOXCROGLR3HOST_DEFS.linux     = Linux=1
 TEMPLATE_VBOXCROGLR3HOST_DEFS.solaris   = SunOS=1 GLEXT_64_TYPES_DEFINED
 TEMPLATE_VBOXCROGLR3HOST_DEFS.darwin    = DARWIN=1 GL_GLEXT_LEGACY
 TEMPLATE_VBOXCROGLR3HOST_INCS           = $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
-TEMPLATE_VBOXCROGLR3HOST_INCS.darwin    = $(PATH_OUT)/obj/VBoxOGL
+TEMPLATE_VBOXCROGLR3HOST_SDKS.darwin    = $(VBOXR3NP_SDKS.darwin) DARWIN-OPENGL
 TEMPLATE_VBOXCROGLR3HOST_LDFLAGS.darwin = -framework Carbon -framework OpenGL -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+TEMPLATE_VBOXCROGLR3HOST_LDFLAGS.linux  = $(TEMPLATE_VBOXR3NP_LDFLAGS.linux) -Wl,--no-as-needed
 TEMPLATE_VBOXCROGLR3HOST_BLDDIRS        = $(VBOX_PATH_CROGL_GENFILES)/
 
 ## VBOXCROGLR3GUESTDLL ##
@@ -77,7 +78,7 @@ TEMPLATE_VBOXCROGLR3GUESTDLL_DEFS.linux     = Linux=1
 TEMPLATE_VBOXCROGLR3GUESTDLL_DEFS.solaris   = SunOS=1 GLEXT_64_TYPES_DEFINED
 TEMPLATE_VBOXCROGLR3GUESTDLL_DEFS.darwin    = DARWIN=1 GL_GLEXT_LEGACY
 TEMPLATE_VBOXCROGLR3GUESTDLL_INCS           = $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
-TEMPLATE_VBOXCROGLR3GUESTDLL_INCS.darwin    = $(PATH_OUT)/obj/VBoxOGL
+TEMPLATE_VBOXCROGLR3GUESTDLL_SDKS.darwin    = $(VBOXGUESTR3NPDLL_SDKS.darwin) DARWIN-OPENGL
 TEMPLATE_VBOXCROGLR3GUESTDLL_LDFLAGS.darwin = -framework Carbon -framework OpenGL -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 TEMPLATE_VBOXCROGLR3GUESTDLL_BLDDIRS        = $(VBOX_PATH_CROGL_GENFILES)/
 
@@ -239,6 +240,7 @@ VBoxOGLcrpacker_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h
+## @todo r=bird: Why does a library target have LIBS?
 ifeq ($(KBUILD_TARGET),win)
  VBoxOGLcrpacker_LIBS = \
 	$(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB)
@@ -252,8 +254,7 @@ endif
 #
 VBoxOGLhostcrpacker_EXTENDS  = VBoxOGLcrpacker
 VBoxOGLhostcrpacker_TEMPLATE = VBOXCROGLR3HOST
-## @todo r=bird: this is used by all VBOXCROGLR3HOST users execpt VBoxOGLhostcrutil. Any reason why it's not using it? If not, then move it to the template.
-VBoxOGLhostcrpacker_LDFLAGS.linux += -Wl,--no-as-needed
+## @todo r=bird: Why does a library target have LIBS?
 ifeq ($(KBUILD_TARGET),win)
  VBoxOGLhostcrpacker_LIBS = \
  	$(PATH_OBJ)/VBoxOGLhostcrutil/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
@@ -324,7 +325,6 @@ endif
 #
 VBoxOGLhostspuload_EXTENDS  = VBoxOGLspuload
 VBoxOGLhostspuload_TEMPLATE = VBOXCROGLR3HOST
-VBoxOGLhostspuload_LDFLAGS.linux += -Wl,--no-as-needed
 ifeq ($(KBUILD_TARGET),win)
  VBoxOGLhostspuload_LIBS.win = \
  	$(PATH_OBJ)/VBoxOGLhostcrutil/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
@@ -443,7 +443,6 @@ VBoxOGLhostcrstate_TEMPLATE = VBOXCROGLR3HOST
 VBoxOGLhostcrstate_SOURCES = \
 	$(VBoxOGLcrstate_SOURCES) \
 	state_tracker/state_snapshot.c
-VBoxOGLhostcrstate_LDFLAGS.linux += -Wl,--no-as-needed
 ifeq ($(KBUILD_TARGET),win)
  VBoxOGLhostcrstate_LIBS = \
  	$(PATH_OBJ)/VBoxOGLhostcrutil/VBoxOGLhostcrutil$(VBOX_SUFF_LIB) \
@@ -517,9 +516,6 @@ $(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h: $(addprefix $(PATH_SUB_CURREN
 #         and glu.h intermediate files on darwin.
 #
 VBoxOGLerrorspu_TEMPLATE = VBOXCROGLR3GUESTDLL
-VBoxOGLerrorspu_INTERMEDIATES.darwin = \
-	$(PATH_OUT)/obj/VBoxOGL/GL/./gl.h \
-	$(PATH_OUT)/obj/VBoxOGL/GL/./glu.h
 VBoxOGLerrorspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
 VBoxOGLerrorspu_SOURCES = \
@@ -545,7 +541,6 @@ VBoxOGLhosterrorspu_TEMPLATE = VBOXCROGLR3HOST
 VBoxOGLhosterrorspu_LDFLAGS.darwin += $(VBoxOGLerrorspu_LDFLAGS.darwin) \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhosterrorspu.dylib \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
-VBoxOGLhosterrorspu_LDFLAGS.linux += -Wl,--no-as-needed
 ifeq ($(KBUILD_TARGET),win)
  VBoxOGLhosterrorspu_LIBS = \
  	$(PATH_OBJ)/VBoxOGLhostcrutil/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
