@@ -108,7 +108,6 @@ VBoxSharedCrOpenGL_LIBS.darwin += $(LIB_REM)
 
 VBoxOGLcrserverlib_TEMPLATE = VBOXOGLR3HOST
 VBoxOGLcrserverlib_INCS := $(PATH_SUB_CURRENT)/crserverlib
-VBoxOGLcrserverlib_INTERMEDIATES = $(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
 VBoxOGLcrserverlib_SOURCES := \
 	crserverlib/server_main.c \
 	crserverlib/server_boundsinfo.c \
@@ -140,6 +139,7 @@ VBoxOGLcrserverlib_SOURCES := \
 	$(VBOX_PATH_CROGL_GENFILES)/server_get.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_simpleget.c
 VBoxOGLcrserverlib_INTERMEDIATES := \
+	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h \
 	$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
