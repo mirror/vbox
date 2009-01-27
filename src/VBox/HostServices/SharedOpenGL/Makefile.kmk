@@ -53,6 +53,7 @@ TEMPLATE_VBOXOGLR3HOST_DEFS.win       = _WIN32_WINNT=0x0500 WINDOWS=1
 TEMPLATE_VBOXOGLR3HOST_DEFS.linux     = Linux
 TEMPLATE_VBOXOGLR3HOST_DEFS.solaris   = SunOS
 TEMPLATE_VBOXOGLR3HOST_DEFS.darwin    = DARWIN GL_GLEXT_LEGACY
+TEMPLATE_VBOXOGLR3HOST_SDKS.darwin   += $(VBOXR3NP_SDKS.darwin) DARWIN-OPENGL
 TEMPLATE_VBOXOGLR3HOST_INCS           = \
 	$(VBOX_PATH_CROGL_INCLUDE) \
 	$(VBOX_PATH_CROGL_GENFILES)
@@ -65,24 +66,13 @@ ifeq ($(KBUILD_TARGET),darwin)
  # We have to symlink the system headers of OpenGl cause they have some
  # different directory hierarchy on Mac OS X (no /GL sub directory).
  #
- VBOX_DARWIN_OPENGL_HEADERS := gl.h glu.h
- VBOX_PATH_DARWIN_OPENGL    := $(PATH_OUT)/obj/VBoxOGL/GL
-
- # Install target for creating the symlinks.
+ # See Config.kmk for the global variables.
+ #
  INSTALLS += DarwinOpenGLHdrs
- DarwinOpenGLHdrs_INST := \
- 	$(patsubst $(PATH_OUT)/%,%/,$(VBOX_PATH_DARWIN_OPENGL))
- DarwinOpenGLHdrs_SYMLINKS := \
+ DarwinOpenGLHdrs_INST     = $(VBOX_DARWIN_OPENGL_INST)/
+ DarwinOpenGLHdrs_SYMLINKS = \
  	$(foreach hdr, $(VBOX_DARWIN_OPENGL_HEADERS),\
  		$(hdr)=>$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Headers/$(hdr))
-
- # Update the template.
- TEMPLATE_VBOXOGLR3HOST_INCS.darwin := \
-	$(dir $(VBOX_PATH_DARWIN_OPENGL))
- TEMPLATE_VBOXOGLR3HOST_INTERMEDIATES.darwin := \
-	$(addprefix $(VBOX_PATH_DARWIN_OPENGL)/./,$(VBOX_DARWIN_OPENGL_HEADERS))
- TEMPLATE_VBOXOGLR3HOST_BLDDIRS.darwin = \
- 	$(VBOX_PATH_DARWIN_OPENGL)
 endif # darwin
 
 #
