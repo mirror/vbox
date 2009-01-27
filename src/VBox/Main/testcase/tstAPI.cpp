@@ -1315,9 +1315,8 @@ int main(int argc, char *argv[])
         printf ("Appliance:\n");
         // Fetch all disks
         com::SafeArray<BSTR> retDisks;
-        ULONG diskCount = 0;
         CHECK_ERROR_BREAK (appliance,
-                           GetDisks (ComSafeArrayAsOutParam  (retDisks), (&diskCount)));
+                           COMGETTER (Disks)(ComSafeArrayAsOutParam  (retDisks)));
         if (retDisks.size() > 0)
         {
             printf ("Disks:");
