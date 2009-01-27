@@ -4634,7 +4634,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>&amp;Discard Snapshot</source>
-        <translation>&amp;Rejeter un instantané</translation>
+        <translation>&amp;Rejeter l&apos;instantané</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
