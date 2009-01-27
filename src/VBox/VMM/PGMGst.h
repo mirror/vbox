@@ -112,7 +112,6 @@ PGM_GST_DECL(int, Exit)(PVM pVM);
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
 static DECLCALLBACK(int) pgmR3Gst32BitWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
-static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerPD(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 #endif
 
 /* all */
@@ -402,67 +401,6 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, vo
     STAM_COUNTER_INC(&pVM->pgm.s.StatR3GuestPDWrite);
     return VINF_SUCCESS;
 }
-
-# if 0
-/**
- * Physical write access for Guest CR3.
- *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
- * @param   GCPhys          The physical address the guest is writing to.
- * @param   pvPhys          The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   pvUser          User argument.
- */
-static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerPD(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
-{
-    AssertMsg(!pVM->pgm.s.fMappingsFixed, ("Shouldn't be registered when mappings are fixed!\n"));
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log2(("pgmR3GstPAEWriteHandlerPD: ff=%#x GCPhys=%RGp pvPhys=%p cbBuf=%d pvBuf={%.*Rhxs}\n", pVM->fForcedActions, GCPhys, pvPhys, cbBuf, cbBuf, pvBuf));
-
-    /*
-     * Do the write operation.
-     */
-    memcpy(pvPhys, pvBuf, cbBuf);
-    if (    !pVM->pgm.s.fMappingsFixed
-        &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL))
-    {
-        /*
-         * Figure out which of the 4 PDs this is.
-         */
-        unsigned i;
-        for (i = 0; i < 4; i++)
-            if (pVM->pgm.s.pGstPaePdptHC->a[i].u == (GCPhys & X86_PTE_PAE_PG_MASK))
-            {
-                PX86PDPAE       pPDSrc = pgmGstGetPaePD(&pVM->pgm.s, i << X86_PDPT_SHIFT);
-                const RTGCPTR   offPD  = GCPhys & PAGE_OFFSET_MASK;
-                const unsigned  iPD1   = offPD / sizeof(X86PDEPAE);
-                const unsigned  iPD2   = (offPD + cbBuf - 1) / sizeof(X86PDEPAE);
-                Assert(iPD1 - iPD2 <= 1);
-                if (    (   pPDSrc->a[iPD1].n.u1Present
-                         && pgmGetMapping(pVM, (i << X86_PDPT_SHIFT) | (iPD1 << X86_PD_PAE_SHIFT)) )
-                    ||  (   iPD1 != iPD2
-                         && pPDSrc->a[iPD2].n.u1Present
-                         && pgmGetMapping(pVM, (i << X86_PDPT_SHIFT) | (iPD2 << X86_PD_PAE_SHIFT)) )
-                   )
-                {
-                    Log(("pgmR3GstPaePD3WriteHandler: detected conflict. i=%d iPD1=%#x iPD2=%#x GCPhys=%RGp\n",
-                         i, iPD1, iPD2, GCPhys));
-                    STAM_COUNTER_INC(&pVM->pgm.s.StatR3GuestPDWriteConflict);
-                    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-                }
-                break; /* ASSUMES no duplicate entries... */
-            }
-        Assert(i < 4);
-    }
-
-    STAM_COUNTER_INC(&pVM->pgm.s.StatR3GuestPDWrite);
-    return VINF_SUCCESS;
-}
-# endif
 
 #endif /* PAE */
 
