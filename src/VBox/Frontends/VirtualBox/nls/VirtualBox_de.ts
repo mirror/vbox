@@ -494,7 +494,7 @@
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="133"/>
         <source>S&amp;end the shutdown signal</source>
-        <translation>S&amp;ende Signal zum Herunterfahren</translation>
+        <translation>die virtuelle Maschine mittels ACPI-Event &amp;herunterfahren</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="207"/>
