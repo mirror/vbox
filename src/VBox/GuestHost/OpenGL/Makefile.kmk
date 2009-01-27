@@ -22,32 +22,39 @@
 SUB_DEPTH = ../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-if1of ($(KBUILD_HOST), win)
-VBOX_CROGL_GUEST_HOST_PYTHONPATH := $(VBOX_PATH_CROGL_GLAPI);$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer;$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
-else
-VBOX_CROGL_GUEST_HOST_PYTHONPATH := $(VBOX_PATH_CROGL_GLAPI):$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer:$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
-endif
 
+#
+# Target lists.
+#
 BLDDIRS += \
 	$(VBOX_PATH_CROGL_GENFILES)/ \
 	$(VBOX_PATH_CROGL_GENFILES)/state/
 
 ifdef VBOX_WITH_ADDITIONS
-DLLS      += VBoxOGLcrutil
-DLLS      += VBoxOGLerrorspu
-LIBRARIES += VBoxOGLcrpacker
-LIBRARIES += VBoxOGLspuload
-LIBRARIES += VBoxOGLcrstate
+ DLLS      += VBoxOGLcrutil VBoxOGLerrorspu
+ LIBRARIES += VBoxOGLcrpacker VBoxOGLspuload VBoxOGLcrstate
 endif
 
 ifndef VBOX_ONLY_ADDITIONS
-DLLS      += VBoxOGLhostcrutil
-DLLS      += VBoxOGLhosterrorspu
-LIBRARIES += VBoxOGLhostcrpacker
-LIBRARIES += VBoxOGLhostspuload
-LIBRARIES += VBoxOGLhostcrstate
+ DLLS      += VBoxOGLhostcrutil VBoxOGLhosterrorspu
+ LIBRARIES += VBoxOGLhostcrpacker VBoxOGLhostspuload VBoxOGLhostcrstate
 endif
 
+
+#
+# Globals
+#
+if1of ($(KBUILD_HOST), win)
+ VBOX_CROGL_GUEST_HOST_PYTHONPATH := $(VBOX_PATH_CROGL_GLAPI);$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer;$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
+else
+ VBOX_CROGL_GUEST_HOST_PYTHONPATH := $(VBOX_PATH_CROGL_GLAPI):$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer:$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
+endif
+
+
+#
+# OpenGL templates.
+#
+## @todo r=bird: Most of the keywords are overridden here... check each and why. r42044 fixed did the wrong fix it seems - the cyclic refs were backres to the super class.
 ## VBOXCROGLR3HOST ##
 TEMPLATE_VBOXCROGLR3HOST                = VBox OpenGL Host DLLs/Libraries
 TEMPLATE_VBOXCROGLR3HOST_EXTENDS        = VBOXR3NP
@@ -79,72 +86,89 @@ TEMPLATE_VBOXCROGLR3GUESTLIB         = VBox OpenGL Guest Libraries
 TEMPLATE_VBOXCROGLR3GUESTLIB_EXTENDS = VBOXCROGLR3GUESTDLL
 TEMPLATE_VBOXCROGLR3GUESTLIB_INST    = $(INST_ADDITIONS_LIB)
 
+
 #
 # VBoxOGLcrutil
 #
-
 VBoxOGLcrutil_TEMPLATE      = VBOXCROGLR3GUESTDLL
 VBoxOGLcrutil_SDKS.win      = DXSDK
 VBoxOGLcrutil_INTERMEDIATES = $(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h
 VBoxOGLcrutil_SOURCES       = \
-	bbox.c \
-	bufpool.c \
-	calllists.c \
-	devnull.c \
-	dll.c \
-	endian.c \
-	environment.c \
-	error.c \
-	filenet.c \
-	hash.c \
-	hull.c \
-	list.c \
-	matrix.c \
-	mem.c \
-	net.c \
-	pixel.c \
-	process.c \
-	rand.c \
-	string.c \
-	threads.c \
-	tcpip.c \
-	udptcpip.c \
-	timer.c \
-	url.c \
-	warp.c \
-	vboxhgcm.c
-VBoxOGLcrutil_SOURCES    := $(addprefix util/, $(VBoxOGLcrutil_SOURCES)) $(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
-VBoxOGLcrutil_SOURCES.win.x86 = util/util.def
-VBoxOGLcrutil_CLEAN      := $(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
-VBoxOGLcrutil_LIBS.win    = \
+	util/bbox.c \
+	util/bufpool.c \
+	util/calllists.c \
+	util/devnull.c \
+	util/dll.c \
+	util/endian.c \
+	util/environment.c \
+	util/error.c \
+	util/filenet.c \
+	util/hash.c \
+	util/hull.c \
+	util/list.c \
+	util/matrix.c \
+	util/mem.c \
+	util/net.c \
+	util/pixel.c \
+	util/process.c \
+	util/rand.c \
+	util/string.c \
+	util/threads.c \
+	util/tcpip.c \
+	util/udptcpip.c \
+	util/timer.c \
+	util/url.c \
+	util/warp.c \
+	util/vboxhgcm.c \
+	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
+VBoxOGLcrutil_SOURCES.win.x86 = \
+	util/util.def
+VBoxOGLcrutil_LIBS.win = \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
+VBoxOGLcrutil_CLEAN = \
+	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
 
 # vc7 hangs during compilation of this file when optimizations are enabled.
 VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
 VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 
+#
+# VBoxOGLhostcrutil
+#
+VBoxOGLhostcrutil_EXTENDS  = VBoxOGLcrutil
 VBoxOGLhostcrutil_TEMPLATE = VBOXCROGLR3HOST
-VBoxOGLhostcrutil_EXTENDS = VBoxOGLcrutil
-VBoxOGLhostcrutil_INTERMEDIATES = $(VBoxOGLcrutil_INTERMEDIATES)
-VBoxOGLhostcrutil_LDFLAGS.darwin += $(VBoxOGLcrutil_LDFLAGS.darwin) -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhostcrutil.dylib -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
-# hostcrutil_NAME = crutil - possible, but it creates conflicting library files in PATH_LIB.
+## @todo kBuild: Check this.
+VBoxOGLhostcrutil_INTERMEDIATES  = $(VBoxOGLcrutil_INTERMEDIATES)
+VBoxOGLhostcrutil_LDFLAGS.darwin = $(VBoxOGLcrutil_LDFLAGS.darwin) \
+	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhostcrutil.dylib \
+	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 ## @todo kBuild bug, possibly same as ticket #51: PATH_SDK_DXSDK_LIB is expanded too early.
 # Update. bug 51 was fixed.
 # Still fails as PATH_SDK_DXSDK_LIB is empty.
-VBoxOGLhostcrutil_LIBS    += $(LIB_RUNTIME)
+## @todo kBuild: recheck this (note to self).
 VBoxOGLhostcrutil_LIBS.win = $(VBoxOGLcrutil_LIBS.win)
+VBoxOGLhostcrutil_LIBS     = $(LIB_RUNTIME)
 
+#
+# Generate files for VBoxOGLcrutil and VBoxOGLhostcrutil.
+#
 $(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c: $(PATH_SUB_CURRENT)/util/debug_opcodes.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
 
 #
 # VBoxOGLcrpacker
 #
-
-VBoxOGLcrpacker_TEMPLATE       = VBOXCROGLR3GUESTLIB
-VBoxOGLcrpacker_INCS          := $(PATH_SUB_CURRENT)/packer
-VBoxOGLcrpacker_SOURCES       := \
+VBoxOGLcrpacker_TEMPLATE = VBOXCROGLR3GUESTLIB
+VBoxOGLcrpacker_INCS = \
+	packer
+VBoxOGLcrpacker_INTERMEDIATES = \
+	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
+	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
+	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
+	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
+VBoxOGLcrpacker_SOURCES = \
 	packer/pack_arrays.c \
 	packer/pack_beginend.c \
 	packer/pack_bounds.c \
@@ -195,12 +219,7 @@ VBoxOGLcrpacker_SOURCES       := \
 	$(VBOX_PATH_CROGL_GENFILES)/pack_bbox.c \
 	$(VBOX_PATH_CROGL_GENFILES)/pack_current.c \
 	$(VBOX_PATH_CROGL_GENFILES)/packer.c
-VBoxOGLcrpacker_INTERMEDIATES := \
-	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
-	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
-	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
-	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
-VBoxOGLcrpacker_CLEAN         := \
+VBoxOGLcrpacker_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/pack_arrays_swap.c \
 	$(VBOX_PATH_CROGL_GENFILES)/pack_bounds_swap.c \
 	$(VBOX_PATH_CROGL_GENFILES)/pack_bufferobject_swap.c \
@@ -222,20 +241,27 @@ VBoxOGLcrpacker_CLEAN         := \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h
-VBoxOGLcrpacker_LIBS.win       = $(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB)
-if1of ($(KBUILD_TARGET), linux solaris darwin)
+VBoxOGLcrpacker_LIBS.win = $(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB)
+if1of ($(KBUILD_TARGET), darwin linux solaris)
  VBoxOGLcrpacker_LIBS = $(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
 endif
 
-VBoxOGLhostcrpacker_TEMPLATE = VBOXCROGLR3HOST
+#
+# VBoxOGLhostcrpacker
+#
 VBoxOGLhostcrpacker_EXTENDS  = VBoxOGLcrpacker
+VBoxOGLhostcrpacker_TEMPLATE = VBOXCROGLR3HOST
 VBoxOGLhostcrpacker_INTERMEDIATES = $(VBoxOGLcrpacker_INTERMEDIATES)
 VBoxOGLhostcrpacker_LIBS.win = $(PATH_OBJ)/VBoxOGLhostcrutil/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
+## @todo r=bird: this is used by all VBOXCROGLR3HOST users execpt VBoxOGLhostcrutil. Any reason why it's not using it? If not, then move it to the template.
 VBoxOGLhostcrpacker_LDFLAGS.linux += -Wl,--no-as-needed
 if1of ($(KBUILD_TARGET), linux solaris darwin)
- VBoxOGLhostcrpacker_LIBS    = $(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
+ VBoxOGLhostcrpacker_LIBS = $(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
 endif
 
+#
+# Generate files for VBoxOGLcrpacker and VBoxOGLhostcrpacker.
+#
 $(VBOX_PATH_CROGL_GENFILES)/packer.def: $(PATH_SUB_CURRENT)/packer/packer_defs.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 
@@ -260,12 +286,15 @@ $(VBOX_PATH_CROGL_GENFILES)/pack_current.c: $(PATH_SUB_CURRENT)/packer/pack_curr
 $(VBOX_PATH_CROGL_GENFILES)/%_swap.c: $(PATH_SUB_CURRENT)/packer/%.c $(PATH_SUB_CURRENT)/packer/pack_swap.py | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/pack_swap.py $<
 
+
 #
 # VBoxOGLspuload
 #
-
-VBoxOGLspuload_TEMPLATE   = VBOXCROGLR3GUESTLIB
-VBoxOGLspuload_SOURCES    = \
+VBoxOGLspuload_TEMPLATE = VBOXCROGLR3GUESTLIB
+## @todo r=bird: Why is this not an INTERMEDIATE?
+VBoxOGLspuload_DEPS = \
+	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
+VBoxOGLspuload_SOURCES = \
 	spu_loader/spuinit.c \
 	spu_loader/spuload.c \
 	spu_loader/choosevisual.c \
@@ -273,28 +302,34 @@ VBoxOGLspuload_SOURCES    = \
 	$(VBOX_PATH_CROGL_GENFILES)/spucopy.c \
 	$(VBOX_PATH_CROGL_GENFILES)/dispatch.c \
 	$(VBOX_PATH_CROGL_GENFILES)/glloader.c
-VBoxOGLspuload_DEPS      := $(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
-VBoxOGLspuload_CLEAN      = \
+VBoxOGLspuload_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/spuchange.c \
 	$(VBOX_PATH_CROGL_GENFILES)/spucopy.c \
 	$(VBOX_PATH_CROGL_GENFILES)/dispatch.c \
 	$(VBOX_PATH_CROGL_GENFILES)/glloader.c \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
-VBoxOGLspuload_LIBS.win   = $(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB)
+VBoxOGLspuload_LIBS.win = \
+	$(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLspuload_LIBS += \
 	$(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
 endif
 
-VBoxOGLhostspuload_TEMPLATE = VBOXCROGLR3HOST
+#
+# VBoxOGLspuload
+#
 VBoxOGLhostspuload_EXTENDS  = VBoxOGLspuload
-VBoxOGLhostspuload_LIBS.win = $(PATH_OBJ)/VBoxOGLhostcrutil/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
+VBoxOGLhostspuload_TEMPLATE = VBOXCROGLR3HOST
 VBoxOGLhostspuload_LDFLAGS.linux += -Wl,--no-as-needed
+VBoxOGLhostspuload_LIBS.win = $(PATH_OBJ)/VBoxOGLhostcrutil/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLhostspuload_LIBS += \
 	$(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
 endif
 
+#
+# Generate files for VBoxOGLspuload and VBoxOGLspuload.
+#
 $(VBOX_PATH_CROGL_GENFILES)/dispatch.c: $(PATH_SUB_CURRENT)/spu_loader/dispatch.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 
@@ -310,13 +345,16 @@ $(VBOX_PATH_CROGL_GENFILES)/glloader.c: $(PATH_SUB_CURRENT)/spu_loader/glloader.
 $(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h: $(PATH_SUB_CURRENT)/spu_loader/dispatchheader.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 
-#
-#  VBoxOGLcrstate
-#
 
-VBoxOGLcrstate_TEMPLATE       = VBOXCROGLR3GUESTLIB
-VBoxOGLcrstate_INCS          := $(PATH_SUB_CURRENT)/state_tracker
-VBoxOGLcrstate_SOURCES       := \
+#
+# VBoxOGLcrstate
+#
+VBoxOGLcrstate_TEMPLATE = VBOXCROGLR3GUESTLIB
+VBoxOGLcrstate_INCS = \
+	state_tracker
+VBoxOGLcrstate_INTERMEDIATES = \
+	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
+VBoxOGLcrstate_SOURCES = \
 	state_tracker/state_attrib.c \
 	state_tracker/state_buffer.c \
 	state_tracker/state_bufferobject.c \
@@ -365,8 +403,7 @@ VBoxOGLcrstate_SOURCES       := \
 	$(VBOX_PATH_CROGL_GENFILES)/state_viewport_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_get.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_isenabled.c
-VBoxOGLcrstate_INTERMEDIATES := $(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
-VBoxOGLcrstate_CLEAN         := \
+VBoxOGLcrstate_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/state_buffer_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_current_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_fog_gen.c \
@@ -382,19 +419,25 @@ VBoxOGLcrstate_CLEAN         := \
 	$(VBOX_PATH_CROGL_GENFILES)/state_get.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_isenabled.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
-VBoxOGLcrstate_LIBS.win      = \
+VBoxOGLcrstate_LIBS.win = \
 	$(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxOGLspuload$(VBOX_SUFF_LIB)
-if1of ($(KBUILD_TARGET), linux solaris darwin)
+if1of ($(KBUILD_TARGET), darwin linux solaris)
  VBoxOGLcrstate_LIBS += \
 	$(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL) \
 	$(VBOX_PATH_ADDITIONS)/VBoxOGLspuload$(VBOX_SUFF_DLL)
 endif
 
-VBoxOGLhostcrstate_TEMPLATE = VBOXCROGLR3HOST
+#
+# VBoxOGLhostcrstate
+#
 VBoxOGLhostcrstate_EXTENDS  = VBoxOGLcrstate
-VBoxOGLhostcrstate_INTERMEDIATES = $(VBoxOGLcrstate_INTERMEDIATES)
-VBoxOGLhostcrstate_SOURCES  = $(VBoxOGLcrstate_SOURCES) state_tracker/state_snapshot.c
+VBoxOGLhostcrstate_TEMPLATE = VBOXCROGLR3HOST
+VBoxOGLhostcrstate_INTERMEDIATES = \
+	$(VBoxOGLcrstate_INTERMEDIATES)
+VBoxOGLhostcrstate_SOURCES = \
+	$(VBoxOGLcrstate_SOURCES) \
+	state_tracker/state_snapshot.c
 VBoxOGLhostcrstate_LIBS.win = \
 	$(PATH_OBJ)/VBoxOGLhostcrutil/VBoxOGLhostcrutil$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
@@ -407,6 +450,9 @@ if1of ($(KBUILD_TARGET), linux solaris darwin)
 	$(LIB_VMM)
 endif
 
+#
+# Generate files for VBoxOGLcrstate and VBoxOGLhostcrstate.
+#
 $(VBOX_PATH_CROGL_GENFILES)/state_buffer_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_buffer.txt gendiffcode.py) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py buffer Buffer $(<D)
 
@@ -458,36 +504,51 @@ $(VBOX_PATH_CROGL_GENFILES)/state.def: $(addprefix $(PATH_SUB_CURRENT)/state_tra
 $(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_funcs.py state_special state_feedback_special state_select_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $(<D)/state_funcs.py $(VBOX_PATH_CROGL_GLAPI) $(<D)
 
+
 #
 # VBoxOGLerrorspu
 #
-
 VBoxOGLerrorspu_TEMPLATE      = VBOXCROGLR3GUESTDLL
-VBoxOGLerrorspu_DEPS.darwin  += $(PATH_OUT)/obj/VBoxOGL/GL/gl.h $(PATH_OUT)/obj/VBoxOGL/GL/glu.h
-VBoxOGLerrorspu_INTERMEDIATES = $(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
+## @todo r=bird: Why is this necessary? (Christian?)
+VBoxOGLerrorspu_DEPS.darwin   = \
+	$(PATH_OUT)/obj/VBoxOGL/GL/gl.h \
+	$(PATH_OUT)/obj/VBoxOGL/GL/glu.h
+VBoxOGLerrorspu_INTERMEDIATES = \
+	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
 VBoxOGLerrorspu_SOURCES       = \
 	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c \
 	error/errorspu_init.c
-VBoxOGLerrorspu_SOURCES.win.x86 = error/error.def
-VBoxOGLerrorspu_CLEAN        := $(VBOX_PATH_CROGL_GENFILES)/errorspu.c
+VBoxOGLerrorspu_SOURCES.win.x86 = \
+	error/error.def
+VBoxOGLerrorspu_CLEAN         = \
+	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c
 VBoxOGLerrorspu_LIBS.win      = $(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLerrorspu_LIBS += \
 	$(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
 endif
 
-VBoxOGLhosterrorspu_TEMPLATE = VBOXCROGLR3HOST
+#
+# VBoxOGLhosterrorspu
+#
 VBoxOGLhosterrorspu_EXTENDS  = VBoxOGLerrorspu
-VBoxOGLhosterrorspu_INTERMEDIATES = $(VBoxOGLerrorspu_INTERMEDIATES)
+VBoxOGLhosterrorspu_TEMPLATE = VBOXCROGLR3HOST
+VBoxOGLhosterrorspu_INTERMEDIATES = \
+	$(VBoxOGLerrorspu_INTERMEDIATES)
 VBoxOGLhosterrorspu_LIBS    += $(LIB_RUNTIME)
 VBoxOGLhosterrorspu_LIBS.win = $(PATH_OBJ)/VBoxOGLhostcrutil/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
-VBoxOGLhosterrorspu_LDFLAGS.darwin += $(VBoxOGLerrorspu_LDFLAGS.darwin) -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhosterrorspu.dylib -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+VBoxOGLhosterrorspu_LDFLAGS.darwin += $(VBoxOGLerrorspu_LDFLAGS.darwin) \
+	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhosterrorspu.dylib \
+	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 VBoxOGLhosterrorspu_LDFLAGS.linux += -Wl,--no-as-needed
 if1of ($(KBUILD_TARGET), linux solaris darwin)
  VBoxOGLhosterrorspu_LIBS += \
 	$(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
 endif
 
+#
+# Generate files for VBoxOGLerrorspu and VBoxOGLerrorspu.
+#
 $(VBOX_PATH_CROGL_GENFILES)/errorspu.c: $(PATH_SUB_CURRENT)/error/error.py $(VBOX_CROGL_API_FILES)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_CROGL_GUEST_HOST_PYTHONPATH),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 
