@@ -272,17 +272,23 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     mVmFullscreenAction = new QAction (this);
     mVmFullscreenAction->setIcon (
-        VBoxGlobal::iconSet (":/fullscreen_16px.png", ":/fullscreen_disabled_16px.png"));
+        VBoxGlobal::iconSetOnOff (
+            ":/fullscreen_16px.png", ":/fullscreen_transparent_16px.png",
+            ":/fullscreen_disabled_16px.png", ":/fullscreen_disabled_transparent_16px.png"));
     mVmFullscreenAction->setCheckable (true);
 
     mVmSeamlessAction = new QAction (this);
     mVmSeamlessAction->setIcon (
-        VBoxGlobal::iconSet (":/nw_16px.png", ":/nw_disabled_16px.png"));
+        VBoxGlobal::iconSetOnOff (
+            ":/seamless_16px.png", ":/seamless_transparent_16px.png",
+            ":/seamless_disabled_16px.png", ":/seamless_disabled_transparent_16px.png"));
     mVmSeamlessAction->setCheckable (true);
 
     mVmAutoresizeGuestAction = new QAction (mRunningActions);
     mVmAutoresizeGuestAction->setIcon (
-        VBoxGlobal::iconSet (":/auto_resize_on_16px.png", ":/auto_resize_on_disabled_16px.png"));
+        VBoxGlobal::iconSetOnOff (
+            ":/auto_resize_on_16px.png", ":/auto_resize_on_transparent_16px.png",
+            ":/auto_resize_on_disabled_16px.png", ":/auto_resize_on_disabled_transparent_16px.png"));
     mVmAutoresizeGuestAction->setCheckable (true);
     mVmAutoresizeGuestAction->setEnabled (false);
 
@@ -306,7 +312,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
                                                     ":/reset_disabled_16px.png"));
 
     mVmPauseAction = new QAction (this);
-    mVmPauseAction->setIcon (VBoxGlobal::iconSet (":/pause_16px.png"));
+    mVmPauseAction->setIcon (
+        VBoxGlobal::iconSetOnOff (
+            ":/pause_16px.png", ":/pause_transparent_16px.png",
+            ":/pause_disabled_16px.png", ":/pause_disabled_transparent_16px.png"));
     mVmPauseAction->setCheckable (true);
 
     mVmACPIShutdownAction = new QAction (mRunningActions);
@@ -326,8 +335,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
         ":/session_info_16px.png", ":/session_info_disabled_16px.png"));
 
     mVmDisableMouseIntegrAction = new QAction (this);
-    mVmDisableMouseIntegrAction->setIcon (VBoxGlobal::iconSet (
-        ":/mouse_can_seamless_16px.png", ":/mouse_can_seamless_disabled_16px.png"));
+    mVmDisableMouseIntegrAction->setIcon (
+        VBoxGlobal::iconSetOnOff (
+            ":/mouse_can_seamless_16px.png", ":/mouse_can_seamless_transparent_16px.png",
+            ":/mouse_can_seamless_disabled_16px.png", ":/mouse_can_seamless_disabled_transparent_16px.png"));
     mVmDisableMouseIntegrAction->setCheckable (true);
 
     /* Devices menu actions */
@@ -349,8 +360,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
                                                             ":/shared_folder_disabled_16px.png"));
 
     mDevicesSwitchVrdpAction = new QAction (mRunningOrPausedActions);
-    mDevicesSwitchVrdpAction->setIcon (VBoxGlobal::iconSet (":/vrdp_16px.png",
-                                                              ":/vrdp_disabled_16px.png"));
+    mDevicesSwitchVrdpAction->setIcon (
+        VBoxGlobal::iconSetOnOff (
+            ":/vrdp_16px.png", ":/vrdp_transparent_16px.png",
+            ":/vrdp_disabled_16px.png", ":/vrdp_disabled_transparent_16px.png"));
     mDevicesSwitchVrdpAction->setCheckable (true);
 
     mDevicesInstallGuestToolsAction = new QAction (mRunningActions);
@@ -398,8 +411,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     mVMMenu->addAction (mVmFullscreenAction);
     mVMMenu->addAction (mVmSeamlessAction);
-    mVMMenu->addAction (mVmAdjustWindowAction);
     mVMMenu->addAction (mVmAutoresizeGuestAction);
+    mVMMenu->addAction (mVmAdjustWindowAction);
     mVMMenu->addSeparator();
     mVMMenu->addAction (mVmDisableMouseIntegrAction);
     mVMMenu->addSeparator();

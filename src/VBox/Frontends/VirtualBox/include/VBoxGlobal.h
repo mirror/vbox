@@ -888,6 +888,11 @@ public:
     static QIcon iconSet (const char *aNormal,
                           const char *aDisabled = NULL,
                           const char *aActive = NULL);
+    static QIcon iconSetOnOff (const char *aNormal, const char *aNormalOff,
+                               const char *aDisabled = NULL,
+                               const char *aDisabledOff = NULL,
+                               const char *aActive = NULL,
+                               const char *aActiveOff = NULL);
     static QIcon iconSetFull (const QSize &aNormalSize, const QSize &aSmallSize,
                               const char *aNormal, const char *aSmallNormal,
                               const char *aDisabled = NULL,
