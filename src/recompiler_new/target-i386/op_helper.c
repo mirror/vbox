@@ -152,7 +152,7 @@ void helper_write_eflags_vme(target_ulong t0)
         ||  (new_eflags & TF_MASK)) {
         raise_exception(EXCP0D_GPF);
     } else {
-        load_eflags(new_eflags, 
+        load_eflags(new_eflags,
                     (TF_MASK | AC_MASK | ID_MASK | NT_MASK) & 0xffff);
 
         if (new_eflags & IF_MASK) {
@@ -184,12 +184,12 @@ target_ulong helper_read_eflags_vme(void)
 void helper_dump_state()
 {
     LogRel(("CS:EIP=%08x:%08x, FLAGS=%08x\n", env->segs[R_CS].base, env->eip, env->eflags));
-    LogRel(("EAX=%08x\tECX=%08x\tEDX=%08x\tEBX=%08x\n", 
-            (uint32_t)env->regs[R_EAX], (uint32_t)env->regs[R_ECX], 
+    LogRel(("EAX=%08x\tECX=%08x\tEDX=%08x\tEBX=%08x\n",
+            (uint32_t)env->regs[R_EAX], (uint32_t)env->regs[R_ECX],
             (uint32_t)env->regs[R_EDX], (uint32_t)env->regs[R_EBX]));
-    LogRel(("ESP=%08x\tEBP=%08x\tESI=%08x\tEDI=%08x\n", 
-            (uint32_t)env->regs[R_ESP], (uint32_t)env->regs[R_EBP], 
-            (uint32_t)env->regs[R_ESI], (uint32_t)env->regs[R_EDI]));    
+    LogRel(("ESP=%08x\tEBP=%08x\tESI=%08x\tEDI=%08x\n",
+            (uint32_t)env->regs[R_ESP], (uint32_t)env->regs[R_EBP],
+            (uint32_t)env->regs[R_ESI], (uint32_t)env->regs[R_EDI]));
 }
 #endif
 
@@ -205,14 +205,14 @@ DECLINLINE(int) load_segment(uint32_t *e1_ptr, uint32_t *e2_ptr,
     int index;
     target_ulong ptr;
 
-#ifdef VBOX 
-    /* Trying to load a selector with CPL=1? */ 
-    if ((env->hflags & HF_CPL_MASK) == 0 && (selector & 3) == 1 && (env->state & CPU_RAW_RING0)) 
-    { 
-        Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc)); 
-        selector = selector & 0xfffc; 
-    } 
-#endif 
+#ifdef VBOX
+    /* Trying to load a selector with CPL=1? */
+    if ((env->hflags & HF_CPL_MASK) == 0 && (selector & 3) == 1 && (env->state & CPU_RAW_RING0))
+    {
+        Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc));
+        selector = selector & 0xfffc;
+    }
+#endif
 
     if (selector & 0x4)
         dt = &env->ldt;
@@ -331,16 +331,16 @@ static void tss_load_seg(int seg_reg, int selector)
     uint32_t e1, e2;
     int rpl, dpl, cpl;
 
-#ifdef VBOX 
-    e1 = e2 = 0; 
-    cpl = env->hflags & HF_CPL_MASK; 
-    /* Trying to load a selector with CPL=1? */ 
-    if (cpl == 0 && (selector & 3) == 1 && (env->state & CPU_RAW_RING0)) 
-    { 
-        Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc)); 
-        selector = selector & 0xfffc; 
-    } 
-#endif 
+#ifdef VBOX
+    e1 = e2 = 0;
+    cpl = env->hflags & HF_CPL_MASK;
+    /* Trying to load a selector with CPL=1? */
+    if (cpl == 0 && (selector & 3) == 1 && (env->state & CPU_RAW_RING0))
+    {
+        Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc));
+        selector = selector & 0xfffc;
+    }
+#endif
 
     if ((selector & 0xfffc) != 0) {
         if (load_segment(&e1, &e2, selector) != 0)
@@ -1428,9 +1428,13 @@ void helper_sysret(int dflag)
 void helper_external_event(void)
 {
 #if defined(RT_OS_DARWIN) && defined(VBOX_STRICT)
-    uintptr_t uESP;
-    __asm__ __volatile__("movl %%esp, %0" : "=r" (uESP));
-    AssertMsg(!(uESP & 15), ("esp=%#p\n", uESP));
+    uintptr_t uSP;
+# ifdef RT_ARCH_AMD64
+    __asm__ __volatile__("movl %%rsp, %0" : "=r" (uSP));
+# else
+    __asm__ __volatile__("movl %%esp, %0" : "=r" (uSP));
+# endif
+    AssertMsg(!(uSP & 15), ("xSP=%#p\n", uSP));
 #endif
     /* Keep in sync with flags checked by gen_check_external_event() */
     if (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_HARD)
@@ -3652,20 +3656,20 @@ void helper_rdtsc(void)
     EDX = (uint32_t)(val >> 32);
 }
 
-#ifdef VBOX 
-void helper_rdtscp(void) 
-{ 
-    uint64_t val; 
-    if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) { 
-        raise_exception(EXCP0D_GPF); 
+#ifdef VBOX
+void helper_rdtscp(void)
+{
+    uint64_t val;
+    if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
+        raise_exception(EXCP0D_GPF);
     }
-    
-    val = cpu_get_tsc(env); 
-    EAX = (uint32_t)(val); 
-    EDX = (uint32_t)(val >> 32); 
-    ECX = cpu_rdmsr(env, MSR_K8_TSC_AUX); 
-} 
-#endif 
+
+    val = cpu_get_tsc(env);
+    EAX = (uint32_t)(val);
+    EDX = (uint32_t)(val >> 32);
+    ECX = cpu_rdmsr(env, MSR_K8_TSC_AUX);
+}
+#endif
 
 void helper_rdpmc(void)
 {
@@ -3856,9 +3860,9 @@ void helper_rdmsr(void)
                 val = 0; /** @todo else exception? */
             break;
         }
-        case MSR_K8_TSC_AUX: 
-            val = cpu_rdmsr(env, MSR_K8_TSC_AUX); 
-            break; 
+        case MSR_K8_TSC_AUX:
+            val = cpu_rdmsr(env, MSR_K8_TSC_AUX);
+            break;
 #endif /* VBOX */
     }
     EAX = (uint32_t)(val);
@@ -5468,7 +5472,7 @@ static float approx_rcp(float a)
 
 #if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
 /* This code assumes real physical address always fit into host CPU reg,
-   which is wrong in general, but true for our current use cases. */   
+   which is wrong in general, but true for our current use cases. */
 RTCCUINTREG REGPARM __ldb_vbox_phys(RTCCUINTREG addr)
 {
     return remR3PhysReadS8(addr);
@@ -5674,7 +5678,7 @@ void sync_seg(CPUX86State *env1, int seg_reg, int selector)
     }
     else
     {
-        /* For some reasons, it works even w/o save/restore of the jump buffer, so as code is 
+        /* For some reasons, it works even w/o save/restore of the jump buffer, so as code is
            time critical - let's not do that */
 #if 0
         memcpy(&old_buf, &env1->jmp_env, sizeof(old_buf));
