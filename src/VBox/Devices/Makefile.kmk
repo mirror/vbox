@@ -248,7 +248,7 @@ VBoxDD2_LDFLAGS.l4      = -Wl,--no-undefined
 #
 DevicesR3_TEMPLATE      = VBOXR3
 DevicesR3_SDKS.win      = WINPSDK W2K3DDK
-DevicesR3_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
+DevicesR3_DEFS.darwin.x86 = VBOX_WITH_2X_4GB_ADDR_SPACE
 DevicesR3_DEFS         += VBOX_HGCM_HOST_CODE \
 			  $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
 DevicesR3_INCS         := \
@@ -392,7 +392,7 @@ Graphics/DevVGA.cpp_DEPS = $(PATH_VgaBiosBin)/vbetables.h
 #
 VBoxDDGC_TEMPLATE       = VBOXGC
 VBoxDDGC_SYSSUFF        = .gc
-VBoxDDGC_DEFS.darwin    = VBOX_WITH_2X_4GB_ADDR_SPACE
+VBoxDDGC_DEFS.darwin.x86= VBOX_WITH_2X_4GB_ADDR_SPACE
 VBoxDDGC_DEFS           =
 VBoxDDGC_INCS          := \
 	$(PATH_SUB_CURRENT)
@@ -468,7 +468,7 @@ endif
 #
 VBoxDDR0_TEMPLATE       = VBOXR0
 VBoxDDR0_SYSSUFF        = .r0
-VBoxDDR0_DEFS.darwin    = VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 VBOX_WITH_2X_4GB_ADDR_SPACE
+VBoxDDR0_DEFS.darwin.x86= VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 VBOX_WITH_2X_4GB_ADDR_SPACE
 VBoxDDR0_DEFS           = IN_RT_R0
 VBoxDDR0_INCS          := \
 	$(PATH_SUB_CURRENT)
