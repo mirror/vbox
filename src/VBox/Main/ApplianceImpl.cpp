@@ -43,61 +43,61 @@ using namespace std;
 
 struct DiskImage
 {
-    string strDiskId;               // value from DiskSection/Disk/@diskId
+    Utf8Str strDiskId;              // value from DiskSection/Disk/@diskId
     int64_t iCapacity;              // value from DiskSection/Disk/@capacity;
                                     // (maximum size for dynamic images, I guess; we always translate this to bytes)
     int64_t iPopulatedSize;         // value from DiskSection/Disk/@populatedSize
                                     // (actual used size of disk, always in bytes; can be an estimate of used disk
                                     // space, but cannot be larger than iCapacity)
-    string strFormat;               // value from DiskSection/Disk/@format
+    Utf8Str strFormat;              // value from DiskSection/Disk/@format
                 // typically http://www.vmware.com/specifications/vmdk.html#sparse
 
     // fields from /References/File; the spec says the file reference from disk can be empty,
     // so in that case, strFilename will be empty, then a new disk should be created
-    string strHref;                 // value from /References/File/@href (filename); if empty, then the remaining fields are ignored
+    Utf8Str strHref;                // value from /References/File/@href (filename); if empty, then the remaining fields are ignored
     int64_t iSize;                  // value from /References/File/@size (optional according to spec; then we set -1 here)
     int64_t iChunkSize;             // value from /References/File/@chunkSize (optional, unsupported)
-    string strCompression;          // value from /References/File/@compression (optional, can be "gzip" according to spec)
+    Utf8Str strCompression;         // value from /References/File/@compression (optional, can be "gzip" according to spec)
 };
 
 struct Network
 {
-    string strNetworkName;          // value from NetworkSection/Network/@name
+    Utf8Str strNetworkName;         // value from NetworkSection/Network/@name
             // unfortunately the OVF spec is unspecific about how networks should be specified further
 };
 
 struct VirtualHardwareItem
 {
-    string strDescription;
-    string strCaption;
-    string strElementName;
+    Utf8Str strDescription;
+    Utf8Str strCaption;
+    Utf8Str strElementName;
 
     uint32_t ulInstanceID;
     uint32_t ulParent;
 
     OVFResourceType_T resourceType;
-    string strOtherResourceType;
-    string strResourceSubType;
+    Utf8Str strOtherResourceType;
+    Utf8Str strResourceSubType;
 
-    string strHostResource;             // "Abstractly specifies how a device shall connect to a resource on the deployment platform.
+    Utf8Str strHostResource;            // "Abstractly specifies how a device shall connect to a resource on the deployment platform.
                                         // Not all devices need a backing." Used with disk items, for which this references a virtual
                                         // disk from the Disks section.
     bool fAutomaticAllocation;
     bool fAutomaticDeallocation;
-    string strConnection;               // "All Ethernet adapters that specify the same abstract network connection name within an OVF
+    Utf8Str strConnection;              // "All Ethernet adapters that specify the same abstract network connection name within an OVF
                                         // package shall be deployed on the same network. The abstract network connection name shall be
                                         // listed in the NetworkSection at the outermost envelope level."
-    string strAddress;                  // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
-    string strAddressOnParent;          // "For a device, this specifies its location on the controller."
-    string strAllocationUnits;          // "Specifies the units of allocation used. For example, “byte * 2^20”."
+    Utf8Str strAddress;                 // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
+    Utf8Str strAddressOnParent;         // "For a device, this specifies its location on the controller."
+    Utf8Str strAllocationUnits;         // "Specifies the units of allocation used. For example, “byte * 2^20”."
     uint64_t ullVirtualQuantity;        // "Specifies the quantity of resources presented. For example, “256”."
     uint64_t ullReservation;            // "Specifies the minimum quantity of resources guaranteed to be available."
     uint64_t ullLimit;                  // "Specifies the maximum quantity of resources that will be granted."
     uint64_t ullWeight;                 // "Specifies a relative priority for this allocation in relation to other allocations."
 
-    string strConsumerVisibility;
-    string strMappingBehavior;
-    string strPoolID;
+    Utf8Str strConsumerVisibility;
+    Utf8Str strMappingBehavior;
+    Utf8Str strPoolID;
     uint32_t ulBusNumber;               // seen with IDE controllers, but not listed in OVF spec
 
     uint32_t ulLineNumber;              // line number of <Item> element in XML source; cached for error messages
@@ -107,8 +107,8 @@ struct VirtualHardwareItem
     {};
 };
 
-typedef map<string, DiskImage> DiskImagesMap;
-typedef map<string, Network> NetworksMap;
+typedef map<Utf8Str, DiskImage> DiskImagesMap;
+typedef map<Utf8Str, Network> NetworksMap;
 
 struct VirtualSystem;
 
@@ -133,8 +133,8 @@ struct HardDiskController
 {
     uint32_t             idController;           // instance ID (Item/InstanceId); this gets referenced from HardDisk
     ControllerSystemType controllerSystem;       // one of IDE, SATA, SCSI
-    string               strControllerType;      // controllertype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
-    string               strAddress;             // for IDE
+    Utf8Str              strControllerType;      // controllertype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
+    Utf8Str              strAddress;             // for IDE
     uint32_t             ulBusNumber;            // for IDE
 
     HardDiskController()
@@ -150,19 +150,19 @@ struct VirtualDisk
 {
     uint32_t            idController;           // SCSI (or IDE) controller this disk is connected to;
                                                 // points into VirtualSystem.mapControllers
-    string              strDiskId;              // if the hard disk has an ovf:/disk/<id> reference,
+    Utf8Str             strDiskId;              // if the hard disk has an ovf:/disk/<id> reference,
                                                 // this receives the <id> component; points to one of the
                                                 // references in Appliance::Data.mapDisks
 };
 
-typedef map<string, VirtualDisk> VirtualDisksMap;
+typedef map<Utf8Str, VirtualDisk> VirtualDisksMap;
 
 struct VirtualSystem
 {
-    string              strName;                // copy of VirtualSystem/@id
+    Utf8Str             strName;                // copy of VirtualSystem/@id
 
     CIMOSType_T         cimos;
-    string              strVirtualSystemType;   // generic hardware description; OVF says this can be something like "vmx-4" or "xen";
+    Utf8Str             strVirtualSystemType;   // generic hardware description; OVF says this can be something like "vmx-4" or "xen";
                                                 // VMware Workstation 6.5 is "vmx-07"
 
     HardwareItemsMap    mapHardwareItems;       // map of virtual hardware items, sorted by unique instance ID
@@ -170,7 +170,7 @@ struct VirtualSystem
     uint64_t            ullMemorySize;          // always in bytes, copied from llHardwareItems; default = 0 (unspecified)
     uint16_t            cCPUs;                  // no. of CPUs, copied from llHardwareItems; default = 1
 
-    list<string>        llNetworkNames;
+    list<Utf8Str>       llNetworkNames;
             // list of strings referring to network names
             // (one for each VirtualSystem/Item[@ResourceType=10]/Connection element)
 
@@ -185,11 +185,11 @@ struct VirtualSystem
     bool                fHasCdromDrive;         // true if there's a CD-ROM item in mapHardwareItems; ISO images are not yet supported by OVFtool
     bool                fHasUsbController;      // true if there's a USB controller item in mapHardwareItems
 
-    string              strSoundCardType;       // if not empty, then the system wants a soundcard; this then specifies the hardware;
+    Utf8Str             strSoundCardType;       // if not empty, then the system wants a soundcard; this then specifies the hardware;
                                                 // VMware Workstation 6.5 uses "ensoniq1371" for example
 
-    string              strLicenceInfo;         // license info if any; receives contents of VirtualSystem/EulaSection/Info
-    string              strLicenceText;         // license info if any; receives contents of VirtualSystem/EulaSection/License
+    Utf8Str             strLicenceInfo;         // license info if any; receives contents of VirtualSystem/EulaSection/Info
+    Utf8Str             strLicenceText;         // license info if any; receives contents of VirtualSystem/EulaSection/License
 
     VirtualSystem()
         : ullMemorySize(0), cCPUs(1), fHasFloppyDrive(false), fHasCdromDrive(false), fHasUsbController(false)
@@ -200,11 +200,14 @@ struct VirtualSystem
 // globals
 ////////////////////////////////////////////////////////////////////////////////
 
-template <class T> inline std::string toString(const T& val)
+template <class T>
+inline
+com::Utf8Str toString(const T& val)
 {
+    // @todo optimize
     std::ostringstream ss;
     ss << val;
-    return ss.str();
+    return Utf8Str(ss.str().c_str());
 }
 
 // IVirtualBox public methods
@@ -356,7 +359,7 @@ HRESULT Appliance::HandleDiskSection(const char *pcszPath,
                 // optional
                 d.iPopulatedSize = -1;
 
-            string strFileRef;
+            Utf8Str strFileRef;
             if (pelmDisk->getAttributeValue("fileRef", strFileRef)) // optional
             {
                 // look up corresponding /References/File nodes (list built above)
@@ -1004,7 +1007,7 @@ STDMETHODIMP Appliance::Interpret()
         rc = vsd->init();
         ComAssertComRCThrowRC(rc);
 
-        string osTypeVBox = SchemaDefs_OSTypeId_Other;
+        Utf8Str osTypeVBox = SchemaDefs_OSTypeId_Other;
         /* Guest OS type */
         switch (vs.cimos)
         {
@@ -1193,7 +1196,7 @@ STDMETHODIMP Appliance::Interpret()
         /* VM name */
         /* If the there isn't any name specified create a default one out of
          * the OS type */
-        string nameVBox = vs.strName;
+        Utf8Str nameVBox = vs.strName;
         if (nameVBox == "")
             nameVBox = osTypeVBox;
         searchUniqueVMName(nameVBox);
@@ -1201,7 +1204,7 @@ STDMETHODIMP Appliance::Interpret()
 
         /* Now that we know the base system get our internal defaults based on that. */
         ComPtr<IGuestOSType> osType;
-        rc = mVirtualBox->GetGuestOSType(Bstr(Utf8Str(osTypeVBox.c_str())), osType.asOutParam());
+        rc = mVirtualBox->GetGuestOSType(Bstr(osTypeVBox), osType.asOutParam());
         ComAssertComRCThrowRC(rc);
 
         /* CPU count */
@@ -1261,11 +1264,11 @@ STDMETHODIMP Appliance::Interpret()
                     {
                         // @todo: figure out the SCSI types
 # ifdef VBOX_WITH_LSILOGIC
-                        string hdcController = "LsiLogic";
+                        Utf8Str hdcController = "LsiLogic";
 # elif VBOX_WITH_BUSLOGIC
-                        string hdcController = "BusLogic";
+                        Utf8Str hdcController = "BusLogic";
 # else /* !VBOX_WITH_BUSLOGIC */
-                        string hdcController;
+                        Utf8Str hdcController;
 # endif
 # ifdef VBOX_WITH_LSILOGIC
                         if (!RTStrICmp(hdc.strControllerType.c_str(), "LsiLogic"))
@@ -1319,7 +1322,7 @@ STDMETHODIMP Appliance::Interpret()
                 if (fSupported)
                 {
                     /* Construct the path */
-                    string path = Utf8StrFmt("%ls%c%s", defaultHardDiskLocation, RTPATH_DELIMITER, di.strHref.c_str()).raw();
+                    Utf8Str path = Utf8StrFmt("%ls%c%s", defaultHardDiskLocation, RTPATH_DELIMITER, di.strHref.c_str());
                     /* Make the path unique to the VBox installation */
                     searchUniqueDiskImageFilePath(path);
                     vsd->addEntry(VirtualSystemDescriptionType_HardDiskImage, hd.strDiskId, di.strHref, path);
@@ -1335,7 +1338,7 @@ STDMETHODIMP Appliance::Interpret()
             NetworkAdapterType_T nwAdapterVBox = NetworkAdapterType_Am79C970A;
             rc = osType->COMGETTER(AdapterType)(&nwAdapterVBox);
             ComAssertComRCThrowRC(rc);
-            list<string>::const_iterator nwIt;
+            list<Utf8Str>::const_iterator nwIt;
             /* Iterate through all abstract networks. We support 8 network
              * adapters at the maximum. (@todo: warn if it are more!) */
             size_t a = 0;
@@ -1343,7 +1346,7 @@ STDMETHODIMP Appliance::Interpret()
                  nwIt != vs.llNetworkNames.end() && a < SchemaDefs::NetworkAdapterCount;
                  ++nwIt, ++a)
             {
-                // string nwController = *nwIt; // @todo: not used yet
+                // Utf8Str nwController = *nwIt; // @todo: not used yet
                 vsd->addEntry(VirtualSystemDescriptionType_NetworkAdapter, "", "", toString<ULONG>(nwAdapterVBox));
             }
         }
@@ -1376,18 +1379,18 @@ STDMETHODIMP Appliance::ImportAppliance()
         /* Guest OS type */
         std::list<VirtualSystemDescriptionEntry*> vsdeOS = vsd->findByType(VirtualSystemDescriptionType_OS);
         Assert(vsdeOS.size() == 1);
-        string osTypeVBox = vsdeOS.front()->strFinalValue;
+        const Utf8Str &osTypeVBox = vsdeOS.front()->strFinalValue;
 
         /* Now that we know the base system get our internal defaults based on that. */
         ComPtr<IGuestOSType> osType;
-        rc = mVirtualBox->GetGuestOSType(Bstr(Utf8Str(osTypeVBox.c_str())), osType.asOutParam());
+        rc = mVirtualBox->GetGuestOSType(Bstr(osTypeVBox), osType.asOutParam());
         ComAssertComRCThrowRC(rc);
 
         /* Create the machine */
         /* First get the name */
         std::list<VirtualSystemDescriptionEntry*> vsdeName = vsd->findByType(VirtualSystemDescriptionType_Name);
         Assert(vsdeName.size() == 1);
-        string nameVBox = vsdeName.front()->strFinalValue;
+        const Utf8Str &nameVBox = vsdeName.front()->strFinalValue;
         ComPtr<IMachine> newMachine;
         rc = mVirtualBox->CreateMachine(Bstr(nameVBox.c_str()), Bstr(osTypeVBox.c_str()),
                                         Bstr(), Guid(),
@@ -1402,7 +1405,7 @@ STDMETHODIMP Appliance::ImportAppliance()
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
         std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsd->findByType(VirtualSystemDescriptionType_Memory);
         Assert(vsdeRAM.size() == 1);
-        string memoryVBox = vsdeRAM.front()->strFinalValue;
+        const Utf8Str &memoryVBox = vsdeRAM.front()->strFinalValue;
         uint64_t tt = RTStrToUInt64(memoryVBox.c_str()) / _1M;
 
         rc = newMachine->COMSETTER(MemorySize)(tt);
@@ -1439,7 +1442,7 @@ STDMETHODIMP Appliance::ImportAppliance()
                  (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
                  ++nwIt, ++a)
             {
-                string nwTypeVBox = (*nwIt)->strFinalValue;
+                const Utf8Str &nwTypeVBox = (*nwIt)->strFinalValue;
                 uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
                 ComPtr<INetworkAdapter> nwVBox;
                 rc = newMachine->GetNetworkAdapter((ULONG)a, nwVBox.asOutParam());
@@ -1473,8 +1476,8 @@ STDMETHODIMP Appliance::ImportAppliance()
         /* @todo: we support one SATA controller only */
         if (vsdeHDCSATA.size() > 0)
         {
-            string hdcVBox = vsdeHDCIDE.front()->strFinalValue;
-            if (!RTStrCmp(hdcVBox.c_str(), "AHCI"))
+            const Utf8Str &hdcVBox = vsdeHDCIDE.front()->strFinalValue;
+            if (hdcVBox == "AHCI")
             {
                 /* For now we have just to enable the AHCI controller. */
                 ComPtr<ISATAController> hdcSATAVBox;
@@ -1540,13 +1543,13 @@ STDMETHODIMP Appliance::ImportAppliance()
                      * circumstances. */
 //                    continue;
                 }
-                const string &strRef = (*hdIt)->strRef;
+                const Utf8Str &strRef = (*hdIt)->strRef;
                 /* Get the associated disk image */
                 if (m->mapDisks.find(strRef) == m->mapDisks.end())
                 {
                     /* @todo: error: entry doesn't exists */
                 }
-                DiskImage di = m->mapDisks [strRef];
+                DiskImage di = m->mapDisks[strRef];
                 /* Construct the source file path */
                 char *srcFilePath;
                 RTStrAPrintf(&srcFilePath, "%s/%s", srcDir, di.strHref.c_str());
@@ -1614,7 +1617,7 @@ STDMETHODIMP Appliance::ImportAppliance()
     return S_OK;
 }
 
-HRESULT Appliance::searchUniqueVMName(std::string& aName) const
+HRESULT Appliance::searchUniqueVMName(Utf8Str& aName) const
 {
     IMachine *machine = NULL;
     char *tmpName = RTStrDup(aName.c_str());
@@ -1632,7 +1635,7 @@ HRESULT Appliance::searchUniqueVMName(std::string& aName) const
     return S_OK;
 }
 
-HRESULT Appliance::searchUniqueDiskImageFilePath(std::string& aName) const
+HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
 {
     IHardDisk2 *harddisk = NULL;
     char *tmpName = RTStrDup(aName.c_str());
@@ -1720,18 +1723,18 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
          it != m->descriptions.end();
          ++it, ++i)
     {
-        VirtualSystemDescriptionEntry vsde = (*it);
+        const VirtualSystemDescriptionEntry &vsde = (*it);
         /* Types */
         sfaTypes [i] = vsde.type;
         /* Original value */
-        Bstr bstr = Utf8Str(vsde.strOriginalValue.c_str());
-        bstr.cloneTo(&sfaOrigValues [i]);
+        Bstr bstr = vsde.strOriginalValue;
+        bstr.cloneTo(&sfaOrigValues[i]);
         /* Auto value */
-        bstr = Utf8Str(vsde.strAutoValue.c_str());
-        bstr.cloneTo(&sfaAutoValues [i]);
+        bstr = vsde.strAutoValue;
+        bstr.cloneTo(&sfaAutoValues[i]);
         /* Configuration */
-        bstr = Utf8Str(vsde.strConfiguration.c_str());
-        bstr.cloneTo(&sfaConfigurations [i]);
+        bstr = vsde.strConfiguration;
+        bstr.cloneTo(&sfaConfigurations[i]);
     }
 
     sfaTypes.detachTo(ComSafeArrayOutArg(aTypes));
@@ -1762,17 +1765,17 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(IN_BSTR, aF
          ++it, ++i)
     {
         VirtualSystemDescriptionEntry vsde = (*it);
-        vsde.strFinalValue = Utf8Str(values[i]).raw();
+        vsde.strFinalValue = values[i];
     }
 
     return S_OK;
 }
 
 void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
-                                        const std::string &aRef,
-                                        const std::string &aOrigValue,
-                                        const std::string &aAutoValue,
-                                        const std::string &aConfig /* = "" */)
+                                        const Utf8Str &aRef,
+                                        const Utf8Str &aOrigValue,
+                                        const Utf8Str &aAutoValue,
+                                        const Utf8Str &aConfig /* = "" */)
 {
     VirtualSystemDescriptionEntry vsde;
     vsde.type = aType;
