@@ -2848,12 +2848,14 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     {
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_32BIT_PD:
+            Assert(iUserTable < X86_PG_ENTRIES);
+            break;
 # else
         case PGMPOOLKIND_ROOT_32BIT_PD:
-# endif
             Assert(iUserTable < X86_PG_ENTRIES);
             Assert(!(u.pau32[iUserTable] & PGM_PDFLAGS_MAPPING));
             break;
+# endif
 # if !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) && !defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
         case PGMPOOLKIND_ROOT_PAE_PD:
             Assert(iUserTable < 2048 && pUser->iUser == PGMPOOL_IDX_PAE_PD);
@@ -3434,6 +3436,34 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaeBig(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
 
 #endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
+
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+/**
+ * Clear references to shadowed pages in a 32 bits page directory.
+ *
+ * @param   pPool       The pool.
+ * @param   pPage       The page.
+ * @param   pShwPD      The shadow page directory (mapping of the page).
+ */
+DECLINLINE(void) pgmPoolTrackDerefPD(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PD pShwPD)
+{
+    for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
+    {
+        if (    pShwPD->a[i].n.u1Present
+            &&  !(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING)
+           )
+        {
+            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPD->a[i].u & X86_PDE_PG_MASK);
+            if (pSubPage)
+                pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
+            else
+                AssertFatalMsgFailed(("%x\n", pShwPD->a[i].u & X86_PDE_PG_MASK));
+            /** @todo 64-bit guests: have to ensure that we're not exhausting the dynamic mappings! */
+        }
+    }
+}
+#endif
+
 /**
  * Clear references to shadowed pages in a PAE (legacy or 64 bits) page directory.
  *
@@ -3445,7 +3475,11 @@ DECLINLINE(void) pgmPoolTrackDerefPDPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
     {
-        if (pShwPD->a[i].n.u1Present)
+        if (    pShwPD->a[i].n.u1Present
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+            &&  !(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING)
+#endif
+           )
         {
             PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPD->a[i].u & X86_PDE_PAE_PG_MASK);
             if (pSubPage)
@@ -3469,7 +3503,11 @@ DECLINLINE(void) pgmPoolTrackDerefPDPT64Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPDPT->a); i++)
     {
-        if (pShwPDPT->a[i].n.u1Present)
+        if (    pShwPDPT->a[i].n.u1Present
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+            &&  !(pShwPDPT->a[i].u & PGM_PLXFLAGS_MAPPING)
+#endif
+           )
         {
             PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPDPT->a[i].u & X86_PDPE_PG_MASK);
             if (pSubPage)
@@ -3659,6 +3697,14 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             pgmPoolTrackDerefPDPae(pPool, pPage, (PX86PDPAE)pvShw);
             break;
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_32BIT_PD:
+            pgmPoolTrackDerefPD(pPool, pPage, (PX86PD)pvShw);
+            break;
+
+        case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
+        case PGMPOOLKIND_PAE_PDPT:
+#endif
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
             pgmPoolTrackDerefPDPT64Bit(pPool, pPage, (PX86PDPT)pvShw);

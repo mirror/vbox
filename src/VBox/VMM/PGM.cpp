@@ -3411,6 +3411,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
         }
     }
 
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /** @todo This is a bug!
      *
      * We must flush the PGM pool cache if the guest mode changes; we don't always
@@ -3427,6 +3428,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
         Log(("PGMR3ChangeMode: changing guest paging mode -> flush pgm pool cache!\n"));
         pgmPoolFlushAll(pVM);
     }
+#endif
 
     /*
      * Enter the new guest and shadow+guest modes.
