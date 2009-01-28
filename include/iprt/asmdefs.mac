@@ -658,6 +658,9 @@ BEGINPROC RT_NOCRT(%1)
 ;; @def xSI
 ; RSI or ESI depending on context.
 
+;; @def xWrtRIP
+; 'wrt rip' for AMD64 targets, nothing for x86 ones.
+
 %ifdef RT_ARCH_AMD64
  %define xS  8
  %define xSP rsp
@@ -668,6 +671,7 @@ BEGINPROC RT_NOCRT(%1)
  %define xDX rdx
  %define xDI rdi
  %define xSI rsi
+ %define xWrtRIP wrt rip
 %else
  %define xS  4
  %define xSP esp
@@ -678,6 +682,7 @@ BEGINPROC RT_NOCRT(%1)
  %define xDX edx
  %define xDI edi
  %define xSI esi
+ %define xWrtRIP wrt rip
 %endif
 
 %endif
