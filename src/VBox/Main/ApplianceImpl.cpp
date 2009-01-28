@@ -1142,7 +1142,7 @@ STDMETHODIMP Appliance::Interpret()
 
         /* Now that we know the base system get our internal defaults based on that. */
         ComPtr<IGuestOSType> osType;
-        rc = mVirtualBox->COMGETTER(GuestOSType)(Bstr(Utf8Str(osTypeVBox.c_str())), osType.asOutParam());
+        rc = mVirtualBox->GetGuestOSType(Bstr(Utf8Str(osTypeVBox.c_str())), osType.asOutParam());
         ComAssertComRCThrowRC(rc);
 
         /* CPU count */
@@ -1154,7 +1154,7 @@ STDMETHODIMP Appliance::Interpret()
 
         /* RAM */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
-        uint64_t ullMemSizeVBox = vs.ullMemorySize; /** @todo r=bird/MSC: this will overflow at 4GB, use 64-bit type. */
+        uint64_t ullMemSizeVBox = vs.ullMemorySize;
         if (vs.ullMemorySize == 0)
         {
             /* If the RAM of the OVF is zero, use our predefined values */
@@ -1321,7 +1321,7 @@ STDMETHODIMP Appliance::ImportAppliance()
 
         /* Now that we know the base system get our internal defaults based on that. */
         ComPtr<IGuestOSType> osType;
-        rc = mVirtualBox->COMGETTER(GuestOSType)(Bstr(Utf8Str(osTypeVBox.c_str())), osType.asOutParam());
+        rc = mVirtualBox->GetGuestOSType(Bstr(Utf8Str(osTypeVBox.c_str())), osType.asOutParam());
         ComAssertComRCThrowRC(rc);
 
         /* Create the machine */
