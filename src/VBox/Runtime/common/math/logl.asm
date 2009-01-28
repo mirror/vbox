@@ -54,10 +54,10 @@ BEGINPROC RT_NOCRT(logl)
     fldln2                              ; st0=log(2)
     fld     tword [_BP + _S*2]          ; st1=log(2) st0=lrd
     fld     st0                         ; st1=log(2) st0=lrd st0=lrd
-    fsub    qword [.one]                ; st2=log(2) st1=lrd st0=lrd-1.0
+    fsub    qword [.one xWrtRIP]        ; st2=log(2) st1=lrd st0=lrd-1.0
     fld     st0                         ; st3=log(2) st2=lrd st1=lrd-1.0 st0=lrd-1.0
     fabs                                ; st3=log(2) st2=lrd st1=lrd-1.0 st0=abs(lrd-1.0)
-    fcomp   qword [.limit]              ; st2=log(2) st1=lrd st0=lrd-1.0
+    fcomp   qword [.limit xWrtRIP]      ; st2=log(2) st1=lrd st0=lrd-1.0
     fnstsw  ax
     and     eax, 04500h
     jnz     .use_st1
