@@ -229,9 +229,9 @@ struct VBoxMainHotplugWaiter::Context
     RTMemAutoPtr <DBusConnection, VBoxHalShutdownPrivate> mConnection;
     /** Semaphore which is set when a device is hotplugged and reset when
      * it is read. */
-    bool mTriggered;
+    volatile bool mTriggered;
     /** A flag to say that we wish to interrupt the current wait. */
-    bool mInterrupt;
+    volatile bool mInterrupt;
     /** Constructor */
     Context() : mTriggered(false), mInterrupt(false) {}
 #endif  /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
@@ -262,7 +262,7 @@ VBoxMainHotplugWaiter::VBoxMainHotplugWaiter ()
         if (   RT_SUCCESS (rc)
             && !dbus_connection_add_filter (mContext->mConnection.get(),
                                             dbusFilterFunction,
-                                            &mContext->mTriggered, NULL))
+                                            (void *) &mContext->mTriggered, NULL))
             rc = VERR_NO_MEMORY;
         if (RT_FAILURE (rc))
             mContext->mConnection.reset();
@@ -276,7 +276,7 @@ VBoxMainHotplugWaiter::~VBoxMainHotplugWaiter ()
 #if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
     if (!!mContext->mConnection)
         dbus_connection_remove_filter (mContext->mConnection.get(), dbusFilterFunction,
-                                       &mContext->mTriggered);
+                                       (void *) &mContext->mTriggered);
     delete mContext;
 #endif /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
 }
@@ -1205,7 +1205,7 @@ int getUSBInterfacesFromHal(std::vector <std::string> *pList,
 DBusHandlerResult dbusFilterFunction (DBusConnection *pConnection,
                                       DBusMessage *pMessage, void *pvUser)
 {
-    bool *pTriggered = reinterpret_cast<bool *> (pvUser);
+    volatile bool *pTriggered = reinterpret_cast<volatile bool *> (pvUser);
     if (   dbus_message_is_signal (pMessage, "org.freedesktop.Hal.Manager",
                                    "DeviceAdded")
         || dbus_message_is_signal (pMessage, "org.freedesktop.Hal.Manager",
