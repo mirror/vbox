@@ -162,7 +162,8 @@ struct VirtualSystem
     string              strName;                // copy of VirtualSystem/@id
 
     CIMOSType_T         cimos;
-    string              strVirtualSystemType;
+    string              strVirtualSystemType;   // generic hardware description; OVF says this can be something like "vmx-4" or "xen";
+                                                // VMware Workstation 6.5 is "vmx-07"
 
     HardwareItemsMap    mapHardwareItems;       // map of virtual hardware items, sorted by unique instance ID
 
@@ -1185,7 +1186,7 @@ STDMETHODIMP Appliance::Interpret()
                             hdcController = IDEControllerType_PIIX3;
                         else if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX4"))
                             hdcController = IDEControllerType_PIIX4;
-                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerIDE, toString<uint32_t>(hdc.idController), hdc.strControllerType, toString<ULONG>(hdcController));
+                        vsd->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE, toString<uint32_t>(hdc.idController), hdc.strControllerType, toString<ULONG>(hdcController));
                         break;
                     }
 #ifdef VBOX_WITH_AHCI
@@ -1193,7 +1194,7 @@ STDMETHODIMP Appliance::Interpret()
                     {
                         // @todo: figure out the SATA types
                         /* We only support a plain AHCI controller, so use them always */
-                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerSATA, toString<uint32_t>(hdc.idController), hdc.strControllerType, "AHCI");
+                        vsd->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, toString<uint32_t>(hdc.idController), hdc.strControllerType, "AHCI");
                         break;
                     }
 #endif /* VBOX_WITH_AHCI */
@@ -1216,7 +1217,7 @@ STDMETHODIMP Appliance::Interpret()
                         if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
                             hdcController = "BusLogic";
 # endif /* VBOX_WITH_BUSLOGIC */
-                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerSCSI, toString<uint32_t>(hdc.idController), hdc.strControllerType, hdcController);
+                        vsd->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI, toString<uint32_t>(hdc.idController), hdc.strControllerType, hdcController);
                         break;
                     }
 #endif /* VBOX_WITH_SCSI */
@@ -1263,7 +1264,7 @@ STDMETHODIMP Appliance::Interpret()
                     string path = Utf8StrFmt("%ls%c%s", defaultHardDiskLocation, RTPATH_DELIMITER, di.strHref.c_str()).raw();
                     /* Make the path unique to the VBox installation */
                     searchUniqueDiskImageFilePath(path);
-                    vsd->addEntry(VirtualSystemDescriptionType_Harddisk, hd.strDiskId, di.strHref, path);
+                    vsd->addEntry(VirtualSystemDescriptionType_HardDiskImage, hd.strDiskId, di.strHref, path);
                 }
             }
         }
@@ -1395,7 +1396,7 @@ STDMETHODIMP Appliance::ImportAppliance()
         }
 
         /* Hard disk controller IDE */
-        list<VirtualSystemDescriptionEntry> vsdeHDCIDE = vsd->findByType(VirtualSystemDescriptionType_HarddiskControllerIDE);
+        list<VirtualSystemDescriptionEntry> vsdeHDCIDE = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
         /* @todo: we support one IDE controller only */
         if (vsdeHDCIDE.size() > 0)
         {
@@ -1410,7 +1411,7 @@ STDMETHODIMP Appliance::ImportAppliance()
         }
 #ifdef VBOX_WITH_AHCI
         /* Hard disk controller SATA */
-        list<VirtualSystemDescriptionEntry> vsdeHDCSATA = vsd->findByType(VirtualSystemDescriptionType_HarddiskControllerSATA);
+        list<VirtualSystemDescriptionEntry> vsdeHDCSATA = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
         /* @todo: we support one SATA controller only */
         if (vsdeHDCSATA.size() > 0)
         {
@@ -1432,7 +1433,7 @@ STDMETHODIMP Appliance::ImportAppliance()
 #endif /* VBOX_WITH_AHCI */
 #ifdef VBOX_WITH_SCSI
         /* Hard disk controller SCSI */
-        list<VirtualSystemDescriptionEntry> vsdeHDCSCSI = vsd->findByType(VirtualSystemDescriptionType_HarddiskControllerSCSI);
+        list<VirtualSystemDescriptionEntry> vsdeHDCSCSI = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
         /* @todo: do we support more than one SCSI controller? */
         if (vsdeHDCSCSI.size() > 0)
         {
@@ -1446,7 +1447,7 @@ STDMETHODIMP Appliance::ImportAppliance()
         ComAssertComRCThrowRC(rc);
 
         /* Create the hard disks & connect them to the appropriate controllers. */
-        list<VirtualSystemDescriptionEntry> vsdeHD = vsd->findByType(VirtualSystemDescriptionType_Harddisk);
+        list<VirtualSystemDescriptionEntry> vsdeHD = vsd->findByType(VirtualSystemDescriptionType_HardDiskImage);
         if (vsdeHD.size() > 0)
         {
             /* That we can attach hard disks we need to open a session for the

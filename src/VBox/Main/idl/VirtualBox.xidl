@@ -2991,11 +2991,13 @@
     <const name="OS" value="2" />
     <const name="CPU" value="3" />
     <const name="Memory" value="4" />
-    <const name="HarddiskControllerIDE" value="5" />
-    <const name="HarddiskControllerSATA" value="6" />
-    <const name="HarddiskControllerSCSI" value="7" />
-    <const name="Harddisk" value="8" />
-    <const name="NetworkAdapter" value="9" />
+    <const name="HardDiskControllerIDE" value="5" />
+    <const name="HardDiskControllerSATA" value="6" />
+    <const name="HardDiskControllerSCSI" value="7" />
+    <const name="HardDiskImage" value="8" />
+    <const name="CDROM" value="9" />
+    <const name="Floppy" value="10" />
+    <const name="NetworkAdapter" value="11" />
 
   </enum>
 
