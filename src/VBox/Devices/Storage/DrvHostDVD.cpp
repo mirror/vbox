@@ -31,8 +31,8 @@
 # include <Carbon/Carbon.h>
 # include <IOKit/IOKitLib.h>
 # include <IOKit/IOCFPlugIn.h>
-# include <IOKit/scsi-commands/SCSITaskLib.h>
-# include <IOKit/scsi-commands/SCSICommandOperationCodes.h>
+# include <IOKit/scsi/SCSITaskLib.h>
+# include <IOKit/scsi/SCSICommandOperationCodes.h>
 # include <IOKit/storage/IOStorageDeviceCharacteristics.h>
 # include <mach/mach_error.h>
 # define USE_MEDIA_POLLING
