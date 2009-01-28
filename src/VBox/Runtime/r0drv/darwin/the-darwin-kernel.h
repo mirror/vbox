@@ -62,6 +62,7 @@
 # include <i386/mp_events.h>
 #endif
 #include <libkern/libkern.h>
+#include <libkern/sysctl.h>
 #include <mach/thread_act.h>
 #include <mach/vm_map.h>
 #include <pexpert/pexpert.h>
