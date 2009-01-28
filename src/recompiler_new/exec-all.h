@@ -98,7 +98,7 @@ int cpu_restore_state_copy(struct TranslationBlock *tb,
                            void *puc);
 void cpu_resume_from_signal(CPUState *env1, void *puc);
 void cpu_io_recompile(CPUState *env, void *retaddr);
-TranslationBlock *tb_gen_code(CPUState *env, 
+TranslationBlock *tb_gen_code(CPUState *env,
                               target_ulong pc, target_ulong cs_base, int flags,
                               int cflags);
 void cpu_exec_init(CPUState *env);
@@ -181,9 +181,6 @@ struct TranslationBlock {
 #ifdef USE_DIRECT_JUMP
     uint16_t tb_jmp_offset[4]; /* offset of jump instruction */
 #else
-# if defined(VBOX) && defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
-#  error "First 4GB aren't reachable. jmp dword [tb_next] wont work."
-# endif
     unsigned long tb_next[2]; /* address of jump generated code */
 #endif
     /* list of TBs jumping to this one. This is a circular list using
@@ -407,7 +404,7 @@ DECLINLINE(target_ulong) get_phys_addr_code(CPUState *env1, target_ulong addr)
     if (pd > IO_MEM_ROM && !(pd & IO_MEM_ROMD)) {
 # ifdef VBOX
         /* deal with non-MMIO access handlers. */
-        return remR3PhysGetPhysicalAddressCode(env1, addr, 
+        return remR3PhysGetPhysicalAddressCode(env1, addr,
                                                &env1->tlb_table[mmu_idx][page_index],
                                                env1->iotlb[mmu_idx][page_index]);
 # elif defined(TARGET_SPARC) || defined(TARGET_MIPS)
