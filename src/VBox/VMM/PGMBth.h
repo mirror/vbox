@@ -35,6 +35,8 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCPTR Addr, unsigned fPage, u
 PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage);
 PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCPTR GCPtrPage);
 PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr = 0, RTGCPTR cb = ~(RTGCPTR)0);
+PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3);
+PGM_BTH_DECL(int, UnmapCR3)(PVM pVM);
 __END_DECLS
 
 
@@ -61,6 +63,8 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
 #ifdef VBOX_STRICT
     pModeData->pfnR3BthAssertCR3            = PGM_BTH_NAME(AssertCR3);
 #endif
+    pModeData->pfnR3BthMapCR3               = PGM_BTH_NAME(MapCR3);
+    pModeData->pfnR3BthUnmapCR3             = PGM_BTH_NAME(UnmapCR3);
 
     if (fResolveGCAndR0)
     {
@@ -84,6 +88,10 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
         rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(AssertCR3),           &pModeData->pfnRCBthAssertCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_BTH_NAME_RC_STR(AssertCR3), rc), rc);
 # endif
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(MapCR3),              &pModeData->pfnRCBthMapCR3);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_BTH_NAME_RC_STR(MapCR3), rc), rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(UnmapCR3),            &pModeData->pfnRCBthUnmapCR3);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_BTH_NAME_RC_STR(UnmapCR3), rc), rc);
 #endif /* Not AMD64 shadow paging. */
 
         /* Ring 0 */
@@ -103,6 +111,10 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
         rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_BTH_NAME_R0_STR(AssertCR3),           &pModeData->pfnR0BthAssertCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_BTH_NAME_R0_STR(AssertCR3), rc), rc);
 #endif
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_BTH_NAME_R0_STR(MapCR3),              &pModeData->pfnR0BthMapCR3);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_BTH_NAME_R0_STR(MapCR3), rc), rc);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_BTH_NAME_R0_STR(UnmapCR3),            &pModeData->pfnR0BthUnmapCR3);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_BTH_NAME_R0_STR(UnmapCR3), rc), rc);
     }
     return VINF_SUCCESS;
 }

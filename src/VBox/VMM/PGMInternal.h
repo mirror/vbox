@@ -1530,6 +1530,10 @@ typedef enum PGMPOOLKIND
     PGMPOOLKIND_PAE_PDPT_FOR_32BIT,
     /** Shw: PAE page directory pointer table (legacy, 4 entries);  Gst PAE PDPT. */
     PGMPOOLKIND_PAE_PDPT,
+    /** Shw: PAE page directory pointer table (legacy, 4 entries);  Gst: real mode. */
+    PGMPOOLKIND_PAE_PDPT_PHYS_REAL,
+    /** Shw: PAE page directory pointer table (legacy, 4 entries);  Gst: protected mode without paging. */
+    PGMPOOLKIND_PAE_PDPT_PHYS_PROT,
 
     /** Shw: 64-bit page directory pointer table;   Gst: 64-bit page directory pointer table. */
     PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT,
@@ -1541,7 +1545,7 @@ typedef enum PGMPOOLKIND
     PGMPOOLKIND_64BIT_PD_FOR_PHYS,
 
     /** Shw: 64-bit PML4;                           Gst: 64-bit PML4. */
-    PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4,
+    PGMPOOLKIND_64BIT_PML4,
 
     /** Shw: EPT page directory pointer table;      Gst: no paging  */
     PGMPOOLKIND_EPT_PDPT_FOR_PHYS,
@@ -2047,8 +2051,6 @@ typedef struct PGMMODEDATA
     DECLR3CALLBACKMEMBER(int,       pfnR3GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstUnmonitorCR3,(PVM pVM));
 #endif
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstUnmapCR3,(PVM pVM));
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstWriteHandlerCR3;
     R3PTRTYPE(const char *)         pszR3GstWriteHandlerCR3;
@@ -2062,8 +2064,6 @@ typedef struct PGMMODEDATA
     DECLRCCALLBACKMEMBER(int,       pfnRCGstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstUnmonitorCR3,(PVM pVM));
 #endif
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstUnmapCR3,(PVM pVM));
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstWriteHandlerCR3;
     RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstPAEWriteHandlerCR3;
@@ -2075,8 +2075,6 @@ typedef struct PGMMODEDATA
     DECLR0CALLBACKMEMBER(int,       pfnR0GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstUnmonitorCR3,(PVM pVM));
 #endif
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstUnmapCR3,(PVM pVM));
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstWriteHandlerCR3;
     R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstPAEWriteHandlerCR3;
@@ -2096,6 +2094,8 @@ typedef struct PGMMODEDATA
 #ifdef VBOX_STRICT
     DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 #endif
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthUnmapCR3,(PVM pVM));
 
     DECLRCCALLBACKMEMBER(int,       pfnRCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLRCCALLBACKMEMBER(int,       pfnRCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
@@ -2106,6 +2106,8 @@ typedef struct PGMMODEDATA
 #ifdef VBOX_STRICT
     DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 #endif
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthUnmapCR3,(PVM pVM));
 
     DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
@@ -2116,6 +2118,8 @@ typedef struct PGMMODEDATA
 #ifdef VBOX_STRICT
     DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 #endif
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthUnmapCR3,(PVM pVM));
     /** @} */
 } PGMMODEDATA, *PPGMMODEDATA;
 
@@ -2337,8 +2341,6 @@ typedef struct PGM
     DECLR3CALLBACKMEMBER(int,       pfnR3GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstUnmonitorCR3,(PVM pVM));
 #endif
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstUnmapCR3,(PVM pVM));
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstWriteHandlerCR3;
     R3PTRTYPE(const char *)         pszR3GstWriteHandlerCR3;
@@ -2352,8 +2354,6 @@ typedef struct PGM
     DECLRCCALLBACKMEMBER(int,       pfnRCGstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstUnmonitorCR3,(PVM pVM));
 #endif
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstUnmapCR3,(PVM pVM));
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstWriteHandlerCR3;
     RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstPAEWriteHandlerCR3;
@@ -2369,8 +2369,6 @@ typedef struct PGM
     DECLR0CALLBACKMEMBER(int,       pfnR0GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstUnmonitorCR3,(PVM pVM));
 #endif
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstUnmapCR3,(PVM pVM));
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstWriteHandlerCR3;
     R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstPAEWriteHandlerCR3;
@@ -2388,6 +2386,8 @@ typedef struct PGM
     DECLR3CALLBACKMEMBER(int,       pfnR3BthPrefetchPage,(PVM pVM, RTGCPTR GCPtrPage));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthVerifyAccessSyncPage,(PVM pVM, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
     DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthUnmapCR3,(PVM pVM));
 
     DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
@@ -2396,6 +2396,8 @@ typedef struct PGM
     DECLR0CALLBACKMEMBER(int,       pfnR0BthPrefetchPage,(PVM pVM, RTGCPTR GCPtrPage));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
     DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthUnmapCR3,(PVM pVM));
 
     DECLRCCALLBACKMEMBER(int,       pfnRCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLRCCALLBACKMEMBER(int,       pfnRCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
@@ -2404,6 +2406,8 @@ typedef struct PGM
     DECLRCCALLBACKMEMBER(int,       pfnRCBthPrefetchPage,(PVM pVM, RTGCPTR GCPtrPage));
     DECLRCCALLBACKMEMBER(int,       pfnRCBthVerifyAccessSyncPage,(PVM pVM, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
     DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthUnmapCR3,(PVM pVM));
 #if HC_ARCH_BITS == 64
     RTRCPTR                         alignment2; /**< structure size alignment. */
 #endif

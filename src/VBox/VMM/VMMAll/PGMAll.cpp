@@ -89,9 +89,11 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_REAL(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_32BIT_PT_FOR_PHYS
+#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_32BIT_PD_PHYS_REAL
 #include "PGMAllGst.h"
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef BTH_PGMPOOLKIND_ROOT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -101,9 +103,11 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_PROT(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_32BIT_PT_FOR_PHYS
+#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_32BIT_PD_PHYS_PROT
 #include "PGMAllGst.h"
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef BTH_PGMPOOLKIND_ROOT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -114,10 +118,12 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_32BIT(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT
 #define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB
+#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_32BIT_PD
 #include "PGMAllGst.h"
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_BIG
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef BTH_PGMPOOLKIND_ROOT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -139,8 +145,10 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_PAE_REAL(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
+#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_PAE_PDPT_PHYS_REAL
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef BTH_PGMPOOLKIND_ROOT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -150,8 +158,10 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_PAE_PROT(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
+#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_PAE_PDPT_PHYS_PROT
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef BTH_PGMPOOLKIND_ROOT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -162,9 +172,11 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_PAE_32BIT(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_32BIT_PT
 #define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB
+#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_PAE_PDPT_FOR_32BIT
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_BIG
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef BTH_PGMPOOLKIND_ROOT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -176,10 +188,12 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_PAE_PAE(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
 #define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_PAE_PDPT
 #include "PGMAllGst.h"
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_BIG
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
+#undef BTH_PGMPOOLKIND_ROOT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -201,8 +215,10 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 # define PGM_GST_NAME(name)         PGM_GST_NAME_PROT(name)
 # define PGM_BTH_NAME(name)         PGM_BTH_NAME_AMD64_PROT(name)
 # define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_PAE_PT_FOR_PHYS
+# define BTH_PGMPOOLKIND_ROOT       PGMPOOLKIND_PAE_PD_PHYS_PROT
 # include "PGMAllBth.h"
 # undef BTH_PGMPOOLKIND_PT_FOR_PT
+# undef BTH_PGMPOOLKIND_ROOT
 # undef PGM_BTH_NAME
 # undef PGM_GST_TYPE
 # undef PGM_GST_NAME
@@ -214,10 +230,12 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #  define PGM_BTH_NAME(name)        PGM_BTH_NAME_AMD64_AMD64(name)
 #  define BTH_PGMPOOLKIND_PT_FOR_PT PGMPOOLKIND_PAE_PT_FOR_PAE_PT
 #  define BTH_PGMPOOLKIND_PT_FOR_BIG PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+#  define BTH_PGMPOOLKIND_ROOT      PGMPOOLKIND_64BIT_PML4
 #  include "PGMAllGst.h"
 #  include "PGMAllBth.h"
 #  undef BTH_PGMPOOLKIND_PT_FOR_BIG
 #  undef BTH_PGMPOOLKIND_PT_FOR_PT
+#  undef BTH_PGMPOOLKIND_ROOT
 #  undef PGM_BTH_NAME
 #  undef PGM_GST_TYPE
 #  undef PGM_GST_NAME
@@ -1541,9 +1559,14 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
         GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
     if (pVM->pgm.s.GCPhysCR3 != GCPhysCR3)
     {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        /* Unmap the old CR3 value before activating the new one. */
+        rc = PGM_BTH_PFN(UnmapCR3, pVM)(pVM);
+        AssertRC(rc);
+#endif
         RTGCPHYS GCPhysOldCR3 = pVM->pgm.s.GCPhysCR3;
         pVM->pgm.s.GCPhysCR3  = GCPhysCR3;
-        rc = PGM_GST_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
+        rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             if (!pVM->pgm.s.fMappingsFixed)
@@ -1634,7 +1657,7 @@ VMMDECL(int) PGMUpdateCR3(PVM pVM, uint64_t cr3)
     if (pVM->pgm.s.GCPhysCR3 != GCPhysCR3)
     {
         pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
-        rc = PGM_GST_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
+        rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
         AssertRCSuccess(rc); /* Assumes VINF_PGM_SYNC_CR3 doesn't apply to nested paging. */
     }
     return rc;
@@ -1708,8 +1731,18 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool 
             GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAE_PAGE_MASK);
         else
             GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
+
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        if (pVM->pgm.s.GCPhysCR3 != GCPhysCR3)
+        {
+            /* Unmap the old CR3 value before activating the new one. */
+            rc = PGM_BTH_PFN(UnmapCR3, pVM)(pVM);
+            AssertRC(rc);
+        }
+#endif
+
         pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
-        rc = PGM_GST_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
+        rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
 #ifdef IN_RING3
         if (rc == VINF_PGM_SYNC_CR3)
             rc = pgmPoolSyncCR3(pVM);
