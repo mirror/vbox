@@ -383,7 +383,10 @@ udp_attach(PNATState pData, struct socket *so)
             so->so_expire = curtime + SO_EXPIRE;
             /* enable broadcast for later use */
             setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, (const char *)&opt, sizeof(opt));
+            SOCKET_LOCK_CREATE(so);
+            QSOCKET_LOCK(udb);
             insque(pData, so,&udb);
+            QSOCKET_UNLOCK(udb);
             status = getsockname(so->s, &sa_addr, &socklen);
             Assert(status == 0 && sa_addr.sa_family == AF_INET);
             so->so_hlport = ((struct sockaddr_in *)&sa_addr)->sin_port;

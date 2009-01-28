@@ -114,6 +114,9 @@ typedef struct NATState
     const char *pszDomain;
     /* Stuff from tcp_input.c */
     struct socket tcb;
+#ifdef VBOX_WITH_SLIRP_MT
+    RTSEMMUTEX      tcb_mutex;
+#endif
     struct socket *tcp_last_so;
     tcp_seq tcp_iss;
     /* Stuff from tcp_timer.c */
@@ -129,6 +132,9 @@ typedef struct NATState
     /* Stuff from udp.c */
     struct udpstat_t udpstat;
     struct socket udb;
+#ifdef VBOX_WITH_SLIRP_MT
+    RTSEMMUTEX      udb_mutex;
+#endif
     struct socket *udp_last_so;
     struct socket icmp_socket;
     struct icmp_storage icmp_msg_head;
@@ -264,6 +270,61 @@ typedef struct NATState
 
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 # define fIcmp pData->fIcmp
+#endif
+
+#define queue_tcp_label tcb
+#define queue_udp_label udb
+#define __X(x) x
+#define _X(x) __X(x)
+
+#ifdef VBOX_WITH_SLIRP_MT
+#define QSOCKET_LOCK(queue)                                                     \
+do {                                                                            \
+    int rc = RTSemMutexRequest(_X(queue) ## _mutex, RT_INDEFINITE_WAIT);     \
+    AssertReleaseRC(rc);                                                        \
+} while (0)
+#define QSOCKET_UNLOCK(queue)                           \
+do {                                                    \
+    int rc = RTSemMutexRelease(_X(queue) ## _mutex);    \
+    AssertReleaseRC(rc);                                \
+} while (0)
+#define QSOCKET_LOCK_CREATE(queue)                      \
+do {                                                    \
+    int rc = RTSemMutexCreate(&pData->queue ## _mutex); \
+    AssertReleaseRC(rc);                                \
+} while (0)
+#define QSOCKET_LOCK_DESTROY(queue)                     \
+do {                                                    \
+    int rc = RTSemMutexDestroy(pData->queue ## _mutex); \
+    AssertReleaseRC(rc);                                \
+} while (0)
+
+# define QSOCKET_FOREACH(so, sonext, label)                        \
+        QSOCKET_LOCK(__X(queue_## label ## _label));               \
+        (so) = (_X(queue_ ## label ## _label)).so_next;             \
+        SOCKET_LOCK((so));                      \
+        for(;;)                                 \
+        {                                       \
+            if ((so) == &(_X(queue_## label ## _label)))               \
+            {                                   \
+                QSOCKET_UNLOCK(__X(queue_## label ##_label));                    \
+                break;                          \
+            }                                   \
+            if ((so)->so_next != &(_X(queue_## label ## _label)))      \
+            {                                   \
+                SOCKET_LOCK((so)->so_next);     \
+            }                                   \
+            (sonext) = (so)->so_next;           \
+            QSOCKET_UNLOCK(__X(queue_## label ##_label)); 
+#else
+#define QSOCKET_LOCK(queue) do {} while (0)
+#define QSOCKET_UNLOCK(queue) do {} while (0)
+#define QSOCKET_LOCK_CREATE(queue) do {} while (0)
+#define QSOCKET_LOCK_DESTROY(queue) do {} while (0)
+# define QSOCKET_FOREACH(so, sonext, label)                        \
+   for ((so) = __X(queue_ ## label ## _label).so_next; so != &(__X(queue_ ## label ## _label)); (so) = (sonext))   \
+   {                                                               \
+            (sonext) = (so)->so_next;
 #endif
 
 #endif /* !_slirp_state_h_ */

@@ -7,6 +7,17 @@
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 
+#ifdef VBOX_WITH_SLIRP_MT
+# define CONTINUE(label) goto loop_end_ ## label ## _mt
+/* @todo replace queue parameter with macrodinition */
+# define LOOP_LABEL(label, so, sonext) loop_end_ ## label ## _mt:    \
+    SOCKET_UNLOCK(so);                                               \
+    QSOCKET_LOCK(_X(queue_ ## label ## _label));                     \
+    (so) = (sonext)
+#else
+#define CONTINUE(label) continue;
+# define LOOP_LABEL(label, so, sonext) /* empty*/
+#endif
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 
 # define DO_ENGAGE_EVENT1(so, fdset, label)          \
@@ -47,18 +58,18 @@
  */
 # define ICMP_ENGAGE_EVENT(so, fdset)                do {} while(0)
 
-# define DO_ENGAGE_EVENT1(so, fdset1, label)         \
-    do {                                             \
-        rc = WSAEventSelect((so)->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS); \
-        if (rc == SOCKET_ERROR)                      \
-        {                                            \
-            /* This should not happen */             \
-            error = WSAGetLastError();               \
-            LogRel(("WSAEventSelector (" #label ") error %d (so=%x, socket=%s, event=%x)\n", \
-                        error, (so), (so)->s, VBOX_SOCKET_EVENT)); \
-        }                                            \
-    } while(0);					     \
-    continue
+# define DO_ENGAGE_EVENT1(so, fdset1, label)                                                    \
+    do {                                                                                        \
+        rc = WSAEventSelect((so)->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);                         \
+        if (rc == SOCKET_ERROR)                                                                 \
+        {                                                                                       \
+            /* This should not happen */                                                        \
+            error = WSAGetLastError();                                                          \
+            LogRel(("WSAEventSelector (" #label ") error %d (so=%x, socket=%s, event=%x)\n",    \
+                        error, (so), (so)->s, VBOX_SOCKET_EVENT));                              \
+        }                                                                                       \
+    } while(0);					                                                                \
+    CONTINUE(label)
 
 # define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label) \
     DO_ENGAGE_EVENT1((so), (fdset1), label)
@@ -69,7 +80,7 @@
     {                                                                       \
         (error) = WSAGetLastError();                                        \
         LogRel(("WSAEnumNetworkEvents " #label " error %d\n", (error)));    \
-        continue;                                                           \
+        CONTINUE(label);                                                    \
     }
 
 # define acceptds_win FD_ACCEPT
@@ -92,19 +103,19 @@
 #endif /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
 
 #define TCP_ENGAGE_EVENT1(so, fdset) \
-    DO_ENGAGE_EVENT1((so), (fdset), TCP)
+    DO_ENGAGE_EVENT1((so), (fdset), tcp)
 
 #define TCP_ENGAGE_EVENT2(so, fdset1, fdset2) \
-    DO_ENGAGE_EVENT2((so), (fdset1), (fdset2), TCP)
+    DO_ENGAGE_EVENT2((so), (fdset1), (fdset2), tcp)
 
 #define UDP_ENGAGE_EVENT(so, fdset) \
-    DO_ENGAGE_EVENT1((so), (fdset), UDP)
+    DO_ENGAGE_EVENT1((so), (fdset), udp)
 
 #define POLL_TCP_EVENTS(rc, error, so, events) \
-    DO_POLL_EVENTS((rc), (error), (so), (events), TCP)
+    DO_POLL_EVENTS((rc), (error), (so), (events), tcp)
 
 #define POLL_UDP_EVENTS(rc, error, so, events) \
-    DO_POLL_EVENTS((rc), (error), (so), (events), UDP)
+    DO_POLL_EVENTS((rc), (error), (so), (events), udp)
 
 #define CHECK_FD_SET(so, events, set)           \
     (DO_CHECK_FD_SET((so), (events), set))
@@ -581,10 +592,8 @@ void slirp_select_fill(PNATState pData, int *pnfds,
         STAM_COUNTER_RESET(&pData->StatTCP);
         STAM_COUNTER_RESET(&pData->StatTCPHot);
 
-        for (so = tcb.so_next; so != &tcb; so = so_next)
-        {
-            so_next = so->so_next;
-
+        QSOCKET_FOREACH(so, so_next, tcp)
+        /* { */
             STAM_COUNTER_INC(&pData->StatTCP);
 
             /*
@@ -598,7 +607,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
              * newly socreated() sockets etc. Don't want to select these.
              */
             if (so->so_state & SS_NOFDREF || so->s == -1)
-                continue;
+                CONTINUE(tcp);
 
             /*
              * Set for reading sockets which are accepting
@@ -607,7 +616,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             {
                 STAM_COUNTER_INC(&pData->StatTCPHot);
                 TCP_ENGAGE_EVENT1(so, readfds);
-                continue;
+                CONTINUE(tcp);
             }
 
             /*
@@ -639,6 +648,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                 STAM_COUNTER_INC(&pData->StatTCPHot);
                 TCP_ENGAGE_EVENT2(so, readfds, xfds);
             }
+            LOOP_LABEL(tcp, so, so_next);
         }
 
         /*
@@ -647,8 +657,8 @@ void slirp_select_fill(PNATState pData, int *pnfds,
         STAM_COUNTER_RESET(&pData->StatUDP);
         STAM_COUNTER_RESET(&pData->StatUDPHot);
 
-        for (so = udb.so_next; so != &udb; so = so_next)
-        {
+        QSOCKET_FOREACH(so, so_next, udp)
+        /* { */
             so_next = so->so_next;
 
             STAM_COUNTER_INC(&pData->StatUDP);
@@ -661,7 +671,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                 if (so->so_expire <= curtime)
                 {
                     udp_detach(pData, so);
-                    continue;
+                    CONTINUE(udp);
                 }
                 else
                     do_slowtimo = 1; /* Let socket expire */
@@ -682,6 +692,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                 STAM_COUNTER_INC(&pData->StatUDPHot);
                 UDP_ENGAGE_EVENT(so, readfds);
             }
+            LOOP_LABEL(udp, so, so_next);
         }
 
     }
@@ -767,7 +778,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
              * (and they can crash the program)
              */
             if (so->so_state & SS_NOFDREF || so->s == -1)
-                continue;
+                CONTINUE(tcp);
 
             POLL_TCP_EVENTS(rc, error, so, &NetworkEvents);
 
@@ -800,7 +811,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
                     if (!(NetworkEvents.lNetworkEvents & FD_CLOSE))
 #endif
-                        continue;
+                        CONTINUE(tcp);
                 }
 
                 ret = soread(pData, so, /*fCloseIfNothingRead=*/false);
@@ -858,7 +869,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                             || errno == EWOULDBLOCK
                             || errno == EINPROGRESS
                             || errno == ENOTCONN)
-                            continue;
+                            CONTINUE(tcp);
 
                         /* else failed */
                         so->so_state = SS_NOFDREF;
@@ -898,7 +909,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                         || errno == EINPROGRESS
                         || errno == ENOTCONN)
                     {
-                        continue; /* Still connecting, continue */
+                        CONTINUE(tcp); /* Still connecting, continue */
                     }
 
                     /* else failed */
@@ -917,7 +928,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                             || errno == EINPROGRESS
                             || errno == ENOTCONN)
                         {
-                            continue;
+                            CONTINUE(tcp);
                         }
                         /* else failed */
                         so->so_state = SS_NOFDREF;
@@ -929,6 +940,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 tcp_input((struct mbuf *)NULL, sizeof(struct ip),so);
             } /* SS_ISFCONNECTING */
 #endif
+            LOOP_LABEL(tcp, so, so_next);
         }
 
         /*
@@ -948,15 +960,18 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             {
                 sorecvfrom(pData, so);
             }
+            LOOP_LABEL(udp, so, so_next);
         }
 
     }
 
+#ifndef VBOX_WITH_SLIRP_MT
     /*
      * See if we can start outputting
      */
     if (if_queued && link_up)
         if_start(pData);
+#endif
 
     STAM_PROFILE_STOP(&pData->StatPoll, a);
 }
