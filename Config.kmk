@@ -526,6 +526,15 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
+ ifeq ($(KBUILD_TARGET_ARCH),amd64)
+  # Temporary:
+  VBOX_WITH_QTGUI=
+  VBOX_WITH_MAIN=
+  VBOX_WITH_DEBUGGER_GUI=
+  VBOX_WITH_VBOXSDL=
+  VBOX_WITH_VBOXBFE=
+  VBOX_WITH_WEBSERVICES=
+ endif
 endif
 
 ifeq ($(KBUILD_TARGET),freebsd)
@@ -812,7 +821,11 @@ ifeq ($(VBOX_LDR_FMT),lx)
  VBOX_ASFLAGS_DBFINFO = -g stabs
 endif
 ifeq ($(VBOX_LDR_FMT),macho)
- VBOX_ASFLAGS_FMT = -f macho -DASM_FORMAT_MACHO
+ ifeq ($(KBUILD_TARGET_ARCH),x86)
+  VBOX_ASFLAGS_FMT = -f macho32 -DASM_FORMAT_MACHO
+ else
+  VBOX_ASFLAGS_FMT = -f macho64 -DASM_FORMAT_MACHO
+ endif
  VBOX_ASFLAGS_DBFINFO = -g dwarf2
 endif
 ifeq ($(VBOX_LDR_FMT),pe)
@@ -836,7 +849,7 @@ ifeq ($(VBOX_LDR_FMT32),lx)
  VBOX_ASFLAGS_DBFINFO32 = -g stabs
 endif
 ifeq ($(VBOX_LDR_FMT32),macho)
- VBOX_ASFLAGS_FMT32 = -f macho -DASM_FORMAT_MACHO
+ VBOX_ASFLAGS_FMT32 = -f macho32 -DASM_FORMAT_MACHO
  VBOX_ASFLAGS_DBFINFO32 = -g dwarf2
 endif
 ifeq ($(VBOX_LDR_FMT32),pe)
@@ -1355,7 +1368,11 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 # Macros dealing with the darwin version we're targeting.
 #
 ifeq ($(KBUILD_TARGET),darwin)
- VBOX_DEF_MACOSX_VERSION_MIN ?= 10.4
+ ifeq ($(KBUILD_TARGET_ARCH),x86)
+  VBOX_DEF_MACOSX_VERSION_MIN ?= 10.4
+ else
+  VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
+ endif
  ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
   ifeq ($(origin VBOX_DARWIN_CLASSIC_LINKER),undefined)
    VBOX_DARWIN_CLASSIC_LINKER := $(shell ld -v 2>&1 )
@@ -1391,6 +1408,14 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS  := -mmacosx-version-min=10.5 -isysroot $(VBOX_PATH_MACOSX_SDK_10_5)
  VBOX_DARWIN_DEF_SDK_10_5_OBJCFLAGS := -mmacosx-version-min=10.5 -isysroot $(VBOX_PATH_MACOSX_SDK_10_5)
  VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS   := -mmacosx-version-min=10.5 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_5)
+
+ # specific versions.
+ VBOX_PATH_MACOSX_SDK_10_6          ?= /Developer/SDKs/MacOSX10.6.sdk
+ VBOX_DARWIN_DEF_SDK_10_6_DEFS      := MAC_OS_X_VERSION_MIN_REQUIRED=1060 MAC_OS_X_VERSION_MAX_ALLOWED=1060
+ VBOX_DARWIN_DEF_SDK_10_6_CFLAGS    := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
+ VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS  := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
+ VBOX_DARWIN_DEF_SDK_10_6_OBJCFLAGS := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
+ VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS   := -mmacosx-version-min=10.6 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_6)
 
 endif # target=darwin
 
@@ -1898,9 +1923,9 @@ endif
 ifeq ($(VBOX_LDR_FMT32),macho)
 TEMPLATE_VBOXGC_TOOL                = GXX4MACHO
 TEMPLATE_VBOXGC_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
-TEMPLATE_VBOXGC_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
-TEMPLATE_VBOXGC_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS)   -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
-TEMPLATE_VBOXGC_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)  -nostdlib
+TEMPLATE_VBOXGC_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -m32 -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXGC_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS)   -m32 -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXGC_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)  -m32 -nostdlib
 #TEMPLATE_VBOXGC_LDFLAGS.release     = -Wl,-S ???
 endif
 
@@ -2017,10 +2042,20 @@ endif
 ifeq ($(VBOX_LDR_FMT),macho)
 TEMPLATE_VBOXR0_TOOL                = GXX4MACHO
 TEMPLATE_VBOXR0_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
-TEMPLATE_VBOXR0_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC_Wno-variadic-macros) -fno-common -msoft-float -static -fno-rtti -fno-exceptions $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
-TEMPLATE_VBOXR0_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS)   -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC_Wno-variadic-macros) -fno-common -msoft-float -static -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing
-TEMPLATE_VBOXR0_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)  -nostdlib
+TEMPLATE_VBOXR0_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC_Wno-variadic-macros) \
+	-fno-common -msoft-float -static -fno-rtti -fno-exceptions $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
+	-mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+TEMPLATE_VBOXR0_CXXFLAGS.amd64      = -m64 -mno-red-zone -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2  -mno-sse4a
+TEMPLATE_VBOXR0_CXXFLAGS.x86        = -m32
+TEMPLATE_VBOXR0_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS)   -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC_Wno-variadic-macros) \
+	-fno-common -msoft-float -static -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
+	-mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+TEMPLATE_VBOXR0_CFLAGS.amd64        = -m64 -mno-red-zone -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2  -mno-sse4a
+TEMPLATE_VBOXR0_CFLAGS.x86          = -m32
+TEMPLATE_VBOXR0_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -nostdlib
 #TEMPLATE_VBOXR0_LDFLAGS.release     = -Wl,-S ???
+TEMPLATE_VBOXR0_LDFLAGS.amd64       = -m64
+TEMPLATE_VBOXR0_LDFLAGS.x86         = -m32
 endif
 
 ifeq ($(VBOX_LDR_FMT),lx)
@@ -2105,19 +2140,26 @@ TEMPLATE_VBOXR0DRV_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS) KERNEL KERN
 TEMPLATE_VBOXR0DRV_INCS               += $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) \
 	-g -pipe $(VBOX_GCC_WARN) -Wno-long-long -fno-common -nostdinc -fno-builtin -finline \
-	-fno-keep-inline-functions -force_cpusubtype_ALL -fno-exceptions -msoft-float -static \
+	-fno-keep-inline-functions -fno-exceptions -msoft-float -static \
 	-fapple-kext -fno-rtti -fcheck-new
+## @todo check what Xcode does wrt -mno-sse -mno-mmx -mno-sse2 -mno-3dnow on amd64.
+TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = -m64 -mno-red-zone
+TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32 -force_cpusubtype_ALL
 TEMPLATE_VBOXR0DRV_CXXFLAGS.release    = $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing -fasm-blocks
 TEMPLATE_VBOXR0DRV_CXXFLAGS.profile    = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
 TEMPLATE_VBOXR0DRV_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
 TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) \
 	-g -pipe $(VBOX_GCC_WARN) -Wno-long-long -fno-common -nostdinc -fno-builtin -finline \
-	-fno-keep-inline-functions -force_cpusubtype_ALL -fno-exceptions -msoft-float -static \
+	-fno-keep-inline-functions -fno-exceptions -msoft-float -static \
 	-Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-red-zone
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -force_cpusubtype_ALL
 TEMPLATE_VBOXR0DRV_CFLAGS.release      = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
 TEMPLATE_VBOXR0DRV_CFLAGS.profile      = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.profile)
 TEMPLATE_VBOXR0DRV_CFLAGS.kprofile     = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.kprofile)
 TEMPLATE_VBOXR0DRV_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -static -nostdlib -r -Wl,-Y,1455 -keep_private_extern
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
+TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
 
 TEMPLATE_VBOXR0DRVOSX105               = Mac OS X 10.5 variant.
