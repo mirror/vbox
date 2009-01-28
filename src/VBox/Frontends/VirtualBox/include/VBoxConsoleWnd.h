@@ -216,7 +216,6 @@ private slots:
     void updateUsbState();
     void updateMediaDriveState (VBoxDefs::MediaType aType);
     void updateSharedFoldersState();
-    void updateACPIStatus();
 
     void tryClose();
 
@@ -325,9 +324,6 @@ private:
     QTimer *idle_timer;
     KMachineState machine_state;
     QString caption_prefix;
-
-    QTimer *mACPITimer;
-    bool mACPIEnabled : 1;
 
     bool no_auto_close : 1;
 
