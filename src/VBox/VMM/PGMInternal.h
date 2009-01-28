@@ -2971,6 +2971,11 @@ int             pgmPoolMonitorMonitorCR3(PPGMPOOL pPool, uint16_t idxRoot, RTGCP
 int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
 #endif
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+void            pgmMapClearShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE);
+void            pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
+#endif
+
 __END_DECLS
 
 

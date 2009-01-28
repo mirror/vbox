@@ -328,6 +328,9 @@ VMMDECL(int)        PGMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTG
 VMMDECL(int)        PGMMap(PVM pVM, RTGCPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPages, unsigned fFlags);
 VMMDECL(int)        PGMMapSetPage(PVM pVM, RTGCPTR GCPtr, uint64_t cb, uint64_t fFlags);
 VMMDECL(int)        PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+VMMDECL(int)        PGMMapActivateAll(PVM pVM);
+VMMDECL(int)        PGMMapDeactivateAll(PVM pVM);
+
 VMMDECL(int)        PGMShwGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
 VMMDECL(int)        PGMShwSetPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
 VMMDECL(int)        PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
@@ -547,8 +550,6 @@ VMMR3DECL(int)      PGMR3MappingsUnfix(PVM pVM);
 VMMR3DECL(int)      PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages);
 VMMR3DECL(bool)     PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0);
 VMMR3DECL(int)      PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
-VMMR3DECL(int)      PGMR3MapActivate(PVM pVM);
-VMMR3DECL(int)      PGMR3MapDeactivate(PVM pVM);
 
 VMMR3DECL(int)      PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                                  PFNPGMR3PHYSHANDLER pfnHandlerR3, void *pvUserR3,
