@@ -163,9 +163,27 @@ AssertCompileSize(RTGCPHYS, 8);
 #if ARCH_BITS == 64
 
 AssertCompileSize(void *, 8);
+AssertCompileSize(intptr_t, 8);
+AssertCompileSize(uintptr_t, 8);
+AssertCompileSize(size_t, 8);
+AssertCompileSize(ssize_t, 8);
 
 #else
 
 AssertCompileSize(void *, 4);
+AssertCompileSize(intptr_t, 4);
+AssertCompileSize(uintptr_t, 4);
+AssertCompileSize(size_t, 4);
+AssertCompileSize(ssize_t, 4);
 
 #endif
+
+
+/*
+ * Standard sized types.
+ */
+AssertCompileSize(uint8_t,  1);
+AssertCompileSize(uint16_t, 2);
+AssertCompileSize(uint32_t, 4);
+AssertCompileSize(uint64_t, 8);
+
