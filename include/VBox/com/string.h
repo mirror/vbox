@@ -441,6 +441,10 @@ public:
         cannot typecast implicitly (for example, in printf() argument list). */
     const char *raw() const { return str; }
 
+    /** The same as operator const char *(), but for situations where the compiler
+        cannot typecast implicitly (for example, in printf() argument list). */
+    const char *c_str() const { return str; }
+
     /**
      *  Returns a non-const raw pointer that allows to modify the string directly.
      *  @warning
@@ -494,6 +498,10 @@ public:
         }
         return *this;
     }
+
+    static const size_t npos;
+
+    Utf8Str substr(size_t pos = 0, size_t n = npos) const;
 
     /**
      *  Intended to pass instances as out (|char **|) parameters to methods.
