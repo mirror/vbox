@@ -45,9 +45,25 @@
 
 #include <iprt/cdefs.h>
 
-#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(__IBMC__) && !defined(__IBMCPP__) \
-  && !defined(IPRT_NO_CRT) && !defined(IPRT_DONT_USE_SYSTEM_STDINT_H) && !defined(DOXYGEN_RUNNING)
+#if !(defined(RT_OS_LINUX) && defined(__KERNEL__))  \
+  && !defined(_MSC_VER) \
+  && !defined(__IBMC__) \
+  && !defined(__IBMCPP__) \
+  && !defined(IPRT_NO_CRT) \
+  && !defined(IPRT_DONT_USE_SYSTEM_STDINT_H) \
+  && !defined(DOXYGEN_RUNNING)
 # include <stdint.h>
+
+# if defined(RT_OS_DARWIN) && defined(KERNEL) && defined(RT_ARCH_AMD64)
+/* Kludge to fix the incorrect 32-bit constant macros in
+   Kernel.framework/Headers/stdin.h. uint32_t and int32_t are
+   int not long as these macros use, which is significant when
+   targeting AMD64. (10a222) */
+#  undef  INT32_C
+#  define INT32_C(c)        (c)
+#  undef  UINT32_C
+#  define UINT32_C(c)       (c ## U)
+# endif /* 64-bit darwin kludge. */
 
 #else
 
