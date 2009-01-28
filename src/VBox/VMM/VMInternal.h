@@ -399,7 +399,7 @@ typedef struct VMINTUSERPERVM
     /** Pointer to the DBGC instance data. */
     void                           *pvDBGC;
 
-    /* TLS index for the VMINTUSERPERVMCPU pointer. */
+    /** TLS index for the VMINTUSERPERVMCPU pointer. */
     RTTLS                           idxTLS;
 } VMINTUSERPERVM;
 

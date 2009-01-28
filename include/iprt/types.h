@@ -1109,7 +1109,7 @@ typedef RTTHREAD                                   *PRTTHREAD;
 #define NIL_RTTHREAD                                0
 
 /** A TLS index. */
-typedef int                                         RTTLS;
+typedef RTHCINTPTR                                  RTTLS;
 /** Pointer to a TLS index. */
 typedef RTTLS                                      *PRTTLS;
 /** Pointer to a const TLS index. */
