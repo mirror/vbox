@@ -350,7 +350,6 @@ static int vboxadd_hgcm_disconnect(struct file *filp, unsigned long userspace_in
             rc = -EFAULT;
         }
         if (rc >= 0) {
-            LogRelFunc(("client ID %u\n", info.u32ClientID));
             vrc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT,
                                    &info);
             rc = -RTErrConvertToErrno(vrc);
@@ -551,7 +550,6 @@ static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
         }
         if (rc >= 0) {
                 int vrc;
-                LogRelFunc(("client ID %u\n", pInfo->u32ClientID));
                 vrc = vboxadd_cmc_call(vboxDev,
                               VBOXGUEST_IOCTL_HGCM_CALL(u32Size), pInfo);
                 rc = -RTErrConvertToErrno(vrc);
@@ -611,7 +609,6 @@ static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
         }
         if (rc >= 0) {
                 int vrc;
-                LogRelFunc(("client ID %u\n", pInfo->info.u32ClientID));
                 pInfo->fInterruptible = true;  /* User space may not do uninterruptible waits */
                 vrc = vboxadd_cmc_call(vboxDev,
                               VBOXGUEST_IOCTL_HGCM_CALL_TIMED(u32Size), pInfo);
