@@ -149,8 +149,13 @@ public:
 
     /* private instance data */
 private:
-    void addEntry(VirtualSystemDescriptionType_T aType, std::string aRef, std::string aOrigValue, std::string aAutoValue, std::string aConfig = "");
-    std::list<VirtualSystemDescriptionEntry> findByType(VirtualSystemDescriptionType_T aType);
+    void addEntry(VirtualSystemDescriptionType_T aType,
+                  const std::string &aRef,
+                  const std::string &aOrigValue,
+                  const std::string &aAutoValue,
+                  const std::string &aConfig = "");
+
+    std::list<VirtualSystemDescriptionEntry*> findByType(VirtualSystemDescriptionType_T aType);
 
     struct Data;
     Data *m;
