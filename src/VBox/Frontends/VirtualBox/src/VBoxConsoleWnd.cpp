@@ -223,7 +223,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 #endif
     , console (0)
     , machine_state (KMachineState_Null)
-    , mACPIEnabled (false)
     , no_auto_close (false)
     , mIsFullscreen (false)
     , mIsSeamless (false)
@@ -244,7 +243,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
         *aSelf = this;
 
     idle_timer = new QTimer (this);
-    mACPITimer = new QTimer (this);
 
 #if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
     /* The default application icon (will change to the VM-specific icon in
@@ -915,10 +913,6 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     connect (idle_timer, SIGNAL (timeout()), SLOT (updateDeviceLights()));
     idle_timer->start (50);
 
-    /* start an idle timer that will update acpi status */
-    connect (mACPITimer, SIGNAL (timeout()), SLOT (updateACPIStatus()));
-    mACPITimer->start (1000);
-
     connect (console, SIGNAL (mouseStateChanged (int)),
              this, SLOT (updateMouseState (int)));
     connect (console, SIGNAL (keyboardStateChanged (int)),
@@ -1279,6 +1273,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
     static const char *kPowerOff = "powerOff";
     static const char *kDiscardCurState = "discardCurState";
 
+    bool isACPIEnabled = csession.GetConsole().GetGuestEnteredACPIMode();
+
     if (!console)
     {
         e->accept();
@@ -1346,7 +1342,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                     dlg.mRbSave->setChecked (true);
                     dlg.mRbSave->setFocus();
                 }
-                else if ((lastAction [0] == kPowerOff) && !mACPIEnabled)
+                else if ((lastAction [0] == kPowerOff) && !isACPIEnabled)
                 {
                     dlg.mRbShutdown->setEnabled (false);
                     dlg.mRbPowerOff->setChecked (true);
@@ -1517,10 +1513,6 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
         /* Stop LED update timer */
         idle_timer->stop();
         idle_timer->disconnect (SIGNAL (timeout()), this, SLOT (updateDeviceLights()));
-
-        /* Stop ACPI update timer */
-        mACPITimer->stop();
-        mACPITimer->disconnect (SIGNAL (timeout()), this, SLOT (updateACPIStatus()));
 
         /* Hide console window */
         hide();
@@ -2608,7 +2600,7 @@ void VBoxConsoleWnd::vmPause (bool on)
 
 void VBoxConsoleWnd::vmACPIShutdown()
 {
-    if (!mACPIEnabled)
+    if (!csession.GetConsole().GetGuestEnteredACPIMode())
         return vboxProblem().cannotSendACPIToMachine();
 
     if (console)
@@ -3543,11 +3535,6 @@ void VBoxConsoleWnd::updateUsbState()
 void VBoxConsoleWnd::updateNetworkAdarptersState()
 {
     updateAppearanceOf (NetworkStuff);
-}
-
-void VBoxConsoleWnd::updateACPIStatus()
-{
-    mACPIEnabled = csession.GetConsole().GetGuestEnteredACPIMode();
 }
 
 /**
