@@ -2341,11 +2341,11 @@ HRESULT Host::checkUSBProxyService()
 # else
                 tr ("The USB Proxy Service could not be started, because the USB file system (usbfs) is not available")
 # endif
-                              );
-#else
+                );
+#else  /* !RT_OS_LINUX */
             return setWarning (E_FAIL,
                 tr ("The USB Proxy Service has not yet been ported to this host"));
-#endif
+#endif /* !RT_OS_LINUX */
         return setWarning (E_FAIL,
             tr ("Could not load the Host USB Proxy service (%Rrc)"),
             mUSBProxyService->getLastError());
@@ -3318,17 +3318,17 @@ void Host::unregisterMetrics (PerformanceCollector *aCollector)
 };
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
-STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInterface **networkInterface) 
-{ 
+STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInterface **networkInterface)
+{
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
 #else
-    if (!name) 
-        return E_INVALIDARG; 
-    if (!networkInterface) 
-        return E_POINTER; 
-    
-    *networkInterface = NULL; 
+    if (!name)
+        return E_INVALIDARG;
+    if (!networkInterface)
+        return E_POINTER;
+
+    *networkInterface = NULL;
     ComObjPtr <HostNetworkInterface> found;
     std::list <ComObjPtr <HostNetworkInterface> > list;
     int rc = NetIfList(list);
@@ -3346,25 +3346,25 @@ STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInte
             found = *it;
     }
 
-    if (!found) 
-        return setError (E_INVALIDARG, HostNetworkInterface::tr ( 
-                             "The host network interface with the given name could not be found")); 
-	 	 
-    return found.queryInterfaceTo (networkInterface); 
+    if (!found)
+        return setError (E_INVALIDARG, HostNetworkInterface::tr (
+                             "The host network interface with the given name could not be found"));
+
+    return found.queryInterfaceTo (networkInterface);
 #endif
-} 
-	 	 
-STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_GUID id, IHostNetworkInterface **networkInterface) 
-{ 
+}
+
+STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_GUID id, IHostNetworkInterface **networkInterface)
+{
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
 #else
-    if (Guid(id).isEmpty()) 
-        return E_INVALIDARG; 
-    if (!networkInterface) 
-        return E_POINTER; 
-	 	 
-    *networkInterface = NULL; 
+    if (Guid(id).isEmpty())
+        return E_INVALIDARG;
+    if (!networkInterface)
+        return E_POINTER;
+
+    *networkInterface = NULL;
     ComObjPtr <HostNetworkInterface> found;
     std::list <ComObjPtr <HostNetworkInterface> > list;
     int rc = NetIfList(list);
@@ -3375,19 +3375,19 @@ STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_GUID id, IHostNetworkInterfac
     }
     std::list <ComObjPtr <HostNetworkInterface> >::iterator it;
     for (it = list.begin(); it != list.end(); ++it)
-    { 
-        Guid g; 
-        (*it)->COMGETTER(Id) (g.asOutParam()); 
-        if (g == Guid(id)) 
-            found = *it; 
-    } 
-	 	 
-    if (!found) 
-        return setError (E_INVALIDARG, HostNetworkInterface::tr ( 
-                             "The host network interface with the given GUID could not be found")); 
-	 	 
-    return found.queryInterfaceTo (networkInterface); 
+    {
+        Guid g;
+        (*it)->COMGETTER(Id) (g.asOutParam());
+        if (g == Guid(id))
+            found = *it;
+    }
+
+    if (!found)
+        return setError (E_INVALIDARG, HostNetworkInterface::tr (
+                             "The host network interface with the given GUID could not be found"));
+
+    return found.queryInterfaceTo (networkInterface);
 #endif
-} 
-	 	 
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
