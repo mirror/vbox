@@ -2982,7 +2982,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="36209b5a-8f96-44de-a0af-1bb037cef324"
+    uuid="8ac36d00-bb7c-4a35-a835-3f004b27427b"
   >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -3067,10 +3067,6 @@
       </desc>
 
       <param name="aTypes" type="VirtualSystemDescriptionType" dir="out" safearray="yes">
-        <desc></desc>
-      </param>
-
-      <param name="aRefs" type="unsigned long" dir="out" safearray="yes">
         <desc></desc>
       </param>
 

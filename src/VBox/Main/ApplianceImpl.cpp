@@ -22,6 +22,8 @@
 
 #include <iprt/stream.h>
 #include <iprt/path.h>
+#include <iprt/dir.h>
+#include <iprt/file.h>
 
 #include "ApplianceImpl.h"
 #include "VirtualBoxImpl.h"
@@ -131,7 +133,7 @@ struct HardDiskController
 {
     uint32_t             idController;           // instance ID (Item/InstanceId); this gets referenced from HardDisk
     ControllerSystemType controllerSystem;       // one of IDE, SATA, SCSI
-    string               strControllerType;      // controller type (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
+    string               strControllerType;      // controllertype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
     string               strAddress;             // for IDE
     uint32_t             ulBusNumber;            // for IDE
 
@@ -153,6 +155,8 @@ struct VirtualDisk
                                                 // references in Appliance::Data.mapDisks
 };
 
+typedef map<string, VirtualDisk> VirtualDisksMap;
+
 struct VirtualSystem
 {
     string              strName;                // copy of VirtualSystem/@id
@@ -173,7 +177,7 @@ struct VirtualSystem
             // list of hard disk controllers
             // (one for each VirtualSystem/Item[@ResourceType=6] element with accumulated data from children)
 
-    list<VirtualDisk>   llVirtualDisks;
+    VirtualDisksMap     mapVirtualDisks;
             // (one for each VirtualSystem/Item[@ResourceType=17] element with accumulated data from children)
 
     string              strLicenceInfo;     // license info if any; receives contents of VirtualSystem/EulaSection/Info
@@ -712,7 +716,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                             i.strHostResource.c_str(),
                                             i.ulLineNumber);
 
-                        d.llVirtualDisks.push_back(vd);
+                        d.mapVirtualDisks[vd.strDiskId] = vd;
                     }
                     break;
                 }
@@ -912,6 +916,8 @@ STDMETHODIMP Appliance::Interpret()
     //  - COM error handling
     //  - don't use COM methods but the methods directly (faster, but needs appropriate locking of that objects itself (s. HardDisk2))
     //  - Appropriate handle errors like not supported file formats
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     HRESULT rc = S_OK;
 
@@ -920,8 +926,8 @@ STDMETHODIMP Appliance::Interpret()
     m->virtualSystemDescriptions.clear();
 
     /* We need the default path for storing disk images */
-    ISystemProperties *systemProps = NULL;
-    rc = mVirtualBox->COMGETTER(SystemProperties)(&systemProps);
+    ComPtr<ISystemProperties> systemProps;
+    rc = mVirtualBox->COMGETTER(SystemProperties)(systemProps.asOutParam());
     ComAssertComRCThrowRC(rc);
     BSTR defaultHardDiskLocation;
     rc = systemProps->COMGETTER(DefaultHardDiskFolder)(&defaultHardDiskLocation);
@@ -1123,7 +1129,7 @@ STDMETHODIMP Appliance::Interpret()
                     osTypeVBox = SchemaDefs_OSTypeId_Other;
                 }
         }
-        vsd->addEntry(VirtualSystemDescriptionType_OS, 0, toString<ULONG>(vs.cimos), osTypeVBox);
+        vsd->addEntry(VirtualSystemDescriptionType_OS, "", toString<ULONG>(vs.cimos), osTypeVBox);
 
         /* VM name */
         /* If the there isn't any name specified create a default one out of
@@ -1132,11 +1138,11 @@ STDMETHODIMP Appliance::Interpret()
         if (nameVBox == "")
             nameVBox = osTypeVBox;
         searchUniqueVMName(nameVBox);
-        vsd->addEntry(VirtualSystemDescriptionType_Name, 0, vs.strName, nameVBox);
+        vsd->addEntry(VirtualSystemDescriptionType_Name, "", vs.strName, nameVBox);
 
         /* Now that we know the base system get our internal defaults based on that. */
-        IGuestOSType *osType = NULL;
-        rc = mVirtualBox->GetGuestOSType(Bstr(Utf8Str(osTypeVBox.c_str())), &osType);
+        ComPtr<IGuestOSType> osType;
+        rc = mVirtualBox->COMGETTER(GuestOSType)(Bstr(Utf8Str(osTypeVBox.c_str())), osType.asOutParam());
         ComAssertComRCThrowRC(rc);
 
         /* CPU count */
@@ -1144,7 +1150,7 @@ STDMETHODIMP Appliance::Interpret()
         ULONG cpuCountVBox = vs.cCPUs;
         if (vs.cCPUs == 0)
             cpuCountVBox = 1;
-        vsd->addEntry(VirtualSystemDescriptionType_CPU, 0, toString<ULONG>(vs.cCPUs), toString<ULONG>(cpuCountVBox));
+        vsd->addEntry(VirtualSystemDescriptionType_CPU, "", toString<ULONG>(vs.cCPUs), toString<ULONG>(cpuCountVBox));
 
         /* RAM */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
@@ -1158,7 +1164,7 @@ STDMETHODIMP Appliance::Interpret()
             /* VBox stores that in MByte */
             ullMemSizeVBox = memSizeVBox2 * _1M;
         }
-        vsd->addEntry(VirtualSystemDescriptionType_Memory, 0, toString<uint64_t>(vs.ullMemorySize), toString<uint64_t>(ullMemSizeVBox));
+        vsd->addEntry(VirtualSystemDescriptionType_Memory, "", toString<uint64_t>(vs.ullMemorySize), toString<uint64_t>(ullMemSizeVBox));
 
         /* Hard disk Controller */
         ControllersMap::const_iterator hdcIt;
@@ -1179,43 +1185,65 @@ STDMETHODIMP Appliance::Interpret()
                             hdcController = IDEControllerType_PIIX3;
                         else if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX4"))
                             hdcController = IDEControllerType_PIIX4;
-                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerIDE, hdc.idController, hdc.strControllerType, toString<ULONG>(hdcController));
+                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerIDE, toString<uint32_t>(hdc.idController), hdc.strControllerType, toString<ULONG>(hdcController));
                         break;
                     }
+#ifdef VBOX_WITH_AHCI
                 case SATA:
                     {
                         // @todo: figure out the SATA types
                         /* We only support a plain AHCI controller, so use them always */
-                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerSATA, hdc.idController, hdc.strControllerType, "AHCI");
+                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerSATA, toString<uint32_t>(hdc.idController), hdc.strControllerType, "AHCI");
                         break;
                     }
+#endif /* VBOX_WITH_AHCI */
+#ifdef VBOX_WITH_SCSI
                 case SCSI:
                     {
-                        string hdcController = "LsiLogic";
                         // @todo: figure out the SCSI types
+# ifdef VBOX_WITH_LSILOGIC
+                        string hdcController = "LsiLogic";
+# elif VBOX_WITH_BUSLOGIC
+                        string hdcController = "BusLogic";
+# else /* !VBOX_WITH_BUSLOGIC */
+                        string hdcController;
+# endif
+# ifdef VBOX_WITH_LSILOGIC
                         if (!RTStrICmp(hdc.strControllerType.c_str(), "LsiLogic"))
                             hdcController = "LsiLogic";
-                        else if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
+# endif /* VBOX_WITH_LSILOGIC */
+# ifdef VBOX_WITH_BUSLOGIC
+                        if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
                             hdcController = "BusLogic";
-                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerSCSI, hdc.idController, hdc.strControllerType, hdcController);
+# endif /* VBOX_WITH_BUSLOGIC */
+                        vsd->addEntry(VirtualSystemDescriptionType_HarddiskControllerSCSI, toString<uint32_t>(hdc.idController), hdc.strControllerType, hdcController);
                         break;
+                    }
+#endif /* VBOX_WITH_SCSI */
+                default:
+                    {
+                    /* @todo: hmm, ok, this needs some explanation to the user,
+                     * so set an error! The other possibility is to set IDE
+                     * PIIX4 as default & redirect all hard disks to this
+                     * controller. */
+                    break;
                     }
             }
         }
 
         /* Hard disks */
-        if (vs.llVirtualDisks.size() > 0)
+        if (vs.mapVirtualDisks.size() > 0)
         {
             // @todo:
             //  - strHref could be empty (construct a new default file name)
             //  - check that the filename is unique to vbox in any case
-            list<VirtualDisk>::const_iterator hdIt;
+            VirtualDisksMap::const_iterator hdIt;
             /* Iterate through all hard disks ()*/
-            for (hdIt = vs.llVirtualDisks.begin();
-                 hdIt != vs.llVirtualDisks.end();
+            for (hdIt = vs.mapVirtualDisks.begin();
+                 hdIt != vs.mapVirtualDisks.end();
                  ++hdIt)
             {
-                VirtualDisk hd = *hdIt;
+                VirtualDisk hd = hdIt->second;
                 /* Get the associated disk image */
                 DiskImage di = m->mapDisks [hd.strDiskId];
                 /* We have to check if we support this format */
@@ -1233,7 +1261,9 @@ STDMETHODIMP Appliance::Interpret()
                 {
                     /* Construct the path */
                     string path = Utf8StrFmt("%ls%c%s", defaultHardDiskLocation, RTPATH_DELIMITER, di.strHref.c_str()).raw();
-                    vsd->addEntry(VirtualSystemDescriptionType_Harddisk, hd.idController, di.strHref, path);
+                    /* Make the path unique to the VBox installation */
+                    searchUniqueDiskImageFilePath(path);
+                    vsd->addEntry(VirtualSystemDescriptionType_Harddisk, hd.strDiskId, di.strHref, path);
                 }
             }
         }
@@ -1255,7 +1285,7 @@ STDMETHODIMP Appliance::Interpret()
                  ++nwIt, ++a)
             {
                 // string nwController = *nwIt; // @todo: not used yet
-                vsd->addEntry(VirtualSystemDescriptionType_NetworkAdapter, 0, "", toString<ULONG>(nwAdapterVBox));
+                vsd->addEntry(VirtualSystemDescriptionType_NetworkAdapter, "", "", toString<ULONG>(nwAdapterVBox));
             }
         }
         m->virtualSystemDescriptions.push_back(vsd);
@@ -1266,11 +1296,15 @@ STDMETHODIMP Appliance::Interpret()
 
 STDMETHODIMP Appliance::ImportAppliance()
 {
+    // @todo: we need definitely a IProgress object here (disk image copying, ...)
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
     HRESULT rc = S_OK;
 
     list<VirtualSystem>::const_iterator it;
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
-    /* Iterate through all appliances */
+    /* Iterate through all virtual systems of that appliance */
     size_t i = 0;
     for (it = m->llVirtualSystems.begin(),
          it1 = m->virtualSystemDescriptions.begin();
@@ -1286,8 +1320,8 @@ STDMETHODIMP Appliance::ImportAppliance()
         string osTypeVBox = vsdeOS.front().strFinalValue;
 
         /* Now that we know the base system get our internal defaults based on that. */
-        IGuestOSType *osType = NULL;
-        rc = mVirtualBox->GetGuestOSType(Bstr(Utf8Str(osTypeVBox.c_str())), &osType);
+        ComPtr<IGuestOSType> osType;
+        rc = mVirtualBox->COMGETTER(GuestOSType)(Bstr(Utf8Str(osTypeVBox.c_str())), osType.asOutParam());
         ComAssertComRCThrowRC(rc);
 
         /* Create the machine */
@@ -1295,10 +1329,10 @@ STDMETHODIMP Appliance::ImportAppliance()
         list<VirtualSystemDescriptionEntry> vsdeName = vsd->findByType(VirtualSystemDescriptionType_Name);
         Assert(vsdeName.size() == 1);
         string nameVBox = vsdeName.front().strFinalValue;
-        IMachine *newMachine = NULL;
+        ComPtr<IMachine> newMachine;
         rc = mVirtualBox->CreateMachine(Bstr(nameVBox.c_str()), Bstr(osTypeVBox.c_str()),
                                         Bstr(), Guid(),
-                                        &newMachine);
+                                        newMachine.asOutParam());
         ComAssertComRCThrowRC(rc);
 
         /* CPU count (ignored for now) */
@@ -1330,8 +1364,8 @@ STDMETHODIMP Appliance::ImportAppliance()
         if (vsdeNW.size() == 0)
         {
             /* No network adapters, so we have to disable our default one */
-            INetworkAdapter *nwVBox = NULL;
-            rc = newMachine->GetNetworkAdapter(0, &nwVBox);
+            ComPtr<INetworkAdapter> nwVBox;
+            rc = newMachine->GetNetworkAdapter(0, nwVBox.asOutParam());
             ComAssertComRCThrowRC(rc);
             rc = nwVBox->COMSETTER(Enabled)(false);
             ComAssertComRCThrowRC(rc);
@@ -1348,8 +1382,8 @@ STDMETHODIMP Appliance::ImportAppliance()
             {
                 string nwTypeVBox = nwIt->strFinalValue;
                 uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
-                INetworkAdapter *nwVBox = NULL;
-                rc = newMachine->GetNetworkAdapter((ULONG)a, &nwVBox);
+                ComPtr<INetworkAdapter> nwVBox;
+                rc = newMachine->GetNetworkAdapter((ULONG)a, nwVBox.asOutParam());
                 ComAssertComRCThrowRC(rc);
                 /* Enable the network card & set the adapter type */
                 /* NAT is set as default */
@@ -1359,10 +1393,155 @@ STDMETHODIMP Appliance::ImportAppliance()
                 ComAssertComRCThrowRC(rc);
             }
         }
+
+        /* Hard disk controller IDE */
+        list<VirtualSystemDescriptionEntry> vsdeHDCIDE = vsd->findByType(VirtualSystemDescriptionType_HarddiskControllerIDE);
+        /* @todo: we support one IDE controller only */
+        if (vsdeHDCIDE.size() > 0)
+        {
+             IDEControllerType_T hdcVBox = static_cast<IDEControllerType_T>(RTStrToUInt32(vsdeHDCIDE.front().strFinalValue.c_str()));
+             /* Set the appropriate IDE controller in the virtual BIOS of the
+              * VM. */
+             ComPtr<IBIOSSettings> biosSettings;
+             rc = newMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
+             CheckComRCReturnRC(rc);
+             rc = biosSettings->COMSETTER(IDEControllerType)(hdcVBox);
+             CheckComRCReturnRC(rc);
+        }
+#ifdef VBOX_WITH_AHCI
+        /* Hard disk controller SATA */
+        list<VirtualSystemDescriptionEntry> vsdeHDCSATA = vsd->findByType(VirtualSystemDescriptionType_HarddiskControllerSATA);
+        /* @todo: we support one SATA controller only */
+        if (vsdeHDCSATA.size() > 0)
+        {
+            string hdcVBox = vsdeHDCIDE.front().strFinalValue;
+            if (!RTStrCmp(hdcVBox.c_str(), "AHCI"))
+            {
+                /* For now we have just to enable the AHCI controller. */
+                ComPtr<ISATAController> hdcSATAVBox;
+                rc = newMachine->COMGETTER(SATAController)(hdcSATAVBox.asOutParam());
+                CheckComRCReturnRC(rc);
+                rc = hdcSATAVBox->COMSETTER(Enabled)(true);
+                CheckComRCReturnRC(rc);
+            }
+            else
+            {
+                /* @todo: set an error if this is other than AHCI */
+            }
+        }
+#endif /* VBOX_WITH_AHCI */
+#ifdef VBOX_WITH_SCSI
+        /* Hard disk controller SCSI */
+        list<VirtualSystemDescriptionEntry> vsdeHDCSCSI = vsd->findByType(VirtualSystemDescriptionType_HarddiskControllerSCSI);
+        /* @todo: do we support more than one SCSI controller? */
+        if (vsdeHDCSCSI.size() > 0)
+        {
+            /* @todo: Currently I have no idea how to enable this. Someone has
+             * to write main support for SCSI at all. */
+        }
+#endif /* VBOX_WITH_SCSI */
+
         /* Now its time to register the machine before we add any hard disks */
         rc = mVirtualBox->RegisterMachine(newMachine);
         ComAssertComRCThrowRC(rc);
 
+        /* Create the hard disks & connect them to the appropriate controllers. */
+        list<VirtualSystemDescriptionEntry> vsdeHD = vsd->findByType(VirtualSystemDescriptionType_Harddisk);
+        if (vsdeHD.size() > 0)
+        {
+            /* That we can attach hard disks we need to open a session for the
+             * new machine */
+            Guid newMachineId;
+            rc = newMachine->COMGETTER(Id)(newMachineId.asOutParam());
+            CheckComRCReturnRC(rc);
+            ComPtr<ISession> session;
+            rc = session.createInprocObject(CLSID_Session);
+            CheckComRCReturnRC(rc);
+            rc = mVirtualBox->OpenSession(session, newMachineId);
+            CheckComRCReturnRC(rc);
+
+            int result;
+            /* The disk image has to be on the same place as the OVF file. So
+             * strip the filename out of the full file path. */
+            char *srcDir = RTStrDup(Utf8Str(m->bstrPath).raw());
+            RTPathStripFilename(srcDir);
+            /* Iterate over all given disk images */
+            list<VirtualSystemDescriptionEntry>::const_iterator hdIt;
+            for (hdIt = vsdeHD.begin();
+                 hdIt != vsdeHD.end();
+                 ++hdIt)
+            {
+                char *dstFilePath = RTStrDup(hdIt->strFinalValue.c_str());
+                /* Check if the destination file exists already or the
+                 * destination path is empty. */
+                if (RTPathExists(dstFilePath) ||
+                    !RTStrCmp(dstFilePath, ""))
+                {
+                    /* @todo: what now? For now we override in no
+                     * circumstances. */
+//                    continue;
+                }
+                /* Get the associated disk image */
+                if (m->mapDisks.find(hdIt->strRef) == m->mapDisks.end())
+                {
+                    /* @todo: error: entry doesn't exists */
+                }
+                DiskImage di = m->mapDisks [hdIt->strRef];
+                /* Construct the source file path */
+                char *srcFilePath;
+                RTStrAPrintf(&srcFilePath, "%s/%s", srcDir, di.strHref.c_str());
+                /* Check if the source file exists */
+                if (!RTPathExists(srcFilePath))
+                {
+                    /* @todo: we have to create a new one */
+                }
+                else
+                {
+                    /* Make sure all target directories exists */
+                    rc = VirtualBox::ensureFilePathExists(dstFilePath);
+                    CheckComRCThrowRC(rc);
+                    /* Clone the disk image (this is necessary cause the id has
+                     * to be recreated for the case the same hard disk is
+                     * attached already from a previous import) */
+                    /* First open the existing disk image */
+                    ComPtr<IHardDisk2> srcHdVBox;
+                    rc = mVirtualBox->OpenHardDisk2(Bstr(srcFilePath), srcHdVBox.asOutParam());
+                    CheckComRCReturnRC(rc);
+                    /* We need the format description of the source disk image */
+                    Bstr srcFormat;
+                    rc = srcHdVBox->COMGETTER(Format)(srcFormat.asOutParam());
+                    CheckComRCReturnRC(rc);
+                    /* Create a new hard disk interface for the destination disk image */
+                    ComPtr<IHardDisk2> dstHdVBox;
+                    rc = mVirtualBox->CreateHardDisk2(srcFormat, Bstr(dstFilePath), dstHdVBox.asOutParam());
+                    CheckComRCReturnRC(rc);
+                    /* Clone the source disk image */
+                    ComPtr<IProgress> progress;
+                    rc = srcHdVBox->CloneTo(dstHdVBox, progress.asOutParam());
+                    CheckComRCReturnRC(rc);
+                    rc = progress->WaitForCompletion(-1);
+                    CheckComRCReturnRC(rc);
+                    /* We *must* close the source disk image in order to deregister it */
+                    rc = srcHdVBox->Close();
+                    CheckComRCReturnRC(rc);
+                    /* Now use the new uuid to attach the disk image to our new machine */
+                    ComPtr<IMachine> sMachine;
+                    rc = session->COMGETTER(Machine)(sMachine.asOutParam());
+                    Guid hdId;
+                    rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());;
+                    CheckComRCReturnRC(rc);
+                    rc = sMachine->AttachHardDisk2(hdId, StorageBus_IDE, 0, 0); //
+                    CheckComRCReturnRC(rc);
+                    rc = sMachine->SaveSettings();
+                    CheckComRCReturnRC(rc);
+                    rc = session->Close();
+                    CheckComRCReturnRC(rc);
+                }
+                RTStrFree(srcFilePath);
+                RTStrFree(dstFilePath);
+            }
+            RTStrFree(srcDir);
+        }
         /* @todo: Unregister on failure */
 #if 0
         vbox.UnregisterMachine (machineId);
@@ -1375,7 +1554,7 @@ STDMETHODIMP Appliance::ImportAppliance()
     return S_OK;
 }
 
-HRESULT Appliance::searchUniqueVMName(std::string& aName)
+HRESULT Appliance::searchUniqueVMName(std::string& aName) const
 {
     IMachine *machine = NULL;
     char *tmpName = RTStrDup(aName.c_str());
@@ -1385,6 +1564,34 @@ HRESULT Appliance::searchUniqueVMName(std::string& aName)
     {
         RTStrFree(tmpName);
         RTStrAPrintf(&tmpName, "%s_%d", aName.c_str(), i);
+        ++i;
+    }
+    aName = tmpName;
+    RTStrFree(tmpName);
+
+    return S_OK;
+}
+
+HRESULT Appliance::searchUniqueDiskImageFilePath(std::string& aName) const
+{
+    IHardDisk2 *harddisk = NULL;
+    char *tmpName = RTStrDup(aName.c_str());
+    int i = 1;
+    /* Check if the file exists or if a file with this path is registered
+     * already */
+    /* @todo: Maybe to cost intensive; try to find a lighter way */
+    while (RTPathExists(tmpName) ||
+           mVirtualBox->FindHardDisk2(Bstr(tmpName), &harddisk) != VBOX_E_OBJECT_NOT_FOUND)
+    {
+        RTStrFree(tmpName);
+        char *tmpDir = RTStrDup(aName.c_str());
+        RTPathStripFilename(tmpDir);;
+        char *tmpFile = RTStrDup(RTPathFilename(aName.c_str()));
+        RTPathStripExt(tmpFile);
+        char *tmpExt = RTPathExt(aName.c_str());
+        RTStrAPrintf(&tmpName, "%s/%s_%d%s", tmpDir, tmpFile, i, tmpExt);
+        RTStrFree(tmpFile);
+        RTStrFree(tmpDir);
         ++i;
     }
     aName = tmpName;
@@ -1426,13 +1633,11 @@ void VirtualSystemDescription::uninit()
 }
 
 STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
-                                                      ComSafeArrayOut(ULONG, aRefs),
                                                       ComSafeArrayOut(BSTR, aOrigValues),
                                                       ComSafeArrayOut(BSTR, aAutoValues),
                                                       ComSafeArrayOut(BSTR, aConfigurations))
 {
     if (ComSafeArrayOutIsNull(aTypes) ||
-        ComSafeArrayOutIsNull(aRefs) ||
         ComSafeArrayOutIsNull(aOrigValues) ||
         ComSafeArrayOutIsNull(aAutoValues) ||
         ComSafeArrayOutIsNull(aConfigurations))
@@ -1445,7 +1650,6 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
 
     ULONG c = (ULONG)m->descriptions.size();
     com::SafeArray<VirtualSystemDescriptionType_T> sfaTypes(c);
-    com::SafeArray<ULONG> sfaRefs(c);
     com::SafeArray<BSTR> sfaOrigValues(c);
     com::SafeArray<BSTR> sfaAutoValues(c);
     com::SafeArray<BSTR> sfaConfigurations(c);
@@ -1459,8 +1663,6 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
         VirtualSystemDescriptionEntry vsde = (*it);
         /* Types */
         sfaTypes [i] = vsde.type;
-        /* Refs */
-        sfaRefs [i] = vsde.ref;
         /* Original value */
         Bstr bstr = Utf8Str(vsde.strOriginalValue.c_str());
         bstr.cloneTo(&sfaOrigValues [i]);
@@ -1473,7 +1675,6 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
     }
 
     sfaTypes.detachTo(ComSafeArrayOutArg(aTypes));
-    sfaRefs.detachTo(ComSafeArrayOutArg(aRefs));
     sfaOrigValues.detachTo(ComSafeArrayOutArg(aOrigValues));
     sfaAutoValues.detachTo(ComSafeArrayOutArg(aAutoValues));
     sfaConfigurations.detachTo(ComSafeArrayOutArg(aConfigurations));
@@ -1507,13 +1708,14 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(IN_BSTR, aF
     return S_OK;
 }
 
-void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType, ULONG aRef, std::string aOrigValue, std::string aAutoValue)
+void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType, std::string aRef, std::string aOrigValue, std::string aAutoValue, std::string aConfig /* = "" */)
 {
     VirtualSystemDescriptionEntry vsde;
     vsde.type = aType;
-    vsde.ref = aRef;
+    vsde.strRef = aRef;
     vsde.strOriginalValue = aOrigValue;
     vsde.strAutoValue = aAutoValue;
+    vsde.strConfiguration = aConfig;
     /* For now we add the auto value as final value also */
     vsde.strFinalValue = aAutoValue;
 
