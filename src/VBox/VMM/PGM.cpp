@@ -684,8 +684,8 @@ static const DBGCCMD    g_aCmds[] =
 #define PGM_BTH_NAME_RC_STR(name)   PGM_BTH_NAME_RC_32BIT_REAL_STR(name)
 #define PGM_BTH_NAME_R0_STR(name)   PGM_BTH_NAME_R0_32BIT_REAL_STR(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_32BIT_PT_FOR_PHYS
-#include "PGMGst.h"
 #include "PGMBth.h"
+#include "PGMGst.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
 #undef PGM_BTH_NAME_RC_STR
@@ -704,8 +704,8 @@ static const DBGCCMD    g_aCmds[] =
 #define PGM_BTH_NAME_RC_STR(name)   PGM_BTH_NAME_RC_32BIT_PROT_STR(name)
 #define PGM_BTH_NAME_R0_STR(name)   PGM_BTH_NAME_R0_32BIT_PROT_STR(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_32BIT_PT_FOR_PHYS
-#include "PGMGst.h"
 #include "PGMBth.h"
+#include "PGMGst.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
 #undef PGM_BTH_NAME_RC_STR
@@ -725,8 +725,8 @@ static const DBGCCMD    g_aCmds[] =
 #define PGM_BTH_NAME_R0_STR(name)   PGM_BTH_NAME_R0_32BIT_32BIT_STR(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT
 #define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB
-#include "PGMGst.h"
 #include "PGMBth.h"
+#include "PGMGst.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_BIG
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
@@ -822,8 +822,8 @@ static const DBGCCMD    g_aCmds[] =
 #define PGM_BTH_NAME_R0_STR(name)   PGM_BTH_NAME_R0_PAE_PAE_STR(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
 #define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
-#include "PGMGst.h"
 #include "PGMBth.h"
+#include "PGMGst.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_BIG
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
@@ -860,8 +860,8 @@ static const DBGCCMD    g_aCmds[] =
 # define PGM_BTH_NAME_R0_STR(name)  PGM_BTH_NAME_R0_AMD64_AMD64_STR(name)
 # define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_PAE_PT_FOR_PAE_PT
 # define BTH_PGMPOOLKIND_PT_FOR_BIG PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
-# include "PGMGst.h"
 # include "PGMBth.h"
+# include "PGMGst.h"
 # undef BTH_PGMPOOLKIND_PT_FOR_BIG
 # undef BTH_PGMPOOLKIND_PT_FOR_PT
 # undef PGM_BTH_NAME
@@ -3044,8 +3044,6 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
     pVM->pgm.s.pfnR3GstMonitorCR3           = pModeData->pfnR3GstMonitorCR3;
     pVM->pgm.s.pfnR3GstUnmonitorCR3         = pModeData->pfnR3GstUnmonitorCR3;
 #endif
-    pVM->pgm.s.pfnR3GstMapCR3               = pModeData->pfnR3GstMapCR3;
-    pVM->pgm.s.pfnR3GstUnmapCR3             = pModeData->pfnR3GstUnmapCR3;
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pVM->pgm.s.pfnR3GstWriteHandlerCR3      = pModeData->pfnR3GstWriteHandlerCR3;
     pVM->pgm.s.pszR3GstWriteHandlerCR3      = pModeData->pszR3GstWriteHandlerCR3;
@@ -3059,8 +3057,6 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
     pVM->pgm.s.pfnRCGstMonitorCR3           = pModeData->pfnRCGstMonitorCR3;
     pVM->pgm.s.pfnRCGstUnmonitorCR3         = pModeData->pfnRCGstUnmonitorCR3;
 #endif
-    pVM->pgm.s.pfnRCGstMapCR3               = pModeData->pfnRCGstMapCR3;
-    pVM->pgm.s.pfnRCGstUnmapCR3             = pModeData->pfnRCGstUnmapCR3;
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pVM->pgm.s.pfnRCGstWriteHandlerCR3      = pModeData->pfnRCGstWriteHandlerCR3;
     pVM->pgm.s.pfnRCGstPAEWriteHandlerCR3   = pModeData->pfnRCGstPAEWriteHandlerCR3;
@@ -3072,8 +3068,6 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
     pVM->pgm.s.pfnR0GstMonitorCR3           = pModeData->pfnR0GstMonitorCR3;
     pVM->pgm.s.pfnR0GstUnmonitorCR3         = pModeData->pfnR0GstUnmonitorCR3;
 #endif
-    pVM->pgm.s.pfnR0GstMapCR3               = pModeData->pfnR0GstMapCR3;
-    pVM->pgm.s.pfnR0GstUnmapCR3             = pModeData->pfnR0GstUnmapCR3;
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pVM->pgm.s.pfnR0GstWriteHandlerCR3      = pModeData->pfnR0GstWriteHandlerCR3;
     pVM->pgm.s.pfnR0GstPAEWriteHandlerCR3   = pModeData->pfnR0GstPAEWriteHandlerCR3;
@@ -3090,6 +3084,8 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
 #ifdef VBOX_STRICT
     pVM->pgm.s.pfnR3BthAssertCR3            = pModeData->pfnR3BthAssertCR3;
 #endif
+    pVM->pgm.s.pfnR3BthMapCR3               = pModeData->pfnR3BthMapCR3;
+    pVM->pgm.s.pfnR3BthUnmapCR3             = pModeData->pfnR3BthUnmapCR3;
 
     pVM->pgm.s.pfnRCBthTrap0eHandler        = pModeData->pfnRCBthTrap0eHandler;
     pVM->pgm.s.pfnRCBthInvalidatePage       = pModeData->pfnRCBthInvalidatePage;
@@ -3100,6 +3096,8 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
 #ifdef VBOX_STRICT
     pVM->pgm.s.pfnRCBthAssertCR3            = pModeData->pfnRCBthAssertCR3;
 #endif
+    pVM->pgm.s.pfnRCBthMapCR3               = pModeData->pfnRCBthMapCR3;
+    pVM->pgm.s.pfnRCBthUnmapCR3             = pModeData->pfnRCBthUnmapCR3;
 
     pVM->pgm.s.pfnR0BthTrap0eHandler        = pModeData->pfnR0BthTrap0eHandler;
     pVM->pgm.s.pfnR0BthInvalidatePage       = pModeData->pfnR0BthInvalidatePage;
@@ -3110,6 +3108,8 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
 #ifdef VBOX_STRICT
     pVM->pgm.s.pfnR0BthAssertCR3            = pModeData->pfnR0BthAssertCR3;
 #endif
+    pVM->pgm.s.pfnR0BthMapCR3               = pModeData->pfnR0BthMapCR3;
+    pVM->pgm.s.pfnR0BthUnmapCR3             = pModeData->pfnR0BthUnmapCR3;
 }
 
 

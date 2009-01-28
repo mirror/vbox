@@ -468,8 +468,8 @@ int main()
     GEN_CHECK_OFF(PGM, pfnR3GstMonitorCR3);
     GEN_CHECK_OFF(PGM, pfnR3GstUnmonitorCR3);
 #endif
-    GEN_CHECK_OFF(PGM, pfnR3GstMapCR3);
-    GEN_CHECK_OFF(PGM, pfnR3GstUnmapCR3);
+    GEN_CHECK_OFF(PGM, pfnR3BthMapCR3);
+    GEN_CHECK_OFF(PGM, pfnR3BthUnmapCR3);
     GEN_CHECK_OFF(PGM, pfnR3GstGetPage);
     GEN_CHECK_OFF(PGM, pfnR3GstModifyPage);
     GEN_CHECK_OFF(PGM, pfnR3GstGetPDE);

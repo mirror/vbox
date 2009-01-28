@@ -39,6 +39,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
 #ifdef PGMPOOL_WITH_USER_TRACKING
 DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVM pVM, PPGMPOOLPAGE pShwPage, RTHCPHYS HCPhys);
 #endif
+PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3);
+PGM_BTH_DECL(int, UnmapCR3)(PVM pVM);
 __END_DECLS
 
 
@@ -4402,4 +4404,218 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
 #endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
 }
 #endif /* VBOX_STRICT */
+
+
+/**
+ * Sets up the CR3 for shadow paging
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS.
+ *
+ * @param   pVM             VM handle.
+ * @param   GCPhysCR3       The physical address in the CR3 register.
+ */
+PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
+{
+#if PGM_GST_TYPE == PGM_TYPE_32BIT \
+ || PGM_GST_TYPE == PGM_TYPE_PAE \
+ || PGM_GST_TYPE == PGM_TYPE_AMD64
+
+    LogFlow(("MapCR3: %RGp\n", GCPhysCR3));
+
+    /*
+     * Map the page CR3 points at.
+     */
+    RTHCPHYS    HCPhysGuestCR3;
+    RTHCPTR     HCPtrGuestCR3;
+    int rc = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhysCR3 & GST_CR3_PAGE_MASK, &HCPtrGuestCR3, &HCPhysGuestCR3);
+    if (RT_SUCCESS(rc))
+    {
+        rc = PGMMap(pVM, (RTGCPTR)pVM->pgm.s.GCPtrCR3Mapping, HCPhysGuestCR3, PAGE_SIZE, 0);
+        if (RT_SUCCESS(rc))
+        {
+            PGM_INVL_PG(pVM->pgm.s.GCPtrCR3Mapping);
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
+            pVM->pgm.s.pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+            pVM->pgm.s.pGst32BitPdR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
+#  endif
+            pVM->pgm.s.pGst32BitPdRC = (RCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
+
+# elif PGM_GST_TYPE == PGM_TYPE_PAE
+            unsigned off = GCPhysCR3 & GST_CR3_PAGE_MASK & PAGE_OFFSET_MASK;
+            pVM->pgm.s.pGstPaePdptR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+            pVM->pgm.s.pGstPaePdptR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+#  endif
+            pVM->pgm.s.pGstPaePdptRC = (RCPTRTYPE(PX86PDPT))((RCPTRTYPE(uint8_t *))pVM->pgm.s.GCPtrCR3Mapping + off);
+            Log(("Cached mapping %RGv\n", pVM->pgm.s.pGstPaePdptRC));
+
+            /*
+             * Map the 4 PDs too.
+             */
+            PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(&pVM->pgm.s);
+            RTGCPTR GCPtr = pVM->pgm.s.GCPtrCR3Mapping + PAGE_SIZE;
+            for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++, GCPtr += PAGE_SIZE)
+            {
+                if (pGuestPDPT->a[i].n.u1Present)
+                {
+                    RTHCPTR     HCPtr;
+                    RTHCPHYS    HCPhys;
+                    RTGCPHYS    GCPhys = pGuestPDPT->a[i].u & X86_PDPE_PG_MASK;
+                    int rc2 = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
+                    if (RT_SUCCESS(rc2))
+                    {
+                        rc = PGMMap(pVM, GCPtr, HCPhys & X86_PTE_PAE_PG_MASK, PAGE_SIZE, 0);
+                        AssertRCReturn(rc, rc);
+
+                        pVM->pgm.s.apGstPaePDsR3[i]     = (R3PTRTYPE(PX86PDPAE))HCPtr;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+                        pVM->pgm.s.apGstPaePDsR0[i]     = (R0PTRTYPE(PX86PDPAE))HCPtr;
+#  endif
+                        pVM->pgm.s.apGstPaePDsRC[i]     = (RCPTRTYPE(PX86PDPAE))GCPtr;
+                        pVM->pgm.s.aGCPhysGstPaePDs[i]  = GCPhys;
+                        PGM_INVL_PG(GCPtr); /** @todo This ends up calling HWACCMInvalidatePage, is that correct? */
+                        continue;
+                    }
+                    AssertMsgFailed(("pgmR3Gst32BitMapCR3: rc2=%d GCPhys=%RGp i=%d\n", rc2, GCPhys, i));
+                }
+
+                pVM->pgm.s.apGstPaePDsR3[i]     = 0;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+                pVM->pgm.s.apGstPaePDsR0[i]     = 0;
+#  endif
+                pVM->pgm.s.apGstPaePDsRC[i]     = 0;
+                pVM->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
+                PGM_INVL_PG(GCPtr); /** @todo this shouldn't be necessary? */
+            }
+
+# elif PGM_GST_TYPE == PGM_TYPE_AMD64
+            pVM->pgm.s.pGstAmd64Pml4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+            pVM->pgm.s.pGstAmd64Pml4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
+#  endif
+#  ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+            if (!HWACCMIsNestedPagingActive(pVM))
+            {
+                /*
+                 * Update the shadow root page as well since that's not fixed.
+                 */
+                /** @todo Move this into PGMAllBth.h. */
+                PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+                if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
+                {
+                    /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
+                    /** @todo Coordinate this better with the pool. */
+                    if (pVM->pgm.s.CTX_SUFF(pShwPageCR3)->enmKind != PGMPOOLKIND_FREE)
+                        pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->GCPhys >> PAGE_SHIFT);
+                    pVM->pgm.s.pShwPageCR3R3 = 0;
+                    pVM->pgm.s.pShwPageCR3R0 = 0;
+                    pVM->pgm.s.pShwRootR3    = 0;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+                    pVM->pgm.s.pShwRootR0    = 0;
+#  endif
+                    pVM->pgm.s.HCPhysShwCR3  = 0;
+                }
+
+                Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
+                rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_64BIT_PML4, PGMPOOL_IDX_AMD64_CR3, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+                if (rc == VERR_PGM_POOL_FLUSHED)
+                {
+                    Log(("MapCR3: PGM pool flushed -> signal sync cr3\n"));
+                    Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+                    return VINF_PGM_SYNC_CR3;
+                }
+                AssertRCReturn(rc, rc);
+#  ifdef IN_RING0
+                pVM->pgm.s.pShwPageCR3R3 = MMHyperCCToR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+#  else
+                pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+#  endif
+                pVM->pgm.s.pShwRootR3    = (R3PTRTYPE(void *))pVM->pgm.s.CTX_SUFF(pShwPageCR3)->pvPageR3;
+                Assert(pVM->pgm.s.pShwRootR3);
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+                pVM->pgm.s.pShwRootR0    = (R0PTRTYPE(void *))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+#  endif
+                pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
+                rc = VINF_SUCCESS; /* clear it - pgmPoolAlloc returns hints. */
+            }
+#  endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
+# endif
+        }
+        else
+            AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%RGp\n", rc, GCPhysCR3));
+    }
+    else
+        AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%RGp\n", rc, GCPhysCR3));
+
+#else /* prot/real stub */
+    int rc = VINF_SUCCESS;
+#endif
+    return rc;
+}
+
+/**
+ * Unmaps the shadow CR3.
+ *
+ * @returns VBox status, no specials.
+ * @param   pVM             VM handle.
+ */
+PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
+{
+    LogFlow(("UnmapCR3\n"));
+
+    int rc = VINF_SUCCESS;
+
+#if PGM_GST_TYPE == PGM_TYPE_32BIT
+    pVM->pgm.s.pGst32BitPdR3 = 0;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pGst32BitPdR0 = 0;
+#endif
+    pVM->pgm.s.pGst32BitPdRC = 0;
+
+#elif PGM_GST_TYPE == PGM_TYPE_PAE
+    pVM->pgm.s.pGstPaePdptR3 = 0;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pGstPaePdptR0 = 0;
+# endif
+    pVM->pgm.s.pGstPaePdptRC = 0;
+    for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
+    {
+        pVM->pgm.s.apGstPaePDsR3[i]    = 0;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+        pVM->pgm.s.apGstPaePDsR0[i]    = 0;
+# endif
+        pVM->pgm.s.apGstPaePDsRC[i]    = 0;
+        pVM->pgm.s.aGCPhysGstPaePDs[i] = NIL_RTGCPHYS;
+    }
+
+#elif PGM_GST_TYPE == PGM_TYPE_AMD64
+    pVM->pgm.s.pGstAmd64Pml4R3 = 0;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pGstAmd64Pml4R0 = 0;
+# endif
+    if (!HWACCMIsNestedPagingActive(pVM))
+    {
+        pVM->pgm.s.pShwRootR3 = 0;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+        pVM->pgm.s.pShwRootR0 = 0;
+# endif
+        pVM->pgm.s.HCPhysShwCR3 = 0;
+# ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
+        {
+            PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+            pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->GCPhys >> PAGE_SHIFT);
+            pVM->pgm.s.pShwPageCR3R3 = 0;
+            pVM->pgm.s.pShwPageCR3R0 = 0;
+        }
+# endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
+    }
+
+#else /* prot/real mode stub */
+    /* nothing to do */
+#endif
+    return rc;
+}
 

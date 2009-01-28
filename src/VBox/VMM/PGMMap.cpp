@@ -655,7 +655,7 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
 {
     Log(("PGMR3MappingsUnfix: fMappingsFixed=%d\n", pVM->pgm.s.fMappingsFixed));
 
-    /* Refuse in VT-x/AMD-V mode. */
+    /* Ignore in VT-x/AMD-V mode. */
     if (HWACCMR3IsActive(pVM))
         return VINF_SUCCESS;
 
@@ -675,7 +675,7 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
     pgmPoolFlushAll(pVM);
 #endif
     /* Remap CR3 as we have just flushed the CR3 shadow PML4 in case we're in long mode. */
-    int rc = PGM_GST_PFN(MapCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
+    int rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
     AssertRCSuccess(rc);
 
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY

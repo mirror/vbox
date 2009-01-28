@@ -302,7 +302,7 @@ int pgmR3PoolInit(PVM pVM)
 #else
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].pvPageR3  = pVM->pgm.s.pShwPaePdptR3;  /* not used - isn't it wrong as well? */
 #endif
-    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].enmKind   = PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4;
+    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].enmKind   = PGMPOOLKIND_64BIT_PML4;
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].idx       = PGMPOOL_IDX_AMD64_CR3;
 
     /* The Nested Paging CR3. */
