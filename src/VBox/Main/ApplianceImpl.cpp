@@ -1221,7 +1221,7 @@ STDMETHODIMP Appliance::Interpret()
             rc = osType->COMGETTER(RecommendedRAM)(&memSizeVBox2);
             ComAssertComRCThrowRC(rc);
             /* VBox stores that in MByte */
-            ullMemSizeVBox = memSizeVBox2 * _1M;
+            ullMemSizeVBox = (uint64_t)memSizeVBox2 * _1M;
         }
         vsd->addEntry(VirtualSystemDescriptionType_Memory, "", toString<uint64_t>(vs.ullMemorySize), toString<uint64_t>(ullMemSizeVBox));
 
