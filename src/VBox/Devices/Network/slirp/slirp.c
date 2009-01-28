@@ -162,10 +162,6 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     DWORD ret;
     IP_ADDR_STRING *pIPAddr;
     struct in_addr tmp_addr;
-#ifdef VBOX_WITH_MULTI_DNS
-    struct in_addr local_mask;
-    struct in_addr local_network;
-#endif
 
     FixedInfo = (FIXED_INFO *)GlobalAlloc(GPTR, sizeof(FIXED_INFO));
     BufLen = sizeof(FIXED_INFO);
@@ -212,19 +208,19 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     }
 #else
     /*localhost mask */
-    inet_aton("255.0.0.0", &local_mask);
-    inet_aton("127.0.0.0", &local_network);
     for (pIPAddr = &FixedInfo->DnsServerList; pIPAddr != NULL; pIPAddr = pIPAddr->Next)
     {
-        struct dns_entry *da = RTMemAllocZ(sizeof (struct dns_entry));
+        struct dns_entry *da;
+        if(!inet_aton(pIPAddr->IpAddress.String, &tmp_addr))
+            continue;
+        da = RTMemAllocZ(sizeof (struct dns_entry));
         if (da == NULL)
         {
             LogRel(("can't alloc memory for DNS entry\n"));
             return -1;
         }
         /*check */
-        inet_aton(pIPAddr->IpAddress.String, &da->de_addr);
-        if ((ntohl(da->de_addr.s_addr) & ntohl(local_mask.s_addr)) == ntohl(local_network.s_addr)) {
+        if ((da->de_addr.s_addr & htonl(IN_CLASSA_NET)) == ntohl(INADDR_LOOPBACK & IN_CLASSA_NET)) {
             da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
         }
         LIST_INSERT_HEAD(&pData->dns_list_head, da, de_list);
@@ -312,10 +308,14 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     Log(("nat: DNS Servers:\n"));
     while (fgets(buff, 512, f) != NULL)
     {
+#ifdef VBOX_WITH_MULTI_DNS
+        struct dns_entry *da = NULL;
+#endif
         if (sscanf(buff, "nameserver%*[ \t]%256s", buff2) == 1)
         {
             if (!inet_aton(buff2, &tmp_addr))
                 continue;
+#ifndef VBOX_WITH_MULTI_DNS
             /* If it's the first one, set it to dns_addr */
             if (!found)
             {
@@ -328,6 +328,21 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                 if (fVerbose)
                     LogRel(("NAT: ignored DNS address: %s\n", buff2));
             }
+#else
+    /*localhost mask */
+            da = RTMemAllocZ(sizeof (struct dns_entry));
+            if (da == NULL)
+            {
+                LogRel(("can't alloc memory for DNS entry\n"));
+                return -1;
+            }
+            /*check */
+            da->de_addr.s_addr = tmp_addr.s_addr;
+            if ((da->de_addr.s_addr & htonl(IN_CLASSA_NET)) == ntohl(INADDR_LOOPBACK & IN_CLASSA_NET)) {
+                da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
+            }
+            LIST_INSERT_HEAD(&pData->dns_list_head, da, de_list);
+#endif
             found++;
         }
         if (   ppszDomain
