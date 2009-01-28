@@ -284,6 +284,8 @@ PGM_GST_DECL(int, Exit)(PVM pVM)
 }
 
 
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
 /**
  * Physical write access for the Guest CR3 in 32-bit mode.
@@ -403,4 +405,4 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, vo
 }
 
 #endif /* PAE */
-
+#endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
