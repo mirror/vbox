@@ -33,40 +33,30 @@
 
 BEGINCODE
 
-%ifdef RT_ARCH_AMD64
- %define _SP rsp
- %define _BP rbp
- %define _S  8
-%else
- %define _SP esp
- %define _BP ebp
- %define _S  4
-%endif
-
 ;;
 ; Compute the smallest integral value not less than lrd.
 ; @returns st(0)
 ; @param    lrd     [rbp + 8]
 BEGINPROC RT_NOCRT(ceill)
-    push    _BP
-    mov     _BP, _SP
-    sub     _SP, 10h
+    push    xBP
+    mov     xBP, xSP
+    sub     xSP, 10h
 
-    fld     tword [_BP + _S*2]
+    fld     tword [xBP + xS*2]
 
     ; Make it round up by modifying the fpu control word.
-    fstcw   [_BP - 10h]
-    mov     eax, [_BP - 10h]
+    fstcw   [xBP - 10h]
+    mov     eax, [xBP - 10h]
     or      eax, 00800h
     and     eax, 0fbffh
-    mov     [_BP - 08h], eax
-    fldcw   [_BP - 08h]
+    mov     [xBP - 08h], eax
+    fldcw   [xBP - 08h]
 
     ; Round ST(0) to integer.
     frndint
 
     ; Restore the fpu control word.
-    fldcw   [_BP - 10h]
+    fldcw   [xBP - 10h]
 
     leave
     ret

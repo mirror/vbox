@@ -28,39 +28,28 @@
 ; additional information or have any questions.
 ;
 
-
 %include "iprt/asmdefs.mac"
 
 BEGINCODE
 
-%ifdef RT_ARCH_AMD64
- %define _SP rsp
- %define _BP rbp
- %define _S  8
-%else
- %define _SP esp
- %define _BP ebp
- %define _S  4
-%endif
-
 ;;
 ; Round rd to the nearest integer value, rounding according to the current rounding direction.
 ; @returns 32-bit: eax  64-bit: rax
-; @param    lrd     [rbp + _S*2]
+; @param    lrd     [rbp + xS*2]
 BEGINPROC RT_NOCRT(lrintl)
-    push    _BP
-    mov     _BP, _SP
-    sub     _SP, 10h
+    push    xBP
+    mov     xBP, xSP
+    sub     xSP, 10h
 
-    fld     tword [_BP + _S*2]
+    fld     tword [xBP + xS*2]
 %ifdef RT_ARCH_AMD64
-    fistp   qword [_SP]
+    fistp   qword [xSP]
     fwait
-    mov     rax, [_SP]
+    mov     rax, [xSP]
 %else
-    fistp   dword [_SP]
+    fistp   dword [xSP]
     fwait
-    mov     eax, [_SP]
+    mov     eax, [xSP]
 %endif
 
     leave

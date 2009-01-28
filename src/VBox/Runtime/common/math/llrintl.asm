@@ -32,33 +32,23 @@
 
 BEGINCODE
 
-%ifdef RT_ARCH_AMD64
- %define _SP rsp
- %define _BP rbp
- %define _S  8
-%else
- %define _SP esp
- %define _BP ebp
- %define _S  4
-%endif
-
 ;;
 ; Round rd to the nearest integer value, rounding according to the current rounding direction.
 ; @returns 32-bit: edx:eax  64-bit: rax
-; @param    lrd     [rbp + _S*2]
+; @param    lrd     [rbp + xS*2]
 BEGINPROC RT_NOCRT(llrintl)
-    push    _BP
-    mov     _BP, _SP
-    sub     _SP, 10h
+    push    xBP
+    mov     xBP, xSP
+    sub     xSP, 10h
 
-    fld     tword [_BP + _S*2]
-    fistp   qword [_SP]
+    fld     tword [xBP + xS*2]
+    fistp   qword [xSP]
     fwait
 %ifdef RT_ARCH_AMD64
-    mov     rax, [_SP]
+    mov     rax, [xSP]
 %else
-    mov     eax, [_SP]
-    mov     edx, [_SP + 4]
+    mov     eax, [xSP]
+    mov     edx, [xSP + 4]
 %endif
 
     leave

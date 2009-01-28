@@ -1,4 +1,4 @@
-; $Id: $
+; $Id$
 ;; @file
 ; IPRT - No-CRT fabsl - AMD64 & X86.
 ;
@@ -28,30 +28,19 @@
 ; additional information or have any questions.
 ;
 
-
 %include "iprt/asmdefs.mac"
 
 BEGINCODE
 
-%ifdef RT_ARCH_AMD64
- %define _SP rsp
- %define _BP rbp
- %define _S  8
-%else
- %define _SP esp
- %define _BP ebp
- %define _S  4
-%endif
-
 ;;
 ; Compute the absolute value of lrd (|lrd|).
 ; @returns st(0)
-; @param    lrd     [_SP + _S*2]
+; @param    lrd     [xSP + xS*2]
 BEGINPROC RT_NOCRT(fabsl)
-    push    _BP
-    mov     _BP, _SP
+    push    xBP
+    mov     xBP, xSP
 
-    fld     tword [_BP + _S*2]
+    fld     tword [xBP + xS*2]
     fabs
 
 .done:

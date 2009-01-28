@@ -28,31 +28,20 @@
 ; additional information or have any questions.
 ;
 
-
 %include "iprt/asmdefs.mac"
 
 BEGINCODE
 
-%ifdef RT_ARCH_AMD64
- %define _SP rsp
- %define _BP rbp
- %define _S  8
-%else
- %define _SP esp
- %define _BP ebp
- %define _S  4
-%endif
-
 ;;
 ; Compute the sine of lrd
 ; @returns st(0)
-; @param    lrd     [_SP + _S*2]
+; @param    lrd     [xSP + xS*2]
 BEGINPROC RT_NOCRT(sinl)
-    push    _BP
-    mov     _BP, _SP
-    sub     _SP, 10h
+    push    xBP
+    mov     xBP, xSP
+    sub     xSP, 10h
 
-    fld     tword [_BP + _S*2]
+    fld     tword [xBP + xS*2]
     fsin
     fnstsw  ax
     test    ah, 04h

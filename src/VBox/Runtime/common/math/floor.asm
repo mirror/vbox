@@ -32,49 +32,39 @@
 
 BEGINCODE
 
-%ifdef RT_ARCH_AMD64
- %define _SP rsp
- %define _BP rbp
- %define _S  8
-%else
- %define _SP esp
- %define _BP ebp
- %define _S  4
-%endif
-
 ;;
 ; Compute the largest integral value not greater than rd.
 ; @returns 32-bit: st(0)   64-bit: xmm0
 ; @param    rd      32-bit: [ebp + 8]   64-bit: xmm0
 BEGINPROC RT_NOCRT(floor)
-    push    _BP
-    mov     _BP, _SP
-    sub     _SP, 10h
+    push    xBP
+    mov     xBP, xSP
+    sub     xSP, 10h
 
 %ifdef RT_ARCH_AMD64
-    movsd   [_SP], xmm0
-    fld     qword [_SP]
+    movsd   [xSP], xmm0
+    fld     qword [xSP]
 %else
-    fld     qword [_BP + _S*2]
+    fld     qword [xBP + xS*2]
 %endif
 
     ; Make it round down by modifying the fpu control word.
-    fstcw   [_BP - 10h]
-    mov     eax, [_BP - 10h]
+    fstcw   [xBP - 10h]
+    mov     eax, [xBP - 10h]
     or      eax, 00400h
     and     eax, 0f7ffh
-    mov     [_BP - 08h], eax
-    fldcw   [_BP - 08h]
+    mov     [xBP - 08h], eax
+    fldcw   [xBP - 08h]
 
     ; Round ST(0) to integer.
     frndint
 
     ; Restore the fpu control word.
-    fldcw   [_BP - 10h]
+    fldcw   [xBP - 10h]
 
 %ifdef RT_ARCH_AMD64
-    fstp    qword [_SP]
-    movsd   xmm0, [_SP]
+    fstp    qword [xSP]
+    movsd   xmm0, [xSP]
 %endif
     leave
     ret

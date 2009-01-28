@@ -32,22 +32,14 @@
 
 BEGINCODE
 
-%ifdef RT_ARCH_AMD64
- %define _SP rsp
- %define _BP rbp
-%else
- %define _SP esp
- %define _BP ebp
-%endif
-
 ;;
 ; See SUS.
 ; @returns st(0)
 ; @param    lrd1    [rbp + 10h]
 ; @param    lrd2    [rbp + 20h]
 BEGINPROC RT_NOCRT(remainderl)
-    push    _BP
-    mov     _BP, _SP
+    push    xBP
+    mov     xBP, xSP
 
 %ifdef RT_ARCH_AMD64
     fld     tword [rbp + 10h + RTLRD_CB]
