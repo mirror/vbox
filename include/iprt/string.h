@@ -1578,10 +1578,10 @@ RTDECL(int)  RTUtf16ToUtf8(PCRTUTF16 pwszString, char **ppszString);
  *
  * @returns iprt status code.
  * @param   pwszString      The UTF-16 string to convert.
- * @param   cwcString       The number of RTUTF16 items to translation from pwszString.
- *                          The translate will stop when reaching cwcString or the terminator ('\\0').
+ * @param   cwcString       The number of RTUTF16 items to translate from pwszString.
+ *                          The translation will stop when reaching cwcString or the terminator ('\\0').
  *                          Use RTSTR_MAX to translate the entire string.
- * @param   ppsz            If cch is non-zero, this must either be pointing to pointer to
+ * @param   ppsz            If cch is non-zero, this must either be pointing to a pointer to
  *                          a buffer of the specified size, or pointer to a NULL pointer.
  *                          If *ppsz is NULL or cch is zero a buffer of at least cch chars
  *                          will be allocated to hold the translated string.
