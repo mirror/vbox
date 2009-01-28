@@ -397,7 +397,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     ///// Menubar ///////////////////////////////////////////////////////////
 
-    mMainMenu = new QMenu (this);
+    mMainMenu = new QIMenu (this);
 
     /* Machine submenu */
 
@@ -1187,9 +1187,8 @@ void VBoxConsoleWnd::popupMainMenu (bool aCenter)
         pos.setY (pos.y() - mMainMenu->frameGeometry().height());
     }
 
-    mMainMenu->setActiveAction (mMainMenu->actions().first());
     mMainMenu->popup (pos);
-    mMainMenu->activateWindow();
+    mMainMenu->selectFirstAction();
 }
 
 //

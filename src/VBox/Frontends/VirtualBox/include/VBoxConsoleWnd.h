@@ -34,6 +34,7 @@
 #include <QMap>
 #include <QColor>
 #include <QDialog>
+#include <QMenu>
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>
@@ -48,7 +49,6 @@ class QAction;
 class QActionGroup;
 class QLabel;
 class QSpacerItem;
-class QMenu;
 
 class VBoxConsoleView;
 class QIStateIndicator;
@@ -57,6 +57,22 @@ class VBoxUSBMenu;
 class VBoxSwitchMenu;
 
 class VBoxChangeDockIconUpdateEvent;
+
+/* We want to make the first action highlighted but not
+ * selected, but Qt makes the both or neither one of this,
+ * so, just move the focus to the next eligible object,
+ * which will be the first menu action. This little
+ * subclass made only for that purpose. */
+class QIMenu : public QMenu
+{
+    Q_OBJECT;
+
+public:
+
+    QIMenu (QWidget *aParent) : QMenu (aParent) {}
+
+    void selectFirstAction() { QMenu::focusNextChild(); }
+};
 
 class VBoxConsoleWnd : public QIWithRetranslateUI2<QMainWindow>
 {
@@ -235,7 +251,7 @@ private slots:
 private:
 
     /** Popup version of the main menu */
-    QMenu *mMainMenu;
+    QIMenu *mMainMenu;
 
     QActionGroup *mRunningActions;
     QActionGroup *mRunningOrPausedActions;
