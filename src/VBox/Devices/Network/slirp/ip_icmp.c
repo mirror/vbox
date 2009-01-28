@@ -188,6 +188,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
                     && icp->icmp_seq == icp0->icmp_seq)
                 {
                     found = 1;
+                    Log(("Have found %R[natsock]\n", icm->im_so));
                     break;
                 }
                 Log(("Have found nothing\n"));
@@ -274,6 +275,7 @@ icmp_attach(PNATState pData, struct mbuf *m)
     Assert(ip->ip_p == IPPROTO_ICMP);
     icm = RTMemAlloc(sizeof(struct icmp_msg));
     icm->im_m = m;
+    icm->im_so = m->m_so;
     LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
     return 0;
 }
@@ -370,6 +372,7 @@ freeit:
 #ifndef RT_OS_WINDOWS
                 if (pData->icmp_socket.s != -1)
                 {
+                    m->m_so = &pData->icmp_socket;
                     icmp_attach(pData, m);
                     ttl = ip->ip_ttl;
                     Log(("NAT/ICMP: try to set TTL(%d)\n", ttl));
@@ -381,7 +384,7 @@ freeit:
                     if (sendto(pData->icmp_socket.s, icp, icmplen, 0,
                               (struct sockaddr *)&addr, sizeof(addr)) == -1)
                     {
-                        DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
+                        Log((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
                                     errno, strerror(errno)));
                         icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0, strerror(errno));
                         m_free(pData, m);
@@ -402,9 +405,10 @@ freeit:
                 pData->icmp_socket.so_laddr.s_addr = ip->ip_src.s_addr; /* XXX: hack*/
                 pData->icmp_socket.so_icmp_id = icp->icmp_id;
                 pData->icmp_socket.so_icmp_seq = icp->icmp_seq;
+                m->m_so = &pData->icmp_socket;
                 memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
                 ipopt.Ttl = ip->ip_ttl;
-                status = ICMP_SEND_ECHO(pData->phEvents[VBOX_ICMP_EVENT_INDEX], notify_slirp, addr.sin_addr.s_addr, 
+                status = ICMP_SEND_ECHO(pData->phEvents[VBOX_ICMP_EVENT_INDEX], notify_slirp, addr.sin_addr.s_addr,
                                 icp->icmp_data, icmplen - ICMP_MINLEN, &ipopt);
                 if (status == 0 && (error = GetLastError()) != ERROR_IO_PENDING)
                 {
@@ -630,7 +634,7 @@ icmp_reflect(PNATState pData, struct mbuf *m)
     icmpstat.icps_reflect++;
 }
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
-static void WINAPI  
+static void WINAPI
 notify_slirp(void *ctx)
 {
     /* pData name is important see slirp_state.h */
