@@ -2859,9 +2859,9 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
         *ppGipR3 = pGip;
 
 #ifdef DEBUG_DARWIN_GIP
-    OSDBGPRINT(("SUPR0GipMap: returns %d *pHCPhysGip=%lx *ppGip=%p GipMapObjR3\n", rc, (unsigned long)HCPhys, pGip, pSession->GipMapObjR3));
+    OSDBGPRINT(("SUPR0GipMap: returns %d *pHCPhysGip=%lx pGip=%p\n", rc, (unsigned long)HCPhys, (void *)pGip));
 #else
-    LogFlow(("SUPR0GipMap: returns %d *pHCPhysGip=%lx *ppGipR3=%p\n", rc, (unsigned long)HCPhys, (void *)(uintptr_t)pGip));
+    LogFlow((   "SUPR0GipMap: returns %d *pHCPhysGip=%lx pGip=%p\n", rc, (unsigned long)HCPhys, (void *)pGip));
 #endif
     return rc;
 }
