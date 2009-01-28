@@ -682,7 +682,7 @@ BEGINPROC RT_NOCRT(%1)
  %define xDX edx
  %define xDI edi
  %define xSI esi
- %define xWrtRIP wrt rip
+ %define xWrtRIP
 %endif
 
 %endif
