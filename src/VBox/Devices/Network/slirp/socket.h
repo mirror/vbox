@@ -9,6 +9,9 @@
 
 #ifndef _SLIRP_SOCKET_H_
 #define _SLIRP_SOCKET_H_
+#ifdef VBOX_WITH_SLIRP_MT
+#include <iprt/semaphore.h>
+#endif
 
 #define SO_EXPIRE 240000
 #define SO_EXPIREFAST 10000
@@ -63,9 +66,38 @@ struct socket
 
     struct sbuf     so_rcv;      /* Receive buffer */
     struct sbuf     so_snd;      /* Send buffer */
+#ifdef VBOX_WITH_SLIRP_MT
+    RTSEMMUTEX      so_mutex;
+#endif
 };
 
-
+#ifdef VBOX_WITH_SLIRP_MT
+# define SOCKET_LOCK(so)                                                \
+    do {                                                                \
+        int rc = RTSemMutexRequest((so)->so_mutex, RT_INDEFINITE_WAIT); \
+        AssertReleaseRC(rc);                                            \
+    } while (0)
+# define SOCKET_UNLOCK(so)                                              \
+    do {                                                                \
+        int rc = RTSemMutexRelease((so)->so_mutex);                     \
+        AssertReleaseRC(rc);                                            \
+    } while (0)
+# define SOCKET_LOCK_CREATE(so)                                         \
+    do {                                                                \
+        int rc = RTSemMutexCreate(&(so)->so_mutex);                     \
+        AssertReleaseRC(rc);                                            \
+    } while (0)
+# define SOCKET_LOCK_DESTROY(so)                                        \
+    do {                                                                \
+        int rc = RTSemMutexDestroy((so)->so_mutex);                     \
+        AssertReleaseRC(rc);                                            \
+    } while (0)
+#else
+# define SOCKET_LOCK(so) do {} while (0)
+# define SOCKET_UNLOCK(so) do {} while (0)
+# define SOCKET_LOCK_CREATE(so) do {} while (0)
+# define SOCKET_LOCK_DESTROY(so) do {} while (0)
+#endif
 /*
  * Socket state bits. (peer means the host on the Internet,
  * local host means the host on the other end of the modem)

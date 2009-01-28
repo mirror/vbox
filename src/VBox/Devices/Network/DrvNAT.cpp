@@ -90,6 +90,9 @@ typedef struct DRVNAT
     PRTREQQUEUE             pReqQueue;
     /* Send queue */
     PPDMQUEUE               pSendQueue;
+# ifdef VBOX_WITH_SLIRP_MT
+    PPDMTHREAD              pGuestThread;
+# endif
 # ifndef RT_OS_WINDOWS
     /** The write end of the control pipe. */
     RTFILE                  PipeWrite;
@@ -435,6 +438,23 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
     return VINF_SUCCESS;
 }
+
+#ifdef VBOX_WITH_SLIRP_MT
+static DECLCALLBACK(int) drvNATAsyncIoGuest(PPDMDRVINS pDrvIns, PPDMTHREAD pThread) 
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+	while (1) 
+	{
+	}
+}
+
+static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+
+    return VINF_SUCCESS;
+}
+#endif
 
 #endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
@@ -862,6 +882,11 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvNATAsyncIoThread, drvNATAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT");
             AssertReleaseRC(rc);
+
+#ifdef VBOX_WITH_SLIRP_MT
+            rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pGuestThread, pThis, drvNATAsyncIoGuest, drvNATAsyncIoGuestWakeup, 128 * _1K, RTTHREADTYPE_EMULATION, "NAT");
+            AssertReleaseRC(rc);
+#endif
 #endif
 
             pThis->enmLinkState = PDMNETWORKLINKSTATE_UP;

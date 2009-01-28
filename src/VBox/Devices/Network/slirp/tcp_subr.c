@@ -538,7 +538,10 @@ tcp_attach(PNATState pData, struct socket *so)
     if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL)
         return -1;
 
+    SOCKET_LOCK_CREATE(so); 
+    QSOCKET_LOCK(tcb);
     insque(pData, so, &tcb);
+    QSOCKET_UNLOCK(tcb);
     return 0;
 }
 

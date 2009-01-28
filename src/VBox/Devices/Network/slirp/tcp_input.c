@@ -432,7 +432,8 @@ findso:
             RTMemFree(so); /* Not sofree (if it failed, it's not insqued) */
             goto dropwithreset;
         }
-
+        
+        SOCKET_LOCK(so); 
         sbreserve(&so->so_snd, tcp_sndspace);
         sbreserve(&so->so_rcv, tcp_rcvspace);
 

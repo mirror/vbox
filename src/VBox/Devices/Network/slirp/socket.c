@@ -71,6 +71,8 @@ socreate()
 
 /*
  * remque and free a socket, clobber cache
+ * VBOX_WITH_SLIRP_MT: before sofree queue should be locked, because 
+ *      in sofree we don't know from which queue item beeing removed. 
  */
 void
 sofree(PNATState pData, struct socket *so)
@@ -86,6 +88,9 @@ sofree(PNATState pData, struct socket *so)
 
     if(so->so_next && so->so_prev)
         remque(pData, so);  /* crashes if so is not in a queue */
+
+    SOCKET_UNLOCK(so);
+    SOCKET_LOCK_DESTROY(so);
 
     RTMemFree(so);
 }
@@ -643,7 +648,12 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
         RTMemFree(so);
         return NULL;
     }
+
+    SOCKET_LOCK_CREATE(so); 
+    SOCKET_LOCK(so);
+    QSOCKET_LOCK(tcb);
     insque(pData, so,&tcb);
+    QSOCKET_UNLOCK(tcb);
 
     /*
      * SS_FACCEPTONCE sockets must time out.
@@ -673,7 +683,9 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 #else
         int tmperrno = errno; /* Don't clobber the real reason we failed */
         close(s);
+        QSOCKET_LOCK(tcb);
         sofree(pData, so);
+        QSOCKET_UNLOCK(tcb);
         /* Restore the real errno */
         errno = tmperrno;
 #endif
