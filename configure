@@ -1954,9 +1954,6 @@ if [ $OSE -ge 1 ]; then
     cnf_append "VBOX_WITH_LINUX_ADDITIONS" ""
   fi
   echo >> $CNF
-else
-  # webservices are enabled for non-OSE builds of course
-  WITH_GSOAP=1
 fi
 
 # headless
@@ -2042,10 +2039,12 @@ fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
 
-if [ $WITH_GSOAP -eq 1 ]; then
-  check_gsoap
-else
-  cnf_append "VBOX_WITH_WEBSERVICES" ""
+if [ $OSE -ge 1 ]; then
+  if [ $WITH_GSOAP -eq 1 ]; then
+    check_gsoap
+  else
+    cnf_append "VBOX_WITH_WEBSERVICES" ""
+  fi
 fi
 
 # Darwin-specific
