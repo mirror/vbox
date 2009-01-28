@@ -1,4 +1,4 @@
-; $Id: $
+; $Id$
 ;; @file
 ; IPRT - No-CRT fabsf - AMD64 & X86.
 ;
@@ -32,37 +32,27 @@
 
 BEGINCODE
 
-%ifdef RT_ARCH_AMD64
- %define _SP rsp
- %define _BP rbp
- %define _S  8
-%else
- %define _SP esp
- %define _BP ebp
- %define _S  4
-%endif
-
 ;;
 ; Compute the absolute value of rf (|rf|).
 ; @returns 32-bit: st(0)   64-bit: xmm0
 ; @param    rf      32-bit: [ebp + 8]   64-bit: xmm0
 BEGINPROC RT_NOCRT(fabsf)
-    push    _BP
-    mov     _BP, _SP
+    push    xBP
+    mov     xBP, xSP
 
 %ifdef RT_ARCH_AMD64
-    sub     _SP, 10h
+    sub     xSP, 10h
 
-    movsd   [_SP], xmm0
-    fld     dword [_SP]
+    movsd   [xSP], xmm0
+    fld     dword [xSP]
 
     fabs
 
-    fstp    dword [_SP]
-    movsd   xmm0, [_SP]
+    fstp    dword [xSP]
+    movsd   xmm0, [xSP]
 
 %else
-    fld     dword [_BP + _S*2]
+    fld     dword [xBP + xS*2]
     fabs
 %endif
 

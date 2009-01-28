@@ -32,26 +32,16 @@
 
 BEGINCODE
 
-%ifdef RT_ARCH_AMD64
- %define _SP rsp
- %define _BP rbp
- %define _S  8
-%else
- %define _SP esp
- %define _BP ebp
- %define _S  4
-%endif
-
 ;;
 ; compute the cosine of ldr, measured in radians.
 ; @returns st(0)
-; @param    lrd     [rbp + _S*2]
+; @param    lrd     [rbp + xS*2]
 BEGINPROC RT_NOCRT(cosl)
-    push    _BP
-    mov     _BP, _SP
-    sub     _SP, 10h
+    push    xBP
+    mov     xBP, xSP
+    sub     xSP, 10h
 
-    fld     tword [_BP + _S*2]
+    fld     tword [xBP + xS*2]
     fcos
     fnstsw  ax
     test    ah, 4

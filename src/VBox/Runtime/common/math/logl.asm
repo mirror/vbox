@@ -32,27 +32,17 @@
 
 BEGINCODE
 
-%ifdef RT_ARCH_AMD64
- %define _SP rsp
- %define _BP rbp
- %define _S  8
-%else
- %define _SP esp
- %define _BP ebp
- %define _S  4
-%endif
-
 ;;
 ; compute the natural logarithm of lrd
 ; @returns st(0)
-; @param    lrd     [rbp + _S*2]
+; @param    lrd     [rbp + xS*2]
 BEGINPROC RT_NOCRT(logl)
-    push    _BP
-    mov     _BP, _SP
-    sub     _SP, 10h
+    push    xBP
+    mov     xBP, xSP
+    sub     xSP, 10h
 
     fldln2                              ; st0=log(2)
-    fld     tword [_BP + _S*2]          ; st1=log(2) st0=lrd
+    fld     tword [xBP + xS*2]          ; st1=log(2) st0=lrd
     fld     st0                         ; st1=log(2) st0=lrd st0=lrd
     fsub    qword [.one xWrtRIP]        ; st2=log(2) st1=lrd st0=lrd-1.0
     fld     st0                         ; st3=log(2) st2=lrd st1=lrd-1.0 st0=lrd-1.0
