@@ -176,12 +176,12 @@ static int suplibDarwinOpenService(PSUPLIBDATA pThis)
     if (kr != kIOReturnSuccess)
     {
         LogRel(("SUP: IOServiceOpen returned %d. Driver open failed.\n", kr));
-        pThis->pvConnection = NULL;
+        pThis->uConnection = 0;
         return VERR_VM_DRIVER_OPEN_ERROR;
     }
 
-    AssertCompile(sizeof(void *) == sizeof(Connection));
-    pThis->pvConnection = (void *)Connection;
+    AssertCompile(sizeof(pThis->uConnection) >= sizeof(Connection));
+    pThis->uConnection = Connection;
     return VINF_SUCCESS;
 }
 
@@ -204,13 +204,13 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
         rc = suplibDarwinOpenDevice(pThis);
         if (RT_FAILURE(rc))
         {
-            kern_return_t kr = IOServiceClose((io_connect_t)pThis->pvConnection);
+            kern_return_t kr = IOServiceClose((io_connect_t)pThis->uConnection);
             if (kr != kIOReturnSuccess)
             {
-                LogRel(("Warning: IOServiceClose(%p) returned %d\n", pThis->pvConnection, kr));
+                LogRel(("Warning: IOServiceClose(%RCv) returned %d\n", pThis->uConnection, kr));
                 AssertFailed();
             }
-            pThis->pvConnection = NULL;
+            pThis->uConnection = 0;
         }
     }
 
@@ -226,15 +226,15 @@ int suplibOsTerm(PSUPLIBDATA pThis)
      * Close the connection to the IOService.
      * This will cause the SUPDRVSESSION to be closed (starting IOC 9.1).
      */
-    if (pThis->pvConnection)
+    if (pThis->uConnection)
     {
-        kern_return_t kr = IOServiceClose((io_connect_t)pThis->pvConnection);
+        kern_return_t kr = IOServiceClose((io_connect_t)pThis->uConnection);
         if (kr != kIOReturnSuccess)
         {
-            LogRel(("Warning: IOServiceClose(%p) returned %d\n", pThis->pvConnection, kr));
+            LogRel(("Warning: IOServiceClose(%RCv) returned %d\n", pThis->uConnection, kr));
             AssertFailed();
         }
-        pThis->pvConnection = NULL;
+        pThis->uConnection = 0;
     }
 
     /*

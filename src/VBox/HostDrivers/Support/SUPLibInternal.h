@@ -194,7 +194,7 @@ typedef struct SUPLIBDATA
     RTFILE              hDevice;
 #if   defined(RT_OS_DARWIN)
     /** The connection to the VBoxSupDrv service. */
-    void               *pvConnection;
+    uintptr_t           uConnection;
 #elif defined(RT_OS_LINUX)
     /** Indicates whether madvise(,,MADV_DONTFORK) works. */
     bool                fSysMadviseWorks;
