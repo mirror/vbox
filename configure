@@ -1954,6 +1954,9 @@ if [ $OSE -ge 1 ]; then
     cnf_append "VBOX_WITH_LINUX_ADDITIONS" ""
   fi
   echo >> $CNF
+else
+  # webservices are enabled for non-OSE builds of course
+  WITH_GSOAP=1
 fi
 
 # headless
