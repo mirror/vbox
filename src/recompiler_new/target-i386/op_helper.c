@@ -1430,7 +1430,7 @@ void helper_external_event(void)
 #if defined(RT_OS_DARWIN) && defined(VBOX_STRICT)
     uintptr_t uSP;
 # ifdef RT_ARCH_AMD64
-    __asm__ __volatile__("movl %%rsp, %0" : "=r" (uSP));
+    __asm__ __volatile__("movq %%rsp, %0" : "=r" (uSP));
 # else
     __asm__ __volatile__("movl %%esp, %0" : "=r" (uSP));
 # endif
