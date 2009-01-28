@@ -26,6 +26,8 @@
 
 #include "VirtualBoxBase.h"
 
+#include <string>
+
 class VirtualBox;
 
 class ATL_NO_VTABLE Appliance :
@@ -87,17 +89,16 @@ private:
     HRESULT HandleNetworkSection(const char *pcszPath, const xml::Node *pSectionElem);
     HRESULT HandleVirtualSystemContent(const char *pcszPath, const xml::Node *pContentElem);
 
-    HRESULT searchUniqueVMName (std::string& aName);
+    HRESULT searchUniqueVMName (std::string& aName) const;
+    HRESULT searchUniqueDiskImageFilePath(std::string& aName) const;
 };
 
-
-#include <string>
 struct VirtualSystemDescriptionEntry
 {
     VirtualSystemDescriptionType_T type; /* Of which type is this value */
-    uint64_t ref; /* Reference value to the internal implementation */
-    std::string strOriginalValue; /* The original ovf value */
-    std::string strAutoValue; /* The value which vbox suggest */
+    std::string strRef; /* Reference value to the internal implementation */
+    std::string strOriginalValue; /* The original OVF value */
+    std::string strAutoValue; /* The value which VBox suggest */
     std::string strFinalValue; /* The value the user select */
     std::string strConfiguration; /* Additional configuration data for this type */
 };
@@ -139,7 +140,6 @@ public:
 
     /* IVirtualSystemDescription methods */
     STDMETHOD(GetDescription)(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
-                              ComSafeArrayOut(ULONG, aRefs),
                               ComSafeArrayOut(BSTR, aOrigValues),
                               ComSafeArrayOut(BSTR, aAutoValues),
                               ComSafeArrayOut(BSTR, aConfigurations));
@@ -149,7 +149,7 @@ public:
 
     /* private instance data */
 private:
-    void addEntry(VirtualSystemDescriptionType_T aType, ULONG aRef, std::string aOrigValue, std::string aAutoValue);
+    void addEntry(VirtualSystemDescriptionType_T aType, std::string aRef, std::string aOrigValue, std::string aAutoValue, std::string aConfig = "");
     std::list<VirtualSystemDescriptionEntry> findByType(VirtualSystemDescriptionType_T aType);
 
     struct Data;
