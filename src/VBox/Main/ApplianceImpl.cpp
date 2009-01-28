@@ -181,11 +181,18 @@ struct VirtualSystem
     VirtualDisksMap     mapVirtualDisks;
             // (one for each VirtualSystem/Item[@ResourceType=17] element with accumulated data from children)
 
-    string              strLicenceInfo;     // license info if any; receives contents of VirtualSystem/EulaSection/Info
-    string              strLicenceText;     // license info if any; receives contents of VirtualSystem/EulaSection/License
+    bool                fHasFloppyDrive;        // true if there's a floppy item in mapHardwareItems
+    bool                fHasCdromDrive;         // true if there's a CD-ROM item in mapHardwareItems; ISO images are not yet supported by OVFtool
+    bool                fHasUsbController;      // true if there's a USB controller item in mapHardwareItems
+
+    string              strSoundCardType;       // if not empty, then the system wants a soundcard; this then specifies the hardware;
+                                                // VMware Workstation 6.5 uses "ensoniq1371" for example
+
+    string              strLicenceInfo;         // license info if any; receives contents of VirtualSystem/EulaSection/Info
+    string              strLicenceText;         // license info if any; receives contents of VirtualSystem/EulaSection/License
 
     VirtualSystem()
-        : ullMemorySize(0), cCPUs(1)
+        : ullMemorySize(0), cCPUs(1), fHasFloppyDrive(false), fHasCdromDrive(false), fHasUsbController(false)
     {
     }
 };
@@ -673,6 +680,25 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                     }
                     break;
 
+                    case OVFResourceType_FloppyDrive: // 14
+                        d.fHasFloppyDrive = true;           // we have no additional information
+                    break;
+
+                    case OVFResourceType_CdDrive:       // 15
+                        /*  <Item ovf:required="false">
+                                <rasd:Caption>cdrom1</rasd:Caption>
+                                <rasd:InstanceId>7</rasd:InstanceId>
+                                <rasd:ResourceType>15</rasd:ResourceType>
+                                <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
+                                <rasd:Parent>5</rasd:Parent>
+                                <rasd:AddressOnParent>0</rasd:AddressOnParent>
+                            </Item> */
+                            // I tried to see what happens if I set an ISO for the CD-ROM in VMware Workstation,
+                            // but then the ovftool dies with "Device backing not supported". So I guess if
+                            // VMware can't export ISOs, then we don't need to be able to import them right now.
+                        d.fHasCdromDrive = true;           // we have no additional information
+                    break;
+
                     case OVFResourceType_HardDisk: // 17
                     {
                         /*  <Item>
@@ -720,6 +746,38 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                         d.mapVirtualDisks[vd.strDiskId] = vd;
                     }
                     break;
+
+                    case OVFResourceType_UsbController: // 23
+                        /*  <Item ovf:required="false">
+                                <rasd:Caption>usb</rasd:Caption>
+                                <rasd:Description>USB Controller</rasd:Description>
+                                <rasd:InstanceId>3</rasd:InstanceId>
+                                <rasd:ResourceType>23</rasd:ResourceType>
+                                <rasd:Address>0</rasd:Address>
+                                <rasd:BusNumber>0</rasd:BusNumber>
+                            </Item> */
+                        d.fHasUsbController = true;           // we have no additional information
+                    break;
+
+                    case OVFResourceType_SoundCard: // 35
+                        /*  <Item ovf:required="false">
+                                <rasd:Caption>sound</rasd:Caption>
+                                <rasd:Description>Sound Card</rasd:Description>
+                                <rasd:InstanceId>10</rasd:InstanceId>
+                                <rasd:ResourceType>35</rasd:ResourceType>
+                                <rasd:ResourceSubType>ensoniq1371</rasd:ResourceSubType>
+                                <rasd:AutomaticAllocation>false</rasd:AutomaticAllocation>
+                                <rasd:AddressOnParent>3</rasd:AddressOnParent>
+                            </Item> */
+                        d.strSoundCardType = i.strResourceSubType;
+                    break;
+
+                    default:
+                        return setError(VBOX_E_FILE_ERROR,
+                                        tr("Error reading \"%s\": Unknown resource type %d in hardware item, line %d"),
+                                        pcszPath,
+                                        i.resourceType,
+                                        i.ulLineNumber);
                 }
             }
         }
