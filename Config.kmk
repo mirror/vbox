@@ -1986,7 +1986,7 @@ endif
 ifeq ($(VBOX_LDR_FMT32),macho)
  TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -static -nostdinc,$(TEMPLATE_VBOXGC_CFLAGS))
  TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -static -nostdinc,$(TEMPLATE_VBOXGC_CXXFLAGS))
- TEMPLATE_VBOXGCEXE_LDFLAGS  = -g
+ TEMPLATE_VBOXGCEXE_LDFLAGS  = -g -m32
 endif
 
 ifeq ($(VBOX_LDR_FMT32),lx)
