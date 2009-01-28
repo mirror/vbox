@@ -84,7 +84,7 @@ public:
 
     Global() : tlsID (NIL_RTTLS)
     {
-#if defined (RT_OS_LINUX)
+#if defined (RT_OS_LINUX) /** @todo r=bird: Why only linux? All but windows supports destructors... */
         int vrc = RTTlsAllocEx (&tlsID, TLSDestructor);
         AssertRC (vrc);
 #else
