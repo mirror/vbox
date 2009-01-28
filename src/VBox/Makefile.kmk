@@ -27,7 +27,9 @@ ifdef VBOX_SINGLE_MAKEFILE
 ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  ifdef VBOX_WITH_CROGL
-  include $(PATH_SUB_CURRENT)/GuestHost/Makefile.kmk
+  if1of ($(KBUILD_TARGET),win)
+   include $(PATH_SUB_CURRENT)/GuestHost/Makefile.kmk
+  endif
  endif
  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
 
