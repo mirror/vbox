@@ -1374,9 +1374,9 @@ STDMETHODIMP Appliance::ImportAppliance()
         ComObjPtr<VirtualSystemDescription> vsd = (*it1);
 
         /* Guest OS type */
-        list<VirtualSystemDescriptionEntry> vsdeOS = vsd->findByType(VirtualSystemDescriptionType_OS);
+        std::list<VirtualSystemDescriptionEntry*> vsdeOS = vsd->findByType(VirtualSystemDescriptionType_OS);
         Assert(vsdeOS.size() == 1);
-        string osTypeVBox = vsdeOS.front().strFinalValue;
+        string osTypeVBox = vsdeOS.front()->strFinalValue;
 
         /* Now that we know the base system get our internal defaults based on that. */
         ComPtr<IGuestOSType> osType;
@@ -1385,9 +1385,9 @@ STDMETHODIMP Appliance::ImportAppliance()
 
         /* Create the machine */
         /* First get the name */
-        list<VirtualSystemDescriptionEntry> vsdeName = vsd->findByType(VirtualSystemDescriptionType_Name);
+        std::list<VirtualSystemDescriptionEntry*> vsdeName = vsd->findByType(VirtualSystemDescriptionType_Name);
         Assert(vsdeName.size() == 1);
-        string nameVBox = vsdeName.front().strFinalValue;
+        string nameVBox = vsdeName.front()->strFinalValue;
         ComPtr<IMachine> newMachine;
         rc = mVirtualBox->CreateMachine(Bstr(nameVBox.c_str()), Bstr(osTypeVBox.c_str()),
                                         Bstr(), Guid(),
@@ -1396,13 +1396,13 @@ STDMETHODIMP Appliance::ImportAppliance()
 
         /* CPU count (ignored for now) */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxCPUCount) */
-        // list<VirtualSystemDescriptionEntry> vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
+        // EntriesList vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
 
         /* RAM */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
-        list<VirtualSystemDescriptionEntry> vsdeRAM = vsd->findByType(VirtualSystemDescriptionType_Memory);
+        std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsd->findByType(VirtualSystemDescriptionType_Memory);
         Assert(vsdeRAM.size() == 1);
-        string memoryVBox = vsdeRAM.front().strFinalValue;
+        string memoryVBox = vsdeRAM.front()->strFinalValue;
         uint64_t tt = RTStrToUInt64(memoryVBox.c_str()) / _1M;
 
         rc = newMachine->COMSETTER(MemorySize)(tt);
@@ -1419,7 +1419,7 @@ STDMETHODIMP Appliance::ImportAppliance()
         ComAssertComRCThrowRC(rc);
 
         /* Change the network adapters */
-        list<VirtualSystemDescriptionEntry> vsdeNW = vsd->findByType(VirtualSystemDescriptionType_NetworkAdapter);
+        std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsd->findByType(VirtualSystemDescriptionType_NetworkAdapter);
         if (vsdeNW.size() == 0)
         {
             /* No network adapters, so we have to disable our default one */
@@ -1431,7 +1431,7 @@ STDMETHODIMP Appliance::ImportAppliance()
         }
         else
         {
-            list<VirtualSystemDescriptionEntry>::const_iterator nwIt;
+            list<VirtualSystemDescriptionEntry*>::const_iterator nwIt;
             /* Iterate through all network cards. We support 8 network adapters
              * at the maximum. (@todo: warn if it are more!) */
             size_t a = 0;
@@ -1439,7 +1439,7 @@ STDMETHODIMP Appliance::ImportAppliance()
                  (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
                  ++nwIt, ++a)
             {
-                string nwTypeVBox = nwIt->strFinalValue;
+                string nwTypeVBox = (*nwIt)->strFinalValue;
                 uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
                 ComPtr<INetworkAdapter> nwVBox;
                 rc = newMachine->GetNetworkAdapter((ULONG)a, nwVBox.asOutParam());
@@ -1454,11 +1454,11 @@ STDMETHODIMP Appliance::ImportAppliance()
         }
 
         /* Hard disk controller IDE */
-        list<VirtualSystemDescriptionEntry> vsdeHDCIDE = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
+        std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
         /* @todo: we support one IDE controller only */
         if (vsdeHDCIDE.size() > 0)
         {
-             IDEControllerType_T hdcVBox = static_cast<IDEControllerType_T>(RTStrToUInt32(vsdeHDCIDE.front().strFinalValue.c_str()));
+             IDEControllerType_T hdcVBox = static_cast<IDEControllerType_T>(RTStrToUInt32(vsdeHDCIDE.front()->strFinalValue.c_str()));
              /* Set the appropriate IDE controller in the virtual BIOS of the
               * VM. */
              ComPtr<IBIOSSettings> biosSettings;
@@ -1469,11 +1469,11 @@ STDMETHODIMP Appliance::ImportAppliance()
         }
 #ifdef VBOX_WITH_AHCI
         /* Hard disk controller SATA */
-        list<VirtualSystemDescriptionEntry> vsdeHDCSATA = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
+        std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
         /* @todo: we support one SATA controller only */
         if (vsdeHDCSATA.size() > 0)
         {
-            string hdcVBox = vsdeHDCIDE.front().strFinalValue;
+            string hdcVBox = vsdeHDCIDE.front()->strFinalValue;
             if (!RTStrCmp(hdcVBox.c_str(), "AHCI"))
             {
                 /* For now we have just to enable the AHCI controller. */
@@ -1491,7 +1491,7 @@ STDMETHODIMP Appliance::ImportAppliance()
 #endif /* VBOX_WITH_AHCI */
 #ifdef VBOX_WITH_SCSI
         /* Hard disk controller SCSI */
-        list<VirtualSystemDescriptionEntry> vsdeHDCSCSI = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
+        EntriesList vsdeHDCSCSI = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
         /* @todo: do we support more than one SCSI controller? */
         if (vsdeHDCSCSI.size() > 0)
         {
@@ -1505,7 +1505,7 @@ STDMETHODIMP Appliance::ImportAppliance()
         ComAssertComRCThrowRC(rc);
 
         /* Create the hard disks & connect them to the appropriate controllers. */
-        list<VirtualSystemDescriptionEntry> vsdeHD = vsd->findByType(VirtualSystemDescriptionType_HardDiskImage);
+        std::list<VirtualSystemDescriptionEntry*> vsdeHD = vsd->findByType(VirtualSystemDescriptionType_HardDiskImage);
         if (vsdeHD.size() > 0)
         {
             /* That we can attach hard disks we need to open a session for the
@@ -1525,12 +1525,12 @@ STDMETHODIMP Appliance::ImportAppliance()
             char *srcDir = RTStrDup(Utf8Str(m->bstrPath).raw());
             RTPathStripFilename(srcDir);
             /* Iterate over all given disk images */
-            list<VirtualSystemDescriptionEntry>::const_iterator hdIt;
+            list<VirtualSystemDescriptionEntry*>::const_iterator hdIt;
             for (hdIt = vsdeHD.begin();
                  hdIt != vsdeHD.end();
                  ++hdIt)
             {
-                char *dstFilePath = RTStrDup(hdIt->strFinalValue.c_str());
+                char *dstFilePath = RTStrDup((*hdIt)->strFinalValue.c_str());
                 /* Check if the destination file exists already or the
                  * destination path is empty. */
                 if (RTPathExists(dstFilePath) ||
@@ -1540,12 +1540,13 @@ STDMETHODIMP Appliance::ImportAppliance()
                      * circumstances. */
 //                    continue;
                 }
+                const string &strRef = (*hdIt)->strRef;
                 /* Get the associated disk image */
-                if (m->mapDisks.find(hdIt->strRef) == m->mapDisks.end())
+                if (m->mapDisks.find(strRef) == m->mapDisks.end())
                 {
                     /* @todo: error: entry doesn't exists */
                 }
-                DiskImage di = m->mapDisks [hdIt->strRef];
+                DiskImage di = m->mapDisks [strRef];
                 /* Construct the source file path */
                 char *srcFilePath;
                 RTStrAPrintf(&srcFilePath, "%s/%s", srcDir, di.strHref.c_str());
@@ -1767,7 +1768,11 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(IN_BSTR, aF
     return S_OK;
 }
 
-void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType, std::string aRef, std::string aOrigValue, std::string aAutoValue, std::string aConfig /* = "" */)
+void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
+                                        const std::string &aRef,
+                                        const std::string &aOrigValue,
+                                        const std::string &aAutoValue,
+                                        const std::string &aConfig /* = "" */)
 {
     VirtualSystemDescriptionEntry vsde;
     vsde.type = aType;
@@ -1781,16 +1786,15 @@ void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType, st
     m->descriptions.push_back(vsde);
 }
 
-list<VirtualSystemDescriptionEntry> VirtualSystemDescription::findByType(VirtualSystemDescriptionType_T aType)
+std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::findByType(VirtualSystemDescriptionType_T aType)
 {
-    list<VirtualSystemDescriptionEntry> vsd;
-
-    list<VirtualSystemDescriptionEntry>::const_iterator it;
+    std::list<VirtualSystemDescriptionEntry*> vsd;
+    list<VirtualSystemDescriptionEntry>::iterator it;
     for (it = m->descriptions.begin();
          it != m->descriptions.end();
          ++it)
         if (it->type == aType)
-            vsd.push_back(*it);
+            vsd.push_back(&(*it));
 
     return vsd;
 }

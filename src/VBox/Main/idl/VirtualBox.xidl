@@ -3001,6 +3001,7 @@
     <const name="Floppy" value="10" />
     <const name="NetworkAdapter" value="11" />
     <const name="USBController" value="12" />
+    <const name="SoundCard" value="13" />
 
   </enum>
 
