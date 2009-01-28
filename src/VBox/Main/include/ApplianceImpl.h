@@ -26,7 +26,7 @@
 
 #include "VirtualBoxBase.h"
 
-#include <string>
+// #include <string>
 
 class VirtualBox;
 
@@ -89,18 +89,18 @@ private:
     HRESULT HandleNetworkSection(const char *pcszPath, const xml::Node *pSectionElem);
     HRESULT HandleVirtualSystemContent(const char *pcszPath, const xml::Node *pContentElem);
 
-    HRESULT searchUniqueVMName (std::string& aName) const;
-    HRESULT searchUniqueDiskImageFilePath(std::string& aName) const;
+    HRESULT searchUniqueVMName(Utf8Str& aName) const;
+    HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
 };
 
 struct VirtualSystemDescriptionEntry
 {
     VirtualSystemDescriptionType_T type; /* Of which type is this value */
-    std::string strRef; /* Reference value to the internal implementation */
-    std::string strOriginalValue; /* The original OVF value */
-    std::string strAutoValue; /* The value which VBox suggest */
-    std::string strFinalValue; /* The value the user select */
-    std::string strConfiguration; /* Additional configuration data for this type */
+    Utf8Str strRef; /* Reference value to the internal implementation */
+    Utf8Str strOriginalValue; /* The original OVF value */
+    Utf8Str strAutoValue; /* The value which VBox suggest */
+    Utf8Str strFinalValue; /* The value the user select */
+    Utf8Str strConfiguration; /* Additional configuration data for this type */
 };
 
 class ATL_NO_VTABLE VirtualSystemDescription :
@@ -150,10 +150,10 @@ public:
     /* private instance data */
 private:
     void addEntry(VirtualSystemDescriptionType_T aType,
-                  const std::string &aRef,
-                  const std::string &aOrigValue,
-                  const std::string &aAutoValue,
-                  const std::string &aConfig = "");
+                  const Utf8Str &aRef,
+                  const Utf8Str &aOrigValue,
+                  const Utf8Str &aAutoValue,
+                  const Utf8Str &aConfig = "");
 
     std::list<VirtualSystemDescriptionEntry*> findByType(VirtualSystemDescriptionType_T aType);
 

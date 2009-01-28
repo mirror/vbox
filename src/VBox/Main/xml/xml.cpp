@@ -20,6 +20,8 @@
 
 #include "Logging.h"
 
+#include <boost/shared_ptr.hpp>
+
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/lock.h>
@@ -34,11 +36,8 @@
 
 #include <libxml/xmlschemas.h>
 
-#include <string>
 #include <list>
 #include <map>
-
-#include "boost/shared_ptr.hpp"
 
 #include "VBox/xml.h"
 
@@ -684,7 +683,7 @@ const Node* Node::findAttribute(const char *pcszMatch) const
  * @param str out: attribute value
  * @return TRUE if attribute was found and str was thus updated.
  */
-bool Node::getAttributeValue(const char *pcszMatch, std::string &str) const
+bool Node::getAttributeValue(const char *pcszMatch, com::Utf8Str &str) const
 {
     const Node* pAttr;
     if ((pAttr = findAttribute(pcszMatch)))
@@ -708,7 +707,7 @@ bool Node::getAttributeValue(const char *pcszMatch, std::string &str) const
  */
 bool Node::getAttributeValue(const char *pcszMatch, int64_t &i) const
 {
-    std::string str;
+    com::Utf8Str str;
     if (    (getAttributeValue(pcszMatch, str))
          && (VINF_SUCCESS == RTStrToInt64Ex(str.c_str(), NULL, 10, &i))
        )
@@ -729,7 +728,7 @@ bool Node::getAttributeValue(const char *pcszMatch, int64_t &i) const
  */
 bool Node::getAttributeValue(const char *pcszMatch, uint64_t &i) const
 {
-    std::string str;
+    com::Utf8Str str;
     if (    (getAttributeValue(pcszMatch, str))
          && (VINF_SUCCESS == RTStrToUInt64Ex(str.c_str(), NULL, 10, &i))
        )
@@ -906,7 +905,7 @@ XmlParserBase::~XmlParserBase()
 struct XmlFileParser::Data
 {
     xmlParserCtxtPtr ctxt;
-    std::string strXmlFilename;
+    com::Utf8Str strXmlFilename;
 
     Data()
     {
@@ -934,7 +933,7 @@ XmlFileParser::~XmlFileParser()
 struct ReadContext
 {
     File file;
-    std::string error;
+    com::Utf8Str error;
 
     ReadContext(const char *pcszFilename)
         : file(File::Mode_Read, pcszFilename)

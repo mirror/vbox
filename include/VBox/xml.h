@@ -38,7 +38,6 @@
 #undef max
 
 #include <iprt/mem.h>
-#include <string>
 
 #ifndef IN_RING3
 # error "There are no XML APIs available in Ring-0 Context!"
@@ -63,6 +62,7 @@
 # define VBOXXML_CLASS DECLIMPORT_CLASS
 #endif
 
+#include "VBox/com/string.h"
 
 /*
  * Shut up MSVC complaining that auto_ptr[_ref] template instantiations (as a
@@ -513,7 +513,7 @@ public:
     const Node* findChildElementFromId(const char *pcszId) const;
 
     const Node* findAttribute(const char *pcszMatch) const;
-    bool getAttributeValue(const char *pcszMatch, std::string &str) const;
+    bool getAttributeValue(const char *pcszMatch, com::Utf8Str &str) const;
     bool getAttributeValue(const char *pcszMatch, int64_t &i) const;
     bool getAttributeValue(const char *pcszMatch, uint64_t &i) const;
 
