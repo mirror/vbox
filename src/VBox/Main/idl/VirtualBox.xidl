@@ -2870,6 +2870,8 @@
     <const name="CdDrive" value="15" />
     <const name="DvdDrive" value="16" />
     <const name="HardDisk" value="17" />
+    <const name="UsbController" value="23" />
+    <const name="SoundCard" value="35" />
   </enum>
 
   <interface
@@ -2998,6 +3000,7 @@
     <const name="CDROM" value="9" />
     <const name="Floppy" value="10" />
     <const name="NetworkAdapter" value="11" />
+    <const name="USBController" value="12" />
 
   </enum>
 
