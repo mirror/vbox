@@ -392,7 +392,9 @@ Graphics/DevVGA.cpp_DEPS = $(PATH_VgaBiosBin)/vbetables.h
 #
 VBoxDDGC_TEMPLATE       = VBOXGC
 VBoxDDGC_SYSSUFF        = .gc
-VBoxDDGC_DEFS.darwin.x86= VBOX_WITH_2X_4GB_ADDR_SPACE
+ifeq ($(KBUILD_TARGET_ARCH),x86)
+ VBoxDDGC_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
+endif
 VBoxDDGC_DEFS           =
 VBoxDDGC_INCS          := \
 	$(PATH_SUB_CURRENT)
