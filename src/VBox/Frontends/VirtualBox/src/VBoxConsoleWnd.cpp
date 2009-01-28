@@ -1189,6 +1189,9 @@ void VBoxConsoleWnd::popupMainMenu (bool aCenter)
 
     mMainMenu->popup (pos);
     mMainMenu->selectFirstAction();
+#ifdef Q_WS_WIN
+    mMainMenu->activateWindow();
+#endif
 }
 
 //
