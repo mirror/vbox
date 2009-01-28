@@ -91,11 +91,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
     {
         case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_PAGE:
-            IOFreeAligned(pMemDarwin->Core.pv, pMemDarwin->Core.cb);
-            break;
-
         case RTR0MEMOBJTYPE_CONT:
-            IOFreeContiguous(pMemDarwin->Core.pv, pMemDarwin->Core.cb);
             break;
 
         case RTR0MEMOBJTYPE_LOCK:
@@ -122,12 +118,10 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_PHYS_NC:
             AssertMsgFailed(("RTR0MEMOBJTYPE_PHYS_NC\n"));
             return VERR_INTERNAL_ERROR;
-            break;
 
         case RTR0MEMOBJTYPE_RES_VIRT:
             AssertMsgFailed(("RTR0MEMOBJTYPE_RES_VIRT\n"));
             return VERR_INTERNAL_ERROR;
-            break;
 
         case RTR0MEMOBJTYPE_MAPPING:
             /* nothing to do here. */
@@ -142,141 +136,102 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 }
 
 
-int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
+
+/**
+ * Kernel memory alloc worker that uses inTaskWithPhysicalMask.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_ADDRESS_TOO_BIG try another way.
+ *
+ * @param   ppMem           Where to return the memory object.
+ * @param   cb              The page aligned memory size.
+ * @param   fExecutable     Whether the mapping needs to be executable.
+ * @param   fContiguous     Whether the backing memory needs to be contiguous.
+ * @param   PhysMask        The mask for the backing memory (i.e. range). Use 0 if
+ *                          you don't care that much or is speculating.
+ * @param   MaxPhysAddr     The max address to verify the result against. Use
+ *                          UINT64_MAX if it doesn't matter.
+ * @param   enmType         The object type.
+ */
+static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
+                                       bool fExecutable, bool fContiguous,
+                                       mach_vm_address_t PhysMask, uint64_t MaxPhysAddr,
+                                       RTR0MEMOBJTYPE enmType)
 {
     /*
-     * Try allocate the memory and create it's IOMemoryDescriptor first.
-     */
-    int rc = VERR_NO_PAGE_MEMORY;
-    AssertCompile(sizeof(IOPhysicalAddress) == 4);
-    void *pv = IOMallocAligned(cb, PAGE_SIZE);
-    if (pv)
-    {
-        IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, kernel_task);
-        if (pMemDesc)
-        {
-            /*
-             * Create the IPRT memory object.
-             */
-            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_PAGE, pv, cb);
-            if (pMemDarwin)
-            {
-                pMemDarwin->pMemDesc = pMemDesc;
-                *ppMem = &pMemDarwin->Core;
-                return VINF_SUCCESS;
-            }
-
-            rc = VERR_NO_MEMORY;
-            pMemDesc->release();
-        }
-        else
-            rc = VERR_MEMOBJ_INIT_FAILED;
-        IOFreeAligned(pv, cb);
-    }
-    return rc;
-}
-
-
-int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
-{
-#if 1
-    /*
-     * Allocating 128KB continguous memory for the low page pool can bit a bit
-     * exhausting on the kernel, it frequently causes the entire box to lock
-     * up on startup.
+     * Try inTaskWithPhysicalMask first, but since we don't quite trust that it
+     * actually respects the physical memory mask (10.5.x is certainly busted),
+     * we'll use rtR0MemObjNativeAllocCont as a fallback for dealing with that.
      *
-     * So, try allocate the memory using IOMallocAligned first and if we get any high
-     * physical memory we'll release it and fall back on IOMAllocContiguous.
+     * The kIOMemorySharingTypeMask flag just forces the result to be page aligned.
      */
-    int rc = VERR_NO_PAGE_MEMORY;
-    AssertCompile(sizeof(IOPhysicalAddress) == 4);
-    void *pv = IOMallocAligned(cb, PAGE_SIZE);
-    if (pv)
+    int rc;
+    IOBufferMemoryDescriptor *pMemDesc =
+        IOBufferMemoryDescriptor::inTaskWithPhysicalMask(kernel_task,
+                                                           kIOMemorySharingTypeMask
+                                                         | kIODirectionInOut
+                                                         | (fContiguous ? kIOMemoryPhysicallyContiguous : 0),
+                                                         cb,
+                                                         PhysMask);
+    if (pMemDesc)
     {
-        IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, kernel_task);
-        if (pMemDesc)
+        IOReturn IORet = pMemDesc->prepare(kIODirectionInOut);
+        if (IORet == kIOReturnSuccess)
         {
-            /*
-             * Check if it's all below 4GB.
-             */
-            for (IOByteCount off = 0; off < cb; off += PAGE_SIZE)
+            void *pv = pMemDesc->getBytesNoCopy(0, cb);
+            if (pv)
             {
-                addr64_t Addr = pMemDesc->getPhysicalSegment64(off, NULL);
-                if (Addr > (uint32_t)(_4G - PAGE_SIZE))
+                /*
+                 * Check if it's all below 4GB.
+                 */
+                addr64_t AddrPrev = 0;
+                MaxPhysAddr &= ~(uint64_t)PAGE_OFFSET_MASK;
+                for (IOByteCount off = 0; off < cb; off += PAGE_SIZE)
                 {
-                    /* Ok, we failed, fall back on contiguous allocation. */
-                    pMemDesc->release();
-                    IOFreeAligned(pv, cb);
-                    return rtR0MemObjNativeAllocCont(ppMem, cb, fExecutable);
+#ifdef __LP64__ /* Grumble! */
+                    addr64_t Addr = pMemDesc->getPhysicalSegment(off, NULL);
+#else
+                    addr64_t Addr = pMemDesc->getPhysicalSegment64(off, NULL);
+#endif
+                    if (    Addr > MaxPhysAddr
+                        ||  !Addr
+                        || (Addr & PAGE_OFFSET_MASK)
+                        ||  (   fContiguous
+                             && !off
+                             && Addr == AddrPrev + PAGE_SIZE))
+                    {
+                        /* Buggy API, try allocate the memory another way. */
+                        pMemDesc->release();
+                        if (PhysMask)
+                            LogAlways(("rtR0MemObjNativeAllocLow: off=%x Addr=%llx AddrPrev=%llx MaxPhysAddr=%llx PhysMas=%llx - buggy API!\n",
+                                       off, Addr, AddrPrev, MaxPhysAddr, PhysMask));
+                        return VERR_ADDRESS_TOO_BIG;
+                    }
+                    AddrPrev = Addr;
                 }
-            }
 
-            /*
-             * Create the IPRT memory object.
-             */
-            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOW, pv, cb);
-            if (pMemDarwin)
-            {
-                pMemDarwin->pMemDesc = pMemDesc;
-                *ppMem = &pMemDarwin->Core;
-                return VINF_SUCCESS;
-            }
-
-            rc = VERR_NO_MEMORY;
-            pMemDesc->release();
-        }
-        else
-            rc = VERR_MEMOBJ_INIT_FAILED;
-        IOFreeAligned(pv, cb);
-    }
-    return rc;
-
-#else
-
-    /*
-     * IOMallocContiguous is the most suitable API.
-     */
-    return rtR0MemObjNativeAllocCont(ppMem, cb, fExecutable);
-#endif
-}
-
-
-int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
-{
-    /*
-     * Try allocate the memory and create it's IOMemoryDescriptor first.
-     */
-    int rc = VERR_NO_CONT_MEMORY;
-    AssertCompile(sizeof(IOPhysicalAddress) == 4);
-
-    /// @todo
-    // Use IOBufferMemoryDescriptor::inTaskWithPhysicalMask(kernel_task, kIOMemoryKernelUserShared | kIODirectionInOut,
-    //                                                      cb, (_4G - 1) ^ PAGE_OFFSET_MASK);
-#if 1 /* seems to work fine for cb == PAGE_SIZE, the other variant doesn't. */
-    IOPhysicalAddress PhysAddrIgnored = 0;
-    void *pv = IOMallocContiguous(cb, PAGE_SIZE, &PhysAddrIgnored);
-#else
-    void *pv = IOMallocContiguous(cb, PAGE_SIZE, NULL);
-#endif
-    if (pv)
-    {
-        IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, kernel_task);
-        if (pMemDesc)
-        {
-            /* a bit of useful paranoia. */
-            addr64_t PhysAddr = pMemDesc->getPhysicalSegment64(0, NULL);
-            Assert(PhysAddr == pMemDesc->getPhysicalAddress());
-            if (    PhysAddr > 0
-                &&  PhysAddr <= _4G
-                &&  PhysAddr + cb <= _4G)
-            {
                 /*
                  * Create the IPRT memory object.
                  */
-                PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_CONT, pv, cb);
+                PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), enmType, pv, cb);
                 if (pMemDarwin)
                 {
-                    pMemDarwin->Core.u.Cont.Phys = PhysAddr;
+                    if (fContiguous)
+                    {
+#ifdef __LP64__ /* Grumble! */
+                        addr64_t PhysBase64 = pMemDesc->getPhysicalSegment(0, NULL);
+#else
+                        addr64_t PhysBase64 = pMemDesc->getPhysicalSegment64(0, NULL);
+#endif
+                        RTHCPHYS PhysBase = PhysBase64; Assert(PhysBase == PhysBase64);
+                        if (enmType == RTR0MEMOBJTYPE_CONT)
+                            pMemDarwin->Core.u.Cont.Phys = PhysBase;
+                        else if (enmType == RTR0MEMOBJTYPE_PHYS)
+                            pMemDarwin->Core.u.Phys.PhysBase = PhysBase;
+                        else
+                            AssertMsgFailed(("enmType=%d\n", enmType));
+                    }
+
                     pMemDarwin->pMemDesc = pMemDesc;
                     *ppMem = &pMemDarwin->Core;
                     return VINF_SUCCESS;
@@ -285,108 +240,84 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
                 rc = VERR_NO_MEMORY;
             }
             else
-            {
-                printf("rtR0MemObjNativeAllocCont: PhysAddr=%llx cb=%#x\n", (unsigned long long)PhysAddr, cb);
-                AssertMsgFailed(("PhysAddr=%llx\n", (unsigned long long)PhysAddr));
-                rc = VERR_INTERNAL_ERROR;
-            }
-            pMemDesc->release();
+                rc = VERR_MEMOBJ_INIT_FAILED;
         }
         else
-            rc = VERR_MEMOBJ_INIT_FAILED;
-        IOFreeContiguous(pv, cb);
+            rc = RTErrConvertFromDarwinIO(IORet);
+        pMemDesc->release();
     }
+    else
+        rc = VERR_MEMOBJ_INIT_FAILED;
+    Assert(rc != VERR_ADDRESS_TOO_BIG);
+    return rc;
+}
+
+
+int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
+{
+    return rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */,
+                                       0 /* PhysMask */, UINT64_MAX, RTR0MEMOBJTYPE_PAGE);
+}
+
+
+int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
+{
+    /*
+     * Try IOMallocPhysical/IOMallocAligned first.
+     * Then try optimistically without a physical address mask, which will always
+     * end up using IOMallocAligned.
+     *
+     * (See bug comment in the worker and IOBufferMemoryDescriptor::initWithPhysicalMask.)
+     */
+    int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */,
+                                         ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW);
+    if (rc == VERR_ADDRESS_TOO_BIG)
+        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */,
+                                         0 /* PhysMask */, _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW);
+    return rc;
+}
+
+
+int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
+{
+    int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, true /* fContiguous */,
+                                         ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE,
+                                         RTR0MEMOBJTYPE_CONT);
 
     /*
-     * Workaround for odd IOMallocContiguous behavior, just in case.
+     * Workaround for bogus IOKernelAllocateContiguous behavior, just in case.
+     * cb <= PAGE_SIZE allocations take a different path, using a different allocator.
      */
-    if (rc == VERR_INTERNAL_ERROR && cb <= PAGE_SIZE)
-        rc = rtR0MemObjNativeAllocCont(ppMem, cb + PAGE_SIZE, fExecutable);
+    if (RT_FAILURE(rc) && cb <= PAGE_SIZE)
+        rc = rtR0MemObjNativeAllocWorker(ppMem, cb + PAGE_SIZE, fExecutable, true /* fContiguous */,
+                                         ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE,
+                                         RTR0MEMOBJTYPE_CONT);
     return rc;
 }
 
 
 int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
-#if 0 /* turned out IOMallocPhysical isn't exported yet. sigh. */
     /*
-     * Try allocate the memory and create it's IOMemoryDescriptor first.
-     * Note that IOMallocPhysical is not working correctly (it's ignoring the mask).
+     * Translate the PhysHighest address into a mask.
      */
-
-    /* first calc the mask (in the hope that it'll be used) */
-    IOPhysicalAddress PhysMask = ~(IOPhysicalAddress)PAGE_OFFSET_MASK;
-    if (PhysHighest != NIL_RTHCPHYS)
+    int rc;
+    if (PhysHighest == NIL_RTHCPHYS)
+        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, true /* fExecutable */, true /* fContiguous */,
+                                         0 /* PhysMask*/, UINT64_MAX, RTR0MEMOBJTYPE_PHYS);
+    else
     {
-        PhysMask = ~(IOPhysicalAddress)0;
-        while (PhysMask > PhysHighest)
+        mach_vm_address_t PhysMask = 0;
+        PhysMask = ~(mach_vm_address_t)0;
+        while (PhysMask > (PhysHighest | PAGE_OFFSET_MASK))
             PhysMask >>= 1;
-        AssertReturn(PhysMask + 1 < cb, VERR_INVALID_PARAMETER);
-        PhysMask &= ~(IOPhysicalAddress)PAGE_OFFSET_MASK;
+        AssertReturn(PhysMask + 1 <= cb, VERR_INVALID_PARAMETER);
+        PhysMask &= ~(mach_vm_address_t)PAGE_OFFSET_MASK;
+
+        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, true /* fExecutable */, true /* fContiguous */,
+                                         PhysMask, PhysHighest, RTR0MEMOBJTYPE_PHYS);
     }
-
-    /* try allocate physical memory. */
-    int rc = VERR_NO_PHYS_MEMORY;
-    mach_vm_address_t PhysAddr64 = IOMallocPhysical(cb, PhysMask);
-    if (PhysAddr64)
-    {
-        IOPhysicalAddress PhysAddr = PhysAddr64;
-        if (    PhysAddr == PhysAddr64
-            &&  PhysAddr < PhysHighest
-            &&  PhysAddr + cb <= PhysHighest)
-        {
-            /* create a descriptor. */
-            IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withPhysicalAddress(PhysAddr, cb, kIODirectionInOut);
-            if (pMemDesc)
-            {
-                Assert(PhysAddr == pMemDesc->getPhysicalAddress());
-
-                /*
-                 * Create the IPRT memory object.
-                 */
-                PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_PHYS, NULL, cb);
-                if (pMemDarwin)
-                {
-                    pMemDarwin->Core.u.Phys.PhysBase = PhysAddr;
-                    pMemDarwin->Core.u.Phys.fAllocated = true;
-                    pMemDarwin->pMemDesc = pMemDesc;
-                    *ppMem = &pMemDarwin->Core;
-                    return VINF_SUCCESS;
-                }
-
-                rc = VERR_NO_MEMORY;
-                pMemDesc->release();
-            }
-            else
-                rc = VERR_MEMOBJ_INIT_FAILED;
-        }
-        else
-        {
-            AssertMsgFailed(("PhysAddr=%#llx PhysAddr64=%#llx PhysHigest=%#llx\n", (unsigned long long)PhysAddr,
-                             (unsigned long long)PhysAddr64, (unsigned long long)PhysHighest));
-            rc = VERR_INTERNAL_ERROR;
-        }
-
-        IOFreePhysical(PhysAddr64, cb);
-    }
-
-    /*
-     * Just in case IOMallocContiguous doesn't work right, we can try fall back
-     * on a contiguous allcation.
-     */
-    if (rc == VERR_INTERNAL_ERROR || rc == VERR_NO_PHYS_MEMORY)
-    {
-        int rc2 = rtR0MemObjNativeAllocCont(ppMem, cb, false);
-        if (RT_SUCCESS(rc2))
-            rc = rc2;
-    }
-
     return rc;
-
-#else
-
-    return rtR0MemObjNativeAllocCont(ppMem, cb, false);
-#endif
 }
 
 
@@ -408,7 +339,7 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
      * as it doesn't harm us keep it in).
      */
     int rc = VERR_ADDRESS_TOO_BIG;
-    IOAddressRange aRanges[1] = { Phys, cb };
+    IOAddressRange aRanges[1] = { { Phys, cb } };
     if (    aRanges[0].address == Phys
         &&  aRanges[0].length == cb)
     {
@@ -492,7 +423,7 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
      * Create a descriptor and try lock it (prepare).
      */
     int rc = VERR_MEMOBJ_INIT_FAILED;
-    IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, Task);
+    IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddressRange((vm_address_t)pv, cb, kIODirectionInOut, Task);
     if (pMemDesc)
     {
         IOReturn IORet = pMemDesc->prepare(kIODirectionInOut);
@@ -549,6 +480,8 @@ int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, 
 int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
                               unsigned fProt, size_t offSub, size_t cbSub)
 {
+    AssertReturn(pvFixed == (void *)-1, VERR_NOT_SUPPORTED);
+
     /*
      * Must have a memory descriptor.
      */
@@ -556,9 +489,17 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     PRTR0MEMOBJDARWIN pMemToMapDarwin = (PRTR0MEMOBJDARWIN)pMemToMap;
     if (pMemToMapDarwin->pMemDesc)
     {
-        IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map(kernel_task, kIOMapAnywhere,
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
+        IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->createMappingInTask(kernel_task,
+                                                                              0,
+                                                                              kIOMapAnywhere | kIOMapDefaultCache,
+                                                                              offSub,
+                                                                              cbSub);
+#else
+        IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map(kernel_task, 0,
                                                               kIOMapAnywhere | kIOMapDefaultCache,
                                                               offSub, cbSub);
+#endif
         if (pMemMap)
         {
             IOVirtualAddress VirtAddr = pMemMap->getVirtualAddress();
@@ -593,6 +534,8 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 
 int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
+    AssertReturn(R3PtrFixed == (RTR3PTR)-1, VERR_NOT_SUPPORTED);
+
     /*
      * Must have a memory descriptor.
      */
@@ -600,8 +543,16 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
     PRTR0MEMOBJDARWIN pMemToMapDarwin = (PRTR0MEMOBJDARWIN)pMemToMap;
     if (pMemToMapDarwin->pMemDesc)
     {
-        IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map((task_t)R0Process, kIOMapAnywhere,
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
+        IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->createMappingInTask((task_t)R0Process,
+                                                                              0,
+                                                                              kIOMapAnywhere | kIOMapDefaultCache,
+                                                                              0 /* offset */,
+                                                                              0 /* length */);
+#else
+        IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map((task_t)R0Process, 0,
                                                               kIOMapAnywhere | kIOMapDefaultCache);
+#endif
         if (pMemMap)
         {
             IOVirtualAddress VirtAddr = pMemMap->getVirtualAddress();
@@ -698,7 +649,11 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
         /*
          * If we've got a memory descriptor, use getPhysicalSegment64().
          */
+#ifdef __LP64__ /* Grumble! */
+        addr64_t Addr = pMemDesc->getPhysicalSegment(iPage * PAGE_SIZE, NULL);
+#else
         addr64_t Addr = pMemDesc->getPhysicalSegment64(iPage * PAGE_SIZE, NULL);
+#endif
         AssertMsgReturn(Addr, ("iPage=%u\n", iPage), NIL_RTHCPHYS);
         PhysAddr = Addr;
         AssertMsgReturn(PhysAddr == Addr, ("PhysAddr=%RHp Addr=%RX64\n", PhysAddr, (uint64_t)Addr), NIL_RTHCPHYS);
