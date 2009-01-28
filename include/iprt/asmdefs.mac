@@ -58,15 +58,15 @@
 ; Mangles the given name so it can be referenced using DECLASM() in the
 ; C/C++ world.
 %ifdef RT_ARCH_X86
- %ifdef RT_OS_DARWIN
-  %define NAME(name)    _ %+ NAME_OVERLOAD(name)
- %endif
  %ifdef RT_OS_OS2
   %define NAME(name)    _ %+ NAME_OVERLOAD(name)
  %endif
  %ifdef RT_OS_WINDOWS
   %define NAME(name)    _ %+ NAME_OVERLOAD(name)
  %endif
+%endif
+%ifdef RT_OS_DARWIN
+ %define NAME(name)     _ %+ NAME_OVERLOAD(name)
 %endif
 %ifndef NAME
  %define NAME(name)     NAME_OVERLOAD(name)
