@@ -4417,6 +4417,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
  */
 PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 {
+    /* Update guest paging info. */
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
@@ -4552,6 +4553,62 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #else /* prot/real stub */
     int rc = VINF_SUCCESS;
 #endif
+
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    /* Update shadow paging info. */
+# if    PGM_SHW_TYPE == PGM_TYPE_32BITS \
+     || PGM_SHW_TYPE == PGM_TYPE_PAE    \
+     || PGM_SHW_TYPE == PGM_TYPE_AMD64
+
+    if (!HWACCMIsNestedPagingActive(pVM))
+    {
+        /* Apply all hypervisor mappings to the new CR3. */
+        PGMMapActivateAll(pVM);
+
+        /*
+         * Update the shadow root page as well since that's not fixed.
+         */
+        PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+        if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
+        {
+            /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
+            /** @todo Coordinate this better with the pool. */
+            if (pVM->pgm.s.CTX_SUFF(pShwPageCR3)->enmKind != PGMPOOLKIND_FREE)
+                pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), SHW_POOL_ROOT_IDX, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->GCPhys >> PAGE_SHIFT);
+            pVM->pgm.s.pShwPageCR3R3 = 0;
+            pVM->pgm.s.pShwPageCR3R0 = 0;
+            pVM->pgm.s.pShwRootR3    = 0;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+            pVM->pgm.s.pShwRootR0    = 0;
+#  endif
+            pVM->pgm.s.HCPhysShwCR3  = 0;
+        }
+
+        Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
+        rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+        if (rc == VERR_PGM_POOL_FLUSHED)
+        {
+            Log(("MapCR3: PGM pool flushed -> signal sync cr3\n"));
+            Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            return VINF_PGM_SYNC_CR3;
+        }
+        AssertRCReturn(rc, rc);
+#  ifdef IN_RING0
+        pVM->pgm.s.pShwPageCR3R3 = MMHyperCCToR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+#  else
+        pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+#  endif
+        pVM->pgm.s.pShwRootR3    = (R3PTRTYPE(void *))pVM->pgm.s.CTX_SUFF(pShwPageCR3)->pvPageR3;
+        Assert(pVM->pgm.s.pShwRootR3);
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+        pVM->pgm.s.pShwRootR0    = (R0PTRTYPE(void *))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+#  endif
+        pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
+        rc = VINF_SUCCESS; /* clear it - pgmPoolAlloc returns hints. */
+    }
+# endif
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
+
     return rc;
 }
 
@@ -4567,6 +4624,7 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
 
     int rc = VINF_SUCCESS;
 
+    /* Update guest paging info. */
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
     pVM->pgm.s.pGst32BitPdR3 = 0;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -4595,14 +4653,14 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->pgm.s.pGstAmd64Pml4R0 = 0;
 # endif
+# ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     if (!HWACCMIsNestedPagingActive(pVM))
     {
         pVM->pgm.s.pShwRootR3 = 0;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         pVM->pgm.s.pShwRootR0 = 0;
-# endif
+#  endif
         pVM->pgm.s.HCPhysShwCR3 = 0;
-# ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
         {
             PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -4610,12 +4668,41 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
             pVM->pgm.s.pShwPageCR3R3 = 0;
             pVM->pgm.s.pShwPageCR3R0 = 0;
         }
-# endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
     }
+# endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 #else /* prot/real mode stub */
     /* nothing to do */
 #endif
+
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    /* Update shadow paging info. */
+# if    PGM_SHW_TYPE == PGM_TYPE_32BITS \
+     || PGM_SHW_TYPE == PGM_TYPE_PAE    \
+     || PGM_SHW_TYPE == PGM_TYPE_AMD64
+
+    if (!HWACCMIsNestedPagingActive(pVM))
+    {
+        /* @todo: dangerous as it's the current CR3! */
+        /* Remove the hypervisor mappings from the shadow page table. */
+        PGMMapDeactivateAll(pVM);
+
+        pVM->pgm.s.pShwRootR3 = 0;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+        pVM->pgm.s.pShwRootR0 = 0;
+#  endif
+        pVM->pgm.s.HCPhysShwCR3 = 0;
+        if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
+        {
+            PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+            pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), SHW_POOL_ROOT_IDX, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->GCPhys >> PAGE_SHIFT);
+            pVM->pgm.s.pShwPageCR3R3 = 0;
+            pVM->pgm.s.pShwPageCR3R0 = 0;
+        }
+    }
+# endif
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
+
     return rc;
 }
 

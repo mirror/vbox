@@ -210,7 +210,7 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 # define PGM_SHW_NAME(name)         PGM_SHW_NAME_AMD64(name)
 # include "PGMAllShw.h"
 
-/* Guest - protected mode */
+/* Guest - protected mode (only used for AMD-V nested paging in 64 bits mode) */
 # define PGM_GST_TYPE               PGM_TYPE_PROT
 # define PGM_GST_NAME(name)         PGM_GST_NAME_PROT(name)
 # define PGM_BTH_NAME(name)         PGM_BTH_NAME_AMD64_PROT(name)
@@ -1417,11 +1417,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperPaeCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperAmd64CR3(PVM pVM)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     return pVM->pgm.s.HCPhysShwCR3;
-#else
-    return pVM->pgm.s.HCPhysShwCR3;
-#endif
 }
 
 /**

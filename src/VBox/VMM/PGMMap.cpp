@@ -43,10 +43,6 @@ static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE);
 static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
 static int  pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cPages, PX86PT pPTDefault, PX86PTPAE pPTPaeDefault);
 static void pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, RTHCPHYS HCPhys, unsigned cPages, PX86PT pPTDefault, PX86PTPAE pPTPaeDefault);
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-static void pgmR3MapClearShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE);
-static void pgmR3MapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
-#endif
 
 
 /**
@@ -905,7 +901,7 @@ static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
     unsigned i = pMap->cPTs;
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pgmR3MapClearShadowPDEs(pVM, pMap, iOldPDE);
+    pgmMapClearShadowPDEs(pVM, pMap, iOldPDE);
 #endif
 
     iOldPDE += i;
@@ -941,66 +937,6 @@ static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
     }
 }
 
-
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-/**
- * Clears all PDEs involved with the mapping in the shadow page table.
- *
- * @param   pVM         The VM handle.
- * @param   pMap        Pointer to the mapping in question.
- * @param   iOldPDE     The index of the 32-bit PDE corresponding to the base of the mapping.
- */
-static void pgmR3MapClearShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
-{
-    unsigned i = pMap->cPTs;
-    PGMMODE  enmShadowMode = PGMGetShadowMode(pVM);
-
-    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
-        return;
-
-    iOldPDE += i;
-    while (i-- > 0)
-    {
-        iOldPDE--;
-
-        switch(enmShadowMode)
-        {
-        case PGMMODE_32_BIT:
-        {
-            PX86PD pShw32BitPd = pgmShwGet32BitPDPtr(&pVM->pgm.s);
-            AssertFatal(pShw32BitPd);
-
-            pShw32BitPd->a[iOldPDE].u   = 0;
-            break;
-        }
-
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-        {
-            PX86PDPT  pPdpt = NULL;
-            PX86PDPAE pShwPaePd = NULL;
-
-            const unsigned iPD = iOldPDE / 256;         /* iOldPDE * 2 / 512; iOldPDE is in 4 MB pages */
-            unsigned iPDE = iOldPDE * 2 % 512;
-            pPdpt     = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
-            pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPD << X86_PDPT_SHIFT));
-            AssertFatal(pShwPaePd);
-
-            pShwPaePd->a[iPDE].u = 0;
-
-            iPDE++;
-            AssertFatal(iPDE < 512);
-
-            pShwPaePd->a[iPDE].u = 0;
-            /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entry. (legacy PAE guest mode) */
-            pPdpt->a[iPD].u &= ~PGM_PLXFLAGS_MAPPING;
-            break;
-        }
-        }
-    }
-}
-#endif
-
 /**
  * Sets all PDEs involved with the mapping in the shadow and intermediate page tables.
  *
@@ -1015,7 +951,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
     Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s) || PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pgmR3MapSetShadowPDEs(pVM, pMap, iNewPDE);
+    pgmMapSetShadowPDEs(pVM, pMap, iNewPDE);
 #endif
 
     /*
@@ -1090,101 +1026,6 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 #endif
     }
 }
-
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-/**
- * Sets all PDEs involved with the mapping in the shadow page table.
- *
- * @param   pVM         The VM handle.
- * @param   pMap        Pointer to the mapping in question.
- * @param   iNewPDE     The index of the 32-bit PDE corresponding to the base of the mapping.
- */
-static void pgmR3MapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
-{
-    PPGM    pPGM = &pVM->pgm.s;
-    PGMMODE enmShadowMode = PGMGetShadowMode(pVM);
-
-    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
-        return;
-
-    Assert(enmShadowMode <= PGMMODE_PAE_NX);
-
-    /*
-     * Init the page tables and insert them into the page directories.
-     */
-    unsigned i = pMap->cPTs;
-    iNewPDE += i;
-    while (i-- > 0)
-    {
-        iNewPDE--;
-
-        switch(enmShadowMode)
-        {
-        case PGMMODE_32_BIT:
-        {
-            PX86PD pShw32BitPd = pgmShwGet32BitPDPtr(&pVM->pgm.s);
-            AssertFatal(pShw32BitPd);
-
-            if (pShw32BitPd->a[iNewPDE].n.u1Present)
-            {
-                Assert(!(pShw32BitPd->a[iNewPDE].u & PGM_PDFLAGS_MAPPING));
-                pgmPoolFree(pVM, pShw32BitPd->a[iNewPDE].u & X86_PDE_PG_MASK, pVM->pgm.s.pShwPageCR3R3->idx, iNewPDE);
-            }
-
-            X86PDE Pde;
-            /* Default mapping page directory flags are read/write and supervisor; individual page attributes determine the final flags */
-            Pde.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT;
-            pShw32BitPd->a[iNewPDE]   = Pde;
-            break;
-        }
-
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-        {
-            PX86PDPT  pShwPdpt;
-            PX86PDPAE pShwPaePd;
-            const unsigned iPdPt = iNewPDE / 256;
-            unsigned iPDE = iNewPDE * 2 % 512;
-
-            pShwPdpt  = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
-            Assert(pShwPdpt);
-            pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPdPt << X86_PDPT_SHIFT));
-            AssertFatal(pShwPaePd);
-
-            PPGMPOOLPAGE pPoolPagePde = pgmPoolGetPageByHCPhys(pVM, pShwPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
-            AssertFatal(pPoolPagePde);
-
-            if (pShwPaePd->a[iPDE].n.u1Present)
-            {
-                Assert(!(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
-                pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePde->idx, iNewPDE);
-            }
-
-            X86PDEPAE PdePae0;
-            PdePae0.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0;
-            pShwPaePd->a[iPDE] = PdePae0;
-
-            /* 2nd 2 MB PDE of the 4 MB region */
-            iPDE++;
-            AssertFatal(iPDE < 512);
-
-            if (pShwPaePd->a[iPDE].n.u1Present)
-            {
-                Assert(!(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
-                pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePde->idx, iNewPDE);
-            }
-
-            X86PDEPAE PdePae1;
-            PdePae1.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1;
-            pShwPaePd->a[iPDE] = PdePae1;
-
-            /* Set the PGM_PDFLAGS_MAPPING flag in the page directory pointer entry. (legacy PAE guest mode) */
-            pShwPdpt->a[iPdPt].u |= PGM_PLXFLAGS_MAPPING;
-        }
-        }
-    }
-}
-#endif
 
 /**
  * Relocates a mapping to a new address.
@@ -1515,61 +1356,6 @@ VMMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
 
     return false;
 }
-
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-/**
- * Apply the hypervisor mappings to the active CR3.
- *
- * @returns VBox status.
- * @param   pVM         The virtual machine.
- */
-VMMR3DECL(int) PGMR3MapActivate(PVM pVM)
-{
-    /*
-     * Can skip this if mappings are safely fixed.
-     */
-    if (pVM->pgm.s.fMappingsFixed)
-        return VINF_SUCCESS;
-
-    /*
-     * Iterate mappings.
-     */
-    for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
-    {
-        unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
-
-        pgmR3MapSetShadowPDEs(pVM, pCur, iPDE);
-    }
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Remove the hypervisor mappings from the active CR3
- *
- * @returns VBox status.
- * @param   pVM         The virtual machine.
- */
-VMMR3DECL(int) PGMR3MapDeactivate(PVM pVM)
-{
-    /*
-     * Can skip this if mappings are safely fixed.
-     */
-    if (pVM->pgm.s.fMappingsFixed)
-        return VINF_SUCCESS;
-
-    /*
-     * Iterate mappings.
-     */
-    for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
-    {
-        unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
-
-        pgmR3MapClearShadowPDEs(pVM, pCur, iPDE);
-    }
-    return VINF_SUCCESS;
-}
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 /**
  * Read memory from the guest mappings.
