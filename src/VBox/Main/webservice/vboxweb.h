@@ -219,10 +219,12 @@ int findComPtrFromId(struct soap *soap,
         RaiseSoapInvalidObjectFault(soap, id);
     else
     {
+        // pRef->getComPtr returns a ComPtr<IUnknown>; by casting it to
+        // ComPtr<T>, we implicitly do a queryInterface() call
         if (pComPtr = pRef->getComPtr())
             return 0;
 
-        WEBDEBUG(("    Interface not support for object reference %s, which is of class %s\n", id.c_str(), pRef->getInterfaceName()));
+        WEBDEBUG(("    Interface not supported for object reference %s, which is of class %s\n", id.c_str(), pRef->getInterfaceName()));
         rc = VERR_WEB_UNSUPPORTED_INTERFACE;
         RaiseSoapInvalidObjectFault(soap, id);      // @todo better message
     }
