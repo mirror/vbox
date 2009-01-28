@@ -35,6 +35,7 @@
 #include "the-darwin-kernel.h"
 
 #include <iprt/mp.h>
+#include <iprt/cpuset.h>
 #include <iprt/err.h>
 #include <iprt/asm.h>
 #include "r0drv/mp-r0drv.h"
@@ -81,7 +82,16 @@ RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
+    RTCPUID idCpu;
 
+    RTCpuSetEmpty(pSet);
+    idCpu = RTMpGetMaxCpuId();
+    do
+    {
+        if (RTMpIsCpuPossible(idCpu))
+            RTCpuSetAdd(pSet, idCpu);
+    } while (idCpu-- > 0);
+    return pSet;
 }
 
 
