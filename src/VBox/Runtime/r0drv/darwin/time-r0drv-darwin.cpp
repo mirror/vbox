@@ -119,9 +119,14 @@ RTDECL(uint64_t) RTTimeSystemMilliTS(void)
  */
 RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
-    uint32_t u32Secs;
-    uint32_t u32Nanosecs;
-    clock_get_calendar_nanotime(&u32Secs, &u32Nanosecs);
-    return RTTimeSpecSetNano(pTime, (uint64_t)u32Secs * 1000000000 + u32Nanosecs);
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1060
+    uint32_t        uSecs;
+    uint32_t        uNanosecs;
+#else
+    clock_sec_t     uSecs;
+    clock_nsec_t    uNanosecs;
+#endif
+    clock_get_calendar_nanotime(&uSecs, &uNanosecs);
+    return RTTimeSpecSetNano(pTime, (uint64_t)uSecs * 1000000000 + uNanosecs);
 }
 
