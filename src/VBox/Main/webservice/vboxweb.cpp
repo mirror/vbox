@@ -244,12 +244,12 @@ int main(int argc, char* argv[])
 {
     int rc;
 
+    // intialize runtime
+    RTR3Init();
+
     RTStrmPrintf(g_pStdErr, "Sun xVM VirtualBox Webservice Version %s\n"
                             "(C) 2005-2009 Sun Microsystems, Inc.\n"
                             "All rights reserved.\n", VBOX_VERSION_STRING);
-
-    // intialize runtime
-    RTR3Init(); /** @todo r=bird: This isn't at top of main(), is it? */
 
     int c;
     int i = 1;
@@ -303,7 +303,8 @@ int main(int argc, char* argv[])
                     exit(2);
                 }
 
-                WebLog("Opened log file \"%s\"\n", ValueUnion.psz);
+                WebLog("Sun xVM VirtualBox Webservice Version %s\n"
+                       "Opened log file \"%s\"\n", VBOX_VERSION_STRING, ValueUnion.psz);
             }
             break;
 
@@ -343,13 +344,13 @@ int main(int argc, char* argv[])
 #endif
 
     // intialize COM/XPCOM
-    ComPtr<ISession> session;
+//     ComPtr<ISession> session;
     if ((rc = com::Initialize()))
         RTStrmPrintf(g_pStdErr, "[!] Failed to initialize COM!\n");
     else if ((rc = g_pVirtualBox.createLocalObject(CLSID_VirtualBox)))
         RTStrmPrintf(g_pStdErr, "[!] Failed to create the local VirtualBox object!\n");
-    else if ((rc = session.createInprocObject(CLSID_Session)))
-        RTStrmPrintf(g_pStdErr, "[!] Failed to create the inproc VirtualBox object!\n");
+//     else if ((rc = session.createInprocObject(CLSID_Session)))
+//         RTStrmPrintf(g_pStdErr, "[!] Failed to create the inproc VirtualBox object!\n");
 
     if (rc)
     {
@@ -687,19 +688,18 @@ bool SplitManagedObjectRef(const WSDLT_ID &id,
  * Creates a managed object reference (in string form) from
  * two integers representing a session and object ID, respectively.
  *
- * @param id
+ * @param sz Buffer with at least 34 bytes space to receive MOR string.
  * @param sessid
  * @param objid
  * @return
  */
-WSDLT_ID MakeManagedObjectRef(uint64_t &sessid,
-                              uint64_t &objid)
+void MakeManagedObjectRef(char *sz,
+                          uint64_t &sessid,
+                          uint64_t &objid)
 {
-    char sz[34];
     RTStrFormatNumber(sz, sessid, 16, 16, 0, RTSTR_F_64BIT | RTSTR_F_ZEROPAD);
     sz[16] = '-';
     RTStrFormatNumber(sz + 17, objid, 16, 16, 0, RTSTR_F_64BIT | RTSTR_F_ZEROPAD);
-    return sz;
 }
 
 /****************************************************************************
@@ -1023,7 +1023,9 @@ ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
     // and count globally
     ULONG64 cTotal = ++g_cManagedObjects;           // raise global count and make a copy for the debug message below
 
-    _strID = MakeManagedObjectRef(session._uSessionID, _id);
+    char sz[34];
+    MakeManagedObjectRef(sz, session._uSessionID, _id);
+    _strID = sz;
 
     session._pp->_mapManagedObjectsById[_id] = this;
     session._pp->_mapManagedObjectsByPtr[_ulp] = this;
