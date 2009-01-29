@@ -556,13 +556,19 @@ stubGetWindowGeometry( const WindowInfo *window, int *x, int *y,
 {
     Window root, child;
     unsigned int border, depth;
+
+    //@todo: Performing those checks is expensive operation, especially for simple apps with high FPS.
+    //       Disabling those tripples glxgears fps, thus using xevens instead of per frame polling is much more preffered.
+    //@todo: Check similiar on windows guests, though doubtfull as there're no XSync like calls on windows.
     if (!window
-            || !window->dpy
-            || !window->drawable
-            || !XGetGeometry(window->dpy, window->drawable, &root,
-                                             x, y, w, h, &border, &depth)
-            || !XTranslateCoordinates(window->dpy, window->drawable, root,
-                                                                *x, *y, x, y, &child)) {
+        || !window->dpy
+        || !window->drawable
+        || !XGetGeometry(window->dpy, window->drawable, &root,
+                         x, y, w, h, &border, &depth)
+        || !XTranslateCoordinates(window->dpy, window->drawable, root,
+                                  0, 0, x, y, &child)) 
+    {
+        crWarning("Failed to get windows geometry for %x, try xwininfo", (int) window);
         *x = *y = 0;
         *w = *h = 0;
     }
@@ -980,7 +986,11 @@ stubDestroyContext( unsigned long contextId )
                because GL context is already released from DC and actual guest window
                could be destroyed.
              */
+#ifdef WINDOWS
             crWindowDestroy((GLint)context->pOwnWindow->hWnd);
+#else
+            crWindowDestroy((GLint)context->pOwnWindow->drawable);
+#endif
         }
     }
 

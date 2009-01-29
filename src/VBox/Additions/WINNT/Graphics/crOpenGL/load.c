@@ -522,6 +522,10 @@ stubInit(void)
     /* Load pointers to native OpenGL functions into stub.nativeDispatch */
     stubInitNativeDispatch();
 
+
+/*crDebug("stub init");
+raise(SIGINT);*/
+
 #ifdef WINDOWS
     stubInstallWindowMessageHook();
 #endif

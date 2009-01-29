@@ -74,6 +74,14 @@ $$(PATH_VBoxOGL)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(APIFILES) | $$(dir $$@)
 $$(PATH_VBoxOGL)/gen/getprocaddress$(SUFF_OBJ): $(PATH_TARGET)/VBoxOGL/cr_gl.h
 endif
 
+ifeq ($(KBUILD_TARGET),linux)
+$$(PATH_VBoxOGL)/linux_exports.asm: \
+		$(PATH_SUB_CURRENT)/Linux_i386_exports.py \
+		$(APIFILES) $(PATH_SUB_CURRENT)/entrypoints.py \
+		| $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
+endif
+
 $$(PATH_VBoxOGL)/NULLfuncs.c: $(PATH_SUB_CURRENT)/NULLfuncs.py $(APIFILES) | $$(dir $$@)
 	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
 
@@ -113,6 +121,7 @@ VBoxOGL_SOURCES    := \
 	context.c \
 	$(GEN_C_FILES)
 VBoxOGL_SOURCES.win := wgl.c icd_drv.c ogl_hgcm.c VBoxCROGL.rc $(GEN_ASM_FILES.win) $(GEN_C_FILES.win)
+VBoxOGL_SOURCES.linux := $(PATH_TARGET)/VBoxOGL/linux_exports.asm glx.c xfont.c
 VBoxOGL_DEPS.win   := $(GEN_H_FILES.win)
 VBoxOGL_CLEAN      := $(GEN_C_FILES)
 VBoxOGL_CLEAN.win  := $(GEN_ASM_FILES.win) $(GEN_H_FILES.win) $(GEN_C_FILES.win)
