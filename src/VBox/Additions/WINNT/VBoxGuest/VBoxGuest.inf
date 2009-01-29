@@ -86,6 +86,9 @@ vbcoinst.dll
 [VBoxGuest_Install_CoInstallers_reg]
 HKR,,CoInstallers32,0x00010000,"vbcoinst.dll,VBoxCoInstaller"
 
+[ClassInstall32]
+; This should fix the error 0xe0000101 (The required section was not found in the INF).
+
 [Strings]
 SUN = "Sun Microsystems, Inc."
 VBoxGuest.DeviceDesc = "VirtualBox Device"
