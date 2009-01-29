@@ -43,31 +43,37 @@ Utf8Str Utf8Str::substr(size_t pos /*= 0*/, size_t n /*= npos*/) const
 
     if (n)
     {
-        const char *psz = c_str();
-        RTUNICP cp;
+        const char *psz;
 
-        // walk the UTF-8 characters until where the caller wants to start
-        size_t i = pos;
-        while (i--)
-            RTStrGetCpEx(&psz, &cp);
-
-        const char *pFirst = psz;
-
-        if (n == npos)
-            // all the rest:
-            ret = pFirst;
-        else
+        if ((psz = c_str()))
         {
-            i = n;
-            while (i--)
-                RTStrGetCpEx(&psz, &cp);
+            RTUNICP cp;
 
-            size_t len = psz - pFirst;
-            char *psz = (char*)RTMemAlloc(len + 1);
-            memcpy(psz, pFirst, len);
-            psz[len] = '\0';
-            ret = psz;
-            RTMemFree(psz);
+            // walk the UTF-8 characters until where the caller wants to start
+            size_t i = pos;
+            while (*psz && i--)
+                if (!(RT_SUCCESS(RTStrGetCpEx(&psz, &cp))))
+                    return ret;     // return empty string on bad encoding
+
+            const char *pFirst = psz;
+
+            if (n == npos)
+                // all the rest:
+                ret = pFirst;
+            else
+            {
+                i = n;
+                while (*psz && i--)
+                    if (!(RT_SUCCESS(RTStrGetCpEx(&psz, &cp))))
+                        return ret;     // return empty string on bad encoding
+
+                size_t len = psz - pFirst;
+                char *psz = (char*)RTMemAlloc(len + 1);
+                memcpy(psz, pFirst, len);
+                psz[len] = '\0';
+                ret = psz;
+                RTMemFree(psz);
+            }
         }
     }
 
