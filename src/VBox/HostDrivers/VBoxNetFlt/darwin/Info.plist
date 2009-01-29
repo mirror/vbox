@@ -23,10 +23,6 @@
         <key>com.apple.kpi.unsupported</key>    <string>8.8.1</string>
         <key>com.apple.kpi.iokit</key>          <string>8.8.1</string>
         <key>org.virtualbox.kext.VBoxDrv</key>  <string>@VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@</string>
-<!--
-        <key>com.apple.kernel.bsd</key>         <string>7.9.9</string>
-        <key>com.apple.kernel.mach</key>        <string>7.9.9</string>
--->
     </dict>
 </dict>
 </plist>
