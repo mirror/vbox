@@ -373,6 +373,8 @@ VMMDECL(int) PGMMapActivateAll(PVM pVM)
     if (pVM->pgm.s.fMappingsFixed)
         return VINF_SUCCESS;
 
+    Assert(PGMGetGuestMode(pVM) >= PGMMODE_32_BIT && PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
+
     /*
      * Iterate mappings.
      */
@@ -399,6 +401,8 @@ VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
      */
     if (pVM->pgm.s.fMappingsFixed)
         return VINF_SUCCESS;
+
+    Assert(PGMGetGuestMode(pVM) >= PGMMODE_32_BIT && PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
 
     /*
      * Iterate mappings.
