@@ -180,7 +180,7 @@ typedef struct {
 extern Stub stub;
 extern DECLEXPORT(SPUDispatchTable) glim;
 extern SPUDispatchTable stubThreadsafeDispatch;
-extern SPUDispatchTable stubNULLDispatch;
+extern DECLEXPORT(SPUDispatchTable) stubNULLDispatch;
 
 
 #ifdef WINDOWS
