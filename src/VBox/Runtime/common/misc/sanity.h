@@ -187,3 +187,20 @@ AssertCompileSize(uint16_t, 2);
 AssertCompileSize(uint32_t, 4);
 AssertCompileSize(uint64_t, 8);
 
+#define TEST_CONST_MACRO(c,t) \
+    AssertCompile(sizeof(c) == sizeof(t) || (sizeof(c) == sizeof(int) && sizeof(t) < sizeof(int)) )
+
+TEST_CONST_MACRO(UINT8_C(1),  uint8_t);
+TEST_CONST_MACRO(UINT16_C(1), uint16_t);
+TEST_CONST_MACRO(UINT32_C(1), uint32_t);
+TEST_CONST_MACRO(UINT64_C(1), uint64_t);
+
+TEST_CONST_MACRO(INT8_C(1),   int8_t);
+TEST_CONST_MACRO(INT8_C(-1),  int8_t);
+TEST_CONST_MACRO(INT16_C(1),  int16_t);
+TEST_CONST_MACRO(INT16_C(-1), int16_t);
+TEST_CONST_MACRO(INT32_C(1),  int32_t);
+TEST_CONST_MACRO(INT32_C(-1), int32_t);
+TEST_CONST_MACRO(INT64_C(1),  int64_t);
+TEST_CONST_MACRO(INT64_C(-1), int64_t);
+
