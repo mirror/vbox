@@ -1078,10 +1078,12 @@ VBox-xpcom-xptcall_INCS.os2            = xpcom/reflect/xptcall/src/md/unix
 VBox-xpcom-xptcall_SOURCES             = xpcom/reflect/xptcall/src/xptcall.cpp
 VBox-xpcom-xptcall_SOURCES.darwin.x86  = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_unixish_x86.cpp \
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_unixish_x86.cpp
+VBox-xpcom-xptcall_SOURCES.darwin.amd64= xpcom/reflect/xptcall/src/md/unix/xptcinvoke_amd64_darwin.cpp \
+                                         xpcom/reflect/xptcall/src/md/unix/xptcstubs_amd64_darwin.cpp
 VBox-xpcom-xptcall_SOURCES.freebsd.x86 = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_gcc_x86_unix.cpp \
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_gcc_x86_unix.cpp
-VBox-xpcom-xptcall_SOURCES.freebsd.amd64= xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_64_linux.cpp \
-                                         xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_64_linux.cpp ## ???
+VBox-xpcom-xptcall_SOURCES.freebsd.amd64=xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_64_linux.cpp \
+                                         xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_64_linux.cpp
 VBox-xpcom-xptcall_SOURCES.linux.x86   = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_gcc_x86_unix.cpp \
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_gcc_x86_unix.cpp
 VBox-xpcom-xptcall_SOURCES.linux.amd64 = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_64_linux.cpp \
