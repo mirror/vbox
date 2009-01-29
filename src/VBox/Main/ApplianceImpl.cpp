@@ -1450,6 +1450,7 @@ STDMETHODIMP Appliance::ImportAppliance()
             const Utf8Str& audioAdapterVBox = vsdeAudioAdapter.front()->strFinalValue;
             if (RTStrICmp(audioAdapterVBox, "null") != 0)
             {
+                uint32_t audio = RTStrToUInt32(audioAdapterVBox.c_str());
                 ComPtr<IAudioAdapter> audioAdapter;
                 rc = newMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
                 ComAssertComRCThrowRC(rc);
@@ -1482,7 +1483,7 @@ STDMETHODIMP Appliance::ImportAppliance()
 #endif
                 rc = audioAdapter->COMSETTER(AudioDriver)(adt);
                 ComAssertComRCThrowRC(rc);
-                rc = audioAdapter->COMSETTER(AudioController)(audioAdapterVBox);
+                rc = audioAdapter->COMSETTER(AudioController)(static_cast<AudioControllerType_T>(audio));
                 ComAssertComRCThrowRC(rc);
             }
         }
