@@ -1,28 +1,28 @@
 /* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* 
+/*
  * The contents of this file are subject to the Mozilla Public
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.mozilla.org/MPL/
- * 
+ *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * The Original Code is the Netscape Portable Runtime (NSPR).
- * 
+ *
  * The Initial Developer of the Original Code is Netscape
- * Communications Corporation.  Portions created by Netscape are 
+ * Communications Corporation.  Portions created by Netscape are
  * Copyright (C) 1998-2000 Netscape Communications Corporation.  All
  * Rights Reserved.
- * 
+ *
  * Contributor(s): Steve Streeter (Hewlett-Packard Company)
- * 
+ *
  * Alternatively, the contents of this file may be used under the
  * terms of the GNU General Public License Version 2 or later (the
- * "GPL"), in which case the provisions of the GPL are applicable 
- * instead of those above.  If you wish to allow use of your 
+ * "GPL"), in which case the provisions of the GPL are applicable
+ * instead of those above.  If you wish to allow use of your
  * version of this file only under the terms of the GPL and not to
  * allow others to use your version of this file under the MPL,
  * indicate your decision by deleting the provisions above and
@@ -39,6 +39,21 @@
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 #include <string.h>
+
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+# include <iprt/ldr.h>
+# include <iprt/path.h>
+# include <iprt/err.h>
+
+# if defined(XP_MACOSX) /** @todo Add some equivalent to PR_GetLibraryFilePathname. */
+#  include <mach-o/dyld.h>
+# endif
+
+# ifdef XP_MAC
+#  error "Misconfiguration: XP_MAC && VBOX_USE_MORE_IPRT_IN_NSPR are not intended to work together"
+# endif
+
+#else /* ! VBOX_USE_MORE_IPRT_IN_NSPR */
 
 #ifdef XP_BEOS
 #include <image.h>
@@ -96,6 +111,8 @@
 #endif
 #endif /* XP_UNIX */
 
+#endif /* !VBOX_USE_MORE_IPRT_IN_NSPR */
+
 #define _PR_DEFAULT_LD_FLAGS PR_LD_LAZY
 
 #ifdef VMS
@@ -110,37 +127,37 @@
 #include <stsdef.h>
 #include <unixlib.h>
 
-#pragma __nostandard 
+#pragma __nostandard
 #pragma __member_alignment __save
 #pragma __nomember_alignment
 #ifdef __INITIAL_POINTER_SIZE
-#pragma __required_pointer_size __save 
+#pragma __required_pointer_size __save
 #pragma __required_pointer_size __short
 #endif
- 
+
 typedef struct _imcb {
-    struct _imcb *imcb$l_flink;         
-    struct _imcb *imcb$l_blink;         
-    unsigned short int imcb$w_size;     
-    unsigned char imcb$b_type;          
-    char imcb$b_resv_1;                 
-    unsigned char imcb$b_access_mode;   
-    unsigned char imcb$b_act_code;      
-    unsigned short int imcb$w_chan;     
-    unsigned int imcb$l_flags;		
-    char imcb$t_image_name [40];        
-    unsigned int imcb$l_symvec_size; 
+    struct _imcb *imcb$l_flink;
+    struct _imcb *imcb$l_blink;
+    unsigned short int imcb$w_size;
+    unsigned char imcb$b_type;
+    char imcb$b_resv_1;
+    unsigned char imcb$b_access_mode;
+    unsigned char imcb$b_act_code;
+    unsigned short int imcb$w_chan;
+    unsigned int imcb$l_flags;
+    char imcb$t_image_name [40];
+    unsigned int imcb$l_symvec_size;
     unsigned __int64 imcb$q_ident;
     void *imcb$l_starting_address;
     void *imcb$l_end_address;
 } IMCB;
- 
+
 #pragma __member_alignment __restore
-#ifdef __INITIAL_POINTER_SIZE 
+#ifdef __INITIAL_POINTER_SIZE
 #pragma __required_pointer_size __restore
 #endif
 #pragma __standard
- 
+
 typedef struct {
     short   buflen;
     short   itmcode;
@@ -165,11 +182,13 @@ struct _imcb *IAC$GL_IMAGE_LIST = NULL;
 /*
  * On these platforms, symbols have a leading '_'.
  */
+#ifndef VBOX_USE_MORE_IPRT_IN_NSPR /* RTLdr hides this. */
 #if defined(SUNOS4) || defined(DARWIN) || defined(NEXTSTEP) \
     || defined(WIN16) || defined(XP_OS2) \
     || ((defined(OPENBSD) || defined(NETBSD)) && !defined(__ELF__))
 #define NEED_LEADING_UNDERSCORE
 #endif
+#endif /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 
 #ifdef XP_PC
 typedef PRStaticLinkTable *NODL_PROC(void);
@@ -182,6 +201,10 @@ struct PRLibrary {
     PRLibrary*                  next;
     int                         refCount;
     const PRStaticLinkTable*    staticTable;
+
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+    RTLDRMOD                    dlh;
+#else  /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 
 #ifdef XP_PC
 #ifdef XP_OS2
@@ -213,13 +236,14 @@ struct PRLibrary {
     NSModule                    dlh;
 #else
     void*                       dlh;
-#endif 
-#endif 
+#endif
+#endif
 
 #ifdef XP_BEOS
     void*                       dlh;
     void*                       stub_dlh;
 #endif
+#endif /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 };
 
 static PRLibrary *pr_loadmap;
@@ -237,7 +261,7 @@ static PRLibrary *pr_Mac_LoadIndexedFragment(const FSSpec *fileSpec,
 
 /************************************************************************/
 
-#if !defined(USE_DLFCN) && !defined(HAVE_STRERROR)
+#if !defined(USE_DLFCN) && !defined(HAVE_STRERROR) && !defined(VBOX_USE_MORE_IPRT_IN_NSPR)
 static char* errStrBuf = NULL;
 #define ERR_STR_BUF_LENGTH    20
 static char* errno_string(PRIntn oserr)
@@ -270,7 +294,7 @@ static void DLLErrorInternal(PRIntn oserr)
 
 void _PR_InitLinker(void)
 {
-#if !defined(XP_MAC) && !defined(XP_BEOS)
+#if (!defined(XP_MAC) && !defined(XP_BEOS)) || defined(VBOX_USE_MORE_IPRT_IN_NSPR)
     PRLibrary *lm;
 #endif
 #ifdef XP_UNIX
@@ -282,14 +306,17 @@ void _PR_InitLinker(void)
     }
     PR_EnterMonitor(pr_linker_lock);
 
-#if defined(XP_PC)
+#if defined(XP_PC) || defined(VBOX_USE_MORE_IPRT_IN_NSPR)
     lm = PR_NEWZAP(PRLibrary);
     lm->name = strdup("Executable");
-        /* 
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+    lm->dlh = NIL_RTLDRMOD;
+#else  /* !VBOX_USE_MORE_IPRT_IN_NSPR */
+        /*
         ** In WIN32, GetProcAddress(...) expects a module handle in order to
         ** get exported symbols from the executable...
         **
-        ** However, in WIN16 this is accomplished by passing NULL to 
+        ** However, in WIN16 this is accomplished by passing NULL to
         ** GetProcAddress(...)
         */
 #if defined(_WIN32)
@@ -297,6 +324,7 @@ void _PR_InitLinker(void)
 #else
         lm->dlh = (HINSTANCE)NULL;
 #endif /* ! _WIN32 */
+#endif /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 
     lm->refCount    = 1;
     lm->staticTable = NULL;
@@ -309,7 +337,7 @@ void _PR_InitLinker(void)
     h = dlopen(0, RTLD_LAZY);
     if (!h) {
         char *error;
-        
+
         DLLErrorInternal(_MD_ERRNO());
         error = (char*)PR_MALLOC(PR_GetErrorTextLength());
         (void) PR_GetErrorText(error);
@@ -339,7 +367,7 @@ void _PR_InitLinker(void)
 #endif /* HAVE_DLL */
 #endif /* XP_UNIX */
 
-#if !defined(XP_MAC) && !defined(XP_BEOS)
+#if !defined(XP_MAC) && !defined(XP_BEOS) || defined(VBOX_USE_MORE_IPRT_IN_NSPR)
     PR_LOG(_pr_linker_lm, PR_LOG_MIN, ("Loaded library %s (init)", lm?lm->name:"NULL"));
 #endif
 
@@ -365,7 +393,7 @@ void _PR_ShutdownLinker(void)
     }
     PR_UnloadLibrary(pr_loadmap);
     }
-    
+
     PR_ExitMonitor(pr_linker_lock);
 
     PR_DestroyMonitor(pr_linker_lock);
@@ -384,7 +412,7 @@ void _PR_ShutdownLinker(void)
 void _PR_ShutdownLinker(void)
 {
     /* FIXME: pr_exe_loadmap should be destroyed. */
-    
+
     PR_DestroyMonitor(pr_linker_lock);
     pr_linker_lock = NULL;
 
@@ -393,7 +421,7 @@ void _PR_ShutdownLinker(void)
         _pr_currentLibPath = NULL;
     }
 
-#if !defined(USE_DLFCN) && !defined(HAVE_STRERROR)
+#if !defined(USE_DLFCN) && !defined(HAVE_STRERROR) && !defined(VBOX_USE_MORE_IPRT_IN_NSPR)
     PR_DELETE(errStrBuf);
 #endif
 }
@@ -426,7 +454,7 @@ PR_IMPLEMENT(PRStatus) PR_SetLibraryPath(const char *path)
 /*
 ** Return the library path for finding shared libraries.
 */
-PR_IMPLEMENT(char *) 
+PR_IMPLEMENT(char *)
 PR_GetLibraryPath(void)
 {
     char *ev;
@@ -454,10 +482,10 @@ PR_GetLibraryPath(void)
     int len;
 
     ev = getenv("LD_LIBRARY_PATH");
-    
+
     if (!ev)
         ev = "";
-    
+
     len = strlen(ev) + 1;        /* +1 for the null */
     p = (char*) malloc(len);
     if (p) {
@@ -479,7 +507,11 @@ PR_GetLibraryPath(void)
         ev = "%A/lib:/boot/home/config/lib:/boot/beos/system/lib";
     }
 #else
+# if defined(VBOX) && defined(XP_MACOSX)
+    ev = getenv("DYLD_LIBRARY_PATH");
+# else
     ev = getenv("LD_LIBRARY_PATH");
+# endif
     if (!ev) {
         ev = "/usr/lib:/lib";
     }
@@ -519,7 +551,7 @@ PR_GetLibraryPath(void)
 /*
 ** Build library name from path, lib and extensions
 */
-PR_IMPLEMENT(char*) 
+PR_IMPLEMENT(char*)
 PR_GetLibraryName(const char *path, const char *lib)
 {
     char *fullname;
@@ -569,13 +601,13 @@ PR_GetLibraryName(const char *path, const char *lib)
 /*
 ** Free the memory allocated, for the caller, by PR_GetLibraryName
 */
-PR_IMPLEMENT(void) 
+PR_IMPLEMENT(void)
 PR_FreeLibraryName(char *mem)
 {
     PR_smprintf_free(mem);
 }
 
-static PRLibrary* 
+static PRLibrary*
 pr_UnlockedFindLibrary(const char *name)
 {
     PRLibrary* lm = pr_loadmap;
@@ -586,11 +618,11 @@ pr_UnlockedFindLibrary(const char *name)
     cp = cp ? cp + 1 : lm->name;
 #ifdef WIN32
         /* Windows DLL names are case insensitive... */
-    if (strcmpi(np, cp) == 0) 
+    if (strcmpi(np, cp) == 0)
 #elif defined(XP_OS2)
     if (stricmp(np, cp) == 0)
 #else
-    if (strcmp(np, cp)  == 0) 
+    if (strcmp(np, cp)  == 0)
 #endif
     {
         /* found */
@@ -629,8 +661,8 @@ PR_LoadLibraryWithFlags(PRLibSpec libSpec, PRIntn flags)
             return NULL;
     }
 }
-            
-PR_IMPLEMENT(PRLibrary*) 
+
+PR_IMPLEMENT(PRLibrary*)
 PR_LoadLibrary(const char *name)
 {
     PRLibSpec libSpec;
@@ -640,6 +672,7 @@ PR_LoadLibrary(const char *name)
     return PR_LoadLibraryWithFlags(libSpec, 0);
 }
 
+#ifndef VBOX_USE_MORE_IPRT_IN_NSPR /* exclude big chunk */
 #if defined(USE_MACH_DYLD)
 static NSModule
 pr_LoadMachDyldModule(const char *name)
@@ -698,7 +731,7 @@ static void* TV2FP(CFMutableDictionaryRef dict, const char* name, void *tvp)
             CFRelease(nameRef);
         }
     }
-    
+
     return newGlue;
 }
 #endif
@@ -719,7 +752,7 @@ pr_LoadViaCFM(const char *name, PRLibrary *lm)
     OSErr err;
     char cName[64];
     Str255 errName;
-    
+
 #if !defined(XP_MACOSX)
     Str255 pName;
     /*
@@ -844,7 +877,7 @@ pr_LoadCFBundle(const char *name, PRLibrary *lm)
 {
     CFURLRef bundleURL;
     CFBundleRef bundle = NULL;
-    
+
 #ifdef XP_MACOSX
     char pathBuf[PATH_MAX];
     const char *resolvedPath;
@@ -854,7 +887,7 @@ pr_LoadCFBundle(const char *name, PRLibrary *lm)
     resolvedPath = realpath(name, pathBuf);
     if (!resolvedPath)
         return PR_FAILURE;
-        
+
     pathRef = CFStringCreateWithCString(NULL, pathBuf, kCFStringEncodingUTF8);
     if (pathRef) {
         bundleURL = CFURLCreateWithFileSystemPath(NULL, pathRef,
@@ -910,6 +943,7 @@ pr_LoadViaDyld(const char *name, PRLibrary *lm)
 #endif
 
 #endif /* defined(XP_MAC) || defined(XP_MACOSX) */
+#endif /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 
 /*
 ** Dynamically load a library. Only load libraries once, so scan the load
@@ -937,6 +971,16 @@ pr_LoadLibraryByPathname(const char *name, PRIntn flags)
     }
     lm->staticTable = NULL;
 
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+    oserr = RTLdrOpen(name, &lm->dlh);
+    if (RT_FAILURE(oserr))
+        goto unlock;
+    lm->name = strdup(name);
+    lm->refCount = 1;
+    lm->next = pr_loadmap;
+    pr_loadmap = lm;
+
+#else  /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 #ifdef XP_OS2  /* Why isn't all this stuff in MD code?! */
     {
         HMODULE h;
@@ -1005,7 +1049,7 @@ pr_LoadLibraryByPathname(const char *name, PRIntn flags)
     if (status != PR_SUCCESS) {
         oserr = cfragNoLibraryErr;
         PR_DELETE(lm);
-        goto unlock;        
+        goto unlock;
     }
     lm->name = strdup(name);
     lm->next = pr_loadmap;
@@ -1113,7 +1157,7 @@ pr_LoadLibraryByPathname(const char *name, PRIntn flags)
                through the 'load_add_on()' system call, which includes
                mozilla components), but allows 256M to be used by
                shared libraries.
-               
+
                unfortunately, mozilla is too large to fit into the
                "add-on" space, so we must trick the loader into
                loading some of the components as shared libraries.  this
@@ -1138,7 +1182,7 @@ pr_LoadLibraryByPathname(const char *name, PRIntn flags)
                 while (get_next_image_info(0, &cookie, &info) == B_OK) {
                     const char *endOfSystemName = strrchr(info.name, '/');
                     const char *endOfPassedName = strrchr(name, '/');
-                    if( 0 == endOfSystemName ) 
+                    if( 0 == endOfSystemName )
                         endOfSystemName = info.name;
                     else
                         endOfSystemName++;
@@ -1173,6 +1217,7 @@ pr_LoadLibraryByPathname(const char *name, PRIntn flags)
         pr_loadmap = lm;
     }
 #endif
+#endif /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 
     result = lm;    /* success */
     PR_LOG(_pr_linker_lm, PR_LOG_MIN, ("Loaded library %s (load lib)", lm->name));
@@ -1186,7 +1231,7 @@ pr_LoadLibraryByPathname(const char *name, PRIntn flags)
     return result;
 }
 
-PR_IMPLEMENT(PRLibrary*) 
+PR_IMPLEMENT(PRLibrary*)
 PR_FindLibrary(const char *name)
 {
     PRLibrary* result;
@@ -1210,12 +1255,12 @@ pr_Mac_LoadNamedFragment(const FSSpec *fileSpec, const char* fragmentName)
 	CFragConnectionID		connectionID = 0;
 	Boolean							isFolder, wasAlias;
 	OSErr								err = noErr;
-	
+
 	if (!_pr_initialized) _PR_ImplicitInitialization();
 
 	/* See if library is already loaded */
 	PR_EnterMonitor(pr_linker_lock);
-  
+
 	result = pr_UnlockedFindLibrary(fragmentName);
 	if (result != NULL) goto unlock;
 
@@ -1234,7 +1279,7 @@ pr_Mac_LoadNamedFragment(const FSSpec *fileSpec, const char* fragmentName)
   	err = fnfErr;
   	goto unlock;
   }
-    
+
 	/* Finally, try to load the library */
 	err = NSLoadNamedFragment(&resolvedSpec, fragmentName, &connectionID);
 	if (err != noErr)
@@ -1267,7 +1312,7 @@ pr_Mac_LoadIndexedFragment(const FSSpec *fileSpec, PRUint32 fragIndex)
 	PRLibrary* 					result;
 	FSSpec							resolvedSpec = *fileSpec;
 	char*								fragmentName = NULL;
-	UInt32              fragOffset, fragLength;                
+	UInt32              fragOffset, fragLength;
 	CFragConnectionID		connectionID = 0;
 	Boolean							isFolder, wasAlias;
 	OSErr								err = noErr;
@@ -1289,7 +1334,7 @@ pr_Mac_LoadIndexedFragment(const FSSpec *fileSpec, PRUint32 fragIndex)
   }
     err = GetIndexedFragmentOffsets(&resolvedSpec, fragIndex, &fragOffset, &fragLength, &fragmentName);
   if (err != noErr) goto unlock;
-  
+
 	result = pr_UnlockedFindLibrary(fragmentName);
 	free(fragmentName);
 	fragmentName = NULL;
@@ -1298,7 +1343,7 @@ pr_Mac_LoadIndexedFragment(const FSSpec *fileSpec, PRUint32 fragIndex)
 	newLib = PR_NEWZAP(PRLibrary);
 	if (newLib == NULL) goto unlock;
 	newLib->staticTable = NULL;
-    
+
 	/* Finally, try to load the library */
 	err = NSLoadIndexedFragment(&resolvedSpec, fragIndex, &fragmentName, &connectionID);
 	if (err != noErr) {
@@ -1331,7 +1376,7 @@ unlock:
 /*
 ** Unload a shared library which was loaded via PR_LoadLibrary
 */
-PR_IMPLEMENT(PRStatus) 
+PR_IMPLEMENT(PRStatus)
 PR_UnloadLibrary(PRLibrary *lib)
 {
     int result = 0;
@@ -1350,6 +1395,11 @@ PR_UnloadLibrary(PRLibrary *lib)
     goto done;
     }
 
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+    result = RTLdrClose(lib->dlh);
+    lib->dlh = NIL_RTLDRMOD;
+
+#else  /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 #ifdef XP_BEOS
     if(((image_id)lib->stub_dlh) == B_ERROR)
         unload_add_on( (image_id) lib->dlh );
@@ -1391,6 +1441,7 @@ PR_UnloadLibrary(PRLibrary *lib)
     /* No way to unload an image (lib->image) */
 #endif
 #endif
+#endif /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 
     /* unlink from library search list */
     if (pr_loadmap == lib)
@@ -1437,7 +1488,7 @@ done:
     return status;
 }
 
-static void* 
+static void*
 pr_FindSymbolInLib(PRLibrary *lm, const char *name)
 {
     void *f = NULL;
@@ -1452,7 +1503,7 @@ pr_FindSymbolInLib(PRLibrary *lm, const char *name)
                 return (void*) tp->fp;
             }
         }
-        /* 
+        /*
         ** If the symbol was not found in the static table then check if
         ** the symbol was exported in the DLL... Win16 only!!
         */
@@ -1461,7 +1512,12 @@ pr_FindSymbolInLib(PRLibrary *lm, const char *name)
         return (void*)NULL;
 #endif
     }
-    
+
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+    if (RT_FAILURE(RTLdrGetSymbol(lm->dlh, name, &f)))
+        f = NULL;
+
+#else  /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 #ifdef XP_OS2
     rc = DosQueryProcAddr(lm->dlh, 0, (PSZ) name, (PFN *) &f);
 #if defined(NEED_LEADING_UNDERSCORE)
@@ -1499,24 +1555,24 @@ pr_FindSymbolInLib(PRLibrary *lm, const char *name)
         Ptr                 symAddr;
         CFragSymbolClass    symClass;
         Str255              pName;
-        
+
         PR_LOG(_pr_linker_lm, PR_LOG_MIN, ("Looking up symbol: %s", name + SYM_OFFSET));
-        
+
         PStrFromCStr(name + SYM_OFFSET, pName);
-        
+
 #if defined(XP_MACOSX)
         f = (FindSymbol(lm->connection, pName, &symAddr, &symClass) == noErr) ? symAddr : NULL;
 #else
         f = (NSFindSymbol(lm->connection, pName, &symAddr, &symClass) == noErr) ? symAddr : NULL;
 #endif
-        
+
 #if defined(XP_MACOSX)
         /* callers expect mach-o function pointers, so must wrap tvectors with glue. */
         if (f && symClass == kTVectorCFragSymbol) {
             f = TV2FP(lm->wrappers, name + SYM_OFFSET, f);
         }
 #endif
-        
+
         if (f == NULL && strcmp(name + SYM_OFFSET, "main") == 0) f = lm->main;
     }
 #if defined(XP_MACOSX)
@@ -1560,6 +1616,7 @@ pr_FindSymbolInLib(PRLibrary *lm, const char *name)
 #endif
 #endif /* HAVE_DLL */
 #endif /* XP_UNIX */
+#endif /* !VBOX_USE_MORE_IPRT_IN_NSPR */
     if (f == NULL) {
         PR_SetError(PR_FIND_SYMBOL_ERROR, _MD_ERRNO());
         DLLErrorInternal(_MD_ERRNO());
@@ -1570,7 +1627,7 @@ pr_FindSymbolInLib(PRLibrary *lm, const char *name)
 /*
 ** Called by class loader to resolve missing native's
 */
-PR_IMPLEMENT(void*) 
+PR_IMPLEMENT(void*)
 PR_FindSymbol(PRLibrary *lib, const char *raw_name)
 {
     void *f = NULL;
@@ -1611,13 +1668,13 @@ PR_FindSymbol(PRLibrary *lib, const char *raw_name)
 /*
 ** Return the address of the function 'raw_name' in the library 'lib'
 */
-PR_IMPLEMENT(PRFuncPtr) 
+PR_IMPLEMENT(PRFuncPtr)
 PR_FindFunctionSymbol(PRLibrary *lib, const char *raw_name)
 {
     return ((PRFuncPtr) PR_FindSymbol(lib, raw_name));
 }
 
-PR_IMPLEMENT(void*) 
+PR_IMPLEMENT(void*)
 PR_FindSymbolAndLibrary(const char *raw_name, PRLibrary* *lib)
 {
     void *f = NULL;
@@ -1668,7 +1725,7 @@ PR_FindSymbolAndLibrary(const char *raw_name, PRLibrary* *lib)
     return f;
 }
 
-PR_IMPLEMENT(PRFuncPtr) 
+PR_IMPLEMENT(PRFuncPtr)
 PR_FindFunctionSymbolAndLibrary(const char *raw_name, PRLibrary* *lib)
 {
     return ((PRFuncPtr) PR_FindSymbolAndLibrary(raw_name, lib));
@@ -1678,7 +1735,7 @@ PR_FindFunctionSymbolAndLibrary(const char *raw_name, PRLibrary* *lib)
 ** Add a static library to the list of loaded libraries. If LoadLibrary
 ** is called with the name then we will pretend it was already loaded
 */
-PR_IMPLEMENT(PRLibrary*) 
+PR_IMPLEMENT(PRLibrary*)
 PR_LoadStaticLibrary(const char *name, const PRStaticLinkTable *slt)
 {
     PRLibrary *lm=NULL;
@@ -1703,7 +1760,7 @@ PR_LoadStaticLibrary(const char *name, const PRStaticLinkTable *slt)
 
     lm->name = strdup(name);
     lm->refCount    = 1;
-#if defined(XP_MAC)
+#if defined(XP_MAC) && !defined(VBOX_USE_MORE_IPRT_IN_NSPR)
     lm->connection  = pr_exe_loadmap ? pr_exe_loadmap->connection : 0;
 #else
     lm->dlh         = pr_exe_loadmap ? pr_exe_loadmap->dlh : 0;
@@ -1739,7 +1796,7 @@ PR_GetLibraryFilePathname(const char *name, PRFuncPtr addr)
     return result;
 #elif defined(USE_MACH_DYLD)
     char *result;
-    char *image_name;
+    char const *image_name;
     int i, count = _dyld_image_count();
 
     for (i = 0; i < count; i++) {
@@ -1874,7 +1931,7 @@ PR_GetLibraryFilePathname(const char *name, PRFuncPtr addr)
     int                 device_name_len;
     $DESCRIPTOR         (device_name_desc, device_name);
     struct fibdef	fib;
-    struct dsc$descriptor_s fib_desc = 
+    struct dsc$descriptor_s fib_desc =
 	{ sizeof(struct fibdef), DSC$K_DTYPE_Z, DSC$K_CLASS_S, (char *)&fib } ;
     IOSB		iosb;
     ITMLST		devlst[2] = {
@@ -1883,7 +1940,7 @@ PR_GetLibraryFilePathname(const char *name, PRFuncPtr addr)
     short               file_name_len;
     char                file_name[MAX_FILNAM+1];
     char		*result = NULL;
-    struct dsc$descriptor_s file_name_desc = 
+    struct dsc$descriptor_s file_name_desc =
 	{ MAX_FILNAM, DSC$K_DTYPE_T, DSC$K_CLASS_S, (char *) &file_name[0] } ;
 
     /*
@@ -1903,7 +1960,7 @@ PR_GetLibraryFilePathname(const char *name, PRFuncPtr addr)
     for (icb = IAC$GL_IMAGE_LIST->imcb$l_flink;
          icb != IAC$GL_IMAGE_LIST;
          icb = icb->imcb$l_flink) {
-        if (((void *)addr >= icb->imcb$l_starting_address) && 
+        if (((void *)addr >= icb->imcb$l_starting_address) &&
 	    ((void *)addr <= icb->imcb$l_end_address)) {
 	    /*
 	    ** This is the correct image.
