@@ -529,12 +529,13 @@ ifeq ($(KBUILD_TARGET),darwin)
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
   # Temporary:
   VBOX_WITH_QTGUI=
-  VBOX_WITH_MAIN=
   VBOX_WITH_DEBUGGER_GUI=
-  VBOX_WITH_VBOXSDL=
-  VBOX_WITH_VBOXBFE=
+  VBOX_WITH_PYTHON=
   VBOX_WITH_WEBSERVICES=
   VBOX_WITH_CROGL=
+  # Permanent (no working SDL).
+  VBOX_WITH_VBOXSDL=
+  VBOX_WITH_VBOXBFE=
  endif
 endif
 
@@ -1045,9 +1046,6 @@ DEFS.win.amd64 = __WIN64__
 # optional defines (use environment or make commandline)
 ifdef VBOX_WITH_DEBUGGER
  DEFS += VBOX_WITH_DEBUGGER
-endif
-ifdef VBOX_WITH_DEBUGGER_GUI
- DEFS += VBOX_WITH_DEBUGGER_GUI
 endif
 ifdef VBOX_WITH_STATISTICS
  DEFS += VBOX_WITH_STATISTICS
@@ -3306,7 +3304,7 @@ TEMPLATE_VBOXGUESTR3EXE_DEFS     := $(TEMPLATE_VBOXR3EXE_DEFS) IN_GUEST IN_GUEST
 ifeq ($(KBUILD_TARGET),linux) # As few libs as possible on linux.
  TEMPLATE_VBOXGUESTR3EXE_LIBS     = pthread rt m
 endif
-if1of ($(KBUILD_TARGET),freebsd netbsd openbsd)
+if1of ($(KBUILD_TARGET), freebsd netbsd openbsd)
  TEMPLATE_VBOXGUESTR3EXE_LIBS     = $(TEMPLATE_VBOXR3EXE_LIBS) iconv
 endif
 

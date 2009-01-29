@@ -175,8 +175,11 @@ VirtualBox_DEFS          += \
 	$(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE) \
 	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000) \
 	$(if $(VBOX_WITH_NETFLT)$(eq $(KBUILD_TARGET),freebsd),VBOX_WITH_NETFLT)
-if "$(KBUILD_TYPE)" != "release" && defined(VBOX_WITH_DEBUGGER_GUI)
- VirtualBox_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
+ifdef VBOX_WITH_DEBUGGER_GUI
+ VirtualBox_DEFS        += VBOX_WITH_DEBUGGER_GUI
+ if "$(KBUILD_TYPE)" != "release"
+  VirtualBox_DEFS       += VBOX_WITH_DEBUGGER_GUI_MENU
+ endif
 endif
 
 VirtualBox_src/main.cpp_DEFS += VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
