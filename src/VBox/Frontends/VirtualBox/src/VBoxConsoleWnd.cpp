@@ -273,22 +273,22 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mVmFullscreenAction = new QAction (this);
     mVmFullscreenAction->setIcon (
         VBoxGlobal::iconSetOnOff (
-            ":/fullscreen_16px.png", ":/fullscreen_transparent_16px.png",
-            ":/fullscreen_disabled_16px.png", ":/fullscreen_disabled_transparent_16px.png"));
+            ":/fullscreen_on_16px.png", ":/fullscreen_16px.png",
+            ":/fullscreen_on_disabled_16px.png", ":/fullscreen_disabled_16px.png"));
     mVmFullscreenAction->setCheckable (true);
 
     mVmSeamlessAction = new QAction (this);
     mVmSeamlessAction->setIcon (
         VBoxGlobal::iconSetOnOff (
-            ":/seamless_16px.png", ":/seamless_transparent_16px.png",
-            ":/seamless_disabled_16px.png", ":/seamless_disabled_transparent_16px.png"));
+            ":/seamless_on_16px.png", ":/seamless_16px.png",
+            ":/seamless_on_disabled_16px.png", ":/seamless_disabled_16px.png"));
     mVmSeamlessAction->setCheckable (true);
 
     mVmAutoresizeGuestAction = new QAction (mRunningActions);
     mVmAutoresizeGuestAction->setIcon (
         VBoxGlobal::iconSetOnOff (
-            ":/auto_resize_on_16px.png", ":/auto_resize_on_transparent_16px.png",
-            ":/auto_resize_on_disabled_16px.png", ":/auto_resize_on_disabled_transparent_16px.png"));
+            ":/auto_resize_on_on_16px.png", ":/auto_resize_on_16px.png",
+            ":/auto_resize_on_on_disabled_16px.png", ":/auto_resize_on_disabled_16px.png"));
     mVmAutoresizeGuestAction->setCheckable (true);
     mVmAutoresizeGuestAction->setEnabled (false);
 
@@ -313,9 +313,14 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     mVmPauseAction = new QAction (this);
     mVmPauseAction->setIcon (
+        /* checkbox over the pause icon doesn't look nice */
+#if 0
         VBoxGlobal::iconSetOnOff (
-            ":/pause_16px.png", ":/pause_transparent_16px.png",
-            ":/pause_disabled_16px.png", ":/pause_disabled_transparent_16px.png"));
+            ":/pause_on_16px.png", ":/pause_16px.png",
+            ":/pause_on_disabled_16px.png", ":/pause_disabled_16px.png"));
+#else
+        VBoxGlobal::iconSet (":/pause_16px.png", ":/pause_disabled_16px.png"));
+#endif
     mVmPauseAction->setCheckable (true);
 
     mVmACPIShutdownAction = new QAction (mRunningActions);
@@ -337,8 +342,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mVmDisableMouseIntegrAction = new QAction (this);
     mVmDisableMouseIntegrAction->setIcon (
         VBoxGlobal::iconSetOnOff (
-            ":/mouse_can_seamless_16px.png", ":/mouse_can_seamless_transparent_16px.png",
-            ":/mouse_can_seamless_disabled_16px.png", ":/mouse_can_seamless_disabled_transparent_16px.png"));
+            ":/mouse_can_seamless_on_16px.png", ":/mouse_can_seamless_16px.png",
+            ":/mouse_can_seamless_on_disabled_16px.png", ":/mouse_can_seamless_disabled_16px.png"));
     mVmDisableMouseIntegrAction->setCheckable (true);
 
     /* Devices menu actions */
@@ -346,29 +351,33 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mDevicesMountFloppyImageAction = new QAction (mRunningOrPausedActions);
 
     mDevicesUnmountFloppyAction = new QAction (this);
-    mDevicesUnmountFloppyAction->setIcon (VBoxGlobal::iconSet (":/fd_unmount_16px.png",
-                                                                 ":/fd_unmount_dis_16px.png"));
+    mDevicesUnmountFloppyAction->setIcon (
+        VBoxGlobal::iconSet (":/fd_unmount_16px.png",
+                             ":/fd_unmount_dis_16px.png"));
 
     mDevicesMountDVDImageAction = new QAction (mRunningOrPausedActions);
 
     mDevicesUnmountDVDAction = new QAction (this);
-    mDevicesUnmountDVDAction->setIcon (VBoxGlobal::iconSet (":/cd_unmount_16px.png",
-                                                              ":/cd_unmount_dis_16px.png"));
+    mDevicesUnmountDVDAction->setIcon (
+        VBoxGlobal::iconSet (":/cd_unmount_16px.png",
+                             ":/cd_unmount_dis_16px.png"));
 
     mDevicesSFDialogAction = new QAction (mRunningOrPausedActions);
-    mDevicesSFDialogAction->setIcon (VBoxGlobal::iconSet (":/shared_folder_16px.png",
-                                                            ":/shared_folder_disabled_16px.png"));
+    mDevicesSFDialogAction->setIcon (
+        VBoxGlobal::iconSet (":/shared_folder_16px.png",
+                             ":/shared_folder_disabled_16px.png"));
 
     mDevicesSwitchVrdpAction = new QAction (mRunningOrPausedActions);
     mDevicesSwitchVrdpAction->setIcon (
         VBoxGlobal::iconSetOnOff (
-            ":/vrdp_16px.png", ":/vrdp_transparent_16px.png",
-            ":/vrdp_disabled_16px.png", ":/vrdp_disabled_transparent_16px.png"));
+            ":/vrdp_on_16px.png", ":/vrdp_16px.png",
+            ":/vrdp_on_disabled_16px.png", ":/vrdp_disabled_16px.png"));
     mDevicesSwitchVrdpAction->setCheckable (true);
 
     mDevicesInstallGuestToolsAction = new QAction (mRunningActions);
-    mDevicesInstallGuestToolsAction->setIcon (VBoxGlobal::iconSet (":/guesttools_16px.png",
-                                                                     ":/guesttools_disabled_16px.png"));
+    mDevicesInstallGuestToolsAction->setIcon (
+        VBoxGlobal::iconSet (":/guesttools_16px.png",
+                             ":/guesttools_disabled_16px.png"));
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
