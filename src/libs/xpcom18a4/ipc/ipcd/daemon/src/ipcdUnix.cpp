@@ -44,7 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef RT_OS_SOLARIS
+#ifdef RT_OS_OS2
 # include <sys/resource.h>
 #endif
 
@@ -396,6 +396,9 @@ static void PollLoop(PRFileDesc *listenFD)
                 memset(&clientAddr, 0, sizeof(clientAddr));
                 PRFileDesc *clientFD;
 
+                // @todo : We need to handle errors from accept() especially something like 
+                //          EMFILE, which happens when we run out of file descriptors.
+                //          and puts XPCOMIPCD in a poll/accept endless loop!
                 clientFD = PR_Accept(listenFD, &clientAddr, PR_INTERVAL_NO_WAIT);
                 if (clientFD == NULL) {
                     // ignore this error... perhaps the client disconnected.
@@ -477,24 +480,6 @@ int main(int argc, char **argv)
     else
         PL_strncpyz(addr.local.path, argv[1], sizeof(addr.local.path));
 
-#ifdef RT_OS_SOLARIS
-        struct rlimit lim;
-        if (getrlimit(RLIMIT_NOFILE, &lim) == 0)
-        {
-            if (lim.rlim_cur < 2048)
-            {
-                lim.rlim_cur = 2048;
-                if (setrlimit(RLIMIT_NOFILE, &lim) != 0)
-                {
-                    getrlimit(RLIMIT_NOFILE, &lim);
-                    printf ("WARNING: failed to increase per-process file-descriptor limit to 2048\n", lim.rlim_cur);
-                }
-            }
-        }
-        else
-            printf ("WARNING: failed to obtain per-process file-descriptor limit.\n");
-#endif
-
 #ifdef IPC_USE_FILE_LOCK
     Status status = InitDaemonDir(addr.local.path);
     if (status != EOk) {
@@ -542,6 +527,29 @@ int main(int argc, char **argv)
             PR_Open("/dev/null", O_WRONLY, 0);
 
             IPC_NotifyParent();
+
+#if defined(VBOX) && !defined(XP_OS2)
+        struct rlimit lim;
+        if (getrlimit(RLIMIT_NOFILE, &lim) == 0)
+        {
+            int k = 10240;
+            for (; k >= 2048; k -= 1024)
+            {
+                if (lim.rlim_cur < k)
+                {
+                    lim.rlim_cur = k;
+                    if (setrlimit(RLIMIT_NOFILE, &lim) == 0)
+                        break;
+                }
+                else
+                    break;
+            }
+            if (k <= 2048)
+                printf("WARNING: failed to increase file descriptor limit.\n");
+        }
+        else
+            printf ("WARNING: failed to obtain per-process file-descriptor limit.\n");
+#endif
 
             PollLoop(listenFD);
         }

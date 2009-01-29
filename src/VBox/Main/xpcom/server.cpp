@@ -60,7 +60,7 @@
 #include <errno.h>
 #include <getopt.h>
 
-#ifdef RT_OS_SOLARIS
+#ifndef RT_OS_OS2
 # include <sys/resource.h>
 #endif
 
@@ -1050,24 +1050,6 @@ int main (int argc, char **argv)
 
     do
     {
-#ifdef RT_OS_SOLARIS
-        struct rlimit lim;
-        if (getrlimit(RLIMIT_NOFILE, &lim) == 0)
-        {
-            if (lim.rlim_cur < 2048)
-            {
-                lim.rlim_cur = 2048;
-                if (setrlimit(RLIMIT_NOFILE, &lim) != 0)
-                {
-                    getrlimit(RLIMIT_NOFILE, &lim);
-                    printf ("WARNING: failed to increase per-process file-descriptor limit to 2048.\n", lim.rlim_cur);
-                }
-            }
-        }
-        else
-            printf ("WARNING: failed to obtain per-process file-descriptor limit.\n");
-#endif
-
         rc = com::Initialize();
         if (NS_FAILED (rc))
         {
@@ -1184,6 +1166,29 @@ int main (int argc, char **argv)
             RTFileWrite(pidFile, lf, strlen(lf), NULL);
             RTFileClose(pidFile);
         }
+
+#ifndef RT_OS_OS2
+        struct rlimit lim;
+        if (getrlimit(RLIMIT_NOFILE, &lim) == 0)
+        {
+            int k = 10240;
+            for (; k >= 2048; k -= 1024)
+            {
+                if (lim.rlim_cur < k)
+                {
+                    lim.rlim_cur = k;
+                    if (setrlimit(RLIMIT_NOFILE, &lim) == 0)
+                        break;
+                }
+                else
+                    break;
+            }
+            if (k <= 2048)
+                printf("WARNING: failed to increase file descriptor limit.\n");
+        }
+        else
+            printf ("WARNING: failed to obtain per-process file-descriptor limit.\n");
+#endif
 
         PLEvent *ev;
         while (gKeepRunning)
