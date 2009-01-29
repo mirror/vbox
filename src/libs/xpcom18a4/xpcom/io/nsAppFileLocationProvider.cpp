@@ -48,7 +48,7 @@
 #include "prenv.h"
 #include "nsCRT.h"
 
-#if defined(XP_MAC) || defined(XP_MACOSX)
+#if (defined(XP_MAC) || defined(XP_MACOSX)) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
 #include <Folders.h>
 #include <Script.h>
 #include <Processes.h>
@@ -147,13 +147,13 @@ nsAppFileLocationProvider::GetFile(const char *prop, PRBool *persistant, nsIFile
     *_retval = nsnull;
     *persistant = PR_TRUE;
 
-#if defined (XP_MAC) || defined(XP_MACOSX)
+#if (defined (XP_MAC) || defined(XP_MACOSX)) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
     short foundVRefNum;
     long foundDirID;
     FSSpec fileSpec;
     nsCOMPtr<nsILocalFileMac> macFile;
 #endif
-    
+
     if (nsCRT::strcmp(prop, NS_APP_APPLICATION_REGISTRY_DIR) == 0)
     {
         rv = GetProductDirectory(getter_AddRefs(localFile));
@@ -211,7 +211,7 @@ nsAppFileLocationProvider::GetFile(const char *prop, PRBool *persistant, nsIFile
         if (NS_SUCCEEDED(rv))
             rv = localFile->AppendRelativeNativePath(PLUGINS_DIR_NAME);
     }
-#if defined(XP_MAC) || defined(XP_MACOSX)
+#if (defined(XP_MAC) || defined(XP_MACOSX)) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
     else if (nsCRT::strcmp(prop, NS_MACOSX_USER_PLUGIN_DIR) == 0)
     {
         if (!(::FindFolder(kUserDomain,
@@ -268,20 +268,20 @@ nsAppFileLocationProvider::GetFile(const char *prop, PRBool *persistant, nsIFile
             rv = localFile->AppendRelativeNativePath(SEARCH_DIR_NAME);
     }
     else if (nsCRT::strcmp(prop, NS_APP_INSTALL_CLEANUP_DIR) == 0)
-    {   
+    {
         // This is cloned so that embeddors will have a hook to override
-        // with their own cleanup dir.  See bugzilla bug #105087 
+        // with their own cleanup dir.  See bugzilla bug #105087
         rv = CloneMozBinDirectory(getter_AddRefs(localFile));
 #ifdef XP_MAC
         if (NS_SUCCEEDED(rv))
             rv = localFile->AppendNative(ESSENTIAL_FILES);
 #endif
 
-    } 
+    }
 
     if (localFile && NS_SUCCEEDED(rv))
         return localFile->QueryInterface(NS_GET_IID(nsIFile), (void**)_retval);
-        
+
     return rv;
 }
 
@@ -340,7 +340,7 @@ NS_METHOD nsAppFileLocationProvider::GetProductDirectory(nsILocalFile **aLocalFi
     nsCOMPtr<nsILocalFile> localDir;
 
 #if defined(XP_MAC)
-    nsCOMPtr<nsIProperties> directoryService = 
+    nsCOMPtr<nsIProperties> directoryService =
              do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
     if (NS_FAILED(rv)) return rv;
     OSErr   err;
@@ -349,7 +349,7 @@ NS_METHOD nsAppFileLocationProvider::GetProductDirectory(nsILocalFile **aLocalFi
     const char *prop = (!err && response >= 0x00001000) ? NS_MAC_USER_LIB_DIR : NS_MAC_DOCUMENTS_DIR;
     rv = directoryService->Get(prop, NS_GET_IID(nsILocalFile), getter_AddRefs(localDir));
     if (NS_FAILED(rv)) return rv;
-#elif defined(XP_MACOSX)
+#elif defined(XP_MACOSX) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
     FSRef fsRef;
     OSErr err = ::FSFindFolder(kUserDomain, kDomainLibraryFolderType, kCreateFolder, &fsRef);
     if (err) return NS_ERROR_FAILURE;
@@ -359,13 +359,13 @@ NS_METHOD nsAppFileLocationProvider::GetProductDirectory(nsILocalFile **aLocalFi
     rv = localDirMac->InitWithFSRef(&fsRef);
     if (NS_FAILED(rv)) return rv;
 #elif defined(XP_OS2)
-    nsCOMPtr<nsIProperties> directoryService = 
+    nsCOMPtr<nsIProperties> directoryService =
              do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
     if (NS_FAILED(rv)) return rv;
     rv = directoryService->Get(NS_OS2_HOME_DIR, NS_GET_IID(nsILocalFile), getter_AddRefs(localDir));
     if (NS_FAILED(rv)) return rv;
 #elif defined(XP_WIN)
-    nsCOMPtr<nsIProperties> directoryService = 
+    nsCOMPtr<nsIProperties> directoryService =
              do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
     if (NS_FAILED(rv)) return rv;
     rv = directoryService->Get(NS_WIN_APPDATA_DIR, NS_GET_IID(nsILocalFile), getter_AddRefs(localDir));
@@ -469,7 +469,7 @@ class nsAppDirectoryEnumerator : public nsISimpleEnumerator
     {
     }
 
-    NS_IMETHOD HasMoreElements(PRBool *result) 
+    NS_IMETHOD HasMoreElements(PRBool *result)
     {
         while (!mNext && *mCurrentKey)
         {
@@ -485,7 +485,7 @@ class nsAppDirectoryEnumerator : public nsISimpleEnumerator
         return NS_OK;
     }
 
-    NS_IMETHOD GetNext(nsISupports **result) 
+    NS_IMETHOD GetNext(nsISupports **result)
     {
         NS_ENSURE_ARG_POINTER(result);
         *result = nsnull;
@@ -494,11 +494,11 @@ class nsAppDirectoryEnumerator : public nsISimpleEnumerator
         HasMoreElements(&hasMore);
         if (!hasMore)
             return NS_ERROR_FAILURE;
-            
+
         *result = mNext;
         NS_IF_ADDREF(*result);
         mNext = nsnull;
-        
+
         return *result ? NS_OK : NS_ERROR_FAILURE;
     }
 
@@ -542,7 +542,7 @@ class nsPathsDirectoryEnumerator : public nsAppDirectoryEnumerator
     {
     }
 
-    NS_IMETHOD HasMoreElements(PRBool *result) 
+    NS_IMETHOD HasMoreElements(PRBool *result)
     {
         if (mEndPath)
             while (!mNext && *mEndPath)
@@ -581,18 +581,18 @@ nsAppFileLocationProvider::GetFiles(const char *prop, nsISimpleEnumerator **_ret
     NS_ENSURE_ARG_POINTER(_retval);
     *_retval = nsnull;
     nsresult rv = NS_ERROR_FAILURE;
-    
+
     if (!nsCRT::strcmp(prop, NS_APP_PLUGINS_DIR_LIST))
     {
-#if defined(XP_MAC) || defined(XP_MACOSX)
+#if (defined(XP_MAC) || defined(XP_MACOSX)) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
         static const char* osXKeys[] = { NS_APP_PLUGINS_DIR, NS_MACOSX_USER_PLUGIN_DIR, NS_MACOSX_LOCAL_PLUGIN_DIR, nsnull };
         static const char* os9Keys[] = { NS_APP_PLUGINS_DIR, NS_MAC_CLASSIC_PLUGIN_DIR, nsnull };
         static const char** keys;
-        
+
         if (!keys) {
             OSErr err;
             long response;
-            err = ::Gestalt(gestaltSystemVersion, &response); 
+            err = ::Gestalt(gestaltSystemVersion, &response);
             keys = (!err && response >= 0x00001000) ? osXKeys : os9Keys;
         }
 
@@ -606,7 +606,7 @@ nsAppFileLocationProvider::GetFiles(const char *prop, nsISimpleEnumerator **_ret
         *_retval = new nsPathsDirectoryEnumerator(this, keys);
 #endif
         NS_IF_ADDREF(*_retval);
-        rv = *_retval ? NS_OK : NS_ERROR_OUT_OF_MEMORY;        
+        rv = *_retval ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
     }
     return rv;
 }
