@@ -1585,7 +1585,10 @@ bool VBoxConsoleWnd::x11Event (XEvent *event)
 }
 #endif
 
-extern void qt_set_sequence_auto_mnemonic ( bool on );
+#ifdef Q_WS_MAC
+extern void qt_set_sequence_auto_mnemonic (bool on);
+#endif
+
 /**
  *  Sets the strings of the subwidgets using the current
  *  language.
@@ -1612,7 +1615,10 @@ void VBoxConsoleWnd::retranslateUi()
 
     /* VM actions */
 
+#ifdef Q_WS_MAC
     qt_set_sequence_auto_mnemonic (false);
+#endif
+
     mVmFullscreenAction->setText (VBoxGlobal::insertKeyToActionText (tr ("&Fullscreen Mode"), "F"));
     mVmFullscreenAction->setStatusTip (tr ("Switch to fullscreen mode" ));
 
