@@ -972,7 +972,7 @@ pr_LoadLibraryByPathname(const char *name, PRIntn flags)
     lm->staticTable = NULL;
 
 #ifdef VBOX_USE_MORE_IPRT_IN_NSPR
-    oserr = RTLdrOpen(name, &lm->dlh);
+    oserr = RTLdrLoad(name, &lm->dlh);
     if (RT_FAILURE(oserr))
         goto unlock;
     lm->name = strdup(name);
