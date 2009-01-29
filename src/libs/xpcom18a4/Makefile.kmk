@@ -1014,13 +1014,13 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsStringStream.cpp \
 	xpcom/io/nsUnicharInputStream.cpp \
 	xpcom/io/nsNativeCharsetUtils.cpp
-VBox-xpcom-io_SOURCES.darwin = \
+VBox-xpcom-io_SOURCES.darwin.x86 = \
 	xpcom/io/nsLocalFileOSX.cpp \
 	xpcom/MoreFiles/FSCopyObject.c \
 	xpcom/MoreFiles/MoreFilesX.c
 VBox-xpcom-io_SOURCES.l4 = \
 	xpcom/io/nsLocalFileL4.cpp
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),)
+if1of ($(KBUILD_TARGET) $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd linux netbsd openbsd solaris darwin.amd64)
 VBox-xpcom-io_SOURCES += \
 	xpcom/io/nsLocalFileUnix.cpp
 endif
