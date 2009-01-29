@@ -1168,26 +1168,20 @@ int main (int argc, char **argv)
         }
 
 #ifndef RT_OS_OS2
+        // Increase the file table size to 10240 or as high as possible.
         struct rlimit lim;
         if (getrlimit(RLIMIT_NOFILE, &lim) == 0)
         {
-            int k = 10240;
-            for (; k >= 2048; k -= 1024)
+            if (    lim.rlim_cur < 10240
+                &&  lim.rlim_cur < lim.rlim_max)
             {
-                if (lim.rlim_cur < k)
-                {
-                    lim.rlim_cur = k;
-                    if (setrlimit(RLIMIT_NOFILE, &lim) == 0)
-                        break;
-                }
-                else
-                    break;
+                lim.rlim_cur = RT_MIN(lim.rlim_max, 10240);
+                if (setrlimit(RLIMIT_NOFILE, &lim) == -1)
+                    printf("WARNING: failed to increase file descriptor limit. (%d)\n", errno);
             }
-            if (k <= 2048)
-                printf("WARNING: failed to increase file descriptor limit.\n");
         }
         else
-            printf ("WARNING: failed to obtain per-process file-descriptor limit.\n");
+            printf("WARNING: failed to obtain per-process file-descriptor limit (%d).\n", errno);
 #endif
 
         PLEvent *ev;
