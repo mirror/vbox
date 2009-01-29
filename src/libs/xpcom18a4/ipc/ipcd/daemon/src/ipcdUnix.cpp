@@ -44,7 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef RT_OS_OS2
+#if defined(VBOX) && !defined(XP_OS2)
 # include <sys/resource.h>
 #endif
 
