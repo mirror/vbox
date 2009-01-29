@@ -119,9 +119,6 @@ VBoxNetFlt-inf_SOURCES += \
 $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.sys: $$(TARGET_VBoxNetFlt) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxNetFltMpCat.dir/VBoxNetFlt.sys: $$(TARGET_VBoxNetFlt) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
 $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNotify.dll: $$(TARGET_VBoxNetFltNotify) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
@@ -133,7 +130,6 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
 $(PATH_TARGET)/VBoxNetFltMpCat.dir/VBoxNetFlt_m.cat: \
-		$(PATH_TARGET)/VBoxNetFltMpCat.dir/VBoxNetFlt.sys \
 		$(PATH_TARGET)/VBoxNetFltMpCat.dir/VBoxNetFlt_m.inf
 	$(call MSG_TOOL,Inf2Cat,VBoxNetFlt-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
