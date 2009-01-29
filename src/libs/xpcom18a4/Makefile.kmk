@@ -106,9 +106,14 @@ endif
 TEMPLATE_XPCOM_LDFLAGS.x86         = -m32
 TEMPLATE_XPCOM_LDFLAGS.amd64       = -m64
 TEMPLATE_XPCOM_LDFLAGS.darwin      = $(TEMPLATE_VBOXR3NP_LDFLAGS.darwin) \
-                                     -fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
-                                     -framework CoreServices -framework CoreFoundation -framework Foundation -framework AppKit -framework Carbon \
-                                     -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+	-fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
+	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
+	-framework CoreServices \
+	-framework CoreFoundation \
+	-framework Foundation \
+	-framework AppKit \
+	-framework Carbon
+## @todo wy is -fno-exceptions here.
 ifn1of ($(KBUILD_TARGET), os2 win)
  TEMPLATE_XPCOM_CXXFLAGS          += -fPIC
  TEMPLATE_XPCOM_CFLAGS            += -fPIC
@@ -192,40 +197,51 @@ TEMPLATE_XPCOMEXE_LDFLAGS.l4       = $(L4_DIR)/lib/x86_586/crt0.o \
 # It extends the BLDPROG template in config.kmk but overrides CFLAGS
 # and CXXFLAGS completely at the moment.
 #
-TEMPLATE_XPCOMBLDPROG                   = XPCOM Build programs executables
-TEMPLATE_XPCOMBLDPROG_EXTENDS           = VBOXBLDPROG
+TEMPLATE_XPCOMBLDPROG                     = XPCOM Build programs executables
+TEMPLATE_XPCOMBLDPROG_EXTENDS             = VBOXBLDPROG
 ## @todo Verify that this doesn't blow up because of template inheriance ordering. (we're assuming XPCOMEXE is expanded when this is being used.)
+TEMPLATE_XPCOMBLDPROG_DEFS                = $(TEMPLATE_BLDPROG_DEFS)                $(TEMPLATE_XPCOMEXE_DEFS)
+TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_HOST) = $(TEMPLATE_BLDPROG_DEFS.$(KBUILD_HOST)) $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_HOST))
+TEMPLATE_XPCOMBLDPROG_DEFS.x86            = $(TEMPLATE_BLDPROG_DEFS.x86)            $(TEMPLATE_XPCOMEXE_DEFS.x86)
+TEMPLATE_XPCOMBLDPROG_DEFS.amd64          = $(TEMPLATE_BLDPROG_DEFS.amd64)          $(TEMPLATE_XPCOMEXE_DEFS.amd64)
+TEMPLATE_XPCOMBLDPROG_INCS                = \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/string \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64)
+ TEMPLATE_XPCOMBLDPROG_CFLAGS             = $(filter-out -pedantic,$(TEMPLATE_BLDPROG_CFLAGS))
+ TEMPLATE_XPCOMBLDPROG_CXXFLAGS           = $(filter-out -pedantic,$(TEMPLATE_BLDPROG_CXXFLAGS))
+ TEMPLATE_XPCOMBLDPROG_CXXFLAGS.darwin    = $(TEMPLATE_BLDPROG_CXXFLAGS.darwin)     -fpascal-strings -fshort-wchar -fno-common -fno-rtti
+ ## @todo ???: TEMPLATE_XPCOMBLDPROG_CFLAGS.darwin      = $(TEMPLATE_BLDPROG_CFLAGS.darwin)       -fpascal-strings -fshort-wchar -fno-common -fno-rtti
+ TEMPLATE_XPCOMBLDPROG_LDFLAGS.darwin     = $(TEMPLATE_BLDPROG_LDFLAGS.darwin)      -fpascal-strings -fshort-wchar -fno-rtti -fno-exceptions
 
-TEMPLATE_XPCOMBLDPROG_DEFS                       = $(TEMPLATE_BLDPROG_DEFS)                       $(TEMPLATE_XPCOMEXE_DEFS)
-TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_TARGET)      = $(TEMPLATE_BLDPROG_DEFS.$(KBUILD_TARGET))      $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_TARGET))
-TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_BLDPROG_DEFS.$(KBUILD_TARGET_ARCH)) $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_TARGET_ARCH))
-TEMPLATE_XPCOMBLDPROG_CXXFLAGS          = -ansi -Wall -Wno-non-virtual-dtor
-TEMPLATE_XPCOMBLDPROG_CXXFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH))
-TEMPLATE_XPCOMBLDPROG_CXXFLAGS.release  = -O
-TEMPLATE_XPCOMBLDPROG_CXXFLAGS.profile  = -O
-TEMPLATE_XPCOMBLDPROG_CXXFLAGS.freebsd  = -pthread
-TEMPLATE_XPCOMBLDPROG_CXXFLAGS.linux    = -pthread
-TEMPLATE_XPCOMBLDPROG_CFLAGS            = -pipe -ansi -Wall -Wno-unused
-TEMPLATE_XPCOMBLDPROG_CFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CFLAGS.$(KBUILD_TARGET_ARCH))
-TEMPLATE_XPCOMBLDPROG_CFLAGS.release    = -O
-TEMPLATE_XPCOMBLDPROG_CFLAGS.profile    = -O
-TEMPLATE_XPCOMBLDPROG_CFLAGS.freebsd    = -pthread
-TEMPLATE_XPCOMBLDPROG_CFLAGS.linux      = -pthread
-TEMPLATE_XPCOMBLDPROG_INCS              = $(VBOX_PATH_SDK)/bindings/xpcom/include \
-                                          $(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
-                                          $(VBOX_PATH_SDK)/bindings/xpcom/include/string \
-                                          $(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
-                                          $(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd
-TEMPLATE_XPCOMBLDPROG_INCS.$(KBUILD_TARGET)         = $(TEMPLATE_XPCOMEXE_INCS.$(KBUILD_TARGET))
-TEMPLATE_XPCOMBLDPROG_INCS.$(KBUILD_TARGET_ARCH)    = $(TEMPLATE_XPCOMEXE_INCS.$(KBUILD_TARGET_ARCH))
-TEMPLATE_XPCOMBLDPROG_LIBPATH.$(KBUILD_TARGET)      = $(TEMPLATE_XPCOMEXE_LIBPATH.$(KBUILD_TARGET))
-TEMPLATE_XPCOMBLDPROG_LIBPATH.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LIBPATH.$(KBUILD_TARGET_ARCH))
-ifeq ($(KBUILD_TARGET),darwin)
-TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(KBUILD_TARGET)      = $(filter-out $(TEMPLATE_XPCOMEXE_LDFLAGS.$(KBUILD_TARGET)),$(TEMPLATE_VBOXR3NP_LDFLAGS.$(KBUILD_TARGET))) $(TEMPLATE_VBOXBLDPROG_LDFLAGS.darwin)
 else
-TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(KBUILD_TARGET)      = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(KBUILD_TARGET))
-endif
-TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(KBUILD_TARGET_ARCH))
+ ## @todo This stuff is *really* ugly.
+ TEMPLATE_XPCOMBLDPROG_CXXFLAGS          = -ansi -Wall -Wno-non-virtual-dtor
+ TEMPLATE_XPCOMBLDPROG_CXXFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH))
+ TEMPLATE_XPCOMBLDPROG_CXXFLAGS.release  = -O
+ TEMPLATE_XPCOMBLDPROG_CXXFLAGS.profile  = -O
+ TEMPLATE_XPCOMBLDPROG_CXXFLAGS.freebsd  = -pthread
+ TEMPLATE_XPCOMBLDPROG_CXXFLAGS.linux    = -pthread
+ TEMPLATE_XPCOMBLDPROG_CFLAGS            = -pipe -ansi -Wall -Wno-unused
+ TEMPLATE_XPCOMBLDPROG_CFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CFLAGS.$(KBUILD_TARGET_ARCH))
+ TEMPLATE_XPCOMBLDPROG_CFLAGS.release    = -O
+ TEMPLATE_XPCOMBLDPROG_CFLAGS.profile    = -O
+ TEMPLATE_XPCOMBLDPROG_CFLAGS.freebsd    = -pthread
+ TEMPLATE_XPCOMBLDPROG_CFLAGS.linux      = -pthread
+ TEMPLATE_XPCOMBLDPROG_INCS.$(KBUILD_TARGET)         = $(TEMPLATE_XPCOMEXE_INCS.$(KBUILD_TARGET))
+ TEMPLATE_XPCOMBLDPROG_INCS.$(KBUILD_TARGET_ARCH)    = $(TEMPLATE_XPCOMEXE_INCS.$(KBUILD_TARGET_ARCH))
+ TEMPLATE_XPCOMBLDPROG_LIBPATH.$(KBUILD_TARGET)      = $(TEMPLATE_XPCOMEXE_LIBPATH.$(KBUILD_TARGET))
+ TEMPLATE_XPCOMBLDPROG_LIBPATH.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LIBPATH.$(KBUILD_TARGET_ARCH))
+ ifeq ($(KBUILD_TARGET),darwin)
+  TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(KBUILD_TARGET)     = $(filter-out $(TEMPLATE_XPCOMEXE_LDFLAGS.$(KBUILD_TARGET)),$(TEMPLATE_VBOXR3NP_LDFLAGS.$(KBUILD_TARGET))) $(TEMPLATE_VBOXBLDPROG_LDFLAGS.darwin)
+ else
+  TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(KBUILD_TARGET)     = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(KBUILD_TARGET))
+ endif
+ TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(KBUILD_TARGET_ARCH))
+endif # End of ugly stuff.
 TEMPLATE_XPCOMBLDPROG_ORDERDEPS         = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst)))
 
 
@@ -611,6 +627,13 @@ xpidl_TEMPLATE = XPCOMBLDPROG
 xpidl_DEFS = EXPORT_XPT_API
 ## @todo This assumes HOST == TARGET.
 xpidl_INST = $(INST_BIN)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64) # HACK ALERT!
+ xpidl_BLD_TRG_ARCH = x86
+ ## @todo kBuild ticket 84 workarounds:
+ xpidl_CFLAGS.x86   = $(TEMPLATE_XPCOMBLDPROG_CFLAGS.x86)
+ xpidl_CXXFLAGS.x86 = $(TEMPLATE_XPCOMBLDPROG_CXXFLAGS.x86)
+ xpidl_LDFLAGS.x86  = $(TEMPLATE_XPCOMBLDPROG_LDFLAGS.x86)
+endif
 xpidl_SOURCES = \
 	xpcom/typelib/xpidl/xpidl.c \
 	xpcom/typelib/xpidl/xpidl_idl.c \
