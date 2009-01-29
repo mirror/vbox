@@ -36,6 +36,10 @@
 #undef SHW_PTE_PG_MASK
 #undef SHW_PT_SHIFT
 #undef SHW_PT_MASK
+#undef SHW_TOTAL_PD_ENTRIES
+#undef SHW_PDPT_SHIFT
+#undef SHW_PDPT_MASK
+#undef SHW_PDPE_PG_MASK
 #undef SHW_POOL_ROOT_IDX
 
 #if PGM_SHW_TYPE == PGM_TYPE_32BIT
@@ -50,10 +54,33 @@
 # define SHW_PDE_PG_MASK        X86_PDE_PG_MASK
 # define SHW_PD_SHIFT           X86_PD_SHIFT
 # define SHW_PD_MASK            X86_PD_MASK
+# define SHW_TOTAL_PD_ENTRIES   X86_PG_ENTRIES
 # define SHW_PTE_PG_MASK        X86_PTE_PG_MASK
 # define SHW_PT_SHIFT           X86_PT_SHIFT
 # define SHW_PT_MASK            X86_PT_MASK
 # define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_PD
+
+#elif PGM_SHW_TYPE == PGM_TYPE_EPT
+# define SHWPT                  EPTPT
+# define PSHWPT                 PEPTPT
+# define SHWPTE                 EPTPTE
+# define PSHWPTE                PEPTPTE
+# define SHWPD                  EPTPD
+# define PSHWPD                 PEPTPD
+# define SHWPDE                 EPTPDE
+# define PSHWPDE                PEPTPDE
+# define SHW_PDE_PG_MASK        EPT_PDE_PG_MASK
+# define SHW_PD_SHIFT           EPT_PD_SHIFT
+# define SHW_PD_MASK            EPT_PD_MASK
+# define SHW_PTE_PG_MASK        EPT_PTE_PG_MASK
+# define SHW_PT_SHIFT           EPT_PT_SHIFT
+# define SHW_PT_MASK            EPT_PT_MASK
+# define SHW_PDPT_SHIFT         EPT_PDPT_SHIFT
+# define SHW_PDPT_MASK          EPT_PDPT_MASK
+# define SHW_PDPE_PG_MASK       EPT_PDPE_PG_MASK
+# define SHW_TOTAL_PD_ENTRIES   (EPT_PG_AMD64_ENTRIES*EPT_PG_AMD64_PDPE_ENTRIES)
+# define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_NESTED_ROOT      /* do not use! exception is real mode & protected mode without paging. */
+
 #else
 # define SHWPT                  X86PTPAE
 # define PSHWPT                 PX86PTPAE
@@ -69,7 +96,26 @@
 # define SHW_PTE_PG_MASK        X86_PTE_PAE_PG_MASK
 # define SHW_PT_SHIFT           X86_PT_PAE_SHIFT
 # define SHW_PT_MASK            X86_PT_PAE_MASK
-# define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_PAE_PD
+
+# if PGM_SHW_TYPE == PGM_TYPE_AMD64
+#  define SHW_PDPT_SHIFT        X86_PDPT_SHIFT
+#  define SHW_PDPT_MASK         X86_PDPT_MASK_AMD64
+#  define SHW_PDPE_PG_MASK      X86_PDPE_PG_MASK
+#  define SHW_TOTAL_PD_ENTRIES  (X86_PG_AMD64_ENTRIES*X86_PG_AMD64_PDPE_ENTRIES)
+#  define SHW_POOL_ROOT_IDX     PGMPOOL_IDX_AMD64_CR3
+
+# else /* 32 bits PAE mode */
+#  define SHW_PDPT_SHIFT        X86_PDPT_SHIFT
+#  define SHW_PDPT_MASK         X86_PDPT_MASK_PAE
+#  define SHW_PDPE_PG_MASK      X86_PDPE_PG_MASK
+#  define SHW_TOTAL_PD_ENTRIES  (X86_PG_PAE_ENTRIES*X86_PG_PAE_PDPE_ENTRIES)
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#  define SHW_POOL_ROOT_IDX     PGMPOOL_IDX_PDPT
+#  else
+#  define SHW_POOL_ROOT_IDX     PGMPOOL_IDX_PAE_PD
+#  endif
+
+# endif
 #endif
 
 

@@ -4017,8 +4017,10 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
      */
     if (PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) == pPage->Core.Key)
     {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         AssertMsg(pPage->enmKind == PGMPOOLKIND_64BIT_PML4,
                   ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(pPool->CTX_SUFF(pVM)), pPage->Core.Key, pPage->enmKind));
+#endif
         Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
         return VINF_SUCCESS;
     }
@@ -4241,6 +4243,8 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     pPage->fCached = false;
     pPage->fReusedFlushPending = false;
     pPage->fCR3Mix = false;
+    pPage->iUser = iUser;
+    pPage->iUserTable = iUserTable;
 #ifdef PGMPOOL_WITH_MONITORING
     pPage->cModifications = 0;
     pPage->iModifiedNext = NIL_PGMPOOL_IDX;

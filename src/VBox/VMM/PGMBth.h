@@ -129,7 +129,67 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
  */
 PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
 {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    /* Here we deal with allocation of the root shadow page table for real and protected mode during mode switches;
+     * Other modes rely on MapCR3/UnmapCR3 to setup the shadow root page tables. 
+     */
+# if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BITS \
+           || PGM_SHW_TYPE == PGM_TYPE_PAE    \
+           || PGM_SHW_TYPE == PGM_TYPE_AMD64) \
+       && (   PGM_GST_TYPE == PGM_TYPE_REAL   \
+           && PGM_GST_TYPE == PGM_TYPE_PROT))
+
+    Assert(!HWACCMIsNestedPagingActive(pVM));
+    /* We only need shadow paging in real and protected mode for VT-x and AMD-V (excluding nested paging/EPT modes) */
+    if (HWACCMR3IsActive(pVM))
+    {
+        /* Free the previous root mapping if still active. */
+        PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+        if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
+        {
+            /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
+            /** @todo Coordinate this better with the pool. */
+            if (pVM->pgm.s.CTX_SUFF(pShwPageCR3)->enmKind != PGMPOOLKIND_FREE)
+                pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pVM->pgm.s.CTX_SUFF(pShwPageCR3)->iUser, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->iUserTable);
+            pVM->pgm.s.pShwPageCR3R3 = 0;
+            pVM->pgm.s.pShwPageCR3R0 = 0;
+            pVM->pgm.s.pShwRootR3    = 0;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+            pVM->pgm.s.pShwRootR0    = 0;
+#  endif
+            pVM->pgm.s.HCPhysShwCR3  = 0;
+        }
+
+        /* contruct a fake address */
+#  if PGM_GST_TYPE == PGM_TYPE_REAL 
+        RTGCPHYS GCPhysCR3 = RT_BIT_64(63);
+#  else
+        RTGCPHYS GCPhysCR3 = RT_BIT_64(63) | RT_BIT_64(62);
+#  endif
+        int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+        if (rc == VERR_PGM_POOL_FLUSHED)
+        {
+            Log(("Bth-Enter: PGM pool flushed -> signal sync cr3\n"));
+            Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            return VINF_PGM_SYNC_CR3;
+        }
+        AssertRCReturn(rc, rc);
+#  ifdef IN_RING0
+        pVM->pgm.s.pShwPageCR3R3 = MMHyperCCToR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+#  else
+        pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+#  endif
+        pVM->pgm.s.pShwRootR3    = (R3PTRTYPE(void *))pVM->pgm.s.CTX_SUFF(pShwPageCR3)->pvPageR3;
+        Assert(pVM->pgm.s.pShwRootR3);
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+        pVM->pgm.s.pShwRootR0    = (R0PTRTYPE(void *))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+#  endif
+        pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
+    }
+# endif
+#else
     /* nothing special to do here - InitData does the job. */
+#endif
     return VINF_SUCCESS;
 }
 
