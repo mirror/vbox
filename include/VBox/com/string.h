@@ -125,9 +125,9 @@ public:
     }
 
     /**
-     *  Allocates memory for a string capable to store \a aSize - 1 characters
-     *  plus the terminating zero character. If \a aSize is zero, or if a
-     *  memory allocation error occurs, this object will become null.
+     *  Allocates memory for a string capable to store \a aSize - 1 characters;
+     *  in other words, aSize includes the terminating zero character. If \a aSize
+     *  is zero, or if a memory allocation error occurs, this object will become null.
      */
     Bstr &alloc (size_t aSize)
     {
@@ -388,9 +388,9 @@ public:
     }
 
     /**
-     *  Allocates memory for a string capable to store \a aSize - 1 characters
-     *  plus the terminating zero character. If \a aSize is zero, or if a
-     *  memory allocation error occurs, this object will become null.
+     *  Allocates memory for a string capable to store \a aSize - 1 bytes (not characters!);
+     *  in other words, aSize includes the terminating zero character. If \a aSize
+     *  is zero, or if a memory allocation error occurs, this object will become null.
      */
     Utf8Str &alloc (size_t aSize)
     {
