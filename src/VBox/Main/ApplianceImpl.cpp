@@ -1228,6 +1228,46 @@ STDMETHODIMP Appliance::Interpret()
         }
         vsd->addEntry(VirtualSystemDescriptionType_Memory, "", toString<uint64_t>(vs.ullMemorySize), toString<uint64_t>(ullMemSizeVBox));
 
+        /* Audio */
+        if (!vs.strSoundCardType.isNull())
+            /* Currently we set the AC97 always.
+               @todo: figure out the hardware which could be possible */
+            vsd->addEntry(VirtualSystemDescriptionType_SoundCard, "", vs.strSoundCardType, toString<uint32_t>(AudioControllerType_AC97));
+
+        /* USB Controller */
+        if (vs.fHasUsbController)
+            vsd->addEntry(VirtualSystemDescriptionType_USBController, "", "", "1");
+
+        /* Network Controller */
+        // @todo: is there no hardware specified in the OVF-Format?
+        if (vs.llNetworkNames.size() > 0)
+        {
+            /* Get the default network adapter type for the selected guest OS */
+            NetworkAdapterType_T nwAdapterVBox = NetworkAdapterType_Am79C970A;
+            rc = osType->COMGETTER(AdapterType)(&nwAdapterVBox);
+            ComAssertComRCThrowRC(rc);
+            list<Utf8Str>::const_iterator nwIt;
+            /* Iterate through all abstract networks. We support 8 network
+             * adapters at the maximum. (@todo: warn if it are more!) */
+            size_t a = 0;
+            for (nwIt = vs.llNetworkNames.begin();
+                 nwIt != vs.llNetworkNames.end() && a < SchemaDefs::NetworkAdapterCount;
+                 ++nwIt, ++a)
+            {
+                // Utf8Str nwController = *nwIt; // @todo: not used yet
+                vsd->addEntry(VirtualSystemDescriptionType_NetworkAdapter, "", "", toString<ULONG>(nwAdapterVBox));
+            }
+        }
+
+        /* Floppy Drive */
+        if (vs.fHasFloppyDrive)
+            vsd->addEntry(VirtualSystemDescriptionType_Floppy, "", "", "1");
+
+        /* CD Drive */
+        /* @todo: I can't disable the CDROM. So nothing to do for now. */
+        //if (vs.fHasCdromDrive)
+        //    vsd->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "1");
+
         /* Hard disk Controller */
         ControllersMap::const_iterator hdcIt;
         /* Iterate through all hard disk controllers */
@@ -1330,26 +1370,6 @@ STDMETHODIMP Appliance::Interpret()
             }
         }
 
-        /* Network Controller */
-        // @todo: is there no hardware specified in the OVF-Format?
-        if (vs.llNetworkNames.size() > 0)
-        {
-            /* Get the default network adapter type for the selected guest OS */
-            NetworkAdapterType_T nwAdapterVBox = NetworkAdapterType_Am79C970A;
-            rc = osType->COMGETTER(AdapterType)(&nwAdapterVBox);
-            ComAssertComRCThrowRC(rc);
-            list<Utf8Str>::const_iterator nwIt;
-            /* Iterate through all abstract networks. We support 8 network
-             * adapters at the maximum. (@todo: warn if it are more!) */
-            size_t a = 0;
-            for (nwIt = vs.llNetworkNames.begin();
-                 nwIt != vs.llNetworkNames.end() && a < SchemaDefs::NetworkAdapterCount;
-                 ++nwIt, ++a)
-            {
-                // Utf8Str nwController = *nwIt; // @todo: not used yet
-                vsd->addEntry(VirtualSystemDescriptionType_NetworkAdapter, "", "", toString<ULONG>(nwAdapterVBox));
-            }
-        }
         m->virtualSystemDescriptions.push_back(vsd);
     }
 
@@ -1421,6 +1441,68 @@ STDMETHODIMP Appliance::ImportAppliance()
         rc = newMachine->COMSETTER(VRAMSize)(vramVBox);
         ComAssertComRCThrowRC(rc);
 
+
+        /* Audio Adapter */
+        std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsd->findByType(VirtualSystemDescriptionType_SoundCard);
+        /* @todo: we support one audio adapter only */
+        if (vsdeAudioAdapter.size() > 0)
+        {
+            const Utf8Str& audioAdapterVBox = vsdeAudioAdapter.front()->strFinalValue;
+            if (RTStrICmp(audioAdapterVBox, "null") != 0)
+            {
+                ComPtr<IAudioAdapter> audioAdapter;
+                rc = newMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                ComAssertComRCThrowRC(rc);
+                rc = audioAdapter->COMSETTER(Enabled)(true);
+                ComAssertComRCThrowRC(rc);
+                /* @todo: For now this is preselected, but on Linux for example
+                   more drivers are possible. The user should be able to change
+                   this also. */
+                AudioDriverType_T adt = AudioDriverType_Null;
+#if defined(RT_OS_WINDOWS)
+# ifdef VBOX_WITH_WINMM
+                adt = AudioDriverType_WinMM;
+# else
+                adt = AudioDriverType_DirectSound;
+# endif
+#elif defined(RT_OS_LINUX)
+# ifdef VBOX_WITH_ALSA
+                adt = AudioDriverType_Alsa;
+# elif defined(VBOX_WITH_PULSE)
+                adt = AudioDriverType_Pulse;
+# else
+                adt = AudioDriverType_OSS;
+# endif
+#elif defined(RT_OS_DARWIN)
+                adt = AudioDriverType_CoreAudio;
+#elif defined(RT_OS_SOLARIS)
+                adt = AudioDriverType_SolAudio;
+#elif defined(RT_OS_OS2)
+                adt = AudioDriverType_MMPM;
+#endif
+                rc = audioAdapter->COMSETTER(AudioDriver)(adt);
+                ComAssertComRCThrowRC(rc);
+                rc = audioAdapter->COMSETTER(AudioController)(audioAdapterVBox);
+                ComAssertComRCThrowRC(rc);
+            }
+        }
+
+        /* USB Controller */
+        std::list<VirtualSystemDescriptionEntry*> vsdeUSBController = vsd->findByType(VirtualSystemDescriptionType_USBController);
+        /* If there is no USB controller entry it will be disabled */
+        bool fUSBEnabled = vsdeUSBController.size() > 0;
+        if (fUSBEnabled)
+        {
+            /* Check if the user has disabled the USB controller in the client */
+            const Utf8Str& usbVBox = vsdeUSBController.front()->strFinalValue;
+            fUSBEnabled = usbVBox == "1";
+        }
+        ComPtr<IUSBController> usbController;
+        rc = newMachine->COMGETTER(USBController)(usbController.asOutParam());
+        ComAssertComRCThrowRC(rc);
+        rc = usbController->COMSETTER(Enabled)(fUSBEnabled);
+        ComAssertComRCThrowRC(rc);
+
         /* Change the network adapters */
         std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsd->findByType(VirtualSystemDescriptionType_NetworkAdapter);
         if (vsdeNW.size() == 0)
@@ -1455,6 +1537,26 @@ STDMETHODIMP Appliance::ImportAppliance()
                 ComAssertComRCThrowRC(rc);
             }
         }
+
+        /* Floppy drive */
+        std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsd->findByType(VirtualSystemDescriptionType_Floppy);
+        /* If there is no floppy drive entry it will be disabled */
+        bool fFloppyEnabled = vsdeFloppy.size() > 0;
+        if (fFloppyEnabled)
+        {
+            /* Check if the user has disabled the floppy drive in the client */
+            const Utf8Str& floppyVBox = vsdeFloppy.front()->strFinalValue;
+            fFloppyEnabled = floppyVBox == "1";
+        }
+        ComPtr<IFloppyDrive> floppyDrive;
+        rc = newMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
+        ComAssertComRCThrowRC(rc);
+        rc = floppyDrive->COMSETTER(Enabled)(fFloppyEnabled);
+        ComAssertComRCThrowRC(rc);
+
+        /* CDROM drive */
+        /* @todo: I can't disable the CDROM. So nothing to do for now */
+        // std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsd->findByType(VirtualSystemDescriptionType_CDROM);
 
         /* Hard disk controller IDE */
         std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
@@ -1541,15 +1643,17 @@ STDMETHODIMP Appliance::ImportAppliance()
                 {
                     /* @todo: what now? For now we override in no
                      * circumstances. */
-//                    continue;
+                    continue;
                 }
                 const Utf8Str &strRef = (*hdIt)->strRef;
                 /* Get the associated disk image */
-                if (m->mapDisks.find(strRef) == m->mapDisks.end())
+                if (m->mapDisks.find(strRef) == m->mapDisks.end() ||
+                    vs.mapVirtualDisks.find(strRef) == vs.mapVirtualDisks.end())
                 {
                     /* @todo: error: entry doesn't exists */
                 }
                 DiskImage di = m->mapDisks[strRef];
+                VirtualDisk vd = (*vs.mapVirtualDisks.find(strRef)).second;
                 /* Construct the source file path */
                 char *srcFilePath;
                 RTStrAPrintf(&srcFilePath, "%s/%s", srcDir, di.strHref.c_str());
@@ -1593,7 +1697,17 @@ STDMETHODIMP Appliance::ImportAppliance()
                     Guid hdId;
                     rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());;
                     CheckComRCReturnRC(rc);
-                    rc = sMachine->AttachHardDisk2(hdId, StorageBus_IDE, 0, 0); //
+                    /* For now we assume we have one controller of every type only */
+                    HardDiskController hdc = (*vs.mapControllers.find(vd.idController)).second;
+                    StorageBus_T sbt = StorageBus_IDE;
+                    switch (hdc.controllerSystem)
+                    {
+                        case IDE: sbt = StorageBus_IDE; break;
+                        case SATA: sbt = StorageBus_SATA; break;
+                        //case SCSI: sbt = StorageBus_SCSI; break; // @todo: not available yet
+                        default: break;
+                    }
+                    rc = sMachine->AttachHardDisk2(hdId, sbt, hdc.ulBusNumber, 0);
                     CheckComRCReturnRC(rc);
                     rc = sMachine->SaveSettings();
                     CheckComRCReturnRC(rc);
