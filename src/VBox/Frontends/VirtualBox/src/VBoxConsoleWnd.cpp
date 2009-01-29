@@ -1347,15 +1347,17 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                 /* read the last user's choice for the given VM */
                 QStringList lastAction =
                     cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction).split (',');
+                bool wasDiscardCurState = lastAction.count() > 1 &&
+                                          lastAction [1] == kDiscardCurState;
                 AssertWrapperOk (cmachine);
                 if (lastAction [0] == kSave)
                 {
                     dlg.mRbSave->setChecked (true);
                     dlg.mRbSave->setFocus();
                 }
-                else if ((lastAction [0] == kPowerOff) && !isACPIEnabled)
+                else if (wasDiscardCurState || !isACPIEnabled)
                 {
-                    dlg.mRbShutdown->setEnabled (false);
+                    dlg.mRbShutdown->setEnabled (isACPIEnabled);
                     dlg.mRbPowerOff->setChecked (true);
                     dlg.mRbPowerOff->setFocus();
                 }
@@ -1364,8 +1366,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                     dlg.mRbShutdown->setChecked (true);
                     dlg.mRbShutdown->setFocus();
                 }
-                dlg.mCbDiscardCurState->setChecked (
-                    lastAction.count() > 1 && lastAction [1] == kDiscardCurState);
+                dlg.mCbDiscardCurState->setChecked (wasDiscardCurState);
             }
             else
             {
