@@ -77,7 +77,7 @@
 #elif defined(L4ENV)
   /* Major hack attack!!! */
 #include "nsLocalFileL4.h"
-#elif defined(XP_UNIX) || defined(XP_BEOS) || (defined(VBOX) && defined(XP_MACOSX))
+#elif defined(XP_UNIX) || defined(XP_BEOS)
 #include "nsLocalFileUnix.h"
 #elif defined(XP_OS2)
 #include "nsLocalFileOS2.h"
