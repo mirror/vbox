@@ -52,6 +52,10 @@
 #define _PR_SI_ARCHITECTURE "x86"
 #elif defined(__ppc__)
 #define _PR_SI_ARCHITECTURE "ppc"
+#elif defined(__amd64__)
+#define _PR_SI_ARCHITECTURE "amd64"
+#else
+#error "unknown architecture."
 #endif
 #define PR_DLL_SUFFIX		".dylib"
 
@@ -63,7 +67,7 @@
 #undef  HAVE_STACK_GROWING_UP
 #define HAVE_DLL
 #define USE_MACH_DYLD
-#define _PR_HAVE_SOCKADDR_LEN  
+#define _PR_HAVE_SOCKADDR_LEN
 #define _PR_STAT_HAS_ST_ATIMESPEC
 #define _PR_HAVE_LARGE_OFF_T
 #define PR_HAVE_SYSV_NAMED_SHARED_MEMORY
@@ -102,6 +106,9 @@
 #define IPV6_V6ONLY 27
 #endif
 
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+# include "_iprt_atomic.h"
+#else  /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 #if defined(__ppc__)
 #define _PR_HAVE_ATOMIC_OPS
 #define _MD_INIT_ATOMIC()
@@ -125,6 +132,7 @@ extern PRInt32 _PR_Darwin_x86_AtomicSet(PRInt32 *val, PRInt32 newval);
 extern PRInt32 _PR_Darwin_x86_AtomicAdd(PRInt32 *ptr, PRInt32 val);
 #define _MD_ATOMIC_ADD(ptr, val)    _PR_Darwin_x86_AtomicAdd(ptr, val)
 #endif /* __i386__ */
+#endif /* !VBOX_USE_MORE_IPRT_IN_NSPR */
 
 #define USE_SETJMP
 
