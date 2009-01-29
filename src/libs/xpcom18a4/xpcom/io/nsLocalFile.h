@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK *****
  *
- * This Original Code has been modified by IBM Corporation. Modifications made by IBM 
+ * This Original Code has been modified by IBM Corporation. Modifications made by IBM
  * described herein are Copyright (c) International Business Machines Corporation, 2000.
  * Modifications to Mozilla code or documentation identified per MPL Section 3.3
  *
@@ -70,14 +70,14 @@
 
 #ifdef XP_WIN
 #include "nsLocalFileWin.h"
-#elif defined(XP_MACOSX)
+#elif defined(XP_MACOSX) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
 #include "nsLocalFileOSX.h"
 #elif defined(XP_MAC)
 #include "nsLocalFileMac.h"
 #elif defined(L4ENV)
   /* Major hack attack!!! */
 #include "nsLocalFileL4.h"
-#elif defined(XP_UNIX) || defined(XP_BEOS)
+#elif defined(XP_UNIX) || defined(XP_BEOS) || (defined(VBOX) && defined(XP_MACOSX))
 #include "nsLocalFileUnix.h"
 #elif defined(XP_OS2)
 #include "nsLocalFileOS2.h"
