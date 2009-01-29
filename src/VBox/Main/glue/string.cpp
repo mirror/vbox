@@ -52,7 +52,7 @@ Utf8Str Utf8Str::substr(size_t pos /*= 0*/, size_t n /*= npos*/) const
             // walk the UTF-8 characters until where the caller wants to start
             size_t i = pos;
             while (*psz && i--)
-                if (!(RT_SUCCESS(RTStrGetCpEx(&psz, &cp))))
+                if (RT_FAILURE(RTStrGetCpEx(&psz, &cp)))
                     return ret;     // return empty string on bad encoding
 
             const char *pFirst = psz;
@@ -64,15 +64,21 @@ Utf8Str Utf8Str::substr(size_t pos /*= 0*/, size_t n /*= npos*/) const
             {
                 i = n;
                 while (*psz && i--)
-                    if (!(RT_SUCCESS(RTStrGetCpEx(&psz, &cp))))
+                    if (RT_FAILURE(RTStrGetCpEx(&psz, &cp)))
                         return ret;     // return empty string on bad encoding
 
                 size_t len = psz - pFirst;
+#if 1
                 char *psz = (char*)RTMemAlloc(len + 1);
                 memcpy(psz, pFirst, len);
                 psz[len] = '\0';
                 ret = psz;
                 RTMemFree(psz);
+#else /* A proposal that saves a memcpy and alloc/free: */
+                ret.alloc(len + 1);
+                memcpy(ret.str, pFirst, len);
+                ret.str[len] = '\0';
+#endif
             }
         }
     }
