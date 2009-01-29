@@ -178,7 +178,7 @@ typedef struct {
 
 
 extern Stub stub;
-extern SPUDispatchTable glim;
+extern DECLEXPORT(SPUDispatchTable) glim;
 extern SPUDispatchTable stubThreadsafeDispatch;
 extern SPUDispatchTable stubNULLDispatch;
 

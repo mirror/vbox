@@ -35,7 +35,7 @@ for func_name in keys:
 	print ""
 
 
-print "SPUDispatchTable stubNULLDispatch = {"
+print "DECLEXPORT(SPUDispatchTable) stubNULLDispatch = {"
 for func_name in keys:
 	print "\tNULL_%s," % (func_name)
 print "\tNULL,  /* copyList */"
