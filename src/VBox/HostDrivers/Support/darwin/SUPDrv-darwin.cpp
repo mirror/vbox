@@ -393,7 +393,13 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
             rc = VERR_GENERAL_FAILURE;
 
         RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
         kauth_cred_unref(&pCred);
+#else  /* 10.4 */
+        /* The 10.4u SDK headers and 10.4.11 kernel source have inconsisten defintions
+           of kauth_cred_unref(), so use the other (now deprecated) API for releasing it. */
+        kauth_cred_rele(pCred);
+#endif /* 10.4 */
     }
     else
         rc = SUPDRV_ERR_INVALID_PARAM;
