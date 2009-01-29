@@ -506,7 +506,7 @@ public:
      * its equivalent in std::string except that this interprets pos and n
      * as UTF-8 codepoints instead of bytes. With the default parameters "0"
      * and "npos", this always copies the entire string.
-     * @param pos Index of first codepoints to copy from "this", counting from 0.
+     * @param pos Index of first codepoint to copy from "this", counting from 0.
      * @param n Number of codepoints to copy, starting with the one at "pos".
      */
     Utf8Str substr(size_t pos = 0, size_t n = npos) const;
