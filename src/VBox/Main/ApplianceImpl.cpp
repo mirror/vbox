@@ -1467,7 +1467,7 @@ STDMETHODIMP Appliance::ImportAppliance()
 # endif
 #elif defined(RT_OS_LINUX)
 # ifdef VBOX_WITH_ALSA
-                adt = AudioDriverType_Alsa;
+                adt = AudioDriverType_ALSA;
 # elif defined(VBOX_WITH_PULSE)
                 adt = AudioDriverType_Pulse;
 # else
