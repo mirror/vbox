@@ -354,7 +354,8 @@ static void crVBoxHGCMReadExact( CRConnection *conn, const void *buf, unsigned i
 
     if (parms.cbBuffer.u.value32)
     {
-        conn->pBuffer  = (uint8_t*) parms.pBuffer.u.Pointer.u.linearAddr;
+        //conn->pBuffer  = (uint8_t*) parms.pBuffer.u.Pointer.u.linearAddr;
+        conn->pBuffer  = conn->pHostBuffer;
         conn->cbBuffer = parms.cbBuffer.u.value32;
     }
 
@@ -429,7 +430,8 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
 
     if (parms.cbWriteback.u.value32)
     {
-        conn->pBuffer  = (uint8_t*) parms.pWriteback.u.Pointer.u.linearAddr;
+        //conn->pBuffer  = (uint8_t*) parms.pWriteback.u.Pointer.u.linearAddr;
+        conn->pBuffer  = conn->pHostBuffer;
         conn->cbBuffer = parms.cbWriteback.u.value32;
     }
 
