@@ -705,6 +705,8 @@ VBox-xpcom-nspr_DEFS       = \
 	FORCE_PR_LOG
 VBox-xpcom-nspr_DEFS      += \
 	VBOX_USE_IPRT_IN_NSPR
+VBox-xpcom-nspr_DEFS.darwin.amd64 = \
+	VBOX_USE_MORE_IPRT_IN_NSPR
 VBox-xpcom-nspr_DEFS.darwin = \
 	HAVE_BSD_FLOCK=1 \
 	_PR_PTHREADS
