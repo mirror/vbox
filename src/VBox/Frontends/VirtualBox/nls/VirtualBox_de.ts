@@ -822,12 +822,12 @@
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1597"/>
         <source>Seam&amp;less Mode</source>
-        <translation>Naht&amp;loser Mode</translation>
+        <translation>Naht&amp;loser Modus</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1598"/>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Schaltet in den nahtlosen Fenstermodus</translation>
+        <translation>Schaltet in den nahtlosen Fenstermodus (Fenster des Gastes werden nahtlos in den Hostdesktop integriert)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1789"/>
