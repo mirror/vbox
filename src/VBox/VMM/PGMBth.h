@@ -158,6 +158,8 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
             pVM->pgm.s.pShwRootR0    = 0;
 #  endif
             pVM->pgm.s.HCPhysShwCR3  = 0;
+            pVM->pgm.s.iShwUser      = 0;
+            pVM->pgm.s.iShwUserTable = 0;
         }
 
         /* contruct a fake address */
@@ -166,7 +168,9 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  else
         RTGCPHYS GCPhysCR3 = RT_BIT_64(63) | RT_BIT_64(62);
 #  endif
-        int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+        pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
+        pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
+        int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Log(("Bth-Enter: PGM pool flushed -> signal sync cr3\n"));
