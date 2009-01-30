@@ -1349,12 +1349,9 @@ endif
 ifdef VBOX_WITH_PYTHON
  if "$(KBUILD_TARGET)" == "darwin" && !defined(VBOX_PATH_PYTHON_INC) && !defined(VBOX_LIB_PYTHON)
   ifndef VBOX_PYTHON_FRAMEWORK
-   ifneq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
-    $(error we are assuming 10.4 here; VBOX_DEF_MACOSX_VERSION_MIN=$(VBOX_DEF_MACOSX_VERSION_MIN))
-   endif
    # Does -framework really work with CXXFLAGS and CFLAGS?
    VBOX_PYTHON_FRAMEWORK := -framework Python
-   VBOX_PATH_PYTHON_INC := $(VBOX_PATH_MACOSX_SDK_10_4)/System/Library/Frameworks/Python.framework/Headers
+   VBOX_PATH_PYTHON_INC := $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Headers
   endif
  else  # !darwin || configured darwin
   ifndef VBOX_PATH_PYTHON_INC
@@ -1395,6 +1392,7 @@ VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API \
                   VBOX_PYXPCOM VBOX_WITH_XPCOM
 VBoxPython_DEFS.darwin = VBOX_PYXPCOM_VERSIONED
 VBoxPython_NAME.darwin = VBoxPython2_3
+VBoxPython_NAME.darwin.amd64 = VBoxPython2_6
 ifeq ($(KBUILD_TARGET),darwin)
  ## @todo kBuild - this ain't working: VBoxPython_DLLSUFF.darwin = .so
  VBoxPython_DLLSUFF = .so
@@ -1433,7 +1431,7 @@ VBoxPython_LIBS = \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
 	$(VBOX_LIB_PYTHON)
 
-if defined(VBOX_WITH_VBOXPYTHON_FOR_OSX_10_5) && "$(KBUILD_TARGET)" == "darwin"
+if defined(VBOX_WITH_VBOXPYTHON_FOR_OSX_10_5) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.x86"
 # Same VBoxPython except built against the Mac OS X 10.5 SDK.
 DLLS += VBoxPython2_5
 VBoxPython2_5_EXTENDS = VBoxPython

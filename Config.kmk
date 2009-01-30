@@ -530,7 +530,7 @@ ifeq ($(KBUILD_TARGET),darwin)
   # Temporary:
   VBOX_WITH_QTGUI=
   override VBOX_WITH_DEBUGGER_GUI=
-  VBOX_WITH_PYTHON=
+  #VBOX_WITH_PYTHON=
   VBOX_WITH_WEBSERVICES=
   VBOX_WITH_CROGL=
   # Permanent (no working SDL).
