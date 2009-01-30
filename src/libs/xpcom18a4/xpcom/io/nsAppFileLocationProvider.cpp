@@ -48,7 +48,7 @@
 #include "prenv.h"
 #include "nsCRT.h"
 
-#if (defined(XP_MAC) || defined(XP_MACOSX)) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
+#if (defined(XP_MAC) || defined(XP_MACOSX)) && !defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
 #include <Folders.h>
 #include <Script.h>
 #include <Processes.h>
@@ -147,7 +147,7 @@ nsAppFileLocationProvider::GetFile(const char *prop, PRBool *persistant, nsIFile
     *_retval = nsnull;
     *persistant = PR_TRUE;
 
-#if (defined (XP_MAC) || defined(XP_MACOSX)) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
+#if (defined (XP_MAC) || defined(XP_MACOSX)) && !defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
     short foundVRefNum;
     long foundDirID;
     FSSpec fileSpec;
@@ -211,7 +211,7 @@ nsAppFileLocationProvider::GetFile(const char *prop, PRBool *persistant, nsIFile
         if (NS_SUCCEEDED(rv))
             rv = localFile->AppendRelativeNativePath(PLUGINS_DIR_NAME);
     }
-#if (defined(XP_MAC) || defined(XP_MACOSX)) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
+#if (defined(XP_MAC) || defined(XP_MACOSX)) && !defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
     else if (nsCRT::strcmp(prop, NS_MACOSX_USER_PLUGIN_DIR) == 0)
     {
         if (!(::FindFolder(kUserDomain,
@@ -349,7 +349,7 @@ NS_METHOD nsAppFileLocationProvider::GetProductDirectory(nsILocalFile **aLocalFi
     const char *prop = (!err && response >= 0x00001000) ? NS_MAC_USER_LIB_DIR : NS_MAC_DOCUMENTS_DIR;
     rv = directoryService->Get(prop, NS_GET_IID(nsILocalFile), getter_AddRefs(localDir));
     if (NS_FAILED(rv)) return rv;
-#elif defined(XP_MACOSX) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
+#elif defined(XP_MACOSX) && !defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
     FSRef fsRef;
     OSErr err = ::FSFindFolder(kUserDomain, kDomainLibraryFolderType, kCreateFolder, &fsRef);
     if (err) return NS_ERROR_FAILURE;
@@ -584,7 +584,7 @@ nsAppFileLocationProvider::GetFiles(const char *prop, nsISimpleEnumerator **_ret
 
     if (!nsCRT::strcmp(prop, NS_APP_PLUGINS_DIR_LIST))
     {
-#if (defined(XP_MAC) || defined(XP_MACOSX)) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
+#if (defined(XP_MAC) || defined(XP_MACOSX)) && !defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
         static const char* osXKeys[] = { NS_APP_PLUGINS_DIR, NS_MACOSX_USER_PLUGIN_DIR, NS_MACOSX_LOCAL_PLUGIN_DIR, nsnull };
         static const char* os9Keys[] = { NS_APP_PLUGINS_DIR, NS_MAC_CLASSIC_PLUGIN_DIR, nsnull };
         static const char** keys;

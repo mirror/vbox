@@ -70,7 +70,7 @@
 
 #ifdef XP_WIN
 #include "nsLocalFileWin.h"
-#elif defined(XP_MACOSX) && (!defined(VBOX) || !defined(RT_ARCH_AMD64))
+#elif defined(XP_MACOSX) && !defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
 #include "nsLocalFileOSX.h"
 #elif defined(XP_MAC)
 #include "nsLocalFileMac.h"
