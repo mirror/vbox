@@ -89,7 +89,7 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_REAL(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_32BIT_PT_FOR_PHYS
-#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_32BIT_PD_PHYS_REAL
+#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_32BIT_PD_PHYS
 #include "PGMAllGst.h"
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
@@ -103,7 +103,7 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_PROT(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_32BIT_PT_FOR_PHYS
-#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_32BIT_PD_PHYS_PROT
+#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_32BIT_PD_PHYS
 #include "PGMAllGst.h"
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
@@ -145,7 +145,7 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_PAE_REAL(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
-#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_PAE_PDPT_PHYS_REAL
+#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_PAE_PDPT_PHYS
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef BTH_PGMPOOLKIND_ROOT
@@ -158,7 +158,7 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 #define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_PAE_PROT(name)
 #define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
-#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_PAE_PDPT_PHYS_PROT
+#define BTH_PGMPOOLKIND_ROOT        PGMPOOLKIND_PAE_PDPT_PHYS
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef BTH_PGMPOOLKIND_ROOT
@@ -215,7 +215,7 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
 # define PGM_GST_NAME(name)         PGM_GST_NAME_PROT(name)
 # define PGM_BTH_NAME(name)         PGM_BTH_NAME_AMD64_PROT(name)
 # define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_PAE_PT_FOR_PHYS
-# define BTH_PGMPOOLKIND_ROOT       PGMPOOLKIND_PAE_PD_PHYS_PROT
+# define BTH_PGMPOOLKIND_ROOT       PGMPOOLKIND_PAE_PD_PHYS
 # include "PGMAllBth.h"
 # undef BTH_PGMPOOLKIND_PT_FOR_PT
 # undef BTH_PGMPOOLKIND_ROOT
@@ -876,6 +876,7 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
     PX86PDPE       pPdpe = &pPdpt->a[iPdPt];
     PPGMPOOL       pPool         = pVM->pgm.s.CTX_SUFF(pPool);
     bool           fNestedPaging = HWACCMIsNestedPagingActive(pVM);
+    bool           fPaging       = !!(CPUMGetGuestCR0(pVM) & X86_CR0_PG);
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
@@ -892,10 +893,10 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
         }
         else
         {
-            /* AMD-V nested paging. (Intel EPT never comes here) */
+            /* AMD-V nested paging or real/protected mode without paging */
             RTGCPTR64 GCPdPt = (RTGCPTR64)iPdPt << EPT_PDPT_SHIFT;
 
-            rc = pgmPoolAlloc(pVM, GCPdPt + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_PAE_PD_PHYS_PROT, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPdPt, &pShwPage);
+            rc = pgmPoolAlloc(pVM, GCPdPt + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_PAE_PD_PHYS, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPdPt, &pShwPage);
         }
 
         if (rc == VERR_PGM_POOL_FLUSHED)

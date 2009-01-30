@@ -56,7 +56,7 @@
 /*
  * Enable to use the PGM pool for all levels in the paging chain in all paging modes.
  */
-//#define VBOX_WITH_PGMPOOL_PAGING_ONLY
+#define VBOX_WITH_PGMPOOL_PAGING_ONLY
 
 /**
  * Solve page is out of sync issues inside Guest Context (in PGMGC.cpp).
@@ -1513,27 +1513,21 @@ typedef enum PGMPOOLKIND
 
     /** Shw: 32-bit page directory. Gst: 32-bit page directory. */
     PGMPOOLKIND_32BIT_PD,
-    /** Shw: 32-bit page directory. Gst: real mode. */
-    PGMPOOLKIND_32BIT_PD_PHYS_REAL,
-    /** Shw: 32-bit page directory. Gst: protected mode without paging. */
-    PGMPOOLKIND_32BIT_PD_PHYS_PROT,
+    /** Shw: 32-bit page directory. Gst: no paging. */
+    PGMPOOLKIND_32BIT_PD_PHYS,
     /** Shw: PAE page directory;    Gst: 32-bit page directory. */
     PGMPOOLKIND_PAE_PD_FOR_32BIT_PD,
     /** Shw: PAE page directory;    Gst: PAE page directory. */
     PGMPOOLKIND_PAE_PD_FOR_PAE_PD,
-    /** Shw: PAE page directory;    Gst: real mode. */
-    PGMPOOLKIND_PAE_PD_PHYS_REAL,
-    /** Shw: PAE page directory;    Gst: protected mode without paging. */
-    PGMPOOLKIND_PAE_PD_PHYS_PROT,
+    /** Shw: PAE page directory;    Gst: no paging. */
+    PGMPOOLKIND_PAE_PD_PHYS,
 
     /** Shw: PAE page directory pointer table (legacy, 4 entries);  Gst 32 bits paging. */
     PGMPOOLKIND_PAE_PDPT_FOR_32BIT,
     /** Shw: PAE page directory pointer table (legacy, 4 entries);  Gst PAE PDPT. */
     PGMPOOLKIND_PAE_PDPT,
-    /** Shw: PAE page directory pointer table (legacy, 4 entries);  Gst: real mode. */
-    PGMPOOLKIND_PAE_PDPT_PHYS_REAL,
-    /** Shw: PAE page directory pointer table (legacy, 4 entries);  Gst: protected mode without paging. */
-    PGMPOOLKIND_PAE_PDPT_PHYS_PROT,
+    /** Shw: PAE page directory pointer table (legacy, 4 entries);  Gst: no paging. */
+    PGMPOOLKIND_PAE_PDPT_PHYS,
 
     /** Shw: 64-bit page directory pointer table;   Gst: 64-bit page directory pointer table. */
     PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT,
