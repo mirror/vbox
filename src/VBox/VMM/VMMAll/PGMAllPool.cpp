@@ -4243,8 +4243,6 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     pPage->fCached = false;
     pPage->fReusedFlushPending = false;
     pPage->fCR3Mix = false;
-    pPage->iUser = iUser;
-    pPage->iUserTable = iUserTable;
 #ifdef PGMPOOL_WITH_MONITORING
     pPage->cModifications = 0;
     pPage->iModifiedNext = NIL_PGMPOOL_IDX;

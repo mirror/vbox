@@ -4578,7 +4578,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
         /** @todo Coordinate this better with the pool. */
         if (pVM->pgm.s.CTX_SUFF(pShwPageCR3)->enmKind != PGMPOOLKIND_FREE)
-            pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pVM->pgm.s.CTX_SUFF(pShwPageCR3)->iUser, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->iUserTable);
+            pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
         pVM->pgm.s.pShwPageCR3R3 = 0;
         pVM->pgm.s.pShwPageCR3R0 = 0;
         pVM->pgm.s.pShwRootR3    = 0;
@@ -4586,10 +4586,14 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         pVM->pgm.s.pShwRootR0    = 0;
 #  endif
         pVM->pgm.s.HCPhysShwCR3  = 0;
+        pVM->pgm.s.iShwUser      = 0;
+        pVM->pgm.s.iShwUserTable = 0;
     }
 
     Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
-    rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
+    pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
+    rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
     if (rc == VERR_PGM_POOL_FLUSHED)
     {
         Log(("MapCR3: PGM pool flushed -> signal sync cr3\n"));
@@ -4700,9 +4704,11 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
     if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-        pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pVM->pgm.s.CTX_SUFF(pShwPageCR3)->iUser, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->iUserTable);
+        pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
         pVM->pgm.s.pShwPageCR3R3 = 0;
         pVM->pgm.s.pShwPageCR3R0 = 0;
+        pVM->pgm.s.iShwUser      = 0;
+        pVM->pgm.s.iShwUserTable = 0;
     }
 # endif
 #endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
