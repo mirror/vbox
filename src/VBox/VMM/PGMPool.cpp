@@ -331,7 +331,9 @@ int pgmR3PoolInit(PVM pVM)
         pPool->aPages[iPage].iAgeNext       = NIL_PGMPOOL_IDX;
         pPool->aPages[iPage].iAgePrev       = NIL_PGMPOOL_IDX;
 #endif
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         Assert(VALID_PTR(pPool->aPages[iPage].pvPageR3));
+#endif
         Assert(pPool->aPages[iPage].idx == iPage);
         Assert(pPool->aPages[iPage].GCPhys == NIL_RTGCPHYS);
         Assert(!pPool->aPages[iPage].fSeenNonGlobal);
