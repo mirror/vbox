@@ -150,7 +150,7 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
             /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
             /** @todo Coordinate this better with the pool. */
             if (pVM->pgm.s.CTX_SUFF(pShwPageCR3)->enmKind != PGMPOOLKIND_FREE)
-                pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pVM->pgm.s.CTX_SUFF(pShwPageCR3)->iUser, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->iUserTable);
+                pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
             pVM->pgm.s.pShwPageCR3R3 = 0;
             pVM->pgm.s.pShwPageCR3R0 = 0;
             pVM->pgm.s.pShwRootR3    = 0;
