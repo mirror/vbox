@@ -502,7 +502,6 @@ VMMR3DECL(void)     PGMR3Reset(PVM pVM);
 VMMR3DECL(int)      PGMR3Term(PVM pVM);
 VMMR3DECL(int)      PGMR3TermCPU(PVM pVM);
 VMMR3DECL(int)      PGMR3LockCall(PVM pVM);
-VMMR3DECL(int)      PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable);
 VMMR3DECL(int)      PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode);
 
 #ifndef VBOX_WITH_NEW_PHYS_CODE
@@ -547,6 +546,7 @@ VMMR3DECL(int)      PGMR3FinalizeMappings(PVM pVM);
 VMMR3DECL(int)      PGMR3MappingsSize(PVM pVM, uint32_t *pcb);
 VMMR3DECL(int)      PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb);
 VMMR3DECL(int)      PGMR3MappingsUnfix(PVM pVM);
+VMMR3DECL(int)      PGMR3MappingsDisable(PVM pVM);
 VMMR3DECL(int)      PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages);
 VMMR3DECL(bool)     PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0);
 VMMR3DECL(int)      PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
