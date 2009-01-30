@@ -1277,12 +1277,9 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
         case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
         case PGMPOOLKIND_EPT_PT_FOR_PHYS:
-        case PGMPOOLKIND_PAE_PD_PHYS_PROT:
-        case PGMPOOLKIND_PAE_PD_PHYS_REAL:
-        case PGMPOOLKIND_PAE_PDPT_PHYS_REAL:
-        case PGMPOOLKIND_PAE_PDPT_PHYS_PROT:
-        case PGMPOOLKIND_32BIT_PD_PHYS_REAL:
-        case PGMPOOLKIND_32BIT_PD_PHYS_PROT:
+        case PGMPOOLKIND_PAE_PD_PHYS:
+        case PGMPOOLKIND_PAE_PDPT_PHYS:
+        case PGMPOOLKIND_32BIT_PD_PHYS:
             return true;
 
         /*
@@ -1571,12 +1568,9 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_EPT_PD_FOR_PHYS:
                 case PGMPOOLKIND_EPT_PT_FOR_PHYS:
                 case PGMPOOLKIND_ROOT_NESTED:
-                case PGMPOOLKIND_PAE_PD_PHYS_PROT:
-                case PGMPOOLKIND_PAE_PD_PHYS_REAL:
-                case PGMPOOLKIND_PAE_PDPT_PHYS_REAL:
-                case PGMPOOLKIND_PAE_PDPT_PHYS_PROT:
-                case PGMPOOLKIND_32BIT_PD_PHYS_REAL:
-                case PGMPOOLKIND_32BIT_PD_PHYS_PROT:
+                case PGMPOOLKIND_PAE_PD_PHYS:
+                case PGMPOOLKIND_PAE_PDPT_PHYS:
+                case PGMPOOLKIND_32BIT_PD_PHYS:
                     break;
                 default:
                     AssertFatalMsgFailed(("enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
@@ -1639,12 +1633,9 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             return VINF_SUCCESS;
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        case PGMPOOLKIND_32BIT_PD_PHYS_REAL:
-        case PGMPOOLKIND_32BIT_PD_PHYS_PROT:
-        case PGMPOOLKIND_PAE_PDPT_PHYS_REAL:
-        case PGMPOOLKIND_PAE_PDPT_PHYS_PROT:
-        case PGMPOOLKIND_PAE_PD_PHYS_PROT:
-        case PGMPOOLKIND_PAE_PD_PHYS_REAL:
+        case PGMPOOLKIND_32BIT_PD_PHYS:
+        case PGMPOOLKIND_PAE_PDPT_PHYS:
+        case PGMPOOLKIND_PAE_PD_PHYS:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 #else
@@ -1739,12 +1730,9 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
         case PGMPOOLKIND_EPT_PT_FOR_PHYS:
         case PGMPOOLKIND_ROOT_NESTED:
-        case PGMPOOLKIND_PAE_PD_PHYS_PROT:
-        case PGMPOOLKIND_PAE_PD_PHYS_REAL:
-        case PGMPOOLKIND_PAE_PDPT_PHYS_REAL:
-        case PGMPOOLKIND_PAE_PDPT_PHYS_PROT:
-        case PGMPOOLKIND_32BIT_PD_PHYS_REAL:
-        case PGMPOOLKIND_32BIT_PD_PHYS_PROT:
+        case PGMPOOLKIND_PAE_PD_PHYS:
+        case PGMPOOLKIND_PAE_PDPT_PHYS:
+        case PGMPOOLKIND_32BIT_PD_PHYS:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 
@@ -2461,8 +2449,7 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_32BIT_PD:
-        case PGMPOOLKIND_32BIT_PD_PHYS_REAL:
-        case PGMPOOLKIND_32BIT_PD_PHYS_PROT:
+        case PGMPOOLKIND_32BIT_PD_PHYS:
 #else
         case PGMPOOLKIND_ROOT_32BIT_PD:
 #endif
@@ -2489,10 +2476,8 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
         case PGMPOOLKIND_EPT_PT_FOR_PHYS:
-        case PGMPOOLKIND_PAE_PD_PHYS_PROT:
-        case PGMPOOLKIND_PAE_PD_PHYS_REAL:
-        case PGMPOOLKIND_PAE_PDPT_PHYS_REAL:
-        case PGMPOOLKIND_PAE_PDPT_PHYS_PROT:
+        case PGMPOOLKIND_PAE_PD_PHYS:
+        case PGMPOOLKIND_PAE_PDPT_PHYS:
             return 8;
 
         default:
@@ -2548,12 +2533,9 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
         case PGMPOOLKIND_EPT_PT_FOR_PHYS:
         case PGMPOOLKIND_ROOT_NESTED:
-        case PGMPOOLKIND_PAE_PD_PHYS_PROT:
-        case PGMPOOLKIND_PAE_PD_PHYS_REAL:
-        case PGMPOOLKIND_PAE_PDPT_PHYS_REAL:
-        case PGMPOOLKIND_PAE_PDPT_PHYS_PROT:
-        case PGMPOOLKIND_32BIT_PD_PHYS_REAL:
-        case PGMPOOLKIND_32BIT_PD_PHYS_PROT:
+        case PGMPOOLKIND_PAE_PD_PHYS:
+        case PGMPOOLKIND_PAE_PDPT_PHYS:
+        case PGMPOOLKIND_32BIT_PD_PHYS:
             /** @todo can we return 0? (nobody is calling this...) */
             AssertFailed();
             return 0;
@@ -2887,8 +2869,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     {
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_32BIT_PD:
- 	    case PGMPOOLKIND_32BIT_PD_PHYS_REAL:
- 	    case PGMPOOLKIND_32BIT_PD_PHYS_PROT:
+ 	    case PGMPOOLKIND_32BIT_PD_PHYS:
             Assert(iUserTable < X86_PG_ENTRIES);
             break;
 # else
@@ -2905,8 +2886,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
 # endif
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_PAE_PDPT:
- 	    case PGMPOOLKIND_PAE_PDPT_PHYS_REAL:
- 	    case PGMPOOLKIND_PAE_PDPT_PHYS_PROT:
+ 	    case PGMPOOLKIND_PAE_PDPT_PHYS:
 # else
         case PGMPOOLKIND_ROOT_PDPT:
 # endif
@@ -2915,8 +2895,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             break;
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-        case PGMPOOLKIND_PAE_PD_PHYS_PROT:
- 	    case PGMPOOLKIND_PAE_PD_PHYS_REAL:
+        case PGMPOOLKIND_PAE_PD_PHYS:
             Assert(iUserTable < X86_PG_PAE_ENTRIES);
             break;
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
@@ -2959,8 +2938,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         /* 32-bit entries */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_32BIT_PD:
- 	    case PGMPOOLKIND_32BIT_PD_PHYS_REAL:
- 	    case PGMPOOLKIND_32BIT_PD_PHYS_PROT:
+ 	    case PGMPOOLKIND_32BIT_PD_PHYS:
 #else
         case PGMPOOLKIND_ROOT_32BIT_PD:
 #endif
@@ -2970,10 +2948,8 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         /* 64-bit entries */
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-        case PGMPOOLKIND_PAE_PD_PHYS_PROT:
- 	    case PGMPOOLKIND_PAE_PD_PHYS_REAL:
- 	    case PGMPOOLKIND_PAE_PDPT_PHYS_REAL:
- 	    case PGMPOOLKIND_PAE_PDPT_PHYS_PROT:
+ 	    case PGMPOOLKIND_PAE_PD_PHYS:
+ 	    case PGMPOOLKIND_PAE_PDPT_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_64BIT_PML4:
