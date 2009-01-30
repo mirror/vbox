@@ -158,10 +158,10 @@ static const unsigned g_aReg8Index[] =
     RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_CL */
     RT_OFFSETOF(CPUMCTXCORE, edx),        /* USE_REG_DL */
     RT_OFFSETOF(CPUMCTXCORE, ebx),        /* USE_REG_BL */
-    RT_OFFSETOF(CPUMCTXCORE, eax) + 1,    /* USE_REG_AH */
-    RT_OFFSETOF(CPUMCTXCORE, ecx) + 1,    /* USE_REG_CH */
-    RT_OFFSETOF(CPUMCTXCORE, edx) + 1,    /* USE_REG_DH */
-    RT_OFFSETOF(CPUMCTXCORE, ebx) + 1,    /* USE_REG_BH */
+    RT_OFFSETOF_ADD(CPUMCTXCORE, eax, 1), /* USE_REG_AH */
+    RT_OFFSETOF_ADD(CPUMCTXCORE, ecx, 1), /* USE_REG_CH */
+    RT_OFFSETOF_ADD(CPUMCTXCORE, edx, 1), /* USE_REG_DH */
+    RT_OFFSETOF_ADD(CPUMCTXCORE, ebx, 1), /* USE_REG_BH */
     RT_OFFSETOF(CPUMCTXCORE, r8),         /* USE_REG_R8B */
     RT_OFFSETOF(CPUMCTXCORE, r9),         /* USE_REG_R9B */
     RT_OFFSETOF(CPUMCTXCORE, r10),        /* USE_REG_R10B*/
