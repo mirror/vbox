@@ -2959,6 +2959,8 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         /* 32-bit entries */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_32BIT_PD:
+ 	    case PGMPOOLKIND_32BIT_PD_PHYS_REAL:
+ 	    case PGMPOOLKIND_32BIT_PD_PHYS_PROT:
 #else
         case PGMPOOLKIND_ROOT_32BIT_PD:
 #endif
@@ -2968,6 +2970,10 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         /* 64-bit entries */
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
+        case PGMPOOLKIND_PAE_PD_PHYS_PROT:
+ 	    case PGMPOOLKIND_PAE_PD_PHYS_REAL:
+ 	    case PGMPOOLKIND_PAE_PDPT_PHYS_REAL:
+ 	    case PGMPOOLKIND_PAE_PDPT_PHYS_PROT:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_64BIT_PML4:
