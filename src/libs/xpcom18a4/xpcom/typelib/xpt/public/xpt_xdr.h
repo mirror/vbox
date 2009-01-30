@@ -185,6 +185,9 @@ XPT_GetAddrForOffset(XPTCursor *cursor, PRUint32 offset);
 /* all data structures are big-endian */
 
 #if defined IS_BIG_ENDIAN
+# ifdef VBOX
+#  error "Misconfigured endian!"
+# endif
 #  define XPT_SWAB32(x) x
 #  define XPT_SWAB16(x) x
 #elif defined IS_LITTLE_ENDIAN
