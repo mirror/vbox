@@ -1,0 +1,85 @@
+# $Id: Makefile.kmk 40871 2008-12-13 07:46:20Z frank $
+## @file
+# Sub-Makefile for the VBox C Binding.
+#
+
+#
+# Copyright (C) 2009 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+
+if "$(KBUILD_TARGET)" == "linux" || defined(VBOX_ONLY_SDK)
+#
+# The samples
+#
+INSTALLS += XpComCSamples
+XpComCSamples_MODE = a+r,u+rw
+XpComCSamples_INST = \
+	$(INST_SDK)bindings/xpcom/cbinding/samples/
+XpComCSamples_SOURCES = \
+	tstLinuxC.c \
+	tstLinuxC.h \
+	makefile.tstLinuxC=>Makefile
+
+INSTALLS += XpComCHeaders
+XpComCHeaders_MODE = a+r,u+rw
+XpComCHeaders_INST = $(INST_SDK)bindings/xpcom/include/
+XpComCHeaders_SOURCES = \
+	$(XpComCHeaders_0_OUTDIR)/VirtualBox_CXPCOM.h
+
+$$(XpComCHeaders_0_OUTDIR)/VirtualBox_CXPCOM.h: \
+		$(PATH_SUB_CURRENT)/xpcidl.xsl \
+		$(PATH_SUB_CURRENT)/../idl/VirtualBox.xidl \
+		| $$(dir $$@)
+	$(VBOX_XSLTPROC) -o $@ $^
+
+endif # linux || SDK
+ifndef VBOX_ONLY_SDK
+
+ #
+ # The C utility DLL
+ #
+ DLLS.linux += VBoxXPCOMC
+ VBoxXPCOMC_TEMPLATE = VBOXMAINDLL
+ VBoxXPCOMC_DEFS = MOZ_UNICODE IN_VBOXXPCOMC
+ VBoxXPCOMC_SOURCES = \
+ 	libXPCOMtoC.cpp
+
+ ifdef VBOX_WITH_TESTCASES
+  #
+  # The testcase (also in samples).
+  #
+  PROGRAMS.linux += tstXPCOMC
+  tstXPCOMC_TEMPLATE = VBOXR3
+  tstXPCOMC_DEFS = MOZ_UNICODE
+  tstXPCOMC_INCS = \
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include \
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub
+  tstXPCOMC_INTERMEDIATES = \
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_CXPCOM.h
+  tstXPCOMC_SOURCES = \
+  	tstLinuxC.c
+  tstXPCOMC_LIBS = \
+  	$(VBoxXPCOMC_1_TARGET)
+ endif
+
+endif # ! VBOX_ONLY_SDK
+
+# generate rules.
+include $(KBUILD_PATH)/subfooter.kmk
+
