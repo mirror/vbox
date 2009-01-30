@@ -1,0 +1,34 @@
+# $Id: Makefile 42209 2009-01-29 12:22:10Z jens $
+
+PATH_XPCOM     = ../..
+PATH_BIN       = /opt/VirtualBox
+
+INCS_XPCOM = $(PATH_XPCOM)/include \
+             $(PATH_XPCOM)/include/nsprpub \
+             $(PATH_XPCOM)/include/string \
+             $(PATH_XPCOM)/include/xpcom \
+             $(PATH_XPCOM)/include/ipcd \
+             $(PATH_VBOX_SVN)/include
+
+.PHONY: all
+all: tstLinuxC run 
+
+.PHONY: clean cleanaout
+clean:        cleanaout
+
+tstLinuxC: tstLinuxC.o
+	gcc -g -o $@ $^ \
+	    -Wl,-rpath $(PATH_BIN) \
+	    $(PATH_BIN)/VBoxXPCOMC.so
+
+tstLinuxC.o: tstLinuxC.c tstLinuxC.h
+	gcc -ansi -pedantic -Wall -DRT_OS_LINUX -DMOZ_UNICODE -g \
+	    $(addprefix -I, $(INCS_XPCOM)) -o $@ -c $<
+
+run: 
+	echo "env VBOX_XPCOM_HOME=$(PATH_BIN) LD_LIBRARY_PATH=$(PATH_BIN) ./tstLinuxC" > $@
+	chmod a+x $@
+
+cleanaout:
+	rm -f tstLinuxC.o tstLinuxC run
+
