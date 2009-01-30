@@ -61,7 +61,7 @@ void NS_ShutdownLocalFile()
     nsLocalFile::GlobalShutdown();
 }
 
-#if (!defined(XP_MAC) && !defined(XP_MACOSX)) || (defined(VBOX) && defined(RT_ARCH_AMD64))
+#if (!defined(XP_MAC) && !defined(XP_MACOSX)) || defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
 NS_IMETHODIMP
 nsLocalFile::InitWithFile(nsILocalFile *aFile)
 {
