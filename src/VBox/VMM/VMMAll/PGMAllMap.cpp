@@ -399,7 +399,9 @@ VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
     if (pVM->pgm.s.fMappingsFixed)
         return VINF_SUCCESS;
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(PGMGetGuestMode(pVM) >= PGMMODE_32_BIT && PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
+#endif
 
     /*
      * Iterate mappings.
