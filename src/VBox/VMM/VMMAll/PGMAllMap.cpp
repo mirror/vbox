@@ -380,7 +380,7 @@ VMMDECL(int) PGMMapActivateAll(PVM pVM)
 
     Assert(PGMGetGuestMode(pVM) >= PGMMODE_32_BIT && PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (!pPGM->CTX_SUFF(pShwPageCR3))
+    if (!pVM->pgm.s.CTX_SUFF(pShwPageCR3))
         return VINF_SUCCESS;    /* too early */
 #endif
 
@@ -414,7 +414,7 @@ VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(PGMGetGuestMode(pVM) >= PGMMODE_32_BIT && PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
 
-    if (!pPGM->CTX_SUFF(pShwPageCR3))
+    if (!pVM->pgm.s.CTX_SUFF(pShwPageCR3))
         return VINF_SUCCESS;    /* too early */
 #endif
 
