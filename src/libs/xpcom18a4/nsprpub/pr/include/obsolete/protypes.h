@@ -105,8 +105,13 @@ typedef PRUintn uint;
  * uint64
  */
 
-#if !defined(XP_BEOS) && !defined(VMS)
+#if !defined(XP_BEOS) && !defined(VMS) \
+    && (!defined(__APPLE__) || !defined(_UINT64))
+/* bird: ^^^ cssmconfig.h conflicts on 10.6/amd64; XP_MACOSX isn't always set so check for the compiler. */
 typedef PRUint64 uint64;
+# if defined(__APPLE__) /* bird */
+#  define _UINT64       /* bird */
+# endif                 /* bird */
 #endif
 
 /*
