@@ -639,6 +639,33 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
     return VINF_SUCCESS;
 }
 
+/**
+ * Disable the hypervisor mappings in the shadow page tables (doesn't touch the intermediate table!)
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM.
+ */
+VMMR3DECL(int) PGMR3MappingsDisable(PVM pVM)
+{
+    uint32_t cb;
+    int rc = PGMR3MappingsSize(pVM, &cb);
+    AssertRCReturn(rc, rc);
+
+    rc = PGMMapDeactivateAll(pVM);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Mark the mappings as fixed (using fake values) and disabled. 
+     */
+    pVM->pgm.s.fDisableMappings  = true;
+    pVM->pgm.s.fMappingsFixed    = true;
+    pVM->pgm.s.GCPtrMappingFixed = MM_HYPER_AREA_ADDRESS;
+    pVM->pgm.s.cbMappingFixed    = cb;
+    pVM->pgm.s.fSyncFlags       &= ~PGM_SYNC_MONITOR_CR3;
+    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Unfixes the mappings.
@@ -967,6 +994,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
          * 32-bit.
          */
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        Assert(!pPGM->pShw32BitPdR3->a[iNewPDE].n.u1Present || pgmMapAreMappingsEnabled(&pVM->pgm.s));
         if (    pgmMapAreMappingsEnabled(&pVM->pgm.s)
             &&  pPGM->pShw32BitPdR3->a[iNewPDE].n.u1Present)
         {
@@ -988,6 +1016,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
         const unsigned iPD = iNewPDE / 256;
         unsigned iPDE = iNewPDE * 2 % 512;
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        Assert(!pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present || pgmMapAreMappingsEnabled(&pVM->pgm.s));
         if (   pgmMapAreMappingsEnabled(&pVM->pgm.s)
             && pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
         {
@@ -1005,6 +1034,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
         iPDE++;
         AssertFatal(iPDE < 512);
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        Assert(!pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present || pgmMapAreMappingsEnabled(&pVM->pgm.s));
         if (   pgmMapAreMappingsEnabled(&pVM->pgm.s)
             && pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
         {
