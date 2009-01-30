@@ -175,6 +175,7 @@ static int rtkldrConvertError(int krc)
         case KLDR_ERR_ALREADY_MAPPED:                       return VERR_WRONG_ORDER;
         case KLDR_ERR_NOT_MAPPED:                           return VERR_WRONG_ORDER;
         case KLDR_ERR_ADDRESS_OVERFLOW:                     return VERR_NUMBER_TOO_BIG;
+        case KLDR_ERR_TODO:                                 return VERR_NOT_IMPLEMENTED;
 
         case KLDR_ERR_NOT_LOADED_DYNAMICALLY:
         case KCPU_ERR_ARCH_CPU_NOT_COMPATIBLE:
@@ -215,6 +216,28 @@ static int rtkldrConvertError(int krc)
         case KLDR_ERR_LX_BAD_SONAME:
         case KLDR_ERR_LX_BAD_FORWARDER:
         case KLDR_ERR_LX_NRICHAIN_NOT_SUPPORTED:
+            return VERR_GENERAL_FAILURE;
+
+        case KLDR_ERR_MACHO_OTHER_ENDIAN_NOT_SUPPORTED:
+        case KLDR_ERR_MACHO_BAD_HEADER:
+        case KLDR_ERR_MACHO_UNSUPPORTED_FILE_TYPE:
+        case KLDR_ERR_MACHO_UNSUPPORTED_MACHINE:
+        case KLDR_ERR_MACHO_BAD_LOAD_COMMAND:
+        case KLDR_ERR_MACHO_UNKNOWN_LOAD_COMMAND:
+        case KLDR_ERR_MACHO_UNSUPPORTED_LOAD_COMMAND:
+        case KLDR_ERR_MACHO_BAD_SECTION:
+        case KLDR_ERR_MACHO_UNSUPPORTED_SECTION:
+#ifdef KLDR_ERR_MACHO_UNSUPPORTED_INIT_SECTION
+        case KLDR_ERR_MACHO_UNSUPPORTED_INIT_SECTION:
+        case KLDR_ERR_MACHO_UNSUPPORTED_TERM_SECTION:
+#endif
+        case KLDR_ERR_MACHO_UNKNOWN_SECTION:
+        case KLDR_ERR_MACHO_BAD_SECTION_ORDER:
+        case KLDR_ERR_MACHO_BIT_MIX:
+        case KLDR_ERR_MACHO_BAD_OBJECT_FILE:
+        case KLDR_ERR_MACHO_BAD_SYMBOL:
+        case KLDR_ERR_MACHO_UNSUPPORTED_FIXUP_TYPE:
+            AssertMsgFailed(("krc=%d (%#x); KLDR_ERR_MACHO_BASE=%d; off=%d\n", krc, krc, KLDR_ERR_MACHO_BASE, krc - KLDR_ERR_MACHO_BASE));
             return VERR_GENERAL_FAILURE;
 
         default:
