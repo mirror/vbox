@@ -1626,7 +1626,14 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_32BIT_PD_PHYS_REAL:
+        case PGMPOOLKIND_32BIT_PD_PHYS_PROT:
+        case PGMPOOLKIND_PAE_PDPT_PHYS_REAL:
+        case PGMPOOLKIND_PAE_PDPT_PHYS_PROT:
+            /* Nothing to monitor here. */
+            return VINF_SUCCESS;
+#else
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
 #endif
