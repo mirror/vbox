@@ -60,7 +60,7 @@ TEMPLATE_XPCOM_ASFLAGS             = $(NO_SUCH_VARIABLE)
 TEMPLATE_XPCOM_ASFLAGS.x86         = -m32
 TEMPLATE_XPCOM_ASFLAGS.amd64       = -m64
 TEMPLATE_XPCOM_ASDEFS              = $(NO_SUCH_VARIABLE)
-TEMPLATE_XPCOM_CXXFLAGS            = -pipe -ansi -Wall -Wno-unused -Wno-non-virtual-dtor \
+TEMPLATE_XPCOM_CXXFLAGS            = -g -pipe -ansi -Wall -Wno-unused -Wno-non-virtual-dtor \
                                      $(VBOX_GCC_Wno-invalid-offsetof) -Wno-sign-compare -Wno-unused -Wno-ctor-dtor-privacy \
                                      $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_XPCOM_CXXFLAGS.x86        = -m32
@@ -72,7 +72,7 @@ TEMPLATE_XPCOM_CXXFLAGS.freebsd    = -pthread
 TEMPLATE_XPCOM_CXXFLAGS.l4         = -fno-exceptions -nostdinc
 TEMPLATE_XPCOM_CXXFLAGS.linux      = -pthread
 TEMPLATE_XPCOM_CXXFLAGS.solaris    = -fno-omit-frame-pointer # for now anyway.
-TEMPLATE_XPCOM_CFLAGS              = -pipe -Wall -Wno-unused -Wno-parentheses -Wno-uninitialized $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_XPCOM_CFLAGS              = -g -pipe -Wall -Wno-unused -Wno-parentheses -Wno-uninitialized $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_XPCOM_CFLAGS.x86          = -m32
 TEMPLATE_XPCOM_CFLAGS.amd64        = -m64
 TEMPLATE_XPCOM_CFLAGS.release      = -O
