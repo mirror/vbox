@@ -2887,6 +2887,8 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     {
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_32BIT_PD:
+ 	    case PGMPOOLKIND_32BIT_PD_PHYS_REAL:
+ 	    case PGMPOOLKIND_32BIT_PD_PHYS_PROT:
             Assert(iUserTable < X86_PG_ENTRIES);
             break;
 # else
@@ -2903,6 +2905,8 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
 # endif
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_PAE_PDPT:
+ 	    case PGMPOOLKIND_PAE_PDPT_PHYS_REAL:
+ 	    case PGMPOOLKIND_PAE_PDPT_PHYS_PROT:
 # else
         case PGMPOOLKIND_ROOT_PDPT:
 # endif
@@ -2911,6 +2915,8 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             break;
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
+        case PGMPOOLKIND_PAE_PD_PHYS_PROT:
+ 	    case PGMPOOLKIND_PAE_PD_PHYS_REAL:
             Assert(iUserTable < X86_PG_PAE_ENTRIES);
             break;
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
