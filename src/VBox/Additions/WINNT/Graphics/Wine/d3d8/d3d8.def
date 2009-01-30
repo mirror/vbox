@@ -1,0 +1,10 @@
+; File generated automatically from ../../../dlls/d3d8/d3d8.spec; do not edit!
+
+LIBRARY d3d8.dll
+
+EXPORTS
+  D3D8GetSWInfo
+  DebugSetMute
+  Direct3DCreate8
+  ValidatePixelShader
+  ValidateVertexShader
