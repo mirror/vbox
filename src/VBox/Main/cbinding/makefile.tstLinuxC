@@ -1,34 +1,31 @@
 # $Id: Makefile 42209 2009-01-29 12:22:10Z jens $
 
-PATH_XPCOM     = ../..
-PATH_BIN       = /opt/VirtualBox
+PATH_XPCOM = ../..
+PATH_BIN   = /opt/VirtualBox
 
-INCS_XPCOM = $(PATH_XPCOM)/include \
-             $(PATH_XPCOM)/include/nsprpub \
-             $(PATH_XPCOM)/include/string \
-             $(PATH_XPCOM)/include/xpcom \
-             $(PATH_XPCOM)/include/ipcd \
-             $(PATH_VBOX_SVN)/include
+INCS_XPCOM = -I$(PATH_XPCOM)/include \
+             -I$(PATH_XPCOM)/include/nsprpub \
+             -I$(PATH_XPCOM)/include/string \
+             -I$(PATH_XPCOM)/include/xpcom \
+             -I$(PATH_XPCOM)/include/ipcd \
+             -I$(PATH_VBOX_SVN)/include
+
+CC         = gcc
+CFLAGS     = -g -ansi -pedantic -Wall
 
 .PHONY: all
-all: tstLinuxC run 
+all: tstLinuxC run
 
-.PHONY: clean cleanaout
-clean:        cleanaout
-
-tstLinuxC: tstLinuxC.o
-	gcc -g -o $@ $^ \
-	    -Wl,-rpath $(PATH_BIN) \
-	    $(PATH_BIN)/VBoxXPCOMC.so
-
-tstLinuxC.o: tstLinuxC.c tstLinuxC.h
-	gcc -ansi -pedantic -Wall -DRT_OS_LINUX -DMOZ_UNICODE -g \
-	    $(addprefix -I, $(INCS_XPCOM)) -o $@ -c $<
-
-run: 
-	echo "env VBOX_XPCOM_HOME=$(PATH_BIN) LD_LIBRARY_PATH=$(PATH_BIN) ./tstLinuxC" > $@
-	chmod a+x $@
-
-cleanaout:
+.PHONY: clean
+clean:
 	rm -f tstLinuxC.o tstLinuxC run
 
+tstLinuxC: tstLinuxC.o
+	$(CC) -o $@ $^ -Wl,-rpath $(PATH_BIN) $(PATH_BIN)/VBoxXPCOMC.so
+
+tstLinuxC.o: tstLinuxC.c tstLinuxC.h
+	$(CC) $(CFLAGS) -DRT_OS_LINUX -DMOZ_UNICODE $(INCS_XPCOM) -o $@ -c $<
+
+run:
+	echo "env VBOX_XPCOM_HOME=$(PATH_BIN) LD_LIBRARY_PATH=$(PATH_BIN) ./tstLinuxC" > $@
+	chmod a+x $@
