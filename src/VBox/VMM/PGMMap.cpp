@@ -1170,6 +1170,7 @@ void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping, RT
  */
 int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTGCPTR GCPtrOldMapping)
 {
+    STAM_REL_COUNTER_INC(&pVM->pgm.s.cRelocations);
     STAM_PROFILE_START(&pVM->pgm.s.StatR3ResolveConflict, a);
 
     /*
@@ -1235,6 +1236,7 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTG
  */
 int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping)
 {
+    STAM_REL_COUNTER_INC(&pVM->pgm.s.cRelocations);
     STAM_PROFILE_START(&pVM->pgm.s.StatR3ResolveConflict, a);
 
     for (int iPDPTE = X86_PG_PAE_PDPE_ENTRIES - 1; iPDPTE >= 0; iPDPTE--)
