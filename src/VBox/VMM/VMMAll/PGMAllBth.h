@@ -2920,7 +2920,12 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCPTR GCPtrPage)
     PGSTPD          pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
     unsigned        iPDSrc;
+#   ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    X86PDPE         PdpeSrc;
+    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc, &PdpeSrc);
+#   else
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc, NULL);
+#   endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
     if (!pPDSrc)
         return VINF_SUCCESS; /* not present */
 #  elif PGM_GST_TYPE == PGM_TYPE_AMD64
@@ -2949,7 +2954,28 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCPTR GCPtrPage)
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
         const X86PDE    PdeDst = pgmShwGet32BitPDE(&pVM->pgm.s, GCPtrPage);
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
+        PX86PDPAE       pPDDst;
+        X86PDEPAE       PdeDst;
+#   if PGM_GST_TYPE != PGM_TYPE_PAE
+        X86PDPE         PdpeSrc;
+
+        /* Fake PDPT entry; access control handled on the page table level, so allow everything. */
+        PdpeSrc.u  = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_A;
+#   endif
+        int rc = pgmShwSyncPaePDPtr(pVM, GCPtrPage, &PdpeSrc, &pPDDst);
+        if (rc != VINF_SUCCESS)
+        {
+            AssertRC(rc);
+            return rc;
+        }
+        Assert(pPDDst);
+        PdeDst = pPDDst->a[iPDDst];
+#  else
         const X86PDEPAE PdeDst = pgmShwGetPaePDE(&pVM->pgm.s, GCPtrPage);
+#  endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
+
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
         const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
         PX86PDPAE       pPDDst;
