@@ -955,6 +955,26 @@
  */
 #define RT_UOFFSETOF(type, member)   ( (uintptr_t)&( ((type *)(void *)0)->member) )
 
+/** @def RT_OFFSETOF_ADD
+ * RT_OFFSETOF with an addend.
+ *
+ * @returns offset into the structure of the specified member. signed.
+ * @param   type    Structure type.
+ * @param   member  Member.
+ * @param   addend  The addend to add to the offset.
+ */
+#define RT_OFFSETOF_ADD(type, member, addend)   ( (int)RT_UOFFSETOF_ADD(type, member, addend) )
+
+/** @def RT_UOFFSETOF_ADD
+ * RT_UOFFSETOF with an addend.
+ *
+ * @returns offset into the structure of the specified member. signed.
+ * @param   type    Structure type.
+ * @param   member  Member.
+ * @param   addend  The addend to add to the offset.
+ */
+#define RT_UOFFSETOF_ADD(type, member, addend)   ( (uintptr_t)&( ((type *)(void *)(uintptr_t)(addend))->member) )
+
 /** @def RT_SIZEOFMEMB
  * Get the size of a structure member.
  *
