@@ -186,9 +186,6 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
         AssertReleaseRC(rc);
     RTReqFree(pReq);
 
-    rc = WSASetEvent(pThis->hWakeupEvent);
-    AssertRelease(rc == TRUE);
-
 #else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
     int rc = RTCritSectEnter(&pThis->CritSect);
