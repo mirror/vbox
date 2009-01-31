@@ -48,6 +48,7 @@
 #define KLDR_NO_KLDR_H_INCLUDES
 #include <k/kLdr.h>
 #include <k/kRdrAll.h>
+#include <k/kErr.h>
 #include <k/kErrors.h>
 #include <k/kMagics.h>
 
@@ -169,7 +170,7 @@ static int rtkldrConvertError(int krc)
         case KERR_BUFFER_OVERFLOW:                          return VERR_BUFFER_OVERFLOW;
         case KLDR_ERR_SYMBOL_NOT_FOUND:                     return VERR_SYMBOL_NOT_FOUND;
         case KLDR_ERR_FORWARDER_SYMBOL:                     return VERR_BAD_EXE_FORMAT;
-        case KLDR_ERR_BAD_FIXUP:                            return VERR_BAD_EXE_FORMAT;
+        case KLDR_ERR_BAD_FIXUP:                            AssertMsgFailedReturn(("KLDR_ERR_BAD_FIXUP\n"), VERR_BAD_EXE_FORMAT);
         case KLDR_ERR_IMPORT_ORDINAL_OUT_OF_BOUNDS:         return VERR_BAD_EXE_FORMAT;
         case KLDR_ERR_NO_DEBUG_INFO:                        return VERR_FILE_NOT_FOUND;
         case KLDR_ERR_ALREADY_MAPPED:                       return VERR_WRONG_ORDER;
@@ -191,7 +192,7 @@ static int rtkldrConvertError(int krc)
         case KRDR_ERR_TOO_MANY_MAPPINGS:
         case KLDR_ERR_NOT_DLL:
         case KLDR_ERR_NOT_EXE:
-            return VERR_GENERAL_FAILURE;
+            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_GENERAL_FAILURE);
 
 
         case KLDR_ERR_PE_UNSUPPORTED_MACHINE:
@@ -202,7 +203,7 @@ static int rtkldrConvertError(int krc)
         case KLDR_ERR_PE_FORWARDER_IMPORT_NOT_FOUND:
         case KLDR_ERR_PE_BAD_FIXUP:
         case KLDR_ERR_PE_BAD_IMPORT:
-            return VERR_GENERAL_FAILURE;
+            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_GENERAL_FAILURE);
 
         case KLDR_ERR_LX_BAD_HEADER:
         case KLDR_ERR_LX_BAD_LOADER_SECTION:
@@ -216,7 +217,7 @@ static int rtkldrConvertError(int krc)
         case KLDR_ERR_LX_BAD_SONAME:
         case KLDR_ERR_LX_BAD_FORWARDER:
         case KLDR_ERR_LX_NRICHAIN_NOT_SUPPORTED:
-            return VERR_GENERAL_FAILURE;
+            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_GENERAL_FAILURE);
 
         case KLDR_ERR_MACHO_OTHER_ENDIAN_NOT_SUPPORTED:
         case KLDR_ERR_MACHO_BAD_HEADER:
@@ -237,14 +238,12 @@ static int rtkldrConvertError(int krc)
         case KLDR_ERR_MACHO_BAD_OBJECT_FILE:
         case KLDR_ERR_MACHO_BAD_SYMBOL:
         case KLDR_ERR_MACHO_UNSUPPORTED_FIXUP_TYPE:
-            AssertMsgFailed(("krc=%d (%#x); KLDR_ERR_MACHO_BASE=%d; off=%d\n", krc, krc, KLDR_ERR_MACHO_BASE, krc - KLDR_ERR_MACHO_BASE));
-            return VERR_GENERAL_FAILURE;
+            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_GENERAL_FAILURE);
 
         default:
             if (RT_FAILURE(krc))
                 return krc;
-            AssertMsgFailed(("krc=%d (%#x)\n", krc, krc));
-            return VERR_NO_TRANSLATION;
+            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_NO_TRANSLATION);
     }
 }
 
@@ -500,7 +499,7 @@ static int rtkldrEnumSymbolsWrapper(PKLDRMOD pMod, uint32_t iSymbol,
         pszSymbol = psz;
     }
 
-#if defined(RT_OS_OS2) || (defined(RT_OS_DARWIN) && defined(RT_ARCH_X86))
+#if defined(RT_OS_OS2) || defined(RT_OS_DARWIN)
     /* skip the underscore prefix. */
     if (*pszSymbol == '_')
         pszSymbol++;
@@ -567,7 +566,7 @@ static int rtkldrGetImportWrapper(PKLDRMOD pMod, uint32_t iImport, uint32_t iSym
         pszSymbol = psz;
     }
 
-#if defined(RT_OS_OS2) || (defined(RT_OS_DARWIN) && defined(RT_ARCH_X86))
+#if defined(RT_OS_OS2) || defined(RT_OS_DARWIN)
     /* skip the underscore prefix. */
     if (*pszSymbol == '_')
         pszSymbol++;
@@ -604,7 +603,7 @@ static DECLCALLBACK(int) rtkldrGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *p
     PKLDRMOD pModkLdr = ((PRTLDRMODKLDR)pMod)->pMod;
     KLDRADDR uValue;
 
-#if defined(RT_OS_OS2) || (defined(RT_OS_DARWIN) && defined(RT_ARCH_X86))
+#if defined(RT_OS_OS2) || defined(RT_OS_DARWIN)
     /*
      * Add underscore prefix.
      */
@@ -662,6 +661,19 @@ int rtldrkLdrOpen(PRTLDRREADER pReader, PRTLDRMOD phLdrMod)
             pNewMod->Core.pOps = &g_rtkldrOps;
             pNewMod->pMod = pMod;
             *phLdrMod = &pNewMod->Core;
+
+#ifdef LOG_ENABLED
+            Log(("rtldrkLdrOpen: '%s' (%s) %u segments\n",
+                 pMod->pszName, pMod->pszFilename, pMod->cSegments));
+            for (unsigned iSeg = 0; iSeg < pMod->cSegments; iSeg++)
+            {
+                Log(("Segment #%-2u: RVA=%08llx cb=%08llx '%.*s'\n", iSeg,
+                     pMod->aSegments[iSeg].RVA,
+                     pMod->aSegments[iSeg].cb,
+                     pMod->aSegments[iSeg].cchName,
+                     pMod->aSegments[iSeg].pchName));
+            }
+#endif
             return VINF_SUCCESS;
         }
         kLdrModClose(pMod);
