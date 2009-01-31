@@ -77,8 +77,8 @@ static bool MyDisBlock(PDISCPUSTATE pCpu, RTHCUINTPTR pvCodeBlock, int32_t cbMax
  */
 static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
 {
-    /* check the name format and only permit certain names */
-    *pValue = 0xf0f0f0f0;
+    RTUINTPTR BaseAddr = *(PCRTUINTPTR)pvUser;
+    *pValue = BaseAddr + UINT32_C(0x604020f0);
     return VINF_SUCCESS;
 }
 
@@ -191,7 +191,7 @@ int main(int argc, char **argv)
     }
 
     void *pvBits = RTMemAlloc(RTLdrSize(hLdrMod));
-    rc = RTLdrGetBits(hLdrMod, pvBits, LoadAddr, testGetImport, NULL);
+    rc = RTLdrGetBits(hLdrMod, pvBits, LoadAddr, testGetImport, &LoadAddr);
     if (RT_SUCCESS(rc))
     {
         if (argc > 3)
@@ -213,7 +213,11 @@ int main(int argc, char **argv)
                     {
                         DISCPUSTATE Cpu;
                         memset(&Cpu, 0, sizeof(Cpu));
+#if 1
                         Cpu.mode = CPUMODE_32BIT;
+#else
+                        Cpu.mode = CPUMODE_64BIT;
+#endif
                         uint8_t *pbCode = (uint8_t *)pvBits + (NearSym.aSyms[0].Value - LoadAddr);
                         MyDisBlock(&Cpu, (uintptr_t)pbCode,
                                    RT_MAX(NearSym.aSyms[1].Value - NearSym.aSyms[0].Value, 0x20000),
