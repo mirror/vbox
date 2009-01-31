@@ -1299,7 +1299,7 @@ VBox-xpcom-ipctmgrcom_SOURCES = \
 VBoxXPCOMIPCC_TEMPLATE = XPCOMIPC
 VBoxXPCOMIPCC_NAME.os2 = VBoxIPCC
 VBoxXPCOMIPCC_INST = $(INST_BIN)components/
-VBoxXPCOMIPCC_DEFS = HAVE_DEPENDENT_LIBS
+#VBoxXPCOMIPCC_DEFS = HAVE_DEPENDENT_LIBS - dependentLibs.h is linux specific, so this cannot be required.
 VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/client/src/ipcdclient.cpp \
 	ipc/ipcd/client/src/ipcService.cpp \
