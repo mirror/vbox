@@ -59,7 +59,7 @@ socreate()
 {
     struct socket *so;
 
-    so = (struct socket *)RTMemAlloc(sizeof(struct socket));
+    so = (struct socket *)RTMemAllocZ(sizeof(struct socket));
     if(so)
     {
         memset(so, 0, sizeof(struct socket));
@@ -88,12 +88,21 @@ sofree(PNATState pData, struct socket *so)
 
     if(so->so_next && so->so_prev)
         remque(pData, so);  /* crashes if so is not in a queue */
-
+    so->so_state = SS_NOFDREF; /* for debugging purposes */
     SOCKET_UNLOCK(so);
     SOCKET_LOCK_DESTROY(so);
 
     RTMemFree(so);
+    so = NULL;
 }
+
+#ifdef VBOX_WITH_SLIRP_MT
+void
+soread_queue(PNATState pData, struct socket *so, int fCloseIfNothingRead, int *ret)
+{
+    *ret = soread(pData, so, fCloseIfNothingRead);
+}
+#endif
 
 /*
  * Read from so's socket into sb_snd, updating all relevant sbuf fields
@@ -108,6 +117,11 @@ soread(PNATState pData, struct socket *so, int fCloseIfNothingRead)
     size_t len = sb->sb_datalen - sb->sb_cc;
     struct iovec iov[2];
     int mss = so->so_tcpcb->t_maxseg;
+    Log2(("%s:%d soread before lock\n", __FUNCTION__, __LINE__));
+    QSOCKET_LOCK(tcb);
+    SOCKET_LOCK(so);
+    QSOCKET_UNLOCK(tcb);
+    Log2(("%s:%d soread before lock\n",__FUNCTION__, __LINE__));
 
     DEBUG_CALL("soread");
     DEBUG_ARG("so = %lx", (long )so);
@@ -189,10 +203,16 @@ soread(PNATState pData, struct socket *so, int fCloseIfNothingRead)
          * would be dangerous.
          */
         if (nn == 0 && !fCloseIfNothingRead)
+        {
+            SOCKET_UNLOCK(so);
             return 0;
+        }
 #endif
         if (nn < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
+        {
+            SOCKET_UNLOCK(so);
             return 0;
+        }
         else
         {
             /* nn == 0 means peer has performed an orderly shutdown */
@@ -200,6 +220,7 @@ soread(PNATState pData, struct socket *so, int fCloseIfNothingRead)
                         nn, errno,strerror(errno)));
             sofcantrcvmore(so);
             tcp_sockclosed(pData, sototcpcb(so));
+            SOCKET_UNLOCK(so);
             return -1;
         }
     }
@@ -230,6 +251,7 @@ soread(PNATState pData, struct socket *so, int fCloseIfNothingRead)
     sb->sb_wptr += nn;
     if (sb->sb_wptr >= (sb->sb_data + sb->sb_datalen))
         sb->sb_wptr -= sb->sb_datalen;
+    SOCKET_UNLOCK(so);
     return nn;
 }
 
@@ -343,12 +365,17 @@ sowrite(PNATState pData, struct socket *so)
 
     DEBUG_CALL("sowrite");
     DEBUG_ARG("so = %lx", (long)so);
-
+    QSOCKET_LOCK(tcb);
+    SOCKET_LOCK(so);
+    QSOCKET_UNLOCK(tcb);
     if (so->so_urgc)
     {
         sosendoob(so);
         if (sb->sb_cc == 0)
+        {
+            SOCKET_UNLOCK(so);    
             return 0;
+        }
     }
 
     /*
@@ -395,7 +422,10 @@ sowrite(PNATState pData, struct socket *so)
 #endif
     /* This should never happen, but people tell me it does *shrug* */
     if (nn < 0 && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK))
+    {
+        SOCKET_UNLOCK(so);    
         return 0;
+    }
 
     if (nn < 0 || (nn == 0 && iov[0].iov_len > 0))
     {
@@ -403,6 +433,7 @@ sowrite(PNATState pData, struct socket *so)
                    so->so_state, errno));
         sofcantsendmore(so);
         tcp_sockclosed(pData, sototcpcb(so));
+        SOCKET_UNLOCK(so);    
         return -1;
     }
 
@@ -430,6 +461,7 @@ sowrite(PNATState pData, struct socket *so)
     if ((so->so_state & SS_FWDRAIN) && sb->sb_cc == 0)
         sofcantsendmore(so);
 
+    SOCKET_UNLOCK(so);    
     return nn;
 }
 
@@ -462,8 +494,15 @@ sorecvfrom(PNATState pData, struct socket *so)
         size_t len;
         u_long n;
 
-        if (!(m = m_get(pData)))
+        QSOCKET_LOCK(udb);
+        SOCKET_LOCK(so);
+        QSOCKET_UNLOCK(udb);
+
+        if (!(m = m_get(pData))) 
+        {
+            SOCKET_UNLOCK(so);
             return;
+        }
         m->m_data += if_maxlinkhdr;
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
         m->m_data += sizeof(struct udphdr)
@@ -489,7 +528,7 @@ sorecvfrom(PNATState pData, struct socket *so)
 
         m->m_len = recvfrom(so->s, m->m_data, len, 0,
                             (struct sockaddr *)&addr, &addrlen);
-        DEBUG_MISC((dfd, " did recvfrom %d, errno = %d-%s\n",
+        Log2((" did recvfrom %d, errno = %d-%s\n",
                     m->m_len, errno,strerror(errno)));
         if(m->m_len < 0)
         {
@@ -500,7 +539,7 @@ sorecvfrom(PNATState pData, struct socket *so)
             else if(errno == ENETUNREACH)
                 code = ICMP_UNREACH_NET;
 
-            DEBUG_MISC((dfd," rx error, tx icmp ICMP_UNREACH:%i\n", code));
+            Log2((dfd," rx error, tx icmp ICMP_UNREACH:%i\n", code));
             icmp_error(pData, so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
             m_free(pData, m);
         }
@@ -533,6 +572,7 @@ sorecvfrom(PNATState pData, struct socket *so)
              * make it look like that's where it came from, done by udp_output
              */
             udp_output(pData, so, m, &addr);
+            SOCKET_UNLOCK(so);
         } /* rx error */
     } /* if ping packet */
 }
@@ -677,7 +717,9 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 #ifdef RT_OS_WINDOWS
         int tmperrno = WSAGetLastError(); /* Don't clobber the real reason we failed */
         closesocket(s);
+        QSOCKET_LOCK(tcb);
         sofree(pData, so);
+        QSOCKET_UNLOCK(tcb);
         /* Restore the real errno */
         WSASetLastError(tmperrno);
 #else

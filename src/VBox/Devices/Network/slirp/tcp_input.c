@@ -276,7 +276,13 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
     DEBUG_CALL("tcp_input");
     DEBUG_ARGS((dfd," m = %8lx  iphlen = %2d  inso = %lx\n",
                 (long )m, iphlen, (long )inso ));
-
+    
+    if (inso != NULL) 
+    { 
+        QSOCKET_LOCK(tcb);
+        SOCKET_LOCK(inso);
+        QSOCKET_UNLOCK(tcb);
+    }
     /*
      * If called with m == 0, then we're continuing the connect
      */
@@ -394,17 +400,52 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
      * Locate pcb for segment.
      */
 findso:
+    if (so != NULL && so != &tcb)
+        SOCKET_UNLOCK(so);
+    QSOCKET_LOCK(tcb);
     so = tcp_last_so;
     if (   so->so_fport        != ti->ti_dport
         || so->so_lport        != ti->ti_sport
         || so->so_laddr.s_addr != ti->ti_src.s_addr
         || so->so_faddr.s_addr != ti->ti_dst.s_addr)
     {
+        struct socket *sonxt;
+        QSOCKET_UNLOCK(tcb);
+        /* @todo fix SOLOOKUP macrodefinition to be usable here */ 
+#ifndef VBOX_WITH_SLIRP_MT
         so = solookup(&tcb, ti->ti_src, ti->ti_sport,
                       ti->ti_dst, ti->ti_dport);
+#else
+        so = NULL;
+        QSOCKET_FOREACH(so, sonxt, tcp)        
+        /* { */
+            if (   so->so_lport        == ti->ti_sport
+                && so->so_laddr.s_addr == ti->ti_src.s_addr
+                && so->so_faddr.s_addr == ti->ti_dst.s_addr
+                && so->so_fport        == ti->ti_dport) 
+            {
+                if (sonxt != &tcb)
+                    SOCKET_UNLOCK(sonxt);
+                Log2(("lock: %s:%d We found socket %R[natsock]\n", __FUNCTION__, __LINE__, so));
+                break; /* so is locked here */
+            }
+        LOOP_LABEL(tcp, so, sonxt);
+        }
+        if (so == &tcb) {
+            Log2(("lock: %s:%d Haven't find anything \n", __FUNCTION__, __LINE__));
+            so = NULL;
+        }
+#endif
         if (so)
+        {
             tcp_last_so = so;
+        }
         ++tcpstat.tcps_socachemiss;
+    } 
+    else
+    {
+        SOCKET_LOCK(so);
+        QSOCKET_UNLOCK(tcb);
     }
 
     /*
@@ -420,6 +461,7 @@ findso:
      * the only flag set, then create a session, mark it
      * as if it was LISTENING, and continue...
      */
+    Log2(("so = %p\n", so));
     if (so == 0)
     {
         if ((tiflags & (TH_SYN|TH_FIN|TH_RST|TH_URG|TH_ACK)) != TH_SYN)
@@ -593,6 +635,7 @@ findso:
               if (so->so_snd.sb_cc)
                   (void) tcp_output(pData, tp);
 
+              SOCKET_UNLOCK(so);
               return;
             }
         }
@@ -636,6 +679,7 @@ findso:
              */
             tp->t_flags |= TF_ACKNOW;
             tcp_output(pData, tp);
+            SOCKET_UNLOCK(so);
             return;
         }
     } /* header prediction */
@@ -735,6 +779,7 @@ findso:
                 tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
                 tp->t_state = TCPS_SYN_RECEIVED;
             }
+            SOCKET_UNLOCK(so);
             return;
 
 cont_conn:
@@ -764,6 +809,7 @@ cont_input:
             tp->t_state = TCPS_SYN_RECEIVED;
             tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
             tcpstat.tcps_accepts++;
+            Log2(("hit trimthenstep6\n"));
             goto trimthenstep6;
         } /* case TCPS_LISTEN */
 
@@ -853,6 +899,7 @@ trimthenstep6:
             }
             tp->snd_wl1 = ti->ti_seq - 1;
             tp->rcv_up = ti->ti_seq;
+            Log2(("hit6"));
             goto step6;
     } /* switch tp->t_state */
     /*
@@ -984,6 +1031,7 @@ trimthenstep6:
             {
                 iss = tp->rcv_nxt + TCP_ISSINCR;
                 tp = tcp_close(pData, tp);
+                SOCKET_UNLOCK(tp->t_socket);
                 goto findso;
             }
             /*
@@ -1116,6 +1164,7 @@ close:
             (void) tcp_reass(pData, tp, (struct tcphdr *)0, (int *)0, (struct mbuf *)0);
             tp->snd_wl1 = ti->ti_seq - 1;
             /* Avoid ack processing; snd_una==ti_ack  =>  dup ack */
+            Log2(("hit synrx_to_est\n"));
             goto synrx_to_est;
             /* fall into ... */
 
@@ -1200,6 +1249,7 @@ close:
                 break;
             }
 synrx_to_est:
+            Log2(("enter synrx_to_est\n"));
             /*
              * If the congestion window was inflated to account
              * for the other side's cached packets, retract it.
@@ -1428,6 +1478,7 @@ step6:
         if (SEQ_GT(tp->rcv_nxt, tp->rcv_up))
             tp->rcv_up = tp->rcv_nxt;
 dodata:
+    Log2(("do data hit!\n"));
 
     /*
      * If this is a small packet, then ACK now - with Nagel
@@ -1566,6 +1617,7 @@ dodata:
     if (needoutput || (tp->t_flags & TF_ACKNOW))
         tcp_output(pData, tp);
 
+    SOCKET_UNLOCK(so);
     return;
 
 dropafterack:
@@ -1579,11 +1631,11 @@ dropafterack:
     m_freem(pData, m);
     tp->t_flags |= TF_ACKNOW;
     (void) tcp_output(pData, tp);
+    SOCKET_UNLOCK(so);
     return;
 
 dropwithreset:
     /* reuses m if m!=NULL, m_free() unnecessary */
-    Log2(("drop with reset\n"));
     if (tiflags & TH_ACK)
         tcp_respond(pData, tp, ti, m, (tcp_seq)0, ti->ti_ack, TH_RST);
     else
@@ -1593,15 +1645,17 @@ dropwithreset:
                     TH_RST|TH_ACK);
     }
 
+    if (so != &tcb)
+        SOCKET_UNLOCK(so);
     return;
 
 drop:
     /*
      * Drop space held by incoming segment and return.
      */
-    Log2(("drop\n"));
     m_free(pData, m);
 
+    SOCKET_UNLOCK(so);
     return;
 }
 

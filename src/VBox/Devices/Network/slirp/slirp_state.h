@@ -20,6 +20,7 @@
 
 #ifndef _slirp_state_h_
 #define _slirp_state_h_
+#include <iprt/req.h>
 #include "ip_icmp.h"
 
 /** Number of DHCP clients supported by NAT. */
@@ -99,6 +100,9 @@ typedef struct NATState
     struct in_addr our_addr;
     struct in_addr alias_addr;
     struct in_addr special_addr;
+#ifdef VBOX_WITH_SLIRP_MT
+    PRTREQQUEUE pReqQueue;
+#endif
 #ifndef VBOX_WITH_MULTI_DNS
     struct in_addr dns_addr;
 #else
@@ -115,7 +119,7 @@ typedef struct NATState
     /* Stuff from tcp_input.c */
     struct socket tcb;
 #ifdef VBOX_WITH_SLIRP_MT
-    RTSEMMUTEX      tcb_mutex;
+    RTCRITSECT      tcb_mutex;
 #endif
     struct socket *tcp_last_so;
     tcp_seq tcp_iss;
@@ -133,7 +137,7 @@ typedef struct NATState
     struct udpstat_t udpstat;
     struct socket udb;
 #ifdef VBOX_WITH_SLIRP_MT
-    RTSEMMUTEX      udb_mutex;
+    RTCRITSECT      udb_mutex;
 #endif
     struct socket *udp_last_so;
     struct socket icmp_socket;
@@ -276,33 +280,37 @@ typedef struct NATState
 #define queue_udp_label udb
 #define __X(x) x
 #define _X(x) __X(x)
-
+#define _str(x) #x
+#define str(x) _str(x)
 #ifdef VBOX_WITH_SLIRP_MT
 #define QSOCKET_LOCK(queue)                                                     \
 do {                                                                            \
-    int rc = RTSemMutexRequest(_X(queue) ## _mutex, RT_INDEFINITE_WAIT);        \
+    int rc;                                                                     \
+    rc = RTCritSectEnter(&_X(queue) ## _mutex);            \
     AssertReleaseRC(rc);                                                        \
 } while (0)
 #define QSOCKET_UNLOCK(queue)                           \
 do {                                                    \
-    int rc = RTSemMutexRelease(_X(queue) ## _mutex);    \
+    int rc;                                             \
+    rc = RTCritSectLeave(&_X(queue) ## _mutex);        \
     AssertReleaseRC(rc);                                \
 } while (0)
 #define QSOCKET_LOCK_CREATE(queue)                      \
 do {                                                    \
-    int rc = RTSemMutexCreate(&pData->queue ## _mutex); \
+    int rc;                                             \
+    rc = RTCritSectInit(&pData->queue ## _mutex);     \
     AssertReleaseRC(rc);                                \
 } while (0)
 #define QSOCKET_LOCK_DESTROY(queue)                     \
 do {                                                    \
-    int rc = RTSemMutexDestroy(pData->queue ## _mutex); \
+    int rc = RTCritSectDelete(&pData->queue ## _mutex); \
     AssertReleaseRC(rc);                                \
 } while (0)
 
 # define QSOCKET_FOREACH(so, sonext, label)                         \
         QSOCKET_LOCK(__X(queue_## label ## _label));                \
         (so) = (_X(queue_ ## label ## _label)).so_next;             \
-        SOCKET_LOCK((so));                                          \
+        if ((so) != &(_X(queue_## label ## _label))) SOCKET_LOCK((so));  \
         for(;;)                                                     \
         {                                                           \
             if ((so) == &(_X(queue_## label ## _label)))            \
@@ -310,12 +318,191 @@ do {                                                    \
                 QSOCKET_UNLOCK(__X(queue_## label ##_label));       \
                 break;                                              \
             }                                                       \
+            Log2(("%s:%d Processing so:%R[natsock]\n", __FUNCTION__, __LINE__, (so)));  \
             if ((so)->so_next != &(_X(queue_## label ## _label)))   \
             {                                                       \
                 SOCKET_LOCK((so)->so_next);                         \
             }                                                       \
             (sonext) = (so)->so_next;                               \
             QSOCKET_UNLOCK(__X(queue_## label ##_label)); 
+
+# define CONTINUE_NO_UNLOCK(label) goto loop_end_ ## label ## _mt_nounlock
+# define CONTINUE(label) goto loop_end_ ## label ## _mt
+/* @todo replace queue parameter with macrodinition */
+# define LOOP_LABEL(label, so, sonext) loop_end_ ## label ## _mt:       \
+    SOCKET_UNLOCK(so);                                                  \
+    loop_end_ ## label ## _mt_nounlock:                                 \
+    QSOCKET_LOCK(_X(queue_ ## label ## _label));                        \
+    (so) = (sonext)
+
+#define DO_TCP_OUTPUT(data, sotcb)                                      \
+do {                                                                    \
+    PRTREQ pReq = NULL;                                                 \
+    int rc;                                                             \
+    rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);      \
+    AssertReleaseRC(rc);                                                \
+    pReq->u.Internal.pfn      = (PFNRT)tcp_output;                      \
+    pReq->u.Internal.cArgs    = 2;                                      \
+    pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                      \
+    pReq->u.Internal.aArgs[1] = (uintptr_t)(sotcb);                     \
+    pReq->fFlags              = RTREQFLAGS_VOID;     \
+    rc = RTReqQueue(pReq, 0);                                           \
+    if (RT_LIKELY(rc) == VERR_TIMEOUT)                                  \
+    {                                                                   \
+        SOCKET_UNLOCK(so);                                               \
+        rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                       \
+        AssertReleaseRC(rc);                                            \
+        SOCKET_LOCK(so);                                                \
+        RTReqFree(pReq);                                                \
+    }                                                                   \
+    else                                                                \
+        AssertReleaseRC(rc);                                            \
+} while(0)
+
+#define DO_TCP_INPUT(data, mbuf, size, so)                              \
+do {                                                                    \
+    PRTREQ pReq = NULL;                                                 \
+    int rc;                                                             \
+    rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);      \
+    AssertReleaseRC(rc);                                                \
+    pReq->u.Internal.pfn      = (PFNRT)tcp_input;                       \
+    pReq->u.Internal.cArgs    = 4;                                      \
+    pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                      \
+    pReq->u.Internal.aArgs[1] = (uintptr_t)(mbuf);                      \
+    pReq->u.Internal.aArgs[2] = (uintptr_t)(size);                      \
+    pReq->u.Internal.aArgs[3] = (uintptr_t)(so);                        \
+    pReq->fFlags              = RTREQFLAGS_VOID;                        \
+    rc = RTReqQueue(pReq, 0);                                           \
+    if (RT_LIKELY(rc) == VERR_TIMEOUT)                                  \
+    {                                                                   \
+        SOCKET_UNLOCK(so);                                               \
+        rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                       \
+        AssertReleaseRC(rc);                                            \
+        SOCKET_LOCK(so);                                                \
+        RTReqFree(pReq);                                                \
+    }                                                                   \
+    else                                                                \
+        AssertReleaseRC(rc);                                            \
+} while(0)
+
+#define DO_TCP_CONNECT(data, so)                                        \
+do {                                                                    \
+    PRTREQ pReq = NULL;                                                 \
+    int rc;                                                             \
+    rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);      \
+    AssertReleaseRC(rc);                                                \
+    pReq->u.Internal.pfn      = (PFNRT)tcp_connect;                     \
+    pReq->u.Internal.cArgs    = 2;                                      \
+    pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                      \
+    pReq->u.Internal.aArgs[1] = (uintptr_t)(so);                        \
+    pReq->fFlags              = RTREQFLAGS_VOID;                        \
+    rc = RTReqQueue(pReq, 0); /* don't wait, we have to release lock before*/ \
+    if (RT_LIKELY(rc) == VERR_TIMEOUT)                                  \
+    {                                                                   \
+        SOCKET_UNLOCK(so);                                               \
+        rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                       \
+        AssertReleaseRC(rc);                                            \
+        SOCKET_LOCK(so);                                                \
+        RTReqFree(pReq);                                                \
+    }                                                                   \
+    else                                                                \
+        AssertReleaseRC(rc);                                            \
+} while(0)
+
+#define DO_SOREAD(ret, data, so, ifclose)                               \
+do {                                                                    \
+    PRTREQ pReq = NULL;                                                 \
+    int rc;                                                             \
+    rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);      \
+    AssertReleaseRC(rc);                                                \
+    pReq->u.Internal.pfn      = (PFNRT)soread_queue;                    \
+    pReq->u.Internal.cArgs    = 4;                                      \
+    pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                      \
+    pReq->u.Internal.aArgs[1] = (uintptr_t)(so);                        \
+    pReq->u.Internal.aArgs[2] = (uintptr_t)(ifclose);                   \
+    pReq->u.Internal.aArgs[3] = (uintptr_t)&(ret);                      \
+    pReq->fFlags              = RTREQFLAGS_VOID;                        \
+    rc = RTReqQueue(pReq, 0); /* don't wait, we have to release lock before*/ \
+    if (RT_LIKELY(rc) == VERR_TIMEOUT)                                  \
+    {                                                                   \
+        SOCKET_UNLOCK(so);                                               \
+        rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                       \
+        AssertReleaseRC(rc);                                            \
+        SOCKET_LOCK(so);                                                \
+        RTReqFree(pReq);                                                \
+    }                                                                   \
+    else                                                                \
+        AssertReleaseRC(rc);                                            \
+} while(0)
+
+#define DO_SOWRITE(ret, data, so)                                       \
+do {                                                                    \
+    PRTREQ pReq = NULL;                                                 \
+    int rc;                                                             \
+    rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);      \
+    AssertReleaseRC(rc);                                                \
+    pReq->u.Internal.pfn      = (PFNRT)sowrite;                         \
+    pReq->u.Internal.cArgs    = 2;                                      \
+    pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                      \
+    pReq->u.Internal.aArgs[1] = (uintptr_t)(so);                        \
+    pReq->fFlags              = RTREQFLAGS_RETURN_MASK;                 \
+    rc = RTReqQueue(pReq, 0); /* don't wait, we have to release lock before*/ \
+    if (RT_LIKELY(rc) == VERR_TIMEOUT)                                  \
+    {                                                                   \
+        SOCKET_UNLOCK(so);                                              \
+        rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                       \
+        SOCKET_LOCK(so);                                                \
+        ret = pReq->iStatus;                                            \
+        RTReqFree(pReq);                                                \
+    }                                                                   \
+    else                                                                \
+        AssertReleaseRC(rc);                                            \
+} while(0)
+
+#define DO_SORECFROM(data, so)                                          \
+do {                                                                    \
+    PRTREQ pReq = NULL;                                                 \
+    int rc;                                                             \
+    rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);      \
+    AssertReleaseRC(rc);                                                \
+    pReq->u.Internal.pfn      = (PFNRT)sorecvfrom;                      \
+    pReq->u.Internal.cArgs    = 2;                                      \
+    pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                      \
+    pReq->u.Internal.aArgs[1] = (uintptr_t)(so);                        \
+    pReq->fFlags              = RTREQFLAGS_VOID;                        \
+    rc = RTReqQueue(pReq, 0);                                           \
+    if (RT_LIKELY(rc) == VERR_TIMEOUT)                                  \
+    {                                                                   \
+        SOCKET_UNLOCK(so);                                               \
+        rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                       \
+        AssertReleaseRC(rc);                                            \
+        SOCKET_LOCK(so);                                                \
+        RTReqFree(pReq);                                                \
+    }                                                                   \
+    else                                                                \
+        AssertReleaseRC(rc);                                            \
+} while(0)
+
+#define SOLOOKUP(so, label, src, sport, dst, dport)                     \
+do {                                                                    \
+    struct socket *sonxt;                                               \
+    (so) = NULL;                                                        \
+    QSOCKET_FOREACH(so, sonxt, label)                                   \
+    /* { */                                                             \
+        if (   so->so_lport        == (sport)                           \
+            && so->so_laddr.s_addr == (src).s_addr                      \
+            && so->so_faddr.s_addr == (dst).s_addr                      \
+            && so->so_fport        == (dport))                          \
+            {                                                           \
+                if (sonxt != &__X(queue_ ## label ## _label))           \
+                    SOCKET_UNLOCK(sonxt);                               \
+                break; /*so is locked*/                                 \
+            }                                                           \
+        LOOP_LABEL(so, sonxt, label);                                   \
+        }                                                               \
+    }                                                                   \
+}while (0) 
+    
 #else
 #define QSOCKET_LOCK(queue) do {} while (0)
 #define QSOCKET_UNLOCK(queue) do {} while (0)
@@ -325,6 +512,25 @@ do {                                                    \
    for ((so) = __X(queue_ ## label ## _label).so_next; so != &(__X(queue_ ## label ## _label)); (so) = (sonext))    \
    {                                                                                                                \
             (sonext) = (so)->so_next;
+# define CONTINUE(label) continue
+# define CONTINUE_NO_UNLOCK(label) continue
+# define LOOP_LABEL(label, so, sonext) /* empty*/
+#define DO_TCP_OUTPUT(data, sotcb) tcp_output((data), (sotcb))
+#define DO_TCP_INPUT(data, mbuf, size, so) tcp_input((data), (mbuf), (size), (so))
+#define DO_TCP_CONNECT(data, so) tcp_connect((data), (so))
+#define DO_SOREAD(ret, data, so, ifclose) do{(ret) = soread((data), (so), (ifclose));}while(0)
+#define DO_SOWRITE(ret, data, so) do{(ret) = sowrite((data), (so));}while(0)
+#define DO_SORECFROM(data, so) sorecvfrom((data), (so))
+#define SOLOOKUP(so, label, src, sport, dst, dport)                                     \
+do {                                                                                    \
+    (so) = solookup(&__X(queue_ ## label ## _label), (src), (sport), (dst), (dport));   \
+} while (0)
 #endif
 
+#define TCP_OUTPUT(data, sotcb) DO_TCP_OUTPUT((data), (sotcb))
+#define TCP_INPUT(data, mbuf, size, so) DO_TCP_INPUT((data), (mbuf), (size), (so))
+#define TCP_CONNECT(data, so) DO_TCP_CONNECT((data), (so))
+#define SOREAD(ret, data, so, ifclose) DO_SOREAD((ret), (data), (so), (ifclose))
+#define SOWRITE(ret, data, so) DO_SOWRITE((ret), (data), (so))
+#define SORECVFROM(data, so) DO_SORECFROM((data), (so))
 #endif /* !_slirp_state_h_ */

@@ -10,7 +10,7 @@
 #ifndef _SLIRP_SOCKET_H_
 #define _SLIRP_SOCKET_H_
 #ifdef VBOX_WITH_SLIRP_MT
-#include <iprt/semaphore.h>
+#include <iprt/critsect.h>
 #endif
 
 #define SO_EXPIRE 240000
@@ -67,29 +67,34 @@ struct socket
     struct sbuf     so_rcv;      /* Receive buffer */
     struct sbuf     so_snd;      /* Send buffer */
 #ifdef VBOX_WITH_SLIRP_MT
-    RTSEMMUTEX      so_mutex;
+    RTCRITSECT      so_mutex;
 #endif
 };
 
 #ifdef VBOX_WITH_SLIRP_MT
 # define SOCKET_LOCK(so)                                                \
     do {                                                                \
-        int rc = RTSemMutexRequest((so)->so_mutex, RT_INDEFINITE_WAIT); \
+        int rc;                                                         \
+        Log2(("lock:%s:%d L on %R[natsock]\n", __FUNCTION__, __LINE__, (so)));       \
+        rc = RTCritSectEnter(&(so)->so_mutex);                           \
         AssertReleaseRC(rc);                                            \
     } while (0)
 # define SOCKET_UNLOCK(so)                                              \
     do {                                                                \
-        int rc = RTSemMutexRelease((so)->so_mutex);                     \
+        int rc;                                                         \
+        if ((so) != NULL) Log2(("lock:%s:%d U on %R[natsock]\n", __FUNCTION__, __LINE__, (so)));       \
+        rc = RTCritSectLeave(&(so)->so_mutex);                           \
         AssertReleaseRC(rc);                                            \
     } while (0)
 # define SOCKET_LOCK_CREATE(so)                                         \
     do {                                                                \
-        int rc = RTSemMutexCreate(&(so)->so_mutex);                     \
+        int rc;                                                         \
+        rc = RTCritSectInit(&(so)->so_mutex);                            \
         AssertReleaseRC(rc);                                            \
     } while (0)
 # define SOCKET_LOCK_DESTROY(so)                                        \
     do {                                                                \
-        int rc = RTSemMutexDestroy((so)->so_mutex);                     \
+        int rc = RTCritSectDelete(&(so)->so_mutex);                      \
         AssertReleaseRC(rc);                                            \
     } while (0)
 #else
@@ -129,6 +134,9 @@ void so_init _P((void));
 struct socket * solookup _P((struct socket *, struct in_addr, u_int, struct in_addr, u_int));
 struct socket * socreate _P((void));
 void sofree _P((PNATState, struct socket *));
+#ifdef VBOX_WITH_SLIRP_MT
+void soread_queue (PNATState, struct socket *, int, int *);
+#endif
 int soread _P((PNATState, struct socket *, int));
 void sorecvoob _P((PNATState, struct socket *));
 int sosendoob _P((struct socket *));
