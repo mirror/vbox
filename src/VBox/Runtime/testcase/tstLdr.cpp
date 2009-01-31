@@ -45,7 +45,12 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /** If set, don't bitch when failing to resolve symbols. */
-static bool g_fDontBitchOnResolveFailure = false;
+static bool     g_fDontBitchOnResolveFailure = false;
+/** Whether it's kernel model code or not.. */
+static bool     g_fKernel = true;
+/** Module architectur bit count. */
+static uint32_t g_cBits = HC_ARCH_BITS;
+
 
 /**
  * Resolve an external symbol during RTLdrGetBits().
@@ -60,8 +65,18 @@ static bool g_fDontBitchOnResolveFailure = false;
  */
 static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
 {
-    /* check the name format and only permit certain names */
-    *pValue = 0xabcdef0f;
+    /* check the name format and only permit certain names... later, right?  */
+
+    if (g_cBits == 32)
+        *pValue = 0xabcdef0f;
+    else
+    {
+        RTUINTPTR BaseAddr = *(PCRTUINTPTR)pvUser;
+        if (g_fKernel)
+            *pValue = BaseAddr & RT_BIT(31) ? -(int32_t)0x76634935 : 0x7f304938;
+        else
+            *pValue = (int32_t)0x76634935 * ((BaseAddr >> 8) & 7);
+    }
     return VINF_SUCCESS;
 }
 
@@ -89,12 +104,12 @@ static int testLdrOne(const char *pszFilename)
         const char *pszName;
     }   aLoads[6] =
     {
-        { NULL, NULL, 0xefefef00, "foo" },
-        { NULL, NULL, 0x40404040, "bar" },
-        { NULL, NULL, 0xefefef00, "foobar" },
-        { NULL, NULL, 0xefefef00, "kLdr-foo" },
-        { NULL, NULL, 0x40404040, "kLdr-bar" },
-        { NULL, NULL, 0xefefef00, "kLdr-foobar" }
+        { NULL, NULL, (int32_t)0xefefef00, "foo" },
+        { NULL, NULL, (int32_t)0x40404040, "bar" },
+        { NULL, NULL, (int32_t)0xefefef00, "foobar" },
+        { NULL, NULL, (int32_t)0xefefef00, "kLdr-foo" },
+        { NULL, NULL, (int32_t)0x40404040, "kLdr-bar" },
+        { NULL, NULL, (int32_t)0xefefef00, "kLdr-foobar" }
     };
     unsigned i;
 
@@ -103,6 +118,12 @@ static int testLdrOne(const char *pszFilename)
      */
     for (i = 0; i < RT_ELEMENTS(aLoads); i++)
     {
+        /* adjust load address and announce our intentions */
+        if (g_cBits == 32)
+            aLoads[i].Addr &= UINT32_C(0xffffffff);
+        RTPrintf("tstLdr: Loading image at %RTptr\n", aLoads[i].Addr);
+
+        /* open it */
         int rc;
         if (!strncmp(aLoads[i].pszName, "kLdr-", sizeof("kLdr-") - 1))
             rc = RTLdrOpenkLdr(pszFilename, &aLoads[i].hLdrMod);
@@ -136,7 +157,7 @@ static int testLdrOne(const char *pszFilename)
         }
 
         /* Get the bits. */
-        rc = RTLdrGetBits(aLoads[i].hLdrMod, aLoads[i].pvBits, aLoads[i].Addr, testGetImport, NULL);
+        rc = RTLdrGetBits(aLoads[i].hLdrMod, aLoads[i].pvBits, aLoads[i].Addr, testGetImport, &aLoads[i].Addr);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstLdr: Failed to get bits for '%s'/%d, rc=%Rrc. aborting test\n", pszFilename, i, rc);
@@ -152,15 +173,15 @@ static int testLdrOne(const char *pszFilename)
     {
         static RTUINTPTR aRels[] =
         {
-            0xefefef00,                 /* same. */
-            0x40404040,                 /* the other. */
-            0xefefef00,                 /* back. */
-            0x40404040,                 /* the other. */
-            0xefefef00,                 /* back again. */
-            0x77773420,                 /* somewhere entirely else. */
-            0xf0000000,                 /* somewhere entirely else. */
-            0x40404040,                 /* the other. */
-            0xefefef00                  /* back again. */
+            (int32_t)0xefefef00,        /* same. */
+            (int32_t)0x40404040,        /* the other. */
+            (int32_t)0xefefef00,        /* back. */
+            (int32_t)0x40404040,        /* the other. */
+            (int32_t)0xefefef00,        /* back again. */
+            (int32_t)0x77773420,        /* somewhere entirely else. */
+            (int32_t)0xf0000000,        /* somewhere entirely else. */
+            (int32_t)0x40404040,        /* the other. */
+            (int32_t)0xefefef00         /* back again. */
         };
         struct Symbols
         {
@@ -183,6 +204,10 @@ static int testLdrOne(const char *pszFilename)
         unsigned iRel = 0;
         for (;;)
         {
+            /* adjust load address and announce our intentions */
+            if (g_cBits == 32)
+                aRels[iRel] &= UINT32_C(0xffffffff);
+
             /* Compare all which are at the same address. */
             for (i = 0; i < RT_ELEMENTS(aLoads) - 1; i++)
             {
@@ -193,12 +218,21 @@ static int testLdrOne(const char *pszFilename)
                         if (memcmp(aLoads[j].pvBits, aLoads[i].pvBits, cbImage))
                         {
                             RTPrintf("tstLdr: Mismatch between load %d and %d. ('%s')\n", j, i, pszFilename);
+#if 1
                             const uint8_t *pu8J = (const uint8_t *)aLoads[j].pvBits;
                             const uint8_t *pu8I = (const uint8_t *)aLoads[i].pvBits;
                             for (uint32_t off = 0; off < cbImage; off++, pu8J++, pu8I++)
                                 if (*pu8J != *pu8I)
                                     RTPrintf("  %08x  %02x != %02x\n", off, *pu8J, *pu8I);
+#else
+                            const uint32_t *pu32J = (const uint32_t *)aLoads[j].pvBits;
+                            const uint32_t *pu32I = (const uint32_t *)aLoads[i].pvBits;
+                            for (uint32_t off = 0; off < cbImage; off += 4, pu32J++, pu32I++)
+                                if (*pu32J != *pu32I)
+                                    RTPrintf("  %08x  %08x != %08x\n", off, *pu32J, *pu32I);
+#endif
                             rcRet++;
+                            break;
                         }
                     }
                 }
@@ -244,7 +278,8 @@ static int testLdrOne(const char *pszFilename)
                 break;
 
             /* relocate it stuff. */
-            int rc = RTLdrRelocate(aLoads[2].hLdrMod, aLoads[2].pvBits, aRels[iRel], aLoads[2].Addr, testGetImport, NULL);
+            RTPrintf("tstLdr: Relocating image 2 from %RTptr to %RTptr\n", aLoads[2].Addr, aRels[iRel]);
+            int rc = RTLdrRelocate(aLoads[2].hLdrMod, aLoads[2].pvBits, aRels[iRel], aLoads[2].Addr, testGetImport, &aRels[iRel]);
             if (RT_FAILURE(rc))
             {
                 RTPrintf("tstLdr: Relocate of '%s' from %#x to %#x failed, rc=%Rrc. Aborting test.\n",
@@ -289,7 +324,7 @@ int main(int argc, char **argv)
     int rcRet = 0;
     if (argc <= 1)
     {
-        RTPrintf("usage: %s <module> [more modules]\n", argv[0]);
+        RTPrintf("usage: %s [-32|-64] [-kernel] <module> [more options/modules]\n", argv[0]);
         return 1;
     }
 
@@ -298,8 +333,14 @@ int main(int argc, char **argv)
      */
     for (int argi = 1; argi < argc; argi++)
     {
-        if (argv[argi][0] == '-' && argv[argi][1] == 'n')
+        if (!strcmp(argv[argi], "-n"))
             g_fDontBitchOnResolveFailure = true;
+        else if (!strcmp(argv[argi], "-32"))
+            g_cBits = 32;
+        else if (!strcmp(argv[argi], "-64"))
+            g_cBits = 64;
+        else if (!strcmp(argv[argi], "-kernel"))
+            g_fKernel = 64;
         else
         {
             RTPrintf("tstLdr: TESTING '%s'...\n", argv[argi]);
