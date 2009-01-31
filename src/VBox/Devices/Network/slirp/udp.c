@@ -383,14 +383,14 @@ udp_attach(PNATState pData, struct socket *so)
             so->so_expire = curtime + SO_EXPIRE;
             /* enable broadcast for later use */
             setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, (const char *)&opt, sizeof(opt));
-            SOCKET_LOCK_CREATE(so);
-            QSOCKET_LOCK(udb);
-            insque(pData, so,&udb);
-            QSOCKET_UNLOCK(udb);
             status = getsockname(so->s, &sa_addr, &socklen);
             Assert(status == 0 && sa_addr.sa_family == AF_INET);
             so->so_hlport = ((struct sockaddr_in *)&sa_addr)->sin_port;
             so->so_hladdr.s_addr = ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
+            SOCKET_LOCK_CREATE(so);
+            QSOCKET_LOCK(udb);
+            insque(pData, so,&udb);
+            QSOCKET_UNLOCK(udb);
         }
     }
     return so->s;
@@ -402,7 +402,9 @@ udp_detach(PNATState pData, struct socket *so)
     if (so != &pData->icmp_socket)
     {
         closesocket(so->s);
+        QSOCKET_LOCK(udb);
         sofree(pData, so);
+        QSOCKET_UNLOCK(udb);
     }
 }
 
@@ -698,7 +700,10 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 
     so->s = socket(AF_INET,SOCK_DGRAM,0);
     so->so_expire = curtime + SO_EXPIRE;
+    SOCKET_LOCK_CREATE(so);
+    QSOCKET_LOCK(udb);
     insque(pData, so,&udb);
+    QSOCKET_UNLOCK(udb);
 
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;

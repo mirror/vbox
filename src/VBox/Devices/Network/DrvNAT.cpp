@@ -52,7 +52,7 @@
  * @todo: This is a bad hack to prevent freezing the guest during high network
  *        activity. This needs to be fixed properly.
  */
-#define VBOX_NAT_DELAY_HACK
+/*#define VBOX_NAT_DELAY_HACK*/
 
 
 /*******************************************************************************
@@ -147,14 +147,18 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
     Log2(("drvNATSend: pvBuf=%p cb=%#x\n%.*Rhxd\n", pvBuf, cb, cb, pvBuf));
 
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC 
 
     PRTREQ pReq = NULL;
     int rc;
     /* don't queue new requests when the NAT thread is about to stop */
     if (pThis->pThread->enmState != PDMTHREADSTATE_RUNNING)
         return VINF_SUCCESS;
+#ifndef VBOX_WITH_SLIRP_MT
     rc = RTReqAlloc(pThis->pReqQueue, &pReq, RTREQTYPE_INTERNAL);
+#else
+    rc = RTReqAlloc((PRTREQQUEUE)slirp_get_queue(pThis->pNATState), &pReq, RTREQTYPE_INTERNAL);
+#endif
     AssertReleaseRC(rc);
     pReq->u.Internal.pfn      = (PFNRT)drvNATSendWorker;
     pReq->u.Internal.cArgs    = 3;
@@ -162,6 +166,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     pReq->u.Internal.aArgs[1] = (uintptr_t)pvBuf;
     pReq->u.Internal.aArgs[2] = (uintptr_t)cb;
     pReq->fFlags              = RTREQFLAGS_VOID;
+
     rc = RTReqQueue(pReq, 0); /* don't wait, we have to wakeup the NAT thread fist */
     if (RT_LIKELY(rc == VERR_TIMEOUT))
     {
@@ -180,6 +185,9 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     else
         AssertReleaseRC(rc);
     RTReqFree(pReq);
+
+    rc = WSASetEvent(pThis->hWakeupEvent);
+    AssertRelease(rc == TRUE);
 
 #else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
@@ -396,10 +404,12 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         {
             /* only check for slow/fast timers */
             slirp_select_poll(pThis->pNATState, /* fTimeout=*/true, /*fIcmp=*/false);
+            Log2(("%s: timeout\n", __FUNCTION__));
             continue;
         }
 
         /* poll the sockets in any case */
+        Log2(("%s: poll\n", __FUNCTION__));
         slirp_select_poll(pThis->pNATState, /* fTimeout=*/false, /* fIcmp=*/(event == WSA_WAIT_EVENT_0));
         /* process _all_ outstanding requests but don't wait */
         RTReqProcess(pThis->pReqQueue, 0);
@@ -443,9 +453,13 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 static DECLCALLBACK(int) drvNATAsyncIoGuest(PPDMDRVINS pDrvIns, PPDMTHREAD pThread) 
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-	while (1) 
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
 	{
+        slirp_process_queue(pThis->pNATState);
 	}
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)

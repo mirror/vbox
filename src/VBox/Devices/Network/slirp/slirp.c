@@ -7,17 +7,6 @@
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 
-#ifdef VBOX_WITH_SLIRP_MT
-# define CONTINUE(label) goto loop_end_ ## label ## _mt
-/* @todo replace queue parameter with macrodinition */
-# define LOOP_LABEL(label, so, sonext) loop_end_ ## label ## _mt:    \
-    SOCKET_UNLOCK(so);                                               \
-    QSOCKET_LOCK(_X(queue_ ## label ## _label));                     \
-    (so) = (sonext)
-#else
-#define CONTINUE(label) continue;
-# define LOOP_LABEL(label, so, sonext) /* empty*/
-#endif
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 
 # define DO_ENGAGE_EVENT1(so, fdset, label)          \
@@ -386,6 +375,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
                const char *pszBootFile, void *pvUser)
 {
     int fNATfailed = 0;
+    int rc;
     PNATState pData = RTMemAlloc(sizeof(NATState));
     *ppData = pData;
     if (!pData)
@@ -408,6 +398,12 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
 # if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
     pData->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
 # endif
+#endif
+#ifdef VBOX_WITH_SLIRP_MT
+    QSOCKET_LOCK_CREATE(tcb);
+    QSOCKET_LOCK_CREATE(udb);
+    rc = RTReqCreateQueue(&pData->pReqQueue);
+    AssertReleaseRC(rc);
 #endif
 
     link_up = 1;
@@ -685,7 +681,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 
         QSOCKET_FOREACH(so, so_next, udp)
         /* { */
-            so_next = so->so_next;
 
             STAM_COUNTER_INC(&pData->StatUDP);
 
@@ -697,7 +692,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                 if (so->so_expire <= curtime)
                 {
                     udp_detach(pData, so);
-                    CONTINUE(udp);
+                    CONTINUE_NO_UNLOCK(udp);
                 }
                 else
                     do_slowtimo = 1; /* Let socket expire */
@@ -795,9 +790,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
         /*
          * Check TCP sockets
          */
-        for (so = tcb.so_next; so != &tcb; so = so_next)
-        {
-            so_next = so->so_next;
+        QSOCKET_FOREACH(so, so_next, tcp)
+        /* { */
 
             /*
              * FD_ISSET is meaningless on these sockets
@@ -833,17 +827,17 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                  */
                 if (so->so_state & SS_FACCEPTCONN)
                 {
-                    tcp_connect(pData, so);
+                    TCP_CONNECT(pData, so);
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
                     if (!(NetworkEvents.lNetworkEvents & FD_CLOSE))
 #endif
                         CONTINUE(tcp);
                 }
 
-                ret = soread(pData, so, /*fCloseIfNothingRead=*/false);
+                SOREAD(ret, pData, so, /*fCloseIfNothingRead=*/false);
                 /* Output it if we read something */
                 if (ret > 0)
-                    tcp_output(pData, sototcpcb(so));
+                    TCP_OUTPUT(pData, sototcpcb(so));
             }
 
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
@@ -857,9 +851,9 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                  */
                 for (;;)
                 {
-                    ret = soread(pData, so, /*fCloseIfNothingRead=*/true);
+                    SOREAD(ret, pData, so, /*fCloseIfNothingRead=*/true);
                     if (ret > 0)
-                        tcp_output(pData, sototcpcb(so));
+                        TCP_OUTPUT(pData, sototcpcb(so));
                     else
                         break;
                 }
@@ -906,11 +900,11 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                     /*
                      * Continue tcp_input
                      */
-                    tcp_input(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
+                    TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
                     /* continue; */
                 }
                 else
-                    ret = sowrite(pData, so);
+                    SOWRITE(ret, pData, so);
                 /*
                  * XXX If we wrote something (a lot), there could be the need
                  * for a window update. In the worst case, the remote will send
@@ -963,7 +957,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                         so->so_state &= ~SS_ISFCONNECTING;
 
                 }
-                tcp_input((struct mbuf *)NULL, sizeof(struct ip),so);
+                TCP_INPUT((struct mbuf *)NULL, sizeof(struct ip),so);
             } /* SS_ISFCONNECTING */
 #endif
             LOOP_LABEL(tcp, so, so_next);
@@ -974,17 +968,15 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
          * Incoming packets are sent straight away, they're not buffered.
          * Incoming UDP data isn't buffered either.
          */
-        for (so = udb.so_next; so != &udb; so = so_next)
-        {
-            so_next = so->so_next;
-
+         QSOCKET_FOREACH(so, so_next, udp)
+         /* { */
             POLL_UDP_EVENTS(rc, error, so, &NetworkEvents);
 
             LOG_NAT_SOCK(so, UDP, &NetworkEvents, readfds, writefds, xfds);
 
             if (so->s != -1 && CHECK_FD_SET(so, NetworkEvents, readfds))
             {
-                sorecvfrom(pData, so);
+                SORECVFROM(pData, so);
             }
             LOOP_LABEL(udp, so, so_next);
         }
@@ -1289,3 +1281,13 @@ void slirp_post_sent(PNATState pData, void *pvArg)
     struct mbuf *m = (struct mbuf *)pvArg;
     m_free(pData, m);
 }
+#ifdef VBOX_WITH_SLIRP_MT
+void slirp_process_queue(PNATState pData)
+{
+     RTReqProcess(pData->pReqQueue, RT_INDEFINITE_WAIT);
+}
+void *slirp_get_queue(PNATState pData)
+{
+    return pData->pReqQueue;
+}
+#endif

@@ -184,15 +184,15 @@ sockstats(PNATState pData)
 {
     char buff[256];
     int n;
-    struct socket *so;
+    struct socket *so, *so_next;
 
     lprint(" \n");
 
     lprint(
            "Proto[state]     Sock     Local Address, Port  Remote Address, Port RecvQ SendQ\n");
 
-    for (so = tcb.so_next; so != &tcb; so = so->so_next)
-    {
+    QSOCKET_FOREACH(so, so_next, tcp)
+    /* { */
         n = sprintf(buff, "tcp[%s]", so->so_tcpcb?tcpstates[so->so_tcpcb->t_state]:"NONE");
         while (n < 17)
             buff[n++] = ' ';
@@ -202,10 +202,11 @@ sockstats(PNATState pData)
         lprint("%15s %5d %5d %5d\n",
                 inet_ntoa(so->so_faddr), ntohs(so->so_fport),
                 so->so_rcv.sb_cc, so->so_snd.sb_cc);
+    LOOP_LABEL(tcp, so, so_next);
     }
 
-    for (so = udb.so_next; so != &udb; so = so->so_next)
-    {
+    QSOCKET_FOREACH(so, so_next, udp)
+    /* { */
         n = sprintf(buff, "udp[%d sec]", (so->so_expire - curtime) / 1000);
         while (n < 17)
             buff[n++] = ' ';
@@ -215,6 +216,7 @@ sockstats(PNATState pData)
         lprint("%15s %5d %5d %5d\n",
                 inet_ntoa(so->so_faddr), ntohs(so->so_fport),
                 so->so_rcv.sb_cc, so->so_snd.sb_cc);
+    LOOP_LABEL(udp, so, so_next);
     }
 }
 #endif
@@ -247,7 +249,8 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     int status = 0;
 
     AssertReturn(strcmp(pszType, "natsock") == 0, 0);
-
+    if (so->so_state == SS_NOFDREF || so->s == -1) 
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket SS_NODREF");
     status = getsockname(so->s, &addr, &socklen);
 
     Assert(status == 0 && addr.sa_family == AF_INET);
@@ -256,7 +259,7 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %4d:(proto:%u) "
             "state=%04x ip=" IP4_ADDR_PRINTF_FORMAT ":%d name=" IP4_ADDR_PRINTF_FORMAT ":%d",
             so->s, so->so_type, so->so_state, IP4_ADDR_PRINTF_DECOMP(ip), ntohs(so->so_fport),
-            IP4_ADDR_PRINTF_DECOMP(((struct sockaddr_in *)&addr)->sin_addr.s_addr),
+            IP4_ADDR_PRINTF_DECOMP(ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr)),
             ntohs(((struct sockaddr_in *)&addr)->sin_port));
 }
 

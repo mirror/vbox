@@ -88,6 +88,10 @@ int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_b
 HANDLE *slirp_get_events(PNATState pData);
 void slirp_register_external_event(PNATState pData, HANDLE hEvent, int index);
 #endif
+#ifdef VBOX_WITH_SLIRP_MT
+void slirp_process_queue(PNATState pData);
+void *slirp_get_queue(PNATState pData);
+#endif
 
 /*
  * Return the timeout.

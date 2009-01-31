@@ -43,22 +43,25 @@
 void
 tcp_fasttimo(PNATState pData)
 {
-    register struct socket *so;
+    register struct socket *so, *so_next;
     register struct tcpcb *tp;
 
     DEBUG_CALL("tcp_fasttimo");
 
     so = tcb.so_next;
     if (so)
-        for (; so != &tcb; so = so->so_next)
+        QSOCKET_FOREACH (so, so_next,tcp)
+        /* { */
             if (   (tp = (struct tcpcb *)so->so_tcpcb)
                 && (tp->t_flags & TF_DELACK))
             {
                 tp->t_flags &= ~TF_DELACK;
                 tp->t_flags |= TF_ACKNOW;
                 tcpstat.tcps_delack++;
-                (void) tcp_output(pData, tp);
+                TCP_OUTPUT(pData, tp);
             }
+        LOOP_LABEL(tcp, so, so_next);
+        }
 }
 
 /*
@@ -81,12 +84,12 @@ tcp_slowtimo(PNATState pData)
     ip = tcb.so_next;
     if (ip == 0)
         return;
-    for (; ip != &tcb; ip = ipnxt)
-    {
+    QSOCKET_FOREACH(ip, ipnxt, tcp)
+    /* { */ 
         ipnxt = ip->so_next;
         tp = sototcpcb(ip);
         if (tp == 0)
-            continue;
+            CONTINUE(tcp);
         for (i = 0; i < TCPT_NTIMERS; i++)
         {
             if (tp->t_timer[i] && --tp->t_timer[i] == 0)
@@ -101,6 +104,7 @@ tcp_slowtimo(PNATState pData)
             tp->t_rtt++;
 tpgone:
         ;
+    LOOP_LABEL(tcp, ip, ipnxt);
     }
     tcp_iss += TCP_ISSINCR / PR_SLOWHZ;         /* increment iss */
 #ifdef TCP_COMPAT_42
