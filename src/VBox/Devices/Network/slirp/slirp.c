@@ -691,6 +691,16 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             {
                 if (so->so_expire <= curtime)
                 {
+                    QSOCKET_LOCK(udb);
+#ifdef VBOX_WITH_SLIRP_MT
+                    /*we can determinate the next item after udb_detach*/
+                    if (so->so_next != &tcb) 
+                    {
+                        SOCKET_LOCK(so->so_next);
+                        so_next = so->so_next;
+                    }
+#endif
+                    QSOCKET_UNLOCK(udb);
                     udp_detach(pData, so);
                     CONTINUE_NO_UNLOCK(udp);
                 }
