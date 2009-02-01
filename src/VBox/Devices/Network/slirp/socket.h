@@ -75,7 +75,9 @@ struct socket
 # define SOCKET_LOCK(so)                                                \
     do {                                                                \
         int rc;                                                         \
+        /* Assert(strcmp(RTThreadSelfName(), "EMT") != 0); */           \
         Log2(("lock:%s:%d L on %R[natsock]\n", __FUNCTION__, __LINE__, (so)));       \
+        Assert(!RTCritSectIsOwner(&(so)->so_mutex));                     \
         rc = RTCritSectEnter(&(so)->so_mutex);                           \
         AssertReleaseRC(rc);                                            \
     } while (0)

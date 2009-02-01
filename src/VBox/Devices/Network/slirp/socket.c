@@ -77,6 +77,7 @@ socreate()
 void
 sofree(PNATState pData, struct socket *so)
 {
+    struct socket *so_prev = NULL;
     if (so == tcp_last_so)
         tcp_last_so = &tcb;
     else if (so == udp_last_so)
@@ -85,9 +86,19 @@ sofree(PNATState pData, struct socket *so)
     /* check if mbuf haven't been already freed  */
     if (so->so_m != NULL)
         m_free(pData, so->so_m);
-
     if(so->so_next && so->so_prev)
+    {
+        if (   so->so_prev != NULL 
+            && so->so_prev != &udb
+            && so->so_prev != &tcb) 
+            {
+                SOCKET_LOCK(so->so_prev);
+                so_prev = so->so_prev;
+            }
         remque(pData, so);  /* crashes if so is not in a queue */
+        if (so_prev != NULL) 
+            SOCKET_UNLOCK(so_prev);
+    }
     so->so_state = SS_NOFDREF; /* for debugging purposes */
     SOCKET_UNLOCK(so);
     SOCKET_LOCK_DESTROY(so);
@@ -743,6 +754,7 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
         so->so_faddr = addr.sin_addr;
 
     so->s = s;
+    SOCKET_UNLOCK(so);
     return so;
 }
 

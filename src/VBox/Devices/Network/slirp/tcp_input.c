@@ -424,8 +424,6 @@ findso:
                 && so->so_faddr.s_addr == ti->ti_dst.s_addr
                 && so->so_fport        == ti->ti_dport) 
             {
-                if (sonxt != &tcb)
-                    SOCKET_UNLOCK(sonxt);
                 Log2(("lock: %s:%d We found socket %R[natsock]\n", __FUNCTION__, __LINE__, so));
                 break; /* so is locked here */
             }
@@ -461,7 +459,7 @@ findso:
      * the only flag set, then create a session, mark it
      * as if it was LISTENING, and continue...
      */
-    Log2(("so = %p\n", so));
+    Log2(("so = %R[natsock]\n", so));
     if (so == 0)
     {
         if ((tiflags & (TH_SYN|TH_FIN|TH_RST|TH_URG|TH_ACK)) != TH_SYN)

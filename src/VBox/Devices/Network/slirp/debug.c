@@ -249,6 +249,8 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     int status = 0;
 
     AssertReturn(strcmp(pszType, "natsock") == 0, 0);
+    if (so == NULL) 
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket is null");
     if (so->so_state == SS_NOFDREF || so->s == -1) 
         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket SS_NODREF");
     status = getsockname(so->s, &addr, &socklen);

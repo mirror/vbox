@@ -286,7 +286,8 @@ typedef struct NATState
 #define QSOCKET_LOCK(queue)                                                     \
 do {                                                                            \
     int rc;                                                                     \
-    rc = RTCritSectEnter(&_X(queue) ## _mutex);            \
+    /* Assert(strcmp(RTThreadSelfName(), "EMT") != 0); */                       \
+    rc = RTCritSectEnter(&_X(queue) ## _mutex);                                 \
     AssertReleaseRC(rc);                                                        \
 } while (0)
 #define QSOCKET_UNLOCK(queue)                           \
@@ -310,31 +311,40 @@ do {                                                    \
 # define QSOCKET_FOREACH(so, sonext, label)                         \
         QSOCKET_LOCK(__X(queue_## label ## _label));                \
         (so) = (_X(queue_ ## label ## _label)).so_next;             \
+        QSOCKET_UNLOCK(__X(queue_## label ##_label));               \
         if ((so) != &(_X(queue_## label ## _label))) SOCKET_LOCK((so));  \
         for(;;)                                                     \
         {                                                           \
             if ((so) == &(_X(queue_## label ## _label)))            \
             {                                                       \
-                QSOCKET_UNLOCK(__X(queue_## label ##_label));       \
                 break;                                              \
             }                                                       \
-            Log2(("%s:%d Processing so:%R[natsock]\n", __FUNCTION__, __LINE__, (so)));  \
-            if ((so)->so_next != &(_X(queue_## label ## _label)))   \
-            {                                                       \
-                SOCKET_LOCK((so)->so_next);                         \
-            }                                                       \
-            (sonext) = (so)->so_next;                               \
-            QSOCKET_UNLOCK(__X(queue_## label ##_label)); 
+            Log2(("%s:%d Processing so:%R[natsock]\n", __FUNCTION__, __LINE__, (so)));
 
 # define CONTINUE_NO_UNLOCK(label) goto loop_end_ ## label ## _mt_nounlock
 # define CONTINUE(label) goto loop_end_ ## label ## _mt
 /* @todo replace queue parameter with macrodinition */
+/* _mt_nounlock - user should lock so_next before calling CONTINUE_NO_UNLOCK */
 # define LOOP_LABEL(label, so, sonext) loop_end_ ## label ## _mt:       \
+    (sonext) = (so)->so_next;                                           \
     SOCKET_UNLOCK(so);                                                  \
-    loop_end_ ## label ## _mt_nounlock:                                 \
     QSOCKET_LOCK(_X(queue_ ## label ## _label));                        \
+    if ((sonext) != &(_X(queue_## label ## _label)))                    \
+    {                                                                   \
+        SOCKET_LOCK((sonext));                                          \
+        QSOCKET_UNLOCK(_X(queue_ ## label ## _label));                  \
+    }                                                                   \
+    else                                                                \
+    {                                                                   \
+        so = &_X(queue_ ## label ## _label);                            \
+        QSOCKET_UNLOCK(_X(queue_ ## label ## _label));                  \
+        break;                                                          \
+    }                                                                   \
+    (so) = (sonext);                                                    \
+    continue;                                                           \
+    loop_end_ ## label ## _mt_nounlock:                                 \
     (so) = (sonext)
-
+    
 #define DO_TCP_OUTPUT(data, sotcb)                                      \
 do {                                                                    \
     PRTREQ pReq = NULL;                                                 \
