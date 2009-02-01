@@ -2072,8 +2072,8 @@ SUPR0DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const 
  * @param   pSession    Session to which the locked memory should be associated.
  * @param   pvR3        Start of the memory range to lock.
  *                      This must be page aligned.
- * @param   cb          Size of the memory range to lock.
- *                      This must be page aligned.
+ * @param   cPages      Number of pages to lock.
+ * @param   paPages     Where to put the physical addresses of allocated memory.
  */
 SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages)
 {
@@ -2167,7 +2167,7 @@ SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3)
  *
  * @returns IPRT status code.
  * @param   pSession    Session data.
- * @param   cb          Number of bytes to allocate.
+ * @param   cPages      Number of pages to allocate.
  * @param   ppvR0       Where to put the address of Ring-0 mapping the allocated memory.
  * @param   ppvR3       Where to put the address of Ring-3 mapping the allocated memory.
  * @param   pHCPhys     Where to put the physical address of allocated memory.
