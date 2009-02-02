@@ -29,6 +29,7 @@
 #include <QFileInfo>
 
 #if defined (Q_WS_MAC)
+# include <ApplicationServices/ApplicationServices.h>
 # ifdef QT_MAC_USE_COCOA
 /** @todo Carbon -> Cocoa */
 # else
