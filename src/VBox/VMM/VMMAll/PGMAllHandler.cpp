@@ -818,6 +818,7 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
         {
             case PGMPHYSHANDLERTYPE_PHYSICAL_WRITE:
             case PGMPHYSHANDLERTYPE_PHYSICAL_ALL:
+            case PGMPHYSHANDLERTYPE_MMIO: /* @note Only use when clearing aliased mmio ranges! */
             {
                 /*
                  * Set the flags and flush shadow PT entries.
@@ -841,11 +842,6 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
             /*
              * Invalid.
              */
-            case PGMPHYSHANDLERTYPE_MMIO:
-                AssertMsgFailed(("Can't reset type %d!\n",  pCur->enmType));
-                rc = VERR_INTERNAL_ERROR;
-                break;
-
             default:
                 AssertMsgFailed(("Invalid type %d! Corruption!\n",  pCur->enmType));
                 rc = VERR_INTERNAL_ERROR;
