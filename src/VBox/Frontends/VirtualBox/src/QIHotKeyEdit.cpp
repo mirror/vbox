@@ -68,7 +68,8 @@ QMap<QString, QString> QIHotKeyEdit::sKeyNames;
 #endif
 
 #ifdef Q_WS_MAC
-#include "DarwinKeyboard.h"
+# include "DarwinKeyboard.h"
+# include <Carbon/Carbon.h>
 #endif
 
 
@@ -131,6 +132,9 @@ QIHotKeyEdit::QIHotKeyEdit (QWidget *aParent) :
     setPalette (p);
 
 #ifdef Q_WS_MAC
+# ifdef QT_MAC_USE_COCOA
+/** @todo Carbon -> Cocoa */
+# else  /* !QT_MAC_USE_COCOA */
     mDarwinKeyModifiers = GetCurrentEventKeyModifiers();
 
     EventTypeSpec eventTypes [4];
@@ -149,6 +153,7 @@ QIHotKeyEdit::QIHotKeyEdit (QWidget *aParent) :
     ::InstallApplicationEventHandler (eventHandler, RT_ELEMENTS (eventTypes), &eventTypes [0],
                                       this, &mDarwinEventHandlerRef);
     ::DisposeEventHandlerUPP (eventHandler);
+# endif /* !QT_MAC_USE_COCOA */
     ::DarwinGrabKeyboard (false /* just modifiers */);
 #endif
 }
@@ -157,8 +162,12 @@ QIHotKeyEdit::~QIHotKeyEdit()
 {
 #ifdef Q_WS_MAC
     ::DarwinReleaseKeyboard();
+# ifdef QT_MAC_USE_COCOA
+    /** @todo Carbon -> Cocoa */
+# else
     ::RemoveEventHandler (mDarwinEventHandlerRef);
     mDarwinEventHandlerRef = NULL;
+# endif
 #endif
 }
 
@@ -656,6 +665,9 @@ bool QIHotKeyEdit::x11Event (XEvent *event)
 }
 
 #elif defined (Q_WS_MAC)
+# ifdef QT_MAC_USE_COCOA
+/** @todo Carbon -> Cocoa */
+# else /* !QT_MAC_USE_COCOA */
 
 /* static */
 pascal OSStatus QIHotKeyEdit::darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
@@ -712,6 +724,7 @@ bool QIHotKeyEdit::darwinKeyboardEvent (EventRef inEvent)
     }
     return false;
 }
+# endif /* !QT_MAC_USE_COCOA */
 
 #else
 # warning "Port me!"
