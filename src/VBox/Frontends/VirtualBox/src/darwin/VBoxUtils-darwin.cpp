@@ -28,6 +28,8 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 
+#include <CoreFoundation/CFBundle.h>
+
 /* Qt includes */
 #include <QImage>
 #include <QPixmap>
@@ -40,6 +42,8 @@
 #if QT_VERSION < 0x040400
 extern void qt_mac_set_menubar_icons(bool b);
 #endif /* QT_VERSION < 0x040400 */
+
+#ifndef QT_MAC_USE_COCOA
 
 /**
  * Callback for deleting the QImage object when CGImageCreate is done
@@ -105,21 +109,31 @@ CGImageRef darwinToCGImageRef (const char *aSource)
     return ::darwinToCGImageRef (&qpm);
 }
 
+#endif /* !QT_MAC_USE_COCOA */
+
 void darwinSetShowToolBarButton (QToolBar *aToolBar, bool aShow)
 {
     QWidget *parent = aToolBar->parentWidget();
     if (parent)
     {
+#ifdef QT_MAC_USE_COCOA
+        /** @todo Carbon -> Cocoa */
+#else
         int err = ChangeWindowAttributes (::darwinToWindowRef (parent), aShow ? kWindowToolbarButtonAttribute:kWindowNoAttributes,
                                                                         aShow ? kWindowNoAttributes:kWindowToolbarButtonAttribute);
         AssertCarbonOSStatus (err);
+#endif
     }
 }
 
 void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget)
 {
+#ifdef QT_MAC_USE_COCOA
+    /** @todo Carbon -> Cocoa */
+#else
     HIRect r = ::darwinToHIRect (aTarget);
     TransitionWindowWithOptions (::darwinToWindowRef (aWidget), kWindowSlideTransitionEffect, kWindowResizeTransitionAction, &r, false, NULL);
+#endif
 }
 
 /* Proxy icon creation */
@@ -141,7 +155,7 @@ QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText)
     return dragPixmap;
 }
 
-QString darwinSystemLanguage()
+QString darwinSystemLanguage (void)
 {
     /* Get the locales supported by our bundle */
     CFArrayRef supportedLocales = CFBundleCopyBundleLocalizations (CFBundleGetMainBundle());
@@ -163,13 +177,18 @@ QString darwinSystemLanguage()
     return id;
 }
 
-bool darwinIsMenuOpen()
+bool darwinIsMenuOpen (void)
 {
+#ifdef QT_MAC_USE_COCOA
+    /** @todo Carbon -> Cocoa */
+    return false;
+#else
     MenuTrackingData outData;
     return (GetMenuTrackingData (NULL, &outData) != menuNotFoundErr);
+#endif
 }
 
-void darwinDisableIconsInMenus()
+void darwinDisableIconsInMenus (void)
 {
     /* No icons in the menu of a mac application. */
 #if QT_VERSION < 0x040400
@@ -179,6 +198,8 @@ void darwinDisableIconsInMenus()
     QApplication::instance()->setAttribute (Qt::AA_DontShowIconsInMenus, true);
 #endif /* QT_VERSION >= 0x040400 */
 }
+
+#ifndef QT_MAC_USE_COCOA
 
 /* Currently not used! */
 OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
@@ -303,10 +324,11 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
     return ::CallNextEventHandler (aInHandlerCallRef, aInEvent);
 }
 
+#endif /* !QT_MAC_USE_COCOA */
 
 
 /* Event debugging stuff. Borrowed from Knuts Qt patch. */
-#ifdef DEBUG
+#if defined (DEBUG) && !defined(QT_MAC_USE_COCOA)
 
 # define MY_CASE(a) case a: return #a
 const char * DarwinDebugEventName (UInt32 ekind)
@@ -463,4 +485,4 @@ void darwinDebugPrintEvent (const char *psz, EventRef event)
       printf("%d %s: %#x(%s) %#x\n", (int)time(NULL), psz, (uint)eclass, darwinDebugClassName (eclass), (uint)ekind);
 }
 
-#endif /* DEBUG */
+#endif /* DEBUG && !QT_MAC_USE_COCOA */

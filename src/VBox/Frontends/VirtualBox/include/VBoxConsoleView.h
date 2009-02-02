@@ -20,8 +20,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxConsoleView_h__
-#define __VBoxConsoleView_h__
+#ifndef ___VBoxConsoleView_h___
+#define ___VBoxConsoleView_h___
 
 #include "COMDefs.h"
 
@@ -38,7 +38,11 @@
 #endif
 
 #if defined (Q_WS_MAC)
-# include <Carbon/Carbon.h>
+# ifdef QT_MAC_USE_COCOA
+/** @todo include something chocolatety... */
+# else
+#  include <Carbon/Carbon.h>
+# endif
 #endif
 
 class VBoxConsoleWnd;
@@ -159,7 +163,9 @@ protected:
 #elif defined(Q_WS_X11)
     bool x11Event (XEvent *event);
 #elif defined(Q_WS_MAC)
+# ifndef QT_MAC_USE_COCOA
     bool darwinKeyboardEvent (EventRef inEvent);
+# endif
     void darwinGrabKeyboardEvents (bool fGrab);
 #endif
 
@@ -294,7 +300,7 @@ private:
 #endif
 
 #if defined(Q_WS_MAC)
-# ifndef VBOX_WITH_HACKED_QT
+# if !defined (VBOX_WITH_HACKED_QT) && !defined (QT_MAC_USE_COCOA)
     /** Event handler reference. NULL if the handler isn't installed. */
     EventHandlerRef mDarwinEventHandlerRef;
 # endif
@@ -312,7 +318,7 @@ private:
 #if defined (Q_WS_WIN32)
     static LRESULT CALLBACK lowLevelKeyboardProc (int nCode,
                                                   WPARAM wParam, LPARAM lParam);
-#elif defined (Q_WS_MAC)
+#elif defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
     EventHandlerRef mDarwinWindowOverlayHandlerRef;
 # ifndef VBOX_WITH_HACKED_QT
     static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
@@ -333,5 +339,5 @@ private:
     bool mPassCAD;
 };
 
-#endif // __VBoxConsoleView_h__
+#endif // !___VBoxConsoleView_h___
 

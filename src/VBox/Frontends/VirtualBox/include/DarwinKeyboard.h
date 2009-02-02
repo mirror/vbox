@@ -21,11 +21,11 @@
  */
 
 
-#ifndef __DarwinKeyboard_h__
-#define __DarwinKeyboard_h__
+#ifndef ___DarwinKeyboard_h___
+#define ___DarwinKeyboard_h___
 
 #include <iprt/cdefs.h>
-#include <Carbon/Carbon.h>
+#include <CoreFoundation/CFBase.h>
 
 __BEGIN_DECLS
 

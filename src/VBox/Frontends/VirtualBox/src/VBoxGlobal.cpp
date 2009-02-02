@@ -61,8 +61,12 @@
 #endif
 
 #if defined (Q_WS_MAC)
-#include "VBoxUtils.h"
-#include <Carbon/Carbon.h> // for HIToolbox/InternetConfig
+# include "VBoxUtils.h"
+# ifdef QT_MAC_USE_COCOA
+/** @todo Carbon -> Cocoa */
+# else
+#  include <Carbon/Carbon.h> // for HIToolbox/InternetConfig
+# endif
 #endif
 
 #if defined (Q_WS_WIN)
@@ -5160,6 +5164,9 @@ bool VBoxGlobal::openURL (const QString &aURL)
     }
 
 #elif defined (Q_WS_MAC)
+# ifdef QT_MAC_USE_COCOA
+    /** @todo Carbon -> Cocoa */
+# else /* !QT_MAC_USE_COCOA */
 
     /* The code below is taken from Psi 0.10 sources
      * (http://www.psi-im.org) */
@@ -5187,6 +5194,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
         ICStop (icInstance);
         return true;
     }
+# endif /* !QT_MAC_USE_COCOA */
 
 #else
     vboxProblem().message
