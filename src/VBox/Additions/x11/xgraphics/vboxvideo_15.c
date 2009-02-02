@@ -482,7 +482,7 @@ vbox_output_get_modes (xf86OutputPtr output)
 static Bool
 vbox_output_set_property(xf86OutputPtr output, Atom property,
                          RRPropertyValuePtr value)
-{ (void) output, (void) property, (void) value; return FALSE; }
+{ (void) output; (void) property; (void) value; return FALSE; }
 #endif
 
 static const xf86OutputFuncsRec VBOXOutputFuncs = {
