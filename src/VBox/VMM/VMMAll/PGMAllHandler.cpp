@@ -1031,6 +1031,11 @@ VMMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPage, &pPage);
             AssertRCReturn(rc, rc);
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, pgmHandlerPhysicalCalcState(pCur));
+
+            /* MMIO has no backing memory; overwrite previously aliased physical address. */
+            if (pCur->enmType == PGMPHYSHANDLERTYPE_MMIO)
+                pPage->HCPhys = 0;
+
 #ifndef IN_RC
             HWACCMInvalidatePhysPage(pVM, GCPhysPage);
 #endif
