@@ -68,6 +68,7 @@ struct socket
     struct sbuf     so_snd;      /* Send buffer */
 #ifdef VBOX_WITH_SLIRP_MT
     RTCRITSECT      so_mutex;
+    int             so_deleted;
 #endif
 };
 
