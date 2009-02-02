@@ -1784,8 +1784,12 @@ VMMDECL(int) IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped
     Assert(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 #endif
 
+#if 0
+    rc = PGMPrefetchPage(pVM, (RTGCPTR)GCPhys);
+#else
     /* Mark it as writable and present so reads and writes no longer fault. */
     rc = PGMShwModifyPage(pVM, (RTGCPTR)GCPhys, 1, fPageFlags, ~fPageFlags);
+#endif
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
     return VINF_SUCCESS;
@@ -1829,8 +1833,12 @@ VMMDECL(int)  IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
         AssertRC(rc);
 
         /* Mark it as not present again to intercept all read and write access. */
+#if 0
+        rc = PGMPrefetchPage(pVM, (RTGCPTR)GCPhys);
+#else
         rc = PGMShwModifyPage(pVM, (RTGCPTR)GCPhys, 1, 0, ~(uint64_t)(X86_PTE_RW|X86_PTE_P));
         Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
+#endif
 
 #ifdef VBOX_STRICT
         uint64_t fFlags;
