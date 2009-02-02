@@ -528,7 +528,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_PDM_ASYNC_COMPLETION=
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
   # Temporary:
-  VBOX_WITH_QTGUI=
   override VBOX_WITH_DEBUGGER_GUI=
   #VBOX_WITH_PYTHON=
   VBOX_WITH_WEBSERVICES=
@@ -2966,7 +2965,9 @@ ifdef VBOX_WITH_QTGUI
  TEMPLATE_VBOXQT4GUIEXE_LRCTOOL = QT4
  TEMPLATE_VBOXQT4GUIEXE_SDKS = QT4
  ifdef VBOX_WITH_QT4_SUN
-  ifneq ($(KBUILD_TARGET),darwin) ## @todo The next darwin build should also make use the prefix just to make things more uniform.
+  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64)
+   TEMPLATE_VBOXQT4GUIEXE_QT_INFIX = VBox
+  else ifneq ($(KBUILD_TARGET),darwin) ## @todo The next darwin build should also make use the prefix just to make things more uniform.
    TEMPLATE_VBOXQT4GUIEXE_QT_PREFIX = VBox
   endif
  endif
