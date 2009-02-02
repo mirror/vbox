@@ -151,23 +151,32 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
 
     PRTREQ pReq = NULL;
     int rc;
+    const void *buf;
     /* don't queue new requests when the NAT thread is about to stop */
     if (pThis->pThread->enmState != PDMTHREADSTATE_RUNNING)
         return VINF_SUCCESS;
-#ifndef VBOX_WITH_SLIRP_MT
+# ifndef VBOX_WITH_SLIRP_MT
     rc = RTReqAlloc(pThis->pReqQueue, &pReq, RTREQTYPE_INTERNAL);
-#else
+    buf = pvBuf;
+# else
+    buf = (const void *)RTMemAlloc(cb); 
+    memcpy((void *)buf, pvBuf, cb);
     rc = RTReqAlloc((PRTREQQUEUE)slirp_get_queue(pThis->pNATState), &pReq, RTREQTYPE_INTERNAL);
-#endif
+# endif
     AssertReleaseRC(rc);
     pReq->u.Internal.pfn      = (PFNRT)drvNATSendWorker;
     pReq->u.Internal.cArgs    = 3;
     pReq->u.Internal.aArgs[0] = (uintptr_t)pThis;
-    pReq->u.Internal.aArgs[1] = (uintptr_t)pvBuf;
+    pReq->u.Internal.aArgs[1] = (uintptr_t)buf;
     pReq->u.Internal.aArgs[2] = (uintptr_t)cb;
+# ifndef VBOX_WITH_SLIRP_MT
     pReq->fFlags              = RTREQFLAGS_VOID;
+# else
+    pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT;
+# endif
 
     rc = RTReqQueue(pReq, 0); /* don't wait, we have to wakeup the NAT thread fist */
+#ifndef VBOX_WITH_SLIRP_MT
     if (RT_LIKELY(rc == VERR_TIMEOUT))
     {
 # ifndef RT_OS_WINDOWS
@@ -185,6 +194,18 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     else
         AssertReleaseRC(rc);
     RTReqFree(pReq);
+#else
+# ifndef RT_OS_WINDOWS
+        /* kick select() */
+    rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
+    AssertRC(rc);
+# else
+    /* kick WSAWaitForMultipleEvents */
+    rc = WSASetEvent(pThis->hWakeupEvent);
+    AssertRelease(rc == TRUE);
+# endif
+    AssertReleaseRC(rc);
+#endif
 
 #else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
@@ -895,7 +916,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             AssertReleaseRC(rc);
 
 #ifdef VBOX_WITH_SLIRP_MT
-            rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pGuestThread, pThis, drvNATAsyncIoGuest, drvNATAsyncIoGuestWakeup, 128 * _1K, RTTHREADTYPE_EMULATION, "NAT");
+            rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pGuestThread, pThis, drvNATAsyncIoGuest, drvNATAsyncIoGuestWakeup, 128 * _1K, RTTHREADTYPE_IO, "NATGUEST");
             AssertReleaseRC(rc);
 #endif
 #endif

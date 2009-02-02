@@ -262,10 +262,12 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
     register struct tcpiphdr *t;
     struct socket *so = tp->t_socket;
     register struct mbuf *m;
+    struct socket *so_next, *so_prev;
 
     struct tseg_qent *te = NULL;
     DEBUG_CALL("tcp_close");
     DEBUG_ARG("tp = %lx", (long )tp);
+    so_next = so_prev = NULL;
     /*XXX: freeing the reassembly queue */
     while (!LIST_EMPTY(&tp->t_segq))
     {
@@ -284,7 +286,23 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
     closesocket(so->s);
     sbfree(&so->so_rcv);
     sbfree(&so->so_snd);
+    QSOCKET_LOCK(tcb);
+    if (   so->so_next != &tcb
+        && so->so_next != NULL)
+    {
+        SOCKET_LOCK(so->so_next);
+        so_next = so->so_next;
+    }
+    if (   so->so_prev != &tcb
+        && so->so_prev != NULL)
+    {
+        SOCKET_LOCK(so->so_prev);
+        so_prev = so->so_prev;
+    }
+    QSOCKET_UNLOCK(tcb);
     sofree(pData, so);
+    if (so_next != NULL) SOCKET_UNLOCK(so_next);
+    if (so_prev != NULL) SOCKET_UNLOCK(so_prev);
     tcpstat.tcps_closed++;
     return ((struct tcpcb *)0);
 }

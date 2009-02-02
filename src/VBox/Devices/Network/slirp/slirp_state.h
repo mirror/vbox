@@ -381,18 +381,9 @@ do {                                                                    \
     pReq->u.Internal.aArgs[1] = (uintptr_t)(mbuf);                      \
     pReq->u.Internal.aArgs[2] = (uintptr_t)(size);                      \
     pReq->u.Internal.aArgs[3] = (uintptr_t)(so);                        \
-    pReq->fFlags              = RTREQFLAGS_VOID;                        \
+    pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT;     \
     rc = RTReqQueue(pReq, 0);                                           \
-    if (RT_LIKELY(rc) == VERR_TIMEOUT)                                  \
-    {                                                                   \
-        SOCKET_UNLOCK(so);                                               \
-        rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                       \
-        AssertReleaseRC(rc);                                            \
-        SOCKET_LOCK(so);                                                \
-        RTReqFree(pReq);                                                \
-    }                                                                   \
-    else                                                                \
-        AssertReleaseRC(rc);                                            \
+    AssertReleaseRC(rc);                                                \
 } while(0)
 
 #define DO_TCP_CONNECT(data, so)                                        \
@@ -493,6 +484,30 @@ do {                                                                    \
         AssertReleaseRC(rc);                                            \
 } while(0)
 
+#define DO_UDP_DETACH(data, so, so_next)                                \
+do {                                                                    \
+    PRTREQ pReq = NULL;                                                 \
+    int rc;                                                             \
+    rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);      \
+    AssertReleaseRC(rc);                                                \
+    pReq->u.Internal.pfn      = (PFNRT)udp_detach;                      \
+    pReq->u.Internal.cArgs    = 2;                                      \
+    pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                      \
+    pReq->u.Internal.aArgs[1] = (uintptr_t)(so);                        \
+    pReq->fFlags              = RTREQFLAGS_VOID;                        \
+    rc = RTReqQueue(pReq, 0); /* don't wait, we have to release lock before*/ \
+    if (RT_LIKELY(rc) == VERR_TIMEOUT)                                  \
+    {                                                                   \
+        SOCKET_UNLOCK(so);                                              \
+        rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                       \
+        AssertReleaseRC(rc);                                            \
+        if ((so_next) != &udb) SOCKET_LOCK((so_next));                                         \
+        RTReqFree(pReq);                                                \
+    }                                                                   \
+    else                                                                \
+        AssertReleaseRC(rc);                                            \
+} while(0)
+
 #define SOLOOKUP(so, label, src, sport, dst, dport)                     \
 do {                                                                    \
     struct socket *sonxt;                                               \
@@ -535,6 +550,7 @@ do {                                                                    \
 do {                                                                                    \
     (so) = solookup(&__X(queue_ ## label ## _label), (src), (sport), (dst), (dport));   \
 } while (0)
+#define DO_UDP_DETACH(data, so, ignored) udp_detach((data), (so))
 #endif
 
 #define TCP_OUTPUT(data, sotcb) DO_TCP_OUTPUT((data), (sotcb))
@@ -543,4 +559,5 @@ do {                                                                            
 #define SOREAD(ret, data, so, ifclose) DO_SOREAD((ret), (data), (so), (ifclose))
 #define SOWRITE(ret, data, so) DO_SOWRITE((ret), (data), (so))
 #define SORECVFROM(data, so) DO_SORECFROM((data), (so))
+#define UDP_DETACH(data, so, so_next) DO_UDP_DETACH((data), (so), (so_next))
 #endif /* !_slirp_state_h_ */

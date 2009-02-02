@@ -1653,7 +1653,10 @@ drop:
      */
     m_free(pData, m);
 
-    SOCKET_UNLOCK(so);
+#ifdef VBOX_WITH_SLIRP_MT
+    /*socket should be killed atm*/
+    AssertRelease(!RTCritSectIsInitialized(&so->so_mutex));
+#endif    
     return;
 }
 
