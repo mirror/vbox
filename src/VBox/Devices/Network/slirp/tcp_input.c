@@ -422,7 +422,8 @@ findso:
             if (   so->so_lport        == ti->ti_sport
                 && so->so_laddr.s_addr == ti->ti_src.s_addr
                 && so->so_faddr.s_addr == ti->ti_dst.s_addr
-                && so->so_fport        == ti->ti_dport) 
+                && so->so_fport        == ti->ti_dport
+                && so->so_deleted != 1) 
             {
                 Log2(("lock: %s:%d We found socket %R[natsock]\n", __FUNCTION__, __LINE__, so));
                 break; /* so is locked here */
@@ -1653,10 +1654,6 @@ drop:
      */
     m_free(pData, m);
 
-#ifdef VBOX_WITH_SLIRP_MT
-    /*socket should be killed atm*/
-    AssertRelease(!RTCritSectIsInitialized(&so->so_mutex));
-#endif    
     return;
 }
 

@@ -286,23 +286,8 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
     closesocket(so->s);
     sbfree(&so->so_rcv);
     sbfree(&so->so_snd);
-    QSOCKET_LOCK(tcb);
-    if (   so->so_next != &tcb
-        && so->so_next != NULL)
-    {
-        SOCKET_LOCK(so->so_next);
-        so_next = so->so_next;
-    }
-    if (   so->so_prev != &tcb
-        && so->so_prev != NULL)
-    {
-        SOCKET_LOCK(so->so_prev);
-        so_prev = so->so_prev;
-    }
-    QSOCKET_UNLOCK(tcb);
     sofree(pData, so);
-    if (so_next != NULL) SOCKET_UNLOCK(so_next);
-    if (so_prev != NULL) SOCKET_UNLOCK(so_prev);
+    SOCKET_UNLOCK(so);
     tcpstat.tcps_closed++;
     return ((struct tcpcb *)0);
 }
