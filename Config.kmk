@@ -528,8 +528,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_PDM_ASYNC_COMPLETION=
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
   # Temporary:
-  override VBOX_WITH_DEBUGGER_GUI=
-  #VBOX_WITH_PYTHON=
   VBOX_WITH_WEBSERVICES=
   VBOX_WITH_CROGL=
   # Permanent (no working SDL).
