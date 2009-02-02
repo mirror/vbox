@@ -305,6 +305,7 @@ extensions_num_get_values = {
     'GL_PROGRAM_ERROR_POSITION_NV': (1, 'CR_NV_vertex_program'),
     'GL_VERTEX_PROGRAM_BINDING_NV': (1, 'CR_NV_vertex_program'),
     'GL_MAX_VERTEX_ATTRIBS_ARB': (1, 'CR_ARB_vertex_program'),
+    'GL_MAX_TEXTURE_COORDS_ARB': (1, 'CR_ARB_vertex_program'),
     'GL_PROGRAM_ERROR_POSITION_NV': (1, 'CR_NV_fragment_program'),
     'GL_FRAGMENT_PROGRAM_BINDING_NV': (1, 'CR_NV_fragment_program'),
     'GL_MAX_RECTANGLE_TEXTURE_SIZE_NV': (1, 'CR_NV_texture_rectangle'),
