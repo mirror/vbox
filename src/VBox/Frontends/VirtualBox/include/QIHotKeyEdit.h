@@ -20,15 +20,15 @@
  * additional information or have any questions.
  */
 
-#ifndef __QIHotKeyEdit_h__
-#define __QIHotKeyEdit_h__
+#ifndef ___QIHotKeyEdit_h___
+#define ___QIHotKeyEdit_h___
 
 #include <QLabel>
 #if defined (Q_WS_X11)
 #include <QMap>
 #endif
-#if defined (Q_WS_MAC)
-#include <Carbon/Carbon.h>
+#if defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
+# include <Carbon/Carbon.h>
 #endif
 
 #if defined (Q_WS_PM)
@@ -81,7 +81,7 @@ protected:
     bool pmEvent (QMSG *aMsg);
 #elif defined (Q_WS_X11)
     bool x11Event (XEvent *event);
-#elif defined (Q_WS_MAC)
+#elif defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
     static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
                                                    EventRef inEvent, void *inUserData);
     bool darwinKeyboardEvent (EventRef inEvent);
@@ -105,7 +105,7 @@ private:
     static QMap <QString, QString> sKeyNames;
 #endif
 
-#if defined (Q_WS_MAC)
+#if defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
     /** Event handler reference. NULL if the handler isn't installed. */
     EventHandlerRef mDarwinEventHandlerRef;
     /** The current modifier key mask. Used to figure out which modifier
@@ -116,5 +116,5 @@ private:
     static const char *kNoneSymbName;
 };
 
-#endif // __QIHotKeyEdit_h__
+#endif // !___QIHotKeyEdit_h___
 

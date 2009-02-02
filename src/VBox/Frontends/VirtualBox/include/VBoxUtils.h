@@ -20,8 +20,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxUtils_h__
-#define __VBoxUtils_h__
+#ifndef ___VBoxUtils_h___
+#define ___VBoxUtils_h___
 
 /* Qt includes */
 #include <QMouseEvent>
@@ -125,17 +125,20 @@ public:
 };
 
 #ifdef Q_WS_MAC
-# undef PAGE_SIZE
-# undef PAGE_SHIFT
-# include <Carbon/Carbon.h>
-
-/* Asserts if a != noErr and prints the error code */
-#define AssertCarbonOSStatus(a) AssertMsg ((a) == noErr, ("Carbon OSStatus: %d\n", static_cast<int> (a)))
-
 class QImage;
 class QPixmap;
 class QToolBar;
 class VBoxFrameBuffer;
+
+# ifdef QT_MAC_USE_COCOA
+/** @todo Carbon -> Cocoa */
+# else /* !QT_MAC_USE_COCOA */
+#  undef PAGE_SIZE
+#  undef PAGE_SHIFT
+#  include <Carbon/Carbon.h>
+
+/* Asserts if a != noErr and prints the error code */
+#  define AssertCarbonOSStatus(a) AssertMsg ((a) == noErr, ("Carbon OSStatus: %d\n", static_cast<int> (a)))
 
 /* Converting stuff */
 CGImageRef darwinToCGImageRef (const QImage *aImage);
@@ -196,10 +199,11 @@ inline HIRect darwinToHIRect (const QRect &aRect)
 {
     return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height());
 }
+#endif /* !QT_MAC_USE_COCOA */
 
-QString darwinSystemLanguage();
+QString darwinSystemLanguage (void);
 
-bool darwinIsMenuOpen();
+bool darwinIsMenuOpen (void);
 
 void darwinSetShowToolBarButton (QToolBar *aToolBar, bool aShow);
 
@@ -209,8 +213,11 @@ void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
 
 /* Icons in the menu of an mac application are unusual. */
-void darwinDisableIconsInMenus();
+void darwinDisableIconsInMenus (void);
 
+#ifndef QT_MAC_USE_COCOA
+/** @todo Carbon -> Cocoa  */
+#else  /* !QT_MAC_USE_COCOA */
 /* Experimental region handler for the seamless mode */
 OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 
@@ -227,10 +234,11 @@ enum
 };
 OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 
-# ifdef DEBUG
+#  ifdef DEBUG
 void darwinDebugPrintEvent (const char *aPrefix, EventRef aEvent);
-# endif
+#  endif
+# endif /* !QT_MAC_USE_COCOA*/
 #endif /* Q_WS_MAC */
 
-#endif // __VBoxUtils_h__
+#endif // !___VBoxUtils_h___
 

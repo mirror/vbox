@@ -57,11 +57,10 @@
 #endif
 
 #ifdef Q_WS_MAC
-#include "VBoxUtils.h"
-#include "VBoxIChatTheaterWrapper.h"
-//#include <Carbon/Carbon.h>
-/* Qt includes */
-#include <QPainter>
+# include "VBoxUtils.h"
+# include "VBoxIChatTheaterWrapper.h"
+  /* Qt includes */
+# include <QPainter>
 #endif
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1160,8 +1159,12 @@ void VBoxConsoleWnd::unlockActionsSwitch()
     if (!mIsSeamless)
     {
         /* Fade back to the normal gamma */
+# ifdef QT_MAC_USE_COCOA
+        /** @todo Carbon -> Cocoa */
+# else
         CGDisplayFade (mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false);
         CGReleaseDisplayFadeReservation (mFadeToken);
+# endif
     }
     console->setMouseCoalescingEnabled (true);
 #endif
@@ -1255,9 +1258,13 @@ bool VBoxConsoleWnd::event (QEvent *e)
             if (mIsSeamless)
             {
                 /* Clear the background */
+# ifdef QT_MAC_USE_COCOA
+                /** @todo Carbon -> Cocoa */
+# else
                 HIRect viewRect;
                 HIViewGetBounds (::darwinToHIViewRef (this), &viewRect);
                 CGContextClearRect (::darwinToCGContextRef (this), viewRect);
+# endif
             }
             break;
         }
@@ -2203,8 +2210,12 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     if (!aSeamless)
     {
         /* Fade to black */
+# ifdef QT_MAC_USE_COCOA
+        /** @todo Carbon -> Cocoa */
+# else
         CGAcquireDisplayFadeReservation (kCGMaxDisplayReservationInterval, &mFadeToken);
         CGDisplayFade (mFadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
+# endif
     }
 #endif
 
@@ -2330,6 +2341,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
              * winId. So please be careful on rearrangement of the method
              * calls. */
             /* Undo all mac specific installations */
+# ifdef QT_MAC_USE_COCOA
+            /** @todo Carbon -> Cocoa */
+# else  /* !QT_MAC_USE_COCOA */
             OSStatus status;
             WindowRef windowRef = ::darwinToWindowRef (this);
             Assert (VALID_PTR (windowRef));
@@ -2341,6 +2355,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             AssertCarbonOSStatus (status);
             status = SetWindowAlpha (windowRef, 1.0);
             AssertCarbonOSStatus (status);
+# endif /* !QT_MAC_USE_COCOA */
         }
 #endif
 
@@ -2373,6 +2388,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
          * switched to fullscreen. Qt changes the winId on the fullscreen
          * switch and make this stuff useless with the old winId. So please be
          * careful on rearrangement of the method calls. */
+# ifdef QT_MAC_USE_COCOA
+        /** @todo Carbon -> Cocoa */
+# else  /* !QT_MAC_USE_COCOA */
         OSStatus status;
         HIViewRef viewRef = ::darwinToHIViewRef (console->viewport());
         Assert (VALID_PTR (viewRef));
@@ -2409,6 +2427,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
          * window has a big coolness factor. */
         status = ChangeWindowAttributes (windowRef, kWindowNoShadowAttribute, 0);
         AssertCarbonOSStatus (status);
+# endif /* !QT_MAC_USE_COCOA */
     }
 #endif
 
@@ -2454,6 +2473,9 @@ void VBoxConsoleWnd::changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &
 void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
 {
 #ifdef Q_WS_MAC
+# ifdef QT_MAC_USE_COCOA
+    /** @todo Carbon -> Cocoa */
+# else  /* !QT_MAC_USE_COCOA */
     /* setWindowState removes the window group connection somehow. So save it
      * temporary. */
     WindowGroupRef g = GetWindowGroup (::darwinToWindowRef (this));
@@ -2479,6 +2501,7 @@ void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
         setWindowState (windowState() ^ Qt::WindowFullScreen);
     /* Reassign the correct window group. */
     SetWindowGroup (::darwinToWindowRef (this), g);
+# endif /* !QT_MAC_USE_COCOA */
 #else
     NOREF (aOn);
     NOREF (aSeamless);

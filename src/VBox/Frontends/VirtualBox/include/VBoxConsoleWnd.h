@@ -40,9 +40,13 @@
 # include <VBox/dbggui.h>
 #endif
 #ifdef Q_WS_MAC
-# undef PAGE_SIZE
-# undef PAGE_SHIFT
-# include <Carbon/Carbon.h>
+# ifdef QT_MAC_USE_COCOA
+    /** @todo Carbon -> Cocoa */
+# else
+#  undef PAGE_SIZE
+#  undef PAGE_SHIFT
+#  include <Carbon/Carbon.h>
+# endif
 #endif
 
 class QAction;
@@ -355,7 +359,12 @@ private:
 
 #ifdef Q_WS_MAC
     QRegion mCurrRegion;
+# ifndef QT_MAC_USE_COCOA
+    /** @todo Carbon -> Cocoa */
+#else
+# else
     EventHandlerRef mDarwinRegionEventHandlerRef;
+# endif
 #endif
 
     // variables for dealing with true fullscreen
@@ -385,8 +394,12 @@ private:
     /* For seamless maximizing */
     QRect mNormalGeometry;
     Qt::WindowFlags mSavedFlags;
+# ifdef QT_MAC_USE_COCOA
+    /** @todo Carbon -> Cocoa */
+# else
     /* For the fade effect if the the window goes fullscreen */
     CGDisplayFadeReservationToken mFadeToken;
+# endif
 #endif
 };
 

@@ -105,7 +105,7 @@ LRESULT CALLBACK VBoxConsoleView::lowLevelKeyboardProc (int nCode,
 
 #endif
 
-#if defined (Q_WS_MAC)
+#if defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
 
 # ifndef VBOX_WITH_HACKED_QT
 /**
@@ -183,7 +183,7 @@ bool VBoxConsoleView::macEventFilter (EventRef inEvent, void *inUserData)
 }
 # endif /* VBOX_WITH_HACKED_QT */
 
-#endif /* Q_WS_MAC */
+#endif /* Q_WS_MAC && !QT_MAC_USE_COCOA */
 
 /** Guest mouse pointer shape change event. */
 class MousePointerChangeEvent : public QEvent
@@ -665,7 +665,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mAlphaCursor (NULL)
 #endif
 #if defined(Q_WS_MAC)
-# ifndef VBOX_WITH_HACKED_QT
+# if !defined (VBOX_WITH_HACKED_QT) && !defined (QT_MAC_USE_COCOA)
     , mDarwinEventHandlerRef (NULL)
 # endif
     , mDarwinKeyModifiers (0)
@@ -686,6 +686,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     QString osTypeId = mConsole.GetGuest().GetOSTypeId();
     mDockIconPreview = new VBoxDockIconPreview (mMainWnd, vboxGlobal().vmGuestOSTypeIcon (osTypeId));
 
+# ifdef QT_MAC_USE_COCOA
+    /** @todo Carbon -> Cocoa */
+# else /* !QT_MAC_USE_COCOA */
     /* Install the event handler which will proceed external window handling */
     EventHandlerUPP eventHandler = ::NewEventHandlerUPP (::darwinOverlayWindowHandler);
     EventTypeSpec eventTypes[] =
@@ -700,7 +703,8 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     ::InstallApplicationEventHandler (eventHandler, RT_ELEMENTS (eventTypes), &eventTypes[0],
                                       this, &mDarwinWindowOverlayHandlerRef);
     ::DisposeEventHandlerUPP (eventHandler);
-#endif
+# endif /* !QT_MAC_USE_COCOA */
+#endif /* QT_WS_MAC */
 
     /* No frame around the view */
     setFrameStyle (QFrame::NoFrame);
@@ -880,7 +884,7 @@ VBoxConsoleView::~VBoxConsoleView()
 
     mConsole.UnregisterCallback (mCallback);
 
-#ifdef Q_WS_MAC
+#if defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
     if (mDarwinWindowOverlayHandlerRef)
     {
         ::RemoveEventHandler (mDarwinWindowOverlayHandlerRef);
@@ -2119,6 +2123,7 @@ bool VBoxConsoleView::x11Event (XEvent *event)
 
 #elif defined (Q_WS_MAC)
 
+# ifndef QT_MAC_USE_COCOA
 /**
  *  Invoked by VBoxConsoleView::darwinEventHandlerProc / VBoxConsoleView::macEventFilter when
  *  it receives a raw keyboard event.
@@ -2210,6 +2215,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
 
     return ret;
 }
+# endif /* !QT_MAC_USE_COCOA */
 
 
 /**
@@ -2222,12 +2228,15 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
     mKeyboardGrabbed = fGrab;
     if (fGrab)
     {
+# ifdef QT_MAC_USE_COCOA
+        /** @todo Carbon -> Cocoa */
+# else  /* !QT_MAC_USE_COCOA */
         /* Disable mouse event compression to get *really* all mouse events in
            the VM. */
         ::SetMouseCoalescingEnabled (false, NULL);
         ::CGSetLocalEventsSuppressionInterval (0.0);
 
-#ifndef VBOX_WITH_HACKED_QT
+#  ifndef VBOX_WITH_HACKED_QT
 
         EventTypeSpec eventTypes[6];
         eventTypes[0].eventClass = kEventClassKeyboard;
@@ -2252,28 +2261,33 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
                                           this, &mDarwinEventHandlerRef);
         ::DisposeEventHandlerUPP (eventHandler);
 
-#else /* VBOX_WITH_HACKED_QT */
+#  else /* VBOX_WITH_HACKED_QT */
         ((QIApplication *)qApp)->setEventFilter (VBoxConsoleView::macEventFilter, this);
-#endif /* VBOX_WITH_HACKED_QT */
+#  endif /* VBOX_WITH_HACKED_QT */
+# endif /* !QT_MAC_USE_COCOA */
 
         ::DarwinGrabKeyboard (false);
     }
     else
     {
         ::DarwinReleaseKeyboard();
-#ifndef VBOX_WITH_HACKED_QT
+# ifdef QT_MAC_USE_COCOA
+        /** @todo Carbon -> Cocoa */
+# else  /* !QT_MAC_USE_COCOA */
+#  ifndef VBOX_WITH_HACKED_QT
         if (mDarwinEventHandlerRef)
         {
             ::RemoveEventHandler (mDarwinEventHandlerRef);
             mDarwinEventHandlerRef = NULL;
         }
-#else
+#  else
         ((QIApplication *)qApp)->setEventFilter (NULL, NULL);
-#endif
+#  endif
+# endif /* !QT_MAC_USE_COCOA*/
     }
 }
 
-#endif // defined (Q_WS_WIN)
+#endif // defined (Q_WS_MAC)
 
 //
 // Private members
@@ -2383,7 +2397,7 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
         codes[(*count)++] = 0x3a | 0x80;
     }
 
-#elif defined(Q_WS_MAC)
+#elif defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
 
     /* if (muNumLockAdaptionCnt) ... - NumLock isn't implemented by Mac OS X so ignore it. */
     if (muCapsLockAdaptionCnt && (mCapsLock ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
@@ -2392,6 +2406,10 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
         codes[(*count)++] = 0x3a;
         codes[(*count)++] = 0x3a | 0x80;
     }
+
+#elif defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
+
+    /** @todo Carbon -> Cocoa */
 
 #else
 
@@ -3908,16 +3926,21 @@ void VBoxConsoleView::requestToResize (const QSize &aSize)
 }
 
 #if defined(Q_WS_MAC)
+
 void VBoxConsoleView::updateDockIcon()
 {
     if (mDockIconEnabled)
     {
         if (!mPausedShot.isNull())
         {
+# ifdef QT_MAC_USE_COCOA
+            /** @todo Carbon -> Cocoa */
+# else
             CGImageRef pauseImg = ::darwinToCGImageRef (&mPausedShot);
             /* Use the pause image as background */
             mDockIconPreview->updateDockPreview (pauseImg);
             CGImageRelease (pauseImg);
+# endif
         }
         else
         {
@@ -3954,7 +3977,9 @@ void VBoxConsoleView::updateDockOverlay()
 
 void VBoxConsoleView::setMouseCoalescingEnabled (bool aOn)
 {
-
+#ifdef QT_MAC_USE_COCOA
+    /** @todo Carbon -> Cocoa */
+#else
     if (aOn)
         /* Enable mouse event compression if we leave the VM view. This
            is necessary for having smooth resizing of the VM/other
@@ -3969,7 +3994,8 @@ void VBoxConsoleView::setMouseCoalescingEnabled (bool aOn)
         if (mKeyboardGrabbed)
             ::SetMouseCoalescingEnabled (false, NULL);
     }
+#endif
 }
 
-#endif
+#endif /* Q_WS_MAC */
 

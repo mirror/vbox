@@ -20,12 +20,12 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxToolBar_h__
-#define __VBoxToolBar_h__
+#ifndef ___VBoxToolBar_h___
+#define ___VBoxToolBar_h___
 
 
 #ifdef Q_WS_MAC
- #include "VBoxUtils.h"
+# include "VBoxUtils.h"
 #endif
 
 /* Qt includes */
@@ -77,6 +77,9 @@ public:
         if (mMainWindow)
         {
             mMainWindow->setUnifiedTitleAndToolBarOnMac (true);
+# ifdef QT_MAC_USE_COCOA
+            /** @todo Carbon -> Cocoa */
+# else  /* !QT_MAC_USE_COCOA */
             WindowRef window = ::darwinToWindowRef (this);
             EventHandlerUPP eventHandler = ::NewEventHandlerUPP (VBoxToolBar::macEventFilter);
             EventTypeSpec eventTypes[2];
@@ -87,11 +90,12 @@ public:
             InstallWindowEventHandler (window, eventHandler,
                                        RT_ELEMENTS (eventTypes), eventTypes,
                                        NULL, NULL);
+# endif /* !QT_MAC_USE_COCOA */
         }
 #endif /* Q_WS_MAC */
     }
 
-#ifdef Q_WS_MAC
+#if defined(Q_WS_MAC) && !defined(QT_MAC_USE_COCOA)
     static pascal OSStatus macEventFilter (EventHandlerCallRef aNextHandler,
                                            EventRef aEvent, void * /* aUserData */)
     {
@@ -113,7 +117,7 @@ public:
         }
         return CallNextEventHandler (aNextHandler, aEvent);
     }
-#endif /* Q_WS_MAC */
+#endif /* Q_WS_MAC && !QT_MAC_USE_COCOA */
 
     void setShowToolBarButton (bool aShow)
     {
@@ -141,5 +145,5 @@ private:
     QMainWindow *mMainWindow;
 };
 
-#endif // __VBoxToolBar_h__
+#endif // !___VBoxToolBar_h___
 

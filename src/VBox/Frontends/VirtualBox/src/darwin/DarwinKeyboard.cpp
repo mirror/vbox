@@ -48,6 +48,7 @@
 # include <IOKit/usb/USB.h>
 # include <CoreFoundation/CoreFoundation.h>
 #endif
+#include <ApplicationServices/ApplicationServices.h>
 #include <Carbon/Carbon.h>
 
 __BEGIN_DECLS
@@ -80,7 +81,7 @@ __END_DECLS
 #define QZ_RCTRL        0x3E
 /* Found the definition of the fn-key in:
  * http://stuff.mit.edu/afs/sipb/project/darwin/src/modules/IOHIDFamily/IOHIDSystem/IOHIKeyboardMapper.cpp &
- * http://stuff.mit.edu/afs/sipb/project/darwin/src/modules/AppleADBKeyboard/AppleADBKeyboard.cpp 
+ * http://stuff.mit.edu/afs/sipb/project/darwin/src/modules/AppleADBKeyboard/AppleADBKeyboard.cpp
  * Maybe we need this in the future.*/
 #define QZ_FN           0x3F
 #define QZ_NUMLOCK      0x47
@@ -97,7 +98,7 @@ __END_DECLS
 /** An attempt at catching reference leaks. */
 #define MY_CHECK_CREFS(cRefs)   do { AssertMsg(cRefs < 25, ("%ld\n", cRefs)); NOREF(cRefs); } while (0)
 
-#endif 
+#endif
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -430,22 +431,22 @@ void DarwinDisableGlobalHotKeys(bool fDisable)
         g_fConnectedToCGS = true;
     }
 
-    /* 
-     * Get the current mode. 
+    /*
+     * Get the current mode.
      */
     CGSGlobalHotKeyOperatingMode enmMode = kCGSGlobalHotKeyInvalid;
     CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmMode);
-    if (    enmMode != kCGSGlobalHotKeyEnable 
+    if (    enmMode != kCGSGlobalHotKeyEnable
         &&  enmMode != kCGSGlobalHotKeyDisable)
     {
         AssertMsgFailed(("%d\n", enmMode));
         if (s_cComplaints++ < 32)
             LogRel(("DarwinDisableGlobalHotKeys: Unexpected enmMode=%d\n", enmMode));
-        return;                    
+        return;
     }
 
-    /* 
-     * Calc the new mode. 
+    /*
+     * Calc the new mode.
      */
     if (fDisable)
     {
@@ -460,8 +461,8 @@ void DarwinDisableGlobalHotKeys(bool fDisable)
         enmMode = kCGSGlobalHotKeyEnable;
     }
 
-    /* 
-     * Try set it and check the actual result. 
+    /*
+     * Try set it and check the actual result.
      */
     CGSSetGlobalHotKeyOperatingMode(g_CGSConnection, enmMode);
     CGSGlobalHotKeyOperatingMode enmNewMode = kCGSGlobalHotKeyInvalid;
@@ -830,7 +831,7 @@ static void darwinHIDKeyboardCacheDestroyEntry(struct KeyboardCacheData *pKeyboa
 }
 
 
-/** 
+/**
  * Zap the keyboard cache.
  */
 static void darwinHIDKeyboardCacheZap(void)

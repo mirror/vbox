@@ -20,8 +20,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxFrameBuffer_h__
-#define __VBoxFrameBuffer_h__
+#ifndef ___VBoxFrameBuffer_h___
+#define ___VBoxFrameBuffer_h___
 
 #include "COMDefs.h"
 
@@ -471,6 +471,6 @@ private:
     RegionRects volatile *mRegionUnused;
 };
 
-#endif
+#endif /* Q_WS_MAC && VBOX_GUI_USE_QUARTZ2D */
 
-#endif // !__VBoxFrameBuffer_h__
+#endif // !___VBoxFrameBuffer_h___
