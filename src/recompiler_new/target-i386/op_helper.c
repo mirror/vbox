@@ -689,8 +689,8 @@ void helper_check_external_event()
 
 void helper_sync_seg(uint32_t reg)
 {
-    assert(env->segs[reg].newselector != 0);
-    sync_seg(env, reg, env->segs[reg].newselector);
+    if (env->segs[reg].newselector)
+        sync_seg(env, reg, env->segs[reg].newselector);
 }
 #endif
 
@@ -5680,7 +5680,7 @@ void sync_seg(CPUX86State *env1, int seg_reg, int selector)
     {
         /* For some reasons, it works even w/o save/restore of the jump buffer, so as code is
            time critical - let's not do that */
-#if 0
+#ifdef FORCE_SEGMENT_SYNC
         memcpy(&old_buf, &env1->jmp_env, sizeof(old_buf));
 #endif
         if (setjmp(env1->jmp_env) == 0)
@@ -5714,7 +5714,7 @@ void sync_seg(CPUX86State *env1, int seg_reg, int selector)
             env1->error_code = 0;
             env1->old_exception = -1;
         }
-#if 0
+#ifdef FORCE_SEGMENT_SYNC
         memcpy(&env1->jmp_env, &old_buf, sizeof(old_buf));
 #endif
     }
@@ -7000,4 +7000,3 @@ CCTable cc_table[CC_OP_NB] = {
 #endif
 };
 #endif /* VBOX */
-

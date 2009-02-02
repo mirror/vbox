@@ -477,7 +477,7 @@ int cpu_exec(CPUState *env1)
                     /* execute the generated code */
                     RAWEx_ProfileStart(env, STATS_QEMU_RUN_EMULATED_CODE);
 #if defined(VBOX) && defined(GCC_WITH_BUGGY_REGPARM)
-                    tcg_qemu_tb_exec(tc_ptr, next_tb); 
+                    tcg_qemu_tb_exec(tc_ptr, next_tb);
 #else
                     next_tb = tcg_qemu_tb_exec(tc_ptr);
 #endif

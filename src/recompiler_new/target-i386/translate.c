@@ -639,7 +639,16 @@ DECLINLINE(void) gen_op_addl_A0_reg_sN(int shift, int reg)
 DECLINLINE(void) gen_op_seg_check(int reg, bool keepA0)
 {
     /* It seems segments doesn't get out of sync - if they do in fact - enable below code. */
-#if 0
+#ifdef FORCE_SEGMENT_SYNC
+#if 1
+    TCGv t0;
+
+    /* Considering poor quality of TCG optimizer - better call directly */
+    t0 = tcg_temp_local_new(TCG_TYPE_TL);
+    tcg_gen_movi_tl(t0, reg);
+    tcg_gen_helper_0_1(helper_sync_seg, t0);
+    tcg_temp_free(t0);
+#else
     /* Our segments could be outdated, thus check for newselector field to see if update really needed */
     int skip_label;
     TCGv t0, a0;
@@ -677,6 +686,7 @@ DECLINLINE(void) gen_op_seg_check(int reg, bool keepA0)
         tcg_temp_free(a0);
     }
 #endif /* 0 */
+#endif /* FORCE_SEGMENT_SYNC */
 }
 #endif
 
@@ -874,6 +884,11 @@ DECLINLINE(void) gen_op_st_T1_A0(int idx)
 #ifdef VBOX
 static void gen_check_external_event()
 {
+#if 1
+    /** @todo: once TCG codegen improves, we may want to use version 
+        from else version */ 
+    tcg_gen_helper_0_0(helper_check_external_event);
+#else
     int skip_label;
     TCGv t0;
 
@@ -895,6 +910,7 @@ static void gen_check_external_event()
     tcg_gen_helper_0_0(helper_check_external_event);
 
    gen_set_label(skip_label);
+#endif
 }
 
 static void gen_check_external_event2()
