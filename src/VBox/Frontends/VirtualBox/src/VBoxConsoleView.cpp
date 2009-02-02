@@ -84,6 +84,9 @@ const int XKeyRelease = KeyRelease;
 # ifdef VBOX_WITH_HACKED_QT
 #  include "QIApplication.h"
 # endif
+# ifndef QT_MAC_USE_COCOA
+#  include <Carbon/Carbon.h>
+# endif
 # include <VBox/err.h>
 #endif /* defined (Q_WS_MAC) */
 
