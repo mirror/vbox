@@ -1654,6 +1654,13 @@ drop:
      */
     m_free(pData, m);
 
+#ifdef VBOX_WITH_SLIRP_MT
+    if (RTCritSectIsOwned(&so->so_mutex)) 
+    {
+        SOCKET_UNLOCK(so);
+    }
+#endif
+
     return;
 }
 
