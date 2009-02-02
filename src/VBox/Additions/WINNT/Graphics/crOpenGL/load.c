@@ -117,6 +117,15 @@ static void stubCheckWindowState(void)
         stubUpdateWindowVisibileRegions(window);
     }
 #endif
+
+    if (stub.trackWindowVisibility && window->type == CHROMIUM && window->drawable) {
+        const int mapped = stubIsWindowVisible(window);
+        if (mapped != window->mapped) {
+            crDebug("Dispatched: WindowShow(%i, %i)", window->spuWindow, mapped);
+            stub.spu->dispatch_table.WindowShow(window->spuWindow, mapped);
+            window->mapped = mapped;
+        }
+    }
 }
 
 
