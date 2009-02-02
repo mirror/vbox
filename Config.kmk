@@ -600,7 +600,7 @@ endif
 # Include automatic and local config file to override the above settings
 # and to provide defaults for the settings below this point.
 #
-AUTOCFG := $(wildcard $(PATH_ROOT)/AutoConfig.kmk)
+AUTOCFG ?= $(wildcard $(PATH_ROOT)/AutoConfig.kmk)
 ifeq ($(AUTOCFG),)
  # deprecated name. to be removed.
  AUTOCFG := $(wildcard $(PATH_ROOT)/Config.kmkconf)
@@ -612,13 +612,18 @@ ifneq ($(AUTOCFG),)
  include $(AUTOCFG)
 endif
 
-LOCALCFG := $(wildcard $(PATH_ROOT)/LocalConfig.kmk)
+LOCALCFG ?= $(wildcard $(PATH_ROOT)/LocalConfig.kmk)
 ifeq ($(LOCALCFG),)
  # deprecated name. to be removed.
  LOCALCFG := $(wildcard $(PATH_ROOT)/Config.kmklocal)
  ifneq ($(LOCALCFG),)
   $(warning Please rename your Config.kmklocal to LocalConfig.kmk.)
  endif
+endif
+# We want to be able to pass an alternative location for LocalConfig.kmk
+# without actually requiring it to exist.
+ifeq ($(wildcard $(LOCALCFG)),)
+ LOCALCFG=
 endif
 ifneq ($(LOCALCFG),)
  include $(LOCALCFG)
