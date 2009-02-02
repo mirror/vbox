@@ -743,14 +743,25 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
         if (rc == cPages)
         {
             /*
-             * Flush dcache (required?) and protect against fork.
+             * Flush dcache (required?), protect against fork and _really_ pin the page
+             * table entries. get_user_pages() will protect against swapping out the
+             * pages but it will NOT protect against removing page table entries. This
+             * can be achieved with
+             *   - using mlock / mmap(..., MAP_LOCKED, ...) from userland. This requires
+             *     an appropriate limit set up with setrlimit(..., RLIMIT_MEMLOCK, ...).
+             *     Usual Linux distributions support only a limited size of locked pages
+             *     (e.g. 32KB).
+             *   - setting the PageReserved bit (as we do in rtR0MemObjLinuxAllocPages()
+             *     or by
+             *   - setting the VM_LOCKED flag. This is the same as doing mlock() without
+             *     a range check.
              */
             /** @todo The Linux fork() protection will require more work if this API
              * is to be used for anything but locking VM pages. */
             while (rc-- > 0)
             {
                 flush_dcache_page(pMemLnx->apPages[rc]);
-                papVMAs[rc]->vm_flags |= VM_DONTCOPY;
+                papVMAs[rc]->vm_flags |= (VM_DONTCOPY | VM_LOCKED);
             }
 
             up_read(&pTask->mm->mmap_sem);
