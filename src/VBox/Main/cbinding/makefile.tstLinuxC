@@ -21,7 +21,7 @@ clean:
 	rm -f tstLinuxC.o tstLinuxC run
 
 tstLinuxC: tstLinuxC.o
-	$(CC) -o $@ $^ -Wl,-rpath $(PATH_BIN) $(PATH_BIN)/VBoxXPCOMC.so
+	$(CC) -o $@ $^ -Xlinker -rpath -Xlinker $(PATH_BIN) $(PATH_BIN)/VBoxXPCOMC.so
 
 tstLinuxC.o: tstLinuxC.c tstLinuxC.h
 	$(CC) $(CFLAGS) -DRT_OS_LINUX -DMOZ_UNICODE $(INCS_XPCOM) -o $@ -c $<
