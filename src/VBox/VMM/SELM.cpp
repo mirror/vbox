@@ -1486,8 +1486,10 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
             cbTss = sizeof(VBOXTSS);
 #endif
         /* The guest's TSS can span multiple pages now. We will monitor the whole thing. */
+#ifndef DEBUG_michael
         AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + sizeof(VBOXTSS) - 1) >> PAGE_SHIFT),
                   ("GCPtrTss=%RGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
+#endif
 
         // All system GDTs are marked not present above. That explains why this check fails.
         //if (pDesc->Gen.u1Present)
@@ -1770,8 +1772,10 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
         if (cbTss > sizeof(VBOXTSS))
             cbTss = sizeof(VBOXTSS);
 # endif
+#ifndef DEBUG_michael
         AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + sizeof(VBOXTSS) - 1) >> PAGE_SHIFT),
                   ("GCPtrTss=%RGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
+#endif
 
         // All system GDTs are marked not present above. That explains why this check fails.
         //if (pDesc->Gen.u1Present)
