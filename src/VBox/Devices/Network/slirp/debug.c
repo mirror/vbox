@@ -252,10 +252,13 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     if (so == NULL) 
         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket is null");
     if (so->so_state == SS_NOFDREF || so->s == -1) 
-        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket SS_NODREF");
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket(%d) SS_NODREF",so->s);
     status = getsockname(so->s, &addr, &socklen);
 
-    Assert(status == 0 && addr.sa_family == AF_INET);
+    if(status != 0 || addr.sa_family != AF_INET)
+    {
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket(%d) is invalid(probably closed)",so->s);
+    }
 
     ip = ntohl(so->so_faddr.s_addr);
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %4d:(proto:%u) "

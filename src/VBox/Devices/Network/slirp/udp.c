@@ -399,12 +399,31 @@ udp_attach(PNATState pData, struct socket *so)
 void
 udp_detach(PNATState pData, struct socket *so)
 {
+    struct socket *so_next, *so_prev;
+    so_next = so_prev = NULL;
     if (so != &pData->icmp_socket)
     {
-        closesocket(so->s);
         QSOCKET_LOCK(udb);
-        sofree(pData, so);
+        SOCKET_LOCK(so);
+        if (    so->so_next != &udb
+            && so->so_next != NULL)
+        {
+            SOCKET_LOCK(so->so_next);
+            so_next = so->so_next;
+        }
+        if (    so->so_prev != &udb
+            && so->so_prev != NULL)
+        {
+            SOCKET_LOCK(so->so_prev);
+            so_prev = so->so_prev;
+        }
         QSOCKET_UNLOCK(udb);
+        closesocket(so->s);
+        sofree(pData, so);
+        if(so_prev != NULL)
+            SOCKET_UNLOCK(so_prev);
+        if(so_next != NULL)
+            SOCKET_UNLOCK(so_next);
     }
 }
 

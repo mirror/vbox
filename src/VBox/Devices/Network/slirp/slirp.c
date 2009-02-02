@@ -621,7 +621,9 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             /*
              * See if we need a tcp_fasttimo
              */
-            if (time_fasttimo == 0 && so->so_tcpcb->t_flags & TF_DELACK)
+            if (    time_fasttimo == 0 
+                    && so->so_tcpcb != NULL
+                    && so->so_tcpcb->t_flags & TF_DELACK)
                 time_fasttimo = curtime; /* Flag when we want a fasttimo */
 
             /*
@@ -691,17 +693,11 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             {
                 if (so->so_expire <= curtime)
                 {
-                    QSOCKET_LOCK(udb);
 #ifdef VBOX_WITH_SLIRP_MT
-                    /*we can determinate the next item after udb_detach*/
-                    if (so->so_next != &tcb) 
-                    {
-                        SOCKET_LOCK(so->so_next);
-                        so_next = so->so_next;
-                    }
+                    /* we need so_next for continue our cycle*/
+                    so_next = so->so_next;
 #endif
-                    QSOCKET_UNLOCK(udb);
-                    udp_detach(pData, so);
+                    UDP_DETACH(pData, so, so_next);
                     CONTINUE_NO_UNLOCK(udp);
                 }
                 else
