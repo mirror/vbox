@@ -361,7 +361,6 @@ private:
     QRegion mCurrRegion;
 # ifndef QT_MAC_USE_COCOA
     /** @todo Carbon -> Cocoa */
-#else
 # else
     EventHandlerRef mDarwinRegionEventHandlerRef;
 # endif
