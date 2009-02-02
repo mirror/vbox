@@ -59,6 +59,7 @@
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
 # include "VBoxIChatTheaterWrapper.h"
+# include <ApplicationServices/ApplicationServices.h>
   /* Qt includes */
 # include <QPainter>
 #endif
