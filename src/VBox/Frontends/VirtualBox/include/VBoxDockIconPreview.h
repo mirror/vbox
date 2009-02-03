@@ -25,7 +25,7 @@
 
 #include <QObject> /* drag in QT_MAC_USE_COCOA */
 
-#ifndef QT_MAC_USE_COCOA
+#ifdef QT_MAC_USE_COCOA
 /** @todo include chocolatey headers... */
 #else
 # include <Carbon/Carbon.h>
