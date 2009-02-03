@@ -23,6 +23,8 @@
 #ifndef ___VBoxUtils_h___
 #define ___VBoxUtils_h___
 
+#include <iprt/types.h>
+
 /* Qt includes */
 #include <QMouseEvent>
 #include <QWidget>
