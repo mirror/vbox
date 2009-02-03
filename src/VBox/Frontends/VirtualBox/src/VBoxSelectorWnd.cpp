@@ -488,6 +488,11 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMModel = new VBoxVMModel (mVMListView);
     mVMListView->setModel (mVMModel);
 
+    /* Make non-possible to activate list elements by single click,
+     * this hack should disable the current possibility to do it if present */
+    if (mVMListView->style()->styleHint (QStyle::SH_ItemView_ActivateItemOnSingleClick, 0, mVMListView))
+        mVMListView->setStyleSheet ("activate-on-singleclick");
+
     leftVLayout->addWidget (mVMListView);
 
     /* VM tab widget containing details and snapshots tabs */
