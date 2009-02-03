@@ -96,11 +96,10 @@ private:
 struct VirtualSystemDescriptionEntry
 {
     VirtualSystemDescriptionType_T type; /* Of which type is this value */
-    Utf8Str strRef; /* Reference value to the internal implementation */
-    Utf8Str strOriginalValue; /* The original OVF value */
-    Utf8Str strAutoValue; /* The value which VBox suggest */
-    Utf8Str strFinalValue; /* The value the user select */
-    Utf8Str strConfiguration; /* Additional configuration data for this type */
+    uint32_t ulRef;     // reference number
+    Utf8Str strOrig; /* The original OVF value */
+    Utf8Str strConfig; /* The value which VBox suggest */
+    Utf8Str strExtraConfig; /* Additional configuration data for this type */
 };
 
 class ATL_NO_VTABLE VirtualSystemDescription :
@@ -140,9 +139,10 @@ public:
 
     /* IVirtualSystemDescription methods */
     STDMETHOD(GetDescription)(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
+                              ComSafeArrayOut(ULONG, aRefs),
                               ComSafeArrayOut(BSTR, aOrigValues),
-                              ComSafeArrayOut(BSTR, aAutoValues),
-                              ComSafeArrayOut(BSTR, aConfigurations));
+                              ComSafeArrayOut(BSTR, aConfigValues),
+                              ComSafeArrayOut(BSTR, aExtraConfigValues));
     STDMETHOD(SetFinalValues)(ComSafeArrayIn(IN_BSTR, aFinalValues));
 
     /* public methods only for internal purposes */
@@ -150,10 +150,9 @@ public:
     /* private instance data */
 private:
     void addEntry(VirtualSystemDescriptionType_T aType,
-                  const Utf8Str &aRef,
+                  uint32_t ulRef,
                   const Utf8Str &aOrigValue,
-                  const Utf8Str &aAutoValue,
-                  const Utf8Str &aConfig = "");
+                  const Utf8Str &aAutoValue);
 
     std::list<VirtualSystemDescriptionEntry*> findByType(VirtualSystemDescriptionType_T aType);
 

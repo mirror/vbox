@@ -2989,19 +2989,20 @@
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
 
-    <const name="Name" value="1" />
-    <const name="OS" value="2" />
-    <const name="CPU" value="3" />
-    <const name="Memory" value="4" />
-    <const name="HardDiskControllerIDE" value="5" />
-    <const name="HardDiskControllerSATA" value="6" />
-    <const name="HardDiskControllerSCSI" value="7" />
-    <const name="HardDiskImage" value="8" />
-    <const name="CDROM" value="9" />
-    <const name="Floppy" value="10" />
-    <const name="NetworkAdapter" value="11" />
-    <const name="USBController" value="12" />
-    <const name="SoundCard" value="13" />
+    <const name="Ignore" value="1" />
+    <const name="Name" value="2" />
+    <const name="OS" value="3" />
+    <const name="CPU" value="4" />
+    <const name="Memory" value="5" />
+    <const name="HardDiskControllerIDE" value="6" />
+    <const name="HardDiskControllerSATA" value="7" />
+    <const name="HardDiskControllerSCSI" value="8" />
+    <const name="HardDiskImage" value="9" />
+    <const name="CDROM" value="10" />
+    <const name="Floppy" value="11" />
+    <const name="NetworkAdapter" value="12" />
+    <const name="USBController" value="13" />
+    <const name="SoundCard" value="14" />
 
   </enum>
 
@@ -3024,49 +3025,63 @@
 
       The list below identifies the value sets that are possible depending on the
       <link to="VirtualSystemDescriptionType" /> enum value in the array item in aTypes[]. In each case,
-      the array item with the same index in aOrigValues[] will contain the original value as contained
-      in the OVF file, and the corresponding item in aAutoValues[] will contain a suggested value to
-      be used for VirtualBox. Items in the other arrays will be empty, unless specified otherwise below:
+      the array item with the same index in aOrigValue[] will contain the original value as contained
+      in the OVF file (just for informational purposes), and the corresponding item in aConfigValues[]
+      will contain a suggested value to be used for VirtualBox. Depending on the description type,
+      the aExtraConfigValues[] array item may also be used.
 
       <ul>
       <li>
-        "OS": then the corresponding item in aAutoValues[] contains the suggested guest operating system
-        for VirtualBox. The corresponding item in aOrigValues[] will contain a numerical value that
-        described the operating system in the OVF (see <link to="CIMOSType" />).
+        "OS": the guest operating system type. There must be exactly one such array item on import. The
+        corresponding item in aConfigValues[] contains the suggested guest operating system for VirtualBox.
+        This will be one of the values listed in <link to="IVirtualBox::guestOSTypes" />. The corresponding
+        item in aOrigValues[] will contain a numerical value that described the operating system in the OVF
+        (see <link to="CIMOSType" />).
       </li>
       <li>
-        "Name": then the correponding item im aOrigValues[] will contain the suggested virtual machine name
-        from the OVF file, and aAutoValues[] will contain a suggestion for a unique VirtualBox
+        "Name": the name to give to the new virtual machine. There can be at most one such array item;
+        if none is present on import, then an automatic name will be created from the operating system
+        type. The correponding item im aOrigValues[] will contain the suggested virtual machine name
+        from the OVF file, and aConfigValues[] will contain a suggestion for a unique VirtualBox
         <link to="IMachine" /> name that does not exist yet.
       </li>
       <li>
-        "CPU": number of CPUs.
+        "CPU": the number of CPUs. There can be at most one such item, which will presently be ignored.
       </li>
       <li>
-        "Memory": amount of memory, in bytes.
+        "Memory": the amount of guest RAM, in bytes. There can be at most one such array item; if none
+        is present on import, then VirtualBox will set a meaningful default based on the operating system
+        type.
       </li>
       <li>
-        "HarddiskControllerSCSI": a SCSI hard disk controller. Here the items in aOrigValues[] and aAutoValues[] will either be
-        "LsiLogic" or "BusLogic". The matching item in the aRefValue[] array will contain a numerical
-        index that other items of the "Harddisk" type can use to specify which hard disk controller
-        a virtual disk should be connected to.
+        "HarddiskControllerSCSI": a SCSI hard disk controller. There can be at most one such item.
+        The items in aOrigValues[] and aConfigValues[] will either be "LsiLogic" or "BusLogic". The
+        matching item in the aRefs[] array will contain an integer that other items of the "Harddisk"
+        type can use to specify which hard disk controller a virtual disk should be connected to.
       </li>
       <li>
-        "HarddiskControllerIDE": an IDE hard disk controller. This has no value in aOrigValues[] or aAutoValues[];
-        as with SCSI controllers, the matching item in the aRefValues[] array will contain a numerical
-        index that other items of the "Harddisk" type can use to specify which hard disk controller
-        a virtual disk should be connected to.
+        "HarddiskControllerIDE": an IDE hard disk controller. There can be at most one such item. This
+        has no value in aOrigValues[] or aAutoValues[]. The matching item in the aRefs[] array will be
+        used as with SCSI controllers (see above).
       </li>
       <li>
-        "Harddisk": a virtual hard disk, most probably as a reference to an image file. The array item
-        in aOrigValues[] will contain the file specification from the OVF file, whereas the item
-        in aAutoValues[] will contain the fully qualified path to the image, which VirtualBox has verified
-        to exist.
-        The item in the aRefValues[] array specifies the hard disk controller to connect to and has the
-        same value as another aRefValues[] array item of the types listed above.
+        "Harddisk": a virtual hard disk, most probably as a reference to an image file. There can be an
+        arbitrary number of these items, one for each virtual disk image that accompanies the OVF. The
+        array item in aOrigValues[] will contain the file specification from the OVF file, whereas the item
+        in aConfigValues[] will contain a qualified path specification where the hard disk image should
+        be copied to; this target image will then be registered with VirtualBox.
+        The matching item in the aRefs[] array must contain a integer specifying the hard disk controller
+        to connect the image to. This number must be the same as the integer used by one of the hard disk
+        controller items (SCSI, SATA or IDE; see above).
       </li>
       <li>
         "NetworkAdapter": a network adapter. (todo document)
+      </li>
+      <li>
+        "SoundCard": a sound card. There can be at most one such item. If and only if such an item is
+        present, sound support will be enabled for the new virtual machine. Note that the virtual
+        machine in VirtualBox will always be presented with the standard VirtualBox soundcard, which
+        may be different from the virtual soundcard expected by the appliance.
       </li>
       </ul>
 
@@ -3076,15 +3091,19 @@
         <desc></desc>
       </param>
 
+      <param name="aRefs" type="unsigned long" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
       <param name="aOrigValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aAutoValues" type="wstring" dir="out" safearray="yes">
+      <param name="aConfigValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aConfiguration" type="wstring" dir="out" safearray="yes">
+      <param name="aExtraConfigValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
