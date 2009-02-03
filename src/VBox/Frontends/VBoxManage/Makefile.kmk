@@ -43,7 +43,9 @@ else # !VBOX_ONLY_DOCS
  VBoxManage_DEFS.win   = _WIN32_WINNT=0x0500
  VBoxManage_SOURCES = \
  	VBoxManage.cpp \
+ 	VBoxManageModifyVM.cpp \
  	VBoxManageInfo.cpp \
+ 	VBoxManageImport.cpp \
  	VBoxManageMetrics.cpp \
  	VBoxManageList.cpp \
  	VBoxManageDisk.cpp \
