@@ -151,7 +151,7 @@ CGImageRef darwinToCGImageRef (const char *aSource);
  * @returns HIViewRef of the QWidget.
  * @param   aWidget   Pointer to the QWidget
  */
-inline HIViewRef darwinToHIViewRef (QWidget *aWidget)
+DECLINLINE(HIViewRef) darwinToHIViewRef (QWidget *aWidget)
 {
     return HIViewRef(aWidget->winId());
 }
@@ -162,7 +162,7 @@ inline HIViewRef darwinToHIViewRef (QWidget *aWidget)
  * @returns WindowRef of the HIView.
  * @param   aViewRef  Reference to the HIView
  */
-inline WindowRef darwinToWindowRef (HIViewRef aViewRef)
+DECLINLINE(WindowRef) darwinToWindowRef (HIViewRef aViewRef)
 {
     return reinterpret_cast<WindowRef> (HIViewGetWindow(aViewRef));
 }
@@ -173,7 +173,7 @@ inline WindowRef darwinToWindowRef (HIViewRef aViewRef)
  * @returns WindowRef of the QWidget.
  * @param   aWidget   Pointer to the QWidget
  */
-inline WindowRef darwinToWindowRef (QWidget *aWidget)
+DECLINLINE(WindowRef) darwinToWindowRef (QWidget *aWidget)
 {
     return ::darwinToWindowRef (::darwinToHIViewRef (aWidget));
 }
@@ -184,7 +184,7 @@ inline WindowRef darwinToWindowRef (QWidget *aWidget)
  * @returns CGContextRef of the QWidget.
  * @param   aWidget      Pointer to the QWidget
  */
-inline CGContextRef darwinToCGContextRef (QWidget *aWidget)
+DECLINLINE(CGContextRef) darwinToCGContextRef (QWidget *aWidget)
 {
     return static_cast<CGContext *> (aWidget->macCGHandle());
 }
@@ -195,7 +195,7 @@ inline CGContextRef darwinToCGContextRef (QWidget *aWidget)
  * @returns HIRect for the converted QRect.
  * @param   aRect  the QRect to convert
  */
-inline HIRect darwinToHIRect (const QRect &aRect)
+DECLINLINE(HIRect) darwinToHIRect (const QRect &aRect)
 {
     return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height());
 }
@@ -215,7 +215,7 @@ QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
 /* Icons in the menu of an mac application are unusual. */
 void darwinDisableIconsInMenus (void);
 
-#ifndef QT_MAC_USE_COCOA
+#ifdef QT_MAC_USE_COCOA
 /** @todo Carbon -> Cocoa  */
 #else  /* !QT_MAC_USE_COCOA */
 /* Experimental region handler for the seamless mode */
