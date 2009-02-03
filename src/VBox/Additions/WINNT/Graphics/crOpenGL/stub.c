@@ -9,6 +9,11 @@
 #include "cr_mem.h" 
 #include "stub.h"
 
+#ifdef GLX
+#include <X11/extensions/Xcomposite.h>
+#include <X11/extensions/Xfixes.h>
+#endif
+
 /**
  * Returns -1 on error
  */
@@ -87,6 +92,11 @@ void APIENTRY crWindowDestroy( GLint window )
         if (winInfo->hVisibleRegion != INVALID_HANDLE_VALUE)
         {
             DeleteObject(winInfo->hVisibleRegion);
+        }
+#elif defined(GLX)
+        if (winInfo->pVisibleRegions)
+        {
+            XFree(winInfo->pVisibleRegions);
         }
 #endif
         stub.spu->dispatch_table.Flush();
@@ -379,4 +389,101 @@ void stubUninstallWindowMessageHook()
     if (stub.hMessageHook)
         UnhookWindowsHookEx(stub.hMessageHook);
 }
-#endif
+#elif defined(GLX) //#ifdef WINDOWS
+static GLboolean stubCheckXExtensions(WindowInfo *pWindow)
+{
+    int evb, erb, vmi=0, vma=0;
+
+    if (XCompositeQueryExtension(pWindow->dpy, &evb, &erb) 
+        && XCompositeQueryVersion(pWindow->dpy, &vma, &vmi) 
+        && (vma>0 || vmi>=4))
+    {
+        crDebug("XComposite %i.%i", vma, vmi);
+        vma=0;
+        vmi=0;
+        if (XFixesQueryExtension(pWindow->dpy, &evb, &erb) 
+            && XFixesQueryVersion(pWindow->dpy, &vma, &vmi)
+            && vma>=2)
+        {
+            crDebug("XFixes %i.%i", vma, vmi);
+            return GL_TRUE;
+        }
+        else
+        {
+            crWarning("XFixes not found or old version (%i.%i), no VisibilityTracking", vma, vmi);
+        }
+    }
+    else
+    {
+        crWarning("XComposite not found or old version (%i.%i), no VisibilityTracking", vma, vmi);
+    }
+    return GL_FALSE;
+}
+
+/*
+ *  Updates visible regions for given spu window.
+ *  Returns GL_TRUE if regions changed since last call, GL_FALSE overwise.
+ */
+GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
+{
+    static GLboolean bExtensionsChecked = GL_FALSE;
+
+    XserverRegion xreg;
+    int cRects, i;
+    XRectangle *pXRects;
+    GLint* pGLRects;
+
+    if (bExtensionsChecked || stubCheckXExtensions(pWindow))
+    {
+        bExtensionsChecked = GL_TRUE;
+    }
+    else
+    {
+        stub.trackWindowVisibleRgn = 0;
+        return GL_FALSE;
+    }
+
+    /*@todo see comment regarding size/position updates and XSync, same applies to those functions but
+    * it seems there's no way to get even based updates for this. Or I've failed to find the appropriate extension.
+    */
+    xreg = XCompositeCreateRegionFromBorderClip(pWindow->dpy, pWindow->drawable);
+    pXRects = XFixesFetchRegion(pWindow->dpy, xreg, &cRects);
+    XFixesDestroyRegion(pWindow->dpy, xreg);
+
+    if (!pWindow->pVisibleRegions 
+        || pWindow->cVisibleRegions!=cRects 
+        || crMemcmp(pWindow->pVisibleRegions, pXRects, cRects * sizeof(XRectangle)))
+    {
+        pWindow->pVisibleRegions = pXRects;
+        pWindow->cVisibleRegions = cRects;
+
+        pGLRects = crAlloc(4*cRects*sizeof(GLint));
+        if (!pGLRects)
+        {
+            crWarning("stubUpdateWindowVisibileRegions: failed to allocate %i bytes", 4*cRects*sizeof(GLint));
+            return GL_FALSE;
+        }
+
+        /*crDebug("Got %i rects.", cRects);*/
+        for (i=0; i<cRects; ++i)
+        {
+            pGLRects[4*i+0] = pXRects[i].x;
+            pGLRects[4*i+1] = pXRects[i].y;
+            pGLRects[4*i+2] = pXRects[i].x+pXRects[i].width;
+            pGLRects[4*i+3] = pXRects[i].y+pXRects[i].height;
+            /*crDebug("Rect[%i]=(%i,%i,%i,%i)", i, pGLRects[4*i+0], pGLRects[4*i+1], pGLRects[4*i+2], pGLRects[4*i+3]);*/                   
+        }
+
+        crDebug("Dispatched WindowVisibleRegion (%i, cRects=%i)", pWindow->spuWindow, cRects);
+        stub.spuDispatch.WindowVisibleRegion(pWindow->spuWindow, cRects, pGLRects);
+        crFree(pGLRects);
+        return GL_TRUE;
+    }
+    else
+    {
+        XFree(pXRects);
+    }
+
+    return GL_FALSE;
+}
+#endif //#ifdef WINDOWS

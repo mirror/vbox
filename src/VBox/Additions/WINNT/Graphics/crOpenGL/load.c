@@ -74,7 +74,6 @@ static void stubInitNativeDispatch( void )
 static ClearFunc_t origClear;
 static ViewportFunc_t origViewport;
 
-
 static void stubCheckWindowState(void)
 {
     int winX, winY;
@@ -111,7 +110,7 @@ static void stubCheckWindowState(void)
 
     stubUpdateWindowGeometry(window, bForceUpdate);
 
-#ifdef WINDOWS
+#if defined(GLX) || defined (WINDOWS)
     if (stub.trackWindowVisibleRgn)
     {
         stubUpdateWindowVisibileRegions(window);
@@ -287,6 +286,8 @@ static void stubInitVars(void)
     defaultWin->spuWindow = 0;  /* window 0 always exists */
 #ifdef WINDOWS
     defaultWin->hVisibleRegion = INVALID_HANDLE_VALUE;
+#elif defined(GLX)
+    defaultWin->pVisibleRegions = NULL;
 #endif
     crHashtableAdd(stub.windowTable, 0, defaultWin);
 
