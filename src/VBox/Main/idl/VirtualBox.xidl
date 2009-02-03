@@ -2374,7 +2374,7 @@
         process that opens a direct session with the given VM. As a result, the
         VM is locked by that direct session in the new process, preventing
         conflicting changes from other processes. Since sessions act as locks
-        that such prevent conflicting changes, one cannot open a remote session
+        that prevent conflicting changes, one cannot open a remote session
         for a VM that already has another open session (direct or remote), or
         is currently in the process of opening one (see <link
           to="IMachine::sessionState"/>).
