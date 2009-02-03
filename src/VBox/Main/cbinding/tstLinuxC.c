@@ -1,9 +1,8 @@
+/* $Revsion: $ */
 /** @file tstLinuxC.c
- *
  * Demonstrator program to illustrate use of C bindings of Main API.
- * Linux only at the moment due to shared library magic in the Makefile.
  *
- * $Id$
+ * Linux only at the moment due to shared library magic in the Makefile.
  */
 
 /*
@@ -25,7 +24,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <iconv.h>
 #include "cbinding.h"
 
 static char *nsIDToString(nsID *guid);
@@ -76,7 +74,7 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
     rc = virtualBox->vtbl->GetMachines2(virtualBox, &machineCnt, &machines);
     if (NS_FAILED(rc))
     {
-        fprintf (stderr, "could not get list of machines, rc=%08x\n",
+        fprintf(stderr, "could not get list of machines, rc=%08x\n",
             (unsigned)rc);
         return;
     }
@@ -94,12 +92,13 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
 
         printf("\tMachine #%u\n", (unsigned)i);
 
-        if (!machine) {
+        if (!machine)
+        {
             printf("\t(skipped, NULL)\n");
             continue;
         }
 
-        machine->vtbl->GetAccessible (machine, &isAccessible);
+        machine->vtbl->GetAccessible(machine, &isAccessible);
 
         if (isAccessible)
         {
@@ -117,7 +116,7 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
 
 
         {
-            nsID  *iid          = nsnull;
+            nsID  *iid = NULL;
             char  *uuidString;
 
             machine->vtbl->GetId(machine, &iid);
@@ -152,7 +151,7 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
             {
                 PRUnichar *typeId;
                 PRUnichar *osName;
-                IGuestOSType *osType = nsnull;
+                IGuestOSType *osType = NULL;
 
                 machine->vtbl->GetOSTypeId(machine, &typeId);
                 virtualBox->vtbl->GetGuestOSType(virtualBox, typeId, &osType);
@@ -170,15 +169,17 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
      * Let the user chose a machine to start.
      */
 
-    printf ("Type Machine# to start (0 - %u) or 'quit' to do nothing: ",
+    printf("Type Machine# to start (0 - %u) or 'quit' to do nothing: ",
         (unsigned)(machineCnt - 1));
-    fflush (stdout);
+    fflush(stdout);
 
-    if (scanf ("%u", &start_id) == 1 && start_id < machineCnt) {
+    if (scanf("%u", &start_id) == 1 && start_id < machineCnt)
+    {
         IMachine *machine = machines[start_id];
 
-        if (machine) {
-            nsID  *iid = nsnull;
+        if (machine)
+        {
+            nsID  *iid = NULL;
 
             machine->vtbl->GetId(machine, &iid);
             startVM(virtualBox, session, iid);
@@ -191,10 +192,12 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
      * Don't forget to release the objects in the array.
      */
 
-    for (i = 0; i < machineCnt; ++i) {
+    for (i = 0; i < machineCnt; ++i)
+    {
         IMachine *machine = machines[i];
 
-        if (machine) {
+        if (machine)
+        {
             machine->vtbl->nsisupports.Release((void *)machine);
         }
     }
@@ -219,7 +222,7 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
 
     if (NS_FAILED(rc) || !machine)
     {
-        fprintf (stderr, "Error: Couldn't get the machine handle.\n");
+        fprintf(stderr, "Error: Couldn't get the machine handle.\n");
         return;
     }
 
@@ -236,9 +239,9 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
 
     VBoxUtf16Free(sessionType);
 
-    if (NS_FAILED (rc))
+    if (NS_FAILED(rc))
     {
-        fprintf (stderr, "Error: OpenRemoteSession failed.\n");
+        fprintf(stderr, "Error: OpenRemoteSession failed.\n");
     }
     else
     {
@@ -249,7 +252,7 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
         progress->vtbl->WaitForCompletion(progress, -1);
 
         rc = progress->vtbl->GetCompleted(progress, &completed);
-        if (NS_FAILED (rc))
+        if (NS_FAILED(rc))
         {
             fprintf (stderr, "Error: GetCompleted status failed.\n");
         }
@@ -262,11 +265,11 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
 
             progress->vtbl->GetErrorInfo(progress, &errorInfo);
             errorInfo->vtbl->GetText(errorInfo, &text);
-            printf ("[!] Text        = %s\n", VBoxConvertPRUnichartoAscii (text));
+            printf("[!] Text        = %s\n", VBoxConvertPRUnichartoAscii (text));
         }
         else
         {
-            fprintf (stderr, "Remote session has been successfully opened.\n");
+            fprintf(stderr, "Remote session has been successfully opened.\n");
         }
         progress->vtbl->nsisupports.Release((void *)progress);
     }
@@ -287,21 +290,25 @@ int main(int argc, char **argv)
     nsresult rc;     /* Result code of various function (method) calls. */
 
     printf("Starting Main\n");
+
     /*
      * VBoxComInitialize does all the necessary startup action and
      * provides us with pointers to vbox and session handles.
      * It should be matched by a call to VBoxComUninitialize(vbox)
      * when done.
      */
+
     VBoxComInitialize(&vbox, &session);
 
-    if (vbox == NULL) {
-        fprintf (stderr, "%s: FATAL: could not get vbox handle\n", argv[0]);
-        exit (EXIT_FAILURE);
+    if (vbox == NULL)
+    {
+        fprintf(stderr, "%s: FATAL: could not get vbox handle\n", argv[0]);
+        return EXIT_FAILURE;
     }
-    if (session == NULL) {
+    if (session == NULL)
+    {
         fprintf (stderr, "%s: FATAL: could not get session handle\n", argv[0]);
-        exit (EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     /*
@@ -309,6 +316,7 @@ int main(int argc, char **argv)
      * this vbox. Were not using fancy macros here so it
      * remains easy to see how we access C++'s vtable.
      */
+
     printf("----------------------------------------------------\n");
 
     /* 1. Revision */
@@ -360,9 +368,11 @@ int main(int argc, char **argv)
     /*
      * Do as mom told us: always clean up after yourself.
      */
+
     VBoxComUninitialize();
     printf("Finished Main\n");
 
     return 0;
 }
 /* vim: set ts=4 sw=4 et: */
+

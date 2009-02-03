@@ -1,8 +1,7 @@
-# $Id: Makefile 42209 2009-01-29 12:22:10Z jens $
-#
+# $Revision$
 ## @file makefile.tstLinuxC
-#
 # Makefile for sample program illustrating use of C binding for XPCOM.
+#
 
 #
 # Copyright (C) 2009 Sun Microsystems, Inc.
@@ -49,3 +48,4 @@ tstLinuxC.o: tstLinuxC.c cbinding.h
 run:
 	echo "env VBOX_XPCOM_HOME=$(PATH_BIN) LD_LIBRARY_PATH=$(PATH_BIN) ./tstLinuxC" > $@
 	chmod a+x $@
+
