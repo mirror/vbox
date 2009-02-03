@@ -78,6 +78,16 @@ Utf8Str Utf8Str::substr(size_t pos /*= 0*/, size_t n /*= npos*/) const
     return ret;
 }
 
+int Utf8Str::toInt(uint64_t &i) const
+{
+    return RTStrToUInt64Ex(str, NULL, 0, &i);
+}
+
+int Utf8Str::toInt(uint32_t &i) const
+{
+    return RTStrToUInt32Ex(str, NULL, 0, &i);
+}
+
 struct FormatData
 {
     static const size_t CacheIncrement = 256;

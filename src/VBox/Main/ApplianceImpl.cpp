@@ -107,7 +107,7 @@ struct VirtualHardwareItem
     {};
 };
 
-typedef map<Utf8Str, DiskImage> DiskImagesMap;
+typedef map<uint32_t, DiskImage> DiskImagesMap;
 typedef map<Utf8Str, Network> NetworksMap;
 
 struct VirtualSystem;
@@ -128,11 +128,11 @@ struct Appliance::Data
 
 typedef map<uint32_t, VirtualHardwareItem> HardwareItemsMap;
 
-enum ControllerSystemType { IDE, SATA, SCSI };
 struct HardDiskController
 {
     uint32_t             idController;           // instance ID (Item/InstanceId); this gets referenced from HardDisk
-    ControllerSystemType controllerSystem;       // one of IDE, SATA, SCSI
+    enum ControllerSystemType { IDE, SATA, SCSI };
+    ControllerSystemType system;                 // one of IDE, SATA, SCSI
     Utf8Str              strControllerType;      // controllertype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
     Utf8Str              strAddress;             // for IDE
     uint32_t             ulBusNumber;            // for IDE
@@ -445,11 +445,11 @@ HRESULT Appliance::HandleNetworkSection(const char *pcszPath,
 HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                               const xml::Node *pelmVirtualSystem)
 {
-    VirtualSystem d;
+    VirtualSystem vsys;
 
     const xml::Node *pIdAttr = pelmVirtualSystem->findAttribute("id");
     if (pIdAttr)
-        d.strName = pIdAttr->getValue();
+        vsys.strName = pIdAttr->getValue();
 
     xml::NodesLoop loop(*pelmVirtualSystem);      // all child elements
     const xml::Node *pelmThis;
@@ -471,8 +471,8 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                  && ((pelmLicense = pelmThis->findChildElement("License")))
                )
             {
-                d.strLicenceInfo = pelmInfo->getValue();
-                d.strLicenceText = pelmLicense->getValue();
+                vsys.strLicenceInfo = pelmInfo->getValue();
+                vsys.strLicenceText = pelmLicense->getValue();
             }
         }
         else if (    (!strcmp(pcszElemName, "VirtualHardwareSection"))
@@ -490,7 +490,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                     <vssd:VirtualSystemType>vmx-4</vssd:VirtualSystemType>
                 </System>*/
                 if ((pelmVirtualSystemType = pelmSystem->findChildElement("VirtualSystemType")))
-                    d.strVirtualSystemType = pelmVirtualSystemType->getValue();
+                    vsys.strVirtualSystemType = pelmVirtualSystemType->getValue();
             }
 
             xml::NodesLoop loopVirtualHardwareItems(*pelmThis, "Item");      // all "Item" child elements
@@ -567,13 +567,13 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                 }
 
                 // store!
-                d.mapHardwareItems[i.ulInstanceID] = i;
+                vsys.mapHardwareItems[i.ulInstanceID] = i;
             }
 
             HardwareItemsMap::const_iterator itH;
 
-            for (itH = d.mapHardwareItems.begin();
-                 itH != d.mapHardwareItems.end();
+            for (itH = vsys.mapHardwareItems.begin();
+                 itH != vsys.mapHardwareItems.end();
                  ++itH)
             {
                 const VirtualHardwareItem &i = itH->second;
@@ -589,7 +589,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                             <rasd:ResourceType>3</rasd:ResourceType>
                             <rasd:VirtualQuantity>1</rasd:VirtualQuantity>*/
                         if (i.ullVirtualQuantity < UINT16_MAX)
-                            d.cCPUs = (uint16_t)i.ullVirtualQuantity;
+                            vsys.cCPUs = (uint16_t)i.ullVirtualQuantity;
                         else
                             return setError(VBOX_E_FILE_ERROR,
                                             tr("Error reading \"%s\": CPU count %RI64 is larger than %d, line %d"),
@@ -604,7 +604,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                              || (i.strAllocationUnits == "MB")                  // found in MS docs
                              || (i.strAllocationUnits == "byte * 2^20")         // suggested by OVF spec DSP0243 page 21
                            )
-                            d.ullMemorySize = i.ullVirtualQuantity * 1024 * 1024;
+                            vsys.ullMemorySize = i.ullVirtualQuantity * 1024 * 1024;
                         else
                             return setError(VBOX_E_FILE_ERROR,
                                             tr("Error reading \"%s\": Invalid allocation unit \"%s\" specified with memory size item, line %d"),
@@ -624,13 +624,14 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                 <rasd:BusNumber>0</rasd:BusNumber>
                             </Item> */
                         HardDiskController hdc;
+                        hdc.system = HardDiskController::IDE;
                         hdc.idController = i.ulInstanceID;
-                        hdc.controllerSystem = IDE;
                         hdc.strAddress = i.strAddress;
                         hdc.ulBusNumber = i.ulBusNumber;
 
-                        d.mapControllers[i.ulInstanceID] = hdc;
+                        vsys.mapControllers[i.ulInstanceID] = hdc;
                     }
+                    break;
 
                     case OVFResourceType_ParallelScsiHba:        // 6       SCSI controller
                     {
@@ -643,11 +644,11 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                 <rasd:ResourceType>6</rasd:ResourceType>
                             </Item> */
                         HardDiskController hdc;
+                        hdc.system = HardDiskController::SCSI;
                         hdc.idController = i.ulInstanceID;
-                        hdc.controllerSystem = SCSI;
                         hdc.strControllerType = i.strResourceSubType;
 
-                        d.mapControllers[i.ulInstanceID] = hdc;
+                        vsys.mapControllers[i.ulInstanceID] = hdc;
                     }
                     break;
 
@@ -679,12 +680,12 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                             i.strConnection.c_str(),
                                             i.ulLineNumber);
 
-                        d.llNetworkNames.push_back(i.strConnection);
+                        vsys.llNetworkNames.push_back(i.strConnection);
                     }
                     break;
 
                     case OVFResourceType_FloppyDrive: // 14
-                        d.fHasFloppyDrive = true;           // we have no additional information
+                        vsys.fHasFloppyDrive = true;           // we have no additional information
                     break;
 
                     case OVFResourceType_CdDrive:       // 15
@@ -699,7 +700,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                             // I tried to see what happens if I set an ISO for the CD-ROM in VMware Workstation,
                             // but then the ovftool dies with "Device backing not supported". So I guess if
                             // VMware can't export ISOs, then we don't need to be able to import them right now.
-                        d.fHasCdromDrive = true;           // we have no additional information
+                        vsys.fHasCdromDrive = true;           // we have no additional information
                     break;
 
                     case OVFResourceType_HardDisk: // 17
@@ -716,8 +717,8 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
 
                         // look up the hard disk controller element whose InstanceID equals our Parent;
                         // this is how the connection is specified in OVF
-                        ControllersMap::const_iterator it = d.mapControllers.find(i.ulParent);
-                        if (it == d.mapControllers.end())
+                        ControllersMap::const_iterator it = vsys.mapControllers.find(i.ulParent);
+                        if (it == vsys.mapControllers.end())
                             return setError(VBOX_E_FILE_ERROR,
                                             tr("Error reading \"%s\": Hard disk item with instance ID %d specifies invalid parent %d, line %d"),
                                             pcszPath,
@@ -746,7 +747,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                             i.strHostResource.c_str(),
                                             i.ulLineNumber);
 
-                        d.mapVirtualDisks[vd.strDiskId] = vd;
+                        vsys.mapVirtualDisks[vd.strDiskId] = vd;
                     }
                     break;
 
@@ -759,7 +760,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                 <rasd:Address>0</rasd:Address>
                                 <rasd:BusNumber>0</rasd:BusNumber>
                             </Item> */
-                        d.fHasUsbController = true;           // we have no additional information
+                        vsys.fHasUsbController = true;           // we have no additional information
                     break;
 
                     case OVFResourceType_SoundCard: // 35
@@ -772,7 +773,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                 <rasd:AutomaticAllocation>false</rasd:AutomaticAllocation>
                                 <rasd:AddressOnParent>3</rasd:AddressOnParent>
                             </Item> */
-                        d.strSoundCardType = i.strResourceSubType;
+                        vsys.strSoundCardType = i.strResourceSubType;
                     break;
 
                     default:
@@ -795,12 +796,12 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                 pcszPath,
                                 pelmThis->getLineNumber());
 
-            d.cimos = (CIMOSType_T)cimos64;
+            vsys.cimos = (CIMOSType_T)cimos64;
         }
     }
 
     // now create the virtual system
-    m->llVirtualSystems.push_back(d);
+    m->llVirtualSystems.push_back(vsys);
 
     return S_OK;
 }
@@ -971,6 +972,192 @@ STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVi
     return S_OK;
 }
 
+void convertCIMOSType2VBoxOSType(Utf8Str &osTypeVBox, CIMOSType_T c)
+{
+    switch (c)
+    {
+        case CIMOSType_CIMOS_Unknown: // 0 - Unknown
+            osTypeVBox = SchemaDefs_OSTypeId_Other;
+            break;
+
+        case CIMOSType_CIMOS_OS2: // 12 - OS/2
+            osTypeVBox = SchemaDefs_OSTypeId_OS2;
+            break;
+
+        case CIMOSType_CIMOS_MSDOS: // 14 - MSDOS
+            osTypeVBox = SchemaDefs_OSTypeId_DOS;
+            break;
+
+        case CIMOSType_CIMOS_WIN3x: // 15 - WIN3x
+            osTypeVBox = SchemaDefs_OSTypeId_Windows31;
+            break;
+
+        case CIMOSType_CIMOS_WIN95: // 16 - WIN95
+            osTypeVBox = SchemaDefs_OSTypeId_Windows95;
+            break;
+
+        case CIMOSType_CIMOS_WIN98: // 17 - WIN98
+            osTypeVBox = SchemaDefs_OSTypeId_Windows98;
+            break;
+
+        case CIMOSType_CIMOS_WINNT: // 18 - WINNT
+            osTypeVBox = SchemaDefs_OSTypeId_WindowsNT4;
+            break;
+
+        case CIMOSType_CIMOS_NetWare: // 21 - NetWare
+        case CIMOSType_CIMOS_NovellOES: // 86 - Novell OES
+            osTypeVBox = SchemaDefs_OSTypeId_Netware;
+            break;
+
+        case CIMOSType_CIMOS_Solaris: // 29 - Solaris
+        case CIMOSType_CIMOS_SunOS: // 30 - SunOS
+            osTypeVBox = SchemaDefs_OSTypeId_Solaris;
+            break;
+
+        case CIMOSType_CIMOS_FreeBSD: // 42 - FreeBSD
+            osTypeVBox = SchemaDefs_OSTypeId_FreeBSD;
+            break;
+
+        case CIMOSType_CIMOS_NetBSD: // 43 - NetBSD
+            osTypeVBox = SchemaDefs_OSTypeId_NetBSD;
+            break;
+
+        case CIMOSType_CIMOS_QNX: // 48 - QNX
+            osTypeVBox = SchemaDefs_OSTypeId_QNX;
+            break;
+
+        case CIMOSType_CIMOS_Windows2000: // 58 - Windows 2000
+            osTypeVBox = SchemaDefs_OSTypeId_Windows2000;
+            break;
+
+        case CIMOSType_CIMOS_WindowsMe: // 63 - Windows (R) Me
+            osTypeVBox = SchemaDefs_OSTypeId_WindowsMe;
+            break;
+
+        case CIMOSType_CIMOS_OpenBSD: // 65 - OpenBSD
+            osTypeVBox = SchemaDefs_OSTypeId_OpenBSD;
+            break;
+
+        case CIMOSType_CIMOS_WindowsXP: // 67 - Windows XP
+        case CIMOSType_CIMOS_WindowsXPEmbedded: // 72 - Windows XP Embedded
+        case CIMOSType_CIMOS_WindowsEmbeddedforPointofService: // 75 - Windows Embedded for Point of Service
+            osTypeVBox = SchemaDefs_OSTypeId_WindowsXP;
+            break;
+
+        case CIMOSType_CIMOS_MicrosoftWindowsServer2003: // 69 - Microsoft Windows Server 2003
+            osTypeVBox = SchemaDefs_OSTypeId_Windows2003;
+            break;
+
+        case CIMOSType_CIMOS_MicrosoftWindowsServer2003_64: // 70 - Microsoft Windows Server 2003 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_Windows2003_64;
+            break;
+
+        case CIMOSType_CIMOS_WindowsXP_64: // 71 - Windows XP 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_WindowsXP_64;
+            break;
+
+        case CIMOSType_CIMOS_WindowsVista: // 73 - Windows Vista
+            osTypeVBox = SchemaDefs_OSTypeId_WindowsVista;
+            break;
+
+        case CIMOSType_CIMOS_WindowsVista_64: // 74 - Windows Vista 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_WindowsVista_64;
+            break;
+
+        case CIMOSType_CIMOS_MicrosoftWindowsServer2008: // 76 - Microsoft Windows Server 2008
+            osTypeVBox = SchemaDefs_OSTypeId_Windows2008;
+            break;
+
+        case CIMOSType_CIMOS_MicrosoftWindowsServer2008_64: // 77 - Microsoft Windows Server 2008 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_Windows2008_64;
+            break;
+
+        case CIMOSType_CIMOS_FreeBSD_64: // 78 - FreeBSD 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_FreeBSD_64;
+            break;
+
+        case CIMOSType_CIMOS_RedHatEnterpriseLinux: // 79 - RedHat Enterprise Linux
+            osTypeVBox = SchemaDefs_OSTypeId_RedHat;
+            break;
+
+        case CIMOSType_CIMOS_RedHatEnterpriseLinux_64: // 80 - RedHat Enterprise Linux 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_RedHat_64;
+            break;
+
+        case CIMOSType_CIMOS_Solaris_64: // 81 - Solaris 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_Solaris_64;
+            break;
+
+        case CIMOSType_CIMOS_SUSE: // 82 - SUSE
+        case CIMOSType_CIMOS_SLES: // 84 - SLES
+        case CIMOSType_CIMOS_NovellLinuxDesktop: // 87 - Novell Linux Desktop
+            osTypeVBox = SchemaDefs_OSTypeId_OpenSUSE;
+            break;
+
+        case CIMOSType_CIMOS_SUSE_64: // 83 - SUSE 64-Bit
+        case CIMOSType_CIMOS_SLES_64: // 85 - SLES 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_OpenSUSE_64;
+            break;
+
+        case CIMOSType_CIMOS_LINUX: // 36 - LINUX
+        case CIMOSType_CIMOS_SunJavaDesktopSystem: // 88 - Sun Java Desktop System
+        case CIMOSType_CIMOS_TurboLinux: // 91 - TurboLinux
+            osTypeVBox = SchemaDefs_OSTypeId_Linux;
+            break;
+
+            //                case CIMOSType_CIMOS_TurboLinux_64: // 92 - TurboLinux 64-Bit
+            //                case CIMOSType_CIMOS_Linux_64: // 101 - Linux 64-Bit
+            //                    osTypeVBox = VBOXOSTYPE_Linux_x64;
+            //                    break;
+
+        case CIMOSType_CIMOS_Mandriva: // 89 - Mandriva
+            osTypeVBox = SchemaDefs_OSTypeId_Mandriva;
+            break;
+
+        case CIMOSType_CIMOS_Mandriva_64: // 90 - Mandriva 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_Mandriva_64;
+            break;
+
+        case CIMOSType_CIMOS_Ubuntu: // 93 - Ubuntu
+            osTypeVBox = SchemaDefs_OSTypeId_Ubuntu;
+            break;
+
+        case CIMOSType_CIMOS_Ubuntu_64: // 94 - Ubuntu 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_Ubuntu_64;
+            break;
+
+        case CIMOSType_CIMOS_Debian: // 95 - Debian
+            osTypeVBox = SchemaDefs_OSTypeId_Debian;
+            break;
+
+        case CIMOSType_CIMOS_Debian_64: // 96 - Debian 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_Debian_64;
+            break;
+
+        case CIMOSType_CIMOS_Linux_2_4_x: // 97 - Linux 2.4.x
+            osTypeVBox = SchemaDefs_OSTypeId_Linux24;
+            break;
+
+        case CIMOSType_CIMOS_Linux_2_4_x_64: // 98 - Linux 2.4.x 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_Linux24_64;
+            break;
+
+        case CIMOSType_CIMOS_Linux_2_6_x: // 99 - Linux 2.6.x
+            osTypeVBox = SchemaDefs_OSTypeId_Linux26;
+            break;
+
+        case CIMOSType_CIMOS_Linux_2_6_x_64: // 100 - Linux 2.6.x 64-Bit
+            osTypeVBox = SchemaDefs_OSTypeId_Linux26_64;
+            break;
+        default:
+            {
+                /* If we are here we have no clue what OS this should be. Set to
+                    * other type as default. */
+                osTypeVBox = SchemaDefs_OSTypeId_Other;
+            }
+    }
+}
+
 STDMETHODIMP Appliance::Interpret()
 {
     // @todo:
@@ -991,8 +1178,8 @@ STDMETHODIMP Appliance::Interpret()
     ComPtr<ISystemProperties> systemProps;
     rc = mVirtualBox->COMGETTER(SystemProperties)(systemProps.asOutParam());
     ComAssertComRCThrowRC(rc);
-    BSTR defaultHardDiskLocation;
-    rc = systemProps->COMGETTER(DefaultHardDiskFolder)(&defaultHardDiskLocation);
+    Bstr bstrDefaultHardDiskLocation;
+    rc = systemProps->COMGETTER(DefaultHardDiskFolder)(bstrDefaultHardDiskLocation.asOutParam());
     ComAssertComRCThrowRC(rc);
 
     list<VirtualSystem>::const_iterator it;
@@ -1001,376 +1188,200 @@ STDMETHODIMP Appliance::Interpret()
          it != m->llVirtualSystems.end();
          ++it)
     {
-        const VirtualSystem &vs = *it;
-        ComObjPtr <VirtualSystemDescription> vsd;
-        vsd.createObject();
-        rc = vsd->init();
+        const VirtualSystem &vsysThis = *it;
+
+        ComObjPtr<VirtualSystemDescription> pNewDesc;
+        pNewDesc.createObject();
+        rc = pNewDesc->init();
         ComAssertComRCThrowRC(rc);
 
-        Utf8Str osTypeVBox = SchemaDefs_OSTypeId_Other;
         /* Guest OS type */
-        switch (vs.cimos)
-        {
-            case CIMOSType_CIMOS_Unknown: // 0 - Unknown
-                osTypeVBox = SchemaDefs_OSTypeId_Other;
-                break;
-
-            case CIMOSType_CIMOS_OS2: // 12 - OS/2
-                osTypeVBox = SchemaDefs_OSTypeId_OS2;
-                break;
-
-            case CIMOSType_CIMOS_MSDOS: // 14 - MSDOS
-                osTypeVBox = SchemaDefs_OSTypeId_DOS;
-                break;
-
-            case CIMOSType_CIMOS_WIN3x: // 15 - WIN3x
-                osTypeVBox = SchemaDefs_OSTypeId_Windows31;
-                break;
-
-            case CIMOSType_CIMOS_WIN95: // 16 - WIN95
-                osTypeVBox = SchemaDefs_OSTypeId_Windows95;
-                break;
-
-            case CIMOSType_CIMOS_WIN98: // 17 - WIN98
-                osTypeVBox = SchemaDefs_OSTypeId_Windows98;
-                break;
-
-            case CIMOSType_CIMOS_WINNT: // 18 - WINNT
-                osTypeVBox = SchemaDefs_OSTypeId_WindowsNT4;
-                break;
-
-            case CIMOSType_CIMOS_NetWare: // 21 - NetWare
-            case CIMOSType_CIMOS_NovellOES: // 86 - Novell OES
-                osTypeVBox = SchemaDefs_OSTypeId_Netware;
-                break;
-
-            case CIMOSType_CIMOS_Solaris: // 29 - Solaris
-            case CIMOSType_CIMOS_SunOS: // 30 - SunOS
-                osTypeVBox = SchemaDefs_OSTypeId_Solaris;
-                break;
-
-            case CIMOSType_CIMOS_FreeBSD: // 42 - FreeBSD
-                osTypeVBox = SchemaDefs_OSTypeId_FreeBSD;
-                break;
-
-            case CIMOSType_CIMOS_NetBSD: // 43 - NetBSD
-                osTypeVBox = SchemaDefs_OSTypeId_NetBSD;
-                break;
-
-            case CIMOSType_CIMOS_QNX: // 48 - QNX
-                osTypeVBox = SchemaDefs_OSTypeId_QNX;
-                break;
-
-            case CIMOSType_CIMOS_Windows2000: // 58 - Windows 2000
-                osTypeVBox = SchemaDefs_OSTypeId_Windows2000;
-                break;
-
-            case CIMOSType_CIMOS_WindowsMe: // 63 - Windows (R) Me
-                osTypeVBox = SchemaDefs_OSTypeId_WindowsMe;
-                break;
-
-            case CIMOSType_CIMOS_OpenBSD: // 65 - OpenBSD
-                osTypeVBox = SchemaDefs_OSTypeId_OpenBSD;
-                break;
-
-            case CIMOSType_CIMOS_WindowsXP: // 67 - Windows XP
-            case CIMOSType_CIMOS_WindowsXPEmbedded: // 72 - Windows XP Embedded
-            case CIMOSType_CIMOS_WindowsEmbeddedforPointofService: // 75 - Windows Embedded for Point of Service
-                osTypeVBox = SchemaDefs_OSTypeId_WindowsXP;
-                break;
-
-            case CIMOSType_CIMOS_MicrosoftWindowsServer2003: // 69 - Microsoft Windows Server 2003
-                osTypeVBox = SchemaDefs_OSTypeId_Windows2003;
-                break;
-
-            case CIMOSType_CIMOS_MicrosoftWindowsServer2003_64: // 70 - Microsoft Windows Server 2003 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_Windows2003_64;
-                break;
-
-            case CIMOSType_CIMOS_WindowsXP_64: // 71 - Windows XP 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_WindowsXP_64;
-                break;
-
-            case CIMOSType_CIMOS_WindowsVista: // 73 - Windows Vista
-                osTypeVBox = SchemaDefs_OSTypeId_WindowsVista;
-                break;
-
-            case CIMOSType_CIMOS_WindowsVista_64: // 74 - Windows Vista 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_WindowsVista_64;
-                break;
-
-            case CIMOSType_CIMOS_MicrosoftWindowsServer2008: // 76 - Microsoft Windows Server 2008
-                osTypeVBox = SchemaDefs_OSTypeId_Windows2008;
-                break;
-
-            case CIMOSType_CIMOS_MicrosoftWindowsServer2008_64: // 77 - Microsoft Windows Server 2008 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_Windows2008_64;
-                break;
-
-            case CIMOSType_CIMOS_FreeBSD_64: // 78 - FreeBSD 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_FreeBSD_64;
-                break;
-
-            case CIMOSType_CIMOS_RedHatEnterpriseLinux: // 79 - RedHat Enterprise Linux
-                osTypeVBox = SchemaDefs_OSTypeId_RedHat;
-                break;
-
-            case CIMOSType_CIMOS_RedHatEnterpriseLinux_64: // 80 - RedHat Enterprise Linux 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_RedHat_64;
-                break;
-
-            case CIMOSType_CIMOS_Solaris_64: // 81 - Solaris 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_Solaris_64;
-                break;
-
-            case CIMOSType_CIMOS_SUSE: // 82 - SUSE
-            case CIMOSType_CIMOS_SLES: // 84 - SLES
-            case CIMOSType_CIMOS_NovellLinuxDesktop: // 87 - Novell Linux Desktop
-                osTypeVBox = SchemaDefs_OSTypeId_OpenSUSE;
-                break;
-
-            case CIMOSType_CIMOS_SUSE_64: // 83 - SUSE 64-Bit
-            case CIMOSType_CIMOS_SLES_64: // 85 - SLES 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_OpenSUSE_64;
-                break;
-
-            case CIMOSType_CIMOS_LINUX: // 36 - LINUX
-            case CIMOSType_CIMOS_SunJavaDesktopSystem: // 88 - Sun Java Desktop System
-            case CIMOSType_CIMOS_TurboLinux: // 91 - TurboLinux
-                osTypeVBox = SchemaDefs_OSTypeId_Linux;
-                break;
-
-                //                case CIMOSType_CIMOS_TurboLinux_64: // 92 - TurboLinux 64-Bit
-                //                case CIMOSType_CIMOS_Linux_64: // 101 - Linux 64-Bit
-                //                    osTypeVBox = VBOXOSTYPE_Linux_x64;
-                //                    break;
-
-            case CIMOSType_CIMOS_Mandriva: // 89 - Mandriva
-                osTypeVBox = SchemaDefs_OSTypeId_Mandriva;
-                break;
-
-            case CIMOSType_CIMOS_Mandriva_64: // 90 - Mandriva 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_Mandriva_64;
-                break;
-
-            case CIMOSType_CIMOS_Ubuntu: // 93 - Ubuntu
-                osTypeVBox = SchemaDefs_OSTypeId_Ubuntu;
-                break;
-
-            case CIMOSType_CIMOS_Ubuntu_64: // 94 - Ubuntu 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_Ubuntu_64;
-                break;
-
-            case CIMOSType_CIMOS_Debian: // 95 - Debian
-                osTypeVBox = SchemaDefs_OSTypeId_Debian;
-                break;
-
-            case CIMOSType_CIMOS_Debian_64: // 96 - Debian 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_Debian_64;
-                break;
-
-            case CIMOSType_CIMOS_Linux_2_4_x: // 97 - Linux 2.4.x
-                osTypeVBox = SchemaDefs_OSTypeId_Linux24;
-                break;
-
-            case CIMOSType_CIMOS_Linux_2_4_x_64: // 98 - Linux 2.4.x 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_Linux24_64;
-                break;
-
-            case CIMOSType_CIMOS_Linux_2_6_x: // 99 - Linux 2.6.x
-                osTypeVBox = SchemaDefs_OSTypeId_Linux26;
-                break;
-
-            case CIMOSType_CIMOS_Linux_2_6_x_64: // 100 - Linux 2.6.x 64-Bit
-                osTypeVBox = SchemaDefs_OSTypeId_Linux26_64;
-                break;
-            default:
-                {
-                    /* If we are here we have no clue what OS this should be. Set to
-                     * other type as default. */
-                    osTypeVBox = SchemaDefs_OSTypeId_Other;
-                }
-        }
-        vsd->addEntry(VirtualSystemDescriptionType_OS, "", toString<ULONG>(vs.cimos), osTypeVBox);
+        Utf8Str strOsTypeVBox,
+                strCIMOSType = toString<ULONG>(vsysThis.cimos);
+        convertCIMOSType2VBoxOSType(strOsTypeVBox, vsysThis.cimos);
+        pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
+                      0,
+                      strCIMOSType,
+                      strOsTypeVBox);
 
         /* VM name */
         /* If the there isn't any name specified create a default one out of
          * the OS type */
-        Utf8Str nameVBox = vs.strName;
+        Utf8Str nameVBox = vsysThis.strName;
         if (nameVBox == "")
-            nameVBox = osTypeVBox;
+            nameVBox = strOsTypeVBox;
         searchUniqueVMName(nameVBox);
-        vsd->addEntry(VirtualSystemDescriptionType_Name, "", vs.strName, nameVBox);
+        pNewDesc->addEntry(VirtualSystemDescriptionType_Name,
+                           0,
+                           vsysThis.strName,
+                           nameVBox);
 
-        /* Now that we know the base system get our internal defaults based on that. */
-        ComPtr<IGuestOSType> osType;
-        rc = mVirtualBox->GetGuestOSType(Bstr(osTypeVBox), osType.asOutParam());
+        /* Now that we know the OS type, get our internal defaults based on that. */
+        ComPtr<IGuestOSType> pGuestOSType;
+        rc = mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox), pGuestOSType.asOutParam());
         ComAssertComRCThrowRC(rc);
 
         /* CPU count */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxCPUCount) */
-        ULONG cpuCountVBox = vs.cCPUs;
-        if (vs.cCPUs == 0)
+        ULONG cpuCountVBox = vsysThis.cCPUs;
+        if (vsysThis.cCPUs == 0)
             cpuCountVBox = 1;
-        vsd->addEntry(VirtualSystemDescriptionType_CPU, "", toString<ULONG>(vs.cCPUs), toString<ULONG>(cpuCountVBox));
+        pNewDesc->addEntry(VirtualSystemDescriptionType_CPU,
+                           0,
+                           toString<ULONG>(vsysThis.cCPUs),
+                           toString<ULONG>(cpuCountVBox));
 
         /* RAM */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
-        uint64_t ullMemSizeVBox = vs.ullMemorySize;
-        if (vs.ullMemorySize == 0)
+        uint64_t ullMemSizeVBox = vsysThis.ullMemorySize;
+        if (vsysThis.ullMemorySize == 0)
         {
             /* If the RAM of the OVF is zero, use our predefined values */
             ULONG memSizeVBox2;
-            rc = osType->COMGETTER(RecommendedRAM)(&memSizeVBox2);
+            rc = pGuestOSType->COMGETTER(RecommendedRAM)(&memSizeVBox2);
             ComAssertComRCThrowRC(rc);
             /* VBox stores that in MByte */
             ullMemSizeVBox = (uint64_t)memSizeVBox2 * _1M;
         }
-        vsd->addEntry(VirtualSystemDescriptionType_Memory, "", toString<uint64_t>(vs.ullMemorySize), toString<uint64_t>(ullMemSizeVBox));
+        pNewDesc->addEntry(VirtualSystemDescriptionType_Memory,
+                           0,
+                           toString<uint64_t>(vsysThis.ullMemorySize),
+                           toString<uint64_t>(ullMemSizeVBox));
 
         /* Audio */
-        if (!vs.strSoundCardType.isNull())
+        if (!vsysThis.strSoundCardType.isNull())
             /* Currently we set the AC97 always.
                @todo: figure out the hardware which could be possible */
-            vsd->addEntry(VirtualSystemDescriptionType_SoundCard, "", vs.strSoundCardType, toString<uint32_t>(AudioControllerType_AC97));
+            pNewDesc->addEntry(VirtualSystemDescriptionType_SoundCard,
+                               0,
+                               vsysThis.strSoundCardType,
+                               "");
 
         /* USB Controller */
-        if (vs.fHasUsbController)
-            vsd->addEntry(VirtualSystemDescriptionType_USBController, "", "", "1");
+        if (vsysThis.fHasUsbController)
+            pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, 0, "", "");
 
         /* Network Controller */
-        // @todo: is there no hardware specified in the OVF-Format?
-        if (vs.llNetworkNames.size() > 0)
+        // @todo: there is no hardware specification in the OVF file; supposedly the
+        // hardware will then be determined by the VirtualSystemType element (e.g. "vmx-07")
+        if (vsysThis.llNetworkNames.size() > 0)
         {
             /* Get the default network adapter type for the selected guest OS */
             NetworkAdapterType_T nwAdapterVBox = NetworkAdapterType_Am79C970A;
-            rc = osType->COMGETTER(AdapterType)(&nwAdapterVBox);
+            rc = pGuestOSType->COMGETTER(AdapterType)(&nwAdapterVBox);
             ComAssertComRCThrowRC(rc);
             list<Utf8Str>::const_iterator nwIt;
             /* Iterate through all abstract networks. We support 8 network
              * adapters at the maximum. (@todo: warn if it are more!) */
             size_t a = 0;
-            for (nwIt = vs.llNetworkNames.begin();
-                 nwIt != vs.llNetworkNames.end() && a < SchemaDefs::NetworkAdapterCount;
+            for (nwIt = vsysThis.llNetworkNames.begin();
+                 nwIt != vsysThis.llNetworkNames.end() && a < SchemaDefs::NetworkAdapterCount;
                  ++nwIt, ++a)
             {
-                // Utf8Str nwController = *nwIt; // @todo: not used yet
-                vsd->addEntry(VirtualSystemDescriptionType_NetworkAdapter, "", "", toString<ULONG>(nwAdapterVBox));
+                Utf8Str nwController = *nwIt; // @todo: not used yet
+                pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter, 0, "", toString<ULONG>(nwAdapterVBox));
             }
         }
 
         /* Floppy Drive */
-        if (vs.fHasFloppyDrive)
-            vsd->addEntry(VirtualSystemDescriptionType_Floppy, "", "", "1");
+        if (vsysThis.fHasFloppyDrive)
+            pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy, 0, "", "");
 
         /* CD Drive */
-        /* @todo: I can't disable the CDROM. So nothing to do for now. */
-        //if (vs.fHasCdromDrive)
-        //    vsd->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "1");
+        if (vsysThis.fHasCdromDrive)
+           pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, 0, "", "");
 
         /* Hard disk Controller */
         ControllersMap::const_iterator hdcIt;
         /* Iterate through all hard disk controllers */
-        for (hdcIt = vs.mapControllers.begin();
-             hdcIt != vs.mapControllers.end();
+        for (hdcIt = vsysThis.mapControllers.begin();
+             hdcIt != vsysThis.mapControllers.end();
              ++hdcIt)
         {
-            HardDiskController hdc = hdcIt->second;
-            switch (hdc.controllerSystem)
+            const HardDiskController &hdc = hdcIt->second;
+            switch (hdc.system)
             {
-                case IDE:
-                    {
-                        // @todo: figure out the IDE types
-                        /* Use PIIX4 as default */
-                        IDEControllerType_T hdcController = IDEControllerType_PIIX4;
-                        if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX3"))
-                            hdcController = IDEControllerType_PIIX3;
-                        else if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX4"))
-                            hdcController = IDEControllerType_PIIX4;
-                        vsd->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE, toString<uint32_t>(hdc.idController), hdc.strControllerType, toString<ULONG>(hdcController));
-                        break;
-                    }
-#ifdef VBOX_WITH_AHCI
-                case SATA:
-                    {
-                        // @todo: figure out the SATA types
-                        /* We only support a plain AHCI controller, so use them always */
-                        vsd->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, toString<uint32_t>(hdc.idController), hdc.strControllerType, "AHCI");
-                        break;
-                    }
-#endif /* VBOX_WITH_AHCI */
-#ifdef VBOX_WITH_SCSI
-                case SCSI:
-                    {
-                        // @todo: figure out the SCSI types
-# ifdef VBOX_WITH_LSILOGIC
-                        Utf8Str hdcController = "LsiLogic";
-# elif VBOX_WITH_BUSLOGIC
-                        Utf8Str hdcController = "BusLogic";
-# else /* !VBOX_WITH_BUSLOGIC */
-                        Utf8Str hdcController;
-# endif
-# ifdef VBOX_WITH_LSILOGIC
-                        if (!RTStrICmp(hdc.strControllerType.c_str(), "LsiLogic"))
-                            hdcController = "LsiLogic";
-# endif /* VBOX_WITH_LSILOGIC */
-# ifdef VBOX_WITH_BUSLOGIC
-                        if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
-                            hdcController = "BusLogic";
-# endif /* VBOX_WITH_BUSLOGIC */
-                        vsd->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI, toString<uint32_t>(hdc.idController), hdc.strControllerType, hdcController);
-                        break;
-                    }
-#endif /* VBOX_WITH_SCSI */
-                default:
-                    {
-                    /* @todo: hmm, ok, this needs some explanation to the user,
-                     * so set an error! The other possibility is to set IDE
-                     * PIIX4 as default & redirect all hard disks to this
-                     * controller. */
+                case HardDiskController::IDE:
+                {
+                    // @todo: figure out the IDE types
+                    /* Use PIIX4 as default */
+                    IDEControllerType_T hdcController = IDEControllerType_PIIX4;
+                    if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX3"))
+                        hdcController = IDEControllerType_PIIX3;
+                    else if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX4"))
+                        hdcController = IDEControllerType_PIIX4;
+                    pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
+                                       hdc.idController,
+                                       hdc.strControllerType,
+                                       toString<ULONG>(hdcController));
                     break;
-                    }
+                }
+
+                case HardDiskController::SATA:
+                {
+                    // @todo: figure out the SATA types
+                    /* We only support a plain AHCI controller, so use them always */
+                    pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
+                                       hdc.idController,
+                                       hdc.strControllerType,
+                                       "AHCI");
+                    break;
+                }
+
+                case HardDiskController::SCSI:
+                {
+                    // @todo: figure out the SCSI types
+                    Utf8Str hdcController = "LsiLogic";
+                    if (!RTStrICmp(hdc.strControllerType.c_str(), "LsiLogic"))
+                        hdcController = "LsiLogic";
+                    else if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
+                        hdcController = "BusLogic";
+                    pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
+                                       hdc.idController,
+                                       hdc.strControllerType,
+                                       hdcController);
+                    break;
+                }
             }
         }
 
         /* Hard disks */
-        if (vs.mapVirtualDisks.size() > 0)
+        if (vsysThis.mapVirtualDisks.size() > 0)
         {
             // @todo:
             //  - strHref could be empty (construct a new default file name)
             //  - check that the filename is unique to vbox in any case
             VirtualDisksMap::const_iterator hdIt;
             /* Iterate through all hard disks ()*/
-            for (hdIt = vs.mapVirtualDisks.begin();
-                 hdIt != vs.mapVirtualDisks.end();
+            for (hdIt = vsysThis.mapVirtualDisks.begin();
+                 hdIt != vsysThis.mapVirtualDisks.end();
                  ++hdIt)
             {
-                VirtualDisk hd = hdIt->second;
+                const VirtualDisk &hd = hdIt->second;
                 /* Get the associated disk image */
-                DiskImage di = m->mapDisks [hd.strDiskId];
-                /* We have to check if we support this format */
-                bool fSupported = false;
+                const DiskImage &di = m->mapDisks[hd.strDiskId];
+
                 // @todo:
                 //  - figure out all possible vmdk formats we also support
                 //  - figure out if there is a url specifier for vhd already
                 //  - we need a url specifier for the vdi format
-                if (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#sparse"))
-                    fSupported = true;
-                /* enable compressed formats for the first tests also */
-                else if (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed"))
-                    fSupported = true;
-                if (fSupported)
+                if (    (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#sparse"))
+                     || (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed"))
+                   )
                 {
                     /* Construct the path */
-                    Utf8Str path = Utf8StrFmt("%ls%c%s", defaultHardDiskLocation, RTPATH_DELIMITER, di.strHref.c_str());
+                    Utf8StrFmt path("%ls%c%s", bstrDefaultHardDiskLocation.raw(), RTPATH_DELIMITER, di.strHref.c_str());
                     /* Make the path unique to the VBox installation */
                     searchUniqueDiskImageFilePath(path);
-                    vsd->addEntry(VirtualSystemDescriptionType_HardDiskImage, hd.strDiskId, di.strHref, path);
+                    pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
+                                       hd.idController,
+                                       di.strHref,
+                                       path);
                 }
             }
         }
 
-        m->virtualSystemDescriptions.push_back(vsd);
+        m->virtualSystemDescriptions.push_back(pNewDesc);
     }
 
     return S_OK;
@@ -1389,17 +1400,17 @@ STDMETHODIMP Appliance::ImportAppliance()
     /* Iterate through all virtual systems of that appliance */
     size_t i = 0;
     for (it = m->llVirtualSystems.begin(),
-         it1 = m->virtualSystemDescriptions.begin();
+            it1 = m->virtualSystemDescriptions.begin();
          it != m->llVirtualSystems.end();
          ++it, ++it1, ++i)
     {
-        const VirtualSystem &vs = *it;
-        ComObjPtr<VirtualSystemDescription> vsd = (*it1);
+        const VirtualSystem &vsysThis = *it;
+        ComObjPtr<VirtualSystemDescription> vsdescThis = (*it1);
 
         /* Guest OS type */
-        std::list<VirtualSystemDescriptionEntry*> vsdeOS = vsd->findByType(VirtualSystemDescriptionType_OS);
+        std::list<VirtualSystemDescriptionEntry*> vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
         Assert(vsdeOS.size() == 1);
-        const Utf8Str &osTypeVBox = vsdeOS.front()->strFinalValue;
+        const Utf8Str &osTypeVBox = vsdeOS.front()->strConfig;
 
         /* Now that we know the base system get our internal defaults based on that. */
         ComPtr<IGuestOSType> osType;
@@ -1408,11 +1419,11 @@ STDMETHODIMP Appliance::ImportAppliance()
 
         /* Create the machine */
         /* First get the name */
-        std::list<VirtualSystemDescriptionEntry*> vsdeName = vsd->findByType(VirtualSystemDescriptionType_Name);
+        std::list<VirtualSystemDescriptionEntry*> vsdeName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
         Assert(vsdeName.size() == 1);
-        const Utf8Str &nameVBox = vsdeName.front()->strFinalValue;
+        const Utf8Str &nameVBox = vsdeName.front()->strConfig;
         ComPtr<IMachine> newMachine;
-        rc = mVirtualBox->CreateMachine(Bstr(nameVBox.c_str()), Bstr(osTypeVBox.c_str()),
+        rc = mVirtualBox->CreateMachine(Bstr(nameVBox), Bstr(osTypeVBox),
                                         Bstr(), Guid(),
                                         newMachine.asOutParam());
         ComAssertComRCThrowRC(rc);
@@ -1423,9 +1434,9 @@ STDMETHODIMP Appliance::ImportAppliance()
 
         /* RAM */
         /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
-        std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsd->findByType(VirtualSystemDescriptionType_Memory);
+        std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->findByType(VirtualSystemDescriptionType_Memory);
         Assert(vsdeRAM.size() == 1);
-        const Utf8Str &memoryVBox = vsdeRAM.front()->strFinalValue;
+        const Utf8Str &memoryVBox = vsdeRAM.front()->strConfig;
         uint64_t tt = RTStrToUInt64(memoryVBox.c_str()) / _1M;
 
         rc = newMachine->COMSETTER(MemorySize)(tt);
@@ -1443,11 +1454,11 @@ STDMETHODIMP Appliance::ImportAppliance()
 
 
         /* Audio Adapter */
-        std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsd->findByType(VirtualSystemDescriptionType_SoundCard);
+        std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->findByType(VirtualSystemDescriptionType_SoundCard);
         /* @todo: we support one audio adapter only */
         if (vsdeAudioAdapter.size() > 0)
         {
-            const Utf8Str& audioAdapterVBox = vsdeAudioAdapter.front()->strFinalValue;
+            const Utf8Str& audioAdapterVBox = vsdeAudioAdapter.front()->strConfig;
             if (RTStrICmp(audioAdapterVBox, "null") != 0)
             {
                 uint32_t audio = RTStrToUInt32(audioAdapterVBox.c_str());
@@ -1489,13 +1500,13 @@ STDMETHODIMP Appliance::ImportAppliance()
         }
 
         /* USB Controller */
-        std::list<VirtualSystemDescriptionEntry*> vsdeUSBController = vsd->findByType(VirtualSystemDescriptionType_USBController);
+        std::list<VirtualSystemDescriptionEntry*> vsdeUSBController = vsdescThis->findByType(VirtualSystemDescriptionType_USBController);
         /* If there is no USB controller entry it will be disabled */
         bool fUSBEnabled = vsdeUSBController.size() > 0;
         if (fUSBEnabled)
         {
             /* Check if the user has disabled the USB controller in the client */
-            const Utf8Str& usbVBox = vsdeUSBController.front()->strFinalValue;
+            const Utf8Str& usbVBox = vsdeUSBController.front()->strConfig;
             fUSBEnabled = usbVBox == "1";
         }
         ComPtr<IUSBController> usbController;
@@ -1505,7 +1516,7 @@ STDMETHODIMP Appliance::ImportAppliance()
         ComAssertComRCThrowRC(rc);
 
         /* Change the network adapters */
-        std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsd->findByType(VirtualSystemDescriptionType_NetworkAdapter);
+        std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
         if (vsdeNW.size() == 0)
         {
             /* No network adapters, so we have to disable our default one */
@@ -1525,7 +1536,7 @@ STDMETHODIMP Appliance::ImportAppliance()
                  (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
                  ++nwIt, ++a)
             {
-                const Utf8Str &nwTypeVBox = (*nwIt)->strFinalValue;
+                const Utf8Str &nwTypeVBox = (*nwIt)->strConfig;
                 uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
                 ComPtr<INetworkAdapter> nwVBox;
                 rc = newMachine->GetNetworkAdapter((ULONG)a, nwVBox.asOutParam());
@@ -1540,13 +1551,13 @@ STDMETHODIMP Appliance::ImportAppliance()
         }
 
         /* Floppy drive */
-        std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsd->findByType(VirtualSystemDescriptionType_Floppy);
+        std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
         /* If there is no floppy drive entry it will be disabled */
         bool fFloppyEnabled = vsdeFloppy.size() > 0;
         if (fFloppyEnabled)
         {
             /* Check if the user has disabled the floppy drive in the client */
-            const Utf8Str& floppyVBox = vsdeFloppy.front()->strFinalValue;
+            const Utf8Str& floppyVBox = vsdeFloppy.front()->strConfig;
             fFloppyEnabled = floppyVBox == "1";
         }
         ComPtr<IFloppyDrive> floppyDrive;
@@ -1560,11 +1571,11 @@ STDMETHODIMP Appliance::ImportAppliance()
         // std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsd->findByType(VirtualSystemDescriptionType_CDROM);
 
         /* Hard disk controller IDE */
-        std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
+        std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
         /* @todo: we support one IDE controller only */
         if (vsdeHDCIDE.size() > 0)
         {
-             IDEControllerType_T hdcVBox = static_cast<IDEControllerType_T>(RTStrToUInt32(vsdeHDCIDE.front()->strFinalValue.c_str()));
+             IDEControllerType_T hdcVBox = static_cast<IDEControllerType_T>(RTStrToUInt32(vsdeHDCIDE.front()->strConfig.c_str()));
              /* Set the appropriate IDE controller in the virtual BIOS of the
               * VM. */
              ComPtr<IBIOSSettings> biosSettings;
@@ -1575,11 +1586,11 @@ STDMETHODIMP Appliance::ImportAppliance()
         }
 #ifdef VBOX_WITH_AHCI
         /* Hard disk controller SATA */
-        std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
+        std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
         /* @todo: we support one SATA controller only */
         if (vsdeHDCSATA.size() > 0)
         {
-            const Utf8Str &hdcVBox = vsdeHDCIDE.front()->strFinalValue;
+            const Utf8Str &hdcVBox = vsdeHDCIDE.front()->strConfig;
             if (hdcVBox == "AHCI")
             {
                 /* For now we have just to enable the AHCI controller. */
@@ -1597,7 +1608,7 @@ STDMETHODIMP Appliance::ImportAppliance()
 #endif /* VBOX_WITH_AHCI */
 #ifdef VBOX_WITH_SCSI
         /* Hard disk controller SCSI */
-        EntriesList vsdeHDCSCSI = vsd->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
+        EntriesList vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
         /* @todo: do we support more than one SCSI controller? */
         if (vsdeHDCSCSI.size() > 0)
         {
@@ -1611,8 +1622,8 @@ STDMETHODIMP Appliance::ImportAppliance()
         ComAssertComRCThrowRC(rc);
 
         /* Create the hard disks & connect them to the appropriate controllers. */
-        std::list<VirtualSystemDescriptionEntry*> vsdeHD = vsd->findByType(VirtualSystemDescriptionType_HardDiskImage);
-        if (vsdeHD.size() > 0)
+        std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+        if (avsdeHDs.size() > 0)
         {
             /* That we can attach hard disks we need to open a session for the
              * new machine */
@@ -1628,52 +1639,57 @@ STDMETHODIMP Appliance::ImportAppliance()
             int result;
             /* The disk image has to be on the same place as the OVF file. So
              * strip the filename out of the full file path. */
-            char *srcDir = RTStrDup(Utf8Str(m->bstrPath).raw());
-            RTPathStripFilename(srcDir);
+            char *pszSrcDir = RTStrDup(Utf8Str(m->bstrPath).raw());
+            RTPathStripFilename(pszSrcDir);
+            Utf8Str strSrcDir(pszSrcDir);
+            RTStrFree(pszSrcDir);
+
             /* Iterate over all given disk images */
             list<VirtualSystemDescriptionEntry*>::const_iterator hdIt;
-            for (hdIt = vsdeHD.begin();
-                 hdIt != vsdeHD.end();
+            for (hdIt = avsdeHDs.begin();
+                 hdIt != avsdeHDs.end();
                  ++hdIt)
             {
-                char *dstFilePath = RTStrDup((*hdIt)->strFinalValue.c_str());
+                const VirtualSystemDescriptionEntry &vsdeHD = (**hdIt);
+
+                const char *pcszDestFilePath = vsdeHD.strConfig.c_str();
                 /* Check if the destination file exists already or the
                  * destination path is empty. */
-                if (RTPathExists(dstFilePath) ||
-                    !RTStrCmp(dstFilePath, ""))
+                if (RTPathExists(pcszDestFilePath) ||
+                    !RTStrCmp(pcszDestFilePath, ""))
                 {
                     /* @todo: what now? For now we override in no
                      * circumstances. */
                     continue;
                 }
-                const Utf8Str &strRef = (*hdIt)->strRef;
+
+                uint32_t ulRef = (*hdIt)->ulRef;
                 /* Get the associated disk image */
-                if (m->mapDisks.find(strRef) == m->mapDisks.end() ||
-                    vs.mapVirtualDisks.find(strRef) == vs.mapVirtualDisks.end())
+                if (m->mapDisks.find(ulRef) == m->mapDisks.end() ||
+                    vsysThis.mapVirtualDisks.find(ulRef) == vsysThis.mapVirtualDisks.end())
                 {
                     /* @todo: error: entry doesn't exists */
                 }
-                DiskImage di = m->mapDisks[strRef];
-                VirtualDisk vd = (*vs.mapVirtualDisks.find(strRef)).second;
+                DiskImage di = m->mapDisks[ulRef];
+                VirtualDisk vd = (*vsysThis.mapVirtualDisks.find(ulRef)).second;
                 /* Construct the source file path */
-                char *srcFilePath;
-                RTStrAPrintf(&srcFilePath, "%s/%s", srcDir, di.strHref.c_str());
+                Utf8StrFmt strSrcFilePath("%s/%s", strSrcDir.c_str(), di.strHref.c_str());
                 /* Check if the source file exists */
-                if (!RTPathExists(srcFilePath))
+                if (!RTPathExists(strSrcFilePath.c_str()))
                 {
                     /* @todo: we have to create a new one */
                 }
                 else
                 {
                     /* Make sure all target directories exists */
-                    rc = VirtualBox::ensureFilePathExists(dstFilePath);
+                    rc = VirtualBox::ensureFilePathExists(pcszDestFilePath);
                     CheckComRCThrowRC(rc);
                     /* Clone the disk image (this is necessary cause the id has
                      * to be recreated for the case the same hard disk is
                      * attached already from a previous import) */
                     /* First open the existing disk image */
                     ComPtr<IHardDisk2> srcHdVBox;
-                    rc = mVirtualBox->OpenHardDisk2(Bstr(srcFilePath), srcHdVBox.asOutParam());
+                    rc = mVirtualBox->OpenHardDisk2(Bstr(strSrcFilePath), srcHdVBox.asOutParam());
                     CheckComRCReturnRC(rc);
                     /* We need the format description of the source disk image */
                     Bstr srcFormat;
@@ -1681,7 +1697,7 @@ STDMETHODIMP Appliance::ImportAppliance()
                     CheckComRCReturnRC(rc);
                     /* Create a new hard disk interface for the destination disk image */
                     ComPtr<IHardDisk2> dstHdVBox;
-                    rc = mVirtualBox->CreateHardDisk2(srcFormat, Bstr(dstFilePath), dstHdVBox.asOutParam());
+                    rc = mVirtualBox->CreateHardDisk2(srcFormat, Bstr(pcszDestFilePath), dstHdVBox.asOutParam());
                     CheckComRCReturnRC(rc);
                     /* Clone the source disk image */
                     ComPtr<IProgress> progress;
@@ -1699,12 +1715,12 @@ STDMETHODIMP Appliance::ImportAppliance()
                     rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());;
                     CheckComRCReturnRC(rc);
                     /* For now we assume we have one controller of every type only */
-                    HardDiskController hdc = (*vs.mapControllers.find(vd.idController)).second;
+                    HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
                     StorageBus_T sbt = StorageBus_IDE;
-                    switch (hdc.controllerSystem)
+                    switch (hdc.system)
                     {
-                        case IDE: sbt = StorageBus_IDE; break;
-                        case SATA: sbt = StorageBus_SATA; break;
+                        case HardDiskController::IDE: sbt = StorageBus_IDE; break;
+                        case HardDiskController::SATA: sbt = StorageBus_SATA; break;
                         //case SCSI: sbt = StorageBus_SCSI; break; // @todo: not available yet
                         default: break;
                     }
@@ -1715,10 +1731,7 @@ STDMETHODIMP Appliance::ImportAppliance()
                     rc = session->Close();
                     CheckComRCReturnRC(rc);
                 }
-                RTStrFree(srcFilePath);
-                RTStrFree(dstFilePath);
             }
-            RTStrFree(srcDir);
         }
         /* @todo: Unregister on failure */
 #if 0
@@ -1811,14 +1824,16 @@ void VirtualSystemDescription::uninit()
 }
 
 STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
+                                                      ComSafeArrayOut(ULONG, aRefs),
                                                       ComSafeArrayOut(BSTR, aOrigValues),
-                                                      ComSafeArrayOut(BSTR, aAutoValues),
-                                                      ComSafeArrayOut(BSTR, aConfigurations))
+                                                      ComSafeArrayOut(BSTR, aConfigValues),
+                                                      ComSafeArrayOut(BSTR, aExtraConfigValues))
 {
     if (ComSafeArrayOutIsNull(aTypes) ||
+        ComSafeArrayOutIsNull(aRefs) ||
         ComSafeArrayOutIsNull(aOrigValues) ||
-        ComSafeArrayOutIsNull(aAutoValues) ||
-        ComSafeArrayOutIsNull(aConfigurations))
+        ComSafeArrayOutIsNull(aConfigValues) ||
+        ComSafeArrayOutIsNull(aExtraConfigValues))
         return E_POINTER;
 
     AutoCaller autoCaller(this);
@@ -1828,9 +1843,10 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
 
     ULONG c = (ULONG)m->descriptions.size();
     com::SafeArray<VirtualSystemDescriptionType_T> sfaTypes(c);
+    com::SafeArray<ULONG> sfaRefs(c);
     com::SafeArray<BSTR> sfaOrigValues(c);
-    com::SafeArray<BSTR> sfaAutoValues(c);
-    com::SafeArray<BSTR> sfaConfigurations(c);
+    com::SafeArray<BSTR> sfaConfigValues(c);
+    com::SafeArray<BSTR> sfaExtraConfigValues(c);
 
     list<VirtualSystemDescriptionEntry>::const_iterator it;
     size_t i = 0;
@@ -1839,23 +1855,26 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
          ++it, ++i)
     {
         const VirtualSystemDescriptionEntry &vsde = (*it);
-        /* Types */
-        sfaTypes [i] = vsde.type;
-        /* Original value */
-        Bstr bstr = vsde.strOriginalValue;
+
+        sfaTypes[i] = vsde.type;
+
+        sfaRefs[i] = vsde.ulRef;
+
+        Bstr bstr = vsde.strOrig;
         bstr.cloneTo(&sfaOrigValues[i]);
-        /* Auto value */
-        bstr = vsde.strAutoValue;
-        bstr.cloneTo(&sfaAutoValues[i]);
-        /* Configuration */
-        bstr = vsde.strConfiguration;
-        bstr.cloneTo(&sfaConfigurations[i]);
+
+        bstr = vsde.strConfig;
+        bstr.cloneTo(&sfaConfigValues[i]);
+
+        bstr = vsde.strExtraConfig;
+        bstr.cloneTo(&sfaExtraConfigValues[i]);
     }
 
     sfaTypes.detachTo(ComSafeArrayOutArg(aTypes));
+    sfaRefs.detachTo(ComSafeArrayOutArg(aRefs));
     sfaOrigValues.detachTo(ComSafeArrayOutArg(aOrigValues));
-    sfaAutoValues.detachTo(ComSafeArrayOutArg(aAutoValues));
-    sfaConfigurations.detachTo(ComSafeArrayOutArg(aConfigurations));
+    sfaConfigValues.detachTo(ComSafeArrayOutArg(aConfigValues));
+    sfaExtraConfigValues.detachTo(ComSafeArrayOutArg(aExtraConfigValues));
 
     return S_OK;
 }
@@ -1880,26 +1899,22 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(IN_BSTR, aF
          ++it, ++i)
     {
         VirtualSystemDescriptionEntry vsde = (*it);
-        vsde.strFinalValue = values[i];
+        vsde.strConfig = values[i];
     }
 
     return S_OK;
 }
 
 void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
-                                        const Utf8Str &aRef,
+                                        uint32_t ulRef,
                                         const Utf8Str &aOrigValue,
-                                        const Utf8Str &aAutoValue,
-                                        const Utf8Str &aConfig /* = "" */)
+                                        const Utf8Str &aAutoValue)
 {
     VirtualSystemDescriptionEntry vsde;
     vsde.type = aType;
-    vsde.strRef = aRef;
-    vsde.strOriginalValue = aOrigValue;
-    vsde.strAutoValue = aAutoValue;
-    vsde.strConfiguration = aConfig;
-    /* For now we add the auto value as final value also */
-    vsde.strFinalValue = aAutoValue;
+    vsde.ulRef = ulRef;
+    vsde.strOrig = aOrigValue;
+    vsde.strConfig = aAutoValue;
 
     m->descriptions.push_back(vsde);
 }

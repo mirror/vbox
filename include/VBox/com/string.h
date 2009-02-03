@@ -512,6 +512,20 @@ public:
     Utf8Str substr(size_t pos = 0, size_t n = npos) const;
 
     /**
+     * Attempts to convert the member string into an unsigned 64-bit integer.
+     * @return IPRT error code.
+     * @param i Output buffer.
+     */
+    int toInt(uint64_t &i) const;
+
+    /**
+     * Attempts to convert the member string into an unsigned 32-bit integer.
+     * @return IPRT error code.
+     * @param i Output buffer.
+     */
+    int toInt(uint32_t &i) const;
+
+    /**
      *  Intended to pass instances as out (|char **|) parameters to methods.
      *  Takes the ownership of the returned data.
      */
