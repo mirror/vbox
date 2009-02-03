@@ -1566,14 +1566,14 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
                 if (CPUMGetGuestCR4(pVM) & X86_CR4_VME)
                 {
                     uint32_t offRedirBitmap;
-                    
+
                     /* Make sure the io bitmap offset is valid; anything less than sizeof(VBOXTSS) means there's none. */
                     if (tss.offIoBitmap < RT_OFFSETOF(VBOXTSS, IntRedirBitmap) + sizeof(tss.IntRedirBitmap))
                     {
                         Log(("Invalid io bitmap offset detected (%x)!\n", tss.offIoBitmap));
                         tss.offIoBitmap = RT_OFFSETOF(VBOXTSS, IntRedirBitmap) + sizeof(tss.IntRedirBitmap);
                     }
-                        
+
                     offRedirBitmap = tss.offIoBitmap - sizeof(tss.IntRedirBitmap);
 
                     /** @todo not sure how the partial case is handled; probably not allowed */
@@ -1772,10 +1772,10 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
         if (cbTss > sizeof(VBOXTSS))
             cbTss = sizeof(VBOXTSS);
 # endif
-#ifndef DEBUG_michael
+# ifndef DEBUG_michael
         AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + sizeof(VBOXTSS) - 1) >> PAGE_SHIFT),
                   ("GCPtrTss=%RGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
-#endif
+# endif
 
         // All system GDTs are marked not present above. That explains why this check fails.
         //if (pDesc->Gen.u1Present)
