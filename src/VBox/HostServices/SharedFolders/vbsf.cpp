@@ -683,6 +683,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
     /* Open or create a file. */
     unsigned fOpen = 0;
     bool fNoError = false;
+    static int cErrors;
 
     int rc = vbsfConvertFileOpenFlags(pParms->CreateFlags, &fOpen);
     if (RT_SUCCESS(rc))
@@ -729,6 +730,18 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
             /* This actually isn't an error, so correct the rc before return later,
                because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
             fNoError = true;
+            break;
+        case VERR_TOO_MANY_OPEN_FILES:
+            if (cErrors < 32)
+            {
+                LogRel(("SharedFolders host service: Cannot open '%s' -- too many open files.\n", pszPath));
+#if defined RT_OS_LINUX || RT_OS_SOLARIS
+                if (cErrors < 1)
+                    LogRel(("SharedFolders host service: Try to increase the limit for open files (ulimt -n)\n"));
+#endif
+                cErrors++;
+            }
+            pParms->Result = SHFL_NO_RESULT;
             break;
         default:
             pParms->Result = SHFL_NO_RESULT;
