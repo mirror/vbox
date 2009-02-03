@@ -85,6 +85,7 @@
 #define USAGE_CONVERTTORAW          RT_BIT_64(41)
 #define USAGE_METRICS               RT_BIT_64(42)
 #define USAGE_CONVERTHD             RT_BIT_64(43)
+#define USAGE_IMPORTAPPLIANCE       RT_BIT_64(44)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
@@ -131,7 +132,12 @@ void printUsageInternal(USAGECATEGORY u64Cmd);
 void showProgress(ComPtr<IProgress> progress);
 
 int handleInternalCommands(HandlerArg *a);
+
+unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name);
 #endif /* !VBOX_ONLY_DOCS */
+
+/* VBoxManageModifyVM.cpp */
+int handleModifyVM(HandlerArg *a);
 
 /* VBoxManageGuestProp.cpp */
 extern void usageGuestProperty(void);
@@ -160,6 +166,9 @@ int handleAddiSCSIDisk(HandlerArg *a);
 int handleShowHardDiskInfo(HandlerArg *a);
 int handleOpenMedium(HandlerArg *a);
 int handleCloseMedium(HandlerArg *a);
+
+// VBoxManageImport.cpp
+int handleImportAppliance(HandlerArg *a);
 
 /* VBoxManageUSB.cpp */
 /* VBoxManageTODO.cpp */
