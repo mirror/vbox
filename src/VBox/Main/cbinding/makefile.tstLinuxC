@@ -1,4 +1,24 @@
 # $Id: Makefile 42209 2009-01-29 12:22:10Z jens $
+#
+## @file makefile.tstLinuxC
+#
+# Makefile for sample program illustrating use of C binding for XPCOM.
+
+#
+# Copyright (C) 2009 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
 
 PATH_XPCOM = ../..
 PATH_BIN   = /opt/VirtualBox
@@ -23,7 +43,7 @@ clean:
 tstLinuxC: tstLinuxC.o
 	$(CC) -o $@ $^ -Xlinker -rpath -Xlinker $(PATH_BIN) $(PATH_BIN)/VBoxXPCOMC.so
 
-tstLinuxC.o: tstLinuxC.c tstLinuxC.h
+tstLinuxC.o: tstLinuxC.c cbinding.h
 	$(CC) $(CFLAGS) -DRT_OS_LINUX -DMOZ_UNICODE $(INCS_XPCOM) -o $@ -c $<
 
 run:
