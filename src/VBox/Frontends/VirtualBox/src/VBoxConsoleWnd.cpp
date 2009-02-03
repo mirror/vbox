@@ -1348,7 +1348,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
             dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
             /* make the Discard checkbox invisible if there are no snapshots */
-            dlg.mCbDiscardCurState->setVisible ((cmachine.GetSnapshotCount() > 0));
+            bool isDiscardVisible = cmachine.GetSnapshotCount() > 0;
+            dlg.mCbDiscardCurState->setVisible (isDiscardVisible);
 
             if (machine_state != KMachineState_Stuck)
             {
@@ -1363,7 +1364,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                     dlg.mRbSave->setChecked (true);
                     dlg.mRbSave->setFocus();
                 }
-                else if (wasDiscardCurState || !isACPIEnabled)
+                else if ((wasDiscardCurState && isDiscardVisible) || !isACPIEnabled)
                 {
                     dlg.mRbShutdown->setEnabled (isACPIEnabled);
                     dlg.mRbPowerOff->setChecked (true);
