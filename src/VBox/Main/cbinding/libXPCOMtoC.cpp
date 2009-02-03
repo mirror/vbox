@@ -39,47 +39,56 @@ static IVirtualBox         *Ivirtualbox;
 static nsIServiceManager   *serviceManager;
 static nsIComponentManager *manager;
 
-int VBoxUtf16ToUtf8(const PRUnichar *pszString, char **ppwszString)
+VBOXXPCOMC_DECL(int)
+VBoxUtf16ToUtf8(const PRUnichar *pszString, char **ppwszString)
 {
     return RTUtf16ToUtf8(pszString, ppwszString);
 }
 
-int VBoxStrToUtf16(const char *pszString, PRUnichar **ppwszString)
+VBOXXPCOMC_DECL(int)
+VBoxStrToUtf16(const char *pszString, PRUnichar **ppwszString)
 {
     return RTStrToUtf16(pszString, ppwszString);
 }
 
-void VBoxUtf16Free(PRUnichar *pwszString)
+VBOXXPCOMC_DECL(void)
+VBoxUtf16Free(PRUnichar *pwszString)
 {
     RTUtf16Free(pwszString);
 }
 
-void VBoxStrFree(char *pszString)
+VBOXXPCOMC_DECL(void)
+VBoxStrFree(char *pszString)
 {
     RTStrFree(pszString);
 }
 
-const PRUnichar* VBoxConvertUTF8toPRUnichar(char *src)
+VBOXXPCOMC_DECL(const PRUnichar *)
+VBoxConvertUTF8toPRUnichar(char *src)
 {
     return NS_ConvertUTF8toUTF16(src).get();
 }
 
-const char* VBoxConvertPRUnichartoUTF8(PRUnichar *src)
+VBOXXPCOMC_DECL(const char *)
+VBoxConvertPRUnichartoUTF8(PRUnichar *src)
 {
     return NS_ConvertUTF16toUTF8(src).get();
 }
 
-const PRUnichar* VBoxConvertAsciitoPRUnichar(char *src)
+VBOXXPCOMC_DECL(const PRUnichar *)
+VBoxConvertAsciitoPRUnichar(char *src)
 {
     return NS_ConvertASCIItoUTF16(src).get();
 }
 
-const char* VBoxConvertPRUnichartoAscii(PRUnichar *src)
+VBOXXPCOMC_DECL(const char *)
+VBoxConvertPRUnichartoAscii(PRUnichar *src)
 {
     return NS_LossyConvertUTF16toASCII(src).get();
 }
 
-void VBoxComUnallocStr(PRUnichar *str_dealloc)
+VBOXXPCOMC_DECL(void)
+VBoxComUnallocStr(PRUnichar *str_dealloc)
 {
     if (str_dealloc)
     {
@@ -87,7 +96,8 @@ void VBoxComUnallocStr(PRUnichar *str_dealloc)
     }
 }
 
-void VBoxComUnallocIID(nsIID *iid)
+VBOXXPCOMC_DECL(void)
+VBoxComUnallocIID(nsIID *iid)
 {
     if (iid)
     {
@@ -95,7 +105,8 @@ void VBoxComUnallocIID(nsIID *iid)
     }
 }
 
-void VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
+VBOXXPCOMC_DECL(void)
+VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
 {
     nsresult rc;
 
@@ -157,7 +168,8 @@ void VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
     cout << "ISession object created." << endl;
 }
 
-void VBoxComUninitialize(void)
+VBOXXPCOMC_DECL(void)
+VBoxComUninitialize(void)
 {
     if (Session)
         NS_RELEASE(Session);        // decrement refcount
@@ -172,3 +184,4 @@ void VBoxComUninitialize(void)
 }
 
 /* vim: set ts=4 sw=4 et: */
+
