@@ -29,10 +29,6 @@
 void PACK_APIENTRY crPackWindowVisibleRegion( GLint window, GLint cRects, GLint * pRects )
 {
     GLint i, size, cnt;
-#ifdef WINDOWS
-    RECT *pRECT = (RECT*) pRects;
-#else
-#endif
 
     GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
@@ -47,14 +43,11 @@ void PACK_APIENTRY crPackWindowVisibleRegion( GLint window, GLint cRects, GLint 
     cnt = 16;
     for (i=0; i<cRects; ++i)
     {
-#ifdef WINDOWS
-        WRITE_DATA(cnt, GLint, (GLint) pRECT[i].left);
-        WRITE_DATA(cnt+4, GLint, (GLint) pRECT[i].top);
-        WRITE_DATA(cnt+8, GLint, (GLint) pRECT[i].right);
-        WRITE_DATA(cnt+12, GLint, (GLint) pRECT[i].bottom);
+        WRITE_DATA(cnt, GLint, (GLint) pRects[4*i+0]);
+        WRITE_DATA(cnt+4, GLint, (GLint) pRects[4*i+1]);
+        WRITE_DATA(cnt+8, GLint, (GLint) pRects[4*i+2]);
+        WRITE_DATA(cnt+12, GLint, (GLint) pRects[4*i+3]);
         cnt += 16;
-#else
-#endif
     }
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }

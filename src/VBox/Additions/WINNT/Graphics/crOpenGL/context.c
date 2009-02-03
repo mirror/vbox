@@ -137,6 +137,7 @@ stubNewWindow( const char *dpyName, GLint visBits )
     winInfo->drawable = (CGSWindowID) spuWin;
 #elif defined(GLX)
     winInfo->drawable = (GLXDrawable) spuWin;
+    winInfo->pVisibleRegions = NULL;
 #endif
     winInfo->spuWindow = spuWin;
 
@@ -202,6 +203,7 @@ stubGetWindowInfo( Display *dpy, GLXDrawable drawable )
     crStrncpy(winInfo->dpyName, DisplayString(dpy), MAX_DPY_NAME);
     winInfo->dpyName[MAX_DPY_NAME-1] = 0;
     winInfo->dpy = dpy;
+    winInfo->pVisibleRegions = NULL;
 #elif defined(Darwin)
     winInfo->connection = _CGSDefaultConnection(); // store our connection as default
 #elif defined(WINDOWS)

@@ -142,7 +142,8 @@ if1of ($(KBUILD_TARGET), linux solaris) ## @todo r=bird: See dll comment else wh
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
 	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
-	$(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
+	$(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL) \
+	Xcomposite
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk

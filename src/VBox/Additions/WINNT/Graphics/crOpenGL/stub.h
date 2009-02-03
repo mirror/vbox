@@ -121,6 +121,8 @@ struct window_info_t
 #elif defined(GLX)
     Display *dpy;
     GLXDrawable drawable;
+    XRectangle *pVisibleRegions;
+    GLint cVisibleRegions;
 #endif
 };
 
@@ -182,6 +184,9 @@ extern DECLEXPORT(SPUDispatchTable) glim;
 extern SPUDispatchTable stubThreadsafeDispatch;
 extern DECLEXPORT(SPUDispatchTable) stubNULLDispatch;
 
+#if defined(GLX) || defined (WINDOWS)
+extern GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow);
+#endif
 
 #ifdef WINDOWS
 
@@ -190,8 +195,6 @@ extern WindowInfo *stubGetWindowInfo( HDC drawable );
 
 extern void stubInstallWindowMessageHook();
 extern void stubUninstallWindowMessageHook();
-
-extern GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow);
 
 #elif defined(DARWIN)
 
