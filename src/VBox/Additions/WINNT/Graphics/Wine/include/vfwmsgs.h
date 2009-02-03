@@ -16,6 +16,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+/*
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the language indicating
+ * that LGPLv2 or any later version may be used, or where a choice of which version
+ * of the LGPL is applied is otherwise unspecified.
+ */
+
 #define VFW_S_NO_MORE_ITEMS              ((HRESULT)0x00040103)
 #define VFW_S_DUPLICATE_NAME             ((HRESULT)0x0004022D)
 #define VFW_S_STATE_INTERMEDIATE         ((HRESULT)0x00040237)

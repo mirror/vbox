@@ -16,6 +16,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+/*
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the language indicating
+ * that LGPLv2 or any later version may be used, or where a choice of which version
+ * of the LGPL is applied is otherwise unspecified.
+ */
+
 /* FIXME: Need to add C++ code for certain structs for headers - this is going to be a problem
           if WINE continues to only use C code  - I suppose that we could always inline in
           the header file to get around that little problem... */
