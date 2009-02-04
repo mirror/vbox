@@ -118,11 +118,9 @@ soread(PNATState pData, struct socket *so, int fCloseIfNothingRead)
     size_t len = sb->sb_datalen - sb->sb_cc;
     struct iovec iov[2];
     int mss = so->so_tcpcb->t_maxseg;
-    Log2(("%s:%d soread before lock\n", __FUNCTION__, __LINE__));
     QSOCKET_LOCK(tcb);
     SOCKET_LOCK(so);
     QSOCKET_UNLOCK(tcb);
-    Log2(("%s:%d soread before lock\n",__FUNCTION__, __LINE__));
 
     DEBUG_CALL("soread");
     DEBUG_ARG("so = %lx", (long )so);
