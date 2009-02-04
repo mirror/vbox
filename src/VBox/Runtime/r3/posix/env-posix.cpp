@@ -99,8 +99,17 @@ RTDECL(int) RTEnvUnset(const char *pszVar)
         return VINF_ENV_VAR_NOT_FOUND;
 
     /* Ok, try remove it. */
+#ifdef RT_OS_WINDOWS
+    /* Windows does not have unsetenv() */
     if (!putenv((char *)pszVar))
         return VINF_SUCCESS;
+#else
+    /* This is the preferred function as putenv() like used
+     * above does neither work on Solaris nor on Darwin. */
+    if (!unsetenv((char*)pszVar))
+        return VINF_SUCCESS;
+#endif
+
     return RTErrConvertFromErrno(errno);
 }
 
