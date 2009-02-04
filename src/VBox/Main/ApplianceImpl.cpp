@@ -1533,7 +1533,7 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
         char *tmpFile = RTStrDup(RTPathFilename(aName.c_str()));
         RTPathStripExt(tmpFile);
         const char *tmpExt = RTPathExt(aName.c_str());
-        RTStrAPrintf(&tmpName, "%s/%s_%d%s", tmpDir, tmpFile, i, tmpExt);
+        RTStrAPrintf(&tmpName, "%s%c%s_%d%s", tmpDir, RTPATH_DELIMITER, tmpFile, i, tmpExt);
         RTStrFree(tmpFile);
         RTStrFree(tmpDir);
         ++i;
@@ -1851,7 +1851,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                         const VirtualDisk &vd = itVirtualDisk->second;
 
                         /* Construct the source file path */
-                        Utf8StrFmt strSrcFilePath("%s/%s", strSrcDir.c_str(), di.strHref.c_str());
+                        Utf8StrFmt strSrcFilePath("%s%c%s", strSrcDir.c_str(), RTPATH_DELIMITER, di.strHref.c_str());
                         /* Check if the source file exists */
                         if (!RTPathExists(strSrcFilePath.c_str()))
                         {
