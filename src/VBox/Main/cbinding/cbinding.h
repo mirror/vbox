@@ -43,22 +43,17 @@ VBOXXPCOMC_DECL(void) VBoxComInitialize(IVirtualBox **virtualBox, ISession **ses
 VBOXXPCOMC_DECL(void) VBoxComUninitialize(void);
 
 /* Deallocation functions. */
-VBOXXPCOMC_DECL(void) VBoxComUnallocStr(PRUnichar *str_dealloc);
-VBOXXPCOMC_DECL(void) VBoxComUnallocIID(nsIID *iid);
+VBOXXPCOMC_DECL(void) VBoxComUnallocMem(void *ptr);
 VBOXXPCOMC_DECL(void) VBoxUtf16Free(PRUnichar *pwszString);
-VBOXXPCOMC_DECL(void) VBoxStrFree(char *pszString);
+VBOXXPCOMC_DECL(void) VBoxUtf8Free(char *pszString);
 
 /* Converting to and from ASCII. */
 VBOXXPCOMC_DECL(const char *) VBoxConvertPRUnichartoAscii(PRUnichar *src);
 VBOXXPCOMC_DECL(const PRUnichar *) VBoxConvertAsciitoPRUnichar(char *src);
 
-/* Converting to and from UTF-8. */
-VBOXXPCOMC_DECL(const char *) VBoxConvertPRUnichartoUTF8(PRUnichar *src);
-VBOXXPCOMC_DECL(const PRUnichar *) VBoxConvertUTF8toPRUnichar(char *src);
-
 /* Converting to and from UTF-8 and UTF-16. */
-VBOXXPCOMC_DECL(int)  VBoxStrToUtf16(const char *pszString, PRUnichar **ppwszString);
-VBOXXPCOMC_DECL(int)  VBoxUtf16ToUtf8(const PRUnichar *pszString, char **ppwszString);
+VBOXXPCOMC_DECL(int) VBoxUtf16ToUtf8(const PRUnichar *pwszString, char **ppszString);
+VBOXXPCOMC_DECL(int) VBoxUtf8ToUtf16(const char *pszString, PRUnichar **ppwszString);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /* $Id$ */
-/** @file libXPCOMtoC.cpp
+/** @file VBoxXPCOMC.cpp
  * Utility functions to use with the C binding for XPCOM.
  */
 
@@ -23,7 +23,6 @@
 #include <iomanip>
 
 #include <nsMemory.h>
-#include <nsString.h>
 #include <nsIServiceManager.h>
 #include <nsEventQueueUtils.h>
 
@@ -40,13 +39,13 @@ static nsIServiceManager   *serviceManager;
 static nsIComponentManager *manager;
 
 VBOXXPCOMC_DECL(int)
-VBoxUtf16ToUtf8(const PRUnichar *pszString, char **ppwszString)
+VBoxUtf16ToUtf8(const PRUnichar *pwszString, char **ppszString)
 {
-    return RTUtf16ToUtf8(pszString, ppwszString);
+    return RTUtf16ToUtf8(pwszString, ppszString);
 }
 
 VBOXXPCOMC_DECL(int)
-VBoxStrToUtf16(const char *pszString, PRUnichar **ppwszString)
+VBoxUtf8ToUtf16(const char *pszString, PRUnichar **ppwszString)
 {
     return RTStrToUtf16(pszString, ppwszString);
 }
@@ -58,50 +57,17 @@ VBoxUtf16Free(PRUnichar *pwszString)
 }
 
 VBOXXPCOMC_DECL(void)
-VBoxStrFree(char *pszString)
+VBoxUtf8Free(char *pszString)
 {
     RTStrFree(pszString);
 }
 
-VBOXXPCOMC_DECL(const PRUnichar *)
-VBoxConvertUTF8toPRUnichar(char *src)
-{
-    return NS_ConvertUTF8toUTF16(src).get();
-}
-
-VBOXXPCOMC_DECL(const char *)
-VBoxConvertPRUnichartoUTF8(PRUnichar *src)
-{
-    return NS_ConvertUTF16toUTF8(src).get();
-}
-
-VBOXXPCOMC_DECL(const PRUnichar *)
-VBoxConvertAsciitoPRUnichar(char *src)
-{
-    return NS_ConvertASCIItoUTF16(src).get();
-}
-
-VBOXXPCOMC_DECL(const char *)
-VBoxConvertPRUnichartoAscii(PRUnichar *src)
-{
-    return NS_LossyConvertUTF16toASCII(src).get();
-}
-
 VBOXXPCOMC_DECL(void)
-VBoxComUnallocStr(PRUnichar *str_dealloc)
+VBoxComUnallocMem(void *ptr)
 {
-    if (str_dealloc)
+    if (ptr)
     {
-        nsMemory::Free(str_dealloc);
-    }
-}
-
-VBOXXPCOMC_DECL(void)
-VBoxComUnallocIID(nsIID *iid)
-{
-    if (iid)
-    {
-        nsMemory::Free(iid);
+        nsMemory::Free(ptr);
     }
 }
 
