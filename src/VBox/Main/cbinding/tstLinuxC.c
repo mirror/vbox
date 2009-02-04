@@ -79,141 +79,141 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
         return;
     }
 
-	if(machineCnt)
-	{
-	    printf("VM List:\n\n");
-	
-	    /*
-	     * Iterate through the collection.
-	     */
-	
-	    for (i = 0; i < machineCnt; ++i)
-	    {
-	        IMachine *machine      = machines[i];
-	        PRBool    isAccessible = PR_FALSE;
-	
-	        printf("\tMachine #%u\n", (unsigned)i);
-	
-	        if (!machine)
-	        {
-	            printf("\t(skipped, NULL)\n");
-	            continue;
-	        }
-	
-	        machine->vtbl->GetAccessible(machine, &isAccessible);
-	
-	        if (isAccessible)
-	        {
-	            PRUnichar *machineName_;
-				char *machineName;
-	
-	            machine->vtbl->GetName(machine, &machineName_);
-				VBoxUtf16ToUtf8(machineName_,&machineName);
-	            printf("\tName:        %s\n", machineName);
-	
-	            VBoxUtf8Free(machineName);
-				VBoxComUnallocMem(machineName_);
-	        }
-	        else
-	        {
-	            printf("\tName:        <inaccessible>\n");
-	        }
-	
-	
-	        {
-	            nsID  *iid = NULL;
-	            char  *uuidString;
-	
-	            machine->vtbl->GetId(machine, &iid);
-	            uuidString = nsIDToString(iid);
-	            printf("\tUUID:        %s\n", uuidString);
-	
-	            free(uuidString);
-	            VBoxComUnallocMem(iid);
-	        }
-	
-	        if (isAccessible)
-	        {
-	            {
-	                PRUnichar *configFile;
-	                char      *configFile1 = calloc((size_t)64, (size_t)1);
-	
-	                machine->vtbl->GetSettingsFilePath(machine, &configFile);
-	                VBoxUtf16ToUtf8(configFile, &configFile1);
-	                printf("\tConfig file: %s\n", configFile1);
-	
-	                free(configFile1);
-	                VBoxComUnallocMem(configFile);
-	            }
-	
-	            {
-	                PRUint32 memorySize;
-	
-	                machine->vtbl->GetMemorySize(machine, &memorySize);
-	                printf("\tMemory size: %uMB\n", memorySize);
-	            }
-	
-	            {
-	                PRUnichar *typeId;
-	                PRUnichar *osName_;
-	                char *osName;
-	                IGuestOSType *osType = NULL;
-	
-	                machine->vtbl->GetOSTypeId(machine, &typeId);
-	                virtualBox->vtbl->GetGuestOSType(virtualBox, typeId, &osType);
-	                osType->vtbl->GetDescription(osType, &osName_);
-					VBoxUtf16ToUtf8(osName_,&osName);
-	                printf("\tGuest OS:    %s\n\n", osName);
-	
-	                osType->vtbl->nsisupports.Release((void *)osType);
-	                VBoxUtf8Free(osName);
-	                VBoxComUnallocMem(osName_);
-	                VBoxComUnallocMem(typeId);
-	            }
-	        }
-	    }
-	
-	    /*
-	     * Let the user chose a machine to start.
-	     */
-	
-	    printf("Type Machine# to start (0 - %u) or 'quit' to do nothing: ",
-	        (unsigned)(machineCnt - 1));
-	    fflush(stdout);
-	
-	    if (scanf("%u", &start_id) == 1 && start_id < machineCnt)
-	    {
-	        IMachine *machine = machines[start_id];
-	
-	        if (machine)
-	        {
-	            nsID  *iid = NULL;
-	
-	            machine->vtbl->GetId(machine, &iid);
-	            startVM(virtualBox, session, iid);
-	
-	            VBoxComUnallocMem(iid);
-	        }
-	    }
-	
-	    /*
-	     * Don't forget to release the objects in the array.
-	     */
-	
-	    for (i = 0; i < machineCnt; ++i)
-	    {
-	        IMachine *machine = machines[i];
-	
-	        if (machine)
-	        {
-	            machine->vtbl->nsisupports.Release((void *)machine);
-	        }
-	    }
-	}
-	else
-	{
-	    printf("\tNo VMs\n");
-	}
+    if (machineCnt)
+    {
+        printf("VM List:\n\n");
+
+        /*
+         * Iterate through the collection.
+         */
+
+        for (i = 0; i < machineCnt; ++i)
+        {
+            IMachine *machine      = machines[i];
+            PRBool    isAccessible = PR_FALSE;
+
+            printf("\tMachine #%u\n", (unsigned)i);
+
+            if (!machine)
+            {
+                printf("\t(skipped, NULL)\n");
+                continue;
+            }
+
+            machine->vtbl->GetAccessible(machine, &isAccessible);
+
+            if (isAccessible)
+            {
+                PRUnichar *machineName_;
+                char *machineName;
+
+                machine->vtbl->GetName(machine, &machineName_);
+                VBoxUtf16ToUtf8(machineName_,&machineName);
+                printf("\tName:        %s\n", machineName);
+
+                VBoxUtf8Free(machineName);
+                VBoxComUnallocMem(machineName_);
+            }
+            else
+            {
+                printf("\tName:        <inaccessible>\n");
+            }
+
+
+            {
+                nsID  *iid = NULL;
+                char  *uuidString;
+
+                machine->vtbl->GetId(machine, &iid);
+                uuidString = nsIDToString(iid);
+                printf("\tUUID:        %s\n", uuidString);
+
+                free(uuidString);
+                VBoxComUnallocMem(iid);
+            }
+
+            if (isAccessible)
+            {
+                {
+                    PRUnichar *configFile;
+                    char      *configFile1 = calloc((size_t)64, (size_t)1);
+
+                    machine->vtbl->GetSettingsFilePath(machine, &configFile);
+                    VBoxUtf16ToUtf8(configFile, &configFile1);
+                    printf("\tConfig file: %s\n", configFile1);
+
+                    free(configFile1);
+                    VBoxComUnallocMem(configFile);
+                }
+
+                {
+                    PRUint32 memorySize;
+
+                    machine->vtbl->GetMemorySize(machine, &memorySize);
+                    printf("\tMemory size: %uMB\n", memorySize);
+                }
+
+                {
+                    PRUnichar *typeId;
+                    PRUnichar *osName_;
+                    char *osName;
+                    IGuestOSType *osType = NULL;
+
+                    machine->vtbl->GetOSTypeId(machine, &typeId);
+                    virtualBox->vtbl->GetGuestOSType(virtualBox, typeId, &osType);
+                    osType->vtbl->GetDescription(osType, &osName_);
+                    VBoxUtf16ToUtf8(osName_,&osName);
+                    printf("\tGuest OS:    %s\n\n", osName);
+
+                    osType->vtbl->nsisupports.Release((void *)osType);
+                    VBoxUtf8Free(osName);
+                    VBoxComUnallocMem(osName_);
+                    VBoxComUnallocMem(typeId);
+                }
+            }
+        }
+
+        /*
+         * Let the user chose a machine to start.
+         */
+
+        printf("Type Machine# to start (0 - %u) or 'quit' to do nothing: ",
+            (unsigned)(machineCnt - 1));
+        fflush(stdout);
+
+        if (scanf("%u", &start_id) == 1 && start_id < machineCnt)
+        {
+            IMachine *machine = machines[start_id];
+
+            if (machine)
+            {
+                nsID  *iid = NULL;
+
+                machine->vtbl->GetId(machine, &iid);
+                startVM(virtualBox, session, iid);
+
+                VBoxComUnallocMem(iid);
+            }
+        }
+
+        /*
+         * Don't forget to release the objects in the array.
+         */
+
+        for (i = 0; i < machineCnt; ++i)
+        {
+            IMachine *machine = machines[i];
+
+            if (machine)
+            {
+                machine->vtbl->nsisupports.Release((void *)machine);
+            }
+        }
+    }
+    else
+    {
+        printf("\tNo VMs\n");
+    }
 }
 
 /**
@@ -279,11 +279,11 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
 
             progress->vtbl->GetErrorInfo(progress, &errorInfo);
             errorInfo->vtbl->GetText(errorInfo, &text_);
-			VBoxUtf16ToUtf8(text_, &text);
+            VBoxUtf16ToUtf8(text_, &text);
             printf("Error: %s\n", text);
 
-			VBoxComUnallocMem(text_);
-			VBoxUtf8Free(text);
+            VBoxComUnallocMem(text_);
+            VBoxUtf8Free(text);
         }
         else
         {
@@ -355,10 +355,10 @@ int main(int argc, char **argv)
     rc = vbox->vtbl->GetVersion(vbox, &version_);
     if (NS_SUCCEEDED(rc))
     {
-		char *version = NULL;
-		VBoxUtf16ToUtf8(version_, &version);	
+        char *version = NULL;
+        VBoxUtf16ToUtf8(version_, &version);    
         printf("\tVersion: %s\n", version);
-		VBoxUtf8Free(version);
+        VBoxUtf8Free(version);
     }
     else
     {
@@ -372,10 +372,10 @@ int main(int argc, char **argv)
     rc = vbox->vtbl->GetHomeFolder(vbox, &homefolder_);
     if (NS_SUCCEEDED(rc))
     {
-		char *homefolder = NULL;
-		VBoxUtf16ToUtf8(homefolder_, &homefolder);
-		printf("\tHomeFolder: %s\n", homefolder);
-		VBoxUtf8Free(homefolder);
+        char *homefolder = NULL;
+        VBoxUtf16ToUtf8(homefolder_, &homefolder);
+        printf("\tHomeFolder: %s\n", homefolder);
+        VBoxUtf8Free(homefolder);
     }
     else
     {
@@ -399,4 +399,3 @@ int main(int argc, char **argv)
     return 0;
 }
 /* vim: set ts=4 sw=4 et: */
-
