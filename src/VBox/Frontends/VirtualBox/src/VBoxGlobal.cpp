@@ -3420,6 +3420,8 @@ void VBoxGlobal::retranslateUi()
         tr ("Host Interface", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_Internal] =
         tr ("Internal Network", "NetworkAttachmentType");
+    mNetworkAttachmentTypes [KNetworkAttachmentType_HostOnly] =
+        tr ("Host-only Network", "NetworkAttachmentType");
 
     mClipboardTypes [KClipboardMode_Disabled] =
         tr ("Disabled", "ClipboardType");

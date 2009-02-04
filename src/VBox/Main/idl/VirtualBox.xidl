@@ -10225,7 +10225,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="NetworkAttachmentType"
-    uuid="8730d899-d036-4925-bc63-e58f3486f4bf"
+    uuid="64e770dc-dd1d-4879-9f12-5bd6bc879b78"
   >
     <desc>
       Network attachment type.
@@ -10237,6 +10237,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="NAT"                   value="1"/>
     <const name="HostInterface"         value="2"/>
     <const name="Internal"              value="3"/>
+    <const name="HostOnly"              value="4"/>
   </enum>
 
   <enum
@@ -10258,7 +10259,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="INetworkAdapter" extends="$unknown"
-     uuid="a876d9b1-68d9-43b1-9c68-ddea0a473663"
+     uuid="4a1ee64e-6c5f-47dd-acfa-f834d7cb74fb"
      wsmap="managed"
      >
     <attribute name="adapterType" type="NetworkAdapterType">
@@ -10355,6 +10356,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="attachToInternalNetwork">
       <desc>
         Attach the network adapter to an internal network.
+      </desc>
+    </method>
+
+    <method name="attachToHostOnlyNetwork">
+      <desc>
+        Attach the network adapter to the host-only network.
       </desc>
     </method>
 

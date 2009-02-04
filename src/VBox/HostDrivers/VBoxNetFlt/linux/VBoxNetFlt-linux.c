@@ -157,6 +157,114 @@ MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(INTNETTRUNKIFPORT_VERSION) ")");
 static VBOXNETFLTGLOBALS g_VBoxNetFltGlobals;
 
 
+/*
+ * TAP-related part
+ */
+
+#define VBOX_TAP_NAME "vboxnet%d"
+
+struct net_device *g_pNetDev;
+
+struct VBoxTapPriv
+{
+    struct net_device_stats Stats;
+};
+typedef struct VBoxTapPriv VBOXTAPPRIV;
+typedef VBOXTAPPRIV *PVBOXTAPPRIV;
+
+static int vboxTapOpen(struct net_device *pNetDev)
+{
+    netif_start_queue(pNetDev);
+    printk("vboxTapOpen returns 0\n");
+    return 0;
+}
+
+static int vboxTapStop(struct net_device *pNetDev)
+{
+    netif_stop_queue(pNetDev);
+    return 0;
+}
+
+static int vboxTapXmit(struct sk_buff *pSkb, struct net_device *pNetDev)
+{
+    PVBOXTAPPRIV pPriv = netdev_priv(pNetDev);
+
+    /* Update the stats. */
+    pPriv->Stats.tx_packets++;
+    pPriv->Stats.tx_bytes += pSkb->len;
+    /* Update transmission time stamp. */
+    pNetDev->trans_start = jiffies;
+    /* Nothing else to do, just free the sk_buff. */
+    dev_kfree_skb(pSkb);
+    return 0;
+}
+
+struct net_device_stats *vboxTapGetStats(struct net_device *pNetDev)
+{
+    PVBOXTAPPRIV pPriv = netdev_priv(pNetDev);
+    return &pPriv->Stats;
+}
+
+static int vboxTapValidateAddr(struct net_device *dev)
+{
+    Log(("vboxTapValidateAddr: %02x:%02x:%02x:%02x:%02x:%02x\n",
+         dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2], 
+         dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5]));
+    return -EADDRNOTAVAIL;
+}
+
+static void vboxTapNetDevInit(struct net_device *pNetDev)
+{
+    PVBOXTAPPRIV pPriv;
+
+    ether_setup(pNetDev);
+    /// @todo Use Sun vendor id
+    memcpy(pNetDev->dev_addr, "\0vbnet", ETH_ALEN);
+    Log(("vboxTapNetDevInit: pNetDev->dev_addr = %.6Rhxd\n", pNetDev->dev_addr)); 
+    pNetDev->open = vboxTapOpen;
+    pNetDev->stop = vboxTapStop;
+    pNetDev->hard_start_xmit = vboxTapXmit;
+    pNetDev->get_stats = vboxTapGetStats;
+    //pNetDev->validate_addr = vboxTapValidateAddr;
+/*    pNetDev-> = vboxTap;
+    pNetDev-> = vboxTap;
+    pNetDev-> = vboxTap;
+    pNetDev-> = vboxTap;
+    pNetDev-> = vboxTap;*/
+
+    pPriv = netdev_priv(pNetDev);
+    memset(pPriv, 0, sizeof(*pPriv));
+}
+
+static int vboxTapRegisterNetDev(void)
+{
+    int rc;
+    struct net_device *pNetDev;
+
+    /* No need for private data. */
+    pNetDev = alloc_netdev(sizeof(VBOXTAPPRIV), VBOX_TAP_NAME, vboxTapNetDevInit);
+    if (pNetDev)
+    {
+        int err = register_netdev(pNetDev);
+        if (!err)
+        {
+            g_pNetDev = pNetDev;
+            return VINF_SUCCESS;
+        }
+        free_netdev(pNetDev);
+        rc = RTErrConvertFromErrno(err);
+    }
+    return rc;
+}
+
+static int vboxTapUnregisterNetDev(void)
+{
+    unregister_netdev(g_pNetDev);
+    free_netdev(g_pNetDev);
+    g_pNetDev = NULL;
+    return VINF_SUCCESS;
+}
+
 /**
  * Initialize module.
  *
@@ -191,11 +299,17 @@ static int __init VBoxNetFltLinuxInit(void)
         rc = vboxNetFltInitGlobals(&g_VBoxNetFltGlobals);
         if (RT_SUCCESS(rc))
         {
-            LogRel(("VBoxNetFlt: Successfully started.\n"));
-            return 0;
+            rc = vboxTapRegisterNetDev();
+            if (RT_SUCCESS(rc))
+            {
+                LogRel(("VBoxNetFlt: Successfully started.\n"));
+                return 0;
+            }
+            else
+                LogRel(("VBoxNetFlt: failed to register device (rc=%d)\n", rc));
         }
-
-        LogRel(("VBoxNetFlt: failed to initialize device extension (rc=%d)\n", rc));
+        else
+            LogRel(("VBoxNetFlt: failed to initialize device extension (rc=%d)\n", rc));
         RTR0Term();
     }
     else
@@ -220,6 +334,8 @@ static void __exit VBoxNetFltLinuxUnload(void)
     /*
      * Undo the work done during start (in reverse order).
      */
+    rc = vboxTapUnregisterNetDev();
+    AssertRC(rc);
     rc = vboxNetFltTryDeleteGlobals(&g_VBoxNetFltGlobals);
     AssertRC(rc); NOREF(rc);
 

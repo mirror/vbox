@@ -128,6 +128,7 @@ public:
     STDMETHOD(AttachToNAT)();
     STDMETHOD(AttachToHostInterface)();
     STDMETHOD(AttachToInternalNetwork)();
+    STDMETHOD(AttachToHostOnlyNetwork)();
     STDMETHOD(Detach)();
 
     // public methods only for internal purposes
