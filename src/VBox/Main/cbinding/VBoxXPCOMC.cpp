@@ -27,6 +27,7 @@
 #include <nsEventQueueUtils.h>
 
 #include <iprt/string.h>
+#include <iprt/log.h>
 
 #include "VirtualBox_XPCOM.h"
 #include "cbinding.h"
@@ -87,14 +88,10 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
  * going to be used in real life, the cout(/RTPrintf) bits should be optional,
  * add a flag argument and define VBOXCOMINIT_FLAG_VERBOSE for the purpose. */
 
-    // All numbers on stderr in hex prefixed with 0X.
-    cerr.setf(ios_base::showbase | ios_base::uppercase);
-    cerr.setf(ios_base::hex, ios_base::basefield);
-
     rc = NS_InitXPCOM2(&serviceManager, nsnull, nsnull);
     if (NS_FAILED(rc))
     {
-        cerr << "XPCOM could not be initialized! rc=" << rc << endl;
+        Log(("Cbinding: XPCOM could not be initialized! rc=0x%x\n",rc));
         VBoxComUninitialize();
         return;
     }
@@ -102,7 +99,7 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
     rc = NS_GetComponentManager (&manager);
     if (NS_FAILED(rc))
     {
-        cerr << "could not get component manager! rc=" << rc << endl;
+        Log(("Cbinding: Could not get component manager! rc=0x%x\n",rc));
         VBoxComUninitialize();
         return;
     }
@@ -113,12 +110,12 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
                                              (void **)virtualBox);
     if (NS_FAILED(rc))
     {
-        cerr << "could not instantiate VirtualBox object! rc=" << rc << endl;
+        Log(("Cbinding: Could not instantiate VirtualBox object! rc=0x%x\n",rc));
         VBoxComUninitialize();
         return;
     }
 
-    cout << "VirtualBox object created." << endl;
+    Log(("Cbinding: IVirtualBox object created.\n"));
 
     rc = manager->CreateInstanceByContractID (NS_SESSION_CONTRACTID,
                                               nsnull,
@@ -126,12 +123,12 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
                                               (void **)session);
     if (NS_FAILED(rc))
     {
-        cerr << "could not instantiate Session object! rc=" << rc << endl;
+        Log(("Cbinding: Could not instantiate Session object! rc=0x%x\n",rc));
         VBoxComUninitialize();
         return;
     }
 
-    cout << "ISession object created." << endl;
+    Log(("Cbinding: ISession object created.\n"));
 }
 
 VBOXXPCOMC_DECL(void)
@@ -146,8 +143,7 @@ VBoxComUninitialize(void)
     if (serviceManager)
         NS_RELEASE(serviceManager); // decrement refcount
     NS_ShutdownXPCOM(nsnull);
-    cout << "Done!" << endl;
+    Log(("Cbinding: Cleaned up the created IVirtualBox and ISession Objects.\n"));
 }
 
 /* vim: set ts=4 sw=4 et: */
-
