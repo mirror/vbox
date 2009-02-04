@@ -2876,7 +2876,7 @@
 
   <interface
      name="IAppliance" extends="$unknown"
-     uuid="f3aa3a74-7b66-425b-9d3d-973924ddf163"
+     uuid="a7a71c1f-20d3-4483-95c0-7357dda77f50"
      wsmap="managed"
      >
     <desc>
@@ -2978,6 +2978,10 @@
         Calling this method is the final step of importing an appliance into VirtualBox;
         see <link to="IAppliance" /> for an overview.
       </desc>
+
+      <param name="aProgress" type="IProgress" dir="out">
+        <desc></desc>
+      </param>
     </method>
 
   </interface>
