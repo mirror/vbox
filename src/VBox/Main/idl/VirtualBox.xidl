@@ -3099,7 +3099,7 @@
         <desc></desc>
       </param>
 
-      <param name="aRefs" type="unsigned long" dir="out" safearray="yes">
+      <param name="aRefs" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
