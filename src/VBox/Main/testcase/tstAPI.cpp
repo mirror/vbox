@@ -1301,28 +1301,28 @@ int main(int argc, char *argv[])
     do
     {
         Bstr ovf = argc > 1 ? argv [1] : "someOVF.ovf";
-        printf ("Try to open %ls ...\n", ovf.raw());
+        RTPrintf ("Try to open %ls ...\n", ovf.raw());
 
         ComPtr <IAppliance> appliance;
         CHECK_ERROR_BREAK (virtualBox,
                            OpenAppliance (ovf, appliance.asOutParam()));
         Bstr path;
         CHECK_ERROR_BREAK (appliance, COMGETTER (Path)(path.asOutParam()));
-        printf ("Successfully opened %ls.\n", path.raw());
+        RTPrintf ("Successfully opened %ls.\n", path.raw());
         CHECK_ERROR_BREAK (appliance,
                            Interpret());
-        printf ("Successfully interpreted %ls.\n", path.raw());
-        printf ("Appliance:\n");
+        RTPrintf ("Successfully interpreted %ls.\n", path.raw());
+        RTPrintf ("Appliance:\n");
         // Fetch all disks
         com::SafeArray<BSTR> retDisks;
         CHECK_ERROR_BREAK (appliance,
                            COMGETTER (Disks)(ComSafeArrayAsOutParam  (retDisks)));
         if (retDisks.size() > 0)
         {
-            printf ("Disks:");
+            RTPrintf ("Disks:");
             for (unsigned i = 0; i < retDisks.size(); i++)
                 printf (" %ls", Bstr (retDisks [i]).raw());
-            printf ("\n");
+            RTPrintf ("\n");
         }
         /* Fetch all virtual system descriptions */
         com::SafeIfaceArray<IVirtualSystemDescription> retVSD;
@@ -1333,32 +1333,49 @@ int main(int argc, char *argv[])
             for (unsigned i = 0; i < retVSD.size(); ++i)
             {
                 com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
-                com::SafeArray<ULONG> retRefs;
+                com::SafeArray<ULONG> retRefValues;
                 com::SafeArray<BSTR> retOrigValues;
                 com::SafeArray<BSTR> retAutoValues;
                 com::SafeArray<BSTR> retConfiguration;
                 CHECK_ERROR_BREAK (retVSD [i],
                                    GetDescription (ComSafeArrayAsOutParam (retTypes),
-                                                   ComSafeArrayAsOutParam (retRefs),
+                                                   ComSafeArrayAsOutParam (retRefValues),
                                                    ComSafeArrayAsOutParam (retOrigValues),
                                                    ComSafeArrayAsOutParam (retAutoValues),
                                                    ComSafeArrayAsOutParam (retConfiguration)));
 
-                printf ("VirtualSystemDescription:\n");
+                RTPrintf ("VirtualSystemDescription:\n");
                 for (unsigned a = 0; a < retTypes.size(); ++a)
                 {
-                    printf (" %d %u %ls %ls %ls\n",
+                    printf (" %d %ls %ls %ls\n",
                             retTypes [a],
-                            retRefs [a],
                             Bstr (retOrigValues [a]).raw(),
                             Bstr (retAutoValues [a]).raw(),
                             Bstr (retConfiguration [a]).raw());
                 }
             }
-            printf ("\n");
+            RTPrintf ("\n");
         }
+        RTPrintf ("Try to import the appliance ...\n");
+        ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK (appliance,
-                           ImportAppliance());
+                           ImportAppliance (progress.asOutParam()));
+        CHECK_ERROR (progress, WaitForCompletion (-1));
+        if (SUCCEEDED (rc))
+        {
+            /* Check if the import was sucessfully */
+            progress->COMGETTER (ResultCode)(&rc);
+            if (FAILED (rc))
+            {
+                com::ProgressErrorInfo info (progress);
+                if (info.isBasicAvailable())
+                    RTPrintf ("Error: failed to import appliance. Error message: %lS\n", info.getText().raw());
+                else
+                    RTPrintf ("Error: failed to import appliance. No error message available!\n");
+            }else
+                RTPrintf ("Successfully imported the appliance.\n");
+        }
+
     }
     while (FALSE);
     printf ("\n");
