@@ -1487,7 +1487,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
 #endif
         /* The guest's TSS can span multiple pages now. We will monitor the whole thing. */
 #ifndef DEBUG_michael
-        AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + sizeof(VBOXTSS) - 1) >> PAGE_SHIFT),
+        AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + RT_MIN(sizeof(VBOXTSS), cbTss) - 1) >> PAGE_SHIFT),
                   ("GCPtrTss=%RGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
 #endif
 
