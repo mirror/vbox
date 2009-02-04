@@ -27,6 +27,7 @@
 #include <nsEventQueueUtils.h>
 
 #include <iprt/string.h>
+#define LOG_GROUP_MAIN
 #include <iprt/log.h>
 
 #include "VirtualBox_XPCOM.h"
@@ -91,7 +92,7 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
     rc = NS_InitXPCOM2(&serviceManager, nsnull, nsnull);
     if (NS_FAILED(rc))
     {
-        Log(("Cbinding: XPCOM could not be initialized! rc=0x%x\n",rc));
+        Log(("Cbinding: XPCOM could not be initialized! rc=%Rhrc\n",rc));
         VBoxComUninitialize();
         return;
     }
@@ -99,7 +100,7 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
     rc = NS_GetComponentManager (&manager);
     if (NS_FAILED(rc))
     {
-        Log(("Cbinding: Could not get component manager! rc=0x%x\n",rc));
+        Log(("Cbinding: Could not get component manager! rc=%Rhrc\n",rc));
         VBoxComUninitialize();
         return;
     }
@@ -110,7 +111,7 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
                                              (void **)virtualBox);
     if (NS_FAILED(rc))
     {
-        Log(("Cbinding: Could not instantiate VirtualBox object! rc=0x%x\n",rc));
+        Log(("Cbinding: Could not instantiate VirtualBox object! rc=%Rhrc\n",rc));
         VBoxComUninitialize();
         return;
     }
@@ -123,7 +124,7 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
                                               (void **)session);
     if (NS_FAILED(rc))
     {
-        Log(("Cbinding: Could not instantiate Session object! rc=0x%x\n",rc));
+        Log(("Cbinding: Could not instantiate Session object! rc=%Rhrc\n",rc));
         VBoxComUninitialize();
         return;
     }
