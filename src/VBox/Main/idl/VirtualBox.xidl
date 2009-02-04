@@ -2977,9 +2977,13 @@
 
         Calling this method is the final step of importing an appliance into VirtualBox;
         see <link to="IAppliance" /> for an overview.
+
+        Since importing the appliance may imply copying disk images, which can take a long
+        time, this method operates asynchronously and returns an IProgress object to allow
+        the caller to monitor the progress.
       </desc>
 
-      <param name="aProgress" type="IProgress" dir="out">
+      <param name="aProgress" type="IProgress" dir="return">
         <desc></desc>
       </param>
     </method>
