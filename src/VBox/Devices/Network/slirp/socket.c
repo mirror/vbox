@@ -99,9 +99,9 @@ sofree(PNATState pData, struct socket *so)
 
 #ifdef VBOX_WITH_SLIRP_MT
 void
-soread_queue(PNATState pData, struct socket *so, int fCloseIfNothingRead, int *ret)
+soread_queue(PNATState pData, struct socket *so, int *ret)
 {
-    *ret = soread(pData, so, fCloseIfNothingRead);
+    *ret = soread(pData, so);
 }
 #endif
 
@@ -111,7 +111,7 @@ soread_queue(PNATState pData, struct socket *so, int fCloseIfNothingRead, int *r
  * a read() of 0 (or less) means it's disconnected
  */
 int
-soread(PNATState pData, struct socket *so, int fCloseIfNothingRead)
+soread(PNATState pData, struct socket *so)
 {
     int n, nn, lss, total;
     struct sbuf *sb = &so->so_snd;
@@ -201,7 +201,15 @@ soread(PNATState pData, struct socket *so, int fCloseIfNothingRead)
          * www.youtube.com I see this very often. Closing the socket too early
          * would be dangerous.
          */
-        if (nn == 0 && !fCloseIfNothingRead)
+        int status = 0;
+        unsigned long pended = 0;
+        int ignored;
+        status = WSAIoctl(so->s, FIONREAD, NULL, 0, &pended, sizeof(unsigned long), &ignored, NULL, NULL);
+        if(status < 0) 
+        {
+            Log2(("error in WSAIoctl: %d\n", WSAGetLastError()));
+        }
+        if (nn == 0 && (pended != 0))
         {
             SOCKET_UNLOCK(so);
             return 0;
@@ -277,7 +285,7 @@ sorecvoob(PNATState pData, struct socket *so)
      * urgent data, or the read() doesn't return all the
      * urgent data.
      */
-    soread(pData, so, /*fCloseIfNothingRead=*/false);
+    soread(pData, so);
     tp->snd_up = tp->snd_una + so->so_snd.sb_cc;
     tp->t_force = 1;
     tcp_output(pData, tp);
