@@ -384,8 +384,11 @@ static void tss_load_seg(int seg_reg, int selector)
         if (seg_reg == R_SS || seg_reg == R_CS)
             raise_exception_err(EXCP0A_TSS, selector & 0xfffc);
 #ifdef VBOX
+#if 0
+        /** @todo: now we ignore loading 0 selectors, need to check what is correct once */
         cpu_x86_load_seg_cache(env, seg_reg, selector,
                                0, 0, 0);
+#endif
 #endif
     }
 }
@@ -5700,7 +5703,10 @@ void sync_seg(CPUX86State *env1, int seg_reg, int selector)
                                e2);
             }
             else
-                tss_load_seg(seg_reg, selector);
+                helper_load_seg(seg_reg, selector);
+            /* We used to use tss_load_seg(seg_reg, selector); which, for some reasons ignored
+               loading 0 selectors, what, in order, lead to subtle problems like #3588 */
+
             env = savedenv;
 
             /* Successful sync. */
