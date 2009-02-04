@@ -138,9 +138,9 @@ struct socket * solookup _P((struct socket *, struct in_addr, u_int, struct in_a
 struct socket * socreate _P((void));
 void sofree _P((PNATState, struct socket *));
 #ifdef VBOX_WITH_SLIRP_MT
-void soread_queue (PNATState, struct socket *, int, int *);
+void soread_queue (PNATState, struct socket *, int *);
 #endif
-int soread _P((PNATState, struct socket *, int));
+int soread _P((PNATState, struct socket *));
 void sorecvoob _P((PNATState, struct socket *));
 int sosendoob _P((struct socket *));
 int sowrite _P((PNATState, struct socket *));
