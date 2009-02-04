@@ -148,6 +148,7 @@ public:
                               ComSafeArrayOut(BSTR, aOrigValues),
                               ComSafeArrayOut(BSTR, aConfigValues),
                               ComSafeArrayOut(BSTR, aExtraConfigValues));
+    STDMETHOD(DisableItem)(ULONG index);
     STDMETHOD(SetFinalValues)(ComSafeArrayIn(IN_BSTR, aFinalValues));
 
     /* public methods only for internal purposes */
