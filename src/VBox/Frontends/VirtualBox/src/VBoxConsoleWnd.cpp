@@ -1348,23 +1348,20 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
             dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
             /* make the Discard checkbox invisible if there are no snapshots */
-            bool isDiscardVisible = cmachine.GetSnapshotCount() > 0;
-            dlg.mCbDiscardCurState->setVisible (isDiscardVisible);
+            dlg.mCbDiscardCurState->setVisible (cmachine.GetSnapshotCount() > 0);
 
             if (machine_state != KMachineState_Stuck)
             {
                 /* read the last user's choice for the given VM */
                 QStringList lastAction =
                     cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction).split (',');
-                bool wasDiscardCurState = lastAction.count() > 1 &&
-                                          lastAction [1] == kDiscardCurState;
                 AssertWrapperOk (cmachine);
                 if (lastAction [0] == kSave)
                 {
                     dlg.mRbSave->setChecked (true);
                     dlg.mRbSave->setFocus();
                 }
-                else if ((wasDiscardCurState && isDiscardVisible) || !isACPIEnabled)
+                else if (lastAction [0] == kPowerOff || !isACPIEnabled)
                 {
                     dlg.mRbShutdown->setEnabled (isACPIEnabled);
                     dlg.mRbPowerOff->setChecked (true);
@@ -1375,7 +1372,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                     dlg.mRbShutdown->setChecked (true);
                     dlg.mRbShutdown->setFocus();
                 }
-                dlg.mCbDiscardCurState->setChecked (wasDiscardCurState);
+                dlg.mCbDiscardCurState->setChecked (lastAction.count() > 1 &&
+                                                    lastAction [1] == kDiscardCurState);
             }
             else
             {
@@ -1486,11 +1484,17 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 
                 if (success || wasShutdown)
                 {
+                    /* read the last user's choice for the given VM */
+                    QStringList prevAction =
+                        cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction).split (',');
                     /* memorize the last user's choice for the given VM */
                     QString lastAction = kPowerOff;
                     if (dlg.mRbSave->isChecked())
                         lastAction = kSave;
-                    else if (dlg.mRbShutdown->isChecked())
+                    else if (dlg.mRbShutdown->isChecked() ||
+                             (dlg.mRbPowerOff->isChecked() &&
+                              prevAction [0] == kShutdown &&
+                              !isACPIEnabled))
                         lastAction = kShutdown;
                     else if (dlg.mRbPowerOff->isChecked())
                         lastAction = kPowerOff;
