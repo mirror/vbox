@@ -212,10 +212,11 @@ RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPa
 RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath);
 
 /**
- * Strips the filename from a path.
+ * Strips the filename from a path. Truncates the given string in-place by overwriting the
+ * last path separator character with a null byte in a platform-neutral way.
  *
- * @param   pszPath     Path which filename should be stripped.
- *                      If only filename in the string a '.' will be returned.
+ * @param   pszPath     Path from which filename should be extracted, will be truncated.
+ *                      If the string contains no path separator, it will be changed to a "." string.
  */
 RTDECL(void) RTPathStripFilename(char *pszPath);
 
