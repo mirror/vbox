@@ -160,7 +160,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
      *  handle TFTP
      */
     if (   ntohs(uh->uh_dport) == TFTP_SERVER 
-	    && CTL_CHECK(ntohl(ip->ip_dst.s_addr), CTL_TFTP))
+        && CTL_CHECK(ntohl(ip->ip_dst.s_addr), CTL_TFTP))
     {
         tftp_input(pData, m);
         goto bad;

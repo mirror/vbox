@@ -54,10 +54,10 @@
         {                                                                                       \
             /* This should not happen */                                                        \
             error = WSAGetLastError();                                                          \
-            LogRel(("WSAEventSelector (" #label ") error %d (so=%x, socket=%s, event=%x)\n",    \
+            LogRel(("WSAEventSelect (" #label ") error %d (so=%x, socket=%s, event=%x)\n",      \
                         error, (so), (so)->s, VBOX_SOCKET_EVENT));                              \
         }                                                                                       \
-    } while(0);					                                                                \
+    } while(0);                                                                                 \
     CONTINUE(label)
 
 # define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label) \
