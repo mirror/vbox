@@ -46,6 +46,5 @@ tstLinuxC.o: tstLinuxC.c cbinding.h
 	$(CC) $(CFLAGS) -DRT_OS_LINUX -DMOZ_UNICODE $(INCS_XPCOM) -o $@ -c $<
 
 run:
-	echo "env VBOX_XPCOM_HOME=$(PATH_BIN) LD_LIBRARY_PATH=$(PATH_BIN) ./tstLinuxC" > $@
+	echo "env VBOX_XPCOM_HOME=$(PATH_BIN) ./tstLinuxC" > $@
 	chmod a+x $@
-
