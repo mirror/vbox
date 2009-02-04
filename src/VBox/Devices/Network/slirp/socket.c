@@ -202,14 +202,14 @@ soread(PNATState pData, struct socket *so)
          * would be dangerous.
          */
         int status = 0;
-        unsigned long pended = 0;
+        unsigned long pending = 0;
         int ignored;
-        status = WSAIoctl(so->s, FIONREAD, NULL, 0, &pended, sizeof(unsigned long), &ignored, NULL, NULL);
+        status = WSAIoctl(so->s, FIONREAD, NULL, 0, &pending, sizeof(unsigned long), &ignored, NULL, NULL);
         if(status < 0) 
         {
             Log2(("error in WSAIoctl: %d\n", WSAGetLastError()));
         }
-        if (nn == 0 && (pended != 0))
+        if (nn == 0 && (pending != 0))
         {
             SOCKET_UNLOCK(so);
             return 0;
