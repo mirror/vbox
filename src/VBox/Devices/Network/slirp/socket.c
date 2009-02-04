@@ -201,14 +201,11 @@ soread(PNATState pData, struct socket *so)
          * www.youtube.com I see this very often. Closing the socket too early
          * would be dangerous.
          */
-        int status = 0;
+        int status, ignored;
         unsigned long pending = 0;
-        int ignored;
         status = WSAIoctl(so->s, FIONREAD, NULL, 0, &pending, sizeof(unsigned long), &ignored, NULL, NULL);
-        if(status < 0) 
-        {
+        if (status < 0)
             Log2(("error in WSAIoctl: %d\n", WSAGetLastError()));
-        }
         if (nn == 0 && (pending != 0))
         {
             SOCKET_UNLOCK(so);

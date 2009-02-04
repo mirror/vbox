@@ -170,7 +170,8 @@ void icmp_input _P((PNATState, struct mbuf *, int));
 void icmp_error _P((PNATState, struct mbuf *, u_char, u_char, int, const char *));
 void icmp_reflect _P((PNATState, struct mbuf *));
 
-struct icmp_msg{
+struct icmp_msg
+{
     LIST_ENTRY(icmp_msg) im_list;
     struct mbuf *im_m;
     struct socket *im_so;
