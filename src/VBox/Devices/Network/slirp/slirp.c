@@ -119,7 +119,7 @@
 # if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 #  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)              \
     do {                                                                                \
-        LogRel(("  " #proto "%R[natsock] %R[natwinnetevents]\n", (so), (winevent)));    \
+        LogRel(("  " #proto " %R[natsock] %R[natwinnetevents]\n", (so), (winevent)));   \
     } while (0)
 # else
 #  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)                              \
