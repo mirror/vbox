@@ -100,12 +100,17 @@ RTDECL(int) RTEnvUnset(const char *pszVar)
 
     /* Ok, try remove it. */
 #ifdef RT_OS_WINDOWS
-    /* Windows does not have unsetenv() */
-    if (!putenv((char *)pszVar))
+    /* Windows does not have unsetenv(). Clear the environment variable according to the MSN docs. */
+    char *pszBuf;
+    int rc = RTStrAPrintf(&pszBuf, "%s=", pszVar);
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = putenv(pszBuf);
+    RTStrFree(pszBuf);
+    if (!rc)
         return VINF_SUCCESS;
 #else
-    /* This is the preferred function as putenv() like used
-     * above does neither work on Solaris nor on Darwin. */
+    /* This is the preferred function as putenv() like used above does neither work on Solaris nor on Darwin. */
     if (!unsetenv((char*)pszVar))
         return VINF_SUCCESS;
 #endif
