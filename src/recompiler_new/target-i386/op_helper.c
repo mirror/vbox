@@ -383,6 +383,10 @@ static void tss_load_seg(int seg_reg, int selector)
     } else {
         if (seg_reg == R_SS || seg_reg == R_CS)
             raise_exception_err(EXCP0A_TSS, selector & 0xfffc);
+#ifdef VBOX
+        cpu_x86_load_seg_cache(env, seg_reg, selector,
+                               0, 0, 0);
+#endif
     }
 }
 
