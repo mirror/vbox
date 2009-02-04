@@ -227,6 +227,13 @@ com::Utf8Str toString(const T& val)
     return Utf8Str(ss.str().c_str());
 }
 
+static Utf8Str stripFilename(const Utf8Str &strFile)
+{
+    Utf8Str str2(strFile);
+    RTPathStripFilename(str2.mutableRaw());
+    return str2;
+}
+
 // IVirtualBox public methods
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -432,7 +439,6 @@ HRESULT Appliance::HandleDiskSection(const char *pcszPath,
                             pcszBad,
                             pelmDisk->getLineNumber());
 
-        // RTPrintf("  found disk: %s\n", d.strDiskId.c_str());
         m->mapDisks[d.strDiskId] = d;
     }
 
@@ -1427,7 +1433,7 @@ STDMETHODIMP Appliance::Interpret()
                         Utf8StrFmt strExtraConfig("controller=%RI16",
                                                   pController->ulIndex);
                         pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                                           "",
+                                           hd.strDiskId,
                                            di.strHref,
                                            strPath,
                                            strExtraConfig);
@@ -1497,7 +1503,7 @@ HRESULT Appliance::searchUniqueVMName(Utf8Str& aName) const
     IMachine *machine = NULL;
     char *tmpName = RTStrDup(aName.c_str());
     int i = 1;
-    /* @todo: Maybe to cost intensive; try to find a lighter way */
+    /* @todo: Maybe too cost-intensive; try to find a lighter way */
     while (mVirtualBox->FindMachine(Bstr(tmpName), &machine) != VBOX_E_OBJECT_NOT_FOUND)
     {
         RTStrFree(tmpName);
@@ -1517,7 +1523,7 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
     int i = 1;
     /* Check if the file exists or if a file with this path is registered
      * already */
-    /* @todo: Maybe to cost intensive; try to find a lighter way */
+    /* @todo: Maybe too cost-intensive; try to find a lighter way */
     while (RTPathExists(tmpName) ||
            mVirtualBox->FindHardDisk2(Bstr(tmpName), &harddisk) != VBOX_E_OBJECT_NOT_FOUND)
     {
@@ -1526,7 +1532,7 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
         RTPathStripFilename(tmpDir);;
         char *tmpFile = RTStrDup(RTPathFilename(aName.c_str()));
         RTPathStripExt(tmpFile);
-        char *tmpExt = RTPathExt(aName.c_str());
+        const char *tmpExt = RTPathExt(aName.c_str());
         RTStrAPrintf(&tmpName, "%s/%s_%d%s", tmpDir, tmpFile, i, tmpExt);
         RTStrFree(tmpFile);
         RTStrFree(tmpDir);
@@ -1579,22 +1585,22 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             /* Guest OS type */
             std::list<VirtualSystemDescriptionEntry*> vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
             Assert(vsdeOS.size() == 1);
-            const Utf8Str &osTypeVBox = vsdeOS.front()->strConfig;
+            const Utf8Str &strOsTypeVBox = vsdeOS.front()->strConfig;
 
             /* Now that we know the base system get our internal defaults based on that. */
             ComPtr<IGuestOSType> osType;
-            rc = app->mVirtualBox->GetGuestOSType(Bstr(osTypeVBox), osType.asOutParam());
+            rc = app->mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox), osType.asOutParam());
             CheckComRCThrowRC(rc);
 
             /* Create the machine */
             /* First get the name */
             std::list<VirtualSystemDescriptionEntry*> vsdeName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
             Assert(vsdeName.size() == 1);
-            const Utf8Str &nameVBox = vsdeName.front()->strConfig;
-            ComPtr<IMachine> newMachine;
-            rc = app->mVirtualBox->CreateMachine(Bstr(nameVBox.c_str()), Bstr(osTypeVBox.c_str()),
+            const Utf8Str &strNameVBox = vsdeName.front()->strConfig;
+            ComPtr<IMachine> pNewMachine;
+            rc = app->mVirtualBox->CreateMachine(Bstr(strNameVBox), Bstr(strOsTypeVBox),
                                                  Bstr(), Guid(),
-                                                 newMachine.asOutParam());
+                                                 pNewMachine.asOutParam());
             CheckComRCThrowRC(rc);
 
             /* CPU count (ignored for now) */
@@ -1608,7 +1614,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             const Utf8Str &memoryVBox = vsdeRAM.front()->strConfig;
             uint64_t tt = RTStrToUInt64(memoryVBox.c_str()) / _1M;
 
-            rc = newMachine->COMSETTER(MemorySize)(tt);
+            rc = pNewMachine->COMSETTER(MemorySize)(tt);
             CheckComRCThrowRC(rc);
 
             /* VRAM */
@@ -1618,7 +1624,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             rc = osType->COMGETTER(RecommendedVRAM)(&vramVBox);
             CheckComRCThrowRC(rc);
             /* Set the VRAM */
-            rc = newMachine->COMSETTER(VRAMSize)(vramVBox);
+            rc = pNewMachine->COMSETTER(VRAMSize)(vramVBox);
             CheckComRCThrowRC(rc);
 
             /* Audio Adapter */
@@ -1631,7 +1637,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 {
                     uint32_t audio = RTStrToUInt32(audioAdapterVBox.c_str());
                     ComPtr<IAudioAdapter> audioAdapter;
-                    rc = newMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                    rc = pNewMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
                     CheckComRCThrowRC(rc);
                     rc = audioAdapter->COMSETTER(Enabled)(true);
                     CheckComRCThrowRC(rc);
@@ -1669,16 +1675,12 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
             /* USB Controller */
             std::list<VirtualSystemDescriptionEntry*> vsdeUSBController = vsdescThis->findByType(VirtualSystemDescriptionType_USBController);
-            /* If there is no USB controller entry it will be disabled */
+            // USB support is enabled if there's at least one such entry; to disable USB support,
+            // the type of the USB item would have been changed to "ignore"
             bool fUSBEnabled = vsdeUSBController.size() > 0;
-            if (fUSBEnabled)
-            {
-                /* Check if the user has disabled the USB controller in the client */
-                const Utf8Str& usbVBox = vsdeUSBController.front()->strConfig;
-                fUSBEnabled = usbVBox == "1";
-            }
+
             ComPtr<IUSBController> usbController;
-            rc = newMachine->COMGETTER(USBController)(usbController.asOutParam());
+            rc = pNewMachine->COMGETTER(USBController)(usbController.asOutParam());
             CheckComRCThrowRC(rc);
             rc = usbController->COMSETTER(Enabled)(fUSBEnabled);
             CheckComRCThrowRC(rc);
@@ -1689,7 +1691,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             {
                 /* No network adapters, so we have to disable our default one */
                 ComPtr<INetworkAdapter> nwVBox;
-                rc = newMachine->GetNetworkAdapter(0, nwVBox.asOutParam());
+                rc = pNewMachine->GetNetworkAdapter(0, nwVBox.asOutParam());
                 CheckComRCThrowRC(rc);
                 rc = nwVBox->COMSETTER(Enabled)(false);
                 CheckComRCThrowRC(rc);
@@ -1698,7 +1700,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             {
                 list<VirtualSystemDescriptionEntry*>::const_iterator nwIt;
                 /* Iterate through all network cards. We support 8 network adapters
-                 * at the maximum. (@todo: warn if it are more!) */
+                 * at the maximum. (@todo: warn if there are more!) */
                 size_t a = 0;
                 for (nwIt = vsdeNW.begin();
                      (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
@@ -1707,7 +1709,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     const Utf8Str &nwTypeVBox = (*nwIt)->strConfig;
                     uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
                     ComPtr<INetworkAdapter> nwVBox;
-                    rc = newMachine->GetNetworkAdapter((ULONG)a, nwVBox.asOutParam());
+                    rc = pNewMachine->GetNetworkAdapter((ULONG)a, nwVBox.asOutParam());
                     CheckComRCThrowRC(rc);
                     /* Enable the network card & set the adapter type */
                     /* NAT is set as default */
@@ -1720,16 +1722,11 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
             /* Floppy drive */
             std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
-            /* If there is no floppy drive entry it will be disabled */
+            // Floppy support is enabled if there's at least one such entry; to disable floppy support,
+            // the type of the floppy item would have been changed to "ignore"
             bool fFloppyEnabled = vsdeFloppy.size() > 0;
-            if (fFloppyEnabled)
-            {
-                /* Check if the user has disabled the floppy drive in the client */
-                const Utf8Str& floppyVBox = vsdeFloppy.front()->strConfig;
-                fFloppyEnabled = floppyVBox == "1";
-            }
             ComPtr<IFloppyDrive> floppyDrive;
-            rc = newMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
+            rc = pNewMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
             CheckComRCThrowRC(rc);
             rc = floppyDrive->COMSETTER(Enabled)(fFloppyEnabled);
             CheckComRCThrowRC(rc);
@@ -1743,13 +1740,19 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             /* @todo: we support one IDE controller only */
             if (vsdeHDCIDE.size() > 0)
             {
-                IDEControllerType_T hdcVBox = static_cast<IDEControllerType_T>(RTStrToUInt32(vsdeHDCIDE.front()->strConfig.c_str()));
-                /* Set the appropriate IDE controller in the virtual BIOS of the
-                 * VM. */
+                // set the appropriate IDE controller in the virtual BIOS of the VM
                 ComPtr<IBIOSSettings> biosSettings;
-                rc = newMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
+                rc = pNewMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
                 CheckComRCThrowRC(rc);
-                rc = biosSettings->COMSETTER(IDEControllerType)(hdcVBox);
+                const char *pcszIDEType = vsdeHDCIDE.front()->strConfig.c_str();
+                if (!strcmp(pcszIDEType, "PIIX3"))
+                    rc = biosSettings->COMSETTER(IDEControllerType)(IDEControllerType_PIIX3);
+                else if (!strcmp(pcszIDEType, "PIIX4"))
+                    rc = biosSettings->COMSETTER(IDEControllerType)(IDEControllerType_PIIX4);
+                else
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Invalid IDE controller type \"%s\""),
+                                   pcszIDEType);
                 CheckComRCThrowRC(rc);
             }
 #ifdef VBOX_WITH_AHCI
@@ -1763,7 +1766,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 {
                     /* For now we have just to enable the AHCI controller. */
                     ComPtr<ISATAController> hdcSATAVBox;
-                    rc = newMachine->COMGETTER(SATAController)(hdcSATAVBox.asOutParam());
+                    rc = pNewMachine->COMGETTER(SATAController)(hdcSATAVBox.asOutParam());
                     CheckComRCThrowRC(rc);
                     rc = hdcSATAVBox->COMSETTER(Enabled)(true);
                     CheckComRCThrowRC(rc);
@@ -1774,19 +1777,17 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 }
             }
 #endif /* VBOX_WITH_AHCI */
-#ifdef VBOX_WITH_SCSI
+
             /* Hard disk controller SCSI */
-            EntriesList vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
+            std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
             /* @todo: do we support more than one SCSI controller? */
             if (vsdeHDCSCSI.size() > 0)
             {
-                /* @todo: Currently I have no idea how to enable this. Someone has
-                 * to write main support for SCSI at all. */
+                /* @todo: revisit when Main support for SCSI is ready */
             }
-#endif /* VBOX_WITH_SCSI */
 
             /* Now its time to register the machine before we add any hard disks */
-            rc = app->mVirtualBox->RegisterMachine(newMachine);
+            rc = app->mVirtualBox->RegisterMachine(pNewMachine);
             CheckComRCThrowRC(rc);
 
             if (!task->progress.isNull())
@@ -1797,15 +1798,14 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             if (avsdeHDs.size() > 0)
             {
                 Guid newMachineId;
-                rc = newMachine->COMGETTER(Id)(newMachineId.asOutParam());
+                rc = pNewMachine->COMGETTER(Id)(newMachineId.asOutParam());
                 CheckComRCThrowRC(rc);
                 /* If in the next block an error occur we have to deregister
                    the machine, so make an extra try/catch block. */
                 ComPtr<ISession> session;
                 try
                 {
-                    /* That we can attach hard disks we need to open a session for the
-                     * new machine */
+                    // in order to attach hard disks we need to open a session for the new machine
                     rc = session.createInprocObject(CLSID_Session);
                     CheckComRCThrowRC(rc);
                     rc = app->mVirtualBox->OpenSession(session, newMachineId);
@@ -1814,10 +1814,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     int result;
                     /* The disk image has to be on the same place as the OVF file. So
                      * strip the filename out of the full file path. */
-                    char *pszSrcDir = RTStrDup(Utf8Str(app->m->bstrPath).raw());
-                    RTPathStripFilename(pszSrcDir);
-                    Utf8Str strSrcDir(pszSrcDir);
-                    RTStrFree(pszSrcDir);
+                    Utf8Str strSrcDir = stripFilename(Utf8Str(app->m->bstrPath).raw());
 
                     /* Iterate over all given disk images */
                     list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
@@ -1830,17 +1827,18 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                         const char *pcszDstFilePath = vsdeHD->strConfig.c_str();
                         /* Check if the destination file exists already or the
                          * destination path is empty. */
-                        if (RTPathExists(pcszDstFilePath) ||
-                            !RTStrCmp(pcszDstFilePath, ""))
-                        {
+                        if (    !(*pcszDstFilePath)
+                             || RTPathExists(pcszDstFilePath)
+                           )
                             /* This isn't allowed */
                             throw setError(VBOX_E_FILE_ERROR,
                                            tr("Destination file '%s' exists",
                                               pcszDstFilePath));
-                        }
 
                         // find the disk from the OVF's disk list
                         DiskImagesMap::const_iterator itDiskImage = app->m->mapDisks.find(vsdeHD->strRef);
+                        // vsdeHD->strRef contains the disk identifier (e.g. "vmdisk1", which should exist
+                        // in the virtual system's disks map under that ID and also in the global images map
                         VirtualDisksMap::const_iterator itVirtualDisk = vsysThis.mapVirtualDisks.find(vsdeHD->strRef);
 
                         if (    itDiskImage == app->m->mapDisks.end()
@@ -2047,6 +2045,31 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
     return S_OK;
 }
 
+STDMETHODIMP VirtualSystemDescription::DisableItem(ULONG index)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    list<VirtualSystemDescriptionEntry>::iterator it;
+    for (it = m->descriptions.begin();
+         it != m->descriptions.end();
+         ++it)
+    {
+        VirtualSystemDescriptionEntry &e = *it;
+        if (e.ulIndex == index)
+        {
+            e.type = VirtualSystemDescriptionType_Ignore;
+            return S_OK;
+        }
+    }
+
+    return setError(VBOX_E_OBJECT_NOT_FOUND,
+                    tr("Array item index %d not found"),
+                    index);
+}
+
 STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(IN_BSTR, aFinalValues))
 {
     CheckComArgSafeArrayNotNull(aFinalValues);
@@ -2124,3 +2147,4 @@ const VirtualSystemDescriptionEntry* VirtualSystemDescription::findControllerFro
 
     return NULL;
 }
+

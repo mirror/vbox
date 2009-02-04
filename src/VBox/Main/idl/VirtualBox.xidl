@@ -3117,6 +3117,22 @@
 
     </method>
 
+    <method name="disableItem">
+      <desc>
+        Disables part of the configuration, as represented by the array items returned by
+        <link to="getDescription" />. For example, to disable USB support for a given
+        virtual system, pass in the array item index of the USB controller; its type will
+        then be changed by this method from "USBController" to "Ignore".
+
+        This works only for items of the types HardDiskControllerIDE, HardDiskControllerSATA,
+        HardDiskControllerSCSI, HardDiskImage, CDROM, Floppy, NetworkAdapter, USBController
+        and SoundCard.
+      </desc>
+
+      <param name="index" type="unsigned long" dir="in">
+      </param>
+    </method>
+
     <method name="SetFinalValues">
       <desc></desc>
 

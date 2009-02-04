@@ -53,10 +53,13 @@ int handleImportAppliance(HandlerArg *a)
     HRESULT rc = S_OK;
 
     Utf8Str strOvfFilename;
+    bool fExecute = false;                  // if true, then we actually do the import (-exec argument)
 
     for (int i = 0; i < a->argc; i++)
     {
-        if (!strOvfFilename)
+        if (!strcmp(a->argv[i], "-exec"))
+            fExecute = true;
+        else if (!strOvfFilename)
             strOvfFilename = a->argv[i];
         else
             return errorSyntax(USAGE_IMPORTAPPLIANCE, "Too many arguments for \"import\" command.");
@@ -218,8 +221,31 @@ int handleImportAppliance(HandlerArg *a)
                     }
                 }
             }
-            RTPrintf("\n");
-        }
+
+            if (fExecute)
+            {
+                ComPtr<IProgress> progress;
+                CHECK_ERROR_BREAK(appliance,
+                                  ImportAppliance(progress.asOutParam()));
+
+                showProgress(progress);
+
+                if (SUCCEEDED(rc))
+                {
+                    progress->COMGETTER(ResultCode)(&rc);
+                    if (FAILED (rc))
+                    {
+                        com::ProgressErrorInfo info(progress);
+                        if (info.isBasicAvailable())
+                            RTPrintf("Error: failed to import appliance. Error message: %lS\n", info.getText().raw());
+                        else
+                            RTPrintf("Error: failed to import appliance. No error message available!\n");
+                    }
+                    else
+                        RTPrintf("Successfully imported the appliance.\n");
+                }
+            }
+        } // end if (aVirtualSystemDescriptions.size() > 0)
     } while (0);
 
     return SUCCEEDED(rc) ? 0 : 1;
