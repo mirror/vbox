@@ -96,7 +96,7 @@ int handleImportAppliance(HandlerArg *a)
             for (unsigned i = 0; i < aVirtualSystemDescriptions.size(); ++i)
             {
                 com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
-                com::SafeArray<ULONG> aRefs;
+                com::SafeArray<BSTR> aRefs;
                 com::SafeArray<BSTR> aOrigValues;
                 com::SafeArray<BSTR> aConfigValues;
                 com::SafeArray<BSTR> aExtraConfigValues;
@@ -146,39 +146,38 @@ int handleImportAppliance(HandlerArg *a)
                         break;
 
                         case VirtualSystemDescriptionType_HardDiskControllerIDE:
-                            RTPrintf("%2d: IDE controller: reference ID %d"
+                            RTPrintf("%2d: IDE controller, type %ls"
                                      "\n    (disable with \"-vsys %d -ignore %d\")\n",
                                      a,
-                                     aRefs[a],
+                                     aConfigValues[a],
                                      i, a);
                         break;
 
                         case VirtualSystemDescriptionType_HardDiskControllerSATA:
-                            RTPrintf("%2d: SATA controller: reference ID %d"
+                            RTPrintf("%2d: SATA controller, type %ls"
                                      "\n    (disable with \"-vsys %d -ignore %d\")\n",
                                      a,
-                                     aRefs[a],
+                                     aConfigValues[a],
                                      i, a);
                         break;
 
                         case VirtualSystemDescriptionType_HardDiskControllerSCSI:
-                            RTPrintf("%2d: SCSI controller: reference ID %d, type %ls"
-                                     "\n    (change with \"-vsys %d -scsitype%d={BusLogic|LsiLogic}\";"
+                            RTPrintf("%2d: SCSI controller, type %ls"
+                                     "\n    (change with \"-vsys %d -type%d={BusLogic|LsiLogic}\";"
                                      "\n    disable with \"-vsys %d -ignore %d\")\n",
                                      a,
-                                     aRefs[a],
                                      aConfigValues[a],
                                      i, a, i, a);
                         break;
 
                         case VirtualSystemDescriptionType_HardDiskImage:
-                            RTPrintf("%2d: Hard disk image: controller %d, source image \"%ls\", target image \"%ls\""
+                            RTPrintf("%2d: Hard disk image: source image=%ls, target path=%ls, %ls"
                                      "\n    (change controller with \"-vsys %d -controller%d=<id>\";"
                                      "\n    disable with \"-vsys %d -ignore %d\")\n",
                                      a,
-                                     aRefs[a],
                                      aOrigValues[a],
                                      aConfigValues[a],
+                                     aExtraConfigValues[a],
                                      i, a, i, a);
                         break;
 
@@ -195,7 +194,7 @@ int handleImportAppliance(HandlerArg *a)
                         break;
 
                         case VirtualSystemDescriptionType_NetworkAdapter:
-                            RTPrintf("%2d: Network adapter: orig %ls, auto %ls, conf %ls\n",
+                            RTPrintf("%2d: Network adapter: orig %ls, config %ls, extra %ls\n",
                                      a,
                                      aOrigValues[a],
                                      aConfigValues[a],

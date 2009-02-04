@@ -108,7 +108,7 @@ struct VirtualHardwareItem
     {};
 };
 
-typedef map<uint32_t, DiskImage> DiskImagesMap;
+typedef map<Utf8Str, DiskImage> DiskImagesMap;
 typedef map<Utf8Str, Network> NetworksMap;
 
 struct VirtualSystem;
@@ -134,7 +134,7 @@ struct HardDiskController
     uint32_t             idController;           // instance ID (Item/InstanceId); this gets referenced from HardDisk
     enum ControllerSystemType { IDE, SATA, SCSI };
     ControllerSystemType system;                 // one of IDE, SATA, SCSI
-    Utf8Str              strControllerType;      // controllertype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
+    Utf8Str              strControllerType;      // controller subtype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
     Utf8Str              strAddress;             // for IDE
     uint32_t             ulBusNumber;            // for IDE
 
@@ -1236,7 +1236,7 @@ STDMETHODIMP Appliance::Interpret()
                     strCIMOSType = toString<ULONG>(vsysThis.cimos);
             convertCIMOSType2VBoxOSType(strOsTypeVBox, vsysThis.cimos);
             pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
-                               0,
+                               "",
                                strCIMOSType,
                                strOsTypeVBox);
 
@@ -1248,7 +1248,7 @@ STDMETHODIMP Appliance::Interpret()
                 nameVBox = strOsTypeVBox;
             searchUniqueVMName(nameVBox);
             pNewDesc->addEntry(VirtualSystemDescriptionType_Name,
-                               0,
+                               "",
                                vsysThis.strName,
                                nameVBox);
 
@@ -1263,7 +1263,7 @@ STDMETHODIMP Appliance::Interpret()
             if (vsysThis.cCPUs == 0)
                 cpuCountVBox = 1;
             pNewDesc->addEntry(VirtualSystemDescriptionType_CPU,
-                               0,
+                               "",
                                toString<ULONG>(vsysThis.cCPUs),
                                toString<ULONG>(cpuCountVBox));
 
@@ -1280,7 +1280,7 @@ STDMETHODIMP Appliance::Interpret()
                 ullMemSizeVBox = (uint64_t)memSizeVBox2 * _1M;
             }
             pNewDesc->addEntry(VirtualSystemDescriptionType_Memory,
-                               0,
+                               "",
                                toString<uint64_t>(vsysThis.ullMemorySize),
                                toString<uint64_t>(ullMemSizeVBox));
 
@@ -1289,13 +1289,13 @@ STDMETHODIMP Appliance::Interpret()
                 /* Currently we set the AC97 always.
                    @todo: figure out the hardware which could be possible */
                 pNewDesc->addEntry(VirtualSystemDescriptionType_SoundCard,
-                                   0,
+                                   "",
                                    vsysThis.strSoundCardType,
                                    "");
 
             /* USB Controller */
             if (vsysThis.fHasUsbController)
-                pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, 0, "", "");
+                pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
 
             /* Network Controller */
             // @todo: there is no hardware specification in the OVF file; supposedly the
@@ -1315,17 +1315,17 @@ STDMETHODIMP Appliance::Interpret()
                      ++nwIt, ++a)
                 {
                     Utf8Str nwController = *nwIt; // @todo: not used yet
-                    pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter, 0, "", toString<ULONG>(nwAdapterVBox));
+                    pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter, "", "", toString<ULONG>(nwAdapterVBox));
                 }
             }
 
             /* Floppy Drive */
             if (vsysThis.fHasFloppyDrive)
-                pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy, 0, "", "");
+                pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy, "", "", "");
 
             /* CD Drive */
             if (vsysThis.fHasCdromDrive)
-                pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, 0, "", "");
+                pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");
 
             /* Hard disk Controller */
             ControllersMap::const_iterator hdcIt;
@@ -1335,21 +1335,24 @@ STDMETHODIMP Appliance::Interpret()
                  ++hdcIt)
             {
                 const HardDiskController &hdc = hdcIt->second;
+                Utf8Str strControllerID = toString<uint32_t>(hdc.idController);
+
                 switch (hdc.system)
                 {
                     case HardDiskController::IDE:
                         {
                             // @todo: figure out the IDE types
                             /* Use PIIX4 as default */
-                            IDEControllerType_T hdcController = IDEControllerType_PIIX4;
+//                             IDEControllerType_T hdcController = IDEControllerType_PIIX4;
+                            Utf8Str strType = "PIIX4";
                             if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX3"))
-                                hdcController = IDEControllerType_PIIX3;
-                            else if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX4"))
-                                hdcController = IDEControllerType_PIIX4;
+                                strType = "PIIX3";
+//                             else // if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX4"))
+//                                 hdcController = IDEControllerType_PIIX4;
                             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
-                                               hdc.idController,
+                                               strControllerID,
                                                hdc.strControllerType,
-                                               toString<ULONG>(hdcController));
+                                               strType);
                             break;
                         }
 
@@ -1358,7 +1361,7 @@ STDMETHODIMP Appliance::Interpret()
                             // @todo: figure out the SATA types
                             /* We only support a plain AHCI controller, so use them always */
                             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
-                                               hdc.idController,
+                                               strControllerID,
                                                hdc.strControllerType,
                                                "AHCI");
                             break;
@@ -1368,12 +1371,13 @@ STDMETHODIMP Appliance::Interpret()
                         {
                             // @todo: figure out the SCSI types
                             Utf8Str hdcController = "LsiLogic";
-                            if (!RTStrICmp(hdc.strControllerType.c_str(), "LsiLogic"))
+                            /* if (!RTStrICmp(hdc.strControllerType.c_str(), "LsiLogic"))
                                 hdcController = "LsiLogic";
-                            else if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
+                            else*/
+                            if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
                                 hdcController = "BusLogic";
                             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
-                                               hdc.idController,
+                                               strControllerID,
                                                hdc.strControllerType,
                                                hdcController);
                             break;
@@ -1387,13 +1391,13 @@ STDMETHODIMP Appliance::Interpret()
                 // @todo:
                 //  - strHref could be empty (construct a new default file name)
                 //  - check that the filename is unique to vbox in any case
-                VirtualDisksMap::const_iterator hdIt;
+                VirtualDisksMap::const_iterator itVD;
                 /* Iterate through all hard disks ()*/
-                for (hdIt = vsysThis.mapVirtualDisks.begin();
-                     hdIt != vsysThis.mapVirtualDisks.end();
-                     ++hdIt)
+                for (itVD = vsysThis.mapVirtualDisks.begin();
+                     itVD != vsysThis.mapVirtualDisks.end();
+                     ++itVD)
                 {
-                    const VirtualDisk &hd = hdIt->second;
+                    const VirtualDisk &hd = itVD->second;
                     /* Get the associated disk image */
                     const DiskImage &di = m->mapDisks[hd.strDiskId];
 
@@ -1402,17 +1406,31 @@ STDMETHODIMP Appliance::Interpret()
                     //  - figure out if there is a url specifier for vhd already
                     //  - we need a url specifier for the vdi format
                     if (    (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#sparse"))
-                            || (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed"))
+                         || (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed"))
                        )
                     {
-                        /* Construct the path */
-                        Utf8StrFmt path("%ls%c%s", bstrDefaultHardDiskLocation.raw(), RTPATH_DELIMITER, di.strHref.c_str());
-                        /* Make the path unique to the VBox installation */
-                        searchUniqueDiskImageFilePath(path);
+                        // construct a unique target path
+                        Utf8StrFmt strPath("%ls%c%s",
+                                           bstrDefaultHardDiskLocation.raw(),
+                                           RTPATH_DELIMITER,
+                                           di.strHref.c_str());
+                        searchUniqueDiskImageFilePath(strPath);
+
+                        // find the description for the hard disk controller that has the
+                        // same ID as hd.idController
+                        const VirtualSystemDescriptionEntry *pController;
+                        if (!(pController = pNewDesc->findControllerFromID(hd.idController)))
+                            throw setError(E_FAIL,
+                                           tr("Internal inconsistency looking up hard disk controller."));
+
+                        // controller to attach to @todo bus?
+                        Utf8StrFmt strExtraConfig("controller=%RI16",
+                                                  pController->ulIndex);
                         pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                                           hd.idController,
+                                           "",
                                            di.strHref,
-                                           path);
+                                           strPath,
+                                           strExtraConfig);
                     }
                 }
             }
@@ -1802,12 +1820,14 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     RTStrFree(pszSrcDir);
 
                     /* Iterate over all given disk images */
-                    list<VirtualSystemDescriptionEntry*>::const_iterator hdIt;
-                    for (hdIt = avsdeHDs.begin();
-                         hdIt != avsdeHDs.end();
-                         ++hdIt)
+                    list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
+                    for (itHD = avsdeHDs.begin();
+                         itHD != avsdeHDs.end();
+                         ++itHD)
                     {
-                        const char *pcszDstFilePath = (*hdIt)->strConfig.c_str();
+                        VirtualSystemDescriptionEntry *vsdeHD = *itHD;
+
+                        const char *pcszDstFilePath = vsdeHD->strConfig.c_str();
                         /* Check if the destination file exists already or the
                          * destination path is empty. */
                         if (RTPathExists(pcszDstFilePath) ||
@@ -1818,17 +1838,20 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                                            tr("Destination file '%s' exists",
                                               pcszDstFilePath));
                         }
-                        ULONG ulRef = (*hdIt)->ulRef;
-                        /* Get the associated disk image */
-                        if (app->m->mapDisks.find(ulRef) == app->m->mapDisks.end() ||
-                            vsysThis.mapVirtualDisks.find(ulRef) == vsysThis.mapVirtualDisks.end())
-                        {
-                            /* This isn't allowed */
+
+                        // find the disk from the OVF's disk list
+                        DiskImagesMap::const_iterator itDiskImage = app->m->mapDisks.find(vsdeHD->strRef);
+                        VirtualDisksMap::const_iterator itVirtualDisk = vsysThis.mapVirtualDisks.find(vsdeHD->strRef);
+
+                        if (    itDiskImage == app->m->mapDisks.end()
+                             || itVirtualDisk == vsysThis.mapVirtualDisks.end()
+                           )
                             throw setError(E_FAIL,
-                                           tr("Some internal error occured"));
-                        }
-                        DiskImage di = app->m->mapDisks[ulRef];
-                        VirtualDisk vd = (*vsysThis.mapVirtualDisks.find(ulRef)).second;
+                                           tr("Internal inconsistency looking up disk images."));
+
+                        const DiskImage &di = itDiskImage->second;
+                        const VirtualDisk &vd = itVirtualDisk->second;
+
                         /* Construct the source file path */
                         Utf8StrFmt strSrcFilePath("%s/%s", strSrcDir.c_str(), di.strHref.c_str());
                         /* Check if the source file exists */
@@ -1968,7 +1991,7 @@ void VirtualSystemDescription::uninit()
 }
 
 STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
-                                                      ComSafeArrayOut(ULONG, aRefs),
+                                                      ComSafeArrayOut(BSTR, aRefs),
                                                       ComSafeArrayOut(BSTR, aOrigValues),
                                                       ComSafeArrayOut(BSTR, aConfigValues),
                                                       ComSafeArrayOut(BSTR, aExtraConfigValues))
@@ -1987,7 +2010,7 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
 
     ULONG c = (ULONG)m->descriptions.size();
     com::SafeArray<VirtualSystemDescriptionType_T> sfaTypes(c);
-    com::SafeArray<ULONG> sfaRefs(c);
+    com::SafeArray<BSTR> sfaRefs(c);
     com::SafeArray<BSTR> sfaOrigValues(c);
     com::SafeArray<BSTR> sfaConfigValues(c);
     com::SafeArray<BSTR> sfaExtraConfigValues(c);
@@ -2002,9 +2025,10 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
 
         sfaTypes[i] = vsde.type;
 
-        sfaRefs[i] = vsde.ulRef;
+        Bstr bstr = vsde.strRef;
+        bstr.cloneTo(&sfaRefs[i]);
 
-        Bstr bstr = vsde.strOrig;
+        bstr = vsde.strOrig;
         bstr.cloneTo(&sfaOrigValues[i]);
 
         bstr = vsde.strConfig;
@@ -2050,15 +2074,18 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(IN_BSTR, aF
 }
 
 void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
-                                        uint32_t ulRef,
+                                        const Utf8Str &strRef,
                                         const Utf8Str &aOrigValue,
-                                        const Utf8Str &aAutoValue)
+                                        const Utf8Str &aAutoValue,
+                                        const Utf8Str &strExtraConfig /*= ""*/)
 {
     VirtualSystemDescriptionEntry vsde;
+    vsde.ulIndex = m->descriptions.size();      // each entry gets an index so the client side can reference them
     vsde.type = aType;
-    vsde.ulRef = ulRef;
+    vsde.strRef = strRef;
     vsde.strOrig = aOrigValue;
     vsde.strConfig = aAutoValue;
+    vsde.strExtraConfig = strExtraConfig;
 
     m->descriptions.push_back(vsde);
 }
@@ -2076,3 +2103,24 @@ std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::findByType(V
     return vsd;
 }
 
+const VirtualSystemDescriptionEntry* VirtualSystemDescription::findControllerFromID(uint32_t id)
+{
+    Utf8Str strRef = toString<uint32_t>(id);
+    list<VirtualSystemDescriptionEntry>::const_iterator it;
+    for (it = m->descriptions.begin();
+         it != m->descriptions.end();
+         ++it)
+    {
+        switch (it->type)
+        {
+            case VirtualSystemDescriptionType_HardDiskControllerIDE:
+            case VirtualSystemDescriptionType_HardDiskControllerSATA:
+            case VirtualSystemDescriptionType_HardDiskControllerSCSI:
+                if (it->strRef == strRef)
+                    return &(*it);
+            break;
+        }
+    }
+
+    return NULL;
+}

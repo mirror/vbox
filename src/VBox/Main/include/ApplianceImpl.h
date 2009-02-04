@@ -99,11 +99,12 @@ private:
 
 struct VirtualSystemDescriptionEntry
 {
-    VirtualSystemDescriptionType_T type; /* Of which type is this value */
-    uint32_t ulRef;     // reference number
-    Utf8Str strOrig; /* The original OVF value */
-    Utf8Str strConfig; /* The value which VBox suggest */
-    Utf8Str strExtraConfig; /* Additional configuration data for this type */
+    uint32_t ulIndex;                       // zero-based index of this entry within array
+    VirtualSystemDescriptionType_T type;    // type of this entry
+    Utf8Str strRef;                         // reference number (hard disk controllers only)
+    Utf8Str strOrig;                        // original OVF value (type-dependent)
+    Utf8Str strConfig;                      // configuration value (type-dependent)
+    Utf8Str strExtraConfig;                 // extra configuration key=value strings (type-dependent)
 };
 
 class ATL_NO_VTABLE VirtualSystemDescription :
@@ -143,7 +144,7 @@ public:
 
     /* IVirtualSystemDescription methods */
     STDMETHOD(GetDescription)(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
-                              ComSafeArrayOut(ULONG, aRefs),
+                              ComSafeArrayOut(BSTR, aRefs),
                               ComSafeArrayOut(BSTR, aOrigValues),
                               ComSafeArrayOut(BSTR, aConfigValues),
                               ComSafeArrayOut(BSTR, aExtraConfigValues));
@@ -154,11 +155,13 @@ public:
     /* private instance data */
 private:
     void addEntry(VirtualSystemDescriptionType_T aType,
-                  uint32_t ulRef,
+                  const Utf8Str &strRef,
                   const Utf8Str &aOrigValue,
-                  const Utf8Str &aAutoValue);
+                  const Utf8Str &aAutoValue,
+                  const Utf8Str &strExtraConfig = "");
 
     std::list<VirtualSystemDescriptionEntry*> findByType(VirtualSystemDescriptionType_T aType);
+    const VirtualSystemDescriptionEntry* findControllerFromID(uint32_t id);
 
     struct Data;
     Data *m;
