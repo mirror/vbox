@@ -203,7 +203,7 @@ struct Appliance::Task
     Task(Appliance *aThat, Progress *aProgress)
         : that(aThat)
         , progress(aProgress)
-        , rc(S_OK) 
+        , rc(S_OK)
     {}
     ~Task() {}
 
@@ -259,7 +259,7 @@ HRESULT Appliance::Task::startThread()
 {
     int vrc = RTThreadCreate(NULL, Appliance::taskThread, this,
                              0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                             "Applicane::Task");
+                             "Appliance::Task");
     ComAssertMsgRCRet(vrc,
                       ("Could not create Appliance::Task thread (%Rrc)\n", vrc), E_FAIL);
 
@@ -1824,7 +1824,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                             vsysThis.mapVirtualDisks.find(ulRef) == vsysThis.mapVirtualDisks.end())
                         {
                             /* This isn't allowed */
-                            throw setError(E_FAIL, 
+                            throw setError(E_FAIL,
                                            tr("Some internal error occured"));
                         }
                         DiskImage di = app->m->mapDisks[ulRef];
