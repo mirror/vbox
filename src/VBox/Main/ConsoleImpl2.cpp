@@ -1597,6 +1597,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             }
 
+            case NetworkAttachmentType_HostOnly:
+            {
+                if (fSniffer)
+                {
+                    rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);   RC_CHECK();
+                }
+                else
+                {
+                    rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);             RC_CHECK();
+                }
+
+                rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "Trunk", "vboxnet0");             RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "Network", "HostInterfaceNetworking-vboxnet0"); RC_CHECK();
+                break;
+            }
+
             default:
                 AssertMsgFailed(("should not get here!\n"));
                 break;

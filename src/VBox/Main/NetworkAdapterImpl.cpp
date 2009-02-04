@@ -779,6 +779,36 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
     return S_OK;
 }
 
+STDMETHODIMP NetworkAdapter::AttachToHostOnlyNetwork()
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoWriteLock alock (this);
+
+    /* don't do anything if we're already host interface attached */
+    if (mData->mAttachmentType != NetworkAttachmentType_HostOnly)
+    {
+        mData.backup();
+
+        /* first detach the current attachment */
+        detach();
+
+        mData->mAttachmentType = NetworkAttachmentType_HostOnly;
+
+        /* leave the lock before informing callbacks */
+        alock.unlock();
+
+        mParent->onNetworkAdapterChange (this);
+    }
+
+    return S_OK;
+}
+
 STDMETHODIMP NetworkAdapter::Detach()
 {
     AutoCaller autoCaller (this);
@@ -909,6 +939,13 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         CheckComRCReturnRC (rc);
     }
     else
+    if (!(attachmentNode = aAdapterNode.findKey ("HostOnlyNetwork")).isNull())
+    {
+        /* Host Interface Networking */
+        rc = AttachToHostOnlyNetwork();
+        CheckComRCReturnRC (rc);
+    }
+    else
     {
         /* Adapter has no children */
         rc = Detach();
@@ -998,6 +1035,11 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
             Key attachmentNode = aAdapterNode.createKey ("InternalNetwork");
             Assert (!mData->mInternalNetwork.isEmpty());
             attachmentNode.setValue <Bstr> ("name", mData->mInternalNetwork);
+            break;
+        }
+        case NetworkAttachmentType_HostOnly:
+        {
+            Key attachmentNode = aAdapterNode.createKey ("HostOnlyNetwork");
             break;
         }
         default:
@@ -1152,6 +1194,10 @@ void NetworkAdapter::detach()
         case NetworkAttachmentType_Internal:
         {
             mData->mInternalNetwork.setNull();
+            break;
+        }
+        case NetworkAttachmentType_HostOnly:
+        {
             break;
         }
     }

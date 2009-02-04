@@ -360,7 +360,11 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-dvdpassthrough on|off]\n"
                  "                            [-floppy disabled|empty|<uuid>|\n"
                  "                                     <filename>|host:<drive>]\n"
+#ifdef RT_OS_LINUX
+                 "                            [-nic<1-N> none|null|nat|hostif|intnet|hostonly]\n"
+#else /* !RT_OS_LINUX */
                  "                            [-nic<1-N> none|null|nat|hostif|intnet]\n"
+#endif /* !RT_OS_LINUX */
                  "                            [-nictype<1-N> Am79C970A|Am79C973"
 #ifdef VBOX_WITH_E1000
                                                                               "|82540EM|82543GC"

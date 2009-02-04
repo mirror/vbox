@@ -143,6 +143,9 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
         case KNetworkAttachmentType_Internal:
             mAdapter.AttachToInternalNetwork();
             break;
+        case KNetworkAttachmentType_HostOnly:
+            mAdapter.AttachToHostOnlyNetwork();
+            break;
         default:
             AssertMsgFailed (("Invalid network attachment type: %d", type));
             break;
@@ -351,6 +354,12 @@ void VBoxVMSettingsNetwork::prepareComboboxes()
         vboxGlobal().toString (KNetworkAttachmentType_Internal));
     mCbNAType->setItemData (3,
         mCbNAType->itemText(3), Qt::ToolTipRole);
+#ifdef RT_OS_LINUX
+    mCbNAType->insertItem (4,
+        vboxGlobal().toString (KNetworkAttachmentType_HostOnly));
+    mCbNAType->setItemData (4,
+        mCbNAType->itemText(4), Qt::ToolTipRole);
+#endif /* RT_OS_LINUX */
     /* Set the old value */
     mCbNAType->setCurrentIndex (currentAttachment);
 }
