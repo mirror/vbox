@@ -89,6 +89,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxvideo.ids \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15.pl \
+		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15suse.pl \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test.c \
 		$(PATH_BIN)/additions/vboxmouse_drv.o \
@@ -142,6 +143,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxvideo.ids         $(VBOX_LNX_ADD_INS_OUT_DIR)
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl          $(VBOX_LNX_ADD_INS_OUT_DIR)
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15.pl        $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15suse.pl    $(VBOX_LNX_ADD_INS_OUT_DIR)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/90-vboxguest.fdi    $(VBOX_LNX_ADD_INS_OUT_DIR)
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY_SYMBOLS) $(PATH_BIN)/additions/vboxmouse_drv.o       $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxmouse_drv.o
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_70.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxmouse_drv_70.so
