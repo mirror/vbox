@@ -300,11 +300,11 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
 
 int main(int argc, char **argv)
 {
-    IVirtualBox *vbox      = NULL;
-    ISession  *session     = NULL;
-    PRUint32   revision    = 0;
-    PRUnichar *version_    = NULL;
-    PRUnichar *homefolder_ = NULL;
+    IVirtualBox *vbox           = NULL;
+    ISession  *session          = NULL;
+    PRUint32   revision         = 0;
+    PRUnichar *versionUtf16     = NULL;
+    PRUnichar *homefolderUtf16  = NULL;
     nsresult rc;     /* Result code of various function (method) calls. */
 
     printf("Starting Main\n");
@@ -352,37 +352,37 @@ int main(int argc, char **argv)
 
     /* 2. Version */
 
-    rc = vbox->vtbl->GetVersion(vbox, &version_);
+    rc = vbox->vtbl->GetVersion(vbox, &versionUtf16);
     if (NS_SUCCEEDED(rc))
     {
         char *version = NULL;
-        VBoxUtf16ToUtf8(version_, &version);    
+        VBoxUtf16ToUtf8(versionUtf16, &version);
         printf("\tVersion: %s\n", version);
         VBoxUtf8Free(version);
+        VBoxComUnallocMem(versionUtf16);
     }
     else
     {
         fprintf(stderr, "%s: GetVersion() returned %08x\n",
             argv[0], (unsigned)rc);
     }
-    VBoxComUnallocMem(version_);
 
     /* 3. Home Folder */
 
-    rc = vbox->vtbl->GetHomeFolder(vbox, &homefolder_);
+    rc = vbox->vtbl->GetHomeFolder(vbox, &homefolderUtf16);
     if (NS_SUCCEEDED(rc))
     {
         char *homefolder = NULL;
-        VBoxUtf16ToUtf8(homefolder_, &homefolder);
+        VBoxUtf16ToUtf8(homefolderUtf16, &homefolder);
         printf("\tHomeFolder: %s\n", homefolder);
         VBoxUtf8Free(homefolder);
+        VBoxComUnallocMem(homefolderUtf16);
     }
     else
     {
         fprintf(stderr, "%s: GetHomeFolder() returned %08x\n",
             argv[0], (unsigned)rc);
     }
-    VBoxComUnallocMem(homefolder_);
 
     listVMs(vbox, session);
     session->vtbl->Close(session);
