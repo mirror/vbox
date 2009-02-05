@@ -32,6 +32,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifdef RT_OS_DARWIN
+/*XXX: see sys/cdefs.h */
+#define __DARWIN_UNIX03 1
+#endif
 #include <iprt/env.h>
 #include <iprt/string.h>
 #include <iprt/alloca.h>
