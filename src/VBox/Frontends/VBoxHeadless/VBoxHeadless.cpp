@@ -24,6 +24,7 @@
 #include <VBox/com/string.h>
 #include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
+#include <VBox/com/errorprint2.h>
 #include <VBox/com/EventQueue.h>
 
 #include <VBox/com/VirtualBox.h>
@@ -616,34 +617,37 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
     HRESULT rc;
 
     rc = com::Initialize();
-    if (FAILED (rc))
+    if (FAILED(rc))
+    {
+        RTPrintf("ERROR: failed to initialize COM!\n");
         return rc;
+    }
 
     do
     {
-        ComPtr <IVirtualBox> virtualBox;
-        ComPtr <ISession> session;
+        ComPtr<IVirtualBox> virtualBox;
+        ComPtr<ISession> session;
 
-        /* create VirtualBox object */
-        rc = virtualBox.createLocalObject (CLSID_VirtualBox);
-        if (FAILED (rc))
+        rc = virtualBox.createLocalObject(CLSID_VirtualBox);
+        if (FAILED(rc))
+            RTPrintf("ERROR: failed to create the VirtualBox object!\n");
+        else
         {
-            com::ErrorInfo info;
-            if (info.isFullAvailable())
-            {
-                RTPrintf("Failed to create VirtualBox object! Error info: '%lS' (component %lS).\n",
-                         info.getText().raw(), info.getComponent().raw());
-            }
-            else
-                RTPrintf("Failed to create VirtualBox object! No error information available (rc = 0x%x).\n", rc);
-            break;
+            rc = session.createInprocObject(CLSID_Session);
+            if (FAILED(rc))
+                RTPrintf("ERROR: failed to create a session object!\n");
         }
 
-        /* create Session object */
-        rc = session.createInprocObject (CLSID_Session);
-        if (FAILED (rc))
+        if (FAILED(rc))
         {
-            LogError ("Cannot create Session object!", rc);
+            com::ErrorInfo info;
+            if (!info.isFullAvailable() && !info.isBasicAvailable())
+            {
+                com::GluePrintRCMessage(rc);
+                RTPrintf("Most likely, the VirtualBox COM server is not running or failed to start.\n");
+            }
+            else
+                GluePrintErrorInfo(info);
             break;
         }
 

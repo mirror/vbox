@@ -29,6 +29,7 @@
 #include <VBox/com/Guid.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
+#include <VBox/com/errorprint2.h>
 
 #include <VBox/com/VirtualBox.h>
 
@@ -142,7 +143,7 @@ int handleList(HandlerArg *a)
             while (SUCCEEDED(enumerator->HasMore(&hasMore)) && hasMore)
             {
                 ComPtr<IGuestOSType> guestOS;
-                CHECK_RC_BREAK(enumerator->GetNext(guestOS.asOutParam()));
+                CHECK_ERROR_BREAK(enumerator, GetNext(guestOS.asOutParam()));
                 Bstr guestId;
                 guestOS->COMGETTER(Id)(guestId.asOutParam());
                 RTPrintf("ID:          %lS\n", guestId.raw());
@@ -167,7 +168,7 @@ int handleList(HandlerArg *a)
             while (SUCCEEDED(enumerator->HasMore(&hasMore)) && hasMore)
             {
                 ComPtr<IHostDVDDrive> dvdDrive;
-                CHECK_RC_BREAK(enumerator->GetNext(dvdDrive.asOutParam()));
+                CHECK_ERROR_BREAK(enumerator, GetNext(dvdDrive.asOutParam()));
                 Bstr name;
                 dvdDrive->COMGETTER(Name)(name.asOutParam());
                 RTPrintf("Name:        %lS\n\n", name.raw());
@@ -189,7 +190,7 @@ int handleList(HandlerArg *a)
             while (SUCCEEDED(enumerator->HasMore(&hasMore)) && hasMore)
             {
                 ComPtr<IHostFloppyDrive> floppyDrive;
-                CHECK_RC_BREAK(enumerator->GetNext(floppyDrive.asOutParam()));
+                CHECK_ERROR_BREAK(enumerator, GetNext(floppyDrive.asOutParam()));
                 Bstr name;
                 floppyDrive->COMGETTER(Name)(name.asOutParam());
                 RTPrintf("Name:        %lS\n\n", name.raw());
@@ -483,8 +484,9 @@ int handleList(HandlerArg *a)
         RTPrintf("Host USB Devices:\n\n");
 
         BOOL fMore = FALSE;
-        rc = EnumPtr->HasMore (&fMore);
-        ASSERT_RET (SUCCEEDED (rc), 1);
+        ASSERT(SUCCEEDED(rc = EnumPtr->HasMore (&fMore)));
+        if (FAILED(rc))
+            return rc;
 
         if (!fMore)
         {
@@ -494,8 +496,9 @@ int handleList(HandlerArg *a)
         while (fMore)
         {
             ComPtr <IHostUSBDevice> dev;
-            rc = EnumPtr->GetNext (dev.asOutParam());
-            ASSERT_RET (SUCCEEDED (rc), 1);
+            ASSERT(SUCCEEDED(rc = EnumPtr->GetNext (dev.asOutParam())));
+            if (FAILED(rc))
+                return rc;
 
             /* Query info. */
             Guid id;
@@ -555,8 +558,9 @@ int handleList(HandlerArg *a)
             }
             RTPrintf("Current State:      %s\n\n", pszState);
 
-            rc = EnumPtr->HasMore (&fMore);
-            ASSERT_RET (SUCCEEDED (rc), rc);
+            ASSERT(SUCCEEDED(rc = EnumPtr->HasMore (&fMore)));
+            if (FAILED(rc))
+                return rc;
         }
     }
     else
@@ -575,8 +579,9 @@ int handleList(HandlerArg *a)
 
         ULONG index = 0;
         BOOL more = FALSE;
-        rc = en->HasMore (&more);
-        ASSERT_RET (SUCCEEDED (rc), 1);
+        ASSERT(SUCCEEDED(rc = en->HasMore (&more)));
+        if (FAILED(rc))
+            return rc;
 
         if (!more)
         {
@@ -586,8 +591,9 @@ int handleList(HandlerArg *a)
         while (more)
         {
             ComPtr<IHostUSBDeviceFilter> flt;
-            rc = en->GetNext (flt.asOutParam());
-            ASSERT_RET (SUCCEEDED (rc), 1);
+            ASSERT(SUCCEEDED(rc = en->GetNext (flt.asOutParam())));
+            if (FAILED(rc))
+                return rc;
 
             /* Query info. */
 
@@ -629,8 +635,9 @@ int handleList(HandlerArg *a)
             CHECK_ERROR_RET (flt, COMGETTER (SerialNumber) (bstr.asOutParam()), 1);
             RTPrintf("Serial Number:    %lS\n\n", bstr.raw());
 
-            rc = en->HasMore (&more);
-            ASSERT_RET (SUCCEEDED (rc), 1);
+            ASSERT(SUCCEEDED(rc = en->HasMore (&more)));
+            if (FAILED(rc))
+                return rc;
 
             index ++;
         }

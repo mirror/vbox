@@ -29,6 +29,7 @@
 #include <VBox/com/Guid.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
+#include <VBox/com/errorprint2.h>
 #include <VBox/com/EventQueue.h>
 
 #include <VBox/com/VirtualBox.h>
@@ -996,7 +997,7 @@ static int handleStartVM(HandlerArg *a)
             ComPtr <IVirtualBoxErrorInfo> errorInfo;
             CHECK_ERROR_RET(progress, COMGETTER(ErrorInfo)(errorInfo.asOutParam()), 1);
             ErrorInfo info (errorInfo);
-            PRINT_ERROR_INFO(info);
+            GluePrintErrorInfo(info);
         }
         else
         {
@@ -2677,8 +2678,7 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
     do
     {
         Bstr formatVersion;
-        CHECK_RC_BREAK (virtualBox->
-                        COMGETTER(SettingsFormatVersion) (formatVersion.asOutParam()));
+        CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFormatVersion) (formatVersion.asOutParam()));
 
         bool isGlobalConverted = false;
         std::list <ComPtr <IMachine> > cvtMachines;
@@ -2687,40 +2687,35 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
         Bstr filePath;
 
         com::SafeIfaceArray <IMachine> machines;
-        CHECK_RC_BREAK (virtualBox->
-                        COMGETTER(Machines2) (ComSafeArrayAsOutParam (machines)));
+        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Machines2) (ComSafeArrayAsOutParam (machines)));
 
         for (size_t i = 0; i < machines.size(); ++ i)
         {
             BOOL accessible;
-            CHECK_RC_BREAK (machines [i]->
-                            COMGETTER(Accessible) (&accessible));
+            CHECK_ERROR_BREAK(machines[i], COMGETTER(Accessible) (&accessible));
             if (!accessible)
                 continue;
 
-            CHECK_RC_BREAK (machines [i]->
-                            COMGETTER(SettingsFileVersion) (version.asOutParam()));
+            CHECK_ERROR_BREAK(machines[i], COMGETTER(SettingsFileVersion) (version.asOutParam()));
 
             if (version != formatVersion)
             {
                 cvtMachines.push_back (machines [i]);
                 Bstr filePath;
-                CHECK_RC_BREAK (machines [i]->
-                                COMGETTER(SettingsFilePath) (filePath.asOutParam()));
+                CHECK_ERROR_BREAK(machines[i], COMGETTER(SettingsFilePath) (filePath.asOutParam()));
                 fileList.push_back (Utf8StrFmt ("%ls  (%ls)", filePath.raw(),
                                                 version.raw()));
             }
         }
 
-        CHECK_RC_BREAK (rc);
+        if (FAILED(rc))
+            break;
 
-        CHECK_RC_BREAK (virtualBox->
-                        COMGETTER(SettingsFileVersion) (version.asOutParam()));
+        CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFileVersion) (version.asOutParam()));
         if (version != formatVersion)
         {
             isGlobalConverted = true;
-            CHECK_RC_BREAK (virtualBox->
-                            COMGETTER(SettingsFilePath) (filePath.asOutParam()));
+            CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFilePath) (filePath.asOutParam()));
             fileList.push_back (Utf8StrFmt ("%ls  (%ls)", filePath.raw(),
                                             version.raw()));
         }
@@ -2772,13 +2767,13 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
                  m != cvtMachines.end(); ++ m)
             {
                 Guid id;
-                CHECK_RC_BREAK ((*m)->COMGETTER(Id) (id.asOutParam()));
+                CHECK_ERROR_BREAK((*m), COMGETTER(Id) (id.asOutParam()));
 
                 /* open a session for the VM */
                 CHECK_ERROR_BREAK (virtualBox, OpenSession (session, id));
 
                 ComPtr <IMachine> sm;
-                CHECK_RC_BREAK (session->COMGETTER(Machine) (sm.asOutParam()));
+                CHECK_ERROR_BREAK(session, COMGETTER(Machine) (sm.asOutParam()));
 
                 Bstr bakFileName;
                 if (fConvertSettings == ConvertSettings_Backup)
@@ -2788,10 +2783,12 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
 
                 session->Close();
 
-                CHECK_RC_BREAK (rc);
+                if (FAILED(rc))
+                    break;
             }
 
-            CHECK_RC_BREAK (rc);
+            if (FAILED(rc))
+                break;
 
             if (isGlobalConverted)
             {
@@ -2802,7 +2799,8 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
                     CHECK_ERROR (virtualBox, SaveSettings());
             }
 
-            CHECK_RC_BREAK (rc);
+            if (FAILED(rc))
+                break;
         }
     }
     while (0);
@@ -2896,7 +2894,12 @@ int main(int argc, char *argv[])
 #else /* !VBOX_ONLY_DOCS */
     HRESULT rc = 0;
 
-    CHECK_RC_RET (com::Initialize());
+    rc = com::Initialize();
+    if (FAILED(rc))
+    {
+        RTPrintf("ERROR: failed to initialize COM!\n");
+        return rc;
+    }
 
     /*
      * The input is in the host OS'es codepage (NT guarantees ACP).
@@ -2923,25 +2926,31 @@ int main(int argc, char *argv[])
         break;
     }
 
-    ComPtr <IVirtualBox> virtualBox;
-    ComPtr <ISession> session;
+    ComPtr<IVirtualBox> virtualBox;
+    ComPtr<ISession> session;
 
-    rc = virtualBox.createLocalObject (CLSID_VirtualBox);
+    rc = virtualBox.createLocalObject(CLSID_VirtualBox);
     if (FAILED(rc))
+        RTPrintf("ERROR: failed to create the VirtualBox object!\n");
+    else
     {
-        RTPrintf ("[!] Failed to create the VirtualBox object!\n");
-        PRINT_RC_MESSAGE (rc);
-
-        com::ErrorInfo info;
-        if (!info.isFullAvailable() && !info.isBasicAvailable())
-            RTPrintf ("[!] Most likely, the VirtualBox COM server is not running "
-                      "or failed to start.\n");
-        else
-            PRINT_ERROR_INFO (info);
-        break;
+        rc = session.createInprocObject(CLSID_Session);
+        if (FAILED(rc))
+            RTPrintf("ERROR: failed to create a session object!\n");
     }
 
-    CHECK_RC_BREAK (session.createInprocObject (CLSID_Session));
+    if (FAILED(rc))
+    {
+        com::ErrorInfo info;
+        if (!info.isFullAvailable() && !info.isBasicAvailable())
+        {
+            com::GluePrintRCMessage(rc);
+            RTPrintf("Most likely, the VirtualBox COM server is not running or failed to start.\n");
+        }
+        else
+            GluePrintErrorInfo(info);
+        break;
+    }
 
     /* create the event queue
      * (here it is necessary only to process remaining XPCOM/IPC events

@@ -25,6 +25,7 @@
 #ifndef VBOX_ONLY_DOCS
 #include <VBox/com/com.h>
 #include <VBox/com/ErrorInfo.h>
+#include <VBox/com/errorprint2.h>
 #include <VBox/com/EventQueue.h>
 
 #include <VBox/com/VirtualBox.h>

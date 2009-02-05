@@ -586,6 +586,7 @@ VBoxCOM_SOURCES         = \
 	glue/string.cpp \
 	glue/EventQueue.cpp \
 	glue/ErrorInfo.cpp \
+	glue/errorprint2.cpp \
 	glue/SupportErrorInfo.cpp \
 	glue/VirtualBoxErrorInfo.cpp
 ifeq ($(KBUILD_TARGET),win)

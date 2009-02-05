@@ -25,6 +25,7 @@
 #include <VBox/com/string.h>
 #include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
+#include <VBox/com/errorprint2.h>
 #include <VBox/com/EventQueue.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/err.h>
@@ -344,24 +345,37 @@ int main(int argc, char* argv[])
 #endif
 
     // intialize COM/XPCOM
-//     ComPtr<ISession> session;
-    if ((rc = com::Initialize()))
-        RTStrmPrintf(g_pStdErr, "[!] Failed to initialize COM!\n");
-    else if ((rc = g_pVirtualBox.createLocalObject(CLSID_VirtualBox)))
-        RTStrmPrintf(g_pStdErr, "[!] Failed to create the local VirtualBox object!\n");
-//     else if ((rc = session.createInprocObject(CLSID_Session)))
-//         RTStrmPrintf(g_pStdErr, "[!] Failed to create the inproc VirtualBox object!\n");
-
-    if (rc)
+    rc = com::Initialize();
+    if (FAILED(rc))
     {
-        PRINT_RC_MESSAGE(rc);
+        RTPrintf("ERROR: failed to initialize COM!\n");
+        return rc;
+    }
 
+    ComPtr<IVirtualBox> virtualBox;
+    ComPtr<ISession> session;
+
+    rc = virtualBox.createLocalObject(CLSID_VirtualBox);
+    if (FAILED(rc))
+        RTPrintf("ERROR: failed to create the VirtualBox object!\n");
+    else
+    {
+        rc = session.createInprocObject(CLSID_Session);
+        if (FAILED(rc))
+            RTPrintf("ERROR: failed to create a session object!\n");
+    }
+
+    if (FAILED(rc))
+    {
         com::ErrorInfo info;
         if (!info.isFullAvailable() && !info.isBasicAvailable())
-            RTStrmPrintf(g_pStdErr, "[!] Most likely, the VirtualBox COM server is not running or failed to start.\n");
+        {
+            com::GluePrintRCMessage(rc);
+            RTPrintf("Most likely, the VirtualBox COM server is not running or failed to start.\n");
+        }
         else
-            PRINT_ERROR_INFO(info);
-        exit(rc);
+            com::GluePrintErrorInfo(info);
+        return rc;
     }
 
     if (g_iWatchdogTimeoutSecs > 0)
@@ -861,7 +875,11 @@ int WebServiceSession::authenticate(const char *pcszUsername,
             // now create the ISession object that this webservice session can use
             // (and of which IWebsessionManager::getSessionObject returns a managed object reference)
             ComPtr<ISession> session;
-            CHECK_RC_BREAK(session.createInprocObject(CLSID_Session));
+            if (FAILED(rc = session.createInprocObject(CLSID_Session)))
+            {
+                WEBDEBUG(("ERROR: cannot create session object!"));
+                break;
+            }
 
             _pISession = new ManagedObjectRef(*this, g_pcszISession, session);
 
