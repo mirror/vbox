@@ -20,8 +20,7 @@
 
 #include "Logging.h"
 
-#include <boost/shared_ptr.hpp>
-
+#include <iprt/cdefs.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/lock.h>
@@ -38,6 +37,7 @@
 
 #include <list>
 #include <map>
+#include <boost/shared_ptr.hpp>
 
 #include "VBox/xml.h"
 

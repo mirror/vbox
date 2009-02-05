@@ -21,6 +21,9 @@
  * additional information or have any questions.
  */
 
+#include <iprt/semaphore.h>
+#include <iprt/asm.h>
+
 #if !defined (VBOX_WITH_XPCOM)
 #include <windows.h>
 #include <dbghelp.h>
@@ -33,9 +36,6 @@
 #include "VirtualBoxBase.h"
 #include "VirtualBoxErrorInfoImpl.h"
 #include "Logging.h"
-
-#include <iprt/semaphore.h>
-#include <iprt/asm.h>
 
 // VirtualBoxBaseProto methods
 ////////////////////////////////////////////////////////////////////////////////
@@ -1269,7 +1269,7 @@ template<> com::Guid FromString <com::Guid> (const char *aValue)
     if (aValue == NULL || *aValue != '{' ||
         strlen (aValue) != RTUUID_STR_LENGTH + 1 ||
         aValue [RTUUID_STR_LENGTH] != '}')
-        throw ENoConversion(xml::FmtStr("'%s' is not Guid", aValue));
+        throw ENoConversion(com::Utf8StrFmt("'%s' is not Guid", aValue));
 
     /* strip { and } */
     memcpy (buf, aValue + 1, RTUUID_STR_LENGTH - 1);
@@ -1279,7 +1279,7 @@ template<> com::Guid FromString <com::Guid> (const char *aValue)
     RTUUID uuid;
     int vrc = RTUuidFromStr (&uuid, buf);
     if (RT_FAILURE (vrc))
-        throw ENoConversion(xml::FmtStr("'%s' is not Guid (%Rrc)", aValue, vrc));
+        throw ENoConversion(com::Utf8StrFmt("'%s' is not Guid (%Rrc)", aValue, vrc));
 
     return com::Guid (uuid);
 }

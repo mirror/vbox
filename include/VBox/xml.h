@@ -100,44 +100,6 @@ typedef xmlError *xmlErrorPtr;
 namespace xml
 {
 
-// Helpers
-//////////////////////////////////////////////////////////////////////////////
-
-/**
- * Temporary holder for the formatted string.
- *
- * Instances of this class are used for passing the formatted string as an
- * argument to an Error constructor or to another function that takes
- * <tr>const char *</tr> and makes a copy of the string it points to.
- */
-class VBOXXML_CLASS FmtStr
-{
-public:
-
-    /**
-     * Creates a formatted string using the format string and a set of
-     * printf-like arguments.
-     */
-    FmtStr(const char *aFmt, ...)
-    {
-        va_list args;
-        va_start(args, aFmt);
-        RTStrAPrintfV(&mStr, aFmt, args);
-        va_end(args);
-    }
-
-    ~FmtStr() { RTStrFree (mStr); }
-
-    operator const char *() { return mStr; }
-
-private:
-
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (FmtStr)
-
-    char *mStr;
-};
-
-
 // Exceptions
 //////////////////////////////////////////////////////////////////////////////
 
