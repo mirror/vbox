@@ -967,7 +967,7 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
         /*
          * Wait for status line change.
          */
-        rc = ioctl(pThis->DeviceFile, TIOCMIWAIT, &uStatusLinesToCheck);
+        rc = ioctl(pThis->DeviceFile, TIOCMIWAIT, uStatusLinesToCheck);
         if (pThread->enmState != PDMTHREADSTATE_RUNNING)
             break;
         if (rc < 0)
