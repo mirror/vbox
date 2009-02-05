@@ -111,7 +111,7 @@ RTDECL(int) RTEnvUnset(const char *pszVar)
         return VINF_SUCCESS;
 #else
     /* This is the preferred function as putenv() like used above does neither work on Solaris nor on Darwin. */
-    if (!unsetenv((char*)pszVar))
+    if (unsetenv((char*)pszVar) == 0)
         return VINF_SUCCESS;
 #endif
 
