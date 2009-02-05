@@ -29,6 +29,8 @@
 #include <VBox/com/Guid.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
+#include <VBox/com/errorprint2.h>
+
 #include <VBox/com/EventQueue.h>
 #include <VBox/com/VirtualBox.h>
 
@@ -812,8 +814,7 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
     do
     {
         Bstr formatVersion;
-        CHECK_RC_BREAK (virtualBox->
-                        COMGETTER(SettingsFormatVersion) (formatVersion.asOutParam()));
+        CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFormatVersion) (formatVersion.asOutParam()));
 
         bool isGlobalConverted = false;
         std::list <ComPtr <IMachine> > cvtMachines;
@@ -822,40 +823,35 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
         Bstr filePath;
 
         com::SafeIfaceArray <IMachine> machines;
-        CHECK_RC_BREAK (virtualBox->
-                        COMGETTER(Machines2) (ComSafeArrayAsOutParam (machines)));
+        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Machines2) (ComSafeArrayAsOutParam (machines)));
 
         for (size_t i = 0; i < machines.size(); ++ i)
         {
             BOOL accessible;
-            CHECK_RC_BREAK (machines [i]->
-                            COMGETTER(Accessible) (&accessible));
+            CHECK_ERROR_BREAK(machines[i], COMGETTER(Accessible) (&accessible));
             if (!accessible)
                 continue;
 
-            CHECK_RC_BREAK (machines [i]->
-                            COMGETTER(SettingsFileVersion) (version.asOutParam()));
+            CHECK_ERROR_BREAK(machines[i], COMGETTER(SettingsFileVersion) (version.asOutParam()));
 
             if (version != formatVersion)
             {
                 cvtMachines.push_back (machines [i]);
                 Bstr filePath;
-                CHECK_RC_BREAK (machines [i]->
-                                COMGETTER(SettingsFilePath) (filePath.asOutParam()));
+                CHECK_ERROR_BREAK(machines[i], COMGETTER(SettingsFilePath) (filePath.asOutParam()));
                 fileList.push_back (Utf8StrFmt ("%ls  (%ls)", filePath.raw(),
                                                 version.raw()));
             }
         }
 
-        CHECK_RC_BREAK (rc);
+        if (FAILED(rc))
+            break;
 
-        CHECK_RC_BREAK (virtualBox->
-                        COMGETTER(SettingsFileVersion) (version.asOutParam()));
+        CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFileVersion) (version.asOutParam()));
         if (version != formatVersion)
         {
             isGlobalConverted = true;
-            CHECK_RC_BREAK (virtualBox->
-                            COMGETTER(SettingsFilePath) (filePath.asOutParam()));
+            CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFilePath) (filePath.asOutParam()));
             fileList.push_back (Utf8StrFmt ("%ls  (%ls)", filePath.raw(),
                                             version.raw()));
         }
@@ -907,13 +903,13 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
                  m != cvtMachines.end(); ++ m)
             {
                 Guid id;
-                CHECK_RC_BREAK ((*m)->COMGETTER(Id) (id.asOutParam()));
+                CHECK_ERROR_BREAK((*m), COMGETTER(Id) (id.asOutParam()));
 
                 /* open a session for the VM */
                 CHECK_ERROR_BREAK (virtualBox, OpenSession (session, id));
 
                 ComPtr <IMachine> sm;
-                CHECK_RC_BREAK (session->COMGETTER(Machine) (sm.asOutParam()));
+                CHECK_ERROR_BREAK(session, COMGETTER(Machine) (sm.asOutParam()));
 
                 Bstr bakFileName;
                 if (fConvertSettings == ConvertSettings_Backup)
@@ -923,10 +919,12 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
 
                 session->Close();
 
-                CHECK_RC_BREAK (rc);
+                if (FAILED(rc))
+                    break;
             }
 
-            CHECK_RC_BREAK (rc);
+            if (FAILED(rc))
+                break;
 
             if (isGlobalConverted)
             {
@@ -937,7 +935,8 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
                     CHECK_ERROR (virtualBox, SaveSettings());
             }
 
-            CHECK_RC_BREAK (rc);
+            if (FAILED(rc))
+                break;
         }
     }
     while (0);

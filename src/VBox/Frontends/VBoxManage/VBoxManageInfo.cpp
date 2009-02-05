@@ -29,6 +29,7 @@
 #include <VBox/com/Guid.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
+#include <VBox/com/errorprint2.h>
 
 #include <VBox/com/VirtualBox.h>
 
@@ -158,7 +159,7 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
             rc = machine->COMGETTER(AccessError) (accessError.asOutParam());
             RTPrintf ("Access error details:\n");
             ErrorInfo ei (accessError);
-            PRINT_ERROR_INFO (ei);
+            GluePrintErrorInfo(ei);
             RTPrintf ("\n");
         }
         return S_OK;
@@ -988,7 +989,7 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
             if (FAILED(rc))
             {
                 com::ErrorInfo info (display);
-                PRINT_ERROR_INFO (info);
+                GluePrintErrorInfo(info);
                 return rc;
             }
             rc = display->COMGETTER(Height)(&yRes);
@@ -997,7 +998,7 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
             if (FAILED(rc))
             {
                 com::ErrorInfo info (display);
-                PRINT_ERROR_INFO (info);
+                GluePrintErrorInfo(info);
                 return rc;
             }
             rc = display->COMGETTER(BitsPerPixel)(&bpp);
@@ -1006,7 +1007,7 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
             if (FAILED(rc))
             {
                 com::ErrorInfo info (display);
-                PRINT_ERROR_INFO (info);
+                GluePrintErrorInfo(info);
                 return rc;
             }
             if (details == VMINFO_MACHINEREADABLE)
@@ -1106,8 +1107,9 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
 
         ULONG index = 0;
         BOOL fMore = FALSE;
-        rc = Enum->HasMore (&fMore);
-        ASSERT_RET (SUCCEEDED (rc), rc);
+        ASSERT(SUCCEEDED(rc = Enum->HasMore (&fMore)));
+        if (FAILED(rc))
+            return rc;
 
         if (!fMore)
         {
@@ -1118,8 +1120,9 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
         while (fMore)
         {
             ComPtr<IUSBDeviceFilter> DevPtr;
-            rc = Enum->GetNext(DevPtr.asOutParam());
-            ASSERT_RET (SUCCEEDED (rc), rc);
+            ASSERT(SUCCEEDED(rc = Enum->GetNext(DevPtr.asOutParam())));
+            if (FAILED(rc))
+                return rc;
 
             /* Query info. */
 
@@ -1183,8 +1186,9 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
                 RTPrintf("\n");
             }
 
-            rc = Enum->HasMore (&fMore);
-            ASSERT_RET (SUCCEEDED (rc), rc);
+            ASSERT(SUCCEEDED(rc = Enum->HasMore (&fMore)));
+            if (FAILED(rc))
+                return rc;
 
             index ++;
         }
@@ -1204,8 +1208,9 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
                 CHECK_ERROR_RET (coll, Enumerate (en.asOutParam()), rc);
 
                 BOOL more = FALSE;
-                rc = en->HasMore (&more);
-                ASSERT_RET (SUCCEEDED (rc), rc);
+                ASSERT(SUCCEEDED(rc = en->HasMore(&more)));
+                if (FAILED(rc))
+                    return rc;
 
                 if (!more)
                 {
@@ -1216,8 +1221,9 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
                 while (more)
                 {
                     ComPtr <IHostUSBDevice> dev;
-                    rc = en->GetNext (dev.asOutParam());
-                    ASSERT_RET (SUCCEEDED (rc), rc);
+                    ASSERT(SUCCEEDED(rc = en->GetNext (dev.asOutParam())));
+                    if (FAILED(rc))
+                        return rc;
 
                     /* Query info. */
                     Guid id;
@@ -1286,8 +1292,9 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
                     if (details != VMINFO_MACHINEREADABLE)
                         RTPrintf("\n");
 
-                    rc = en->HasMore (&more);
-                    ASSERT_RET (SUCCEEDED (rc), rc);
+                    ASSERT(SUCCEEDED(rc = en->HasMore (&more)));
+                    if (FAILED(rc))
+                        return rc;
 
                     index ++;
                 }
@@ -1306,8 +1313,9 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
                 CHECK_ERROR_RET (coll, Enumerate (en.asOutParam()), rc);
 
                 BOOL more = FALSE;
-                rc = en->HasMore (&more);
-                ASSERT_RET (SUCCEEDED (rc), rc);
+                ASSERT(SUCCEEDED(rc = en->HasMore (&more)));
+                if (FAILED(rc))
+                    return rc;
 
                 if (!more)
                 {
@@ -1318,8 +1326,9 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
                 while (more)
                 {
                     ComPtr <IUSBDevice> dev;
-                    rc = en->GetNext (dev.asOutParam());
-                    ASSERT_RET (SUCCEEDED (rc), rc);
+                    ASSERT(SUCCEEDED(rc = en->GetNext (dev.asOutParam())));
+                    if (FAILED(rc))
+                        return rc;
 
                     /* Query info. */
                     Guid id;
@@ -1388,8 +1397,9 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
                     if (details != VMINFO_MACHINEREADABLE)
                         RTPrintf("\n");
 
-                    rc = en->HasMore (&more);
-                    ASSERT_RET (SUCCEEDED (rc), rc);
+                    ASSERT(SUCCEEDED(rc = en->HasMore (&more)));
+                    if (FAILED(rc))
+                        return rc;
 
                     index ++;
                 }
@@ -1840,7 +1850,7 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
             if (details != VMINFO_MACHINEREADABLE)
             {
                 RTPrintf("[!] FAILED calling console->getGuest at line %d!\n", __LINE__);
-                PRINT_RC_MESSAGE(rc);
+                GluePrintRCMessage(rc);
             }
         }
     }
