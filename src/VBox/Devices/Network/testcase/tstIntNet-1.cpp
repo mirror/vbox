@@ -53,9 +53,9 @@ static bool     g_fPingReply = false;
 static uint32_t g_cOtherPkts = 0;
 static uint32_t g_cArpPkts = 0;
 static uint32_t g_cIpv4Pkts = 0;
-static uint32_t     g_cUdpPkts = 0;
-static uint32_t         g_cDhcpPkts = 0;
-static uint32_t     g_cTcpPkts = 0;
+static uint32_t g_cUdpPkts = 0;
+static uint32_t g_cDhcpPkts = 0;
+static uint32_t g_cTcpPkts = 0;
 
 
 /**
