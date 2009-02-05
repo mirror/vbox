@@ -386,9 +386,9 @@ int tcp_fconnect(PNATState pData, struct socket *so)
 
         fd_nonblock(s);
         opt = 1;
-        setsockopt(s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt, sizeof(opt));
+        setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));
         opt = 1;
-        setsockopt(s,SOL_SOCKET,SO_OOBINLINE,(char *)&opt, sizeof(opt));
+        setsockopt(s, SOL_SOCKET, SO_OOBINLINE, (char *)&opt, sizeof(opt));
 
         addr.sin_family = AF_INET;
         if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr)
@@ -449,7 +449,9 @@ tcp_connect(PNATState pData, struct socket *inso)
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(struct sockaddr_in);
     struct tcpcb *tp;
-    int s, opt, optlen, status;
+    int s, opt, status;
+    socklen_t optlen;
+    static int cVerbose = 1;
 
     DEBUG_CALL("tcp_connect");
     DEBUG_ARG("inso = %lx", (long)inso);
@@ -489,41 +491,48 @@ tcp_connect(PNATState pData, struct socket *inso)
     }
     fd_nonblock(s);
     opt = 1;
-    setsockopt(s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt,sizeof(int));
+    setsockopt(s, SOL_SOCKET, SO_REUSEADDR,(char *)&opt, sizeof(int));
     opt = 1;
-    setsockopt(s,SOL_SOCKET,SO_OOBINLINE,(char *)&opt,sizeof(int));
+    setsockopt(s, SOL_SOCKET, SO_OOBINLINE,(char *)&opt, sizeof(int));
     opt = 1;
-    setsockopt(s,IPPROTO_TCP,TCP_NODELAY,(char *)&opt,sizeof(int));
+    setsockopt(s, IPPROTO_TCP, TCP_NODELAY,(char *)&opt, sizeof(int));
 
     optlen = sizeof(int);
     status = getsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, &optlen);
     if (status < 0) 
     {
-        LogRel(("Error(%d) while getting RCV capacity\n", errno));
+        LogRel(("NAT: Error(%d) while getting RCV capacity\n", errno));
         goto no_sockopt;
     }
+    if (cVerbose > 0)
+        LogRel(("NAT: old socket rcv size: %dKB\n", opt / 1024));
     opt *= 4;
-    status = setsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, optlen); 
+    status = setsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(int)); 
     if (status < 0) 
     {
-        LogRel(("Error(%d) while setting RCV capacity to (%d)\n", errno, opt));
+        LogRel(("NAT: Error(%d) while setting RCV capacity to (%d)\n", errno, opt));
         goto no_sockopt;
     }
+    optlen = sizeof(int);
     status = getsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, &optlen);
     if (status < 0) 
     {
-        LogRel(("Error(%d) while getting SND capacity\n", errno));
+        LogRel(("NAT: Error(%d) while getting SND capacity\n", errno));
         goto no_sockopt;
     }
+    if (cVerbose > 0)
+        LogRel(("NAT: old socket snd size: %dKB\n", opt / 1024));
     opt *= 4;
-    status = setsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, optlen); 
+    status = setsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, sizeof(int)); 
     if (status < 0) 
     {
-        LogRel(("Error(%d) while setting SND capacity to (%d)\n", errno, opt));
+        LogRel(("NAT: Error(%d) while setting SND capacity to (%d)\n", errno, opt));
         goto no_sockopt;
     }
+    if (cVerbose > 0)
+        cVerbose--;
 
-    no_sockopt:
+ no_sockopt:
     so->so_fport = addr.sin_port;
     so->so_faddr = addr.sin_addr;
     /* Translate connections from localhost to the real hostname */
