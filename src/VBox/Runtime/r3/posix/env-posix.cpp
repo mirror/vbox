@@ -33,8 +33,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifdef RT_OS_DARWIN
-/*XXX: see sys/cdefs.h */
-#define __DARWIN_UNIX03 1
+/*
+ * @todo: here is workaround for unsetenv(3) which doen't return status 
+ * see sys/cdefs.h for better solution
+ */
+# define __DARWIN_UNIX03 1
 #endif
 #include <iprt/env.h>
 #include <iprt/string.h>
