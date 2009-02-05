@@ -305,6 +305,9 @@ void print_detected_harddisks()
         device = read_byte(ebda_seg, &EbdaData->ata.hdidmap[actual_device]);
     }
 
+    if ((first_ctrl_printed == 0) && (second_ctrl_printed == 0))
+        printf("No hard disks found");
+
     printf("\n");
 }
 

@@ -219,7 +219,7 @@
 #endif
 
 #ifdef VBOX_WITH_SCSI
-#    define BX_MAX_SCSI_DEVICES 1
+#    define BX_MAX_SCSI_DEVICES 2
 #endif
 
 #ifndef VBOX
@@ -5538,11 +5538,25 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
     case 0x08: /* read disk drive parameters */
 
       // Get logical geometry from table
-      nlc   = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.cylinders);
-      nlh   = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.heads);
-      nlspt = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.spt);
-      count = read_byte(ebda_seg, &EbdaData->ata.hdcount);
+#ifdef VBOX_WITH_SCSI
+      if (!VBOX_IS_SCSI_DEVICE(device))
+#endif
+      {
+        nlc   = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.cylinders);
+        nlh   = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.heads);
+        nlspt = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.spt);
+      }
+#ifdef VBOX_WITH_SCSI
+      else
+      {
+        Bit8u scsi_device = VBOX_GET_SCSI_DEVICE(device);
+        nlc   = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.lchs.cylinders);
+        nlh   = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.lchs.heads);
+        nlspt = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.lchs.spt);
+      }
+#endif
 
+      count = read_byte(ebda_seg, &EbdaData->ata.hdcount);
 #ifndef VBOX
       nlc = nlc - 2; /* 0 based , last sector not used */
 #else /* VBOX */
@@ -5577,9 +5591,23 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
     case 0x15: /* read disk drive size */
 
       // Get physical geometry from table
-      npc   = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.cylinders);
-      nph   = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.heads);
-      npspt = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.spt);
+#ifdef VBOX_WITH_SCSI
+      if (!VBOX_IS_SCSI_DEVICE(device))
+#endif
+      {
+        npc   = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.cylinders);
+        nph   = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.heads);
+        npspt = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.spt);
+      }
+#ifdef VBOX_WITH_SCSI
+      else
+      {
+        Bit8u scsi_device = VBOX_GET_SCSI_DEVICE(device);
+        npc   = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.pchs.cylinders);
+        nph   = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.pchs.heads);
+        npspt = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.pchs.spt);
+      }
+#endif
 
       // Compute sector count seen by int13
 #ifndef VBOX
@@ -5713,11 +5741,27 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
       if(size >= 0x1a) {
         Bit16u   blksize;
 
-        npc     = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.cylinders);
-        nph     = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.heads);
-        npspt   = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.spt);
-        lba     = read_dword(ebda_seg, &EbdaData->ata.devices[device].sectors);
-        blksize = read_word(ebda_seg, &EbdaData->ata.devices[device].blksize);
+#ifdef VBOX_WITH_SCSI
+        if (!VBOX_IS_SCSI_DEVICE(device))
+#endif
+        {
+          npc     = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.cylinders);
+          nph     = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.heads);
+          npspt   = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.spt);
+          lba     = read_dword(ebda_seg, &EbdaData->ata.devices[device].sectors);
+          blksize = read_word(ebda_seg, &EbdaData->ata.devices[device].blksize);
+        }
+#ifdef VBOX_WITH_SCSI
+        else
+        {
+          Bit8u scsi_device = VBOX_GET_SCSI_DEVICE(device);
+          npc     = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.pchs.cylinders);
+          nph     = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.pchs.heads);
+          npspt   = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.pchs.spt);
+          lba     = read_dword(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.sectors);
+          blksize = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.blksize);
+        }
+#endif
 
         write_word(DS, SI+(Bit16u)&Int13DPT->size, 0x1a);
         write_word(DS, SI+(Bit16u)&Int13DPT->infos, 0x02); // geometry is valid
