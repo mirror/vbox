@@ -449,7 +449,7 @@ tcp_connect(PNATState pData, struct socket *inso)
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(struct sockaddr_in);
     struct tcpcb *tp;
-    int s, opt;
+    int s, opt, optlen, status;
 
     DEBUG_CALL("tcp_connect");
     DEBUG_ARG("inso = %lx", (long)inso);
@@ -495,6 +495,35 @@ tcp_connect(PNATState pData, struct socket *inso)
     opt = 1;
     setsockopt(s,IPPROTO_TCP,TCP_NODELAY,(char *)&opt,sizeof(int));
 
+    optlen = sizeof(int);
+    status = getsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, &optlen);
+    if (status < 0) 
+    {
+        LogRel(("Error(%d) while getting RCV capacity\n", errno));
+        goto no_sockopt;
+    }
+    opt *= 4;
+    status = setsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, optlen); 
+    if (status < 0) 
+    {
+        LogRel(("Error(%d) while setting RCV capacity to (%d)\n", errno, opt));
+        goto no_sockopt;
+    }
+    status = getsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, &optlen);
+    if (status < 0) 
+    {
+        LogRel(("Error(%d) while getting SND capacity\n", errno));
+        goto no_sockopt;
+    }
+    opt *= 4;
+    status = setsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, optlen); 
+    if (status < 0) 
+    {
+        LogRel(("Error(%d) while setting SND capacity to (%d)\n", errno, opt));
+        goto no_sockopt;
+    }
+
+    no_sockopt:
     so->so_fport = addr.sin_port;
     so->so_faddr = addr.sin_addr;
     /* Translate connections from localhost to the real hostname */
