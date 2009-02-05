@@ -30,15 +30,6 @@
 #ifndef ___VBox_vboxxml_h
 #define ___VBox_vboxxml_h
 
-#include <iprt/cdefs.h>
-#include <iprt/cpputils.h>
-
-/* these conflict with numeric_digits<>::min and max */
-#undef min
-#undef max
-
-#include <iprt/mem.h>
-
 #ifndef IN_RING3
 # error "There are no XML APIs available in Ring-0 Context!"
 #else /* IN_RING3 */
@@ -111,39 +102,19 @@ class VBOXXML_CLASS Error : public std::exception
 public:
 
     Error(const char *aMsg = NULL)
-        : m (aMsg ? Str::New (aMsg) : NULL) {}
+        : m(aMsg) {}
 
     virtual ~Error() throw() {}
 
-    void setWhat (const char *aMsg) { m = aMsg ? Str::New (aMsg) : NULL; }
+    void setWhat (const char *aMsg) { m = aMsg; }
 
-    const char *what() const throw() { return m.is_null() ? NULL : m->str; }
+    const char* what() const throw() { return m.c_str(); }
 
 private:
 
 //     Error() {};     // hide the default constructor to make sure the extended one above is always used
 
-    /** smart string with support for reference counting */
-    struct Str
-    {
-        size_t ref() { return ++ refs; }
-        size_t unref() { return -- refs; }
-
-        size_t refs;
-        char str [1];
-
-        static Str *New (const char *aStr)
-        {
-            Str *that = (Str *) RTMemAllocZ (sizeof (Str) + strlen (aStr));
-            AssertReturn (that, NULL);
-            strcpy (that->str, aStr);
-            return that;
-        }
-
-        void operator delete (void *that, size_t) { RTMemFree (that); }
-    };
-
-    stdx::auto_ref_ptr <Str> m;
+    com::Utf8Str m;
 };
 
 class VBOXXML_CLASS LogicError : public Error
