@@ -104,15 +104,15 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
 
             if (isAccessible)
             {
-                PRUnichar *machineName_;
+                PRUnichar *machineNameUtf16;
                 char *machineName;
 
-                machine->vtbl->GetName(machine, &machineName_);
-                VBoxUtf16ToUtf8(machineName_,&machineName);
+                machine->vtbl->GetName(machine, &machineNameUtf16);
+                VBoxUtf16ToUtf8(machineNameUtf16,&machineName);
                 printf("\tName:        %s\n", machineName);
 
                 VBoxUtf8Free(machineName);
-                VBoxComUnallocMem(machineName_);
+                VBoxComUnallocMem(machineNameUtf16);
             }
             else
             {
@@ -155,19 +155,19 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
 
                 {
                     PRUnichar *typeId;
-                    PRUnichar *osName_;
+                    PRUnichar *osNameUtf16;
                     char *osName;
                     IGuestOSType *osType = NULL;
 
                     machine->vtbl->GetOSTypeId(machine, &typeId);
                     virtualBox->vtbl->GetGuestOSType(virtualBox, typeId, &osType);
-                    osType->vtbl->GetDescription(osType, &osName_);
-                    VBoxUtf16ToUtf8(osName_,&osName);
+                    osType->vtbl->GetDescription(osType, &osNameUtf16);
+                    VBoxUtf16ToUtf8(osNameUtf16,&osName);
                     printf("\tGuest OS:    %s\n\n", osName);
 
                     osType->vtbl->nsisupports.Release((void *)osType);
                     VBoxUtf8Free(osName);
-                    VBoxComUnallocMem(osName_);
+                    VBoxComUnallocMem(osNameUtf16);
                     VBoxComUnallocMem(typeId);
                 }
             }
@@ -274,15 +274,15 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
         if (NS_FAILED(resultCode))
         {
             IVirtualBoxErrorInfo *errorInfo;
-            PRUnichar *text_;
+            PRUnichar *textUtf16;
             char *text;
 
             progress->vtbl->GetErrorInfo(progress, &errorInfo);
-            errorInfo->vtbl->GetText(errorInfo, &text_);
-            VBoxUtf16ToUtf8(text_, &text);
+            errorInfo->vtbl->GetText(errorInfo, &textUtf16);
+            VBoxUtf16ToUtf8(textUtf16, &text);
             printf("Error: %s\n", text);
 
-            VBoxComUnallocMem(text_);
+            VBoxComUnallocMem(textUtf16);
             VBoxUtf8Free(text);
         }
         else
