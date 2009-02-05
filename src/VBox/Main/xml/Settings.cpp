@@ -18,10 +18,6 @@
  * additional information or have any questions.
  */
 
-#include "VBox/settings.h"
-
-#include "Logging.h"
-
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/lock.h>
@@ -39,8 +35,13 @@
 #include <libxslt/transform.h>
 #include <libxslt/xsltutils.h>
 
-#include <string.h>
+#include <list>
 
+// #include <string.h>
+
+#include "VBox/settings.h"
+
+#include "Logging.h"
 
 namespace settings
 {
@@ -57,7 +58,7 @@ inline int sFromHex (char aChar)
     if (aChar >= 'a' && aChar <= 'f')
         return aChar - 'a' + 0xA;
 
-    throw ENoConversion(xml::FmtStr ("'%c' (0x%02X) is not hex", aChar, aChar));
+    throw ENoConversion(com::Utf8StrFmt("'%c' (0x%02X) is not hex", aChar, aChar));
 }
 
 inline char sToHex (int aDigit)
@@ -120,7 +121,7 @@ uint64_t FromStringInteger (const char *aValue, bool aSigned,
         }
     }
 
-    throw ENoConversion(xml::FmtStr("'%s' is not integer", aValue));
+    throw ENoConversion(com::Utf8StrFmt("'%s' is not integer", aValue));
 }
 
 template<> bool FromString <bool> (const char *aValue)
@@ -141,7 +142,7 @@ template<> bool FromString <bool> (const char *aValue)
             //strcmp (aValue, "off") == 0)
         return false;
 
-    throw ENoConversion(xml::FmtStr("'%s' is not bool", aValue));
+    throw ENoConversion(com::Utf8StrFmt("'%s' is not bool", aValue));
 }
 
 template<> RTTIMESPEC FromString <RTTIMESPEC> (const char *aValue)
@@ -175,10 +176,10 @@ template<> RTTIMESPEC FromString <RTTIMESPEC> (const char *aValue)
             }
         }
         else
-            throw ENoConversion(xml::FmtStr("'%s' is not UTC date", aValue));
+            throw ENoConversion(com::Utf8StrFmt("'%s' is not UTC date", aValue));
     }
 
-    throw ENoConversion(xml::FmtStr("'%s' is not ISO date", aValue));
+    throw ENoConversion(com::Utf8StrFmt("'%s' is not ISO date", aValue));
 }
 
 stdx::char_auto_ptr FromString (const char *aValue, size_t *aLen)
@@ -191,8 +192,8 @@ stdx::char_auto_ptr FromString (const char *aValue, size_t *aLen)
 
     /* therefore, the original length must be even */
     if (len % 2 != 0)
-        throw ENoConversion(xml::FmtStr("'%.*s' is not binary data",
-                                        aLen, aValue));
+        throw ENoConversion(com::Utf8StrFmt("'%.*s' is not binary data",
+                                            aLen, aValue));
 
     stdx::char_auto_ptr result (new char [len]);
 
@@ -264,8 +265,8 @@ template<> stdx::char_auto_ptr ToString <RTTIMESPEC> (const RTTIMESPEC &aValue,
 {
     RTTIME time;
     if (!RTTimeExplode (&time, &aValue))
-        throw ENoConversion(xml::FmtStr("timespec %lld ms is invalid",
-                                        RTTimeSpecGetMilli (&aValue)));
+        throw ENoConversion(com::Utf8StrFmt("timespec %lld ms is invalid",
+                                            RTTimeSpecGetMilli (&aValue)));
 
     /* Store ISO date (xsd:dateTime). The format is:
      * '-'? yyyy '-' mm '-' dd 'T' hh ':' mm ':' ss ('.' s+)? (zzzzzz)?

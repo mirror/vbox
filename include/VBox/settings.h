@@ -46,7 +46,7 @@
 
 #include <VBox/xml.h>
 
-#include <stdarg.h>
+// #include <stdarg.h>
 
 
 /** @defgroup   grp_settings    Settings File Manipulation API
@@ -591,7 +591,7 @@ public:
         }
         catch (const ENoValue &)
         {
-            throw ENoValue(xml::FmtStr("No such attribute '%s'", aName));
+            throw ENoValue(com::Utf8StrFmt("No such attribute '%s'", aName));
         }
     }
 
@@ -646,7 +646,7 @@ public:
         }
         catch (const ENoValue &)
         {
-            throw ENoValue(xml::FmtStr("No value for attribute '%s'", aName));
+            throw ENoValue(com::Utf8StrFmt("No value for attribute '%s'", aName));
         }
     }
 
@@ -760,7 +760,7 @@ public:
         Key key = findKey (aName);
         if (key.isNull())
         {
-            throw ENoKey(xml::FmtStr("No such key '%s'", aName));
+            throw ENoKey(com::Utf8StrFmt("No such key '%s'", aName));
         }
         return key;
     }
