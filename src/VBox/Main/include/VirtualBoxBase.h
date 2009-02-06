@@ -22,35 +22,26 @@
 #ifndef ____H_VIRTUALBOXBASEIMPL
 #define ____H_VIRTUALBOXBASEIMPL
 
+#include "VBox/com/string.h"
+#include "VBox/com/Guid.h"
+#include "VBox/com/ptr.h"
+#include "VBox/com/ErrorInfo.h"
+
+#include "VBox/com/VirtualBox.h"
+
+#include <VBox/settings.h>
+
+#include "AutoLock.h"
+
+using namespace com;
+using namespace util;
+
 #include <iprt/cdefs.h>
 #include <iprt/critsect.h>
 #include <iprt/thread.h>
 
 #include <list>
 #include <map>
-
-#include "VBox/com/ErrorInfo.h"
-
-#include "VBox/com/VirtualBox.h"
-
-// avoid including VBox/settings.h and VBox/xml.h;
-// only declare the classes
-namespace settings
-{
-class XmlTreeBackend;
-class TreeBackend;
-class Key;
-}
-
-namespace xml
-{
-class File;
-}
-
-#include "AutoLock.h"
-
-using namespace com;
-using namespace util;
 
 #if !defined (VBOX_WITH_XPCOM)
 
@@ -2833,4 +2824,38 @@ protected:
     D *mBackupData;
 };
 
+#if defined VBOX_MAIN_SETTINGS_ADDONS
+
+/**
+ * Settings API additions.
+ */
+namespace settings
+{
+
+/// @todo once string data in Bstr and Utf8Str is auto_ref_ptr, enable the
+/// code below
+
+#if 0
+
+/** Specialization of FromString for Bstr. */
+template<> com::Bstr FromString <com::Bstr> (const char *aValue);
+
+#endif
+
+/** Specialization of ToString for Bstr. */
+template<> stdx::char_auto_ptr
+ToString <com::Bstr> (const com::Bstr &aValue, unsigned int aExtra);
+
+/** Specialization of FromString for Guid. */
+template<> com::Guid FromString <com::Guid> (const char *aValue);
+
+/** Specialization of ToString for Guid. */
+template<> stdx::char_auto_ptr
+ToString <com::Guid> (const com::Guid &aValue, unsigned int aExtra);
+
+} /* namespace settings */
+
+#endif /* VBOX_MAIN_SETTINGS_ADDONS */
+
 #endif // ____H_VIRTUALBOXBASEIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

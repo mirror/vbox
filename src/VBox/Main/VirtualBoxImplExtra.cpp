@@ -23,10 +23,7 @@
  * additional information or have any questions.
  */
 
-#include <VBox/settings.h>
-
 #include "VirtualBoxImpl.h"
-#include "VirtualBoxImplExtra.h"
 
 #include "VirtualBoxXMLUtil.h"
 
@@ -71,7 +68,7 @@ static const unsigned g_cb_xml_VirtualBox_settings_root_xsd =
  *              a wrong URI/ID pair.
  */
 xml::Input *
-SettingsTreeHelper::resolveEntity (const char *aURI, const char *aID)
+VirtualBox::SettingsTreeHelper::resolveEntity (const char *aURI, const char *aID)
 {
     if (strcmp (aURI, VBOX_XML_SCHEMA_COMMON) == 0)
     {
@@ -140,7 +137,7 @@ SettingsTreeHelper::resolveEntity (const char *aURI, const char *aID)
  *                              pointer. May be NULL. Allocated memory is
  *                              freed by the caller using RTStrFree().
  */
-bool SettingsTreeHelper::
+bool VirtualBox::SettingsTreeHelper::
 needsConversion (const settings::Key &aRoot, char **aOldVersion) const
 {
     if (strcmp (aRoot.name(), "VirtualBox") == 0)
@@ -170,99 +167,8 @@ needsConversion (const settings::Key &aRoot, char **aOldVersion) const
  * This template will be applied to the tree if #needsConversion()
  * returns @c true for this tree.
  */
-const char* SettingsTreeHelper::templateUri() const
+const char *VirtualBox::SettingsTreeHelper::templateUri() const
 {
     return VBOX_XML_SETTINGS_CONVERTER;
 }
-
-#if defined VBOX_MAIN_SETTINGS_ADDONS
-
-// Settings API additions
-////////////////////////////////////////////////////////////////////////////////
-
-namespace settings
-{
-
-template<> stdx::char_auto_ptr
-ToString <com::Bstr> (const com::Bstr &aValue, unsigned int aExtra)
-{
-    stdx::char_auto_ptr result;
-
-    if (aValue.raw() == NULL)
-        throw ENoValue();
-
-    /* The only way to cause RTUtf16ToUtf8Ex return a number of bytes needed
-     * w/o allocating the result buffer itself is to provide that both cch
-     * and *ppsz are not NULL. */
-    char dummy [1];
-    char *dummy2 = dummy;
-    size_t strLen = 1;
-
-    int vrc = RTUtf16ToUtf8Ex (aValue.raw(), RTSTR_MAX,
-                               &dummy2, strLen, &strLen);
-    if (RT_SUCCESS (vrc))
-    {
-        /* the string only contains '\0' :) */
-        result.reset (new char [1]);
-        result.get() [0] = '\0';
-        return result;
-    }
-
-    if (vrc == VERR_BUFFER_OVERFLOW)
-    {
-        result.reset (new char [strLen + 1]);
-        char *buf = result.get();
-        vrc = RTUtf16ToUtf8Ex (aValue.raw(), RTSTR_MAX, &buf, strLen + 1, NULL);
-    }
-
-    if (RT_FAILURE (vrc))
-        throw xml::LogicError (RT_SRC_POS);
-
-    return result;
-}
-
-template<> com::Guid FromString <com::Guid> (const char *aValue)
-{
-    if (aValue == NULL)
-        throw ENoValue();
-
-    /* For settings, the format is always {XXX...XXX} */
-    char buf [RTUUID_STR_LENGTH];
-    if (aValue == NULL || *aValue != '{' ||
-        strlen (aValue) != RTUUID_STR_LENGTH + 1 ||
-        aValue [RTUUID_STR_LENGTH] != '}')
-        throw ENoConversion(com::Utf8StrFmt("'%s' is not Guid", aValue));
-
-    /* strip { and } */
-    memcpy (buf, aValue + 1, RTUUID_STR_LENGTH - 1);
-    buf [RTUUID_STR_LENGTH - 1] = '\0';
-    /* we don't use Guid (const char *) because we want to throw
-     * ENoConversion on format error */
-    RTUUID uuid;
-    int vrc = RTUuidFromStr (&uuid, buf);
-    if (RT_FAILURE (vrc))
-        throw ENoConversion(com::Utf8StrFmt("'%s' is not Guid (%Rrc)", aValue, vrc));
-
-    return com::Guid (uuid);
-}
-
-template<> stdx::char_auto_ptr
-ToString <com::Guid> (const com::Guid &aValue, unsigned int aExtra)
-{
-    /* For settings, the format is always {XXX...XXX} */
-    stdx::char_auto_ptr result (new char [RTUUID_STR_LENGTH + 2]);
-
-    int vrc = RTUuidToStr (aValue.raw(), result.get() + 1, RTUUID_STR_LENGTH);
-    if (RT_FAILURE (vrc))
-        throw xml::LogicError (RT_SRC_POS);
-
-    result.get() [0] = '{';
-    result.get() [RTUUID_STR_LENGTH] = '}';
-    result.get() [RTUUID_STR_LENGTH + 1] = '\0';
-
-    return result;
-}
-
-#endif // VBOX_MAIN_SETTINGS_ADDONS
-
-} /* namespace settings */
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

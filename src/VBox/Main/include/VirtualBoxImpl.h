@@ -40,6 +40,7 @@
 #include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
+
 class Machine;
 class SessionMachine;
 class HardDisk2;
@@ -272,6 +273,19 @@ public:
     const Bstr &settingsFileName() { return mData.mCfgFile.mName; }
 
     static HRESULT ensureFilePathExists (const char *aFileName);
+
+    class SettingsTreeHelper : public settings::XmlTreeBackend::InputResolver
+                             , public settings::XmlTreeBackend::AutoConverter
+    {
+    public:
+
+        // InputResolver interface
+        xml::Input *resolveEntity (const char *aURI, const char *aID);
+
+        // AutoConverter interface
+        bool needsConversion (const settings::Key &aRoot, char **aOldVersion) const;
+        const char *templateUri() const;
+    };
 
     static HRESULT loadSettingsTree (settings::XmlTreeBackend &aTree,
                                      xml::File &aFile,

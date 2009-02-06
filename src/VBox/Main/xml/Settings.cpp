@@ -1155,6 +1155,5 @@ xmlParserInputPtr XmlTreeBackend::ExternalEntityLoader (const char *aURI,
     return NULL;
 }
 
-
 } /* namespace settings */
 

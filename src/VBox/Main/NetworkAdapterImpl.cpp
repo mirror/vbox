@@ -28,7 +28,6 @@
 #include <iprt/cpputils.h>
 
 #include <VBox/err.h>
-#include <VBox/settings.h>
 
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
