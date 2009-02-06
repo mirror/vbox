@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  * MS COM / XPCOM Abstraction Layer:
  * Error info print helpers. This implements the shared code from the macros from errorprint2.h.

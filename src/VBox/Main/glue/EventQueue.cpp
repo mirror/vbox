@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * MS COM / XPCOM Abstraction Layer:
