@@ -1237,6 +1237,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
             m_free(pData, m);
             break;
     }
+    RTMemFree(pkt);
 }
 
 /* output the IP packet to the ethernet device */
