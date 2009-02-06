@@ -26,7 +26,10 @@
 
 #include "VirtualBoxBase.h"
 
-// #include <string>
+namespace xml
+{
+    class Node;
+}
 
 class VirtualBox;
 
