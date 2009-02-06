@@ -39,6 +39,11 @@
 #elif defined(XP_OS2) && defined(XP_OS2_NATIVEIPC)
 #else
 #include <string.h>
+#ifdef XP_UNIX
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#endif
 #include "ipcConfig.h"
 #include "ipcLog.h"
 #include "prenv.h"
@@ -70,6 +75,13 @@ void IPC_GetDefaultSocketPath(char *buf, PRUint32 bufLen)
     bufLen -= (sizeof(kDefaultSocketPrefix) - 1);
 
     logName = PR_GetEnv("VBOX_IPC_SOCKETID");
+#if defined(VBOX) && defined(XP_UNIX)
+    if (!logName || !logName[0]) {
+        struct passwd *passStruct = getpwuid(getuid());
+        if (passStruct)
+            logName = passStruct->pw_name;
+    }
+#endif
     if (!logName || !logName[0]) {
         logName = PR_GetEnv("LOGNAME");
         if (!logName || !logName[0]) {
