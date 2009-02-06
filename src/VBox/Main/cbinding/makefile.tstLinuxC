@@ -19,18 +19,16 @@
 # additional information or have any questions.
 #
 
-PATH_XPCOM = ../..
-PATH_BIN   = /opt/VirtualBox
+PATH_BIN      = /opt/VirtualBox
+XPCOM_INCLUDE = ../../include
+INCS_XPCOM    = -I$(XPCOM_INCLUDE) \
+                -I$(XPCOM_INCLUDE)/nsprpub \
+                -I$(XPCOM_INCLUDE)/string \
+                -I$(XPCOM_INCLUDE)/xpcom \
+                -I$(XPCOM_INCLUDE)/ipcd
 
-INCS_XPCOM = -I$(PATH_XPCOM)/include \
-             -I$(PATH_XPCOM)/include/nsprpub \
-             -I$(PATH_XPCOM)/include/string \
-             -I$(PATH_XPCOM)/include/xpcom \
-             -I$(PATH_XPCOM)/include/ipcd \
-             -I$(PATH_VBOX_SVN)/include
-
-CC         = gcc
-CFLAGS     = -g -ansi -pedantic -Wall
+CC            = gcc
+CFLAGS        = -g -ansi -pedantic -Wall
 
 .PHONY: all
 all: tstLinuxC run
