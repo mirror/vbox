@@ -1942,6 +1942,13 @@ static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
     Log(("CSAMCodePageWriteHandler: write to %RGv size=%zu\n", GCPtr, cbBuf));
 
+    if (    PAGE_ADDRESS(pvPtr) == PAGE_ADDRESS((uintptr_t)pvPtr + cbBuf - 1)
+         && !memcmp(pvPtr, pvBuf, cbBuf))
+    {
+        Log(("CSAMCodePageWriteHandler: dummy write -> ignore\n"));
+        return VINF_PGM_HANDLER_DO_DEFAULT;
+    }
+
     if (VM_IS_EMT(pVM))
     {
         rc = PATMR3PatchWrite(pVM, GCPtr, (uint32_t)cbBuf);
