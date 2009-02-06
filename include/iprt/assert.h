@@ -2249,22 +2249,21 @@ __END_DECLS
  * Equivalent to Assert for each value of the variable from the starting
  * value to the finishing one.
  *
- * @param   var     Name of the counter variable
- * @param   vartype Type of the counter variable
- * @param   first   Lowest inclusive value of the counter variable.  This must
- *                  be free from side effects.
- * @param   last    Highest exclusive value of the counter variable.  This
- *                  must be free from side effects.
+ * @param   var     Name of the counter variable.
+ * @param   vartype Type of the counter variable.
+ * @param   first   Lowest inclusive value of the counter variable.
+ *                  This must be free from side effects.
+ * @param   end     Highest exclusive value of the counter variable.
+ *                  This must be free from side effects.
  * @param   expr    Expression which should be true for each value of @a var.
- * @param   name    Name of the precondition
  */
-#define AssertForEach(var, vartype, first, last, expr) \
-do { \
-    vartype var; \
-    Assert(((first) == (first)) && ((last) == (last))); /* partial check for side effects */ \
-    for (var = (first); var < (last); ++var) \
-        AssertMsg(expr, ("%s = %lld", #var, var)); \
-} while(0)
+#define AssertForEach(var, vartype, first, end, expr) \
+    do { \
+        vartype var; \
+        Assert((first) == (first) && (end) == (end)); /* partial check for side effects */ \
+        for (var = (first); var < (end); var++) \
+            AssertMsg(expr, ("%s = %#RX64 (%RI64)", #var, (uint64_t)var, (int64_t)var)); \
+    } while (0)
 
 /** @} */
 
