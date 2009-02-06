@@ -1462,12 +1462,6 @@ $(foreach lib,RuntimeR3 VBoxRT RuntimeLnxHostR3,$(eval $(def_errmsgwin_deps)))
 
 
 #
-# Generate the rules (we're the to sub-makefile).
-#
-include $(KBUILD_PATH)/subfooter.kmk
-
-
-#
 # Generate the status code data.
 #
 $(IPRT_OUT_DIR)/errmsgdata.h: \
@@ -1594,4 +1588,10 @@ test-doxygen::
 	@echo $(IPRT_DOXYFILE_OUTPUT)
 	@echo $(DOXYGEN_OUTPUT_PREV)
 	@echo $(IPRT_DOXYFILE_INPUT)
+
+
+#
+# Generate the rules (we're the to sub-makefile).
+#
+include $(KBUILD_PATH)/subfooter.kmk
 
