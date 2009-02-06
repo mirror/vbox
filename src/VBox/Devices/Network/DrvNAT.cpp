@@ -157,46 +157,31 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
         return VINF_SUCCESS;
 # ifndef VBOX_WITH_SLIRP_MT
     rc = RTReqAlloc(pThis->pReqQueue, &pReq, RTREQTYPE_INTERNAL);
-    buf = pvBuf;
 # else
-    buf = (const void *)RTMemAlloc(cb); 
-    memcpy((void *)buf, pvBuf, cb);
     rc = RTReqAlloc((PRTREQQUEUE)slirp_get_queue(pThis->pNATState), &pReq, RTREQTYPE_INTERNAL);
 # endif
     AssertReleaseRC(rc);
+
+    /* @todo: Here we should get mbuf instead temporal buffer */
+    buf = (const void *)RTMemAlloc(cb); 
+    if (buf == NULL)
+    {
+        LogRel(("Can't allocate buffer for sending buffer\n"));
+        return VERR_NO_MEMORY;
+    }
+    memcpy((void *)buf, pvBuf, cb);
+
     pReq->u.Internal.pfn      = (PFNRT)drvNATSendWorker;
     pReq->u.Internal.cArgs    = 3;
     pReq->u.Internal.aArgs[0] = (uintptr_t)pThis;
     pReq->u.Internal.aArgs[1] = (uintptr_t)buf;
     pReq->u.Internal.aArgs[2] = (uintptr_t)cb;
-# ifndef VBOX_WITH_SLIRP_MT
-    pReq->fFlags              = RTREQFLAGS_VOID;
-# else
     pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT;
-# endif
 
     rc = RTReqQueue(pReq, 0); /* don't wait, we have to wakeup the NAT thread fist */
-#ifndef VBOX_WITH_SLIRP_MT
-    if (RT_LIKELY(rc == VERR_TIMEOUT))
-    {
+    AssertReleaseRC(rc);
 # ifndef RT_OS_WINDOWS
-        /* kick select() */
-        rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
-        AssertRC(rc);
-# else
-        /* kick WSAWaitForMultipleEvents */
-        rc = WSASetEvent(pThis->hWakeupEvent);
-        AssertRelease(rc == TRUE);
-# endif
-        rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
-    }
-    else
-        AssertReleaseRC(rc);
-    RTReqFree(pReq);
-#else
-# ifndef RT_OS_WINDOWS
-        /* kick select() */
+    /* kick select() */
     rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
     AssertRC(rc);
 # else
@@ -204,8 +189,6 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     rc = WSASetEvent(pThis->hWakeupEvent);
     AssertRelease(rc == TRUE);
 # endif
-    AssertReleaseRC(rc);
-#endif
 
 #else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
