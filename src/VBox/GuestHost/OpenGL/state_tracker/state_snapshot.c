@@ -907,21 +907,21 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
     {
         if (pContext->attrib.enableStack[i].clip)
         {
-            rc = crStateAllocAndSSMR3GetMem(pSSM, &pContext->attrib.enableStack[i].clip,
+            rc = crStateAllocAndSSMR3GetMem(pSSM, (void**)&pContext->attrib.enableStack[i].clip,
                                             pContext->limits.maxClipPlanes*sizeof(GLboolean));
             AssertRCReturn(rc, rc);
         }
 
         if (pContext->attrib.enableStack[i].light)
         {
-            rc = crStateAllocAndSSMR3GetMem(pSSM, &pContext->attrib.enableStack[i].light,
+            rc = crStateAllocAndSSMR3GetMem(pSSM, (void**)&pContext->attrib.enableStack[i].light,
                                             pContext->limits.maxLights*sizeof(GLboolean));
             AssertRCReturn(rc, rc);
         }
 
         if (pContext->attrib.lightingStack[i].light)
         {
-            rc = crStateAllocAndSSMR3GetMem(pSSM, &pContext->attrib.lightingStack[i].light,
+            rc = crStateAllocAndSSMR3GetMem(pSSM, (void**)&pContext->attrib.lightingStack[i].light,
                                             pContext->limits.maxLights*sizeof(CRLight));
             AssertRCReturn(rc, rc);
         }
@@ -934,14 +934,14 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
 
         if (pContext->attrib.transformStack[i].clip)
         {
-            rc = crStateAllocAndSSMR3GetMem(pSSM, &pContext->attrib.transformStack[i].clip,
+            rc = crStateAllocAndSSMR3GetMem(pSSM, (void*)&pContext->attrib.transformStack[i].clip,
                                             pContext->limits.maxClipPlanes*sizeof(GLboolean));
             AssertRCReturn(rc, rc);
         }
 
         if (pContext->attrib.transformStack[i].clipPlane)
         {
-            rc = crStateAllocAndSSMR3GetMem(pSSM, &pContext->attrib.transformStack[i].clipPlane,
+            rc = crStateAllocAndSSMR3GetMem(pSSM, (void**)&pContext->attrib.transformStack[i].clipPlane,
                                             pContext->limits.maxClipPlanes*sizeof(GLvectord));
             AssertRCReturn(rc, rc);
         }
