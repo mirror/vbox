@@ -2245,6 +2245,27 @@ __END_DECLS
 # define AssertGCPtr32(GCPtr)           AssertMsg(!((GCPtr) & UINT64_C(0xffffffff00000000)), ("%RGv\n", GCPtr))
 #endif
 
+/** @def AssertForEach
+ * Equivalent to Assert for each value of the variable from the starting
+ * value to the finishing one.
+ *
+ * @param   var     Name of the counter variable
+ * @param   vartype Type of the counter variable
+ * @param   first   Lowest inclusive value of the counter variable.  This must
+ *                  be free from side effects.
+ * @param   last    Highest exclusive value of the counter variable.  This
+ *                  must be free from side effects.
+ * @param   expr    Expression which should be true for each value of @a var.
+ * @param   name    Name of the precondition
+ */
+#define AssertForEach(var, vartype, first, last, expr) \
+do { \
+    vartype var; \
+    Assert(((first) == (first)) && ((last) == (last))); /* partial check for side effects */ \
+    for (var = (first); var < (last); ++var) \
+        AssertMsg(expr, ("%s = %lld", #var, var)); \
+} while(0)
+
 /** @} */
 
 /** @} */
