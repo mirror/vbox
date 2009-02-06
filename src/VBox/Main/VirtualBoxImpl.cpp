@@ -20,7 +20,35 @@
  * additional information or have any questions.
  */
 
+#include <iprt/path.h>
+#include <iprt/dir.h>
+#include <iprt/file.h>
+#include <iprt/string.h>
+#include <iprt/uuid.h>
+#include <iprt/thread.h>
+#include <iprt/process.h>
+#include <iprt/env.h>
+#include <iprt/cpputils.h>
+
+#include <VBox/com/com.h>
+#include <VBox/com/array.h>
+
+#include <VBox/err.h>
+#include <VBox/param.h>
+#include <VBox/VBoxHDD-new.h>
+#include <VBox/settings.h>
+#include <VBox/version.h>
+
+#include <package-generated.h>
+
+#include <algorithm>
+#include <set>
+#include <memory> // for auto_ptr
+
+#include <typeinfo>
+
 #include "VirtualBoxImpl.h"
+#include "VirtualBoxImplExtra.h"
 
 #include "Global.h"
 #include "MachineImpl.h"
@@ -42,33 +70,8 @@
 # include "win/svchlp.h"
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <iprt/path.h>
-#include <iprt/dir.h>
-#include <iprt/file.h>
-#include <iprt/string.h>
-#include <iprt/uuid.h>
-#include <iprt/thread.h>
-#include <iprt/process.h>
-#include <iprt/env.h>
-#include <iprt/cpputils.h>
-
-#include <VBox/err.h>
-#include <VBox/param.h>
-#include <VBox/VBoxHDD-new.h>
-#include <VBox/version.h>
-#include <package-generated.h>
-
-#include <VBox/com/com.h>
-#include <VBox/com/array.h>
-
-#include <algorithm>
-#include <set>
-#include <memory> // for auto_ptr
-
-#include <typeinfo>
+// #include <stdio.h>
+// #include <stdlib.h>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////

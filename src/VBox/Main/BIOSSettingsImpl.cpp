@@ -23,7 +23,9 @@
 #include "MachineImpl.h"
 #include "Logging.h"
 #include "GuestOSTypeImpl.h"
+
 #include <iprt/cpputils.h>
+#include <VBox/settings.h>
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
