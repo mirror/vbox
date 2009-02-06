@@ -78,6 +78,9 @@ extern const PDMDEVREG g_DeviceSMC;
 #ifdef VBOX_WITH_LPC
 extern const PDMDEVREG g_DeviceLPC;
 #endif
+#ifdef VBOX_WITH_EFI
+extern const PDMDEVREG g_DeviceEFI;
+#endif
 
 extern const PDMDRVREG g_DrvMouseQueue;
 extern const PDMDRVREG g_DrvKeyboardQueue;
