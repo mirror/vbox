@@ -21,6 +21,8 @@
  * additional information or have any questions.
  */
 
+
+
 #include "SATAControllerImpl.h"
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
@@ -28,9 +30,7 @@
 
 #include <iprt/string.h>
 #include <iprt/cpputils.h>
-
 #include <VBox/err.h>
-#include <VBox/settings.h>
 
 #include <algorithm>
 

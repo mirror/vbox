@@ -31,10 +31,8 @@
 
 #include <iprt/path.h>
 #include <iprt/dir.h>
-
-#include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/settings.h>
+#include <VBox/err.h>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////

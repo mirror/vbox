@@ -28,6 +28,10 @@
 # define __STDC_CONSTANT_MACROS
 #endif
 
+#if defined(RT_OS_WINDOWS)
+#elif defined(RT_OS_LINUX)
+#endif
+
 #ifdef VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
 #   include <errno.h>
 #   include <sys/types.h>
@@ -72,8 +76,6 @@
 
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/settings.h>
-
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
 # include <VBox/com/array.h>

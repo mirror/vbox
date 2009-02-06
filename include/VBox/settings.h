@@ -44,8 +44,6 @@
 
 #include <iprt/time.h>
 
-#include <VBox/com/Guid.h>
-
 #include <VBox/xml.h>
 
 // #include <stdarg.h>
@@ -440,31 +438,6 @@ ToString <RTTIMESPEC> (const RTTIMESPEC &aValue, unsigned int aExtra);
  * @return Result of conversion.
  */
 DECLEXPORT (stdx::char_auto_ptr) ToString (const void *aData, size_t aLen);
-
-#if defined VBOX_MAIN_SETTINGS_ADDONS
-
-/// @todo once string data in Bstr and Utf8Str is auto_ref_ptr, enable the
-/// code below
-
-#if 0
-
-/** Specialization of FromString for Bstr. */
-template<> com::Bstr FromString <com::Bstr> (const char *aValue);
-
-#endif
-
-/** Specialization of ToString for Bstr. */
-template<> stdx::char_auto_ptr
-ToString <com::Bstr> (const com::Bstr &aValue, unsigned int aExtra);
-
-/** Specialization of FromString for Guid. */
-template<> com::Guid FromString <com::Guid> (const char *aValue);
-
-/** Specialization of ToString for Guid. */
-template<> stdx::char_auto_ptr
-ToString <com::Guid> (const com::Guid &aValue, unsigned int aExtra);
-
-#endif // VBOX_MAIN_SETTINGS_ADDONS
 
 // the rest
 //////////////////////////////////////////////////////////////////////////////

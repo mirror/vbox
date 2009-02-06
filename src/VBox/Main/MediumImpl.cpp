@@ -29,12 +29,11 @@
 
 #include <VBox/com/array.h>
 
-#include <VBox/err.h>
-#include <VBox/settings.h>
-
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/file.h>
+
+#include <VBox/err.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // MediumBase class

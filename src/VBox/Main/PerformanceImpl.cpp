@@ -21,14 +21,16 @@
  * additional information or have any questions.
  */
 
+#if defined(RT_OS_WINDOWS)
+#elif defined(RT_OS_LINUX)
+#endif
+
 #include "PerformanceImpl.h"
 
 #include "Logging.h"
 
-#include <iprt/process.h>
-
 #include <VBox/err.h>
-#include <VBox/settings.h>
+#include <iprt/process.h>
 
 #include <vector>
 #include <algorithm>

@@ -32,11 +32,10 @@
 #endif
 #include "Logging.h"
 
+
 #include <iprt/string.h>
 #include <iprt/cpputils.h>
-
 #include <VBox/err.h>
-#include <VBox/settings.h>
 
 #include <algorithm>
 
