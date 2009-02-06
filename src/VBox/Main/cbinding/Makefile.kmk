@@ -33,13 +33,13 @@ XpComCSamples_INST = \
 	$(INST_SDK)bindings/xpcom/cbinding/samples/
 XpComCSamples_SOURCES = \
 	tstLinuxC.c \
-	cbinding.h \
 	makefile.tstLinuxC=>Makefile
 
 INSTALLS += XpComCHeaders
 XpComCHeaders_MODE = a+r,u+rw
 XpComCHeaders_INST = $(INST_SDK)bindings/xpcom/include/
 XpComCHeaders_SOURCES = \
+	cbinding.h \
 	$(XpComCHeaders_0_OUTDIR)/VirtualBox_CXPCOM.h
 
 $$(XpComCHeaders_0_OUTDIR)/VirtualBox_CXPCOM.h: \
