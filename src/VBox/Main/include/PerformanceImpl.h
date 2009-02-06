@@ -37,6 +37,9 @@
 
 #include "Performance.h"
 
+#undef min
+#undef max
+
 /* Each second we obtain new CPU load stats. */
 #define VBOX_USAGE_SAMPLER_MIN_INTERVAL 1000
 
@@ -92,7 +95,10 @@ private:
     struct Data
     {
         /* Constructor. */
-        Data() : period(0), count(0), min(0), max(0) { }
+        Data()
+            : period(0), count(0), min(0), max(0)
+        {
+        }
 
         Bstr             name;
         ComPtr<IUnknown> object;
