@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * ErrorInfo class definition
