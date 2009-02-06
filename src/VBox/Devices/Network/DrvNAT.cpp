@@ -151,7 +151,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
 
     PRTREQ pReq = NULL;
     int rc;
-    const void *buf;
+    void *buf;
     /* don't queue new requests when the NAT thread is about to stop */
     if (pThis->pThread->enmState != PDMTHREADSTATE_RUNNING)
         return VINF_SUCCESS;
@@ -163,13 +163,13 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     AssertReleaseRC(rc);
 
     /* @todo: Here we should get mbuf instead temporal buffer */
-    buf = (const void *)RTMemAlloc(cb); 
+    buf = RTMemAlloc(cb); 
     if (buf == NULL)
     {
         LogRel(("Can't allocate buffer for sending buffer\n"));
         return VERR_NO_MEMORY;
     }
-    memcpy((void *)buf, pvBuf, cb);
+    memcpy(buf, pvBuf, cb);
 
     pReq->u.Internal.pfn      = (PFNRT)drvNATSendWorker;
     pReq->u.Internal.cArgs    = 3;
