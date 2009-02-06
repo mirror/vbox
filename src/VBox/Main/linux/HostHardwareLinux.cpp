@@ -838,12 +838,11 @@ int halFindDeviceStringMatchVector (DBusConnection *pConnection,
                                     std::vector<std::string> *pMatches,
                                     bool *pfSuccess)
 {
-#if 0
-    AssertRequireReturn(   VALID_PTR(pConnection) && VALID_PTR(pszKey)
-                        && VALID_PTR(pszValue) && VALID_PTR (pMatches)
-                        && (pfSuccess == NULL || VALID_PTR (pfSuccess)),
-                        Valid pointers, VERR_INVALID_POINTER);
-#endif
+    AssertPtrReturn (pConnection, VERR_INVALID_POINTER);
+    AssertPtrReturn (pszKey, VERR_INVALID_POINTER);
+    AssertPtrReturn (pszValue, VERR_INVALID_POINTER);
+    AssertPtrReturn (pMatches, VERR_INVALID_POINTER);
+    AssertReturn (pfSuccess == NULL || VALID_PTR (pfSuccess), VERR_INVALID_POINTER);
     LogFlowFunc (("pConnection=%p, pszKey=%s, pszValue=%s, pMatches=%p, pfSuccess=%p\n",
                   pConnection, pszKey, pszValue, pMatches, pfSuccess));
     int rc = VINF_SUCCESS;  /* We set this to failure on fatal errors. */
@@ -871,7 +870,7 @@ int halFindDeviceStringMatchVector (DBusConnection *pConnection,
            && dbus_message_iter_get_arg_type (&iterUdis) == DBUS_TYPE_STRING;
          dbus_message_iter_next(&iterUdis))
     {
-        /* Now get all properties from the iterator */
+        /* Now get all UDIs from the iterator */
         const char *pszUdi;
         dbus_message_iter_get_basic (&iterUdis, &pszUdi);
         try
@@ -1009,14 +1008,13 @@ int halGetPropertyStringsVector (DBusConnection *pConnection,
                                  std::vector<std::string> *pMatches,
                                  bool *pfMatches, bool *pfSuccess)
 {
-#if 0
-    AssertRequireReturn(   VALID_PTR (pConnection) && VALID_PTR (pszUdi)
-                        && VALID_PTR (papszKeys) && VALID_PTR (pMatches)
-                        && VALID_PTR (pfMatches)
-                        && (pfSuccess == NULL || VALID_PTR (pfSuccess)),
-                        Valid pointers, VERR_INVALID_POINTER);
-    AssertRequireReturn(pMatches->empty());
-#endif
+    AssertPtrReturn (pConnection, VERR_INVALID_POINTER);
+    AssertPtrReturn (pszUdi, VERR_INVALID_POINTER);
+    AssertPtrReturn (papszKeys, VERR_INVALID_POINTER);
+    AssertPtrReturn (pMatches, VERR_INVALID_POINTER);
+    AssertReturn ((pfMatches == NULL) || VALID_PTR (pfMatches), VERR_INVALID_POINTER);
+    AssertReturn ((pfSuccess == NULL) || VALID_PTR (pfSuccess), VERR_INVALID_POINTER);
+    AssertReturn(pMatches->empty(), VERR_INVALID_PARAMETER);
     LogFlowFunc (("pConnection=%p, pszUdi=%s, cProps=%llu, papszKeys=%p, pMatches=%p, pfMatches=%p, pfSuccess=%p\n",
                   pConnection, pszUdi, cProps, papszKeys, pMatches, pfMatches, pfSuccess));
     RTMemAutoPtr <char *> values(cProps);
@@ -1044,17 +1042,13 @@ int halGetPropertyStringsVector (DBusConnection *pConnection,
     }
     if (pfSuccess != NULL)
         *pfSuccess = halSuccess;
-#if 0
     if (RT_SUCCESS(rc) && halSuccess)
     {
-        AssertEnsure (pMatches->size() == cProps, Right number of strings on success);
-        AssertEnsureForEach (j, size_t, 0, cProps,
-   (pfMatches == NULL)
-|| (pfMatches[j] == true)
-|| ((pfMatches[j] == false) && (pMatches[j].size() == 0)),
-                             On success invalid strings are empty);
+        Assert (pMatches->size() == cProps);
+        AssertForEach (j, size_t, 0, cProps,    (pfMatches == NULL)
+                                             || (pfMatches[j] == true)
+                                             || ((pfMatches[j] == false) && (pMatches[j].size() == 0)));
     }
-#endif
     LogFlowFunc (("rc=%Rrc, halSuccess=%d\n", rc, halSuccess));
     return rc;
 }
