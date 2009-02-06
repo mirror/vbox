@@ -42,7 +42,7 @@ clean:
 tstLinuxC: tstLinuxC.o
 	$(CC) -o $@ $^ -Xlinker -rpath -Xlinker $(PATH_BIN) $(PATH_BIN)/VBoxXPCOMC.so
 
-tstLinuxC.o: tstLinuxC.c cbinding.h
+tstLinuxC.o: tstLinuxC.c
 	$(CC) $(CFLAGS) -DRT_OS_LINUX -DMOZ_UNICODE $(INCS_XPCOM) -o $@ -c $<
 
 run:
