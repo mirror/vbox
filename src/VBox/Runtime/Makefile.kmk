@@ -1226,6 +1226,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 
 RuntimeR0Drv_SOURCES.solaris = \
 	common/err/RTErrConvertFromErrno.cpp \
+	common/err/RTErrConvertToErrno.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	generic/RTAssertShouldPanic-generic.cpp \

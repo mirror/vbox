@@ -40,6 +40,7 @@
 #include <iprt/thread.h>
 #include <iprt/spinlock.h>
 #include <iprt/crc32.h>
+#include <iprt/err.h>
 
 #include <inet/ip.h>
 #include <net/if.h>
@@ -454,7 +455,7 @@ int _init(void)
         LogRel((DEVICE_NAME ":failed to initialize IPRT (rc=%d)\n", rc));
 
     memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
-    return -1;
+    return RTErrConvertToErrno(rc);
 }
 
 
