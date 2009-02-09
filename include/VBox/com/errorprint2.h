@@ -38,6 +38,7 @@ namespace com
 // shared prototypes; these are defined in shared glue code and are
 // compiled only once for all front-ends
 void GluePrintErrorInfo(com::ErrorInfo &info);
+void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, uint32_t ulLine);
 void GluePrintRCMessage(HRESULT rc);
 void GlueHandleComError(ComPtr<IUnknown> iface, const char *pcszContext, HRESULT rc, const char *pcszSourceFile, uint32_t ulLine);
 
