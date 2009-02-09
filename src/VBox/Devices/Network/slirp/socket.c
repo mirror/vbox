@@ -859,7 +859,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     uint32_t dst,src;
     char ip_copy[256];
     struct icmp *icp;
-    int old_ip_len;
+    int old_ip_len = 0;
     int hlen, original_hlen = 0;
     struct mbuf *m;
     struct icmp_msg *icm;
