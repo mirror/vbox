@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2001, Stanford University
  * All rights reserved
  *
@@ -387,6 +388,9 @@ void crStateExtensionsInit( CRLimitsState *limits, CRExtensionState *extensions 
 
 	if (hasExtension((const char*)limits->extensions, "GL_SGIS_generate_mipmap"))
 		extensions->SGIS_generate_mipmap = GL_TRUE;
+
+	if (hasExtension((const char*)limits->extensions, "GLX_EXT_texture_from_pixmap"))
+		extensions->EXT_texture_from_pixmap = GL_TRUE;
 
 	if (extensions->NV_vertex_program2)
 		limits->maxVertexProgramEnvParams = 256;

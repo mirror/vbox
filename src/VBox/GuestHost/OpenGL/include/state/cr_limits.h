@@ -256,6 +256,7 @@ typedef struct {
 	GLboolean NV_vertex_program1_1;
 	GLboolean NV_vertex_program2;
 	GLboolean SGIS_generate_mipmap;
+    GLboolean EXT_texture_from_pixmap;
 
 	/* derived from above */
 	GLboolean any_vertex_program;    /* NV or ARB */
