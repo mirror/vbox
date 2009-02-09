@@ -144,7 +144,6 @@ int handleImportAppliance(HandlerArg *a)
 
                         case VirtualSystemDescriptionType_Memory:
                             Utf8Str(Bstr(aConfigValues[a])).toInt(ulMemMB);
-                            ulMemMB /= 1024 * 1024;
                             RTPrintf("%2d: Guest memory: %u MB\n    (change with \"-vsys %d -memory <MB>\")\n",
                                      a, ulMemMB, i);
                         break;
