@@ -3274,7 +3274,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /* Nothing to do when mappings are fixed. */
-    if (!pVM->pgm.s.fMappingsFixed)
+    if (pVM->pgm.s.fMappingsFixed)
         return VINF_SUCCESS;
 # endif
 
