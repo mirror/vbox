@@ -183,6 +183,8 @@ private:
 
     bool toggleFullscreenMode (bool, bool);
 
+    void checkRequiredFeatures();
+
 private slots:
 
     void finalizeOpenView();

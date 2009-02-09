@@ -45,6 +45,7 @@ protected:
     void getFrom (const CMachine &aMachine);
     void putBackTo();
 
+    void setValidator (QIWidgetValidator *aVal);
     bool revalidate (QString &aWarning, QString &aTitle);
 
     void setOrderAfter (QWidget *aWidget);
@@ -74,6 +75,7 @@ private:
     void showEvent (QShowEvent *aEvent);
 
     CMachine mMachine;
+    QIWidgetValidator *mValidator;
 };
 
 #endif // __VBoxVMSettingsGeneral_h__

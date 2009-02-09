@@ -929,6 +929,18 @@ void VBoxProblemReporter::cannotSendACPIToMachine()
             "does not use the ACPI subsystem."));
 }
 
+bool VBoxProblemReporter::warnAboutVirtNotEnabled()
+{
+    return messageOkCancel (mainWindowShown(), Error,
+        tr ("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
+            "not operational. Your 64 bits guest will fail to detect a 64 "
+            "bits CPU and will not be able to boot.</p><p>Please check if you "
+            "have enabled VT-x/AMD-V properly in the BIOS of your host "
+            "computer.</p>"),
+        0 /* aAutoConfirmId */,
+        tr ("Close VM"), tr ("Continue"));
+}
+
 void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine,
                                                    const QString &aPath)
 {
