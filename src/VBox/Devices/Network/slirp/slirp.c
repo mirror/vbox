@@ -6,7 +6,9 @@
 #include <VBox/err.h>
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
+#ifndef RT_OS_WINDOWS
 #include <poll.h>
+#endif
 
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 
