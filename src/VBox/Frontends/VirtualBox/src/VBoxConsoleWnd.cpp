@@ -2159,7 +2159,10 @@ void VBoxConsoleWnd::checkRequiredFeatures()
     if (is64BitsGuest && !isVirtEnabled)
     {
         vmPause (true);
-        vboxProblem().warnAboutVirtNotEnabled() ? close() : vmPause (false);
+        if (vboxProblem().warnAboutVirtNotEnabled())
+            close();
+        else
+            vmPause (false);
     }
 }
 
