@@ -159,7 +159,8 @@ struct SerialState
 
     bool                            fGCEnabled;
     bool                            fR0Enabled;
-    bool                            afAlignment[5];
+    bool                            fYieldOnLSRRead;
+    bool                            afAlignment[4];
 
     RTSEMEVENT                      ReceiveSem;
     int                             last_break_enable;
@@ -384,6 +385,16 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
         ret = s->mcr;
         break;
     case 5:
+        if ((s->lsr & UART_LSR_DR) == 0 && s->fYieldOnLSRRead)
+        {
+            /* No data available and yielding is enabled, so yield in ring3. */
+#ifndef IN_RING3
+            *pRC = VINF_IOM_HC_IOPORT_READ;
+            break;
+#else
+            RTThreadYield ();
+#endif
+        }
         ret = s->lsr;
         break;
     case 6:
@@ -775,7 +786,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0" "IOBase\0" "GCEnabled\0" "R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0" "IOBase\0" "GCEnabled\0" "R0Enabled\0" "YieldOnLSRRead\0"))
     {
         AssertMsgFailed(("serialConstruct Invalid configuration values\n"));
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
@@ -790,6 +801,11 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"R0Enabled\" value"));
+
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "YieldOnLSRRead", &pThis->fYieldOnLSRRead, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"YieldOnLSRRead\" value"));
 
     rc = CFGMR3QueryU8(pCfgHandle, "IRQ", &irq_lvl);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
