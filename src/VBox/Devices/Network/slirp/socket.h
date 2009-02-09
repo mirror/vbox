@@ -70,6 +70,9 @@ struct socket
     RTCRITSECT      so_mutex;
     int             so_deleted;
 #endif
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+    int so_poll_index;
+#endif
 };
 
 #ifdef VBOX_WITH_SLIRP_MT

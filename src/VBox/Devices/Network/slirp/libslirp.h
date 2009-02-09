@@ -15,6 +15,7 @@ int inet_aton(const char *cp, struct in_addr *ia);
 #  include <sys/time.h>
 # endif
 # include <sys/select.h>
+# include <poll.h>
 # include <arpa/inet.h>
 #endif
 
@@ -32,14 +33,22 @@ void slirp_term(PNATState);
 void slirp_link_up(PNATState);
 void slirp_link_down(PNATState);
 
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
+# if defined(RT_OS_WINDOWS)
+void slirp_select_fill(PNATState pData, int *pndfs);
+
+void slirp_select_poll(PNATState pData, int fTimeout, int fIcmp);
+# else /* RT_OS_WINDOWS */
+void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls);
+void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs);
+# endif /* !RT_OS_WINDOWS */
+#else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 void slirp_select_fill(PNATState pData, int *pnfds,
                        fd_set *readfds, fd_set *writefds, fd_set *xfds);
 
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
-void slirp_select_poll(PNATState pData, int fTimeout, int fIcmp);
-#else
-void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_set *xfds);
-#endif
+void slirp_select_poll(PNATState pData, int *pnfds,
+                       fd_set *readfds, fd_set *writefds, fd_set *xfds);
+#endif /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
 void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len);
 void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr);

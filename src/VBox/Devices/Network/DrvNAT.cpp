@@ -42,6 +42,7 @@
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 # ifndef RT_OS_WINDOWS
 #  include <unistd.h>
+#  include <poll.h>
 # endif
 # include <errno.h>
 # include <iprt/semaphore.h>
@@ -147,7 +148,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
     Log2(("drvNATSend: pvBuf=%p cb=%#x\n%.*Rhxd\n", pvBuf, cb, cb, pvBuf));
 
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC 
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 
     PRTREQ pReq = NULL;
     int rc;
@@ -163,7 +164,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     AssertReleaseRC(rc);
 
     /* @todo: Here we should get mbuf instead temporal buffer */
-    buf = RTMemAlloc(cb); 
+    buf = RTMemAlloc(cb);
     if (buf == NULL)
     {
         LogRel(("Can't allocate buffer for sending buffer\n"));
@@ -347,6 +348,8 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     DWORD   event;
     HANDLE  *phEvents;
     unsigned int cBreak = 0;
+# else
+    struct pollfd *polls;
 # endif
 
     LogFlow(("drvNATAsyncIoThread: pThis=%p\n", pThis));
@@ -363,25 +366,30 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
      */
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        FD_ZERO(&ReadFDs);
-        FD_ZERO(&WriteFDs);
-        FD_ZERO(&XcptFDs);
         nFDs = -1;
 
         /*
          * To prevent concurent execution of sending/receving threads
          */
-        slirp_select_fill(pThis->pNATState, &nFDs, &ReadFDs, &WriteFDs, &XcptFDs);
-        ms = slirp_get_timeout_ms(pThis->pNATState);
 # ifndef RT_OS_WINDOWS
-        struct timeval tv = { 0, ms*1000 };
-        FD_SET(pThis->PipeRead, &ReadFDs);
-        nFDs = ((int)pThis->PipeRead < nFDs ? nFDs : pThis->PipeRead);
-        int cChangedFDs = select(nFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, ms ? &tv : NULL);
+        nFDs = slirp_get_nsock(pThis->pNATState);
+        polls = (struct pollfd *)RTMemAllocZ((2 + nFDs) * sizeof(struct pollfd)); /* allocation for all sockets + ICMP and Management pipe*/
+        if (polls == NULL)
+        {
+            LogRel(("Can't allocate memory for polling\n"));
+            AssertRelease(polls);
+        }
+
+        slirp_select_fill(pThis->pNATState, &nFDs, &polls[1]); /*don't bother Slirp with knowelege about managemant pipe*/
+        ms = slirp_get_timeout_ms(pThis->pNATState);
+
+        polls[0].fd = pThis->PipeRead;
+        polls[0].events = POLLRDNORM|POLLPRI|POLLRDBAND; /* POLLRDBAND usually doesn't used on Linux but seems used on Solaris */
+        int cChangedFDs = poll(polls, nFDs + 2, ms ? ms : -1);
         if (cChangedFDs >= 0)
         {
-            slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
-            if (FD_ISSET(pThis->PipeRead, &ReadFDs))
+            slirp_select_poll(pThis->pNATState, &polls[1], nFDs);
+            if (polls[0].revents & (POLLRDNORM|POLLPRI|POLLRDBAND))
             {
                 /* drain the pipe */
                 char ch[1];
@@ -391,7 +399,11 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             /* process _all_ outstanding requests but don't wait */
             RTReqProcess(pThis->pReqQueue, 0);
         }
+        RTMemFree(polls);
 # else /* RT_OS_WINDOWS */
+        slirp_select_fill(pThis->pNATState, &nFDs);
+        ms = slirp_get_timeout_ms(pThis->pNATState);
+        struct timeval tv = { 0, ms*1000 };
         event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, ms ? ms : WSA_INFINITE, FALSE);
         if (   (event < WSA_WAIT_EVENT_0 || event > WSA_WAIT_EVENT_0 + nFDs - 1)
             && event != WSA_WAIT_TIMEOUT)
@@ -451,7 +463,7 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 }
 
 #ifdef VBOX_WITH_SLIRP_MT
-static DECLCALLBACK(int) drvNATAsyncIoGuest(PPDMDRVINS pDrvIns, PPDMTHREAD pThread) 
+static DECLCALLBACK(int) drvNATAsyncIoGuest(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
