@@ -1334,7 +1334,7 @@ int main(int argc, char *argv[])
             for (unsigned i = 0; i < retVSD.size(); ++i)
             {
                 com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
-                com::SafeArray<ULONG> retRefValues;
+                com::SafeArray<BSTR> retRefValues;
                 com::SafeArray<BSTR> retOrigValues;
                 com::SafeArray<BSTR> retAutoValues;
                 com::SafeArray<BSTR> retConfiguration;
@@ -1354,6 +1354,17 @@ int main(int argc, char *argv[])
                             Bstr (retAutoValues [a]).raw(),
                             Bstr (retConfiguration [a]).raw());
                 }
+                /* Show warnings from interpret */
+                com::SafeArray<BSTR> retWarnings;
+                CHECK_ERROR_BREAK (retVSD [i],
+                                   GetWarnings(ComSafeArrayAsOutParam (retWarnings)));
+                if (retWarnings.size() > 0)
+                {
+                    RTPrintf ("The following warnings occurs on interpret:\n");
+                    for (unsigned r = 0; r < retWarnings.size(); ++r)
+                        RTPrintf ("%ls\n", Bstr (retWarnings [r]).raw());
+                    RTPrintf ("\n");
+                }
             }
             RTPrintf ("\n");
         }
@@ -1364,7 +1375,7 @@ int main(int argc, char *argv[])
         CHECK_ERROR (progress, WaitForCompletion (-1));
         if (SUCCEEDED (rc))
         {
-            /* Check if the import was sucessfully */
+            /* Check if the import was successfully */
             progress->COMGETTER (ResultCode)(&rc);
             if (FAILED (rc))
             {

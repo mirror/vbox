@@ -1198,8 +1198,6 @@ void convertCIMOSType2VBoxOSType(Utf8Str &osTypeVBox, CIMOSType_T c)
 STDMETHODIMP Appliance::Interpret()
 {
     // @todo:
-    //  - Locking
-    //  - COM error handling
     //  - don't use COM methods but the methods directly (faster, but needs appropriate locking of that objects itself (s. HardDisk2))
     //  - Appropriate handle errors like not supported file formats
     AutoCaller autoCaller(this);
@@ -1221,6 +1219,7 @@ STDMETHODIMP Appliance::Interpret()
     rc = systemProps->COMGETTER(DefaultHardDiskFolder)(bstrDefaultHardDiskLocation.asOutParam());
     CheckComRCReturnRC(rc);
 
+    /* Try/catch so we can clean up on error */
     try
     {
         list<VirtualSystem>::const_iterator it;
@@ -1261,11 +1260,17 @@ STDMETHODIMP Appliance::Interpret()
             /* Now that we know the OS type, get our internal defaults based on that. */
             ComPtr<IGuestOSType> pGuestOSType;
             rc = mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox), pGuestOSType.asOutParam());
-            ComAssertComRCThrowRC(rc);
+            CheckComRCThrowRC(rc);
 
             /* CPU count */
-            /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxCPUCount) */
             ULONG cpuCountVBox = vsysThis.cCPUs;
+            /* Check for the constrains */
+            if (cpuCountVBox > 1) //SchemaDefs::MaxCPUCount)
+            {
+                pNewDesc->addWarning(tr("The virtual system claims support for %u CPU's, but VirtualBox has support for max %u CPU's only."),
+                                        cpuCountVBox, 1); //SchemaDefs::MaxCPUCount);
+                cpuCountVBox = 1; //SchemaDefs::MaxCPUCount;
+            }
             if (vsysThis.cCPUs == 0)
                 cpuCountVBox = 1;
             pNewDesc->addEntry(VirtualSystemDescriptionType_CPU,
@@ -1274,16 +1279,24 @@ STDMETHODIMP Appliance::Interpret()
                                toString<ULONG>(cpuCountVBox));
 
             /* RAM */
-            /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
-            uint64_t ullMemSizeVBox = vsysThis.ullMemorySize;
+            uint64_t ullMemSizeVBox = vsysThis.ullMemorySize / _1M;
+            /* Check for the constrains */
+            if (ullMemSizeVBox != 0 && 
+                (ullMemSizeVBox < static_cast<uint64_t>(SchemaDefs::MinGuestRAM) ||
+                 ullMemSizeVBox > static_cast<uint64_t>(SchemaDefs::MaxGuestRAM)))
+            {
+                pNewDesc->addWarning(tr("The virtual system claims support for %llu MB RAM size, but VirtualBox has support for min %u & max %u MB RAM size only."),
+                                        ullMemSizeVBox, SchemaDefs::MinGuestRAM, SchemaDefs::MaxGuestRAM);
+                ullMemSizeVBox = RT_MIN(RT_MAX(ullMemSizeVBox, static_cast<uint64_t>(SchemaDefs::MinGuestRAM)), static_cast<uint64_t>(SchemaDefs::MaxGuestRAM));
+            }
             if (vsysThis.ullMemorySize == 0)
             {
                 /* If the RAM of the OVF is zero, use our predefined values */
                 ULONG memSizeVBox2;
                 rc = pGuestOSType->COMGETTER(RecommendedRAM)(&memSizeVBox2);
-                ComAssertComRCThrowRC(rc);
+                CheckComRCThrowRC(rc);
                 /* VBox stores that in MByte */
-                ullMemSizeVBox = (uint64_t)memSizeVBox2 * _1M;
+                ullMemSizeVBox = (uint64_t)memSizeVBox2;
             }
             pNewDesc->addEntry(VirtualSystemDescriptionType_Memory,
                                "",
@@ -1297,7 +1310,7 @@ STDMETHODIMP Appliance::Interpret()
                 pNewDesc->addEntry(VirtualSystemDescriptionType_SoundCard,
                                    "",
                                    vsysThis.strSoundCardType,
-                                   "");
+                                   toString<ULONG>(AudioControllerType_AC97));
 
             /* USB Controller */
             if (vsysThis.fHasUsbController)
@@ -1308,13 +1321,20 @@ STDMETHODIMP Appliance::Interpret()
             // hardware will then be determined by the VirtualSystemType element (e.g. "vmx-07")
             if (vsysThis.llNetworkNames.size() > 0)
             {
+                /* Check for the constrains */
+                if (vsysThis.llNetworkNames.size() > SchemaDefs::NetworkAdapterCount)
+                {
+                    pNewDesc->addWarning(tr("The virtual system claims support for %u network adapters, but VirtualBox has support for max %u network adapter only."),
+                                         vsysThis.llNetworkNames.size(), SchemaDefs::NetworkAdapterCount);
+
+                }
                 /* Get the default network adapter type for the selected guest OS */
                 NetworkAdapterType_T nwAdapterVBox = NetworkAdapterType_Am79C970A;
                 rc = pGuestOSType->COMGETTER(AdapterType)(&nwAdapterVBox);
-                ComAssertComRCThrowRC(rc);
+                CheckComRCThrowRC(rc);
                 list<Utf8Str>::const_iterator nwIt;
                 /* Iterate through all abstract networks. We support 8 network
-                 * adapters at the maximum. (@todo: warn if it are more!) */
+                 * adapters at the maximum, so the first 8 will be added only. */
                 size_t a = 0;
                 for (nwIt = vsysThis.llNetworkNames.begin();
                      nwIt != vsysThis.llNetworkNames.end() && a < SchemaDefs::NetworkAdapterCount;
@@ -1330,10 +1350,15 @@ STDMETHODIMP Appliance::Interpret()
                 pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy, "", "", "");
 
             /* CD Drive */
+            /* @todo: I can't disable the CDROM. So nothing to do for now */
+            /*
             if (vsysThis.fHasCdromDrive)
-                pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");
+                pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");*/
 
             /* Hard disk Controller */
+            uint16_t cIDEused = 0;
+            uint16_t cSATAused = 0;
+            uint16_t cSCSIused = 0;
             ControllersMap::const_iterator hdcIt;
             /* Iterate through all hard disk controllers */
             for (hdcIt = vsysThis.mapControllers.begin();
@@ -1347,46 +1372,90 @@ STDMETHODIMP Appliance::Interpret()
                 {
                     case HardDiskController::IDE:
                         {
-                            // @todo: figure out the IDE types
-                            /* Use PIIX4 as default */
-//                             IDEControllerType_T hdcController = IDEControllerType_PIIX4;
-                            Utf8Str strType = "PIIX4";
-                            if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX3"))
-                                strType = "PIIX3";
-//                             else // if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX4"))
-//                                 hdcController = IDEControllerType_PIIX4;
-                            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
-                                               strControllerID,
-                                               hdc.strControllerType,
-                                               strType);
+                            /* Check for the constrains */
+                            /* @todo: I'm very confused! Are these bits *one* controller or
+                               is every port/bus declared as an extra controller. */
+                            if (cIDEused < 4)
+                            {
+                                // @todo: figure out the IDE types
+                                /* Use PIIX4 as default */
+                                //                             IDEControllerType_T hdcController = IDEControllerType_PIIX4;
+                                Utf8Str strType = "PIIX4";
+                                if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX3"))
+                                    strType = "PIIX3";
+                                //                             else // if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX4"))
+                                //                                 hdcController = IDEControllerType_PIIX4;
+                                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
+                                                   strControllerID,
+                                                   hdc.strControllerType,
+                                                   strType);
+                            }
+                            else
+                            {
+                                /* Warn only once */
+                                if (cIDEused == 1)
+                                    pNewDesc->addWarning(tr("The virtual system claims support for more than one IDE controller, but VirtualBox has support for only one."));
+                                                     
+                            }
+                            ++cIDEused;
                             break;
                         }
 
+#ifdef VBOX_WITH_AHCI
                     case HardDiskController::SATA:
                         {
-                            // @todo: figure out the SATA types
-                            /* We only support a plain AHCI controller, so use them always */
-                            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
-                                               strControllerID,
-                                               hdc.strControllerType,
-                                               "AHCI");
+                            /* Check for the constrains */
+                            if (cSATAused < 1)
+                            {
+                                // @todo: figure out the SATA types
+                                /* We only support a plain AHCI controller, so use them always */
+                                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
+                                                   strControllerID,
+                                                   hdc.strControllerType,
+                                                   "AHCI");
+                            }
+                            else
+                            {
+                                /* Warn only once */
+                                if (cSATAused == 1)
+                                    pNewDesc->addWarning(tr("The virtual system claims support for more than one SATA controller, but VirtualBox has support for only one."));
+                                                     
+                            }
+                            ++cSATAused;
                             break;
                         }
+#endif /* VBOX_WITH_AHCI */
 
                     case HardDiskController::SCSI:
                         {
-                            // @todo: figure out the SCSI types
-                            Utf8Str hdcController = "LsiLogic";
-                            /* if (!RTStrICmp(hdc.strControllerType.c_str(), "LsiLogic"))
-                                hdcController = "LsiLogic";
-                            else*/
-                            if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
-                                hdcController = "BusLogic";
-                            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
-                                               strControllerID,
-                                               hdc.strControllerType,
-                                               hdcController);
+                            /* Check for the constrains */
+                            if (cSCSIused < 1)
+                            {
+                                // @todo: figure out the SCSI types
+                                Utf8Str hdcController = "LsiLogic";
+                                /* if (!RTStrICmp(hdc.strControllerType.c_str(), "LsiLogic"))
+                                   hdcController = "LsiLogic";
+                                   else*/
+                                if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
+                                    hdcController = "BusLogic";
+                                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
+                                                   strControllerID,
+                                                   hdc.strControllerType,
+                                                   hdcController);
+                            }
+                            else
+                            {
+                                /* Warn only once */
+                                if (cSCSIused == 1)
+                                    pNewDesc->addWarning(tr("The virtual system claims support for more than one SCSI controller, but VirtualBox has support for only one."));
+                                                     
+                            }
+                            ++cSCSIused;
                             break;
+                        }
+                    default:
+                        {
+                            /* @todo: should we stop? */
                         }
                 }
             }
@@ -1438,6 +1507,12 @@ STDMETHODIMP Appliance::Interpret()
                                            strPath,
                                            strExtraConfig);
                     }
+                    else
+                    {
+                        /* @todo: should we stop here? */
+                        pNewDesc->addWarning(tr("The virtual system claims support for the following virtual disk image format which VirtualBox not support: %s"),
+                                             di.strFormat.c_str());
+                    }
                 }
             }
 
@@ -1447,7 +1522,7 @@ STDMETHODIMP Appliance::Interpret()
     catch (HRESULT aRC)
     {
         /* On error we clear the list & return */
-        //m->virtualSystemDescriptions.clear();
+        m->virtualSystemDescriptions.clear();
         rc = aRC;
     }
 
@@ -1584,7 +1659,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
         {
             /* Guest OS type */
             std::list<VirtualSystemDescriptionEntry*> vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
-            Assert(vsdeOS.size() == 1);
+            ComAssertMsgThrow(vsdeOS.size() == 1, ("Guest OS Type missing"), E_FAIL);
             const Utf8Str &strOsTypeVBox = vsdeOS.front()->strConfig;
 
             /* Now that we know the base system get our internal defaults based on that. */
@@ -1595,7 +1670,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             /* Create the machine */
             /* First get the name */
             std::list<VirtualSystemDescriptionEntry*> vsdeName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
-            Assert(vsdeName.size() == 1);
+            ComAssertMsgThrow(vsdeName.size() == 1, ("Guest OS name missing"), E_FAIL);
             const Utf8Str &strNameVBox = vsdeName.front()->strConfig;
             ComPtr<IMachine> pNewMachine;
             rc = app->mVirtualBox->CreateMachine(Bstr(strNameVBox), Bstr(strOsTypeVBox),
@@ -1610,16 +1685,15 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             /* RAM */
             /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
             std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->findByType(VirtualSystemDescriptionType_Memory);
-            Assert(vsdeRAM.size() == 1);
+            ComAssertMsgThrow(vsdeRAM.size() == 1, ("RAM size missing"), E_FAIL);
             const Utf8Str &memoryVBox = vsdeRAM.front()->strConfig;
-            ULONG tt = (ULONG)RTStrToUInt64(memoryVBox.c_str()) / _1M;
+            ULONG tt = (ULONG)RTStrToUInt64(memoryVBox.c_str());
 
             rc = pNewMachine->COMSETTER(MemorySize)(tt);
             CheckComRCThrowRC(rc);
 
             /* VRAM */
             /* Get the recommended VRAM for this guest OS type */
-            /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestVRAM) */
             ULONG vramVBox;
             rc = osType->COMGETTER(RecommendedVRAM)(&vramVBox);
             CheckComRCThrowRC(rc);
@@ -1773,7 +1847,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 }
                 else
                 {
-                    /* @todo: set an error if this is other than AHCI */
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Invalid SATA controller type \"%s\""),
+                                   hdcVBox.c_str());
                 }
             }
 #endif /* VBOX_WITH_AHCI */
@@ -1965,6 +2041,7 @@ struct shutup3 {};
 struct VirtualSystemDescription::Data
 {
     list<VirtualSystemDescriptionEntry> descriptions;
+    list<Utf8Str> warnings;
 };
 
 HRESULT VirtualSystemDescription::init()
@@ -2096,6 +2173,33 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(IN_BSTR, aF
     return S_OK;
 }
 
+STDMETHODIMP VirtualSystemDescription::GetWarnings(ComSafeArrayOut(BSTR, aWarnings))
+{
+    if (ComSafeArrayOutIsNull(aWarnings))
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    com::SafeArray<BSTR> sfaWarnings(m->warnings.size());
+
+    list<Utf8Str>::const_iterator it;
+    size_t i = 0;
+    for (it = m->warnings.begin();
+         it != m->warnings.end();
+         ++it, ++i)
+    {
+        Bstr bstr = *it;
+        bstr.cloneTo(&sfaWarnings[i]);
+    }
+
+    sfaWarnings.detachTo(ComSafeArrayOutArg(aWarnings));
+
+    return S_OK;
+}
+
 void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
                                         const Utf8Str &strRef,
                                         const Utf8Str &aOrigValue,
@@ -2111,6 +2215,15 @@ void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
     vsde.strExtraConfig = strExtraConfig;
 
     m->descriptions.push_back(vsde);
+}
+
+void VirtualSystemDescription::addWarning(const char* aWarning, ...)
+{
+    va_list args;
+    va_start(args, aWarning);
+    Utf8StrFmtVA str(aWarning, args);
+    va_end(args);
+    m->warnings.push_back(str);
 }
 
 std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::findByType(VirtualSystemDescriptionType_T aType)
