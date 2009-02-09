@@ -2074,6 +2074,21 @@ void VirtualSystemDescription::uninit()
     m = NULL;
 }
 
+STDMETHODIMP VirtualSystemDescription::COMGETTER(Count)(ULONG *aCount)
+{
+    if (!aCount)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    *aCount = (ULONG)m->descriptions.size();
+
+    return S_OK;
+}
+
 STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
                                                       ComSafeArrayOut(BSTR, aRefs),
                                                       ComSafeArrayOut(BSTR, aOrigValues),

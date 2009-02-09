@@ -3016,7 +3016,7 @@
 
   <interface
      name="IVirtualSystemDescription" extends="$unknown"
-     uuid="983435af-433c-493a-a068-87ae6295cfc2"
+     uuid="8606c2ae-c06f-487f-9573-1465b44f9524"
      wsmap="managed"
      >
 
@@ -3026,6 +3026,10 @@
     virtual machines. See <link to="IAppliance" /> for the steps required to import an OVF
     into VirtualBox.
     </desc>
+
+    <attribute name="count" type="unsigned long" readonly="yes">
+      <desc>Return the number of virtual system description entries.</desc>
+    </attribute>
 
     <method name="getDescription">
       <desc>Returns information about the virtual system as arrays of instruction items. In each array, the
