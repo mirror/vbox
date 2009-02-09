@@ -159,7 +159,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     /*
      *  handle TFTP
      */
-    if (   ntohs(uh->uh_dport) == TFTP_SERVER 
+    if (   ntohs(uh->uh_dport) == TFTP_SERVER
         && CTL_CHECK(ntohl(ip->ip_dst.s_addr), CTL_TFTP))
     {
         tftp_input(pData, m);
@@ -390,6 +390,7 @@ udp_attach(PNATState pData, struct socket *so)
             SOCKET_LOCK_CREATE(so);
             QSOCKET_LOCK(udb);
             insque(pData, so,&udb);
+            NSOCK_INC();
             QSOCKET_UNLOCK(udb);
         }
     }
@@ -705,6 +706,7 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
     SOCKET_LOCK_CREATE(so);
     QSOCKET_LOCK(udb);
     insque(pData, so,&udb);
+    NSOCK_INC();
     QSOCKET_UNLOCK(udb);
 
     addr.sin_family = AF_INET;

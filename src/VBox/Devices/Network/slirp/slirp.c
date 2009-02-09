@@ -621,7 +621,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             /*
              * See if we need a tcp_fasttimo
              */
-            if (    time_fasttimo == 0 
+            if (    time_fasttimo == 0
                     && so->so_tcpcb != NULL
                     && so->so_tcpcb->t_flags & TF_DELACK)
                 time_fasttimo = curtime; /* Flag when we want a fasttimo */
@@ -800,25 +800,26 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
         /* { */
 
 #ifdef VBOX_WITH_SLIRP_MT
-            if (   so->so_state & SS_NOFDREF 
-                && so->so_deleted == 1) 
-            {   
+            if (   so->so_state & SS_NOFDREF
+                && so->so_deleted == 1)
+            {
                 struct socket *son, *sop = NULL;
                 QSOCKET_LOCK(tcb);
-                if (so->so_next != NULL) 
+                if (so->so_next != NULL)
                 {
                     if (so->so_next != &tcb)
                         SOCKET_LOCK(so->so_next);
                     son = so->so_next;
                 }
                 if (    so->so_prev != &tcb
-                    && so->so_prev != NULL) 
+                    && so->so_prev != NULL)
                 {
                     SOCKET_LOCK(so->so_prev);
                     sop = so->so_prev;
                 }
                 QSOCKET_UNLOCK(tcb);
                 remque(pData, so);
+                NSOCK_DEC();
                 SOCKET_UNLOCK(so);
                 SOCKET_LOCK_DESTROY(so);
                 RTMemFree(so);
@@ -1006,25 +1007,26 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
          QSOCKET_FOREACH(so, so_next, udp)
          /* { */
 #ifdef VBOX_WITH_SLIRP_MT
-            if (   so->so_state & SS_NOFDREF 
-                && so->so_deleted == 1) 
-            {   
+            if (   so->so_state & SS_NOFDREF
+                && so->so_deleted == 1)
+            {
                 struct socket *son, *sop = NULL;
                 QSOCKET_LOCK(udb);
-                if (so->so_next != NULL) 
+                if (so->so_next != NULL)
                 {
                     if (so->so_next != &udb)
                         SOCKET_LOCK(so->so_next);
                     son = so->so_next;
                 }
                 if (    so->so_prev != &udb
-                    && so->so_prev != NULL) 
+                    && so->so_prev != NULL)
                 {
                     SOCKET_LOCK(so->so_prev);
                     sop = so->so_prev;
                 }
                 QSOCKET_UNLOCK(udb);
                 remque(pData, so);
+                NSOCK_DEC();
                 SOCKET_UNLOCK(so);
                 SOCKET_LOCK_DESTROY(so);
                 RTMemFree(so);

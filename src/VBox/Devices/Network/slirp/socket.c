@@ -89,6 +89,7 @@ sofree(PNATState pData, struct socket *so)
 #ifndef VBOX_WITH_SLIRP_MT
     if(so->so_next && so->so_prev)
         remque(pData, so);  /* crashes if so is not in a queue */
+        NSOCK_DEC();
     so->so_state = SS_NOFDREF; /* for debugging purposes */
 
     RTMemFree(so);
@@ -377,7 +378,7 @@ sowrite(PNATState pData, struct socket *so)
         sosendoob(so);
         if (sb->sb_cc == 0)
         {
-            SOCKET_UNLOCK(so);    
+            SOCKET_UNLOCK(so);
             return 0;
         }
     }
@@ -427,7 +428,7 @@ sowrite(PNATState pData, struct socket *so)
     /* This should never happen, but people tell me it does *shrug* */
     if (nn < 0 && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK))
     {
-        SOCKET_UNLOCK(so);    
+        SOCKET_UNLOCK(so);
         return 0;
     }
 
@@ -437,7 +438,7 @@ sowrite(PNATState pData, struct socket *so)
                    so->so_state, errno));
         sofcantsendmore(so);
         tcp_sockclosed(pData, sototcpcb(so));
-        SOCKET_UNLOCK(so);    
+        SOCKET_UNLOCK(so);
         return -1;
     }
 
@@ -465,7 +466,7 @@ sowrite(PNATState pData, struct socket *so)
     if ((so->so_state & SS_FWDRAIN) && sb->sb_cc == 0)
         sofcantsendmore(so);
 
-    SOCKET_UNLOCK(so);    
+    SOCKET_UNLOCK(so);
     return nn;
 }
 
@@ -502,7 +503,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         SOCKET_LOCK(so);
         QSOCKET_UNLOCK(udb);
 
-        if (!(m = m_get(pData))) 
+        if (!(m = m_get(pData)))
         {
             SOCKET_UNLOCK(so);
             return;
@@ -697,6 +698,7 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
     SOCKET_LOCK(so);
     QSOCKET_LOCK(tcb);
     insque(pData, so,&tcb);
+    NSOCK_INC();
     QSOCKET_UNLOCK(tcb);
 
     /*

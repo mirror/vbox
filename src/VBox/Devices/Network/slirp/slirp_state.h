@@ -56,7 +56,7 @@ struct tftp_session
 struct dns_entry
 {
         struct in_addr de_addr;
-        LIST_ENTRY(dns_entry) de_list; 
+        LIST_ENTRY(dns_entry) de_list;
 };
 LIST_HEAD(dns_list_head, dns_entry);
 #endif
@@ -142,6 +142,20 @@ typedef struct NATState
     struct socket *udp_last_so;
     struct socket icmp_socket;
     struct icmp_storage icmp_msg_head;
+# ifndef RT_OS_WINDOWS
+    /* counter of sockets needed for allocation enough room to
+     * process sockets with poll/epoll
+     *
+     * NSOCK_INC/DEC should be injected before every
+     * operation on socket queue (tcb, udb)
+     */
+    int nsock;
+#  define NSOCK_INC() do {pData->nsock++;} while (0)
+#  define NSOCK_DEC() do {pData->nsock--;} while (0)
+# else
+#  define NSOCK_INC() do {} while (0)
+#  define NSOCK_DEC() do {} while (0)
+# endif
 # ifdef RT_OS_WINDOWS
     void *pvIcmpBuffer;
     size_t szIcmpBuffer;
@@ -344,7 +358,7 @@ do {                                                    \
     continue;                                                           \
     loop_end_ ## label ## _mt_nounlock:                                 \
     (so) = (sonext)
-    
+
 #define DO_TCP_OUTPUT(data, sotcb)                                      \
 do {                                                                    \
     PRTREQ pReq = NULL;                                                 \
@@ -526,8 +540,8 @@ do {                                                                    \
         LOOP_LABEL(so, sonxt, label);                                   \
         }                                                               \
     }                                                                   \
-}while (0) 
-    
+}while (0)
+
 #else
 #define QSOCKET_LOCK(queue) do {} while (0)
 #define QSOCKET_UNLOCK(queue) do {} while (0)
