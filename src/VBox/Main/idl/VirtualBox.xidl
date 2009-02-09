@@ -3121,33 +3121,37 @@
 
     </method>
 
-    <method name="disableItem">
+    <method name="setFinalValues">
       <desc>
-        Disables part of the configuration, as represented by the array items returned by
-        <link to="getDescription" />. For example, to disable USB support for a given
-        virtual system, pass in the array item index of the USB controller; its type will
-        then be changed by this method from "USBController" to "Ignore".
+        This method allows the appliance's user to change the configuration for the virtual
+        system descriptions. For each array item returned from <link to="getDescription" />,
+        you must pass in one boolean value and one configuration value.
 
-        This works only for items of the types HardDiskControllerIDE, HardDiskControllerSATA,
+        Each item in the boolean array determines whether the particular configuration item
+        should be enabled.
+        You can only disable items of the types HardDiskControllerIDE, HardDiskControllerSATA,
         HardDiskControllerSCSI, HardDiskImage, CDROM, Floppy, NetworkAdapter, USBController
         and SoundCard.
+
+        For the configuration values, if you pass in the same array as returned
+        in the aConfigValues array from getDescription(), the configuration remains unchanged.
+        Please see the documentation for getDescription() for valid configuration values
+        for the individual array item types. If the corresponding item in the aEnabled array
+        is false, the configuration value is gnored.
       </desc>
 
-      <param name="index" type="unsigned long" dir="in">
+      <param name="aEnabled" type="boolean" dir="in" safearray="yes">
+        <desc></desc>
       </param>
-    </method>
 
-    <method name="SetFinalValues">
-      <desc></desc>
-
-      <param name="aFinaleValues" type="wstring" dir="in" safearray="yes">
+      <param name="aFinalValues" type="wstring" dir="in" safearray="yes">
         <desc></desc>
       </param>
 
     </method>
 
     <method name="getWarnings">
-      <desc>Returns textual warnings which occurs on the virtual system 
+      <desc>Returns textual warnings which occurs on the virtual system
       interpretion.</desc>
 
       <param name="aWarnings" type="wstring" dir="return" safearray="yes">
