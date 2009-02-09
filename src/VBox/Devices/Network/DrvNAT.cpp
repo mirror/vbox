@@ -147,7 +147,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
     Log2(("drvNATSend: pvBuf=%p cb=%#x\n%.*Rhxd\n", pvBuf, cb, cb, pvBuf));
 
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC 
 
     PRTREQ pReq = NULL;
     int rc;
@@ -163,7 +163,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     AssertReleaseRC(rc);
 
     /* @todo: Here we should get mbuf instead temporal buffer */
-    buf = RTMemAlloc(cb);
+    buf = RTMemAlloc(cb); 
     if (buf == NULL)
     {
         LogRel(("Can't allocate buffer for sending buffer\n"));
@@ -338,16 +338,15 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    fd_set  ReadFDs;
+    fd_set  WriteFDs;
+    fd_set  XcptFDs;
     int     nFDs = -1;
     unsigned int ms;
 # ifdef RT_OS_WINDOWS
     DWORD   event;
     HANDLE  *phEvents;
     unsigned int cBreak = 0;
-# else
-    fd_set  ReadFDs;
-    fd_set  WriteFDs;
-    fd_set  XcptFDs;
 # endif
 
     LogFlow(("drvNATAsyncIoThread: pThis=%p\n", pThis));
@@ -452,7 +451,7 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 }
 
 #ifdef VBOX_WITH_SLIRP_MT
-static DECLCALLBACK(int) drvNATAsyncIoGuest(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvNATAsyncIoGuest(PPDMDRVINS pDrvIns, PPDMTHREAD pThread) 
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
