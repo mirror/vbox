@@ -351,7 +351,7 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
      * here. It implies that this method may only be called after constructing
-     * a new BIOSSettings object while all its data fields are in the default
+     * a new AudioAdapter object while all its data fields are in the default
      * values. Exceptions are fields whose creation time defaults don't match
      * values that should be applied when these fields are not explicitly set
      * in the settings file (for backwards compatibility reasons). This takes
@@ -365,18 +365,17 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
     /* is the adapter enabled? (required) */
     mData->mEnabled = audioAdapterNode.value <bool> ("enabled");
 
-    /* now check the audio adapter (not required, default is AC97) */
+    /* now check the audio adapter */
     const char *controller = audioAdapterNode.stringValue ("controller");
     if (strcmp (controller, "SB16") == 0)
         mData->mAudioController = AudioControllerType_SB16;
-    else
+    else if (strcmp (controller, "AC97") == 0)
         mData->mAudioController = AudioControllerType_AC97;
 
     /* now check the audio driver (required) */
     const char *driver = audioAdapterNode.stringValue ("driver");
-    mData->mAudioDriver = AudioDriverType_Null;
     if      (strcmp (driver, "Null") == 0)
-        ; /* Null has been set above */
+        mData->mAudioDriver = AudioDriverType_Null;
 #ifdef RT_OS_WINDOWS
     else if (strcmp (driver, "WinMM") == 0)
 #ifdef VBOX_WITH_WINMM
