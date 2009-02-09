@@ -4260,6 +4260,9 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
     const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pPGM);
 
+    if (!pPdpt->a[iPdpt].n.u1Present)
+        return NULL;
+
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(PGM2VM(pPGM), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, NULL);
