@@ -32,6 +32,7 @@
 #define CR_STUB_H
 
 #include "chromium.h"
+#include "cr_version.h"
 #include "cr_hash.h"
 #include "cr_process.h"
 #include "cr_spu.h"

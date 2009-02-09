@@ -60,6 +60,14 @@ print """
 	{ NULL, NULL }
 };
 
+DECLEXPORT(void) glXBindTexImageEXT(Display *dpy, GLXDrawable draw, int buffer, const int *attrib_list);
+DECLEXPORT(void) glXReleaseTexImageEXT(Display *dpy, GLXDrawable draw, int buffer);
+DECLEXPORT(void) glXQueryDrawable(Display *dpy, GLXDrawable draw, int attribute, unsigned int *value);
+DECLEXPORT(GLXFBConfig *) glXGetFBConfigs(Display *dpy, int screen, int *nelements);
+DECLEXPORT(int) glXGetFBConfigAttrib(Display *dpy, GLXFBConfig config, int attribute, int *value);
+DECLEXPORT(GLXPixmap) glXCreatePixmap(Display *dpy, GLXFBConfig config, Pixmap pixmap, const int *attrib_list);
+
+
 CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 {
 	int i;
@@ -71,6 +79,14 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 		}
 	}
 
+    if (!crStrcmp( name, "glXBindTexImageEXT" )) return (CR_PROC) glXBindTexImageEXT;
+    if (!crStrcmp( name, "glXReleaseTexImageEXT" )) return (CR_PROC) glXReleaseTexImageEXT;
+    if (!crStrcmp( name, "glXQueryDrawable" )) return (CR_PROC) glXQueryDrawable;
+    if (!crStrcmp( name, "glXGetFBConfigs" )) return (CR_PROC) glXGetFBConfigs;
+    if (!crStrcmp( name, "glXGetFBConfigAttrib" )) return (CR_PROC) glXGetFBConfigAttrib;
+    if (!crStrcmp( name, "glXCreatePixmap" )) return (CR_PROC) glXCreatePixmap;
+
+    if (name) crDebug("Returning NULL for %s", name);
 	return NULL;
 }
 

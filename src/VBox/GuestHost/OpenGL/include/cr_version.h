@@ -104,4 +104,6 @@
 #define CR_SGIS_texture_edge_clamp 1
 #define CR_SGIS_generate_mipmap 1
 
+#define CR_EXT_texture_from_pixmap 1
+
 #endif /* CR_VERSION_H */
