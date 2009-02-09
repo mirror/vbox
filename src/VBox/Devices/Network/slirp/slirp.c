@@ -6,34 +6,72 @@
 #include <VBox/err.h>
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
+#include <poll.h>
 
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 
-# define DO_ENGAGE_EVENT1(so, fdset, label)          \
+# ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+#  define DO_ENGAGE_EVENT1(so, fdset, label)          \
     do {                                             \
         FD_SET((so)->s, (fdset));                    \
         UPD_NFDS((so)->s);                           \
     } while(0)
 
 
-# define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label) \
+#  define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label) \
     do {                                             \
         FD_SET((so)->s, (fdset1));                   \
         FD_SET((so)->s, (fdset2));                   \
         UPD_NFDS((so)->s);                           \
     } while(0)
 
-# define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
+#  define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
 
-# define DO_CHECK_FD_SET(so, events, fdset) (FD_ISSET((so)->s, (fdset)))
+#  define DO_CHECK_FD_SET(so, events, fdset) (FD_ISSET((so)->s, fdset))
+# else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+#  define DO_ENGAGE_EVENT1(so, fdset, label)            \
+    do {                                                \
+        polls[poll_index].fd = (so)->s;                 \
+        (so)->so_poll_index = poll_index;               \
+        polls[poll_index].events = N_(fdset ## _poll);  \
+        poll_index++;                                   \
+    } while(0)
 
-# define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0 /* specific for Windows Winsock API */
 
+#  define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label)                           \
+    do {                                                                        \
+        polls[poll_index].fd = (so)->s;                                         \
+        (so)->so_poll_index = poll_index;                                       \
+        polls[poll_index].events = N_(fdset1 ## _poll) | N_(fdset1 ## _poll);   \
+        poll_index++;                                                           \
+    } while(0)
+
+#  define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
+
+#  define DO_CHECK_FD_SET(so, events, fdset) (  ((so)->so_poll_index != -1)                     \
+                                                && ((so)->so_poll_index <= ndfs)                \
+                                                && ((so)->s == polls[so->so_poll_index].fd)     \
+                                                && (polls[(so)->so_poll_index].revents          \
+                                                && N_(fdset ## _poll)))
+# endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+
+#  define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0 /* specific for Windows Winsock API */
 # ifndef RT_OS_WINDOWS
+
+#  ifndef RT_OS_LINUX
+#   define readfds_poll (POLLRDNORM)
+#   define writefds_poll (POLLWRNORM)
+#   define xfds_poll (POLLRDBAND|POLLWRBAND|POLLPRI)
+#  else
+#   define readfds_poll (POLLIN)
+#   define writefds_poll (POLLOUT)
+#   define xfds_poll (POLLPRI)
+#  endif
+
 #  define ICMP_ENGAGE_EVENT(so, fdset)               \
     do {                                             \
         if (pData->icmp_socket.s != -1)              \
-            DO_ENGAGE_EVENT1((so), (fdset), ICMP);   \
+            DO_ENGAGE_EVENT1((so), fdset, ICMP);   \
     } while (0)
 # else /* !RT_OS_WINDOWS */
 #  define ICMP_ENGAGE_EVENT(so, fdset) do {} while(0)
@@ -92,13 +130,13 @@
 #endif /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
 
 #define TCP_ENGAGE_EVENT1(so, fdset) \
-    DO_ENGAGE_EVENT1((so), (fdset), tcp)
+    DO_ENGAGE_EVENT1((so), fdset, tcp)
 
 #define TCP_ENGAGE_EVENT2(so, fdset1, fdset2) \
-    DO_ENGAGE_EVENT2((so), (fdset1), (fdset2), tcp)
+    DO_ENGAGE_EVENT2((so), fdset1, fdset2, tcp)
 
 #define UDP_ENGAGE_EVENT(so, fdset) \
-    DO_ENGAGE_EVENT1((so), (fdset), udp)
+    DO_ENGAGE_EVENT1((so), fdset, udp)
 
 #define POLL_TCP_EVENTS(rc, error, so, events) \
     DO_POLL_EVENTS((rc), (error), (so), (events), tcp)
@@ -569,14 +607,25 @@ static void updtime(PNATState pData)
 }
 #endif
 
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 void slirp_select_fill(PNATState pData, int *pnfds,
                        fd_set *readfds, fd_set *writefds, fd_set *xfds)
+#else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+# ifdef RT_OS_WINDOWS
+void slirp_select_fill(PNATState pData, int *pnfds)
+# else /* RT_OS_WINDOWS */
+void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
+# endif /* !RT_OS_WINDOWS */
+#endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 {
     struct socket *so, *so_next;
     int nfds;
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
     int rc;
     int error;
+#endif
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+    int poll_index = 0;
 #endif
     int i;
 
@@ -724,20 +773,28 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 
     }
 
-#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-    *pnfds = nfds;
-#else
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
+# if defined(RT_OS_WINDOWS)
     *pnfds = VBOX_EVENT_COUNT;
-#endif
+# else /* RT_OS_WINDOWS */
+    *pnfds = poll_index;
+# endif /* !RT_OS_WINDOWS */
+#else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+    *pnfds = nfds;
+#endif /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
     STAM_PROFILE_STOP(&pData->StatFill, a);
 }
 
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
+# if defined(RT_OS_WINDOWS)
 void slirp_select_poll(PNATState pData, int fTimeout, int fIcmp)
-#else
+# else /* RT_OS_WINDOWS */
+void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
+# endif /* !RT_OS_WINDOWS */
+#else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_set *xfds)
-#endif
+#endif /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 {
     struct socket *so, *so_next;
     int ret;
@@ -745,6 +802,9 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
     WSANETWORKEVENTS NetworkEvents;
     int rc;
     int error;
+#endif
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+    int poll_index = 0;
 #endif
 
     STAM_PROFILE_START(&pData->StatPoll, a);
@@ -790,7 +850,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
         if (fIcmp)
             sorecvfrom(pData, &pData->icmp_socket);
 #else
-        if (pData->icmp_socket.s != -1 && FD_ISSET(pData->icmp_socket.s, readfds))
+        if (   (pData->icmp_socket.s != -1)
+            && CHECK_FD_SET(&pData->icmp_socket, ignored, readfds))
             sorecvfrom(pData, &pData->icmp_socket);
 #endif
         /*
