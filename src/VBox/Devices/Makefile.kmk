@@ -360,6 +360,7 @@ endif
 ifdef VBOX_WITH_EFI
 DevicesR3_DEFS          += VBOX_WITH_EFI
 DevicesR3_SOURCES       += EFI/DevEFI.cpp
+#VBoxDD_LIBS             += $(PATH_LIB)/EfiThunk$(VBOX_SUFF_LIB)
 endif
 
 ifdef VBOX_WITH_USB
