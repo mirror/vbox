@@ -825,6 +825,19 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
  * Tests if the guest is running in PAE mode or not.
  *
  * @returns true if in PAE mode, otherwise false.
+ * @param   pVM     The VM handle.
+ */
+DECLINLINE(bool) CPUMIsGuestInPAEMode(PVM pVM)
+{
+    return (    CPUMIsGuestInPagedProtectedMode(pVM)
+            &&  (CPUMGetGuestCR4(pVM) & X86_CR4_PAE)
+            &&  !CPUMIsGuestInLongMode(pVM));
+}
+
+/**
+ * Tests if the guest is running in PAE mode or not.
+ *
+ * @returns true if in PAE mode, otherwise false.
  * @param   pCtx    Current CPU context
  */
 DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
