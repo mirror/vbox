@@ -348,6 +348,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             /* page/2 sized */
             case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
+            {
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 if (!((off ^ pPage->GCPhys) & (PAGE_SIZE / 2)))
                 {
@@ -365,6 +366,54 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     }
                 }
                 break;
+            }
+
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+            case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+            {
+                unsigned iGst     = off / sizeof(X86PDE);
+                unsigned iShwPdpt = iGst / 256;
+                unsigned iShw     = (iGst % 256) * 2;
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
+                if (!((off ^ pPage->GCPhys) & (PAGE_SIZE / 2)))
+                {
+                    if ((uShw.pPDPae->a[iShw].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
+                    {
+                        Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                        VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                        LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw=%#x!\n", iShwPdpt, iShw));
+                    }
+                    /* paranoia / a bit assumptive. */
+                    else if (   pCpu
+                             && (off & 3)
+                             && (off & 3) + cbWrite > 4)
+                    {
+                        const unsigned iShw2 = iShw + 2;
+                        if (    iShw2 < RT_ELEMENTS(uShw.pPDPae->a) /** @todo was completely wrong, it's better now after #1865 but still wrong from cross PD. */
+                            &&  (uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
+                        {
+                            Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                            VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                            LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw2=%#x!\n", iShwPdpt, iShw2));
+                        }
+                    }
+#if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
+                    if (    uShw.pPDPae->a[iShw].n.u1Present
+                        &&  !VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
+                    {
+                        LogFlow(("pgmPoolMonitorChainChanging: iShwPdpt=%#x iShw=%#x: %RX64 -> freeing it!\n", iShwPdpt, iShw, uShw.pPDPae->a[iShw].u));
+# ifdef IN_RC           /* TLB load - we're pushing things a bit... */
+                        ASMProbeReadByte(pvAddress);
+# endif
+                        pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw + iShwPdpt * X86_PG_PAE_ENTRIES);
+                        uShw.pPDPae->a[iShw].u = 0;
+                    }
+#endif
+                }
+                break;
+            }
+# endif
+
 
             case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
             {
@@ -452,7 +501,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 break;
             }
 
-#  ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+# ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
             case PGMPOOLKIND_ROOT_PAE_PD:
             {
                 unsigned iGst     = off / sizeof(X86PDE);           // ASSUMING 32-bit guest paging!
