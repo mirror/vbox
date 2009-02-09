@@ -160,7 +160,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     X86PDPE         PdpeSrc;
 
     /* Fake PDPT entry; access control handled on the page table level, so allow everything. */
-    PdpeSrc.u  = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_A;
+    PdpeSrc.u  = X86_PDPE_P | X86_PDPE_A;   /* rw/us are reserved for PAE pdpte's. */
 #    endif
     rc = pgmShwSyncPaePDPtr(pVM, pvFault, &PdpeSrc, &pPDDst);
     if (rc != VINF_SUCCESS)
