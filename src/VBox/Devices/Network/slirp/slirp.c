@@ -53,8 +53,7 @@
 #  define DO_CHECK_FD_SET(so, events, fdset) (  ((so)->so_poll_index != -1)                     \
                                                 && ((so)->so_poll_index <= ndfs)                \
                                                 && ((so)->s == polls[so->so_poll_index].fd)     \
-                                                && (polls[(so)->so_poll_index].revents          \
-                                                && N_(fdset ## _poll)))
+                                                && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)))
 # endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
 #  define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0 /* specific for Windows Winsock API */
@@ -69,6 +68,9 @@
 #   define writefds_poll (POLLOUT)
 #   define xfds_poll (POLLPRI)
 #  endif
+#  define rderr_poll (POLLERR)
+#  define rdhup_poll (POLLHUP)
+#  define nval_poll (POLLNVAL)
 
 #  define ICMP_ENGAGE_EVENT(so, fdset)               \
     do {                                             \
@@ -156,23 +158,36 @@
  * Loging macros
  */
 #if VBOX_WITH_DEBUG_NAT_SOCKETS
-# if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-#  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)              \
+# if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
+#  if defined(RT_OS_WINDOWS)
+#   define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)              \
     do {                                                                                \
         LogRel(("  " #proto " %R[natsock] %R[natwinnetevents]\n", (so), (winevent)));   \
     } while (0)
-# else
+#  else /* RT_OS_WINDOWS */
+#   define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)         \
+    do {                                                                            \
+            LogRel(("  " #proto " %R[natsock] %s %s %s er: %s, %s, %s\n", (so),     \
+                     CHECK_FD_SET(so, ign ,r_fdset) ? "READ":"",                    \
+                     CHECK_FD_SET(so, ign, w_fdset) ? "WRITE":"",                   \
+                     CHECK_FD_SET(so, ign, x_fdset) ? "OOB":"",                     \
+                     CHECK_FD_SET(so, ign, rderr) ? "RDERR":"",                     \
+                     CHECK_FD_SET(so, ign, rdhup) ? "RDHUP":"",                     \
+                     CHECK_FD_SET(so, ign, nval) ? "RDNVAL":""));                   \
+    } while (0)
+#  endif /* !RT_OS_WINDOWS */
+# else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 #  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)                              \
     do {                                                                                                \
             LogRel(("  " #proto " %R[natsock] %s %s %s\n", (so), FD_ISSET((so)->s, (r_fdset))?"READ":"",\
                      FD_ISSET((so)->s, (w_fdset))?"WRITE":"", FD_ISSET((so)->s, (x_fdset))?"OOB":""));  \
     } while (0)
-# endif /* VBOX_WITH_DEBUG_NAT_SOCKETS */
-#else
+# endif
+#else /* VBOX_WITH_DEBUG_NAT_SOCKETS */
 # define DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) do {} while (0)
 #endif /* !VBOX_WITH_DEBUG_NAT_SOCKETS */
 
-#define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) DO_LOG_NAT_SOCK((so), proto, (winevent), (r_fdset), (w_fdset), (x_fdset))
+#define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) DO_LOG_NAT_SOCK((so), proto, (winevent), r_fdset, w_fdset, x_fdset)
 
 static const uint8_t special_ethaddr[6] =
 {
