@@ -1281,7 +1281,7 @@ STDMETHODIMP Appliance::Interpret()
             /* RAM */
             uint64_t ullMemSizeVBox = vsysThis.ullMemorySize / _1M;
             /* Check for the constrains */
-            if (ullMemSizeVBox != 0 && 
+            if (ullMemSizeVBox != 0 &&
                 (ullMemSizeVBox < static_cast<uint64_t>(SchemaDefs::MinGuestRAM) ||
                  ullMemSizeVBox > static_cast<uint64_t>(SchemaDefs::MaxGuestRAM)))
             {
@@ -1395,7 +1395,7 @@ STDMETHODIMP Appliance::Interpret()
                                 /* Warn only once */
                                 if (cIDEused == 1)
                                     pNewDesc->addWarning(tr("The virtual system claims support for more than one IDE controller, but VirtualBox has support for only one."));
-                                                     
+
                             }
                             ++cIDEused;
                             break;
@@ -1419,7 +1419,7 @@ STDMETHODIMP Appliance::Interpret()
                                 /* Warn only once */
                                 if (cSATAused == 1)
                                     pNewDesc->addWarning(tr("The virtual system claims support for more than one SATA controller, but VirtualBox has support for only one."));
-                                                     
+
                             }
                             ++cSATAused;
                             break;
@@ -1448,7 +1448,7 @@ STDMETHODIMP Appliance::Interpret()
                                 /* Warn only once */
                                 if (cSCSIused == 1)
                                     pNewDesc->addWarning(tr("The virtual system claims support for more than one SCSI controller, but VirtualBox has support for only one."));
-                                                     
+
                             }
                             ++cSCSIused;
                             break;
@@ -1541,7 +1541,6 @@ STDMETHODIMP Appliance::ImportAppliance(IProgress **aProgress)
     HRESULT rc = S_OK;
 
     ComObjPtr<Progress> progress;
-
     try
     {
         /* Create the progress object */
@@ -1879,9 +1878,11 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 /* If in the next block an error occur we have to deregister
                    the machine, so make an extra try/catch block. */
                 ComPtr<ISession> session;
+                ComPtr<IHardDisk2> srcHdVBox;
                 try
                 {
-                    // in order to attach hard disks we need to open a session for the new machine
+                    /* In order to attach hard disks we need to open a session
+                     * for the new machine */
                     rc = session.createInprocObject(CLSID_Session);
                     CheckComRCThrowRC(rc);
                     rc = app->mVirtualBox->OpenSession(session, newMachineId);
@@ -1911,10 +1912,10 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                                            tr("Destination file '%s' exists",
                                               pcszDstFilePath));
 
-                        // find the disk from the OVF's disk list
+                        /* Find the disk from the OVF's disk list */
                         DiskImagesMap::const_iterator itDiskImage = app->m->mapDisks.find(vsdeHD->strRef);
-                        // vsdeHD->strRef contains the disk identifier (e.g. "vmdisk1", which should exist
-                        // in the virtual system's disks map under that ID and also in the global images map
+                        /* vsdeHD->strRef contains the disk identifier (e.g. "vmdisk1"), which should exist
+                           in the virtual system's disks map under that ID and also in the global images map. */
                         VirtualDisksMap::const_iterator itVirtualDisk = vsysThis.mapVirtualDisks.find(vsdeHD->strRef);
 
                         if (    itDiskImage == app->m->mapDisks.end()
@@ -1932,6 +1933,8 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                         if (!RTPathExists(strSrcFilePath.c_str()))
                         {
                             /* @todo: we have to create a new one */
+                            throw setError(E_FAIL,
+                                           tr("Creation of new disk images not supported yet."));
                         }
                         else
                         {
@@ -1942,7 +1945,6 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                              * to be recreated for the case the same hard disk is
                              * attached already from a previous import) */
                             /* First open the existing disk image */
-                            ComPtr<IHardDisk2> srcHdVBox;
                             rc = app->mVirtualBox->OpenHardDisk2(Bstr(strSrcFilePath), srcHdVBox.asOutParam());
                             CheckComRCThrowRC(rc);
                             /* We need the format description of the source disk image */
@@ -1965,6 +1967,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                             /* Now use the new uuid to attach the disk image to our new machine */
                             ComPtr<IMachine> sMachine;
                             rc = session->COMGETTER(Machine)(sMachine.asOutParam());
+                            CheckComRCThrowRC(rc);
                             Guid hdId;
                             rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());;
                             CheckComRCThrowRC(rc);
@@ -1975,7 +1978,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                             {
                                 case HardDiskController::IDE: sbt = StorageBus_IDE; break;
                                 case HardDiskController::SATA: sbt = StorageBus_SATA; break;
-                                           //case HardDiskController::SCSI: sbt = StorageBus_SCSI; break; // @todo: not available yet
+                                //case HardDiskController::SCSI: sbt = StorageBus_SCSI; break; // @todo: not available yet
                                 default: break;
                             }
                             rc = sMachine->AttachHardDisk2(hdId, sbt, hdc.ulBusNumber, 0);
@@ -1989,10 +1992,15 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 }
                 catch(HRESULT aRC)
                 {
-                    /* Unregister/Delete the failed machine */
-                    /* @todo: Not sure what to do when there are succesfully
+                    /* @todo: Not sure what to do when there are successfully
                        added disk images. Delete them also? For now we leave
                        them. */
+                    if (!srcHdVBox.isNull())
+                    {
+                        /* Close any open src disks */
+                        rc = srcHdVBox->Close();
+                        CheckComRCThrowRC(rc);
+                    }
                     if (!session.isNull())
                     {
                         /* If there is an open session, close them before doing
@@ -2000,6 +2008,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                         rc = session->Close();
                         CheckComRCThrowRC(rc);
                     }
+                    /* Unregister/Delete the failed machine */
                     ComPtr<IMachine> failedMachine;
                     rc = app->mVirtualBox->UnregisterMachine(newMachineId, failedMachine.asOutParam());
                     CheckComRCThrowRC(rc);
