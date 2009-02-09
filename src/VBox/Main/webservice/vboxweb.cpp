@@ -352,10 +352,9 @@ int main(int argc, char* argv[])
         return rc;
     }
 
-    ComPtr<IVirtualBox> virtualBox;
     ComPtr<ISession> session;
 
-    rc = virtualBox.createLocalObject(CLSID_VirtualBox);
+    rc = g_pVirtualBox.createLocalObject(CLSID_VirtualBox);
     if (FAILED(rc))
         RTPrintf("ERROR: failed to create the VirtualBox object!\n");
     else
