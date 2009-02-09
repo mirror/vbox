@@ -68,6 +68,8 @@ public:
     STDMETHOD(COMGETTER(MaxGuestRAM) (ULONG *maxRAM));
     STDMETHOD(COMGETTER(MinGuestVRAM) (ULONG *minVRAM));
     STDMETHOD(COMGETTER(MaxGuestVRAM) (ULONG *maxVRAM));
+    STDMETHOD(COMGETTER(MinGuestCPUCount) (ULONG *minCPUCount));
+    STDMETHOD(COMGETTER(MaxGuestCPUCount) (ULONG *maxCPUCount));
     STDMETHOD(COMGETTER(MaxGuestMonitors) (ULONG *maxMonitors));
     STDMETHOD(COMGETTER(MaxVDISize) (ULONG64 *maxVDISize));
     STDMETHOD(COMGETTER(NetworkAdapterCount) (ULONG *count));

@@ -195,6 +195,34 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestVRAM)(ULONG *maxVRAM)
     return S_OK;
 }
 
+STDMETHODIMP SystemProperties::COMGETTER(MinGuestCPUCount)(ULONG *minCPUCount)
+{
+    if (!minCPUCount)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* no need to lock, this is const */
+    *minCPUCount = SchemaDefs::MinCPUCount;
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::COMGETTER(MaxGuestCPUCount)(ULONG *maxCPUCount)
+{
+    if (!maxCPUCount)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* no need to lock, this is const */
+    *maxCPUCount = 1; // SchemaDefs::MaxCPUCount;
+
+    return S_OK;
+}
+
 STDMETHODIMP SystemProperties::COMGETTER(MaxGuestMonitors)(ULONG *maxMonitors)
 {
     if (!maxMonitors)
