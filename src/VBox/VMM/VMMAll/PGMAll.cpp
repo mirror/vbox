@@ -898,7 +898,7 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
             Assert(pGstPdpe);
 
             GCPdPt  = pGstPdpe->u & X86_PDPE_PG_MASK;
-            enmKind = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
+            enmKind = (CPUMGetGuestCR4(pVM) & X86_CR4_PAE) ? PGMPOOLKIND_PAE_PD_FOR_PAE_PD : PGMPOOLKIND_PAE_PD_FOR_32BIT_PD;
         }
 
         /* Create a reference back to the PDPT by using the index in its shadow page. */

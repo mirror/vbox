@@ -1618,6 +1618,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_64BIT_PML4:
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_32BIT_PD:
         case PGMPOOLKIND_PAE_PDPT:
 #else
@@ -1652,8 +1653,9 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #endif
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
-#endif
+#else
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+#endif
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
     }
