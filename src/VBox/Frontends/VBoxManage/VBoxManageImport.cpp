@@ -50,20 +50,24 @@ using namespace com;
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
 
-typedef std::map<Utf8Str, Utf8Str> ArgsMap;         // pairs of strings like "-vmname" => "newvmname"
-typedef std::map<uint32_t, ArgsMap> ArgsMapsMap;   // map of maps, one for each virtual system, sorted by index
+typedef std::map<Utf8Str, Utf8Str> ArgsMap;                 // pairs of strings like "-vmname" => "newvmname"
+typedef std::map<uint32_t, ArgsMap> ArgsMapsMap;            // map of maps, one for each virtual system, sorted by index
+
+typedef std::map<uint32_t, bool> IgnoresMap;                // pairs of numeric description entry indices
+typedef std::map<uint32_t, IgnoresMap> IgnoresMapsMap;      // map of maps, one for each virtual system, sorted by index
 
 static bool findArgValue(Utf8Str &strOut,
-                         const ArgsMap *pmapArgs,
+                         ArgsMap *pmapArgs,
                          const Utf8Str &strKey)
 {
     if (pmapArgs)
     {
-        ArgsMap::const_iterator it;
+        ArgsMap::iterator it;
         it = pmapArgs->find(strKey);
         if (it != pmapArgs->end())
         {
             strOut = it->second;
+            pmapArgs->erase(it);
             return true;
         }
     }
@@ -84,11 +88,13 @@ int handleImportAppliance(HandlerArg *a)
     // (we'll parse them later after interpreting the OVF, when we can
     // actually check whether they make sense semantically)
     ArgsMapsMap mapArgsMapsPerVsys;
+    IgnoresMapsMap mapIgnoresMapsPerVsys;
 
     for (int i = 0;
          i < a->argc;
          ++i)
     {
+        bool fIsIgnore = false;
         Utf8Str strThisArg(a->argv[i]);
         if (strThisArg == "-exec")
             fExecute = true;
@@ -97,10 +103,10 @@ int handleImportAppliance(HandlerArg *a)
             if (++i < a->argc)
             {
                 uint32_t ulVsys;
-                if (VINF_SUCCESS == (rc = Utf8Str(a->argv[i]).toInt(ulVsys)))       // don't use SUCCESS() macro, fail even on warnings
-                    ulCurVsys = ulVsys;
-                else
+                if (VINF_SUCCESS != (rc = Utf8Str(a->argv[i]).toInt(ulVsys)))       // don't use SUCCESS() macro, fail even on warnings
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Argument to -vsys option must be a non-negative number.");
+
+                ulCurVsys = ulVsys;
             }
             else
                 return errorSyntax(USAGE_IMPORTAPPLIANCE, "Missing argument to -vsys option.");
@@ -108,7 +114,7 @@ int handleImportAppliance(HandlerArg *a)
         else if (    (strThisArg == "-ostype")
                   || (strThisArg == "-vmname")
                   || (strThisArg == "-memory")
-                  || (strThisArg == "-ignore")
+                  || (fIsIgnore = (strThisArg == "-ignore"))
                   || (strThisArg.substr(0, 5) == "-type")
                   || (strThisArg.substr(0, 11) == "-controller")
                 )
@@ -116,9 +122,20 @@ int handleImportAppliance(HandlerArg *a)
             if (ulCurVsys == (uint32_t)-1)
                 return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding -vsys argument.", strThisArg.c_str());
 
-            // store both this arg and the next one in the strings map for later parsing
             if (++i < a->argc)
-                mapArgsMapsPerVsys[ulCurVsys][strThisArg] = Utf8Str(a->argv[i]);
+                if (fIsIgnore)
+                {
+                    uint32_t ulItem;
+                    if (VINF_SUCCESS != Utf8Str(a->argv[i]).toInt(ulItem))
+                        return errorSyntax(USAGE_IMPORTAPPLIANCE, "Argument to -vsys option must be a non-negative number.");
+
+                    mapIgnoresMapsPerVsys[ulCurVsys][ulItem] = true;
+                }
+                else
+                {
+                    // store both this arg and the next one in the strings map for later parsing
+                    mapArgsMapsPerVsys[ulCurVsys][strThisArg] = Utf8Str(a->argv[i]);
+                }
             else
                 return errorSyntax(USAGE_IMPORTAPPLIANCE, "Missing argument to \"%s\" option.", strThisArg.c_str());
         }
@@ -196,22 +213,10 @@ int handleImportAppliance(HandlerArg *a)
                 RTPrintf("Virtual system %i:\n", i);
 
                 // look up the corresponding command line options, if any
-                const ArgsMap *pmapArgs = NULL;
-                ArgsMapsMap::const_iterator itm = mapArgsMapsPerVsys.find(i);
+                ArgsMap *pmapArgs = NULL;
+                ArgsMapsMap::iterator itm = mapArgsMapsPerVsys.find(i);
                 if (itm != mapArgsMapsPerVsys.end())
                     pmapArgs = &itm->second;
-
-//                     ArgsMap::const_iterator it3;
-//                     for (it3 = pmapArgs->begin();
-//                          it3 != pmapArgs->end();
-//                          ++it3)
-//                     {
-//                         RTPrintf("%s -> %s\n", it3->first.c_str(), it3->second.c_str());
-//                     }
-//                 }
-
-//                 Bstr bstrVMName;
-//                 Bstr bstrOSType;
 
                 // this collects the final values for setFinalValues()
                 com::SafeArray<BOOL> aEnabled(retTypes.size());
@@ -224,6 +229,8 @@ int handleImportAppliance(HandlerArg *a)
                     Utf8Str strOverride;
 
                     Bstr bstrFinalValue = aConfigValues[a];
+
+                    bool fIgnoreThis = mapIgnoresMapsPerVsys[i][a];
 
                     switch (t)
                     {
@@ -280,55 +287,101 @@ int handleImportAppliance(HandlerArg *a)
                         break;
 
                         case VirtualSystemDescriptionType_HardDiskControllerIDE:
-                            RTPrintf("%2d: IDE controller, type %ls"
-                                     "\n    (disable with \"-vsys %d -ignore %d\")\n",
-                                     a,
-                                     aConfigValues[a],
-                                     i, a);
+                            if (fIgnoreThis)
+                            {
+                                RTPrintf("%2d: IDE controller, type %ls -- disabled\n",
+                                         a,
+                                         aConfigValues[a]);
+                                aEnabled[a] = false;
+                            }
+                            else
+                                RTPrintf("%2d: IDE controller, type %ls"
+                                         "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                         a,
+                                         aConfigValues[a],
+                                         i, a);
                         break;
 
                         case VirtualSystemDescriptionType_HardDiskControllerSATA:
-                            RTPrintf("%2d: SATA controller, type %ls"
-                                     "\n    (disable with \"-vsys %d -ignore %d\")\n",
-                                     a,
-                                     aConfigValues[a],
-                                     i, a);
+                            if (fIgnoreThis)
+                            {
+                                RTPrintf("%2d: SATA controller, type %ls -- disabled\n",
+                                         a,
+                                         aConfigValues[a]);
+                                aEnabled[a] = false;
+                            }
+                            else
+                                RTPrintf("%2d: SATA controller, type %ls"
+                                        "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                        a,
+                                        aConfigValues[a],
+                                        i, a);
                         break;
 
                         case VirtualSystemDescriptionType_HardDiskControllerSCSI:
-                            RTPrintf("%2d: SCSI controller, type %ls"
-                                     "\n    (change with \"-vsys %d -type%d={BusLogic|LsiLogic}\";"
-                                     "\n    disable with \"-vsys %d -ignore %d\")\n",
-                                     a,
-                                     aConfigValues[a],
-                                     i, a, i, a);
+                            if (fIgnoreThis)
+                            {
+                                RTPrintf("%2d: SCSI controller, type %ls -- disabled\n",
+                                         a,
+                                         aConfigValues[a]);
+                                aEnabled[a] = false;
+                            }
+                            else
+                                RTPrintf("%2d: SCSI controller, type %ls"
+                                        "\n    (change with \"-vsys %d -type%d={BusLogic|LsiLogic}\";" // @todo
+                                        "\n    disable with \"-vsys %d -ignore %d\")\n",
+                                        a,
+                                        aConfigValues[a],
+                                        i, a, i, a);
                         break;
 
                         case VirtualSystemDescriptionType_HardDiskImage:
-                            RTPrintf("%2d: Hard disk image: source image=%ls, target path=%ls, %ls"
-                                     "\n    (change controller with \"-vsys %d -controller%d=<id>\";"
-                                     "\n    disable with \"-vsys %d -ignore %d\")\n",
-                                     a,
-                                     aOrigValues[a],
-                                     aConfigValues[a],
-                                     aExtraConfigValues[a],
-                                     i, a, i, a);
+                            if (fIgnoreThis)
+                            {
+                                RTPrintf("%2d: Hard disk image: source image=%ls -- disabled\n",
+                                         a,
+                                         aOrigValues[a]);
+                                aEnabled[a] = false;
+                            }
+                            else
+                                RTPrintf("%2d: Hard disk image: source image=%ls, target path=%ls, %ls"
+                                        "\n    (change controller with \"-vsys %d -controller%d=<id>\";"  // @todo
+                                        "\n    disable with \"-vsys %d -ignore %d\")\n",
+                                        a,
+                                        aOrigValues[a],
+                                        aConfigValues[a],
+                                        aExtraConfigValues[a],
+                                        i, a, i, a);
                         break;
 
                         case VirtualSystemDescriptionType_CDROM:
-                            RTPrintf("%2d: CD-ROM"
-                                     "\n    (disable with \"-vsys %d -ignore %d\")\n",
-                                     a, i, a);
+                            if (fIgnoreThis)
+                            {
+                                RTPrintf("%2d: CD-ROM -- disabled\n",
+                                         a);
+                                aEnabled[a] = false;
+                            }
+                            else
+                                RTPrintf("%2d: CD-ROM"
+                                        "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                        a, i, a);
                         break;
 
                         case VirtualSystemDescriptionType_Floppy:
-                            RTPrintf("%2d: Floppy"
-                                     "\n    (disable with \"-vsys %d -ignore %d\")\n",
-                                     a, i, a);
+                            if (fIgnoreThis)
+                            {
+                                RTPrintf("%2d: Floppy -- disabled\n",
+                                         a);
+                                aEnabled[a] = false;
+                            }
+                            else
+                                RTPrintf("%2d: Floppy"
+                                        "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                        a, i, a);
                         break;
 
                         case VirtualSystemDescriptionType_NetworkAdapter:
-                            RTPrintf("%2d: Network adapter: orig %ls, config %ls, extra %ls\n",
+                            RTPrintf("%2d: Network adapter: orig %ls, config %ls, extra %ls\n",   // @todo
                                      a,
                                      aOrigValues[a],
                                      aConfigValues[a],
@@ -336,18 +389,33 @@ int handleImportAppliance(HandlerArg *a)
                         break;
 
                         case VirtualSystemDescriptionType_USBController:
-                            RTPrintf("%2d: USB controller"
-                                     "\n    (disable with \"-vsys %d -ignore %d\")\n",
-                                     a, i, a);
+                            if (fIgnoreThis)
+                            {
+                                RTPrintf("%2d: USB controller -- disabled\n",
+                                         a);
+                                aEnabled[a] = false;
+                            }
+                            else
+                                RTPrintf("%2d: USB controller"
+                                        "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                        a, i, a);
                         break;
 
                         case VirtualSystemDescriptionType_SoundCard:
-                            RTPrintf("%2d: Sound card (appliance expects \"%ls\", can change on import)"
-                                     "\n    (disable with \"-vsys %d -ignore %d\")\n",
-                                     a,
-                                     aOrigValues[a],
-                                     i,
-                                     a);
+                            if (fIgnoreThis)
+                            {
+                                RTPrintf("%2d: Sound card \"%ls\" -- disabled\n",
+                                         a,
+                                         aOrigValues[a]);
+                                aEnabled[a] = false;
+                            }
+                            else
+                                RTPrintf("%2d: Sound card (appliance expects \"%ls\", can change on import)"
+                                        "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                        a,
+                                        aOrigValues[a],
+                                        i,
+                                        a);
                         break;
                     }
 
