@@ -376,7 +376,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
 {
     int fNATfailed = 0;
     int rc;
-    PNATState pData = RTMemAlloc(sizeof(NATState));
+    PNATState pData = RTMemAllocZ(sizeof(NATState));
     *ppData = pData;
     if (!pData)
         return VERR_NO_MEMORY;
@@ -1337,6 +1337,13 @@ unsigned int slirp_get_timeout_ms(PNATState pData)
     }
     return 0;
 }
+
+#ifndef RT_OS_WINDOWS
+int slirp_get_nsock(PNATState pData)
+{
+    return pData->nsock;
+}
+#endif
 
 /*
  * this function called from NAT thread

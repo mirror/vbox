@@ -94,9 +94,16 @@ void *slirp_get_queue(PNATState pData);
 #endif
 
 /*
- * Return the timeout.
+ * Returns the timeout.
  */
 unsigned int slirp_get_timeout_ms(PNATState pData);
+
+# ifndef RT_OS_WINDOWS
+/*
+ * Returns the number of sockets.
+ */
+int slirp_get_nsock(PNATState pData);
+# endif
 
 #ifdef __cplusplus
 }
