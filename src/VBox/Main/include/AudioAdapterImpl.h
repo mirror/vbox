@@ -40,7 +40,27 @@ public:
     {
         Data() {
             mEnabled = false;
+#if defined (RT_OS_WINDOWS)
+# ifdef VBOX_WITH_WINMM
+            mAudioDriver = AudioDriverType_WinMM;
+# else /* VBOX_WITH_WINMM */
+            mAudioDriver = AudioDriverType_DirectSound;
+# endif /* !VBOX_WITH_WINMM */
+#elif defined (RT_OS_SOLARIS)
+            mAudioDriver = AudioDriverType_SolAudio;
+#elif defined (RT_OS_LINUX)
+# if defined (VBOX_WITH_ALSA)
+            mAudioDriver = AudioDriverType_ALSA;
+# else /* VBOX_WITH_ALSA */
+            mAudioDriver = AudioDriverType_OSS;
+# endif /* !VBOX_WITH_ALSA */
+#elif defined (RT_OS_DARWIN)
+            mAudioDriver = AudioDriverType_CoreAudio;
+#elif defined (RT_OS_OS2)
+            mAudioDriver = AudioDriverType_MMP;;
+#else
             mAudioDriver = AudioDriverType_Null;
+#endif
             mAudioController = AudioControllerType_AC97;
         }
 
