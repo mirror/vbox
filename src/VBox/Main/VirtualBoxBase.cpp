@@ -260,20 +260,21 @@ void VirtualBoxBaseProto::releaseCaller()
     {
         if (mStateChangeThread == RTThreadSelf())
         {
-            /* Called from the same thread that is doing AutoInitSpan or
-             * AutoUninitSpan, just succeed */
+            /* Called from the same thread that is doing AutoInitSpan,
+             * AutoMayUninitSpan or AutoUninitSpan: just succeed */
             return;
         }
 
-        if (mState == InUninit)
+        if (mState == MayUninit || mState == InUninit)
         {
-            /* the caller is being released after AutoUninitSpan has begun */
+            /* the caller is being released after AutoUninitSpan or
+             * AutoMayUninitSpan has begun */
             AssertMsgReturn (mCallers != 0, ("mCallers is ZERO!"), (void) 0);
             -- mCallers;
 
             if (mCallers == 0)
             {
-                /* inform the AutoUninitSpan ctor there are no more callers */
+                /* inform the Auto*UninitSpan ctor there are no more callers */
                 RTSemEventSignal (mZeroCallersSem);
             }
 
