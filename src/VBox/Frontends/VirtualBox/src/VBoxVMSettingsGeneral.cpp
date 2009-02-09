@@ -23,6 +23,7 @@
 #include "VBoxVMSettingsGeneral.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include "QIWidgetValidator.h"
 #include <iprt/asm.h>
 #include <VBox/x86.h>
 
@@ -51,6 +52,7 @@ static int calcPageStep (int aMax)
 }
 
 VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
+    : mValidator (0)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsGeneral::setupUi (this);
@@ -239,10 +241,21 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     /* Other features */
     QString saveRtimeImages = mMachine.GetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime);
     mCbSaveMounted->setChecked (saveRtimeImages != "no");
+
+    if (mValidator)
+        mValidator->revalidate();
 }
 
 void VBoxVMSettingsGeneral::putBackTo()
 {
+    /* Make auto-attenuation for some settings in this chapter: */
+
+    /* Enable VT-x/AMD-V feature if the guest is of 64 bits */
+    if (mOSTypeSelector->type().GetIs64Bit())
+        mCbVirt->setChecked (true);
+
+    /* Save user's predefined settings in this chapter: */
+
     CBIOSSettings biosSettings = mMachine.GetBIOSSettings();
 
     /* Name */
@@ -326,11 +339,18 @@ void VBoxVMSettingsGeneral::putBackTo()
                            mCbSaveMounted->isChecked() ? "yes" : "no");
 }
 
+void VBoxVMSettingsGeneral::setValidator (QIWidgetValidator *aVal)
+{
+    mValidator = aVal;
+    connect (mCbVirt, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
+    connect (mOSTypeSelector, SIGNAL (osTypeChanged()), mValidator, SLOT (revalidate()));
+}
+
 bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle */)
 {
+    /* System RAM & Video RAM sliders correlation test */
     ulong fullSize = vboxGlobal().virtualBox().GetHost().GetMemorySize();
     quint64 needBytes = VBoxGlobal::requiredVideoMemory (&mMachine);
-
     if (mSlRam->value() + mSlVideo->value() > 0.75 * fullSize)
     {
         aWarning = tr (
@@ -358,6 +378,20 @@ bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle *
             .arg (vboxGlobal().formatSize (needBytes, 0, VBoxDefs::FormatSize_RoundUp));
         return true;
     }
+
+    /* Guest OS type & VT-x/AMD-V option correlation test */
+    if (mOSTypeSelector->type().GetIs64Bit() && !mCbVirt->isChecked())
+    {
+        aWarning = tr (
+            "there is a 64 bits guest OS type assigned for this VM, which "
+            "requires virtualization feature (VT-x/AMD-V) to be enabled "
+            "too, else your guest will fail to detect a 64 bits CPU and "
+            "will not be able to boot, so this feature will be enabled "
+            "automatically when you'll accept VM Settings by pressing OK "
+            "button.");
+        return true;
+    }
+
     return true;
 }
 

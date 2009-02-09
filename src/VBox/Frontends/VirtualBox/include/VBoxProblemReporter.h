@@ -232,6 +232,7 @@ public:
     void cannotDiscardSavedState (const CConsole &console);
 
     void cannotSendACPIToMachine();
+    bool warnAboutVirtNotEnabled();
 
     void cannotSetSnapshotFolder (const CMachine &aMachine, const QString &aPath);
     void cannotDiscardSnapshot (const CConsole &aConsole,

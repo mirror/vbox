@@ -1093,6 +1093,9 @@ void VBoxConsoleWnd::finalizeOpenView()
     vboxGlobal().showUpdateDialog (false /* aForce */);
 #endif
 
+    /* Finally check the status of required features. */
+    checkRequiredFeatures();
+
     /* Re-request all the static values finally after
      * view is really opened and attached. */
     updateAppearanceOf (VirtualizationStuff);
@@ -2134,6 +2137,29 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             mVmDisableMouseIntegrAction->setEnabled (console->isMouseAbsolute());
         else
             mVmDisableMouseIntegrAction->setEnabled (false);
+    }
+}
+
+/**
+ *  This function checks the status of required features and
+ *  makes a warning and/or some action if something necessary
+ *  is not in good condition.
+ *  Does nothing if no console view was opened.
+ */
+void VBoxConsoleWnd::checkRequiredFeatures()
+{
+    if (!console) return;
+
+    CConsole cconsole = console->console();
+
+    /* Check if virtualization feature enabled for 64 bits guest */
+    bool is64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType (
+                         cconsole.GetGuest().GetOSTypeId()).GetIs64Bit();
+    bool isVirtEnabled = cconsole.GetDebugger().GetHWVirtExEnabled();
+    if (is64BitsGuest && !isVirtEnabled)
+    {
+        vmPause (true);
+        vboxProblem().warnAboutVirtNotEnabled() ? close() : vmPause (false);
     }
 }
 
