@@ -3016,7 +3016,7 @@
 
   <interface
      name="IVirtualSystemDescription" extends="$unknown"
-     uuid="c76de96b-b316-4a42-9afb-18ce08cce0c9"
+     uuid="09b85139-0923-4f0e-9ba4-f1aa98d156e4"
      wsmap="managed"
      >
 
@@ -3140,6 +3140,15 @@
         <desc></desc>
       </param>
 
+    </method>
+
+    <method name="getWarnings">
+      <desc>Returns textual warnings which occurs on the virtual system 
+      interpretion.</desc>
+
+      <param name="aWarnings" type="wstring" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
     </method>
 
   </interface>
