@@ -49,6 +49,20 @@ void GluePrintErrorInfo(com::ErrorInfo &info)
     Log(("%s", str.c_str()));
 }
 
+void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, uint32_t ulLine)
+{
+    // pcszSourceFile comes from __FILE__ macro, which always contains the full path,
+    // which we don't want to see printed:
+    Utf8Str strFilename(RTPathFilename(pcszSourceFile));
+    Utf8Str str = Utf8StrFmt("Context: \"%s\" at line %d of file %s\n",
+                                pcszContext,
+                                ulLine,
+                                strFilename.c_str());
+    // print and log
+    RTPrintf("%s", str.c_str());
+    Log(("%s", str.c_str()));
+}
+
 void GluePrintRCMessage(HRESULT rc)
 {
     Utf8Str str = Utf8StrFmt("ERROR: code %Rhra (extended info not available)\n", rc);
@@ -66,20 +80,8 @@ void GlueHandleComError(ComPtr<IUnknown> iface,
     // if we have full error info, print something nice, and start with the actual error message
     com::ErrorInfo info(iface);
     if (info.isFullAvailable() || info.isBasicAvailable())
-    {
         GluePrintErrorInfo(info);
-
-        // pcszSourceFile comes from __FILE__ macro, which always contains the full path,
-        // which we don't want to see printed:
-        Utf8Str strFilename(RTPathFilename(pcszSourceFile));
-        Utf8Str str = Utf8StrFmt("Context: \"%s\" at line %d of file %s\n",
-                                 pcszContext,
-                                 ulLine,
-                                 strFilename.c_str());
-        // print and log
-        RTPrintf("%s", str.c_str());
-        Log(("%s", str.c_str()));
-    }
+    GluePrintErrorContext(pcszContext, pcszSourceFile, ulLine);
 }
 
 
