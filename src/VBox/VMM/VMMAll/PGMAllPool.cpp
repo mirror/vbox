@@ -1575,6 +1575,9 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_PAE_PD_PHYS:
                 case PGMPOOLKIND_PAE_PDPT_PHYS:
                 case PGMPOOLKIND_32BIT_PD_PHYS:
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
+#endif
                     break;
                 default:
                     AssertFatalMsgFailed(("enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
@@ -1640,6 +1643,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_32BIT_PD_PHYS:
         case PGMPOOLKIND_PAE_PDPT_PHYS:
         case PGMPOOLKIND_PAE_PD_PHYS:
+        case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
 #else
