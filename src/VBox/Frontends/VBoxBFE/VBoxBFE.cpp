@@ -1662,12 +1662,6 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 
     if (g_pszHdaFile)
     {
-        const char *szDriver;
-        if (0 == strcmp(RTPathExt(g_pszHdaFile), ".vdi"))
-            szDriver = "VBoxHDD";  /* .vdi */
-        else
-            szDriver = "VD";       /* .vmdk */
-
         rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                 UPDATE_RC();
         rc = CFGMR3InsertString(pLunL0, "Driver",         "Block");                 UPDATE_RC();
         rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                   UPDATE_RC();
@@ -1675,7 +1669,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
         rc = CFGMR3InsertInteger(pCfg,  "Mountable",      0);                       UPDATE_RC();
 
         rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pDrv);                   UPDATE_RC();
-        rc = CFGMR3InsertString(pDrv,   "Driver",         szDriver);                UPDATE_RC();
+        rc = CFGMR3InsertString(pDrv,   "Driver",         "VD");                    UPDATE_RC();
         rc = CFGMR3InsertNode(pDrv,     "Config",         &pCfg);                   UPDATE_RC();
         rc = CFGMR3InsertString(pCfg,   "Path",           g_pszHdaFile);            UPDATE_RC();
 
@@ -1687,12 +1681,6 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 
     if (g_pszHdbFile)
     {
-        const char *szDriver;
-        if (0 == strcmp(RTPathExt(g_pszHdbFile), ".vdi"))
-            szDriver = "VBoxHDD";  /* .vdi */
-        else
-            szDriver = "VD";       /* .vmdk */
-
         rc = CFGMR3InsertNode(pInst,    "LUN#1",          &pLunL1);                 UPDATE_RC();
         rc = CFGMR3InsertString(pLunL1, "Driver",         "Block");                 UPDATE_RC();
         rc = CFGMR3InsertNode(pLunL1,   "Config",         &pCfg);                   UPDATE_RC();
@@ -1700,7 +1688,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
         rc = CFGMR3InsertInteger(pCfg,  "Mountable",      0);                       UPDATE_RC();
 
         rc = CFGMR3InsertNode(pLunL1,   "AttachedDriver", &pDrv);                   UPDATE_RC();
-        rc = CFGMR3InsertString(pDrv,   "Driver",         szDriver);                UPDATE_RC();
+        rc = CFGMR3InsertString(pDrv,   "Driver",         "VD");                    UPDATE_RC();
         rc = CFGMR3InsertNode(pDrv,     "Config",         &pCfg);                   UPDATE_RC();
         rc = CFGMR3InsertString(pCfg,   "Path",           g_pszHdbFile);            UPDATE_RC();
 
