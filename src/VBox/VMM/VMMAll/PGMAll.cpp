@@ -871,12 +871,10 @@ DECLINLINE(int) pgmShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86
  */
 DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
 {
-    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
-    PX86PDPT       pPdpt = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
-    PX86PDPE       pPdpe = &pPdpt->a[iPdPt];
-    PPGMPOOL       pPool         = pVM->pgm.s.CTX_SUFF(pPool);
-    bool           fNestedPaging = HWACCMIsNestedPagingActive(pVM);
-    bool           fPaging       = !!(CPUMGetGuestCR0(pVM) & X86_CR0_PG);
+    const unsigned iPdPt    = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    PX86PDPT       pPdpt    = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
+    PX86PDPE       pPdpe    = &pPdpt->a[iPdPt];
+    PPGMPOOL       pPool    = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
@@ -884,21 +882,27 @@ DECLINLINE(int) pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
     if (    !pPdpe->n.u1Present
         &&  !(pPdpe->u & X86_PDPE_PG_MASK))
     {
-        if (!fNestedPaging)
+        bool        fNestedPaging = HWACCMIsNestedPagingActive(pVM);
+        bool        fPaging       = !!(CPUMGetGuestCR0(pVM) & X86_CR0_PG);
+        RTGCPTR64   GCPdPt;
+        PGMPOOLKIND enmKind;
+
+        if (fNestedPaging || !fPaging)
         {
-            Assert(pGstPdpe);
-            Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
-            /* Create a reference back to the PDPT by using the index in its shadow page. */
-            rc = pgmPoolAlloc(pVM, pGstPdpe->u & X86_PDPE_PG_MASK, PGMPOOLKIND_PAE_PD_FOR_PAE_PD, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPdPt, &pShwPage);
+            /* AMD-V nested paging or real/protected mode without paging */
+            GCPdPt  = (RTGCPTR64)iPdPt << X86_PDPT_SHIFT;
+            enmKind = PGMPOOLKIND_PAE_PD_PHYS;
         }
         else
         {
-            /* AMD-V nested paging or real/protected mode without paging */
-            RTGCPTR64 GCPdPt = (RTGCPTR64)iPdPt << EPT_PDPT_SHIFT;
+            Assert(pGstPdpe);
 
-            rc = pgmPoolAlloc(pVM, GCPdPt + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_PAE_PD_PHYS, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPdPt, &pShwPage);
+            GCPdPt  = pGstPdpe->u & X86_PDPE_PG_MASK;
+            enmKind = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
         }
 
+        /* Create a reference back to the PDPT by using the index in its shadow page. */
+        rc = pgmPoolAlloc(pVM, GCPdPt, enmKind, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPdPt, &pShwPage);
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Log(("pgmShwSyncPaePDPtr: PGM pool flushed -> signal sync cr3\n"));
@@ -970,6 +974,9 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
     const unsigned iPml4         = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PX86PML4E      pPml4e        = pgmShwGetLongModePML4EPtr(pPGM, iPml4);
     bool           fNestedPaging = HWACCMIsNestedPagingActive(pVM);
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    bool           fPaging      = !!(CPUMGetGuestCR0(pVM) & X86_CR0_PG);
+#endif
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
@@ -977,7 +984,29 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
     if (    !pPml4e->n.u1Present
         &&  !(pPml4e->u & X86_PML4E_PG_MASK))
     {
-        Assert(!(pPml4e->u & X86_PML4E_PG_MASK));
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        RTGCPTR64   GCPml4;
+        PGMPOOLKIND enmKind;
+
+        Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+
+        if (fNestedPaging || !fPaging)
+        {
+            /* AMD-V nested paging or real/protected mode without paging */
+            GCPml4  = (RTGCPTR64)iPml4 << X86_PML4_SHIFT;
+            enmKind = PGMPOOLKIND_64BIT_PDPT_FOR_PHYS;
+        }
+        else
+        {
+            Assert(pGstPml4e && pGstPdpe);
+
+            GCPml4  = pGstPml4e->u & X86_PML4E_PG_MASK;
+            enmKind = PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT;
+        }
+
+        /* Create a reference back to the PDPT by using the index in its shadow page. */
+        rc = pgmPoolAlloc(pVM, GCPml4, enmKind, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, &pShwPage);
+#else
         if (!fNestedPaging)
         {
             Assert(pGstPml4e && pGstPdpe);
@@ -993,7 +1022,7 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
             rc = pgmPoolAlloc(pVM, GCPml4 + RT_BIT_64(63) /* hack: make the address unique */,
                               PGMPOOLKIND_64BIT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4, &pShwPage);
         }
-
+#endif
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Log(("PGMShwSyncLongModePDPtr: PGM pool flushed (1) -> signal sync cr3\n"));
@@ -1020,6 +1049,27 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
     if (    !pPdpe->n.u1Present
         &&  !(pPdpe->u & X86_PDPE_PG_MASK))
     {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        RTGCPTR64   GCPdPt;
+        PGMPOOLKIND enmKind;
+
+        if (fNestedPaging || !fPaging)
+        {
+            /* AMD-V nested paging or real/protected mode without paging */
+            GCPdPt  = (RTGCPTR64)iPdPt << X86_PDPT_SHIFT;
+            enmKind = PGMPOOLKIND_64BIT_PD_FOR_PHYS;
+        }
+        else
+        {
+            Assert(pGstPdpe);
+
+            GCPdPt  = pGstPdpe->u & X86_PDPE_PG_MASK;
+            enmKind = PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD;
+        }
+
+        /* Create a reference back to the PDPT by using the index in its shadow page. */
+        rc = pgmPoolAlloc(pVM, GCPdPt, enmKind, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPdPt, &pShwPage);
+#else
         if (!fNestedPaging)
         {
             Assert(pGstPml4e && pGstPdpe);
@@ -1034,7 +1084,7 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
 
             rc = pgmPoolAlloc(pVM, GCPdPt + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_64BIT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
         }
-
+#endif
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Log(("PGMShwSyncLongModePDPtr: PGM pool flushed (2) -> signal sync cr3\n"));
@@ -1133,7 +1183,11 @@ DECLINLINE(int) pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
         Assert(!(pPml4e->u & EPT_PML4E_PG_MASK));
         RTGCPTR64 GCPml4 = (RTGCPTR64)iPml4 << EPT_PML4_SHIFT;
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        rc = pgmPoolAlloc(pVM, GCPml4, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4, &pShwPage);
+#else
         rc = pgmPoolAlloc(pVM, GCPml4 + RT_BIT_64(63) /* hack: make the address unique */, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4, &pShwPage);
+#endif
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Log(("PGMShwSyncEPTPDPtr: PGM pool flushed (1) -> signal sync cr3\n"));
@@ -1167,7 +1221,11 @@ DECLINLINE(int) pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
     {
         RTGCPTR64 GCPdPt = (RTGCPTR64)iPdPt << EPT_PDPT_SHIFT;
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        rc = pgmPoolAlloc(pVM, GCPdPt, PGMPOOLKIND_64BIT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
+#else
         rc = pgmPoolAlloc(pVM, GCPdPt + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_64BIT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
+#endif
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Log(("PGMShwSyncEPTPDPtr: PGM pool flushed (2) -> signal sync cr3\n"));

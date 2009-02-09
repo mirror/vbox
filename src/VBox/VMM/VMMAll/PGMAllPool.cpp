@@ -1271,16 +1271,20 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
          * Never reuse them. There is no remapping in non-paging mode.
          */
         case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+        case PGMPOOLKIND_32BIT_PD_PHYS:
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
-        case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
-        case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-        case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
-        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
-        case PGMPOOLKIND_EPT_PT_FOR_PHYS:
         case PGMPOOLKIND_PAE_PD_PHYS:
         case PGMPOOLKIND_PAE_PDPT_PHYS:
-        case PGMPOOLKIND_32BIT_PD_PHYS:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PT_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+            return false;
+#else
             return true;
+#endif
 
         /*
          * It's perfectly fine to reuse these, except for PAE and non-paging stuff.
