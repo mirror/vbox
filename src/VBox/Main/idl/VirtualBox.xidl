@@ -6775,7 +6775,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="604afeba-5963-4d12-a577-902ffb96352a"
+     uuid="0760e03f-06d0-481e-9f81-be43fef092ba"
      wsmap="managed"
      >
     <desc>
@@ -6801,6 +6801,14 @@
 
     <attribute name="maxGuestVRAM" type="unsigned long" readonly="yes">
       <desc>Maximum guest video memory in Megabytes.</desc>
+    </attribute>
+
+    <attribute name="minGuestCPUCount" type="unsigned long" readonly="yes">
+      <desc>Minimum CPU count.</desc>
+    </attribute>
+
+    <attribute name="maxGuestCPUCount" type="unsigned long" readonly="yes">
+      <desc>Maximum CPU count.</desc>
     </attribute>
 
     <attribute name="maxVDISize" type="unsigned long long" readonly="yes">
