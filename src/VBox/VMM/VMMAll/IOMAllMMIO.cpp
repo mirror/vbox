@@ -1758,6 +1758,12 @@ VMMDECL(int) IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped
 
     Log(("IOMMMIOModifyPage %RGp -> %RGp flags=%RX64\n", GCPhys, GCPhysRemapped, fPageFlags));
 
+    /* This currently only works in real mode, protected mode without paging or with nested paging. */
+    if (    !HWACCMIsEnabled(pVM)       /* useless without VT-x/AMD-V */
+        ||  (   CPUMIsGuestInPagedProtectedMode(pVM)
+             && !HWACCMIsNestedPagingActive(pVM)))
+        return VINF_SUCCESS;    /* ignore */
+
     /*
      * Lookup the current context range node and statistics.
      */
@@ -1768,11 +1774,6 @@ VMMDECL(int) IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped
 
     GCPhys         &= ~(RTGCPHYS)0xfff;
     GCPhysRemapped &= ~(RTGCPHYS)0xfff;
-
-    /* This currently only works in real mode, protected mode without paging or with nested paging. */
-    if (    CPUMIsGuestInPagedProtectedMode(pVM)
-        && !HWACCMIsNestedPagingActive(pVM))
-        return VINF_SUCCESS;    /* ignore */
 
     int rc = PGMHandlerPhysicalPageAlias(pVM, pRange->GCPhys, GCPhys, GCPhysRemapped);
     AssertRCReturn(rc, rc);
@@ -1803,6 +1804,12 @@ VMMDECL(int)  IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
 {
     Log(("IOMMMIOResetRegion %RGp\n", GCPhys));
 
+    /* This currently only works in real mode, protected mode without paging or with nested paging. */
+    if (    !HWACCMIsEnabled(pVM)       /* useless without VT-x/AMD-V */
+        ||  (   CPUMIsGuestInPagedProtectedMode(pVM)
+             && !HWACCMIsNestedPagingActive(pVM)))
+        return VINF_SUCCESS;    /* ignore */
+
     /*
      * Lookup the current context range node and statistics.
      */
@@ -1810,12 +1817,6 @@ VMMDECL(int)  IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
     AssertMsgReturn(pRange,
                     ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys),
                     VERR_INTERNAL_ERROR);
-
-    /* This currently only works in real mode, protected mode without paging or with nested paging. */
-    if (    CPUMIsGuestInPagedProtectedMode(pVM)
-        && !HWACCMIsNestedPagingActive(pVM))
-        return VINF_SUCCESS;    /* ignore */
-
 
     /* Reset the entire range by clearing all shadow page table entries. */
     int rc = PGMHandlerPhysicalReset(pVM, pRange->GCPhys);
