@@ -587,7 +587,7 @@ RTR3DECL(int) RTFileSetMode(RTFILE File, RTFMODE fMode)
     if (fchmod((int)File, fMode & RTFS_UNIX_MASK))
     {
         int rc = RTErrConvertFromErrno(errno);
-        Log(("RTFileSetMode(%RTfile,%RTfmode): returns %Rrc\n", File, fMode));
+        Log(("RTFileSetMode(%RTfile,%RTfmode): returns %Rrc\n", File, fMode, rc));
         return rc;
     }
     return VINF_SUCCESS;
