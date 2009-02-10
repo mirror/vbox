@@ -99,6 +99,7 @@ icmp_init(PNATState pData)
         LogRel(("NAT: ICMP/ping not available (could open ICMP socket, error %Rrc)\n", rc));
         return 1;
     }
+    fd_nonblock(pData->icmp_socket.s);
 #else /* RT_OS_WINDOWS */
     pData->hmIcmpLibrary = LoadLibrary("Iphlpapi.dll");
     if (pData->hmIcmpLibrary != NULL)
