@@ -70,6 +70,9 @@ QMap<QString, QString> QIHotKeyEdit::sKeyNames;
 #ifdef Q_WS_MAC
 # include "DarwinKeyboard.h"
 # include <Carbon/Carbon.h>
+# ifdef QT_MAC_USE_COCOA
+#  include "darwin/VBoxCocoaApplication.h"
+# endif
 #endif
 
 
@@ -132,11 +135,10 @@ QIHotKeyEdit::QIHotKeyEdit (QWidget *aParent) :
     setPalette (p);
 
 #ifdef Q_WS_MAC
-# ifdef QT_MAC_USE_COCOA
-/** @todo Carbon -> Cocoa */
-# else  /* !QT_MAC_USE_COCOA */
     mDarwinKeyModifiers = GetCurrentEventKeyModifiers();
-
+# ifdef QT_MAC_USE_COCOA
+    ::VBoxCocoaApplication_setCallback(UINT32_MAX, QIHotKeyEdit::darwinEventHandlerProc, this);
+# else  /* !QT_MAC_USE_COCOA */
     EventTypeSpec eventTypes [4];
     eventTypes [0].eventClass = kEventClassKeyboard;
     eventTypes [0].eventKind  = kEventRawKeyDown;
@@ -163,7 +165,7 @@ QIHotKeyEdit::~QIHotKeyEdit()
 #ifdef Q_WS_MAC
     ::DarwinReleaseKeyboard();
 # ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa */
+    ::VBoxCocoaApplication_unsetCallback(UINT32_MAX, QIHotKeyEdit::darwinEventHandlerProc, this);
 # else
     ::RemoveEventHandler (mDarwinEventHandlerRef);
     mDarwinEventHandlerRef = NULL;
@@ -666,9 +668,18 @@ bool QIHotKeyEdit::x11Event (XEvent *event)
 
 #elif defined (Q_WS_MAC)
 # ifdef QT_MAC_USE_COCOA
-/** @todo Carbon -> Cocoa */
-# else /* !QT_MAC_USE_COCOA */
+/* static */
+bool QIHotKeyEdit::darwinEventHandlerProc (const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
+{
+    QIHotKeyEdit *edit = (QIHotKeyEdit *) pvUser;
+    EventRef inEvent = (EventRef)pvCarbonEvent;
+    UInt32 EventClass = ::GetEventClass (inEvent);
+    if (EventClass == kEventClassKeyboard)
+        return edit->darwinKeyboardEvent (inEvent);
+    return false;
+}
 
+# else  /* !QT_MAC_USE_COCOA */
 /* static */
 pascal OSStatus QIHotKeyEdit::darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
                                                       EventRef inEvent, void *inUserData)
@@ -682,6 +693,7 @@ pascal OSStatus QIHotKeyEdit::darwinEventHandlerProc (EventHandlerCallRef inHand
     }
     return CallNextEventHandler (inHandlerCallRef, inEvent);
 }
+# endif /* !QT_MAC_USE_COCOA */
 
 bool QIHotKeyEdit::darwinKeyboardEvent (EventRef inEvent)
 {
@@ -724,7 +736,6 @@ bool QIHotKeyEdit::darwinKeyboardEvent (EventRef inEvent)
     }
     return false;
 }
-# endif /* !QT_MAC_USE_COCOA */
 
 #else
 # warning "Port me!"

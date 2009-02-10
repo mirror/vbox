@@ -27,7 +27,7 @@
 #if defined (Q_WS_X11)
 #include <QMap>
 #endif
-#if defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
+#if defined (Q_WS_MAC)
 # include <Carbon/Carbon.h>
 #endif
 
@@ -81,9 +81,12 @@ protected:
     bool pmEvent (QMSG *aMsg);
 #elif defined (Q_WS_X11)
     bool x11Event (XEvent *event);
-#elif defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
-    static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
-                                                   EventRef inEvent, void *inUserData);
+#elif defined (Q_WS_MAC)
+# ifdef QT_MAC_USE_COCOA
+    static bool darwinEventHandlerProc (const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
+# else
+    static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData);
+# endif
     bool darwinKeyboardEvent (EventRef inEvent);
 #endif
 
@@ -105,9 +108,11 @@ private:
     static QMap <QString, QString> sKeyNames;
 #endif
 
-#if defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
+#if defined (Q_WS_MAC)
+# ifndef QT_MAC_USE_COCOA
     /** Event handler reference. NULL if the handler isn't installed. */
     EventHandlerRef mDarwinEventHandlerRef;
+# endif
     /** The current modifier key mask. Used to figure out which modifier
      *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
     UInt32 mDarwinKeyModifiers;
