@@ -207,6 +207,14 @@ static void stubSPUTearDown(void)
 
     crNetTearDown();
 
+#ifdef GLX
+    if (stub.xshmSI.shmid>=0)
+    {
+        shmctl(stub.xshmSI.shmid, IPC_RMID, 0);
+        shmdt(stub.xshmSI.shmaddr);
+    }
+#endif
+
     crMemset(&stub, 0, sizeof(stub) );
 }
 
@@ -538,6 +546,11 @@ raise(SIGINT);*/
 
 #ifdef WINDOWS
     stubInstallWindowMessageHook();
+#endif
+
+#ifdef GLX
+    stub.xshmSI.shmid = -1;
+    stub.bShmInitFailed = GL_FALSE;
 #endif
 
     return true;

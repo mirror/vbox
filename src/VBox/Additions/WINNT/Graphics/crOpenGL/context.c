@@ -274,6 +274,10 @@ stubNewContext( const char *dpyName, GLint visBits, ContextType type,
         crHashtableSearch(stub.contextTable, (unsigned long) shareCtx);
 #endif
 
+#ifdef GLX
+    context->pGLXPixmapsHash = crAllocHashtable();
+#endif
+
     crHashtableAdd(stub.contextTable, context->id, (void *) context);
 
     return context;
@@ -1000,6 +1004,10 @@ stubDestroyContext( unsigned long contextId )
     if (stub.currentContext == context) {
         stub.currentContext = NULL;
     }
+
+#ifdef GLX
+    crFreeHashtable(context->pGLXPixmapsHash, crFree);
+#endif
 
     crMemZero(context, sizeof(ContextInfo));  /* just to be safe */
     crHashtableDelete(stub.contextTable, contextId, crFree);
