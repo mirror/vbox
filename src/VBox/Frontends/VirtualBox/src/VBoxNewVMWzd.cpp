@@ -331,6 +331,9 @@ bool VBoxNewVMWzd::constructMachine()
     mMachine.SetVRAMSize (qMax (type.GetRecommendedVRAM(),
                                 (ULONG) (VBoxGlobal::requiredVideoMemory() / _1M)));
 
+    /* Enabling audio by default */
+    mMachine.GetAudioAdapter().SetEnabled (true);
+
     /* Register the VM prior to attaching hard disks */
     vbox.RegisterMachine (mMachine);
     if (!vbox.isOk())
