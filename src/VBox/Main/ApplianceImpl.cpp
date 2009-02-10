@@ -1714,33 +1714,6 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     CheckComRCThrowRC(rc);
                     rc = audioAdapter->COMSETTER(Enabled)(true);
                     CheckComRCThrowRC(rc);
-                    /* @todo: For now this is preselected, but on Linux for example
-                       more drivers are possible. The user should be able to change
-                       this also. */
-                    AudioDriverType_T adt = AudioDriverType_Null;
-#if defined(RT_OS_WINDOWS)
-# ifdef VBOX_WITH_WINMM
-                    adt = AudioDriverType_WinMM;
-# else
-                    adt = AudioDriverType_DirectSound;
-# endif
-#elif defined(RT_OS_LINUX)
-# ifdef VBOX_WITH_ALSA
-                    adt = AudioDriverType_ALSA;
-# elif defined(VBOX_WITH_PULSE)
-                    adt = AudioDriverType_Pulse;
-# else
-                    adt = AudioDriverType_OSS;
-# endif
-#elif defined(RT_OS_DARWIN)
-                    adt = AudioDriverType_CoreAudio;
-#elif defined(RT_OS_SOLARIS)
-                    adt = AudioDriverType_SolAudio;
-#elif defined(RT_OS_OS2)
-                    adt = AudioDriverType_MMPM;
-#endif
-                    rc = audioAdapter->COMSETTER(AudioDriver)(adt);
-                    CheckComRCThrowRC(rc);
                     rc = audioAdapter->COMSETTER(AudioController)(static_cast<AudioControllerType_T>(audio));
                     CheckComRCThrowRC(rc);
                 }
