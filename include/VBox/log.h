@@ -93,6 +93,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_DMA,
     /** Gigabit Ethernet Device group. */
     LOG_GROUP_DEV_E1000,
+    /** Extensible Firmware Interface Device group. */
+    LOG_GROUP_DEV_EFI,
     /** Floppy Controller Device group. */
     LOG_GROUP_DEV_FDC,
     /** High Precision Event Timer Device group. */
@@ -355,6 +357,7 @@ typedef enum LOGGROUP
     "DEV_BUSLOGIC", \
     "DEV_DMA",      \
     "DEV_E1000",    \
+    "DEV_EFI",      \
     "DEV_FDC",      \
     "DEV_HPET",     \
     "DEV_IDE",      \
