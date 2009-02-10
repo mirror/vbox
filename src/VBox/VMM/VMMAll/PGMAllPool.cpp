@@ -3856,6 +3856,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
         case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
         case PGMPOOLKIND_PAE_PDPT:
+        case PGMPOOLKIND_PAE_PDPT_PHYS:
 #endif
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
