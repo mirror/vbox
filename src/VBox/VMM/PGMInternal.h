@@ -1515,8 +1515,14 @@ typedef enum PGMPOOLKIND
     PGMPOOLKIND_32BIT_PD,
     /** Shw: 32-bit page directory. Gst: no paging. */
     PGMPOOLKIND_32BIT_PD_PHYS,
-    /** Shw: PAE page directory;    Gst: 32-bit page directory. */
-    PGMPOOLKIND_PAE_PD_FOR_32BIT_PD,
+    /** Shw: PAE page directory 0;  Gst: 32-bit page directory. */
+    PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD,
+    /** Shw: PAE page directory 1;  Gst: 32-bit page directory. */
+    PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD,
+    /** Shw: PAE page directory 2;  Gst: 32-bit page directory. */
+    PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD,
+    /** Shw: PAE page directory 3;  Gst: 32-bit page directory. */
+    PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD,
     /** Shw: PAE page directory;    Gst: PAE page directory. */
     PGMPOOLKIND_PAE_PD_FOR_PAE_PD,
     /** Shw: PAE page directory;    Gst: no paging. */
