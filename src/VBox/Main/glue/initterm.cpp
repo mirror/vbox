@@ -192,7 +192,41 @@ static unsigned int gXPCOMInitCount = 0;
 
 #endif /* defined (VBOX_WITH_XPCOM) */
 
-
+/**
+ * Initializes the COM runtime.
+ *
+ * This method must be called on each thread of the client application that
+ * wants to access COM facilities. The initialization must be performed before
+ * calling any other COM method or attempting to instantiate COM objects.
+ *
+ * On platforms using XPCOM, this method uses the following scheme to search for
+ * XPCOM runtime:
+ *
+ * 1. If the VBOX_APP_HOME environment variable is set, the path it specifies
+ *    is used to search XPCOM libraries and components. If this method fails to
+ *    initialize XPCOM runtime using this path, it will immediately return a
+ *    failure and will NOT check for other paths as described below.
+ *
+ * 2. If VBOX_APP_HOME is not set, this methods tries the following paths in the
+ *    given order:
+ *
+ *    a) Compiled-in application data directory (as returned by
+ *       RTPathAppPrivateArch())
+ *    b) "/usr/lib/virtualbox" (Linux only)
+ *    c) "/opt/VirtualBox" (Linux only)
+ *
+ *    The first path for which the initialization succeeds will be used.
+ *
+ * On MS COM platforms, the COM runtime is provided by the system and does not
+ * need to be searched for.
+ *
+ * Once the COM subsystem is no longer necessary on a given thread, Shutdown()
+ * must be called to free resources allocated for it. Note that a thread may
+ * call Initialize() several times but for each of tese calls there must be a
+ * corresponding Shutdown() call.
+ *
+ * @return S_OK on success and a COM result code in case of failure.
+ */
 HRESULT Initialize()
 {
     HRESULT rc = E_FAIL;
@@ -306,92 +340,91 @@ HRESULT Initialize()
     /* this is the first initialization */
     gXPCOMInitCount = 1;
 
-    /* Set VBOX_XPCOM_HOME if not present */
-    if (!RTEnvExist ("VBOX_XPCOM_HOME"))
-    {
-        /* get the executable path */
-        char pathProgram [RTPATH_MAX];
-        int vrc = RTPathProgram (pathProgram, sizeof (pathProgram));
-        if (RT_SUCCESS (vrc))
-        {
-            char *pathProgramCP = NULL;
-            vrc = RTStrUtf8ToCurrentCP (&pathProgramCP, pathProgram);
-            if (RT_SUCCESS (vrc))
-            {
-                vrc = RTEnvSet ("VBOX_XPCOM_HOME", pathProgramCP);
-                RTStrFree (pathProgramCP);
-            }
-        }
-        AssertRC (vrc);
-    }
+    /* prepare paths for registry files */
+    char userHomeDir [RTPATH_MAX];
+    int vrc = GetVBoxUserHomeDirectory (userHomeDir, sizeof (userHomeDir));
+    AssertRCReturn (vrc, NS_ERROR_FAILURE);
+
+    char compReg [RTPATH_MAX];
+    char xptiDat [RTPATH_MAX];
+
+    RTStrPrintf (compReg, sizeof (compReg), "%s%c%s",
+                 userHomeDir, RTPATH_DELIMITER, "compreg.dat");
+    RTStrPrintf (xptiDat, sizeof (xptiDat), "%s%c%s",
+                 userHomeDir, RTPATH_DELIMITER, "xpti.dat");
+
+    LogFlowFunc (("component registry  : \"%s\"\n", compReg));
+    LogFlowFunc (("XPTI data file      : \"%s\"\n", xptiDat));
 
 #if defined (XPCOM_GLUE)
     XPCOMGlueStartup (nsnull);
 #endif
 
-    nsCOMPtr <DirectoryServiceProvider> dsProv;
-
-    /* prepare paths for registry files */
-    char homeDir [RTPATH_MAX];
-    char privateArchDir [RTPATH_MAX];
-    int vrc = GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
-    if (RT_SUCCESS (vrc))
-        vrc = RTPathAppPrivateArch (privateArchDir, sizeof (privateArchDir));
-    if (RT_SUCCESS (vrc))
+    const char *kAppPathsToProbe[] =
     {
-        char compReg [RTPATH_MAX];
-        char xptiDat [RTPATH_MAX];
+        NULL, /* 0: will use VBOX_APP_HOME */
+        NULL, /* 1: will try RTPathAppPrivateArch() */
+#ifdef RT_OS_LINUX
+        "/usr/lib/virtualbox",
+        "/opt/VirtualBox",
+#endif
+    };
+
+    /* Find out the directory where VirtualBox binaries are located */
+    for (size_t i = 0; i < RT_ELEMENTS (kAppPathsToProbe); ++ i)
+    {
+        char appHomeDir [RTPATH_MAX];
+        appHomeDir [RTPATH_MAX - 1] = '\0';
+
+        if (i == 0)
+        {
+            /* Use VBOX_APP_HOME if present */
+            if (!RTEnvExist ("VBOX_APP_HOME"))
+                continue;
+
+            strncpy (appHomeDir, RTEnvGet ("VBOX_APP_HOME"), RTPATH_MAX - 1);
+        }
+        else if (i == 1)
+        {
+            /* Use RTPathAppPrivateArch() first */
+            vrc = RTPathAppPrivateArch (appHomeDir, sizeof (appHomeDir));
+            AssertRC (vrc);
+            if (RT_FAILURE (vrc))
+            {
+                rc = NS_ERROR_FAILURE;
+                continue;
+            }
+        }
+        else
+        {
+            /* Iterate over all other paths */
+            strncpy (appHomeDir, kAppPathsToProbe [i], RTPATH_MAX - 1);
+        }
+
+        nsCOMPtr <DirectoryServiceProvider> dsProv;
+
         char compDir [RTPATH_MAX];
-
-        RTStrPrintf (compReg, sizeof (compReg), "%s%c%s",
-                     homeDir, RTPATH_DELIMITER, "compreg.dat");
-        RTStrPrintf (xptiDat, sizeof (xptiDat), "%s%c%s",
-                     homeDir, RTPATH_DELIMITER, "xpti.dat");
         RTStrPrintf (compDir, sizeof (compDir), "%s%c%s",
-                     privateArchDir, RTPATH_DELIMITER, "components");
-
-        LogFlowFunc (("component registry  : \"%s\"\n", compReg));
-        LogFlowFunc (("XPTI data file      : \"%s\"\n", xptiDat));
+                     appHomeDir, RTPATH_DELIMITER, "components");
         LogFlowFunc (("component directory : \"%s\"\n", compDir));
 
         dsProv = new DirectoryServiceProvider();
         if (dsProv)
-            rc = dsProv->init (compReg, xptiDat, compDir, privateArchDir);
+            rc = dsProv->init (compReg, xptiDat, compDir, appHomeDir);
         else
             rc = NS_ERROR_OUT_OF_MEMORY;
-    }
-    else
-        rc = NS_ERROR_FAILURE;
+        if (NS_FAILED (rc))
+            break;
 
-    if (NS_SUCCEEDED (rc))
-    {
-        /* get the path to the executable */
+        /* Setup the application path for NS_InitXPCOM2. Note that we properly
+         * answer the NS_XPCOM_CURRENT_PROCESS_DIR query in our directory
+         * service provider but it seems to be activated after the directory
+         * service is used for the first time (see the source NS_InitXPCOM2). So
+         * use the same value here to be on the safe side. */
         nsCOMPtr <nsIFile> appDir;
         {
-            char path [RTPATH_MAX];
             char *appDirCP = NULL;
-#if defined (DEBUG)
-            const char *env = RTEnvGet ("VIRTUALBOX_APP_HOME");
-            if (env)
-            {
-                char *appDirUtf8 = NULL;
-                vrc = RTStrCurrentCPToUtf8 (&appDirUtf8, env);
-                if (RT_SUCCESS (vrc))
-                {
-                    vrc = RTPathReal (appDirUtf8, path, RTPATH_MAX);
-                    if (RT_SUCCESS (vrc))
-                        vrc = RTStrUtf8ToCurrentCP (&appDirCP, appDirUtf8);
-                    RTStrFree (appDirUtf8);
-                }
-            }
-            else
-#endif
-            {
-                vrc = RTPathProgram (path, RTPATH_MAX);
-                if (RT_SUCCESS (vrc))
-                    vrc = RTStrUtf8ToCurrentCP (&appDirCP, path);
-            }
-
+            vrc = RTStrUtf8ToCurrentCP (&appDirCP, appHomeDir);
             if (RT_SUCCESS (vrc))
             {
                 nsCOMPtr <nsILocalFile> file;
@@ -405,21 +438,47 @@ HRESULT Initialize()
             else
                 rc = NS_ERROR_FAILURE;
         }
+        if (NS_FAILED (rc))
+            break;
+
+        /* Set VBOX_XPCOM_HOME to the same app path to make XPCOM sources that
+         * still use it instead of the directory service happy */
+        {
+            char *pathCP = NULL;
+            vrc = RTStrUtf8ToCurrentCP (&pathCP, appHomeDir);
+            if (RT_SUCCESS (vrc))
+            {
+                vrc = RTEnvSet ("VBOX_XPCOM_HOME", pathCP);
+                RTStrFree (pathCP);
+            }
+            AssertRC (vrc);
+        }
 
         /* Finally, initialize XPCOM */
+        nsCOMPtr <nsIServiceManager> serviceManager;
+        rc = NS_InitXPCOM2 (getter_AddRefs (serviceManager),
+                            appDir, dsProv);
+
         if (NS_SUCCEEDED (rc))
         {
-            nsCOMPtr <nsIServiceManager> serviceManager;
-            rc = NS_InitXPCOM2 (getter_AddRefs (serviceManager),
-                                appDir, dsProv);
-
+            nsCOMPtr <nsIComponentRegistrar> registrar =
+                do_QueryInterface (serviceManager, &rc);
             if (NS_SUCCEEDED (rc))
             {
-                nsCOMPtr <nsIComponentRegistrar> registrar =
-                    do_QueryInterface (serviceManager, &rc);
+                rc = registrar->AutoRegister (nsnull);
                 if (NS_SUCCEEDED (rc))
-                    registrar->AutoRegister (nsnull);
+                {
+                    /* We succeeded, stop probing paths */
+                    LogFlowFunc (("Succeeded.\n"));
+                    break;
+                }
             }
+        }
+
+        if (i == 0)
+        {
+            /* We failed with VBOX_APP_HOME, don't probe other paths */
+            break;
         }
     }
 
