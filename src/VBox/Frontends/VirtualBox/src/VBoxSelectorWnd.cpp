@@ -29,6 +29,7 @@
 #include "VBoxSnapshotsWgt.h"
 #include "VBoxNewVMWzd.h"
 #include "VBoxMediaManagerDlg.h"
+#include "VBoxImportAppliance.h"
 #include "VBoxSettingsDialogSpecific.h"
 #include "VBoxVMLogViewer.h"
 #include "VBoxGlobal.h"
@@ -403,6 +404,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     mFileMediaMgrAction = new QAction (this);
     mFileMediaMgrAction->setIcon (VBoxGlobal::iconSet (":/diskimage_16px.png"));
+
+    mFileApplianceImportAction = new QAction (this);
+    mFileApplianceImportAction->setIcon (VBoxGlobal::iconSet (":/diskimage_16px.png"));
+
     mFileSettingsAction = new QAction(this);
     mFileSettingsAction->setMenuRole (QAction::PreferencesRole);
     mFileSettingsAction->setIcon (VBoxGlobal::iconSet (":/global_settings_16px.png"));
@@ -539,6 +544,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     mFileMenu = menuBar()->addMenu (QString::null);
     mFileMenu->addAction (mFileMediaMgrAction);
+    mFileMenu->addAction (mFileApplianceImportAction);
     mFileMenu->addSeparator();
     mFileMenu->addAction (mFileSettingsAction);
     mFileMenu->addSeparator();
@@ -639,6 +645,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* signals and slots connections */
     connect (mFileMediaMgrAction, SIGNAL (triggered()), this, SLOT (fileMediaMgr()));
+    connect (mFileApplianceImportAction, SIGNAL (triggered()), this, SLOT (fileImportAppliance()));
     connect (mFileSettingsAction, SIGNAL (triggered()), this, SLOT (fileSettings()));
     connect (mFileExitAction, SIGNAL (triggered()), this, SLOT (fileExit()));
     connect (mVmNewAction, SIGNAL (triggered()), this, SLOT (vmNew()));
@@ -734,6 +741,11 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 void VBoxSelectorWnd::fileMediaMgr()
 {
     VBoxMediaManagerDlg::showModeless (this);
+}
+
+void VBoxSelectorWnd::fileImportAppliance()
+{
+    VBoxImportAppliance::import (this);
 }
 
 void VBoxSelectorWnd::fileSettings()
@@ -1249,6 +1261,10 @@ void VBoxSelectorWnd::retranslateUi()
     mFileMediaMgrAction->setText (tr ("&Virtual Media Manager..."));
     mFileMediaMgrAction->setShortcut (QKeySequence ("Ctrl+D"));
     mFileMediaMgrAction->setStatusTip (tr ("Display the Virtual Media Manager dialog"));
+
+    mFileApplianceImportAction->setText (tr ("&Import Appliance..."));
+    mFileApplianceImportAction->setShortcut (QKeySequence ("Ctrl+K"));
+    mFileApplianceImportAction->setStatusTip (tr ("Import an appliance into VirtualBox"));
 
 #ifdef Q_WS_MAC
     /*

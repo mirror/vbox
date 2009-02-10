@@ -371,6 +371,9 @@ public:
 
     void cannotRunInSelectorMode();
 
+    void cannotImportAppliance (const CAppliance &aAppliance);
+    void cannotImportAppliance (const CProgress &aProgress, const CAppliance &aAppliance);
+
     void showRuntimeError (const CConsole &console, bool fatal,
                            const QString &errorID,
                            const QString &errorMsg);
