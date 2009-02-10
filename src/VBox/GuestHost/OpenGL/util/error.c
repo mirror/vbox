@@ -348,7 +348,7 @@ DECLEXPORT(void) crDebug( char *format, ... )
         offset = sprintf( txt, "[0x%x] OpenGL Debug: ", crThreadID());
     }
 #else
-    offset = sprintf( txt, "OpenGL Debug: ");
+    offset = sprintf( txt, "[0x%x] OpenGL Debug: ", crThreadID());
 #endif
     va_start( args, format );
     vsprintf( txt + offset, format, args );
