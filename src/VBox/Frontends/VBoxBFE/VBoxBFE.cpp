@@ -1677,6 +1677,14 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
         {
             rc = CFGMR3InsertString(pCfg, "Format",       "SPF");                   UPDATE_RC();
         }
+        else if (!strcmp(RTPathExt(g_pszHdaFile), ".vdi"))
+        {
+            rc = CFGMR3InsertString(pCfg, "Format",       "VDI");                   UPDATE_RC();
+        }
+        else
+        {
+            rc = CFGMR3InsertString(pCfg, "Format",       "VMDK");                  UPDATE_RC();
+        }
     }
 
     if (g_pszHdbFile)
@@ -1695,6 +1703,14 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
         if (g_fHdbSpf)
         {
             rc = CFGMR3InsertString(pCfg, "Format",       "SPF");                   UPDATE_RC();
+        }
+        else if (!strcmp(RTPathExt(g_pszHdbFile), ".vdi"))
+        {
+            rc = CFGMR3InsertString(pCfg, "Format",       "VDI");                   UPDATE_RC();
+        }
+        else
+        {
+            rc = CFGMR3InsertString(pCfg, "Format",       "VMDK");                  UPDATE_RC();
         }
     }
 
