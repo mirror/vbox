@@ -1484,21 +1484,25 @@ STDMETHODIMP Appliance::Interpret()
                          || (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed"))
                        )
                     {
-                        // construct a unique target path
+                        /* If the href is empty use the VM name as filename */
+                        Utf8Str strFilename = di.strHref.c_str();
+                        if (di.strHref.c_str()[0] == 0)
+                            strFilename = Utf8StrFmt("%s.vmdk", nameVBox.c_str());
+                        /* Construct a unique target path */
                         Utf8StrFmt strPath("%ls%c%s",
                                            bstrDefaultHardDiskLocation.raw(),
                                            RTPATH_DELIMITER,
-                                           di.strHref.c_str());
+                                           strFilename.c_str());
                         searchUniqueDiskImageFilePath(strPath);
 
-                        // find the description for the hard disk controller that has the
-                        // same ID as hd.idController
+                        /* find the description for the hard disk controller
+                         * that has the same ID as hd.idController */
                         const VirtualSystemDescriptionEntry *pController;
                         if (!(pController = pNewDesc->findControllerFromID(hd.idController)))
                             throw setError(E_FAIL,
                                            tr("Internal inconsistency looking up hard disk controller."));
 
-                        // controller to attach to @todo bus?
+                        /* controller to attach to @todo bus? */
                         Utf8StrFmt strExtraConfig("controller=%RI16",
                                                   pController->ulIndex);
                         pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
@@ -1900,20 +1904,38 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                         const DiskImage &di = itDiskImage->second;
                         const VirtualDisk &vd = itVirtualDisk->second;
 
-                        /* Construct the source file path */
-                        Utf8StrFmt strSrcFilePath("%s%c%s", strSrcDir.c_str(), RTPATH_DELIMITER, di.strHref.c_str());
-                        /* Check if the source file exists */
-                        if (!RTPathExists(strSrcFilePath.c_str()))
+                        /* Make sure all target directories exists */
+                        rc = VirtualBox::ensureFilePathExists(pcszDstFilePath);
+                        CheckComRCThrowRC(rc);
+                        ComPtr<IHardDisk2> dstHdVBox;
+                        /* If strHref is empty we have to create a new file */
+                        if (di.strHref.c_str()[0] == 0)
                         {
-                            /* @todo: we have to create a new one */
-                            throw setError(E_FAIL,
-                                           tr("Creation of new disk images not supported yet."));
+                            /* Which format to use? */
+                            Bstr srcFormat = L"VDI";
+                            if (   (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#sparse"))
+                                || (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed")))
+                                srcFormat = L"VMDK";
+                            /* Create an empty hard disk */
+                            rc = app->mVirtualBox->CreateHardDisk2(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
+                            CheckComRCThrowRC(rc);
+                            /* Create a dynamic growing disk image with the given capacity */
+                            ComPtr<IProgress> progress;
+                            dstHdVBox->CreateDynamicStorage(di.iCapacity / _1M, progress.asOutParam());
+                            CheckComRCThrowRC(rc);
+                            rc = progress->WaitForCompletion(-1);
+                            CheckComRCThrowRC(rc);
                         }
                         else
                         {
-                            /* Make sure all target directories exists */
-                            rc = VirtualBox::ensureFilePathExists(pcszDstFilePath);
-                            CheckComRCThrowRC(rc);
+                            /* Construct the source file path */
+                            Utf8StrFmt strSrcFilePath("%s%c%s", strSrcDir.c_str(), RTPATH_DELIMITER, di.strHref.c_str());
+                            /* Check if the source file exists */
+                            if (!RTPathExists(strSrcFilePath.c_str()))
+                                /* This isn't allowed */
+                                throw setError(VBOX_E_FILE_ERROR,
+                                               tr("Source virtual disk image file '%s' doesn't exists",
+                                                  strSrcFilePath.c_str()));
                             /* Clone the disk image (this is necessary cause the id has
                              * to be recreated for the case the same hard disk is
                              * attached already from a previous import) */
@@ -1925,7 +1947,6 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                             rc = srcHdVBox->COMGETTER(Format)(srcFormat.asOutParam());
                             CheckComRCThrowRC(rc);
                             /* Create a new hard disk interface for the destination disk image */
-                            ComPtr<IHardDisk2> dstHdVBox;
                             rc = app->mVirtualBox->CreateHardDisk2(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
                             CheckComRCThrowRC(rc);
                             /* Clone the source disk image */
@@ -1937,30 +1958,30 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                             /* We *must* close the source disk image in order to deregister it */
                             rc = srcHdVBox->Close();
                             CheckComRCThrowRC(rc);
-                            /* Now use the new uuid to attach the disk image to our new machine */
-                            ComPtr<IMachine> sMachine;
-                            rc = session->COMGETTER(Machine)(sMachine.asOutParam());
-                            CheckComRCThrowRC(rc);
-                            Guid hdId;
-                            rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());;
-                            CheckComRCThrowRC(rc);
-                            /* For now we assume we have one controller of every type only */
-                            HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
-                            StorageBus_T sbt = StorageBus_IDE;
-                            switch (hdc.system)
-                            {
-                                case HardDiskController::IDE: sbt = StorageBus_IDE; break;
-                                case HardDiskController::SATA: sbt = StorageBus_SATA; break;
-                                //case HardDiskController::SCSI: sbt = StorageBus_SCSI; break; // @todo: not available yet
-                                default: break;
-                            }
-                            rc = sMachine->AttachHardDisk2(hdId, sbt, hdc.ulBusNumber, 0);
-                            CheckComRCThrowRC(rc);
-                            rc = sMachine->SaveSettings();
-                            CheckComRCThrowRC(rc);
-                            rc = session->Close();
-                            CheckComRCThrowRC(rc);
                         }
+                        /* Now use the new uuid to attach the disk image to our new machine */
+                        ComPtr<IMachine> sMachine;
+                        rc = session->COMGETTER(Machine)(sMachine.asOutParam());
+                        CheckComRCThrowRC(rc);
+                        Guid hdId;
+                        rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());;
+                        CheckComRCThrowRC(rc);
+                        /* For now we assume we have one controller of every type only */
+                        HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
+                        StorageBus_T sbt = StorageBus_IDE;
+                        switch (hdc.system)
+                        {
+                            case HardDiskController::IDE: sbt = StorageBus_IDE; break;
+                            case HardDiskController::SATA: sbt = StorageBus_SATA; break;
+                                                           //case HardDiskController::SCSI: sbt = StorageBus_SCSI; break; // @todo: not available yet
+                            default: break;
+                        }
+                        rc = sMachine->AttachHardDisk2(hdId, sbt, hdc.ulBusNumber, 0);
+                        CheckComRCThrowRC(rc);
+                        rc = sMachine->SaveSettings();
+                        CheckComRCThrowRC(rc);
+                        rc = session->Close();
+                        CheckComRCThrowRC(rc);
                     }
                 }
                 catch(HRESULT aRC)
