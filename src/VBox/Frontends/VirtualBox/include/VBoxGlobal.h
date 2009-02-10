@@ -1027,6 +1027,7 @@ public slots:
 
     void showRegistrationDialog (bool aForce = true);
     void showUpdateDialog (bool aForce = true);
+    void perDayNewVersionNotifier();
 
 protected:
 

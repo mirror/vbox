@@ -47,6 +47,7 @@
 #include <QProcess>
 #include <QThread>
 #include <QPainter>
+#include <QTimer>
 
 #include <math.h>
 
@@ -5268,6 +5269,11 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
  */
 void VBoxGlobal::showUpdateDialog (bool aForce)
 {
+    /* Silently check in one day after current time-stamp */
+    QTimer::singleShot (24 /* hours */   * 60   /* minutes */ *
+                        60 /* seconds */ * 1000 /* milliseconds */,
+                        this, SLOT (perDayNewVersionNotifier()));
+
     bool isNecessary = VBoxUpdateDlg::isNecessary();
 
     if (!aForce && !isNecessary)
@@ -5306,6 +5312,11 @@ void VBoxGlobal::showUpdateDialog (bool aForce)
             /* else mUpdDlg->show(); */
         }
     }
+}
+
+void VBoxGlobal::perDayNewVersionNotifier()
+{
+    showUpdateDialog (false /* force show? */);
 }
 
 // Protected members
