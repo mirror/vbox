@@ -1463,9 +1463,6 @@ STDMETHODIMP Appliance::Interpret()
             /* Hard disks */
             if (vsysThis.mapVirtualDisks.size() > 0)
             {
-                // @todo:
-                //  - strHref could be empty (construct a new default file name)
-                //  - check that the filename is unique to vbox in any case
                 VirtualDisksMap::const_iterator itVD;
                 /* Iterate through all hard disks ()*/
                 for (itVD = vsysThis.mapVirtualDisks.begin();
@@ -1682,16 +1679,13 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             CheckComRCThrowRC(rc);
 
             /* CPU count (ignored for now) */
-            /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxCPUCount) */
             // EntriesList vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
 
             /* RAM */
-            /* @todo: check min/max requirements of VBox (SchemaDefs::Min/MaxGuestRAM) */
             std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->findByType(VirtualSystemDescriptionType_Memory);
             ComAssertMsgThrow(vsdeRAM.size() == 1, ("RAM size missing"), E_FAIL);
             const Utf8Str &memoryVBox = vsdeRAM.front()->strConfig;
             ULONG tt = (ULONG)RTStrToUInt64(memoryVBox.c_str());
-
             rc = pNewMachine->COMSETTER(MemorySize)(tt);
             CheckComRCThrowRC(rc);
 
@@ -1790,7 +1784,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             /* @todo: we support one IDE controller only */
             if (vsdeHDCIDE.size() > 0)
             {
-                // set the appropriate IDE controller in the virtual BIOS of the VM
+                /* Set the appropriate IDE controller in the virtual BIOS of the VM */
                 ComPtr<IBIOSSettings> biosSettings;
                 rc = pNewMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
                 CheckComRCThrowRC(rc);
