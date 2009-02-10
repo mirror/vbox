@@ -388,32 +388,43 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw=%#x!\n", iShwPdpt, iShw));
                     }
-                    /* paranoia / a bit assumptive. */
-                    else if (   pCpu
-                             && (off & 3)
-                             && (off & 3) + cbWrite > 4)
+                    else
+                    if (uShw.pPDPae->a[iShw].n.u1Present)
                     {
-                        const unsigned iShw2 = iShw + 2;
-                        if (    iShw2 < RT_ELEMENTS(uShw.pPDPae->a) /** @todo was completely wrong, it's better now after #1865 but still wrong from cross PD. */
-                            &&  (uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
-                        {
-                            Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
-                            VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
-                            LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw2=%#x!\n", iShwPdpt, iShw2));
-                        }
-                    }
-#if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
-                    if (    uShw.pPDPae->a[iShw].n.u1Present
-                        &&  !VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
-                    {
-                        LogFlow(("pgmPoolMonitorChainChanging: iShwPdpt=%#x iShw=%#x: %RX64 -> freeing it!\n", iShwPdpt, iShw, uShw.pPDPae->a[iShw].u));
-# ifdef IN_RC           /* TLB load - we're pushing things a bit... */
-                        ASMProbeReadByte(pvAddress);
-# endif
-                        pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw + iShwPdpt * X86_PG_PAE_ENTRIES);
+                        LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
+                        pgmPoolFree(pPool->CTX_SUFF(pVM),
+                                    uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK,
+                                    pPage->idx,
+                                    iShw);
                         uShw.pPDPae->a[iShw].u = 0;
                     }
-#endif
+
+                    /* paranoia / a bit assumptive. */
+                    if (   pCpu
+                        && (off & 3)
+                        && (off & 3) + cbWrite > 4)
+                    {
+                        const unsigned iShw2 = iShw + 2;
+                        if (iShw2 < RT_ELEMENTS(uShw.pPDPae->a))
+                        {
+                            if ((uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
+                            {
+                                Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                                VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                                LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw2=%#x!\n", iShwPdpt, iShw2));
+                            }
+                            else
+                            if (uShw.pPDPae->a[iShw2].n.u1Present)
+                            {
+                                LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
+                                pgmPoolFree(pPool->CTX_SUFF(pVM),
+                                            uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
+                                            pPage->idx,
+                                            iShw2);
+                                uShw.pPDPae->a[iShw2].u = 0;
+                            }
+                        }
+                    }
                 }
                 break;
             }
