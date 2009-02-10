@@ -2087,6 +2087,24 @@ void VBoxProblemReporter::cannotRunInSelectorMode()
             "<p>The application will now terminate.</p>"));
 }
 
+void VBoxProblemReporter::cannotImportAppliance (const CAppliance &aAppliance)
+{
+    message (mainWindowShown(),
+             Error,
+             tr ("Failed to open/interpret appliance <b>%1</b>.").arg (aAppliance.GetPath()),
+             formatErrorInfo (aAppliance));
+}
+
+void VBoxProblemReporter::cannotImportAppliance (const CProgress &aProgress, const CAppliance& aAppliance)
+{
+    AssertWrapperOk (aProgress);
+
+    message (mainWindowShown(),
+             Error,
+             tr ("Failed to import appliance <b>%1</b>.").arg (aAppliance.GetPath()),
+             formatErrorInfo (aProgress.GetErrorInfo()));
+}
+
 void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal,
                                             const QString &errorID,
                                             const QString &errorMsg)

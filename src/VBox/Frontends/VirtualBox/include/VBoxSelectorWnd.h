@@ -67,6 +67,7 @@ signals:
 public slots:
 
     void fileMediaMgr();
+    void fileImportAppliance();
     void fileSettings();
     void fileExit();
 
@@ -148,6 +149,7 @@ private:
 
     /* Actions */
     QAction *mFileMediaMgrAction;
+    QAction *mFileApplianceImportAction;
     QAction *mFileSettingsAction;
     QAction *mFileExitAction;
     QAction *mVmNewAction;
