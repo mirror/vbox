@@ -2096,7 +2096,6 @@ int emR3RawPrivileged(PVM pVM)
                                 PATMTRANSSTATE  enmState;
                                 RTGCPTR         pOrgInstrGC = PATMR3PatchToGCPtr(pVM, pCtx->rip, &enmState);
 
-                                Assert(pCtx->eflags.Bits.u1IF == 0);
                                 Log(("Force recompiler switch due to cr0 (%RGp) update\n", pCtx->cr0));
                                 if (enmState == PATMTRANS_OVERWRITTEN)
                                 {
