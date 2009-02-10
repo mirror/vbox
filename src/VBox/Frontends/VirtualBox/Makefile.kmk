@@ -205,8 +205,9 @@ else
 endif
 # r=bird: what is -lz doing here? it belongs in LIBS.
 VirtualBox_LDFLAGS.darwin = -lz \
-	-framework IOKit -framework AppKit -framework ApplicationServices -framework Foundation -framework Carbon -framework QuickTime \
+	-framework IOKit -framework AppKit -framework ApplicationServices -framework Foundation -framework Carbon \
 	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBox.dylib)
+VirtualBox_LDFLAGS.darwin.x86 = -framework QuickTime
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
 endif
@@ -390,8 +391,11 @@ VirtualBox_SOURCES.darwin = \
 
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_SOURCES.darwin += \
-	 src/darwin/VBoxIChatTheaterWrapper.m
+ 	src/darwin/VBoxIChatTheaterWrapper.m
 endif
+
+VirtualBox_SOURCES.darwin.amd64 += \
+	src/darwin/VBoxCocoaApplication.m
 
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)

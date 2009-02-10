@@ -24,11 +24,14 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
 #include "VBoxConsoleWnd.h"
-#ifdef Q_WS_MAC
+#include "VBoxUtils.h"
+#if defined(Q_WS_MAC) && !defined(QT_MAC_USE_COCOA)
 # include "QIApplication.h"
-# include "VBoxUtils.h"
 #else
 # define QIApplication QApplication
+#endif
+#ifdef QT_MAC_USE_COCOA
+# include "darwin/VBoxCocoaApplication.h"
 #endif
 
 #ifdef Q_WS_X11
@@ -233,6 +236,12 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
     sigaction (SIGSEGV, &sa, NULL);
     sigaction (SIGBUS, &sa, NULL);
     sigaction (SIGUSR1, &sa, NULL);
+#endif
+
+#ifdef QT_MAC_USE_COCOA
+    /* Instantiate our NSApplication derivative before QApplication
+     * forces NSApplication to be instantiated. */
+    VBoxCocoaApplication_sharedApplication();
 #endif
 
     qInstallMsgHandler (QtMessageOutput);
