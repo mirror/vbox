@@ -1455,9 +1455,11 @@ void crPixelCopy2D( GLsizei width, GLsizei height,
         else
         {
             /* need to do format and/or type conversion */
-            crDebug("Converting texture format");
             char *swapRow = NULL;
             GLfloat *tmpRow = crAlloc( 4 * width * sizeof(GLfloat) );
+
+            crDebug("Converting texture format");
+
             if (!tmpRow)
                 crError("Out of memory in crPixelCopy2D");
 
