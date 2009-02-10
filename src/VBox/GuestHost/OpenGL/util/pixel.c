@@ -1424,27 +1424,38 @@ void crPixelCopy2D( GLsizei width, GLsizei height,
         if (srcFormat == dstFormat && srcType == dstType)
         {
             CRASSERT(srcBytesPerRow == dstBytesPerRow);
-            for (i = 0; i < height; i++)
+            
+            if (srcBytesPerRow==srcRowStrideBytes 
+                && srcRowStrideBytes==dstRowStrideBytes)
             {
-                crMemcpy( (void *) dst, (const void *) src, srcBytesPerRow );
-                /* check if src XOR dst swapping */
-                if (srcPacking->swapBytes ^ dstPacking->swapBytes) {
-                    const GLint size = crSizeOfType(srcType);
-                    CRASSERT(srcType == dstType);
-                    if (size == 2) {
-                        swap2((GLushort *) dst, srcBytesPerRow / size);
-                    }
-                    else if (size == 4) {
-                        swap4((GLuint *)  dst, srcBytesPerRow / size);
-                    }
-                }
-                dst += dstRowStrideBytes;
-                src += srcRowStrideBytes;
+                crMemcpy( (void *) dst, (const void *) src, height * srcBytesPerRow );
             }
+            else
+                crDebug("Sending texture, BytesPerRow!=RowStrideBytes");
+                for (i = 0; i < height; i++)
+                {
+                    crMemcpy( (void *) dst, (const void *) src, srcBytesPerRow );
+#if 0
+                    /* check if src XOR dst swapping */
+                    if (srcPacking->swapBytes ^ dstPacking->swapBytes) {
+                        const GLint size = crSizeOfType(srcType);
+                        CRASSERT(srcType == dstType);
+                        if (size == 2) {
+                            swap2((GLushort *) dst, srcBytesPerRow / size);
+                        }
+                        else if (size == 4) {
+                            swap4((GLuint *)  dst, srcBytesPerRow / size);
+                        }
+                    }
+#endif
+                    dst += dstRowStrideBytes;
+                    src += srcRowStrideBytes;
+                }
         }
         else
         {
             /* need to do format and/or type conversion */
+            crDebug("Converting texture format");
             char *swapRow = NULL;
             GLfloat *tmpRow = crAlloc( 4 * width * sizeof(GLfloat) );
             if (!tmpRow)
@@ -1498,7 +1509,7 @@ void crPixelCopy2D( GLsizei width, GLsizei height,
                 crFree(swapRow);
         }
     }
-        }
+}
 
 void crPixelCopy3D( GLsizei width, GLsizei height, GLsizei depth,
                     GLvoid *dstPtr, GLenum dstFormat, GLenum dstType,
