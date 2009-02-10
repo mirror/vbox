@@ -119,7 +119,7 @@ public:
     int childCount() const { return mChildItems.count(); }
     int columnCount() const { return 3; }
 
-    virtual Qt::ItemFlags itemFlags (int aColumn) const { return Qt::NoItemFlags; }
+    virtual Qt::ItemFlags itemFlags (int aColumn) const { return 0; }
     virtual bool setData (int aColumn, const QVariant &aValue, int aRole) { return false; }
     virtual QVariant data (int aColumn, int aRole) const { return QVariant(); }
     virtual QWidget * createEditor (QWidget *aParent, const QStyleOptionViewItem &aOption, const QModelIndex &aIndex) const { return NULL; }
@@ -352,7 +352,7 @@ public:
 
     virtual Qt::ItemFlags itemFlags (int aColumn) const
     {
-        Qt::ItemFlags flags = Qt::NoItemFlags;
+        Qt::ItemFlags flags = 0;
         if (aColumn == ConfigValueSection)
         {
             /* Some items are checkable */
