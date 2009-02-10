@@ -1330,6 +1330,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
         case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_PAE_PDPT_FOR_32BIT: /* never reuse them for other types */
             return false;
 #else
             return true;
