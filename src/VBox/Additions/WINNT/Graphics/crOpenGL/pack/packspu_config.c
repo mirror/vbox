@@ -53,5 +53,5 @@ void packspuSetVBoxConfiguration( const SPU *child_spu )
     pack_spu.emit_GATHER_POST_SWAPBUFFERS = 0;
     pack_spu.swapbuffer_sync = 0;
     pack_spu.name = crStrdup("vboxhgcm://llp:7000");
-    pack_spu.buffer_size = 1024 * 1024;
+    pack_spu.buffer_size = 5 * 1024 * 1024;
 }

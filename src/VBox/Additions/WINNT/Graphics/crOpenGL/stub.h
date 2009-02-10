@@ -39,6 +39,11 @@
 #include "cr_threads.h"
 #include "spu_dispatch_table.h"
 
+#ifdef GLX
+#include <X11/extensions/XShm.h>
+#include <sys/shm.h>
+#endif
+
 
 /* When we first create a rendering context we can't be sure whether
  * it'll be handled by Chromium or as a native GLX/WGL context.  So in
@@ -58,6 +63,20 @@ typedef enum
 
 typedef struct context_info_t ContextInfo;
 typedef struct window_info_t WindowInfo;
+
+#ifdef GLX
+typedef struct glxpixmap_info_t GLX_Pixmap_t;
+
+struct glxpixmap_info_t
+{
+    int x, y;
+    unsigned int w, h, border, depth;
+    Window root;
+    GC gc;
+    Pixmap pixmap;
+    void *data;
+};
+#endif
 
 struct context_info_t
 {
@@ -90,6 +109,7 @@ struct context_info_t
     XVisualInfo *visual;
     Bool direct;
     GLXContext glxContext;
+    CRHashTable *pGLXPixmapsHash;
 #endif
 };
 
@@ -173,6 +193,12 @@ typedef struct {
 
     /* windows */
     CRHashTable *windowTable;
+
+#ifdef GLX
+    /* Shared memory, used to transfer XServer pixmaps data into client memory */
+    XShmSegmentInfo xshmSI;
+    GLboolean       bShmInitFailed;
+#endif
 
 #ifdef WINDOWS
     HHOOK       hMessageHook;
