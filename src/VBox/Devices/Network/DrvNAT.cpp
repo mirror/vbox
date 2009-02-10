@@ -388,7 +388,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         int cChangedFDs = poll(polls, nFDs + 2, ms ? ms : -1);
         if (cChangedFDs >= 0)
         {
-            slirp_select_poll(pThis->pNATState, &polls[1], nFDs);
+            slirp_select_poll(pThis->pNATState, &polls[1], nFDs + 1);
             if (polls[0].revents & (POLLRDNORM|POLLPRI|POLLRDBAND))
             {
                 /* drain the pipe */
