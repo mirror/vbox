@@ -335,6 +335,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/rtProcInitExePath-win.cpp \
 	r3/win/sched-win.cpp \
 	r3/win/sems-win.cpp \
+	r3/win/rtFileNativeSetAttributes-win.cpp \
 	r3/win/thread-win.cpp \
 	r3/win/time-win.cpp \
 	r3/win/timer-win.cpp \

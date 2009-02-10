@@ -208,6 +208,8 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
             AssertMsgFailed(("Impossible fOpen=%#x\n", fOpen));
             return VERR_INVALID_PARAMETER;
     }
+    /* RTFileSetMode needs following rights as well. */
+    dwDesiredAccess |= FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | SYNCHRONIZE;
 
     DWORD dwShareMode;
     Assert(RTFILE_O_DENY_READWRITE == RTFILE_O_DENY_ALL && !RTFILE_O_DENY_NONE);
@@ -723,10 +725,30 @@ RTR3DECL(int) RTFileSetTimes(RTFILE File, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC
 }
 
 
+/* This comes from a source file with a different set of system headers (DDK)
+ * so it can't be declared in a common header, like internal/file.h.
+ */
+extern int rtFileNativeSetAttributes(HANDLE FileHandle, ULONG FileAttributes);
+
+
 RTR3DECL(int) RTFileSetMode(RTFILE File, RTFMODE fMode)
 {
-    /** @todo darn. this needs a full path; probably must be done if the file is closed
-     * It's quite possible that there is an NT API for this. NtSetInformationFile() for instance. */
+    /*
+     * Normalize the mode and call the API.
+     */
+    fMode = rtFsModeNormalize(fMode, NULL, 0);
+    if (!rtFsModeIsValid(fMode))
+        return VERR_INVALID_PARAMETER;
+
+    ULONG FileAttributes = (fMode & RTFS_DOS_MASK) >> RTFS_DOS_SHIFT;
+    int Err = rtFileNativeSetAttributes((HANDLE)File, FileAttributes);
+    if (Err != ERROR_SUCCESS)
+    {
+        int rc = RTErrConvertFromWin32(Err);
+        Log(("RTFileSetMode(%RTfile, %RTfmode): rtFileNativeSetAttributes (0x%08X) failed with err %d (%Rrc)\n",
+             File, fMode, FileAttributes, Err, rc));
+        return rc;
+    }
     return VINF_SUCCESS;
 }
 
