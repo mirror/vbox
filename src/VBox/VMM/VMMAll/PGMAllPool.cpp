@@ -369,13 +369,18 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
             }
 
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-            case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+            case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+            case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+            case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+            case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
             {
                 unsigned iGst     = off / sizeof(X86PDE);
                 unsigned iShwPdpt = iGst / 256;
                 unsigned iShw     = (iGst % 256) * 2;
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
-                if (!((off ^ pPage->GCPhys) & (PAGE_SIZE / 2)))
+
+                LogFlow(("pgmPoolMonitorChainChanging PAE for 32 bits: idx = %d\n", iShwPdpt));
+                if (iShwPdpt == pPage->enmKind - PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD)
                 {
                     if ((uShw.pPDPae->a[iShw].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                     {
@@ -1343,7 +1348,10 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
-        case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
             switch (enmKind2)
             {
                 case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
@@ -1379,7 +1387,10 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
-                case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
                 case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
@@ -1587,7 +1598,10 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
-                case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
                 case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
                 case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
                 case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
@@ -1668,7 +1682,10 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_64BIT_PML4:
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
         case PGMPOOLKIND_32BIT_PD:
         case PGMPOOLKIND_PAE_PDPT:
 #else
@@ -1704,7 +1721,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #else
-        case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
 #endif
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
@@ -1774,6 +1791,10 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         case PGMPOOLKIND_32BIT_PD:
         case PGMPOOLKIND_PAE_PDPT:
+        case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
 #else
         case PGMPOOLKIND_ROOT_PDPT:
 #endif
@@ -1803,7 +1824,9 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #endif
-        case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+#endif
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
     }
@@ -2520,7 +2543,10 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
-        case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
@@ -2568,7 +2594,10 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
 #endif
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
-        case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
             return 4;
 
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
@@ -2954,7 +2983,10 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             Assert(iUserTable < 4);
             Assert(!(u.pau64[iUserTable] & PGM_PLXFLAGS_PERMANENT));
             break;
-        case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_PAE_PD_PHYS:
             Assert(iUserTable < X86_PG_PAE_ENTRIES);
@@ -3007,7 +3039,10 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             break;
 
         /* 64-bit entries */
-        case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_PAE_PD_PHYS:
         case PGMPOOLKIND_PAE_PDPT_PHYS:
@@ -3779,7 +3814,10 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             break;
 #endif /* !PGMPOOL_WITH_GCPHYS_TRACKING */
 
-        case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+        case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
