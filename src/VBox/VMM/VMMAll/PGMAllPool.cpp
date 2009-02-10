@@ -379,7 +379,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 unsigned iShw     = (iGst % 256) * 2;
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
 
-                LogFlow(("pgmPoolMonitorChainChanging PAE for 32 bits: idx = %d\n", iShwPdpt));
+                LogFlow(("pgmPoolMonitorChainChanging PAE for 32 bits: iGst=%x idx = %d page idx=%d\n", iGst, iShwPdpt, pPage->enmKind - PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD));
                 if (iShwPdpt == pPage->enmKind - PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD)
                 {
                     for (unsigned i=0;i<2;i++)
