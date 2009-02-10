@@ -3065,7 +3065,12 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCPTR GCPtrPage, unsigned fPa
     PGSTPD          pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
     unsigned        iPDSrc;
+#   ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    X86PDPE         PdpeSrc;
+    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc, &PdpeSrc);
+#   else
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc, NULL);
+#   endif
 
     if (pPDSrc)
     {
@@ -3095,7 +3100,27 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCPTR GCPtrPage, unsigned fPa
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
     PX86PDE         pPdeDst = pgmShwGet32BitPDEPtr(&pVM->pgm.s, GCPtrPage);
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-    PX86PDEPAE      pPdeDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtrPage);
+    PX86PDEPAE      pPdeDst;
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
+    PX86PDPAE       pPDDst;
+#   if PGM_GST_TYPE != PGM_TYPE_PAE
+    X86PDPE         PdpeSrc;
+
+    /* Fake PDPT entry; access control handled on the page table level, so allow everything. */
+    PdpeSrc.u  = X86_PDPE_P;   /* rw/us are reserved for PAE pdpte's; accessed bit causes invalid VT-x guest state errors */
+#   endif
+    rc = pgmShwSyncPaePDPtr(pVM, GCPtrPage, &PdpeSrc, &pPDDst);
+    if (rc != VINF_SUCCESS)
+    {
+        AssertRC(rc);
+        return rc;
+    }
+    Assert(pPDDst);
+    pPdeDst = &pPDDst->a[iPDDst];
+#  else
+    pPdeDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtrPage);
+#  endif
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PX86PDPAE       pPDDst;
