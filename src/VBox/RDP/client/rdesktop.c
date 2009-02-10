@@ -95,7 +95,12 @@ RD_BOOL g_hide_decorations = False;
 RD_BOOL g_use_rdp5 = True;
 RD_BOOL g_rdpclip = True;
 RD_BOOL g_console_session = False;
+#ifndef VBOX
 RD_BOOL g_numlock_sync = False;
+#else /* VBOX */
+/* Always use numlock synchronization with VRDP. */
+RD_BOOL g_numlock_sync = True;
+#end /* VBOX */
 RD_BOOL g_lspci_enabled = False;
 RD_BOOL g_owncolmap = False;
 RD_BOOL g_ownbackstore = True;	/* We can't rely on external BackingStore */
