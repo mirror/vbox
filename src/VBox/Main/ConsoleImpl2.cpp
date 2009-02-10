@@ -335,60 +335,78 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
 
+    BOOL fEfiEnabled;
+    /** @todo: implement appropriate getter */
+#ifdef VBOX_WITH_EFI
+    fEfiEnabled = true;
+#else
+    fEfiEnabled = false;
+#endif
+
+    if (fEfiEnabled)
+    {
+        rc = CFGMR3InsertNode(pDevices, "efi", &pDev);                       RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                        RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */   RC_CHECK();
+    }
+
     /*
      * PC Bios.
      */
-    rc = CFGMR3InsertNode(pDevices, "pcbios", &pDev);                               RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pBiosCfg);                           RC_CHECK();
-    rc = CFGMR3InsertInteger(pBiosCfg,  "RamSize",              cRamMBs * _1M);     RC_CHECK();
-    rc = CFGMR3InsertInteger(pBiosCfg,  "NumCPUs",              cCpus);             RC_CHECK();
-    rc = CFGMR3InsertString(pBiosCfg,   "HardDiskDevice",       "piix3ide");        RC_CHECK();
-    rc = CFGMR3InsertString(pBiosCfg,   "FloppyDevice",         "i82078");          RC_CHECK();
-    rc = CFGMR3InsertInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);           RC_CHECK();
-    rc = CFGMR3InsertInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);         RC_CHECK();
-    rc = CFGMR3InsertBytes(pBiosCfg,    "UUID", pUuid, sizeof(*pUuid));             RC_CHECK();
-
-    DeviceType_T bootDevice;
-    if (SchemaDefs::MaxBootPosition > 9)
+    if (!fEfiEnabled)
     {
-        AssertMsgFailed (("Too many boot devices %d\n",
-                          SchemaDefs::MaxBootPosition));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    for (ULONG pos = 1; pos <= SchemaDefs::MaxBootPosition; pos ++)
-    {
-        hrc = pMachine->GetBootOrder(pos, &bootDevice);                             H();
-
-        char szParamName[] = "BootDeviceX";
-        szParamName[sizeof (szParamName) - 2] = ((char (pos - 1)) + '0');
-
-        const char *pszBootDevice;
-        switch (bootDevice)
+        rc = CFGMR3InsertNode(pDevices, "pcbios", &pDev);                               RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "Config", &pBiosCfg);                           RC_CHECK();
+        rc = CFGMR3InsertInteger(pBiosCfg,  "RamSize",              cRamMBs * _1M);     RC_CHECK();
+        rc = CFGMR3InsertInteger(pBiosCfg,  "NumCPUs",              cCpus);             RC_CHECK();
+        rc = CFGMR3InsertString(pBiosCfg,   "HardDiskDevice",       "piix3ide");        RC_CHECK();
+        rc = CFGMR3InsertString(pBiosCfg,   "FloppyDevice",         "i82078");          RC_CHECK();
+        rc = CFGMR3InsertInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);           RC_CHECK();
+        rc = CFGMR3InsertInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);         RC_CHECK();
+        rc = CFGMR3InsertBytes(pBiosCfg,    "UUID", pUuid, sizeof(*pUuid));             RC_CHECK();
+        
+        DeviceType_T bootDevice;
+        if (SchemaDefs::MaxBootPosition > 9)
         {
-            case DeviceType_Null:
-                pszBootDevice = "NONE";
-                break;
-            case DeviceType_HardDisk:
-                pszBootDevice = "IDE";
-                break;
-            case DeviceType_DVD:
-                pszBootDevice = "DVD";
-                break;
-            case DeviceType_Floppy:
-                pszBootDevice = "FLOPPY";
-                break;
-            case DeviceType_Network:
-                pszBootDevice = "LAN";
-                break;
-            default:
-                AssertMsgFailed(("Invalid bootDevice=%d\n", bootDevice));
-                return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
-                                  N_("Invalid boot device '%d'"), bootDevice);
+            AssertMsgFailed (("Too many boot devices %d\n",
+                              SchemaDefs::MaxBootPosition));
+            return VERR_INVALID_PARAMETER;
         }
-        rc = CFGMR3InsertString(pBiosCfg, szParamName, pszBootDevice);              RC_CHECK();
+        
+        for (ULONG pos = 1; pos <= SchemaDefs::MaxBootPosition; pos ++)
+        {
+            hrc = pMachine->GetBootOrder(pos, &bootDevice);                             H();
+
+            char szParamName[] = "BootDeviceX";
+            szParamName[sizeof (szParamName) - 2] = ((char (pos - 1)) + '0');
+
+            const char *pszBootDevice;
+            switch (bootDevice)
+            {
+                case DeviceType_Null:
+                    pszBootDevice = "NONE";
+                    break;
+                case DeviceType_HardDisk:
+                    pszBootDevice = "IDE";
+                    break;
+                case DeviceType_DVD:
+                    pszBootDevice = "DVD";
+                    break;
+                case DeviceType_Floppy:
+                    pszBootDevice = "FLOPPY";
+                    break;
+                case DeviceType_Network:
+                    pszBootDevice = "LAN";
+                    break;
+                default:
+                    AssertMsgFailed(("Invalid bootDevice=%d\n", bootDevice));
+                    return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                      N_("Invalid boot device '%d'"), bootDevice);
+            }
+            rc = CFGMR3InsertString(pBiosCfg, szParamName, pszBootDevice);              RC_CHECK();
+        }
     }
 
     /*
