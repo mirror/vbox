@@ -580,7 +580,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                 }
-#ifdef PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES
+#if defined(PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES) || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
                 /*
                  * Causes trouble when the guest uses a PDE to refer to the whole page table level
                  * structure. (Invalidate here; faults later on when it tries to change the page
@@ -593,9 +593,14 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
                         pgmPoolFree(pPool->CTX_SUFF(pVM),
                                     uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK,
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                                    pPage->idx,
+                                    iShw);
+# else
                                     /* Note: hardcoded PAE implementation dependency */
                                     (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? PGMPOOL_IDX_PAE_PD : pPage->idx,
                                     (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? iShw + (pPage->idx - PGMPOOL_IDX_PAE_PD_0) * X86_PG_PAE_ENTRIES : iShw);
+# endif
                         uShw.pPDPae->a[iShw].u = 0;
                     }
                 }
@@ -616,15 +621,20 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                     }
-#ifdef PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES
+#if defined(PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES) || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
                     else if (uShw.pPDPae->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
                         pgmPoolFree(pPool->CTX_SUFF(pVM),
                                     uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                                    pPage->idx,
+                                    iShw2);
+# else
                                     /* Note: hardcoded PAE implementation dependency */
                                     (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? PGMPOOL_IDX_PAE_PD : pPage->idx,
                                     (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? iShw2 + (pPage->idx - PGMPOOL_IDX_PAE_PD_0) * X86_PG_PAE_ENTRIES : iShw2);
+# endif
                         uShw.pPDPae->a[iShw2].u = 0;
                     }
 #endif
@@ -2943,7 +2953,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
      * Map the user page.
      */
     PPGMPOOLPAGE pUserPage = &pPool->aPages[pUser->iUser];
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) && !defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
     if (pUserPage->enmKind == PGMPOOLKIND_ROOT_PAE_PD)
     {
         /* Must translate the fake 2048 entry PD to a 512 PD one since the R0 mapping is not linear. */
