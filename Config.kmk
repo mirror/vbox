@@ -614,7 +614,7 @@ else
  if exists "$(LOCALCFG)"
   include $(LOCALCFG)
  else
-  $(warning LOCALCFG='$(LOCALCFG)' does not exists)
+  $(warning LOCALCFG='$(LOCALCFG)' does not exist)
   override LOCALCFG :=
  endif
 endif
