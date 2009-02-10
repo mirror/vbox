@@ -219,17 +219,17 @@ public:
     template <typename QT, typename CT>
     static void ToSafeArray (const QVector <QT> &aVec, com::SafeArray <CT> &aArr)
     {
-        Q_UNUSED (aVec);
-        Q_UNUSED (aArr);
-        AssertMsgFailedReturnVoid (("No conversion!\n"));
+        aArr.reset (aVec.size());
+        for (int i = 0; i < aVec.size(); ++i)
+            aArr [i] = static_cast<CT> (aVec.at (i));
     }
 
     template <typename CT, typename QT>
     static void FromSafeArray (const com::SafeArray <CT> &aArr, QVector <QT> &aVec)
     {
-        Q_UNUSED (aArr);
-        Q_UNUSED (aVec);
-        AssertMsgFailedReturnVoid (("No conversion!\n"));
+        aVec.resize (static_cast<int> (aArr.size()));
+        for (int i = 0; i < aVec.size(); ++i)
+            aVec [i] = static_cast<QT> (aArr [i]);
     }
 
     template <typename QT, typename CT>
