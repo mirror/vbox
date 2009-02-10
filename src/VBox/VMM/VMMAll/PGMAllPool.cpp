@@ -382,46 +382,49 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 LogFlow(("pgmPoolMonitorChainChanging PAE for 32 bits: idx = %d\n", iShwPdpt));
                 if (iShwPdpt == pPage->enmKind - PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD)
                 {
-                    if ((uShw.pPDPae->a[iShw].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
+                    for (unsigned i=0;i<2;i++)
                     {
-                        Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
-                        VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
-                        LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw=%#x!\n", iShwPdpt, iShw));
-                    }
-                    else
-                    if (uShw.pPDPae->a[iShw].n.u1Present)
-                    {
-                        LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
-                        pgmPoolFree(pPool->CTX_SUFF(pVM),
-                                    uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK,
-                                    pPage->idx,
-                                    iShw);
-                        uShw.pPDPae->a[iShw].u = 0;
-                    }
-
-                    /* paranoia / a bit assumptive. */
-                    if (   pCpu
-                        && (off & 3)
-                        && (off & 3) + cbWrite > 4)
-                    {
-                        const unsigned iShw2 = iShw + 2;
-                        if (iShw2 < RT_ELEMENTS(uShw.pPDPae->a))
+                        if ((uShw.pPDPae->a[iShw + i].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                         {
-                            if ((uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
+                            Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                            VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                            LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw=%#x!\n", iShwPdpt, iShw+i));
+                        }
+                        else
+                        if (uShw.pPDPae->a[iShw+i].n.u1Present)
+                        {
+                            LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw+i, uShw.pPDPae->a[iShw+i].u));
+                            pgmPoolFree(pPool->CTX_SUFF(pVM),
+                                        uShw.pPDPae->a[iShw+i].u & X86_PDE_PAE_PG_MASK,
+                                        pPage->idx,
+                                        iShw + i);
+                            uShw.pPDPae->a[iShw+i].u = 0;
+                        }
+
+                        /* paranoia / a bit assumptive. */
+                        if (   pCpu
+                            && (off & 3)
+                            && (off & 3) + cbWrite > 4)
+                        {
+                            const unsigned iShw2 = iShw + 2 + i;
+                            if (iShw2 < RT_ELEMENTS(uShw.pPDPae->a))
                             {
-                                Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
-                                VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
-                                LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw2=%#x!\n", iShwPdpt, iShw2));
-                            }
-                            else
-                            if (uShw.pPDPae->a[iShw2].n.u1Present)
-                            {
-                                LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
-                                pgmPoolFree(pPool->CTX_SUFF(pVM),
-                                            uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
-                                            pPage->idx,
-                                            iShw2);
-                                uShw.pPDPae->a[iShw2].u = 0;
+                                if ((uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
+                                {
+                                    Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                                    VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                                    LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw2=%#x!\n", iShwPdpt, iShw2));
+                                }
+                                else
+                                if (uShw.pPDPae->a[iShw2].n.u1Present)
+                                {
+                                    LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
+                                    pgmPoolFree(pPool->CTX_SUFF(pVM),
+                                                uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
+                                                pPage->idx,
+                                                iShw2);
+                                    uShw.pPDPae->a[iShw2].u = 0;
+                                }
                             }
                         }
                     }
