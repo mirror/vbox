@@ -230,8 +230,10 @@ PGM_GST_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
     /*
      * Map and monitor CR3
      */
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    int rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
+#else
     int rc = PGM_BTH_NAME(MapCR3)(pVM, GCPhysCR3);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     if (RT_SUCCESS(rc) && !pVM->pgm.s.fMappingsFixed)
         rc = PGM_GST_NAME(MonitorCR3)(pVM, GCPhysCR3);
 #endif
@@ -263,11 +265,13 @@ PGM_GST_DECL(int, Exit)(PVM pVM)
 {
     int rc;
 
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    rc = PGM_BTH_PFN(UnmapCR3, pVM)(pVM);
+#else
     rc = PGM_GST_NAME(UnmonitorCR3)(pVM);
     if (RT_SUCCESS(rc))
-#endif
         rc = PGM_BTH_NAME(UnmapCR3)(pVM);
+#endif
     return rc;
 }
 
