@@ -117,9 +117,10 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" != "win"
 	$(VBOX_PATH_SDK)/bindings/xpcom/include
 endif # xpcom
 
+
 #
 # Strip documentation from source XIDL so that we don't get a full
-#	recompile every time a comma in the documentation is changed.
+# recompile every time a comma in the documentation is changed.
 #
 $(VBOX_XIDL_FILE).ts |+ $(VBOX_XIDL_FILE): \
 		$(VBOX_XIDL_FILE_SRC) \
@@ -127,7 +128,8 @@ $(VBOX_XIDL_FILE).ts |+ $(VBOX_XIDL_FILE): \
 		| $$(dir $$@)
 # 	$(CP) -fv $< $(VBOX_XIDL_FILE).ts
 	$(VBOX_XSLTPROC) -o $(VBOX_XIDL_FILE).ts $(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl $<
-	$(CP) --changed -fv $(VBOX_XIDL_FILE).ts $(VBOX_XIDL_FILE_SRC)
+	$(CP) --changed -fv $(VBOX_XIDL_FILE).ts $(VBOX_XIDL_FILE)
+
 
 #
 # The Main API documentation
