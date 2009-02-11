@@ -292,6 +292,17 @@ uint32_t VBoxCocoaApplication_getEventModifierFlagsXlated(const void *pvEvent)
 
 
 /**
+ * Calls the + (void)setMouseCoalescingEnabled:(BOOL)flag class method.
+ *
+ * @param   fEnabled    Whether to enable or disable coalescing.
+ */
+void VBoxCocoaApplication_setMouseCoalescingEnabled(bool fEnabled)
+{
+    [NSEvent setMouseCoalescingEnabled:fEnabled];
+}
+
+
+/**
  * Get the name for a Cocoa event type.
  *
  * @returns Read-only name string.

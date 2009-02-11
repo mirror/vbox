@@ -79,6 +79,9 @@ extern VBoxCocoaApplication *g_pVBoxCocoaApp;
 #endif /* __OBJC__ */
 
 /** @name The C/C++ interface.
+ *
+ * @remarks This is a bit illogical as both NSApplication and NSEvent stuff
+ *          ended up here...
  * @{
  */
 void VBoxCocoaApplication_sharedApplication(void);
@@ -86,10 +89,9 @@ void VBoxCocoaApplication_setCallback(uint32_t fMask, PFNVBOXCACALLBACK pfnCallb
 void VBoxCocoaApplication_unsetCallback(uint32_t fMask, PFNVBOXCACALLBACK pfnCallback, void *pvUser);
 unsigned long VBoxCocoaApplication_getEventModifierFlags(const void *pvEvent);
 uint32_t VBoxCocoaApplication_getEventModifierFlagsXlated(const void *pvEvent);
+void VBoxCocoaApplication_setMouseCoalescingEnabled(bool fEnabled);
 const char *VBoxCocoaApplication_eventTypeName(unsigned long eEvtType);
 void VBoxCocoaApplication_printEvent(const char *pszPrefix, const void *pvEvent);
-
-
 /** @} */
 
 __END_DECLS

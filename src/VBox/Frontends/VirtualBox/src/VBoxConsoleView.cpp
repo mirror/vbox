@@ -4062,27 +4062,23 @@ void VBoxConsoleView::updateDockOverlay()
  * Wrapper for SetMouseCoalescingEnabled().
  *
  * Called by eventFilter() and darwinGrabKeyboardEvents().
+ *
  * @param   aOn     Switch it on (true) or off (false).
  */
 void VBoxConsoleView::setMouseCoalescingEnabled (bool aOn)
 {
+    /* Enable mouse event compression if we leave the VM view. This
+       is necessary for having smooth resizing of the VM/other
+       windows.
+       Disable mouse event compression if we enter the VM view. So
+       all mouse events are registered in the VM. Only do this if
+       the keyboard/mouse is grabbed (this is when we have a valid
+       event handler). */
+    if (aOn || mKeyboardGrabbed)
 # ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa: SetMouseCoalescingEnabled() is 32-bit only. */
+        ::VBoxCocoaApplication_setMouseCoalescingEnabled (aOn);
 # else
-    if (aOn)
-        /* Enable mouse event compression if we leave the VM view. This
-           is necessary for having smooth resizing of the VM/other
-           windows. */
-        ::SetMouseCoalescingEnabled (true, NULL);
-    else
-    {
-        /* Disable mouse event compression if we enter the VM view. So
-           all mouse events are registered in the VM. Only do this if
-           the keyboard/mouse is grabbed (this is when we have a valid
-           event handler). */
-        if (mKeyboardGrabbed)
-            ::SetMouseCoalescingEnabled (false, NULL);
-    }
+        ::SetMouseCoalescingEnabled (aOn, NULL);
 # endif
 }
 
