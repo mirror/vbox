@@ -2319,11 +2319,7 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
         /* Disable mouse and keyboard event compression/delaying to make sure
            we *really* get all of the events. */
         ::CGSetLocalEventsSuppressionInterval (0.0);
-# ifdef QT_MAC_USE_COCOA
-        /** @todo SetMouseCoalescingEnabled */
-# else
-        ::SetMouseCoalescingEnabled (false, NULL);
-# endif
+        setMouseCoalescingEnabled (false);
 
         /* Register the event callback/hook and grab the keyboard. */
 # ifdef QT_MAC_USE_COCOA
@@ -4062,11 +4058,17 @@ void VBoxConsoleView::updateDockOverlay()
         mDockIconPreview->updateDockOverlay();
 }
 
+/**
+ * Wrapper for SetMouseCoalescingEnabled().
+ *
+ * Called by eventFilter() and darwinGrabKeyboardEvents().
+ * @param   aOn     Switch it on (true) or off (false).
+ */
 void VBoxConsoleView::setMouseCoalescingEnabled (bool aOn)
 {
-#ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa */
-#else
+# ifdef QT_MAC_USE_COCOA
+    /** @todo Carbon -> Cocoa: SetMouseCoalescingEnabled() is 32-bit only. */
+# else
     if (aOn)
         /* Enable mouse event compression if we leave the VM view. This
            is necessary for having smooth resizing of the VM/other
@@ -4081,7 +4083,7 @@ void VBoxConsoleView::setMouseCoalescingEnabled (bool aOn)
         if (mKeyboardGrabbed)
             ::SetMouseCoalescingEnabled (false, NULL);
     }
-#endif
+# endif
 }
 
 #endif /* Q_WS_MAC */
