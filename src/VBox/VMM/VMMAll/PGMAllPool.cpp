@@ -759,8 +759,6 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 #ifndef IN_RC
             case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
             {
-                Assert(pPage->enmKind == PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD);
-
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 const unsigned iShw = off / sizeof(X86PDEPAE);
                 if (uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING)
@@ -4247,6 +4245,12 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     if (PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) == pPage->Core.Key)
     {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        AssertMsg(   pPage->enmKind == PGMPOOLKIND_64BIT_PML4
+                  || pPage->enmKind == PGMPOOLKIND_PAE_PDPT
+                  || pPage->enmKind == PGMPOOLKIND_PAE_PDPT_FOR_32BIT
+                  || pPage->enmKind == PGMPOOLKIND_32BIT_PD,
+                  ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(pPool->CTX_SUFF(pVM)), pPage->Core.Key, pPage->enmKind));
+#else
         AssertMsg(pPage->enmKind == PGMPOOLKIND_64BIT_PML4,
                   ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(pPool->CTX_SUFF(pVM)), pPage->Core.Key, pPage->enmKind));
 #endif
@@ -4577,7 +4581,7 @@ void pgmPoolFlushAll(PVM pVM)
 }
 
 #ifdef LOG_ENABLED
-static char *pgmPoolPoolKindToStr(uint8_t enmKind)
+static const char *pgmPoolPoolKindToStr(uint8_t enmKind)
 {
     switch(enmKind)
     {
