@@ -163,9 +163,7 @@ protected:
 #elif defined(Q_WS_X11)
     bool x11Event (XEvent *event);
 #elif defined(Q_WS_MAC)
-# ifndef QT_MAC_USE_COCOA
     bool darwinKeyboardEvent (EventRef inEvent);
-# endif
     void darwinGrabKeyboardEvents (bool fGrab);
 #endif
 
@@ -318,9 +316,12 @@ private:
 #if defined (Q_WS_WIN32)
     static LRESULT CALLBACK lowLevelKeyboardProc (int nCode,
                                                   WPARAM wParam, LPARAM lParam);
-#elif defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
+#elif defined (Q_WS_MAC)
+# if defined (QT_MAC_USE_COCOA)
+    static bool darwinEventHandlerProc (const void *pvCocoaEvent, const
+                                        void *pvCarbonEvent, void *pvUser);
+# elif !defined (VBOX_WITH_HACKED_QT)
     EventHandlerRef mDarwinWindowOverlayHandlerRef;
-# ifndef VBOX_WITH_HACKED_QT
     static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
                                                    EventRef inEvent, void *inUserData);
 # else  /* VBOX_WITH_HACKED_QT */

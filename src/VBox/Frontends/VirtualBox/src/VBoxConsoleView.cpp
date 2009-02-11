@@ -81,7 +81,9 @@ const int XKeyRelease = KeyRelease;
 #if defined (Q_WS_MAC)
 # include "VBoxDockIconPreview.h"
 # include "DarwinKeyboard.h"
-# ifdef VBOX_WITH_HACKED_QT
+# ifdef QT_MAC_USE_COCOA
+#  include "darwin/VBoxCocoaApplication.h"
+# elif defined(VBOX_WITH_HACKED_QT)
 #  include "QIApplication.h"
 # endif
 # include <Carbon/Carbon.h>
@@ -106,9 +108,68 @@ LRESULT CALLBACK VBoxConsoleView::lowLevelKeyboardProc (int nCode,
 
 #endif
 
-#if defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
+#if defined (Q_WS_MAC)
+# if defined (QT_MAC_USE_COCOA)
+/**
+ * Event handler callback for Mac OS X, Cocoa variant.
+ *
+ * (Registered with and called from VBoxCocoaApplication.)
+ *
+ * @returns true if the event should be dropped, false if it should be passed
+ *          along.
+ * @param   pvCocoaEvent    The Cocoa event object.
+ * @param   pvCarbonEvent   The Carbon event object reference.
+ * @param   pvUser          The user argument.
+ */
+/* static */
+bool VBoxConsoleView::darwinEventHandlerProc (const void *pvCocoaEvent,
+                                              const void *pvCarbonEvent,
+                                              void *pvUser)
+{
+    VBoxConsoleView    *view       = (VBoxConsoleView *)pvUser;
+    EventRef            inEvent    = (EventRef)pvCarbonEvent;
+    UInt32              eventClass = ::GetEventClass (inEvent);
 
-# ifndef VBOX_WITH_HACKED_QT
+#if 0
+    /* For debugging events. */
+    if (eventClass != 'cute')
+        ::VBoxCocoaApplication_printEvent ("view: ", pvCocoaEvent);
+#endif
+
+    /*
+     * Not sure but this seems an triggered event if the spotlight searchbar is
+     * displayed. So flag that the host key isn't pressed alone.
+     */
+    if (   eventClass == 'cgs '
+        && view->mIsHostkeyPressed
+        && ::GetEventKind (inEvent) == 0x15)
+        view->mIsHostkeyAlone = false;
+
+    /*
+     * All keyboard class events needs to be handled.
+     */
+    if (eventClass == kEventClassKeyboard)
+    {
+        if (view->darwinKeyboardEvent (inEvent))
+            return true;
+    }
+    /*
+     * Command-H and Command-Q aren't properly disabled yet, and it's still
+     * possible to use the left command key to invoke them when the keyboard
+     * is captured. We discard the events these if the keyboard is captured
+     * as a half measure to prevent unexpected behaviour. However, we don't
+     * get any key down/up events, so these combinations are dead to the guest...
+     */
+    else if (eventClass == kEventClassCommand)
+    {
+        if (view->mKbdCaptured)
+            return true;
+    }
+    /* Pass the event along. */
+    return false;
+}
+
+# elif !defined (VBOX_WITH_HACKED_QT)
 /**
  *  Event handler callback for Mac OS X.
  */
@@ -118,17 +179,18 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc (EventHandlerCallRef inH
 {
     VBoxConsoleView *view = static_cast<VBoxConsoleView *> (inUserData);
     UInt32 eventClass = ::GetEventClass (inEvent);
-    UInt32 eventKind = ::GetEventKind (inEvent);
+
     /* For debugging events */
     /*
-    if (!(eventClass == 'cute'))
+    if (eventClass != 'cute')
         ::darwinDebugPrintEvent ("view: ", inEvent);
     */
 
     /* Not sure but this seems an triggered event if the spotlight searchbar is
      * displayed. So flag that the host key isn't pressed alone. */
-    if (eventClass == 'cgs ' && eventKind == 0x15 &&
-        view->mIsHostkeyPressed)
+    if (   eventClass == 'cgs '
+        && view->mIsHostkeyPressed
+        && ::GetEventKind (inEvent) == 0x15)
         view->mIsHostkeyAlone = false;
 
     if (eventClass == kEventClassKeyboard)
@@ -152,7 +214,6 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc (EventHandlerCallRef inH
 }
 
 # else /* VBOX_WITH_HACKED_QT */
-
 /**
  *  Event handler callback for Mac OS X.
  */
@@ -184,7 +245,7 @@ bool VBoxConsoleView::macEventFilter (EventRef inEvent, void *inUserData)
 }
 # endif /* VBOX_WITH_HACKED_QT */
 
-#endif /* Q_WS_MAC && !QT_MAC_USE_COCOA */
+#endif /* Q_WS_MAC */
 
 /** Guest mouse pointer shape change event. */
 class MousePointerChangeEvent : public QEvent
@@ -885,13 +946,16 @@ VBoxConsoleView::~VBoxConsoleView()
 
     mConsole.UnregisterCallback (mCallback);
 
-#if defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
+#if defined (Q_WS_MAC)
+# if !defined (QT_MAC_USE_COCOA)
     if (mDarwinWindowOverlayHandlerRef)
     {
         ::RemoveEventHandler (mDarwinWindowOverlayHandlerRef);
         mDarwinWindowOverlayHandlerRef = NULL;
     }
+# endif
     delete mDockIconPreview;
+    mDockIconPreview = NULL;
 #endif
 }
 
@@ -2124,7 +2188,6 @@ bool VBoxConsoleView::x11Event (XEvent *event)
 
 #elif defined (Q_WS_MAC)
 
-# ifndef QT_MAC_USE_COCOA
 /**
  *  Invoked by VBoxConsoleView::darwinEventHandlerProc / VBoxConsoleView::macEventFilter when
  *  it receives a raw keyboard event.
@@ -2157,7 +2220,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
             /* get the unicode string (if present). */
             AssertCompileSize (wchar_t, 2);
             AssertCompileSize (UniChar, 2);
-            UInt32 cbWritten = 0;
+            ByteCount cbWritten = 0;
             wchar_t ucs[8];
             if (::GetEventParameter (inEvent, kEventParamKeyUnicodes, typeUnicodeText, NULL,
                                      sizeof (ucs), &cbWritten, &ucs[0]) != 0)
@@ -2216,7 +2279,6 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
 
     return ret;
 }
-# endif /* !QT_MAC_USE_COCOA */
 
 
 /**
@@ -2229,16 +2291,21 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
     mKeyboardGrabbed = fGrab;
     if (fGrab)
     {
-# ifdef QT_MAC_USE_COCOA
-        /** @todo Carbon -> Cocoa */
-# else  /* !QT_MAC_USE_COCOA */
-        /* Disable mouse event compression to get *really* all mouse events in
-           the VM. */
-        ::SetMouseCoalescingEnabled (false, NULL);
+        /* Disable mouse and keyboard event compression/delaying to make sure
+           we *really* get all of the events. */
         ::CGSetLocalEventsSuppressionInterval (0.0);
+# ifdef QT_MAC_USE_COCOA
+        /** @todo SetMouseCoalescingEnabled */
+# else
+        ::SetMouseCoalescingEnabled (false);
+# endif
 
-#  ifndef VBOX_WITH_HACKED_QT
+        /* Register the event callback/hook and grab the keyboard. */
+# ifdef QT_MAC_USE_COCOA
+        ::VBoxCocoaApplication_setCallback (UINT32_MAX, /** @todo fix mask */
+                                            VBoxConsoleView::darwinEventHandlerProc, this);
 
+# elif !defined (VBOX_WITH_HACKED_QT)
         EventTypeSpec eventTypes[6];
         eventTypes[0].eventClass = kEventClassKeyboard;
         eventTypes[0].eventKind  = kEventRawKeyDown;
@@ -2262,10 +2329,9 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
                                           this, &mDarwinEventHandlerRef);
         ::DisposeEventHandlerUPP (eventHandler);
 
-#  else /* VBOX_WITH_HACKED_QT */
+# else  /* VBOX_WITH_HACKED_QT */
         ((QIApplication *)qApp)->setEventFilter (VBoxConsoleView::macEventFilter, this);
-#  endif /* VBOX_WITH_HACKED_QT */
-# endif /* !QT_MAC_USE_COCOA */
+# endif /* VBOX_WITH_HACKED_QT */
 
         ::DarwinGrabKeyboard (false);
     }
@@ -2273,18 +2339,17 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
     {
         ::DarwinReleaseKeyboard();
 # ifdef QT_MAC_USE_COCOA
-        /** @todo Carbon -> Cocoa */
-# else  /* !QT_MAC_USE_COCOA */
-#  ifndef VBOX_WITH_HACKED_QT
+        ::VBoxCocoaApplication_unsetCallback (UINT32_MAX, /** @todo fix mask */
+                                              VBoxConsoleView::darwinEventHandlerProc, this);
+# elif !defined(VBOX_WITH_HACKED_QT)
         if (mDarwinEventHandlerRef)
         {
             ::RemoveEventHandler (mDarwinEventHandlerRef);
             mDarwinEventHandlerRef = NULL;
         }
-#  else
+# else  /* VBOX_WITH_HACKED_QT */
         ((QIApplication *)qApp)->setEventFilter (NULL, NULL);
-#  endif
-# endif /* !QT_MAC_USE_COCOA*/
+# endif /* VBOX_WITH_HACKED_QT */
     }
 }
 
@@ -2398,7 +2463,7 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
         codes[(*count)++] = 0x3a | 0x80;
     }
 
-#elif defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
+#elif defined (Q_WS_MAC)
 
     /* if (muNumLockAdaptionCnt) ... - NumLock isn't implemented by Mac OS X so ignore it. */
     if (muCapsLockAdaptionCnt && (mCapsLock ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
@@ -2407,10 +2472,6 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
         codes[(*count)++] = 0x3a;
         codes[(*count)++] = 0x3a | 0x80;
     }
-
-#elif defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
-
-    /** @todo Carbon -> Cocoa */
 
 #else
 
