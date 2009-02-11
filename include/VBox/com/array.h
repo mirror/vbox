@@ -648,7 +648,8 @@ public:
     }
 
     /**
-     * Creates a deep copy of the given standard C++ container.
+     * Creates a deep copy of the given standard C++ container that stores
+     * T objects.
      *
      * @param aCntr Container object to copy.
      *
@@ -668,6 +669,37 @@ public:
             Copy (*it, m.arr [i]);
 #else
             Copy (*it, m.raw [i]);
+#endif
+    }
+
+    /**
+     * Creates a deep copy of the given standard C++ map that stores T objects
+     * as values.
+     *
+     * @param aMap  Map object to copy.
+     *
+     * @param C     Standard C++ map template class (normally deduced from
+     *              @c aCntr).
+     * @param L     Standard C++ compare class (deduced from @c aCntr).
+     * @param A     Standard C++ allocator class (deduced from @c aCntr).
+     * @param K     Map key class (deduced from @c aCntr).
+     */
+    template <template <typename, typename, typename, typename>
+              class C, class L, class A, class K>
+    SafeArray (const C <K, T, L, A> & aMap)
+    {
+        typedef C <K, T, L, A> Map;
+
+        resize (aMap.size());
+        AssertReturnVoid (!isNull());
+
+        int i = 0;
+        for (typename Map::const_iterator it = aMap.begin();
+             it != aMap.end(); ++ it, ++ i)
+#if defined (VBOX_WITH_XPCOM)
+            Copy (it->second, m.arr [i]);
+#else
+            Copy (it->second, m.raw [i]);
 #endif
     }
 
@@ -1530,6 +1562,70 @@ public:
             Copy (*it, Base::m.arr [i]);
 #else
             Copy (*it, Base::m.raw [i]);
+#endif
+    }
+
+    /**
+     * Creates a deep copy of the given standard C++ map whose values are
+     * interface pointers stored as objects of the ComPtr <I> class.
+     *
+     * @param aMap  Map object to copy.
+     *
+     * @param C     Standard C++ map template class (normally deduced from
+     *              @c aCntr).
+     * @param L     Standard C++ compare class (deduced from @c aCntr).
+     * @param A     Standard C++ allocator class (deduced from @c aCntr).
+     * @param K     Map key class (deduced from @c aCntr).
+     * @param OI    Argument to the ComPtr template (deduced from @c aCntr).
+     */
+    template <template <typename, typename, typename, typename>
+              class C, class L, class A, class K, class OI>
+    SafeIfaceArray (const C <K, ComPtr <OI>, L, A> & aMap)
+    {
+        typedef C <K, ComPtr <OI>, L, A> Map;
+
+        Base::resize (aMap.size());
+        AssertReturnVoid (!Base::isNull());
+
+        int i = 0;
+        for (typename Map::const_iterator it = aMap.begin();
+             it != aMap.end(); ++ it, ++ i)
+#if defined (VBOX_WITH_XPCOM)
+            Copy (it->second, Base::m.arr [i]);
+#else
+            Copy (it->second, Base::m.raw [i]);
+#endif
+    }
+
+    /**
+     * Creates a deep copy of the given standard C++ map whose values are
+     * interface pointers stored as objects of the ComObjPtr <I> class.
+     *
+     * @param aMap  Map object to copy.
+     *
+     * @param C     Standard C++ map template class (normally deduced from
+     *              @c aCntr).
+     * @param L     Standard C++ compare class (deduced from @c aCntr).
+     * @param A     Standard C++ allocator class (deduced from @c aCntr).
+     * @param K     Map key class (deduced from @c aCntr).
+     * @param OI    Argument to the ComObjPtr template (deduced from @c aCntr).
+     */
+    template <template <typename, typename, typename, typename>
+              class C, class L, class A, class K, class OI>
+    SafeIfaceArray (const C <K, ComObjPtr <OI>, L, A> & aMap)
+    {
+        typedef C <K, ComObjPtr <OI>, L, A> Map;
+
+        Base::resize (aMap.size());
+        AssertReturnVoid (!Base::isNull());
+
+        int i = 0;
+        for (typename Map::const_iterator it = aMap.begin();
+             it != aMap.end(); ++ it, ++ i)
+#if defined (VBOX_WITH_XPCOM)
+            Copy (it->second, Base::m.arr [i]);
+#else
+            Copy (it->second, Base::m.raw [i]);
 #endif
     }
 };
