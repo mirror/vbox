@@ -20,11 +20,6 @@
  * additional information or have any questions.
  */
 
-
-
-#define USE_HID_FOR_MODIFIERS
-
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -38,7 +33,8 @@
 # include <iprt/stream.h>
 #endif
 
-#ifdef USE_HID_FOR_MODIFIERS
+#ifdef RT_ARCH_X86
+# define USE_HID_FOR_MODIFIERS
 # include <mach/mach.h>
 # include <mach/mach_error.h>
 # include <IOKit/IOKitLib.h>
@@ -50,6 +46,11 @@
 #endif
 #include <ApplicationServices/ApplicationServices.h>
 #include <Carbon/Carbon.h>
+
+#ifndef USE_HID_FOR_MODIFIERS
+# include "VBoxCocoaApplication.h"
+#endif
+
 
 __BEGIN_DECLS
 /* Private interface in 10.3 and later. */
@@ -971,57 +972,67 @@ static UInt32 darwinQueryHIDModifiers(void)
  *
  * @returns left/right adjusted fModifiers.
  * @param   fModifiers      The mask to adjust.
+ * @param   pvCocoaEvent    The associated Cocoa keyboard event. This is NULL
+ *                          when using HID for modifier corrections.
+ *
  */
-UInt32 DarwinAdjustModifierMask(UInt32 fModifiers)
+UInt32 DarwinAdjustModifierMask(UInt32 fModifiers, const void *pvCocoaEvent)
 {
-#ifdef USE_HID_FOR_MODIFIERS
-    /*
-     * Update the keyboard cache.
-     */
-    darwinHIDKeyboardCacheUpdate();
-
     /*
      * Check if there is anything to adjust and perform the adjustment.
      */
     if (fModifiers & (shiftKey | rightShiftKey | controlKey | rightControlKey | optionKey | rightOptionKey | cmdKey | kEventKeyModifierRightCmdKeyMask))
     {
-        const UInt32 fHIDModifiers = g_fHIDModifierMask;
+#ifndef USE_HID_FOR_MODIFIERS
+        /*
+         * Convert the Cocoa modifiers to Carbon ones.
+         */
+        AssertPtr(pvCocoaEvent);
+        VBoxCocoaApplication_printEvent("dbg-adjMods: ", pvCocoaEvent);
+        uint32_t fAltModifiers = VBoxCocoaApplication_getEventModifierFlagsXlated(pvCocoaEvent);
+
+#else  /* USE_HID_FOR_MODIFIERS */
+        /*
+         * Update the keyboard cache.
+         */
+        darwinHIDKeyboardCacheUpdate();
+        const UInt32 fAltModifiers = g_fHIDModifierMask;
+
+#endif /* USE_HID_FOR_MODIFIERS */
 #ifdef DEBUG_PRINTF
-        RTPrintf("dbg-fHIDModifier=%#x fModifiers=%#x", fHIDModifiers, fModifiers);
+        RTPrintf("dbg-fAltModifiers=%#x fModifiers=%#x", fAltModifiers, fModifiers);
 #endif
         if (   (fModifiers    & (rightShiftKey | shiftKey))
-            && (fHIDModifiers & (rightShiftKey | shiftKey)))
+            && (fAltModifiers & (rightShiftKey | shiftKey)))
         {
             fModifiers &= ~(rightShiftKey | shiftKey);
-            fModifiers |= fHIDModifiers & (rightShiftKey | shiftKey);
+            fModifiers |= fAltModifiers & (rightShiftKey | shiftKey);
         }
 
         if (   (fModifiers    & (rightControlKey | controlKey))
-            && (fHIDModifiers & (rightControlKey | controlKey)))
+            && (fAltModifiers & (rightControlKey | controlKey)))
         {
             fModifiers &= ~(rightControlKey | controlKey);
-            fModifiers |= fHIDModifiers & (rightControlKey | controlKey);
+            fModifiers |= fAltModifiers & (rightControlKey | controlKey);
         }
 
         if (   (fModifiers    & (optionKey | rightOptionKey))
-            && (fHIDModifiers & (optionKey | rightOptionKey)))
+            && (fAltModifiers & (optionKey | rightOptionKey)))
         {
             fModifiers &= ~(optionKey | rightOptionKey);
-            fModifiers |= fHIDModifiers & (optionKey | rightOptionKey);
+            fModifiers |= fAltModifiers & (optionKey | rightOptionKey);
         }
 
         if (   (fModifiers    & (cmdKey | kEventKeyModifierRightCmdKeyMask))
-            && (fHIDModifiers & (cmdKey | kEventKeyModifierRightCmdKeyMask)))
+            && (fAltModifiers & (cmdKey | kEventKeyModifierRightCmdKeyMask)))
         {
             fModifiers &= ~(cmdKey | kEventKeyModifierRightCmdKeyMask);
-            fModifiers |= fHIDModifiers & (cmdKey | kEventKeyModifierRightCmdKeyMask);
+            fModifiers |= fAltModifiers & (cmdKey | kEventKeyModifierRightCmdKeyMask);
         }
 #ifdef DEBUG_PRINTF
-        RTPrintf(" -> %#x", fModifiers);
+        RTPrintf(" -> %#x\n", fModifiers);
 #endif
     }
-#endif /* USE_HID_FOR_MODIFIERS */
-
     return fModifiers;
 }
 

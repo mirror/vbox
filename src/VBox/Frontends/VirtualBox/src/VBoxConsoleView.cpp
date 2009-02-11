@@ -150,7 +150,7 @@ bool VBoxConsoleView::darwinEventHandlerProc (const void *pvCocoaEvent,
      */
     if (eventClass == kEventClassKeyboard)
     {
-        if (view->darwinKeyboardEvent (inEvent))
+        if (view->darwinKeyboardEvent (pvCocoaEvent, inEvent))
             return true;
     }
     /*
@@ -195,7 +195,7 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc (EventHandlerCallRef inH
 
     if (eventClass == kEventClassKeyboard)
     {
-        if (view->darwinKeyboardEvent (inEvent))
+        if (view->darwinKeyboardEvent (NULL, inEvent))
             return 0;
     }
     /*
@@ -238,7 +238,7 @@ bool VBoxConsoleView::macEventFilter (EventRef inEvent, void *inUserData)
 
     if (eventClass == kEventClassKeyboard)
     {
-        if (view->darwinKeyboardEvent (inEvent))
+        if (view->darwinKeyboardEvent (NULL, inEvent))
             return true;
     }
     return false;
@@ -2192,11 +2192,12 @@ bool VBoxConsoleView::x11Event (XEvent *event)
  *  Invoked by VBoxConsoleView::darwinEventHandlerProc / VBoxConsoleView::macEventFilter when
  *  it receives a raw keyboard event.
  *
+ *  @param pvCocoaEvent The Cocoa keyboard event. Can be NULL in some configs.
  *  @param inEvent      The keyboard event.
  *
  *  @return true if the key was processed, false if it wasn't processed and should be passed on.
  */
-bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
+bool VBoxConsoleView::darwinKeyboardEvent (const void *pvCocoaEvent, EventRef inEvent)
 {
     bool ret = false;
     UInt32 EventKind = ::GetEventKind (inEvent);
@@ -2236,7 +2237,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
         UInt32 newMask = 0;
         ::GetEventParameter (inEvent, kEventParamKeyModifiers, typeUInt32, NULL,
                              sizeof (newMask), NULL, &newMask);
-        newMask = ::DarwinAdjustModifierMask (newMask);
+        newMask = ::DarwinAdjustModifierMask (newMask, pvCocoaEvent);
         UInt32 changed = newMask ^ mDarwinKeyModifiers;
         if (changed)
         {

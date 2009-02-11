@@ -24,6 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "VBoxCocoaApplication.h"
+#include "DarwinKeyboard.h"
 #include <iprt/assert.h>
 #import <AppKit/NSEvent.h>
 
@@ -192,6 +193,101 @@ void VBoxCocoaApplication_setCallback(uint32_t fMask, PFNVBOXCACALLBACK pfnCallb
 void VBoxCocoaApplication_unsetCallback(uint32_t fMask, PFNVBOXCACALLBACK pfnCallback, void *pvUser)
 {
     [g_pVBoxCocoaApp unsetCallback:fMask :pfnCallback :pvUser];
+}
+
+
+/**
+ * Calls the -(NSUInteger)modifierFlags method on a NSEvent object.
+ *
+ * @return  The Cocoa event modifier mask.
+ * @param   pvEvent     The NSEvent object.
+ */
+unsigned long VBoxCocoaApplication_getEventModifierFlags(const void *pvEvent)
+{
+    NSEvent *pEvent = (NSEvent *)pvEvent;
+    return [pEvent modifierFlags];
+}
+
+
+/**
+ * Calls the -(NSUInteger)modifierFlags method on a NSEvent object and
+ * converts the flags to carbon style.
+ *
+ * @return  The Carbon modifier mask.
+ * @param   pvEvent     The NSEvent object.
+ */
+uint32_t VBoxCocoaApplication_getEventModifierFlagsXlated(const void *pvEvent)
+{
+    NSEvent    *pEvent  = (NSEvent *)pvEvent;
+    NSUInteger  fCocoa  = [pEvent modifierFlags];
+    uint32_t    fCarbon = 0;
+    if (fCocoa)
+    {
+        if (fCocoa & NSAlphaShiftKeyMask)
+            fCarbon |= alphaLock;
+        if (fCocoa & (NSShiftKeyMask | NX_DEVICELSHIFTKEYMASK | NX_DEVICERSHIFTKEYMASK))
+        {
+            if (fCocoa & (NX_DEVICERSHIFTKEYMASK | NX_DEVICERSHIFTKEYMASK))
+            {
+                if (fCocoa & NX_DEVICERSHIFTKEYMASK)
+                    fCarbon |= rightShiftKey;
+                if (fCocoa & NX_DEVICELSHIFTKEYMASK)
+                    fCarbon |= shiftKey;
+            }
+            else
+                fCarbon |= shiftKey;
+        }
+
+        if (fCocoa & (NSControlKeyMask | NX_DEVICELCTLKEYMASK | NX_DEVICERCTLKEYMASK))
+        {
+            if (fCocoa & (NX_DEVICELCTLKEYMASK | NX_DEVICERCTLKEYMASK))
+            {
+                if (fCocoa & NX_DEVICERCTLKEYMASK)
+                    fCarbon |= rightControlKey;
+                if (fCocoa & NX_DEVICELCTLKEYMASK)
+                    fCarbon |= controlKey;
+            }
+            else
+                fCarbon |= controlKey;
+        }
+
+        if (fCocoa & (NSAlternateKeyMask | NX_DEVICELALTKEYMASK | NX_DEVICERALTKEYMASK))
+        {
+            if (fCocoa & (NX_DEVICELALTKEYMASK | NX_DEVICERALTKEYMASK))
+            {
+                if (fCocoa & NX_DEVICERALTKEYMASK)
+                    fCarbon |= rightOptionKey;
+                if (fCocoa & NX_DEVICELALTKEYMASK)
+                    fCarbon |= optionKey;
+            }
+            else
+                fCarbon |= optionKey;
+        }
+
+        if (fCocoa & (NSCommandKeyMask | NX_DEVICELCMDKEYMASK | NX_DEVICERCMDKEYMASK))
+        {
+            if (fCocoa & (NX_DEVICELCMDKEYMASK | NX_DEVICERCMDKEYMASK))
+            {
+                if (fCocoa & NX_DEVICERCMDKEYMASK)
+                    fCarbon |= kEventKeyModifierRightCmdKeyMask;
+                if (fCocoa & NX_DEVICELCMDKEYMASK)
+                    fCarbon |= cmdKey;
+            }
+            else
+                fCarbon |= cmdKey;
+        }
+
+        //if (fCocoa & NSNumericPadKeyMask)
+        //    fCarbon |= ???;
+
+        //if (fCocoa & NSHelpKeyMask)
+        //    fCarbon |= ???;
+
+        //if (fCocoa & NSFunctionKeyMask)
+        //    fCarbon |= ???;
+    }
+
+    return fCarbon;
 }
 
 

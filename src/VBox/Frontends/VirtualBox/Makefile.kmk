@@ -555,8 +555,9 @@ tstDarwinKeyboard4_TEMPLATE = VBOXR3TSTEXE
 tstDarwinKeyboard4_INCS = include
 tstDarwinKeyboard4_SOURCES = \
 	src/darwin/tstDarwinKeyboard.cpp \
-	src/darwin/DarwinKeyboard.cpp
-tstDarwinKeyboard4_LDFLAGS = -framework IOKit -framework Carbon
+	src/darwin/DarwinKeyboard.cpp \
+	src/darwin/VBoxCocoaApplication.m
+tstDarwinKeyboard4_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
 tstDarwinKeyboard4_LIBS = \
 	$(LIB_RUNTIME)
 endif
