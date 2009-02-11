@@ -436,7 +436,7 @@
       PoweredOff, Aborted and Saved too).
 
       The first diagram shows what happens when a lengthy setup operation is
-      being executed (such as <link to="IMachine::attachHardDisk2()"/>).
+      being executed (such as <link to="IMachine::attachHardDisk2"/>).
 
       <pre>
     +-----------------------------------(same sate as before the call)------+
@@ -620,10 +620,10 @@
     <const name="Spawning"              value="3">
       <desc>
         A new (direct) session is being opened for the machine
-        as a result of <link to="IVirtualBox::openRemoteSession()"/>
+        as a result of <link to="IVirtualBox::openRemoteSession"/>
         call (<link to="IMachine::sessionState"/>);
         the session is currently being opened
-        as a result of <link to="IVirtualBox::openRemoteSession()"/>
+        as a result of <link to="IVirtualBox::openRemoteSession"/>
         call (<link to="ISession::state"/>)
       </desc>
     </const>
@@ -650,19 +650,19 @@
     <const name="Direct"                value="1">
       <desc>
         Direct session
-        (opened by <link to="IVirtualBox::openSession()"/>)
+        (opened by <link to="IVirtualBox::openSession"/>)
       </desc>
     </const>
     <const name="Remote"                value="2">
       <desc>
         Remote session
-        (opened by <link to="IVirtualBox::openRemoteSession()"/>)
+        (opened by <link to="IVirtualBox::openRemoteSession"/>)
       </desc>
     </const>
     <const name="Existing"              value="3">
       <desc>
         Existing session
-        (opened by <link to="IVirtualBox::openExistingSession()"/>)
+        (opened by <link to="IVirtualBox::openExistingSession"/>)
       </desc>
     </const>
   </enum>
@@ -1110,13 +1110,13 @@
         <ul>
         <li><link to="DeviceType_HardDisk"/>: the media is a hard disk
         that, if registered, can be obtained using the
-        <link to="IVirtualBox::getHardDisk2()"/> call.</li>
+        <link to="IVirtualBox::getHardDisk2"/> call.</li>
         <li><link to="DeviceType_DVD"/>: the media is a CD/DVD image
         that, if registered, can be obtained using the
-        <link to="IVirtualBox::getDVDImage()"/> call.</li>
+        <link to="IVirtualBox::getDVDImage"/> call.</li>
         <li><link to="DeviceType_Floppy"/>: the media is a Floppy image
         that, if registered, can be obtained using the
-        <link to="IVirtualBox::getFloppyImage()"/> call.</li>
+        <link to="IVirtualBox::getFloppyImage"/> call.</li>
         </ul>
 
         Note that if this is a deregistration notification,
@@ -1335,7 +1335,7 @@
         versions to the most recent version when reading them (usually at
         VirtualBox startup) but it doesn't save the changes back until
         you call a method that implicitly saves settings (such as
-        <link to="#setExtraData()"/>) or call <link to="#saveSettings()"/>
+        <link to="#setExtraData"/>) or call <link to="#saveSettings"/>
         explicitly. Therefore, if the value of this attribute differs from the
         value of <link to="#settingsFormatVersion"/>, then it
         means that the settings file was converted but the result of the
@@ -1364,7 +1364,7 @@
 
         VirtualBox uses this version of the format when saving settings files
         (either as a result of method calls that require to save settings or as
-        a result of an explicit call to <link to="#saveSettings()"/>).
+        a result of an explicit call to <link to="#saveSettings"/>).
 
         <see>settingsFileVersion</see>
       </desc>
@@ -1451,14 +1451,14 @@
           </li>
 
           <li>
-            Call <link to="IMachine::saveSettings()" /> to write the settings
+            Call <link to="IMachine::saveSettings" /> to write the settings
             to the machine's XML settings file. The configuration of the newly
             created machine will not be saved to disk until this method is
             called.
           </li>
 
           <li>
-            Call <link to="#registerMachine()" /> to add the machine to the list
+            Call <link to="#registerMachine" /> to add the machine to the list
             of machines known to VirtualBox.
           </li>
         </ol>
@@ -1537,7 +1537,7 @@
         Creates a new virtual machine in "legacy" mode, using the specified
         settings file to store machine settings.
 
-        As opposed to machines created by <link to="#createMachine()"/>,
+        As opposed to machines created by <link to="#createMachine"/>,
         the settings file of the machine created in "legacy" mode is not
         automatically renamed when the machine name is changed -- it will always
         remain the same as specified in this method call.
@@ -1549,14 +1549,14 @@
 
         Note that the configuration of the newly created machine is not
         saved to disk (and therefore no settings file is created)
-        until <link to="IMachine::saveSettings()"/> is called. If the
+        until <link to="IMachine::saveSettings"/> is called. If the
         specified settings file already exists, this method
         will fail with <link to="VBOX_E_FILE_ERROR"/>..
 
-        See <link to="#createMachine()"/> for more information.
+        See <link to="#createMachine"/> for more information.
 
         @deprecated This method may be removed later. Use <link
-        to="IVirtualBox::createMachine()"/> instead.
+        to="IVirtualBox::createMachine"/> instead.
 
         <note>
           There is no way to change the name of the settings file
@@ -1596,7 +1596,7 @@
       <desc>
         Opens a virtual machine from the existing settings file.
         The opened machine remains unregistered until you call
-        <link to="#registerMachine()"/>.
+        <link to="#registerMachine"/>.
 
         The specified settings file name can be absolute
         (full path) or relative to the <link to="IVirtualBox::homeFolder">
@@ -1628,8 +1628,8 @@
       <desc>
 
         Registers the machine previously created using
-        <link to="#createMachine()"/> or opened using
-        <link to="#openMachine()"/> within this VirtualBox installation. After
+        <link to="#createMachine"/> or opened using
+        <link to="#openMachine"/> within this VirtualBox installation. After
         successful method invocation, the
         <link to="IVirtualBoxCallback::onMachineRegistered"/> signal is sent
         to all registered callbacks.
@@ -1747,9 +1747,9 @@
         to virtual machines, you must call one of the following methods to
         allocate a format-specific storage unit at the specified location:
         <ul>
-          <li><link to="IHardDisk2::createDynamicStorage()"/></li>
-          <li><link to="IHardDisk2::createFixedStorage()"/></li>
-          <li><link to="IHardDisk2::createDiffStorage()"/></li>
+          <li><link to="IHardDisk2::createDynamicStorage"/></li>
+          <li><link to="IHardDisk2::createFixedStorage"/></li>
+          <li><link to="IHardDisk2::createDiffStorage"/></li>
         </ul>
 
         Some hard disk attributes, such as <link to="IHardDisk2::id"/>, may
@@ -1758,7 +1758,7 @@
 
         After the storage unit is successfully created, the hard disk gets
         remembered by this VirtualBox installation and will be accessible
-        through <link to="#getHardDisk2()"/> and <link to="#findHardDisk2()"/>
+        through <link to="#getHardDisk2"/> and <link to="#findHardDisk2"/>
         methods. Remembered root (base) hard disks are also returned as part of
         the <link to="#hardDisks2"/> array. See IHardDisk2 for more details.
 
@@ -1805,8 +1805,8 @@
 
         After the hard disk is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
-        accessible through <link to="#getHardDisk2()"/> and
-        <link to="#findHardDisk2()"/> methods. Remembered root (base) hard disks
+        accessible through <link to="#getHardDisk2"/> and
+        <link to="#findHardDisk2"/> methods. Remembered root (base) hard disks
         are also returned as part of the <link to="#hardDisks2"/> array and can
         be attached to virtual machines. See IHardDisk2 for more details.
 
@@ -1851,8 +1851,8 @@
 
         The hard disk with the given UUID must be known to this VirtualBox
         installation, i.e. it must be previously created by
-        <link to="#createHardDisk2()"/> or opened by <link
-        to="#openHardDisk2()"/>, or attached to some known virtual machine.
+        <link to="#createHardDisk2"/> or opened by <link
+        to="#openHardDisk2"/>, or attached to some known virtual machine.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           No hard disk object matching @a id found.
@@ -1874,8 +1874,8 @@
 
         The given hard disk must be known to this VirtualBox installation, i.e.
         it must be previously created by
-        <link to="#createHardDisk2()"/> or opened by <link
-        to="#openHardDisk2()"/>, or attached to some known virtual machine.
+        <link to="#createHardDisk2"/> or opened by <link
+        to="#openHardDisk2"/>, or attached to some known virtual machine.
 
         The search is done by comparing the value of the @a location argument to
         the <link to="IHardDisk2::location"/> attribute of each known hard
@@ -1910,8 +1910,8 @@
 
         After the image is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
-        accessible through <link to="#getDVDImage()"/> and
-        <link to="#findDVDImage()"/> methods. Remembered images are also
+        accessible through <link to="#getDVDImage"/> and
+        <link to="#findDVDImage"/> methods. Remembered images are also
         returned as part of the <link to="#DVDImages"/> array and can be mounted
         to virtual machines. See IMedium for more details.
 
@@ -1950,7 +1950,7 @@
 
         The image with the given UUID must be known to this VirtualBox
         installation, i.e. it must be previously opened by <link
-        to="#openDVDImage()"/>, or mounted to some known virtual machine.
+        to="#openDVDImage"/>, or mounted to some known virtual machine.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           No matching DVD image found in the media registry.
@@ -1971,7 +1971,7 @@
 
         The image with the given UUID must be known to this VirtualBox
         installation, i.e. it must be previously opened by <link
-        to="#openDVDImage()"/>, or mounted to some known virtual machine.
+        to="#openDVDImage"/>, or mounted to some known virtual machine.
 
         The search is done by comparing the value of the @a location argument to
         the <link to="IMedium::location"/> attribute of each known CD/DVD image.
@@ -2007,8 +2007,8 @@
 
         After the image is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
-        accessible through <link to="#getFloppyImage()"/> and
-        <link to="#findFloppyImage()"/> methods. Remembered images are also
+        accessible through <link to="#getFloppyImage"/> and
+        <link to="#findFloppyImage"/> methods. Remembered images are also
         returned as part of the <link to="#floppyImages"/> array and can be
         mounted to virtual machines. See IMedium for more details.
 
@@ -2049,7 +2049,7 @@
 
         The image with the given UUID must be known to this VirtualBox
         installation, i.e. it must be previously opened by <link
-        to="#openFloppyImage()"/>, or mounted to some known virtual machine.
+        to="#openFloppyImage"/>, or mounted to some known virtual machine.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           No matching floppy image found in the media registry.
@@ -2070,7 +2070,7 @@
 
         The image with the given UUID must be known to this VirtualBox
         installation, i.e. it must be previously opened by <link
-        to="#openFloppyImage()"/>, or mounted to some known virtual machine.
+        to="#openFloppyImage"/>, or mounted to some known virtual machine.
 
         The search is done by comparing the value of the @a location argument to
         the <link to="IMedium::location"/> attribute of each known floppy image.
@@ -2223,13 +2223,13 @@
         <note>
           Before performing the actual data change, this method will ask all
           registered callbacks using the
-          <link to="IVirtualBoxCallback::onExtraDataCanChange()"/>
+          <link to="IVirtualBoxCallback::onExtraDataCanChange"/>
           notification for a permission. If one of the callbacks refuses the
           new value, the change will not be performed.
         </note>
         <note>
           On success, the
-          <link to="IVirtualBoxCallback::onExtraDataChange()"/> notification
+          <link to="IVirtualBoxCallback::onExtraDataChange"/> notification
           is called to inform all registered callbacks about a successful data
           change.
         </note>
@@ -2302,7 +2302,7 @@
 
         <li>Call <link to="IMachine::saveSettings" />.</li>
 
-        <li>Close the session by calling <link to="ISession::close()"/>.</li>
+        <li>Close the session by calling <link to="ISession::close"/>.</li>
         </ol>
 
         <result name="E_UNEXPECTED">
@@ -2453,7 +2453,7 @@
         within the remote session context, not all VM settings are available
         for modification.
 
-        As opposed to <link to="#openRemoteSession()"/>, the number of
+        As opposed to <link to="#openRemoteSession"/>, the number of
         remote sessions opened this way is not limited by the API
 
         <note>
@@ -2644,12 +2644,12 @@
       <desc>
         Creates a backup copy of the global settings file
         (<link to="#settingsFilePath"/>) in case of auto-conversion, and then
-        calls <link to="#saveSettings()"/>.
+        calls <link to="#saveSettings"/>.
 
         Note that the backup copy is created <b>only</b> if the settings file
         auto-conversion took place (see <link to="#settingsFileVersion"/> for
         details). Otherwise, this call is fully equivalent to
-        <link to="#saveSettings()"/> and no backup copying is done.
+        <link to="#saveSettings"/> and no backup copying is done.
 
         The backup copy is created in the same directory where the original
         settings file is located. It is given the following file name:
@@ -2669,7 +2669,7 @@
         If the copy operation succeeds, the @a bakFileName return argument will
         receive a full path to the created backup file (for informational
         purposes). Note that this will happen even if the subsequent
-        <link to="#saveSettings()"/> call performed by this method after the
+        <link to="#saveSettings"/> call performed by this method after the
         copy operation, fails.
 
         <note>
@@ -3753,7 +3753,7 @@
         as a name of the machine's settings file and as a name of the
         subdirectory this settings file resides in. Thus, every time you
         change the value of this property, the settings file will be
-        renamed once you call <link to="#saveSettings()"/> to confirm the
+        renamed once you call <link to="#saveSettings"/> to confirm the
         change. The containing subdirectory will be also renamed, but
         only if it has exactly the same name as the settings file
         itself prior to changing this property (for backward compatibility
@@ -3771,16 +3771,16 @@
             or if any file in the directory containing the settings file
             is being used by another running machine or by any other
             process in the host operating system at a time when
-            <link to="#saveSettings()"/> is called.
+            <link to="#saveSettings"/> is called.
           </li>
         </ul>
-        If any of the above limitations are hit, <link to="#saveSettings()"/>
+        If any of the above limitations are hit, <link to="#saveSettings"/>
         will return an appropriate error message explaining the exact
         reason and the changes you made to this machine will not be
         saved.
         <note>
           For "legacy" machines created using the
-          <link to="IVirtualBox::createLegacyMachine()"/> call,
+          <link to="IVirtualBox::createLegacyMachine"/> call,
           the above naming limitations do not apply because the
           machine name does not affect the settings file name.
           The settings file name remains the same as it was specified
@@ -3997,7 +3997,7 @@
         versions to the most recent version when reading them (usually at
         VirtualBox startup) but it doesn't save the changes back until
         you call a method that implicitly saves settings (such as
-        <link to="#setExtraData()"/>) or call <link to="#saveSettings()"/>
+        <link to="#setExtraData"/>) or call <link to="#saveSettings"/>
         explicitly. Therefore, if the value of this attribute differs from the
         value of <link to="IVirtualBox::settingsFormatVersion"/>, then it
         means that the settings file was converted but the result of the
@@ -4028,7 +4028,7 @@
         </note>
         <note>
           For newly created unregistered machines, the value of this
-          property is always TRUE until <link to="#saveSettings()"/>
+          property is always TRUE until <link to="#saveSettings"/>
           is called (no matter if any machine settings have been
           changed after the creation or not). For opened machines
           the value is set to FALSE (and then follows to normal rules).
@@ -4045,9 +4045,9 @@
         Type of the session.  If <link to="#sessionState"/> is
         SessionSpawning or SessionOpen, this attribute contains the
         same value as passed to the
-        <link to="IVirtualBox::openRemoteSession()"/> method in the @a
+        <link to="IVirtualBox::openRemoteSession"/> method in the @a
         type parameter. If the session was opened directly using
-        <link to="IVirtualBox::openSession()"/>, or if
+        <link to="IVirtualBox::openSession"/>, or if
         <link to="#sessionState"/> is SessionClosed, the value of this
         attribute is @c null.
       </desc>
@@ -4058,7 +4058,7 @@
         Identifier of the session process. This attribute contains the
         platform-dependent identifier of the process that has opened a
         direct session for this machine using the
-        <link to="IVirtualBox::openSession()"/> call. The returned value
+        <link to="IVirtualBox::openSession"/> call. The returned value
         is only valid if <link to="#sessionState"/> is SessionOpen or
         SessionClosing (i.e. a session is currently open or being
         closed) by the time this property is read.
@@ -4270,13 +4270,13 @@
         <note>
           You cannot attach a hard disk to a running machine. Also, you cannot
           attach a hard disk to a newly created machine until this machine's
-          settings are saved to disk using <link to="#saveSettings()"/>.
+          settings are saved to disk using <link to="#saveSettings"/>.
         </note>
         <note>
           If the hard disk is being attached indirectly, a new differencing hard
           disk will implicitly be created for it and attached instead. If the
           changes made to the machine settings (including this indirect
-          attachment) are later cancelled using <link to="#discardSettings()"/>,
+          attachment) are later cancelled using <link to="#discardSettings"/>,
           this implicitly created differencing hard disk will implicitly
           be deleted.
         </note>
@@ -4317,9 +4317,9 @@
         bus.
 
         Note that if the hard disk was indirectly attached by
-        <link to="#attachHardDisk2()"/> to the given device slot then this
+        <link to="#attachHardDisk2"/> to the given device slot then this
         method will return not the same object as passed to the
-        <link to="#attachHardDisk2()"/> call. See <link to="IHardDisk2"/> for
+        <link to="#attachHardDisk2"/> call. See <link to="IHardDisk2"/> for
         more detailed information about attaching hard disks.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
@@ -4349,7 +4349,7 @@
         Detaching the hard disk from the virtual machine is deferred. This means
         that the hard disk remains associated with the machine when this method
         returns and gets actually de-associated only after a successful
-        <link to="#saveSettings()"/> call. See <link to="IHardDisk2"/>
+        <link to="#saveSettings"/> call. See <link to="IHardDisk2"/>
         for more detailed information about attaching hard disks.
 
         <note>
@@ -4357,12 +4357,12 @@
         </note>
         <note>
           Detaching differencing hard disks implicitly created by <link
-          to="#attachHardDisk2()"/> for the indirect attachment using this
+          to="#attachHardDisk2"/> for the indirect attachment using this
           method will <b>not</b> implicitly delete them. The
-          <link to="IHardDisk2::deleteStorage()"/> operation should be
+          <link to="IHardDisk2::deleteStorage"/> operation should be
           explicitly performed by the caller after the hard disk is successfully
           detached and the settings are saved with
-          <link to="#saveSettings()"/>, if it is the desired action.
+          <link to="#saveSettings"/>, if it is the desired action.
         </note>
 
         <result name="VBOX_E_INVALID_VM_STATE">
@@ -4498,13 +4498,13 @@
         <note>
           Before performing the actual data change, this method will ask all
           registered callbacks using the
-          <link to="IVirtualBoxCallback::onExtraDataCanChange()"/>
+          <link to="IVirtualBoxCallback::onExtraDataCanChange"/>
           notification for a permission. If one of the callbacks refuses the
           new value, the change will not be performed.
         </note>
         <note>
           On success, the
-          <link to="IVirtualBoxCallback::onExtraDataChange()"/> notification
+          <link to="IVirtualBoxCallback::onExtraDataChange"/> notification
           is called to inform all registered callbacks about a successful data
           change.
         </note>
@@ -4534,12 +4534,12 @@
       <desc>
         Saves any changes to machine settings made since the session
         has been opened or a new machine has been created, or since the
-        last call to <link to="#saveSettings()"/> or <link to="#discardSettings()"/>.
+        last call to <link to="#saveSettings"/> or <link to="#discardSettings"/>.
         For registered machines, new settings become visible to all
         other VirtualBox clients after successful invocation of this
         method.
         <note>
-          The method sends <link to="IVirtualBoxCallback::onMachineDataChange()"/>
+          The method sends <link to="IVirtualBoxCallback::onMachineDataChange"/>
           notification event after the configuration has been successfully
           saved (only for registered machines).
         </note>
@@ -4568,12 +4568,12 @@
       <desc>
         Creates a backup copy of the machine settings file (<link
         to="#settingsFilePath"/>) in case of auto-conversion, and then calls
-        <link to="#saveSettings()"/>.
+        <link to="#saveSettings"/>.
 
         Note that the backup copy is created <b>only</b> if the settings file
         auto-conversion took place (see <link to="#settingsFileVersion"/> for
         details). Otherwise, this call is fully equivalent to
-        <link to="#saveSettings()"/> and no backup copying is done.
+        <link to="#saveSettings"/> and no backup copying is done.
 
         The backup copy is created in the same directory where the original
         settings file is located. It is given the following file name:
@@ -4593,7 +4593,7 @@
         If the copy operation succeeds, the @a bakFileName return argument will
         receive a full path to the created backup file (for informational
         purposes). Note that this will happen even if the subsequent
-        <link to="#saveSettings()"/> call performed by this method after the
+        <link to="#saveSettings"/> call performed by this method after the
         copy operation, fails.
 
         <note>
@@ -4627,7 +4627,7 @@
     <method name="discardSettings">
       <desc>
         Discards any changes to the machine settings made since the session
-        has been opened or since the last call to <link to="#saveSettings()"/>
+        has been opened or since the last call to <link to="#saveSettings"/>
         or <link to="#discardSettings"/>.
         <note>
           Calling this method is only valid on instances returned
@@ -4664,7 +4664,7 @@
         </note>
         <note>
           The deleted machine settings file can be restored (saved again)
-          by calling <link to="#saveSettings()"/>.
+          by calling <link to="#saveSettings"/>.
         </note>
 
         <result name="VBOX_E_INVALID_VM_STATE">
@@ -5274,8 +5274,8 @@
         to <tt>true</tt>. In case of fatal errors, the virtual machine
         execution is always paused before calling this notification, and
         the notification handler is supposed either to immediately save
-        the virtual machine state using <link to="IConsole::saveState()"/>
-        or power it off using <link to="IConsole::powerDown()"/>.
+        the virtual machine state using <link to="IConsole::saveState"/>
+        or power it off using <link to="IConsole::powerDown"/>.
         Resuming the execution can lead to unpredictable results.
 
         <b>Non-fatal</b> errors and warnings are indicated by the
@@ -5288,7 +5288,7 @@
         value of the @a id parameter) that offers several actions such
         as <i>Retry</i>, <i>Save</i> or <i>Power Off</i>. If the user
         wants to retry, the notification handler should continue
-        the machine execution using the <link to="IConsole::resume()"/>
+        the machine execution using the <link to="IConsole::resume"/>
         call. If the machine execution is not Paused during this
         notification, then it means this notification is a <i>warning</i>
         (for example, about a fatal condition that can happen very soon);
@@ -5332,9 +5332,9 @@
     <method name="onCanShowWindow">
       <desc>
         Notification when a call to
-        <link to="IMachine::canShowConsoleWindow()"/> is made by a
+        <link to="IMachine::canShowConsoleWindow"/> is made by a
         front-end to check if a subsequent call to
-        <link to="IMachine::showConsoleWindow()"/> can succeed.
+        <link to="IMachine::showConsoleWindow"/> can succeed.
 
         The callee should give an answer appropriate to the current
         machine state in the @a canShow argument. This answer must
@@ -5361,7 +5361,7 @@
     <method name="onShowWindow">
       <desc>
         Notification when a call to
-        <link to="IMachine::showConsoleWindow()"/>
+        <link to="IMachine::showConsoleWindow"/>
         requests the console window to be activated and brought to
         foreground on the desktop of the host PC.
 
@@ -5827,7 +5827,7 @@
 
         <note>
           On success, this method implicitly calls
-          <link to="IMachine::saveSettings()"/> to save all current machine
+          <link to="IMachine::saveSettings"/> to save all current machine
           settings (including runtime changes to the DVD drive, etc.).
           Together with the impossibility to change any VM settings when it is
           in the Saved state, this guarantees adequate hardware
@@ -6022,7 +6022,7 @@
         a new current snapshot.
 
         <note>
-          This method implicitly calls <link to="IMachine::saveSettings()"/> to
+          This method implicitly calls <link to="IMachine::saveSettings"/> to
           save all current machine settings before taking an offline snapshot.
         </note>
 
@@ -6121,7 +6121,7 @@
         </note>
         <note>
           Note that discarding the current snapshot
-          will implicitly call <link to="IMachine::saveSettings()"/> to
+          will implicitly call <link to="IMachine::saveSettings"/> to
           make all current machine settings permanent.
         </note>
         <result name="VBOX_E_INVALID_VM_STATE">
@@ -6138,7 +6138,7 @@
 
     <method name="discardCurrentState">
       <desc>
-        This operation is similar to <link to="#discardSnapshot()"/> but
+        This operation is similar to <link to="#discardSnapshot"/> but
         affects the current machine state. This means that the state stored in
         the current snapshot will become a new current state, and all current
         settings of the machine and changes stored in differencing hard disks
@@ -6159,7 +6159,7 @@
         <note>
           If the machine state is <link to="MachineState_Saved">Saved</link>
           prior to this operation, the saved state file will be implicitly
-          discarded (as if <link to="IConsole::discardSavedState()"/> were
+          discarded (as if <link to="IConsole::discardSavedState"/> were
           called).
         </note>
 
@@ -6178,7 +6178,7 @@
         This method is equivalent to
         doing <link to="IConsole::discardSnapshot">discardSnapshot</link>
         (currentSnapshot.id(), progress) followed by
-        <link to="#discardCurrentState()"/>.
+        <link to="#discardCurrentState"/>.
 
         As a result, the machine will be fully restored from the
         snapshot preceding the current snapshot, while both the current
@@ -6189,8 +6189,8 @@
         discarded <b>before</b> discarding the snapshot. In other words, the
         machine will be restored from its last snapshot, before discarding
         it. This differs from performing a single
-        <link to="#discardSnapshot()"/> call (note that no
-        <link to="#discardCurrentState()"/> will be possible after it)
+        <link to="#discardSnapshot"/> call (note that no
+        <link to="#discardCurrentState"/> will be possible after it)
         to the effect that the latter will preserve the current state instead of
         discarding it.
 
@@ -6205,7 +6205,7 @@
         <note>
           If the machine state is <link to="MachineState_Saved">Saved</link>
           prior to this operation, the saved state file will be implicitly
-          discarded (as if <link to="#discardSavedState()"/> were
+          discarded (as if <link to="#discardSavedState"/> were
           called).
         </note>
 
@@ -6685,7 +6685,7 @@
         <i>active</i> is <tt>false</tt> (the filter is not active).
 
         The created filter can be added to the list of filters using
-        <link to="#insertUSBDeviceFilter()"/>.
+        <link to="#insertUSBDeviceFilter"/>.
 
         <see>#USBDeviceFilters</see>
       </desc>
@@ -6880,7 +6880,7 @@
         Maximum device position in the boot order. This value corresponds
         to the total number of devices a machine can boot from, to make it
         possible to include all possible devices to the boot list.
-        <see><link to="IMachine::setBootOrder()"/></see>
+        <see><link to="IMachine::setBootOrder"/></see>
       </desc>
     </attribute>
 
@@ -6912,8 +6912,8 @@
         </note>
 
         <see>
-          <link to="IVirtualBox::createMachine()"/>,
-          <link to="IVirtualBox::openMachine()"/>
+          <link to="IVirtualBox::createMachine"/>,
+          <link to="IVirtualBox::openMachine"/>
         </see>
       </desc>
     </attribute>
@@ -6950,8 +6950,8 @@
 
         <see>
           IHardDisk2,
-          <link to="IVirtualBox::createHardDisk2()"/>,
-          <link to="IVirtualBox::openHardDisk2()"/>,
+          <link to="IVirtualBox::createHardDisk2"/>,
+          <link to="IVirtualBox::openHardDisk2"/>,
           <link to="IMedium::location"/>
         </see>
       </desc>
@@ -6964,7 +6964,7 @@
 
         Keep in mind that the hard disk format identifier
         (<link to="IHardDiskFormat::id"/>) used in other API calls like
-        <link to="IVirtualBox::createHardDisk2()"/> to refer to a particular
+        <link to="IVirtualBox::createHardDisk2"/> to refer to a particular
         hard disk format is a case-insensitive string. This means that, for
         example, all of the following strings:
         <pre>
@@ -6989,7 +6989,7 @@
 
         The hard disk format set by this attribute is used by VirtualBox
         when the hard disk format was not specified explicitly. One example is
-        <link to="IVirtualBox::createHardDisk2()"/> with the <tt>null</tt>
+        <link to="IVirtualBox::createHardDisk2"/> with the <tt>null</tt>
         format argument. A more complex example is implicit creation of
         differencing hard disks when taking a snapshot of a virtual machine:
         this operation will try to use a format of the parent hard disk first
@@ -7013,7 +7013,7 @@
         <see>
           <link to="#hardDiskFormats"/>,
           <link to="IHardDiskFormat::id"/>,
-          <link to="IVirtualBox::createHardDisk2()"/>
+          <link to="IVirtualBox::createHardDisk2"/>
         </see>
       </desc>
     </attribute>
@@ -7494,11 +7494,11 @@
 
       In the current implementation, multiple snapshot branches within one
       virtual machine are not allowed. Every machine has a single branch,
-      and <link to="IConsole::takeSnapshot()"/> operation adds a new
+      and <link to="IConsole::takeSnapshot"/> operation adds a new
       snapshot to the top of that branch.
 
       Existing snapshots can be discarded using
-      <link to="IConsole::discardSnapshot()"/>.
+      <link to="IConsole::discardSnapshot"/>.
 
       <h3>Current snapshot</h3>
 
@@ -7521,8 +7521,8 @@
       The current machine state is what represented by IMachine instances got
       directly from IVirtualBox
       using <link
-      to="IVirtualBox::getMachine()">getMachine()</link>, <link
-      to="IVirtualBox::findMachine()">findMachine()</link>, etc. (as opposed
+      to="IVirtualBox::getMachine">getMachine()</link>, <link
+      to="IVirtualBox::findMachine">findMachine()</link>, etc. (as opposed
       to instances returned by <link to="ISnapshot::machine"/>).  This state
       is always used when the machine is <link to="IConsole::powerUp"> powered
       on</link>.
@@ -7543,7 +7543,7 @@
       was saved.
 
       Similarly to snapshots, the current machine state can be discarded
-      using <link to="IConsole::discardCurrentState()"/>.
+      using <link to="IConsole::discardCurrentState"/>.
 
       <h3>Taking and discarding snapshots</h3>
 
@@ -7553,7 +7553,7 @@
       <table>
         <tr><th>Operation</th><th>Meaning</th><th>Remarks</th></tr>
 
-        <tr><td><link to="IConsole::takeSnapshot()"/></td>
+        <tr><td><link to="IConsole::takeSnapshot"/></td>
 
           <td>Save the current state of the virtual machine, including all
             settings, contents of normal hard disks and the current modifications
@@ -7563,7 +7563,7 @@
             execution if it is being executed when the snapshot is
             taken)</td></tr>
 
-        <tr><td><link to="IConsole::discardSnapshot()"/></td>
+        <tr><td><link to="IConsole::discardSnapshot"/></td>
 
           <td>Forget the state of the virtual machine stored in the snapshot:
             dismiss all saved settings and delete the saved execution state (for
@@ -7572,7 +7572,7 @@
           <td>Other snapshots (including child snapshots, if any) and the
             current state are not directly affected</td></tr>
 
-        <tr><td><link to="IConsole::discardCurrentState()"/></td>
+        <tr><td><link to="IConsole::discardCurrentState"/></td>
 
           <td>Restore the current state of the virtual machine from the state
             stored in the current snapshot, including all settings and hard disk
@@ -7581,7 +7581,7 @@
           <td>The current state of the machine existed prior to this operation
             is lost</td></tr>
 
-        <tr><td><link to="IConsole::discardCurrentSnapshotAndState()"/></td>
+        <tr><td><link to="IConsole::discardCurrentSnapshotAndState"/></td>
 
           <td>Completely revert the virtual machine to the state it was in
             before the current snapshot has been taken</td>
@@ -7740,13 +7740,13 @@
       Existing media are opened using the following methods, depending on the
       media type:
       <ul>
-        <li><link to="IVirtualBox::openHardDisk2()"/></li>
-        <li><link to="IVirtualBox::openDVDImage()"/></li>
-        <li><link to="IVirtualBox::openFloppyImage()"/></li>
+        <li><link to="IVirtualBox::openHardDisk2"/></li>
+        <li><link to="IVirtualBox::openDVDImage"/></li>
+        <li><link to="IVirtualBox::openFloppyImage"/></li>
       </ul>
 
       New hard disk media are created using the
-      <link to="IVirtualBox::createHardDisk2()"/> method. CD/DVD and floppy
+      <link to="IVirtualBox::createHardDisk2"/> method. CD/DVD and floppy
       images are created outside VirtualBox, usually by storing a copy
       of the real medium of the corresponding type in a regular file.
 
@@ -7765,14 +7765,14 @@
       <link to="IVirtualBox::hardDisks2"/>,
       <link to="IVirtualBox::DVDImages"/> and
       <link to="IVirtualBox::floppyImages"/> attributes. Individual media can be
-      quickly found by UUID using <link to="IVirtualBox::getHardDisk2()"/>
+      quickly found by UUID using <link to="IVirtualBox::getHardDisk2"/>
       and similar methods or by location using
-      <link to="IVirtualBox::findHardDisk2()"/> and similar methods.
+      <link to="IVirtualBox::findHardDisk2"/> and similar methods.
 
       Only known media can be attached to virtual machines.
 
       Removing known media from the media registry is performed when the given
-      medium is closed using the <link to="#close()"/> method or when its
+      medium is closed using the <link to="#close"/> method or when its
       associated storage unit is deleted (only for hard disks).
 
       <h3>Accessibility Checks</h3>
@@ -7945,7 +7945,7 @@
         <note>
           The returned array will include a machine even if this medium is not
           attached to that machine in the current state but attached to it in
-          one of the machine's snapshots. See <link to="#getSnapshotIds()"/> for
+          one of the machine's snapshots. See <link to="#getSnapshotIds"/> for
           details.
         </note>
       </desc>
@@ -7986,7 +7986,7 @@
 
         The read lock is shared: many clients can simultaneously lock the
         same media for reading unless it is already locked for writing (see
-        <link to="#lockWrite()"/>) in which case an error is returned.
+        <link to="#lockWrite"/>) in which case an error is returned.
 
         When the medium is locked for reading, it cannot be modified
         from within VirtualBox. This means that any method that changes
@@ -8000,9 +8000,9 @@
         for reading, the startup procedure will fail.
 
         The medium locked for reading must be unlocked using the <link
-        to="#unlockRead()"/> method. Calls to <link to="#lockRead()"/>
+        to="#unlockRead"/> method. Calls to <link to="#lockRead"/>
         can be nested and must be followed by the same number of paired
-        <link to="#unlockRead()"/> calls.
+        <link to="#unlockRead"/> calls.
 
         This method sets the media state to <link
         to="MediaState_LockedRead"/> on success. The state prior to
@@ -8032,12 +8032,12 @@
 
     <method name="unlockRead">
       <desc>
-        Cancels the read lock previously set by <link to="#lockRead()"/>.
+        Cancels the read lock previously set by <link to="#lockRead"/>.
 
         Either on success or on failure, this method returns the current state
         of the medium <b>after</b> the operation.
 
-        See <link to="#lockRead()"/> for more details.
+        See <link to="#lockRead"/> for more details.
 
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Medium not locked for reading.
@@ -8055,7 +8055,7 @@
       <desc>
         Locks this medium for writing.
 
-        The write lock, as opposed to <link to="#lockRead()"/>, is
+        The write lock, as opposed to <link to="#lockRead"/>, is
         exclusive: there may be only one client that holds a write lock
         and there may be no read locks while the write lock is held.
 
@@ -8072,9 +8072,9 @@
         for writing, the startup procedure will fail.
 
         The medium locked for writing must be unlocked using the <link
-        to="#unlockWrite()"/> method. Calls to <link to="#lockWrite()"/>
+        to="#unlockWrite"/> method. Calls to <link to="#lockWrite"/>
         can <b>not</b> be nested and must be followed by a paired <link
-        to="#unlockWrite()"/> call.
+        to="#unlockWrite"/> call.
 
         This method sets the media state to <link
         to="MediaState_LockedWrite"/> on success. The state prior to
@@ -8103,12 +8103,12 @@
 
     <method name="unlockWrite">
       <desc>
-        Cancels the write lock previously set by <link to="#lockWrite()"/>.
+        Cancels the write lock previously set by <link to="#lockWrite"/>.
 
         Either on success or on failure, this method returns the current
         state of the medium <b>after</b> the operation.
 
-        See <link to="#lockWrite()"/> for more details.
+        See <link to="#lockWrite"/> for more details.
 
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Medium not locked for writing.
@@ -8287,23 +8287,23 @@
       <h3>Creating Hard Disks</h3>
 
       New base hard disks are created using
-      <link to="IVirtualBox::createHardDisk2()"/>. Existing hard disks are
-      opened using <link to="IVirtualBox::openHardDisk2()"/>. Differencing hard
+      <link to="IVirtualBox::createHardDisk2"/>. Existing hard disks are
+      opened using <link to="IVirtualBox::openHardDisk2"/>. Differencing hard
       disks are usually implicitly created by VirtualBox when needed but may
-      also be created explicitly using <link to="#createDiffStorage()"/>.
+      also be created explicitly using <link to="#createDiffStorage"/>.
 
       After the hard disk is successfully created (including the storage unit)
       or opened, it becomes a known hard disk (remembered in the internal media
       registry). Known hard disks can be attached to a virtual machine, accessed
-      through <link to="IVirtualBox::getHardDisk2()"/> and
-      <link to="IVirtualBox::findHardDisk2()"/> methods or enumerated using the
+      through <link to="IVirtualBox::getHardDisk2"/> and
+      <link to="IVirtualBox::findHardDisk2"/> methods or enumerated using the
       <link to="IVirtualBox::hardDisks2"/> array (only for base hard disks).
 
-      The following methods, besides <link to="IMedium::close()"/>,
+      The following methods, besides <link to="IMedium::close"/>,
       automatically remove the hard disk from the media registry:
       <ul>
-        <li><link to="#deleteStorage()"/></li>
-        <li><link to="#mergeTo()"/></li>
+        <li><link to="#deleteStorage"/></li>
+        <li><link to="#mergeTo"/></li>
       </ul>
 
       If the storage unit of the hard disk is a regular file in the host's
@@ -8337,8 +8337,8 @@
       <h3>Attaching Hard Disks</h3>
 
       Hard disks are attached to virtual machines using the
-      <link to="IMachine::attachHardDisk2()"/> method and detached using the
-      <link to="IMachine::detachHardDisk2()"/> method. Depending on their
+      <link to="IMachine::attachHardDisk2"/> method and detached using the
+      <link to="IMachine::detachHardDisk2"/> method. Depending on their
       <link to="#type"/>, hard disks are attached either
       <i>directly</i> or <i>indirectly</i>.
 
@@ -8347,13 +8347,13 @@
       running. When a hard disk is being attached indirectly, a new differencing
       hard disk linked to it is implicitly created and this differencing hard
       disk is associated with the machine and used for hard disk operations.
-      This also means that if <link to="IMachine::attachHardDisk2()"/> performs
+      This also means that if <link to="IMachine::attachHardDisk2"/> performs
       a direct attachment then the same hard disk will be returned in response
-      to the subsequent  <link to="IMachine::getHardDisk2()"/> call; however if
+      to the subsequent  <link to="IMachine::getHardDisk2"/> call; however if
       an indirect attachment is performed then
-      <link to="IMachine::getHardDisk2()"/> will return the implicitly created
+      <link to="IMachine::getHardDisk2"/> will return the implicitly created
       differencing hard disk, not the original one passed to <link
-      to="IMachine::attachHardDisk2()"/>. The following table shows the
+      to="IMachine::attachHardDisk2"/>. The following table shows the
       dependency of the attachment type on the hard disk type:
 
       <table>
@@ -8414,32 +8414,32 @@
 
       Detaching hard disks is performed in a <i>deferred</i> fashion. This means
       that the given hard disk remains associated with the given machine after a
-      successful <link to="IMachine::detachHardDisk2()"/> call until
-      <link to="IMachine::saveSettings()"/> is called to save all changes to
+      successful <link to="IMachine::detachHardDisk2"/> call until
+      <link to="IMachine::saveSettings"/> is called to save all changes to
       machine settings to disk. This deferring is necessary to guarantee that
       the hard disk configuration may be restored at any time by a call to
-      <link to="IMachine::discardSettings()"/>  before the settings
+      <link to="IMachine::discardSettings"/>  before the settings
       are saved (committed).
 
-      Note that if <link to="IMachine::discardSettings()"/> is called after
+      Note that if <link to="IMachine::discardSettings"/> is called after
       indirectly attaching some hard disks to the machine but before a call to
-      <link to="IMachine::saveSettings()"/> is made, it will implicitly delete
+      <link to="IMachine::saveSettings"/> is made, it will implicitly delete
       all differencing hard disks implicitly created by
-      <link to="IMachine::attachHardDisk2()"/> for these indirect attachments.
+      <link to="IMachine::attachHardDisk2"/> for these indirect attachments.
       Such implicitly created hard disks will also be immediately deleted when
-      detached explicitly using the <link to="IMachine::detachHardDisk2()"/>
-      call if it is made before <link to="IMachine::saveSettings()"/>. This
+      detached explicitly using the <link to="IMachine::detachHardDisk2"/>
+      call if it is made before <link to="IMachine::saveSettings"/>. This
       implicit deletion is safe because newly created differencing hard
       disks do not contain any user data.
 
       However, keep in mind that detaching differencing hard disks that were
-      implicitly created by <link to="IMachine::attachHardDisk2()"/>
-      before the last <link to="IMachine::saveSettings()"/> call will
+      implicitly created by <link to="IMachine::attachHardDisk2"/>
+      before the last <link to="IMachine::saveSettings"/> call will
       <b>not</b> implicitly delete them as they may already contain some data
       (for example, as a result of virtual machine execution). If these hard
       disks are no more necessary, the caller can always delete them explicitly
-      using <link to="#deleteStorage()"/> after they are actually de-associated
-      from this machine by the <link to="IMachine::saveSettings()"/> call.
+      using <link to="#deleteStorage"/> after they are actually de-associated
+      from this machine by the <link to="IMachine::saveSettings"/> call.
 
       <h3>Smart Attachment</h3>
 
@@ -8502,8 +8502,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       as described above, the backup copy of the current list of hard disk
       attachment is searched for descendants. This backup copy is created when
       the hard disk configuration is changed for the first time after the last
-      <link to="IMachine::saveSettings()"/> call and used by
-      <link to="IMachine::discardSettings()"/> to undo the recent hard disk
+      <link to="IMachine::saveSettings"/> call and used by
+      <link to="IMachine::discardSettings"/> to undo the recent hard disk
       changes. When such a descendant is found in this backup copy, it will be
       simply re-attached back, without creating a new differencing hard disk for
       it. This optimization is necessary to make it possible to re-attach the
@@ -8640,7 +8640,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Returns the value of the custom hard disk property with the given name.
 
         The list of all properties supported by the given hard disk format can
-        be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
+        be obtained with <link to="IHardDiskFormat::describeProperties"/>.
 
         Note that if this method returns a <tt>null</tt> @a value, the requested
         property is supported but currently not assigned any value.
@@ -8663,7 +8663,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Sets the value of the custom hard disk property with the given name.
 
         The list of all properties supported by the given hard disk format can
-        be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
+        be obtained with <link to="IHardDiskFormat::describeProperties"/>.
 
         Note that setting the property value to <tt>null</tt> is equivalent to
         deleting the existing value. A default value (if it is defined for this
@@ -8693,7 +8693,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         existing properties.
 
         The list of all properties supported by the given hard disk format can
-        be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
+        be obtained with <link to="IHardDiskFormat::describeProperties"/>.
 
         The method returns two arrays, the array of property names corresponding
         to the @a names argument and the current values of these properties.
@@ -8733,12 +8733,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         the method will fail before changing the values of any other properties
         from the @a names array.
 
-        Using this method over <link to="#setProperty()"/> is preferred if you
+        Using this method over <link to="#setProperty"/> is preferred if you
         need to set several properties at once since it will result into less
         IPC calls.
 
         The list of all properties supported by the given hard disk format can
-        be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
+        be obtained with <link to="IHardDiskFormat::describeProperties"/>.
 
         Note that setting the property value to <tt>null</tt> is equivalent to
         deleting the existing value. A default value (if it is defined for this
@@ -9012,7 +9012,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Starts creating a deep (independent) clone of this hard disk in the
         format and at the location defined by the @a target argument.
 
-        This operation is similar to <link to="#cloneTo()"/> except that when
+        This operation is similar to <link to="#cloneTo"/> except that when
         applied to a differencing hard disk, it will also copy missing hard disk
         data from all parent hard disks it is linked to. This will make the
         created clone an independent base hard disk that contains all hard disk
@@ -9024,7 +9024,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         <note>
           For base hard disks, this operation is identical to
-          <link to="#cloneTo()"/>.
+          <link to="#cloneTo"/>.
         </note>
         <note>
           This hard disk and all its parent hard disks will be placed to <link
@@ -9171,7 +9171,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         Each hard disk format is identified by a string represented by the
         <link to="#id"/> attribute. This string is used in calls like
-        <link to="IVirtualBox::createHardDisk2()"/> to specify the desired
+        <link to="IVirtualBox::createHardDisk2"/> to specify the desired
         format.
 
         The list of all supported hard disk formats can be obtained using
@@ -9195,7 +9195,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         This string is used in methods of other interfaces where it is necessary
         to specify a hard disk format, such as
-        <link to="IVirtualBox::createHardDisk2()"/>.
+        <link to="IVirtualBox::createHardDisk2"/>.
       </desc>
     </attribute>
 
@@ -9672,7 +9672,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Format of the video memory buffer. Constants represented by this enum can
       be used to test for particular values of <link
       to="IFramebuffer::pixelFormat"/>. See also <link
-      to="IFramebuffer::requestResize()"/>.
+      to="IFramebuffer::requestResize"/>.
 
       See also www.fourcc.org for more information about FOURCC pixel formats.
     </desc>
@@ -9740,7 +9740,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Defines whether this frame buffer uses the virtual video card's memory
         buffer (guest VRAM) directly or not. See <link
-        to="IFramebuffer::requestResize()"/> for more information.
+        to="IFramebuffer::requestResize"/> for more information.
       </desc>
     </attribute>
 
@@ -9864,10 +9864,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         finished resizing the frame buffer or not. If, for some reason, the
         resize cannot be finished immediately during this call, @a finished
         must be set to @c false, and the implementation must call
-        <link to="IDisplay::resizeCompleted()"/> after it has returned from
+        <link to="IDisplay::resizeCompleted"/> after it has returned from
         this method as soon as possible. If @a finished is @c false, the
         machine will not call any frame buffer methods until
-        <link to="IDisplay::resizeCompleted()"/> is called.
+        <link to="IDisplay::resizeCompleted"/> is called.
 
         Note that if the direct mode is chosen, the <link to="#bitsPerPixel"/>,
         <link to="#bytesPerLine"/> and <link to="#pixelFormat"/> attributes of
@@ -9882,16 +9882,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         <note>
           This method is called by the IDisplay object under the
-          <link to="#lock()"/> provided by this IFramebuffer
+          <link to="#lock"/> provided by this IFramebuffer
           implementation. If this method returns @c false in @a finished, then
           this lock is not released until
-          <link to="IDisplay::resizeCompleted()"/> is called.
+          <link to="IDisplay::resizeCompleted"/> is called.
         </note>
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
         <desc>
           Logical screen number. Must be used in the corresponding call to
-          <link to="IDisplay::resizeCompleted()"/> if this call is made.
+          <link to="IDisplay::resizeCompleted"/> if this call is made.
         </desc>
       </param>
       <param name="pixelFormat" type="unsigned long" dir="in">
@@ -9919,7 +9919,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>
           Can the VM start using the new frame buffer immediately
           after this method returns or it should wait for
-          <link to="IDisplay::resizeCompleted()"/>.
+          <link to="IDisplay::resizeCompleted"/>.
         </desc>
       </param>
     </method>
@@ -10805,7 +10805,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <i>active</i> is <tt>false</tt> (the filter is not active).
 
         The created filter can then be added to the list of filters using
-        <link to="#insertDeviceFilter()"/>.
+        <link to="#insertDeviceFilter"/>.
 
         <result name="VBOX_E_INVALID_VM_STATE">
           The virtual machine is not mutable.
@@ -11240,7 +11240,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       or USBDeviceState_Available, depending on the current device usage.
 
       Besides auto-capturing based on filters, the device can be manually
-      captured by guests (<link to="IConsole::attachUSBDevice()"/>) if its
+      captured by guests (<link to="IConsole::attachUSBDevice"/>) if its
       state is USBDeviceState_Busy, USBDeviceState_Available or
       USBDeviceState_Held.
 
@@ -11248,7 +11248,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Due to differences in USB stack implementations in Linux and Win32,
         states USBDeviceState_Busy and USBDeviceState_vailable are applicable
         only to the Linux version of the product. This also means that (<link
-        to="IConsole::attachUSBDevice()"/>) can only succeed on Win32 if the
+        to="IConsole::attachUSBDevice"/>) can only succeed on Win32 if the
         device state is USBDeviceState_Held.
       </note>
 
@@ -11973,11 +11973,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="onShowWindow">
       <desc>
-        Called by <link to="IMachine::canShowConsoleWindow()"/> and by
-        <link to="IMachine::showConsoleWindow()"/> in order to notify
+        Called by <link to="IMachine::canShowConsoleWindow"/> and by
+        <link to="IMachine::showConsoleWindow"/> in order to notify
         console callbacks
-        <link to="IConsoleCallback::onCanShowWindow()"/>
-        and <link to="IConsoleCallback::onShowWindow()"/>.
+        <link to="IConsoleCallback::onCanShowWindow"/>
+        and <link to="IConsoleCallback::onShowWindow"/>.
 
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Session type prevents operation.
@@ -11991,8 +11991,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="accessGuestProperty">
       <desc>
-        Called by <link to="IMachine::getGuestProperty()"/> and by
-        <link to="IMachine::setGuestProperty()"/> in order to read and
+        Called by <link to="IMachine::getGuestProperty"/> and by
+        <link to="IMachine::setGuestProperty"/> in order to read and
         modify guest properties.
 
         <result name="VBOX_E_INVALID_VM_STATE">
@@ -12172,7 +12172,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         a matching "close" call, even when errors occur.
 
         Otherwise, if a direct session for a machine opened with
-        <link to="IVirtualBox::openSession()"/> is not explicitly closed
+        <link to="IVirtualBox::openSession"/> is not explicitly closed
         when the application terminates, the state of the machine will
         be set to <link to="MachineState_Aborted" /> on the server.
 
