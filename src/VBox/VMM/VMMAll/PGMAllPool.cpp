@@ -63,6 +63,9 @@ static void pgmPoolMonitorModifiedRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 #ifndef IN_RING3
 DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 #endif
+#ifdef LOG_ENABLED
+static char *pgmPoolPoolKindToStr(uint8_t enmKind);
+#endif
 __END_DECLS
 
 
@@ -1507,7 +1510,7 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
         } while (i != NIL_PGMPOOL_IDX);
     }
 
-    Log3(("pgmPoolCacheAlloc: Missed GCPhys=%RGp enmKind=%d\n", GCPhys, enmKind));
+    Log3(("pgmPoolCacheAlloc: Missed GCPhys=%RGp enmKind=%s\n", GCPhys, pgmPoolPoolKindToStr(enmKind)));
     STAM_COUNTER_INC(&pPool->StatCacheMisses);
     return VERR_FILE_NOT_FOUND;
 }
@@ -1530,14 +1533,14 @@ static void pgmPoolCacheInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fCanBeCa
     {
         pPage->fCached = true;
         pgmPoolHashInsert(pPool, pPage);
-        Log3(("pgmPoolCacheInsert: Caching %p:{.Core=%RHp, .idx=%d, .enmKind=%d, GCPhys=%RGp}\n",
-              pPage, pPage->Core.Key, pPage->idx, pPage->enmKind, pPage->GCPhys));
+        Log3(("pgmPoolCacheInsert: Caching %p:{.Core=%RHp, .idx=%d, .enmKind=%s, GCPhys=%RGp}\n",
+              pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), pPage->GCPhys));
         STAM_COUNTER_INC(&pPool->StatCacheCacheable);
     }
     else
     {
-        Log3(("pgmPoolCacheInsert: Not caching %p:{.Core=%RHp, .idx=%d, .enmKind=%d, GCPhys=%RGp}\n",
-              pPage, pPage->Core.Key, pPage->idx, pPage->enmKind, pPage->GCPhys));
+        Log3(("pgmPoolCacheInsert: Not caching %p:{.Core=%RHp, .idx=%d, .enmKind=%s, GCPhys=%RGp}\n",
+              pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), pPage->GCPhys));
         STAM_COUNTER_INC(&pPool->StatCacheUncacheable);
     }
 
@@ -4153,15 +4156,15 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
     int rc = VINF_SUCCESS;
     STAM_PROFILE_START(&pPool->StatFlushPage, f);
-    LogFlow(("pgmPoolFlushPage: pPage=%p:{.Key=%RHp, .idx=%d, .enmKind=%d, .GCPhys=%RGp}\n",
-             pPage, pPage->Core.Key, pPage->idx, pPage->enmKind, pPage->GCPhys));
+    LogFlow(("pgmPoolFlushPage: pPage=%p:{.Key=%RHp, .idx=%d, .enmKind=%s, .GCPhys=%RGp}\n",
+             pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), pPage->GCPhys));
 
     /*
      * Quietly reject any attempts at flushing any of the special root pages.
      */
     if (pPage->idx < PGMPOOL_IDX_FIRST)
     {
-        Log(("pgmPoolFlushPage: special root page, rejected. enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
+        Log(("pgmPoolFlushPage: special root page, rejected. enmKind=%s idx=%d\n", pgmPoolPoolKindToStr(pPage->enmKind), pPage->idx));
         return VINF_SUCCESS;
     }
 
@@ -4174,7 +4177,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         AssertMsg(pPage->enmKind == PGMPOOLKIND_64BIT_PML4,
                   ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(pPool->CTX_SUFF(pVM)), pPage->Core.Key, pPage->enmKind));
 #endif
-        Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
+        Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%s idx=%d\n", pgmPoolPoolKindToStr(pPage->enmKind), pPage->idx));
         return VINF_SUCCESS;
     }
 
@@ -4249,8 +4252,8 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable)
 {
     STAM_PROFILE_START(&pPool->StatFree, a);
-    LogFlow(("pgmPoolFreeByPage: pPage=%p:{.Key=%RHp, .idx=%d, enmKind=%d} iUser=%#x iUserTable=%#x\n",
-             pPage, pPage->Core.Key, pPage->idx, pPage->enmKind, iUser, iUserTable));
+    LogFlow(("pgmPoolFreeByPage: pPage=%p:{.Key=%RHp, .idx=%d, enmKind=%s} iUser=%#x iUserTable=%#x\n",
+             pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), iUser, iUserTable));
     Assert(pPage->idx >= PGMPOOL_IDX_FIRST);
 #ifdef PGMPOOL_WITH_USER_TRACKING
     pgmPoolTrackFreeUser(pPool, pPage, iUser, iUserTable);
@@ -4338,7 +4341,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_ADV_START(&pPool->StatAlloc, a);
-    LogFlow(("pgmPoolAlloc: GCPhys=%RGp enmKind=%d iUser=%#x iUserTable=%#x\n", GCPhys, enmKind, iUser, iUserTable));
+    LogFlow(("pgmPoolAlloc: GCPhys=%RGp enmKind=%s iUser=%#x iUserTable=%#x\n", GCPhys, pgmPoolPoolKindToStr(enmKind), iUser, iUserTable));
     *ppPage = NULL;
     /** @todo CSAM/PGMPrefetchPage messes up here during CSAMR3CheckGates
      *  (TRPMR3SyncIDT) because of FF priority. Try fix that?
@@ -4480,8 +4483,8 @@ PPGMPOOLPAGE pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys)
     /** @todo profile this! */
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE pPage = pgmPoolGetPage(pPool, HCPhys);
-    Log3(("pgmPoolGetPageByHCPhys: HCPhys=%RHp -> %p:{.idx=%d .GCPhys=%RGp .enmKind=%d}\n",
-          HCPhys, pPage, pPage->idx, pPage->GCPhys, pPage->enmKind));
+    Log3(("pgmPoolGetPageByHCPhys: HCPhys=%RHp -> %p:{.idx=%d .GCPhys=%RGp .enmKind=%s}\n",
+          HCPhys, pPage, pPage->idx, pPage->GCPhys, pgmPoolPoolKindToStr(pPage->enmKind)));
     return pPage;
 }
 
@@ -4500,3 +4503,80 @@ void pgmPoolFlushAll(PVM pVM)
     pgmPoolFlushAllInt(pVM->pgm.s.CTX_SUFF(pPool));
 }
 
+#ifdef LOG_ENABLED
+static char *pgmPoolPoolKindToStr(uint8_t enmKind)
+{
+    switch(enmKind)
+    {
+    case PGMPOOLKIND_INVALID:
+        return "PGMPOOLKIND_INVALID";
+    case PGMPOOLKIND_FREE:
+        return "PGMPOOLKIND_FREE";
+    case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+        return "PGMPOOLKIND_32BIT_PT_FOR_PHYS";
+    case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
+        return "PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT";
+    case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
+        return "PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB";
+    case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+        return "PGMPOOLKIND_PAE_PT_FOR_PHYS";
+    case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
+        return "PGMPOOLKIND_PAE_PT_FOR_32BIT_PT";
+    case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
+        return "PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB";
+    case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
+        return "PGMPOOLKIND_PAE_PT_FOR_PAE_PT";
+    case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+        return "PGMPOOLKIND_PAE_PT_FOR_PAE_2MB";
+    case PGMPOOLKIND_32BIT_PD:
+        return "PGMPOOLKIND_32BIT_PD";
+    case PGMPOOLKIND_32BIT_PD_PHYS:
+        return "PGMPOOLKIND_32BIT_PD_PHYS";
+    case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+        return "PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD";
+    case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+        return "PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD";
+    case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+        return "PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD";
+    case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
+        return "PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD";
+    case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
+        return "PGMPOOLKIND_PAE_PD_FOR_PAE_PD";
+    case PGMPOOLKIND_PAE_PD_PHYS:
+        return "PGMPOOLKIND_PAE_PD_PHYS";
+    case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
+        return "PGMPOOLKIND_PAE_PDPT_FOR_32BIT";
+    case PGMPOOLKIND_PAE_PDPT:
+        return "PGMPOOLKIND_PAE_PDPT";
+    case PGMPOOLKIND_PAE_PDPT_PHYS:
+        return "PGMPOOLKIND_PAE_PDPT_PHYS";
+    case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+        return "PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT";
+    case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+        return "PGMPOOLKIND_64BIT_PDPT_FOR_PHYS";
+    case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
+        return "PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD";
+    case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        return "PGMPOOLKIND_64BIT_PD_FOR_PHYS";
+    case PGMPOOLKIND_64BIT_PML4:
+        return "PGMPOOLKIND_64BIT_PML4";
+    case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+        return "PGMPOOLKIND_EPT_PDPT_FOR_PHYS";
+    case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+        return "PGMPOOLKIND_EPT_PD_FOR_PHYS";
+    case PGMPOOLKIND_EPT_PT_FOR_PHYS:
+        return "PGMPOOLKIND_EPT_PT_FOR_PHYS";
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    case PGMPOOLKIND_ROOT_32BIT_PD:
+        return "PGMPOOLKIND_ROOT_32BIT_PD";
+    case PGMPOOLKIND_ROOT_PAE_PD:
+        return "PGMPOOLKIND_ROOT_PAE_PD";
+    case PGMPOOLKIND_ROOT_PDPT:
+        return "PGMPOOLKIND_ROOT_PDPT";
+#endif
+    case PGMPOOLKIND_ROOT_NESTED:
+        return "PGMPOOLKIND_ROOT_NESTED";
+    }
+    return "Unknown kind!";
+}
+#endif
