@@ -2503,8 +2503,7 @@
         event occurs.
 
         <result name="E_INVALIDARG">
-          Registering a @c NULL @a callback is pretty pointless, ain't it?
-          <!-- See if someone is actually reading this and objects :-) -->
+          A @c NULL callback cannot be registered.
         </result>
 
       </desc>
