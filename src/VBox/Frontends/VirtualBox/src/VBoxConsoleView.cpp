@@ -2322,7 +2322,7 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
 # ifdef QT_MAC_USE_COCOA
         /** @todo SetMouseCoalescingEnabled */
 # else
-        ::SetMouseCoalescingEnabled (false);
+        ::SetMouseCoalescingEnabled (false, NULL);
 # endif
 
         /* Register the event callback/hook and grab the keyboard. */
