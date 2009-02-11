@@ -953,9 +953,10 @@ void VBoxImportAppliance::import (QWidget *aParent /* = NULL */)
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
         /* Open the appliance */
-        CAppliance appliance = vbox.OpenAppliance (file);
+        CAppliance appliance = vbox.CreateAppliance();
         if (appliance.isOk())
         {
+            appliance.Read(file); // @todo error handling
             /* Now we have to interpret that stuff */
             appliance.Interpret();
             if (appliance.isOk())
@@ -966,7 +967,7 @@ void VBoxImportAppliance::import (QWidget *aParent /* = NULL */)
                 {
                     /* Start the import asynchronously */
                     CProgress progress;
-                    progress = appliance.ImportAppliance();
+                    progress = appliance.ImportMachines();
                     if (!appliance.isOk())
                     {
                         vboxProblem().cannotImportAppliance (appliance);

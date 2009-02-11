@@ -1726,40 +1726,13 @@
       </param>
     </method>
 
-    <method name="openAppliance">
+    <method name="createAppliance">
       <desc>
-        Attempts to open the given appliance, which must be in Open Virtual Machine Format (OVF).
-
-        As prescribed by the OVF standard, VirtualBox supports OVF in two formats:
-
-        <ol>
-          <li>If the OVF is distributed as a set of files, then @a file must be a fully qualified
-          path name to an existing OVF descriptor file with an <tt>.ovf</tt> file extension. If
-          this descriptor file references other files, as OVF appliances distributed as a set of
-          files most likely do, those files must be in the same directory as the descriptor file.</li>
-
-          <li>If the OVF is distributed as a single file, it must be in TAR format and have the
-          <tt>.ova</tt> file extension. This TAR file must then contain at least the OVF descriptor
-          files and optionally other files.</li>
-        </ol>
-
-        In both cases, VirtualBox will open the OVF descriptor file, parse its contents and create a
-        new instance of IAppliance representing the OVF file.
-
-        This method succeeds if the OVF is syntactically valid and, by itself, without errors. The
-        returned IAppliance object can then be used to retrieve information about the appliance and
-        import it into VirtualBox. The mere fact that this method returns successfully does not mean
-        that VirtualBox supports all features requested by the appliance; see the documentation for
-        <link to="IAppliance" /> for details.
-
+        Creates a new appliance object, which represents an appliance in the Open Virtual Machine
+        Format (OVF). This can then be used to import an OVF appliance into VirtualBox; see the
+        documentation for <link to="IAppliance" /> for details.
       </desc>
-      <param name="file" type="wstring" dir="in">
-        <desc>
-          Name of appliance file to open (either with an <tt>.ovf</tt> or <tt>.ova</tt> extension, depending
-          on whether the appliance is distributed as a set of files or as a single file, respectively).
-        </desc>
-      </param>
-      <param name="machine" type="IAppliance" dir="return">
+      <param name="appliance" type="IAppliance" dir="return">
         <desc>New appliance.</desc>
       </param>
     </method>
@@ -2881,16 +2854,19 @@
      >
     <desc>
         Represents an appliance in OVF format. An instance of this is returned by
-        <link to="IVirtualBox::openAppliance" />.
+        <link to="IVirtualBox::createAppliance" />.
 
         Importing an OVF appliance into VirtualBox is a three-step process:
 
         <ol>
           <li>
-          Call <link to="IVirtualBox::openAppliance" /> with the full path of the OVF
-          file. So long as the appliance file is syntactically valid, this will succeed
-          and return an instance of IAppliance that contains the parsed data from the
-          OVF file.
+          Call <link to="IVirtualBox::createAppliance" />. This will create an empty IAppliance object.
+          </li>
+
+          <li>
+          Call <link to="#open" /> with the full path of the OVF file you would like to
+          import. So long as this file is syntactically valid, this will succeed and return
+          an instance of IAppliance that contains the parsed data from the OVF file.
           </li>
 
           <li>The caller should then invoke <link to="#interpret" />, which
@@ -2902,7 +2878,7 @@
           the user the option to confirm and/or change these suggestions.
           </li>
 
-          <li>Finally, the caller should invoke <link to="#importAppliance" />, which will
+          <li>Finally, the caller should invoke <link to="#importMachines" />, which will
           create virtual machines in VirtualBox as instances of <link to="IMachine" /> that
           match the information in the virtual system descriptions.
           </li>
@@ -2912,7 +2888,7 @@
 
     <attribute name="path" type="wstring" readonly="yes">
       <desc>Path to the main file of the OVF appliance, which is either the <tt>.ovf</tt> or
-      the <tt>.ova</tt> file passed to <link to="IVirtualBox::openAppliance" />.</desc>
+      the <tt>.ova</tt> file passed to <link to="IVirtualBox::read" />.</desc>
     </attribute>
 
     <attribute name="disks" type="wstring" readonly="yes" safearray="yes">
@@ -2955,6 +2931,34 @@
       </desc>
     </attribute>
 
+    <method name="read">
+      <desc>
+        The OVF standard suggests two different file formats:
+
+        <ol>
+          <li>If the OVF is distributed as a set of files, then @a file must be a fully qualified
+          path name to an existing OVF descriptor file with an <tt>.ovf</tt> file extension. If
+          this descriptor file references other files, as OVF appliances distributed as a set of
+          files most likely do, those files must be in the same directory as the descriptor file.</li>
+
+          <li>If the OVF is distributed as a single file, it must be in TAR format and have the
+          <tt>.ova</tt> file extension. This TAR file must then contain at least the OVF descriptor
+          files and optionally other files. This variant is not yet supported by VirtualBox;
+          support will be added in a later version.</li>
+        </ol>
+
+        This method succeeds if the OVF is syntactically valid and, by itself, without errors. The
+        mere fact that this method returns successfully does not mean that VirtualBox supports all
+        features requested by the appliance; this can be examined after a call to <link to="#interpret" />.
+      </desc>
+      <param name="file" type="wstring" dir="in">
+        <desc>
+          Name of appliance file to open (either with an <tt>.ovf</tt> or <tt>.ova</tt> extension, depending
+          on whether the appliance is distributed as a set of files or as a single file, respectively).
+        </desc>
+      </param>
+    </method>
+
     <method name="interpret">
       <desc>
         Interprets the OVF data that was read when the appliance was constructed. After
@@ -2968,7 +2972,7 @@
       </desc>
     </method>
 
-    <method name="importAppliance">
+    <method name="importMachines">
       <desc>
         Imports the appliance into VirtualBox by creating instances of <link to="IMachine" />
         and other interfaces that match the information contained in the appliance as

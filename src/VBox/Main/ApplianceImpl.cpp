@@ -238,25 +238,18 @@ static Utf8Str stripFilename(const Utf8Str &strFile)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Implementation for IVirtualBox::openAppliance. Loads the given appliance (see API reference).
+ * Implementation for IVirtualBox::createAppliance.
  *
- * @param bstrPath Appliance to open (either .ovf or .ova file, see API reference)
  * @param anAppliance IAppliance object created if S_OK is returned.
  * @return S_OK or error.
  */
-STDMETHODIMP VirtualBox::OpenAppliance(IN_BSTR bstrPath, IAppliance** anAppliance)
+STDMETHODIMP VirtualBox::CreateAppliance(IAppliance** anAppliance)
 {
     HRESULT rc;
 
     ComObjPtr<Appliance> appliance;
     appliance.createObject();
-    /* @todo r=poetzsch: We should consider to split the creation & opening of
-       the appliance into two calls. Now the returned appliance is null in the
-       case of an error. But at the same time the error message is in the
-       appliance object which isn't returned. So I propose: createAppliance in
-       IVirtualBox & OpenAppliance in IAppliance. Such an error could easily
-       produced if you set an invalid path to the open call. */
-    rc = appliance->init(this, bstrPath);
+    rc = appliance->init(this);
 //     ComAssertComRCThrowRC(rc);
 
     if (SUCCEEDED(rc))
@@ -860,7 +853,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
  * @return
  */
 
-HRESULT Appliance::init(VirtualBox *aVirtualBox, IN_BSTR &path)
+HRESULT Appliance::init(VirtualBox *aVirtualBox)
 {
     HRESULT rc;
 
@@ -868,60 +861,11 @@ HRESULT Appliance::init(VirtualBox *aVirtualBox, IN_BSTR &path)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    /* Weakly reference to a VirtualBox object */
+    /* Weak reference to a VirtualBox object */
     unconst(mVirtualBox) = aVirtualBox;
 
     // initialize data
     m = new Data;
-    m->bstrPath = path;
-
-    // see if we can handle this file; for now we insist it has an ".ovf" extension
-    Utf8Str utf8Path(path);
-    const char *pcszLastDot = strrchr(utf8Path, '.');
-    if (    (!pcszLastDot)
-         || (    strcmp(pcszLastDot, ".ovf")
-              && strcmp(pcszLastDot, ".OVF")
-            )
-       )
-        return setError(VBOX_E_FILE_ERROR,
-                        tr("Appliance file must have .ovf extension"));
-
-    try
-    {
-        xml::XmlFileParser parser;
-        xml::Document doc;
-        parser.read(utf8Path.raw(),
-                    doc);
-
-        const xml::Node *pRootElem = doc.getRootElement();
-        if (strcmp(pRootElem->getName(), "Envelope"))
-            return setError(VBOX_E_FILE_ERROR,
-                            tr("Root element in OVF file must be \"Envelope\"."));
-
-        // OVF has the following rough layout:
-        /*
-            -- <References> ....  files referenced from other parts of the file, such as VMDK images
-            -- Metadata, comprised of several section commands
-            -- virtual machines, either a single <VirtualSystem>, or a <VirtualSystemCollection>
-            -- optionally <Strings> for localization
-        */
-
-        // get all "File" child elements of "References" section so we can look up files easily;
-        // first find the "References" sections so we can look up files
-        xml::NodesList listFileElements;      // receives all /Envelope/References/File nodes
-        const xml::Node *pReferencesElem;
-        if ((pReferencesElem = pRootElem->findChildElement("References")))
-            pReferencesElem->getChildElements(listFileElements, "File");
-
-        // now go though the sections
-        if (!(SUCCEEDED(rc = LoopThruSections(utf8Path.raw(), pReferencesElem, pRootElem))))
-            return rc;
-    }
-    catch(xml::Error &x)
-    {
-        return setError(VBOX_E_FILE_ERROR,
-                        x.what());
-    }
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -1199,6 +1143,70 @@ void convertCIMOSType2VBoxOSType(Utf8Str &osTypeVBox, CIMOSType_T c)
                 osTypeVBox = SchemaDefs_OSTypeId_Other;
             }
     }
+}
+
+STDMETHODIMP Appliance::Read(IN_BSTR path)
+{
+    HRESULT rc = S_OK;
+
+    if (!path)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+    m->bstrPath = path;
+
+    // see if we can handle this file; for now we insist it has an ".ovf" extension
+    Utf8Str utf8Path(path);
+    const char *pcszLastDot = strrchr(utf8Path, '.');
+    if (    (!pcszLastDot)
+         || (    strcmp(pcszLastDot, ".ovf")
+              && strcmp(pcszLastDot, ".OVF")
+            )
+       )
+        return setError(VBOX_E_FILE_ERROR,
+                        tr("Appliance file must have .ovf extension"));
+
+    try
+    {
+        xml::XmlFileParser parser;
+        xml::Document doc;
+        parser.read(utf8Path.raw(),
+                    doc);
+
+        const xml::Node *pRootElem = doc.getRootElement();
+        if (strcmp(pRootElem->getName(), "Envelope"))
+            return setError(VBOX_E_FILE_ERROR,
+                            tr("Root element in OVF file must be \"Envelope\"."));
+
+        // OVF has the following rough layout:
+        /*
+            -- <References> ....  files referenced from other parts of the file, such as VMDK images
+            -- Metadata, comprised of several section commands
+            -- virtual machines, either a single <VirtualSystem>, or a <VirtualSystemCollection>
+            -- optionally <Strings> for localization
+        */
+
+        // get all "File" child elements of "References" section so we can look up files easily;
+        // first find the "References" sections so we can look up files
+        xml::NodesList listFileElements;      // receives all /Envelope/References/File nodes
+        const xml::Node *pReferencesElem;
+        if ((pReferencesElem = pRootElem->findChildElement("References")))
+            pReferencesElem->getChildElements(listFileElements, "File");
+
+        // now go though the sections
+        if (!(SUCCEEDED(rc = LoopThruSections(utf8Path.raw(), pReferencesElem, pRootElem))))
+            return rc;
+    }
+    catch(xml::Error &x)
+    {
+        return setError(VBOX_E_FILE_ERROR,
+                        x.what());
+    }
+
+    return S_OK;
 }
 
 STDMETHODIMP Appliance::Interpret()
@@ -1536,7 +1544,7 @@ STDMETHODIMP Appliance::Interpret()
     return rc;
 }
 
-STDMETHODIMP Appliance::ImportAppliance(IProgress **aProgress)
+STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
 {
     CheckComArgOutPointerValid(aProgress);
 
@@ -1709,7 +1717,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
             if (!task->progress.isNull())
             {
-                rc = task->progress->notifyProgress(opCountMax * opCount++);
+                rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
                 CheckComRCThrowRC(rc);
             }
 
@@ -1735,7 +1743,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
             if (!task->progress.isNull())
             {
-                rc = task->progress->notifyProgress(opCountMax * opCount++);
+                rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
                 CheckComRCThrowRC(rc);
             }
 
@@ -1772,7 +1780,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
             if (!task->progress.isNull())
             {
-                rc = task->progress->notifyProgress(opCountMax * opCount++);
+                rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
                 CheckComRCThrowRC(rc);
             }
 
@@ -1824,7 +1832,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
             if (!task->progress.isNull())
             {
-                rc = task->progress->notifyProgress(opCountMax * opCount++);
+                rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
                 CheckComRCThrowRC(rc);
             }
 
@@ -1891,7 +1899,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
             if (!task->progress.isNull())
             {
-                rc = task->progress->notifyProgress(opCountMax * opCount++);
+                rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
                 CheckComRCThrowRC(rc);
             }
 
