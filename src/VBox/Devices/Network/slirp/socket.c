@@ -65,6 +65,9 @@ socreate()
         memset(so, 0, sizeof(struct socket));
         so->so_state = SS_NOFDREF;
         so->s = -1;
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+        so->so_poll_index = -1;
+#endif
     }
     return so;
 }
@@ -88,9 +91,10 @@ sofree(PNATState pData, struct socket *so)
         m_free(pData, so->so_m);
 #ifndef VBOX_WITH_SLIRP_MT
     if(so->so_next && so->so_prev)
+    {
         remque(pData, so);  /* crashes if so is not in a queue */
         NSOCK_DEC();
-    so->so_state = SS_NOFDREF; /* for debugging purposes */
+    }
 
     RTMemFree(so);
 #else
