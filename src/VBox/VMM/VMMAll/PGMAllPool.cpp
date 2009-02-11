@@ -392,6 +392,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                             Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
                             VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                             LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw=%#x!\n", iShwPdpt, iShw+i));
+                            break;
                         }
                         else
                         if (uShw.pPDPae->a[iShw+i].n.u1Present)
@@ -417,6 +418,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                                     Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
                                     VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw2=%#x!\n", iShwPdpt, iShw2));
+                                    break;
                                 }
                                 else
                                 if (uShw.pPDPae->a[iShw2].n.u1Present)
@@ -491,21 +493,53 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                     STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
+                    break;
                 }
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                else
+                {
+                    if (uShw.pPD->a[iShw].n.u1Present)
+                    {
+                        LogFlow(("pgmPoolMonitorChainChanging: 32 bit pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPD->a[iShw].u));
+                        pgmPoolFree(pPool->CTX_SUFF(pVM),
+                                    uShw.pPD->a[iShw].u & X86_PDE_PAE_PG_MASK,
+                                    pPage->idx,
+                                    iShw);
+                        uShw.pPD->a[iShw].u = 0;
+                    }
+                }
+#  endif
                 /* paranoia / a bit assumptive. */
-                else if (   pCpu
-                         && (off & 3)
-                         && (off & 3) + cbWrite > sizeof(X86PTE))
+                if (   pCpu
+                    && (off & 3)
+                    && (off & 3) + cbWrite > sizeof(X86PTE))
                 {
                     const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PTE);
                     if (    iShw2 != iShw
-                        &&  iShw2 < RT_ELEMENTS(uShw.pPD->a)
-                        &&  uShw.pPD->a[iShw2].u & PGM_PDFLAGS_MAPPING)
+                        &&  iShw2 < RT_ELEMENTS(uShw.pPD->a))
                     {
-                        Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
-                        STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
-                        VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
-                        LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
+
+                        if (uShw.pPD->a[iShw2].u & PGM_PDFLAGS_MAPPING)
+                        {
+                            Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                            STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
+                            VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                            LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
+                        }
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                        else
+                        {
+                            if (uShw.pPD->a[iShw2].n.u1Present)
+                            {
+                                LogFlow(("pgmPoolMonitorChainChanging: 32 bit pd iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPD->a[iShw2].u));
+                                pgmPoolFree(pPool->CTX_SUFF(pVM),
+                                            uShw.pPD->a[iShw2].u & X86_PDE_PAE_PG_MASK,
+                                            pPage->idx,
+                                            iShw2);
+                                uShw.pPD->a[iShw2].u = 0;
+                            }
+                        }
+#  endif
                     }
                 }
 #if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
@@ -582,8 +616,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                     STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
+                    break;
                 }
-#if defined(PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES) || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 /*
                  * Causes trouble when the guest uses a PDE to refer to the whole page table level
                  * structure. (Invalidate here; faults later on when it tries to change the page
@@ -624,7 +659,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                     }
-#if defined(PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES) || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                     else if (uShw.pPDPae->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
@@ -672,6 +707,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
                         VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
+                        break;
                     }
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                     else
