@@ -831,6 +831,8 @@ VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
 {
     VBOXPtr pVBox = VBOXGetRec(xf86Screens[scrnIndex]);
 
+    pVBox->viewportX = x;
+    pVBox->viewportY = y;
     VBESetDisplayStart(pVBox->pVbe, x, y, TRUE);
 }
 

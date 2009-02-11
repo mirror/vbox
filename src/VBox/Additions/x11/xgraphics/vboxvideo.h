@@ -156,6 +156,7 @@ typedef struct _VBOXRec
      * safe to touch the hardware. */
     Bool vtSwitch;
     Bool useVbva;
+    int viewportX, viewportY;
     VMMDevMemory *pVMMDevMemory;
     VBVAMEMORY *pVbvaMemory;
 } VBOXRec, *VBOXPtr;

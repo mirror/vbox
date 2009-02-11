@@ -1219,8 +1219,11 @@ VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
     TRACE;
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
-    if (!pVBox->vtSwitch)
+    if (!pVBox->vtSwitch) {
+        pVBox->viewportX = x;
+        pVBox->viewportY = y;
         VBESetDisplayStart(pVBox->pVbe, x, y, TRUE);
+    }
     TRACE2;
 }
 
