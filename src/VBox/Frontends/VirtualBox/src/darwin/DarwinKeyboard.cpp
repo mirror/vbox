@@ -33,8 +33,7 @@
 # include <iprt/stream.h>
 #endif
 
-#ifdef RT_ARCH_X86
-# define USE_HID_FOR_MODIFIERS
+#ifdef USE_HID_FOR_MODIFIERS
 # include <mach/mach.h>
 # include <mach/mach_error.h>
 # include <IOKit/IOKitLib.h>
@@ -477,10 +476,7 @@ void DarwinDisableGlobalHotKeys(bool fDisable)
     }
 }
 
-
-
 #ifdef USE_HID_FOR_MODIFIERS
-
 
 /**
  * Callback function for consuming queued events.
@@ -964,8 +960,6 @@ static UInt32 darwinQueryHIDModifiers(void)
 
 #endif /* USE_HID_FOR_MODIFIERS */
 
-
-
 /**
  * Left / rigth adjust the modifier mask using the current
  * keyboard state.
@@ -985,10 +979,11 @@ UInt32 DarwinAdjustModifierMask(UInt32 fModifiers, const void *pvCocoaEvent)
     {
 #ifndef USE_HID_FOR_MODIFIERS
         /*
-         * Convert the Cocoa modifiers to Carbon ones.
+         * Convert the Cocoa modifiers to Carbon ones (the Cocoa modifier
+         * definitions are tucked away in Objective-C headers, unfortunately).
          */
         AssertPtr(pvCocoaEvent);
-        VBoxCocoaApplication_printEvent("dbg-adjMods: ", pvCocoaEvent);
+        //VBoxCocoaApplication_printEvent("dbg-adjMods: ", pvCocoaEvent);
         uint32_t fAltModifiers = VBoxCocoaApplication_getEventModifierFlagsXlated(pvCocoaEvent);
 
 #else  /* USE_HID_FOR_MODIFIERS */
