@@ -1014,6 +1014,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
 
     /*
      * Check that the basic cpuid id information is unchanged.
+     * @todo we should check the 64 bits capabilities too!
      */
     uint32_t au32CpuId[8] = {0};
     ASMCpuId(0, &au32CpuId[0], &au32CpuId[1], &au32CpuId[2], &au32CpuId[3]);
