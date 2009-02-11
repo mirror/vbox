@@ -65,17 +65,36 @@ fi
 # when we resize.
 if test "$1" = "--test"; then
     xout=`$xorgbin -version 2>&1`
-    if echo "$xout" | grep 1.4.99.901 > /dev/null; then
-        exit 1
-    elif echo "$xout" | grep 1.4.99.902 > /dev/null; then
-        exit 1
-    elif echo "$xout" | grep 1.4.99.903 > /dev/null; then
-        exit 1
-    elif echo "$xout" | grep 1.4.99.904 > /dev/null; then
-        exit 1
-    elif echo "$xout" | grep 1.4.99.905 > /dev/null; then
+    if echo "$xout" | grep 1.4.99.901 > /dev/null ||
+        echo "$xout" | grep 1.4.99.902 > /dev/null ||
+        echo "$xout" | grep 1.4.99.903 > /dev/null ||
+        echo "$xout" | grep 1.4.99.904 > /dev/null ||
+        echo "$xout" | grep 1.4.99.905 > /dev/null
+    then
+        echo "Disabling dynamic resizing due to known bugs in this X server."
         exit 1
     fi
+    for conf in "/etc/X11/xorg.conf-4" "/etc/X11/xorg.conf" "/etc/X11/.xorg.conf" "/etc/xorg.conf" \
+                "/usr/etc/X11/xorg.conf-4" "/usr/etc/X11/xorg.conf" "/usr/lib/X11/xorg.conf-4" \
+                "/usr/lib/X11/xorg.conf"
+    do
+        if [ -r $conf ]
+        then
+            if awk -v IN_SECTION=0 \
+'tolower($0) ~ /^[ \t]*section/ { IN_SECTION=1 } '\
+'tolower($0) ~ /^[ \t]*modes/ { if (IN_SECTION) { print "mode"; exit } } '\
+'tolower($0) ~ /^[ \t]*option[ \t]+\"preferredmode\"/ { if (IN_SECTION) { print "mode"; exit } } '\
+'tolower($0) ~ /endsection/ { IN_SECTION=0 }' \
+                $conf 2>/dev/null | grep mode > /dev/null
+            then
+                echo "Disabling dynamic resizing as the X server is configured to only use static"
+                echo "resolutions.  To fix this, edit the server configuration file, remove all"
+                echo "\"Modes\" lines from the \"Screen\" section and any Option \"PreferredMode\""
+                echo "lines from \"Monitor\" sections and restart the server."
+                exit 1
+            fi
+        fi
+    done
     $randrbin 2> /dev/null | grep VBOX1 > /dev/null
     exit
 fi
@@ -84,3 +103,4 @@ fi
 # which is the one corresponding to the last video mode hint sent by the host.
 $randrbin --output VBOX1 --preferred
 $refreshbin 2>&1 > /dev/null
+
