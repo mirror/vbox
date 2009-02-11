@@ -2089,10 +2089,21 @@ void VBoxProblemReporter::cannotRunInSelectorMode()
 
 void VBoxProblemReporter::cannotImportAppliance (const CAppliance &aAppliance)
 {
-    message (mainWindowShown(),
-             Error,
-             tr ("Failed to open/interpret appliance <b>%1</b>.").arg (aAppliance.GetPath()),
-             formatErrorInfo (aAppliance));
+    if (aAppliance.isNull())
+    {
+        message (mainWindowShown(),
+                 Error,
+                 tr ("Failed to open appliance."));
+    }else
+    {
+        /* Preserve the current error info before calling the object again */
+        COMResult res (aAppliance);
+
+        message (mainWindowShown(),
+                 Error,
+                 tr ("Failed to open/interpret appliance <b>%1</b>.").arg (aAppliance.GetPath()),
+                 formatErrorInfo (res));
+    }
 }
 
 void VBoxProblemReporter::cannotImportAppliance (const CProgress &aProgress, const CAppliance& aAppliance)
