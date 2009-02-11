@@ -1330,6 +1330,18 @@ STDMETHODIMP Appliance::Interpret()
             if (vsysThis.fHasUsbController)
                 pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
 
+            NetworksMap::const_iterator itN;
+            for (itN = m->mapNetworks.begin();
+                 itN != m->mapNetworks.end();
+                 ++itN)
+            {
+                const Network &nw = itN->second;
+                pNewDesc->addEntry(VirtualSystemDescriptionType_LogicalNetwork,
+                                   "",
+                                   nw.strNetworkName,
+                                   nw.strNetworkName);
+            }
+
             /* Network Controller */
             // @todo: there is no hardware specification in the OVF file; supposedly the
             // hardware will then be determined by the VirtualSystemType element (e.g. "vmx-07")
@@ -1354,8 +1366,12 @@ STDMETHODIMP Appliance::Interpret()
                      nwIt != vsysThis.llNetworkNames.end() && a < SchemaDefs::NetworkAdapterCount;
                      ++nwIt, ++a)
                 {
-                    Utf8Str nwController = *nwIt; // @todo: not used yet
-                    pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter, "", "", toString<ULONG>(nwAdapterVBox));
+                    Utf8Str strNetwork = *nwIt; // logical network to connect to
+                    pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
+                                       "",      // ref
+                                       strNetwork,      // orig
+                                       toString<ULONG>(nwAdapterVBox),   // conf
+                                       Utf8StrFmt("network=%s", strNetwork.c_str()));       // extra conf
                 }
             }
 
@@ -2251,17 +2267,23 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
 }
 
 STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnabled),
-                                                      ComSafeArrayIn(IN_BSTR, aFinalValues))
+                                                      ComSafeArrayIn(IN_BSTR, argConfigValues),
+                                                      ComSafeArrayIn(IN_BSTR, argExtraConfigValues))
 {
-    CheckComArgSafeArrayNotNull(aFinalValues);
+    CheckComArgSafeArrayNotNull(argConfigValues);
+    CheckComArgSafeArrayNotNull(argExtraConfigValues);
 
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
     AutoWriteLock alock(this);
 
-    com::SafeArray <IN_BSTR> values(ComSafeArrayInArg(aFinalValues));
-    if (values.size() != m->descriptions.size())
+    com::SafeArray<IN_BSTR> aConfigValues(ComSafeArrayInArg(argConfigValues));
+    com::SafeArray<IN_BSTR> aExtraConfigValues(ComSafeArrayInArg(argExtraConfigValues));
+
+    if (    (aConfigValues.size() != m->descriptions.size())
+         || (aExtraConfigValues.size() != m->descriptions.size())
+       )
         return E_INVALIDARG;
 
     list<VirtualSystemDescriptionEntry>::iterator it;
@@ -2273,7 +2295,10 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
         VirtualSystemDescriptionEntry& vsde = *it;
 
         if (aEnabled[i])
-            vsde.strConfig = values[i];
+        {
+            vsde.strConfig = aConfigValues[i];
+            vsde.strExtraConfig = aExtraConfigValues[i];
+        }
         else
             vsde.type = VirtualSystemDescriptionType_Ignore;
     }

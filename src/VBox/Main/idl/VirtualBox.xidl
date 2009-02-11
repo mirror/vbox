@@ -3012,9 +3012,10 @@
     <const name="HardDiskImage" value="9" />
     <const name="CDROM" value="10" />
     <const name="Floppy" value="11" />
-    <const name="NetworkAdapter" value="12" />
-    <const name="USBController" value="13" />
-    <const name="SoundCard" value="14" />
+    <const name="LogicalNetwork" value="12" />
+    <const name="NetworkAdapter" value="13" />
+    <const name="USBController" value="14" />
+    <const name="SoundCard" value="15" />
 
   </enum>
 
@@ -3086,12 +3087,23 @@
         array item in aOrigValues[] will contain the file specification from the OVF file, whereas the item
         in aConfigValues[] will contain a qualified path specification where the hard disk image should
         be copied to; this target image will then be registered with VirtualBox.
-        The matching item in the aRefs[] array must contain a integer specifying the hard disk controller
-        to connect the image to. This number must be the same as the integer used by one of the hard disk
-        controller items (SCSI, SATA or IDE; see above).
+        The matching item in the aExtraConfigValues[] array must contain a string of the "controller=&lt;ctrl&gt;"
+        format, where &lt;ctrl&gt; must be an integer specifying the hard disk controller to connect the image to.
+        That number must be the index of an array item with one of the hard disk controller types
+        (HarddiskControllerSCSI, HarddiskControllerSATA, HarddiskControllerIDE).
       </li>
       <li>
-        "NetworkAdapter": a network adapter. (todo document)
+        "LogicalNetwork": a logical network to which virtual machines can connect. This is taken from
+        the Network section in the OVF that is shared between several virtual systems. OVF has no
+        formal description of how the network shall be set up (e.g. whether to use NAT or host interface
+        networking), but OVFs typically name the logical networks "nat" or "bridged" to suggest such
+        a configuration.
+      </li>
+      <li>
+        "NetworkAdapter": a network adapter. The array item in aConfigValues[] will specify the hardware
+        for the network adapter, whereas the array item in aExtraConfigValues[] will have a string
+        of the "network=&lt;nw&gt;" format, where &lt;nw&gt; must be one of the networks as specified with the
+        LogicalNetwork type.
       </li>
       <li>
         "SoundCard": a sound card. There can be at most one such item. If and only if such an item is
@@ -3137,21 +3149,24 @@
         HardDiskControllerSCSI, HardDiskImage, CDROM, Floppy, NetworkAdapter, USBController
         and SoundCard.
 
-        For the configuration values, if you pass in the same array as returned
-        in the aConfigValues array from getDescription(), the configuration remains unchanged.
-        Please see the documentation for getDescription() for valid configuration values
-        for the individual array item types. If the corresponding item in the aEnabled array
-        is false, the configuration value is gnored.
+        For the configuration and "extra" configuration values, if you pass in the same arrays
+        as returned in the aConfigValues and aExtraConfigValues arrays from getDescription(),
+        the configuration remains unchanged. Please see the documentation for getDescription()
+        for valid configuration values for the individual array item types. If the
+        corresponding item in the aEnabled array is false, the configuration value is ignored.
       </desc>
 
       <param name="aEnabled" type="boolean" dir="in" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aFinalValues" type="wstring" dir="in" safearray="yes">
+      <param name="aConfigValues" type="wstring" dir="in" safearray="yes">
         <desc></desc>
       </param>
 
+      <param name="aExtraConfigValues" type="wstring" dir="in" safearray="yes">
+        <desc></desc>
+      </param>
     </method>
 
     <method name="getWarnings">
