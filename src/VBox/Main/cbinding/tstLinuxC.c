@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include "cbinding.h"
 
 static char *nsIDToString(nsID *guid);
@@ -300,20 +301,28 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
 int main(int argc, char **argv)
 {
     IVirtualBox *vbox           = NULL;
-    ISession  *session          = NULL;
-    PRUint32   revision         = 0;
-    PRUnichar *versionUtf16     = NULL;
-    PRUnichar *homefolderUtf16  = NULL;
-    nsresult rc;     /* Result code of various function (method) calls. */
-    FILE *fpsetenv;
+    ISession   *session          = NULL;
+    PRUint32    revision         = 0;
+    PRUnichar  *versionUtf16     = NULL;
+    PRUnichar  *homefolderUtf16  = NULL;
+    struct stat stIgnored;
+    nsresult    rc;     /* Result code of various function (method) calls. */
 
-    if ((fpsetenv = fopen("/opt/VirtualBox/VBoxXPCOMC.so", "r")) != NULL) {
-        VBoxSetEnv("VBOX_APP_HOME","/opt/VirtualBox/");
-        fclose (fpsetenv);
-    }
-    if ((fpsetenv = fopen("/usr/lib/virtualbox/VBoxXPCOMC.so", "r")) != NULL) {
-        VBoxSetEnv("VBOX_APP_HOME","/usr/lib/virtualbox/");
-        fclose (fpsetenv);
+    /*
+     * Guess where VirtualBox is installed not mentioned in the environment.
+     * (This will be moved to VBoxComInitialize later.)
+     */
+
+    if (!VBoxGetEnv("VBOX_APP_HOME"))
+    {
+        if (stat("/opt/VirtualBox/VBoxXPCOMC.so", &stIgnored) == 0)
+        {
+            VBoxSetEnv("VBOX_APP_HOME","/opt/VirtualBox/");
+        }
+        if (stat("/usr/lib/virtualbox/VBoxXPCOMC.so", &stIgnored) == 0)
+        {
+            VBoxSetEnv("VBOX_APP_HOME","/usr/lib/virtualbox/");
+        }
     }
 
     printf("Starting Main\n");
@@ -334,7 +343,7 @@ int main(int argc, char **argv)
     }
     if (session == NULL)
     {
-        fprintf (stderr, "%s: FATAL: could not get session handle\n", argv[0]);
+        fprintf(stderr, "%s: FATAL: could not get session handle\n", argv[0]);
         return EXIT_FAILURE;
     }
 
