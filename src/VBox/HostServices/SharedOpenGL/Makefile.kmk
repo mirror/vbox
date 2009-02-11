@@ -84,9 +84,9 @@ endif # darwin
 VBoxSharedCrOpenGL_TEMPLATE = VBOXOGLR3HOST
 ifdef VBOX_WITH_XPCOM
  VBoxSharedCrOpenGL_DEFS = VBOX_WITH_XPCOM
- VBoxSharedCrOpenGL_INTERMEDIATES = \
- 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 endif
+VBoxSharedCrOpenGL_INTERMEDIATES = \
+	$(TEMPLATE_VBOXMAINEXE_INTERMEDIATES)
 VBoxSharedCrOpenGL_INCS.win = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
 	$(VBOX_PATH_SDK)/bindings/mscom/include \
