@@ -72,6 +72,7 @@ QMap<QString, QString> QIHotKeyEdit::sKeyNames;
 # include <Carbon/Carbon.h>
 # ifdef QT_MAC_USE_COCOA
 #  include "darwin/VBoxCocoaApplication.h"
+#  include "VBoxUtils.h"
 # endif
 #endif
 
@@ -137,7 +138,7 @@ QIHotKeyEdit::QIHotKeyEdit (QWidget *aParent) :
 #ifdef Q_WS_MAC
     mDarwinKeyModifiers = GetCurrentEventKeyModifiers();
 # ifdef QT_MAC_USE_COCOA
-    ::VBoxCocoaApplication_setCallback(UINT32_MAX, QIHotKeyEdit::darwinEventHandlerProc, this);
+    ::VBoxCocoaApplication_setCallback (UINT32_MAX, QIHotKeyEdit::darwinEventHandlerProc, this);
 # else  /* !QT_MAC_USE_COCOA */
     EventTypeSpec eventTypes [4];
     eventTypes [0].eventClass = kEventClassKeyboard;
@@ -165,7 +166,7 @@ QIHotKeyEdit::~QIHotKeyEdit()
 #ifdef Q_WS_MAC
     ::DarwinReleaseKeyboard();
 # ifdef QT_MAC_USE_COCOA
-    ::VBoxCocoaApplication_unsetCallback(UINT32_MAX, QIHotKeyEdit::darwinEventHandlerProc, this);
+    ::VBoxCocoaApplication_unsetCallback (UINT32_MAX, QIHotKeyEdit::darwinEventHandlerProc, this);
 # else
     ::RemoveEventHandler (mDarwinEventHandlerRef);
     mDarwinEventHandlerRef = NULL;
@@ -697,6 +698,10 @@ pascal OSStatus QIHotKeyEdit::darwinEventHandlerProc (EventHandlerCallRef inHand
 
 bool QIHotKeyEdit::darwinKeyboardEvent (EventRef inEvent)
 {
+#if 0 /* for debugging */
+    ::darwinDebugPrintEvent("QIHotKeyEdit", inEvent);
+#endif
+
     /* ignore key changes unless we're the focus widget */
     if (!hasFocus())
         return false;

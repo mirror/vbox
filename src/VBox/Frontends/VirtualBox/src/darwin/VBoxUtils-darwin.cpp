@@ -29,6 +29,7 @@
 #include <iprt/mem.h>
 
 #include <CoreFoundation/CFBundle.h>
+#include <Carbon/Carbon.h>
 
 /* Qt includes */
 #include <QImage>
@@ -328,15 +329,17 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
 
 
 /* Event debugging stuff. Borrowed from Knuts Qt patch. */
-#if defined (DEBUG) && !defined(QT_MAC_USE_COCOA)
+#if defined (DEBUG)
 
 # define MY_CASE(a) case a: return #a
 const char * DarwinDebugEventName (UInt32 ekind)
 {
     switch (ekind)
     {
+# if !__LP64__
         MY_CASE(kEventWindowUpdate                );
         MY_CASE(kEventWindowDrawContent           );
+# endif
         MY_CASE(kEventWindowActivated             );
         MY_CASE(kEventWindowDeactivated           );
         MY_CASE(kEventWindowHandleActivate        );
@@ -361,6 +364,7 @@ const char * DarwinDebugEventName (UInt32 ekind)
         MY_CASE(kEventWindowClosed                );
         MY_CASE(kEventWindowTransitionStarted     );
         MY_CASE(kEventWindowTransitionCompleted   );
+# if !__LP64__
         MY_CASE(kEventWindowClickDragRgn          );
         MY_CASE(kEventWindowClickResizeRgn        );
         MY_CASE(kEventWindowClickCollapseRgn      );
@@ -370,6 +374,7 @@ const char * DarwinDebugEventName (UInt32 ekind)
         MY_CASE(kEventWindowClickProxyIconRgn     );
         MY_CASE(kEventWindowClickToolbarButtonRgn );
         MY_CASE(kEventWindowClickStructureRgn     );
+# endif
         MY_CASE(kEventWindowCursorChange          );
         MY_CASE(kEventWindowCollapse              );
         MY_CASE(kEventWindowCollapseAll           );
@@ -385,7 +390,9 @@ const char * DarwinDebugEventName (UInt32 ekind)
         MY_CASE(kEventWindowGetMinimumSize        );
         MY_CASE(kEventWindowGetMaximumSize        );
         MY_CASE(kEventWindowConstrain             );
+# if !__LP64__
         MY_CASE(kEventWindowHandleContentClick    );
+# endif
         MY_CASE(kEventWindowGetDockTileMenu       );
         MY_CASE(kEventWindowProxyBeginDrag        );
         MY_CASE(kEventWindowProxyEndDrag          );
@@ -438,23 +445,25 @@ const char * darwinDebugClassName (UInt32 eclass)
     return s_sz;
 }
 
-void darwinDebugPrintEvent (const char *psz, EventRef event)
+void darwinDebugPrintEvent (const char *psz, EventRef evtRef)
 {
-  if (!event)
+  if (!evtRef)
       return;
-  UInt32 ekind = GetEventKind (event), eclass = GetEventClass (event);
+  UInt32 ekind = GetEventKind (evtRef), eclass = GetEventClass (evtRef);
   if (eclass == kEventClassWindow)
   {
       switch (ekind)
       {
+# if !__LP64__
           case kEventWindowDrawContent:
           case kEventWindowUpdate:
+# endif
           case kEventWindowBoundsChanged:
               break;
           default:
           {
               WindowRef wid = NULL;
-              GetEventParameter(event, kEventParamDirectObject, typeWindowRef, NULL, sizeof(WindowRef), NULL, &wid);
+              GetEventParameter(evtRef, kEventParamDirectObject, typeWindowRef, NULL, sizeof(WindowRef), NULL, &wid);
               QWidget *widget = QWidget::find((WId)wid);
               printf("%d %s: (%s) %#x win=%p wid=%p (%s)\n", (int)time(NULL), psz, darwinDebugClassName (eclass), (uint)ekind, wid, widget, DarwinDebugEventName (ekind));
               break;
@@ -464,7 +473,7 @@ void darwinDebugPrintEvent (const char *psz, EventRef event)
   else if (eclass == kEventClassCommand)
   {
       WindowRef wid = NULL;
-      GetEventParameter(event, kEventParamDirectObject, typeWindowRef, NULL, sizeof(WindowRef), NULL, &wid);
+      GetEventParameter(evtRef, kEventParamDirectObject, typeWindowRef, NULL, sizeof(WindowRef), NULL, &wid);
       QWidget *widget = QWidget::find((WId)wid);
       const char *name = "Unknown";
       switch (ekind)
@@ -479,10 +488,48 @@ void darwinDebugPrintEvent (const char *psz, EventRef event)
       printf("%d %s: (%s) %#x win=%p wid=%p (%s)\n", (int)time(NULL), psz, darwinDebugClassName (eclass), (uint)ekind, wid, widget, name);
   }
   else if (eclass == kEventClassKeyboard)
-      printf("%d %s: %#x(%s) %#x (kEventClassKeyboard)\n", (int)time(NULL), psz, (uint)eclass, darwinDebugClassName (eclass), (uint)ekind);
+  {
+      printf("%d %s: %#x(%s) %#x (kEventClassKeyboard)", (int)time(NULL), psz, (uint)eclass, darwinDebugClassName (eclass), (uint)ekind);
 
+      UInt32 keyCode = 0;
+      ::GetEventParameter (evtRef, kEventParamKeyCode, typeUInt32, NULL,
+                           sizeof (keyCode), NULL, &keyCode);
+      printf(" keyCode=%d (%#x) ", keyCode, keyCode);
+
+      char macCharCodes[8] = {0,0,0,0, 0,0,0,0};
+      ::GetEventParameter (evtRef, kEventParamKeyCode, typeChar, NULL,
+                           sizeof (macCharCodes), NULL, &macCharCodes[0]);
+      printf(" macCharCodes={");
+      for (unsigned i =0; i < 8 && macCharCodes[i]; i++)
+          printf( i == 0 ? "%02x" : ",%02x", macCharCodes[i]);
+      printf("}");
+
+      UInt32 modifierMask = 0;
+      ::GetEventParameter (evtRef, kEventParamKeyModifiers, typeUInt32, NULL,
+                           sizeof (modifierMask), NULL, &modifierMask);
+      printf(" modifierMask=%08x", modifierMask);
+
+      UniChar keyUnicodes[8] = {0,0,0,0, 0,0,0,0};
+      ::GetEventParameter (evtRef, kEventParamKeyUnicodes, typeUnicodeText, NULL,
+                           sizeof (keyUnicodes), NULL, &keyUnicodes[0]);
+      printf(" keyUnicodes={");
+      for (unsigned i =0; i < 8 && keyUnicodes[i]; i++)
+          printf( i == 0 ? "%02x" : ",%02x", keyUnicodes[i]);
+      printf("}");
+
+      UInt32 keyboardType = 0;
+      ::GetEventParameter (evtRef, kEventParamKeyboardType, typeUInt32, NULL,
+                           sizeof (keyboardType), NULL, &keyboardType);
+      printf(" keyboardType=%08x", keyboardType);
+
+      EventHotKeyID evtHotKeyId = {0,0};
+      ::GetEventParameter (evtRef, typeEventHotKeyID, typeEventHotKeyID, NULL,
+                           sizeof (evtHotKeyId), NULL, &evtHotKeyId);
+      printf(" evtHotKeyId={signature=%08x, .id=%08x}", evtHotKeyId.signature, evtHotKeyId.id);
+      printf("\n");
+  }
   else
       printf("%d %s: %#x(%s) %#x\n", (int)time(NULL), psz, (uint)eclass, darwinDebugClassName (eclass), (uint)ekind);
 }
 
-#endif /* DEBUG && !QT_MAC_USE_COCOA */
+#endif /* DEBUG */

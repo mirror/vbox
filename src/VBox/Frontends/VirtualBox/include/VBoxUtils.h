@@ -217,9 +217,13 @@ QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
 /* Icons in the menu of an mac application are unusual. */
 void darwinDisableIconsInMenus (void);
 
-#ifdef QT_MAC_USE_COCOA
+# ifdef DEBUG
+void darwinDebugPrintEvent (const char *aPrefix, EventRef aEvent);
+# endif
+
+# ifdef QT_MAC_USE_COCOA
 /** @todo Carbon -> Cocoa  */
-#else  /* !QT_MAC_USE_COCOA */
+# else  /* !QT_MAC_USE_COCOA */
 /* Experimental region handler for the seamless mode */
 OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 
@@ -235,10 +239,6 @@ enum
     kEventVBoxUpdateDock   = 'udck'
 };
 OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
-
-#  ifdef DEBUG
-void darwinDebugPrintEvent (const char *aPrefix, EventRef aEvent);
-#  endif
 # endif /* !QT_MAC_USE_COCOA*/
 #endif /* Q_WS_MAC */
 
