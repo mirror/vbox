@@ -3614,6 +3614,17 @@ $(VBOX_SVN_REV_KMK):
 	$(QUIET)$(CAT) $(VBOX_SVN_REV_KMK)
 endif
 
+#
+# Shared definitions of the XIDL file to use as a source for
+# generating various other files (VBoxSVC, webservice, docs, front-ends, ...)
+#
+
+# Real XIDL source file; from this we strip the <desc> elements to generate
+# a second XIDL file, from which the COM/XPCOM IDL files are then generated:
+VBOX_XIDL_FILE_SRC     = $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl
+# second XIDL file to use as source for COM/XPCOM IDL (with stripped docs):
+VBOX_XIDL_FILE         = $(PATH_OUT)/obj/VirtualBox_stripped.xidl
+
 
 #
 # Legacy.

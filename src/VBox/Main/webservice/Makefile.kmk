@@ -110,7 +110,7 @@ PATH_TARGET_SOAPDEMOHEADERS   := $(VBOXWEB_OUT_DIR)/demo_headers
 PATH_TARGET_SOAPDEMONSMAPS    := $(VBOXWEB_OUT_DIR)/demo_namespacemaps
 PATH_TARGET_WEBTEST           := $(VBOXWEB_OUT_DIR)/webtest
 
-VBOXWEB_IDL_SRC_ORIG          := $(VBOX_PATH_WEBSERVICE)/../idl/VirtualBox.xidl
+VBOXWEB_IDL_SRC_ORIG          := $(VBOX_XIDL_FILE)
 VBOXWEB_IDL_SRC               := $(VBOXWEB_OUT_DIR)/VirtualBox.xidl
 
 VBOXWEB_TYPEMAP               := $(VBOXWEB_OUT_DIR)/typemap.dat

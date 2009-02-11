@@ -44,7 +44,7 @@ XpComCHeaders_SOURCES = \
 
 $$(XpComCHeaders_0_OUTDIR)/VirtualBox_CXPCOM.h: \
 		$(PATH_SUB_CURRENT)/xpcidl.xsl \
-		$(PATH_SUB_CURRENT)/../idl/VirtualBox.xidl \
+		$(VBOX_XIDL_FILE) \
 		| $$(dir $$@)
 	$(VBOX_XSLTPROC) -o $@ $^
 
