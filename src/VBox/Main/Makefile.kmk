@@ -117,6 +117,14 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" != "win"
 	$(VBOX_PATH_SDK)/bindings/xpcom/include
 endif # xpcom
 
+#
+# Strip documentation from source XIDL so that we don't get a full
+#	recompile every time a comma in the documentation is changed.
+#
+$(VBOX_XIDL_FILE): $(VBOX_XIDL_FILE_SRC) $(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl
+# 	$(CP) -fv $< $(VBOX_XIDL_FILE).tmp
+	$(VBOX_XSLTPROC) -o $(VBOX_XIDL_FILE).tmp $(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl $<
+	$(CP) --changed -fv $(VBOX_XIDL_FILE).tmp $@
 
 #
 # The Main API documentation
@@ -127,11 +135,11 @@ BLDDIRS += $(VBOX_MAIN_DOC_DIR)
 $(PATH_TARGET)/docs.Main: \
 		$(VBOX_PATH_MAIN_SRC)/Doxyfile.Main \
 		$(VBOX_PATH_MAIN_SRC)/idl/doxygen.xsl \
-		$(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl \
+		$(VBOX_XIDL_FILE_SRC) \
 		| $(PATH_TARGET)/ \
 		$(VBOX_MAIN_DOC_DIR)/
 	$(RM) -f $(wildcard $(VBOX_MAIN_DOC_DIR)/html/*) $(PATH_TARGET)/docs.Main
-	$(VBOX_XSLTPROC) -o $(PATH_TARGET)/VirtualBox.idl $(VBOX_PATH_MAIN_SRC)/idl/doxygen.xsl $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl
+	$(VBOX_XSLTPROC) -o $(PATH_TARGET)/VirtualBox.idl $(VBOX_PATH_MAIN_SRC)/idl/doxygen.xsl $(VBOX_XIDL_FILE_SRC)
 	$(REDIRECT) -E 'DOCDIR=$(VBOX_MAIN_DOC_DIR)' -E 'PATH_TARGET=$(PATH_TARGET)' -E 'PATH_CHM=$(subst /,\,$(VBOX_MAIN_DOC_DIR)/VirtualBoxAPI.chm)' \
 		-- doxygen $(VBOX_PATH_MAIN_SRC)/Doxyfile.Main
 	-$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe $(subst /,\\,$(VBOX_MAIN_DOC_DIR)/html/index.hhp)
@@ -148,7 +156,7 @@ endif
 #
 INSTALLS += VBox-main-xidl
 VBox-main-xidl_INST = $(INST_SDK)bindings/
-VBox-main-xidl_SOURCES = idl/VirtualBox.xidl
+VBox-main-xidl_SOURCES = $(VBOX_XIDL_FILE_SRC)
 
 
 ifndef VBOX_ONLY_SDK # Note this goes on for *very* long
@@ -623,8 +631,6 @@ include $(KBUILD_PATH)/subfooter.kmk
 #
 # Additions rules.
 #
-
-VBOX_XIDL_FILE = $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl
 
 ## @todo this hack ain't cutting it any longer. (the file name is abspath'ed since ages now.)
 xpcom/helpers.cpp: $(VBOX_IDL_TYPELIB.XPCOM)

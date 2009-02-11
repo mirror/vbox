@@ -440,7 +440,7 @@ VirtualBox_INTERMEDIATES += $(PATH_VirtualBox)/include/COMWrappers.h
 VirtualBox_CLEAN         += $(PATH_VirtualBox)/include/COMWrappers.h
 
 $$(PATH_VirtualBox)/include/COMWrappers.h: \
-		$(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl \
+		$(VBOX_XIDL_FILE) \
 		$(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox,$<,$@)
