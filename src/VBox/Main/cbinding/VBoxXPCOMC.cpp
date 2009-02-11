@@ -25,9 +25,11 @@
 #include <nsEventQueueUtils.h>
 
 #include <iprt/string.h>
+#include <iprt/env.h>
 #include <VBox/log.h>
 
 #include "VirtualBox_XPCOM.h"
+#include "VBox/com/com.h"
 #include "cbinding.h"
 
 using namespace std;
@@ -70,6 +72,18 @@ VBoxComUnallocMem(void *ptr)
     }
 }
 
+VBOXXPCOMC_DECL(int)
+VBoxSetEnv(const char *pszVar, const char *pszValue)
+{
+    return RTEnvSet(pszVar, pszValue);
+}
+
+VBOXXPCOMC_DECL(const char*)
+VBoxGetEnv(const char *pszVar)
+{
+    return RTEnvGet(pszVar);
+}
+
 VBOXXPCOMC_DECL(void)
 VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
 {
@@ -81,7 +95,7 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
     Session     = *session;
     Ivirtualbox = *virtualBox;
 
-    rc = NS_InitXPCOM2(&serviceManager, nsnull, nsnull);
+    rc = com::Initialize();
     if (NS_FAILED(rc))
     {
         Log(("Cbinding: XPCOM could not be initialized! rc=%Rhrc\n",rc));
@@ -135,7 +149,7 @@ VBoxComUninitialize(void)
         NS_RELEASE(manager);        // decrement refcount
     if (serviceManager)
         NS_RELEASE(serviceManager); // decrement refcount
-    NS_ShutdownXPCOM(nsnull);
+    com::Shutdown();
     Log(("Cbinding: Cleaned up the created IVirtualBox and ISession Objects.\n"));
 }
 

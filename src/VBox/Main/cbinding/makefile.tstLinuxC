@@ -31,18 +31,14 @@ CC            = gcc
 CFLAGS        = -g -ansi -pedantic -Wall
 
 .PHONY: all
-all: tstLinuxC run
+all: tstLinuxC
 
 .PHONY: clean
 clean:
-	rm -f tstLinuxC.o tstLinuxC run
+	rm -f tstLinuxC.o tstLinuxC
 
 tstLinuxC: tstLinuxC.o
 	$(CC) -o $@ $^ -Xlinker -rpath -Xlinker $(PATH_BIN) $(PATH_BIN)/VBoxXPCOMC.so
 
 tstLinuxC.o: tstLinuxC.c
 	$(CC) $(CFLAGS) -DRT_OS_LINUX -DMOZ_UNICODE $(INCS_XPCOM) -o $@ -c $<
-
-run:
-	echo "env VBOX_XPCOM_HOME=$(PATH_BIN) ./tstLinuxC" > $@
-	chmod a+x $@

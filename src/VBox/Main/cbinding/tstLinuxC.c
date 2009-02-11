@@ -305,6 +305,16 @@ int main(int argc, char **argv)
     PRUnichar *versionUtf16     = NULL;
     PRUnichar *homefolderUtf16  = NULL;
     nsresult rc;     /* Result code of various function (method) calls. */
+    FILE *fpsetenv;
+
+    if ((fpsetenv = fopen("/opt/VirtualBox/VBoxXPCOMC.so", "r")) != NULL) {
+        VBoxSetEnv("VBOX_APP_HOME","/opt/VirtualBox/");
+        fclose (fpsetenv);
+    }
+    if ((fpsetenv = fopen("/usr/lib/virtualbox/VBoxXPCOMC.so", "r")) != NULL) {
+        VBoxSetEnv("VBOX_APP_HOME","/usr/lib/virtualbox/");
+        fclose (fpsetenv);
+    }
 
     printf("Starting Main\n");
 
