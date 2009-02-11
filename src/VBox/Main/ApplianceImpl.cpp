@@ -250,6 +250,12 @@ STDMETHODIMP VirtualBox::OpenAppliance(IN_BSTR bstrPath, IAppliance** anApplianc
 
     ComObjPtr<Appliance> appliance;
     appliance.createObject();
+    /* @todo r=poetzsch: We should consider to split the creation & opening of
+       the appliance into two calls. Now the returned appliance is null in the
+       case of an error. But at the same time the error message is in the
+       appliance object which isn't returned. So I propose: createAppliance in
+       IVirtualBox & OpenAppliance in IAppliance. Such an error could easily
+       produced if you set an invalid path to the open call. */
     rc = appliance->init(this, bstrPath);
 //     ComAssertComRCThrowRC(rc);
 
@@ -1544,12 +1550,30 @@ STDMETHODIMP Appliance::ImportAppliance(IProgress **aProgress)
     ComObjPtr<Progress> progress;
     try
     {
+        /* Figure out how many sub operation the import will need */
+        /* One for the appliance */
+        int opCount = 1;
+        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
+        for (it = m->virtualSystemDescriptions.begin();
+             it != m->virtualSystemDescriptions.end();
+             ++it)
+        {
+            /* One for every Virtual System */
+            ++opCount;
+            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
+            /* One for every hard disk of the Virtual System */
+            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+            opCount += avsdeHDs.size();
+        }
+        Bstr progressDesc = BstrFmt(tr("Import appliance '%ls'"),
+                                    m->bstrPath.raw());
         /* Create the progress object */
         progress.createObject();
         rc = progress->init(mVirtualBox, static_cast<IAppliance *>(this),
-                            BstrFmt(tr("Import appliance '%ls'"),
-                                    m->bstrPath.raw()),
-                            FALSE /* aCancelable */);
+                            progressDesc,
+                            FALSE /* aCancelable */,
+                            opCount,
+                            progressDesc);
         CheckComRCThrowRC(rc);
 
         /* Initialize our worker task */
@@ -1637,11 +1661,6 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
     HRESULT rc = S_OK;
 
-    /* For now we report 2 steps for every virtual system. Later we may add the
-       progress of the image cloning. */
-    float opCountMax = (float)100.0 / (app->m->llVirtualSystems.size() * 2);
-    uint32_t opCount = 0;
-
     list<VirtualSystem>::const_iterator it;
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
     /* Iterate through all virtual systems of that appliance */
@@ -1657,6 +1676,16 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
         /* Catch possible errors */
         try
         {
+            if (!task->progress.isNull())
+            {
+                rc = task->progress->advanceOperation (BstrFmt(tr("Importing Virtual System %d"), i + 1));
+                CheckComRCThrowRC(rc);
+            }
+
+            /* How many sub notifications are necessary? */
+            const float opCountMax = 100.0/5;
+            uint32_t opCount = 0;
+
             /* Guest OS type */
             std::list<VirtualSystemDescriptionEntry*> vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
             ComAssertMsgThrow(vsdeOS.size() == 1, ("Guest OS Type missing"), E_FAIL);
@@ -1678,6 +1707,12 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                                                  pNewMachine.asOutParam());
             CheckComRCThrowRC(rc);
 
+            if (!task->progress.isNull())
+            {
+                rc = task->progress->notifyProgress(opCountMax * opCount++);
+                CheckComRCThrowRC(rc);
+            }
+
             /* CPU count (ignored for now) */
             // EntriesList vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
 
@@ -1697,6 +1732,12 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             /* Set the VRAM */
             rc = pNewMachine->COMSETTER(VRAMSize)(vramVBox);
             CheckComRCThrowRC(rc);
+
+            if (!task->progress.isNull())
+            {
+                rc = task->progress->notifyProgress(opCountMax * opCount++);
+                CheckComRCThrowRC(rc);
+            }
 
             /* Audio Adapter */
             std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->findByType(VirtualSystemDescriptionType_SoundCard);
@@ -1728,6 +1769,12 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             CheckComRCThrowRC(rc);
             rc = usbController->COMSETTER(Enabled)(fUSBEnabled);
             CheckComRCThrowRC(rc);
+
+            if (!task->progress.isNull())
+            {
+                rc = task->progress->notifyProgress(opCountMax * opCount++);
+                CheckComRCThrowRC(rc);
+            }
 
             /* Change the network adapters */
             std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
@@ -1774,6 +1821,12 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             CheckComRCThrowRC(rc);
             rc = floppyDrive->COMSETTER(Enabled)(fFloppyEnabled);
             CheckComRCThrowRC(rc);
+
+            if (!task->progress.isNull())
+            {
+                rc = task->progress->notifyProgress(opCountMax * opCount++);
+                CheckComRCThrowRC(rc);
+            }
 
             /* CDROM drive */
             /* @todo: I can't disable the CDROM. So nothing to do for now */
@@ -1837,7 +1890,10 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             CheckComRCThrowRC(rc);
 
             if (!task->progress.isNull())
-                task->progress->notifyProgress(static_cast<ULONG>(opCountMax * opCount++));
+            {
+                rc = task->progress->notifyProgress(opCountMax * opCount++);
+                CheckComRCThrowRC(rc);
+            }
 
             /* Create the hard disks & connect them to the appropriate controllers. */
             std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
@@ -1917,8 +1973,35 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                             ComPtr<IProgress> progress;
                             dstHdVBox->CreateDynamicStorage(di.iCapacity / _1M, progress.asOutParam());
                             CheckComRCThrowRC(rc);
-                            rc = progress->WaitForCompletion(-1);
+                            /* Advance to the next operation */
+                            if (!task->progress.isNull())
+                            {
+                                rc = task->progress->advanceOperation (BstrFmt(tr("Creating virtual disk image '%s'"), pcszDstFilePath));
+                                CheckComRCThrowRC(rc);
+                            }
+                            /* Manually check the progress to inform the user */
+                            BOOL fCompleted;
+                            LONG currentPercent;
+                            while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+                            {
+                                 rc = progress->COMGETTER(Percent(&currentPercent));
+                                 CheckComRCThrowRC(rc);
+                                 if (!task->progress.isNull())
+                                 {
+                                     rc = task->progress->notifyProgress(currentPercent);
+                                     CheckComRCThrowRC(rc);
+                                 }
+                                 if (fCompleted)
+                                     break;
+                                 /* Make sure the loop is not too tight */
+                                 rc = progress->WaitForCompletion(100);
+                                 CheckComRCThrowRC(rc);
+                            }
+                            /* Check the real return code of the asynchrony operation */
+                            HRESULT vrc;
+                            rc = progress->COMGETTER(ResultCode)(&vrc);
                             CheckComRCThrowRC(rc);
+                            CheckComRCThrowRC(vrc);
                         }
                         else
                         {
@@ -1947,8 +2030,35 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                             ComPtr<IProgress> progress;
                             rc = srcHdVBox->CloneTo(dstHdVBox, progress.asOutParam());
                             CheckComRCThrowRC(rc);
-                            rc = progress->WaitForCompletion(-1);
+                            /* Advance to the next operation */
+                            if (!task->progress.isNull())
+                            {
+                                rc = task->progress->advanceOperation (BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()));
+                                CheckComRCThrowRC(rc);
+                            }
+                            /* Manually check the progress to inform the user */
+                            BOOL fCompleted;
+                            LONG currentPercent;
+                            while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+                            {
+                                 rc = progress->COMGETTER(Percent(&currentPercent));
+                                 CheckComRCThrowRC(rc);
+                                 if (!task->progress.isNull())
+                                 {
+                                     rc = task->progress->notifyProgress (currentPercent);
+                                     CheckComRCThrowRC(rc);
+                                 }
+                                 if (fCompleted)
+                                     break;
+                                 /* Make sure the loop is not too tight */
+                                 rc = progress->WaitForCompletion(100);
+                                 CheckComRCThrowRC(rc);
+                            }
+                            /* Check the real return code of the asynchrony operation */
+                            HRESULT vrc;
+                            rc = progress->COMGETTER(ResultCode)(&vrc);
                             CheckComRCThrowRC(rc);
+                            CheckComRCThrowRC(vrc);
                             /* We *must* close the source disk image in order to deregister it */
                             rc = srcHdVBox->Close();
                             CheckComRCThrowRC(rc);
@@ -2002,17 +2112,15 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     CheckComRCThrowRC(rc);
                     rc = failedMachine->DeleteSettings();
                     CheckComRCThrowRC(rc);
-                    /* Throw the original error number */
-                    throw aRC;
+                    /* Throw the original error */
+                    throw;
                 }
             }
-            if (!task->progress.isNull())
-                task->progress->notifyProgress(static_cast<ULONG>(opCountMax * opCount++));
         }
         catch(HRESULT aRC)
         {
             /* @todo: If we are here an error on importing of *one* virtual
-               system has occured. We didn't break now, but try to import the
+               system has occurred. We didn't break now, but try to import the
                other virtual systems. This needs some further discussion. */
             rc = aRC;
         }
