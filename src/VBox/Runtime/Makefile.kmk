@@ -1483,7 +1483,7 @@ $(IPRT_OUT_DIR)/errmsgcomdata.h: \
 
 $(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/VBox/errmsgvboxcom.xsl \
-		$(VBOX_XIDL_FILE) \
+		$(VBOX_XIDL_FILE_SRC) \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(filter %.xidl,$^))
 	$(VBOX_XSLTPROC) -o $@ $< $(filter %.xidl,$^)
