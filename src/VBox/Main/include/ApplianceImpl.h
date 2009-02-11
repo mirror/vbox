@@ -61,7 +61,7 @@ public:
     HRESULT FinalConstruct() { return S_OK; }
     void FinalRelease() { uninit(); }
 
-    HRESULT init(VirtualBox *aVirtualBox, IN_BSTR &path);
+    HRESULT init(VirtualBox *aVirtualBox);
     void uninit();
 
     // for VirtualBoxSupportErrorInfoImpl
@@ -73,9 +73,9 @@ public:
     STDMETHOD(COMGETTER(VirtualSystemDescriptions))(ComSafeArrayOut(IVirtualSystemDescription*, aVirtualSystemDescriptions));
 
     /* IAppliance methods */
-    /* void interpret (); */
+    STDMETHOD(Read)(IN_BSTR path);
     STDMETHOD(Interpret)(void);
-    STDMETHOD(ImportAppliance)(IProgress **aProgress);
+    STDMETHOD(ImportMachines)(IProgress **aProgress);
 
     /* public methods only for internal purposes */
 

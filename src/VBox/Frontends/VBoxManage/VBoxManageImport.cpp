@@ -154,7 +154,9 @@ int handleImportAppliance(HandlerArg *a)
     {
         Bstr bstrOvfFilename(strOvfFilename);
         ComPtr<IAppliance> appliance;
-        CHECK_ERROR_BREAK(a->virtualBox, OpenAppliance(bstrOvfFilename, appliance.asOutParam()));
+        CHECK_ERROR_BREAK(a->virtualBox, CreateAppliance(appliance.asOutParam()));
+
+        CHECK_ERROR_BREAK(appliance, Read(bstrOvfFilename));
 
         RTPrintf("Interpreting %s... ", strOvfFilename.c_str());
         CHECK_ERROR_BREAK(appliance, Interpret());
@@ -433,7 +435,7 @@ int handleImportAppliance(HandlerArg *a)
             {
                 ComPtr<IProgress> progress;
                 CHECK_ERROR_BREAK(appliance,
-                                  ImportAppliance(progress.asOutParam()));
+                                  ImportMachines(progress.asOutParam()));
 
                 showProgress(progress);
 
