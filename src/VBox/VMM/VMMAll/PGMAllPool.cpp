@@ -656,8 +656,14 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                  * - touching unused parts of the page
                  * - messing with the bits of pd pointers without changing the physical address
                  */
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                /* PDPT roots are not page aligned; 32 byte only! */
+                const unsigned offPdpt = GCPhysFault - pPage->GCPhys;
+# else
+                const unsigned offPdpt = off;
+# endif
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
-                const unsigned iShw = off / sizeof(X86PDPE);
+                const unsigned iShw = offPdpt / sizeof(X86PDPE);
                 if (iShw < X86_PG_PAE_PDPE_ENTRIES)          /* don't use RT_ELEMENTS(uShw.pPDPT->a), because that's for long mode only */
                 {
                     if (uShw.pPDPT->a[iShw].u & PGM_PLXFLAGS_MAPPING)
@@ -667,20 +673,47 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                     }
-                    /* paranoia / a bit assumptive. */
-                    else if (   pCpu
-                            && (off & 7)
-                            && (off & 7) + cbWrite > sizeof(X86PDPE))
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                    else
+                    if (uShw.pPDPT->a[iShw].n.u1Present)
                     {
-                        const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDPE);
+                        LogFlow(("pgmPoolMonitorChainChanging: pae pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPT->a[iShw].u));
+                        pgmPoolFree(pPool->CTX_SUFF(pVM),
+                                    uShw.pPDPT->a[iShw].u & X86_PDPE_PG_MASK,
+                                    pPage->idx,
+                                    iShw);
+                        uShw.pPDPT->a[iShw].u = 0;
+                    }
+# endif
+
+                    /* paranoia / a bit assumptive. */
+                    if (   pCpu
+                        && (offPdpt & 7)
+                        && (offPdpt & 7) + cbWrite > sizeof(X86PDPE))
+                    {
+                        const unsigned iShw2 = (offPdpt + cbWrite - 1) / sizeof(X86PDPE);
                         if (    iShw2 != iShw
-                            &&  iShw2 < X86_PG_PAE_PDPE_ENTRIES
-                            &&  uShw.pPDPT->a[iShw2].u & PGM_PLXFLAGS_MAPPING)
+                            &&  iShw2 < X86_PG_PAE_PDPE_ENTRIES)
                         {
-                            Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
-                            STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
-                            VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
-                            LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
+                            if (uShw.pPDPT->a[iShw2].u & PGM_PLXFLAGS_MAPPING)
+                            {
+                                Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                                STAM_COUNTER_INC(&(pPool->CTX_SUFF(pVM)->pgm.s.StatRZGuestCR3WriteConflict));
+                                VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                                LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
+                            }
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                            else
+                            if (uShw.pPDPT->a[iShw2].n.u1Present)
+                            {
+                                LogFlow(("pgmPoolMonitorChainChanging: pae pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPT->a[iShw2].u));
+                                pgmPoolFree(pPool->CTX_SUFF(pVM),
+                                            uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK,
+                                            pPage->idx,
+                                            iShw2);
+                                uShw.pPDPT->a[iShw2].u = 0;
+                            }
+# endif
                         }
                     }
                 }
