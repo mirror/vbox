@@ -151,7 +151,7 @@ endif
 VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QIMAGE VBOX_WITHOUT_QHTTP
-VirtualBox_DEFS.darwin.x86= VBOX_GUI_USE_QUARTZ2D
+VirtualBox_DEFS.darwin.x86= VBOX_GUI_USE_QUARTZ2D USE_HID_FOR_MODIFIERS
 VirtualBox_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox_DEFS.linux     = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
@@ -549,16 +549,18 @@ endif # darwin
 # Testcase for the darwin keyboard routines.
 #
 ifdef VBOX_WITH_TESTCASES
-PROGRAMS.darwin += tstDarwinKeyboard4
-tstDarwinKeyboard4_NAME = tstDarwinKeyboard
-tstDarwinKeyboard4_TEMPLATE = VBOXR3TSTEXE
-tstDarwinKeyboard4_INCS = include
-tstDarwinKeyboard4_SOURCES = \
+PROGRAMS.darwin += tstDarwinKeyboard
+tstDarwinKeyboard_NAME = tstDarwinKeyboard
+tstDarwinKeyboard_TEMPLATE = VBOXR3TSTEXE
+tstDarwinKeyboard_DEFS.x86 = USE_HID_FOR_MODIFIERS
+tstDarwinKeyboard_INCS = include
+tstDarwinKeyboard_SOURCES = \
 	src/darwin/tstDarwinKeyboard.cpp \
-	src/darwin/DarwinKeyboard.cpp \
+	src/darwin/DarwinKeyboard.cpp
+tstDarwinKeyboard_SOURCES.amd64 = \
 	src/darwin/VBoxCocoaApplication.m
-tstDarwinKeyboard4_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
-tstDarwinKeyboard4_LIBS = \
+tstDarwinKeyboard_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
+tstDarwinKeyboard_LIBS = \
 	$(LIB_RUNTIME)
 endif
 
