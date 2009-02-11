@@ -163,7 +163,7 @@ protected:
 #elif defined(Q_WS_X11)
     bool x11Event (XEvent *event);
 #elif defined(Q_WS_MAC)
-    bool darwinKeyboardEvent (EventRef inEvent);
+    bool darwinKeyboardEvent (const void *pvCocoaEvent, EventRef inEvent);
     void darwinGrabKeyboardEvents (bool fGrab);
 #endif
 

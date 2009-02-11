@@ -676,7 +676,7 @@ bool QIHotKeyEdit::darwinEventHandlerProc (const void *pvCocoaEvent, const void 
     EventRef inEvent = (EventRef)pvCarbonEvent;
     UInt32 EventClass = ::GetEventClass (inEvent);
     if (EventClass == kEventClassKeyboard)
-        return edit->darwinKeyboardEvent (inEvent);
+        return edit->darwinKeyboardEvent (pvCocoaEvent, inEvent);
     return false;
 }
 
@@ -689,14 +689,14 @@ pascal OSStatus QIHotKeyEdit::darwinEventHandlerProc (EventHandlerCallRef inHand
     UInt32 EventClass = ::GetEventClass (inEvent);
     if (EventClass == kEventClassKeyboard)
     {
-        if (edit->darwinKeyboardEvent (inEvent))
+        if (edit->darwinKeyboardEvent (NULL, inEvent))
             return 0;
     }
     return CallNextEventHandler (inHandlerCallRef, inEvent);
 }
 # endif /* !QT_MAC_USE_COCOA */
 
-bool QIHotKeyEdit::darwinKeyboardEvent (EventRef inEvent)
+bool QIHotKeyEdit::darwinKeyboardEvent (const void *pvCocoaEvent, EventRef inEvent)
 {
 #if 0 /* for debugging */
     ::darwinDebugPrintEvent("QIHotKeyEdit", inEvent);
@@ -718,7 +718,7 @@ bool QIHotKeyEdit::darwinKeyboardEvent (EventRef inEvent)
             ::GetEventParameter (inEvent, kEventParamKeyModifiers, typeUInt32, NULL,
                                  sizeof (modifierMask), NULL, &modifierMask);
 
-            modifierMask = ::DarwinAdjustModifierMask (modifierMask);
+            modifierMask = ::DarwinAdjustModifierMask (modifierMask, pvCocoaEvent);
             UInt32 changed = mDarwinKeyModifiers ^ modifierMask;
             mDarwinKeyModifiers = modifierMask;
 

@@ -84,8 +84,11 @@ extern VBoxCocoaApplication *g_pVBoxCocoaApp;
 void VBoxCocoaApplication_sharedApplication(void);
 void VBoxCocoaApplication_setCallback(uint32_t fMask, PFNVBOXCACALLBACK pfnCallback, void *pvUser);
 void VBoxCocoaApplication_unsetCallback(uint32_t fMask, PFNVBOXCACALLBACK pfnCallback, void *pvUser);
+unsigned long VBoxCocoaApplication_getEventModifierFlags(const void *pvEvent);
+uint32_t VBoxCocoaApplication_getEventModifierFlagsXlated(const void *pvEvent);
 const char *VBoxCocoaApplication_eventTypeName(unsigned long eEvtType);
 void VBoxCocoaApplication_printEvent(const char *pszPrefix, const void *pvEvent);
+
 
 /** @} */
 

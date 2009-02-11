@@ -87,7 +87,7 @@ protected:
 # else
     static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData);
 # endif
-    bool darwinKeyboardEvent (EventRef inEvent);
+    bool darwinKeyboardEvent (const void *pvCocoaEvent, EventRef inEvent);
 #endif
 
     void focusInEvent (QFocusEvent *);
