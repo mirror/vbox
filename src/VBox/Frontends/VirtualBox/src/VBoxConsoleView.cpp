@@ -2103,6 +2103,25 @@ bool VBoxConsoleView::pmEvent (QMSG *aMsg)
 #elif defined(Q_WS_X11)
 
 /**
+ * This function is a "predicate" for XCheckIfEvent().  It will check
+ * the XEvent passed to it to see if it is a keypress event matching
+ * the keyrelease event in @a pvArg.
+ * @returns True if the event matches, False otherwise
+ * @param   pEvent    the event to compare, taken from the event queue
+ * @param   pvArg     the keyrelease event we would like to compare against
+ */
+static Bool VBoxConsoleViewCompEvent(Display *, XEvent *pEvent,
+                                     XPointer pvArg)
+{
+    XEvent *pKeyEvent = (XEvent *) pvArg;
+    if ((pEvent->type == XKeyPress) &&
+        (pEvent->xkey.keycode == pKeyEvent->xkey.keycode))
+        return True;
+    else
+        return False;
+}
+
+/**
  *  This routine gets X11 events before they are processed by Qt. This is
  *  used for our platform specific keyboard implementation. A return value
  *  of TRUE indicates that the event has been processed by us.
@@ -2146,21 +2165,26 @@ bool VBoxConsoleView::x11Event (XEvent *event)
 
     /* Fix for http://www.virtualbox.org/ticket/1296:
      * when X11 sends events for repeated keys, it always inserts an
-     * XKeyRelease before the XKeyPress.  Since it nearly always
-     * (always?) uses the same time stamp for both, we can spot the
-     * unwanted event and discard it.  Of course, if we do miss one it
-     * isn't fatal for our purposes. */
+     * XKeyRelease before the XKeyPress. */
+    XEvent returnEvent;
+    if ((event->type == XKeyRelease) &&
+        (XCheckIfEvent(event->xkey.display, &returnEvent,
+                       VBoxConsoleViewCompEvent, (XPointer) event) == True)) {
+        XPutBackEvent(event->xkey.display, &returnEvent);
+        return true;
+    }
+#if 0
     if ((XKeyRelease == event->type) && XPending(event->xkey.display))
     {
         XEvent nextEvent;
 
         XPeekEvent(event->xkey.display, &nextEvent);
         if ((XKeyPress == nextEvent.type) &&
-            (event->xkey.keycode == nextEvent.xkey.keycode) &&
-            (event->xkey.time == nextEvent.xkey.time))
+            (event->xkey.keycode == nextEvent.xkey.keycode))
             /* Discard it, don't pass it to Qt. */
             return true;
     }
+#endif
 
     KeySym ks = ::XKeycodeToKeysym (event->xkey.display, event->xkey.keycode, 0);
 
