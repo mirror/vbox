@@ -321,7 +321,6 @@ private:
     static bool darwinEventHandlerProc (const void *pvCocoaEvent, const
                                         void *pvCarbonEvent, void *pvUser);
 # elif !defined (VBOX_WITH_HACKED_QT)
-    EventHandlerRef mDarwinWindowOverlayHandlerRef;
     static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
                                                    EventRef inEvent, void *inUserData);
 # else  /* VBOX_WITH_HACKED_QT */
@@ -331,6 +330,9 @@ private:
 
     QPixmap mPausedShot;
 #if defined(Q_WS_MAC)
+# if !defined (QT_MAC_USE_COCOA)
+    EventHandlerRef mDarwinWindowOverlayHandlerRef;
+# endif
     VBoxDockIconPreview *mDockIconPreview;
     bool mDockIconEnabled;
 #endif
