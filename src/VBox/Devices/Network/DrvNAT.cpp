@@ -42,6 +42,7 @@
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 # ifndef RT_OS_WINDOWS
 #  include <unistd.h>
+#  include <fcntl.h>
 #  include <poll.h>
 # endif
 # include <errno.h>
@@ -349,7 +350,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     HANDLE  *phEvents;
     unsigned int cBreak = 0;
 # else
-    struct pollfd *polls;
+    struct pollfd *polls = NULL;
 # endif
 
     LogFlow(("drvNATAsyncIoThread: pThis=%p\n", pThis));
@@ -373,11 +374,12 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
          */
 # ifndef RT_OS_WINDOWS
         nFDs = slirp_get_nsock(pThis->pNATState);
-        polls = (struct pollfd *)RTMemAllocZ((2 + nFDs) * sizeof(struct pollfd)); /* allocation for all sockets + ICMP and Management pipe*/
+        polls = NULL;
+        polls = (struct pollfd *)RTMemAlloc((1 + nFDs) * sizeof(struct pollfd) + sizeof(uint32_t)); /* allocation for all sockets + Management pipe*/
         if (polls == NULL)
         {
             LogRel(("Can't allocate memory for polling\n"));
-            AssertRelease(polls);
+            return VERR_NO_MEMORY;
         }
 
         slirp_select_fill(pThis->pNATState, &nFDs, &polls[1]); /*don't bother Slirp with knowelege about managemant pipe*/
@@ -385,10 +387,13 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
         polls[0].fd = pThis->PipeRead;
         polls[0].events = POLLRDNORM|POLLPRI|POLLRDBAND; /* POLLRDBAND usually doesn't used on Linux but seems used on Solaris */
-        int cChangedFDs = poll(polls, nFDs + 2, ms ? ms : -1);
+        polls[0].revents = 0;
+
+        int cChangedFDs = poll(polls, nFDs + 1, ms ? ms : -1);
+        AssertRelease(cChangedFDs >= 0);
         if (cChangedFDs >= 0)
         {
-            slirp_select_poll(pThis->pNATState, &polls[1], nFDs + 1);
+            slirp_select_poll(pThis->pNATState, &polls[1], nFDs);
             if (polls[0].revents & (POLLRDNORM|POLLPRI|POLLRDBAND))
             {
                 /* drain the pipe */

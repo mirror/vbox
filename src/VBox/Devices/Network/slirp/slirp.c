@@ -32,17 +32,31 @@
 #  define DO_CHECK_FD_SET(so, events, fdset) (FD_ISSET((so)->s, fdset))
 #  define DO_UNIX_CHECK_FD_SET(so, events, fdset )  0 /*specific for Unix API */
 # else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
-#  define DO_ENGAGE_EVENT1(so, fdset, label)            \
-    do {                                                \
-        polls[poll_index].fd = (so)->s;                 \
-        (so)->so_poll_index = poll_index;               \
-        polls[poll_index].events = N_(fdset ## _poll);  \
-        poll_index++;                                   \
+#  define DO_ENGAGE_EVENT1(so, fdset, label)                    \
+    do {                                                        \
+        AssertRelease(poll_index < (nfds));                     \
+        if(    so->so_poll_index != -1                          \
+            && so->s == polls[so->so_poll_index].fd) {          \
+            polls[poll_index].events |= N_(fdset ## _poll);     \
+            break; /* out of this loop */                       \
+        }                                                       \
+        AssertRelease(poll_index >= 0 && poll_index < (nfds));  \
+        polls[poll_index].fd = (so)->s;                         \
+        (so)->so_poll_index = poll_index;                       \
+        polls[poll_index].events = N_(fdset ## _poll);          \
+        polls[poll_index].revents = 0;                          \
+        poll_index++;                                           \
     } while(0)
 
 
 #  define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label)                           \
     do {                                                                        \
+        AssertRelease(poll_index < (nfds));                     \
+        if(    so->so_poll_index != -1                          \
+            && so->s == polls[so->so_poll_index].fd) {          \
+            polls[poll_index].events |= N_(fdset1 ## _poll) | N_(fdset1 ## _poll);  \
+            break; /* out of this loop */                       \
+        }                                                       \
         polls[poll_index].fd = (so)->s;                                         \
         (so)->so_poll_index = poll_index;                                       \
         polls[poll_index].events = N_(fdset1 ## _poll) | N_(fdset1 ## _poll);   \
@@ -688,6 +702,9 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 
         QSOCKET_FOREACH(so, so_next, tcp)
         /* { */
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+            so->so_poll_index = -1;
+#endif
             STAM_COUNTER_INC(&pData->StatTCP);
 
             /*
@@ -757,6 +774,9 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         /* { */
 
             STAM_COUNTER_INC(&pData->StatUDP);
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+            so->so_poll_index = -1;
+#endif
 
             /*
              * See if it's timed out
@@ -800,6 +820,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 # if defined(RT_OS_WINDOWS)
     *pnfds = VBOX_EVENT_COUNT;
 # else /* RT_OS_WINDOWS */
+    AssertRelease(poll_index <= *pnfds);
     *pnfds = poll_index;
 # endif /* !RT_OS_WINDOWS */
 #else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
@@ -923,6 +944,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             POLL_TCP_EVENTS(rc, error, so, &NetworkEvents);
 
             LOG_NAT_SOCK(so, TCP, &NetworkEvents, readfds, writefds, xfds);
+
 
             /*
              * Check for URG data
@@ -1088,8 +1110,10 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 {
                     so->so_state = SS_NOFDREF;
                     TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
+                    CONTINUE(tcp);
                 }
                 /* Here should be other error handlings */
+                AssertRelease(!"shouldn't be here!!!");
             }
 #endif
             LOOP_LABEL(tcp, so, so_next);

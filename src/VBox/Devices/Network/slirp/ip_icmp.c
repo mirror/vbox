@@ -100,6 +100,7 @@ icmp_init(PNATState pData)
         return 1;
     }
     fd_nonblock(pData->icmp_socket.s);
+    NSOCK_INC();
 #else /* RT_OS_WINDOWS */
     pData->hmIcmpLibrary = LoadLibrary("Iphlpapi.dll");
     if (pData->hmIcmpLibrary != NULL)
