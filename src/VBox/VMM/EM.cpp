@@ -2096,7 +2096,7 @@ int emR3RawPrivileged(PVM pVM)
                                 PATMTRANSSTATE  enmState;
                                 RTGCPTR         pOrgInstrGC = PATMR3PatchToGCPtr(pVM, pCtx->rip, &enmState);
 
-                                Log(("Force recompiler switch due to cr0 (%RGp) update\n", pCtx->cr0));
+                                Log(("Force recompiler switch due to cr0 (%RGp) update rip=%RGv -> %RGv (enmState=%d)\n", pCtx->cr0, pCtx->rip, pOrgInstrGC, enmState));
                                 if (enmState == PATMTRANS_OVERWRITTEN)
                                 {
                                     rc = PATMR3DetectConflict(pVM, pOrgInstrGC, pOrgInstrGC);
@@ -2156,6 +2156,7 @@ DECLINLINE(int) emR3RawUpdateForceFlag(PVM pVM, PCPUMCTX pCtx, int rc)
         {
             case VINF_EM_RESCHEDULE:
             case VINF_EM_RESCHEDULE_REM:
+                LogFlow(("emR3RawUpdateForceFlag: patch address -> force raw reschedule\n"));
                 rc = VINF_SUCCESS;
                 break;
         }
