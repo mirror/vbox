@@ -3071,15 +3071,20 @@
         type.
       </li>
       <li>
-        "HarddiskControllerSCSI": a SCSI hard disk controller. There can be at most one such item.
-        The items in aOrigValues[] and aConfigValues[] will either be "LsiLogic" or "BusLogic". The
-        matching item in the aRefs[] array will contain an integer that other items of the "Harddisk"
+        "HarddiskControllerIDE": an IDE hard disk controller. There can be at most one such item. This
+        has no value in aOrigValues[] or aConfigValues[].
+        The matching item in the aRefs[] array will contain an integer that other items of the "Harddisk"
         type can use to specify which hard disk controller a virtual disk should be connected to.
       </li>
       <li>
-        "HarddiskControllerIDE": an IDE hard disk controller. There can be at most one such item. This
-        has no value in aOrigValues[] or aAutoValues[]. The matching item in the aRefs[] array will be
-        used as with SCSI controllers (see above).
+        "HarddiskControllerSATA": an SATA hard disk controller. There can be at most one such item. This
+        has no value in aOrigValues[] or aConfigValues[].
+        The matching item in the aRefs[] array will be used as with IDE controllers (see above).
+      </li>
+      <li>
+        "HarddiskControllerSCSI": a SCSI hard disk controller. There can be at most one such item.
+        The items in aOrigValues[] and aConfigValues[] will either be "LsiLogic" or "BusLogic".
+        The matching item in the aRefs[] array will be used as with IDE controllers (see above).
       </li>
       <li>
         "Harddisk": a virtual hard disk, most probably as a reference to an image file. There can be an
