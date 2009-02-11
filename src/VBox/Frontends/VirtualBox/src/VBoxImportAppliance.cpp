@@ -127,10 +127,10 @@ public:
     virtual bool setModelData (QWidget *aEditor, QAbstractItemModel *aModel, const QModelIndex &aIndex) { return false; }
 
     virtual void restoreDefaults() {}
-    virtual void putBack (QVector<QString>& aFinalValues, QVector<BOOL>& aFinalStates)
+    virtual void putBack (QVector<BOOL>& aFinalStates, QVector<QString>& aFinalValues, QVector<QString>& aFinalExtraValues)
     {
         for (int i = 0; i < childCount(); ++i)
-            child (i)->putBack (aFinalValues, aFinalStates);
+            child (i)->putBack (aFinalStates, aFinalValues, aFinalExtraValues);
     }
 
     ModelItemType type() const { return mType; }
@@ -161,16 +161,17 @@ public:
         return v;
     }
 
-    virtual void putBack (QVector<QString>& aFinalValues, QVector<BOOL>& aFinalStates)
+    virtual void putBack (QVector<BOOL>& aFinalStates, QVector<QString>& aFinalValues, QVector<QString>& aFinalExtraValues)
     {
         /* Resize the vectors */
         unsigned long count = mDesc.GetCount();
-        aFinalValues.resize (count);
         aFinalStates.resize (count);
+        aFinalValues.resize (count);
+        aFinalExtraValues.resize (count);
         /* Recursively fill the vectors */
-        ModelItem::putBack (aFinalValues, aFinalStates);
+        ModelItem::putBack (aFinalStates, aFinalValues, aFinalExtraValues);
         /* Set all final values at once */
-        mDesc.SetFinalValues (aFinalStates, aFinalValues);
+        mDesc.SetFinalValues (aFinalStates, aFinalValues, aFinalExtraValues);
     }
 
 private:
@@ -201,11 +202,12 @@ public:
         , mCheckState (Qt::Checked)
     {}
 
-    virtual void putBack (QVector<QString>& aFinalValues, QVector<BOOL>& aFinalStates)
+    virtual void putBack (QVector<BOOL>& aFinalStates, QVector<QString>& aFinalValues, QVector<QString>& aFinalExtraValues)
     {
-        aFinalValues[mNumber] = mConfigValue;
         aFinalStates[mNumber] = mCheckState == Qt::Checked;
-        ModelItem::putBack (aFinalValues, aFinalStates);
+        aFinalValues[mNumber] = mConfigValue;
+        aFinalExtraValues[mNumber] = mExtraConfigValue;
+        ModelItem::putBack (aFinalStates, aFinalValues, aFinalExtraValues);
     }
 
     bool setData (int aColumn, const QVariant &aValue, int aRole)
@@ -926,9 +928,10 @@ void VirtualSystemModel::restoreDefaults (const QModelIndex& aParent /* = QModel
 
 void VirtualSystemModel::putBack()
 {
-    QVector<QString> v1;
-    QVector<BOOL> v2;
-    mRootItem->putBack (v1, v2);
+    QVector<BOOL> v1;
+    QVector<QString> v2;
+    QVector<QString> v3;
+    mRootItem->putBack (v1, v2, v3);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

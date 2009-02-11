@@ -154,7 +154,8 @@ public:
                               ComSafeArrayOut(BSTR, aExtraConfigValues));
 
     STDMETHOD(SetFinalValues)(ComSafeArrayIn(BOOL, aEnabled),
-                              ComSafeArrayIn(IN_BSTR, aFinalValues));
+                              ComSafeArrayIn(IN_BSTR, aConfigValues),
+                              ComSafeArrayIn(IN_BSTR, aExtraConfigValues));
 
     STDMETHOD(GetWarnings)(ComSafeArrayOut(BSTR, aWarnings));
 

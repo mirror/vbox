@@ -427,7 +427,8 @@ int handleImportAppliance(HandlerArg *a)
                 if (fExecute)
                     CHECK_ERROR_BREAK(aVirtualSystemDescriptions[i],
                                       SetFinalValues(ComSafeArrayAsInParam(aEnabled),
-                                                     ComSafeArrayAsInParam(aFinalValues)));
+                                                     ComSafeArrayAsInParam(aFinalValues),
+                                                     ComSafeArrayAsInParam(aExtraConfigValues)));
 
             } // for (unsigned i = 0; i < cVirtualSystemDescriptions; ++i)
 
