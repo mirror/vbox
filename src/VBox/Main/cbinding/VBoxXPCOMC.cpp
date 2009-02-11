@@ -78,7 +78,7 @@ VBoxSetEnv(const char *pszVar, const char *pszValue)
     return RTEnvSet(pszVar, pszValue);
 }
 
-VBOXXPCOMC_DECL(const char*)
+VBOXXPCOMC_DECL(const char *)
 VBoxGetEnv(const char *pszVar)
 {
     return RTEnvGet(pszVar);
