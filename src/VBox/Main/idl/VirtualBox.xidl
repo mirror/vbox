@@ -2856,7 +2856,8 @@
         Represents an appliance in OVF format. An instance of this is returned by
         <link to="IVirtualBox::createAppliance" />.
 
-        Importing an OVF appliance into VirtualBox is a three-step process:
+        Importing an OVF appliance into VirtualBox involves the following sequence
+        of API calls:
 
         <ol>
           <li>
@@ -2864,23 +2865,28 @@
           </li>
 
           <li>
-          Call <link to="#open" /> with the full path of the OVF file you would like to
-          import. So long as this file is syntactically valid, this will succeed and return
-          an instance of IAppliance that contains the parsed data from the OVF file.
+          On the new object, call <link to="#read" /> with the full path of the OVF file you
+          would like to import. So long as this file is syntactically valid, this will succeed
+          and return an instance of IAppliance that contains the parsed data from the OVF file.
           </li>
 
-          <li>The caller should then invoke <link to="#interpret" />, which
-          analyzes the OVF data and sets up the contents of the IAppliance attributes
-          accordingly. These can be inspected by a VirtualBox front-end such as the GUI,
-          and the suggestions can be displayed to the user. For example, the virtual system
-          will contain the virtual hardware prescribed by the OVF (network and hardware
-          adapters, virtual disk images, memory size and so on), and the GUI can then give
-          the user the option to confirm and/or change these suggestions.
+          <li>Next, call <link to="#interpret" />, which analyzes the OVF data and sets up the
+          contents of the IAppliance attributes accordingly. These can be inspected by a
+          VirtualBox front-end such as the GUI, and the suggestions can be displayed to the
+          user. In particular, the <link to="#virtualSystemDescriptions" /> array contains
+          instances of <link to="IVirtualSystemDescription" /> which represent the virtual
+          systems in the OVF, which in turn describe the virtual hardware prescribed
+          by the OVF (network and hardware adapters, virtual disk images, memory size and so on).
+          The GUI can then give the user the option to confirm and/or change these suggestions.
           </li>
 
-          <li>Finally, the caller should invoke <link to="#importMachines" />, which will
-          create virtual machines in VirtualBox as instances of <link to="IMachine" /> that
-          match the information in the virtual system descriptions.
+          <li>If desired, call <link to="IVirtualSystemDescription::setFinalValues" /> for
+          each virtual system to override the suggestions made by VirtualBox.
+          </li>
+
+          <li>Finally, call <link to="#importMachines" /> to  create virtual machines in
+          VirtualBox as instances of <link to="IMachine" /> that match the information in the
+          virtual system descriptions.
           </li>
         </ol>
 
@@ -2888,7 +2894,7 @@
 
     <attribute name="path" type="wstring" readonly="yes">
       <desc>Path to the main file of the OVF appliance, which is either the <tt>.ovf</tt> or
-      the <tt>.ova</tt> file passed to <link to="IVirtualBox::read" />.</desc>
+      the <tt>.ova</tt> file passed to <link to="IAppliance::read" />.</desc>
     </attribute>
 
     <attribute name="disks" type="wstring" readonly="yes" safearray="yes">
@@ -2933,6 +2939,8 @@
 
     <method name="read">
       <desc>
+        Reads an OVF file into the appliance object.
+
         The OVF standard suggests two different file formats:
 
         <ol>
@@ -12682,8 +12690,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           metric/object pairs.
         </note>
         <note>
-          Data collection continues behind the scenes after call to @c
-          queryMetricsData. The return data can be seen as the snapshot of
+          Data collection continues behind the scenes after call to
+          @c queryMetricsData. The return data can be seen as the snapshot of
           the current state at the time of @c queryMetricsData call. The
           internally kept metric values are not cleared by the call. This makes
           possible querying different subsets of metrics or aggregates with
