@@ -64,7 +64,7 @@ static void pgmPoolMonitorModifiedRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 #endif
 #ifdef LOG_ENABLED
-static char *pgmPoolPoolKindToStr(uint8_t enmKind);
+static const char *pgmPoolPoolKindToStr(uint8_t enmKind);
 #endif
 __END_DECLS
 
