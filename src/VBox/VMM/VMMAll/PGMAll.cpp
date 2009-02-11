@@ -1375,7 +1375,15 @@ VMMDECL(X86PDPE) PGMGstGetPaePDPtr(PVM pVM, unsigned iPdpt)
 VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
 {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    return pVM->pgm.s.HCPhysShwCR3;
+    PGMMODE enmShadowMode = pVM->pgm.s.enmShadowMode;
+    switch (enmShadowMode)
+    {
+        case PGMMODE_EPT:
+            return pVM->pgm.s.HCPhysShwNestedRoot;
+
+        default:
+            return pVM->pgm.s.HCPhysShwCR3;
+    }
 #else
     PGMMODE enmShadowMode = pVM->pgm.s.enmShadowMode;
     switch (enmShadowMode)
