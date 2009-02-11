@@ -260,9 +260,11 @@ typedef struct VDINTERFACE
      *  As this is opaque this must be casted to the right interface
      *  struct defined below based on the interface type in enmInterface. */
     void               *pCallbacks;
-} VDINTERFACE, *PVDINTERFACE;
-/** Pointer to a const PVDINTERFACE. */
-typedef const PVDINTERFACE PCVDINTERFACE;
+} VDINTERFACE;
+/** Pointer to a VDINTERFACE. */
+typedef VDINTERFACE *PVDINTERFACE;
+/** Pointer to a const VDINTERFACE. */
+typedef const VDINTERFACE *PCVDINTERFACE;
 
 /**
  * Helper functions to handle interface lists.
