@@ -121,10 +121,13 @@ endif # xpcom
 # Strip documentation from source XIDL so that we don't get a full
 #	recompile every time a comma in the documentation is changed.
 #
-$(VBOX_XIDL_FILE): $(VBOX_XIDL_FILE_SRC) $(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl
-# 	$(CP) -fv $< $(VBOX_XIDL_FILE).tmp
-	$(VBOX_XSLTPROC) -o $(VBOX_XIDL_FILE).tmp $(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl $<
-	$(CP) --changed -fv $(VBOX_XIDL_FILE).tmp $@
+$(VBOX_XIDL_FILE).ts |+ $(VBOX_XIDL_FILE): \
+		$(VBOX_XIDL_FILE_SRC) \
+		$(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl \
+		| $$(dir $$@)
+# 	$(CP) -fv $< $(VBOX_XIDL_FILE).ts
+	$(VBOX_XSLTPROC) -o $(VBOX_XIDL_FILE).ts $(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl $<
+	$(CP) --changed -fv $(VBOX_XIDL_FILE).ts $(VBOX_XIDL_FILE_SRC)
 
 #
 # The Main API documentation
