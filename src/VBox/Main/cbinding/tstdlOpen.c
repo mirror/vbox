@@ -308,31 +308,104 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
     machine->vtbl->nsisupports.Release((void *)machine);
 }
 
-#if 0 /* finish this. */
+#ifdef USE_DYNAMIC_GLUE
+/** The dlopen handle for VBoxXPCOM. */
+void *g_hVBoxXPCOMC = NULL;
+/** The last load error. */
+char g_szVBoxXPCOMErrMsg[256];
+
+#if defined(__linux__) || defined(__linux_gnu__) || defined(__sun__)
+# define SYM_PREFIX     ""
+# define DYNLIB_NAME    "VBoxXPCOM.so"
+#elif defined(__APPLE__)
+# define SYM_PREFIX     "_"
+# define DYNLIB_NAME    "VBoxXPCOM.dylib"
+#else
+# error "Port me"
+#endif
+
 /**
  * Try load VBoxXPCOMC.so/dylib/dll from the specified location and resolve all
  * the symbols we need.
  *
  * @returns 0 on success, -1 on failure.
- * @param   pszName         The shared object / dylib / DLL to try load.
- * @param   fComplain       Whether to complain to stderr or not when symbols
- *                          are missing.
+ * @param   pszHome         The director where to try load VBoxXPCOMC from. Can be NULL.
+ * @param   pszMsgPrefix    Error message prefix. NULL means no error messages.
  */
-int tryLoadOne(const char *pszName, int fComplain)
+static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
 {
     static struct
     {
         const char *pszSymbol;
         void **ppvSym;
-    } s_aSyms[] =
+    } const s_aSyms[] =
     {
-        { "VBoxComInitialize", (void **)&VBoxComInitializePtr },
-        ....
+        { SYM_PREFIX "VBoxComUninitialize",         (void **)&VBoxComUninitializePtr          },
+        { SYM_PREFIX "VBoxComUnallocMem",           (void **)&VBoxComUnallocMemPtr            },
+        { SYM_PREFIX "VBoxUtf16Free",               (void **)&VBoxUtf16FreePtr                },
+        { SYM_PREFIX "VBoxUtf8Free",                (void **)&VBoxUtf8FreePtr                 },
+        { SYM_PREFIX "VBoxConvertPRUnichartoAscii", (void **)&VBoxConvertPRUnichartoAsciiPtr  },
+        { SYM_PREFIX "VBoxConvertAsciitoPRUnichar", (void **)&VBoxConvertAsciitoPRUnicharPtr  },
+        { SYM_PREFIX "VBoxUtf16ToUtf8",             (void **)&VBoxUtf16ToUtf8Ptr              },
+        { SYM_PREFIX "VBoxUtf8ToUtf16",             (void **)&VBoxUtf8ToUtf16Ptr              },
+        { SYM_PREFIX "VBoxGetEnv",                  (void **)&VBoxGetEnvPtr                   },
+        { SYM_PREFIX "VBoxSetEnv",                  (void **)&VBoxSetEnvPtr                   }
     };
+    size_t      cchHome = pszHome ? strlen(pszHome) : 0;
+    size_t      cbBuf;
+    char *      pszBuf;
+    int         rc = 0;
 
-    /* Just try dlopen it and run over the s_aSyms table calling dlsym on
-       each entry. */
-    return 0
+    /*
+     * Construct the full name.
+     */
+    cbBuf = cchHome + sizeof("/" DYNLIB_NAME);
+    pszBuf = (char *)malloc(cbBuf);
+    if (!pszBuf)
+    {
+        sprintf(g_szVBoxXPCOMErrMsg, "malloc(%u) failed", (unsigned)cbBuf);
+        if (pszMsgPrefix)
+            fprintf(stderr, "%s%s\n", pszMsgPrefix, g_szVBoxXPCOMErrMsg);
+        return -1;
+    }
+    if (pszHome)
+    {
+        memcpy(pszBuf, pszHome, cchHome);
+        pszBuf[cchHome] = '/';
+        cchHome++;
+    }
+    memcpy(&pszBuf[cchHome], DYNLIB_NAME, sizeof(DYNLIB_NAME));
+
+    /*
+     * Try load it by that name, setting the VBOX_APP_HOME first (for now).
+     */
+    setenv("VBOX_APP_HOME", pszBuf, 0 /* no need to overwrite */);
+    g_hVBoxXPCOMC = dlopen(pszBuf, RTLD_NOW | RTLD_LOCAL);
+    if (g_hVBoxXPCOMC)
+    {
+        unsigned i = sizeof(s_aSyms) / sizeof(s_aSyms[0]);
+        while (i-- > 0)
+        {
+            void *pv = dlsym(g_hVBoxXPCOMC, s_aSyms[i].pszSymbol);
+            if (!pv)
+            {
+                sprintf(g_szVBoxXPCOMErrMsg, "dlsym(%.80s/%.32s): %128s",
+                        pszBuf, s_aSyms[i].pszSymbol, dlerror());
+                if (pszMsgPrefix)
+                    fprintf(stderr, "%s%s\n", pszMsgPrefix, g_szVBoxXPCOMErrMsg);
+                rc = -1;
+                break;
+            }
+            *s_aSyms[i].ppvSym = pv;
+        }
+    }
+    else
+    {
+        sprintf(g_szVBoxXPCOMErrMsg, "dlopen(%.80s): %128s", pszBuf, dlerror());
+        rc = -1;
+    }
+    free(pszBuf);
+    return rc;
 }
 
 /**
@@ -340,17 +413,51 @@ int tryLoadOne(const char *pszName, int fComplain)
  * function pointers.
  *
  * @returns 0 on success, -1 on failure.
- * @param   fComplain       Whether to complain to stderr or not.
+ * @param   pszMsgPrefix    Error message prefix. NULL means no error messages.
  *
  * @remark  This should be considered moved into a separate glue library since
  *          its its going to be pretty much the same for any user of VBoxXPCOMC
  *          and it will just cause trouble to have duplicate versions of this
  *          source code all around the place.
  */
-int tryLoad(int fComplain)
+static int tryLoad(const char *pszMsgPrefix)
 {
-    /* Check getenv("VBOX_APP_HOME") first, then try the standard
-       locations for this platform, finally try load it without a path. */
+    /*
+     * If the user specifies the location, try only that.
+     */
+    const char *pszHome = getenv("VBOX_APP_HOME");
+    if (pszHome)
+        return tryLoadOne(pszHome, pszMsgPrefix);
+
+    /*
+     * Try the known standard locations.
+     */
+#if defined(__gnu__linux__) || defined(__linux__)
+    if (tryLoadOne("/opt/VirtualBox", pszMsgPrefix) == 0)
+        return 0;
+    if (tryLoadOne("/usr/lib/virtualbox", pszMsgPrefix) == 0)
+        return 0;
+#elif defined(__sun__)
+    if (tryLoadOne("/opt/VirtualBox/amd64", pszMsgPrefix) == 0)
+        return 0;
+    if (tryLoadOne("/opt/VirtualBox/i386", pszMsgPrefix) == 0)
+        return 0;
+#elif defined(__APPLE__)
+    if (tryLoadOne("/Application/VirtualBox.app/Contents/MacOS", pszMsgPrefix) == 0)
+        return 0;
+#else
+# error "port me"
+#endif
+
+    /*
+     * Finally try the dynamic linker search path.
+     */
+    if (tryLoadOne(NULL, pszMsgPrefix) == 0)
+        return 0;
+
+    /* No luck, return failure. */
+    if (pszMsgPrefix)
+        fprintf(stderr, "%sFailed to locate VBoxXPCOMC\n", pszMsgPrefix);
     return -1;
 }
 #endif
@@ -365,10 +472,11 @@ int main(int argc, char **argv)
     PRUint32    revision         = 0;
     PRUnichar  *versionUtf16     = NULL;
     PRUnichar  *homefolderUtf16  = NULL;
+    nsresult    rc;     /* Result code of various function (method) calls. */
+#ifndef USE_DYNAMIC_GLUE
     void       *xpcomHandle      = NULL;
     const char *xpcomdlError;
     struct stat stIgnored;
-    nsresult    rc;     /* Result code of various function (method) calls. */
 
     /*
      * Guess where VirtualBox is installed not mentioned in the environment.
@@ -405,6 +513,17 @@ int main(int argc, char **argv)
         }
         VBoxSetEnvPtr("VBOX_APP_HOME","/usr/lib/virtualbox/");
     }
+#else
+    /*
+     * Initialize the dynamic linking glue.
+     */
+
+    if (tryLoad(NULL) != 0)
+    {
+        fprintf(stderr, "%s: FATAL: %s\n", argv[0], g_szVBoxXPCOMErrMsg);
+        return EXIT_FAILURE;
+    }
+#endif
 
     printf("Starting Main\n");
 
@@ -415,12 +534,14 @@ int main(int argc, char **argv)
      * when done.
      */
 
+#ifndef USE_DYNAMIC_GLUE
     dlerror();    /* Clear any existing error */
     *(void **) (&VBoxComInitializePtr) = dlsym(xpcomHandle, "VBoxComInitialize");
     if ((xpcomdlError = dlerror()) != NULL)  {
         fprintf(stderr, "%s: FATAL: could not open VBoxXPCOMC.so library: %s\n", argv[0],xpcomdlError);
         return EXIT_FAILURE;
     }
+#endif
     VBoxComInitializePtr(&vbox, &session);
 
     if (vbox == NULL)
@@ -434,6 +555,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+#ifndef USE_DYNAMIC_GLUE
     *(void **) (&VBoxUtf16ToUtf8Ptr) = dlsym(xpcomHandle, "VBoxUtf16ToUtf8");
     if ((xpcomdlError = dlerror()) != NULL)  {
         fprintf(stderr, "%s: FATAL: could not open VBoxXPCOMC.so library: %s\n", argv[0],xpcomdlError);
@@ -459,6 +581,8 @@ int main(int argc, char **argv)
         fprintf(stderr, "%s: FATAL: could not open VBoxXPCOMC.so library: %s\n", argv[0],xpcomdlError);
         return EXIT_FAILURE;
     }
+#endif
+
     /*
      * Now ask for revision, version and home folder information of
      * this vbox. Were not using fancy macros here so it
@@ -523,13 +647,17 @@ int main(int argc, char **argv)
      * Do as mom told us: always clean up after yourself.
      */
 
+#ifndef USE_DYNAMIC_GLUE
     *(void **) (&VBoxComUninitializePtr) = dlsym(xpcomHandle, "VBoxComUninitialize");
     if ((xpcomdlError = dlerror()) != NULL)  {
         fprintf(stderr, "%s: FATAL: could not open VBoxXPCOMC.so library: %s\n", argv[0],xpcomdlError);
         return EXIT_FAILURE;
     }
+#endif
     VBoxComUninitializePtr();
+#ifndef USE_DYNAMIC_GLUE
     dlclose(xpcomHandle);
+#endif
     printf("Finished Main\n");
 
     return 0;
