@@ -128,7 +128,7 @@ public:
     STDMETHOD(COMGETTER(HardDisks2)) (ComSafeArrayOut (IHardDisk2 *, aHardDisks));
     STDMETHOD(COMGETTER(DVDImages)) (ComSafeArrayOut (IDVDImage2 *, aDVDImages));
     STDMETHOD(COMGETTER(FloppyImages)) (ComSafeArrayOut (IFloppyImage2 *, aFloppyImages));
-    STDMETHOD(COMGETTER(ProgressOperations)) (IProgressCollection **aOperations);
+    STDMETHOD(COMGETTER(ProgressOperations)) (ComSafeArrayOut (IProgress *, aOperations));
     STDMETHOD(COMGETTER(GuestOSTypes)) (IGuestOSTypeCollection **aGuestOSTypes);
     STDMETHOD(COMGETTER(SharedFolders)) (ISharedFolderCollection **aSharedFolders);
     STDMETHOD(COMGETTER(PerformanceCollector)) (IPerformanceCollector **aPerformanceCollector);
