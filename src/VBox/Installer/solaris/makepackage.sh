@@ -87,6 +87,13 @@ hardlink_fixup()
   mv -f "tmp-$1" "$1"
 }
 
+symlink_fixup()
+{
+  "$VBOX_AWK" 'NF == 3 && $1=="s" && '"$2"' { '"$3"' } { print }' "$1" > "tmp-$1"
+  mv -f "tmp-$1" "$1"
+}
+
+
 # prepare file list
 cd "$VBOX_INSTALLED_DIR"
 echo 'i pkginfo=./vbox.pkginfo' > prototype
@@ -111,7 +118,7 @@ if test -f $VBOX_INSTALLED_DIR/amd64/VBoxBFE || test -f $VBOX_INSTALLED_DIR/i386
 fi
 if test -f $VBOX_INSTALLED_DIR/amd64/VBoxHeadless || test -f $VBOX_INSTALLED_DIR/i386/VBoxHeadless; then
     ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxHeadless
-    ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxVRDP
+    ln -fs ./VBoxHeadless $VBOX_INSTALLED_DIR/VBoxVRDP
 fi
 
 find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
@@ -120,6 +127,7 @@ find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postins
 filelist_fixup prototype '$2 == "none"'                                                                 '$5 = "root"; $6 = "bin"'
 filelist_fixup prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3"="$3'
 hardlink_fixup prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3'
+symlink_fixup  prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3'
 
 # install the kernel modules to the right place.
 filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxdrv=i386/vboxdrv"'                             '$3 = "platform/i86pc/kernel/drv/vboxdrv=i386/vboxdrv"; $6 = "sys"'
