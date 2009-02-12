@@ -923,7 +923,7 @@ int main(int argc, char *argv[])
                 {
                     for (size_t j = 0; j < ids.size(); ++ j)
                     {
-                        printf ("   {%Vuuid}\n", &ids [i]);
+                        printf ("   {%Vuuid}\n", &ids [j]);
                     }
                 }
             }
@@ -979,7 +979,7 @@ int main(int argc, char *argv[])
                 {
                     for (size_t j = 0; j < ids.size(); ++ j)
                     {
-                        printf ("   {%Vuuid}\n", &ids [i]);
+                        printf ("   {%Vuuid}\n", &ids [j]);
                     }
                 }
             }
