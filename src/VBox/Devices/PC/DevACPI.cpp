@@ -133,7 +133,11 @@ enum
     SYSTEM_INFO_INDEX_HPET_STATUS       = 2,
     SYSTEM_INFO_INDEX_SMC_STATUS        = 3,
     SYSTEM_INFO_INDEX_FDC_STATUS        = 4,
-    SYSTEM_INFO_INDEX_LAST              = 5,
+    SYSTEM_INFO_INDEX_CPU0_STATUS       = 5,
+    SYSTEM_INFO_INDEX_CPU1_STATUS       = 6,
+    SYSTEM_INFO_INDEX_CPU2_STATUS       = 7,
+    SYSTEM_INFO_INDEX_CPU3_STATUS       = 8,
+    SYSTEM_INFO_INDEX_LAST              = 9,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -193,8 +197,10 @@ struct ACPIState
     bool                fUseSmc;
     /** the guest handled the last power button event */
     bool                fPowerButtonHandled;
+    /** If ACPI CPU device should be shown */
+    bool                fShowCpu;
     /** Aligning IBase. */
-    bool                afAlignment[3];
+    bool                afAlignment[2];
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -808,7 +814,7 @@ static void acpiSetupMADT (ACPIState *s, RTGCPHYS32 addr)
 
     madt.IOApic.u8Type     = 1;
     madt.IOApic.u8Length   = sizeof(ACPITBLIOAPIC);
-    madt.IOApic.u8IOApicId = 0;
+    madt.IOApic.u8IOApicId = 1;
     madt.IOApic.u8Reserved = 0;
     madt.IOApic.u32Address = RT_H2LE_U32(0xfec00000);
     madt.IOApic.u32GSIB    = RT_H2LE_U32(0);
@@ -1328,7 +1334,19 @@ IO_READ_PROTO (acpiSysInfoDataRead)
                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
                             : 0;
                     break;
+                case SYSTEM_INFO_INDEX_CPU0_STATUS:
+                    *pu32 = s->fShowCpu ? (  STA_DEVICE_PRESENT_MASK
+                                           | STA_DEVICE_ENABLED_MASK
+                                           | STA_DEVICE_SHOW_IN_UI_MASK
+                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
+                            : 0;
+                    break;
 
+                case SYSTEM_INFO_INDEX_CPU1_STATUS:
+                case SYSTEM_INFO_INDEX_CPU2_STATUS:
+                case SYSTEM_INFO_INDEX_CPU3_STATUS:
+                    *pu32 = 0;
+                    break;
 
                 /* Solaris 9 tries to read from this index */
                 case SYSTEM_INFO_INDEX_INVALID:
@@ -1813,6 +1831,8 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"SmcEnabled\""));
+    /** @todo: a bit of hack: if we have SMC, also show CPU in ACPI */
+    s->fShowCpu = s->fUseSmc;
 
     rc = CFGMR3QueryBool (pCfgHandle, "GCEnabled", &fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
