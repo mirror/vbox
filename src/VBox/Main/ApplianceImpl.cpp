@@ -1678,6 +1678,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
     /// @todo ugly hack, fix ComAssert... (same as in HardDisk2::taskThread)
     #define setError app->setError
 
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", app));
+
     AutoCaller autoCaller(app);
     CheckComRCReturnRC(autoCaller.rc());
 
@@ -2154,6 +2157,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
     if (!task->progress.isNull())
         task->progress->notifyComplete (rc);
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
 
     /// @todo ugly hack, fix ComAssert... (same as in HardDisk2::taskThread)
     #undef setError

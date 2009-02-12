@@ -1306,7 +1306,9 @@ int main(int argc, char *argv[])
 
         ComPtr <IAppliance> appliance;
         CHECK_ERROR_BREAK (virtualBox,
-                           OpenAppliance (ovf, appliance.asOutParam()));
+                           CreateAppliance (appliance.asOutParam()));
+        CHECK_ERROR_BREAK (appliance,
+                           Read (ovf));
         Bstr path;
         CHECK_ERROR_BREAK (appliance, COMGETTER (Path)(path.asOutParam()));
         RTPrintf ("Successfully opened %ls.\n", path.raw());
@@ -1371,7 +1373,7 @@ int main(int argc, char *argv[])
         RTPrintf ("Try to import the appliance ...\n");
         ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK (appliance,
-                           ImportAppliance (progress.asOutParam()));
+                           ImportMachines (progress.asOutParam()));
         CHECK_ERROR (progress, WaitForCompletion (-1));
         if (SUCCEEDED (rc))
         {
