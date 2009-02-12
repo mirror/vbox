@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>627</width>
-    <height>401</height>
+    <width>573</width>
+    <height>476</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -20,6 +20,19 @@
   </property>
   <layout class="QGridLayout" name="gridLayout" >
    <item row="0" column="0" >
+    <widget class="QLabel" name="mInfoText" >
+     <property name="text" >
+      <string>These are the Virtual Machines as described in the Appliance. VirtualBox has done some initial mapping of the various values. You can change most of the shown properties by double clicking on the items. To disable some of them use the check box near the values.</string>
+     </property>
+     <property name="alignment" >
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+     </property>
+     <property name="wordWrap" >
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0" >
     <widget class="QTreeView" name="mTvSettings" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="MinimumExpanding" hsizetype="Expanding" >
@@ -29,7 +42,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0" >
+   <item row="2" column="0" >
     <widget class="QWidget" native="1" name="mWarningWidget" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Maximum" hsizetype="Preferred" >
@@ -70,7 +83,7 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="0" >
+   <item row="3" column="0" >
     <widget class="QIDialogButtonBox" name="mButtonBox" >
      <property name="orientation" >
       <enum>Qt::Horizontal</enum>
@@ -87,6 +100,7 @@
    <class>QIDialog</class>
    <extends>QDialog</extends>
    <header>QIDialog.h</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>QIDialogButtonBox</class>
