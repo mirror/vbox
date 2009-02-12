@@ -292,6 +292,10 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
             return(FALSE);
         }
 
+        /* Clear VRAM to avoid distortions during the video mode change. */
+        RtlZeroMemory(ppdev->pjScreen,
+                      ppdev->cyScreen * (ppdev->lDeltaScreen > 0? ppdev->lDeltaScreen: -ppdev->lDeltaScreen));
+
         //
         // Initialize the head of the offscreen list to NULL.
         //
