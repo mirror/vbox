@@ -291,13 +291,13 @@ public:
                 {
                     switch (mType)
                     {
-                        case KVirtualSystemDescriptionType_Name:
-                        case KVirtualSystemDescriptionType_OS:
-                        case KVirtualSystemDescriptionType_CPU:
-                        case KVirtualSystemDescriptionType_Memory: v = QIcon (":/machine_16px.png"); break;
-                        case KVirtualSystemDescriptionType_HardDiskControllerIDE:
-                        case KVirtualSystemDescriptionType_HardDiskControllerSATA:
-                        case KVirtualSystemDescriptionType_HardDiskControllerSCSI:
+                        case KVirtualSystemDescriptionType_Name: v = QIcon (":/name_16px.png"); break;
+                        case KVirtualSystemDescriptionType_OS: v = QIcon (":/os_type_16px.png"); break;
+                        case KVirtualSystemDescriptionType_CPU: v = QIcon (":/cpu_16px.png"); break;
+                        case KVirtualSystemDescriptionType_Memory: v = QIcon (":/ram_16px.png"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerIDE: v = QIcon (":/ide_16px.png"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = QIcon (":/sata_16px.png"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = QIcon (":/scsi_16px.png"); break;
                         case KVirtualSystemDescriptionType_HardDiskImage: v = QIcon (":/hd_16px.png"); break;
                         case KVirtualSystemDescriptionType_CDROM: v = QIcon (":/cd_16px.png"); break;
                         case KVirtualSystemDescriptionType_Floppy: v = QIcon (":/fd_16px.png"); break;

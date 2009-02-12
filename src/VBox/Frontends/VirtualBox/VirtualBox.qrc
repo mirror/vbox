@@ -318,5 +318,12 @@
     <file alias="welcome.png">images/welcome.png</file>
     <file alias="monitor.png">images/monitor.png</file>
     <file alias="monitor_glossy.png">images/monitor_glossy.png</file>
+    <file alias="name_16px.png">images/name_16px.png</file>
+    <file alias="os_type_16px.png">images/os_type_16px.png</file>
+    <file alias="cpu_16px.png">images/cpu_16px.png</file>
+    <file alias="ram_16px.png">images/ram_16px.png</file>
+    <file alias="ide_16px.png">images/ide_16px.png</file>
+    <file alias="sata_16px.png">images/sata_16px.png</file>
+    <file alias="scsi_16px.png">images/scsi_16px.png</file>
  </qresource>
  </RCC>
