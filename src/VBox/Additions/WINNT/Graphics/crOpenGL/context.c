@@ -138,6 +138,7 @@ stubNewWindow( const char *dpyName, GLint visBits )
 #elif defined(GLX)
     winInfo->drawable = (GLXDrawable) spuWin;
     winInfo->pVisibleRegions = NULL;
+    winInfo->cVisibleRegions = 0;
 #endif
     winInfo->spuWindow = spuWin;
 
@@ -276,6 +277,9 @@ stubNewContext( const char *dpyName, GLint visBits, ContextType type,
 
 #ifdef GLX
     context->pGLXPixmapsHash = crAllocHashtable();
+    context->damageInitFailed = GL_FALSE;
+    context->damageDpy = NULL;
+    context->damageEventsBase = 0;
 #endif
 
     crHashtableAdd(stub.contextTable, context->id, (void *) context);
@@ -1007,6 +1011,10 @@ stubDestroyContext( unsigned long contextId )
 
 #ifdef GLX
     crFreeHashtable(context->pGLXPixmapsHash, crFree);
+    if (context->damageDpy)
+    {
+        XCloseDisplay(context->damageDpy);
+    }
 #endif
 
     crMemZero(context, sizeof(ContextInfo));  /* just to be safe */
