@@ -1106,8 +1106,15 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             if (   UNIX_CHECK_FD_SET(so, NetworkEvents, rdhup)
                 && UNIX_CHECK_FD_SET(so, NetworkEvents, rderr))
             {
-                if (so->so_state & SS_ISFCONNECTING)
+                if (   so->so_state & SS_ISFCONNECTING
+                    || (polls[poll_index].revents & POLLIN) != 0)
                 {
+                    /**
+                     * Check if we need here take care about gracefull connection 
+                     * @todo try with proxy server
+                     */
+                    if ((polls[poll_index].revents & POLLIN) != 0)
+                        LogRel(("NAT: err happens on read I/O, other side close connection \n"));
                     so->so_state = SS_NOFDREF;
                     TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
                     CONTINUE(tcp);
