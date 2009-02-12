@@ -1369,9 +1369,19 @@ bool VBoxConsoleView::event (QEvent *e)
                 GuestAdditionsEvent *ge = (GuestAdditionsEvent *) e;
                 LogFlowFunc (("AdditionsStateChangeEventType\n"));
 
+                /* Always send a size hint if we are in fullscreen or seamless
+                 * when the graphics capability is enabled, in case the host
+                 * resolution has changed since the VM was last run. */
+                if (!mDoResize &&
+                    (mMainWnd->isTrueSeamless() || mMainWnd->isTrueFullscreen()))
+                    mDoResize = (mGuestSupportsGraphics != ge->supportsGraphics());
+
                 mGuestSupportsGraphics = ge->supportsGraphics();
 
                 maybeRestrictMinimumSize();
+
+                /* This will only be acted upon if mDoResize is true. */
+                doResizeHint();
 
                 emit additionsStateChanged (ge->additionVersion(),
                                             ge->additionActive(),
@@ -3838,6 +3848,8 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
 
             mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
         }
+        /* we have resized now... */
+        mDoResize = false;
     }
 }
 
