@@ -1351,7 +1351,86 @@ static void ataSetSector(ATADevState *s, uint64_t iLBA)
 }
 
 
-static int ataReadSectors(ATADevState *s, uint64_t u64Sector, void *pvBuf, uint32_t cSectors)
+static void ataWarningDiskFull(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("PIIX3 ATA: Host disk full\n"));
+    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
+                           false, "DevATA_DISKFULL",
+                           N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
+    AssertRC(rc);
+}
+
+static void ataWarningFileTooBig(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("PIIX3 ATA: File too big\n"));
+    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
+                           false, "DevATA_FILETOOBIG",
+                           N_("Host system reported that the file size limit of the host file system has been exceeded. VM execution is suspended. You need to move your virtual hard disk to a filesystem which allows bigger files"));
+    AssertRC(rc);
+}
+
+static void ataWarningISCSI(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("PIIX3 ATA: iSCSI target unavailable\n"));
+    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
+                           false, "DevATA_ISCSIDOWN",
+                           N_("The iSCSI target has stopped responding. VM execution is suspended. You can resume when it is available again"));
+    AssertRC(rc);
+}
+
+/**
+ * Suspend I/O operations on a controller. Also suspends EMT, because it's
+ * waiting for I/O to make progress. The next attempt to perform an I/O
+ * operation will be made when EMT is resumed up again (as the resume
+ * callback below restarts I/O).
+ *
+ * @param pCtl      Controller for which to suspend I/O.
+ */
+static void ataSuspendRedo(PATACONTROLLER pCtl)
+{
+    PPDMDEVINS  pDevIns = CONTROLLER_2_DEVINS(pCtl);
+    PVMREQ      pReq;
+    int         rc;
+
+    pCtl->fRedoIdle = true;
+    rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
+                     (PFNRT)PDMDevHlpVMSuspend, 1, pDevIns);
+    AssertReleaseRC(rc);
+    VMR3ReqFree(pReq);
+}
+
+bool ataIsRedoSetWarning(ATADevState *s, int rc)
+{
+    PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
+    Assert(!PDMCritSectIsOwner(&pCtl->lock));
+    if (rc == VERR_DISK_FULL)
+    {
+        ataWarningDiskFull(ATADEVSTATE_2_DEVINS(s));
+        ataSuspendRedo(pCtl);
+        return true;
+    }
+    if (rc == VERR_FILE_TOO_BIG)
+    {
+        ataWarningFileTooBig(ATADEVSTATE_2_DEVINS(s));
+        ataSuspendRedo(pCtl);
+        return true;
+    }
+    if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
+    {
+        /* iSCSI connection abort (first error) or failure to reestablish
+         * connection (second error). Pause VM. On resume we'll retry. */
+        ataWarningISCSI(ATADEVSTATE_2_DEVINS(s));
+        ataSuspendRedo(pCtl);
+        return true;
+    }
+    return false;
+}
+
+
+static int ataReadSectors(ATADevState *s, uint64_t u64Sector, void *pvBuf, uint32_t cSectors, bool *fRedo)
 {
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     int rc;
@@ -1366,6 +1445,11 @@ static int ataReadSectors(ATADevState *s, uint64_t u64Sector, void *pvBuf, uint3
 
     STAM_REL_COUNTER_ADD(&s->StatBytesRead, cSectors * 512);
 
+    if (RT_SUCCESS(rc))
+        *fRedo = false;
+    else
+        *fRedo = ataIsRedoSetWarning(s, rc);
+
     STAM_PROFILE_START(&pCtl->StatLockWait, a);
     PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
     STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
@@ -1373,7 +1457,7 @@ static int ataReadSectors(ATADevState *s, uint64_t u64Sector, void *pvBuf, uint3
 }
 
 
-static int ataWriteSectors(ATADevState *s, uint64_t u64Sector, const void *pvBuf, uint32_t cSectors)
+static int ataWriteSectors(ATADevState *s, uint64_t u64Sector, const void *pvBuf, uint32_t cSectors, bool *fRedo)
 {
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     int rc;
@@ -1396,6 +1480,11 @@ static int ataWriteSectors(ATADevState *s, uint64_t u64Sector, const void *pvBuf
 
     STAM_REL_COUNTER_ADD(&s->StatBytesWritten, cSectors * 512);
 
+    if (RT_SUCCESS(rc))
+        *fRedo = false;
+    else
+        *fRedo = ataIsRedoSetWarning(s, rc);
+
     STAM_PROFILE_START(&pCtl->StatLockWait, a);
     PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
     STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
@@ -1417,50 +1506,18 @@ static void ataReadWriteSectorsBT(ATADevState *s)
 }
 
 
-static void ataWarningDiskFull(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("PIIX3 ATA: Host disk full\n"));
-    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
-                           false, "DevATA_DISKFULL",
-                           N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
-    AssertRC(rc);
-}
-
-
-static void ataWarningFileTooBig(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("PIIX3 ATA: File too big\n"));
-    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
-                           false, "DevATA_FILETOOBIG",
-                           N_("Host system reported that the file size limit of the host file system has been exceeded. VM execution is suspended. You need to move your virtual hard disk to a filesystem which allows bigger files"));
-    AssertRC(rc);
-}
-
-
-static void ataWarningISCSI(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("PIIX3 ATA: iSCSI target unavailable\n"));
-    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
-                           false, "DevATA_ISCSIDOWN",
-                           N_("The iSCSI target has stopped responding. VM execution is suspended. You can resume when it is available again"));
-    AssertRC(rc);
-}
-
-
 static bool ataReadSectorsSS(ATADevState *s)
 {
     int rc;
     uint32_t cSectors;
     uint64_t iLBA;
+    bool fRedo;
 
     cSectors = s->cbElementaryTransfer / 512;
     Assert(cSectors);
     iLBA = ataGetSector(s);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
-    rc = ataReadSectors(s, iLBA, s->CTX_SUFF(pbIOBuffer), cSectors);
+    rc = ataReadSectors(s, iLBA, s->CTX_SUFF(pbIOBuffer), cSectors, &fRedo);
     if (RT_SUCCESS(rc))
     {
         ataSetSector(s, iLBA + cSectors);
@@ -1470,23 +1527,8 @@ static bool ataReadSectorsSS(ATADevState *s)
     }
     else
     {
-        if (rc == VERR_DISK_FULL)
-        {
-            ataWarningDiskFull(ATADEVSTATE_2_DEVINS(s));
-            return true;
-        }
-        if (rc == VERR_FILE_TOO_BIG)
-        {
-            ataWarningFileTooBig(ATADEVSTATE_2_DEVINS(s));
-            return true;
-        }
-        if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
-        {
-            /* iSCSI connection abort (first error) or failure to reestablish
-             * connection (second error). Pause VM. On resume we'll retry. */
-            ataWarningISCSI(ATADEVSTATE_2_DEVINS(s));
-            return true;
-        }
+        if (fRedo)
+            return fRedo;
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
             LogRel(("PIIX3 ATA: LUN#%d: disk read error (rc=%Rrc iSector=%#RX64 cSectors=%#RX32)\n",
                     s->iLUN, rc, iLBA, cSectors));
@@ -1498,7 +1540,6 @@ static bool ataReadSectorsSS(ATADevState *s)
         if (rc != VERR_INTERRUPTED)
             ataCmdError(s, ID_ERR);
     }
-    /** @todo implement redo for iSCSI */
     return false;
 }
 
@@ -1508,12 +1549,13 @@ static bool ataWriteSectorsSS(ATADevState *s)
     int rc;
     uint32_t cSectors;
     uint64_t iLBA;
+    bool fRedo;
 
     cSectors = s->cbElementaryTransfer / 512;
     Assert(cSectors);
     iLBA = ataGetSector(s);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
-    rc = ataWriteSectors(s, iLBA, s->CTX_SUFF(pbIOBuffer), cSectors);
+    rc = ataWriteSectors(s, iLBA, s->CTX_SUFF(pbIOBuffer), cSectors, &fRedo);
     if (RT_SUCCESS(rc))
     {
         ataSetSector(s, iLBA + cSectors);
@@ -1523,23 +1565,8 @@ static bool ataWriteSectorsSS(ATADevState *s)
     }
     else
     {
-        if (rc == VERR_DISK_FULL)
-        {
-            ataWarningDiskFull(ATADEVSTATE_2_DEVINS(s));
-            return true;
-        }
-        if (rc == VERR_FILE_TOO_BIG)
-        {
-            ataWarningFileTooBig(ATADEVSTATE_2_DEVINS(s));
-            return true;
-        }
-        if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
-        {
-            /* iSCSI connection abort (first error) or failure to reestablish
-             * connection (second error). Pause VM. On resume we'll retry. */
-            ataWarningISCSI(ATADEVSTATE_2_DEVINS(s));
-            return true;
-        }
+        if (fRedo)
+            return fRedo;
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
             LogRel(("PIIX3 ATA: LUN#%d: disk write error (rc=%Rrc iSector=%#RX64 cSectors=%#RX32)\n",
                     s->iLUN, rc, iLBA, cSectors));
@@ -1551,7 +1578,6 @@ static bool ataWriteSectorsSS(ATADevState *s)
         if (rc != VERR_INTERRUPTED)
             ataCmdError(s, ID_ERR);
     }
-    /** @todo implement redo for iSCSI */
     return false;
 }
 
@@ -4277,27 +4303,6 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
 }
 
 
-/**
- * Suspend I/O operations on a controller. Also suspends EMT, because it's
- * waiting for I/O to make progress. The next attempt to perform an I/O
- * operation will be made when EMT is resumed up again (as the resume
- * callback below restarts I/O).
- *
- * @param pCtl      Controller for which to suspend I/O.
- */
-static void ataSuspendRedo(PATACONTROLLER pCtl)
-{
-    PPDMDEVINS  pDevIns = CONTROLLER_2_DEVINS(pCtl);
-    PVMREQ      pReq;
-    int         rc;
-
-    pCtl->fRedoIdle = true;
-    rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
-                     (PFNRT)PDMDevHlpVMSuspend, 1, pDevIns);
-    AssertReleaseRC(rc);
-    VMR3ReqFree(pReq);
-}
-
 /** Asynch I/O thread for an interface. Once upon a time this was readable
  * code with several loops and a different semaphore for each purpose. But
  * then came the "how can one save the state in the middle of a PIO transfer"
@@ -4452,7 +4457,6 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                              * request. Occurs very rarely, not worth optimizing. */
                             LogRel(("%s: Ctl#%d: redo entire operation\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
                             ataAsyncIOPutRequest(pCtl, pReq);
-                            ataSuspendRedo(pCtl);
                             break;
                         }
                     }
@@ -4557,7 +4561,6 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                 {
                     LogRel(("PIIX3 ATA: Ctl#%d: redo DMA operation\n", ATACONTROLLER_IDX(pCtl)));
                     ataAsyncIOPutRequest(pCtl, &ataDMARequest);
-                    ataSuspendRedo(pCtl);
                     break;
                 }
 
