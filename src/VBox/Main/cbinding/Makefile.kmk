@@ -33,6 +33,7 @@ XpComCSamples_INST = \
 	$(INST_SDK)bindings/xpcom/cbinding/samples/
 XpComCSamples_SOURCES = \
 	tstLinuxC.c \
+	tstdlOpen.c \
 	makefile.tstLinuxC=>Makefile
 
 INSTALLS += XpComCHeaders
