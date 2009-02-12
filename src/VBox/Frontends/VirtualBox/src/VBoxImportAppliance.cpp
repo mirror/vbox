@@ -955,47 +955,45 @@ void VBoxImportAppliance::import (QWidget *aParent /* = NULL */)
     if (!file.isEmpty())
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        /* Open the appliance */
+        /* Create a appliance object */
         CAppliance appliance = vbox.CreateAppliance();
-        if (appliance.isOk())
+        bool fResult = appliance.isOk();
+        if (fResult)
         {
-            appliance.Read(file); // @todo error handling
-            /* Now we have to interpret that stuff */
-            appliance.Interpret();
-            if (appliance.isOk())
+            /* Read the appliance */
+            appliance.Read (file);
+            fResult = appliance.isOk();
+            if (fResult)
             {
-                /* Let the user do some tuning */
-                VBoxImportApplianceDlg settingsDlg (&appliance, aParent);
-                if (settingsDlg.exec() == QDialog::Accepted)
+                /* Now we have to interpret that stuff */
+                appliance.Interpret();
+                fResult = appliance.isOk();
+                if (fResult)
                 {
-                    /* Start the import asynchronously */
-                    CProgress progress;
-                    progress = appliance.ImportMachines();
-                    if (!appliance.isOk())
+                    /* Let the user do some tuning */
+                    VBoxImportApplianceDlg settingsDlg (&appliance, aParent);
+                    if (settingsDlg.exec() == QDialog::Accepted)
                     {
-                        vboxProblem().cannotImportAppliance (appliance);
-                        return;
-                    }
-                    /* Show some progress, so the user know whats going on */
-                    vboxProblem().showModalProgressDialog (progress, VBoxImportApplianceDlg::tr ("Importing Appliance ..."), aParent);
-                    if (!progress.isOk() || progress.GetResultCode() != 0)
-                    {
-                        vboxProblem().cannotImportAppliance (progress, appliance);
-                        return;
+                        /* Start the import asynchronously */
+                        CProgress progress;
+                        progress = appliance.ImportMachines();
+                        fResult = appliance.isOk();
+                        if (fResult)
+                        {
+                            /* Show some progress, so the user know whats going on */
+                            vboxProblem().showModalProgressDialog (progress, VBoxImportApplianceDlg::tr ("Importing Appliance ..."), aParent);
+                            if (!progress.isOk() || progress.GetResultCode() != 0)
+                            {
+                                vboxProblem().cannotImportAppliance (progress, appliance);
+                                return;
+                            }
+                        }
                     }
                 }
             }
-            else
-            {
-                vboxProblem().cannotImportAppliance (appliance);
-                return;
-            }
         }
-        else
-        {
+        if (!fResult)
             vboxProblem().cannotImportAppliance (appliance);
-            return;
-        }
     }
 }
 
