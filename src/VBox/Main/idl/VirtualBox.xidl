@@ -1406,7 +1406,7 @@
       </desc>
     </attribute>
 
-    <attribute name="progressOperations" type="IProgressCollection" readonly="yes"/>
+    <attribute name="progressOperations" type="IProgress" readonly="yes" safearray="yes"/>
 
     <attribute name="guestOSTypes" type="IGuestOSTypeCollection" readonly="yes"/>
 
@@ -7278,20 +7278,9 @@
   /////////////////////////////////////////////////////////////////////////
   -->
 
-  <enumerator
-     name="IProgressEnumerator" type="IProgress"
-     uuid="e0380522-4ef1-48f4-856c-e455177ccb2d"
-     />
-
-  <collection
-     name="IProgressCollection" type="IProgress" enumerator="IProgressEnumerator"
-     uuid="78B76A7C-F0F2-467c-9F0E-F089A54EE957"
-     readonly="yes"
-     />
-
   <interface
      name="IProgress" extends="$unknown"
-     uuid="10CC03A1-717E-429b-992D-C67B56175A51"
+     uuid="d3aa5417-6103-41fc-9e54-01ee1d08f42f"
      wsmap="managed"
      >
     <desc>
@@ -7299,8 +7288,8 @@
       to wait for the completion of some asynchronous task.
 
       The task consists of one or more operations that run sequentially,
-      one after one. There is an individual percent of completion of the
-      current operation and the percent of completion of the task as a
+      one by one. There is an individual percentage of completion of the
+      current operation and the percentage of completion of the task as a
       whole. Similarly, you can wait for the completion of a particular
       operation or for the completion of the whole task.
 
