@@ -359,6 +359,7 @@ static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
     /*
      * Construct the full name.
      */
+
     cbBuf = cchHome + sizeof("/" DYNLIB_NAME);
     pszBuf = (char *)malloc(cbBuf);
     if (!pszBuf)
@@ -379,6 +380,7 @@ static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
     /*
      * Try load it by that name, setting the VBOX_APP_HOME first (for now).
      */
+
     setenv("VBOX_APP_HOME", pszBuf, 0 /* no need to overwrite */);
     g_hVBoxXPCOMC = dlopen(pszBuf, RTLD_NOW | RTLD_LOCAL);
     if (g_hVBoxXPCOMC)
@@ -425,6 +427,7 @@ static int tryLoad(const char *pszMsgPrefix)
     /*
      * If the user specifies the location, try only that.
      */
+
     const char *pszHome = getenv("VBOX_APP_HOME");
     if (pszHome)
         return tryLoadOne(pszHome, pszMsgPrefix);
@@ -432,6 +435,7 @@ static int tryLoad(const char *pszMsgPrefix)
     /*
      * Try the known standard locations.
      */
+
 #if defined(__gnu__linux__) || defined(__linux__)
     if (tryLoadOne("/opt/VirtualBox", pszMsgPrefix) == 0)
         return 0;
@@ -452,6 +456,7 @@ static int tryLoad(const char *pszMsgPrefix)
     /*
      * Finally try the dynamic linker search path.
      */
+
     if (tryLoadOne(NULL, pszMsgPrefix) == 0)
         return 0;
 
