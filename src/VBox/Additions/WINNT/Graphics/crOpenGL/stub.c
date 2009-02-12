@@ -450,7 +450,11 @@ GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
     pXRects = XFixesFetchRegion(pWindow->dpy, xreg, &cRects);
     XFixesDestroyRegion(pWindow->dpy, xreg);
 
-    if (!pWindow->pVisibleRegions 
+    /* @todo For some odd reason *first* run of compiz on freshly booted VM gives us 0 cRects all the time.
+     * In (!pWindow->pVisibleRegions && cRects) "&& cRects" is a workaround for that case, especially as this
+     * information is useless for full screen composing managers anyway.
+     */
+    if ((!pWindow->pVisibleRegions && cRects)
         || pWindow->cVisibleRegions!=cRects 
         || crMemcmp(pWindow->pVisibleRegions, pXRects, cRects * sizeof(XRectangle)))
     {
@@ -464,14 +468,14 @@ GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
             return GL_FALSE;
         }
 
-        /*crDebug("Got %i rects.", cRects);*/
+        //crDebug("Got %i rects.", cRects);
         for (i=0; i<cRects; ++i)
         {
             pGLRects[4*i+0] = pXRects[i].x;
             pGLRects[4*i+1] = pXRects[i].y;
             pGLRects[4*i+2] = pXRects[i].x+pXRects[i].width;
             pGLRects[4*i+3] = pXRects[i].y+pXRects[i].height;
-            /*crDebug("Rect[%i]=(%i,%i,%i,%i)", i, pGLRects[4*i+0], pGLRects[4*i+1], pGLRects[4*i+2], pGLRects[4*i+3]);*/                   
+            //crDebug("Rect[%i]=(%i,%i,%i,%i)", i, pGLRects[4*i+0], pGLRects[4*i+1], pGLRects[4*i+2], pGLRects[4*i+3]);                   
         }
 
         crDebug("Dispatched WindowVisibleRegion (%i, cRects=%i)", pWindow->spuWindow, cRects);

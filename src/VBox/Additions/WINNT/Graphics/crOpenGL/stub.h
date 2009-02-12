@@ -42,6 +42,7 @@
 #ifdef GLX
 #include <X11/extensions/XShm.h>
 #include <sys/shm.h>
+#include <X11/extensions/Xdamage.h>
 #endif
 
 
@@ -73,8 +74,9 @@ struct glxpixmap_info_t
     unsigned int w, h, border, depth;
     Window root;
     GC gc;
-    Pixmap pixmap;
-    void *data;
+    Pixmap pixmap; /* Shared memory pixmap object, if it's supported*/
+    Damage damage;
+    Bool   bPixmapImageDirty;
 };
 #endif
 
@@ -110,6 +112,9 @@ struct context_info_t
     Bool direct;
     GLXContext glxContext;
     CRHashTable *pGLXPixmapsHash;
+    Bool     damageInitFailed;
+    Display *damageDpy; /* second display connection to read xdamage extension data */
+    int      damageEventsBase;
 #endif
 };
 

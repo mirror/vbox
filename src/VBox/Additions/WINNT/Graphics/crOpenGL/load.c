@@ -73,6 +73,8 @@ static void stubInitNativeDispatch( void )
 /** Pointer to the SPU's real glClear and glViewport functions */
 static ClearFunc_t origClear;
 static ViewportFunc_t origViewport;
+static SwapBuffersFunc_t origSwapBuffers;
+static DrawBufferFunc_t origDrawBuffer;
 
 static void stubCheckWindowState(void)
 {
@@ -151,6 +153,17 @@ static void SPU_APIENTRY trapViewport(GLint x, GLint y, GLsizei w, GLsizei h)
     origViewport(x, y, w, h);
 }
 
+static void SPU_APIENTRY trapSwapBuffers(GLint window, GLint flags)
+{
+    stubCheckWindowState();
+    origSwapBuffers(window, flags);
+}
+
+static void SPU_APIENTRY trapDrawBuffer(GLenum buf)
+{
+    stubCheckWindowState();
+    origDrawBuffer(buf);
+}
 
 /**
  * Use the GL function pointers in <spu> to initialize the static glim
@@ -165,8 +178,12 @@ static void stubInitSPUDispatch(SPU *spu)
         /* patch-in special glClear/Viewport function to track window sizing */
         origClear = stub.spuDispatch.Clear;
         origViewport = stub.spuDispatch.Viewport;
+        origSwapBuffers = stub.spuDispatch.SwapBuffers;
+        origDrawBuffer = stub.spuDispatch.DrawBuffer;
         stub.spuDispatch.Clear = trapClear;
         stub.spuDispatch.Viewport = trapViewport;
+        /*stub.spuDispatch.SwapBuffers = trapSwapBuffers;
+        stub.spuDispatch.DrawBuffer = trapDrawBuffer;*/
     }
 
     crSPUCopyDispatchTable( &glim, &stub.spuDispatch );
@@ -296,6 +313,7 @@ static void stubInitVars(void)
     defaultWin->hVisibleRegion = INVALID_HANDLE_VALUE;
 #elif defined(GLX)
     defaultWin->pVisibleRegions = NULL;
+    defaultWin->cVisibleRegions = 0;
 #endif
     crHashtableAdd(stub.windowTable, 0, defaultWin);
 
