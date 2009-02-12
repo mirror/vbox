@@ -122,10 +122,14 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
     // In this case, XP SP2 contains this buggy Intelppm.sys driver which wants to mess
     // with SpeedStep if it finds a CPU object and when it finds out that it can't, it
     // tries to unload and crashes (MS probably never tested this code path).
-//    Scope (\_PR)
-//    {
-//        Processor (CPU1, 0x01, 0x00000000, 0x00) {}
-//    }
+    Scope (\_PR)
+    {
+        Processor (CPU0, 0x00, 0x00000410, 0x06) 
+        {
+           Method (_STA) { Return(\_SB.UCP0) }
+        }
+        // Maybe we'll need more entries for SMP systems, enabled depending on runtime config 
+    }
 
     Scope (\_SB)
     {
@@ -138,11 +142,12 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
 
         IndexField (IDX0, DAT0, DwordAcc, NoLock, Preserve)
         {
-            MEML, 32,
-            UIOA, 32,
-            UHPT, 32,
-            USMC, 32,
-            UFDC, 32,
+            MEML,  32,
+            UIOA,  32,
+            UHPT,  32,
+            USMC,  32,
+            UFDC,  32,
+            UCP0,  32,
             Offset (0x80),
             ININ, 32,
             Offset (0x200),
@@ -162,6 +167,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             HEX4 (USMC)
             DBG ("UFDC: ")
             HEX4 (UFDC)
+            DBG ("UCP0: ")
+            HEX4 (UCP0)
         }
 
         // PCI PIC IRQ Routing table
