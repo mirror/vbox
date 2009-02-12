@@ -405,7 +405,7 @@ DECLINLINE(void) vboxNetFltLinuxReleaseNetDev(PVBOXNETFLTINS pThis, struct net_d
 #endif
 }
 
-#define VBOXNETFLT_CB_TAG 0xA1C9D7C3
+#define VBOXNETFLT_CB_TAG(skb) (0xA1C90000 | (skb->dev->ifindex & 0xFFFF))
 #define VBOXNETFLT_SKB_TAG(skb) (*(uint32_t*)&((skb)->cb[sizeof((skb)->cb)-sizeof(uint32_t)]))
 
 /**
@@ -417,7 +417,7 @@ DECLINLINE(void) vboxNetFltLinuxReleaseNetDev(PVBOXNETFLTINS pThis, struct net_d
  */
 DECLINLINE(bool) vboxNetFltLinuxSkBufIsOur(struct sk_buff *pBuf)
 {
-    return VBOXNETFLT_SKB_TAG(pBuf) == VBOXNETFLT_CB_TAG ;
+    return VBOXNETFLT_SKB_TAG(pBuf) == VBOXNETFLT_CB_TAG(pBuf);
 }
 
 
@@ -471,7 +471,7 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
             skb_push(pPkt, ETH_HLEN);
             VBOX_SKB_RESET_MAC_HDR(pPkt);
         }
-        VBOXNETFLT_SKB_TAG(pPkt) = VBOXNETFLT_CB_TAG;
+        VBOXNETFLT_SKB_TAG(pPkt) = VBOXNETFLT_CB_TAG(pPkt);
 
         return pPkt;
     }
