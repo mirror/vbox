@@ -77,6 +77,20 @@ ifndef VBOX_ONLY_SDK
   	tstLinuxC.c
   tstXPCOMC_LIBS = \
   	$(VBoxXPCOMC_1_TARGET)
+
+  #
+  # The testcase (also in samples).
+  #
+  PROGRAMS.linux += tstXPCOMCDynLink
+  tstXPCOMCDynLink_TEMPLATE = VBOXR3
+  tstXPCOMCDynLink_DEFS = MOZ_UNICODE
+  tstXPCOMCDynLink_INCS = \
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include \
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub
+  tstXPCOMCDynLink_INTERMEDIATES = \
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_CXPCOM.h
+  tstXPCOMCDynLink_SOURCES = \
+  	tstdlOpen.c
  endif
 
 endif # ! VBOX_ONLY_SDK
