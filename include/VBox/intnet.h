@@ -626,8 +626,8 @@ typedef enum INTNETTRUNKTYPE
     /** VirtualBox host network interface filter driver.
      * The trunk name is the name of the host network interface. */
     kIntNetTrunkType_NetFlt,
-    /** VirtualBox TAP host driver. */
-    kIntNetTrunkType_NetTap,
+    /** VirtualBox adapter host driver. */
+    kIntNetTrunkType_NetAdp,
     /** Nat service (ring-0). */
     kIntNetTrunkType_SrvNat,
     /** The end of valid types. */

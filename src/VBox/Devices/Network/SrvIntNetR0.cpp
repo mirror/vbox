@@ -3701,8 +3701,8 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
         case kIntNetTrunkType_NetFlt:
             pszName = "VBoxNetFlt";
             break;
-        case kIntNetTrunkType_NetTap:
-            pszName = "VBoxNetTap";
+        case kIntNetTrunkType_NetAdp:
+            pszName = "VBoxNetAdp";
             break;
         case kIntNetTrunkType_SrvNat:
             pszName = "VBoxSrvNat";
