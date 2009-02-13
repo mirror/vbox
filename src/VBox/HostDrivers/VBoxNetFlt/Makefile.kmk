@@ -38,7 +38,7 @@ VBoxNetFlt_SDKS.win = W2K3DDK WINPSDKINCS
 VBoxNetFlt_INCS := $(PATH_SUB_CURRENT)
 VBoxNetFlt_SOURCES.darwin = \
         darwin/VBoxNetFlt-darwin.cpp \
-        darwin/VBoxTap-darwin.cpp
+        darwin/VBoxNetAdapter-darwin.cpp
 VBoxNetFlt_SOURCES.win = \
 	win/VBoxNetFlt-win.c \
 	win/VBoxNetFltPt-win.c \
