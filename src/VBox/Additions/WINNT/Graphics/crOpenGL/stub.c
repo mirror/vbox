@@ -456,7 +456,7 @@ GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
      */
     if ((!pWindow->pVisibleRegions && cRects)
         || pWindow->cVisibleRegions!=cRects 
-        || crMemcmp(pWindow->pVisibleRegions, pXRects, cRects * sizeof(XRectangle)))
+        || (pWindow->pVisibleRegions && crMemcmp(pWindow->pVisibleRegions, pXRects, cRects * sizeof(XRectangle))))
     {
         pWindow->pVisibleRegions = pXRects;
         pWindow->cVisibleRegions = cRects;
