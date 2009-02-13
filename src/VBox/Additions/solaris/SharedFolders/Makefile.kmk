@@ -35,14 +35,13 @@ vboxvfs_DEFS          = VBOX_WITH_HGCM
 vboxvfs_INCS         := \
 	.
 vboxvfs_SOURCES       = \
-	vboxvfs_vfsops.c \
-	vboxvfs_vnops.c \
-	vboxvfs_utils.c
+	vboxfs_vfs.c \
+	vboxfs_vnode.c \
+	vboxfs_prov.c
 vboxvfs_LIBS          = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
-#@todo find out why the additions box freaks out with this...
-#vboxvfs_LDFLAGS      += -N drv/vboxguest
+vboxvfs_LDFLAGS      += -N drv/vboxguest
 
 #
 # mount - Userland mount wrapper for vboxvfs
