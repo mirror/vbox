@@ -74,9 +74,10 @@ struct glxpixmap_info_t
     unsigned int w, h, border, depth;
     Window root;
     GC gc;
-    Pixmap pixmap; /* Shared memory pixmap object, if it's supported*/
-    Damage damage;
+    Pixmap hShmPixmap; /* Shared memory pixmap object, if it's supported*/
+    Damage hDamage;    /* damage xserver handle*/
     Bool   bPixmapImageDirty;
+    Region pDamageRegion;
 };
 #endif
 
