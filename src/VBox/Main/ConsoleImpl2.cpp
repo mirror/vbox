@@ -275,7 +275,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Virtual IDE controller type.
      */
     IDEControllerType_T controllerType;
-    BOOL fPIIX4;
+    BOOL fPIIX4, fICH6;
     hrc = biosSettings->COMGETTER(IDEControllerType)(&controllerType);               H();
     switch (controllerType)
     {
@@ -290,6 +290,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
                               N_("Invalid IDE controller type '%d'"), controllerType);
     }
+#ifdef VBOX_WITH_SMC
+    /** @todo: gross hack, rewrite appropriately */
+    fPIIX4 = FALSE;
+    fICH6 = TRUE;
+#else
+    fICH6 = FALSE;
+#endif
 
     /*
      * PDM config.
@@ -366,7 +373,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);           RC_CHECK();
         rc = CFGMR3InsertInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);         RC_CHECK();
         rc = CFGMR3InsertBytes(pBiosCfg,    "UUID", pUuid, sizeof(*pUuid));             RC_CHECK();
-        
+
         DeviceType_T bootDevice;
         if (SchemaDefs::MaxBootPosition > 9)
         {
@@ -374,7 +381,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                               SchemaDefs::MaxBootPosition));
             return VERR_INVALID_PARAMETER;
         }
-        
+
         for (ULONG pos = 1; pos <= SchemaDefs::MaxBootPosition; pos ++)
         {
             hrc = pMachine->GetBootOrder(pos, &bootDevice);                             H();
@@ -794,6 +801,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pIdeInst, "PCIFunctionNo",        1);                  RC_CHECK();
     rc = CFGMR3InsertNode(pIdeInst,    "Config", &pCfg);                            RC_CHECK();
     rc = CFGMR3InsertInteger(pCfg,  "PIIX4", fPIIX4);               /* boolean */   RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "ICH6",  fICH6);                /* boolean */   RC_CHECK();
 
     /* Attach the status driver */
     rc = CFGMR3InsertNode(pIdeInst,    "LUN#999", &pLunL0);                         RC_CHECK();
