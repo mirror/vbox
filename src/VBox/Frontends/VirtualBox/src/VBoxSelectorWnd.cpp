@@ -406,7 +406,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mFileMediaMgrAction->setIcon (VBoxGlobal::iconSet (":/diskimage_16px.png"));
 
     mFileApplianceImportAction = new QAction (this);
-    mFileApplianceImportAction->setIcon (VBoxGlobal::iconSet (":/diskimage_16px.png"));
+    mFileApplianceImportAction->setIcon (VBoxGlobal::iconSet (":/import_16px.png"));
 
     mFileSettingsAction = new QAction(this);
     mFileSettingsAction->setMenuRole (QAction::PreferencesRole);

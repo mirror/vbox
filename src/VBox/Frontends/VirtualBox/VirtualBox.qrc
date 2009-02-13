@@ -325,5 +325,6 @@
     <file alias="ide_16px.png">images/ide_16px.png</file>
     <file alias="sata_16px.png">images/sata_16px.png</file>
     <file alias="scsi_16px.png">images/scsi_16px.png</file>
+    <file alias="import_16px.png">images/import_16px.png</file>
  </qresource>
  </RCC>
