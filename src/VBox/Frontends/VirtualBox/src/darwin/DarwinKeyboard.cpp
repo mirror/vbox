@@ -981,6 +981,11 @@ UInt32 DarwinAdjustModifierMask(UInt32 fModifiers, const void *pvCocoaEvent)
         /*
          * Convert the Cocoa modifiers to Carbon ones (the Cocoa modifier
          * definitions are tucked away in Objective-C headers, unfortunately).
+         *
+         * Update: CGEventTypes.h includes what looks like the Cocoa modifiers
+         *         and the NX_* defines should be available as well. We should look
+         *         into ways to intercept the CG (core graphics) events in the Carbon
+         *         based setup and get rid of all this HID mess.
          */
         AssertPtr(pvCocoaEvent);
         //VBoxCocoaApplication_printEvent("dbg-adjMods: ", pvCocoaEvent);
