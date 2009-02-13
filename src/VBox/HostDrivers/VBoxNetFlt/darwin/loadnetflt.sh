@@ -106,8 +106,13 @@ fi
 
 sudo chmod -R o-rwx "$DIR"
 sync
-echo "${SCRIPT_NAME}.sh: loading $DIR... (kextload $OPTS \"$DIR\")"
+if [ "$XNU_VERSION" -ge "10" ]; then
+    echo "${SCRIPT_NAME}.sh: loading $DIR... (kextutil $OPTS -d \"$DEP_DIR\" \"$DIR\")"
+    sudo kextutil $OPTS -d "$DEP_DIR" "$DIR"
+else
+    echo "${SCRIPT_NAME}.sh: loading $DIR... (kextload $OPTS -d \"$DEP_DIR\" \"$DIR\")"
 sudo kextload $OPTS -d "$DEP_DIR" "$DIR"
+fi
 sync
 sudo chown -R `whoami` "$DIR" "$DEP_DIR"
 kextstat | grep org.virtualbox.kext
