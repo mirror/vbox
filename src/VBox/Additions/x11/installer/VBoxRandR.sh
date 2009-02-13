@@ -61,9 +61,10 @@ fi
 
 # If we were called with the --test parameter, we check whether the display
 # we are running on is really using the VBox video driver (and RandR 1.2),
-# and whether we are running on a buggy version of X.org which might crash
+# and whether we are running on a buggy version of X.Org which might crash
 # when we resize.
 if test "$1" = "--test"; then
+    # Check for buggy X.Org versions
     xout=`$xorgbin -version 2>&1`
     if echo "$xout" | grep 1.4.99.901 > /dev/null ||
         echo "$xout" | grep 1.4.99.902 > /dev/null ||
@@ -71,9 +72,12 @@ if test "$1" = "--test"; then
         echo "$xout" | grep 1.4.99.904 > /dev/null ||
         echo "$xout" | grep 1.4.99.905 > /dev/null
     then
-        echo "Disabling dynamic resizing due to known bugs in this X server."
+        echo "Warning: the version of the X Window system on your guest has a known"
+        echo "problem. Because of this, dynamic resizing and seamless mode will not work."
+        echo
         exit 1
     fi
+    # Check to see if the server is configured to use static modes only.
     for conf in "/etc/X11/xorg.conf-4" "/etc/X11/xorg.conf" "/etc/X11/.xorg.conf" "/etc/xorg.conf" \
                 "/usr/etc/X11/xorg.conf-4" "/usr/etc/X11/xorg.conf" "/usr/lib/X11/xorg.conf-4" \
                 "/usr/lib/X11/xorg.conf"
@@ -91,10 +95,14 @@ if test "$1" = "--test"; then
                 echo "resolutions.  To fix this, edit the server configuration file, remove all"
                 echo "\"Modes\" lines from the \"Screen\" section and any Option \"PreferredMode\""
                 echo "lines from \"Monitor\" sections and restart the server."
+                echo
                 exit 1
             fi
         fi
     done
+    # Don't write out error information in this case, as this script is also
+    # called from the installer, and vboxvideo will not yet be in place yet in
+    # that case.
     $randrbin 2> /dev/null | grep VBOX1 > /dev/null
     exit
 fi
