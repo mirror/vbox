@@ -1345,7 +1345,17 @@ IO_READ_PROTO (acpiSysInfoDataRead)
                 case SYSTEM_INFO_INDEX_CPU1_STATUS:
                 case SYSTEM_INFO_INDEX_CPU2_STATUS:
                 case SYSTEM_INFO_INDEX_CPU3_STATUS:
+#ifdef VBOX_WITH_SMP_GUESTS
+                    *pu32 = (s->fShowCpu && 
+                             s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < cCpus)
+                            ? (  STA_DEVICE_PRESENT_MASK
+                                           | STA_DEVICE_ENABLED_MASK
+                                           | STA_DEVICE_SHOW_IN_UI_MASK
+                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
+                            : 0;
+#else
                     *pu32 = 0;
+#endif
                     break;
 
                 /* Solaris 9 tries to read from this index */
@@ -1831,7 +1841,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"SmcEnabled\""));
-    /** @todo: a bit of hack: if we have SMC, also show CPU in ACPI */
+    /** @todo: a bit of hack: if we have SMC, also show CPU object in ACPI tables */
     s->fShowCpu = s->fUseSmc;
 
     rc = CFGMR3QueryBool (pCfgHandle, "GCEnabled", &fGCEnabled);

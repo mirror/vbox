@@ -122,13 +122,43 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
     // In this case, XP SP2 contains this buggy Intelppm.sys driver which wants to mess
     // with SpeedStep if it finds a CPU object and when it finds out that it can't, it
     // tries to unload and crashes (MS probably never tested this code path).
+    // So we enable this ACPI object only for certain guests, which do need it,
+    // if by accident Windows guest seen enabled CPU object, just boot from latest
+    // known good configuration, as it remembers state, even if ACPI object gets disabled.
     Scope (\_PR)
     {
-        Processor (CPU0, 0x00, 0x00000410, 0x06) 
+       Processor (CPU0, /* Name */
+                   0x00, /* Id */
+                   0x0,  /* Processor IO ports range start */ 
+                   0x0   /* Processor IO ports range length */ 
+                   ) 
         {
            Method (_STA) { Return(\_SB.UCP0) }
         }
-        // Maybe we'll need more entries for SMP systems, enabled depending on runtime config 
+        Processor (CPU1, /* Name */
+                   0x01, /* Id */
+                   0x0,  /* Processor IO ports range start */ 
+                   0x0   /* Processor IO ports range length */ 
+                   ) 
+        {
+           Method (_STA) { Return(\_SB.UCP1) }
+        }
+        Processor (CPU2, /* Name */
+                   0x02, /* Id */
+                   0x0,  /* Processor IO ports range start */ 
+                   0x0   /* Processor IO ports range length */ 
+                   ) 
+        {
+           Method (_STA) { Return(\_SB.UCP2) }
+        }
+        Processor (CPU3, /* Name */
+                   0x03, /* Id */
+                   0x0,  /* Processor IO ports range start */ 
+                   0x0   /* Processor IO ports range length */ 
+                   ) 
+        {
+           Method (_STA) { Return(\_SB.UCP3) }
+        }
     }
 
     Scope (\_SB)
@@ -147,7 +177,11 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             UHPT,  32,
             USMC,  32,
             UFDC,  32,
+            // @todo: maybe make it bitmask instead?
             UCP0,  32,
+            UCP1,  32,
+            UCP2,  32,
+            UCP3,  32,
             Offset (0x80),
             ININ, 32,
             Offset (0x200),
@@ -899,7 +933,9 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     0x01,               // Alignment
                     0x20,               // Length
                     )
-                //IRQNoFlags () {8}
+                // This line seriously confuses Windows ACPI driver, so not even try to 
+                // enable SMC for Windows guests
+                IRQNoFlags () {8}
             })
         }
 
