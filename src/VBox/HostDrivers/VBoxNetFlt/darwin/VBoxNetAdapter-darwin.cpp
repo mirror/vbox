@@ -44,60 +44,60 @@ __END_DECLS
 #include <sys/errno.h>
 #include <sys/param.h>
 
-#define VBOXTAP_MAX_INSTANCES  8
-#define VBOXTAP_MAX_FAMILIES   4
-#define VBOXTAP_NAME           "vboxnet"
-#define VBOXTAP_MTU            1500
-#define VBOXTAP_DETACH_TIMEOUT 500
+#define VBOXNETADA_MAX_INSTANCES  8
+#define VBOXNETADA_MAX_FAMILIES   4
+#define VBOXNETADA_NAME           "vboxnet"
+#define VBOXNETADA_MTU            1500
+#define VBOXNETADA_DETACH_TIMEOUT 500
 
-#define VBOXTAP_FROM_IFACE(iface) ((PVBOXTAP) ifnet_softc(iface))
+#define VBOXNETADA_FROM_IFACE(iface) ((PVBOXNETADA) ifnet_softc(iface))
 
 /**
- * Void TAPs mark vacant slots in TAP array. Valid TAPs are busy slots.
+ * Void NETADAs mark vacant slots in NETADA array. Valid NETADAs are busy slots.
  * As soon as slot is being modified its state changes to transitional.
- * TAPs in transitional state must only be accessed by the thread that
+ * NETADAs in transitional state must only be accessed by the thread that
  * put it to this state.
  */
-enum VBoxTapState
+enum VBoxNetAdaState
 {
-    VBOXTAP_ST_VOID,
-    VBOXTAP_ST_TRANSITIONAL,
-    VBOXTAP_ST_VALID
+    VBOXNETADA_ST_VOID,
+    VBOXNETADA_ST_TRANSITIONAL,
+    VBOXNETADA_ST_VALID
 };
-typedef enum VBoxTapState VBOXTAPSTATE;
+typedef enum VBoxNetAdaState VBOXNETADASTATE;
 
-struct VBoxTap
+struct VBoxNetAda
 {
     /** Mutex protecting access to enmState. */
     RTSEMFASTMUTEX    hStateMtx;
-    /** Denotes availability of this TAP. */
-    VBOXTAPSTATE      enmState;
-    /** Corresponds to the digit at the end of TAP name. */
+    /** Denotes availability of this NETADA. */
+    VBOXNETADASTATE      enmState;
+    /** Corresponds to the digit at the end of NETADA name. */
     uint8_t           uUnit;
     /** Event to signal detachment of interface. */
     RTSEMEVENT        hEvtDetached;
     /** Pointer to Darwin interface structure. */
     ifnet_t           pIface;
     /* todo: MAC address? */
-    /** Protocol families attached to this TAP. */
-    protocol_family_t aAttachedFamilies[VBOXTAP_MAX_FAMILIES];
+    /** Protocol families attached to this NETADA. */
+    protocol_family_t aAttachedFamilies[VBOXNETADA_MAX_FAMILIES];
 };
-typedef struct VBoxTap VBOXTAP;
-typedef VBOXTAP *PVBOXTAP;
+typedef struct VBoxNetAda VBOXNETADA;
+typedef VBOXNETADA *PVBOXNETADA;
 
-VBOXTAP g_aTaps[VBOXTAP_MAX_INSTANCES];
+VBOXNETADA g_aAdapters[VBOXNETADA_MAX_INSTANCES];
 
-DECLINLINE(bool) vboxTAPIsValid(PVBOXTAP pTap)
+DECLINLINE(bool) vboxNetAdaIsValid(PVBOXNETADA pAda)
 {
-    return pTap->enmState == VBOXTAP_ST_VALID;
+    return pAda->enmState == VBOXNETADA_ST_VALID;
 }
 
-DECLINLINE(bool) vboxTAPIsVoid(PVBOXTAP pTap)
+DECLINLINE(bool) vboxNetAdaIsVoid(PVBOXNETADA pAda)
 {
-    return pTap->enmState == VBOXTAP_ST_VOID;
+    return pAda->enmState == VBOXNETADA_ST_VOID;
 }
 
-static void vboxTAPComposeMACAddress(PVBOXTAP pTap, PCRTMAC pCustomMac, struct sockaddr_dl *pMac)
+static void vboxNetAdaComposeMACAddress(PVBOXNETADA pAda, PCRTMAC pCustomMac, struct sockaddr_dl *pMac)
 {
     pMac->sdl_len = sizeof(*pMac);
     pMac->sdl_family = AF_LINK;
@@ -109,233 +109,233 @@ static void vboxTAPComposeMACAddress(PVBOXTAP pTap, PCRTMAC pCustomMac, struct s
     else
     {
         memcpy(LLADDR(pMac), "\0vbox0", pMac->sdl_alen);
-        LLADDR(pMac)[ETHER_ADDR_LEN - 1] += pTap->uUnit;
+        LLADDR(pMac)[ETHER_ADDR_LEN - 1] += pAda->uUnit;
     }
 }
 
-static void vboxTAPComposeUUID(PVBOXTAP pTap, PRTUUID pUuid)
+static void vboxNetAdaComposeUUID(PVBOXNETADA pAda, PRTUUID pUuid)
 {
     /* Generate UUID from name and MAC address. */
     RTUuidClear(pUuid);
     memcpy(pUuid->au8, "vboxnet", 7);
     pUuid->Gen.u8ClockSeqHiAndReserved = (pUuid->Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
     pUuid->Gen.u16TimeHiAndVersion = (pUuid->Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
-    pUuid->Gen.u8ClockSeqLow = pTap->uUnit;
+    pUuid->Gen.u8ClockSeqLow = pAda->uUnit;
     memcpy(pUuid->Gen.au8Node, "\0vbox0", sizeof(pUuid->Gen.au8Node));
-    pUuid->Gen.au8Node[sizeof(pUuid->Gen.au8Node) - 1] += pTap->uUnit;
+    pUuid->Gen.au8Node[sizeof(pUuid->Gen.au8Node) - 1] += pAda->uUnit;
 }
 
 
-static errno_t vboxTAPOutput(ifnet_t pIface, mbuf_t pMBuf)
+static errno_t vboxNetAdaOutput(ifnet_t pIface, mbuf_t pMBuf)
 {
     mbuf_freem_list(pMBuf);
     return 0;
 }
 
-static void vboxTAPAttachFamily(PVBOXTAP pTap, protocol_family_t Family)
+static void vboxNetAdaAttachFamily(PVBOXNETADA pAda, protocol_family_t Family)
 {
     u_int32_t i;
-    for (i = 0; i < VBOXTAP_MAX_FAMILIES; i++)
-        if (pTap->aAttachedFamilies[i] == 0)
+    for (i = 0; i < VBOXNETADA_MAX_FAMILIES; i++)
+        if (pAda->aAttachedFamilies[i] == 0)
         {
-            pTap->aAttachedFamilies[i] = Family;
+            pAda->aAttachedFamilies[i] = Family;
             break;
         }
 }
 
-static void vboxTAPDetachFamily(PVBOXTAP pTap, protocol_family_t Family)
+static void vboxNetAdaDetachFamily(PVBOXNETADA pAda, protocol_family_t Family)
 {
     u_int32_t i;
-    for (i = 0; i < VBOXTAP_MAX_FAMILIES; i++)
-        if (pTap->aAttachedFamilies[i] == Family)
-            pTap->aAttachedFamilies[i] = 0;
+    for (i = 0; i < VBOXNETADA_MAX_FAMILIES; i++)
+        if (pAda->aAttachedFamilies[i] == Family)
+            pAda->aAttachedFamilies[i] = 0;
 }
 
-static errno_t vboxTAPAddProto(ifnet_t pIface, protocol_family_t Family, const struct ifnet_demux_desc *pDemuxDesc, u_int32_t nDesc)
+static errno_t vboxNetAdaAddProto(ifnet_t pIface, protocol_family_t Family, const struct ifnet_demux_desc *pDemuxDesc, u_int32_t nDesc)
 {
-    PVBOXTAP pTap = VBOXTAP_FROM_IFACE(pIface);
-    Assert(pTap);
-    vboxTAPAttachFamily(pTap, Family);
-    LogFlow(("vboxTAPAddProto: Family=%d.\n", Family));
+    PVBOXNETADA pAda = VBOXNETADA_FROM_IFACE(pIface);
+    Assert(pAda);
+    vboxNetAdaAttachFamily(pAda, Family);
+    LogFlow(("vboxNetAdaAddProto: Family=%d.\n", Family));
     return ether_add_proto(pIface, Family, pDemuxDesc, nDesc);
 }
 
-static errno_t vboxTAPDelProto(ifnet_t pIface, protocol_family_t Family)
+static errno_t vboxNetAdaDelProto(ifnet_t pIface, protocol_family_t Family)
 {
-    PVBOXTAP pTap = VBOXTAP_FROM_IFACE(pIface);
-    Assert(pTap);
-    LogFlow(("vboxTAPDelProto: Family=%d.\n", Family));
-    vboxTAPDetachFamily(pTap, Family);
+    PVBOXNETADA pAda = VBOXNETADA_FROM_IFACE(pIface);
+    Assert(pAda);
+    LogFlow(("vboxNetAdaDelProto: Family=%d.\n", Family));
+    vboxNetAdaDetachFamily(pAda, Family);
     return ether_del_proto(pIface, Family);
 }
 
-static void vboxTAPDetach(ifnet_t pIface)
+static void vboxNetAdaDetach(ifnet_t pIface)
 {
-    PVBOXTAP pTap = VBOXTAP_FROM_IFACE(pIface);
-    Assert(pTap);
-    Log(("vboxTAPDetach: Signaling detach to vboxTAPUnregisterDevice.\n"));
-    /* Let vboxTAPUnregisterDevice know that the interface has been detached. */
-    RTSemEventSignal(pTap->hEvtDetached);
+    PVBOXNETADA pAda = VBOXNETADA_FROM_IFACE(pIface);
+    Assert(pAda);
+    Log(("vboxNetAdaDetach: Signaling detach to vboxNetAdaUnregisterDevice.\n"));
+    /* Let vboxNetAdaUnregisterDevice know that the interface has been detached. */
+    RTSemEventSignal(pAda->hEvtDetached);
 }
 
 
-static int vboxTAPRegisterDevice(PVBOXTAP pTap, const struct sockaddr_dl *pMACAddress)
+static int vboxNetAdaRegisterDevice(PVBOXNETADA pAda, const struct sockaddr_dl *pMACAddress)
 {
     struct ifnet_init_params Params;
     RTUUID uuid;
     
-    vboxTAPComposeUUID(pTap, &uuid);
+    vboxNetAdaComposeUUID(pAda, &uuid);
     Params.uniqueid = uuid.au8;
     Params.uniqueid_len = sizeof(uuid);
-    Params.name = VBOXTAP_NAME;
-    Params.unit = pTap->uUnit;
+    Params.name = VBOXNETADA_NAME;
+    Params.unit = pAda->uUnit;
     Params.family = IFNET_FAMILY_ETHERNET;
     Params.type = IFT_ETHER;
-    Params.output = vboxTAPOutput;
+    Params.output = vboxNetAdaOutput;
     Params.demux = ether_demux;
-    Params.add_proto = vboxTAPAddProto;
-    Params.del_proto = vboxTAPDelProto;
+    Params.add_proto = vboxNetAdaAddProto;
+    Params.del_proto = vboxNetAdaDelProto;
     Params.check_multi = ether_check_multi;
     Params.framer = ether_frameout;
-    Params.softc = pTap;
+    Params.softc = pAda;
     Params.ioctl = ether_ioctl;
     Params.set_bpf_tap = NULL;
-    Params.detach = vboxTAPDetach;
+    Params.detach = vboxNetAdaDetach;
     Params.event = NULL;
     Params.broadcast_addr = "\xFF\xFF\xFF\xFF\xFF\xFF";
     Params.broadcast_len = ETHER_ADDR_LEN;
 
-    errno_t err = ifnet_allocate(&Params, &pTap->pIface);
+    errno_t err = ifnet_allocate(&Params, &pAda->pIface);
     if (!err)
     {
-        err = ifnet_attach(pTap->pIface, pMACAddress);
+        err = ifnet_attach(pAda->pIface, pMACAddress);
         if (!err)
         {
-            err = ifnet_set_flags(pTap->pIface, IFF_RUNNING | IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST, 0xFFFF);
+            err = ifnet_set_flags(pAda->pIface, IFF_RUNNING | IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST, 0xFFFF);
             if (!err)
             {
-                ifnet_set_mtu(pTap->pIface, VBOXTAP_MTU);
+                ifnet_set_mtu(pAda->pIface, VBOXNETADA_MTU);
                 return VINF_SUCCESS;
             }
             else
-                Log(("vboxTAPRegisterDevice: Failed to set flags (err=%d).\n", err));
-            ifnet_detach(pTap->pIface);
+                Log(("vboxNetAdaRegisterDevice: Failed to set flags (err=%d).\n", err));
+            ifnet_detach(pAda->pIface);
         }
         else
-            Log(("vboxTAPRegisterDevice: Failed to attach to interface (err=%d).\n", err));
-        ifnet_release(pTap->pIface);
+            Log(("vboxNetAdaRegisterDevice: Failed to attach to interface (err=%d).\n", err));
+        ifnet_release(pAda->pIface);
     }
     else
-        Log(("vboxTAPRegisterDevice: Failed to allocate interface (err=%d).\n", err));
+        Log(("vboxNetAdaRegisterDevice: Failed to allocate interface (err=%d).\n", err));
 
     return RTErrConvertFromErrno(err);
 }
 
-static int vboxTAPUnregisterDevice(PVBOXTAP pTap)
+static int vboxNetAdaUnregisterDevice(PVBOXNETADA pAda)
 {
     u_int32_t i;
     /* Bring down the interface */
     int rc = VINF_SUCCESS;
-    errno_t err = ifnet_set_flags(pTap->pIface, 0, IFF_UP | IFF_RUNNING);
+    errno_t err = ifnet_set_flags(pAda->pIface, 0, IFF_UP | IFF_RUNNING);
     if (err)
-        Log(("vboxTAPUnregisterDevice: Failed to bring down interface "
+        Log(("vboxNetAdaUnregisterDevice: Failed to bring down interface "
              "(err=%d).\n", err));
     /* Detach all protocols. */
-    for (i = 0; i < VBOXTAP_MAX_FAMILIES; i++)
-        if (pTap->aAttachedFamilies[i])
-            ifnet_detach_protocol(pTap->pIface, pTap->aAttachedFamilies[i]);
+    for (i = 0; i < VBOXNETADA_MAX_FAMILIES; i++)
+        if (pAda->aAttachedFamilies[i])
+            ifnet_detach_protocol(pAda->pIface, pAda->aAttachedFamilies[i]);
     /*
      * We acquire the lock twice: before and after ifnet_detach.
      * The second attempt to get the lock will block until the lock
      * is released in detach callback.
      */
-    err = ifnet_detach(pTap->pIface);
+    err = ifnet_detach(pAda->pIface);
     if (err)
-        Log(("vboxTAPUnregisterDevice: Failed to detach interface "
+        Log(("vboxNetAdaUnregisterDevice: Failed to detach interface "
              "(err=%d).\n", err));
-    Log2(("vboxTAPUnregisterDevice: Trying to acquire lock second time.\n"));
-    rc = RTSemEventWait(pTap->hEvtDetached, VBOXTAP_DETACH_TIMEOUT);
+    Log2(("vboxNetAdaUnregisterDevice: Trying to acquire lock second time.\n"));
+    rc = RTSemEventWait(pAda->hEvtDetached, VBOXNETADA_DETACH_TIMEOUT);
     if (rc == VERR_TIMEOUT)
-        LogRel(("VBoxTAP: Failed to detach interface %s%d\n.",
-                VBOXTAP_NAME, pTap->uUnit));
-    err = ifnet_release(pTap->pIface);
+        LogRel(("VBoxNETADA: Failed to detach interface %s%d\n.",
+                VBOXNETADA_NAME, pAda->uUnit));
+    err = ifnet_release(pAda->pIface);
     if (err)
-        Log(("vboxTAPUnregisterDevice: Failed to release interface (err=%d).\n", err));
+        Log(("vboxNetAdaUnregisterDevice: Failed to release interface (err=%d).\n", err));
     
     return rc;
 }
 
-int vboxTAPCreate (PVBOXTAP *ppTap, PCRTMAC pMac)
+int vboxNetAdaCreate (PVBOXNETADA *ppAda, PCRTMAC pMac)
 {
     int rc;
     unsigned i;
 
-    for (i = 0; i < RT_ELEMENTS(g_aTaps); i++)
+    for (i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
     {
-        PVBOXTAP pTap = &g_aTaps[i];
-        RTSemFastMutexRequest(pTap->hStateMtx);
-        if (vboxTAPIsVoid(pTap))
+        PVBOXNETADA pAda = &g_aAdapters[i];
+        RTSemFastMutexRequest(pAda->hStateMtx);
+        if (vboxNetAdaIsVoid(pAda))
         {
-            pTap->enmState = VBOXTAP_ST_TRANSITIONAL;
-            RTSemFastMutexRelease(pTap->hStateMtx);
+            pAda->enmState = VBOXNETADA_ST_TRANSITIONAL;
+            RTSemFastMutexRelease(pAda->hStateMtx);
             /* Found an empty slot -- use it. */
             struct sockaddr_dl mac;
-            Assert(pTap->hEvtDetached == NIL_RTSEMEVENT);
-            rc = RTSemEventCreate(&pTap->hEvtDetached);
+            Assert(pAda->hEvtDetached == NIL_RTSEMEVENT);
+            rc = RTSemEventCreate(&pAda->hEvtDetached);
             if (RT_FAILURE(rc))
                 return rc;
-            pTap->uUnit = i;
-                vboxTAPComposeMACAddress(pTap, pMac, &mac);
-            rc = vboxTAPRegisterDevice(pTap, &mac);
-            *ppTap = pTap;
-            RTSemFastMutexRequest(pTap->hStateMtx);
-            pTap->enmState = VBOXTAP_ST_VALID;
-            RTSemFastMutexRelease(pTap->hStateMtx);
+            pAda->uUnit = i;
+                vboxNetAdaComposeMACAddress(pAda, pMac, &mac);
+            rc = vboxNetAdaRegisterDevice(pAda, &mac);
+            *ppAda = pAda;
+            RTSemFastMutexRequest(pAda->hStateMtx);
+            pAda->enmState = VBOXNETADA_ST_VALID;
+            RTSemFastMutexRelease(pAda->hStateMtx);
             return rc;
         }
-        RTSemFastMutexRelease(pTap->hStateMtx);
+        RTSemFastMutexRelease(pAda->hStateMtx);
     }
 
-    /* All slots in TAP array are busy. */
+    /* All slots in NETADA array are busy. */
     return VERR_OUT_OF_RESOURCES;
 }
 
-int vboxTAPDestroy (PVBOXTAP pTap)
+int vboxNetAdaDestroy (PVBOXNETADA pAda)
 {
     int rc;
 
-    RTSemFastMutexRequest(pTap->hStateMtx);
-    if (!vboxTAPIsValid(pTap))
+    RTSemFastMutexRequest(pAda->hStateMtx);
+    if (!vboxNetAdaIsValid(pAda))
     {
-        RTSemFastMutexRelease(pTap->hStateMtx);
+        RTSemFastMutexRelease(pAda->hStateMtx);
         return VERR_INVALID_PARAMETER;
     }
-    pTap->enmState = VBOXTAP_ST_TRANSITIONAL;
-    RTSemFastMutexRelease(pTap->hStateMtx);
+    pAda->enmState = VBOXNETADA_ST_TRANSITIONAL;
+    RTSemFastMutexRelease(pAda->hStateMtx);
 
-    rc = vboxTAPUnregisterDevice(pTap);
+    rc = vboxNetAdaUnregisterDevice(pAda);
     if (RT_FAILURE(rc))
-        Log(("vboxTAPDestroy: Failed to unregister device (rc=%Rrc).\n", rc));
+        Log(("vboxNetAdaDestroy: Failed to unregister device (rc=%Rrc).\n", rc));
 
-    RTSemEventDestroy(pTap->hEvtDetached);
-    pTap->hEvtDetached = NIL_RTSEMEVENT;
+    RTSemEventDestroy(pAda->hEvtDetached);
+    pAda->hEvtDetached = NIL_RTSEMEVENT;
 
-    RTSemFastMutexRequest(pTap->hStateMtx);
-    pTap->enmState = VBOXTAP_ST_VOID;
-    RTSemFastMutexRelease(pTap->hStateMtx);
+    RTSemFastMutexRequest(pAda->hStateMtx);
+    pAda->enmState = VBOXNETADA_ST_VOID;
+    RTSemFastMutexRelease(pAda->hStateMtx);
 
     return rc;
 }
 
-int vboxTAPModuleStart(void)
+int vboxNetAdaModuleStart(void)
 {
-    memset(&g_aTaps, 0, sizeof(g_aTaps));
-    for (unsigned i = 0; i < RT_ELEMENTS(g_aTaps); i++)
+    memset(&g_aAdapters, 0, sizeof(g_aAdapters));
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
     {
-        int rc = RTSemFastMutexCreate(&g_aTaps[i].hStateMtx);
+        int rc = RTSemFastMutexCreate(&g_aAdapters[i].hStateMtx);
         if (RT_FAILURE(rc))
         {
-            Log(("VBoxTAP: Failed to create fast mutex (rc=%Rrc).\n", rc));
+            Log(("VBoxNetAdapter: Failed to create fast mutex (rc=%Rrc).\n", rc));
             return rc;
         }
     }
@@ -343,17 +343,17 @@ int vboxTAPModuleStart(void)
     return VINF_SUCCESS;
 }
 
-int vboxTAPModuleStop(void)
+int vboxNetAdaModuleStop(void)
 {
     int rc;
     unsigned i;
 
-    for (i = 0; i < RT_ELEMENTS(g_aTaps); i++)
+    for (i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
     {
-        vboxTAPDestroy(&g_aTaps[i]);
-        rc = RTSemFastMutexDestroy(g_aTaps[i].hStateMtx);
+        vboxNetAdaDestroy(&g_aAdapters[i]);
+        rc = RTSemFastMutexDestroy(g_aAdapters[i].hStateMtx);
         if (RT_FAILURE(rc))
-            Log(("VBoxTAP: Failed to destroy fast mutex (rc=%Rrc).\n", rc));
+            Log(("VBoxNetAdapter: Failed to destroy fast mutex (rc=%Rrc).\n", rc));
     }
 
     return VINF_SUCCESS;
