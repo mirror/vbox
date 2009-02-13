@@ -2138,25 +2138,24 @@ TEMPLATE_VBOXR0DRV_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS) KERNEL KERN
 TEMPLATE_VBOXR0DRV_INCS               += $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) \
 	-g -pipe $(VBOX_GCC_WARN) -Wno-long-long -fno-common -nostdinc -fno-builtin -finline \
-	-fno-keep-inline-functions -fno-exceptions -msoft-float -static \
-	-fapple-kext -fno-rtti -fcheck-new
-## @todo check what Xcode does wrt -mno-sse -mno-mmx -mno-sse2 -mno-3dnow on amd64.
-TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = -m64 -mno-red-zone
-TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32 -force_cpusubtype_ALL
+	-fno-keep-inline-functions -fno-exceptions -msoft-float \
+	-fapple-kext -fno-rtti -fcheck-new -force_cpusubtype_ALL
+TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = -m64 -mkernel -mno-red-zone -gdwarf-2
+TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32 -static
 TEMPLATE_VBOXR0DRV_CXXFLAGS.release    = $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing -fasm-blocks
 TEMPLATE_VBOXR0DRV_CXXFLAGS.profile    = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
 TEMPLATE_VBOXR0DRV_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
 TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) \
 	-g -pipe $(VBOX_GCC_WARN) -Wno-long-long -fno-common -nostdinc -fno-builtin -finline \
-	-fno-keep-inline-functions -fno-exceptions -msoft-float -static \
-	-Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-red-zone
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -force_cpusubtype_ALL
+	-fno-keep-inline-functions -fno-exceptions -msoft-float \
+	-Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -force_cpusubtype_ALL
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mkernel -mno-red-zone -gdwarf-2
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -static
 TEMPLATE_VBOXR0DRV_CFLAGS.release      = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
 TEMPLATE_VBOXR0DRV_CFLAGS.profile      = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.profile)
 TEMPLATE_VBOXR0DRV_CFLAGS.kprofile     = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.kprofile)
 TEMPLATE_VBOXR0DRV_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -static -nostdlib -r -Wl,-Y,1455 -keep_private_extern
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64 -Xlinker -kext
 TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
 
