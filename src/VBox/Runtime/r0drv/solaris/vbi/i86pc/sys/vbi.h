@@ -36,6 +36,8 @@ extern "C" {
  * facilities. The interface uses limited types when crossing the kernel
  * to hypervisor boundary. (void *) is for handles and function and other
  * pointers. uint64 for physical addresses, size_t and int elsewhere.
+ * The goal is for this module to eventually be part of OpenSolaris once
+ * interfaces have become more stable.
  */
 
 /*
