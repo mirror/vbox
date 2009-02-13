@@ -1282,6 +1282,7 @@ static void
 VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
 {
     VBOXPtr pVBox = VBOXGetRec(xf86Screens[scrnIndex]);
+    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
 
     TRACE;
     /* Don't fiddle with the hardware if we are switched
@@ -1289,7 +1290,12 @@ VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
     if (!pVBox->vtSwitch) {
         pVBox->viewportX = x;
         pVBox->viewportY = y;
+        /* If VBVA is enabled the graphics card will not notice the change. */
+        if (pVBox->useVbva == TRUE)
+            vboxDisableVbva(pScrn);
         VBESetDisplayStart(pVBox->pVbe, x, y, TRUE);
+        if (pVBox->useVbva == TRUE)
+            vboxEnableVbva(pScrn);
     }
     TRACE2;
 }
