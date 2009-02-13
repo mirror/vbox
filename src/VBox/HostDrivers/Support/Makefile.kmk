@@ -337,7 +337,9 @@ VBoxDrv.kext_INST     = $(INST_VBOXDRV)Contents/
 VBoxDrv.kext_SOURCES  =	$(PATH_VBoxDrv.kext)/Info.plist
 VBoxDrv.kext_CLEAN    =	$(PATH_VBoxDrv.kext)/Info.plist
 
-$$(PATH_VBoxDrv.kext)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
+$$(PATH_VBoxDrv.kext)/Info.plist: \
+		$(PATH_SUB_CURRENT)/darwin/Info$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64",-SnowLeopard,).plist \
+		$(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxDrv,$@,$<)
 	$(xQUIET)$(RM) -f $@
 	$(xQUIET)$(SED) \
@@ -345,7 +347,6 @@ $$(PATH_VBoxDrv.kext)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_V
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64",-e '/com\.apple\.kernel/d',) \
 		--output $@ \
 		$<
 
