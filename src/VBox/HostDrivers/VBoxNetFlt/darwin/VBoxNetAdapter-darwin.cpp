@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxTAP - Network TAP Driver (Host), Darwin Specific Code.
+ * VBoxNetAdapter - Virtual Network Adapter Driver (Host), Darwin Specific Code.
  */
 
 /*
@@ -173,7 +173,7 @@ static void vboxNetAdaDetach(ifnet_t pIface)
 {
     PVBOXNETADA pAda = VBOXNETADA_FROM_IFACE(pIface);
     Assert(pAda);
-    Log(("vboxNetAdaDetach: Signaling detach to vboxNetAdaUnregisterDevice.\n"));
+    Log2(("vboxNetAdaDetach: Signaling detach to vboxNetAdaUnregisterDevice.\n"));
     /* Let vboxNetAdaUnregisterDevice know that the interface has been detached. */
     RTSemEventSignal(pAda->hEvtDetached);
 }
@@ -244,16 +244,12 @@ static int vboxNetAdaUnregisterDevice(PVBOXNETADA pAda)
     for (i = 0; i < VBOXNETADA_MAX_FAMILIES; i++)
         if (pAda->aAttachedFamilies[i])
             ifnet_detach_protocol(pAda->pIface, pAda->aAttachedFamilies[i]);
-    /*
-     * We acquire the lock twice: before and after ifnet_detach.
-     * The second attempt to get the lock will block until the lock
-     * is released in detach callback.
-     */
     err = ifnet_detach(pAda->pIface);
     if (err)
         Log(("vboxNetAdaUnregisterDevice: Failed to detach interface "
              "(err=%d).\n", err));
-    Log2(("vboxNetAdaUnregisterDevice: Trying to acquire lock second time.\n"));
+    Log2(("vboxNetAdaUnregisterDevice: Waiting for 'detached' event...\n"));
+    /* Wait until we get a signal from detach callback. */
     rc = RTSemEventWait(pAda->hEvtDetached, VBOXNETADA_DETACH_TIMEOUT);
     if (rc == VERR_TIMEOUT)
         LogRel(("VBoxNETADA: Failed to detach interface %s%d\n.",
@@ -296,7 +292,7 @@ int vboxNetAdaCreate (PVBOXNETADA *ppAda, PCRTMAC pMac)
         RTSemFastMutexRelease(pAda->hStateMtx);
     }
 
-    /* All slots in NETADA array are busy. */
+    /* All slots in adapter array are busy. */
     return VERR_OUT_OF_RESOURCES;
 }
 
@@ -335,7 +331,7 @@ int vboxNetAdaModuleStart(void)
         int rc = RTSemFastMutexCreate(&g_aAdapters[i].hStateMtx);
         if (RT_FAILURE(rc))
         {
-            Log(("VBoxNetAdapter: Failed to create fast mutex (rc=%Rrc).\n", rc));
+            Log(("vboxNetAdaModuleStart: Failed to create fast mutex (rc=%Rrc).\n", rc));
             return rc;
         }
     }
@@ -353,7 +349,7 @@ int vboxNetAdaModuleStop(void)
         vboxNetAdaDestroy(&g_aAdapters[i]);
         rc = RTSemFastMutexDestroy(g_aAdapters[i].hStateMtx);
         if (RT_FAILURE(rc))
-            Log(("VBoxNetAdapter: Failed to destroy fast mutex (rc=%Rrc).\n", rc));
+            Log(("vboxNetAdaModuleStop: Failed to destroy fast mutex (rc=%Rrc).\n", rc));
     }
 
     return VINF_SUCCESS;
