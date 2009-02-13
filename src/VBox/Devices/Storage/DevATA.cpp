@@ -29,7 +29,8 @@
 /**
  * The SSM saved state versions.
  */
-#define ATA_SAVED_STATE_VERSION 18
+#define ATA_SAVED_STATE_VERSION 19
+#define ATA_SAVED_STATE_VERSION_WITH_BOOL_TYPE     18
 #define ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE 16
 #define ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS 17
 
@@ -421,6 +422,16 @@ typedef struct ATACONTROLLER
     STAMPROFILE     StatLockWait;
 } ATACONTROLLER, *PATACONTROLLER;
 
+typedef enum CHIPSET
+{
+    /** PIIX3 chipset, must be 0 for saved state compatibility */
+    CHIPSET_PIIX3 = 0,
+    /** PIIX4 chipset, must be 1 for saved state compatibility */
+    CHIPSET_PIIX4 = 1,
+    /** ICH6 chipset */
+    CHIPSET_ICH6 = 2
+} CHIPSET;
+
 typedef struct PCIATAState {
     PCIDEVICE           dev;
     /** The controllers. */
@@ -437,9 +448,9 @@ typedef struct PCIATAState {
     bool                fGCEnabled;
     /** Flag whether R0 is enabled. */
     bool                fR0Enabled;
-    /** Flag indicating whether PIIX4 or PIIX3 is being emulated. */
-    bool                fPIIX4;
-    bool                Alignment0[HC_ARCH_BITS == 64 ? 5 : 1]; /**< Align the struct size. */
+    /** Flag indicating chipset being emulated. */
+    uint8_t             u8Type;
+    bool                Alignment0[HC_ARCH_BITS == 64 ? 5 : 1 ]; /**< Align the struct size. */
 } PCIATAState;
 
 #define PDMIBASE_2_PCIATASTATE(pInterface)      ( (PCIATAState *)((uintptr_t)(pInterface) - RT_OFFSETOF(PCIATAState, IBase)) )
@@ -5918,7 +5929,7 @@ static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
                 Assert(pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer) == NULL);
         }
     }
-    SSMR3PutBool(pSSMHandle, pThis->fPIIX4);
+    SSMR3PutU8(pSSMHandle, pThis->u8Type);
 
     return SSMR3PutU32(pSSMHandle, ~0); /* sanity/terminator */
 }
@@ -5940,7 +5951,8 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
 
     if (   u32Version != ATA_SAVED_STATE_VERSION
         && u32Version != ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE
-        && u32Version != ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS)
+        && u32Version != ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS
+        && u32Version != ATA_SAVED_STATE_VERSION_WITH_BOOL_TYPE)
     {
         AssertMsgFailed(("u32Version=%d\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -6058,7 +6070,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
                 Assert(pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer) == NULL);
         }
     }
-    SSMR3GetBool(pSSMHandle, &pThis->fPIIX4);
+    SSMR3GetU8(pSSMHandle, &pThis->u8Type);
 
     rc = SSMR3GetU32(pSSMHandle, &u32);
     if (RT_FAILURE(rc))
@@ -6111,7 +6123,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0IRQDelay\0R0Enabled\0PIIX4\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0IRQDelay\0R0Enabled\0PIIX4\0ICH6\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("PIIX3 configuration error: unknown option specified"));
 
@@ -6134,11 +6146,25 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     Log(("%s: DelayIRQMillies=%d\n", __FUNCTION__, DelayIRQMillies));
     Assert(DelayIRQMillies < 50);
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "PIIX4", &pThis->fPIIX4, false);
+    pThis->u8Type = CHIPSET_PIIX3;
+    bool fPIIX4;
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "PIIX4", &fPIIX4, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read PIIX4 as boolean"));
-    Log(("%s: fPIIX4=%d\n", __FUNCTION__, pThis->fPIIX4));
+    Log(("%s: fPIIX4=%d\n", __FUNCTION__, fPIIX4));
+    if (fPIIX4)
+        pThis->u8Type = CHIPSET_PIIX4;
+
+    /** @todo: Need to implement better IDE chipset configuration mechanism */
+    bool fICH6;
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "ICH6", &fICH6, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("PIIX3 configuration error: failed to read ICH6 as boolean"));
+    Log(("%s: fICH6=%d\n", __FUNCTION__, fICH6));
+    if (fICH6)
+        pThis->u8Type = CHIPSET_ICH6;
 
     /*
      * Initialize data (most of it anyway).
@@ -6149,16 +6175,34 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /* PCI configuration space. */
     PCIDevSetVendorId(&pThis->dev, 0x8086); /* Intel */
-    if (pThis->fPIIX4)
+
+    /* 
+     * When adding more IDE chipsets, don't forget to update pci_bios_init_device()
+     * as it explicitly checks for PCI id for IDE controllers.
+     */
+    switch (pThis->u8Type)
     {
-        PCIDevSetDeviceId(&pThis->dev, 0x7111); /* PIIX4 IDE */
-        PCIDevSetRevisionId(&pThis->dev, 0x01); /* PIIX4E */
-        pThis->dev.config[0x48] = 0x00; /* UDMACTL */
-        pThis->dev.config[0x4A] = 0x00; /* UDMATIM */
-        pThis->dev.config[0x4B] = 0x00;
+        case CHIPSET_ICH6:
+            PCIDevSetDeviceId(&pThis->dev, 0x269e); /* ICH6 IDE */
+            /** @todo: do we need it? Do we need anything else? */
+            pThis->dev.config[0x48] = 0x00; /* UDMACTL */
+            pThis->dev.config[0x4A] = 0x00; /* UDMATIM */
+            pThis->dev.config[0x4B] = 0x00;
+            break;
+        case CHIPSET_PIIX4:
+            PCIDevSetDeviceId(&pThis->dev, 0x7111); /* PIIX4 IDE */
+            PCIDevSetRevisionId(&pThis->dev, 0x01); /* PIIX4E */
+            pThis->dev.config[0x48] = 0x00; /* UDMACTL */
+            pThis->dev.config[0x4A] = 0x00; /* UDMATIM */
+            pThis->dev.config[0x4B] = 0x00;
+            break;
+        case CHIPSET_PIIX3:
+            PCIDevSetDeviceId(&pThis->dev, 0x7010); /* PIIX3 IDE */
+            break;
+        default:
+            AssertMsgFailed(("Unsupported IDE chipset type: %d\n", pThis->u8Type));
     }
-    else
-        PCIDevSetDeviceId(&pThis->dev, 0x7010); /* PIIX3 IDE */
+
     PCIDevSetCommand(   &pThis->dev, PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS | PCI_COMMAND_BUSMASTER);
     PCIDevSetClassProg( &pThis->dev, 0x8a); /* programming interface = PCI_IDE bus master is supported */
     PCIDevSetClassSub(  &pThis->dev, 0x01); /* class_sub = PCI_IDE */
@@ -6532,4 +6576,3 @@ const PDMDEVREG g_DevicePIIX3IDE =
 };
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-
