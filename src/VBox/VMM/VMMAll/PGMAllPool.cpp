@@ -2414,9 +2414,25 @@ static int pgmPoolTrackFreeOneUser(PPGMPOOL pPool, uint16_t iUser)
 DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhys, uint16_t iUser, uint32_t iUserTable)
 {
     int rc = VINF_SUCCESS;
-    PPGMPOOLUSER pUser = pPool->CTX_SUFF(paUsers);
+    PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
 
     LogFlow(("pgmPoolTrackInsert iUser %x iUserTable %x\n", iUser, iUserTable));
+
+#ifdef VBOX_STRICT
+    /*
+     * Check that the entry doesn't already exists.
+     */
+    if (pPage->iUserHead != NIL_PGMPOOL_USER_INDEX)
+    {
+        uint16_t i = pPage->iUserHead;
+        do
+        {
+            Assert(i < pPool->cMaxUsers);
+            AssertMsg(paUsers[i].iUser != iUser || paUsers[i].iUserTable != iUserTable, ("%x %x vs new %x %x\n", paUsers[i].iUser, paUsers[i].iUserTable, iUser, iUserTable));
+            i = paUsers[i].iNext;
+        } while (i != NIL_PGMPOOL_USER_INDEX);
+    }
+#endif
 
     /*
      * Find free a user node.
@@ -2434,10 +2450,10 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
      * Unlink the user node from the free list,
      * initialize and insert it into the user list.
      */
-    pPool->iUserFreeHead = pUser[i].iNext;
-    pUser[i].iNext = NIL_PGMPOOL_USER_INDEX;
-    pUser[i].iUser = iUser;
-    pUser[i].iUserTable = iUserTable;
+    pPool->iUserFreeHead = paUsers[i].iNext;
+    paUsers[i].iNext = NIL_PGMPOOL_USER_INDEX;
+    paUsers[i].iUser = iUser;
+    paUsers[i].iUserTable = iUserTable;
     pPage->iUserHead = i;
 
     /*
@@ -2475,8 +2491,8 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
             rc = VERR_PGM_POOL_FLUSHED;
 #  endif
             pPage->iUserHead = NIL_PGMPOOL_USER_INDEX;
-            pUser[i].iNext = pPool->iUserFreeHead;
-            pUser[i].iUser = NIL_PGMPOOL_IDX;
+            paUsers[i].iNext = pPool->iUserFreeHead;
+            paUsers[i].iUser = NIL_PGMPOOL_IDX;
             pPool->iUserFreeHead = i;
         }
     }
