@@ -27,8 +27,6 @@
 #include "QIWithRetranslateUI.h"
 #include "QIDialog.h"
 
-#include <QSortFilterProxyModel>
-
 class CAppliance;
 class CVirtualSystemDescription;
 class VirtualSystemModel;
