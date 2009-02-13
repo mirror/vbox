@@ -36,8 +36,6 @@ void (*VBoxComUninitializePtr)(void);
 void (*VBoxComUnallocMemPtr)(void *ptr);
 void (*VBoxUtf16FreePtr)(PRUnichar *pwszString);
 void (*VBoxUtf8FreePtr)(char *pszString);
-const char * (*VBoxConvertPRUnichartoAsciiPtr)(PRUnichar *src);
-const PRUnichar * (*VBoxConvertAsciitoPRUnicharPtr)(char *src);
 int (*VBoxUtf16ToUtf8Ptr)(const PRUnichar *pwszString, char **ppszString);
 int (*VBoxUtf8ToUtf16Ptr)(const char *pszString, PRUnichar **ppwszString);
 const char * (*VBoxGetEnvPtr)(const char *pszVar);
@@ -316,10 +314,10 @@ char g_szVBoxXPCOMErrMsg[256];
 
 #if defined(__linux__) || defined(__linux_gnu__) || defined(__sun__)
 # define SYM_PREFIX     ""
-# define DYNLIB_NAME    "VBoxXPCOM.so"
+# define DYNLIB_NAME    "VBoxXPCOMC.so"
 #elif defined(__APPLE__)
 # define SYM_PREFIX     "_"
-# define DYNLIB_NAME    "VBoxXPCOM.dylib"
+# define DYNLIB_NAME    "VBoxXPCOMC.dylib"
 #else
 # error "Port me"
 #endif
@@ -340,12 +338,11 @@ static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
         void **ppvSym;
     } const s_aSyms[] =
     {
+        { SYM_PREFIX "VBoxComInitialize",           (void **)&VBoxComInitializePtr            },
         { SYM_PREFIX "VBoxComUninitialize",         (void **)&VBoxComUninitializePtr          },
         { SYM_PREFIX "VBoxComUnallocMem",           (void **)&VBoxComUnallocMemPtr            },
         { SYM_PREFIX "VBoxUtf16Free",               (void **)&VBoxUtf16FreePtr                },
         { SYM_PREFIX "VBoxUtf8Free",                (void **)&VBoxUtf8FreePtr                 },
-        { SYM_PREFIX "VBoxConvertPRUnichartoAscii", (void **)&VBoxConvertPRUnichartoAsciiPtr  },
-        { SYM_PREFIX "VBoxConvertAsciitoPRUnichar", (void **)&VBoxConvertAsciitoPRUnicharPtr  },
         { SYM_PREFIX "VBoxUtf16ToUtf8",             (void **)&VBoxUtf16ToUtf8Ptr              },
         { SYM_PREFIX "VBoxUtf8ToUtf16",             (void **)&VBoxUtf8ToUtf16Ptr              },
         { SYM_PREFIX "VBoxGetEnv",                  (void **)&VBoxGetEnvPtr                   },
@@ -381,7 +378,7 @@ static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
      * Try load it by that name, setting the VBOX_APP_HOME first (for now).
      */
 
-    setenv("VBOX_APP_HOME", pszBuf, 0 /* no need to overwrite */);
+    setenv("VBOX_APP_HOME", pszHome, 0 /* no need to overwrite */);
     g_hVBoxXPCOMC = dlopen(pszBuf, RTLD_NOW | RTLD_LOCAL);
     if (g_hVBoxXPCOMC)
     {
@@ -662,6 +659,8 @@ int main(int argc, char **argv)
     VBoxComUninitializePtr();
 #ifndef USE_DYNAMIC_GLUE
     dlclose(xpcomHandle);
+#else
+    dlclose(g_hVBoxXPCOMC);
 #endif
     printf("Finished Main\n");
 

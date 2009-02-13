@@ -25,7 +25,7 @@ INCS_XPCOM    = -I$(XPCOM_INCLUDE) \
                 -I$(XPCOM_INCLUDE)/nsprpub
 
 CC            = gcc
-CFLAGS        = -g -ansi -pedantic -Wall
+CFLAGS        = -g -Wall
 
 .PHONY: all
 all: tstLinuxC tstdlOpen
@@ -44,4 +44,4 @@ tstdlOpen: tstdlOpen.o
 	$(CC) -o $@ $^ -ldl
 
 tstdlOpen.o: tstdlOpen.c
-	$(CC) $(CFLAGS) -DRT_OS_LINUX -DMOZ_UNICODE $(INCS_XPCOM) -o $@ -c $<
+	$(CC) $(CFLAGS) -DRT_OS_LINUX -DMOZ_UNICODE -DUSE_DYNAMIC_GLUE $(INCS_XPCOM) -o $@ -c $<
