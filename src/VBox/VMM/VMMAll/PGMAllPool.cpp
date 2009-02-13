@@ -2416,7 +2416,7 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
     int rc = VINF_SUCCESS;
     PPGMPOOLUSER pUser = pPool->CTX_SUFF(paUsers);
 
-    LogFlow(("pgmPoolTrackInsert iUser %d iUserTable %d\n", iUser, iUserTable));
+    LogFlow(("pgmPoolTrackInsert iUser %x iUserTable %x\n", iUser, iUserTable));
 
     /*
      * Find free a user node.
@@ -2504,7 +2504,7 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
 {
     PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
 
-    LogFlow(("pgmPoolTrackAddUser GCPhys = %RGp iUser %x iUserTable %x\n", pPage->GCPhys, iUser, iUserTable));
+    Log3(("pgmPoolTrackAddUser GCPhys = %RGp iUser %x iUserTable %x\n", pPage->GCPhys, iUser, iUserTable));
 #  ifdef VBOX_STRICT
     /*
      * Check that the entry doesn't already exists.
@@ -3179,6 +3179,8 @@ static void pgmPoolTrackClearPageUsers(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Free all the user records.
      */
+    LogFlow(("pgmPoolTrackClearPageUsers %RGp\n", pPage->GCPhys));
+
     PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
     uint16_t i = pPage->iUserHead;
     while (i != NIL_PGMPOOL_USER_INDEX)
