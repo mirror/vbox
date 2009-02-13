@@ -2182,20 +2182,9 @@ bool VBoxConsoleView::x11Event (XEvent *event)
         (XCheckIfEvent(event->xkey.display, &returnEvent,
                        VBoxConsoleViewCompEvent, (XPointer) event) == True)) {
         XPutBackEvent(event->xkey.display, &returnEvent);
+        /* Discard it, don't pass it to Qt. */
         return true;
     }
-#if 0
-    if ((XKeyRelease == event->type) && XPending(event->xkey.display))
-    {
-        XEvent nextEvent;
-
-        XPeekEvent(event->xkey.display, &nextEvent);
-        if ((XKeyPress == nextEvent.type) &&
-            (event->xkey.keycode == nextEvent.xkey.keycode))
-            /* Discard it, don't pass it to Qt. */
-            return true;
-    }
-#endif
 
     KeySym ks = ::XKeycodeToKeysym (event->xkey.display, event->xkey.keycode, 0);
 
