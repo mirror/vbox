@@ -1372,9 +1372,10 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* Always send a size hint if we are in fullscreen or seamless
                  * when the graphics capability is enabled, in case the host
                  * resolution has changed since the VM was last run. */
-                if (!mDoResize &&
+                if (!mDoResize && !mGuestSupportsGraphics &&
+                    ge->supportsGraphics() &&
                     (mMainWnd->isTrueSeamless() || mMainWnd->isTrueFullscreen()))
-                    mDoResize = (mGuestSupportsGraphics != ge->supportsGraphics());
+                    mDoResize = true;
 
                 mGuestSupportsGraphics = ge->supportsGraphics();
 
