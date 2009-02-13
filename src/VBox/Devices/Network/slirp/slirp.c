@@ -32,35 +32,37 @@
 #  define DO_CHECK_FD_SET(so, events, fdset) (FD_ISSET((so)->s, fdset))
 #  define DO_UNIX_CHECK_FD_SET(so, events, fdset )  0 /*specific for Unix API */
 # else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
-#  define DO_ENGAGE_EVENT1(so, fdset, label)                    \
-    do {                                                        \
-        AssertRelease(poll_index < (nfds));                     \
-        if(    so->so_poll_index != -1                          \
-            && so->s == polls[so->so_poll_index].fd) {          \
-            polls[poll_index].events |= N_(fdset ## _poll);     \
-            break; /* out of this loop */                       \
-        }                                                       \
-        AssertRelease(poll_index >= 0 && poll_index < (nfds));  \
-        polls[poll_index].fd = (so)->s;                         \
-        (so)->so_poll_index = poll_index;                       \
-        polls[poll_index].events = N_(fdset ## _poll);          \
-        polls[poll_index].revents = 0;                          \
-        poll_index++;                                           \
+#  define DO_ENGAGE_EVENT1(so, fdset, label)                        \
+    do {                                                            \
+        if(    so->so_poll_index != -1                              \
+            && so->s == polls[so->so_poll_index].fd) {              \
+            polls[so->so_poll_index].events |= N_(fdset ## _poll);  \
+            break; /* out of this loop */                           \
+        }                                                           \
+        AssertRelease(poll_index < (nfds));                         \
+        AssertRelease(poll_index >= 0 && poll_index < (nfds));      \
+        polls[poll_index].fd = (so)->s;                             \
+        (so)->so_poll_index = poll_index;                           \
+        polls[poll_index].events = N_(fdset ## _poll);              \
+        polls[poll_index].revents = 0;                              \
+        poll_index++;                                               \
     } while(0)
 
 
-#  define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label)                           \
-    do {                                                                        \
-        AssertRelease(poll_index < (nfds));                     \
+#  define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label)           \
+    do {                                                        \
         if(    so->so_poll_index != -1                          \
             && so->s == polls[so->so_poll_index].fd) {          \
-            polls[poll_index].events |= N_(fdset1 ## _poll) | N_(fdset1 ## _poll);  \
+            polls[so->so_poll_index].events |=                  \
+                N_(fdset1 ## _poll) | N_(fdset1 ## _poll);      \
             break; /* out of this loop */                       \
         }                                                       \
-        polls[poll_index].fd = (so)->s;                                         \
-        (so)->so_poll_index = poll_index;                                       \
-        polls[poll_index].events = N_(fdset1 ## _poll) | N_(fdset1 ## _poll);   \
-        poll_index++;                                                           \
+        AssertRelease(poll_index < (nfds));                     \
+        polls[poll_index].fd = (so)->s;                         \
+        (so)->so_poll_index = poll_index;                       \
+        polls[poll_index].events =                              \
+            N_(fdset1 ## _poll) | N_(fdset1 ## _poll);          \
+        poll_index++;                                           \
     } while(0)
 
 #  define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
