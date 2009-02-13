@@ -24,13 +24,14 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxFilePathSelectorWidget.h"
+#include "VBoxOSTypeSelectorButton.h"
 
 #include <QItemDelegate>
+#include <QSortFilterProxyModel>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QComboBox>
-#include <QPushButton>
 
 class ModelItem;
 
@@ -387,15 +388,12 @@ public:
             {
                 case KVirtualSystemDescriptionType_OS:
                 {
-                    QComboBox *e = new QComboBox (aParent);
-                    /* Create a list of all possible OS types */
-                    QList <CGuestOSType> families = vboxGlobal().vmGuestOSFamilyList();
-                    QList <CGuestOSType> types;
-                    foreach (const CGuestOSType& family, families)
-                        types << vboxGlobal().vmGuestOSTypeList (family.GetFamilyId());
-                    /* Fill the combobox */
-                    foreach (const CGuestOSType& type, types)
-                        e->addItem (vboxGlobal().vmGuestOSTypeIcon (type.GetId()), type.GetDescription(), type.GetId());
+                    VBoxOSTypeSelectorButton *e = new VBoxOSTypeSelectorButton (aParent);
+                    /* Fill the background with the highlight color in the case
+                     * the button hasn't a rectangle shape. This prevents the
+                     * display of parts from the current text on the Mac. */
+                    e->setAutoFillBackground (true);
+                    e->setBackgroundRole (QPalette::Highlight);
                     editor = e;
                     break;
                 }
@@ -471,6 +469,14 @@ public:
         switch (mType)
         {
             case KVirtualSystemDescriptionType_OS:
+            {
+                if (VBoxOSTypeSelectorButton *e = qobject_cast<VBoxOSTypeSelectorButton*> (aEditor))
+                {
+                    e->setOSTypeId (mConfigValue);
+                    fDone = true;
+                }
+                break;
+            }
             case KVirtualSystemDescriptionType_HardDiskControllerIDE:
             {
                 if (QComboBox *e = qobject_cast<QComboBox*> (aEditor))
@@ -538,6 +544,14 @@ public:
         switch (mType)
         {
             case KVirtualSystemDescriptionType_OS:
+            {
+                if (VBoxOSTypeSelectorButton *e = qobject_cast<VBoxOSTypeSelectorButton*> (aEditor))
+                {
+                    mConfigValue = e->osTypeId();
+                    fDone = true;
+                }
+                break;
+            }
             case KVirtualSystemDescriptionType_HardDiskControllerIDE:
             {
                 if (QComboBox *e = qobject_cast<QComboBox*> (aEditor))
@@ -686,7 +700,12 @@ public:
     QSize sizeHint (const QStyleOptionViewItem &aOption, const QModelIndex &aIndex) const
     {
         QSize size = QItemDelegate::sizeHint (aOption, aIndex);
-        size.setHeight (RT_MAX (24, size.height()));
+#ifdef Q_WS_MAC
+        int h = 28;
+#else /* Q_WS_MAC */
+        int h = 24;
+#endif /* Q_WS_MAC */
+        size.setHeight (RT_MAX (h, size.height()));
         return size;
     }
 private:
