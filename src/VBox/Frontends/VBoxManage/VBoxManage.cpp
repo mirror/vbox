@@ -271,12 +271,6 @@ static void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage [-v|-version]    print version number and exit\n"
                  "VBoxManage -nologo ...      suppress the logo\n"
-                 "\n"
-                 "VBoxManage -convertSettings ...        allow to auto-convert settings files\n"
-                 "VBoxManage -convertSettingsBackup ...  allow to auto-convert settings files\n"
-                 "                                       but create backup copies before\n"
-                 "VBoxManage -convertSettingsIgnore ...  allow to auto-convert settings files\n"
-                 "                                       but don't explicitly save the results\n"
                  "\n");
     }
 
@@ -290,9 +284,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_SHOWVMINFO)
     {
-        RTPrintf("VBoxManage showvminfo       <uuid>|<name>\n"
-                 "                            [-details]\n"
-                 "                            [-statistics]\n"
+        RTPrintf("VBoxManage showvminfo       <uuid>|<name> [-details] [-statistics]\n"
                  "                            [-machinereadable]\n"
                  "\n");
     }
@@ -305,8 +297,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_UNREGISTERVM)
     {
-        RTPrintf("VBoxManage unregistervm     <uuid>|<name>\n"
-                 "                            [-delete]\n"
+        RTPrintf("VBoxManage unregistervm     <uuid>|<name> [-delete]\n"
                  "\n");
     }
 
