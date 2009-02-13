@@ -365,10 +365,13 @@ public:
                 mType == KVirtualSystemDescriptionType_NetworkAdapter)
                 flags |= Qt::ItemIsUserCheckable;
             /* Some items are editable */
-            if (mType != KVirtualSystemDescriptionType_CPU && /* CPU not editable for now */
-                mType != KVirtualSystemDescriptionType_Floppy && /* The following items didn't have any associated data to edit */
-                mType != KVirtualSystemDescriptionType_CDROM &&
-                mType != KVirtualSystemDescriptionType_USBController &&
+            if ((mType == KVirtualSystemDescriptionType_Name ||
+                 mType == KVirtualSystemDescriptionType_OS ||
+                 mType == KVirtualSystemDescriptionType_Memory ||
+                 mType == KVirtualSystemDescriptionType_SoundCard ||
+                 mType == KVirtualSystemDescriptionType_NetworkAdapter ||
+                 mType == KVirtualSystemDescriptionType_HardDiskControllerIDE ||
+                 mType == KVirtualSystemDescriptionType_HardDiskImage) &&
                 mCheckState == Qt::Checked) /* Item has to be enabled */
                 flags |= Qt::ItemIsEditable;
         }
@@ -741,7 +744,7 @@ bool VirtualSystemSortProxyModel::lessThan (const QModelIndex &aLeft, const QMod
             return false;
         }
 
-    return false;
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
