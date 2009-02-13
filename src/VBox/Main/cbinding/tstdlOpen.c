@@ -472,7 +472,7 @@ static int tryLoad(const char *pszMsgPrefix)
 
 int main(int argc, char **argv)
 {
-    IVirtualBox *vbox           = NULL;
+    IVirtualBox *vbox            = NULL;
     ISession   *session          = NULL;
     PRUint32    revision         = 0;
     PRUnichar  *versionUtf16     = NULL;
@@ -480,7 +480,7 @@ int main(int argc, char **argv)
     nsresult    rc;     /* Result code of various function (method) calls. */
 #ifndef USE_DYNAMIC_GLUE
     void       *xpcomHandle      = NULL;
-    const char *xpcomdlError;
+    const char *xpcomdlError     = NULL;
     struct stat stIgnored;
 
     /*
