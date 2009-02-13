@@ -43,6 +43,7 @@ using namespace com;
 #include <iprt/path.h>
 #include <iprt/param.h>
 #include <iprt/stream.h>
+#include <iprt/thread.h>
 
 #define printf RTPrintf
 
