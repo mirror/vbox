@@ -461,7 +461,6 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     if (u32Netmask & 0x1f)
         /* CTL is x.x.x.15, bootp passes up to 16 IPs (15..31) */
         return VERR_INVALID_PARAMETER;
-    memset(pData, '\0', sizeof(NATState));
     pData->fPassDomain = fPassDomain;
     pData->pvUser = pvUser;
     tftp_prefix = pszTFTPPrefix;
@@ -1110,11 +1109,9 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 || UNIX_CHECK_FD_SET(so, NetworkEvents, rderr))
             {
                 int err;
-                int inq, outq;
-                int status;
-                inq = -1;
+                int inq = -1, outq;
                 socklen_t optlen = sizeof(int);
-                status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
+                int status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
                 if (status != 0) 
                     LogRel(("NAT:can't get error status from %R[natsock]\n", so));
 #ifndef RT_OS_SOLARIS
