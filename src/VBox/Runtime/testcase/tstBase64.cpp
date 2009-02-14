@@ -37,56 +37,6 @@
 #include <iprt/err.h>
 #include <iprt/initterm.h>
 
-struct TstI64
-{
-    const char *psz;
-    unsigned    uBase;
-    int         rc;
-    int64_t     Result;
-};
-
-struct TstU64
-{
-    const char *psz;
-    unsigned    uBase;
-    int         rc;
-    uint64_t    Result;
-};
-
-struct TstI32
-{
-    const char *psz;
-    unsigned    uBase;
-    int         rc;
-    int32_t     Result;
-};
-
-struct TstU32
-{
-    const char *psz;
-    unsigned    uBase;
-    int         rc;
-    uint32_t    Result;
-};
-
-
-#define TEST(Test, Type, Fmt, Fun, iTest) \
-    do \
-    { \
-        Type Result; \
-        int rc = Fun(Test.psz, NULL, Test.uBase, &Result); \
-        if (Result != Test.Result) \
-        { \
-            RTPrintf("failure: '%s' -> " Fmt " expected " Fmt ". (%s/%u)\n", Test.psz, Result, Test.Result, #Fun, iTest); \
-            cErrors++; \
-        } \
-        else if (rc != Test.rc) \
-        { \
-            RTPrintf("failure: '%s' -> rc=%Rrc expected %Rrc. (%s/%u)\n", Test.psz, rc, Test.rc, #Fun, iTest); \
-            cErrors++; \
-        } \
-    } while (0)
-
 
 int main()
 {
