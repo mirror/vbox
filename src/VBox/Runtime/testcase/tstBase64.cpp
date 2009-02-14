@@ -56,7 +56,7 @@ int main()
 
 
     /*
-     * Test 0.
+     * Series of simple tests.
      */
     static const struct
     {
@@ -114,7 +114,7 @@ int main()
             cErrors++;
         }
 
-        rc = RTBase64Encode(g_aTests[i].pszText, g_aTests[i].cchText, szOut, g_aTests[i].cchEnc*2 + 1, &cchOut);
+        rc = RTBase64Encode(g_aTests[i].pszText, g_aTests[i].cchText, szOut, g_aTests[i].cchEnc + 1, &cchOut);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstBase64: FAILURE - #%u: RTBase64Encode -> %Rrc\n", i, rc);
@@ -141,6 +141,7 @@ int main()
             cErrors++;
         }
 
+        /** @todo negative testing. */
     }
 
     /*
