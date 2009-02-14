@@ -40,79 +40,90 @@
 
 int main()
 {
-    int cErrors =0;
+    int     cErrors = 0;
+    char    szOut[0x10000];
+    size_t  cchOut = 0;
     RTR3Init();
+
 
     /*
      * Test 0.
      */
-    static const char s_szText0[] = "Hey";
-    static const char s_szEnc0[]  = "SGV5";
-    size_t cchOut0 = 0;
-    char szOut0[sizeof(s_szText0)];
-    int rc = RTBase64Decode(&s_szEnc0[0], szOut0, sizeof(szOut0), &cchOut0, NULL);
-    if (RT_FAILURE(rc))
+    static const struct
     {
-        RTPrintf("tstBase64: FAILURE - RTBase64Decode s_szEnc0 -> %Rrc\n", rc);
-        cErrors++;
-    }
-    else if (cchOut0 != sizeof(s_szText0) - 1)
+        const char *pszText;
+        size_t      cchText;
+        const char *pszEnc;
+        size_t      cchEnc;
+    } g_aTests[] =
     {
-        RTPrintf("tstBase64: FAILURE - RTBase64Decode returned %zu bytes, expected %zu.\n",
-                 cchOut0, sizeof(s_szText0) - 1);
-        cErrors++;
-    }
-    else if (memcmp(szOut0, s_szText0, cchOut0))
-    {
-        RTPrintf("tstBase64: FAILURE - RTBase64Decode returned:\n%.*s\nexpected:\n%s\n",
-                 (int)cchOut0, szOut0, s_szText0);
-        cErrors++;
-    }
+#define TEST_ENTRY(szText, szEnc) { szText, sizeof(szText) - 1, szEnc, sizeof(szEnc) - 1 }
+        TEST_ENTRY("Hey", "SGV5"),
+        TEST_ENTRY("Base64", "QmFzZTY0"),
+        TEST_ENTRY("Call me Ishmael.", "Q2FsbCBtZSBJc2htYWVsLg==")
+#undef TEST_ENTRY
+    };
 
-    cchOut0 = RTBase64DecodedSize(s_szEnc0, NULL);
-    if (cchOut0 != sizeof(s_szText0) - 1)
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
     {
-        RTPrintf("tstBase64: FAILURE - RTBase64DecodedSize returned %zu bytes, expected %zu.\n",
-                 cchOut0, sizeof(s_szText0) - 1);
-        cErrors++;
+        int rc = RTBase64Decode(g_aTests[i].pszEnc, szOut, g_aTests[i].cchText, &cchOut, NULL);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstBase64: FAILURE - #%u: RTBase64Decode -> %Rrc\n", i, rc);
+            cErrors++;
+        }
+        else if (cchOut != g_aTests[i].cchText)
+        {
+            RTPrintf("tstBase64: FAILURE - #%u: RTBase64Decode returned %zu bytes, expected %zu.\n",
+                     i, cchOut, g_aTests[i].cchText);
+            cErrors++;
+        }
+        else if (memcmp(szOut, g_aTests[i].pszText, cchOut))
+        {
+            RTPrintf("tstBase64: FAILURE - #%u: RTBase64Decode returned:\n%.*s\nexpected:\n%s\n",
+                     i, (int)cchOut, szOut, g_aTests[i].pszText);
+            cErrors++;
+        }
+
+        cchOut = RTBase64DecodedSize(g_aTests[i].pszEnc, NULL);
+        if (cchOut != g_aTests[i].cchText)
+        {
+            RTPrintf("tstBase64: FAILURE - #%u: RTBase64DecodedSize returned %zu bytes, expected %zu.\n",
+                     i, cchOut, g_aTests[i].cchText);
+            cErrors++;
+        }
+
+        rc = RTBase64Encode(g_aTests[i].pszText, g_aTests[i].cchText, szOut, g_aTests[i].cchEnc + 1, &cchOut);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstBase64: FAILURE - #%u: RTBase64Encode -> %Rrc\n", i, rc);
+            cErrors++;
+        }
+        else if (cchOut != g_aTests[i].cchEnc)
+        {
+            RTPrintf("tstBase64: FAILURE - #%u: RTBase64Encode returned %zu bytes, expected %zu.\n",
+                     i, cchOut, g_aTests[i].cchEnc);
+            cErrors++;
+        }
+        else if (memcmp(szOut, g_aTests[i].pszEnc, cchOut + 1))
+        {
+            RTPrintf("tstBase64: FAILURE - #%u: RTBase64Encode returned:\n%*s\nexpected:\n%s\n",
+                     i, szOut, g_aTests[i].pszText);
+            cErrors++;
+        }
+
+        cchOut = RTBase64EncodedLength(g_aTests[i].cchText);
+        if (cchOut != g_aTests[i].cchEnc)
+        {
+            RTPrintf("tstBase64: FAILURE - #%u: RTBase64EncodedLength returned %zu bytes, expected %zu.\n",
+                     i, cchOut, g_aTests[i].cchEnc);
+            cErrors++;
+        }
+
     }
 
     /*
-     * Test 1.
-     */
-    static const char s_szText1[] = "Call me Ishmael.";
-    static const char s_szEnc1[]  = "Q2FsbCBtZSBJc2htYWVsLg==";
-    size_t cchOut1 = 0;
-    char szOut1[sizeof(s_szText1)];
-    rc = RTBase64Decode(&s_szEnc1[0], szOut1, sizeof(szOut1), &cchOut1, NULL);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstBase64: FAILURE - RTBase64Decode s_szEnc1 -> %Rrc\n", rc);
-        cErrors++;
-    }
-    else if (cchOut1 != sizeof(s_szText1) - 1)
-    {
-        RTPrintf("tstBase64: FAILURE - RTBase64Decode returned %zu bytes, expected %zu.\n",
-                 cchOut1, sizeof(s_szText1) - 1);
-        cErrors++;
-    }
-    else if (memcmp(szOut1, s_szText1, cchOut1))
-    {
-        RTPrintf("tstBase64: FAILURE - RTBase64Decode returned:\n%.*s\nexpected:\n%s\n",
-                 (int)cchOut1, szOut1, s_szText1);
-        cErrors++;
-    }
-
-    cchOut1 = RTBase64DecodedSize(s_szEnc1, NULL);
-    if (cchOut1 != sizeof(s_szText1) - 1)
-    {
-        RTPrintf("tstBase64: FAILURE - RTBase64DecodedSize returned %zu bytes, expected %zu.\n",
-                 cchOut1, sizeof(s_szText1) - 1);
-        cErrors++;
-    }
-
-    /*
-     * Test 2.
+     * Bigger Test.
      */
     static const char s_szText2[] =
         "Man is distinguished, not only by his reason, but by this singular passion "
@@ -127,32 +138,30 @@ int main()
         " dWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRo\n\r"
         " ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=\n \n";
 
-    size_t cchOut2 = 0;
-    char szOut2[sizeof(s_szText2)];
-    rc = RTBase64Decode(&s_szEnc2[0], szOut2, sizeof(szOut2), &cchOut2, NULL);
+    int rc = RTBase64Decode(&s_szEnc2[0], szOut, sizeof(s_szText2), &cchOut, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstBase64: FAILURE - RTBase64Decode s_szEnc2 -> %Rrc\n", rc);
         cErrors++;
     }
-    else if (cchOut2 != sizeof(s_szText2) - 1)
+    else if (cchOut != sizeof(s_szText2) - 1)
     {
         RTPrintf("tstBase64: FAILURE - RTBase64Decode returned %zu bytes, expected %zu.\n",
-                 cchOut2, sizeof(s_szText2) - 1);
+                 cchOut, sizeof(s_szText2) - 1);
         cErrors++;
     }
-    else if (memcmp(szOut2, s_szText2, cchOut2))
+    else if (memcmp(szOut, s_szText2, cchOut))
     {
         RTPrintf("tstBase64: FAILURE - RTBase64Decode returned:\n%.*s\nexpected:\n%s\n",
-                 (int)cchOut2, szOut2, s_szText2);
+                 (int)cchOut, szOut, s_szText2);
         cErrors++;
     }
 
-    cchOut2 = RTBase64DecodedSize(s_szEnc2, NULL);
-    if (cchOut2 != sizeof(s_szText2) - 1)
+    cchOut = RTBase64DecodedSize(s_szEnc2, NULL);
+    if (cchOut != sizeof(s_szText2) - 1)
     {
         RTPrintf("tstBase64: FAILURE - RTBase64DecodedSize returned %zu bytes, expected %zu.\n",
-                 cchOut2, sizeof(s_szText2) - 1);
+                 cchOut, sizeof(s_szText2) - 1);
         cErrors++;
     }
 
