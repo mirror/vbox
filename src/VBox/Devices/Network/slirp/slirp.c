@@ -1112,15 +1112,21 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 int err;
                 int inq, outq;
                 int status;
-#ifndef RT_OS_SOLARIS
                 inq = -1;
                 socklen_t optlen = sizeof(int);
                 status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
-                AssertRelease(status == 0 ); 
+                if (status != 0) 
+                    LogRel(("NAT:can't get error status from %R[natsock]\n", so));
+#ifndef RT_OS_SOLARIS
                 status = ioctl(so->s, FIONREAD, &inq); /* tcp(7) recommends SIOCINQ which is Linux specific */
-                AssertRelease(status == 0 || status == EINVAL);/* EINVAL returned if socket in listen state tcp(7)*/
+                if (status != 0 || status != EINVAL)
+                {
+                    /* EINVAL returned if socket in listen state tcp(7)*/
+                    LogRel(("NAT:can't get depth of IN queue status from %R[natsock]\n", so));
+                }
                 status = ioctl(so->s, TIOCOUTQ, &outq); /* SIOCOUTQ see previous comment */
-                AssertRelease(status == 0);
+                if (status != 0) 
+                    LogRel(("NAT:can't get depth of OUT queue from %R[natsock]\n", so));
 #else
                 inq = outq = -1;
                 /*
