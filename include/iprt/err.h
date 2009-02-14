@@ -502,6 +502,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_DANGLING_OBJECTS               (-86)
 /** Generic dangling objects status. */
 #define VWRN_DANGLING_OBJECTS               86
+/** Invalid Base64 encoding. */
+#define VERR_INVALID_BASE64_ENCODING        (-87)
 /** @} */
 
 
