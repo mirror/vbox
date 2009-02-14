@@ -43,11 +43,14 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/** The line length used for encoding. */
+#define RTBASE64_LINE_LEN   64
+
 /** @name Special g_au8CharToVal values
  * @{ */
-#define BASE64_SPACE    0xc0
-#define BASE64_PAD      0xe0
-#define BASE64_INVALID  0xff
+#define BASE64_SPACE        0xc0
+#define BASE64_PAD          0xe0
+#define BASE64_INVALID      0xff
 /** @} */
 
 
@@ -251,10 +254,8 @@ RTDECL(int) RTBase64Decode(const char *pszString, void *pvData, size_t cbData, s
     unsigned    ch;
     AssertCompile(sizeof(char) == sizeof(uint8_t));
 
-const char *pszCurStart;
     for (;;)
     {
-pszCurStart = pszString;
         /* The first 6-bit group. */
         while ((u8 = g_au8CharToVal[ch = *pszString]) == BASE64_SPACE)
             pszString++;
@@ -420,7 +421,7 @@ RTDECL(size_t) RTBase64EncodedLength(size_t cbData)
             cch += 8;
         cch /= 6;
 
-        cch += (cch / 64) * RTBASE64_EOL_SIZE;
+        cch += (cch / RTBASE64_LINE_LEN) * RTBASE64_EOL_SIZE;
         return cch;
     }
 
@@ -429,7 +430,7 @@ RTDECL(size_t) RTBase64EncodedLength(size_t cbData)
         cch += 8;
     cch /= 6;
 
-    cch += (cch / 64) * RTBASE64_EOL_SIZE;
+    cch += (cch / RTBASE64_LINE_LEN) * RTBASE64_EOL_SIZE;
     return cch;
 }
 
@@ -454,7 +455,79 @@ RTDECL(size_t) RTBase64EncodedLength(size_t cbData)
  */
 RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size_t cbBuf, size_t *pcchActual)
 {
-    /** @todo implement RTBase64Encode. */
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Process whole "trios" of input data.
+     */
+    uint8_t         u8A;
+    uint8_t         u8B;
+    uint8_t         u8C;
+    size_t          cbLineFeed = cbBuf - RTBASE64_LINE_LEN;
+    const uint8_t  *pbSrc      = (const uint8_t *)pvData;
+    char           *pchDst     = pszBuf;
+    while (cbData >= 3)
+    {
+        if (cbBuf < 4 + 1)
+            return VERR_BUFFER_OVERFLOW;
+
+        /* encode */
+        u8A = pbSrc[0];
+        pchDst[0] = g_szValToChar[u8A >> 2];
+        u8B = pbSrc[1];
+        pchDst[1] = g_szValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
+        u8C = pbSrc[2];
+        pchDst[2] = g_szValToChar[((u8B << 2) & 0x3f) | (u8C >> 6)];
+        pchDst[3] = g_szValToChar[u8C & 0x3f];
+
+        /* advance */
+        cbBuf  -= 4;
+        pchDst += 4;
+        cbData -= 3;
+        pbSrc  += 3;
+
+        if (cbBuf == cbLineFeed)
+        {
+            if (cbBuf < RTBASE64_EOL_SIZE + 1)
+                return VERR_BUFFER_OVERFLOW;
+            cbBuf -= RTBASE64_EOL_SIZE;
+            if (RTBASE64_EOL_SIZE == 2)
+                *pchDst++ = '\r';
+            *pchDst++ = '\n';
+            cbLineFeed = cbBuf - RTBASE64_LINE_LEN;
+        }
+    }
+
+    /*
+     * Deal with the odd bytes and string termination.
+     */
+    if (cbData)
+    {
+        if (cbBuf < 4 + 1)
+            return VERR_BUFFER_OVERFLOW;
+        switch (cbData)
+        {
+            case 1:
+                u8A = pbSrc[0];
+                pchDst[0] = g_szValToChar[u8A >> 2];
+                pchDst[1] = g_szValToChar[(u8A << 4) & 0x3f];
+                pchDst[2] = '=';
+                pchDst[3] = '=';
+                break;
+            case 2:
+                u8A = pbSrc[0];
+                pchDst[0] = g_szValToChar[u8A >> 2];
+                u8B = pbSrc[1];
+                pchDst[1] = g_szValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
+                pchDst[2] = g_szValToChar[(u8B << 2) & 0x3f];
+                pchDst[3] = '=';
+                break;
+        }
+        pchDst += 4;
+    }
+
+    *pchDst = '\0';
+
+    if (pcchActual)
+        *pcchActual = pchDst - pszBuf;
+    return VINF_SUCCESS;
 }
 

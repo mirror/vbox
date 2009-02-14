@@ -37,6 +37,15 @@
 #include <iprt/err.h>
 #include <iprt/initterm.h>
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+# define MY_NL "\r\n"
+#else
+# define MY_NL "\n"
+#endif
+
 
 int main()
 {
@@ -60,7 +69,19 @@ int main()
 #define TEST_ENTRY(szText, szEnc) { szText, sizeof(szText) - 1, szEnc, sizeof(szEnc) - 1 }
         TEST_ENTRY("Hey", "SGV5"),
         TEST_ENTRY("Base64", "QmFzZTY0"),
-        TEST_ENTRY("Call me Ishmael.", "Q2FsbCBtZSBJc2htYWVsLg==")
+        TEST_ENTRY("Call me Ishmael.", "Q2FsbCBtZSBJc2htYWVsLg=="),
+        TEST_ENTRY(
+        "Man is distinguished, not only by his reason, but by this singular passion "
+        "from other animals, which is a lust of the mind, that by a perseverance of "
+        "delight in the continued and indefatigable generation of knowledge, exceeds "
+        "the short vehemence of any carnal pleasure." /* Thomas Hobbes's Leviathan */,
+        "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1" MY_NL
+        "dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3" MY_NL
+        "aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFu" MY_NL
+        "Y2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxl" MY_NL
+        "IGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhl" MY_NL
+        "bWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
+        )
 #undef TEST_ENTRY
     };
 
@@ -93,7 +114,7 @@ int main()
             cErrors++;
         }
 
-        rc = RTBase64Encode(g_aTests[i].pszText, g_aTests[i].cchText, szOut, g_aTests[i].cchEnc + 1, &cchOut);
+        rc = RTBase64Encode(g_aTests[i].pszText, g_aTests[i].cchText, szOut, g_aTests[i].cchEnc*2 + 1, &cchOut);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstBase64: FAILURE - #%u: RTBase64Encode -> %Rrc\n", i, rc);
@@ -123,7 +144,7 @@ int main()
     }
 
     /*
-     * Bigger Test.
+     * Try with some more junk in the encoding and different line length.
      */
     static const char s_szText2[] =
         "Man is distinguished, not only by his reason, but by this singular passion "
@@ -132,11 +153,11 @@ int main()
         "the short vehemence of any carnal pleasure."; /* Thomas Hobbes's Leviathan */
 
     static const char s_szEnc2[] =
-        " TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz\n"
-        " IHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2Yg\n\r"
-        " dGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGlu\n"
-        " dWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRo\n\r"
-        " ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=\n \n";
+        "  TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz\r\n"
+        "  IHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2Yg\n\r\t\t\t\v"
+          "dGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGlu\n"
+        "\tdWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRo\n\r"
+        "  ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=\n \n   \r   \n \t";
 
     int rc = RTBase64Decode(&s_szEnc2[0], szOut, sizeof(s_szText2), &cchOut, NULL);
     if (RT_FAILURE(rc))
