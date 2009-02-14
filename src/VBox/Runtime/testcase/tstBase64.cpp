@@ -69,6 +69,14 @@ int main()
         cErrors++;
     }
 
+    cchOut0 = RTBase64DecodedSize(s_szEnc0, NULL);
+    if (cchOut0 != sizeof(s_szText0) - 1)
+    {
+        RTPrintf("tstBase64: FAILURE - RTBase64DecodedSize returned %zu bytes, expected %zu.\n",
+                 cchOut0, sizeof(s_szText0) - 1);
+        cErrors++;
+    }
+
     /*
      * Test 1.
      */
@@ -92,6 +100,14 @@ int main()
     {
         RTPrintf("tstBase64: FAILURE - RTBase64Decode returned:\n%.*s\nexpected:\n%s\n",
                  (int)cchOut1, szOut1, s_szText1);
+        cErrors++;
+    }
+
+    cchOut1 = RTBase64DecodedSize(s_szEnc1, NULL);
+    if (cchOut1 != sizeof(s_szText1) - 1)
+    {
+        RTPrintf("tstBase64: FAILURE - RTBase64DecodedSize returned %zu bytes, expected %zu.\n",
+                 cchOut1, sizeof(s_szText1) - 1);
         cErrors++;
     }
 
@@ -129,6 +145,14 @@ int main()
     {
         RTPrintf("tstBase64: FAILURE - RTBase64Decode returned:\n%.*s\nexpected:\n%s\n",
                  (int)cchOut2, szOut2, s_szText2);
+        cErrors++;
+    }
+
+    cchOut2 = RTBase64DecodedSize(s_szEnc2, NULL);
+    if (cchOut2 != sizeof(s_szText2) - 1)
+    {
+        RTPrintf("tstBase64: FAILURE - RTBase64DecodedSize returned %zu bytes, expected %zu.\n",
+                 cchOut2, sizeof(s_szText2) - 1);
         cErrors++;
     }
 
