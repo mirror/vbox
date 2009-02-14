@@ -244,56 +244,62 @@ RTDECL(int) RTBase64Decode(const char *pszString, void *pvData, size_t cbData, s
     /*
      * Process input in groups of 4 input / 3 output chars.
      */
-    uint8_t    *pbData    = (uint8_t *)pbData;
     uint8_t     u8Trio[3];
-    unsigned    c6Bits    = 0;
+    uint8_t    *pbData    = (uint8_t *)pvData;
     uint8_t     u8        = BASE64_INVALID;
+    unsigned    c6Bits    = 0;
     unsigned    ch;
     AssertCompile(sizeof(char) == sizeof(uint8_t));
 
+const char *pszCurStart;
     for (;;)
     {
+pszCurStart = pszString;
         /* The first 6-bit group. */
-        while ((u8 = g_au8CharToVal[ch = *pszString]) != BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = *pszString]) == BASE64_SPACE)
             pszString++;
         if (u8 >= 64)
         {
             c6Bits = 0;
             break;
         }
-        u8Trio[0] = u8;
+        u8Trio[0] = u8 << 2;
+        pszString++;
 
         /* The second 6-bit group. */
-        while ((u8 = g_au8CharToVal[ch = *pszString]) != BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = *pszString]) == BASE64_SPACE)
             pszString++;
         if (u8 >= 64)
         {
             c6Bits = 1;
             break;
         }
-        u8Trio[0] |= (u8 & 0x3) << 6;
-        u8Trio[1] = u8 >> 2;
+        u8Trio[0] |= u8 >> 4;
+        u8Trio[1]  = u8 << 4;
+        pszString++;
 
         /* The third 6-bit group. */
-        while ((u8 = g_au8CharToVal[ch = *pszString]) != BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = *pszString]) == BASE64_SPACE)
             pszString++;
         if (u8 >= 64)
         {
             c6Bits = 2;
             break;
         }
-        u8Trio[1] |= (u8 & 0xf) << 4;
-        u8Trio[2] = u8 >> 4;
+        u8Trio[1] |= u8 >> 2;
+        u8Trio[2]  = u8 << 6;
+        pszString++;
 
         /* The fourth 6-bit group. */
-        while ((u8 = g_au8CharToVal[ch = *pszString]) != BASE64_SPACE)
+        while ((u8 = g_au8CharToVal[ch = *pszString]) == BASE64_SPACE)
             pszString++;
         if (u8 >= 64)
         {
             c6Bits = 3;
             break;
         }
-        u8Trio[2] |= u8 << 2;
+        u8Trio[2] |= u8;
+        pszString++;
 
         /* flush the trio */
         if (cbData < 3)
@@ -341,11 +347,11 @@ RTDECL(int) RTBase64Decode(const char *pszString, void *pvData, size_t cbData, s
     /*
      * Check padding vs. pending sextets, if anything left to do finish it off.
      */
-    if (    c6Bits + cbPad != 4
-        &&  c6Bits + cbPad != 0)
-        return VERR_INVALID_BASE64_ENCODING;
-    if (c6Bits)
+    if (c6Bits || cbPad)
     {
+        if (c6Bits + cbPad != 4)
+            return VERR_INVALID_BASE64_ENCODING;
+
         switch (c6Bits)
         {
             case 1:

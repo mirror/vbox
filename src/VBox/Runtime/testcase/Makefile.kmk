@@ -49,6 +49,7 @@ IPRT_OUT_DIR ?= $(PATH_TARGET)/Runtime
 #
 PROGRAMS += \
 	tstAvl \
+	tstBase64 \
 	tstBitOperations \
 	tstCidr \
 	tstCritSect \
@@ -126,6 +127,9 @@ endif
 #
 
 tstAvl_SOURCES = tstAvl.cpp
+
+tstBase64_TEMPLATE = VBOXR3TSTEXE
+tstBase64_SOURCES = tstBase64.cpp
 
 tstBitOperations_TEMPLATE = VBOXR3TSTEXE
 tstBitOperations_SOURCES = tstBitOperations.cpp
