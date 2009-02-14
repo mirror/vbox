@@ -399,15 +399,18 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                 /* drain the pipe */
                 char ch[1];
                 size_t cbRead;
+                int counter = 0;
                 /* 
                  * drvNATSend decoupled so we don't know how many times 
                  * device's thread sends before we've entered multiplex,
                  * so to avoid false alarm drain pipe here to the very end
                  *
                  * @todo: Probably we should counter drvNATSend to count how 
-                 * deep pipe has been filed before drain
+                 * deep pipe has been filed before drain. 
+                 *
+                 * XXX:Make it reading exactly we need to drain the pipe.
                  */
-                while(RTFileRead(pThis->PipeRead, &ch, 1, &cbRead) > 0);
+                RTFileRead(pThis->PipeRead, &ch, 1, &cbRead);
             }
             /* process _all_ outstanding requests but don't wait */
             RTReqProcess(pThis->pReqQueue, 0);
