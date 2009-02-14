@@ -1112,6 +1112,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 int err;
                 int inq, outq;
                 int status;
+#ifndef RT_OS_SOLARIS
                 inq = -1;
                 socklen_t optlen = sizeof(int);
                 status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
@@ -1120,6 +1121,13 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 AssertRelease(status == 0 || status == EINVAL);/* EINVAL returned if socket in listen state tcp(7)*/
                 status = ioctl(so->s, TIOCOUTQ, &outq); /* SIOCOUTQ see previous comment */
                 AssertRelease(status == 0);
+#else
+                inq = outq = -1;
+                /*
+                 * Solaris has bit different ioctl commands and its handlings
+                 * hint: streamio(7) I_NREAD 
+                 */
+#endif
 
                 if (   so->so_state & SS_ISFCONNECTING
                     || UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
