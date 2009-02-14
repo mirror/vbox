@@ -7,6 +7,7 @@
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 #ifndef RT_OS_WINDOWS
+#include <sys/ioctl.h>
 #include <poll.h>
 #endif
 
@@ -1106,21 +1107,49 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #endif
 #ifndef RT_OS_WINDOWS
             if (   UNIX_CHECK_FD_SET(so, NetworkEvents, rdhup)
-                && UNIX_CHECK_FD_SET(so, NetworkEvents, rderr))
+                || UNIX_CHECK_FD_SET(so, NetworkEvents, rderr))
             {
+                int err;
+                int inq, outq;
+                int status;
+                inq = -1;
+                socklen_t optlen = sizeof(int);
+                status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
+                AssertRelease(status == 0 ); 
+                status = ioctl(so->s, FIONREAD, &inq); /* tcp(7) recommends SIOCINQ which is Linux specific */
+                AssertRelease(status == 0 || status == EINVAL);/* EINVAL returned if socket in listen state tcp(7)*/
+                status = ioctl(so->s, TIOCOUTQ, &outq); /* SIOCOUTQ see previous comment */
+                AssertRelease(status == 0);
+
                 if (   so->so_state & SS_ISFCONNECTING
-                    || (polls[poll_index].revents & POLLIN) != 0)
+                    || UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
                 {
                     /**
                      * Check if we need here take care about gracefull connection 
                      * @todo try with proxy server
                      */
-                    if ((polls[poll_index].revents & POLLIN) != 0)
-                        LogRel(("NAT: err happens on read I/O, other side close connection \n"));
+                    if (UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
+                    {
+                        /*
+                         * Never meet inq != 0 or outq != 0, anyway let it stay for a while 
+                         * in case it happens we'll able to detect it.
+                         */
+                        LogRel(("NAT:%R[natsock] err(%d:%s) s(in:%d,out:%d)happens on read I/O, "
+                            "other side close connection \n", so, err, strerror(err), inq, outq));
+                    }
                     so->so_state = SS_NOFDREF;
                     TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
                     CONTINUE(tcp);
                 }
+                LogRel(("NAT:%R[natsock] we've met(%d:%s) s(in:%d, out:%d) unhandled combination hup (%d) "
+                    "rederr(%d) on (r:%d, w:%d, x:%d)\n", 
+                        so, err, strerror(err),
+                        inq, outq,
+                        UNIX_CHECK_FD_SET(so, ign, rdhup),
+                        UNIX_CHECK_FD_SET(so, ign, rderr),
+                        UNIX_CHECK_FD_SET(so, ign, readfds),
+                        UNIX_CHECK_FD_SET(so, ign, writefds),
+                        UNIX_CHECK_FD_SET(so, ign, xfds)));
                 /* Here should be other error handlings */
                 AssertRelease(!"shouldn't be here!!!");
             }
