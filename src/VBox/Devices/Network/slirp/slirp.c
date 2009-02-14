@@ -1164,7 +1164,11 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                         UNIX_CHECK_FD_SET(so, ign, readfds),
                         UNIX_CHECK_FD_SET(so, ign, writefds),
                         UNIX_CHECK_FD_SET(so, ign, xfds)));
-                /* Here should be other error handlings */
+                /* 
+                 * Here should be other error handlings 
+                 * The error handling code above handles the errors can happens on reading
+                 * we haven't still met any cases of error on write.
+                 */
                 AssertRelease(!"shouldn't be here!!!");
             }
 #endif
