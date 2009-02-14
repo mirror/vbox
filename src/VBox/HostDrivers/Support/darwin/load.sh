@@ -128,6 +128,7 @@ sync
 echo "load.sh: loading $DIR..."
 
 if [ "$XNU_VERSION" -ge "10" ]; then
+    echo "${SCRIPT_NAME}.sh: loading $DIR... (kextutil $OPTS \"$DIR\")"
     sudo kextutil $OPTS "$DIR"
 else
     sudo kextload $OPTS "$DIR"
