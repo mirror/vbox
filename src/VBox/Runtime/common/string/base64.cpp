@@ -422,6 +422,7 @@ RTDECL(size_t) RTBase64EncodedLength(size_t cbData)
         cch /= 6;
 
         cch += (cch / RTBASE64_LINE_LEN) * RTBASE64_EOL_SIZE;
+        cch -= (cch % RTBASE64_LINE_LEN) == 0;
         return cch;
     }
 
@@ -431,6 +432,7 @@ RTDECL(size_t) RTBase64EncodedLength(size_t cbData)
     cch /= 6;
 
     cch += (cch / RTBASE64_LINE_LEN) * RTBASE64_EOL_SIZE;
+    cch -= (cch % RTBASE64_LINE_LEN) == 0;
     return cch;
 }
 
@@ -484,7 +486,8 @@ RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size
         cbData -= 3;
         pbSrc  += 3;
 
-        if (cbBuf == cbLineFeed)
+        /* deal out linefeeds */
+        if (cbBuf == cbLineFeed && cbData)
         {
             if (cbBuf < RTBASE64_EOL_SIZE + 1)
                 return VERR_BUFFER_OVERFLOW;
