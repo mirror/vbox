@@ -66,11 +66,7 @@ fi
 if test "$1" = "--test"; then
     # Check for buggy X.Org versions
     xout=`$xorgbin -version 2>&1`
-    if echo "$xout" | grep 1.4.99.901 > /dev/null ||
-        echo "$xout" | grep 1.4.99.902 > /dev/null ||
-        echo "$xout" | grep 1.4.99.903 > /dev/null ||
-        echo "$xout" | grep 1.4.99.904 > /dev/null ||
-        echo "$xout" | grep 1.4.99.905 > /dev/null
+    if echo "$xout" | grep "1\.4\.99\.90[12345]" > /dev/null
     then
         echo "Warning: the version of the X Window system on your guest has a known"
         echo "problem. Because of this, dynamic resizing and seamless mode will not work."
