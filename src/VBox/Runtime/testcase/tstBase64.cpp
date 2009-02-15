@@ -127,7 +127,7 @@ static void tstBase64(const void *pvData, size_t cbData, const char *pszEnc, siz
     if (cchOut != cchOut2)
     {
         RTPrintf("tstBase64: FAILURE - %s: RTBase64EncodedLength returned %zu bytes, expected %zu.\n",
-                 szTest, cchOut, cchOut2);
+                 szTest, cchOut2, cchOut);
         g_cErrors++;
     }
 
@@ -283,7 +283,7 @@ int main()
         "8P/w//D/8ADwAPAA8f/x//H/8QDxAPEA8v/y//L/8gDyAPIA8//z//P/8wDzAPMA" MY_NL
         "9P/0//T/9AD0APQA9f/1//X/9QD1APUA9v/2//b/9gD2APYA9//3//f/9wD3APcA" MY_NL
         "+P/4//j/+AD4APgA+f/5//n/+QD5APkA+v/6//r/+gD6APoA+//7//v/+wD7APsA" MY_NL
-        "/P/8//z//AD8APwA/f/9//3//QD9AP0A/v/+//7//gD+AP4A/////////wD/AP8A" MY_NL;
+        "/P/8//z//AD8APwA/f/9//3//QD9AP0A/v/+//7//gD+AP4A/////////wD/AP8A";
 
     tstBase64(s_abData3, sizeof(s_abData3),
               s_szEnc3,  sizeof(s_szEnc3) - 1,
