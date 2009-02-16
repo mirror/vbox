@@ -27,13 +27,20 @@
     </dict>
     <key>OSBundleLibraries</key>
     <dict>
-        <key>com.apple.kpi.bsd</key>            <string>8.8.1</string>
-        <key>com.apple.kpi.mach</key>           <string>8.8.1</string>
-        <key>com.apple.kpi.libkern</key>        <string>8.8.1</string>
-        <key>com.apple.kpi.unsupported</key>    <string>8.8.1</string>
-        <key>com.apple.kpi.iokit</key>          <string>8.8.1</string>
-        <key>com.apple.kernel.bsd</key>         <string>7.9.9</string>
-        <key>com.apple.kernel.mach</key>        <string>7.9.9</string>
+        <key>com.apple.kpi.bsd</key>            <string>9.0.0</string>
+        <key>com.apple.kpi.mach</key>           <string>9.0.0</string>
+        <key>com.apple.kpi.libkern</key>        <string>9.0.0</string>
+        <key>com.apple.kpi.unsupported</key>    <string>9.0.0</string>
+        <key>com.apple.kpi.iokit</key>          <string>9.0.0</string>
+    </dict>
+    <key>OSBundleLibraries_x86_64</key>
+    <dict>
+        <key>com.apple.kpi.bsd</key>            <string>10.0.0d4</string>
+        <key>com.apple.kpi.mach</key>           <string>10.0.0d3</string>
+        <key>com.apple.kpi.libkern</key>        <string>10.0.0d3</string>
+        <key>com.apple.kpi.iokit</key>          <string>10.0.0d3</string>
+        <key>com.apple.kpi.unsupported</key>    <string>10.0.0d3</string>
     </dict>
 </dict>
 </plist>
+
