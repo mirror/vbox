@@ -1253,6 +1253,10 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
          */
         rc = pgmR3PoolInit(pVM);
     }
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    if (RT_SUCCESS(rc))
+        rc = PGMR3ChangeMode(pVM, PGMMODE_REAL);
+#endif
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1538,8 +1542,10 @@ static int pgmR3InitPaging(PVM pVM)
             return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
     }
     rc = pgmR3ModeDataInit(pVM, false /* don't resolve GC and R0 syms yet */);
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     if (RT_SUCCESS(rc))
         rc = PGMR3ChangeMode(pVM, PGMMODE_REAL);
+#endif
     if (RT_SUCCESS(rc))
     {
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
