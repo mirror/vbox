@@ -32,7 +32,9 @@ use File::Copy;
 # @todo: perl must have an API for generating this
 my $temp="/tmp/xorg.conf";
 # The list of possible names of X.org configuration files
-my @cfg_files = ("/home/fm3/xorg.conf");
+my @cfg_files = ("/etc/X11/xorg.conf-4", "/etc/X11/xorg.conf", "/etc/X11/.xorg.conf", "/etc/xorg.conf",
+                 "/usr/etc/X11/xorg.conf-4", "/usr/etc/X11/xorg.conf", "/usr/lib/X11/xorg.conf-4",
+                 "/usr/lib/X11/xorg.conf");
 # File descriptor of the old configuration file
 my $CFG;
 # File descriptor of the temporary file
