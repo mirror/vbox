@@ -147,6 +147,9 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
     {
+        /* Remove the hypervisor mappings from the shadow page table. */
+        PGMMapDeactivateAll(pVM);
+
         /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
         /** @todo Coordinate this better with the pool. */
         if (pVM->pgm.s.pShwPageCR3R3->enmKind != PGMPOOLKIND_FREE)
@@ -183,9 +186,10 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
     pVM->pgm.s.pShwRootR0    = (R0PTRTYPE(void *))PGMPOOL_PAGE_2_PTR(pVM, pVM->pgm.s.pShwPageCR3R3);
 #  endif
     pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.pShwPageCR3R3->Core.Key;
-# endif
+
     /* Apply all hypervisor mappings to the new CR3. */
     return PGMMapActivateAll(pVM);
+# endif
 #else
     /* nothing special to do here - InitData does the job. */
 #endif
