@@ -4623,6 +4623,9 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
     {
+        /* Remove the hypervisor mappings from the shadow page table. */
+        PGMMapDeactivateAll(pVM);
+
         /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
         /** @todo Coordinate this better with the pool. */
         if (pVM->pgm.s.CTX_SUFF(pShwPageCR3)->enmKind != PGMPOOLKIND_FREE)
