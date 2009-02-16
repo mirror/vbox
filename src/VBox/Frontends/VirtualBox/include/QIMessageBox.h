@@ -23,6 +23,7 @@
 #ifndef __QIMessageBox_h__
 #define __QIMessageBox_h__
 
+/* VBox includes */
 #include "QIDialog.h"
 
 /* Qt includes */
@@ -30,17 +31,55 @@
 #include <QCheckBox>
 #include <QTextEdit>
 
+/* VBox forwards */
+class QIArrowSplitter;
+class QIDialogButtonBox;
 class QILabel;
+
+/* Qt forwards */
+class QCloseEvent;
 class QLabel;
 class QPushButton;
 class QSpacerItem;
-class QCloseEvent;
+class QToolButton;
+class QVBoxLayout;
 
-class QIDialogButtonBox;
+/** @class QIArrowSplitter
+ *
+ *  The QIArrowSplitter class is a folding widget placeholder.
+ *  It is declared here until moved into separate file in case
+ *  of it will be used somewhere except problem-reporter dialog.
+ */
+class QIArrowSplitter : public QWidget
+{
+    Q_OBJECT;
 
+public:
+
+    QIArrowSplitter (QWidget *aParent = 0);
+
+    void addWidget (const QString &aName, QWidget *aWidget);
+
+public slots:
+
+    void toggleWidget();
+
+private:
+
+    QVBoxLayout *mMainLayout;
+    QList <QToolButton*> mButtonsList;
+    QList <QWidget*> mWidgetsList;
+};
+
+/** @class QIMessageBox
+ *
+ *  The QIMessageBox class is a message box similar to QMessageBox.
+ *  It partly implements the QMessageBox interface and adds some enhanced
+ *  functionality.
+ */
 class QIMessageBox : public QIDialog
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
@@ -91,6 +130,7 @@ private:
     QPushButton *createButton (int aButton);
 
     void closeEvent (QCloseEvent *e);
+    void showEvent (QShowEvent *e);
 
 private slots:
 
@@ -108,10 +148,12 @@ private:
     QPushButton *mButton0PB, *mButton1PB, *mButton2PB;
     QCheckBox *mFlagCB, *mFlagCB_Main, *mFlagCB_Details;
     QWidget *mDetailsVBox;
+    QIArrowSplitter *mDetailsSplitter;
     QTextEdit *mDetailsText;
     QSpacerItem *mSpacer;
     QIDialogButtonBox *mButtonBox;
     bool mWasDone : 1;
+    bool mWasPolished : 1;
 };
 
 #endif

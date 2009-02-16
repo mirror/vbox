@@ -20,9 +20,9 @@
  * additional information or have any questions.
  */
 
+/* VBox includes */
 #include "VBoxDefs.h"
 #include "VBoxGlobal.h"
-
 #include "QIMessageBox.h"
 #include "QILabel.h"
 #include "QIDialogButtonBox.h"
@@ -32,8 +32,80 @@
 
 /* Qt includes */
 #include <QHBoxLayout>
-#include <QPushButton>
 #include <QLabel>
+#include <QPushButton>
+#include <QToolButton>
+
+/** @class QIArrowSplitter
+ *
+ *  The QIArrowSplitter class is a folding widget placeholder.
+ */
+QIArrowSplitter::QIArrowSplitter (QWidget *aParent)
+    : QWidget (aParent)
+    , mMainLayout (new QVBoxLayout (this))
+{
+    VBoxGlobal::setLayoutMargin (mMainLayout, 0);
+}
+
+void QIArrowSplitter::addWidget (const QString &aName, QWidget *aWidget)
+{
+    /* Creating arrow tool-button */
+    QToolButton *arrowButton = new QToolButton();
+    connect (arrowButton, SIGNAL (clicked (bool)), this, SLOT (toggleWidget()));
+    arrowButton->setIcon (VBoxGlobal::iconSet (":/arrow_right_10px.png"));
+    arrowButton->setFocusPolicy (Qt::StrongFocus);
+    arrowButton->setAutoRaise (true);
+    arrowButton->setFixedSize (14, 16);
+    mButtonsList.append (arrowButton);
+
+    /* Creating description label */
+    QLabel *descriptionLabel = new QLabel (aName);
+    descriptionLabel->setBuddy (arrowButton);
+
+    mWidgetsList.append (aWidget);
+
+    QHBoxLayout *lineLayout = new QHBoxLayout();
+    lineLayout->addWidget (arrowButton);
+    lineLayout->addWidget (descriptionLabel);
+
+    mMainLayout->insertWidget (0, aWidget);
+    mMainLayout->insertLayout (0, lineLayout);
+}
+
+void QIArrowSplitter::toggleWidget()
+{
+    QToolButton *arrowButton = qobject_cast <QToolButton*> (sender());
+
+    /* Toggle all or the specified arrow & related widget */
+    foreach (QToolButton *itemButton, mButtonsList)
+    {
+        if ((itemButton == arrowButton) || (!arrowButton))
+        {
+            QWidget *relatedWidget = mWidgetsList [mButtonsList.indexOf (itemButton)];
+            Assert (relatedWidget);
+            relatedWidget->setVisible (!relatedWidget->isVisible());
+            itemButton->setIcon (VBoxGlobal::iconSet (relatedWidget->isVisible() ?
+                                 ":/arrow_down_10px.png" : ":/arrow_right_10px.png"));
+        }
+    }
+
+    /* Update full layout system of message window */
+    QList <QLayout*> layouts = findChildren <QLayout*> ();
+    foreach (QLayout *item, layouts)
+    {
+        item->update();
+        item->activate();
+    }
+
+    /* Update main layout of message window at last */
+    window()->layout()->update();
+    window()->layout()->activate();
+
+    /* Now resize window to minimum possible size */
+    window()->resize (window()->minimumSizeHint());
+    qApp->processEvents();
+    window()->setFixedSize (window()->size());
+}
 
 /** @class QIMessageBox
  *
@@ -50,6 +122,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
                             QWidget *aParent, const char *aName, bool aModal)
     : QIDialog (aParent)
     , mWasDone (false)
+    , mWasPolished (false)
 {
 #ifdef Q_WS_MAC
     /* Sheets are broken if the window is in fullscreen mode. So make it a
@@ -98,14 +171,12 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     messageVBoxLayout->setSpacing (10);
     hLayout->addLayout (messageVBoxLayout);
 
-    mTextLabel = new QILabel (aText, NULL);
+    mTextLabel = new QILabel (aText);
     mTextLabel->setAlignment (Qt::AlignLeft | Qt::AlignTop);
     mTextLabel->setWordWrap (true);
-    QSizePolicy sp (QSizePolicy::Minimum, QSizePolicy::Minimum);
+    QSizePolicy sp (QSizePolicy::Preferred, QSizePolicy::Preferred);
     sp.setHeightForWidth (true);
     mTextLabel->setSizePolicy (sp);
-    mTextLabel->adjustSize();
-    mTextLabel->setMinimumWidth (mTextLabel->sizeHint().width());
     messageVBoxLayout->addWidget (mTextLabel);
 
     mFlagCB_Main = new QCheckBox();
@@ -115,9 +186,12 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mDetailsVBox = new QWidget();
     layout->addWidget (mDetailsVBox);
 
-    QVBoxLayout* detailsVBoxLayout = new QVBoxLayout(mDetailsVBox);
+    QVBoxLayout* detailsVBoxLayout = new QVBoxLayout (mDetailsVBox);
     VBoxGlobal::setLayoutMargin (detailsVBoxLayout, 0);
     detailsVBoxLayout->setSpacing (10);
+
+    mDetailsSplitter = new QIArrowSplitter();
+    detailsVBoxLayout->addWidget (mDetailsSplitter);
 
     mDetailsText = new QTextEdit();
     {
@@ -129,7 +203,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mDetailsText->setReadOnly (true);
     mDetailsText->setSizePolicy (QSizePolicy::Expanding,
                                  QSizePolicy::MinimumExpanding);
-    detailsVBoxLayout->addWidget (mDetailsText);
+    mDetailsSplitter->addWidget (tr ("&Details:"), mDetailsText);
 
     mFlagCB_Details = new QCheckBox();
     mFlagCB_Details->hide();
@@ -156,9 +230,6 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
 
     /* this call is a must -- it initializes mFlagCB and mSpacer */
     setDetailsShown (false);
-
-    /* Set fixed size */
-    setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 }
 
 /**
@@ -376,6 +447,22 @@ void QIMessageBox::closeEvent (QCloseEvent *e)
         e->accept();
     else
         e->ignore();
+}
+
+void QIMessageBox::showEvent (QShowEvent *e)
+{
+    if (!mWasPolished)
+    {
+        /* Polishing sub-widgets */
+        resize (minimumSizeHint());
+        qApp->processEvents();
+        mTextLabel->setMinimumWidth (mTextLabel->width());
+        mTextLabel->updateSizeHint();
+        mDetailsSplitter->toggleWidget();
+        mWasPolished = true;
+    }
+
+    QIDialog::showEvent (e);
 }
 
 void QIMessageBox::reject()
