@@ -101,7 +101,7 @@
   library and lives in the VBoxSVC process. In fact, when you create an instance
   of the <tt>VirtualBox.VirtualBox</tt>, the COM subsystem checks if the VBoxSVC
   process is already running, starts it if not, and returns you a reference to
-  the<tt>VirtualBox</tt> object created in this process. When the last reference
+  the <tt>VirtualBox</tt> object created in this process. When the last reference
   to this object is released, the VBoxSVC process ends (with a 5 second delay to
   protect from too frequent restarts).
 
