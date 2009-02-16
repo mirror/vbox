@@ -3428,23 +3428,21 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 if (iPD == iPdNoMapping)
 #   endif
                 {
-#   ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
                     if (pVM->pgm.s.fMappingsFixed)
                     {
                         /* It's fixed, just skip the mapping. */
                         const unsigned cPTs = pMapping->cb >> GST_PD_SHIFT;
                         Assert(PGM_GST_TYPE == PGM_TYPE_32BIT || (iPD + cPTs - 1) / X86_PG_PAE_ENTRIES == iPD / X86_PG_PAE_ENTRIES);
                         iPD += cPTs - 1;
-#    if PGM_SHW_TYPE != PGM_GST_TYPE /* SHW==PAE && GST==32BIT */
+#   if PGM_SHW_TYPE != PGM_GST_TYPE /* SHW==PAE && GST==32BIT */
                         pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)(iPD + 1) << GST_PD_SHIFT);
-#    else
+#   else
                         pPDEDst += cPTs;
-#    endif
+#   endif
                         pMapping = pMapping->CTX_SUFF(pNext);
                         iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                         continue;
                     }
-#   endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
 #   ifdef IN_RING3
 #    if PGM_GST_TYPE == PGM_TYPE_32BIT
                     int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPD << GST_PD_SHIFT);
@@ -3470,7 +3468,14 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
 #  endif /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
 
-#  ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                /* advance */
+#   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
+                pPDEDst += 2;
+#   else
+                pPDEDst++;
+#   endif
+#  else
                 /*
                  * Sync page directory entry.
                  *
@@ -3478,13 +3483,13 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                  * the entry to not-present and postpone the page table synching till
                  * it's actually used.
                  */
-#  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
+#   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
-#  elif PGM_GST_TYPE == PGM_TYPE_PAE
+#   elif PGM_GST_TYPE == PGM_TYPE_PAE
                 const unsigned iPdShw = iPD + iPdpt * X86_PG_PAE_ENTRIES; NOREF(iPdShw);
-#  else
+#   else
                 const unsigned iPdShw = iPD; NOREF(iPdShw);
-#  endif
+#   endif
                 {
                     SHWPDE PdeDst = *pPDEDst;
                     if (PdeDst.n.u1Present)
@@ -3495,18 +3500,18 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                             ||  !fBigPagesSupported)
                         {
                             GCPhys = PdeSrc.u & GST_PDE_PG_MASK;
-#  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
+#   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
                             GCPhys |= i * (PAGE_SIZE / 2);
-#  endif
+#   endif
                         }
                         else
                         {
                             GCPhys = GST_GET_PDE_BIG_PG_GCPHYS(PdeSrc);
-#  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
+#   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                             /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
                             GCPhys |= i * X86_PAGE_2M_SIZE;
-#  endif
+#   endif
                         }
 
                         if (    pShwPage->GCPhys == GCPhys
@@ -3514,12 +3519,12 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                             &&  (   pShwPage->fCached
                                 || (   !fGlobal
                                     && (   false
-#  ifdef PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
+#   ifdef PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
                                         || (   (PdeSrc.u & (X86_PDE4M_PS | X86_PDE4M_G)) == (X86_PDE4M_PS | X86_PDE4M_G)
                                             && (cr4 & (X86_CR4_PGE | X86_CR4_PSE)) == (X86_CR4_PGE | X86_CR4_PSE)) /* global 2/4MB page. */
                                         || (  !pShwPage->fSeenNonGlobal
                                             && (cr4 & X86_CR4_PGE))
-#  endif
+#   endif
                                         )
                                     )
                                 )
@@ -3530,7 +3535,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                                 )
                         )
                         {
-#  ifdef VBOX_WITH_STATISTICS
+#   ifdef VBOX_WITH_STATISTICS
                             if (   !fGlobal
                                 && (PdeSrc.u & (X86_PDE4M_PS | X86_PDE4M_G)) == (X86_PDE4M_PS | X86_PDE4M_G)
                                 && (cr4 & (X86_CR4_PGE | X86_CR4_PSE)) == (X86_CR4_PGE | X86_CR4_PSE))
@@ -3539,7 +3544,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                                 MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstSkippedGlobalPT));
                             else
                                 MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstCacheHit));
-#  endif /* VBOX_WITH_STATISTICS */
+#   endif /* VBOX_WITH_STATISTICS */
     /** @todo a replacement strategy isn't really needed unless we're using a very small pool < 512 pages.
     * The whole ageing stuff should be put in yet another set of #ifdefs. For now, let's just skip it. */
     //#  ifdef PGMPOOL_WITH_CACHE
@@ -3567,10 +3572,17 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             else if (iPD != iPdNoMapping)
 #  endif
             {
-#  ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY 
                 /*
                  * Check if there is any page directory to mark not present here.
                  */
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                /* advance */
+#   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
+                pPDEDst += 2;
+#   else
+                pPDEDst++;
+#   endif
+#  else
 #   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
 #   elif PGM_GST_TYPE == PGM_TYPE_PAE
@@ -3606,7 +3618,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                 }
                 else
-#   endif
+#   endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
                 {
                     /*
                      * Check for conflicts for subsequent pagetables
