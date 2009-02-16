@@ -79,6 +79,10 @@ echo "Creating links..."
 # Install Xorg components to the required places
 xorgversion_long=`/usr/X11/bin/Xorg -version 2>&1 | grep "X Window System Version"`
 xorgversion=`/usr/bin/expr "${xorgversion_long}" : 'X Window System Version \([^ ]*\)'`
+if test -z "$xorgversion_long"; then
+    xorgversion_long=`/usr/X11/bin/Xorg -version 2>&1 | grep "X.Org X Server"`
+    xorgversion=`/usr/bin/expr "${xorgversion_long}" : 'X.Org X Server \([^ ]*\)'`
+fi
 
 vboxmouse_src=""
 vboxvideo_src=""
