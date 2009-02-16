@@ -140,51 +140,52 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
            || PGM_GST_TYPE == PGM_TYPE_PROT))
 
     Assert(!HWACCMIsNestedPagingActive(pVM));
-    /* We only need shadow paging in real and protected mode for VT-x and AMD-V (excluding nested paging/EPT modes) */
-    if (HWACCMIsEnabled(pVM))
+    /* Note: we only really need shadow paging in real and protected mode for VT-x and AMD-V (excluding nested paging/EPT modes),
+     *       but any calls to GC need a proper shadow page setup as well.
+     */
+    /* Free the previous root mapping if still active. */
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
     {
-        /* Free the previous root mapping if still active. */
-        PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-        if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
-        {
-            /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
-            /** @todo Coordinate this better with the pool. */
-            if (pVM->pgm.s.pShwPageCR3R3->enmKind != PGMPOOLKIND_FREE)
-                pgmPoolFreeByPage(pPool, pVM->pgm.s.pShwPageCR3R3, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
-            pVM->pgm.s.pShwPageCR3R3 = 0;
-            pVM->pgm.s.pShwPageCR3RC = 0;
-            pVM->pgm.s.pShwPageCR3R0 = 0;
-            pVM->pgm.s.pShwRootR3    = 0;
+        /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
+        /** @todo Coordinate this better with the pool. */
+        if (pVM->pgm.s.pShwPageCR3R3->enmKind != PGMPOOLKIND_FREE)
+            pgmPoolFreeByPage(pPool, pVM->pgm.s.pShwPageCR3R3, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
+        pVM->pgm.s.pShwPageCR3R3 = 0;
+        pVM->pgm.s.pShwPageCR3RC = 0;
+        pVM->pgm.s.pShwPageCR3R0 = 0;
+        pVM->pgm.s.pShwRootR3    = 0;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-            pVM->pgm.s.pShwRootR0    = 0;
+        pVM->pgm.s.pShwRootR0    = 0;
 #  endif
-            pVM->pgm.s.HCPhysShwCR3  = 0;
-            pVM->pgm.s.iShwUser      = 0;
-            pVM->pgm.s.iShwUserTable = 0;
-        }
-
-        /* contruct a fake address */
-        RTGCPHYS GCPhysCR3 = RT_BIT_64(63);
-        pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
-        pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
-        int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable, &pVM->pgm.s.pShwPageCR3R3);
-        if (rc == VERR_PGM_POOL_FLUSHED)
-        {
-            Log(("Bth-Enter: PGM pool flushed -> signal sync cr3\n"));
-            Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
-            return VINF_PGM_SYNC_CR3;
-        }
-        AssertRCReturn(rc, rc);
-        pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.pShwPageCR3R3);
-        pVM->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVM->pgm.s.pShwPageCR3R3);
-        pVM->pgm.s.pShwRootR3    = (R3PTRTYPE(void *))pVM->pgm.s.pShwPageCR3R3->pvPageR3;
-        Assert(pVM->pgm.s.pShwRootR3);
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-        pVM->pgm.s.pShwRootR0    = (R0PTRTYPE(void *))PGMPOOL_PAGE_2_PTR(pVM, pVM->pgm.s.pShwPageCR3R3);
-#  endif
-        pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.pShwPageCR3R3->Core.Key;
+        pVM->pgm.s.HCPhysShwCR3  = 0;
+        pVM->pgm.s.iShwUser      = 0;
+        pVM->pgm.s.iShwUserTable = 0;
     }
+
+    /* contruct a fake address */
+    RTGCPHYS GCPhysCR3 = RT_BIT_64(63);
+    pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
+    pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
+    int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable, &pVM->pgm.s.pShwPageCR3R3);
+    if (rc == VERR_PGM_POOL_FLUSHED)
+    {
+        Log(("Bth-Enter: PGM pool flushed -> signal sync cr3\n"));
+        Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+        return VINF_PGM_SYNC_CR3;
+    }
+    AssertRCReturn(rc, rc);
+    pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.pShwPageCR3R3);
+    pVM->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVM->pgm.s.pShwPageCR3R3);
+    pVM->pgm.s.pShwRootR3    = (R3PTRTYPE(void *))pVM->pgm.s.pShwPageCR3R3->pvPageR3;
+    Assert(pVM->pgm.s.pShwRootR3);
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pShwRootR0    = (R0PTRTYPE(void *))PGMPOOL_PAGE_2_PTR(pVM, pVM->pgm.s.pShwPageCR3R3);
+#  endif
+    pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.pShwPageCR3R3->Core.Key;
 # endif
+    /* Apply all hypervisor mappings to the new CR3. */
+    return PGMMapActivateAll(pVM);
 #else
     /* nothing special to do here - InitData does the job. */
 #endif
