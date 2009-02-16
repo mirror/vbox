@@ -389,8 +389,7 @@ VMMDECL(int) PGMMapActivateAll(PVM pVM)
         return VINF_SUCCESS;
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (!pVM->pgm.s.CTX_SUFF(pShwPageCR3))
-        return VINF_SUCCESS;    /* too early */
+    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 #endif
 
     /*
@@ -421,8 +420,7 @@ VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
         return VINF_SUCCESS;
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (!pVM->pgm.s.CTX_SUFF(pShwPageCR3))
-        return VINF_SUCCESS;    /* too early */
+    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 #endif
 
     /*
