@@ -525,6 +525,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     fd_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/fd_read_16px.png"));
     fd_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/fd_write_16px.png"));
     fd_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/fd_disabled_16px.png"));
+    fd_light->hide(); /* This LED hidden due to little importance (defect #3630) */
     indicatorBoxHLayout->addWidget (fd_light);
     net_light = new QIStateIndicator (KDeviceActivity_Idle);
     net_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/nw_16px.png"));
