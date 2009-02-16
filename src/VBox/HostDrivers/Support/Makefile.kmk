@@ -315,8 +315,8 @@ VBoxDrvTiger.kext_CLEAN    = $(PATH_VBoxDrvTiger.kext)/Info.plist
 
 $$(PATH_VBoxDrvTiger.kext)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info-Tiger.plist $(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxDrvTiger,$@,$<)
-	$(xQUIET)$(RM) -f $@
-	$(xQUIET)$(SED) \
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
@@ -338,11 +338,11 @@ VBoxDrv.kext_SOURCES  =	$(PATH_VBoxDrv.kext)/Info.plist
 VBoxDrv.kext_CLEAN    =	$(PATH_VBoxDrv.kext)/Info.plist
 
 $$(PATH_VBoxDrv.kext)/Info.plist: \
-		$(PATH_SUB_CURRENT)/darwin/Info$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64",-SnowLeopard,).plist \
+		$(PATH_SUB_CURRENT)/darwin/Info.plist \
 		$(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxDrv,$@,$<)
-	$(xQUIET)$(RM) -f $@
-	$(xQUIET)$(SED) \
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
