@@ -164,7 +164,7 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
     }
 
     /* contruct a fake address */
-    RTGCPHYS GCPhysCR3 = RT_BIT_64(63);
+    GCPhysCR3 = RT_BIT_64(63);
     pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
     pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
     int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable, &pVM->pgm.s.pShwPageCR3R3);
