@@ -1155,7 +1155,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                     && !UNIX_CHECK_FD_SET(so, NetworkEvents, writefds)
                     && !UNIX_CHECK_FD_SET(so, NetworkEvents, xfds)) 
                 {
-                    LogRel(("NAT:system expires the socket %R[natsock] err(%d:%s) s(in:%d,out:%d) happens on non-I/O. "
+                    LogRel(("NAT:system expires the socket %R[natsock] err(%d:%s) s(in:%d,out:%d) happens on non-I/O. ",
                             so, err, strerror(err), inq, outq));
                     goto tcp_input_close;
                 }
