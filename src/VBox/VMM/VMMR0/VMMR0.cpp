@@ -543,6 +543,14 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
             {
                 RTCCUINTREG uFlags = ASMIntDisableFlags();
 
+#ifdef VBOX_STRICT
+                if (RT_UNLIKELY(!PGMGetHyperCR3(pVM)))
+                {
+                    pVM->vmm.s.iLastGZRc = VERR_ACCESS_DENIED;
+                    return;
+                }
+#endif
+
                 TMNotifyStartOfExecution(pVM);
                 int rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
                 pVM->vmm.s.iLastGZRc = rc;
