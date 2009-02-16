@@ -72,13 +72,13 @@ filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxService=VBoxService
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxService=amd64/VBoxService"'  '$4 = "4755"'
 
 # 32-bit kernel module
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest"'              '$3 = "platform/i86pc/kernel/drv/vboxguest=vboxguest"; $6="sys"'
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest"'              '$3 = "usr/kernel/drv/vboxguest=vboxguest"; $6="sys"'
 
 # 64-bit kernel module
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxguest=amd64/vboxguest"'  '$3 = "platform/i86pc/kernel/drv/amd64/vboxguest=amd64/vboxguest"; $6="sys"'
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxguest=amd64/vboxguest"'  '$3 = "usr/kernel/drv/amd64/vboxguest=amd64/vboxguest"; $6="sys"'
 
 # kernel module config file
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxguest.conf"'    '$3 = "platform/i86pc/kernel/drv/vboxguest.conf=vboxguest.conf"'
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxguest.conf"'    '$3 = "usr/kernel/drv/vboxguest.conf=vboxguest.conf"'
 
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxservice.xml=vboxservice.xml"'  '$3 = "var/svc/manifest/system/virtualbox/vboxservice.xml=vboxservice.xml"'
 echo " --- start of prototype  ---" 

@@ -19,7 +19,7 @@
 
 SILENTUNLOAD=""
 MODNAME="vboxguest"
-MODDIR32="/platform/i86pc/kernel/drv"
+MODDIR32="/usr/kernel/drv"
 MODDIR64=$MODDIR32/amd64
 
 abort()
