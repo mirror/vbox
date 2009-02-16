@@ -1131,7 +1131,6 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                  * hint: streamio(7) I_NREAD 
                  */
 #endif
-
                 if (   so->so_state & SS_ISFCONNECTING
                     || UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
                 {
@@ -1143,14 +1142,22 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                     {
                         /*
                          * Never meet inq != 0 or outq != 0, anyway let it stay for a while 
-                         * in case it happens we'll able to detect it.
+                         * in case it happens we'll able to detect it. 
+                         * Give TCP/IP stack wait or expire the socket. 
                          */
                         LogRel(("NAT:%R[natsock] err(%d:%s) s(in:%d,out:%d)happens on read I/O, "
                             "other side close connection \n", so, err, strerror(err), inq, outq));
+                        CONTINUE(tcp);
                     }
-                    so->so_state = SS_NOFDREF;
-                    TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
-                    CONTINUE(tcp);
+                    goto tcp_input_close;
+                }
+                if (   !UNIX_CHECK_FD_SET(so, NetworkEvents, readfds)
+                    && !UNIX_CHECK_FD_SET(so, NetworkEvents, writefds)
+                    && !UNIX_CHECK_FD_SET(so, NetworkEvents, xfds)) 
+                {
+                    LogRel(("NAT:system expires the socket %R[natsock] err(%d:%s) s(in:%d,out:%d) happens on non-I/O. "
+                            so, err, strerror(err), inq, outq));
+                    goto tcp_input_close;
                 }
                 LogRel(("NAT:%R[natsock] we've met(%d:%s) s(in:%d, out:%d) unhandled combination hup (%d) "
                     "rederr(%d) on (r:%d, w:%d, x:%d)\n", 
@@ -1162,11 +1169,13 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                         UNIX_CHECK_FD_SET(so, ign, writefds),
                         UNIX_CHECK_FD_SET(so, ign, xfds)));
                 /* 
-                 * Here should be other error handlings 
-                 * The error handling code above handles the errors can happens on reading
-                 * we haven't still met any cases of error on write.
+                 * Give OS's TCP/IP stack a chance to resolve an issue or expire the socket.
                  */
-                AssertRelease(!"shouldn't be here!!!");
+                CONTINUE(tcp);
+tcp_input_close:
+                so->so_state = SS_NOFDREF; /*cause connection valid tcp connection termination and socket closing */
+                TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
+                CONTINUE(tcp);
             }
 #endif
             LOOP_LABEL(tcp, so, so_next);
