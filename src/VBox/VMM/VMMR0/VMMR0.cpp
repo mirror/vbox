@@ -775,6 +775,11 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
             if (RT_UNLIKELY(pVM->vmm.s.fSwitcherDisabled))
                 return VERR_NOT_SUPPORTED;
 
+#ifdef VBOX_STRICT
+            if (RT_UNLIKELY(!PGMGetHyperCR3(pVM)))
+                return VERR_NOT_SUPPORTED;
+#endif
+
             RTCCUINTREG fFlags = ASMIntDisableFlags();
             int rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
             /** @todo dispatch interrupts? */
