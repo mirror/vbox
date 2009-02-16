@@ -133,7 +133,7 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
     /* Here we deal with allocation of the root shadow page table for real and protected mode during mode switches;
      * Other modes rely on MapCR3/UnmapCR3 to setup the shadow root page tables. 
      */
-# if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BITS \
+# if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT \
            || PGM_SHW_TYPE == PGM_TYPE_PAE    \
            || PGM_SHW_TYPE == PGM_TYPE_AMD64) \
        && (   PGM_GST_TYPE == PGM_TYPE_REAL   \
