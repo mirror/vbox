@@ -2004,6 +2004,10 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     pVM->pgm.s.pShwPaePdptRC += offDelta;
 #endif
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    pVM->pgm.s.pShwPageCR3RC += offDelta;
+#endif
+
     pgmR3ModeDataInit(pVM, true /* resolve GC/R0 symbols */);
     pgmR3ModeDataSwitch(pVM, pVM->pgm.s.enmShadowMode, pVM->pgm.s.enmGuestMode);
 
