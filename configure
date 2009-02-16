@@ -1852,12 +1852,12 @@ for option in $*; do
       if [ -d $out_path ]; then
         saved_path="`pwd`"
         cd $out_path
-        OUT_PATH="`pwd`/"
+        OUT_PATH="`pwd`"
         cd $saved_path
         OUT_PATH_OVERRIDE=1
         if [ $ODIR_OVERRIDE -eq 0 ]; then
           # This variable has not *yet* been overridden.  That can still happen.
-          ODIR=$OUT_PATH
+          ODIR=$OUT_PATH/
         fi
       else
         echo "Error: invalid folder \"$out_path\" in option \"$option\""
@@ -1937,8 +1937,8 @@ export PATH
 
 # if we will be writing to a different out directory then set this up now
 if [ $OUT_PATH_OVERRIDE -eq 1 ]; then
-  echo "export AUTOCFG=$OUT_PATH""AutoConfig.kmk" >> $ENV
-  echo "export LOCALCFG=$OUT_PATH""LocalConfig.kmk" >> $ENV
+  echo "export AUTOCFG=$OUT_PATH/AutoConfig.kmk" >> $ENV
+  echo "export LOCALCFG=$OUT_PATH/LocalConfig.kmk" >> $ENV
   echo "export PATH_OUT_BASE=$OUT_PATH" >> $ENV
 fi
 
@@ -2066,11 +2066,11 @@ if [ "$OS" = "linux" ]; then
     if [ $OUT_PATH_OVERRIDE -eq 1 ]; then
       vbox_out_path=$OUT_PATH
     else
-      vbox_out_path=./out/
+      vbox_out_path=./out
     fi
     echo "To compile the kernel module, do:"
     echo ""
-    echo "  cd $vbox_out_path$OS.$TARGET_MACHINE/$BUILD_TYPE/bin/src/vboxdrv"
+    echo "  cd $vbox_out_path/$OS.$TARGET_MACHINE/$BUILD_TYPE/bin/src/vboxdrv"
     echo "  make"
     echo ""
 fi
