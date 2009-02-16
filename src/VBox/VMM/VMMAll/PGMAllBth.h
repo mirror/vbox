@@ -4617,9 +4617,6 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 
     Assert(!HWACCMIsNestedPagingActive(pVM));
 
-    /* Apply all hypervisor mappings to the new CR3. */
-    PGMMapActivateAll(pVM);
-
     /*
      * Update the shadow root page as well since that's not fixed.
      */
@@ -4669,7 +4666,9 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     pVM->pgm.s.pShwRootR0    = (R0PTRTYPE(void *))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 #  endif
     pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
-    rc = VINF_SUCCESS; /* clear it - pgmPoolAlloc returns hints. */
+
+    /* Apply all hypervisor mappings to the new CR3. */
+    rc = PGMMapActivateAll(pVM);
 # endif
 #endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
