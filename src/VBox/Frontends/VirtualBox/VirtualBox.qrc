@@ -318,6 +318,10 @@
     <file alias="welcome.png">images/welcome.png</file>
     <file alias="monitor.png">images/monitor.png</file>
     <file alias="monitor_glossy.png">images/monitor_glossy.png</file>
+    <file alias="arrow_right_10px.png">images/arrow_right_10px.png</file>
+    <file alias="arrow_left_10px.png">images/arrow_left_10px.png</file>
+    <file alias="arrow_up_10px.png">images/arrow_up_10px.png</file>
+    <file alias="arrow_down_10px.png">images/arrow_down_10px.png</file>
     <file alias="name_16px.png">images/name_16px.png</file>
     <file alias="os_type_16px.png">images/os_type_16px.png</file>
     <file alias="cpu_16px.png">images/cpu_16px.png</file>
