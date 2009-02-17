@@ -185,11 +185,10 @@ tcp_newtcpcb(PNATState pData, struct socket *so)
 {
     register struct tcpcb *tp;
 
-    tp = (struct tcpcb *)RTMemAlloc(sizeof(*tp));
+    tp = (struct tcpcb *)RTMemAllocZ(sizeof(*tp));
     if (tp == NULL)
         return ((struct tcpcb *)0);
 
-    memset((char *) tp, 0, sizeof(struct tcpcb));
     tp->t_maxseg = tcp_mssdflt;
 
     tp->t_flags = tcp_do_rfc1323 ? (TF_REQ_SCALE|TF_REQ_TSTMP) : 0;
