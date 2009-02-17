@@ -35,7 +35,7 @@
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
-#include <iprt/uuid.h>
+#include <iprt/rand.h>
 
 #include <sys/types.h>
 #include <sys/dlpi.h>
@@ -352,7 +352,6 @@ static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                          * Registeration can fail on some S10 versions when the MTU size is more than 1500.
                          * When we implement jumbo frames we should probably retry with MTU 1500 for S10.
                          */
-                        LogRel((DEVICE_NAME ":VBoxNetAdpSolarisAttach here.\n"));
                         rc = gld_register(pDip, (char *)ddi_driver_name(pDip), pMacInfo);
                         if (rc == DDI_SUCCESS)
                         {
@@ -481,18 +480,31 @@ static int vboxNetAdpSolarisGenerateMac(PRTMAC pMac)
     pMac->au8[0] = 0x00;
     pMac->au8[1] = 0x08;
     pMac->au8[2] = 0x27;
-    pMac->au8[3] = 0x00;
-    pMac->au8[4] = 0x00;
-    pMac->au8[5] = 0x00;
 
-    LogFlow((DEVICE_NAME ":VBoxNetAdpSolarisGenerateMac Generated %.6Rhxs\n", pMac));
+    unsigned char achRand[3];
+    RTRandBytes(&achRand, sizeof(achRand));
+
+    pMac->au8[3] = achRand[0];
+    pMac->au8[4] = achRand[1];
+    pMac->au8[5] = achRand[2];
+
+    LogFlow((DEVICE_NAME ":VBoxNetAdpSolarisGenerateMac Generated %.*Rhxs\n", sizeof(RTMAC), &pMac));
     return VINF_SUCCESS;
 }
 
 
 static int vboxNetAdpSolarisSetMacAddress(gld_mac_info_t *pMacInfo, unsigned char *pszMacAddr)
 {
-
+    vboxnetadp_state_t *pState = (vboxnetadp_state_t *)pMacInfo->gldm_private;
+    if (pState)
+    {
+        bcopy(pszMacAddr, &pState->CurrentMac, sizeof(RTMAC));
+        LogFlow((DEVICE_NAME ":vboxNetAdpSolarisSetMacAddress updated MAC %.*Rhxs\n", sizeof(RTMAC), &pState->CurrentMac));
+        return GLD_SUCCESS;
+    }
+    else
+        LogRel((DEVICE_NAME ":vboxNetAdpSolarisSetMacAddress failed to get internal state.\n"));
+    return GLD_FAILURE;
 }
 
 
@@ -511,7 +523,10 @@ static int vboxNetAdpSolarisStub(gld_mac_info_t *pMacInfo)
 
 static int vboxNetAdpSolarisSetMulticast(gld_mac_info_t *pMacInfo, unsigned char *pMulticastAddr, int fMulticast)
 {
-
+    NOREF(pMacInfo);
+    NOREF(pMulticastAddr);
+    NOREF(fMulticast);
+    return GLD_SUCCESS;
 }
 
 
