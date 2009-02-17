@@ -744,6 +744,8 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     bool f;
 
+    __asm {int 3};
+
     /*
      * Init the static parts.
      */
@@ -1025,24 +1027,32 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     }
 
 #elif defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
-    if (OpenReq.enmTrunkType == kIntNetTrunkType_NetFlt)
+    if (OpenReq.enmTrunkType == kIntNetTrunkType_NetFlt
+            || OpenReq.enmTrunkType == kIntNetTrunkType_NetTap)
     {
 # ifndef VBOX_NETFLT_ONDEMAND_BIND
         /*
          * We have a ndis filter driver started on system boot before the VBoxDrv,
          * tell the filter driver to init VBoxNetFlt functionality.
          */
-        rc = drvIntNetWinConstruct(pDrvIns, pCfgHandle);
+        rc = drvIntNetWinConstruct(pDrvIns, pCfgHandle, OpenReq.enmTrunkType);
         AssertLogRelMsgRCReturn(rc, ("drvIntNetWinConstruct failed, rc=%Rrc", rc), rc);
 # endif
 
-        /*
-         * <Describe what this does here or/and in the function docs of drvIntNetWinIfGuidToBindName>.
-         */
-        char szBindName[INTNET_MAX_TRUNK_NAME];
-        rc = drvIntNetWinIfGuidToBindName(OpenReq.szTrunk, szBindName, INTNET_MAX_TRUNK_NAME);
-        AssertLogRelMsgRCReturn(rc, ("drvIntNetWinIfGuidToBindName failed, rc=%Rrc", rc), rc);
-        strcpy(OpenReq.szTrunk, szBindName);
+        if (OpenReq.enmTrunkType == kIntNetTrunkType_NetFlt)
+        {
+            /*
+             * <Describe what this does here or/and in the function docs of drvIntNetWinIfGuidToBindName>.
+             */
+            char szBindName[INTNET_MAX_TRUNK_NAME];
+            rc = drvIntNetWinIfGuidToBindName(OpenReq.szTrunk, szBindName, INTNET_MAX_TRUNK_NAME);
+            AssertLogRelMsgRCReturn(rc, ("drvIntNetWinIfGuidToBindName failed, rc=%Rrc", rc), rc);
+            strcpy(OpenReq.szTrunk, szBindName);
+        }
+        else
+        {
+            strcpy(OpenReq.szTrunk, "dummy name");
+        }
     }
 #endif /* WINDOWS && NETFLT */
 

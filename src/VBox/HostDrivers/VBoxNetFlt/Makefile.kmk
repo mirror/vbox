@@ -213,6 +213,65 @@ $$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn_i.c \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 endif #ifeq ($(KBUILD_TARGET), win)
 
+#
+# VBoxNetAdp.sys - The VirtualBox Adapter miniport driver.
+#
+SYSMODS.win += VBoxNetAdp
+VBoxNetAdp_TEMPLATE = VBOXR0DRV
+VBoxNetAdp_INST = $(INST_VBOXNETFLT)
+if defined(VBOX_SIGNING_MODE)
+ VBoxNetAdp_NOINST = true
+endif
+VBoxNetAdp_DEFS = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
+VBoxNetAdp_SDKS = W2K3DDK WINPSDKINCS
+VBoxNetAdp_INCS := $(PATH_SUB_CURRENT)
+VBoxNetAdp_SOURCES = \
+	VBoxNetFlt.c \
+	win/VBoxNetFlt-win.c \
+	win/VBoxNetFltMp-win.c \
+	win/VBoxNetFlt-win.rc
+VBoxNetAdp_DEFS += VBOXNETFLT_STATIC_CONFIG VBOX_TAPMINIPORT
+VBoxNetAdp_LDFLAGS.win.x86 = -Entry:DriverEntry@8
+VBoxNetAdp_LDFLAGS.win.amd64 = -Entry:DriverEntry
+VBoxNetAdp_SOURCES.win.amd64 += win/VBoxNetFltA-win.asm
+VBoxNetAdp_DEFS.win.amd64    += RT_WITH_W64_UNWIND_HACK
+VBoxNetAdp_LIBS.win = \
+	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/ndis.lib \
+	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+VBoxNetAdp_LIBS = \
+	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+
+
+INSTALLS.win += VBoxNetAdp-inf
+VBoxNetAdp-inf_INST = $(INST_BIN)
+VBoxNetAdp-inf_MODE = a+r,u+w
+VBoxNetAdp-inf_SOURCES = \
+	$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.inf
+VBoxNetAdp-inf_CLEAN = $(VBoxNetAdp-inf_SOURCES)
+VBoxNetAdp-inf_BLDDIRS = $(PATH_TARGET)/VBoxNetAdpCat.dir
+
+$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.inf: $(PATH_SUB_CURRENT)/win/VBoxNetAdp.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,VBoxNetAdp-inf,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
+
+ ifdef VBOX_SIGNING_MODE
+VBoxNetAdp-inf_SOURCES += \
+	$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.sys \
+	$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.cat
+
+$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.sys: $$(TARGET_VBoxNetAdp) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+
+$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.cat: \
+		$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.sys \
+		$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.inf
+	$(call MSG_TOOL,Inf2Cat,VBoxNetFlt-inf,$@,$<)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+
+ endif #  ifdef VBOX_SIGNING_MODE
+ 
 else if1of ($(KBUILD_TARGET), linux solaris) ## @todo merge this with the mixed case stuff.
 #
 # vboxnetflt(.ko/.o/) - The lower case driver.

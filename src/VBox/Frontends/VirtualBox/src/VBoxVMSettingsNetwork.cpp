@@ -354,7 +354,7 @@ void VBoxVMSettingsNetwork::prepareComboboxes()
         vboxGlobal().toString (KNetworkAttachmentType_Internal));
     mCbNAType->setItemData (3,
         mCbNAType->itemText(3), Qt::ToolTipRole);
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined (RT_OS_WINDOWS)
     mCbNAType->insertItem (4,
         vboxGlobal().toString (KNetworkAttachmentType_HostOnly));
     mCbNAType->setItemData (4,

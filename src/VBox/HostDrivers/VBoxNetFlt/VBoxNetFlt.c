@@ -1036,7 +1036,12 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
     rc = RTSemFastMutexRequest(pGlobals->hFastMtx);
     AssertRCReturn(rc, rc);
 
+#if defined(VBOX_TAPMINIPORT) && defined(RT_OS_WINDOWS)
+    /* temporary hack to pick up the first adapter */
+    pCur = pGlobals->pInstanceHead;
+#else
     pCur = vboxNetFltFindInstanceLocked(pGlobals, pszName);
+#endif
     if (pCur)
     {
 #ifdef VBOXNETFLT_STATIC_CONFIG
@@ -1267,8 +1272,11 @@ DECLHIDDEN(int) vboxNetFltInitGlobalsBase(PVBOXNETFLTGLOBALS pGlobals)
 
             pGlobals->TrunkFactory.pfnRelease = vboxNetFltFactoryRelease;
             pGlobals->TrunkFactory.pfnCreateAndConnect = vboxNetFltFactoryCreateAndConnect;
-
+#if defined(RT_OS_WINDOWS) && defined(VBOX_TAPMINIPORT)
+            strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetTap");
+#else
             strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetFlt");
+#endif
             pGlobals->SupDrvFactory.pfnQueryFactoryInterface = vboxNetFltQueryFactoryInterface;
 
             return rc;
