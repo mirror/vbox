@@ -62,7 +62,6 @@ socreate()
     so = (struct socket *)RTMemAllocZ(sizeof(struct socket));
     if(so)
     {
-        memset(so, 0, sizeof(struct socket));
         so->so_state = SS_NOFDREF;
         so->s = -1;
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
