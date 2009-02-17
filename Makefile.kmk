@@ -493,7 +493,7 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/vm.h \
 	\
 	$(PATH_ROOT)/include/VBox/sup.h \
-	$(PATH_ROOT)/include/VBox/VBoxHDD-new.h \
+	$(PATH_ROOT)/include/VBox/VBoxHDD.h \
 	$(PATH_ROOT)/include/VBox/types.h \
 	$(PATH_ROOT)/include/VBox/err.h \
 	$(PATH_ROOT)/include/VBox/x86.h \

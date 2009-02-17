@@ -35,7 +35,6 @@ cpp_hdrs := \
 r3_only_hdrs := \
 	VBox/vrdpapi.h \
         VBox/vrdpusb.h \
-	VBox/VBoxHDD-new.h \
 	VBox/VBoxHDD.h \
 	iprt/tcp.h \
 	iprt/localipc.h
