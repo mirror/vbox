@@ -70,15 +70,16 @@ struct socket
     RTCRITSECT      so_mutex;
     int             so_deleted;
 #endif
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+# ifndef RT_OS_WINDOWS
     int so_poll_index;
-#endif
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+# else /* !RT_OS_WINDOWS */
     /*
      * FD_CLOSE event has been occured on socket 
      */
     int so_close; 
-#endif
+# endif /* RT_OS_WINDOWS */
+#endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 };
 
 #ifdef VBOX_WITH_SLIRP_MT
