@@ -1028,7 +1028,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
 
 #elif defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
     if (OpenReq.enmTrunkType == kIntNetTrunkType_NetFlt
-            || OpenReq.enmTrunkType == kIntNetTrunkType_NetTap)
+            || OpenReq.enmTrunkType == kIntNetTrunkType_NetAdp)
     {
 # ifndef VBOX_NETFLT_ONDEMAND_BIND
         /*
