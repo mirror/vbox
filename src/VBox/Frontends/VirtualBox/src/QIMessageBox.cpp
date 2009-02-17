@@ -56,6 +56,7 @@ void QIArrowSplitter::addWidget (const QString &aName, QWidget *aWidget)
     arrowButton->setFocusPolicy (Qt::StrongFocus);
     arrowButton->setAutoRaise (true);
     arrowButton->setFixedSize (14, 16);
+    arrowButton->setStyleSheet ("QToolButton { border: 0px none black; }");
     mButtonsList.append (arrowButton);
 
     /* Creating description label */
