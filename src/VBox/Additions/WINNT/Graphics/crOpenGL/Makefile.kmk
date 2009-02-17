@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for the VirtualBox Windows Chromium OpenGL ICD.
+# Sub-Makefile for the VirtualBox Guest OpenGL part
 #
 
 #
@@ -22,129 +22,188 @@
 SUB_DEPTH = ../../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-ifndef VBOX_BLD_PYTHON
- if1of ($(KBUILD_HOST), win)
-  VBOX_BLD_PYTHON := $(firstword $(rsort $(wildcard $(PATH_DEVTOOLS)/win.x86/python/v*/python$(HOSTSUFF_EXE))) python-not-found.exe)
- else
-  VBOX_BLD_PYTHON := python$(HOSTSUFF_EXE)
- endif
-endif
+#
+# Target lists.
+#
+BLDDIRS += \
+	$(VBOX_PATH_CROGL_GENFILES)/
 
-## @todo r=bird: This conflicts with the export you're doing in GuestHost for reasons pointed out there.
-GLAPI_PATH := $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/glapi_parser
-if1of ($(KBUILD_HOST), win)
- export PYTHONPATH := $(GLAPI_PATH);$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer;$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
-else
- export PYTHONPATH := $(GLAPI_PATH):$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer:$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
-endif
-## @todo r=bird: See GuestHost makefile.
-APIFILES := $(GLAPI_PATH)/apiutil.py $(GLAPI_PATH)/APIspec.txt
+DLLS += VBoxOGL VBoxOGLarrayspu VBoxOGLpassthroughspu VBoxOGLpackspu
 
-## @todo r=bird: This appears to be common between GuestHost and this file, so move up to Config.kmk. Put it before the SDKs or something.
-## Also, see comments in the GuestHost makefile.
-# Actually this
-VBOXCROGL_GENFILES      := VBoxOGLgen
-PATH_VBOXCROGL_GENFILES := $(PATH_OBJ)/$(VBOXCROGL_GENFILES)
-PATH_VBOXCROGL_INCLUDE  := $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/include
-
-# Include sub-makefile(s).
-include $(PATH_SUB_CURRENT)/array/Makefile.kmk
-include $(PATH_SUB_CURRENT)/pack/Makefile.kmk
-include $(PATH_SUB_CURRENT)/passthrough/Makefile.kmk
-
-$$(PATH_VBoxOGL)/cropengl.def: $(PATH_SUB_CURRENT)/defs.py $(APIFILES) | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
+#
+# VBoxOGL
+#
+VBoxOGL_TEMPLATE       = VBOXCROGLR3GUESTDLL
+VBoxOGL_INCS           = .
 ifeq ($(KBUILD_TARGET),win)
-$$(PATH_VBoxOGL)/getprocaddress.c: $(PATH_SUB_CURRENT)/windows_getprocaddress.py $(APIFILES) | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-else
-$$(PATH_VBoxOGL)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress.py $(APIFILES) | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
+#fixme?, INTERMEDIATES.win ain't working
+ VBoxOGL_INTERMEDIATES += $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h
 endif
-
-ifeq ($(KBUILD_TARGET),win)
-$$(PATH_VBoxOGL)/windows_exports.asm: \
-		$(PATH_SUB_CURRENT)/windows_i386_exports.py \
-		$(APIFILES) $(PATH_SUB_CURRENT)/entrypoints.py \
-		| $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-$$(PATH_VBoxOGL)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(APIFILES) | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-$$(PATH_VBoxOGL)/gen/getprocaddress$(SUFF_OBJ): $(PATH_TARGET)/VBoxOGL/cr_gl.h
-endif
-
-ifeq ($(KBUILD_TARGET),linux)
-$$(PATH_VBoxOGL)/linux_exports.asm: \
-		$(PATH_SUB_CURRENT)/Linux_i386_exports.py \
-		$(APIFILES) $(PATH_SUB_CURRENT)/entrypoints.py \
-		| $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-endif
-
-$$(PATH_VBoxOGL)/NULLfuncs.c: $(PATH_SUB_CURRENT)/NULLfuncs.py $(APIFILES) | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-$$(PATH_VBoxOGL)/tsfuncs.c: $(PATH_SUB_CURRENT)/tsfuncs.py $(APIFILES) | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
-
-## @todo r=bird: See comments elsewhere about the GEN_?_FILES stuff.
-GEN_C_FILES := getprocaddress.c NULLfuncs.c
-GEN_C_FILES := $(addprefix $(PATH_TARGET)/VBoxOGL/, $(GEN_C_FILES))
-
-GEN_C_FILES.win := cropengl.def
-GEN_C_FILES.win := $(addprefix $(PATH_TARGET)/VBoxOGL/, $(GEN_C_FILES.win))
-
-GEN_ASM_FILES.win := windows_exports.asm
-GEN_ASM_FILES.win := $(addprefix $(PATH_TARGET)/VBoxOGL/, $(GEN_ASM_FILES.win))
-
-GEN_H_FILES.win := cr_gl.h
-GEN_H_FILES.win := $(addprefix $(PATH_TARGET)/VBoxOGL/, $(GEN_H_FILES.win))
-
-THREADSAFE=1
-
-DLLS += VBoxOGL
-
-VBoxOGL_TEMPLATE     = VBOXGUESTR3NPDLL
-VBoxOGL_DEFS         = CHROMIUM_THREADSAFE VBOX_WITH_HGCM
-VBoxOGL_DEFS.win     = _WIN32_WINNT=0x0500 WINDOWS=1
-VBoxOGL_DEFS.linux   = Linux=1
-VBoxOGL_DEFS.solaris = SunOS=1 GLEXT_64_TYPES_DEFINED
-VBoxOGL_INCS	     := \
-	$(PATH_SUB_CURRENT) \
-	$(PATH_VBOXCROGL_INCLUDE) \
-	$(PATH_VBOXCROGL_GENFILES) \
-	$(PATH_TARGET)/VBoxOGL
-VBoxOGL_SOURCES    := \
+VBoxOGL_SOURCES        = \
 	load.c \
 	stub.c \
 	context.c \
-	$(GEN_C_FILES)
-VBoxOGL_SOURCES.win := wgl.c icd_drv.c ogl_hgcm.c VBoxCROGL.rc $(GEN_ASM_FILES.win) $(GEN_C_FILES.win)
-VBoxOGL_SOURCES.linux := $(PATH_TARGET)/VBoxOGL/linux_exports.asm glx.c xfont.c
-VBoxOGL_DEPS.win   := $(GEN_H_FILES.win)
-VBoxOGL_CLEAN      := $(GEN_C_FILES)
-VBoxOGL_CLEAN.win  := $(GEN_ASM_FILES.win) $(GEN_H_FILES.win) $(GEN_C_FILES.win)
-
-ifeq ($(THREADSAFE), 1)
-VBoxOGL_DEFS    += CHROMIUM_THREADSAFE
-VBoxOGL_SOURCES += $(PATH_TARGET)/VBoxOGL/tsfuncs.c
-VBoxOGL_CLEAN   += $(PATH_TARGET)/VBoxOGL/tsfuncs.c
-endif
-
-VBoxOGL_LIBS.win = \
+	$(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c \
+	$(VBOX_PATH_CROGL_GENFILES)/NULLfuncs.c \
+	$(VBOX_PATH_CROGL_GENFILES)/tsfuncs.c
+VBoxOGL_SOURCES.linux  = \
+	glx.c \
+	xfont.c \
+	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
+VBoxOGL_SOURCES.win    = \
+	wgl.c \
+	icd_drv.c \
+	ogl_hgcm.c \
+	VBoxCROGL.rc \
+	$(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm \
+	$(VBOX_PATH_CROGL_GENFILES)/cropengl.def
+VBoxOGL_CLEAN          = \
+	$(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c \
+	$(VBOX_PATH_CROGL_GENFILES)/NULLfuncs.c \
+	$(VBOX_PATH_CROGL_GENFILES)/tsfuncs.c
+VBoxOGL_CLEAN.linux    = \
+	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
+VBoxOGL_CLEAN.win      = \
+	$(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm \
+	$(VBOX_PATH_CROGL_GENFILES)/cropengl.def
+VBoxOGL_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
-	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
-	$(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB)
-if1of ($(KBUILD_TARGET), linux solaris) ## @todo r=bird: See dll comment else where.
+	$(VBOX_LIB_OGL_CRUTIL) \
+	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB)
+if1of ($(KBUILD_TARGET),linux solaris)
  VBoxOGL_LIBS += \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3) \
-	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
-	$(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL) \
 	Xcomposite
 endif
+
+#
+# Generate files for VBoxOGL.
+#
+$(VBOX_PATH_CROGL_GENFILES)/NULLfuncs.c: $(PATH_SUB_CURRENT)/NULLfuncs.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+$(VBOX_PATH_CROGL_GENFILES)/tsfuncs.c: $(PATH_SUB_CURRENT)/tsfuncs.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
+ifeq ($(KBUILD_TARGET),win)
+$(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/windows_getprocaddress.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+$(VBOX_PATH_CROGL_GENFILES)/cropengl.def: $(PATH_SUB_CURRENT)/defs.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+$(VBOX_PATH_CROGL_GENFILES)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+$(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm: \
+		$(PATH_SUB_CURRENT)/windows_i386_exports.py \
+		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
+		| $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+else ifeq ($(KBUILD_TARGET),linux)
+$(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm: \
+		$(PATH_SUB_CURRENT)/Linux_i386_exports.py \
+		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
+		| $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+endif
+
+#
+# VBoxOGLarrayspu
+#
+VBoxOGLarrayspu_TEMPLATE      = VBOXCROGLR3GUESTDLL
+VBoxOGLarrayspu_INCS          = \
+	array
+VBoxOGLarrayspu_INCS.darwin  += $(PATH_OUT)/obj/VBoxOGL
+VBoxOGLarrayspu_INTERMEDIATES = \
+	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
+	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
+VBoxOGLarrayspu_SOURCES       = \
+	array/arrayspu.c \
+	array/arrayspu_config.c \
+	array/arrayspu_init.c
+VBoxOGLarrayspu_SOURCES.win   = \
+	array/arrayspu.def
+VBoxOGLarrayspu_LIBS          = \
+	$(VBOX_LIB_OGL_CRUTIL) \
+	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
+
+#
+# VBoxOGLpassthroughspu
+#
+VBoxOGLpassthroughspu_TEMPLATE    = VBOXCROGLR3GUESTDLL
+VBoxOGLpassthroughspu_INCS        = \
+	passthrough
+VBoxOGLpassthroughspu_SOURCES     = \
+	passthrough/passthroughspu_init.c \
+	$(VBOX_PATH_CROGL_GENFILES)/passthroughspu.c
+VBoxOGLpassthroughspu_SOURCES.win = \
+	passthrough/passthrough.def
+VBoxOGLpassthroughspu_CLEAN       = \
+	$(VBOX_PATH_CROGL_GENFILES)/passthroughspu.c
+VBoxOGLpassthroughspu_LIBS        = \
+	$(VBOX_LIB_OGL_CRUTIL)
+
+#
+# Generate files for VBoxOGLpassthroughspu.
+#
+$(VBOX_PATH_CROGL_GENFILES)/passthroughspu.c: $(PATH_SUB_CURRENT)/passthrough/passthrough.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
+#
+# VBoxOGLpackspu
+#
+VBoxOGLpackspu_TEMPLATE      = VBOXCROGLR3GUESTDLL
+VBoxOGLpackspu_DEFS          = TRACKS_STATE=1 PACKS=1
+VBoxOGLpackspu_INCS          = \
+	pack
+VBoxOGLpackspu_INTERMEDIATES = \
+	$(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h
+VBoxOGLpackspu_SOURCES    = \
+	pack/packspu_bufferobject.c \
+	pack/packspu_client.c \
+	pack/packspu_config.c \
+	pack/packspu_context.c \
+	pack/packspu_getstring.c \
+	pack/packspu_init.c \
+	pack/packspu_misc.c \
+	pack/packspu_net.c \
+	pack/packspu_swapbuf.c \
+	pack/packspu_pixel.c \
+	$(VBOX_PATH_CROGL_GENFILES)/packspu.c \
+	$(VBOX_PATH_CROGL_GENFILES)/packspu_get.c \
+	$(VBOX_PATH_CROGL_GENFILES)/packspu_flush.c \
+	$(VBOX_PATH_CROGL_GENFILES)/packspu_beginend.c
+VBoxOGLpackspu_SOURCES.win = \
+	pack/pack.def
+VBoxOGLpackspu_CLEAN       = \
+	$(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h \
+	$(VBOX_PATH_CROGL_GENFILES)/packspu.c \
+	$(VBOX_PATH_CROGL_GENFILES)/packspu_get.c \
+	$(VBOX_PATH_CROGL_GENFILES)/packspu_flush.c \
+	$(VBOX_PATH_CROGL_GENFILES)/packspu_beginend.c
+VBoxOGLpackspu_LIBS        = \
+	$(VBOX_LIB_OGL_CRUTIL) \
+	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrpacker$(VBOX_SUFF_LIB)
+
+#
+# Generate files for VBoxOGLpackspu.
+#
+$(VBOX_PATH_CROGL_GENFILES)/packspu.c: $(addprefix $(PATH_SUB_CURRENT)/pack/,pack.py packspu_special packspu_unimplemented_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/packspu_get.c: $(PATH_SUB_CURRENT)/pack/packspu_get.py $(PATH_SUB_CURRENT)/pack/packspu_special $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_sizes.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/packspu_flush.c: $(PATH_SUB_CURRENT)/pack/packspu_flush.py $(PATH_SUB_CURRENT)/pack/packspu_flush_special $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/packspu_beginend.c: $(PATH_SUB_CURRENT)/pack/packspu_beginend.py $(PATH_SUB_CURRENT)/pack/packspu_vertex_special $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h: $(addprefix $(PATH_SUB_CURRENT)/pack/,packspu_proto.py packspu_special packspu_unimplemented_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
