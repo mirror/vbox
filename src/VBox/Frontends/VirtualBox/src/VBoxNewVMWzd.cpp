@@ -351,7 +351,7 @@ bool VBoxNewVMWzd::constructMachine()
         if (!session.isNull())
         {
             CMachine m = session.GetMachine();
-            m.AttachHardDisk2 (mHDCombo->id(), KStorageBus_IDE, 0, 0);
+            m.AttachHardDisk(mHDCombo->id(), KStorageBus_IDE, 0, 0);
             if (m.isOk())
             {
                 m.SaveSettings();

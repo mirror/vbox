@@ -388,11 +388,11 @@ int handleList(HandlerArg *a)
     else
     if (strcmp(a->argv[0], "hdds") == 0)
     {
-        com::SafeIfaceArray <IHardDisk2> hdds;
-        CHECK_ERROR(a->virtualBox, COMGETTER(HardDisks2)(ComSafeArrayAsOutParam (hdds)));
+        com::SafeIfaceArray<IHardDisk> hdds;
+        CHECK_ERROR(a->virtualBox, COMGETTER(HardDisks)(ComSafeArrayAsOutParam (hdds)));
         for (size_t i = 0; i < hdds.size(); ++ i)
         {
-            ComPtr<IHardDisk2> hdd = hdds[i];
+            ComPtr<IHardDisk> hdd = hdds[i];
             Guid uuid;
             hdd->COMGETTER(Id)(uuid.asOutParam());
             RTPrintf("UUID:         %s\n", uuid.toString().raw());
@@ -451,11 +451,11 @@ int handleList(HandlerArg *a)
     else
     if (strcmp(a->argv[0], "floppies") == 0)
     {
-        com::SafeIfaceArray<IFloppyImage2> floppies;
+        com::SafeIfaceArray<IFloppyImage> floppies;
         CHECK_ERROR(a->virtualBox, COMGETTER(FloppyImages)(ComSafeArrayAsOutParam(floppies)));
         for (size_t i = 0; i < floppies.size(); ++ i)
         {
-            ComPtr<IFloppyImage2> floppyImage = floppies[i];
+            ComPtr<IFloppyImage> floppyImage = floppies[i];
             Guid uuid;
             floppyImage->COMGETTER(Id)(uuid.asOutParam());
             RTPrintf("UUID:       %s\n", uuid.toString().raw());

@@ -1198,7 +1198,7 @@ STDMETHODIMP Appliance::Read(IN_BSTR path)
 STDMETHODIMP Appliance::Interpret()
 {
     // @todo:
-    //  - don't use COM methods but the methods directly (faster, but needs appropriate locking of that objects itself (s. HardDisk2))
+    //  - don't use COM methods but the methods directly (faster, but needs appropriate locking of that objects itself (s. HardDisk))
     //  - Appropriate handle errors like not supported file formats
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
@@ -1624,14 +1624,14 @@ HRESULT Appliance::searchUniqueVMName(Utf8Str& aName) const
 
 HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
 {
-    IHardDisk2 *harddisk = NULL;
+    IHardDisk *harddisk = NULL;
     char *tmpName = RTStrDup(aName.c_str());
     int i = 1;
     /* Check if the file exists or if a file with this path is registered
      * already */
     /* @todo: Maybe too cost-intensive; try to find a lighter way */
     while (RTPathExists(tmpName) ||
-           mVirtualBox->FindHardDisk2(Bstr(tmpName), &harddisk) != VBOX_E_OBJECT_NOT_FOUND)
+           mVirtualBox->FindHardDisk(Bstr(tmpName), &harddisk) != VBOX_E_OBJECT_NOT_FOUND)
     {
         RTStrFree(tmpName);
         char *tmpDir = RTStrDup(aName.c_str());
@@ -1658,7 +1658,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
     Appliance *app = task->that;
 
-    /// @todo ugly hack, fix ComAssert... (same as in HardDisk2::taskThread)
+    /// @todo ugly hack, fix ComAssert... (same as in HardDisk::taskThread)
     #define setError app->setError
 
     LogFlowFuncEnter();
@@ -1920,7 +1920,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 /* If in the next block an error occur we have to deregister
                    the machine, so make an extra try/catch block. */
                 ComPtr<ISession> session;
-                ComPtr<IHardDisk2> srcHdVBox;
+                ComPtr<IHardDisk> srcHdVBox;
                 try
                 {
                     /* In order to attach hard disks we need to open a session
@@ -1972,7 +1972,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                         /* Make sure all target directories exists */
                         rc = VirtualBox::ensureFilePathExists(pcszDstFilePath);
                         CheckComRCThrowRC(rc);
-                        ComPtr<IHardDisk2> dstHdVBox;
+                        ComPtr<IHardDisk> dstHdVBox;
                         /* If strHref is empty we have to create a new file */
                         if (di.strHref.c_str()[0] == 0)
                         {
@@ -1982,7 +1982,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                                 || (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed")))
                                 srcFormat = L"VMDK";
                             /* Create an empty hard disk */
-                            rc = app->mVirtualBox->CreateHardDisk2(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
+                            rc = app->mVirtualBox->CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
                             CheckComRCThrowRC(rc);
                             /* Create a dynamic growing disk image with the given capacity */
                             ComPtr<IProgress> progress;
@@ -2032,14 +2032,14 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                              * to be recreated for the case the same hard disk is
                              * attached already from a previous import) */
                             /* First open the existing disk image */
-                            rc = app->mVirtualBox->OpenHardDisk2(Bstr(strSrcFilePath), srcHdVBox.asOutParam());
+                            rc = app->mVirtualBox->OpenHardDisk(Bstr(strSrcFilePath), srcHdVBox.asOutParam());
                             CheckComRCThrowRC(rc);
                             /* We need the format description of the source disk image */
                             Bstr srcFormat;
                             rc = srcHdVBox->COMGETTER(Format)(srcFormat.asOutParam());
                             CheckComRCThrowRC(rc);
                             /* Create a new hard disk interface for the destination disk image */
-                            rc = app->mVirtualBox->CreateHardDisk2(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
+                            rc = app->mVirtualBox->CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
                             CheckComRCThrowRC(rc);
                             /* Clone the source disk image */
                             ComPtr<IProgress> progress;
@@ -2095,7 +2095,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                                                            //case HardDiskController::SCSI: sbt = StorageBus_SCSI; break; // @todo: not available yet
                             default: break;
                         }
-                        rc = sMachine->AttachHardDisk2(hdId, sbt, hdc.ulBusNumber, 0);
+                        rc = sMachine->AttachHardDisk(hdId, sbt, hdc.ulBusNumber, 0);
                         CheckComRCThrowRC(rc);
                         rc = sMachine->SaveSettings();
                         CheckComRCThrowRC(rc);
@@ -2149,7 +2149,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
 
-    /// @todo ugly hack, fix ComAssert... (same as in HardDisk2::taskThread)
+    /// @todo ugly hack, fix ComAssert... (same as in HardDisk::taskThread)
     #undef setError
 
     return VINF_SUCCESS;

@@ -1110,16 +1110,16 @@ HRESULT DVDImage::unregisterWithVirtualBox()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// FloppyImage2 class
+// FloppyImage class
 ////////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (FloppyImage2)
+DEFINE_EMPTY_CTOR_DTOR (FloppyImage)
 
 /**
  * @note Called from within this object's AutoMayUninitSpan and from under
  *       mVirtualBox write lock.
  */
-HRESULT FloppyImage2::unregisterWithVirtualBox()
+HRESULT FloppyImage::unregisterWithVirtualBox()
 {
     return mVirtualBox->unregisterFloppyImage (this);
 }

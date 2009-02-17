@@ -109,7 +109,7 @@ void VBoxVMSettingsFD::getFrom (const CMachine &aMachine)
         }
         case KDriveState_ImageMounted:
         {
-            CFloppyImage2 img = floppy.GetImage();
+            CFloppyImage img = floppy.GetImage();
             QString src = img.GetLocation();
             AssertMsg (!src.isNull(), ("Image file must not be null"));
             QFileInfo fi (src);

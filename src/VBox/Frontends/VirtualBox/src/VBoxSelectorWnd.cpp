@@ -871,11 +871,11 @@ void VBoxSelectorWnd::vmDelete (const QUuid &aUuid /*= QUuid_null*/)
                 return;
             CMachine machine = session.GetMachine();
             /* Detach all attached Hard Disks */
-            CHardDisk2AttachmentVector vec = machine.GetHardDisk2Attachments();
+            CHardDiskAttachmentVector vec = machine.GetHardDiskAttachments();
             for (int i = 0; i < vec.size(); ++ i)
             {
-                CHardDisk2Attachment hda = vec [i];
-                machine.DetachHardDisk2 (hda.GetBus(), hda.GetChannel(), hda.GetDevice());
+                CHardDiskAttachment hda = vec [i];
+                machine.DetachHardDisk(hda.GetBus(), hda.GetChannel(), hda.GetDevice());
                 if (!machine.isOk())
                     vboxProblem().cannotDetachHardDisk (this, machine,
                         vboxGlobal().getMedium (CMedium (hda.GetHardDisk())).location(),

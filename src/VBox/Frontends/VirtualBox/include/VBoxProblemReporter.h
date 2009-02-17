@@ -263,7 +263,7 @@ public:
                                             const QString &aLocation);
     int confirmDeleteHardDiskStorage (QWidget *aParent,
                                       const QString &aLocation);
-    void cannotDeleteHardDiskStorage (QWidget *aParent, const CHardDisk2 &aHD,
+    void cannotDeleteHardDiskStorage (QWidget *aParent, const CHardDisk &aHD,
                                       const CProgress &aProgress);
 
     int confirmDetachSATASlots (QWidget *aParent);
@@ -271,7 +271,7 @@ public:
 
     void cannotCreateHardDiskStorage (QWidget *aParent, const CVirtualBox &aVBox,
                                       const QString &aLocaiton,
-                                      const CHardDisk2 &aHD,
+                                      const CHardDisk &aHD,
                                       const CProgress &aProgress);
     void cannotAttachHardDisk (QWidget *aParent, const CMachine &aMachine,
                                const QString &aLocation, KStorageBus aBus,

@@ -35,7 +35,7 @@ VBoxVMFirstRunWzd::VBoxVMFirstRunWzd (const CMachine &aMachine, QWidget *aParent
     initializeWizardHdr();
 
     /* Hide unnecessary text labels */
-    CHardDisk2AttachmentVector vec = mMachine.GetHardDisk2Attachments();
+    CHardDiskAttachmentVector vec = mMachine.GetHardDiskAttachments();
     if (vec.size() != 0)
     {
         mTextWelcome2->setHidden (true);

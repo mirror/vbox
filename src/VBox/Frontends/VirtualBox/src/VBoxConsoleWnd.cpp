@@ -1916,11 +1916,11 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                           "HDD tooltip");
         QString data;
         bool hasDisks = false;
-        CHardDisk2AttachmentVector vec = cmachine.GetHardDisk2Attachments();
-        for (CHardDisk2AttachmentVector::ConstIterator hda = vec.begin();
+        CHardDiskAttachmentVector vec = cmachine.GetHardDiskAttachments();
+        for (CHardDiskAttachmentVector::ConstIterator hda = vec.begin();
              hda != vec.end(); ++ hda)
         {
-            CHardDisk2 hd = hda->GetHardDisk();
+            CHardDisk hd = hda->GetHardDisk();
             data += QString ("<br><nobr><b>%1 %2</b>: %3</nobr>")
                 .arg (vboxGlobal().toString (hda->GetBus(), hda->GetChannel()))
                 .arg (vboxGlobal().toString (hda->GetBus(), hda->GetChannel(),

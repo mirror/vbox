@@ -383,7 +383,7 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
             {
                 case DriveState_ImageMounted:
                 {
-                    ComPtr<IFloppyImage2> floppyImage;
+                    ComPtr<IFloppyImage> floppyImage;
                     rc = floppyDrive->GetImage(floppyImage.asOutParam());
                     if (SUCCEEDED(rc) && floppyImage)
                     {
@@ -460,14 +460,14 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
      */
     if (fSataEnabled)
     {
-        ComPtr<IHardDisk2> hardDisk;
+        ComPtr<IHardDisk> hardDisk;
         Bstr  filePath;
         ULONG cSataPorts;
 
         SATACtl->COMGETTER(PortCount)(&cSataPorts);
         for (ULONG i = 0; i < cSataPorts; ++ i)
         {
-            rc = machine->GetHardDisk2(StorageBus_SATA, i, 0, hardDisk.asOutParam());
+            rc = machine->GetHardDisk(StorageBus_SATA, i, 0, hardDisk.asOutParam());
             if (SUCCEEDED(rc) && hardDisk)
             {
                 hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -511,9 +511,9 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
     else
         RTPrintf("IDE Controller:  %s\n", pszIdeController);
 
-    ComPtr<IHardDisk2> hardDisk;
+    ComPtr<IHardDisk> hardDisk;
     Bstr filePath;
-    rc = machine->GetHardDisk2(StorageBus_IDE, 0, 0, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(StorageBus_IDE, 0, 0, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -531,7 +531,7 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hda=\"none\"\n");
     }
-    rc = machine->GetHardDisk2(StorageBus_IDE, 0, 1, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(StorageBus_IDE, 0, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -549,7 +549,7 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hdb=\"none\"\n");
     }
-    rc = machine->GetHardDisk2(StorageBus_IDE, 1, 1, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(StorageBus_IDE, 1, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());

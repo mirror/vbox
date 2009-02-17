@@ -2656,7 +2656,7 @@ HRESULT Console::onFloppyDriveChange()
     {
         case DriveState_ImageMounted:
         {
-            ComPtr <IFloppyImage2> ImagePtr;
+            ComPtr<IFloppyImage> ImagePtr;
             rc = mFloppyDrive->GetImage (ImagePtr.asOutParam());
             if (SUCCEEDED (rc))
                 rc = ImagePtr->COMGETTER(Location) (Path.asOutParam());
@@ -4354,14 +4354,14 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
 
     /* lock all hard disks for writing and their parents for reading */
     {
-        com::SafeIfaceArray <IHardDisk2Attachment> atts;
+        com::SafeIfaceArray <IHardDiskAttachment> atts;
         rc = mMachine->
-            COMGETTER(HardDisk2Attachments) (ComSafeArrayAsOutParam (atts));
+            COMGETTER(HardDiskAttachments) (ComSafeArrayAsOutParam (atts));
         CheckComRCReturnRC (rc);
 
         for (size_t i = 0; i < atts.size(); ++ i)
         {
-            ComPtr <IHardDisk2> hardDisk;
+            ComPtr <IHardDisk> hardDisk;
             rc = atts [i]->COMGETTER(HardDisk) (hardDisk.asOutParam());
             CheckComRCReturnRC (rc);
 
@@ -4390,7 +4390,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
                 if (mediaState == MediaState_Inaccessible)
                     task->mediaToCheck.push_back (hardDisk);
 
-                ComPtr <IHardDisk2> parent;
+                ComPtr <IHardDisk> parent;
                 rc = hardDisk->COMGETTER(Parent) (parent.asOutParam());
                 CheckComRCReturnRC (rc);
                 hardDisk = parent;
@@ -4435,7 +4435,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
 
         if (driveState == DriveState_ImageMounted)
         {
-            ComPtr <IFloppyImage2> image;
+            ComPtr<IFloppyImage> image;
             rc = drive->GetImage (image.asOutParam());
             CheckComRCReturnRC (rc);
 
@@ -6781,7 +6781,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
  *  @param   phrc    Where to store com error - only valid if we return VERR_GENERAL_FAILURE.
  *  @return  VBox status code.
  */
-static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDisk2Attachment *hda,
+static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDiskAttachment *hda,
                                               HRESULT *phrc)
 {
     LogFlowFunc (("pVM=%p hda=%p phrc=%p\n", pVM, hda, phrc));
@@ -6796,7 +6796,7 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDisk2Attachment *hda
     /*
      * Figure out which IDE device this is.
      */
-    ComPtr<IHardDisk2> hardDisk;
+    ComPtr<IHardDisk> hardDisk;
     hrc = hda->COMGETTER(HardDisk)(hardDisk.asOutParam());                      H();
     StorageBus_T enmBus;
     hrc = hda->COMGETTER(Bus)(&enmBus);                                         H();
@@ -6946,7 +6946,7 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDisk2Attachment *hda
     }
 
     /* Create an inversed tree of parents. */
-    ComPtr<IHardDisk2> parentHardDisk = hardDisk;
+    ComPtr<IHardDisk> parentHardDisk = hardDisk;
     for (PCFGMNODE pParent = pCfg;;)
     {
         hrc = parentHardDisk->COMGETTER(Parent)(hardDisk.asOutParam());     H();
@@ -7083,9 +7083,9 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
         {
             LogFlowFunc (("Reattaching new differencing hard disks...\n"));
 
-            com::SafeIfaceArray <IHardDisk2Attachment> atts;
+            com::SafeIfaceArray <IHardDiskAttachment> atts;
             rc = that->mMachine->
-                COMGETTER(HardDisk2Attachments) (ComSafeArrayAsOutParam (atts));
+                COMGETTER(HardDiskAttachments) (ComSafeArrayAsOutParam (atts));
             if (FAILED (rc))
                 break;
             for (size_t i = 0; i < atts.size(); ++ i)

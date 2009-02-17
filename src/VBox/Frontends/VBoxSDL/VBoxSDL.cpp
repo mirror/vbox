@@ -1658,13 +1658,13 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          * it to the VM.
          */
         Bstr hdaFileBstr = hdaFile;
-        ComPtr<IHardDisk2> hardDisk;
-        virtualBox->FindHardDisk2(hdaFileBstr, hardDisk.asOutParam());
+        ComPtr<IHardDisk> hardDisk;
+        virtualBox->FindHardDisk(hdaFileBstr, hardDisk.asOutParam());
         if (!hardDisk)
         {
             /* we've not found the image */
             RTPrintf("Adding hard disk '%S'...\n", hdaFile);
-            virtualBox->OpenHardDisk2 (hdaFileBstr, hardDisk.asOutParam());
+            virtualBox->OpenHardDisk(hdaFileBstr, hardDisk.asOutParam());
         }
         /* do we have the right image now? */
         if (hardDisk)
@@ -1674,8 +1674,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              */
             Guid uuid;
             hardDisk->COMGETTER(Id)(uuid.asOutParam());
-            gMachine->DetachHardDisk2(StorageBus_IDE, 0, 0);
-            gMachine->AttachHardDisk2(uuid, StorageBus_IDE, 0, 0);
+            gMachine->DetachHardDisk(StorageBus_IDE, 0, 0);
+            gMachine->AttachHardDisk(uuid, StorageBus_IDE, 0, 0);
             /// @todo why is this attachment saved?
         }
         else
@@ -1725,7 +1725,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (!done)
         {
             /* try to find an existing one */
-            ComPtr <IFloppyImage2> image;
+            ComPtr<IFloppyImage> image;
             rc = virtualBox->FindFloppyImage (medium, image.asOutParam());
             if (FAILED (rc))
             {

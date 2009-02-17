@@ -1413,7 +1413,7 @@ static int handleControlVM(HandlerArg *a)
             {
                 /* first assume it's a UUID */
                 Guid uuid(a->argv[2]);
-                ComPtr<IFloppyImage2> floppyImage;
+                ComPtr<IFloppyImage> floppyImage;
                 rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
                 if (FAILED(rc) || !floppyImage)
                 {

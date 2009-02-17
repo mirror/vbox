@@ -55,7 +55,7 @@ public:
         }
 
         BOOL enabled;
-        ComObjPtr <FloppyImage2> image;
+        ComObjPtr<FloppyImage> image;
         ComPtr <IHostFloppyDrive> hostDrive;
         DriveState_T state;
     };
@@ -93,7 +93,7 @@ public:
     STDMETHOD(MountImage) (IN_GUID aImageId);
     STDMETHOD(CaptureHostDrive) (IHostFloppyDrive *aHostFloppyDrive);
     STDMETHOD(Unmount)();
-    STDMETHOD(GetImage) (IFloppyImage2 **aFloppyImage);
+    STDMETHOD(GetImage) (IFloppyImage **aFloppyImage);
     STDMETHOD(GetHostDrive) (IHostFloppyDrive **aHostFloppyDrive);
 
     // public methods only for internal purposes

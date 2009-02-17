@@ -297,10 +297,10 @@ void createVM(IVirtualBox *virtualBox)
     /*
      * Create a virtual harddisk
      */
-    nsCOMPtr<IHardDisk2> hardDisk = 0;
-    rc = virtualBox->CreateHardDisk2(NS_LITERAL_STRING("VDI").get(),
-                                     NS_LITERAL_STRING("TestHardDisk.vdi").get(),
-                                     getter_AddRefs(hardDisk));
+    nsCOMPtr<IHardDisk> hardDisk = 0;
+    rc = virtualBox->CreateHardDisk(NS_LITERAL_STRING("VDI").get(),
+                                    NS_LITERAL_STRING("TestHardDisk.vdi").get(),
+                                    getter_AddRefs(hardDisk));
     if (NS_FAILED(rc))
     {
         printf("Failed creating a hard disk object! rc=%08X\n", rc);
@@ -343,10 +343,10 @@ void createVM(IVirtualBox *virtualBox)
                  */
                 nsID *vdiUUID = nsnull;
                 hardDisk->GetId(&vdiUUID);
-                rc = machine->AttachHardDisk2(*vdiUUID,
-                                              StorageBus::IDE, // controler identifier
-                                              0,               // channel number on the controller
-                                              0);              // device number on the controller
+                rc = machine->AttachHardDisk(*vdiUUID,
+                                             StorageBus::IDE, // controler identifier
+                                             0,               // channel number on the controller
+                                             0);              // device number on the controller
                 nsMemory::Free(vdiUUID);
                 if (NS_FAILED(rc))
                 {

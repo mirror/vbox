@@ -218,7 +218,7 @@ void VBoxMedium::refresh()
         /* adjust the parent if necessary (note that mParent must always point
          * to an item from VBoxGlobal::currentMediaList()) */
 
-        CHardDisk2 parent = mHardDisk.GetParent();
+        CHardDisk parent = mHardDisk.GetParent();
         Assert (!parent.isNull() || mParent == NULL);
 
         if (!parent.isNull() &&
@@ -1937,7 +1937,7 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
  *       problem though and needs to be addressed using exceptions (see also the
  *       @todo in VBoxMedium::details()).
  */
-QString VBoxGlobal::details (const CHardDisk2 &aHD,
+QString VBoxGlobal::details (const CHardDisk &aHD,
                              bool aPredictDiff)
 {
     CMedium cmedium (aHD);
@@ -2160,11 +2160,11 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
     {
         int rows = 2; /* including section header and footer */
 
-        CHardDisk2AttachmentVector vec = aMachine.GetHardDisk2Attachments();
+        CHardDiskAttachmentVector vec = aMachine.GetHardDiskAttachments();
         for (size_t i = 0; i < (size_t) vec.size(); ++ i)
         {
-            CHardDisk2Attachment hda = vec [i];
-            CHardDisk2 hd = hda.GetHardDisk();
+            CHardDiskAttachment hda = vec [i];
+            CHardDisk hd = hda.GetHardDisk();
 
             /// @todo for the explaination of the below isOk() checks, see ***
             /// in VBoxMedium::details().
@@ -2331,7 +2331,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                 break;
             case KDriveState_ImageMounted:
             {
-                CFloppyImage2 img = floppy.GetImage();
+                CFloppyImage img = floppy.GetImage();
                 item = QString (sSectionItemTpl2)
                     .arg (tr ("Image", "details report (floppy)"),
                           locationForHTML (img.GetName()));
@@ -2914,7 +2914,7 @@ bool VBoxGlobal::startMachine (const QUuid &id)
  * list. To be called only from VBoxGlobal::startEnumeratingMedia().
  */
 static
-void AddHardDisksToList (const CHardDisk2Vector &aVector,
+void AddHardDisksToList (const CHardDiskVector &aVector,
                          VBoxMediaList &aList,
                          VBoxMediaList::iterator aWhere,
                          VBoxMedium *aParent = 0)
@@ -2922,7 +2922,7 @@ void AddHardDisksToList (const CHardDisk2Vector &aVector,
     VBoxMediaList::iterator first = aWhere;
 
     /* First pass: Add siblings sorted */
-    for (CHardDisk2Vector::ConstIterator it = aVector.begin();
+    for (CHardDiskVector::ConstIterator it = aVector.begin();
          it != aVector.end(); ++ it)
     {
         CMedium cmedium (*it);
@@ -2944,7 +2944,7 @@ void AddHardDisksToList (const CHardDisk2Vector &aVector,
     /* Second pass: Add children */
     for (VBoxMediaList::iterator it = first; it != aWhere;)
     {
-        CHardDisk2Vector children = (*it).hardDisk().GetChildren();
+        CHardDiskVector children = (*it).hardDisk().GetChildren();
         VBoxMedium *parent = &(*it);
 
         ++ it; /* go to the next sibling before inserting children */
@@ -2996,7 +2996,7 @@ void VBoxGlobal::startEnumeratingMedia()
     /* composes a list of all currently known media & their children */
     mMediaList.clear();
     {
-        AddHardDisksToList (mVBox.GetHardDisks2(), mMediaList, mMediaList.end());
+        AddHardDisksToList (mVBox.GetHardDisks(), mMediaList, mMediaList.end());
     }
     {
         VBoxMediaList::iterator first = mMediaList.end();
@@ -3024,8 +3024,8 @@ void VBoxGlobal::startEnumeratingMedia()
     {
         VBoxMediaList::iterator first = mMediaList.end();
 
-        CFloppyImage2Vector vec = mVBox.GetFloppyImages();
-        for (CFloppyImage2Vector::ConstIterator it = vec.begin();
+        CFloppyImageVector vec = mVBox.GetFloppyImages();
+        for (CFloppyImageVector::ConstIterator it = vec.begin();
              it != vec.end(); ++ it)
         {
             CMedium cmedium (*it);

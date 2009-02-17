@@ -94,7 +94,7 @@
 #include <ApplianceImpl.h>
 #include <SnapshotImpl.h>
 #include <MediumImpl.h>
-#include <HardDisk2Impl.h>
+#include <HardDiskImpl.h>
 #include <HardDiskFormatImpl.h>
 #include <ProgressImpl.h>
 #include <DVDDriveImpl.h>
@@ -146,21 +146,21 @@ NS_DECL_CLASSINFO(DVDImage)
 NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(DVDImage,
                                            IMedium, ImageMediumBase,
                                            IDVDImage, DVDImage)
-NS_DECL_CLASSINFO(FloppyImage2)
-NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(FloppyImage2,
+NS_DECL_CLASSINFO(FloppyImage)
+NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(FloppyImage,
                                            IMedium, ImageMediumBase,
-                                           IFloppyImage2, FloppyImage2)
+                                           IFloppyImage, FloppyImage)
 
-NS_DECL_CLASSINFO(HardDisk2)
-NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(HardDisk2,
+NS_DECL_CLASSINFO(HardDisk)
+NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(HardDisk,
                                            IMedium, MediumBase,
-                                           IHardDisk2, HardDisk2)
+                                           IHardDisk, HardDisk)
 
 NS_DECL_CLASSINFO(HardDiskFormat)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HardDiskFormat, IHardDiskFormat)
 
-NS_DECL_CLASSINFO(HardDisk2Attachment)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HardDisk2Attachment, IHardDisk2Attachment)
+NS_DECL_CLASSINFO(HardDiskAttachment)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HardDiskAttachment, IHardDiskAttachment)
 
 NS_DECL_CLASSINFO(Progress)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Progress, IProgress)

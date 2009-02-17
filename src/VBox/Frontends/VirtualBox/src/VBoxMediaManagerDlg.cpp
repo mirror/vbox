@@ -971,7 +971,7 @@ void VBoxMediaManagerDlg::doNewMedium()
 
     if (dlg.exec() == QDialog::Accepted)
     {
-        CHardDisk2 hd = dlg.hardDisk();
+        CHardDisk hd = dlg.hardDisk();
         /* Select the newly created hard disk */
         MediaItem *item = searchItem (mHardDiskView, hd.GetId());
         AssertReturnVoid (item);
@@ -1093,7 +1093,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
                 deleteStorage = rc == QIMessageBox::Yes;
             }
 
-            CHardDisk2 hardDisk = item->medium().hardDisk();
+            CHardDisk hardDisk = item->medium().hardDisk();
 
             if (deleteStorage)
             {
@@ -1133,7 +1133,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
         }
         case VBoxDefs::MediaType_Floppy:
         {
-            CFloppyImage2 image = item->medium().floppyImage();
+            CFloppyImage image = item->medium().floppyImage();
             image.Close();
             result = image;
             break;
@@ -1231,15 +1231,15 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
     {
         case VBoxDefs::MediaType_HardDisk:
         {
-            CHardDisk2AttachmentVector vec =machine.GetHardDisk2Attachments();
+            CHardDiskAttachmentVector vec =machine.GetHardDiskAttachments();
             for (int i = 0; i < vec.size(); ++ i)
             {
-                CHardDisk2Attachment hda = vec [i];
+                CHardDiskAttachment hda = vec [i];
                 if (hda.GetHardDisk().GetId() == aMedium.id())
                 {
-                    machine.DetachHardDisk2 (hda.GetBus(),
-                                             hda.GetChannel(),
-                                             hda.GetDevice());
+                    machine.DetachHardDisk(hda.GetBus(),
+                                           hda.GetChannel(),
+                                           hda.GetDevice());
                     if (!machine.isOk())
                     {
                         vboxProblem().cannotDetachHardDisk (
@@ -1542,7 +1542,7 @@ void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation,
     {
         case VBoxDefs::MediaType_HardDisk:
         {
-            CHardDisk2 hd = mVBox.OpenHardDisk2 (aLocation);
+            CHardDisk hd = mVBox.OpenHardDisk(aLocation);
             if (mVBox.isOk())
             {
                 medium = VBoxMedium (CMedium (hd),
@@ -1564,7 +1564,7 @@ void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation,
         }
         case VBoxDefs::MediaType_Floppy:
         {
-            CFloppyImage2 image = mVBox.OpenFloppyImage (aLocation, uuid);
+            CFloppyImage image = mVBox.OpenFloppyImage (aLocation, uuid);
             if (mVBox.isOk())
             {
                 medium = VBoxMedium (CMedium (image),
@@ -1590,7 +1590,7 @@ MediaItem* VBoxMediaManagerDlg::createHardDiskItem (QTreeWidget *aTree,
 
     MediaItem *item = 0;
 
-    CHardDisk2 parent = aMedium.hardDisk().GetParent();
+    CHardDisk parent = aMedium.hardDisk().GetParent();
     if (parent.isNull())
     {
         item = new MediaItem (aTree, aMedium, this);

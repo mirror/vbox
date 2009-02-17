@@ -436,7 +436,7 @@
       PoweredOff, Aborted and Saved too).
 
       The first diagram shows what happens when a lengthy setup operation is
-      being executed (such as <link to="IMachine::attachHardDisk2"/>).
+      being executed (such as <link to="IMachine::attachHardDisk"/>).
 
       <pre>
     +-----------------------------------(same sate as before the call)------+
@@ -1110,7 +1110,7 @@
         <ul>
         <li><link to="DeviceType_HardDisk"/>: the media is a hard disk
         that, if registered, can be obtained using the
-        <link to="IVirtualBox::getHardDisk2"/> call.</li>
+        <link to="IVirtualBox::getHardDisk"/> call.</li>
         <li><link to="DeviceType_DVD"/>: the media is a CD/DVD image
         that, if registered, can be obtained using the
         <link to="IVirtualBox::getDVDImage"/> call.</li>
@@ -1384,13 +1384,13 @@
       </desc>
     </attribute>
 
-    <attribute name="hardDisks2" type="IHardDisk2" readonly="yes" safearray="yes">
+    <attribute name="hardDisks" type="IHardDisk" readonly="yes" safearray="yes">
       <desc>
         Array of hard disk objects known to this VirtualBox installation.
 
         This array contains only base (root) hard disks. All differencing
         hard disks of the given base hard disk can be enumerated using
-        <link to="IHardDisk2::children"/>.
+        <link to="IHardDisk::children"/>.
       </desc>
     </attribute>
 
@@ -1400,7 +1400,7 @@
       </desc>
     </attribute>
 
-    <attribute name="floppyImages" type="IFloppyImage2" readonly="yes" safearray="yes">
+    <attribute name="floppyImages" type="IFloppyImage" readonly="yes" safearray="yes">
       <desc>
         Array of floppy image objects registered with this VirtualBox instance.
       </desc>
@@ -1737,7 +1737,7 @@
       </param>
     </method>
 
-    <method name="createHardDisk2">
+    <method name="createHardDisk">
       <desc>
         Creates a new base hard disk object that will use the given storage
         format and location for hard disk data.
@@ -1747,20 +1747,20 @@
         to virtual machines, you must call one of the following methods to
         allocate a format-specific storage unit at the specified location:
         <ul>
-          <li><link to="IHardDisk2::createDynamicStorage"/></li>
-          <li><link to="IHardDisk2::createFixedStorage"/></li>
-          <li><link to="IHardDisk2::createDiffStorage"/></li>
+          <li><link to="IHardDisk::createDynamicStorage"/></li>
+          <li><link to="IHardDisk::createFixedStorage"/></li>
+          <li><link to="IHardDisk::createDiffStorage"/></li>
         </ul>
 
-        Some hard disk attributes, such as <link to="IHardDisk2::id"/>, may
+        Some hard disk attributes, such as <link to="IHardDisk::id"/>, may
         remain uninitialized until the hard disk storage unit is successfully
         created by one of the above methods.
 
         After the storage unit is successfully created, the hard disk gets
         remembered by this VirtualBox installation and will be accessible
-        through <link to="#getHardDisk2"/> and <link to="#findHardDisk2"/>
+        through <link to="#getHardDisk"/> and <link to="#findHardDisk"/>
         methods. Remembered root (base) hard disks are also returned as part of
-        the <link to="#hardDisks2"/> array. See IHardDisk2 for more details.
+        the <link to="#hardDisks"/> array. See IHardDisk for more details.
 
         The list of all storage formats supported by this VirtualBox
         installation can be obtained using
@@ -1770,7 +1770,7 @@
         be used for creating a storage unit of the hard disk.
 
         Note that the format of the location string is storage format specific.
-        See <link to="IMedium::location"/>, IHardDisk2 and
+        See <link to="IMedium::location"/>, IHardDisk and
         <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
@@ -1794,21 +1794,21 @@
           Location of the storage unit for the new hard disk.
         </desc>
       </param>
-      <param name="hardDisk" type="IHardDisk2" dir="return">
+      <param name="hardDisk" type="IHardDisk" dir="return">
         <desc>Created hard disk object.</desc>
       </param>
     </method>
 
-    <method name="openHardDisk2">
+    <method name="openHardDisk">
       <desc>
         Opens a hard disk from an existing location.
 
         After the hard disk is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
-        accessible through <link to="#getHardDisk2"/> and
-        <link to="#findHardDisk2"/> methods. Remembered root (base) hard disks
-        are also returned as part of the <link to="#hardDisks2"/> array and can
-        be attached to virtual machines. See IHardDisk2 for more details.
+        accessible through <link to="#getHardDisk"/> and
+        <link to="#findHardDisk"/> methods. Remembered root (base) hard disks
+        are also returned as part of the <link to="#hardDisks"/> array and can
+        be attached to virtual machines. See IHardDisk for more details.
 
         If a differencing hard disk is to be opened by this method, the
         operation will succeed only if its parent hard disk and all ancestors,
@@ -1819,7 +1819,7 @@
         by reading hard disk data at the specified location.
 
         Note that the format of the location string is storage format specific.
-        See <link to="IMedium::location"/>, IHardDisk2 and
+        See <link to="IMedium::location"/>, IHardDisk and
         <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
 
 
@@ -1840,19 +1840,19 @@
           the supported storage formats.
         </desc>
       </param>
-      <param name="hardDisk" type="IHardDisk2" dir="return">
+      <param name="hardDisk" type="IHardDisk" dir="return">
         <desc>Opened hard disk object.</desc>
       </param>
     </method>
 
-    <method name="getHardDisk2" const="yes">
+    <method name="getHardDisk" const="yes">
       <desc>
         Returns a hard disk with the given UUID.
 
         The hard disk with the given UUID must be known to this VirtualBox
         installation, i.e. it must be previously created by
-        <link to="#createHardDisk2"/> or opened by <link
-        to="#openHardDisk2"/>, or attached to some known virtual machine.
+        <link to="#createHardDisk"/> or opened by <link
+        to="#openHardDisk"/>, or attached to some known virtual machine.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           No hard disk object matching @a id found.
@@ -1862,23 +1862,23 @@
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the hard disk to look for.</desc>
       </param>
-      <param name="hardDisk" type="IHardDisk2" dir="return">
+      <param name="hardDisk" type="IHardDisk" dir="return">
         <desc>Found hard disk object.</desc>
       </param>
     </method>
 
-    <method name="findHardDisk2">
+    <method name="findHardDisk">
       <desc>
         Returns a hard disk that uses the given location to store hard
         disk data.
 
         The given hard disk must be known to this VirtualBox installation, i.e.
         it must be previously created by
-        <link to="#createHardDisk2"/> or opened by <link
-        to="#openHardDisk2"/>, or attached to some known virtual machine.
+        <link to="#createHardDisk"/> or opened by <link
+        to="#openHardDisk"/>, or attached to some known virtual machine.
 
         The search is done by comparing the value of the @a location argument to
-        the <link to="IHardDisk2::location"/> attribute of each known hard
+        the <link to="IHardDisk::location"/> attribute of each known hard
         disk.
 
         For locations represented by file names in the host's file system, the
@@ -1898,7 +1898,7 @@
       <param name="location" type="wstring" dir="in">
         <desc>Location string to search for.</desc>
       </param>
-      <param name="hardDisk" type="IHardDisk2" dir="return">
+      <param name="hardDisk" type="IHardDisk" dir="return">
         <desc>Found hard disk object.</desc>
       </param>
     </method>
@@ -2038,7 +2038,7 @@
           randomly generate a new UUID.
         </desc>
       </param>
-      <param name="image" type="IFloppyImage2" dir="return">
+      <param name="image" type="IFloppyImage" dir="return">
         <desc>Opened floppy image object.</desc>
       </param>
     </method>
@@ -2059,7 +2059,7 @@
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the image to look for.</desc>
       </param>
-      <param name="image" type="IFloppyImage2" dir="return">
+      <param name="image" type="IFloppyImage" dir="return">
         <desc>Found floppy image object.</desc>
       </param>
     </method>
@@ -2094,7 +2094,7 @@
       <param name="location" type="wstring" dir="in">
         <desc>Floppy image file path to look for.</desc>
       </param>
-      <param name="image" type="IFloppyImage2" dir="return">
+      <param name="image" type="IFloppyImage" dir="return">
         <desc>Found floppy image object.</desc>
       </param>
     </method>
@@ -3934,7 +3934,7 @@
       <desc>VRDP server object.</desc>
     </attribute>
 
-    <attribute name="hardDisk2Attachments" type="IHardDisk2Attachment" readonly="yes" safearray="yes">
+    <attribute name="hardDiskAttachments" type="IHardDiskAttachment" readonly="yes" safearray="yes">
       <desc>Array of hard disks attached to this machine.</desc>
     </attribute>
 
@@ -4243,7 +4243,7 @@
       </param>
     </method>
 
-    <method name="attachHardDisk2">
+    <method name="attachHardDisk">
       <desc>
         Attaches a virtual hard disk identified by the given UUID @a id
         to a device slot of the specified bus.
@@ -4264,7 +4264,7 @@
         The specified device slot must not have another disk attached to it, or
         this method will fail.
 
-        See <link to="IHardDisk2"/> for more detailed information about
+        See <link to="IHardDisk"/> for more detailed information about
         attaching hard disks.
 
         <note>
@@ -4311,15 +4311,15 @@
       </param>
     </method>
 
-    <method name="getHardDisk2" const="yes">
+    <method name="getHardDisk" const="yes">
       <desc>
         Returns the virtual hard disk attached to a device slot of the specified
         bus.
 
         Note that if the hard disk was indirectly attached by
-        <link to="#attachHardDisk2"/> to the given device slot then this
+        <link to="#attachHardDisk"/> to the given device slot then this
         method will return not the same object as passed to the
-        <link to="#attachHardDisk2"/> call. See <link to="IHardDisk2"/> for
+        <link to="#attachHardDisk"/> call. See <link to="IHardDisk"/> for
         more detailed information about attaching hard disks.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
@@ -4336,12 +4336,12 @@
       <param name="device" type="long" dir="in">
         <desc>Device slot in the given channel to query.</desc>
       </param>
-      <param name="hardDisk" type="IHardDisk2" dir="return">
+      <param name="hardDisk" type="IHardDisk" dir="return">
         <desc>Attached hard disk object.</desc>
       </param>
     </method>
 
-    <method name="detachHardDisk2">
+    <method name="detachHardDisk">
       <desc>
         Detaches the virtual hard disk attached to a device slot of the
         specified bus.
@@ -4349,7 +4349,7 @@
         Detaching the hard disk from the virtual machine is deferred. This means
         that the hard disk remains associated with the machine when this method
         returns and gets actually de-associated only after a successful
-        <link to="#saveSettings"/> call. See <link to="IHardDisk2"/>
+        <link to="#saveSettings"/> call. See <link to="IHardDisk"/>
         for more detailed information about attaching hard disks.
 
         <note>
@@ -4357,9 +4357,9 @@
         </note>
         <note>
           Detaching differencing hard disks implicitly created by <link
-          to="#attachHardDisk2"/> for the indirect attachment using this
+          to="#attachHardDisk"/> for the indirect attachment using this
           method will <b>not</b> implicitly delete them. The
-          <link to="IHardDisk2::deleteStorage"/> operation should be
+          <link to="IHardDisk::deleteStorage"/> operation should be
           explicitly performed by the caller after the hard disk is successfully
           detached and the settings are saved with
           <link to="#saveSettings"/>, if it is the desired action.
@@ -6949,9 +6949,9 @@
         </note>
 
         <see>
-          IHardDisk2,
-          <link to="IVirtualBox::createHardDisk2"/>,
-          <link to="IVirtualBox::openHardDisk2"/>,
+          IHardDisk,
+          <link to="IVirtualBox::createHardDisk"/>,
+          <link to="IVirtualBox::openHardDisk"/>,
           <link to="IMedium::location"/>
         </see>
       </desc>
@@ -6964,7 +6964,7 @@
 
         Keep in mind that the hard disk format identifier
         (<link to="IHardDiskFormat::id"/>) used in other API calls like
-        <link to="IVirtualBox::createHardDisk2"/> to refer to a particular
+        <link to="IVirtualBox::createHardDisk"/> to refer to a particular
         hard disk format is a case-insensitive string. This means that, for
         example, all of the following strings:
         <pre>
@@ -6989,7 +6989,7 @@
 
         The hard disk format set by this attribute is used by VirtualBox
         when the hard disk format was not specified explicitly. One example is
-        <link to="IVirtualBox::createHardDisk2"/> with the <tt>null</tt>
+        <link to="IVirtualBox::createHardDisk"/> with the <tt>null</tt>
         format argument. A more complex example is implicit creation of
         differencing hard disks when taking a snapshot of a virtual machine:
         this operation will try to use a format of the parent hard disk first
@@ -7013,7 +7013,7 @@
         <see>
           <link to="#hardDiskFormats"/>,
           <link to="IHardDiskFormat::id"/>,
-          <link to="IVirtualBox::createHardDisk2"/>
+          <link to="IVirtualBox::createHardDisk"/>
         </see>
       </desc>
     </attribute>
@@ -7474,7 +7474,7 @@
 
       Snapshots can be chained. Chained snapshots form a branch where
       every next snapshot is based on the previous one. This chaining is
-      mostly related to hard disk branching (see <link to="IHardDisk2"/>
+      mostly related to hard disk branching (see <link to="IHardDisk"/>
       description). This means that every time a new snapshot is created,
       a new differencing hard disk is implicitly created for all normal
       hard disks attached to the given virtual machine. This allows to
@@ -7721,21 +7721,21 @@
       The exact media type may be determined by querying the appropriate
       interface such as:
       <ul>
-        <li>IHardDisk2 (virtual hard disks)</li>
+        <li>IHardDisk (virtual hard disks)</li>
         <li>IDVDImage (standard CD/DVD ISO image files)</li>
-        <li>IFloppyImage2 (raw floppy image files)</li>
+        <li>IFloppyImage (raw floppy image files)</li>
       </ul>
 
       Existing media are opened using the following methods, depending on the
       media type:
       <ul>
-        <li><link to="IVirtualBox::openHardDisk2"/></li>
+        <li><link to="IVirtualBox::openHardDisk"/></li>
         <li><link to="IVirtualBox::openDVDImage"/></li>
         <li><link to="IVirtualBox::openFloppyImage"/></li>
       </ul>
 
       New hard disk media are created using the
-      <link to="IVirtualBox::createHardDisk2"/> method. CD/DVD and floppy
+      <link to="IVirtualBox::createHardDisk"/> method. CD/DVD and floppy
       images are created outside VirtualBox, usually by storing a copy
       of the real medium of the corresponding type in a regular file.
 
@@ -7748,15 +7748,15 @@
       files so that this registry is preserved when VirtualBox is not running.
 
       Newly created virtual hard disks get remembered only when the associated
-      storage unit is actually created (see IHardDisk2 for more details).
+      storage unit is actually created (see IHardDisk for more details).
 
       All known media can be enumerated using
-      <link to="IVirtualBox::hardDisks2"/>,
+      <link to="IVirtualBox::hardDisks"/>,
       <link to="IVirtualBox::DVDImages"/> and
       <link to="IVirtualBox::floppyImages"/> attributes. Individual media can be
-      quickly found by UUID using <link to="IVirtualBox::getHardDisk2"/>
+      quickly found by UUID using <link to="IVirtualBox::getHardDisk"/>
       and similar methods or by location using
-      <link to="IVirtualBox::findHardDisk2"/> and similar methods.
+      <link to="IVirtualBox::findHardDisk"/> and similar methods.
 
       Only known media can be attached to virtual machines.
 
@@ -7852,7 +7852,7 @@
         For example, states <link to="MediaState_NotCreated"/>,
         <link to="MediaState_LockedWrite"/>, <link to="MediaState_Creating"/>,
         <link to="MediaState_Deleting"/> are meaningless for IDVDImage and
-        IFloppyImage2 media.
+        IFloppyImage media.
       </desc>
     </attribute>
 
@@ -8123,7 +8123,7 @@
         the list of remembered hard disks, but its storage unit is not
         deleted. In particular, this means that this hard disk can be
         later opened again using the <link
-        to="IVirtualBox::openHardDisk2"/> call.
+        to="IVirtualBox::openHardDisk"/> call.
 
         Note that after this method successfully returns, the given hard
         disk object becomes uninitialized. This means that any attempt
@@ -8151,7 +8151,7 @@
 
 
   <!--
-  // IHardDisk2
+  // IHardDisk
   /////////////////////////////////////////////////////////////////////////
   -->
 
@@ -8185,19 +8185,19 @@
   </enum>
 
   <interface
-    name="IHardDisk2Attachment" extends="$unknown"
-    uuid="fa2f4619-2c14-4090-869e-73b45419b7b5"
+    name="IHardDiskAttachment" extends="$unknown"
+    uuid="b1dd04bb-93c0-4ad3-a9cf-82316e595836"
     wsmap="struct"
   >
     <desc>
-      The IHardDisk2Attachment interface represents a hard disk attachment of a
+      The IHardDiskAttachment interface represents a hard disk attachment of a
       virtual machine.
 
       Every hard disk attachment specifies a slot of the virtual hard disk
       controller and a virtual hard disk attached to this slot.
 
       The array of hard disk attachments is returned by
-      <link to="IMachine::hardDisk2Attachments"/>.
+      <link to="IMachine::hardDiskAttachments"/>.
 
       <note>
         With the COM API, this is an interface like all the others. With the
@@ -8205,7 +8205,7 @@
         will not return an object, but a complete structure.
       </note>
     </desc>
-    <attribute name="hardDisk" type="IHardDisk2" readonly="yes">
+    <attribute name="hardDisk" type="IHardDisk" readonly="yes">
       <desc>Hard disk object associated with this attachment.</desc>
     </attribute>
 
@@ -8224,13 +8224,13 @@
   </interface>
 
   <interface
-    name="IHardDisk2" extends="IMedium"
-    uuid="ed6e2525-c2fd-42a4-917a-7a9045ac9e15"
+    name="IHardDisk" extends="IMedium"
+    uuid="244f89fe-1943-464d-baad-2efd73e5d532"
     wsmap="managed"
   >
     <desc>
-      The IHardDisk2 interface represents a virtual hard disk drive
-      used by a virtual machine.
+      The IHardDisk interface represents a virtual hard disk drive
+      used by a virtual machine. This is a subclass of <link to="IMedium" />; see remarks there.
 
       Virtual hard disk objects virtualize the hard disk hardware and look like
       regular hard disks for the guest OS running inside the virtual machine.
@@ -8276,17 +8276,17 @@
       <h3>Creating Hard Disks</h3>
 
       New base hard disks are created using
-      <link to="IVirtualBox::createHardDisk2"/>. Existing hard disks are
-      opened using <link to="IVirtualBox::openHardDisk2"/>. Differencing hard
+      <link to="IVirtualBox::createHardDisk"/>. Existing hard disks are
+      opened using <link to="IVirtualBox::openHardDisk"/>. Differencing hard
       disks are usually implicitly created by VirtualBox when needed but may
       also be created explicitly using <link to="#createDiffStorage"/>.
 
       After the hard disk is successfully created (including the storage unit)
       or opened, it becomes a known hard disk (remembered in the internal media
       registry). Known hard disks can be attached to a virtual machine, accessed
-      through <link to="IVirtualBox::getHardDisk2"/> and
-      <link to="IVirtualBox::findHardDisk2"/> methods or enumerated using the
-      <link to="IVirtualBox::hardDisks2"/> array (only for base hard disks).
+      through <link to="IVirtualBox::getHardDisk"/> and
+      <link to="IVirtualBox::findHardDisk"/> methods or enumerated using the
+      <link to="IVirtualBox::hardDisks"/> array (only for base hard disks).
 
       The following methods, besides <link to="IMedium::close"/>,
       automatically remove the hard disk from the media registry:
@@ -8326,8 +8326,8 @@
       <h3>Attaching Hard Disks</h3>
 
       Hard disks are attached to virtual machines using the
-      <link to="IMachine::attachHardDisk2"/> method and detached using the
-      <link to="IMachine::detachHardDisk2"/> method. Depending on their
+      <link to="IMachine::attachHardDisk"/> method and detached using the
+      <link to="IMachine::detachHardDisk"/> method. Depending on their
       <link to="#type"/>, hard disks are attached either
       <i>directly</i> or <i>indirectly</i>.
 
@@ -8336,13 +8336,13 @@
       running. When a hard disk is being attached indirectly, a new differencing
       hard disk linked to it is implicitly created and this differencing hard
       disk is associated with the machine and used for hard disk operations.
-      This also means that if <link to="IMachine::attachHardDisk2"/> performs
+      This also means that if <link to="IMachine::attachHardDisk"/> performs
       a direct attachment then the same hard disk will be returned in response
-      to the subsequent  <link to="IMachine::getHardDisk2"/> call; however if
+      to the subsequent  <link to="IMachine::getHardDisk"/> call; however if
       an indirect attachment is performed then
-      <link to="IMachine::getHardDisk2"/> will return the implicitly created
+      <link to="IMachine::getHardDisk"/> will return the implicitly created
       differencing hard disk, not the original one passed to <link
-      to="IMachine::attachHardDisk2"/>. The following table shows the
+      to="IMachine::attachHardDisk"/>. The following table shows the
       dependency of the attachment type on the hard disk type:
 
       <table>
@@ -8403,7 +8403,7 @@
 
       Detaching hard disks is performed in a <i>deferred</i> fashion. This means
       that the given hard disk remains associated with the given machine after a
-      successful <link to="IMachine::detachHardDisk2"/> call until
+      successful <link to="IMachine::detachHardDisk"/> call until
       <link to="IMachine::saveSettings"/> is called to save all changes to
       machine settings to disk. This deferring is necessary to guarantee that
       the hard disk configuration may be restored at any time by a call to
@@ -8414,15 +8414,15 @@
       indirectly attaching some hard disks to the machine but before a call to
       <link to="IMachine::saveSettings"/> is made, it will implicitly delete
       all differencing hard disks implicitly created by
-      <link to="IMachine::attachHardDisk2"/> for these indirect attachments.
+      <link to="IMachine::attachHardDisk"/> for these indirect attachments.
       Such implicitly created hard disks will also be immediately deleted when
-      detached explicitly using the <link to="IMachine::detachHardDisk2"/>
+      detached explicitly using the <link to="IMachine::detachHardDisk"/>
       call if it is made before <link to="IMachine::saveSettings"/>. This
       implicit deletion is safe because newly created differencing hard
       disks do not contain any user data.
 
       However, keep in mind that detaching differencing hard disks that were
-      implicitly created by <link to="IMachine::attachHardDisk2"/>
+      implicitly created by <link to="IMachine::attachHardDisk"/>
       before the last <link to="IMachine::saveSettings"/> call will
       <b>not</b> implicitly delete them as they may already contain some data
       (for example, as a result of virtual machine execution). If these hard
@@ -8540,7 +8540,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="parent" type="IHardDisk2" readonly="yes">
+    <attribute name="parent" type="IHardDisk" readonly="yes">
       <desc>
         Parent of this hard disk (a hard disk this hard disk is directly based
         on).
@@ -8550,7 +8550,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="children" type="IHardDisk2" safearray="yes" readonly="yes">
+    <attribute name="children" type="IHardDisk" safearray="yes" readonly="yes">
       <desc>
         Children of this hard disk (all differencing hard disks directly based
         on this hard disk). A <tt>null</tt> array is returned if this hard disk
@@ -8558,7 +8558,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="root" type="IHardDisk2" readonly="yes">
+    <attribute name="root" type="IHardDisk" readonly="yes">
       <desc>
         Root hard disk of this hard disk.
 
@@ -8874,7 +8874,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Hard disk not in NotCreated state.
         </result>
       </desc>
-      <param name="target" type="IHardDisk2" dir="in">
+      <param name="target" type="IHardDisk" dir="in">
         <desc>Target hard disk.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -8988,7 +8988,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           state for the duration of this operation.
         </note>
       </desc>
-      <param name="target" type="IHardDisk2" dir="in">
+      <param name="target" type="IHardDisk" dir="in">
         <desc>Target hard disk.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -9021,7 +9021,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           operation.
         </note>
       </desc>
-      <param name="target" type="IHardDisk2" dir="in">
+      <param name="target" type="IHardDisk" dir="in">
         <desc>Target hard disk.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -9115,7 +9115,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="Differencing" value="0x10">
       <desc>
         Supports being used as a format for differencing hard disks (see <link
-        to="IHardDisk2::createDiffStorage"/>).
+        to="IHardDisk::createDiffStorage"/>).
       </desc>
     </const>
 
@@ -9160,13 +9160,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         Each hard disk format is identified by a string represented by the
         <link to="#id"/> attribute. This string is used in calls like
-        <link to="IVirtualBox::createHardDisk2"/> to specify the desired
+        <link to="IVirtualBox::createHardDisk"/> to specify the desired
         format.
 
         The list of all supported hard disk formats can be obtained using
         <link to="ISystemProperties::hardDiskFormats"/>.
 
-        <see>IHardDisk2</see>
+        <see>IHardDisk</see>
     </desc>
 
     <attribute name="id" type="wstring" readonly="yes">
@@ -9184,7 +9184,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         This string is used in methods of other interfaces where it is necessary
         to specify a hard disk format, such as
-        <link to="IVirtualBox::createHardDisk2"/>.
+        <link to="IVirtualBox::createHardDisk"/>.
       </desc>
     </attribute>
 
@@ -9258,18 +9258,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <!--
-  // IFloppyImage2
+  // IFloppyImage
   /////////////////////////////////////////////////////////////////////////
   -->
 
   <interface
-    name="IFloppyImage2" extends="IMedium"
-    uuid="fcdee8f0-03f9-11dd-95ff-0800200c9a66"
+    name="IFloppyImage" extends="IMedium"
+    uuid="faa6101f-078c-4b3a-ab75-75670c8170b3"
     wsmap="managed"
   >
     <desc>
-      The IFloppyImage2 interface represents a medium containing the image
-      of a floppy disk.
+      The IFloppyImage interface represents a medium containing the image
+      of a floppy disk. This is a subclass of <link to="IMedium" />; see remarks there.
     </desc>
 
   </interface>
@@ -9418,7 +9418,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="getImage">
       <desc>Returns the currently mounted floppy image.</desc>
-      <param name="image" type="IFloppyImage2" dir="return"/>
+      <param name="image" type="IFloppyImage" dir="return"/>
     </method>
 
     <method name="getHostDrive">

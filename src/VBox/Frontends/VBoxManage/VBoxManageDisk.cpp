@@ -121,8 +121,8 @@ int handleCreateHardDisk(HandlerArg *a)
     if (strcmp(type, "normal") && strcmp(type, "writethrough"))
         return errorArgument("Invalid hard disk type '%s' specified", Utf8Str(type).raw());
 
-    ComPtr<IHardDisk2> hardDisk;
-    CHECK_ERROR(a->virtualBox, CreateHardDisk2(format, filename, hardDisk.asOutParam()));
+    ComPtr<IHardDisk> hardDisk;
+    CHECK_ERROR(a->virtualBox, CreateHardDisk(format, filename, hardDisk.asOutParam()));
     if (SUCCEEDED(rc) && hardDisk)
     {
         /* we will close the hard disk after the storage has been successfully
@@ -214,17 +214,17 @@ int handleModifyHardDisk(HandlerArg *a)
     if (a->argc < 2)
         return errorSyntax(USAGE_MODIFYHD, "Incorrect number of parameters");
 
-    ComPtr<IHardDisk2> hardDisk;
+    ComPtr<IHardDisk> hardDisk;
     Bstr filepath;
 
     /* first guess is that it's a UUID */
     Guid uuid(a->argv[0]);
-    rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+    rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
     /* no? then it must be a filename */
     if (!hardDisk)
     {
         filepath = a->argv[0];
-        CHECK_ERROR(a->virtualBox, FindHardDisk2(filepath, hardDisk.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindHardDisk(filepath, hardDisk.asOutParam()));
     }
 
     /* let's find out which command */
@@ -276,7 +276,7 @@ int handleModifyHardDisk(HandlerArg *a)
         /* the hard disk image might not be registered */
         if (!hardDisk)
         {
-            a->virtualBox->OpenHardDisk2(Bstr(a->argv[0]), hardDisk.asOutParam());
+            a->virtualBox->OpenHardDisk(Bstr(a->argv[0]), hardDisk.asOutParam());
             if (!hardDisk)
                 return errorArgument("Hard disk image not found");
         }
@@ -353,21 +353,21 @@ int handleCloneHardDisk(HandlerArg *a)
     if (dst.isEmpty())
         return errorSyntax(USAGE_CLONEHD, "Mandatory output file parameter missing");
 
-    ComPtr<IHardDisk2> srcDisk;
-    ComPtr<IHardDisk2> dstDisk;
+    ComPtr<IHardDisk> srcDisk;
+    ComPtr<IHardDisk> dstDisk;
     bool unknown = false;
 
     /* first guess is that it's a UUID */
     Guid uuid(Utf8Str(src).raw());
-    rc = a->virtualBox->GetHardDisk2(uuid, srcDisk.asOutParam());
+    rc = a->virtualBox->GetHardDisk(uuid, srcDisk.asOutParam());
     /* no? then it must be a filename */
     if (FAILED (rc))
     {
-        rc = a->virtualBox->FindHardDisk2(src, srcDisk.asOutParam());
+        rc = a->virtualBox->FindHardDisk(src, srcDisk.asOutParam());
         /* no? well, then it's an unkwnown image */
         if (FAILED (rc))
         {
-            CHECK_ERROR(a->virtualBox, OpenHardDisk2(src, srcDisk.asOutParam()));
+            CHECK_ERROR(a->virtualBox, OpenHardDisk(src, srcDisk.asOutParam()));
             if (SUCCEEDED (rc))
             {
                 unknown = true;
@@ -386,7 +386,7 @@ int handleCloneHardDisk(HandlerArg *a)
             CHECK_ERROR_BREAK(srcDisk, COMGETTER(Format) (format.asOutParam()));
         }
 
-        CHECK_ERROR_BREAK(a->virtualBox, CreateHardDisk2(format, dst, dstDisk.asOutParam()));
+        CHECK_ERROR_BREAK(a->virtualBox, CreateHardDisk(format, dst, dstDisk.asOutParam()));
 
         ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK(srcDisk, CloneTo(dstDisk, progress.asOutParam()));
@@ -678,11 +678,11 @@ int handleAddiSCSIDisk(HandlerArg *a)
 
     do
     {
-        ComPtr<IHardDisk2> hardDisk;
+        ComPtr<IHardDisk> hardDisk;
         CHECK_ERROR_BREAK (a->virtualBox,
-            CreateHardDisk2(Bstr ("iSCSI"),
-                            BstrFmt ("%ls/%ls", server.raw(), target.raw()),
-                            hardDisk.asOutParam()));
+            CreateHardDisk(Bstr ("iSCSI"),
+                           BstrFmt ("%ls/%ls", server.raw(), target.raw()),
+                           hardDisk.asOutParam()));
         CheckComRCBreakRC (rc);
 
         if (!comment.isNull())
@@ -748,23 +748,23 @@ int handleShowHardDiskInfo(HandlerArg *a)
     if (a->argc != 1)
         return errorSyntax(USAGE_SHOWHDINFO, "Incorrect number of parameters");
 
-    ComPtr<IHardDisk2> hardDisk;
+    ComPtr<IHardDisk> hardDisk;
     Bstr filepath;
 
     bool unknown = false;
 
     /* first guess is that it's a UUID */
     Guid uuid(a->argv[0]);
-    rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+    rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
     /* no? then it must be a filename */
     if (FAILED (rc))
     {
         filepath = a->argv[0];
-        rc = a->virtualBox->FindHardDisk2(filepath, hardDisk.asOutParam());
+        rc = a->virtualBox->FindHardDisk(filepath, hardDisk.asOutParam());
         /* no? well, then it's an unkwnown image */
         if (FAILED (rc))
         {
-            CHECK_ERROR(a->virtualBox, OpenHardDisk2(filepath, hardDisk.asOutParam()));
+            CHECK_ERROR(a->virtualBox, OpenHardDisk(filepath, hardDisk.asOutParam()));
             if (SUCCEEDED (rc))
             {
                 unknown = true;
@@ -890,8 +890,8 @@ int handleOpenMedium(HandlerArg *a)
             type = a->argv[3];
         }
 
-        ComPtr<IHardDisk2> hardDisk;
-        CHECK_ERROR(a->virtualBox, OpenHardDisk2(filepath, hardDisk.asOutParam()));
+        ComPtr<IHardDisk> hardDisk;
+        CHECK_ERROR(a->virtualBox, OpenHardDisk(filepath, hardDisk.asOutParam()));
         if (SUCCEEDED(rc) && hardDisk)
         {
             /* change the type if requested */
@@ -913,7 +913,7 @@ int handleOpenMedium(HandlerArg *a)
     }
     else if (strcmp(a->argv[0], "floppy") == 0)
     {
-        ComPtr<IFloppyImage2> floppyImage;
+        ComPtr<IFloppyImage> floppyImage;
         CHECK_ERROR(a->virtualBox, OpenFloppyImage(filepath, Guid(), floppyImage.asOutParam()));
     }
     else
@@ -934,12 +934,12 @@ int handleCloseMedium(HandlerArg *a)
 
     if (strcmp(a->argv[0], "disk") == 0)
     {
-        ComPtr<IHardDisk2> hardDisk;
-        rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+        ComPtr<IHardDisk> hardDisk;
+        rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
         if (!hardDisk)
         {
-            CHECK_ERROR(a->virtualBox, FindHardDisk2(Bstr(a->argv[1]), hardDisk.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(a->argv[1]), hardDisk.asOutParam()));
         }
         if (SUCCEEDED(rc) && hardDisk)
         {
@@ -964,7 +964,7 @@ int handleCloseMedium(HandlerArg *a)
     else
     if (strcmp(a->argv[0], "floppy") == 0)
     {
-        ComPtr<IFloppyImage2> floppyImage;
+        ComPtr<IFloppyImage> floppyImage;
         rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
         if (!floppyImage)

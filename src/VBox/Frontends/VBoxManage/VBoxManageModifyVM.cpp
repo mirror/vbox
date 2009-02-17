@@ -979,28 +979,28 @@ int handleModifyVM(HandlerArg *a)
         {
             if (strcmp(hdds[0], "none") == 0)
             {
-                machine->DetachHardDisk2(StorageBus_IDE, 0, 0);
+                machine->DetachHardDisk(StorageBus_IDE, 0, 0);
             }
             else
             {
                 /* first guess is that it's a UUID */
                 Guid uuid(hdds[0]);
-                ComPtr<IHardDisk2> hardDisk;
-                rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+                ComPtr<IHardDisk> hardDisk;
+                rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(a->virtualBox, FindHardDisk2(Bstr(hdds[0]), hardDisk.asOutParam()));
+                    CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(hdds[0]), hardDisk.asOutParam()));
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
-                        CHECK_ERROR(a->virtualBox, OpenHardDisk2(Bstr(hdds[0]), hardDisk.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[0]), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk2(uuid, StorageBus_IDE, 0, 0));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 0, 0));
                 }
                 else
                     rc = E_FAIL;
@@ -1012,28 +1012,28 @@ int handleModifyVM(HandlerArg *a)
         {
             if (strcmp(hdds[1], "none") == 0)
             {
-                machine->DetachHardDisk2(StorageBus_IDE, 0, 1);
+                machine->DetachHardDisk(StorageBus_IDE, 0, 1);
             }
             else
             {
                 /* first guess is that it's a UUID */
                 Guid uuid(hdds[1]);
-                ComPtr<IHardDisk2> hardDisk;
-                rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+                ComPtr<IHardDisk> hardDisk;
+                rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(a->virtualBox, FindHardDisk2(Bstr(hdds[1]), hardDisk.asOutParam()));
+                    CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(hdds[1]), hardDisk.asOutParam()));
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
-                        CHECK_ERROR(a->virtualBox, OpenHardDisk2(Bstr(hdds[1]), hardDisk.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[1]), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk2(uuid, StorageBus_IDE, 0, 1));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 0, 1));
                 }
                 else
                     rc = E_FAIL;
@@ -1045,28 +1045,28 @@ int handleModifyVM(HandlerArg *a)
         {
             if (strcmp(hdds[2], "none") == 0)
             {
-                machine->DetachHardDisk2(StorageBus_IDE, 1, 1);
+                machine->DetachHardDisk(StorageBus_IDE, 1, 1);
             }
             else
             {
                 /* first guess is that it's a UUID */
                 Guid uuid(hdds[2]);
-                ComPtr<IHardDisk2> hardDisk;
-                rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+                ComPtr<IHardDisk> hardDisk;
+                rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(a->virtualBox, FindHardDisk2(Bstr(hdds[2]), hardDisk.asOutParam()));
+                    CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(hdds[2]), hardDisk.asOutParam()));
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
-                        CHECK_ERROR(a->virtualBox, OpenHardDisk2(Bstr(hdds[2]), hardDisk.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[2]), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk2(uuid, StorageBus_IDE, 1, 1));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 1, 1));
                 }
                 else
                     rc = E_FAIL;
@@ -1209,7 +1209,7 @@ int handleModifyVM(HandlerArg *a)
                 {
                     /* first assume it's a UUID */
                     Guid uuid(floppy);
-                    ComPtr<IFloppyImage2> floppyImage;
+                    ComPtr<IFloppyImage> floppyImage;
                     rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
                     if (FAILED(rc) || !floppyImage)
                     {
@@ -1746,28 +1746,28 @@ int handleModifyVM(HandlerArg *a)
             {
                 if (strcmp(hdds[i], "none") == 0)
                 {
-                    machine->DetachHardDisk2(StorageBus_SATA, i-4, 0);
+                    machine->DetachHardDisk(StorageBus_SATA, i-4, 0);
                 }
                 else
                 {
                     /* first guess is that it's a UUID */
                     Guid uuid(hdds[i]);
-                    ComPtr<IHardDisk2> hardDisk;
-                    rc = a->virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
+                    ComPtr<IHardDisk> hardDisk;
+                    rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                     /* not successful? Then it must be a filename */
                     if (!hardDisk)
                     {
-                        CHECK_ERROR(a->virtualBox, FindHardDisk2(Bstr(hdds[i]), hardDisk.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(hdds[i]), hardDisk.asOutParam()));
                         if (FAILED(rc))
                         {
                             /* open the new hard disk object */
-                            CHECK_ERROR(a->virtualBox, OpenHardDisk2(Bstr(hdds[i]), hardDisk.asOutParam()));
+                            CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[i]), hardDisk.asOutParam()));
                         }
                     }
                     if (hardDisk)
                     {
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR(machine, AttachHardDisk2(uuid, StorageBus_SATA, i-4, 0));
+                        CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_SATA, i-4, 0));
                     }
                     else
                         rc = E_FAIL;
