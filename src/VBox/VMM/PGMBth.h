@@ -187,6 +187,9 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  endif
     pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.pShwPageCR3R3->Core.Key;
 
+    /* Set the current hypervisor CR3. */
+    CPUMSetHyperCR3(pVM, PGMGetHyperCR3(pVM));
+
     /* Apply all hypervisor mappings to the new CR3. */
     return PGMMapActivateAll(pVM);
 # endif
