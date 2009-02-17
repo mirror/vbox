@@ -55,6 +55,52 @@ VBOXXPCOMC_DECL(int) VBoxUtf8ToUtf16(const char *pszString, PRUnichar **ppwszStr
 VBOXXPCOMC_DECL(const char *) VBoxGetEnv(const char *pszVar);
 VBOXXPCOMC_DECL(int) VBoxSetEnv(const char *pszVar, const char *pszValue);
 
+
+/**
+ * Function table for dynamic linking.
+ * Use VBoxGetFunctions() to obtain the pointer to it.
+ */
+typedef struct VBOXXPCOMC
+{
+    /** The size of the structure. */
+    unsigned cb;
+    /** The structure version. */
+    unsigned uVersion;
+    void  (*pfnComInitialize)(IVirtualBox **virtualBox, ISession **session);
+    void  (*pfnComUninitialize)(void);
+
+    void  (*pfnComUnallocMem)(void *pv);
+    void  (*pfnUtf16Free)(PRUnichar *pwszString);
+    void  (*pfnUtf8Free)(char *pszString);
+
+    int   (*pfnUtf16ToUtf8)(const PRUnichar *pwszString, char **ppszString);
+    int   (*pfnUtf8ToUtf16)(const char *pszString, PRUnichar **ppwszString);
+
+    const char * (*pfnGetEnv)(const char *pszVar);
+    int   (*pfnSetEnv)(const char *pszVar, const char *pszValue);
+    /** Tail version, same as uVersion. */
+    unsigned uEndVersion;
+} VBOXXPCOMC;
+/** Pointer to a const VBoxXPCOMC function table. */
+typedef VBOXXPCOMC const *PCVBOXXPCOM;
+
+/** The current interface version.
+ * For use with VBoxGetXPCOMCFunctions and to be found in
+ * VBOXXPCOMC::uVersion. */
+#define VBOX_XPCOMC_VERSION     0x00010000U
+
+VBOXXPCOMC_DECL(PCVBOXXPCOM) VBoxGetXPCOMCFunctions(unsigned uVersion);
+/** Typedef for VBoxGetXPCOMCFunctions. */
+typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
+
+/** The symbol name of VBoxGetXPCOMCFunctions. */
+#if defined(__APPLE__) || defined(__OS2__)
+# define VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME   "_VBoxGetXPCOMCFunctions"
+#else
+# define VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME   "VBoxGetXPCOMCFunctions"
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif
