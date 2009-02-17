@@ -516,6 +516,7 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
         CPUMPushHyper(pVM, 5 * sizeof(RTRCPTR));        /* trampoline param: stacksize.  */
         CPUMPushHyper(pVM, RCPtrEP);                    /* Call EIP. */
         CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
+        Assert(CPUMGetHyperCR3(pVM) && CPUMGetHyperCR3(pVM) == PGMGetHyperCR3(pVM));
 
         for (;;)
         {
