@@ -333,12 +333,24 @@ int handleImportAppliance(HandlerArg *a)
                                 aEnabled[a] = false;
                             }
                             else
-                                RTPrintf("%2d: SCSI controller, type %ls"
-                                        "\n    (change with \"-vsys %d -type%d={BusLogic|LsiLogic}\";" // @todo
-                                        "\n    disable with \"-vsys %d -ignore %d\")\n",
-                                        a,
-                                        aConfigValues[a],
-                                        i, a, i, a);
+                            {
+                                Utf8StrFmt strTypeArg("-type%RI16", a);
+                                if (findArgValue(strOverride, pmapArgs, strTypeArg))
+                                {
+                                    bstrFinalValue = strOverride;
+                                    RTPrintf("%2d: SCSI controller, type set with -type%d: %ls\n",
+                                            a,
+                                            a,
+                                            bstrFinalValue.raw());
+                                }
+                                else
+                                    RTPrintf("%2d: SCSI controller, type %ls"
+                                            "\n    (change with \"-vsys %d -type%d {BusLogic|LsiLogic}\";"
+                                            "\n    disable with \"-vsys %d -ignore %d\")\n",
+                                            a,
+                                            aConfigValues[a],
+                                            i, a, i, a);
+                            }
                         break;
 
                         case VirtualSystemDescriptionType_HardDiskImage:
@@ -350,14 +362,31 @@ int handleImportAppliance(HandlerArg *a)
                                 aEnabled[a] = false;
                             }
                             else
-                                RTPrintf("%2d: Hard disk image: source image=%ls, target path=%ls, %ls"
-                                        "\n    (change controller with \"-vsys %d -controller%d=<id>\";"  // @todo
-                                        "\n    disable with \"-vsys %d -ignore %d\")\n",
-                                        a,
-                                        aOrigValues[a],
-                                        aConfigValues[a],
-                                        aExtraConfigValues[a],
-                                        i, a, i, a);
+                            {
+                                Utf8StrFmt strTypeArg("-controller%RI16", a);
+                                if (findArgValue(strOverride, pmapArgs, strTypeArg))
+                                {
+                                    // strOverride now has the controller index as a number, but we
+                                    // need a "controller=X" format string
+                                    strOverride = Utf8StrFmt("controller=%s", strOverride.c_str());
+                                    Bstr bstrExtraConfigValue = strOverride;
+                                    bstrExtraConfigValue.detachTo(&aExtraConfigValues[a]);
+                                    RTPrintf("%2d: Hard disk image: source image=%ls, target path=%ls, %ls\n",
+                                            a,
+                                            aOrigValues[a],
+                                            aConfigValues[a],
+                                            aExtraConfigValues[a]);
+                                }
+                                else
+                                    RTPrintf("%2d: Hard disk image: source image=%ls, target path=%ls, %ls"
+                                            "\n    (change controller with \"-vsys %d -controller%d <id>\";"
+                                            "\n    disable with \"-vsys %d -ignore %d\")\n",
+                                            a,
+                                            aOrigValues[a],
+                                            aConfigValues[a],
+                                            aExtraConfigValues[a],
+                                            i, a, i, a);
+                            }
                         break;
 
                         case VirtualSystemDescriptionType_CDROM:
@@ -387,7 +416,7 @@ int handleImportAppliance(HandlerArg *a)
                         break;
 
                         case VirtualSystemDescriptionType_NetworkAdapter:
-                            RTPrintf("%2d: Network adapter: orig %ls, config %ls, extra %ls\n",   // @todo
+                            RTPrintf("%2d: Network adapter: orig %ls, config %ls, extra %ls\n",   // @todo implement once we have a plan for the back-end
                                      a,
                                      aOrigValues[a],
                                      aConfigValues[a],
