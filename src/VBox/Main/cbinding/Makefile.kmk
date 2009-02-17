@@ -87,6 +87,21 @@ ifndef VBOX_ONLY_SDK
   	$(VBoxXPCOMC_1_TARGET)
 
   #
+  # C testcase using the dynamic glue.
+  #
+  PROGRAMS.linux += tstXPCOMCGlue
+  tstXPCOMCGlue_TEMPLATE = VBOXR3
+  tstXPCOMCGlue_INCS = \
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include \
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub
+  tstXPCOMCGlue_INTERMEDIATES = \
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_CXPCOM.h
+  tstXPCOMCGlue_SOURCES = \
+  	tstXPCOMCGlue.c
+  tstXPCOMCGlue_LIBS = \
+  	$(VBoxXPCOMCGlue_1_TARGET)
+
+  #
   # The testcase (also in samples).
   #
   PROGRAMS.linux += tstXPCOMCDynLink

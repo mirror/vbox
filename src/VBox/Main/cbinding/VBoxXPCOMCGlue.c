@@ -49,7 +49,7 @@
 /** The dlopen handle for VBoxXPCOMC. */
 void *g_hVBoxXPCOMC = NULL;
 /** The last load error. */
-char g_szVBoxXPCOMErrMsg[256];
+char g_szVBoxErrMsg[256];
 /** Pointer to the VBoxXPCOMC function table.  */
 PCVBOXXPCOM g_pVBoxFuncs = NULL;
 
@@ -76,9 +76,9 @@ static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
     pszBuf = (char *)malloc(cbBuf);
     if (!pszBuf)
     {
-        sprintf(g_szVBoxXPCOMErrMsg, "malloc(%u) failed", (unsigned)cbBuf);
+        sprintf(g_szVBoxErrMsg, "malloc(%u) failed", (unsigned)cbBuf);
         if (pszMsgPrefix)
-            fprintf(stderr, "%s%s\n", pszMsgPrefix, g_szVBoxXPCOMErrMsg);
+            fprintf(stderr, "%s%s\n", pszMsgPrefix, g_szVBoxErrMsg);
         return -1;
     }
     if (pszHome)
@@ -106,15 +106,15 @@ static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
             if (g_pVBoxFuncs)
                 rc = 0;
             else
-                sprintf(g_szVBoxXPCOMErrMsg, "%.80s: pfnGetFunctions(%#x) failed",
+                sprintf(g_szVBoxErrMsg, "%.80s: pfnGetFunctions(%#x) failed",
                         pszBuf, VBOX_XPCOMC_VERSION);
         }
         else
-            sprintf(g_szVBoxXPCOMErrMsg, "dlsym(%.80s/%.32s): %128s",
+            sprintf(g_szVBoxErrMsg, "dlsym(%.80s/%.32s): %128s",
                     pszBuf, VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME, dlerror());
     }
     else
-        sprintf(g_szVBoxXPCOMErrMsg, "dlopen(%.80s): %128s", pszBuf, dlerror());
+        sprintf(g_szVBoxErrMsg, "dlopen(%.80s): %128s", pszBuf, dlerror());
     free(pszBuf);
     return rc;
 }
