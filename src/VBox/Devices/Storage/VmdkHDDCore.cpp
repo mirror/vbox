@@ -2875,20 +2875,6 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
     /* Make sure this is not reached accidentally with an error status. */
     AssertRC(rc);
 
-    /* VMDK 1.0/1.1 version paranoia. */
-    for (unsigned i = 0; i < pImage->cExtents; i++)
-    {
-        pExtent = &pImage->pExtents[i];
-        if (    (   pExtent->uVersion != 3
-                 && (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED))
-            ||  (   pExtent->uVersion != 1
-                 && !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)))
-        {
-            rc = vmdkError(pImage, VERR_VD_VMDK_UNSUPPORTED_VERSION, RT_SRC_POS, N_("VMDK: inconsistent version in extent header in '%s', not a VMDK 1.0/1.1 conforming file"), pExtent->pszFullname);
-            goto out;
-        }
-    }
-
     /* Determine PCHS geometry if not set. */
     if (pImage->PCHSGeometry.cCylinders == 0)
     {
