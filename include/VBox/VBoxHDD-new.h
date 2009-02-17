@@ -97,17 +97,19 @@ typedef VDIMAGETYPE *PVDIMAGETYPE;
  * @{
  */
 /** No flags. */
-#define VD_IMAGE_FLAGS_NONE                 (0)
+#define VD_IMAGE_FLAGS_NONE                     (0)
 /** VMDK: Split image into 2GB extents. */
-#define VD_VMDK_IMAGE_FLAGS_SPLIT_2G        (0x0001)
+#define VD_VMDK_IMAGE_FLAGS_SPLIT_2G            (0x0001)
 /** VMDK: Raw disk image (giving access to a number of host partitions). */
-#define VD_VMDK_IMAGE_FLAGS_RAWDISK         (0x0002)
+#define VD_VMDK_IMAGE_FLAGS_RAWDISK             (0x0002)
+/** VMDK: stream optimized image, read only. */
+#define VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED    (0x0004)
 /** VDI: Fill new blocks with zeroes while expanding image file. Only valid
  * for newly created images, never set for opened existing images. */
-#define VD_VDI_IMAGE_FLAGS_ZERO_EXPAND      (0x0100)
+#define VD_VDI_IMAGE_FLAGS_ZERO_EXPAND          (0x0100)
 
 /** Mask of valid image flags for VMDK. */
-#define VD_VMDK_IMAGE_FLAGS_MASK            (VD_IMAGE_FLAGS_NONE | VD_VMDK_IMAGE_FLAGS_SPLIT_2G | VD_VMDK_IMAGE_FLAGS_RAWDISK)
+#define VD_VMDK_IMAGE_FLAGS_MASK            (VD_IMAGE_FLAGS_NONE | VD_VMDK_IMAGE_FLAGS_SPLIT_2G | VD_VMDK_IMAGE_FLAGS_RAWDISK | VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
 
 /** Mask of valid image flags for VDI. */
 #define VD_VDI_IMAGE_FLAGS_MASK             (VD_IMAGE_FLAGS_NONE | VD_VDI_IMAGE_FLAGS_ZERO_EXPAND)

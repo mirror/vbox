@@ -1080,6 +1080,8 @@
 #define VERR_VD_VMDK_VALUE_NOT_FOUND                (-3242)
 /** VMDK: Operation can't be done in current image state. */
 #define VERR_VD_VMDK_INVALID_STATE                  (-3243)
+/** VMDK: Format is invalid/inconsistent. */
+#define VERR_VD_VMDK_INVALID_FORMAT                 (-3244)
 /** iSCSI: Invalid header, i.e. dummy for validity check. */
 #define VERR_VD_ISCSI_INVALID_HEADER                (-3250)
 /** iSCSI: Configuration value is unknown. This indicates misconfiguration. */
