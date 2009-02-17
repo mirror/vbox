@@ -153,4 +153,36 @@ VBoxComUninitialize(void)
     Log(("Cbinding: Cleaned up the created IVirtualBox and ISession Objects.\n"));
 }
 
+
+VBOXXPCOMC_DECL(PCVBOXXPCOM)
+VBoxGetXPCOMCFunctions(unsigned uVersion)
+{
+    /* The current version. */
+    static const VBOXXPCOMC s_Functions =
+    {
+        sizeof(VBOXXPCOMC),
+        VBOX_XPCOMC_VERSION,
+
+        VBoxComInitialize,
+        VBoxComUninitialize,
+
+        VBoxComUnallocMem,
+        VBoxUtf16Free,
+        VBoxUtf8Free,
+
+        VBoxUtf16ToUtf8,
+        VBoxUtf8ToUtf16,
+
+        VBoxGetEnv,
+        VBoxSetEnv,
+
+        VBOX_XPCOMC_VERSION
+    };
+
+    if ((uVersion & 0xffff0000U) != VBOX_XPCOMC_VERSION)
+        return NULL; /* not supported. */
+
+    return &s_Functions;
+}
+
 /* vim: set ts=4 sw=4 et: */

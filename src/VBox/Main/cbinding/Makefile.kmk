@@ -61,6 +61,15 @@ ifndef VBOX_ONLY_SDK
  VBoxXPCOMC_SOURCES = \
  	VBoxXPCOMC.cpp
 
+ #
+ # The C glue library.
+ #
+ LIBRARIES.linux += VBoxXPCOMCGlue
+ VBoxXPCOMCGlue_TEMPLATE = VBOXMAINEXE
+ VBoxXPCOMCGlue_DEFS = MOZ_UNICODE IN_VBOXXPCOMC
+ VBoxXPCOMCGlue_SOURCES = \
+ 	VBoxXPCOMCGlue.c
+
  ifdef VBOX_WITH_TESTCASES
   #
   # The testcase (also in samples).
