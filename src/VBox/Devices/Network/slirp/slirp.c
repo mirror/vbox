@@ -987,9 +987,12 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
             /*
              * Check for FD_CLOSE events.
+             * in some cases once FD_CLOSE engaged on socket it could be flashed latter (for some reasons)
              */
-            if (NetworkEvents.lNetworkEvents & FD_CLOSE)
+            if (    (NetworkEvents.lNetworkEvents & FD_CLOSE)
+                ||  (so->so_close == 1))
             {
+                so->so_close = 1; /* mark it */
                 /*
                  * drain the socket
                  */
@@ -1001,6 +1004,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                     else
                         break;
                 }
+                CONTINUE(tcp);
             }
 #endif
 

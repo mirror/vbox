@@ -73,6 +73,12 @@ struct socket
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
     int so_poll_index;
 #endif
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+    /*
+     * FD_CLOSE event has been occured on socket 
+     */
+    int so_close; 
+#endif
 };
 
 #ifdef VBOX_WITH_SLIRP_MT
