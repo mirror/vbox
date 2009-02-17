@@ -24,7 +24,7 @@
 *   Header files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_VD
-#include <VBox/VBoxHDD-new.h>
+#include <VBox/VBoxHDD.h>
 #include <VBox/pdmdrv.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>

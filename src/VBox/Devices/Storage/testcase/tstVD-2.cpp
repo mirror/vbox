@@ -20,7 +20,7 @@
  */
 
 #include <VBox/err.h>
-#include <VBox/VBoxHDD-new.h>
+#include <VBox/VBoxHDD.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/file.h>

@@ -19,7 +19,7 @@
  * additional information or have any questions.
  */
 
-#include <VBox/VBoxHDD-new.h>
+#include <VBox/VBoxHDD.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>

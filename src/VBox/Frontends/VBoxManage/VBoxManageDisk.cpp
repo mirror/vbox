@@ -35,7 +35,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <VBox/log.h>
-#include <VBox/VBoxHDD-new.h>
+#include <VBox/VBoxHDD.h>
 
 #include "VBoxManage.h"
 using namespace com;
@@ -187,7 +187,7 @@ int handleCreateHardDisk(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-#if 0 /* disabled until disk shrinking is implemented based on VBoxHDD-new */
+#if 0 /* disabled until disk shrinking is implemented based on VBoxHDD */
 static DECLCALLBACK(int) hardDiskProgressCallback(PVM pVM, unsigned uPercent, void *pvUser)
 {
     unsigned *pPercent = (unsigned *)pvUser;
