@@ -888,6 +888,7 @@ VMMDECL(RTGCUINTREG)    CPUMGetHyperDR3(PVM pVM);
 VMMDECL(RTGCUINTREG)    CPUMGetHyperDR6(PVM pVM);
 VMMDECL(RTGCUINTREG)    CPUMGetHyperDR7(PVM pVM);
 VMMDECL(void)           CPUMGetHyperCtx(PVM pVM, PCPUMCTX pCtx);
+VMMDECL(uint32_t)       CPUMGetHyperCR3(PVM pVM);
 /** @} */
 
 /** @name Hypervisor Register Setters.
