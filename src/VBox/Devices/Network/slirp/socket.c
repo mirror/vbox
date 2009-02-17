@@ -210,7 +210,7 @@ soread(PNATState pData, struct socket *so)
         unsigned long pending = 0;
         status = WSAIoctl(so->s, FIONREAD, NULL, 0, &pending, sizeof(unsigned long), &ignored, NULL, NULL);
         if (status < 0)
-            Log2(("error in WSAIoctl: %d\n", WSAGetLastError()));
+            Log2(("NAT:error in WSAIoctl: %d\n", WSAGetLastError()));
         if (nn == 0 && (pending != 0))
         {
             SOCKET_UNLOCK(so);
