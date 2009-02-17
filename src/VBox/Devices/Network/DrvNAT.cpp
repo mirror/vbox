@@ -340,9 +340,6 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    fd_set  ReadFDs;
-    fd_set  WriteFDs;
-    fd_set  XcptFDs;
     int     nFDs = -1;
     unsigned int ms;
 # ifdef RT_OS_WINDOWS
