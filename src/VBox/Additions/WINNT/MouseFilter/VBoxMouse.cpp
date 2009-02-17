@@ -205,7 +205,7 @@ static void vboxDeviceRemoved (PDEVICE_EXTENSION devExt)
     dprintf(("VBoxMouse::vboxDeviceRemoved\n"));
 
     /* Save the allocated request pointer and clear the devExt. */
-    VMMDevReqMouseStatus *reqSC = (VMMDevReqMouseStatus *)InterlockedExchangePointer (&devExt->reqSC, NULL);
+    VMMDevReqMouseStatus *reqSC = (VMMDevReqMouseStatus *)InterlockedExchangePointer ((PVOID volatile *)&devExt->reqSC, NULL);
 
     if (devExt->HostMouse && vboxIsHostInformed ())
     {
@@ -305,7 +305,7 @@ static void vboxInformHost (PDEVICE_EXTENSION devExt)
 
             if (RT_SUCCESS(vboxRC))
             {
-                InterlockedExchangePointer (&devExt->reqSC, req);
+                InterlockedExchangePointer ((PVOID volatile *)&devExt->reqSC, req);
                 dumpDevExt (devExt);
             }
             else
