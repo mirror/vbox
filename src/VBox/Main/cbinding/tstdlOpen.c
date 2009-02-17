@@ -1,4 +1,4 @@
-/* $Revsion: $ */
+/* $Revision$ */
 /** @file tstdlOpen.c
  * Demonstrator program to illustrate use of C bindings of Main API
  * using dynamic linking (dlopen and friends).
