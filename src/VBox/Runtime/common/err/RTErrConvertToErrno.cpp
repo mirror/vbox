@@ -441,7 +441,11 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
 
         default:
             AssertMsgFailed(("Unhandled error code %Rrc\n", iErr));
+#ifdef EPROTO
             return EPROTO;
+#else
+            return EINVAL;
+#endif
     }
 }
 
