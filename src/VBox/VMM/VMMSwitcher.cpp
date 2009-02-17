@@ -464,27 +464,6 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                 break;
             }
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-            /* @todo No need for three GetHyper calls; one and the same base is used */
-#endif
-            /*
-             * Store the 32-Bit CR3 (32-bit) for the hypervisor (shadow) memory context.
-             */
-            case FIX_HYPER_32BIT_CR3:
-            {
-                *uSrc.pu32 = PGMGetHyper32BitCR3(pVM);
-                break;
-            }
-
-            /*
-             * Store the PAE CR3 (32-bit) for the hypervisor (shadow) memory context.
-             */
-            case FIX_HYPER_PAE_CR3:
-            {
-                *uSrc.pu32 = PGMGetHyperPaeCR3(pVM);
-                break;
-            }
-
             /*
              * Store Hypervisor CS (16-bit).
              */

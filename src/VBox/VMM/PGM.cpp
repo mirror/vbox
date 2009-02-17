@@ -1505,8 +1505,6 @@ static int pgmR3InitPaging(PVM pVM)
         pVM->pgm.s.pShwPaePdptR3->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.aHCPhysPaePDs[i];
         /* The flags will be corrected when entering and leaving long mode. */
     }
-
-    CPUMSetHyperCR3(pVM, (uint32_t)pVM->pgm.s.HCPhysShw32BitPD);
 #endif
 
     /*

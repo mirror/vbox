@@ -1070,6 +1070,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
      */
     for (;;)
     {
+        Assert(CPUMGetHyperCR3(pVM) == PGMGetHyperCR3(pVM));
         int rc;
         do
         {
@@ -1206,6 +1207,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
     for (;;)
     {
         int rc;
+        Assert(CPUMGetHyperCR3(pVM) == PGMGetHyperCR3(pVM));
         do
         {
 #ifdef NO_SUPCALLR0VMM
@@ -1262,6 +1264,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
     for (;;)
     {
         int rc;
+        Assert(CPUMGetHyperCR3(pVM) == PGMGetHyperCR3(pVM));
         do
         {
 #ifdef NO_SUPCALLR0VMM

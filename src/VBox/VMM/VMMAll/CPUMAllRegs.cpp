@@ -125,6 +125,16 @@ VMMDECL(void) CPUMSetHyperIDTR(PVM pVM, uint32_t addr, uint16_t limit)
 VMMDECL(void) CPUMSetHyperCR3(PVM pVM, uint32_t cr3)
 {
     pVM->cpum.s.Hyper.cr3 = cr3;
+
+#ifdef IN_RC
+    /* Update the current CR3. */
+    ASMSetCR3(cr3);
+#endif
+}
+
+VMMDECL(uint32_t) CPUMGetHyperCR3(PVM pVM)
+{
+    return pVM->cpum.s.Hyper.cr3;
 }
 
 

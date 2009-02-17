@@ -214,6 +214,9 @@ htg_debug_regs_no:
     lgdt    [edx + CPUM.Hyper.gdtr]
     DEBUG_CHAR('1')                     ; trashes esi
 
+    ; Store the hypervisor cr3 for later loading
+    mov     ebp, [edx + CPUM.Hyper.cr3]
+    
     ;;
     ;; Load Intermediate memory context.
     ;;
@@ -268,9 +271,7 @@ ALIGNCODE(16)
 GLOBALNAME FarJmpGCTarget
     DEBUG_CHAR('-')
     ; load final cr3 and do far jump to load cs.
-    FIXUP SWITCHER_FIX_HYPER_CR3, 1
-    mov     eax, 0ffffffffh
-    mov     cr3, eax
+    mov     cr3, ebp            ; ebp set above
     DEBUG_CHAR('0')
 
     ;;

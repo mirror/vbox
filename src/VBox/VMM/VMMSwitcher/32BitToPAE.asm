@@ -27,7 +27,6 @@
 %define NAME_OVERLOAD(name)         vmmR3Switcher32BitToPAE_ %+ name
 %define SWITCHER_FIX_INTER_CR3_HC   FIX_INTER_32BIT_CR3
 %define SWITCHER_FIX_INTER_CR3_GC   FIX_INTER_PAE_CR3
-%define SWITCHER_FIX_HYPER_CR3      FIX_HYPER_PAE_CR3
 %define NEED_PAE_ON_32BIT_HOST  1
 
 ;*******************************************************************************
