@@ -363,7 +363,7 @@ void createVM(IVirtualBox *virtualBox)
      * as the boot device.
      */
     nsID uuid = {0};
-    nsCOMPtr<IDVDImage2> dvdImage;
+    nsCOMPtr<IDVDImage> dvdImage;
 
     rc = virtualBox->OpenDVDImage(NS_LITERAL_STRING("/home/achimha/isoimages/winnt4ger.iso").get(),
                                   uuid, /* NULL UUID, i.e. a new one will be created */

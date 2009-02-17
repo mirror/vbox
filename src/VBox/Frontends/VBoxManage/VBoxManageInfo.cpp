@@ -571,7 +571,7 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
     rc = machine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
     if (SUCCEEDED(rc) && dvdDrive)
     {
-        ComPtr<IDVDImage2> dvdImage;
+        ComPtr<IDVDImage> dvdImage;
         rc = dvdDrive->GetImage(dvdImage.asOutParam());
         if (SUCCEEDED(rc) && dvdImage)
         {

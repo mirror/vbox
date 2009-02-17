@@ -2550,7 +2550,7 @@ HRESULT Console::onDVDDriveChange()
     {
         case DriveState_ImageMounted:
         {
-            ComPtr <IDVDImage2> ImagePtr;
+            ComPtr <IDVDImage> ImagePtr;
             rc = mDVDDrive->GetImage (ImagePtr.asOutParam());
             if (SUCCEEDED (rc))
                 rc = ImagePtr->COMGETTER(Location) (Path.asOutParam());
@@ -4409,7 +4409,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
 
         if (driveState == DriveState_ImageMounted)
         {
-            ComPtr <IDVDImage2> image;
+            ComPtr <IDVDImage> image;
             rc = drive->GetImage (image.asOutParam());
             CheckComRCReturnRC (rc);
 

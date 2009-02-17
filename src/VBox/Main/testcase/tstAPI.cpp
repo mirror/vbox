@@ -960,7 +960,7 @@ int main(int argc, char *argv[])
             }
         }
         {
-            com::SafeIfaceArray <IDVDImage2> images;
+            com::SafeIfaceArray <IDVDImage> images;
             CHECK_ERROR_BREAK (virtualBox,
                                COMGETTER(DVDImages) (ComSafeArrayAsOutParam (images)));
 

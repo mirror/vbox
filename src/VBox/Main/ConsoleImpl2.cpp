@@ -1070,7 +1070,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertString(pCfg,   "Type",                 "DVD");         RC_CHECK();
             rc = CFGMR3InsertInteger(pCfg,  "Mountable",            1);             RC_CHECK();
 
-            ComPtr<IDVDImage2> dvdImage;
+            ComPtr<IDVDImage> dvdImage;
             hrc = dvdDrive->GetImage(dvdImage.asOutParam());                        H();
             if (dvdImage)
             {

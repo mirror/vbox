@@ -1786,7 +1786,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (!done)
         {
             /* try to find an existing one */
-            ComPtr <IDVDImage2> image;
+            ComPtr <IDVDImage> image;
             rc = virtualBox->FindDVDImage (medium, image.asOutParam());
             if (FAILED (rc))
             {

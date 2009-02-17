@@ -2292,7 +2292,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                 break;
             case KDriveState_ImageMounted:
             {
-                CDVDImage2 img = dvd.GetImage();
+                CDVDImage img = dvd.GetImage();
                 item = QString (sSectionItemTpl2)
                     .arg (tr ("Image", "details report (DVD)"),
                           locationForHTML (img.GetName()));
@@ -3001,8 +3001,8 @@ void VBoxGlobal::startEnumeratingMedia()
     {
         VBoxMediaList::iterator first = mMediaList.end();
 
-        CDVDImage2Vector vec = mVBox.GetDVDImages();
-        for (CDVDImage2Vector::ConstIterator it = vec.begin();
+        CDVDImageVector vec = mVBox.GetDVDImages();
+        for (CDVDImageVector::ConstIterator it = vec.begin();
              it != vec.end(); ++ it)
         {
             CMedium cmedium (*it);

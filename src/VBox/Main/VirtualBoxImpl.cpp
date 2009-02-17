@@ -642,7 +642,7 @@ STDMETHODIMP VirtualBox::COMGETTER(HardDisks2) (ComSafeArrayOut (IHardDisk2 *, a
 }
 
 STDMETHODIMP
-VirtualBox::COMGETTER(DVDImages) (ComSafeArrayOut (IDVDImage2 *, aDVDImages))
+VirtualBox::COMGETTER(DVDImages) (ComSafeArrayOut (IDVDImage *, aDVDImages))
 {
     if (ComSafeArrayOutIsNull (aDVDImages))
         return E_POINTER;
@@ -652,7 +652,7 @@ VirtualBox::COMGETTER(DVDImages) (ComSafeArrayOut (IDVDImage2 *, aDVDImages))
 
     AutoReadLock alock (this);
 
-    SafeIfaceArray <IDVDImage2> images (mData.mDVDImages2);
+    SafeIfaceArray <IDVDImage> images (mData.mDVDImages2);
     images.detachTo (ComSafeArrayOutArg (aDVDImages));
 
     return S_OK;
@@ -1165,7 +1165,7 @@ STDMETHODIMP VirtualBox::FindHardDisk2 (IN_BSTR aLocation,
 
 /** @note Doesn't lock anything. */
 STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_GUID aId,
-                                       IDVDImage2 **aDVDImage)
+                                       IDVDImage **aDVDImage)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
@@ -1180,7 +1180,7 @@ STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_GUID aId,
     if (id.isEmpty())
         id.create();
 
-    ComObjPtr <DVDImage2> image;
+    ComObjPtr <DVDImage> image;
     image.createObject();
     rc = image->init (this, aLocation, id);
     if (SUCCEEDED (rc))
@@ -1195,7 +1195,7 @@ STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_GUID aId,
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetDVDImage (IN_GUID aId, IDVDImage2 **aDVDImage)
+STDMETHODIMP VirtualBox::GetDVDImage (IN_GUID aId, IDVDImage **aDVDImage)
 {
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
@@ -1203,8 +1203,8 @@ STDMETHODIMP VirtualBox::GetDVDImage (IN_GUID aId, IDVDImage2 **aDVDImage)
     CheckComRCReturnRC (autoCaller.rc());
 
     Guid id = aId;
-    ComObjPtr <DVDImage2> image;
-    HRESULT rc = findDVDImage2 (&id, NULL, true /* setError */, &image);
+    ComObjPtr <DVDImage> image;
+    HRESULT rc = findDVDImage (&id, NULL, true /* setError */, &image);
 
     /* the below will set *aDVDImage to NULL if image is null */
     image.queryInterfaceTo (aDVDImage);
@@ -1213,7 +1213,7 @@ STDMETHODIMP VirtualBox::GetDVDImage (IN_GUID aId, IDVDImage2 **aDVDImage)
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::FindDVDImage (IN_BSTR aLocation, IDVDImage2 **aDVDImage)
+STDMETHODIMP VirtualBox::FindDVDImage (IN_BSTR aLocation, IDVDImage **aDVDImage)
 {
     CheckComArgNotNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
@@ -1221,8 +1221,8 @@ STDMETHODIMP VirtualBox::FindDVDImage (IN_BSTR aLocation, IDVDImage2 **aDVDImage
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    ComObjPtr <DVDImage2> image;
-    HRESULT rc = findDVDImage2 (NULL, aLocation, true /* setError */, &image);
+    ComObjPtr <DVDImage> image;
+    HRESULT rc = findDVDImage (NULL, aLocation, true /* setError */, &image);
 
     /* the below will set *aDVDImage to NULL if dvd is null */
     image.queryInterfaceTo (aDVDImage);
@@ -2695,7 +2695,7 @@ findHardDisk2 (const Guid *aId, CBSTR aLocation,
 }
 
 /**
- * Searches for a DVDImage2 object with the given ID or location in the list of
+ * Searches for a DVDImage object with the given ID or location in the list of
  * registered DVD images. If both ID and file path are specified, the first
  * object that matches either of them (not necessarily both) is returned.
  *
@@ -2709,9 +2709,9 @@ findHardDisk2 (const Guid *aId, CBSTR aLocation,
  *
  * @note Locks this object and image objects for reading.
  */
-HRESULT VirtualBox::findDVDImage2 (const Guid *aId, CBSTR aLocation,
-                                   bool aSetError,
-                                   ComObjPtr <DVDImage2> *aImage /* = NULL */)
+HRESULT VirtualBox::findDVDImage(const Guid *aId, CBSTR aLocation,
+                                 bool aSetError,
+                                 ComObjPtr<DVDImage> *aImage /* = NULL */)
 {
     AssertReturn (aId || aLocation, E_INVALIDARG);
 
@@ -2730,7 +2730,7 @@ HRESULT VirtualBox::findDVDImage2 (const Guid *aId, CBSTR aLocation,
 
     bool found = false;
 
-    for (DVDImage2List::const_iterator it = mData.mDVDImages2.begin();
+    for (DVDImageList::const_iterator it = mData.mDVDImages2.begin();
          it != mData.mDVDImages2.end();
          ++ it)
     {
@@ -2938,8 +2938,8 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
     }
 
     {
-        ComObjPtr <DVDImage2> image;
-        rc = findDVDImage2 (&aId, aLocation, false /* aSetError */, &image);
+        ComObjPtr<DVDImage> image;
+        rc = findDVDImage (&aId, aLocation, false /* aSetError */, &image);
         if (SUCCEEDED (rc))
         {
             /* Note: no AutoCaller since bound to this */
@@ -3068,7 +3068,7 @@ HRESULT VirtualBox::loadMedia (const settings::Key &aGlobal)
             {
                 case 1: /* DVDImages */
                 {
-                    ComObjPtr <DVDImage2> image;
+                    ComObjPtr<DVDImage> image;
                     image.createObject();
                     rc = image->init (this, *it);
                     CheckComRCBreakRC (rc);
@@ -3181,7 +3181,7 @@ HRESULT VirtualBox::saveSettings()
             {
                 Key imagesNode = registryNode.createKey ("DVDImages");
 
-                for (DVDImage2List::const_iterator it =
+                for (DVDImageList::const_iterator it =
                         mData.mDVDImages2.begin();
                      it != mData.mDVDImages2.end();
                      ++ it)
@@ -3422,7 +3422,7 @@ HRESULT VirtualBox::unregisterHardDisk2 (HardDisk2 *aHardDisk,
  *
  * @note Locks this object for writing and @a aImage for reading.
  */
-HRESULT VirtualBox::registerDVDImage (DVDImage2 *aImage,
+HRESULT VirtualBox::registerDVDImage (DVDImage *aImage,
                                       bool aSaveRegistry /*= true*/)
 {
     AssertReturn (aImage != NULL, E_INVALIDARG);
@@ -3479,7 +3479,7 @@ HRESULT VirtualBox::registerDVDImage (DVDImage2 *aImage,
  *
  * @note Locks this object for writing and @a aImage for reading.
  */
-HRESULT VirtualBox::unregisterDVDImage (DVDImage2 *aImage,
+HRESULT VirtualBox::unregisterDVDImage (DVDImage *aImage,
                                         bool aSaveRegistry /*= true*/)
 {
     AssertReturn (aImage != NULL, E_INVALIDARG);
@@ -3666,7 +3666,7 @@ HRESULT VirtualBox::updateSettings (const char *aOldPath, const char *aNewPath)
     AutoWriteLock alock (this);
 
     /* check DVD paths */
-    for (DVDImage2List::iterator it = mData.mDVDImages2.begin();
+    for (DVDImageList::iterator it = mData.mDVDImages2.begin();
          it != mData.mDVDImages2.end();
          ++ it)
     {

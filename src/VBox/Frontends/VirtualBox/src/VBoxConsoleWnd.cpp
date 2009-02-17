@@ -2915,8 +2915,8 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
     QString name = QString ("VBoxGuestAdditions_%1.iso")
                             .arg (vbox.GetVersion().remove ("_OSE"));
 
-    CDVDImage2Vector vec = vbox.GetDVDImages();
-    for (CDVDImage2Vector::ConstIterator it = vec.begin();
+    CDVDImageVector vec = vbox.GetDVDImages();
+    for (CDVDImageVector::ConstIterator it = vec.begin();
          it != vec.end(); ++ it)
     {
         QString path = it->GetLocation();
@@ -2948,7 +2948,7 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
     CVirtualBox vbox = vboxGlobal().virtualBox();
     QUuid uuid;
 
-    CDVDImage2 image = vbox.FindDVDImage (aSource);
+    CDVDImage image = vbox.FindDVDImage (aSource);
     if (image.isNull())
     {
         image = vbox.OpenDVDImage (aSource, uuid);

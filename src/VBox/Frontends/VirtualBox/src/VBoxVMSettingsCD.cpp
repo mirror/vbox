@@ -108,7 +108,7 @@ void VBoxVMSettingsCD::getFrom (const CMachine &aMachine)
         }
         case KDriveState_ImageMounted:
         {
-            CDVDImage2 img = dvd.GetImage();
+            CDVDImage img = dvd.GetImage();
             QString src = img.GetLocation();
             AssertMsg (!src.isNull(), ("Image file must not be null"));
             QFileInfo fi (src);

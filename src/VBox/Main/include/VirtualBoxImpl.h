@@ -43,7 +43,7 @@
 class Machine;
 class SessionMachine;
 class HardDisk2;
-class DVDImage2;
+class DVDImage;
 class FloppyImage2;
 class MachineCollection;
 class GuestOSType;
@@ -126,7 +126,7 @@ public:
     STDMETHOD(COMGETTER(SystemProperties)) (ISystemProperties **aSystemProperties);
     STDMETHOD(COMGETTER(Machines2)) (ComSafeArrayOut (IMachine *, aMachines));
     STDMETHOD(COMGETTER(HardDisks2)) (ComSafeArrayOut (IHardDisk2 *, aHardDisks));
-    STDMETHOD(COMGETTER(DVDImages)) (ComSafeArrayOut (IDVDImage2 *, aDVDImages));
+    STDMETHOD(COMGETTER(DVDImages)) (ComSafeArrayOut (IDVDImage *, aDVDImages));
     STDMETHOD(COMGETTER(FloppyImages)) (ComSafeArrayOut (IFloppyImage2 *, aFloppyImages));
     STDMETHOD(COMGETTER(ProgressOperations)) (ComSafeArrayOut (IProgress *, aOperations));
     STDMETHOD(COMGETTER(GuestOSTypes)) (IGuestOSTypeCollection **aGuestOSTypes);
@@ -153,9 +153,9 @@ public:
     STDMETHOD(FindHardDisk2) (IN_BSTR aLocation, IHardDisk2 **aHardDisk);
 
     STDMETHOD(OpenDVDImage) (IN_BSTR aLocation, IN_GUID aId,
-                             IDVDImage2 **aDVDImage);
-    STDMETHOD(GetDVDImage) (IN_GUID aId, IDVDImage2 **aDVDImage);
-    STDMETHOD(FindDVDImage) (IN_BSTR aLocation, IDVDImage2 **aDVDImage);
+                             IDVDImage **aDVDImage);
+    STDMETHOD(GetDVDImage) (IN_GUID aId, IDVDImage **aDVDImage);
+    STDMETHOD(FindDVDImage) (IN_BSTR aLocation, IDVDImage **aDVDImage);
 
     STDMETHOD(OpenFloppyImage) (IN_BSTR aLocation, IN_GUID aId,
                                 IFloppyImage2 **aFloppyImage);
@@ -235,8 +235,8 @@ public:
 
     HRESULT findHardDisk2 (const Guid *aId, CBSTR aLocation,
                            bool aSetError, ComObjPtr <HardDisk2> *aHardDisk = NULL);
-    HRESULT findDVDImage2 (const Guid *aId, CBSTR aLocation,
-                           bool aSetError, ComObjPtr <DVDImage2> *aImage = NULL);
+    HRESULT findDVDImage(const Guid *aId, CBSTR aLocation,
+                         bool aSetError, ComObjPtr<DVDImage> *aImage = NULL);
     HRESULT findFloppyImage2 (const Guid *aId, CBSTR aLocation,
                               bool aSetError, ComObjPtr <FloppyImage2> *aImage = NULL);
 
@@ -258,8 +258,8 @@ public:
     HRESULT registerHardDisk2 (HardDisk2 *aHardDisk, bool aSaveRegistry = true);
     HRESULT unregisterHardDisk2 (HardDisk2 *aHardDisk, bool aSaveRegistry = true);
 
-    HRESULT registerDVDImage (DVDImage2 *aImage, bool aSaveRegistry = true);
-    HRESULT unregisterDVDImage (DVDImage2 *aImage, bool aSaveRegistry = true);
+    HRESULT registerDVDImage(DVDImage *aImage, bool aSaveRegistry = true);
+    HRESULT unregisterDVDImage(DVDImage *aImage, bool aSaveRegistry = true);
 
     HRESULT registerFloppyImage (FloppyImage2 *aImage, bool aSaveRegistry = true);
     HRESULT unregisterFloppyImage (FloppyImage2 *aImage, bool aSaveRegistry = true);
@@ -361,7 +361,7 @@ private:
     typedef std::map <Guid, ComPtr <IProgress> > ProgressMap;
 
     typedef std::list <ComObjPtr <HardDisk2> > HardDisk2List;
-    typedef std::list <ComObjPtr <DVDImage2> > DVDImage2List;
+    typedef std::list <ComObjPtr <DVDImage> > DVDImageList;
     typedef std::list <ComObjPtr <FloppyImage2> > FloppyImage2List;
     typedef std::list <ComObjPtr <SharedFolder> > SharedFolderList;
 
@@ -428,7 +428,7 @@ private:
         ProgressMap mProgressOperations;
 
         HardDisk2List mHardDisks2;
-        DVDImage2List mDVDImages2;
+        DVDImageList mDVDImages2;
         FloppyImage2List mFloppyImages2;
         SharedFolderList mSharedFolders;
 
