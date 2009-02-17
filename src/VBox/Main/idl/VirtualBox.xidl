@@ -1122,8 +1122,8 @@
         Note that if this is a deregistration notification,
         there is no way to access the object representing the
         unregistered media. It is supposed that the
-        application will do required cleanup based on the @a
-        mediaId value.
+        application will do required cleanup based on the
+        @a mediaId value.
       </desc>
       <param name="mediaId" type="uuid" dir="in">
         <desc>ID of the media this event relates to.</desc>

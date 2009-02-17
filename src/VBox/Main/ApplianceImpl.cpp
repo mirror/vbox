@@ -1237,7 +1237,7 @@ STDMETHODIMP Appliance::Interpret()
     try
     {
         list<VirtualSystem>::const_iterator it;
-        /* Iterate through all appliances */
+        /* Iterate through all virtual systems */
         for (it = m->llVirtualSystems.begin();
              it != m->llVirtualSystems.end();
              ++it)
@@ -1705,7 +1705,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
         {
             if (!task->progress.isNull())
             {
-                rc = task->progress->advanceOperation (BstrFmt(tr("Importing Virtual System %d"), i + 1));
+                rc = task->progress->advanceOperation(BstrFmt(tr("Importing Virtual System %d"), i + 1));
                 CheckComRCThrowRC(rc);
             }
 
@@ -1714,8 +1714,11 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             uint32_t opCount = 0;
 
             /* Guest OS type */
-            std::list<VirtualSystemDescriptionEntry*> vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
-            ComAssertMsgThrow(vsdeOS.size() == 1, ("Guest OS Type missing"), E_FAIL);
+            std::list<VirtualSystemDescriptionEntry*> vsdeOS;
+            vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
+            if (vsdeOS.size() < 1)
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Missing guest OS type"));
             const Utf8Str &strOsTypeVBox = vsdeOS.front()->strConfig;
 
             /* Now that we know the base system get our internal defaults based on that. */
@@ -1726,7 +1729,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             /* Create the machine */
             /* First get the name */
             std::list<VirtualSystemDescriptionEntry*> vsdeName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
-            ComAssertMsgThrow(vsdeName.size() == 1, ("Guest OS name missing"), E_FAIL);
+            if (vsdeName.size() < 1)
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Missing VM name"));
             const Utf8Str &strNameVBox = vsdeName.front()->strConfig;
             ComPtr<IMachine> pNewMachine;
             rc = app->mVirtualBox->CreateMachine(Bstr(strNameVBox), Bstr(strOsTypeVBox),
@@ -2368,12 +2373,15 @@ void VirtualSystemDescription::addWarning(const char* aWarning, ...)
 std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::findByType(VirtualSystemDescriptionType_T aType)
 {
     std::list<VirtualSystemDescriptionEntry*> vsd;
+
     list<VirtualSystemDescriptionEntry>::iterator it;
     for (it = m->descriptions.begin();
          it != m->descriptions.end();
          ++it)
+    {
         if (it->type == aType)
-            vsd.push_back(&(*it));
+            vsd.push_back(pThis);
+    }
 
     return vsd;
 }
