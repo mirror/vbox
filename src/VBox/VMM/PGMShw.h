@@ -194,6 +194,11 @@ PGM_SHW_DECL(int, Enter)(PVM pVM)
 # endif
     pVM->pgm.s.HCPhysShwCR3 = pVM->pgm.s.HCPhysShwNestedRoot;
 #endif
+
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    CPUMSetHyperCR3(pVM, PGMGetHyperCR3(pVM));
+#endif
+
     return VINF_SUCCESS;
 }
 

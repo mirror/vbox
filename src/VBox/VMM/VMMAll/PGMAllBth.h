@@ -4671,10 +4671,8 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     AssertRCReturn(rc, rc);
 #  endif
 
-#  ifdef IN_RC
-    /* Update the current CR3. */
-    ASMSetCR3(pVM->pgm.s.HCPhysShwCR3);
-#  endif
+    /* Set the current hypervisor CR3. */
+    CPUMSetHyperCR3(pVM, PGMGetHyperCR3(pVM));
 
     /* Clean up the old CR3 root. */
     if (pOldShwPageCR3)
