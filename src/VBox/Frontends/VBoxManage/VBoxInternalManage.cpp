@@ -36,7 +36,7 @@
 
 #include <VBox/com/VirtualBox.h>
 
-#include <VBox/VBoxHDD-new.h>
+#include <VBox/VBoxHDD.h>
 #include <VBox/sup.h>
 #include <VBox/err.h>
 #include <VBox/log.h>

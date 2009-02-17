@@ -21,7 +21,7 @@
  */
 
 #include "VBoxGlobal.h"
-#include <VBox/VBoxHDD-new.h>
+#include <VBox/VBoxHDD.h>
 
 #include "VBoxDefs.h"
 #include "VBoxSelectorWnd.h"

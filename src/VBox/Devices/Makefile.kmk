@@ -80,7 +80,7 @@ else
  VBoxDDU_SDKS.win        = WINPSDK
 endif
 VBoxDDU_SOURCES          = \
-	Storage/VBoxHDD-new.cpp \
+	Storage/VBoxHDD.cpp \
 	Storage/VDIHDDCore.cpp \
 	Storage/VHDHDDCore.cpp \
 	Storage/VmdkHDDCore.cpp \

@@ -32,7 +32,7 @@
 
 #include <VBox/com/SupportErrorInfo.h>
 
-#include <VBox/VBoxHDD-new.h>
+#include <VBox/VBoxHDD.h>
 
 #include <map>
 

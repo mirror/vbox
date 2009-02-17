@@ -28,7 +28,7 @@
 #ifndef VBOX_VDICORE_VD
 #include <VBox/VBoxHDD.h>
 #else /* VBOX_VDICORE_VD */
-#include <VBox/VBoxHDD-new.h>
+#include <VBox/VBoxHDD.h>
 #endif /* VBOX_VDICORE_VD */
 #include <VBox/pdm.h>
 #include <VBox/mm.h>

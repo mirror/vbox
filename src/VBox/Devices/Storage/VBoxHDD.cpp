@@ -23,7 +23,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VD
-#include <VBox/VBoxHDD-new.h>
+#include <VBox/VBoxHDD.h>
 #include <VBox/err.h>
 #include <VBox/sup.h>
 #include <VBox/log.h>
@@ -39,7 +39,7 @@
 #include <iprt/path.h>
 #include <iprt/param.h>
 
-#include "VBoxHDD-newInternal.h"
+#include "VBoxHDD-Internal.h"
 
 
 #define VBOXHDDDISK_SIGNATURE 0x6f0e2a7d

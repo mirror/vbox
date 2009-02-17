@@ -18,11 +18,11 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxHDD_newInternal_h__
+#ifndef __VBoxHDD_Internal_h__
 
 
 #include <VBox/pdm.h>
-#include <VBox/VBoxHDD-new.h>
+#include <VBox/VBoxHDD.h>
 
 
 /** @name VBox HDD backend write flags
