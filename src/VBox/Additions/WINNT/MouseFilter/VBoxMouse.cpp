@@ -118,26 +118,32 @@ typedef struct _VBoxGlobalContext
     volatile LONG fVBGLInited;
     volatile LONG fVBGLInitFailed;
     volatile LONG fHostInformed;
+    volatile LONG fHostMouseFound;
 } VBoxGlobalContext;
 
-VBoxGlobalContext g_ctx = { 0, FALSE, FALSE, FALSE };
+static VBoxGlobalContext g_ctx = { 0, FALSE, FALSE, FALSE, FALSE };
 
-BOOLEAN vboxIsVBGLInited (void)
+static BOOLEAN vboxIsVBGLInited (void)
 {
    return InterlockedCompareExchange (&g_ctx.fVBGLInited, TRUE, TRUE) == TRUE;
 }
 
-BOOLEAN vboxIsVBGLInitFailed (void)
+static BOOLEAN vboxIsVBGLInitFailed (void)
 {
    return InterlockedCompareExchange (&g_ctx.fVBGLInitFailed, TRUE, TRUE) == TRUE;
 }
 
-BOOLEAN vboxIsHostInformed (void)
+static BOOLEAN vboxIsHostInformed (void)
 {
-   return InterlockedCompareExchange (&g_ctx.fVBGLInitFailed, TRUE, TRUE) == TRUE;
+   return InterlockedCompareExchange (&g_ctx.fHostInformed, TRUE, TRUE) == TRUE;
 }
 
-void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
+static BOOLEAN vboxIsHostMouseFound (void)
+{
+   return InterlockedCompareExchange (&g_ctx.fHostMouseFound, TRUE, TRUE) == TRUE;
+}
+
+static void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
 {
     LONG c = InterlockedIncrement (&g_ctx.cDevicesStarted);
 
@@ -154,12 +160,6 @@ void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
                 /* Atomically set the flag. */
                 InterlockedExchange (&g_ctx.fVBGLInited, TRUE);
                 dprintf(("VBoxMouse::vboxDeviceStarted: guest library initialization OK\n"));
-
-                /* Mark the first device as the Host one, that is the emulated mouse.
-                 * For this device the filter will query absolute mouse coords from the host.
-                 * @todo: Better would be to query the device information and detect the emulated device.
-                 */
-                devExt->HostMouse = TRUE;
             }
             else
             {
@@ -168,13 +168,82 @@ void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
             }
         }
     }
+    if (!vboxIsHostMouseFound ())
+    {
+        WCHAR wszProperty[512];
+        ULONG ResultLength = 0;
+        wszProperty[0] = 0;
+        NTSTATUS status = IoGetDeviceProperty(devExt->PDO, DevicePropertyDeviceDescription,
+                                              sizeof (wszProperty),
+                                              &wszProperty,
+                                              &ResultLength);
+        dprintf(("VBoxMouse::vboxDeviceAdded: looking for host mouse: %ls Len is %d, status %x\n",
+                 wszProperty, ResultLength, status));
+
+        if (status == STATUS_SUCCESS)
+        {
+            UNICODE_STRING MicrosoftPS2Mouse;
+            RtlInitUnicodeString (&MicrosoftPS2Mouse, L"Microsoft PS/2 Mouse");
+            UNICODE_STRING DeviceDescription;
+            RtlInitUnicodeString (&DeviceDescription, wszProperty);
+
+            if (RtlCompareUnicodeString (&DeviceDescription, &MicrosoftPS2Mouse, TRUE) == 0)
+            {
+                /* Mark the PS/2 device as the Host one, that is the emulated mouse.
+                 * For this device the filter will query absolute mouse coords from the host.
+                 */
+                InterlockedExchange (&g_ctx.fHostMouseFound, TRUE);
+                devExt->HostMouse = TRUE;
+                dprintf(("VBoxMouse::vboxDeviceAdded: host mouse found.\n"));
+            }
+        }
+    }
 }
 
-void vboxDeviceRemoved (PDEVICE_EXTENSION devExt)
+static void vboxDeviceRemoved (PDEVICE_EXTENSION devExt)
 {
     dprintf(("VBoxMouse::vboxDeviceRemoved\n"));
 
-    LONG c = InterlockedIncrement (&g_ctx.cDevicesStarted);
+    /* Save the allocated request pointer and clear the devExt. */
+    VMMDevReqMouseStatus *reqSC = (VMMDevReqMouseStatus *)InterlockedExchangePointer (&devExt->reqSC, NULL);
+
+    if (devExt->HostMouse && vboxIsHostInformed ())
+    {
+        // tell the VMM that from now on we can't handle absolute coordinates anymore
+        VMMDevReqMouseStatus *req = NULL;
+
+        int vboxRC = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
+
+        if (RT_SUCCESS(vboxRC))
+        {
+            req->mouseFeatures = 0;
+            req->pointerXPos = 0;
+            req->pointerYPos = 0;
+
+            vboxRC = VbglGRPerform (&req->header);
+
+            if (RT_FAILURE(vboxRC) || RT_FAILURE(req->header.rc))
+            {
+                dprintf(("VBoxMouse::vboxDeviceRemoved: ERROR communicating new mouse capabilities to VMMDev.\n"
+                         "rc = %d, VMMDev rc = %Rrc\n", vboxRC, req->header.rc));
+            }
+
+            VbglGRFree (&req->header);
+        }
+        else
+        {
+            dprintf(("VBoxMouse::vboxDeviceRemoved: the request allocation has failed.\n"));
+        }
+    
+        InterlockedExchange (&g_ctx.fHostInformed, FALSE);
+    }
+
+    if (reqSC)
+    {
+        VbglGRFree (&reqSC->header);
+    }
+
+    LONG c = InterlockedDecrement (&g_ctx.cDevicesStarted);
 
     if (c == 0)
     {
@@ -183,54 +252,22 @@ void vboxDeviceRemoved (PDEVICE_EXTENSION devExt)
             /* Set the flag to prevent reinitializing of the VBGL. */
             InterlockedExchange (&g_ctx.fVBGLInitFailed, TRUE);
 
-            /* Save the allocated request pointer and clear the devExt. */
-            VMMDevReqMouseStatus *reqSC = devExt->reqSC;
-            devExt->reqSC = NULL;
-
-            // tell the VMM that from now on we can't handle absolute coordinates anymore
-            VMMDevReqMouseStatus *req = NULL;
-
-            int vboxRC = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
-
-            if (RT_SUCCESS(vboxRC))
-            {
-                req->mouseFeatures = 0;
-                req->pointerXPos = 0;
-                req->pointerYPos = 0;
-
-                vboxRC = VbglGRPerform (&req->header);
-
-                if (RT_FAILURE(vboxRC) || RT_FAILURE(req->header.rc))
-                {
-                    dprintf(("VBoxMouse::vboxDeviceRemoved: ERROR communicating new mouse capabilities to VMMDev.\n"
-                             "rc = %d, VMMDev rc = %Rrc\n", vboxRC, req->header.rc));
-                }
-
-                VbglGRFree (&req->header);
-            }
-
-            if (reqSC)
-            {
-                VbglGRFree (&reqSC->header);
-            }
-
             VbglTerminate ();
 
             /* The VBGL is now in the not initialized state. */
-            InterlockedExchange (&g_ctx.fHostInformed, FALSE);
             InterlockedExchange (&g_ctx.fVBGLInited, FALSE);
             InterlockedExchange (&g_ctx.fVBGLInitFailed, FALSE);
         }
     }
 }
 
-void vboxInformHost (PDEVICE_EXTENSION devExt)
+static void vboxInformHost (PDEVICE_EXTENSION devExt)
 {
     dprintf (("VBoxMouse::vboxInformHost: %p\n", devExt));
 
     if (vboxIsVBGLInited ())
     {
-        if (!vboxIsHostInformed ())
+        if (devExt->HostMouse && !vboxIsHostInformed ())
         {
             VMMDevReqMouseStatus *req = NULL;
 
@@ -268,7 +305,7 @@ void vboxInformHost (PDEVICE_EXTENSION devExt)
 
             if (RT_SUCCESS(vboxRC))
             {
-                devExt->reqSC = req;
+                InterlockedExchangePointer (&devExt->reqSC, req);
                 dumpDevExt (devExt);
             }
             else
@@ -296,6 +333,20 @@ VBoxMouse_AddDevice(
     UNREFERENCED_PARAMETER(errorLogEntry);
 
     dprintf(("VBoxMouse::AddDevice Driver %p, PDO %p\n", Driver, PDO));
+
+#ifdef LOG_ENABLED
+    WCHAR wszProperty[512];
+    ULONG ResultLength = 0;
+    wszProperty[0] = 0;
+    status = IoGetDeviceProperty(PDO, DevicePropertyDeviceDescription,
+                                 sizeof (wszProperty),
+                                 &wszProperty,
+                                 &ResultLength);
+    if (status == STATUS_SUCCESS)
+    {
+        dprintf(("VBoxMouse::AddDevice %ls Len is %d\n", wszProperty, ResultLength));
+    }
+#endif /* LOG_ENABLED */
 
     status = IoCreateDevice(Driver,
                             sizeof(DEVICE_EXTENSION),
