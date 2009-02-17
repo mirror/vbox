@@ -57,7 +57,7 @@ ifndef VBOX_ONLY_SDK
  #
  DLLS.linux += VBoxXPCOMC
  VBoxXPCOMC_TEMPLATE = VBOXMAINDLL
- VBoxXPCOMC_DEFS = MOZ_UNICODE IN_VBOXXPCOMC
+ VBoxXPCOMC_DEFS = IN_VBOXXPCOMC
  VBoxXPCOMC_SOURCES = \
  	VBoxXPCOMC.cpp
 
@@ -66,7 +66,7 @@ ifndef VBOX_ONLY_SDK
  #
  LIBRARIES.linux += VBoxXPCOMCGlue
  VBoxXPCOMCGlue_TEMPLATE = VBOXMAINEXE
- VBoxXPCOMCGlue_DEFS = MOZ_UNICODE IN_VBOXXPCOMC
+ VBoxXPCOMCGlue_DEFS = IN_VBOXXPCOMC
  VBoxXPCOMCGlue_SOURCES = \
  	VBoxXPCOMCGlue.c
 
@@ -76,7 +76,6 @@ ifndef VBOX_ONLY_SDK
   #
   PROGRAMS.linux += tstXPCOMC
   tstXPCOMC_TEMPLATE = VBOXR3
-  tstXPCOMC_DEFS = MOZ_UNICODE
   tstXPCOMC_INCS = \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub
@@ -92,7 +91,6 @@ ifndef VBOX_ONLY_SDK
   #
   PROGRAMS.linux += tstXPCOMCDynLink
   tstXPCOMCDynLink_TEMPLATE = VBOXR3
-  tstXPCOMCDynLink_DEFS = MOZ_UNICODE
   tstXPCOMCDynLink_INCS = \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub
