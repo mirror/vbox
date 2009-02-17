@@ -2381,11 +2381,12 @@ void VBoxProblemReporter::showHelpWebDialog()
 void VBoxProblemReporter::showHelpAboutDialog()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString COMVersion = vbox.GetVersion();
+    QString fullVersion (QString ("%1.%2").arg (vbox.GetVersion())
+                                          .arg (vbox.GetRevision()));
     AssertWrapperOk (vbox);
 
     // this (QWidget*) cast is necessary to work around a gcc-3.2 bug */
-    VBoxAboutDlg ((QWidget*)mainWindowShown(), COMVersion).exec();
+    VBoxAboutDlg ((QWidget*)mainWindowShown(), fullVersion).exec();
 }
 
 void VBoxProblemReporter::showHelpHelpDialog()
