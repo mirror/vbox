@@ -346,18 +346,18 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     DWORD   event;
     HANDLE  *phEvents;
     unsigned int cBreak = 0;
-# else
+# else /* RT_OS_WINDOWS */
     struct pollfd *polls = NULL;
-# endif
+# endif /* !RT_OS_WINDOWS */
 
     LogFlow(("drvNATAsyncIoThread: pThis=%p\n", pThis));
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
     phEvents = slirp_get_events(pThis->pNATState);
-#endif
+# endif /* RT_OS_WINDOWS */
 
     /*
      * Polling loop.
@@ -413,7 +413,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             RTReqProcess(pThis->pReqQueue, 0);
         }
         RTMemFree(polls);
-# else /* RT_OS_WINDOWS */
+# else /* !RT_OS_WINDOWS */
         slirp_select_fill(pThis->pNATState, &nFDs);
         ms = slirp_get_timeout_ms(pThis->pNATState);
         struct timeval tv = { 0, ms*1000 };
@@ -467,10 +467,10 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     /* kick select() */
     int rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
     AssertRC(rc);
-# else
+# else /* !RT_OS_WINDOWS */
     /* kick WSAWaitForMultipleEvents() */
     WSASetEvent(pThis->hWakeupEvent);
-# endif
+# endif /* RT_OS_WINDOWS */
 
     return VINF_SUCCESS;
 }
