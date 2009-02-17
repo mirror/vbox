@@ -244,7 +244,8 @@ VBoxNetAdp_LIBS = \
 	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 
 
-INSTALLS.win += VBoxNetAdp-inf
+# MISSING FILE!!
+#INSTALLS.win += VBoxNetAdp-inf
 VBoxNetAdp-inf_INST = $(INST_BIN)
 VBoxNetAdp-inf_MODE = a+r,u+w
 VBoxNetAdp-inf_SOURCES = \
