@@ -34,6 +34,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/rand.h>
+#include <iprt/zip.h>
 
 
 /*******************************************************************************
@@ -74,6 +75,30 @@
 /** VMDK descriptor DDB entry for parent image modification UUID. */
 #define VMDK_DDB_PARENT_MODIFICATION_UUID "ddb.uuid.parentmodification"
 
+/** No compression for streamOptimized files. */
+#define VMDK_COMPRESSION_NONE 0
+
+/** Deflate compression for streamOptimized files. */
+#define VMDK_COMPRESSION_DEFLATE 1
+
+/** Marker that the actual GD value is stored in the footer. */
+#define VMDK_GD_AT_END 0xffffffffffffffffULL
+
+/** Marker for end-of-stream in streamOptimized images. */
+#define VMDK_MARKER_EOS 0
+
+/** Marker for grain table block in streamOptimized images. */
+#define VMDK_MARKER_GT 1
+
+/** Marker for grain directory block in streamOptimized images. */
+#define VMDK_MARKER_GD 2
+
+/** Marker for footer in streamOptimized images. */
+#define VMDK_MARKER_FOOTER 3
+
+/** Dummy marker for "don't check the marker value". */
+#define VMDK_MARKER_IGNORE 0xffffffffU
+
 /**
  * Magic number for hosted images created by VMware Workstation 4, VMware
  * Workstation 5, VMware Server or VMware Player. Not necessarily sparse.
@@ -103,13 +128,25 @@ typedef struct SparseExtentHeader
     char        nonEndLineChar;
     char        doubleEndLineChar1;
     char        doubleEndLineChar2;
-    uint8_t     pad[435];
+    uint16_t    compressAlgorithm;
+    uint8_t     pad[433];
 } SparseExtentHeader;
 #pragma pack()
 
 /** VMDK capacity for a single chunk when 2G splitting is turned on. Should be
  * divisible by the default grain size (64K) */
 #define VMDK_2G_SPLIT_SIZE (2047 * 1024 * 1024)
+
+/** VMDK streamOptimized file format marker. The type field may or may not
+ * be actually valid, but there's always data to read there. */
+#pragma pack(1)
+typedef struct VMDKMARKER
+{
+    uint64_t uSector;
+    uint32_t cbSize;
+    uint32_t uType;
+} VMDKMARKER;
+#pragma pack()
 
 
 #ifdef VBOX_WITH_VMDK_ESX
@@ -255,7 +292,9 @@ typedef struct VMDKEXTENT
     /** Pointer to the grain directory. */
     uint32_t    *pGD;
     /** Pointer to the redundant grain directory. */
-    uint32_t     *pRGD;
+    uint32_t    *pRGD;
+    /** VMDK version of this extent. 1=1.0, 3=1.1 */
+    uint32_t    uVersion;
     /** Type of this extent. */
     VMDKETYPE   enmType;
     /** Access to this extent. */
@@ -264,6 +303,12 @@ typedef struct VMDKEXTENT
     bool        fUncleanShutdown;
     /** Flag whether the metadata in the extent header needs to be updated. */
     bool        fMetaDirty;
+    /** Compression type for this extent. */
+    uint16_t    uCompression;
+    /** Starting sector of the decompressed grain buffer. */
+    uint64_t    uGrainSector;
+    /** Decompressed grain buffer for streamOptimized extents. */
+    void        *pvGrain;
     /** Reference to the image in which this extent is used. Do not use this
      * on a regular basis to avoid passing pImage references to functions
      * explicitly. */
@@ -413,6 +458,20 @@ typedef struct VMDKIMAGE
     /** Parsed descriptor file content. */
     VMDKDESCRIPTOR  Descriptor;
 } VMDKIMAGE;
+
+
+/** State for the input callout of the inflate reader. */
+typedef struct VMDKINFLATESTATE
+{
+    /* File where the data is stored. */
+    RTFILE File;
+    /* Total size of the data to read. */
+    size_t cbSize;
+    /* Offset in the file to read. */
+    uint64_t uFileOffset;
+    /* Current read position. */
+    ssize_t iOffset;
+} VMDKINFLATESTATE;
 
 /*******************************************************************************
  *   Static Variables                                                           *
@@ -655,6 +714,115 @@ DECLINLINE(int) vmdkFileFlush(PVMDKFILE pVmdkFile)
         return RTFileFlush(pVmdkFile->File);
 }
 
+
+static DECLCALLBACK(int) vmdkFileInflateHelper(void *pvUser, void *pvBuf, size_t cbBuf, size_t *pcbBuf)
+{
+    VMDKINFLATESTATE *pInflateState = (VMDKINFLATESTATE *)pvUser;
+
+    Assert(cbBuf);
+    if (pInflateState->iOffset < 0)
+    {
+        *(uint8_t *)pvBuf = RTZIPTYPE_ZLIB;
+        if (pcbBuf)
+            *pcbBuf = 1;
+        pInflateState->iOffset = 0;
+        return VINF_SUCCESS;
+    }
+    cbBuf = RT_MIN(cbBuf, pInflateState->cbSize);
+    int rc = RTFileReadAt(pInflateState->File, pInflateState->uFileOffset, pvBuf, cbBuf, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    pInflateState->uFileOffset += cbBuf;
+    pInflateState->iOffset += cbBuf;
+    pInflateState->cbSize -= cbBuf;
+    Assert(pcbBuf);
+    *pcbBuf = cbBuf;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Internal: read from a file and inflate the compressed data,
+ * distinguishing between async and normal operation
+ */
+DECLINLINE(int) vmdkFileInflateAt(PVMDKFILE pVmdkFile,
+                                  uint64_t uOffset, void *pvBuf,
+                                  size_t cbToRead, unsigned uMarker,
+                                  uint64_t *puLBA)
+{
+    if (pVmdkFile->fAsyncIO)
+    {
+        AssertMsgFailed(("TODO\n"));
+        return VERR_NOT_SUPPORTED;
+    }
+    else
+    {
+        int rc;
+        PRTZIPDECOMP pZip = NULL;
+        VMDKMARKER Marker;
+        uint64_t uCompOffset, cbComp;
+        VMDKINFLATESTATE InflateState;
+        size_t cbActuallyRead;
+
+        rc = RTFileReadAt(pVmdkFile->File, uOffset, &Marker, sizeof(Marker), NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+        Marker.uSector = RT_LE2H_U64(Marker.uSector);
+        Marker.cbSize = RT_LE2H_U32(Marker.cbSize);
+        if (    uMarker != VMDK_MARKER_IGNORE
+            &&  (   RT_LE2H_U32(Marker.uType) != uMarker
+                 || Marker.cbSize != 0))
+            return VERR_VD_VMDK_INVALID_FORMAT;
+        if (Marker.cbSize != 0)
+        {
+            /* Compressed grain marker. Data follows immediately. */
+            uCompOffset = uOffset + 12;
+            cbComp = Marker.cbSize;
+            if (puLBA)
+                *puLBA = Marker.uSector;
+        }
+        else
+        {
+            Marker.uType = RT_LE2H_U32(Marker.uType);
+            if (Marker.uType == VMDK_MARKER_EOS)
+            {
+                Assert(uMarker != VMDK_MARKER_EOS);
+                return VERR_VD_VMDK_INVALID_FORMAT;
+            }
+            else if (   Marker.uType == VMDK_MARKER_GT
+                     || Marker.uType == VMDK_MARKER_GD
+                     || Marker.uType == VMDK_MARKER_FOOTER)
+            {
+                uCompOffset = uOffset + 512;
+                cbComp = VMDK_SECTOR2BYTE(Marker.uSector);
+            }
+            else
+            {
+                AssertMsgFailed(("VMDK: unknown marker type %u\n", Marker.uType));
+                return VERR_VD_VMDK_INVALID_FORMAT;
+            }
+        }
+        InflateState.File = pVmdkFile->File;
+        InflateState.cbSize = cbComp;
+        InflateState.uFileOffset = uCompOffset;
+        InflateState.iOffset = -1;
+        /* Sanity check - the expansion ratio should be much less than 2. */
+        Assert(cbComp < 2 * cbToRead);
+        if (cbComp >= 2 * cbToRead)
+            return VERR_VD_VMDK_INVALID_FORMAT;
+
+        rc = RTZipDecompCreate(&pZip, &InflateState, vmdkFileInflateHelper);
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = RTZipDecompress(pZip, pvBuf, cbToRead, &cbActuallyRead);
+        RTZipDecompDestroy(pZip);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (cbActuallyRead != cbToRead)
+            rc = VERR_VD_VMDK_INVALID_FORMAT;
+        return rc;
+    }
+}
+
 /**
  * Internal: check if all files are closed, prevent leaking resources.
  */
@@ -796,12 +964,14 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
         goto out;
     }
     pExtent->pGD = pGD;
+    /* The VMDK 1.1 spec talks about compressed grain directories, but real
+     * life files don't have them. The spec is wrong in creative ways. */
     rc = vmdkFileReadAt(pExtent->pFile, VMDK_SECTOR2BYTE(pExtent->uSectorGD),
                         pGD, cbGD, NULL);
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: could not read grain directory in '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: could not read grain directory in '%s': %Rrc"), pExtent->pszFullname);
         goto out;
     }
     for (i = 0, pGDTmp = pGD; i < pExtent->cGDEntries; i++, pGDTmp++)
@@ -816,6 +986,8 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
             goto out;
         }
         pExtent->pRGD = pRGD;
+        /* The VMDK 1.1 spec talks about compressed grain directories, but real
+         * life files don't have them. The spec is wrong in creative ways. */
         rc = vmdkFileReadAt(pExtent->pFile, VMDK_SECTOR2BYTE(pExtent->uSectorRGD),
                             pRGD, cbGD, NULL);
         AssertRC(rc);
@@ -861,6 +1033,8 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
                 rc = vmdkError(pExtent->pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistent references to grain directory in '%s'"), pExtent->pszFullname);
                 goto out;
             }
+            /* The VMDK 1.1 spec talks about compressed grain tables, but real
+             * life files don't have them. The spec is wrong in creative ways. */
             rc = vmdkFileReadAt(pExtent->pFile, VMDK_SECTOR2BYTE(*pGDTmp),
                                 pTmpGT1, cbGT, NULL);
             if (RT_FAILURE(rc))
@@ -870,6 +1044,8 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
                 RTMemTmpFree(pTmpGT2);
                 goto out;
             }
+            /* The VMDK 1.1 spec talks about compressed grain tables, but real
+             * life files don't have them. The spec is wrong in creative ways. */
             rc = vmdkFileReadAt(pExtent->pFile, VMDK_SECTOR2BYTE(*pRGDTmp),
                                 pTmpGT2, cbGT, NULL);
             if (RT_FAILURE(rc))
@@ -1669,9 +1845,11 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData,
     if (    !strcmp(pszCreateType, "twoGbMaxExtentSparse")
         ||  !strcmp(pszCreateType, "twoGbMaxExtentFlat"))
         pImage->uImageFlags = VD_VMDK_IMAGE_FLAGS_SPLIT_2G;
-    if (    !strcmp(pszCreateType, "partitionedDevice")
-        ||  !strcmp(pszCreateType, "fullDevice"))
+    else if (   !strcmp(pszCreateType, "partitionedDevice")
+             || !strcmp(pszCreateType, "fullDevice"))
         pImage->uImageFlags = VD_VMDK_IMAGE_FLAGS_RAWDISK;
+    else if (!strcmp(pszCreateType, "streamOptimized"))
+        pImage->uImageFlags = VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED;
     else
         pImage->uImageFlags = 0;
     RTStrFree((char *)(void *)pszCreateType);
@@ -1958,6 +2136,11 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData,
     else if (RT_FAILURE(rc))
         return rc;
 
+    /* Stream optimized images are always readonly. Nevertheless we opened the
+     * file as read/write to allow us to sneak in the UUID info. */
+    if (pImage->uImageFlags == VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+        pImage->uOpenFlags |= VD_OPEN_FLAGS_READONLY;
+
     return VINF_SUCCESS;
 }
 
@@ -2024,6 +2207,34 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
 }
 
 /**
+ * Internal: validate the consistency check values in a binary header.
+ */
+static int vmdkValidateHeader(PVMDKIMAGE pImage, PVMDKEXTENT pExtent, const SparseExtentHeader *pHeader)
+{
+    int rc = VINF_SUCCESS;
+    if (RT_LE2H_U32(pHeader->magicNumber) != VMDK_SPARSE_MAGICNUMBER)
+    {
+        rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect magic in sparse extent header in '%s'"), pExtent->pszFullname);
+        return rc;
+    }
+    if (RT_LE2H_U32(pHeader->version) != 1 && RT_LE2H_U32(pHeader->version) != 3)
+    {
+        rc = vmdkError(pImage, VERR_VD_VMDK_UNSUPPORTED_VERSION, RT_SRC_POS, N_("VMDK: incorrect version in sparse extent header in '%s', not a VMDK 1.0/1.1 conforming file"), pExtent->pszFullname);
+        return rc;
+    }
+    if (    (RT_LE2H_U32(pHeader->flags) & 1)
+        &&  (   pHeader->singleEndLineChar != '\n'
+             || pHeader->nonEndLineChar != ' '
+             || pHeader->doubleEndLineChar1 != '\r'
+             || pHeader->doubleEndLineChar2 != '\n') )
+    {
+        rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: corrupted by CR/LF translation in '%s'"), pExtent->pszFullname);
+        return rc;
+    }
+    return rc;
+}
+
+/**
  * Internal: read metadata belonging to an extent with binary header, i.e.
  * as found in monolithic files.
  */
@@ -2036,28 +2247,38 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error reading extent header in '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading extent header in '%s'"), pExtent->pszFullname);
         goto out;
     }
-    if (RT_LE2H_U32(Header.magicNumber) != VMDK_SPARSE_MAGICNUMBER)
+    rc = vmdkValidateHeader(pImage, pExtent, &Header);
+    if (RT_FAILURE(rc))
+        goto out;
+    if (    RT_LE2H_U32(Header.flags & RT_BIT(17))
+        &&  RT_LE2H_U64(Header.gdOffset) == VMDK_GD_AT_END)
     {
-        rc = vmdkError(pExtent->pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect magic in sparse extent header in '%s'"), pExtent->pszFullname);
-        goto out;
+        /* Extent with markers. Use this as criteria to read the footer, as
+         * the spec is as usual totally fuzzy what the criteria really is. */
+        uint64_t cbSize;
+        rc = vmdkFileGetSize(pExtent->pFile, &cbSize);
+        AssertRC(rc);
+        if (RT_FAILURE(rc))
+        {
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot get size of '%s'"), pExtent->pszFullname);
+            goto out;
+        }
+        cbSize = RT_ALIGN_64(cbSize, 512);
+        rc = vmdkFileInflateAt(pExtent->pFile, cbSize - 2 * 512, &Header, sizeof(Header), VMDK_MARKER_FOOTER, NULL);
+        AssertRC(rc);
+        if (RT_FAILURE(rc))
+        {
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading extent footer in '%s'"), pExtent->pszFullname);
+            goto out;
+        }
+        rc = vmdkValidateHeader(pImage, pExtent, &Header);
+        if (RT_FAILURE(rc))
+            goto out;
     }
-    if (RT_LE2H_U32(Header.version) != 1)
-    {
-        rc = vmdkError(pExtent->pImage, VERR_VD_VMDK_UNSUPPORTED_VERSION, RT_SRC_POS, N_("VMDK: incorrect version in sparse extent header in '%s', not a VMDK 1.0 conforming file"), pExtent->pszFullname);
-        goto out;
-    }
-    if (    (RT_LE2H_U32(Header.flags) & 1)
-        &&  (   Header.singleEndLineChar != '\n'
-             || Header.nonEndLineChar != ' '
-             || Header.doubleEndLineChar1 != '\r'
-             || Header.doubleEndLineChar2 != '\n') )
-    {
-        rc = vmdkError(pExtent->pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: corrupted by CR/LF translation in '%s'"), pExtent->pszFullname);
-        goto out;
-    }
+    pExtent->uVersion = RT_LE2H_U32(Header.version);
     pExtent->enmType = VMDKETYPE_HOSTED_SPARSE; /* Just dummy value, changed later. */
     pExtent->cSectors = RT_LE2H_U64(Header.capacity);
     pExtent->cSectorsPerGrain = RT_LE2H_U64(Header.grainSize);
@@ -2065,28 +2286,32 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     pExtent->cDescriptorSectors = RT_LE2H_U64(Header.descriptorSize);
     if (pExtent->uDescriptorSector && !pExtent->cDescriptorSectors)
     {
-        rc = vmdkError(pExtent->pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistent embedded descriptor config in '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistent embedded descriptor config in '%s'"), pExtent->pszFullname);
         goto out;
     }
     pExtent->cGTEntries = RT_LE2H_U32(Header.numGTEsPerGT);
-    if (RT_LE2H_U32(Header.flags) & 2)
+    if (RT_LE2H_U32(Header.flags) & RT_BIT(1))
     {
         pExtent->uSectorRGD = RT_LE2H_U64(Header.rgdOffset);
         pExtent->uSectorGD = RT_LE2H_U64(Header.gdOffset);
     }
     else
     {
-        /** @todo this is just guesswork, the spec doesn't document this
-         * properly and I don't have a vmdk without RGD. */
-        pExtent->uSectorGD = RT_LE2H_U64(Header.rgdOffset);
+        pExtent->uSectorGD = RT_LE2H_U64(Header.gdOffset);
         pExtent->uSectorRGD = 0;
+    }
+    if (pExtent->uSectorGD == VMDK_GD_AT_END || pExtent->uSectorRGD == VMDK_GD_AT_END)
+    {
+        rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: cannot resolve grain directory offset in '%s'"), pExtent->pszFullname);
+        goto out;
     }
     pExtent->cOverheadSectors = RT_LE2H_U64(Header.overHead);
     pExtent->fUncleanShutdown = !!Header.uncleanShutdown;
+    pExtent->uCompression = RT_LE2H_U16(Header.compressAlgorithm);
     cSectorsPerGDE = pExtent->cGTEntries * pExtent->cSectorsPerGrain;
     if (!cSectorsPerGDE || cSectorsPerGDE > UINT32_MAX)
     {
-        rc = vmdkError(pExtent->pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect grain directory size in '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect grain directory size in '%s'"), pExtent->pszFullname);
         goto out;
     }
     pExtent->cSectorsPerGDE = cSectorsPerGDE;
@@ -2102,6 +2327,18 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         if (    pExtent->uDescriptorSector + 4 < pExtent->cOverheadSectors
             &&  pExtent->cGTEntries * pExtent->cGDEntries == 0)
             pExtent->cDescriptorSectors = 4;
+    }
+
+    /* streamOptimized extents need a grain decryption buffer. */
+    if (pExtent->uVersion == 3)
+    {
+        pExtent->pvGrain = RTMemAlloc(VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
+        if (!pExtent->pvGrain)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+        pExtent->uGrainSector = 0xffffffffffffffffULL;
     }
 
 out:
@@ -2126,7 +2363,7 @@ static int vmdkReadMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
     if (RT_FAILURE(rc))
     {
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
         goto out;
     }
 /* disabled the size check again as there are too many too short vmdks out there */
@@ -2134,7 +2371,7 @@ static int vmdkReadMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     if (    cbExtentSize != RT_ALIGN_64(cbExtentSize, 512)
         &&  (pExtent->enmType != VMDKETYPE_FLAT || pExtent->cNominalSectors + pExtent->uSectorOffset > VMDK_BYTE2SECTOR(cbExtentSize)))
     {
-        rc = vmdkError(pExtent->pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: file size is not a multiple of 512 in '%s', file is truncated or otherwise garbled"), pExtent->pszFullname);
+        rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: file size is not a multiple of 512 in '%s', file is truncated or otherwise garbled"), pExtent->pszFullname);
         goto out;
     }
 #endif /* VBOX_WITH_VMDK_STRICT_SIZE_CHECK */
@@ -2146,7 +2383,7 @@ static int vmdkReadMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     if (    (pExtent->cSectorsPerGrain & (pExtent->cSectorsPerGrain - 1))
         ||  pExtent->cSectorsPerGrain < 8)
     {
-        rc = vmdkError(pExtent->pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: invalid extent grain size %u in '%s'"), pExtent->cSectorsPerGrain, pExtent->pszFullname);
+        rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: invalid extent grain size %u in '%s'"), pExtent->cSectorsPerGrain, pExtent->pszFullname);
         goto out;
     }
 
@@ -2155,7 +2392,7 @@ static int vmdkReadMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     if (    (pExtent->cGTEntries & (pExtent->cGTEntries - 1))
         ||  pExtent->cGTEntries < VMDK_GT_CACHELINE_SIZE)
     {
-        rc = vmdkError(pExtent->pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: grain table cache size problem in '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: grain table cache size problem in '%s'"), pExtent->pszFullname);
         goto out;
     }
 
@@ -2178,7 +2415,11 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent)
     memset(&Header, '\0', sizeof(Header));
     Header.magicNumber = RT_H2LE_U32(VMDK_SPARSE_MAGICNUMBER);
     Header.version = RT_H2LE_U32(1);
-    Header.flags = RT_H2LE_U32(1 | ((pExtent->pRGD) ? 2 : 0));
+    Header.flags = RT_H2LE_U32(RT_BIT(0));
+    if (pExtent->pRGD)
+        Header.flags |= RT_H2LE_U32(RT_BIT(1));
+    if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+        Header.flags |= RT_H2LE_U32(RT_BIT(16) | RT_BIT(17));
     Header.capacity = RT_H2LE_U64(pExtent->cSectors);
     Header.grainSize = RT_H2LE_U64(pExtent->cSectorsPerGrain);
     Header.descriptorOffset = RT_H2LE_U64(pExtent->uDescriptorSector);
@@ -2192,9 +2433,7 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent)
     }
     else
     {
-        /** @todo this is just guesswork, the spec doesn't document this
-         * properly and I don't have a vmdk without RGD. */
-        Header.rgdOffset = RT_H2LE_U64(pExtent->uSectorGD);
+        Header.gdOffset = RT_H2LE_U64(pExtent->uSectorGD);
     }
     Header.overHead = RT_H2LE_U64(pExtent->cOverheadSectors);
     Header.uncleanShutdown = pExtent->fUncleanShutdown;
@@ -2202,6 +2441,7 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent)
     Header.nonEndLineChar = ' ';
     Header.doubleEndLineChar1 = '\r';
     Header.doubleEndLineChar2 = '\n';
+    Header.compressAlgorithm = RT_H2LE_U16(pExtent->uCompression);
 
     int rc = vmdkFileWriteAt(pExtent->pFile, 0, &Header, sizeof(Header), NULL);
     AssertRC(rc);
@@ -2635,6 +2875,20 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
     /* Make sure this is not reached accidentally with an error status. */
     AssertRC(rc);
 
+    /* VMDK 1.0/1.1 version paranoia. */
+    for (unsigned i = 0; i < pImage->cExtents; i++)
+    {
+        pExtent = &pImage->pExtents[i];
+        if (    (   pExtent->uVersion != 3
+                 && (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED))
+            ||  (   pExtent->uVersion != 1
+                 && !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)))
+        {
+            rc = vmdkError(pImage, VERR_VD_VMDK_UNSUPPORTED_VERSION, RT_SRC_POS, N_("VMDK: inconsistent version in extent header in '%s', not a VMDK 1.0/1.1 conforming file"), pExtent->pszFullname);
+            goto out;
+        }
+    }
+
     /* Determine PCHS geometry if not set. */
     if (pImage->PCHSGeometry.cCylinders == 0)
     {
@@ -2984,8 +3238,6 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
                           false);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new sparse descriptor file '%s'"), pImage->pszFilename);
-        // @todo Is there any sense in the following line I've commented out?
-        //pImage->pszFilename = RTStrDup(pImage->pszFilename);
     }
     else
         pImage->pFile = NULL;
@@ -4286,9 +4538,34 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
             if (uSectorExtentAbs == 0)
                 rc = VERR_VD_BLOCK_FREE;
             else
-                rc = vmdkFileReadAt(pExtent->pFile,
-                                    VMDK_SECTOR2BYTE(uSectorExtentAbs),
-                                    pvBuf, cbToRead, NULL);
+            {
+                if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+                {
+                    uint32_t uSectorInGrain = uSectorExtentRel % pExtent->cSectorsPerGrain;
+                    uSectorExtentAbs -= uSectorInGrain;
+                    uint64_t uLBA;
+                    if (pExtent->uGrainSector != uSectorExtentAbs)
+                    {
+                        rc = vmdkFileInflateAt(pExtent->pFile, VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                               pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain), VMDK_MARKER_IGNORE, &uLBA);
+                        if (RT_FAILURE(rc))
+                        {
+                            pExtent->uGrainSector = 0xffffffffffffffffULL;
+                            AssertRC(rc);
+                            goto out;
+                        }
+                        pExtent->uGrainSector = uSectorExtentAbs;
+                        Assert(uLBA == uSectorExtentRel);
+                    }
+                    memcpy(pvBuf, (uint8_t *)pExtent->pvGrain + VMDK_SECTOR2BYTE(uSectorInGrain), cbToRead);
+                }
+                else
+                {
+                    rc = vmdkFileReadAt(pExtent->pFile,
+                                        VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                        pvBuf, cbToRead, NULL);
+                }
+            }
             break;
         case VMDKETYPE_FLAT:
             rc = vmdkFileReadAt(pExtent->pFile,
