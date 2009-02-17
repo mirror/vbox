@@ -412,7 +412,9 @@ int main()
     GEN_CHECK_OFF(PGM, enmGuestMode);
     GEN_CHECK_OFF(PGM, GCPhysCR3);
     GEN_CHECK_OFF(PGM, GCPtrCR3Mapping);
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     GEN_CHECK_OFF(PGM, GCPhysGstCR3Monitored);
+#endif
     GEN_CHECK_OFF(PGM, pGst32BitPdR3);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGM, pGst32BitPdR0);
