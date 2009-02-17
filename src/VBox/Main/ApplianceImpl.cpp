@@ -214,19 +214,6 @@ struct Appliance::Task
 // globals
 ////////////////////////////////////////////////////////////////////////////////
 
-template<class T> inline com::Utf8Str toString(const T &val);
-
-// specializations
-template<> com::Utf8Str toString<uint32_t>(const uint32_t &val)
-{
-    return Utf8StrFmt("%RI16", val);
-}
-
-template<> com::Utf8Str toString<uint64_t>(const uint64_t &val)
-{
-    return Utf8StrFmt("%RI32", val);
-}
-
 static Utf8Str stripFilename(const Utf8Str &strFile)
 {
     Utf8Str str2(strFile);
@@ -1252,7 +1239,7 @@ STDMETHODIMP Appliance::Interpret()
 
             /* Guest OS type */
             Utf8Str strOsTypeVBox,
-                    strCIMOSType = toString<ULONG>(vsysThis.cimos);
+                    strCIMOSType = Utf8StrFmt("%RI32", (uint32_t)vsysThis.cimos);
             convertCIMOSType2VBoxOSType(strOsTypeVBox, vsysThis.cimos);
             pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
                                "",
@@ -1289,8 +1276,8 @@ STDMETHODIMP Appliance::Interpret()
                 cpuCountVBox = 1;
             pNewDesc->addEntry(VirtualSystemDescriptionType_CPU,
                                "",
-                               toString<ULONG>(vsysThis.cCPUs),
-                               toString<ULONG>(cpuCountVBox));
+                               Utf8StrFmt("%RI32", (uint32_t)vsysThis.cCPUs),
+                               Utf8StrFmt("%RI32", (uint32_t)cpuCountVBox));
 
             /* RAM */
             uint64_t ullMemSizeVBox = vsysThis.ullMemorySize / _1M;
@@ -1314,8 +1301,8 @@ STDMETHODIMP Appliance::Interpret()
             }
             pNewDesc->addEntry(VirtualSystemDescriptionType_Memory,
                                "",
-                               toString<uint64_t>(vsysThis.ullMemorySize),
-                               toString<uint64_t>(ullMemSizeVBox));
+                               Utf8StrFmt("%RI64", (uint64_t)vsysThis.ullMemorySize),
+                               Utf8StrFmt("%RI64", (uint64_t)ullMemSizeVBox));
 
             /* Audio */
             if (!vsysThis.strSoundCardType.isNull())
@@ -1324,7 +1311,7 @@ STDMETHODIMP Appliance::Interpret()
                 pNewDesc->addEntry(VirtualSystemDescriptionType_SoundCard,
                                    "",
                                    vsysThis.strSoundCardType,
-                                   toString<ULONG>(AudioControllerType_AC97));
+                                   Utf8StrFmt("%RI32", (uint32_t)AudioControllerType_AC97));
 
             /* USB Controller */
             if (vsysThis.fHasUsbController)
@@ -1370,7 +1357,7 @@ STDMETHODIMP Appliance::Interpret()
                     pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
                                        "",      // ref
                                        strNetwork,      // orig
-                                       toString<ULONG>(nwAdapterVBox),   // conf
+                                       Utf8StrFmt("%RI32", (uint32_t)nwAdapterVBox),   // conf
                                        Utf8StrFmt("network=%s", strNetwork.c_str()));       // extra conf
                 }
             }
@@ -1396,7 +1383,7 @@ STDMETHODIMP Appliance::Interpret()
                  ++hdcIt)
             {
                 const HardDiskController &hdc = hdcIt->second;
-                Utf8Str strControllerID = toString<uint32_t>(hdc.idController);
+                Utf8Str strControllerID = Utf8StrFmt("%RI32", (uint32_t)hdc.idController);
 
                 switch (hdc.system)
                 {
@@ -1409,12 +1396,9 @@ STDMETHODIMP Appliance::Interpret()
                             {
                                 // @todo: figure out the IDE types
                                 /* Use PIIX4 as default */
-                                //                             IDEControllerType_T hdcController = IDEControllerType_PIIX4;
                                 Utf8Str strType = "PIIX4";
                                 if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX3"))
                                     strType = "PIIX3";
-                                //                             else // if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX4"))
-                                //                                 hdcController = IDEControllerType_PIIX4;
                                 pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
                                                    strControllerID,
                                                    hdc.strControllerType,
@@ -2388,7 +2372,7 @@ std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::findByType(V
 
 const VirtualSystemDescriptionEntry* VirtualSystemDescription::findControllerFromID(uint32_t id)
 {
-    Utf8Str strRef = toString<uint32_t>(id);
+    Utf8Str strRef = Utf8StrFmt("%RI32", id);
     list<VirtualSystemDescriptionEntry>::const_iterator it;
     for (it = m->descriptions.begin();
          it != m->descriptions.end();
