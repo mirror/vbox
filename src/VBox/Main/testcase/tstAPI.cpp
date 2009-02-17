@@ -269,6 +269,36 @@ int main(int argc, char *argv[])
     }
 
 #if 0
+    // Testing VirtualBox::COMGETTER(ProgressOperations).
+    // This is designed to be tested while running
+    // "./VBoxManage clonehd src.vdi clone.vdi" in parallel.
+    // It will then display the progress every 2 seconds.
+    ////////////////////////////////////////////////////////////////////////////
+    {
+        printf ("Testing VirtualBox::COMGETTER(ProgressOperations)...\n");
+
+        for (;;) {
+            com::SafeIfaceArray <IProgress> operations;
+
+            CHECK_ERROR_BREAK (virtualBox,
+                COMGETTER(ProgressOperations)(ComSafeArrayAsOutParam(operations)));
+
+            printf ("operations: %d\n", operations.size());
+            if (operations.size() == 0)
+                break; // No more operations left.
+
+            for (size_t i = 0; i < operations.size(); ++i) {
+                PRInt32 percent;
+
+                operations[i]->COMGETTER(Percent)(&percent);
+                printf ("operations[%u]: %ld\n", (unsigned)i, (long)percent);
+            }
+            RTThreadSleep (2000); // msec
+        }
+    }
+#endif
+
+#if 0
     // IUnknown identity test
     ////////////////////////////////////////////////////////////////////////////
     {
@@ -1512,3 +1542,4 @@ static void listAffectedMetrics(ComPtr<IVirtualBox> aVirtualBox,
 }
 
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+/* vim: set shiftwidth=4 tabstop=4 expandtab: */
