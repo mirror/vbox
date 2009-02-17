@@ -2978,8 +2978,9 @@ int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
 #endif
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-void            pgmMapClearShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE);
+void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE);
 void            pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
+int             pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 #endif
 
 __END_DECLS
@@ -4289,6 +4290,31 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
 #endif
 }
 
+/**
+ * Gets the shadow page directory for the specified address, PAE.
+ *
+ * @returns Pointer to the shadow PD.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ */
+DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, PX86PDPT pPdpt, RTGCPTR GCPtr)
+{
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+
+    if (!pPdpt->a[iPdpt].n.u1Present)
+        return NULL;
+
+    /* Fetch the pgm pool shadow descriptor. */
+    PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(PGM2VM(pPGM), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+    AssertReturn(pShwPde, NULL);
+
+    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pShwPde);
+#else
+    AssertFailed();
+    return NULL;
+#endif
+}
 
 /**
  * Gets the shadow page directory entry, PAE.
