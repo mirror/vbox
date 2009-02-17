@@ -21,7 +21,7 @@
  * additional information or have any questions.
  */
 
-#include "HardDisk2Impl.h"
+#include "HardDiskImpl.h"
 
 #include "ProgressImpl.h"
 #include "SystemPropertiesImpl.h"
@@ -52,15 +52,15 @@
  * Note that instances of this class must be created using new() because the
  * task thread function will delete them when the task is complete!
  *
- * @note The constructor of this class adds a caller on the managed HardDisk2
+ * @note The constructor of this class adds a caller on the managed HardDisk
  *       object which is automatically released upon destruction.
  */
-struct HardDisk2::Task : public com::SupportErrorInfoBase
+struct HardDisk::Task : public com::SupportErrorInfoBase
 {
     enum Operation { CreateDynamic, CreateFixed, CreateDiff,
                      Merge, Clone, Delete };
 
-    HardDisk2 *that;
+    HardDisk *that;
     VirtualBoxBaseProto::AutoCaller autoCaller;
 
     ComObjPtr <Progress> progress;
@@ -69,7 +69,7 @@ struct HardDisk2::Task : public com::SupportErrorInfoBase
     /** Where to save the result when executed using #runNow(). */
     HRESULT rc;
 
-    Task (HardDisk2 *aThat, Progress *aProgress, Operation aOperation)
+    Task (HardDisk *aThat, Progress *aProgress, Operation aOperation)
         : that (aThat), autoCaller (aThat)
         , progress (aProgress)
         , operation (aOperation)
@@ -77,7 +77,7 @@ struct HardDisk2::Task : public com::SupportErrorInfoBase
 
     ~Task();
 
-    void setData (HardDisk2 *aTarget)
+    void setData (HardDisk *aTarget)
     {
         d.target = aTarget;
         HRESULT rc = d.target->addCaller();
@@ -103,7 +103,7 @@ struct HardDisk2::Task : public com::SupportErrorInfoBase
 
         /* CreateDiff */
 
-        ComObjPtr <HardDisk2> target;
+        ComObjPtr<HardDisk> target;
 
         /* Merge */
 
@@ -115,11 +115,11 @@ struct HardDisk2::Task : public com::SupportErrorInfoBase
 protected:
 
     // SupportErrorInfoBase interface
-    const GUID &mainInterfaceID() const { return COM_IIDOF (IHardDisk2); }
-    const char *componentName() const { return HardDisk2::ComponentName(); }
+    const GUID &mainInterfaceID() const { return COM_IIDOF (IHardDisk); }
+    const char *componentName() const { return HardDisk::ComponentName(); }
 };
 
-HardDisk2::Task::~Task()
+HardDisk::Task::~Task()
 {
     /* remove callers added by setData() */
     if (!d.target.isNull())
@@ -127,7 +127,7 @@ HardDisk2::Task::~Task()
 }
 
 /**
- * Starts a new thread driven by the HardDisk2::taskThread() function and passes
+ * Starts a new thread driven by the HardDisk::taskThread() function and passes
  * this Task instance as an argument.
  *
  * Note that if this method returns success, this Task object becomes an ownee
@@ -139,9 +139,9 @@ HardDisk2::Task::~Task()
  *       task when the task is finished to signal the operation completion for
  *       other threads asynchronously waiting for it.
  */
-HRESULT HardDisk2::Task::startThread()
+HRESULT HardDisk::Task::startThread()
 {
-    int vrc = RTThreadCreate (NULL, HardDisk2::taskThread, this,
+    int vrc = RTThreadCreate (NULL, HardDisk::taskThread, this,
                               0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
                               "HardDisk::Task");
     ComAssertMsgRCRet (vrc,
@@ -151,7 +151,7 @@ HRESULT HardDisk2::Task::startThread()
 }
 
 /**
- * Runs HardDisk2::taskThread() by passing it this Task instance as an argument
+ * Runs HardDisk::taskThread() by passing it this Task instance as an argument
  * on the current thread instead of creating a new one.
  *
  * This call implies that it is made on another temporary thread created for
@@ -168,9 +168,9 @@ HRESULT HardDisk2::Task::startThread()
  *       by this method directly and it's the caller's responsibility to
  *       complete the progress object in this case.
  */
-HRESULT HardDisk2::Task::runNow()
+HRESULT HardDisk::Task::runNow()
 {
-    HardDisk2::taskThread (NIL_RTTHREAD, this);
+    HardDisk::taskThread (NIL_RTTHREAD, this);
 
     return rc;
 }
@@ -181,10 +181,10 @@ HRESULT HardDisk2::Task::runNow()
  * Helper class for merge operations.
  *
  * @note It is assumed that when modifying methods of this class are called,
- *       HardDisk2::treeLock() is held in read mode.
+ *       HardDisk::treeLock() is held in read mode.
  */
-class HardDisk2::MergeChain : public HardDisk2::List,
-                              public com::SupportErrorInfoBase
+class HardDisk::MergeChain : public HardDisk::List,
+                             public com::SupportErrorInfoBase
 {
 public:
 
@@ -219,7 +219,7 @@ public:
             mParent->releaseCaller();
     }
 
-    HRESULT addSource (HardDisk2 *aHardDisk)
+    HRESULT addSource (HardDisk *aHardDisk)
     {
         HRESULT rc = aHardDisk->addCaller();
         CheckComRCReturnRC (rc);
@@ -283,7 +283,7 @@ public:
         return S_OK;
     }
 
-    HRESULT addTarget (HardDisk2 *aHardDisk)
+    HRESULT addTarget (HardDisk *aHardDisk)
     {
         HRESULT rc = aHardDisk->addCaller();
         CheckComRCReturnRC (rc);
@@ -313,7 +313,7 @@ public:
         return S_OK;
     }
 
-    HRESULT addIntermediate (HardDisk2 *aHardDisk)
+    HRESULT addIntermediate (HardDisk *aHardDisk)
     {
         HRESULT rc = aHardDisk->addCaller();
         CheckComRCReturnRC (rc);
@@ -344,24 +344,24 @@ public:
     }
 
     bool isForward() const { return mForward; }
-    HardDisk2 *parent() const { return mParent; }
+    HardDisk *parent() const { return mParent; }
     const List &children() const { return mChildren; }
 
-    HardDisk2 *source() const
+    HardDisk *source() const
     { AssertReturn (size() > 0, NULL); return mForward ? front() : back(); }
 
-    HardDisk2 *target() const
+    HardDisk *target() const
     { AssertReturn (size() > 0, NULL); return mForward ? back() : front(); }
 
 protected:
 
     // SupportErrorInfoBase interface
-    const GUID &mainInterfaceID() const { return COM_IIDOF (IHardDisk2); }
-    const char *componentName() const { return HardDisk2::ComponentName(); }
+    const GUID &mainInterfaceID() const { return COM_IIDOF (IHardDisk); }
+    const char *componentName() const { return HardDisk::ComponentName(); }
 
 private:
 
-    HRESULT check (HardDisk2 *aHardDisk, bool aChildren, bool aAttachments,
+    HRESULT check (HardDisk *aHardDisk, bool aChildren, bool aAttachments,
                    bool aImmutable)
     {
         if (aChildren)
@@ -397,16 +397,16 @@ private:
         return S_OK;
     }
 
-    HRESULT checkChildren (HardDisk2 *aHardDisk)
+    HRESULT checkChildren (HardDisk *aHardDisk)
     { return check (aHardDisk, true, false, false); }
 
-    HRESULT checkChildrenAndImmutable (HardDisk2 *aHardDisk)
+    HRESULT checkChildrenAndImmutable (HardDisk *aHardDisk)
     { return check (aHardDisk, true, false, true); }
 
-    HRESULT checkChildrenAndAttachments (HardDisk2 *aHardDisk)
+    HRESULT checkChildrenAndAttachments (HardDisk *aHardDisk)
     { return check (aHardDisk, true, true, false); }
 
-    HRESULT checkChildrenAndAttachmentsAndImmutable (HardDisk2 *aHardDisk)
+    HRESULT checkChildrenAndAttachmentsAndImmutable (HardDisk *aHardDisk)
     { return check (aHardDisk, true, true, true); }
 
     /** true if forward merge, false if backward */
@@ -415,21 +415,21 @@ private:
     bool mIgnoreAttachments : 1;
 
     /** Parent of the source when forward merge (if any) */
-    ComObjPtr <HardDisk2> mParent;
+    ComObjPtr <HardDisk> mParent;
     /** Children of the source when backward merge (if any) */
     List mChildren;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// HardDisk2 class
+// HardDisk class
 ////////////////////////////////////////////////////////////////////////////////
 
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (HardDisk2)
+DEFINE_EMPTY_CTOR_DTOR (HardDisk)
 
-HRESULT HardDisk2::FinalConstruct()
+HRESULT HardDisk::FinalConstruct()
 {
     /* Initialize the callbacks of the VD error interface */
     mm.vdIfCallsError.cbSize = sizeof (VDINTERFACEERROR);
@@ -462,25 +462,25 @@ HRESULT HardDisk2::FinalConstruct()
     /* Initialize the per-disk interface chain */
     int vrc;
     vrc = VDInterfaceAdd (&mm.vdIfError,
-                          "HardDisk2::vdInterfaceError",
+                          "HardDisk::vdInterfaceError",
                           VDINTERFACETYPE_ERROR,
                           &mm.vdIfCallsError, this, &mm.vdDiskIfaces);
     AssertRCReturn (vrc, E_FAIL);
 
     vrc = VDInterfaceAdd (&mm.vdIfProgress,
-                          "HardDisk2::vdInterfaceProgress",
+                          "HardDisk::vdInterfaceProgress",
                           VDINTERFACETYPE_PROGRESS,
                           &mm.vdIfCallsProgress, this, &mm.vdDiskIfaces);
     AssertRCReturn (vrc, E_FAIL);
 
     vrc = VDInterfaceAdd (&mm.vdIfConfig,
-                          "HardDisk2::vdInterfaceConfig",
+                          "HardDisk::vdInterfaceConfig",
                           VDINTERFACETYPE_CONFIG,
                           &mm.vdIfCallsConfig, this, &mm.vdDiskIfaces);
     AssertRCReturn (vrc, E_FAIL);
 
     vrc = VDInterfaceAdd (&mm.vdIfTcpNet,
-                          "HardDisk2::vdInterfaceTcpNet",
+                          "HardDisk::vdInterfaceTcpNet",
                           VDINTERFACETYPE_TCPNET,
                           &mm.vdIfCallsTcpNet, this, &mm.vdDiskIfaces);
     AssertRCReturn (vrc, E_FAIL);
@@ -488,7 +488,7 @@ HRESULT HardDisk2::FinalConstruct()
     return S_OK;
 }
 
-void HardDisk2::FinalRelease()
+void HardDisk::FinalRelease()
 {
     uninit();
 }
@@ -508,8 +508,8 @@ void HardDisk2::FinalRelease()
  * @param aVirtualBox   VirtualBox object.
  * @param aLocaiton     Storage unit location.
  */
-HRESULT HardDisk2::init (VirtualBox *aVirtualBox, CBSTR aFormat,
-                         CBSTR aLocation)
+HRESULT HardDisk::init(VirtualBox *aVirtualBox, CBSTR aFormat,
+                       CBSTR aLocation)
 {
     AssertReturn (aVirtualBox != NULL, E_FAIL);
     AssertReturn (aFormat != NULL && *aFormat != '\0', E_FAIL);
@@ -560,7 +560,7 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, CBSTR aFormat,
          * Created state here and also add it to the registry */
         m.state = MediaState_Created;
         unconst (m.id).create();
-        rc = mVirtualBox->registerHardDisk2 (this);
+        rc = mVirtualBox->registerHardDisk (this);
 
         /// @todo later we may want to use a pfnIsConfigSufficient backend info
         /// callback that would tell us when we have enough properties to work
@@ -588,7 +588,7 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, CBSTR aFormat,
  * @param aVirtualBox   VirtualBox object.
  * @param aLocaiton     Storage unit location.
  */
-HRESULT HardDisk2::init (VirtualBox *aVirtualBox, CBSTR aLocation)
+HRESULT HardDisk::init (VirtualBox *aVirtualBox, CBSTR aLocation)
 {
     AssertReturn (aVirtualBox, E_INVALIDARG);
     AssertReturn (aLocation, E_INVALIDARG);
@@ -648,8 +648,8 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, CBSTR aLocation)
  *
  * @note Locks VirtualBox lock for writing, treeLock() for writing.
  */
-HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
-                         const settings::Key &aNode)
+HRESULT HardDisk::init(VirtualBox *aVirtualBox, HardDisk *aParent,
+                       const settings::Key &aNode)
 {
     using namespace settings;
 
@@ -745,12 +745,12 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
     for (Key::List::const_iterator it = hardDisks.begin();
          it != hardDisks.end(); ++ it)
     {
-        ComObjPtr <HardDisk2> hardDisk;
+        ComObjPtr<HardDisk> hardDisk;
         hardDisk.createObject();
         rc = hardDisk->init (aVirtualBox, this, *it);
         CheckComRCBreakRC (rc);
 
-        rc = mVirtualBox->registerHardDisk2 (hardDisk, false /* aSaveRegistry */);
+        rc = mVirtualBox->registerHardDisk(hardDisk, false /* aSaveRegistry */);
         CheckComRCBreakRC (rc);
     }
 
@@ -771,7 +771,7 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
  *
  * @note Locks treeLock() for writing, VirtualBox for writing.
  */
-void HardDisk2::uninit()
+void HardDisk::uninit()
 {
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan (this);
@@ -813,10 +813,10 @@ void HardDisk2::uninit()
     unconst (mVirtualBox).setNull();
 }
 
-// IHardDisk2 properties
+// IHardDisk properties
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP HardDisk2::COMGETTER(Format) (BSTR *aFormat)
+STDMETHODIMP HardDisk::COMGETTER(Format) (BSTR *aFormat)
 {
     if (aFormat == NULL)
         return E_POINTER;
@@ -830,7 +830,7 @@ STDMETHODIMP HardDisk2::COMGETTER(Format) (BSTR *aFormat)
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::COMGETTER(Type) (HardDiskType_T *aType)
+STDMETHODIMP HardDisk::COMGETTER(Type) (HardDiskType_T *aType)
 {
     if (aType == NULL)
         return E_POINTER;
@@ -845,7 +845,7 @@ STDMETHODIMP HardDisk2::COMGETTER(Type) (HardDiskType_T *aType)
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::COMSETTER(Type) (HardDiskType_T aType)
+STDMETHODIMP HardDisk::COMSETTER(Type) (HardDiskType_T aType)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -913,7 +913,7 @@ STDMETHODIMP HardDisk2::COMSETTER(Type) (HardDiskType_T aType)
     return rc;
 }
 
-STDMETHODIMP HardDisk2::COMGETTER(Parent) (IHardDisk2 **aParent)
+STDMETHODIMP HardDisk::COMGETTER(Parent) (IHardDisk **aParent)
 {
     if (aParent == NULL)
         return E_POINTER;
@@ -929,7 +929,7 @@ STDMETHODIMP HardDisk2::COMGETTER(Parent) (IHardDisk2 **aParent)
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::COMGETTER(Children) (ComSafeArrayOut (IHardDisk2 *, aChildren))
+STDMETHODIMP HardDisk::COMGETTER(Children) (ComSafeArrayOut (IHardDisk *, aChildren))
 {
     if (ComSafeArrayOutIsNull (aChildren))
         return E_POINTER;
@@ -940,13 +940,13 @@ STDMETHODIMP HardDisk2::COMGETTER(Children) (ComSafeArrayOut (IHardDisk2 *, aChi
     /* we access children */
     AutoReadLock treeLock (this->treeLock());
 
-    SafeIfaceArray <IHardDisk2> children (this->children());
+    SafeIfaceArray<IHardDisk> children (this->children());
     children.detachTo (ComSafeArrayOutArg (aChildren));
 
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::COMGETTER(Root) (IHardDisk2 **aRoot)
+STDMETHODIMP HardDisk::COMGETTER(Root)(IHardDisk **aRoot)
 {
     if (aRoot == NULL)
         return E_POINTER;
@@ -958,7 +958,7 @@ STDMETHODIMP HardDisk2::COMGETTER(Root) (IHardDisk2 **aRoot)
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::COMGETTER(ReadOnly) (BOOL *aReadOnly)
+STDMETHODIMP HardDisk::COMGETTER(ReadOnly) (BOOL *aReadOnly)
 {
     if (aReadOnly == NULL)
         return E_POINTER;
@@ -973,7 +973,7 @@ STDMETHODIMP HardDisk2::COMGETTER(ReadOnly) (BOOL *aReadOnly)
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::COMGETTER(LogicalSize) (ULONG64 *aLogicalSize)
+STDMETHODIMP HardDisk::COMGETTER(LogicalSize) (ULONG64 *aLogicalSize)
 {
     if (aLogicalSize == NULL)
         return E_POINTER;
@@ -1004,10 +1004,10 @@ STDMETHODIMP HardDisk2::COMGETTER(LogicalSize) (ULONG64 *aLogicalSize)
     return root()->COMGETTER (LogicalSize) (aLogicalSize);
 }
 
-// IHardDisk2 methods
+// IHardDisk methods
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP HardDisk2::GetProperty (IN_BSTR aName, BSTR *aValue)
+STDMETHODIMP HardDisk::GetProperty (IN_BSTR aName, BSTR *aValue)
 {
     CheckComArgStrNotEmptyOrNull (aName);
     CheckComArgOutPointerValid (aValue);
@@ -1027,7 +1027,7 @@ STDMETHODIMP HardDisk2::GetProperty (IN_BSTR aName, BSTR *aValue)
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::SetProperty (IN_BSTR aName, IN_BSTR aValue)
+STDMETHODIMP HardDisk::SetProperty (IN_BSTR aName, IN_BSTR aValue)
 {
     CheckComArgStrNotEmptyOrNull (aName);
 
@@ -1058,9 +1058,9 @@ STDMETHODIMP HardDisk2::SetProperty (IN_BSTR aName, IN_BSTR aValue)
     return rc;
 }
 
-STDMETHODIMP HardDisk2::GetProperties (IN_BSTR aNames,
-                                       ComSafeArrayOut (BSTR, aReturnNames),
-                                       ComSafeArrayOut (BSTR, aReturnValues))
+STDMETHODIMP HardDisk::GetProperties(IN_BSTR aNames,
+                                     ComSafeArrayOut (BSTR, aReturnNames),
+                                     ComSafeArrayOut (BSTR, aReturnValues))
 {
     CheckComArgOutSafeArrayPointerValid (aReturnNames);
     CheckComArgOutSafeArrayPointerValid (aReturnValues);
@@ -1091,8 +1091,8 @@ STDMETHODIMP HardDisk2::GetProperties (IN_BSTR aNames,
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::SetProperties (ComSafeArrayIn (IN_BSTR, aNames),
-                                       ComSafeArrayIn (IN_BSTR, aValues))
+STDMETHODIMP HardDisk::SetProperties(ComSafeArrayIn (IN_BSTR, aNames),
+                                      ComSafeArrayIn (IN_BSTR, aValues))
 {
     CheckComArgSafeArrayNotNull (aNames);
     CheckComArgSafeArrayNotNull (aValues);
@@ -1128,8 +1128,8 @@ STDMETHODIMP HardDisk2::SetProperties (ComSafeArrayIn (IN_BSTR, aNames),
     return rc;
 }
 
-STDMETHODIMP HardDisk2::CreateDynamicStorage (ULONG64 aLogicalSize,
-                                              IProgress **aProgress)
+STDMETHODIMP HardDisk::CreateDynamicStorage(ULONG64 aLogicalSize,
+                                            IProgress **aProgress)
 {
     CheckComArgOutPointerValid (aProgress);
 
@@ -1154,7 +1154,7 @@ STDMETHODIMP HardDisk2::CreateDynamicStorage (ULONG64 aLogicalSize,
 
     ComObjPtr <Progress> progress;
     progress.createObject();
-    HRESULT rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
+    HRESULT rc = progress->init (mVirtualBox, static_cast<IHardDisk*>(this),
         BstrFmt (tr ("Creating dynamic hard disk storage unit '%ls'"),
                  m.locationFull.raw()),
         FALSE /* aCancelable */);
@@ -1183,8 +1183,8 @@ STDMETHODIMP HardDisk2::CreateDynamicStorage (ULONG64 aLogicalSize,
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::CreateFixedStorage (ULONG64 aLogicalSize,
-                                            IProgress **aProgress)
+STDMETHODIMP HardDisk::CreateFixedStorage(ULONG64 aLogicalSize,
+                                          IProgress **aProgress)
 {
     CheckComArgOutPointerValid (aProgress);
 
@@ -1209,7 +1209,7 @@ STDMETHODIMP HardDisk2::CreateFixedStorage (ULONG64 aLogicalSize,
 
     ComObjPtr <Progress> progress;
     progress.createObject();
-    HRESULT rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
+    HRESULT rc = progress->init (mVirtualBox, static_cast<IHardDisk*>(this),
         BstrFmt (tr ("Creating fixed hard disk storage unit '%ls'"),
                  m.locationFull.raw()),
         FALSE /* aCancelable */);
@@ -1238,7 +1238,7 @@ STDMETHODIMP HardDisk2::CreateFixedStorage (ULONG64 aLogicalSize,
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::DeleteStorage (IProgress **aProgress)
+STDMETHODIMP HardDisk::DeleteStorage (IProgress **aProgress)
 {
     CheckComArgOutPointerValid (aProgress);
 
@@ -1257,7 +1257,7 @@ STDMETHODIMP HardDisk2::DeleteStorage (IProgress **aProgress)
     return rc;
 }
 
-STDMETHODIMP HardDisk2::CreateDiffStorage (IHardDisk2 *aTarget, IProgress **aProgress)
+STDMETHODIMP HardDisk::CreateDiffStorage (IHardDisk *aTarget, IProgress **aProgress)
 {
     CheckComArgNotNull (aTarget);
     CheckComArgOutPointerValid (aProgress);
@@ -1265,7 +1265,7 @@ STDMETHODIMP HardDisk2::CreateDiffStorage (IHardDisk2 *aTarget, IProgress **aPro
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    ComObjPtr <HardDisk2> diff;
+    ComObjPtr<HardDisk> diff;
     HRESULT rc = mVirtualBox->cast (aTarget, diff);
     CheckComRCReturnRC (rc);
 
@@ -1299,7 +1299,7 @@ STDMETHODIMP HardDisk2::CreateDiffStorage (IHardDisk2 *aTarget, IProgress **aPro
     return rc;
 }
 
-STDMETHODIMP HardDisk2::MergeTo (IN_GUID aTargetId, IProgress **aProgress)
+STDMETHODIMP HardDisk::MergeTo (IN_GUID aTargetId, IProgress **aProgress)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1307,7 +1307,7 @@ STDMETHODIMP HardDisk2::MergeTo (IN_GUID aTargetId, IProgress **aProgress)
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP HardDisk2::CloneTo (IHardDisk2 *aTarget, IProgress **aProgress)
+STDMETHODIMP HardDisk::CloneTo (IHardDisk *aTarget, IProgress **aProgress)
 {
     CheckComArgNotNull (aTarget);
     CheckComArgOutPointerValid (aProgress);
@@ -1315,7 +1315,7 @@ STDMETHODIMP HardDisk2::CloneTo (IHardDisk2 *aTarget, IProgress **aProgress)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    ComObjPtr <HardDisk2> target;
+    ComObjPtr <HardDisk> target;
     HRESULT rc = mVirtualBox->cast (aTarget, target);
     CheckComRCReturnRC (rc);
 
@@ -1334,7 +1334,7 @@ STDMETHODIMP HardDisk2::CloneTo (IHardDisk2 *aTarget, IProgress **aProgress)
             throw target->setStateError();
 
         progress.createObject();
-        rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
+        rc = progress->init (mVirtualBox, static_cast <IHardDisk *> (this),
             BstrFmt (tr ("Creating clone hard disk '%ls'"),
                      target->m.locationFull.raw()),
             FALSE /* aCancelable */);
@@ -1377,7 +1377,7 @@ STDMETHODIMP HardDisk2::CloneTo (IHardDisk2 *aTarget, IProgress **aProgress)
     return rc;
 }
 
-STDMETHODIMP HardDisk2::FlattenTo (IHardDisk2 *aTarget, IProgress **aProgress)
+STDMETHODIMP HardDisk::FlattenTo (IHardDisk *aTarget, IProgress **aProgress)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1385,7 +1385,7 @@ STDMETHODIMP HardDisk2::FlattenTo (IHardDisk2 *aTarget, IProgress **aProgress)
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP HardDisk2::Compact (IProgress **aProgress)
+STDMETHODIMP HardDisk::Compact (IProgress **aProgress)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1406,7 +1406,7 @@ STDMETHODIMP HardDisk2::Compact (IProgress **aProgress)
  *
  * @note Locks treeLock() for reading, this object and all children for writing.
  */
-void HardDisk2::updatePaths (const char *aOldPath, const char *aNewPath)
+void HardDisk::updatePaths (const char *aOldPath, const char *aNewPath)
 {
     AssertReturnVoid (aOldPath);
     AssertReturnVoid (aNewPath);
@@ -1442,9 +1442,9 @@ void HardDisk2::updatePaths (const char *aOldPath, const char *aNewPath)
  *
  * @note Locks treeLock() for reading.
  */
-ComObjPtr <HardDisk2> HardDisk2::root (uint32_t *aLevel /*= NULL*/)
+ComObjPtr <HardDisk> HardDisk::root (uint32_t *aLevel /*= NULL*/)
 {
-    ComObjPtr <HardDisk2> root;
+    ComObjPtr <HardDisk> root;
     uint32_t level;
 
     AutoCaller autoCaller (this);
@@ -1484,7 +1484,7 @@ ComObjPtr <HardDisk2> HardDisk2::root (uint32_t *aLevel /*= NULL*/)
  *
  * @note Locks this object and treeLock() for reading.
  */
-bool HardDisk2::isReadOnly()
+bool HardDisk::isReadOnly()
 {
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), false);
@@ -1531,7 +1531,7 @@ bool HardDisk2::isReadOnly()
  *
  * @note Locks this object, treeLock() and children for reading.
  */
-HRESULT HardDisk2::saveSettings (settings::Key &aParentNode)
+HRESULT HardDisk::saveSettings (settings::Key &aParentNode)
 {
     using namespace settings;
 
@@ -1607,7 +1607,7 @@ HRESULT HardDisk2::saveSettings (settings::Key &aParentNode)
  *                      are equal, 1 if this object's location is greater than
  *                      the specified location, and -1 otherwise.
  */
-HRESULT HardDisk2::compareLocationTo (const char *aLocation, int &aResult)
+HRESULT HardDisk::compareLocationTo (const char *aLocation, int &aResult)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -1653,7 +1653,7 @@ HRESULT HardDisk2::compareLocationTo (const char *aLocation, int &aResult)
  *
  * @note Must be called from under this object's read or write lock.
  */
-Utf8Str HardDisk2::name()
+Utf8Str HardDisk::name()
 {
     /// @todo NEWMEDIA treat non-FS-paths specially! (may require to requiest
     /// this information from the VD backend)
@@ -1681,7 +1681,7 @@ Utf8Str HardDisk2::name()
  * @note Locks treeLock() for reading. Locks this object, aTarget and all
  *       intermediate hard disks for writing.
  */
-HRESULT HardDisk2::prepareDiscard (MergeChain * &aChain)
+HRESULT HardDisk::prepareDiscard (MergeChain * &aChain)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -1737,7 +1737,7 @@ HRESULT HardDisk2::prepareDiscard (MergeChain * &aChain)
                   !m.backRefs.front().inCurState &&
                   m.backRefs.front().snapshotIds.size() == 1, E_FAIL);
 
-    ComObjPtr <HardDisk2> child = children().front();
+    ComObjPtr<HardDisk> child = children().front();
 
     /* we keep this locked, so lock the affected child to make sure the lock
      * order is correct when calling prepareMergeTo() */
@@ -1811,11 +1811,11 @@ HRESULT HardDisk2::prepareDiscard (MergeChain * &aChain)
  *       object when the backward merge takes place. Locks treeLock() lock for
  *       reading or writing.
  */
-HRESULT HardDisk2::discard (ComObjPtr <Progress> &aProgress, MergeChain *aChain)
+HRESULT HardDisk::discard (ComObjPtr <Progress> &aProgress, MergeChain *aChain)
 {
     AssertReturn (!aProgress.isNull(), E_FAIL);
 
-    ComObjPtr <HardDisk2> hdFrom;
+    ComObjPtr <HardDisk> hdFrom;
 
     HRESULT rc = S_OK;
 
@@ -1884,7 +1884,7 @@ HRESULT HardDisk2::discard (ComObjPtr <Progress> &aProgress, MergeChain *aChain)
  * @note Locks the hard disks from the chain for writing. Locks treeLock() for
  *       reading.
  */
-void HardDisk2::cancelDiscard (MergeChain *aChain)
+void HardDisk::cancelDiscard (MergeChain *aChain)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -1923,7 +1923,7 @@ void HardDisk2::cancelDiscard (MergeChain *aChain)
 /**
  * Returns a preferred format for differencing hard disks.
  */
-Bstr HardDisk2::preferredDiffFormat()
+Bstr HardDisk::preferredDiffFormat()
 {
     Bstr format;
 
@@ -1969,14 +1969,14 @@ Bstr HardDisk2::preferredDiffFormat()
  * @note Locks mVirtualBox and this object for writing. Locks treeLock() for
  *       writing.
  */
-HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
+HRESULT HardDisk::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
 {
     AssertReturn (aProgress != NULL || aWait == true, E_FAIL);
 
     /* unregisterWithVirtualBox() needs a write lock. We want to unregister
      * ourselves atomically after detecting that deletion is possible to make
      * sure that we don't do that after another thread has done
-     * VirtualBox::findHardDisk2() but before it starts using us (provided that
+     * VirtualBox::findHardDisk() but before it starts using us (provided that
      * it holds a mVirtualBox lock too of course). */
 
     AutoWriteLock vboxLock (mVirtualBox);
@@ -2046,7 +2046,7 @@ HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
         if (progress.isNull())
         {
             progress.createObject();
-            rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
+            rc = progress->init (mVirtualBox, static_cast<IHardDisk*>(this),
                 BstrFmt (tr ("Deleting hard disk storage unit '%ls'"),
                          m.locationFull.raw()),
                 FALSE /* aCancelable */);
@@ -2119,9 +2119,9 @@ HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
  *
  * @note Locks this object and @a aTarget for writing.
  */
-HRESULT HardDisk2::createDiffStorage (ComObjPtr <HardDisk2> &aTarget,
-                                      ComObjPtr <Progress> *aProgress,
-                                      bool aWait)
+HRESULT HardDisk::createDiffStorage(ComObjPtr<HardDisk> &aTarget,
+                                    ComObjPtr<Progress> *aProgress,
+                                     bool aWait)
 {
     AssertReturn (!aTarget.isNull(), E_FAIL);
     AssertReturn (aProgress != NULL || aWait == true, E_FAIL);
@@ -2156,7 +2156,7 @@ HRESULT HardDisk2::createDiffStorage (ComObjPtr <HardDisk2> &aTarget,
              * also associated with the snapshot which is about to create  (see
              * SnapshotMachine::init()) before deassociating them from the
              * current state (which takes place only on success in
-             * Machine::fixupHardDisks2()), so that the size of snapshotIds
+             * Machine::fixupHardDisks()), so that the size of snapshotIds
              * will be 1 in this case. The given condition is used to filter out
              * this legal situatinon and do not report an error. */
 
@@ -2184,7 +2184,7 @@ HRESULT HardDisk2::createDiffStorage (ComObjPtr <HardDisk2> &aTarget,
         if (progress.isNull())
         {
             progress.createObject();
-            rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
+            rc = progress->init (mVirtualBox, static_cast<IHardDisk*> (this),
                 BstrFmt (tr ("Creating differencing hard disk storage unit '%ls'"),
                          aTarget->m.locationFull.raw()),
                 FALSE /* aCancelable */);
@@ -2255,9 +2255,9 @@ HRESULT HardDisk2::createDiffStorage (ComObjPtr <HardDisk2> &aTarget,
  * @note Locks treeLock() for reading. Locks this object, aTarget and all
  *       intermediate hard disks for writing.
  */
-HRESULT HardDisk2::prepareMergeTo (HardDisk2 *aTarget,
-                                   MergeChain * &aChain,
-                                   bool aIgnoreAttachments /*= false*/)
+HRESULT HardDisk::prepareMergeTo(HardDisk *aTarget,
+                                 MergeChain * &aChain,
+                                 bool aIgnoreAttachments /*= false*/)
 {
     AssertReturn (aTarget != NULL, E_FAIL);
 
@@ -2277,7 +2277,7 @@ HRESULT HardDisk2::prepareMergeTo (HardDisk2 *aTarget,
     /* detect the merge direction */
     bool forward;
     {
-        HardDisk2 *parent = mParent;
+        HardDisk *parent = mParent;
         while (parent != NULL && parent != aTarget)
             parent = parent->mParent;
         if (parent == aTarget)
@@ -2309,8 +2309,8 @@ HRESULT HardDisk2::prepareMergeTo (HardDisk2 *aTarget,
     std::auto_ptr <MergeChain> chain (new MergeChain (forward,
                                                       aIgnoreAttachments));
     {
-        HardDisk2 *last = forward ? aTarget : this;
-        HardDisk2 *first = forward ? this : aTarget;
+        HardDisk *last = forward ? aTarget : this;
+        HardDisk *first = forward ? this : aTarget;
 
         for (;;)
         {
@@ -2374,7 +2374,7 @@ HRESULT HardDisk2::prepareMergeTo (HardDisk2 *aTarget,
  * involved extra hard disks) will be restored and @a aChain will be deleted.
  * Note that this (source) hard disk is not uninitialized because of possible
  * AutoCaller instances held by the caller of this method on the current thread.
- * It's therefore the responsibility of the caller to call HardDisk2::uninit()
+ * It's therefore the responsibility of the caller to call HardDisk::uninit()
  * after releasing all callers in this case!
  *
  * If @a aWait is @c false then this method will crea,te a thread to perform the
@@ -2404,9 +2404,9 @@ HRESULT HardDisk2::prepareMergeTo (HardDisk2 *aTarget,
  * @note Locks the branch lock for writing. Locks the hard disks from the chain
  *       for writing.
  */
-HRESULT HardDisk2::mergeTo (MergeChain *aChain,
-                            ComObjPtr <Progress> *aProgress,
-                            bool aWait)
+HRESULT HardDisk::mergeTo(MergeChain *aChain,
+                          ComObjPtr <Progress> *aProgress,
+                          bool aWait)
 {
     AssertReturn (aChain != NULL, E_FAIL);
     AssertReturn (aProgress != NULL || aWait == true, E_FAIL);
@@ -2429,7 +2429,7 @@ HRESULT HardDisk2::mergeTo (MergeChain *aChain,
             AutoReadLock alock (this);
 
             progress.createObject();
-            rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
+            rc = progress->init (mVirtualBox, static_cast<IHardDisk*>(this),
                 BstrFmt (tr ("Merging hard disk '%s' to '%s'"),
                          name().raw(), aChain->target()->name().raw()),
                 FALSE /* aCancelable */);
@@ -2480,7 +2480,7 @@ HRESULT HardDisk2::mergeTo (MergeChain *aChain,
  *
  * @note Locks the hard disks from the chain for writing.
  */
-void HardDisk2::cancelMergeTo (MergeChain *aChain)
+void HardDisk::cancelMergeTo (MergeChain *aChain)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -2513,7 +2513,7 @@ void HardDisk2::cancelMergeTo (MergeChain *aChain)
  *
  * @note Must be called from under this object's write lock.
  */
-HRESULT HardDisk2::setLocation (CBSTR aLocation)
+HRESULT HardDisk::setLocation (CBSTR aLocation)
 {
     /// @todo so far, we assert but later it makes sense to support null
     /// locations for hard disks that are not yet created fail to create a
@@ -2665,7 +2665,7 @@ HRESULT HardDisk2::setLocation (CBSTR aLocation)
  *
  * @note Must be called from under this object's write lock.
  */
-HRESULT HardDisk2::setFormat (CBSTR aFormat)
+HRESULT HardDisk::setFormat (CBSTR aFormat)
 {
     /* get the format object first */
     {
@@ -2718,7 +2718,7 @@ HRESULT HardDisk2::setFormat (CBSTR aFormat)
  *       for the first time). Locks mParent for reading. Locks this object for
  *       writing.
  */
-HRESULT HardDisk2::queryInfo()
+HRESULT HardDisk::queryInfo()
 {
     AutoWriteLock alock (this);
 
@@ -2872,10 +2872,10 @@ HRESULT HardDisk2::queryInfo()
                      * fail if this method reporst MediaState_Inaccessible) */
 
                     Guid id = parentId;
-                    ComObjPtr <HardDisk2> parent;
-                    rc = mVirtualBox->findHardDisk2 (&id, NULL,
-                                                     false /* aSetError */,
-                                                     &parent);
+                    ComObjPtr<HardDisk> parent;
+                    rc = mVirtualBox->findHardDisk(&id, NULL,
+                                                   false /* aSetError */,
+                                                   &parent);
                     if (FAILED (rc))
                     {
                         lastAccessError = Utf8StrFmt (
@@ -3004,7 +3004,7 @@ HRESULT HardDisk2::queryInfo()
  *
  * @note Locks treeLock() for reading.
  */
-HRESULT HardDisk2::canClose()
+HRESULT HardDisk::canClose()
 {
     /* we access children */
     AutoReadLock treeLock (this->treeLock());
@@ -3020,8 +3020,8 @@ HRESULT HardDisk2::canClose()
 /**
  * @note Called from within this object's AutoWriteLock.
  */
-HRESULT HardDisk2::canAttach (const Guid &aMachineId,
-                              const Guid &aSnapshotId)
+HRESULT HardDisk::canAttach(const Guid &aMachineId,
+                            const Guid &aSnapshotId)
 {
     if (mm.numCreateDiffTasks > 0)
         return setError (E_FAIL,
@@ -3038,15 +3038,15 @@ HRESULT HardDisk2::canAttach (const Guid &aMachineId,
  *
  * @note Locks treeLock() for writing.
  */
-HRESULT HardDisk2::unregisterWithVirtualBox()
+HRESULT HardDisk::unregisterWithVirtualBox()
 {
     /* Note that we need to de-associate ourselves from the parent to let
-     * unregisterHardDisk2() properly save the registry */
+     * unregisterHardDisk() properly save the registry */
 
     /* we modify mParent and access children */
     AutoWriteLock treeLock (this->treeLock());
 
-    const ComObjPtr <HardDisk2, ComWeakRef> parent = mParent;
+    const ComObjPtr<HardDisk, ComWeakRef> parent = mParent;
 
     AssertReturn (children().size() == 0, E_FAIL);
 
@@ -3058,7 +3058,7 @@ HRESULT HardDisk2::unregisterWithVirtualBox()
         mParent.setNull();
     }
 
-    HRESULT rc = mVirtualBox->unregisterHardDisk2 (this);
+    HRESULT rc = mVirtualBox->unregisterHardDisk(this);
 
     if (FAILED (rc))
     {
@@ -3097,7 +3097,7 @@ HRESULT HardDisk2::unregisterWithVirtualBox()
  *
  * @param aVRC  VBox error code to use when no error message is provided.
  */
-Utf8Str HardDisk2::vdError (int aVRC)
+Utf8Str HardDisk::vdError (int aVRC)
 {
     Utf8Str error;
 
@@ -3126,10 +3126,10 @@ Utf8Str HardDisk2::vdError (int aVRC)
  * @param   va              Error message arguments.
  */
 /*static*/
-DECLCALLBACK(void) HardDisk2::vdErrorCall (void *pvUser, int rc, RT_SRC_POS_DECL,
-                                           const char *pszFormat, va_list va)
+DECLCALLBACK(void) HardDisk::vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
+                                         const char *pszFormat, va_list va)
 {
-    HardDisk2 *that = static_cast <HardDisk2 *> (pvUser);
+    HardDisk *that = static_cast<HardDisk*>(pvUser);
     AssertReturnVoid (that != NULL);
 
     if (that->mm.vdError.isEmpty())
@@ -3148,10 +3148,10 @@ DECLCALLBACK(void) HardDisk2::vdErrorCall (void *pvUser, int rc, RT_SRC_POS_DECL
  * @param pvUser      Pointer to the Progress instance.
  */
 /*static*/
-DECLCALLBACK(int) HardDisk2::vdProgressCall (PVM /* pVM */, unsigned uPercent,
-                                             void *pvUser)
+DECLCALLBACK(int) HardDisk::vdProgressCall(PVM /* pVM */, unsigned uPercent,
+                                           void *pvUser)
 {
-    HardDisk2 *that = static_cast <HardDisk2 *> (pvUser);
+    HardDisk *that = static_cast<HardDisk*>(pvUser);
     AssertReturn (that != NULL, VERR_GENERAL_FAILURE);
 
     if (that->mm.vdProgress != NULL)
@@ -3165,10 +3165,10 @@ DECLCALLBACK(int) HardDisk2::vdProgressCall (PVM /* pVM */, unsigned uPercent,
 }
 
 /* static */
-DECLCALLBACK(bool) HardDisk2::vdConfigAreKeysValid (void *pvUser,
+DECLCALLBACK(bool) HardDisk::vdConfigAreKeysValid (void *pvUser,
                                                     const char *pszzValid)
 {
-    HardDisk2 *that = static_cast <HardDisk2 *> (pvUser);
+    HardDisk *that = static_cast<HardDisk*>(pvUser);
     AssertReturn (that != NULL, false);
 
     /* we always return true since the only keys we have are those found in
@@ -3177,12 +3177,12 @@ DECLCALLBACK(bool) HardDisk2::vdConfigAreKeysValid (void *pvUser,
 }
 
 /* static */
-DECLCALLBACK(int) HardDisk2::vdConfigQuerySize (void *pvUser, const char *pszName,
-                                                size_t *pcbValue)
+DECLCALLBACK(int) HardDisk::vdConfigQuerySize(void *pvUser, const char *pszName,
+                                              size_t *pcbValue)
 {
     AssertReturn (VALID_PTR (pcbValue), VERR_INVALID_POINTER);
 
-    HardDisk2 *that = static_cast <HardDisk2 *> (pvUser);
+    HardDisk *that = static_cast<HardDisk*>(pvUser);
     AssertReturn (that != NULL, VERR_GENERAL_FAILURE);
 
     Data::PropertyMap::const_iterator it =
@@ -3190,7 +3190,7 @@ DECLCALLBACK(int) HardDisk2::vdConfigQuerySize (void *pvUser, const char *pszNam
     if (it == that->mm.properties.end())
         return VERR_CFGM_VALUE_NOT_FOUND;
 
-    /* we interpret null values as "no value" in HardDisk2 */
+    /* we interpret null values as "no value" in HardDisk */
     if (it->second.isNull())
         return VERR_CFGM_VALUE_NOT_FOUND;
 
@@ -3200,12 +3200,12 @@ DECLCALLBACK(int) HardDisk2::vdConfigQuerySize (void *pvUser, const char *pszNam
 }
 
 /* static */
-DECLCALLBACK(int) HardDisk2::vdConfigQuery (void *pvUser, const char *pszName,
+DECLCALLBACK(int) HardDisk::vdConfigQuery (void *pvUser, const char *pszName,
                                             char *pszValue, size_t cchValue)
 {
     AssertReturn (VALID_PTR (pszValue), VERR_INVALID_POINTER);
 
-    HardDisk2 *that = static_cast <HardDisk2 *> (pvUser);
+    HardDisk *that = static_cast<HardDisk*>(pvUser);
     AssertReturn (that != NULL, VERR_GENERAL_FAILURE);
 
     Data::PropertyMap::const_iterator it =
@@ -3217,7 +3217,7 @@ DECLCALLBACK(int) HardDisk2::vdConfigQuery (void *pvUser, const char *pszName,
     if (value.length() >= cchValue)
         return VERR_CFGM_NOT_ENOUGH_SPACE;
 
-    /* we interpret null values as "no value" in HardDisk2 */
+    /* we interpret null values as "no value" in HardDisk */
     if (it->second.isNull())
         return VERR_CFGM_VALUE_NOT_FOUND;
 
@@ -3235,14 +3235,14 @@ DECLCALLBACK(int) HardDisk2::vdConfigQuery (void *pvUser, const char *pszName,
  * @param pvUser    Pointer to the Task instance.
  */
 /* static */
-DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
+DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
 {
     std::auto_ptr <Task> task (static_cast <Task *> (pvUser));
     AssertReturn (task.get(), VERR_GENERAL_FAILURE);
 
     bool isAsync = thread != NIL_RTTHREAD;
 
-    HardDisk2 *that = task->that;
+    HardDisk *that = task->that;
 
     /// @todo ugly hack, fix ComAssert... later
     #define setError that->setError
@@ -3275,7 +3275,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
             if (generateUuid)
             {
                 id.create();
-                /* VirtualBox::registerHardDisk2() will need UUID */
+                /* VirtualBox::registerHardDisk() will need UUID */
                 unconst (that->m.id) = id;
             }
 
@@ -3336,7 +3336,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 /* register with mVirtualBox as the last step and move to
                  * Created state only on success (leaving an orphan file is
                  * better than breaking media registry consistency) */
-                rc = that->mVirtualBox->registerHardDisk2 (that);
+                rc = that->mVirtualBox->registerHardDisk(that);
             }
 
             thatLock.maybeEnter();
@@ -3365,7 +3365,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
         case Task::CreateDiff:
         {
-            ComObjPtr <HardDisk2> &target = task->d.target;
+            ComObjPtr<HardDisk> &target = task->d.target;
 
             /* Lock both in {parent,child} order. The lock is also used as a
              * signal from the task initiator (which releases it only after
@@ -3381,7 +3381,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
             if (generateUuid)
             {
                 targetId.create();
-                /* VirtualBox::registerHardDisk2() will need UUID */
+                /* VirtualBox::registerHardDisk() will need UUID */
                 unconst (target->m.id) = targetId;
             }
 
@@ -3473,7 +3473,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 /* register with mVirtualBox as the last step and move to
                  * Created state only on success (leaving an orphan file is
                  * better than breaking media registry consistency) */
-                rc = that->mVirtualBox->registerHardDisk2 (target);
+                rc = that->mVirtualBox->registerHardDisk(target);
 
                 if (FAILED (rc))
                 {
@@ -3676,15 +3676,15 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 AutoMultiWriteLock2 alock (that->mVirtualBox->lockHandle(),
                                            that->treeLock());
 
-                HardDisk2 *source = chain->source();
-                HardDisk2 *target = chain->target();
+                HardDisk *source = chain->source();
+                HardDisk *target = chain->target();
 
                 if (chain->isForward())
                 {
                     /* first, unregister the target since it may become a base
                      * hard disk which needs re-registration */
                     rc2 = target->mVirtualBox->
-                        unregisterHardDisk2 (target, false /* aSaveSettings */);
+                        unregisterHardDisk (target, false /* aSaveSettings */);
                     AssertComRC (rc2);
 
                     /* then, reparent it and disconnect the deleted branch at
@@ -3705,13 +3705,13 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
                     /* then, register again */
                     rc2 = target->mVirtualBox->
-                        registerHardDisk2 (target, false /* aSaveSettings */);
+                        registerHardDisk (target, false /* aSaveSettings */);
                     AssertComRC (rc2);
                 }
                 else
                 {
                     Assert (target->children().size() == 1);
-                    HardDisk2 *targetChild = target->children().front();
+                    HardDisk *targetChild = target->children().front();
 
                     /* disconnect the deleted branch at the elder end */
                     target->removeDependentChild (targetChild);
@@ -3756,7 +3756,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                         }
 
                         rc2 = (*it)->mVirtualBox->
-                            unregisterHardDisk2 (*it, false /* aSaveSettings */);
+                            unregisterHardDisk(*it, false /* aSaveSettings */);
                         AssertComRC (rc2);
 
                         /* now, uninitialize the deleted hard disk (note that
@@ -3829,7 +3829,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
         case Task::Clone:
         {
-            ComObjPtr <HardDisk2> &target = task->d.target;
+            ComObjPtr<HardDisk> &target = task->d.target;
 
             /* Lock both in {parent,child} order. The lock is also used as a
              * signal from the task initiator (which releases it only after
@@ -3845,7 +3845,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
             if (generateUuid)
             {
                 targetId.create();
-                /* VirtualBox::registerHardDisk2() will need UUID */
+                /* VirtualBox::registerHardDisk() will need UUID */
                 unconst (target->m.id) = targetId;
             }
 
@@ -3940,7 +3940,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                     /* register with mVirtualBox as the last step and move to
                      * Created state only on success (leaving an orphan file is
                      * better than breaking media registry consistency) */
-                    rc = that->mVirtualBox->registerHardDisk2 (target);
+                    rc = that->mVirtualBox->registerHardDisk(target);
 
                     if (FAILED (rc))
                     {
@@ -3953,7 +3953,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 else
                 {
                     /* just register  */
-                    rc = that->mVirtualBox->registerHardDisk2 (target);
+                    rc = that->mVirtualBox->registerHardDisk(target);
                 }
             }
 

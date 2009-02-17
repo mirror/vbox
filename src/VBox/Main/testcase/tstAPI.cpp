@@ -630,7 +630,7 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        ComPtr <IHardDisk2> hd;
+        ComPtr <IHardDisk> hd;
         static const wchar_t *Names[] =
         {
 #ifndef RT_OS_LINUX
@@ -650,7 +650,7 @@ int main(int argc, char *argv[])
         {
             Bstr src = Names [i];
             printf ("Searching for hard disk '%ls'...\n", src.raw());
-            rc = virtualBox->FindHardDisk2 (src, hd.asOutParam());
+            rc = virtualBox->FindHardDisk (src, hd.asOutParam());
             if (SUCCEEDED (rc))
             {
                 Guid id;
@@ -900,9 +900,9 @@ int main(int argc, char *argv[])
     do
     {
         {
-            com::SafeIfaceArray <IHardDisk2> disks;
+            com::SafeIfaceArray <IHardDisk> disks;
             CHECK_ERROR_BREAK (virtualBox,
-                               COMGETTER(HardDisks2) (ComSafeArrayAsOutParam (disks)));
+                               COMGETTER(HardDisks)(ComSafeArrayAsOutParam (disks)));
 
             printf ("%u base hard disks registered (disks.isNull()=%d).\n",
                     disks.size(), disks.isNull());

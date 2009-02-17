@@ -36,9 +36,9 @@ struct VDBACKENDINFO;
  * The HardDiskFormat class represents the backend used to store hard disk data
  * (IHardDiskFormat interface).
  *
- * @note Instances of this class are permanently caller-referenced by HardDisk2
+ * @note Instances of this class are permanently caller-referenced by HardDisk
  * objects (through addCaller()) so that an attempt to uninitialize or delete
- * them before all HardDisk2 objects are uninitialized will produce an endless
+ * them before all HardDisk objects are uninitialized will produce an endless
  * wait!
  */
 class ATL_NO_VTABLE HardDiskFormat :

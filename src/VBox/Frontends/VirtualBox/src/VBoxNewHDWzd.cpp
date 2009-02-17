@@ -383,7 +383,7 @@ bool VBoxNewHDWzd::createHardDisk()
 
     CProgress progress;
 
-    CHardDisk2 hd = vbox.CreateHardDisk2 (QString ("VDI"), loc);
+    CHardDisk hd = vbox.CreateHardDisk(QString ("VDI"), loc);
 
     if (!vbox.isOk())
     {

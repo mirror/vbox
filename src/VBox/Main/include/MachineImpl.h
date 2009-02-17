@@ -289,7 +289,7 @@ public:
 
         bool operator== (const HDData &that) const;
 
-        typedef std::list <ComObjPtr <HardDisk2Attachment> > AttachmentList;
+        typedef std::list< ComObjPtr<HardDiskAttachment> > AttachmentList;
         AttachmentList mAttachments;
     };
 
@@ -502,7 +502,7 @@ public:
     STDMETHOD(COMSETTER(PAEEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(SnapshotFolder))(BSTR *aSavedStateFolder);
     STDMETHOD(COMSETTER(SnapshotFolder))(IN_BSTR aSavedStateFolder);
-    STDMETHOD(COMGETTER(HardDisk2Attachments))(ComSafeArrayOut (IHardDisk2Attachment *, aAttachments));
+    STDMETHOD(COMGETTER(HardDiskAttachments))(ComSafeArrayOut (IHardDiskAttachment *, aAttachments));
     STDMETHOD(COMGETTER(VRDPServer))(IVRDPServer **vrdpServer);
     STDMETHOD(COMGETTER(DVDDrive))(IDVDDrive **dvdDrive);
     STDMETHOD(COMGETTER(FloppyDrive))(IFloppyDrive **floppyDrive);
@@ -531,11 +531,11 @@ public:
     // IMachine methods
     STDMETHOD(SetBootOrder)(ULONG aPosition, DeviceType_T aDevice);
     STDMETHOD(GetBootOrder)(ULONG aPosition, DeviceType_T *aDevice);
-    STDMETHOD(AttachHardDisk2) (IN_GUID aId, StorageBus_T aBus,
-                                LONG aChannel, LONG aDevice);
-    STDMETHOD(GetHardDisk2) (StorageBus_T aBus, LONG aChannel, LONG aDevice,
-                             IHardDisk2 **aHardDisk);
-    STDMETHOD(DetachHardDisk2) (StorageBus_T aBus, LONG aChannel, LONG aDevice);
+    STDMETHOD(AttachHardDisk)(IN_GUID aId, StorageBus_T aBus,
+                              LONG aChannel, LONG aDevice);
+    STDMETHOD(GetHardDisk)(StorageBus_T aBus, LONG aChannel, LONG aDevice,
+                           IHardDisk **aHardDisk);
+    STDMETHOD(DetachHardDisk)(StorageBus_T aBus, LONG aChannel, LONG aDevice);
     STDMETHOD(GetSerialPort) (ULONG slot, ISerialPort **port);
     STDMETHOD(GetParallelPort) (ULONG slot, IParallelPort **port);
     STDMETHOD(GetNetworkAdapter) (ULONG slot, INetworkAdapter **adapter);
@@ -771,7 +771,7 @@ protected:
                                  bool aOnline);
     HRESULT deleteImplicitDiffs();
 
-    void fixupHardDisks2 (bool aCommit, bool aOnline = false);
+    void fixupHardDisks(bool aCommit, bool aOnline = false);
 
     HRESULT lockConfig();
     HRESULT unlockConfig();

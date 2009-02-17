@@ -1202,15 +1202,15 @@ int VBoxProblemReporter::confirmDeleteHardDiskStorage (
 }
 
 void VBoxProblemReporter::cannotDeleteHardDiskStorage (QWidget *aParent,
-                                                       const CHardDisk2 &aHD,
+                                                       const CHardDisk &aHD,
                                                        const CProgress &aProgress)
 {
-    /* below, we use CHardDisk2 (aHD) to preserve current error info
+    /* below, we use CHardDisk (aHD) to preserve current error info
      * for formatErrorInfo() */
 
     message (aParent, Error,
         tr ("Failed to delete the storage unit of the hard disk <b>%1</b>.")
-            .arg (CHardDisk2 (aHD).GetLocation()),
+            .arg (CHardDisk (aHD).GetLocation()),
         !aHD.isOk() ? formatErrorInfo (aHD) :
         !aProgress.isOk() ? formatErrorInfo (aProgress) :
         formatErrorInfo (aProgress.GetErrorInfo()));
@@ -1247,7 +1247,7 @@ int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (QWidget* aParent)
 
 void VBoxProblemReporter::cannotCreateHardDiskStorage (
     QWidget *aParent, const CVirtualBox &aVBox, const QString &aLocation,
-    const CHardDisk2 &aHD, const CProgress &aProgress)
+    const CHardDisk &aHD, const CProgress &aProgress)
 {
     message (aParent, Error,
         tr ("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")

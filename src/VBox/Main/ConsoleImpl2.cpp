@@ -576,7 +576,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         rc = CFGMR3InsertNode(pInst,    "LUN#0",     &pLunL0);                          RC_CHECK();
 
-        ComPtr<IFloppyImage2> floppyImage;
+        ComPtr<IFloppyImage> floppyImage;
         hrc = floppyDrive->GetImage(floppyImage.asOutParam());                      H();
         if (floppyImage)
         {
@@ -866,13 +866,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     /* Attach the hard disks */
     {
-        com::SafeIfaceArray <IHardDisk2Attachment> atts;
+        com::SafeIfaceArray<IHardDiskAttachment> atts;
         hrc = pMachine->
-            COMGETTER(HardDisk2Attachments) (ComSafeArrayAsOutParam (atts));    H();
+            COMGETTER(HardDiskAttachments) (ComSafeArrayAsOutParam (atts));    H();
 
         for (size_t i = 0; i < atts.size(); ++ i)
         {
-            ComPtr <IHardDisk2> hardDisk;
+            ComPtr<IHardDisk> hardDisk;
             hrc = atts [i]->COMGETTER(HardDisk) (hardDisk.asOutParam());        H();
             StorageBus_T enmBus;
             hrc = atts [i]->COMGETTER(Bus) (&enmBus);                           H();
@@ -985,7 +985,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
 
             /* Create an inversed tree of parents. */
-            ComPtr <IHardDisk2> parentHardDisk = hardDisk;
+            ComPtr<IHardDisk> parentHardDisk = hardDisk;
             for (PCFGMNODE pParent = pCfg;;)
             {
                 hrc = parentHardDisk->

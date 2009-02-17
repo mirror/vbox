@@ -38,7 +38,7 @@ public:
 
     VBoxNewHDWzd (QWidget *aParent = 0);
 
-    CHardDisk2 hardDisk() { return mHD; }
+    CHardDisk hardDisk() { return mHD; }
     void setRecommendedFileName (const QString &aName);
     void setRecommendedSize (quint64 aSize);
 
@@ -65,7 +65,7 @@ private:
     bool createHardDisk();
 
     QIWidgetValidator *mWValNameAndSize;
-    CHardDisk2         mHD;
+    CHardDisk          mHD;
     int                mSliderScale;
     quint64            mMaxVDISize;
     quint64            mCurrentSize;

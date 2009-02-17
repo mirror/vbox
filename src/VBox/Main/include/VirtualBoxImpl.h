@@ -42,9 +42,9 @@
 
 class Machine;
 class SessionMachine;
-class HardDisk2;
+class HardDisk;
 class DVDImage;
-class FloppyImage2;
+class FloppyImage;
 class MachineCollection;
 class GuestOSType;
 class GuestOSTypeCollection;
@@ -125,9 +125,9 @@ public:
     STDMETHOD(COMGETTER(Host)) (IHost **aHost);
     STDMETHOD(COMGETTER(SystemProperties)) (ISystemProperties **aSystemProperties);
     STDMETHOD(COMGETTER(Machines2)) (ComSafeArrayOut (IMachine *, aMachines));
-    STDMETHOD(COMGETTER(HardDisks2)) (ComSafeArrayOut (IHardDisk2 *, aHardDisks));
+    STDMETHOD(COMGETTER(HardDisks)) (ComSafeArrayOut (IHardDisk *, aHardDisks));
     STDMETHOD(COMGETTER(DVDImages)) (ComSafeArrayOut (IDVDImage *, aDVDImages));
-    STDMETHOD(COMGETTER(FloppyImages)) (ComSafeArrayOut (IFloppyImage2 *, aFloppyImages));
+    STDMETHOD(COMGETTER(FloppyImages)) (ComSafeArrayOut (IFloppyImage *, aFloppyImages));
     STDMETHOD(COMGETTER(ProgressOperations)) (ComSafeArrayOut (IProgress *, aOperations));
     STDMETHOD(COMGETTER(GuestOSTypes)) (IGuestOSTypeCollection **aGuestOSTypes);
     STDMETHOD(COMGETTER(SharedFolders)) (ISharedFolderCollection **aSharedFolders);
@@ -146,11 +146,11 @@ public:
     STDMETHOD(UnregisterMachine) (IN_GUID aId, IMachine **aMachine);
     STDMETHOD(CreateAppliance) (IAppliance **anAppliance);
 
-    STDMETHOD(CreateHardDisk2) (IN_BSTR aFormat, IN_BSTR aLocation,
-                                IHardDisk2 **aHardDisk);
-    STDMETHOD(OpenHardDisk2) (IN_BSTR aLocation, IHardDisk2 **aHardDisk);
-    STDMETHOD(GetHardDisk2) (IN_GUID aId, IHardDisk2 **aHardDisk);
-    STDMETHOD(FindHardDisk2) (IN_BSTR aLocation, IHardDisk2 **aHardDisk);
+    STDMETHOD(CreateHardDisk)(IN_BSTR aFormat, IN_BSTR aLocation,
+                               IHardDisk **aHardDisk);
+    STDMETHOD(OpenHardDisk) (IN_BSTR aLocation, IHardDisk **aHardDisk);
+    STDMETHOD(GetHardDisk) (IN_GUID aId, IHardDisk **aHardDisk);
+    STDMETHOD(FindHardDisk) (IN_BSTR aLocation, IHardDisk **aHardDisk);
 
     STDMETHOD(OpenDVDImage) (IN_BSTR aLocation, IN_GUID aId,
                              IDVDImage **aDVDImage);
@@ -158,9 +158,9 @@ public:
     STDMETHOD(FindDVDImage) (IN_BSTR aLocation, IDVDImage **aDVDImage);
 
     STDMETHOD(OpenFloppyImage) (IN_BSTR aLocation, IN_GUID aId,
-                                IFloppyImage2 **aFloppyImage);
-    STDMETHOD(GetFloppyImage) (IN_GUID aId, IFloppyImage2 **aFloppyImage);
-    STDMETHOD(FindFloppyImage) (IN_BSTR aLocation, IFloppyImage2 **aFloppyImage);
+                                IFloppyImage **aFloppyImage);
+    STDMETHOD(GetFloppyImage) (IN_GUID aId, IFloppyImage **aFloppyImage);
+    STDMETHOD(FindFloppyImage) (IN_BSTR aLocation, IFloppyImage **aFloppyImage);
 
     STDMETHOD(GetGuestOSType) (IN_BSTR aId, IGuestOSType **aType);
     STDMETHOD(CreateSharedFolder) (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable);
@@ -233,12 +233,12 @@ public:
     HRESULT findMachine (const Guid &aId, bool aSetError,
                          ComObjPtr <Machine> *machine = NULL);
 
-    HRESULT findHardDisk2 (const Guid *aId, CBSTR aLocation,
-                           bool aSetError, ComObjPtr <HardDisk2> *aHardDisk = NULL);
+    HRESULT findHardDisk(const Guid *aId, CBSTR aLocation,
+                          bool aSetError, ComObjPtr<HardDisk> *aHardDisk = NULL);
     HRESULT findDVDImage(const Guid *aId, CBSTR aLocation,
                          bool aSetError, ComObjPtr<DVDImage> *aImage = NULL);
-    HRESULT findFloppyImage2 (const Guid *aId, CBSTR aLocation,
-                              bool aSetError, ComObjPtr <FloppyImage2> *aImage = NULL);
+    HRESULT findFloppyImage(const Guid *aId, CBSTR aLocation,
+                            bool aSetError, ComObjPtr<FloppyImage> *aImage = NULL);
 
     const ComObjPtr <Host> &host() { return mData.mHost; }
     const ComObjPtr <SystemProperties> &systemProperties()
@@ -255,16 +255,16 @@ public:
     int calculateFullPath (const char *aPath, Utf8Str &aResult);
     void calculateRelativePath (const char *aPath, Utf8Str &aResult);
 
-    HRESULT registerHardDisk2 (HardDisk2 *aHardDisk, bool aSaveRegistry = true);
-    HRESULT unregisterHardDisk2 (HardDisk2 *aHardDisk, bool aSaveRegistry = true);
+    HRESULT registerHardDisk(HardDisk *aHardDisk, bool aSaveRegistry = true);
+    HRESULT unregisterHardDisk(HardDisk *aHardDisk, bool aSaveRegistry = true);
 
     HRESULT registerDVDImage(DVDImage *aImage, bool aSaveRegistry = true);
     HRESULT unregisterDVDImage(DVDImage *aImage, bool aSaveRegistry = true);
 
-    HRESULT registerFloppyImage (FloppyImage2 *aImage, bool aSaveRegistry = true);
-    HRESULT unregisterFloppyImage (FloppyImage2 *aImage, bool aSaveRegistry = true);
+    HRESULT registerFloppyImage (FloppyImage *aImage, bool aSaveRegistry = true);
+    HRESULT unregisterFloppyImage (FloppyImage *aImage, bool aSaveRegistry = true);
 
-    HRESULT cast (IHardDisk2 *aFrom, ComObjPtr <HardDisk2> &aTo);
+    HRESULT cast (IHardDisk *aFrom, ComObjPtr<HardDisk> &aTo);
 
     HRESULT saveSettings();
     HRESULT updateSettings (const char *aOldPath, const char *aNewPath);
@@ -336,7 +336,7 @@ public:
 
     /**
      * Returns a lock handle used to protect changes to the hard disk hierarchy
-     * (e.g. serialize access to the HardDisk2::mParent fields and methods
+     * (e.g. serialize access to the HardDisk::mParent fields and methods
      * adding/removing children). When using this lock, the following rules must
      * be obeyed:
      *
@@ -360,12 +360,12 @@ private:
 
     typedef std::map <Guid, ComPtr <IProgress> > ProgressMap;
 
-    typedef std::list <ComObjPtr <HardDisk2> > HardDisk2List;
+    typedef std::list <ComObjPtr <HardDisk> > HardDiskList;
     typedef std::list <ComObjPtr <DVDImage> > DVDImageList;
-    typedef std::list <ComObjPtr <FloppyImage2> > FloppyImage2List;
+    typedef std::list <ComObjPtr <FloppyImage> > FloppyImageList;
     typedef std::list <ComObjPtr <SharedFolder> > SharedFolderList;
 
-    typedef std::map <Guid, ComObjPtr <HardDisk2> > HardDisk2Map;
+    typedef std::map <Guid, ComObjPtr<HardDisk> > HardDiskMap;
 
     /**
      * Reimplements VirtualBoxWithTypedChildren::childrenLock() to return a
@@ -427,14 +427,14 @@ private:
 
         ProgressMap mProgressOperations;
 
-        HardDisk2List mHardDisks2;
-        DVDImageList mDVDImages2;
-        FloppyImage2List mFloppyImages2;
+        HardDiskList mHardDisks;
+        DVDImageList mDVDImages;
+        FloppyImageList mFloppyImages;
         SharedFolderList mSharedFolders;
 
         /// @todo NEWMEDIA do we really need this map? Used only in
         /// find() it seems
-        HardDisk2Map mHardDisk2Map;
+        HardDiskMap mHardDiskMap;
 
         CallbackList mCallbacks;
     };

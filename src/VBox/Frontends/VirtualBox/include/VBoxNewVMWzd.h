@@ -66,7 +66,7 @@ private:
     QIWidgetValidator *mWvalNameAndOS;
     QIWidgetValidator *mWvalMemory;
     QIWidgetValidator *mWvalHDD;
-    CHardDisk2 mHardDisk;
+    CHardDisk mHardDisk;
     CMachine mMachine;
 };
 

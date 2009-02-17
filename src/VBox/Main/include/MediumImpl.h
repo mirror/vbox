@@ -288,32 +288,32 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * The FloppyImage2 component class implements the IFloppyImage2 interface.
+ * The FloppyImage component class implements the IFloppyImage interface.
  */
-class ATL_NO_VTABLE FloppyImage2
-    : public com::SupportErrorInfoDerived <ImageMediumBase, FloppyImage2, IFloppyImage2>
-    , public VirtualBoxSupportTranslation <FloppyImage2>
-    , public IFloppyImage2
+class ATL_NO_VTABLE FloppyImage
+    : public com::SupportErrorInfoDerived <ImageMediumBase, FloppyImage, IFloppyImage>
+    , public VirtualBoxSupportTranslation <FloppyImage>
+    , public IFloppyImage
 {
 public:
 
     COM_FORWARD_IMedium_TO_BASE (ImageMediumBase)
 
-    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE (FloppyImage2)
+    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE (FloppyImage)
 
-    DECLARE_NOT_AGGREGATABLE (FloppyImage2)
+    DECLARE_NOT_AGGREGATABLE (FloppyImage)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP (FloppyImage2)
+    BEGIN_COM_MAP (FloppyImage)
         COM_INTERFACE_ENTRY (ISupportErrorInfo)
         COM_INTERFACE_ENTRY2 (IMedium, ImageMediumBase)
-        COM_INTERFACE_ENTRY (IFloppyImage2)
+        COM_INTERFACE_ENTRY (IFloppyImage)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
 
-    DECLARE_EMPTY_CTOR_DTOR (FloppyImage2)
+    DECLARE_EMPTY_CTOR_DTOR (FloppyImage)
 
     // public initializer/uninitializer for internal purposes only
 
@@ -331,7 +331,7 @@ public:
     void uninit() { protectedUninit(); }
 
     /** For com::SupportErrorInfoImpl. */
-    static const char *ComponentName() { return "FloppyImage2"; }
+    static const char *ComponentName() { return "FloppyImage"; }
 
 private:
 

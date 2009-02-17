@@ -145,9 +145,9 @@ public:
         return aNoDiffs ? mNoDiffs.result : mResult;
     }
 
-    const CHardDisk2 &hardDisk() const { return mHardDisk; }
+    const CHardDisk &hardDisk() const { return mHardDisk; }
     const CDVDImage &dvdImage() const { return mDVDImage; }
-    const CFloppyImage2 &floppyImage() const { return mFloppyImage; }
+    const CFloppyImage &floppyImage() const { return mFloppyImage; }
 
     QUuid id() const { return mId; }
 
@@ -245,9 +245,9 @@ private:
     QString mLastAccessError;
     COMResult mResult;
 
-    CHardDisk2 mHardDisk;
+    CHardDisk mHardDisk;
     CDVDImage mDVDImage;
-    CFloppyImage2 mFloppyImage;
+    CFloppyImage mFloppyImage;
 
     QUuid mId;
     QString mLocation;
@@ -612,7 +612,7 @@ public:
      * Similar to toString (KHardDiskType), but returns 'Differencing' for
      * normal hard disks that have a parent.
      */
-    QString hardDiskTypeString (const CHardDisk2 &aHD) const
+    QString hardDiskTypeString (const CHardDisk &aHD) const
     {
         if (!aHD.GetParent().isNull())
         {
@@ -798,7 +798,7 @@ public:
 
     /* details generators */
 
-    QString details (const CHardDisk2 &aHD, bool aPredictDiff);
+    QString details (const CHardDisk &aHD, bool aPredictDiff);
 
     QString details (const CUSBDevice &aDevice) const;
     QString toolTip (const CUSBDevice &aDevice) const;

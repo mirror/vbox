@@ -21,8 +21,8 @@
  * additional information or have any questions.
  */
 
-#ifndef ____H_HARDDISK2IMPL
-#define ____H_HARDDISK2IMPL
+#ifndef ____H_HARDDISKIMPL
+#define ____H_HARDDISKIMPL
 
 #include "VirtualBoxBase.h"
 
@@ -41,36 +41,36 @@ class Progress;
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * The HardDisk2 component class implements the IHardDisk2 interface.
+ * The HardDisk component class implements the IHardDisk interface.
  */
-class ATL_NO_VTABLE HardDisk2
-    : public com::SupportErrorInfoDerived <MediumBase, HardDisk2, IHardDisk2>
-    , public VirtualBoxBaseWithTypedChildrenNEXT <HardDisk2>
-    , public VirtualBoxSupportTranslation <HardDisk2>
-    , public IHardDisk2
+class ATL_NO_VTABLE HardDisk
+    : public com::SupportErrorInfoDerived<MediumBase, HardDisk, IHardDisk>
+    , public VirtualBoxBaseWithTypedChildrenNEXT<HardDisk>
+    , public VirtualBoxSupportTranslation<HardDisk>
+    , public IHardDisk
 {
 public:
 
-    typedef VirtualBoxBaseWithTypedChildrenNEXT <HardDisk2>::DependentChildren
+    typedef VirtualBoxBaseWithTypedChildrenNEXT <HardDisk>::DependentChildren
         List;
 
     class MergeChain;
 
-    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE (HardDisk2)
+    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE (HardDisk)
 
-    DECLARE_NOT_AGGREGATABLE (HardDisk2)
+    DECLARE_NOT_AGGREGATABLE (HardDisk)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP (HardDisk2)
+    BEGIN_COM_MAP (HardDisk)
         COM_INTERFACE_ENTRY (ISupportErrorInfo)
         COM_INTERFACE_ENTRY2 (IMedium, MediumBase)
-        COM_INTERFACE_ENTRY (IHardDisk2)
+        COM_INTERFACE_ENTRY (IHardDisk)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
 
-    DECLARE_EMPTY_CTOR_DTOR (HardDisk2)
+    DECLARE_EMPTY_CTOR_DTOR (HardDisk)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -80,24 +80,24 @@ public:
                   CBSTR aLocation);
     HRESULT init (VirtualBox *aVirtualBox,
                   CBSTR aLocation);
-    HRESULT init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
+    HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
                   const settings::Key &aNode);
     void uninit();
 
     // IMedium properties & methods
     COM_FORWARD_IMedium_TO_BASE (MediumBase)
 
-    // IHardDisk2 properties
+    // IHardDisk properties
     STDMETHOD(COMGETTER(Format)) (BSTR *aFormat);
     STDMETHOD(COMGETTER(Type)) (HardDiskType_T *aType);
     STDMETHOD(COMSETTER(Type)) (HardDiskType_T aType);
-    STDMETHOD(COMGETTER(Parent)) (IHardDisk2 **aParent);
-    STDMETHOD(COMGETTER(Children)) (ComSafeArrayOut (IHardDisk2 *, aChildren));
-    STDMETHOD(COMGETTER(Root)) (IHardDisk2 **aRoot);
+    STDMETHOD(COMGETTER(Parent)) (IHardDisk **aParent);
+    STDMETHOD(COMGETTER(Children)) (ComSafeArrayOut (IHardDisk *, aChildren));
+    STDMETHOD(COMGETTER(Root)) (IHardDisk **aRoot);
     STDMETHOD(COMGETTER(ReadOnly)) (BOOL *aReadOnly);
     STDMETHOD(COMGETTER(LogicalSize)) (ULONG64 *aLogicalSize);
 
-    // IHardDisk2 methods
+    // IHardDisk methods
     STDMETHOD(GetProperty) (IN_BSTR aName, BSTR *aValue);
     STDMETHOD(SetProperty) (IN_BSTR aName, IN_BSTR aValue);
     STDMETHOD(GetProperties) (IN_BSTR aNames,
@@ -108,10 +108,10 @@ public:
     STDMETHOD(CreateDynamicStorage) (ULONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(CreateFixedStorage) (ULONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(DeleteStorage) (IProgress **aProgress);
-    STDMETHOD(CreateDiffStorage) (IHardDisk2 *aTarget, IProgress **aProgress);
+    STDMETHOD(CreateDiffStorage) (IHardDisk *aTarget, IProgress **aProgress);
     STDMETHOD(MergeTo) (IN_GUID aTargetId, IProgress **aProgress);
-    STDMETHOD(CloneTo) (IHardDisk2 *aTarget, IProgress **aProgress);
-    STDMETHOD(FlattenTo) (IHardDisk2 *aTarget, IProgress **aProgress);
+    STDMETHOD(CloneTo) (IHardDisk *aTarget, IProgress **aProgress);
+    STDMETHOD(FlattenTo) (IHardDisk *aTarget, IProgress **aProgress);
     STDMETHOD(Compact) (IProgress **aProgress);
 
     // public methods for internal purposes only
@@ -123,7 +123,7 @@ public:
 
     void updatePaths (const char *aOldPath, const char *aNewPath);
 
-    ComObjPtr <HardDisk2> root (uint32_t *aLevel = NULL);
+    ComObjPtr<HardDisk> root (uint32_t *aLevel = NULL);
 
     bool isReadOnly();
 
@@ -149,7 +149,7 @@ public:
      * Shortcut to #createDiffStorage() that doesn't wait for operation
      * completion and implies the progress object will be used for waiting.
      */
-    HRESULT createDiffStorageNoWait (ComObjPtr <HardDisk2> &aTarget,
+    HRESULT createDiffStorageNoWait (ComObjPtr<HardDisk> &aTarget,
                                      ComObjPtr <Progress> &aProgress)
     { return createDiffStorage (aTarget, &aProgress, false /* aWait */); }
 
@@ -157,11 +157,11 @@ public:
      * Shortcut to #createDiffStorage() that wait for operation completion by
      * blocking the current thread.
      */
-    HRESULT createDiffStorageAndWait (ComObjPtr <HardDisk2> &aTarget,
+    HRESULT createDiffStorageAndWait (ComObjPtr<HardDisk> &aTarget,
                                       ComObjPtr <Progress> *aProgress = NULL)
     { return createDiffStorage (aTarget, aProgress, true /* aWait */); }
 
-    HRESULT prepareMergeTo (HardDisk2 *aTarget, MergeChain * &aChain,
+    HRESULT prepareMergeTo (HardDisk *aTarget, MergeChain * &aChain,
                             bool aIgnoreAttachments = false);
 
     /**
@@ -194,17 +194,17 @@ public:
     // unsafe inline public methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
 
-    ComObjPtr <HardDisk2> parent() const { return static_cast <HardDisk2 *> (mParent); }
+    ComObjPtr <HardDisk> parent() const { return static_cast <HardDisk *> (mParent); }
     HardDiskType_T type() const { return mm.type; }
 
     /** For com::SupportErrorInfoImpl. */
-    static const char *ComponentName() { return "HardDisk2"; }
+    static const char *ComponentName() { return "HardDisk"; }
 
 protected:
 
     HRESULT deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait);
 
-    HRESULT createDiffStorage (ComObjPtr <HardDisk2> &aTarget,
+    HRESULT createDiffStorage (ComObjPtr <HardDisk> &aTarget,
                                ComObjPtr <Progress> *aProgress,
                                bool aWait);
 
@@ -261,7 +261,7 @@ private:
     static DECLCALLBACK(int) taskThread (RTTHREAD thread, void *pvUser);
 
     /** weak parent */
-    ComObjPtr <HardDisk2, ComWeakRef> mParent;
+    ComObjPtr <HardDisk, ComWeakRef> mParent;
 
     struct Task;
     friend struct Task;
@@ -306,6 +306,6 @@ private:
     Data mm;
 };
 
-#endif /* ____H_HARDDISK2IMPL */
+#endif /* ____H_HARDDISKIMPL */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

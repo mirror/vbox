@@ -26,12 +26,12 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT HardDisk2Attachment::FinalConstruct()
+HRESULT HardDiskAttachment::FinalConstruct()
 {
     return S_OK;
 }
 
-void HardDisk2Attachment::FinalRelease()
+void HardDiskAttachment::FinalRelease()
 {
     uninit();
 }
@@ -48,8 +48,8 @@ void HardDisk2Attachment::FinalRelease()
  * @param aDevice   Device number on the channel.
  * @param aImplicit Wether the attachment contains an implicitly created diff.
  */
-HRESULT HardDisk2Attachment::init (HardDisk2 *aHD, StorageBus_T aBus, LONG aChannel,
-                                   LONG aDevice, bool aImplicit /*= false*/)
+HRESULT HardDiskAttachment::init(HardDisk *aHD, StorageBus_T aBus, LONG aChannel,
+                                 LONG aDevice, bool aImplicit /*= false*/)
 {
     AssertReturn (aHD, E_INVALIDARG);
 
@@ -74,7 +74,7 @@ HRESULT HardDisk2Attachment::init (HardDisk2 *aHD, StorageBus_T aBus, LONG aChan
  * Uninitializes the instance.
  * Called from FinalRelease().
  */
-void HardDisk2Attachment::uninit()
+void HardDiskAttachment::uninit()
 {
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan (this);
@@ -82,10 +82,10 @@ void HardDisk2Attachment::uninit()
         return;
 }
 
-// IHardDisk2Attachment properties
+// IHardDiskAttachment properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP HardDisk2Attachment::COMGETTER(HardDisk) (IHardDisk2 **aHardDisk)
+STDMETHODIMP HardDiskAttachment::COMGETTER(HardDisk) (IHardDisk **aHardDisk)
 {
     CheckComArgOutPointerValid(aHardDisk);
 
@@ -99,7 +99,7 @@ STDMETHODIMP HardDisk2Attachment::COMGETTER(HardDisk) (IHardDisk2 **aHardDisk)
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2Attachment::COMGETTER(Bus) (StorageBus_T *aBus)
+STDMETHODIMP HardDiskAttachment::COMGETTER(Bus) (StorageBus_T *aBus)
 {
     CheckComArgOutPointerValid(aBus);
 
@@ -112,7 +112,7 @@ STDMETHODIMP HardDisk2Attachment::COMGETTER(Bus) (StorageBus_T *aBus)
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2Attachment::COMGETTER(Channel) (LONG *aChannel)
+STDMETHODIMP HardDiskAttachment::COMGETTER(Channel) (LONG *aChannel)
 {
     CheckComArgOutPointerValid(aChannel);
 
@@ -125,7 +125,7 @@ STDMETHODIMP HardDisk2Attachment::COMGETTER(Channel) (LONG *aChannel)
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2Attachment::COMGETTER(Device) (LONG *aDevice)
+STDMETHODIMP HardDiskAttachment::COMGETTER(Device) (LONG *aDevice)
 {
     CheckComArgOutPointerValid(aDevice);
 

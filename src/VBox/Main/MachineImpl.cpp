@@ -1426,7 +1426,7 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (IN_BSTR aSnapshotFolder)
 }
 
 STDMETHODIMP Machine::
-COMGETTER(HardDisk2Attachments) (ComSafeArrayOut (IHardDisk2Attachment *, aAttachments))
+COMGETTER(HardDiskAttachments) (ComSafeArrayOut(IHardDiskAttachment *, aAttachments))
 {
     if (ComSafeArrayOutIsNull (aAttachments))
         return E_POINTER;
@@ -1436,7 +1436,7 @@ COMGETTER(HardDisk2Attachments) (ComSafeArrayOut (IHardDisk2Attachment *, aAttac
 
     AutoReadLock alock (this);
 
-    SafeIfaceArray <IHardDisk2Attachment> attachments (mHDData->mAttachments);
+    SafeIfaceArray<IHardDiskAttachment> attachments (mHDData->mAttachments);
     attachments.detachTo (ComSafeArrayOutArg (aAttachments));
 
     return S_OK;
@@ -1881,9 +1881,9 @@ STDMETHODIMP Machine::GetBootOrder (ULONG aPosition, DeviceType_T *aDevice)
     return S_OK;
 }
 
-STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
-                                       StorageBus_T aBus, LONG aChannel,
-                                       LONG aDevice)
+STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
+                                     StorageBus_T aBus, LONG aChannel,
+                                     LONG aDevice)
 {
     if (aBus == StorageBus_SATA)
     {
@@ -1933,7 +1933,7 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* VirtualBox::findHardDisk2() need read lock; also we want to make sure the
+    /* VirtualBox::findHardDisk() need read lock; also we want to make sure the
      * hard disk object we pick up doesn't get unregistered before we finish. */
     AutoReadLock vboxLock (mParent);
     AutoWriteLock alock (this);
@@ -1956,11 +1956,11 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
     HDData::AttachmentList::const_iterator it =
         std::find_if (mHDData->mAttachments.begin(),
                       mHDData->mAttachments.end(),
-                      HardDisk2Attachment::EqualsTo (aBus, aChannel, aDevice));
+                      HardDiskAttachment::EqualsTo (aBus, aChannel, aDevice));
 
     if (it != mHDData->mAttachments.end())
     {
-        ComObjPtr <HardDisk2> hd = (*it)->hardDisk();
+        ComObjPtr<HardDisk> hd = (*it)->hardDisk();
         AutoReadLock hdLock (hd);
         return setError (VBOX_E_OBJECT_IN_USE,
             tr ("Hard disk '%ls' is already attached to device slot %d on "
@@ -1971,8 +1971,8 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
     Guid id = aId;
 
     /* find a hard disk by UUID */
-    ComObjPtr <HardDisk2> hd;
-    rc = mParent->findHardDisk2 (&id, NULL, true /* aSetError */, &hd);
+    ComObjPtr<HardDisk> hd;
+    rc = mParent->findHardDisk(&id, NULL, true /* aSetError */, &hd);
     CheckComRCReturnRC (rc);
 
     AutoCaller hdCaller (hd);
@@ -1982,7 +1982,7 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
 
     if (std::find_if (mHDData->mAttachments.begin(),
                       mHDData->mAttachments.end(),
-                      HardDisk2Attachment::RefersTo (hd)) !=
+                      HardDiskAttachment::RefersTo (hd)) !=
             mHDData->mAttachments.end())
     {
         return setError (VBOX_E_OBJECT_IN_USE,
@@ -2005,7 +2005,7 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
              * be restored */
             HDData::AttachmentList::const_iterator it =
                 std::find_if (oldAtts.begin(), oldAtts.end(),
-                              HardDisk2Attachment::RefersTo (hd));
+                              HardDiskAttachment::RefersTo (hd));
             if (it != oldAtts.end())
             {
                 AssertReturn (!indirect, E_FAIL);
@@ -2059,7 +2059,7 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
                          * cannot attach the same hard disk twice) */
                         if (std::find_if (mHDData->mAttachments.begin(),
                                           mHDData->mAttachments.end(),
-                                          HardDisk2Attachment::RefersTo (
+                                          HardDiskAttachment::RefersTo (
                                               (*it)->hardDisk())) !=
                                 mHDData->mAttachments.end())
                             continue;
@@ -2098,7 +2098,7 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
                     /* not implicit, doesn't require association with this VM */
                     indirect = false;
                     associate = false;
-                    /* go right to the HardDisk2Attachment creation */
+                    /* go right to the HardDiskAttachment creation */
                     break;
                 }
             }
@@ -2106,8 +2106,8 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
             /* then, search through snapshots for the best diff in the given
              * hard disk's chain to base the new diff on */
 
-            ComObjPtr <HardDisk2> base;
-            ComObjPtr <Snapshot> snap = mData->mCurrentSnapshot;
+            ComObjPtr<HardDisk> base;
+            ComObjPtr<Snapshot> snap = mData->mCurrentSnapshot;
             while (snap)
             {
                 AutoReadLock snapLock (snap);
@@ -2165,7 +2165,7 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
             }
         }
 
-        ComObjPtr <HardDisk2> diff;
+        ComObjPtr<HardDisk> diff;
         diff.createObject();
         rc = diff->init (mParent, hd->preferredDiffFormat(),
                          BstrFmt ("%ls"RTPATH_SLASH_STR,
@@ -2204,7 +2204,7 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
     }
     while (0);
 
-    ComObjPtr <HardDisk2Attachment> attachment;
+    ComObjPtr<HardDiskAttachment> attachment;
     attachment.createObject();
     rc = attachment->init (hd, aBus, aChannel, aDevice, indirect);
     CheckComRCReturnRC (rc);
@@ -2225,8 +2225,8 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
     return rc;
 }
 
-STDMETHODIMP Machine::GetHardDisk2 (StorageBus_T aBus, LONG aChannel,
-                                    LONG aDevice, IHardDisk2 **aHardDisk)
+STDMETHODIMP Machine::GetHardDisk(StorageBus_T aBus, LONG aChannel,
+                                  LONG aDevice, IHardDisk **aHardDisk)
 {
     CheckComArgExpr (aBus, aBus != StorageBus_Null);
     CheckComArgOutPointerValid (aHardDisk);
@@ -2241,7 +2241,7 @@ STDMETHODIMP Machine::GetHardDisk2 (StorageBus_T aBus, LONG aChannel,
     HDData::AttachmentList::const_iterator it =
         std::find_if (mHDData->mAttachments.begin(),
                       mHDData->mAttachments.end(),
-                      HardDisk2Attachment::EqualsTo (aBus, aChannel, aDevice));
+                      HardDiskAttachment::EqualsTo (aBus, aChannel, aDevice));
 
     if (it == mHDData->mAttachments.end())
         return setError (VBOX_E_OBJECT_NOT_FOUND,
@@ -2253,8 +2253,8 @@ STDMETHODIMP Machine::GetHardDisk2 (StorageBus_T aBus, LONG aChannel,
     return S_OK;
 }
 
-STDMETHODIMP Machine::DetachHardDisk2 (StorageBus_T aBus, LONG aChannel,
-                                       LONG aDevice)
+STDMETHODIMP Machine::DetachHardDisk(StorageBus_T aBus, LONG aChannel,
+                                     LONG aDevice)
 {
     CheckComArgExpr (aBus, aBus != StorageBus_Null);
 
@@ -2275,21 +2275,21 @@ STDMETHODIMP Machine::DetachHardDisk2 (StorageBus_T aBus, LONG aChannel,
     HDData::AttachmentList::const_iterator it =
         std::find_if (mHDData->mAttachments.begin(),
                       mHDData->mAttachments.end(),
-                      HardDisk2Attachment::EqualsTo (aBus, aChannel, aDevice));
+                      HardDiskAttachment::EqualsTo (aBus, aChannel, aDevice));
 
     if (it == mHDData->mAttachments.end())
         return setError (VBOX_E_OBJECT_NOT_FOUND,
             tr ("No hard disk attached to device slot %d on channel %d of bus %d"),
             aDevice, aChannel, aBus);
 
-    ComObjPtr <HardDisk2Attachment> hda = *it;
-    ComObjPtr <HardDisk2> hd = hda->hardDisk();
+    ComObjPtr<HardDiskAttachment> hda = *it;
+    ComObjPtr<HardDisk> hd = hda->hardDisk();
 
     if (hda->isImplicit())
     {
         /* attempt to implicitly delete the implicitly created diff */
 
-        /// @todo move the implicit flag from HardDisk2Attachment to HardDisk2
+        /// @todo move the implicit flag from HardDiskAttachment to HardDisk
         /// and forbid any hard disk operation when it is implicit. Or maybe
         /// a special media state for it to make it even more simple.
 
@@ -5331,8 +5331,8 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
         LONG device = (*it).value <LONG> ("device");
 
         /* find a hard disk by UUID */
-        ComObjPtr <HardDisk2> hd;
-        rc = mParent->findHardDisk2 (&uuid, NULL, true /* aDoSetError */, &hd);
+        ComObjPtr<HardDisk> hd;
+        rc = mParent->findHardDisk(&uuid, NULL, true /* aDoSetError */, &hd);
         CheckComRCReturnRC (rc);
 
         AutoWriteLock hdLock (hd);
@@ -5366,7 +5366,7 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
 
         if (std::find_if (mHDData->mAttachments.begin(),
                           mHDData->mAttachments.end(),
-                          HardDisk2Attachment::RefersTo (hd)) !=
+                          HardDiskAttachment::RefersTo (hd)) !=
                 mHDData->mAttachments.end())
         {
             return setError (E_FAIL,
@@ -5385,7 +5385,7 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
         else
             AssertFailedReturn (E_FAIL);
 
-        ComObjPtr <HardDisk2Attachment> attachment;
+        ComObjPtr<HardDiskAttachment> attachment;
         attachment.createObject();
         rc = attachment->init (hd, bus, channel, device);
         CheckComRCBreakRC (rc);
@@ -6667,7 +6667,7 @@ HRESULT Machine::saveHardDisks (settings::Key &aNode)
          it != mHDData->mAttachments.end();
          ++ it)
     {
-        ComObjPtr <HardDisk2Attachment> att = *it;
+        ComObjPtr <HardDiskAttachment> att = *it;
 
         Key hdNode = aNode.appendKey ("HardDiskAttachment");
 
@@ -6828,7 +6828,7 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
 
     HRESULT rc = S_OK;
 
-    typedef std::list <ComObjPtr <HardDisk2> > LockedMedia;
+    typedef std::list< ComObjPtr<HardDisk> > LockedMedia;
     LockedMedia lockedMedia;
 
     try
@@ -6842,8 +6842,8 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
                  it != mHDData->mAttachments.end();
                  ++ it)
             {
-                ComObjPtr <HardDisk2Attachment> hda = *it;
-                ComObjPtr <HardDisk2> hd = hda->hardDisk();
+                ComObjPtr<HardDiskAttachment> hda = *it;
+                ComObjPtr<HardDisk> hd = hda->hardDisk();
 
                 rc = hd->LockRead (NULL);
                 CheckComRCThrowRC (rc);
@@ -6865,8 +6865,8 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
         for (HDData::AttachmentList::const_iterator
              it = atts.begin(); it != atts.end(); ++ it)
         {
-            ComObjPtr <HardDisk2Attachment> hda = *it;
-            ComObjPtr <HardDisk2> hd = hda->hardDisk();
+            ComObjPtr<HardDiskAttachment> hda = *it;
+            ComObjPtr<HardDisk> hd = hda->hardDisk();
 
             /* type cannot be changed while attached => no need to lock */
             if (hd->type() != HardDiskType_Normal)
@@ -6891,7 +6891,7 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
                          hd->root()->name().raw()));
             CheckComRCThrowRC (rc);
 
-            ComObjPtr <HardDisk2> diff;
+            ComObjPtr<HardDisk> diff;
             diff.createObject();
             rc = diff->init (mParent, hd->preferredDiffFormat(),
                              BstrFmt ("%ls"RTPATH_SLASH_STR,
@@ -6911,7 +6911,7 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
             AssertComRCThrowRC (rc);
 
             /* add a new attachment */
-            ComObjPtr <HardDisk2Attachment> attachment;
+            ComObjPtr<HardDiskAttachment> attachment;
             attachment.createObject();
             rc = attachment->init (diff, hda->bus(), hda->channel(),
                                    hda->device(), true /* aImplicit */);
@@ -6947,10 +6947,10 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
 
 /**
  * Deletes implicit differencing hard disks created either by
- * #createImplicitDiffs() or by #AttachHardDisk2() and rolls back mHDData.
+ * #createImplicitDiffs() or by #AttachHardDisk() and rolls back mHDData.
  *
- * Note that to delete hard disks created by #AttachHardDisk2() this method is
- * called from #fixupHardDisks2() when the changes are rolled back.
+ * Note that to delete hard disks created by #AttachHardDisk() this method is
+ * called from #fixupHardDisks() when the changes are rolled back.
  *
  * @note Locks this object for writing.
  */
@@ -6975,7 +6975,7 @@ HRESULT Machine::deleteImplicitDiffs()
             it = mHDData->mAttachments.begin();
          it != mHDData->mAttachments.end(); ++ it)
     {
-        ComObjPtr <HardDisk2> hd = (*it)->hardDisk();
+        ComObjPtr<HardDisk> hd = (*it)->hardDisk();
 
         if ((*it)->isImplicit())
         {
@@ -6988,8 +6988,8 @@ HRESULT Machine::deleteImplicitDiffs()
 
         /* was this hard disk attached before? */
         HDData::AttachmentList::const_iterator oldIt =
-            std::find_if (oldAtts.begin(), oldAtts.end(),
-                          HardDisk2Attachment::RefersTo (hd));
+            std::find_if(oldAtts.begin(), oldAtts.end(),
+                         HardDiskAttachment::RefersTo (hd));
         if (oldIt == oldAtts.end())
         {
             /* no: de-associate */
@@ -7023,7 +7023,7 @@ HRESULT Machine::deleteImplicitDiffs()
                 it = implicitAtts.begin();
              it != implicitAtts.end(); ++ it)
         {
-            ComObjPtr <HardDisk2> hd = (*it)->hardDisk();
+            ComObjPtr<HardDisk> hd = (*it)->hardDisk();
 
             mrc = hd->deleteStorageAndWait();
         }
@@ -7059,7 +7059,7 @@ HRESULT Machine::deleteImplicitDiffs()
  *
  * @note Locks this object for writing!
  */
-void Machine::fixupHardDisks2 (bool aCommit, bool aOnline /*= false*/)
+void Machine::fixupHardDisks(bool aCommit, bool aOnline /*= false*/)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -7082,7 +7082,7 @@ void Machine::fixupHardDisks2 (bool aCommit, bool aOnline /*= false*/)
              it = mHDData->mAttachments.begin();
              it != mHDData->mAttachments.end(); ++ it)
         {
-            ComObjPtr <HardDisk2> hd = (*it)->hardDisk();
+            ComObjPtr<HardDisk> hd = (*it)->hardDisk();
 
             if ((*it)->isImplicit())
             {
@@ -7097,7 +7097,7 @@ void Machine::fixupHardDisks2 (bool aCommit, bool aOnline /*= false*/)
                     /* also, relock the old hard disk which is a base for the
                      * new diff for reading if the VM is online */
 
-                    ComObjPtr <HardDisk2> parent = hd->parent();
+                    ComObjPtr<HardDisk> parent = hd->parent();
                     /* make the relock atomic */
                     AutoWriteLock parentLock (parent);
                     rc = parent->UnlockWrite (NULL);
@@ -7112,7 +7112,7 @@ void Machine::fixupHardDisks2 (bool aCommit, bool aOnline /*= false*/)
             /* was this hard disk attached before? */
             HDData::AttachmentList::iterator oldIt =
                 std::find_if (oldAtts.begin(), oldAtts.end(),
-                              HardDisk2Attachment::RefersTo (hd));
+                              HardDiskAttachment::RefersTo (hd));
             if (oldIt != oldAtts.end())
             {
                 /* yes: remove from old to avoid de-association */
@@ -7125,7 +7125,7 @@ void Machine::fixupHardDisks2 (bool aCommit, bool aOnline /*= false*/)
         for (HDData::AttachmentList::const_iterator it = oldAtts.begin();
              it != oldAtts.end(); ++ it)
         {
-            ComObjPtr <HardDisk2> hd = (*it)->hardDisk();
+            ComObjPtr<HardDisk> hd = (*it)->hardDisk();
 
             /* now de-associate from the current machine state */
             rc = hd->detachFrom (mData->mUuid);
@@ -7375,7 +7375,7 @@ void Machine::rollback (bool aNotify)
     mHWData.rollback();
 
     if (mHDData.isBackedUp())
-        fixupHardDisks2 (false /* aCommit */);
+        fixupHardDisks(false /* aCommit */);
 
     /* check for changes in child objects */
 
@@ -7480,7 +7480,7 @@ void Machine::commit()
     mHWData.commit();
 
     if (mHDData.isBackedUp())
-        fixupHardDisks2 (true /* aCommit */);
+        fixupHardDisks(true /* aCommit */);
 
     mBIOSSettings->commit();
 #ifdef VBOX_WITH_VRDP
@@ -7504,7 +7504,7 @@ void Machine::commit()
         /* attach new data to the primary machine and reshare it */
         mPeer->mUserData.attach (mUserData);
         mPeer->mHWData.attach (mHWData);
-        /* mHDData is reshared by fixupHardDisks2 */
+        /* mHDData is reshared by fixupHardDisks */
         // mPeer->mHDData.attach (mHDData);
         Assert (mPeer->mHDData.data() == mHDData.data());
     }
@@ -8481,7 +8481,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
          it != mHDData->mAttachments.end();
          ++ it)
     {
-        ComObjPtr <HardDisk2> hd = (*it)->hardDisk();
+        ComObjPtr <HardDisk> hd = (*it)->hardDisk();
         AutoReadLock hdLock (hd);
         if (hd->type() == HardDiskType_Writethrough)
             return setError (E_FAIL,
@@ -9498,7 +9498,7 @@ HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
         bool online = Global::IsOnline (mSnapshotData.mLastState);
 
         /* associate old hard disks with the snapshot and do locking/unlocking*/
-        fixupHardDisks2 (true /* aCommit */, online);
+        fixupHardDisks(true /* aCommit */, online);
 
         /* inform callbacks */
         mParent->onSnapshotTaken (mData->mUuid,
@@ -9513,7 +9513,7 @@ HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
 
         /* delete all differencing hard disks created (this will also attach
          * their parents back by rolling back mHDData) */
-        fixupHardDisks2 (false /* aCommit */);
+        fixupHardDisks(false /* aCommit */);
 
         /* delete the saved state file (it might have been already created) */
         if (mSnapshotData.mSnapshot->stateFilePath())
@@ -9641,24 +9641,24 @@ struct HardDiskDiscardRec
 {
     HardDiskDiscardRec() : chain (NULL) {}
 
-    HardDiskDiscardRec (const ComObjPtr <HardDisk2> &aHd,
-                HardDisk2::MergeChain *aChain = NULL)
+    HardDiskDiscardRec (const ComObjPtr<HardDisk> &aHd,
+                HardDisk::MergeChain *aChain = NULL)
         : hd (aHd), chain (aChain) {}
 
-    HardDiskDiscardRec (const ComObjPtr <HardDisk2> &aHd,
-                        HardDisk2::MergeChain *aChain,
-                        const ComObjPtr <HardDisk2> &aReplaceHd,
-                        const ComObjPtr <HardDisk2Attachment> &aReplaceHda,
+    HardDiskDiscardRec (const ComObjPtr<HardDisk> &aHd,
+                        HardDisk::MergeChain *aChain,
+                        const ComObjPtr<HardDisk> &aReplaceHd,
+                        const ComObjPtr<HardDiskAttachment> &aReplaceHda,
                         const Guid &aSnapshotId)
         : hd (aHd), chain (aChain)
         , replaceHd (aReplaceHd), replaceHda (aReplaceHda)
         , snapshotId (aSnapshotId) {}
 
-    ComObjPtr <HardDisk2> hd;
-    HardDisk2::MergeChain *chain;
+    ComObjPtr<HardDisk> hd;
+    HardDisk::MergeChain *chain;
     /* these are for the replace hard disk case: */
-    ComObjPtr <HardDisk2> replaceHd;
-    ComObjPtr <HardDisk2Attachment> replaceHda;
+    ComObjPtr<HardDisk> replaceHd;
+    ComObjPtr<HardDiskAttachment> replaceHda;
     Guid snapshotId;
 };
 
@@ -9728,10 +9728,10 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
              it != sm->mHDData->mAttachments.end();
              ++ it)
         {
-            ComObjPtr <HardDisk2Attachment> hda = *it;
-            ComObjPtr <HardDisk2> hd = hda->hardDisk();
+            ComObjPtr<HardDiskAttachment> hda = *it;
+            ComObjPtr<HardDisk> hd = hda->hardDisk();
 
-            /* HardDisk2::prepareDiscard() reqiuires a write lock */
+            /* HardDisk::prepareDiscard() reqiuires a write lock */
             AutoWriteLock hdLock (hd);
 
             if (hd->type() != HardDiskType_Normal)
@@ -9748,7 +9748,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                 continue;
             }
 
-            HardDisk2::MergeChain *chain = NULL;
+            HardDisk::MergeChain *chain = NULL;
 
             /* needs to be discarded (merged with the child if any), check
              * prerequisites */
@@ -9765,12 +9765,12 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                  * because it will be going to delete the child) */
 
                 /* The below assert would be nice but I don't want to move
-                 * HardDisk2::MergeChain to the header just for that
+                 * HardDisk::MergeChain to the header just for that
                  * Assert (!chain->isForward()); */
 
                 Assert (hd->children().size() == 1);
 
-                ComObjPtr <HardDisk2> replaceHd = hd->children().front();
+                ComObjPtr<HardDisk> replaceHd = hd->children().front();
 
                 Assert (replaceHd->backRefs().front().machineId == mData->mUuid);
                 Assert (replaceHd->backRefs().front().snapshotIds.size() <= 1);
@@ -9795,7 +9795,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                     /* in current state */
                     it = std::find_if (mHDData->mAttachments.begin(),
                                        mHDData->mAttachments.end(),
-                                       HardDisk2Attachment::RefersTo (replaceHd));
+                                       HardDiskAttachment::RefersTo (replaceHd));
                     AssertBreak (it != mHDData->mAttachments.end());
                 }
                 else
@@ -9810,7 +9810,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                         snapshot->data().mMachine->mHDData->mAttachments;
                     it = std::find_if (snapAtts.begin(),
                                        snapAtts.end(),
-                                       HardDisk2Attachment::RefersTo (replaceHd));
+                                       HardDiskAttachment::RefersTo (replaceHd));
                     AssertBreak (it != snapAtts.end());
                 }
 
@@ -10170,13 +10170,13 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
         /* grab differencing hard disks from the old attachments that will
          * become unused and need to be auto-deleted */
 
-        std::list <ComObjPtr <HardDisk2> > diffs;
+        std::list< ComObjPtr<HardDisk> > diffs;
 
         for (HDData::AttachmentList::const_iterator
              it = mHDData.backedUpData()->mAttachments.begin();
              it != mHDData.backedUpData()->mAttachments.end(); ++ it)
         {
-            ComObjPtr <HardDisk2> hd = (*it)->hardDisk();
+            ComObjPtr<HardDisk> hd = (*it)->hardDisk();
 
             /* while the hard disk is attached, the number of children or the
              * parent cannot change, so no lock */
@@ -10195,7 +10195,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
             /* delete the unused diffs now (and uninit them) because discard
              * may fail otherwise (too many children of the hard disk to be
              * discarded) */
-            for (std::list <ComObjPtr <HardDisk2> >::const_iterator
+            for (std::list< ComObjPtr<HardDisk> >::const_iterator
                  it = diffs.begin(); it != diffs.end(); ++ it)
             {
                 /// @todo for now, we ignore errors since we've already
@@ -10272,7 +10272,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
         if (SUCCEEDED (rc))
         {
             /* now, delete the unused diffs (only on success!) and uninit them*/
-            for (std::list <ComObjPtr <HardDisk2> >::const_iterator
+            for (std::list< ComObjPtr<HardDisk> >::const_iterator
                  it = diffs.begin(); it != diffs.end(); ++ it)
             {
                 /// @todo for now, we ignore errors since we've already
@@ -10377,7 +10377,7 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
                  mHDData->mAttachments.begin();
              it != mHDData->mAttachments.end(); ++ it)
         {
-            ComObjPtr <HardDisk2> hd = (*it)->hardDisk();
+            ComObjPtr<HardDisk> hd = (*it)->hardDisk();
 
             bool first = true;
 

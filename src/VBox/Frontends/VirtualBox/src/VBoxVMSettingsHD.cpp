@@ -76,7 +76,7 @@ DiskValue::DiskValue (const QUuid &aId)
         return;
 
     VBoxMedium medium = vboxGlobal().getMedium (
-        CMedium (vboxGlobal().virtualBox().GetHardDisk2 (aId)));
+        CMedium (vboxGlobal().virtualBox().GetHardDisk(aId)));
     medium.refresh();
     bool noDiffs = !HDSettings::instance()->showDiffs();
     name = medium.details (noDiffs);
@@ -661,10 +661,10 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
     onShowDiffsCheckToggled (mShowDiffsCheck->checkState());
 
     /* Load attachments list */
-    CHardDisk2AttachmentVector vec = mMachine.GetHardDisk2Attachments();
+    CHardDiskAttachmentVector vec = mMachine.GetHardDiskAttachments();
     for (int i = 0; i < vec.size(); ++ i)
     {
-        CHardDisk2Attachment hda = vec [i];
+        CHardDiskAttachment hda = vec [i];
         SlotValue slot (hda.GetBus(), hda.GetChannel(), hda.GetDevice());
         DiskValue disk (hda.GetHardDisk().GetId());
         mModel->addItem (slot, disk);
@@ -686,11 +686,11 @@ void VBoxVMSettingsHD::putBackTo()
         ctl.SetEnabled (mSATACheck->isChecked());
 
     /* Detach all attached Hard Disks */
-    CHardDisk2AttachmentVector vec = mMachine.GetHardDisk2Attachments();
+    CHardDiskAttachmentVector vec = mMachine.GetHardDiskAttachments();
     for (int i = 0; i < vec.size(); ++ i)
     {
-        CHardDisk2Attachment hda = vec [i];
-        mMachine.DetachHardDisk2 (hda.GetBus(), hda.GetChannel(), hda.GetDevice());
+        CHardDiskAttachment hda = vec [i];
+        mMachine.DetachHardDisk(hda.GetBus(), hda.GetChannel(), hda.GetDevice());
 
         /* [dsen] check this */
         if (!mMachine.isOk())
@@ -707,14 +707,14 @@ void VBoxVMSettingsHD::putBackTo()
         if (list [i].slot.bus == KStorageBus_SATA)
             maxSATAPort = maxSATAPort < (list [i].slot.channel + 1) ?
                           (list [i].slot.channel + 1) : maxSATAPort;
-        mMachine.AttachHardDisk2 (list [i].disk.id,
+        mMachine.AttachHardDisk(list [i].disk.id,
             list [i].slot.bus, list [i].slot.channel, list [i].slot.device);
 
         /* [dsen] check this */
         if (!mMachine.isOk())
             vboxProblem().cannotAttachHardDisk (this, mMachine,
                 vboxGlobal().getMedium (CMedium (vboxGlobal().virtualBox()
-                .GetHardDisk2 (list [i].disk.id))).location(),
+                .GetHardDisk(list [i].disk.id))).location(),
                 list [i].slot.bus, list [i].slot.channel, list [i].slot.device);
     }
 
