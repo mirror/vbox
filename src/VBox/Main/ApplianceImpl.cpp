@@ -2380,7 +2380,7 @@ std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::findByType(V
          ++it)
     {
         if (it->type == aType)
-            vsd.push_back(pThis);
+            vsd.push_back(&(*it));
     }
 
     return vsd;
