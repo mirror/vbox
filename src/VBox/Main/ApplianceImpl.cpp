@@ -237,7 +237,6 @@ STDMETHODIMP VirtualBox::CreateAppliance(IAppliance** anAppliance)
     ComObjPtr<Appliance> appliance;
     appliance.createObject();
     rc = appliance->init(this);
-//     ComAssertComRCThrowRC(rc);
 
     if (SUCCEEDED(rc))
         appliance.queryInterfaceTo(anAppliance);

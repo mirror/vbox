@@ -430,11 +430,11 @@ int handleList(HandlerArg *a)
     else
     if (strcmp(a->argv[0], "dvds") == 0)
     {
-        com::SafeIfaceArray<IDVDImage2> dvds;
+        com::SafeIfaceArray<IDVDImage> dvds;
         CHECK_ERROR(a->virtualBox, COMGETTER(DVDImages)(ComSafeArrayAsOutParam(dvds)));
         for (size_t i = 0; i < dvds.size(); ++ i)
         {
-            ComPtr<IDVDImage2> dvdImage = dvds[i];
+            ComPtr<IDVDImage> dvdImage = dvds[i];
             Guid uuid;
             dvdImage->COMGETTER(Id)(uuid.asOutParam());
             RTPrintf("UUID:       %s\n", uuid.toString().raw());

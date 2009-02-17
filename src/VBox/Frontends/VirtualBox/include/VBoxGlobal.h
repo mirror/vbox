@@ -146,7 +146,7 @@ public:
     }
 
     const CHardDisk2 &hardDisk() const { return mHardDisk; }
-    const CDVDImage2 &dvdImage() const { return mDVDImage; }
+    const CDVDImage &dvdImage() const { return mDVDImage; }
     const CFloppyImage2 &floppyImage() const { return mFloppyImage; }
 
     QUuid id() const { return mId; }
@@ -246,7 +246,7 @@ private:
     COMResult mResult;
 
     CHardDisk2 mHardDisk;
-    CDVDImage2 mDVDImage;
+    CDVDImage mDVDImage;
     CFloppyImage2 mFloppyImage;
 
     QUuid mId;

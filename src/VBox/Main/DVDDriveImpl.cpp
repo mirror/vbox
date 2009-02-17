@@ -265,9 +265,9 @@ STDMETHODIMP DVDDrive::MountImage (IN_GUID aImageId)
     /* Our lifetime is bound to mParent's lifetime, so we don't add caller.
      * We also don't lock mParent since its mParent field is const. */
 
-    ComObjPtr <DVDImage2> image;
-    rc = mParent->virtualBox()->findDVDImage2 (&imageId, NULL,
-                                               true /* aSetError */, &image);
+    ComObjPtr<DVDImage> image;
+    rc = mParent->virtualBox()->findDVDImage(&imageId, NULL,
+                                             true /* aSetError */, &image);
 
     if (SUCCEEDED (rc))
     {
@@ -369,7 +369,7 @@ STDMETHODIMP DVDDrive::Unmount()
     return S_OK;
 }
 
-STDMETHODIMP DVDDrive::GetImage (IDVDImage2 **aDVDImage)
+STDMETHODIMP DVDDrive::GetImage (IDVDImage **aDVDImage)
 {
     CheckComArgOutPointerValid(aDVDImage);
 

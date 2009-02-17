@@ -1118,7 +1118,7 @@ int handleModifyVM(HandlerArg *a)
             {
                 /* first assume it's a UUID */
                 Guid uuid(dvd);
-                ComPtr<IDVDImage2> dvdImage;
+                ComPtr<IDVDImage> dvdImage;
                 rc = a->virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
                 if (FAILED(rc) || !dvdImage)
                 {

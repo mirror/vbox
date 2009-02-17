@@ -1394,7 +1394,7 @@
       </desc>
     </attribute>
 
-    <attribute name="DVDImages" type="IDVDImage2" readonly="yes" safearray="yes">
+    <attribute name="DVDImages" type="IDVDImage" readonly="yes" safearray="yes">
       <desc>
         Array of CD/DVD image objects registered with this VirtualBox instance.
       </desc>
@@ -1939,7 +1939,7 @@
           generate a new UUID.
         </desc>
       </param>
-      <param name="image" type="IDVDImage2" dir="return">
+      <param name="image" type="IDVDImage" dir="return">
         <desc>Opened CD/DVD image object.</desc>
       </param>
     </method>
@@ -1960,7 +1960,7 @@
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the image to look for.</desc>
       </param>
-      <param name="image" type="IDVDImage2" dir="return">
+      <param name="image" type="IDVDImage" dir="return">
         <desc>Found CD/DVD image object.</desc>
       </param>
     </method>
@@ -1995,7 +1995,7 @@
       <param name="location" type="wstring" dir="in">
         <desc>CD/DVD image file path to look for.</desc>
       </param>
-      <param name="image" type="IDVDImage2" dir="return">
+      <param name="image" type="IDVDImage" dir="return">
         <desc>Found CD/DVD image object.</desc>
       </param>
     </method>
@@ -7722,7 +7722,7 @@
       interface such as:
       <ul>
         <li>IHardDisk2 (virtual hard disks)</li>
-        <li>IDVDImage2 (standard CD/DVD ISO image files)</li>
+        <li>IDVDImage (standard CD/DVD ISO image files)</li>
         <li>IFloppyImage2 (raw floppy image files)</li>
       </ul>
 
@@ -7851,7 +7851,7 @@
         Note that not all media states are applicable to certain media types.
         For example, states <link to="MediaState_NotCreated"/>,
         <link to="MediaState_LockedWrite"/>, <link to="MediaState_Creating"/>,
-        <link to="MediaState_Deleting"/> are meaningless for IDVDImage2 and
+        <link to="MediaState_Deleting"/> are meaningless for IDVDImage and
         IFloppyImage2 media.
       </desc>
     </attribute>
@@ -9276,18 +9276,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <!--
-  // IDVDImage2
+  // IDVDImage
   /////////////////////////////////////////////////////////////////////////
   -->
 
   <interface
-    name="IDVDImage2" extends="IMedium"
-    uuid="1c5165f1-9543-478d-a117-84a1d2317068"
+    name="IDVDImage" extends="IMedium"
+    uuid="b1f90bbb-e8a9-4484-9af1-3638e943f763"
     wsmap="managed"
   >
     <desc>
-      The IDVDImage2 interface represents a medium containing the image
+      The IDVDImage interface represents a medium containing the image
       of a CD or DVD disk in the ISO format.
+
+      This is a subclass of <link to="IMedium" />; see remarks there.
     </desc>
 
   </interface>
@@ -9350,7 +9352,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="getImage">
       <desc>Returns the currently mounted CD/DVD image.</desc>
-      <param name="image" type="IDVDImage2" dir="return"/>
+      <param name="image" type="IDVDImage" dir="return"/>
     </method>
 
     <method name="getHostDrive">

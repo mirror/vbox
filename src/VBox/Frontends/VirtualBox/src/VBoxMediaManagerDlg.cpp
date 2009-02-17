@@ -1126,7 +1126,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
         }
         case VBoxDefs::MediaType_DVD:
         {
-            CDVDImage2 image = item->medium().dvdImage();
+            CDVDImage image = item->medium().dvdImage();
             image.Close();
             result = image;
             break;
@@ -1553,7 +1553,7 @@ void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation,
         }
         case VBoxDefs::MediaType_DVD:
         {
-            CDVDImage2 image = mVBox.OpenDVDImage (aLocation, uuid);
+            CDVDImage image = mVBox.OpenDVDImage (aLocation, uuid);
             if (mVBox.isOk())
             {
                 medium = VBoxMedium (CMedium (image),

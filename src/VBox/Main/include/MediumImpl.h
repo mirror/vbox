@@ -235,32 +235,32 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * The DVDImage2 component class implements the IDVDImage2 interface.
+ * The DVDImage component class implements the IDVDImage interface.
  */
-class ATL_NO_VTABLE DVDImage2
-    : public com::SupportErrorInfoDerived <ImageMediumBase, DVDImage2, IDVDImage2>
-    , public VirtualBoxSupportTranslation <DVDImage2>
-    , public IDVDImage2
+class ATL_NO_VTABLE DVDImage
+    : public com::SupportErrorInfoDerived<ImageMediumBase, DVDImage, IDVDImage>
+    , public VirtualBoxSupportTranslation<DVDImage>
+    , public IDVDImage
 {
 public:
 
     COM_FORWARD_IMedium_TO_BASE (ImageMediumBase)
 
-    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE (DVDImage2)
+    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE (DVDImage)
 
-    DECLARE_NOT_AGGREGATABLE (DVDImage2)
+    DECLARE_NOT_AGGREGATABLE (DVDImage)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP (DVDImage2)
+    BEGIN_COM_MAP (DVDImage)
         COM_INTERFACE_ENTRY (ISupportErrorInfo)
         COM_INTERFACE_ENTRY2 (IMedium, ImageMediumBase)
-        COM_INTERFACE_ENTRY (IDVDImage2)
+        COM_INTERFACE_ENTRY (IDVDImage)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
 
-    DECLARE_EMPTY_CTOR_DTOR (DVDImage2)
+    DECLARE_EMPTY_CTOR_DTOR (DVDImage)
 
     // public initializer/uninitializer for internal purposes only
 
@@ -278,7 +278,7 @@ public:
     void uninit() { protectedUninit(); }
 
     /** For com::SupportErrorInfoImpl. */
-    static const char *ComponentName() { return "DVDImage2"; }
+    static const char *ComponentName() { return "DVDImage"; }
 
 private:
 
