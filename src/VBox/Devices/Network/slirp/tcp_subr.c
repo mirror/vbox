@@ -258,9 +258,7 @@ struct tcpcb *tcp_drop(PNATState pData, struct tcpcb *tp, int err)
 struct tcpcb *
 tcp_close(PNATState pData, register struct tcpcb *tp)
 {
-    register struct tcpiphdr *t;
     struct socket *so = tp->t_socket;
-    register struct mbuf *m;
     struct socket *so_next, *so_prev;
 
     struct tseg_qent *te = NULL;
