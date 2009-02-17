@@ -4122,6 +4122,7 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
             break;
 
         case kIntNetTrunkType_NetFlt:
+        case kIntNetTrunkType_NetTap:
             AssertReturn(pszTrunk, VERR_INVALID_PARAMETER);
             break;
 

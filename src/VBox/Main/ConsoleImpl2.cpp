@@ -1637,8 +1637,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
                 rc = CFGMR3InsertString(pCfg, "Trunk", "vboxnet0");             RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
                 rc = CFGMR3InsertString(pCfg, "Network", "HostInterfaceNetworking-vboxnet0"); RC_CHECK();
+#ifdef RT_OS_WINDOWS
+                /* TODO: set the proper Trunk and Network values, currently the driver uses the first adapter instance */
+                rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetTap); RC_CHECK();
+#else
+                rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
+#endif
                 break;
             }
 
