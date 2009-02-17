@@ -928,7 +928,7 @@ static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
     unsigned i = pMap->cPTs;
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pgmMapClearShadowPDEs(pVM, pMap, iOldPDE);
+    pgmMapClearShadowPDEs(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pMap, iOldPDE);
 #endif
 
     iOldPDE += i;

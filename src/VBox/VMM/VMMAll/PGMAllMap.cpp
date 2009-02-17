@@ -208,6 +208,7 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
 }
 
 
+#ifndef IN_RING0
 /**
  * Sets all PDEs involved with the mapping in the shadow page table.
  *
@@ -312,13 +313,13 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
  * Clears all PDEs involved with the mapping in the shadow page table.
  *
  * @param   pVM         The VM handle.
+ * @param   pShwPageCR3 CR3 root page
  * @param   pMap        Pointer to the mapping in question.
  * @param   iOldPDE     The index of the 32-bit PDE corresponding to the base of the mapping.
  */
-void pgmMapClearShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
+void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE)
 {
-    unsigned i = pMap->cPTs;
-    PGMMODE  enmShadowMode = PGMGetShadowMode(pVM);
+    Assert(pShwPageCR3);
 
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
@@ -327,6 +328,9 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
     if (!pVM->pgm.s.CTX_SUFF(pShwPageCR3))
         return;    /* too early */
 #endif
+
+    unsigned i = pMap->cPTs;
+    PGMMODE  enmShadowMode = PGMGetShadowMode(pVM);
 
     iOldPDE += i;
     while (i-- > 0)
@@ -337,7 +341,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
         {
             case PGMMODE_32_BIT:
             {
-                PX86PD pShw32BitPd = pgmShwGet32BitPDPtr(&pVM->pgm.s);
+                PX86PD pShw32BitPd = (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
                 AssertFatal(pShw32BitPd);
 
                 pShw32BitPd->a[iOldPDE].u   = 0;
@@ -352,8 +356,8 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
 
                 const unsigned iPD = iOldPDE / 256;         /* iOldPDE * 2 / 512; iOldPDE is in 4 MB pages */
                 unsigned iPDE = iOldPDE * 2 % 512;
-                pPdpt     = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
-                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPD << X86_PDPT_SHIFT));
+                pPdpt     = (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
+                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pPdpt, (iPD << X86_PDPT_SHIFT));
                 AssertFatal(pShwPaePd);
 
                 pShwPaePd->a[iPDE].u = 0;
@@ -373,6 +377,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
         }
     }
 }
+#endif /* !IN_RING0 */
 
 /**
  * Apply the hypervisor mappings to the active CR3.
@@ -388,9 +393,13 @@ VMMDECL(int) PGMMapActivateAll(PVM pVM)
     if (pVM->pgm.s.fMappingsFixed)
         return VINF_SUCCESS;
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#ifdef IN_RING0
+    AssertFailed();
+    return VERR_INTERNAL_ERROR;
+#else
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-#endif
+# endif
 
     /*
      * Iterate mappings.
@@ -401,8 +410,8 @@ VMMDECL(int) PGMMapActivateAll(PVM pVM)
 
         pgmMapSetShadowPDEs(pVM, pCur, iPDE);
     }
-
     return VINF_SUCCESS;
+#endif /* IN_RING0 */
 }
 
 /**
@@ -419,9 +428,13 @@ VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
     if (pVM->pgm.s.fMappingsFixed)
         return VINF_SUCCESS;
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#ifdef IN_RING0
+    AssertFailed();
+    return VERR_INTERNAL_ERROR;
+#else
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-#endif
+# endif
 
     /*
      * Iterate mappings.
@@ -430,7 +443,45 @@ VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
     {
         unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
 
-        pgmMapClearShadowPDEs(pVM, pCur, iPDE);
+        pgmMapClearShadowPDEs(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pCur, iPDE);
     }
     return VINF_SUCCESS;
+#endif /* IN_RING0 */
+}
+
+
+/**
+ * Remove the hypervisor mappings from the specified CR3
+ *
+ * @returns VBox status.
+ * @param   pVM         The virtual machine.
+ * @param   pShwPageCR3 CR3 root page
+ */
+int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
+{
+    /*
+     * Can skip this if mappings are safely fixed.
+     */
+    if (pVM->pgm.s.fMappingsFixed)
+        return VINF_SUCCESS;
+
+#ifdef IN_RING0
+    AssertFailed();
+    return VERR_INTERNAL_ERROR;
+#else
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+# endif
+
+    /*
+     * Iterate mappings.
+     */
+    for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
+    {
+        unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
+
+        pgmMapClearShadowPDEs(pVM, pShwPageCR3, pCur, iPDE);
+    }
+    return VINF_SUCCESS;
+#endif /* IN_RING0 */
 }

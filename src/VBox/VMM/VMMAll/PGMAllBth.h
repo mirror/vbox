@@ -4632,32 +4632,13 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     /*
      * Update the shadow root page as well since that's not fixed.
      */
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
-    {
-        /* Remove the hypervisor mappings from the shadow page table. */
-        PGMMapDeactivateAll(pVM);
-
-        /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
-        /** @todo Coordinate this better with the pool. */
-        if (pVM->pgm.s.CTX_SUFF(pShwPageCR3)->enmKind != PGMPOOLKIND_FREE)
-            pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
-        pVM->pgm.s.pShwPageCR3R3 = 0;
-        pVM->pgm.s.pShwPageCR3RC = 0;
-        pVM->pgm.s.pShwPageCR3R0 = 0;
-        pVM->pgm.s.pShwRootR3    = 0;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-        pVM->pgm.s.pShwRootR0    = 0;
-#  endif
-        pVM->pgm.s.HCPhysShwCR3  = 0;
-        pVM->pgm.s.iShwUser      = 0;
-        pVM->pgm.s.iShwUserTable = 0;
-    }
+    PPGMPOOL     pPool             = pVM->pgm.s.CTX_SUFF(pPool);
+    PPGMPOOLPAGE pOldShwPageCR3    = pVM->pgm.s.CTX_SUFF(pShwPageCR3);
+    uint32_t     iOldShwUserTable  = pVM->pgm.s.iShwUserTable;
+    uint32_t     iOldShwUser       = pVM->pgm.s.iShwUser;
 
     Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
-    pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
-    pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
-    rc = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    rc = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
     if (rc == VERR_PGM_POOL_FLUSHED)
     {
         Log(("MapCR3: PGM pool flushed -> signal sync cr3\n"));
@@ -4665,6 +4646,8 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         return VINF_PGM_SYNC_CR3;
     }
     AssertRCReturn(rc, rc);
+    pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
+    pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
 #  ifdef IN_RING0
     pVM->pgm.s.pShwPageCR3R3 = MMHyperCCToR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
     pVM->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
@@ -4682,8 +4665,24 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  endif
     pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
 
+#  ifndef PGM_WITHOUT_MAPPINGS
     /* Apply all hypervisor mappings to the new CR3. */
     rc = PGMMapActivateAll(pVM);
+    AssertRC(rc);
+#  endif
+    /* Clean up the old CR3 root. */
+    if (pOldShwPageCR3)
+    {
+#  ifndef PGM_WITHOUT_MAPPINGS
+        /* Remove the hypervisor mappings from the shadow page table. */
+        pgmMapDeactivateCR3(pVM, pOldShwPageCR3);
+#  endif
+        /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
+        /** @todo Coordinate this better with the pool. */
+        if (pOldShwPageCR3->enmKind != PGMPOOLKIND_FREE)
+            pgmPoolFreeByPage(pPool, pOldShwPageCR3, iOldShwUser, iOldShwUserTable);
+    }
+
 # endif
 #endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
@@ -4753,9 +4752,9 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
     /* nothing to do */
 #endif
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#if defined(VBOX_WITH_PGMPOOL_PAGING_ONLY) && !defined(IN_RC) /* In RC we rely on MapCR3 to do the shadow part for us at a safe time */
     /* Update shadow paging info. */
-# if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT \
+# if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT  \
            || PGM_SHW_TYPE == PGM_TYPE_PAE    \
            || PGM_SHW_TYPE == PGM_TYPE_AMD64) \
        && (   PGM_GST_TYPE != PGM_TYPE_REAL   \
@@ -4763,9 +4762,10 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
 
     Assert(!HWACCMIsNestedPagingActive(pVM));
 
-    /* @todo: dangerous as it's the current CR3! */
+# ifndef PGM_WITHOUT_MAPPINGS
     /* Remove the hypervisor mappings from the shadow page table. */
     PGMMapDeactivateAll(pVM);
+# endif
 
     pVM->pgm.s.pShwRootR3 = 0;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -4782,7 +4782,7 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
         pVM->pgm.s.iShwUserTable = 0;
     }
 # endif
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY && !IN_RC*/
 
     return rc;
 }
