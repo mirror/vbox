@@ -744,8 +744,6 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     bool f;
 
-    __asm {int 3};
-
     /*
      * Init the static parts.
      */
