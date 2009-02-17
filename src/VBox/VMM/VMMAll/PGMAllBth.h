@@ -4668,8 +4668,14 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  ifndef PGM_WITHOUT_MAPPINGS
     /* Apply all hypervisor mappings to the new CR3. */
     rc = PGMMapActivateAll(pVM);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 #  endif
+
+#  ifdef IN_RC
+    /* Update the current CR3. */
+    ASMSetCR3(pVM->pgm.s.HCPhysShwCR3);
+#  endif
+
     /* Clean up the old CR3 root. */
     if (pOldShwPageCR3)
     {
