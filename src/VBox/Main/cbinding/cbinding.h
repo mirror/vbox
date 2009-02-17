@@ -3,9 +3,6 @@
  * C binding for XPCOM.
  */
 
-#ifndef ___cbinding_h
-#define ___cbinding_h
-
 /*
  * Copyright (C) 2009 Sun Microsystems, Inc.
  *
@@ -21,6 +18,13 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
+
+#ifndef ___VBoxXPCOMC_cbinding_h
+#define ___VBoxXPCOMC_cbinding_h
+
+#ifndef MOZ_UNICODE
+# define MOZ_UNICODE
+#endif
 
 #ifdef __cplusplus
 # include "VirtualBox_XPCOM.h"
@@ -105,5 +109,5 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 }
 #endif
 
-#endif /* !___cbinding_h */
+#endif /* !___VBoxXPCOMC_cbinding_h */
 
