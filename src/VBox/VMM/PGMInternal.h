@@ -56,7 +56,7 @@
 /*
  * Enable to use the PGM pool for all levels in the paging chain in all paging modes.
  */
-//#define VBOX_WITH_PGMPOOL_PAGING_ONLY
+#define VBOX_WITH_PGMPOOL_PAGING_ONLY
 
 /**
  * Solve page is out of sync issues inside Guest Context (in PGMGC.cpp).
@@ -2174,10 +2174,11 @@ typedef struct PGM
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     uint32_t                        u32Alignment;
 #endif
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /** The physical address of the currently monitored guest CR3 page.
      * When this value is NIL_RTGCPHYS no page is being monitored. */
     RTGCPHYS                        GCPhysGstCR3Monitored;
-
+#endif
     /** @name 32-bit Guest Paging.
      * @{ */
     /** The guest's page directory, R3 pointer. */
