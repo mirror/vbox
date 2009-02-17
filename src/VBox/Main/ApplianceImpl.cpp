@@ -34,9 +34,6 @@
 
 #include "VBox/xml.h"
 
-#include <iostream>
-#include <sstream>
-
 using namespace std;
 
 // defines
@@ -217,14 +214,17 @@ struct Appliance::Task
 // globals
 ////////////////////////////////////////////////////////////////////////////////
 
-template <class T>
-inline
-com::Utf8Str toString(const T& val)
+template<class T> inline com::Utf8Str toString(const T &val);
+
+// specializations
+template<> com::Utf8Str toString<uint32_t>(const uint32_t &val)
 {
-    // @todo optimize
-    std::ostringstream ss;
-    ss << val;
-    return Utf8Str(ss.str().c_str());
+    return Utf8StrFmt("%RI16", val);
+}
+
+template<> com::Utf8Str toString<uint64_t>(const uint64_t &val)
+{
+    return Utf8StrFmt("%RI32", val);
 }
 
 static Utf8Str stripFilename(const Utf8Str &strFile)
