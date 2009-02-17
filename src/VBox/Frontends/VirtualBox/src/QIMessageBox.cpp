@@ -210,7 +210,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mDetailsText->setReadOnly (true);
     mDetailsText->setSizePolicy (QSizePolicy::Expanding,
                                  QSizePolicy::MinimumExpanding);
-    mDetailsSplitter->addWidget (tr ("&Details:"), mDetailsText);
+    mDetailsSplitter->addWidget (tr ("&Details"), mDetailsText);
 
     mFlagCB_Details = new QCheckBox();
     mFlagCB_Details->hide();
