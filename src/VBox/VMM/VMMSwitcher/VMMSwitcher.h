@@ -44,7 +44,6 @@
 #define FIX_INTER_AMD64_CR3     14
 #define FIX_HYPER_32BIT_CR3     15
 #define FIX_HYPER_PAE_CR3       16
-#define FIX_HYPER_AMD64_CR3     17
 #define FIX_HYPER_CS            18
 #define FIX_HYPER_DS            19
 #define FIX_HYPER_TSS           20
