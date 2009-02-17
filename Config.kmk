@@ -1824,6 +1824,9 @@ SDK_VBOX_BOOST_INCS  ?= $(PATH_ROOT)/src/libs/boost-1.37.0
 #
 SDK_VBOX_NTDLL = Requires W2K3DDK
 SDK_VBOX_NTDLL_LIBS ?= $(PATH_SDK_W2K3DDK_LIB)/ntdll.lib
+ifeq ($(KBUILD_TARGET),win)
+ include $(KBUILD_PATH)/sdks/W2K3DDK.kmk
+endif
 
 #
 # The linux kernel headers(/sources).
