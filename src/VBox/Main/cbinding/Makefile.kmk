@@ -69,6 +69,8 @@ ifndef VBOX_ONLY_SDK
  VBoxXPCOMCGlue_DEFS = IN_VBOXXPCOMC
  VBoxXPCOMCGlue_SOURCES = \
  	VBoxXPCOMCGlue.c
+ VBoxXPCOMCGlue_INTERMEDIATES = \
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_CXPCOM.h
 
  ifdef VBOX_WITH_TESTCASES
   #
