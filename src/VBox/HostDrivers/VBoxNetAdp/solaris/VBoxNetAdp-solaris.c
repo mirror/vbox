@@ -413,7 +413,7 @@ static int VBoxNetAdpSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
                 if (pState)
                 {
                     int rc = gld_unregister(pMacInfo);
-                    if (rc = DDI_SUCCESS)
+                    if (rc == DDI_SUCCESS)
                     {
                         RTMemFree(pState);
                         gld_mac_free(pMacInfo);
