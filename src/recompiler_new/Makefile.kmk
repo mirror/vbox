@@ -99,11 +99,12 @@ $(REM_MOD)_CFLAGS.debug    = -O0
 $(REM_MOD)_CFLAGS.release += -fno-gcse -O2
 $(REM_MOD)_CFLAGS.profile  = $($(REM_MOD)_CFLAGS.release)
 $(REM_MOD)_DEFS           += IN_RING3 $(ARCH_BITS_DEFS)
-# Temporary hack, to allow running with oldish GCC
+# workaround the regparm bug in gcc <= 3.3
 $(REM_MOD)_DEFS.win.x86   += GCC_WITH_BUGGY_REGPARM
 else  # !win
 $(REM_MOD)_TEMPLATE        = VBOXR3NP
-$(REM_MOD)_DEFS            =
+# workaround the regparm bug in gcc <= 3.3
+$(REM_MOD)_DEFS            = $(if $(VBOX_GCC_BUGGY_REGPARM),GCC_WITH_BUGGY_REGPARM,)
 endif # !win
 $(REM_MOD)_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H
 #$(REM_MOD)_DEFS           += REM_PHYS_ADDR_IN_TLB
