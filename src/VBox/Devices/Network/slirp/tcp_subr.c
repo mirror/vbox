@@ -497,7 +497,7 @@ tcp_connect(PNATState pData, struct socket *inso)
     setsockopt(s, IPPROTO_TCP, TCP_NODELAY,(char *)&opt, sizeof(int));
 
     optlen = sizeof(int);
-    status = getsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, &optlen);
+    status = getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&opt, &optlen);
     if (status < 0)
     {
         LogRel(("NAT: Error(%d) while getting RCV capacity\n", errno));
@@ -506,14 +506,14 @@ tcp_connect(PNATState pData, struct socket *inso)
     if (cVerbose > 0)
         LogRel(("NAT: old socket rcv size: %dKB\n", opt / 1024));
     opt *= 4;
-    status = setsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(int));
+    status = setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&opt, sizeof(int));
     if (status < 0)
     {
         LogRel(("NAT: Error(%d) while setting RCV capacity to (%d)\n", errno, opt));
         goto no_sockopt;
     }
     optlen = sizeof(int);
-    status = getsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, &optlen);
+    status = getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&opt, &optlen);
     if (status < 0)
     {
         LogRel(("NAT: Error(%d) while getting SND capacity\n", errno));
@@ -522,7 +522,7 @@ tcp_connect(PNATState pData, struct socket *inso)
     if (cVerbose > 0)
         LogRel(("NAT: old socket snd size: %dKB\n", opt / 1024));
     opt *= 4;
-    status = setsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, sizeof(int));
+    status = setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&opt, sizeof(int));
     if (status < 0)
     {
         LogRel(("NAT: Error(%d) while setting SND capacity to (%d)\n", errno, opt));
