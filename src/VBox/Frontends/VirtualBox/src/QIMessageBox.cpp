@@ -105,7 +105,13 @@ void QIArrowSplitter::toggleWidget()
     /* Now resize window to minimum possible size */
     window()->resize (window()->minimumSizeHint());
     qApp->processEvents();
+#ifdef Q_WS_WIN
+    /* Set fixed size to which one current we have */
     window()->setFixedSize (window()->size());
+#else
+    /* Unable to resize on some platforms because it was fixed already */
+    window()->setFixedSize (window()->minimumSizeHint());
+#endif
 }
 
 /** @class QIMessageBox
