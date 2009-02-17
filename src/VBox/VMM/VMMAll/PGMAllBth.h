@@ -4646,6 +4646,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         return VINF_PGM_SYNC_CR3;
     }
     AssertRCReturn(rc, rc);
+    rc = VINF_SUCCESS;
     pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
     pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
 #  ifdef IN_RING0
