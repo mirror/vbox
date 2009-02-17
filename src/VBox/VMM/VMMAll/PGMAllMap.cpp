@@ -341,7 +341,11 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
         {
             case PGMMODE_32_BIT:
             {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 PX86PD pShw32BitPd = (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
+#else
+                PX86PD pShw32BitPd = pgmShwGet32BitPDPtr(&pVM->pgm.s);
+#endif
                 AssertFatal(pShw32BitPd);
 
                 pShw32BitPd->a[iOldPDE].u   = 0;
@@ -356,8 +360,13 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 
                 const unsigned iPD = iOldPDE / 256;         /* iOldPDE * 2 / 512; iOldPDE is in 4 MB pages */
                 unsigned iPDE = iOldPDE * 2 % 512;
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 pPdpt     = (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
                 pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pPdpt, (iPD << X86_PDPT_SHIFT));
+#else
+                pPdpt     = pgmShwGetPaePDPTPtr(&pVM->pgm.s); 
+                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPD << X86_PDPT_SHIFT)); 
+#endif
                 AssertFatal(pShwPaePd);
 
                 pShwPaePd->a[iPDE].u = 0;
