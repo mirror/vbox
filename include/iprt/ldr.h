@@ -80,13 +80,37 @@ RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod);
 RTDECL(int) RTLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod);
 
 /**
- * Open a binary image file.
+ * Image architecuture specifier for RTLdrOpenEx.
+ */
+typedef enum RTLDRARCH
+{
+    RTLDRARCH_INVALID = 0,
+    /** Whatever. */
+    RTLDRARCH_WHATEVER,
+    /** The host architecture. */
+    RTLDRARCH_HOST,
+    /** 32-bit x86. */
+    RTLDRARCH_X86_32,
+    /** AMD64 (64-bit x86 if you like). */
+    RTLDRARCH_AMD64,
+    /** End of the valid values. */
+    RTLDRARCH_END,
+    /** Make sure the type is a full 32-bit. */
+    RTLDRARCH_32BIT_HACK = 0x7fffffff
+} RTLDRARCH;
+/** Pointer to a RTLDRARCH. */
+typedef RTLDRARCH *PRTLDRARCH;
+
+/**
+ * Open a binary image file, extended version.
  *
  * @returns iprt status code.
  * @param   pszFilename Image filename.
+ * @param   fFlags      Reserved, MBZ.
+ * @param   enmArch     CPU architecture specifier for the image to be loaded.
  * @param   phLdrMod    Where to store the handle to the loader module.
  */
-RTDECL(int) RTLdrOpen(const char *pszFilename, PRTLDRMOD phLdrMod);
+RTDECL(int) RTLdrOpen(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod);
 
 /**
  * Opens a binary image file using kLdr.
@@ -94,9 +118,11 @@ RTDECL(int) RTLdrOpen(const char *pszFilename, PRTLDRMOD phLdrMod);
  * @returns iprt status code.
  * @param   pszFilename     Image filename.
  * @param   phLdrMod        Where to store the handle to the loaded module.
+ * @param   fFlags      Reserved, MBZ.
+ * @param   enmArch     CPU architecture specifier for the image to be loaded.
  * @remark  Primarily for testing the loader.
  */
-RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, PRTLDRMOD phLdrMod);
+RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod);
 
 /**
  * What to expect and do with the bits passed to RTLdrOpenBits().

@@ -95,7 +95,7 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
 static int testLdrOne(const char *pszFilename)
 {
     RTLDRMOD hLdrMod;
-    int rc = RTLdrOpen(pszFilename, &hLdrMod);
+    int rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_WHATEVER, &hLdrMod);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstLdr: Failed to open '%s', rc=%Rrc. aborting test.\n", pszFilename, rc);

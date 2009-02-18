@@ -720,7 +720,7 @@ static RTLDROPS RTLDRELF_MID(s_rtldrElf,Ops) =
  * @param   pszLogName  The log name.
  * @param   cbRawImage  The size of the raw image.
  */
-static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *pszLogName, uint64_t cbRawImage)
+static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *pszLogName, uint64_t cbRawImage, PRTLDRARCH penmArch)
 {
     Log3(("RTLdrELF:     e_ident: %.*Rhxs\n"
           "RTLdrELF:      e_type: " FMT_ELF_HALF "\n"
@@ -805,10 +805,13 @@ static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *p
 #if   ELF_MODE == 32
         case EM_386:
         case EM_486:
+            *penmArch = RTLDRARCH_X86_32;
+            break;
 #elif ELF_MODE == 64
         case EM_X86_64:
-#endif
+            *penmArch = RTLDRARCH_AMD64;
             break;
+#endif
         default:
             Log(("RTLdrELF: %s: machine type %u is not supported!\n", pEhdr->e_machine));
             return VERR_LDRELF_MACHINE;
@@ -985,9 +988,11 @@ static int RTLDRELF_NAME(ValidateSectionHeader)(PRTLDRMODELF pModElf, unsigned i
  *
  * @returns iprt status code.
  * @param   pReader     The loader reader instance which will provide the raw image bits.
+ * @param   fFlags      Reserved, MBZ.
+ * @param   enmArch     Architecture specifier.
  * @param   phLdrMod    Where to store the handle.
  */
-static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, PRTLDRMOD phLdrMod)
+static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod)
 {
     const char *pszLogName = pReader->pfnLogName(pReader);
     RTFOFF      cbRawImage = pReader->pfnSize(pReader);
@@ -1014,11 +1019,20 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, PRTLDRMOD phLdrMod)
     //pModElf->pStr           = NULL;
 
     /*
-     * Read and validate the ELF header.
+     * Read and validate the ELF header and match up the CPU architecture.
      */
     int rc = pReader->pfnRead(pReader, &pModElf->Ehdr, sizeof(pModElf->Ehdr), 0);
     if (RT_SUCCESS(rc))
-        rc = RTLDRELF_NAME(ValidateElfHeader)(&pModElf->Ehdr, pszLogName, cbRawImage);
+    {
+        RTLDRARCH enmArchImage;
+        rc = RTLDRELF_NAME(ValidateElfHeader)(&pModElf->Ehdr, pszLogName, cbRawImage, &enmArchImage);
+        if (RT_SUCCESS(rc))
+        {
+            if (    enmArch != RTLDRARCH_WHATEVER
+                &&  enmArch != enmArchImage)
+                rc = VERR_LDR_ARCH_MISMATCH;
+        }
+    }
     if (RT_SUCCESS(rc))
     {
         /*

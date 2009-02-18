@@ -113,9 +113,11 @@ static const char *rtldrElfGetShdrType(uint32_t iType)
  *
  * @returns iprt status code.
  * @param   pReader     The loader reader instance which will provide the raw image bits.
+ * @param   fFlags      Reserved, MBZ.
+ * @param   enmArch     Architecture specifier.
  * @param   phLdrMod    Where to store the handle.
  */
-int rtldrELFOpen(PRTLDRREADER pReader, PRTLDRMOD phLdrMod)
+int rtldrELFOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod)
 {
     const char *pszLogName = pReader->pfnLogName(pReader); NOREF(pszLogName);
 
@@ -144,9 +146,9 @@ int rtldrELFOpen(PRTLDRREADER pReader, PRTLDRMOD phLdrMod)
         return VERR_LDRELF_ODD_ENDIAN;
     }
     if (e_ident[EI_CLASS] == ELFCLASS32)
-        rc = rtldrELF32Open(pReader, phLdrMod);
+        rc = rtldrELF32Open(pReader, fFlags, enmArch, phLdrMod);
     else
-        rc = rtldrELF64Open(pReader, phLdrMod);
+        rc = rtldrELF64Open(pReader, fFlags, enmArch, phLdrMod);
     return rc;
 }
 

@@ -1840,7 +1840,7 @@ static int remLoadLinuxObj(void)
      * Load the VBoxREM2.rel object/DLL.
      */
     strcpy(&szPath[offFilename], "/VBoxREM2.rel");
-    rc = RTLdrOpen(szPath, &g_ModREM2);
+    rc = RTLdrOpen(szPath, 0, RTLDRARCH_HOST, &g_ModREM2);
     if (RT_SUCCESS(rc))
     {
         g_pvREM2 = RTMemExecAlloc(RTLdrSize(g_ModREM2));
