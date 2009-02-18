@@ -330,7 +330,7 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
     struct timeval tv = {0, 0}; /* no wait */
     int cChangedFDs = select(nFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
     if (cChangedFDs >= 0)
-        slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
+        slirp_select_poll(pThis->pNATState, &nFDs, &ReadFDs, &WriteFDs, &XcptFDs);
 
     RTCritSectLeave(&pThis->CritSect);
 }
