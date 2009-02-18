@@ -1650,6 +1650,15 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
     return S_OK;
 }
 
+struct MyHardDiskAttachment
+{
+    Guid    uuid;
+    ComPtr<IMachine> pMachine;
+    StorageBus_T busType;
+    int32_t lChannel;
+    int32_t lDevice;
+};
+
 /* static */
 DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 {
@@ -1659,7 +1668,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
     Appliance *app = task->that;
 
     /// @todo ugly hack, fix ComAssert... (same as in HardDisk::taskThread)
-    #define setError app->setError
+//     #define setError app->setError
 
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", app));
@@ -1670,6 +1679,17 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
     AutoWriteLock appLock(app);
 
     HRESULT rc = S_OK;
+
+    // rollback for errors:
+    // 1) a list of images that we created/imported
+    list<MyHardDiskAttachment> llHardDiskAttachments;
+    list< ComPtr<IHardDisk> > llHardDisksCreated;
+    list<Guid> llMachinesRegistered;
+
+    ComPtr<ISession> session;
+    bool fSessionOpen = false;
+    rc = session.createInprocObject(CLSID_Session);
+    CheckComRCReturnRC(rc);
 
     list<VirtualSystem>::const_iterator it;
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
@@ -1683,14 +1703,13 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
         const VirtualSystem &vsysThis = *it;
         ComObjPtr<VirtualSystemDescription> vsdescThis = (*it1);
 
+        ComPtr<IMachine> pNewMachine;
+
         /* Catch possible errors */
         try
         {
             if (!task->progress.isNull())
-            {
-                rc = task->progress->advanceOperation(BstrFmt(tr("Importing Virtual System %d"), i + 1));
-                CheckComRCThrowRC(rc);
-            }
+                task->progress->advanceOperation(BstrFmt(tr("Importing Virtual System %d"), i + 1));
 
             /* How many sub notifications are necessary? */
             const float opCountMax = 100.0/5;
@@ -1706,8 +1725,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
             /* Now that we know the base system get our internal defaults based on that. */
             ComPtr<IGuestOSType> osType;
-            rc = app->mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox), osType.asOutParam());
-            CheckComRCThrowRC(rc);
+            CHECK_ERROR_THROW(app->mVirtualBox, GetGuestOSType(Bstr(strOsTypeVBox), osType.asOutParam()));
 
             /* Create the machine */
             /* First get the name */
@@ -1716,17 +1734,12 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Missing VM name"));
             const Utf8Str &strNameVBox = vsdeName.front()->strConfig;
-            ComPtr<IMachine> pNewMachine;
-            rc = app->mVirtualBox->CreateMachine(Bstr(strNameVBox), Bstr(strOsTypeVBox),
-                                                 Bstr(), Guid(),
-                                                 pNewMachine.asOutParam());
-            CheckComRCThrowRC(rc);
+            CHECK_ERROR_THROW(app->mVirtualBox, CreateMachine(Bstr(strNameVBox), Bstr(strOsTypeVBox),
+                                                              Bstr(), Guid(),
+                                                              pNewMachine.asOutParam()));
 
             if (!task->progress.isNull())
-            {
                 rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
-                CheckComRCThrowRC(rc);
-            }
 
             /* CPU count (ignored for now) */
             // EntriesList vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
@@ -1736,23 +1749,18 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             ComAssertMsgThrow(vsdeRAM.size() == 1, ("RAM size missing"), E_FAIL);
             const Utf8Str &memoryVBox = vsdeRAM.front()->strConfig;
             ULONG tt = (ULONG)RTStrToUInt64(memoryVBox.c_str());
-            rc = pNewMachine->COMSETTER(MemorySize)(tt);
-            CheckComRCThrowRC(rc);
+            CHECK_ERROR_THROW(pNewMachine, COMSETTER(MemorySize)(tt));
 
             /* VRAM */
             /* Get the recommended VRAM for this guest OS type */
             ULONG vramVBox;
-            rc = osType->COMGETTER(RecommendedVRAM)(&vramVBox);
-            CheckComRCThrowRC(rc);
+            CHECK_ERROR_THROW(osType, COMGETTER(RecommendedVRAM)(&vramVBox));
+
             /* Set the VRAM */
-            rc = pNewMachine->COMSETTER(VRAMSize)(vramVBox);
-            CheckComRCThrowRC(rc);
+            CHECK_ERROR_THROW(pNewMachine, COMSETTER(VRAMSize)(vramVBox));
 
             if (!task->progress.isNull())
-            {
-                rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
-                CheckComRCThrowRC(rc);
-            }
+                task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
 
             /* Audio Adapter */
             std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->findByType(VirtualSystemDescriptionType_SoundCard);
@@ -1764,12 +1772,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 {
                     uint32_t audio = RTStrToUInt32(audioAdapterVBox.c_str());
                     ComPtr<IAudioAdapter> audioAdapter;
-                    rc = pNewMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
-                    CheckComRCThrowRC(rc);
-                    rc = audioAdapter->COMSETTER(Enabled)(true);
-                    CheckComRCThrowRC(rc);
-                    rc = audioAdapter->COMSETTER(AudioController)(static_cast<AudioControllerType_T>(audio));
-                    CheckComRCThrowRC(rc);
+                    CHECK_ERROR_THROW(pNewMachine, COMGETTER(AudioAdapter)(audioAdapter.asOutParam()));
+                    CHECK_ERROR_THROW(audioAdapter, COMSETTER(Enabled)(true));
+                    CHECK_ERROR_THROW(audioAdapter, COMSETTER(AudioController)(static_cast<AudioControllerType_T>(audio)));
                 }
             }
 
@@ -1780,16 +1785,11 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             bool fUSBEnabled = vsdeUSBController.size() > 0;
 
             ComPtr<IUSBController> usbController;
-            rc = pNewMachine->COMGETTER(USBController)(usbController.asOutParam());
-            CheckComRCThrowRC(rc);
-            rc = usbController->COMSETTER(Enabled)(fUSBEnabled);
-            CheckComRCThrowRC(rc);
+            CHECK_ERROR_THROW(pNewMachine, COMGETTER(USBController)(usbController.asOutParam()));
+            CHECK_ERROR_THROW(usbController, COMSETTER(Enabled)(fUSBEnabled));
 
             if (!task->progress.isNull())
-            {
-                rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
-                CheckComRCThrowRC(rc);
-            }
+                task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
 
             /* Change the network adapters */
             std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
@@ -1797,10 +1797,8 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             {
                 /* No network adapters, so we have to disable our default one */
                 ComPtr<INetworkAdapter> nwVBox;
-                rc = pNewMachine->GetNetworkAdapter(0, nwVBox.asOutParam());
-                CheckComRCThrowRC(rc);
-                rc = nwVBox->COMSETTER(Enabled)(false);
-                CheckComRCThrowRC(rc);
+                CHECK_ERROR_THROW(pNewMachine, GetNetworkAdapter(0, nwVBox.asOutParam()));
+                CHECK_ERROR_THROW(nwVBox, COMSETTER(Enabled)(false));
             }
             else
             {
@@ -1815,14 +1813,11 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     const Utf8Str &nwTypeVBox = (*nwIt)->strConfig;
                     uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
                     ComPtr<INetworkAdapter> nwVBox;
-                    rc = pNewMachine->GetNetworkAdapter((ULONG)a, nwVBox.asOutParam());
-                    CheckComRCThrowRC(rc);
+                    CHECK_ERROR_THROW(pNewMachine, GetNetworkAdapter((ULONG)a, nwVBox.asOutParam()));
                     /* Enable the network card & set the adapter type */
                     /* NAT is set as default */
-                    rc = nwVBox->COMSETTER(Enabled)(true);
-                    CheckComRCThrowRC(rc);
-                    rc = nwVBox->COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1));
-                    CheckComRCThrowRC(rc);
+                    CHECK_ERROR_THROW(nwVBox, COMSETTER(Enabled)(true));
+                    CHECK_ERROR_THROW(nwVBox, COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1)));
                 }
             }
 
@@ -1832,16 +1827,11 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             // the type of the floppy item would have been changed to "ignore"
             bool fFloppyEnabled = vsdeFloppy.size() > 0;
             ComPtr<IFloppyDrive> floppyDrive;
-            rc = pNewMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
-            CheckComRCThrowRC(rc);
-            rc = floppyDrive->COMSETTER(Enabled)(fFloppyEnabled);
-            CheckComRCThrowRC(rc);
+            CHECK_ERROR_THROW(pNewMachine, COMGETTER(FloppyDrive)(floppyDrive.asOutParam()));
+            CHECK_ERROR_THROW(floppyDrive, COMSETTER(Enabled)(fFloppyEnabled));
 
             if (!task->progress.isNull())
-            {
-                rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
-                CheckComRCThrowRC(rc);
-            }
+                task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
 
             /* CDROM drive */
             /* @todo: I can't disable the CDROM. So nothing to do for now */
@@ -1854,18 +1844,17 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             {
                 /* Set the appropriate IDE controller in the virtual BIOS of the VM */
                 ComPtr<IBIOSSettings> biosSettings;
-                rc = pNewMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
-                CheckComRCThrowRC(rc);
+                CHECK_ERROR_THROW(pNewMachine, COMGETTER(BIOSSettings)(biosSettings.asOutParam()));
+
                 const char *pcszIDEType = vsdeHDCIDE.front()->strConfig.c_str();
                 if (!strcmp(pcszIDEType, "PIIX3"))
-                    rc = biosSettings->COMSETTER(IDEControllerType)(IDEControllerType_PIIX3);
+                    CHECK_ERROR_THROW(biosSettings, COMSETTER(IDEControllerType)(IDEControllerType_PIIX3));
                 else if (!strcmp(pcszIDEType, "PIIX4"))
-                    rc = biosSettings->COMSETTER(IDEControllerType)(IDEControllerType_PIIX4);
+                    CHECK_ERROR_THROW(biosSettings, COMSETTER(IDEControllerType)(IDEControllerType_PIIX4));
                 else
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Invalid IDE controller type \"%s\""),
                                    pcszIDEType);
-                CheckComRCThrowRC(rc);
             }
 #ifdef VBOX_WITH_AHCI
             /* Hard disk controller SATA */
@@ -1878,10 +1867,8 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 {
                     /* For now we have just to enable the AHCI controller. */
                     ComPtr<ISATAController> hdcSATAVBox;
-                    rc = pNewMachine->COMGETTER(SATAController)(hdcSATAVBox.asOutParam());
-                    CheckComRCThrowRC(rc);
-                    rc = hdcSATAVBox->COMSETTER(Enabled)(true);
-                    CheckComRCThrowRC(rc);
+                    CHECK_ERROR_THROW(pNewMachine, COMGETTER(SATAController)(hdcSATAVBox.asOutParam()));
+                    CHECK_ERROR_THROW(hdcSATAVBox, COMSETTER(Enabled)(true));
                 }
                 else
                 {
@@ -1901,36 +1888,31 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             }
 
             /* Now its time to register the machine before we add any hard disks */
-            rc = app->mVirtualBox->RegisterMachine(pNewMachine);
-            CheckComRCThrowRC(rc);
+            CHECK_ERROR_THROW(app->mVirtualBox, RegisterMachine(pNewMachine));
+
+            Guid newMachineId;
+            CHECK_ERROR_THROW(pNewMachine, COMGETTER(Id)(newMachineId.asOutParam()));
 
             if (!task->progress.isNull())
-            {
-                rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
-                CheckComRCThrowRC(rc);
-            }
+                task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
+
+            // store new machine for roll-back in case of errors
+            llMachinesRegistered.push_back(newMachineId);
 
             /* Create the hard disks & connect them to the appropriate controllers. */
             std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
             if (avsdeHDs.size() > 0)
             {
-                Guid newMachineId;
-                rc = pNewMachine->COMGETTER(Id)(newMachineId.asOutParam());
-                CheckComRCThrowRC(rc);
                 /* If in the next block an error occur we have to deregister
                    the machine, so make an extra try/catch block. */
-                ComPtr<ISession> session;
-                bool fSessionOpen = false;
                 ComPtr<IHardDisk> srcHdVBox;
+                bool fSourceHdNeedsClosing = false;
 
                 try
                 {
                     /* In order to attach hard disks we need to open a session
                      * for the new machine */
-                    rc = session.createInprocObject(CLSID_Session);
-                    CheckComRCThrowRC(rc);
-                    rc = app->mVirtualBox->OpenSession(session, newMachineId);
-                    CheckComRCThrowRC(rc);
+                    CHECK_ERROR_THROW(app->mVirtualBox, OpenSession(session, newMachineId));
                     fSessionOpen = true;
 
                     int result;
@@ -1974,7 +1956,11 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
                         /* Make sure all target directories exists */
                         rc = VirtualBox::ensureFilePathExists(pcszDstFilePath);
-                        CheckComRCThrowRC(rc);
+                        if (FAILED(rc))
+                            throw rc;
+
+                        ComPtr<IProgress> progress;
+
                         ComPtr<IHardDisk> dstHdVBox;
                         /* If strHref is empty we have to create a new file */
                         if (di.strHref.c_str()[0] == 0)
@@ -1985,41 +1971,15 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                                 || (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed")))
                                 srcFormat = L"VMDK";
                             /* Create an empty hard disk */
-                            rc = app->mVirtualBox->CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
-                            CheckComRCThrowRC(rc);
+                            CHECK_ERROR_THROW(app->mVirtualBox, CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam()));
+
                             /* Create a dynamic growing disk image with the given capacity */
                             ComPtr<IProgress> progress;
-                            dstHdVBox->CreateDynamicStorage(di.iCapacity / _1M, progress.asOutParam());
-                            CheckComRCThrowRC(rc);
+                            CHECK_ERROR_THROW(dstHdVBox, CreateDynamicStorage(di.iCapacity / _1M, progress.asOutParam()));
+
                             /* Advance to the next operation */
                             if (!task->progress.isNull())
-                            {
-                                rc = task->progress->advanceOperation (BstrFmt(tr("Creating virtual disk image '%s'"), pcszDstFilePath));
-                                CheckComRCThrowRC(rc);
-                            }
-                            /* Manually check the progress to inform the user */
-                            BOOL fCompleted;
-                            LONG currentPercent;
-                            while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
-                            {
-                                 rc = progress->COMGETTER(Percent(&currentPercent));
-                                 CheckComRCThrowRC(rc);
-                                 if (!task->progress.isNull())
-                                 {
-                                     rc = task->progress->notifyProgress(currentPercent);
-                                     CheckComRCThrowRC(rc);
-                                 }
-                                 if (fCompleted)
-                                     break;
-                                 /* Make sure the loop is not too tight */
-                                 rc = progress->WaitForCompletion(100);
-                                 CheckComRCThrowRC(rc);
-                            }
-                            /* Check the real return code of the asynchrony operation */
-                            HRESULT vrc;
-                            rc = progress->COMGETTER(ResultCode)(&vrc);
-                            CheckComRCThrowRC(rc);
-                            CheckComRCThrowRC(vrc);
+                                task->progress->advanceOperation (BstrFmt(tr("Creating virtual disk image '%s'"), pcszDstFilePath));
                         }
                         else
                         {
@@ -2031,131 +1991,204 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                                 throw setError(VBOX_E_FILE_ERROR,
                                                tr("Source virtual disk image file '%s' doesn't exist"),
                                                   strSrcFilePath.c_str());
+
                             /* Clone the disk image (this is necessary cause the id has
                              * to be recreated for the case the same hard disk is
                              * attached already from a previous import) */
+
                             /* First open the existing disk image */
-                            rc = app->mVirtualBox->OpenHardDisk(Bstr(strSrcFilePath), srcHdVBox.asOutParam());
-                            CheckComRCThrowRC(rc);
+                            CHECK_ERROR_THROW(app->mVirtualBox, OpenHardDisk(Bstr(strSrcFilePath), srcHdVBox.asOutParam()));
+                            fSourceHdNeedsClosing = true;
+
                             /* We need the format description of the source disk image */
                             Bstr srcFormat;
-                            rc = srcHdVBox->COMGETTER(Format)(srcFormat.asOutParam());
-                            CheckComRCThrowRC(rc);
+                            CHECK_ERROR_THROW(srcHdVBox, COMGETTER(Format)(srcFormat.asOutParam()));
                             /* Create a new hard disk interface for the destination disk image */
-                            rc = app->mVirtualBox->CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
-                            CheckComRCThrowRC(rc);
+                            CHECK_ERROR_THROW(app->mVirtualBox, CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam()));
                             /* Clone the source disk image */
-                            ComPtr<IProgress> progress;
-                            rc = srcHdVBox->CloneTo(dstHdVBox, progress.asOutParam());
-                            CheckComRCThrowRC(rc);
+                            CHECK_ERROR_THROW(srcHdVBox, CloneTo(dstHdVBox, progress.asOutParam()));
+
                             /* Advance to the next operation */
                             if (!task->progress.isNull())
-                            {
-                                rc = task->progress->advanceOperation (BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()));
-                                CheckComRCThrowRC(rc);
-                            }
-                            /* Manually check the progress to inform the user */
-                            BOOL fCompleted;
-                            LONG currentPercent;
-                            while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
-                            {
-                                 rc = progress->COMGETTER(Percent(&currentPercent));
-                                 CheckComRCThrowRC(rc);
-                                 if (!task->progress.isNull())
-                                 {
-                                     rc = task->progress->notifyProgress (currentPercent);
-                                     CheckComRCThrowRC(rc);
-                                 }
-                                 if (fCompleted)
-                                     break;
-                                 /* Make sure the loop is not too tight */
-                                 rc = progress->WaitForCompletion(100);
-                                 CheckComRCThrowRC(rc);
-                            }
-                            /* Check the real return code of the asynchrony operation */
-                            HRESULT vrc;
-                            rc = progress->COMGETTER(ResultCode)(&vrc);
-                            CheckComRCThrowRC(rc);
-                            CheckComRCThrowRC(vrc);
-                            /* We *must* close the source disk image in order to deregister it */
-                            rc = srcHdVBox->Close();
-                            CheckComRCThrowRC(rc);
+                                task->progress->advanceOperation (BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()));
                         }
+
+                        // now loop until the asynchronous operation completes and then
+                        // report its result
+                        BOOL fCompleted;
+                        LONG currentPercent;
+                        while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+                        {
+                                CHECK_ERROR_THROW(progress, COMGETTER(Percent(&currentPercent)));
+                                if (!task->progress.isNull())
+                                    task->progress->notifyProgress(currentPercent);
+                                if (fCompleted)
+                                    break;
+                                /* Make sure the loop is not too tight */
+                                CHECK_ERROR_THROW(progress, WaitForCompletion(100));
+                        }
+                        // report result of asynchronous operation
+                        HRESULT vrc;
+                        CHECK_ERROR_THROW(progress, COMGETTER(ResultCode)(&vrc));
+
+                        // if the progress object has an error, then retrieve the error info
+                        // from there, or it'll be lost
+                        if (FAILED(vrc))
+                            throw com::ErrorInfo(progress);
+
+                        if (fSourceHdNeedsClosing)
+                        {
+                            CHECK_ERROR_THROW(srcHdVBox, Close());
+                            fSourceHdNeedsClosing = false;
+                        }
+
+                        llHardDisksCreated.push_back(dstHdVBox);
+
                         /* Now use the new uuid to attach the disk image to our new machine */
                         ComPtr<IMachine> sMachine;
-                        rc = session->COMGETTER(Machine)(sMachine.asOutParam());
-                        CheckComRCThrowRC(rc);
+                        CHECK_ERROR_THROW(session, COMGETTER(Machine)(sMachine.asOutParam()));
                         Guid hdId;
-                        rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());;
-                        CheckComRCThrowRC(rc);
+                        CHECK_ERROR_THROW(dstHdVBox, COMGETTER(Id)(hdId.asOutParam()));
+
                         /* For now we assume we have one controller of every type only */
                         HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
-                        StorageBus_T sbt = StorageBus_IDE;
+
+                        // this is for rollback later
+                        MyHardDiskAttachment mhda;
+                        mhda.uuid = newMachineId;
+                        mhda.pMachine = pNewMachine;
+                        mhda.busType = StorageBus_IDE;
+                        mhda.lChannel = (long)hdc.ulBusNumber; // ?!? @todo this is still wrong
+                        mhda.lDevice = (long)0;         // ?!? @todo this is still wrong
+
                         switch (hdc.system)
                         {
-                            case HardDiskController::IDE: sbt = StorageBus_IDE; break;
-                            case HardDiskController::SATA: sbt = StorageBus_SATA; break;
+                            case HardDiskController::IDE: mhda.busType = StorageBus_IDE; break;
+                            case HardDiskController::SATA: mhda.busType = StorageBus_SATA; break;
                                                            //case HardDiskController::SCSI: sbt = StorageBus_SCSI; break; // @todo: not available yet
                             default: break;
                         }
-                        rc = sMachine->AttachHardDisk(hdId, sbt, hdc.ulBusNumber, 0);
-                        CheckComRCThrowRC(rc);
-                        rc = sMachine->SaveSettings();
-                        CheckComRCThrowRC(rc);
+
+                        CHECK_ERROR_THROW(sMachine, AttachHardDisk(hdId,
+                                                                   mhda.busType,
+                                                                   mhda.lChannel,
+                                                                   mhda.lDevice));
+
+                        llHardDiskAttachments.push_back(mhda);
+
+                        CHECK_ERROR_THROW(sMachine, SaveSettings());
                     } // end for (itHD = avsdeHDs.begin();
 
                     // only now that we're done with all disks, close the session
-                    rc = session->Close();
-                    CheckComRCThrowRC(rc);
+                    CHECK_ERROR_THROW(session, Close());
+                    fSessionOpen = false;
+                }
+                catch(com::ErrorInfo(&info))
+                {
+                    if (fSourceHdNeedsClosing)
+                        srcHdVBox->Close();
+
+                    if (fSessionOpen)
+                        session->Close();
+
+                    throw;
                 }
                 catch(HRESULT aRC)
                 {
-                    /* @todo: Not sure what to do when there are successfully
-                       added disk images. Delete them also? For now we leave
-                       them. */
-                    if (!srcHdVBox.isNull())
-                    {
-                        /* Close any open src disks */
-                        rc = srcHdVBox->Close();
-                        CheckComRCThrowRC(rc);
-                    }
-                    if (!session.isNull())
-                    {
-                        /* If there is an open session, close them before doing
-                           anything further. */
-                        rc = session->Close();
-                        CheckComRCThrowRC(rc);
-                    }
-                    /* Unregister/Delete the failed machine */
-                    ComPtr<IMachine> failedMachine;
-                    rc = app->mVirtualBox->UnregisterMachine(newMachineId, failedMachine.asOutParam());
-                    CheckComRCThrowRC(rc);
-                    rc = failedMachine->DeleteSettings();
-                    CheckComRCThrowRC(rc);
-                    /* Throw the original error */
+                    if (fSourceHdNeedsClosing)
+                        srcHdVBox->Close();
+
+                    if (fSessionOpen)
+                        session->Close();
+
                     throw;
                 }
             }
         }
+        catch(com::ErrorInfo(&info))
+        {
+            // so we've had a COM error info somewhere (either on this task
+            // thread or from another subthread such as CloneHD): now copy
+            // what we have here to the IAppliance object, so our client
+            // gets proper error information
+            app->setError(rc = info.getResultCode(),        // return this rc;
+                          info.getInterfaceID(),
+                          Utf8Str(info.getComponent()).c_str() /*aComponent*/,
+                          Utf8Str(info.getText()).c_str() /*aText*/,
+                          false /* aWarning */,
+                          true /*aLogIt*/);
+        }
         catch(HRESULT aRC)
         {
-            /* @todo: If we are here an error on importing of *one* virtual
-               system has occurred. We didn't break now, but try to import the
-               other virtual systems. This needs some further discussion. */
             rc = aRC;
+        }
+
+        if (FAILED(rc))
+            break;
+
+    } // for (it = app->m->llVirtualSystems.begin(),
+
+    if (FAILED(rc))
+    {
+        // with _whatever_ error we've had, do a complete roll-back of
+        // machines and disks we've created; unfortunately this is
+        // not so trivially done...
+
+        HRESULT rc2;
+        // detach all hard disks from all machines we created
+        list<MyHardDiskAttachment>::iterator itM;
+        for (itM = llHardDiskAttachments.begin();
+             itM != llHardDiskAttachments.end();
+             ++itM)
+        {
+            const MyHardDiskAttachment &mhda = *itM;
+            rc2 = app->mVirtualBox->OpenSession(session, mhda.uuid);
+            if (SUCCEEDED(rc2))
+            {
+                ComPtr<IMachine> sMachine;
+                rc2 = session->COMGETTER(Machine)(sMachine.asOutParam());
+                if (SUCCEEDED(rc2))
+                {
+                    rc2 = sMachine->DetachHardDisk(mhda.busType, mhda.lChannel, mhda.lDevice);
+                    rc2 = sMachine->SaveSettings();
+                }
+                session->Close();
+            }
+        }
+
+        // now clean up all hard disks we created
+        list< ComPtr<IHardDisk> >::iterator itHD;
+        for (itHD = llHardDisksCreated.begin();
+             itHD != llHardDisksCreated.end();
+             ++itHD)
+        {
+            ComPtr<IHardDisk> pDisk = *itHD;
+            ComPtr<IProgress> pProgress;
+            rc2 = pDisk->DeleteStorage(pProgress.asOutParam());
+            rc2 = pProgress->WaitForCompletion(-1);
+        }
+
+        // finally, deregister and remove all machines
+        list<Guid>::iterator itID;
+        for (itID = llMachinesRegistered.begin();
+             itID != llMachinesRegistered.end();
+             ++itID)
+        {
+            const Guid &guid = *itID;
+            ComPtr<IMachine> failedMachine;
+            rc2 = app->mVirtualBox->UnregisterMachine(guid, failedMachine.asOutParam());
+            if (SUCCEEDED(rc2))
+                rc2 = failedMachine->DeleteSettings();
         }
     }
 
     task->rc = rc;
 
     if (!task->progress.isNull())
-        task->progress->notifyComplete (rc);
+        task->progress->notifyComplete(rc);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
-
-    /// @todo ugly hack, fix ComAssert... (same as in HardDisk::taskThread)
-    #undef setError
 
     return VINF_SUCCESS;
 }

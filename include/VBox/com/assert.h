@@ -136,6 +136,14 @@
 #define CheckComRCThrowRC(rc)      \
     if (!SUCCEEDED (rc)) { throw rc; } else do {} while (0)
 
-
+/**
+ *  Does the same as CHECK_ERROR(), but throws a com::ErrorInfo on failure.
+ */
+#define CHECK_ERROR_THROW(iface, method) \
+    do { \
+        rc = iface->method; \
+        if (FAILED(rc)) \
+            throw com::ErrorInfo(iface); \
+    } while (0)
 #endif
 
