@@ -56,7 +56,7 @@
 /*
  * Enable to use the PGM pool for all levels in the paging chain in all paging modes.
  */
-#define VBOX_WITH_PGMPOOL_PAGING_ONLY
+//#define VBOX_WITH_PGMPOOL_PAGING_ONLY
 
 /**
  * Solve page is out of sync issues inside Guest Context (in PGMGC.cpp).
@@ -1542,7 +1542,7 @@ typedef enum PGMPOOLKIND
     /** Shw: 64-bit page directory table;           Gst: 64-bit page directory table. */
     PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD,
     /** Shw: 64-bit page directory table;           Gst: no paging  */
-    PGMPOOLKIND_64BIT_PD_FOR_PHYS,
+    PGMPOOLKIND_64BIT_PD_FOR_PHYS, /* 22 */
 
     /** Shw: 64-bit PML4;                           Gst: 64-bit PML4. */
     PGMPOOLKIND_64BIT_PML4,
