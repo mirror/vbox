@@ -189,12 +189,8 @@ static struct modlinkage g_VBoxNetAdpSolarisModLinkage =
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Global device info handle. */
-static dev_info_t *g_pVBoxNetAdpSolarisDip = NULL;
-
 /** The default ethernet broadcast address */
 static uchar_t achBroadcastAddr[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-
 
 /**
  * vboxnetadp_state_t: per-instance data
@@ -213,7 +209,6 @@ typedef struct vboxnetadp_state_t
 static int vboxNetAdpSolarisGenerateMac(PRTMAC pMac);
 static int vboxNetAdpSolarisSetMacAddress(gld_mac_info_t *pMacInfo, unsigned char *pszMacAddr);
 static int vboxNetAdpSolarisSend(gld_mac_info_t *pMacInfo, mblk_t *pMsg);
-
 static int vboxNetAdpSolarisStub(gld_mac_info_t *pMacInfo);
 static int vboxNetAdpSolarisSetPromisc(gld_mac_info_t *pMacInfo, int fPromisc);
 static int vboxNetAdpSolarisSetMulticast(gld_mac_info_t *pMacInfo, unsigned char *pMulticastAddr, int fMulticast);
@@ -440,14 +435,7 @@ static int vboxNetAdpSolarisGenerateMac(PRTMAC pMac)
     pMac->au8[0] = 0x00;
     pMac->au8[1] = 0x08;
     pMac->au8[2] = 0x27;
-
-    unsigned char achRand[3];
-    RTRandBytes(&achRand, sizeof(achRand));
-
-    pMac->au8[3] = achRand[0];
-    pMac->au8[4] = achRand[1];
-    pMac->au8[5] = achRand[2];
-
+    RTRandBytes(&pMac->au8[3], 3);
     LogFlow((DEVICE_NAME ":VBoxNetAdpSolarisGenerateMac Generated %.*Rhxs\n", sizeof(RTMAC), &pMac));
     return VINF_SUCCESS;
 }
