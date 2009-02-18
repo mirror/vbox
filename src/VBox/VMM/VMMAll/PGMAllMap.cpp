@@ -286,7 +286,13 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                         AssertFatal(pGstPdpe);
                         GstPdpe = *pGstPdpe;
                     }
-                    rc = pgmShwSyncPaePDPtr(pVM, (iPdPt << X86_PDPT_SHIFT), &GstPdpe, &pShwPaePd);
+                    int rc = pgmShwSyncPaePDPtr(pVM, (iPdPt << X86_PDPT_SHIFT), &GstPdpe, &pShwPaePd);
+                    AssertRCReturn(rc, rc);
+                    if (rc != VINF_SUCCESS)
+                    {
+                        rc = pgmShwSyncPaePDPtr(pVM, (iPdPt << X86_PDPT_SHIFT), &GstPdpe, &pShwPaePd);
+                        AssertFatalMsg(rc == VINF_SUCCESS, ("rc = %Rrc\n", rc));
+                    }
                 }
 #endif
                 AssertFatal(pShwPaePd);
