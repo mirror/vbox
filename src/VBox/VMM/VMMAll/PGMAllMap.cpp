@@ -524,15 +524,15 @@ int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
 #endif /* IN_RING0 */
 }
 
+#ifndef IN_RING0
 /**
  * Checks guest PD for conflicts with VMM GC mappings.
  *
  * @returns true if conflict detected.
  * @returns false if not.
  * @param   pVM                 The virtual machine.
- * @param   fResolveConflicts   Whether to resolve found conflicts or not (only valid in ring 3)
  */
-VMMDECL(bool) PGMMapHasConflicts(PVM pVM, bool fResolveConflicts)
+VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
 {
     /*
      * Can skip this if mappings are safely fixed.
@@ -563,6 +563,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM, bool fResolveConflicts)
                     &&  (pVM->fRawR0Enabled || pPD->a[iPDE + iPT].n.u1User))
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
+
                     Log(("PGMHasMappingConflicts: Conflict was detected at %08RX32 for mapping %s (32 bits)\n"
                          "                        iPDE=%#x iPT=%#x PDE=%RGp.\n",
                         (iPT + iPDE) << X86_PD_SHIFT, pCur->pszDesc,
@@ -601,3 +602,114 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM, bool fResolveConflicts)
 
     return false;
 }
+
+/**
+ * Checks and resolves (ring 3 only) guest conflicts with VMM GC mappings.
+ *
+ * @returns VBox status.
+ * @param   pVM                 The virtual machine.
+ */
+VMMDECL(int) PGMMapResolveConflicts(PVM pVM)
+{
+    /*
+     * Can skip this if mappings are safely fixed.
+     */
+    if (pVM->pgm.s.fMappingsFixed)
+        return VINF_SUCCESS;
+
+    PGMMODE const enmGuestMode = PGMGetGuestMode(pVM);
+    Assert(enmGuestMode <= PGMMODE_PAE_NX);
+
+    /*
+     * Iterate mappings.
+     */
+    if (enmGuestMode == PGMMODE_32_BIT)
+    {
+        /*
+         * Resolve the page directory.
+         */
+        PX86PD pPD = pgmGstGet32bitPDPtr(&pVM->pgm.s);
+        Assert(pPD);
+
+        for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
+        {
+            unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
+            unsigned iPT = pCur->cPTs;
+            while (iPT-- > 0)
+            {
+                if (    pPD->a[iPDE + iPT].n.u1Present /** @todo PGMGstGetPDE. */
+                    &&  (pVM->fRawR0Enabled || pPD->a[iPDE + iPT].n.u1User))
+                {
+                    STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
+
+                    Log(("PGMHasMappingConflicts: Conflict was detected at %08RX32 for mapping %s (32 bits)\n"
+                         "                        iPDE=%#x iPT=%#x PDE=%RGp.\n",
+                        (iPT + iPDE) << X86_PD_SHIFT, pCur->pszDesc,
+                        iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
+#ifdef IN_RING3
+                    int rc = pgmR3SyncPTResolveConflict(pVM, pCur, pPD, iPDE << X86_PD_SHIFT);
+                    AssertRCReturn(rc, rc);
+
+                    /*
+                     * Update pCur.
+                     */
+                    pCur = pVM->pgm.s.CTX_SUFF(pMappings);
+                    while (pCur && pCur->GCPtr < (iPDE << X86_PD_SHIFT))
+                        pCur = pCur->CTX_SUFF(pNext);
+                    break;
+#else
+                    return VINF_PGM_SYNC_CR3;
+#endif
+                }
+            }
+            if (!pCur) 
+                break;
+        }
+    }
+    else if (   enmGuestMode == PGMMODE_PAE
+             || enmGuestMode == PGMMODE_PAE_NX)
+    {
+        for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
+        {
+            RTGCPTR   GCPtr = pCur->GCPtr;
+
+            unsigned  iPT = pCur->cb >> X86_PD_PAE_SHIFT;
+            while (iPT-- > 0)
+            {
+                X86PDEPAE Pde = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
+
+                if (   Pde.n.u1Present
+                    && (pVM->fRawR0Enabled || Pde.n.u1User))
+                {
+                    STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
+                    Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping %s (PAE)\n"
+                         "                        PDE=%016RX64.\n",
+                        GCPtr, pCur->pszDesc, Pde.u));
+#ifdef IN_RING3
+                    int rc = pgmR3SyncPTResolveConflictPAE(pVM, pCur, GCPtr);
+                    AssertRCReturn(rc, rc);
+
+                    /*
+                     * Update pCur.
+                     */
+                    pCur = pVM->pgm.s.CTX_SUFF(pMappings);
+                    while (pCur && pCur->GCPtr < GCPtr)
+                        pCur = pCur->CTX_SUFF(pNext);
+                    break;
+#else
+                    return VINF_PGM_SYNC_CR3;
+#endif
+                }
+                GCPtr += (1 << X86_PD_PAE_SHIFT);
+            }
+            if (!pCur) 
+                break;
+        }
+    }
+    else
+        AssertFailed();
+
+    return VINF_SUCCESS;
+}
+#endif /* IN_RING0 */
+

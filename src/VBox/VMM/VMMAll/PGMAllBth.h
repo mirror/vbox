@@ -3298,11 +3298,24 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
 
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#  ifdef PGM_WITHOUT_MAPPINGS
+    Assert(!pVM->pgm.s.fMappingsFixed);
+    return VINF_SUCCESS;
+#  else
     /* Nothing to do when mappings are fixed. */
     if (pVM->pgm.s.fMappingsFixed)
         return VINF_SUCCESS;
-# endif
 
+    int rc = PGMMapResolveConflicts(pVM);
+    Assert(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3);
+    if (rc == VINF_PGM_SYNC_CR3)
+    {
+        LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
+        return VINF_PGM_SYNC_CR3;
+    }
+#  endif
+    return VINF_SUCCESS;
+# else
     /*
      * PAE and 32-bit legacy mode (shadow).
      * (Guest PAE, 32-bit legacy, protected and real modes.)
@@ -3340,12 +3353,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     const bool  fRawR0Enabled = EMIsRawRing0Enabled(pVM);
     PPGMPOOL    pPool         = pVM->pgm.s.CTX_SUFF(pPool);
 
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    /* Mappings are always enabled when we get here. */
-    Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-    pMapping      = pVM->pgm.s.CTX_SUFF(pMappings);
-    iPdNoMapping  = (pMapping) ? (pMapping->GCPtr >> GST_PD_SHIFT) : ~0U;
-#  else
     /* Only check mappings if they are supposed to be put into the shadow page table. */
     if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
     {
@@ -3357,7 +3364,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         pMapping      = 0;
         iPdNoMapping  = ~0U;
     }
-#  endif
 
 #  if PGM_GST_TYPE == PGM_TYPE_PAE
     for (uint64_t iPdpt = 0; iPdpt < GST_PDPE_ENTRIES; iPdpt++)
@@ -3368,7 +3374,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         PX86PDEPAE      pPDEDst   = pgmShwGetPaePDEPtr(&pVM->pgm.s, iPdpt << X86_PDPT_SHIFT);
         PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
 
-#   ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         if (pPDSrc == NULL)
         {
             /* PDPE not present */
@@ -3390,7 +3395,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 pPdptDst->a[iPdpt].n.u1Present = 0;
             continue;
         }
-#    endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
 #  else  /* PGM_GST_TYPE != PGM_TYPE_PAE */
     {
 #  endif /* PGM_GST_TYPE != PGM_TYPE_PAE */
@@ -3468,14 +3472,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
 #  endif /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
 
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-                /* advance */
-#   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                pPDEDst += 2;
-#   else
-                pPDEDst++;
-#   endif
-#  else
                 /*
                  * Sync page directory entry.
                  *
@@ -3564,7 +3560,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     /* advance */
                     pPDEDst++;
                 } /* foreach 2MB PAE PDE in 4MB guest PDE */
-#  endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
             }
 #  if PGM_GST_TYPE == PGM_TYPE_PAE
             else if (iPD + iPdpt * X86_PG_PAE_ENTRIES != iPdNoMapping)
@@ -3575,14 +3570,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 /*
                  * Check if there is any page directory to mark not present here.
                  */
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-                /* advance */
-#   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                pPDEDst += 2;
-#   else
-                pPDEDst++;
-#   endif
-#  else
 #   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
 #   elif PGM_GST_TYPE == PGM_TYPE_PAE
@@ -3599,7 +3586,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     }
                     pPDEDst++;
                 }
-#  endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
             }
             else
             {
@@ -3610,7 +3596,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 const unsigned cPTs = pMapping->cb >> GST_PD_SHIFT;
 
                 Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-#   ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY 
                 if (pVM->pgm.s.fMappingsFixed)
                 {
                     /* It's fixed, just skip the mapping. */
@@ -3618,7 +3603,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                 }
                 else
-#   endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
                 {
                     /*
                      * Check for conflicts for subsequent pagetables
@@ -3685,6 +3669,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 # else /* guest real and protected mode */
     return VINF_SUCCESS;
 # endif
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 #endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
 }
 

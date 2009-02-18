@@ -330,8 +330,10 @@ VMMDECL(int)        PGMMapSetPage(PVM pVM, RTGCPTR GCPtr, uint64_t cb, uint64_t 
 VMMDECL(int)        PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 VMMDECL(int)        PGMMapActivateAll(PVM pVM);
 VMMDECL(int)        PGMMapDeactivateAll(PVM pVM);
-VMMDECL(bool)       PGMMapHasConflicts(PVM pVM, bool fResolveConflicts);
-
+#ifndef IN_RING0
+VMMDECL(bool)       PGMMapHasConflicts(PVM pVM);
+VMMDECL(int)        PGMMapResolveConflicts(PVM pVM);
+#endif
 VMMDECL(int)        PGMShwGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
 VMMDECL(int)        PGMShwSetPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
 VMMDECL(int)        PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
