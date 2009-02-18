@@ -461,7 +461,7 @@ int NetIfListTap(std::list <ComObjPtr <HostNetworkInterface> > &list)
         hr = VBoxNetCfgWinGetComponentEnum(pNc, &GUID_DEVCLASS_NET, &pEnumComponent);
         if(hr == S_OK)
         {
-            while(hr = VBoxNetCfgWinGetNextComponent(pEnumComponent, &pMpNcc) == S_OK)
+            while((hr = VBoxNetCfgWinGetNextComponent(pEnumComponent, &pMpNcc)) == S_OK)
             {
                 ULONG uComponentStatus;
                 hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
@@ -477,7 +477,7 @@ int NetIfListTap(std::list <ComObjPtr <HostNetworkInterface> > &list)
                         Assert(hr == S_OK);
                         if(hr == S_OK)
                         {
-                            if(!wcscmp(pId, L"sun_VBoxNetAdp"))
+                            if(!_wcsnicmp(pId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
                             {
                                 vboxNetWinAddComponent(&list, pMpNcc);
                             }

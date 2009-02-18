@@ -98,6 +98,8 @@ public:
 
     // IHost methods
 #ifdef RT_OS_WINDOWS
+    STDMETHOD(COMGETTER(TapInterfaces))(ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces));
+
     STDMETHOD(CreateHostNetworkInterface) (IN_BSTR aName,
                                            IHostNetworkInterface **aHostNetworkInterface,
                                            IProgress **aProgress);
