@@ -152,6 +152,11 @@ extern PYXPCOM_EXPORT PyObject *PyXPCOM_Error;
 // just "return PyXPCOM_BuildPyException(hr, punk, IID_IWhatever)"
 PYXPCOM_EXPORT PyObject *PyXPCOM_BuildPyException(nsresult res);
 
+#ifdef VBOX
+// Build human readable error message out of XPCOM error
+PYXPCOM_EXPORT PyObject *PyXPCOM_BuildErrorMessage(nsresult r);
+#endif
+
 // Used in gateways to handle the current Python exception
 // NOTE: this function assumes it is operating within the Python context
 PYXPCOM_EXPORT nsresult PyXPCOM_SetCOMErrorFromPyException();
