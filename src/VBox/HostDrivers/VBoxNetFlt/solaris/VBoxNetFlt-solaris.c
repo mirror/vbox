@@ -1891,6 +1891,8 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                             vboxNetFltSolarisCloseDev(pUdp4VNodeHeld, pUdp4User);
                                             ldi_close(ArpDevHandle, FREAD | FWRITE, kcred);
                                             ldi_close(Ip4DevHandle, FREAD | FWRITE, kcred);
+                                            releasef(Ip4MuxFd);
+                                            releasef(ArpMuxFd);
 
                                             LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: Success! %s %s@(IPv4:%d Arp:%d) "
                                                     "%s interface %s\n", fAttach ? "Injected" : "Ejected", StrMod.mod_name,
@@ -1937,6 +1939,9 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                             }
                             else
                                 LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to find position. rc=%d rc2=%d\n", rc, rc2));
+
+                            releasef(Ip4MuxFd);
+                            releasef(ArpMuxFd);
                         }
                         else
                             LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to get vnode from MuxFd.\n"));
@@ -2103,6 +2108,7 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                                          */
                                         vboxNetFltSolarisCloseDev(pUdp6VNodeHeld, pUdp6User);
                                         ldi_close(Ip6DevHandle, FREAD | FWRITE, kcred);
+                                        releasef(Ip6MuxFd);
 
                                         LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: Success! %s %s@(IPv6:%d) "
                                                 "%s interface %s\n", fAttach ? "Injected" : "Ejected", StrMod.mod_name,
@@ -2130,6 +2136,8 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                             }
                             else
                                 LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to find position. rc=%d rc2=%d\n", rc, rc2));
+
+                            releasef(Ip6MuxFd);
                         }
                         else
                              LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get vnode from MuxFd.\n"));
