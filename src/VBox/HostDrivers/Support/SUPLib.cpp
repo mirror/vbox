@@ -1529,7 +1529,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
      * Open image file and figure its size.
      */
     RTLDRMOD hLdrMod;
-    int rc = RTLdrOpen(pszFilename, &hLdrMod);
+    int rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_HOST, &hLdrMod);
     if (!RT_SUCCESS(rc))
         return rc;
 

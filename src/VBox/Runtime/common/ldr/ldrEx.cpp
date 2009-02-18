@@ -48,9 +48,11 @@
  *
  * @returns iprt status code.
  * @param   pReader     The loader reader instance which will provide the raw image bits.
+ * @param   fFlags      Reserved, MBZ.
+ * @param   enmArch     Architecture specifier.
  * @param   phMod       Where to store the handle.
  */
-int rtldrOpenWithReader(PRTLDRREADER pReader, PRTLDRMOD phMod)
+int rtldrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phMod)
 {
     /*
      * Read and verify the file signature.
@@ -104,37 +106,37 @@ int rtldrOpenWithReader(PRTLDRREADER pReader, PRTLDRMOD phMod)
      */
     if (uSign.u32 == IMAGE_NT_SIGNATURE)
 #ifdef LDR_WITH_PE
-        rc = rtldrPEOpen(pReader, offHdr, phMod);
+        rc = rtldrPEOpen(pReader, fFlags, enmArch, offHdr, phMod);
 #else
         rc = VERR_PE_EXE_NOT_SUPPORTED;
 #endif
     else if (uSign.u32 == IMAGE_ELF_SIGNATURE)
 #if defined(LDR_WITH_ELF)
-        rc = rtldrELFOpen(pReader, phMod);
+        rc = rtldrELFOpen(pReader, fFlags, enmArch, phMod);
 #else
         rc = VERR_ELF_EXE_NOT_SUPPORTED;
 #endif
     else if (uSign.au16[0] == IMAGE_LX_SIGNATURE)
 #ifdef LDR_WITH_LX
-        rc = rtldrLXOpen(pReader, offHdr, phMod);
+        rc = rtldrLXOpen(pReader, fFlags, enmArch, offHdr, phMod);
 #else
         rc = VERR_LX_EXE_NOT_SUPPORTED;
 #endif
     else if (uSign.au16[0] == IMAGE_LE_SIGNATURE)
 #ifdef LDR_WITH_LE
-        rc = rtldrLEOpen(pReader, phMod);
+        rc = rtldrLEOpen(pReader, fFlags, enmArch, phMod);
 #else
         rc = VERR_LE_EXE_NOT_SUPPORTED;
 #endif
     else if (uSign.au16[0] == IMAGE_NE_SIGNATURE)
 #ifdef LDR_WITH_NE
-        rc = rtldrNEOpen(pReader, phMod);
+        rc = rtldrNEOpen(pReader, fFlags, enmArch, phMod);
 #else
         rc = VERR_NE_EXE_NOT_SUPPORTED;
 #endif
     else if (uSign.au16[0] == IMAGE_DOS_SIGNATURE)
 #ifdef LDR_WITH_MZ
-        rc = rtldrMZOpen(pReader, phMod);
+        rc = rtldrMZOpen(pReader, fFlags, enmArch, phMod);
 #else
         rc = VERR_MZ_EXE_NOT_SUPPORTED;
 #endif
@@ -142,7 +144,7 @@ int rtldrOpenWithReader(PRTLDRREADER pReader, PRTLDRMOD phMod)
              || uSign.u32 == IMAGE_AOUT_Z_SIGNATURE*/ /** @todo find the aout magics in emx or binutils. */
              0)
 #ifdef LDR_WITH_AOUT
-        rc = rtldrAOUTOpen(pReader, phMod);
+        rc = rtldrAOUTOpen(pReader, fFlags, enmArch, phMod);
 #else
         rc = VERR_AOUT_EXE_NOT_SUPPORTED;
 #endif
@@ -157,7 +159,7 @@ int rtldrOpenWithReader(PRTLDRREADER pReader, PRTLDRMOD phMod)
 #ifdef LDR_WITH_KLDR
     /* Try kLdr if it's a format we don't recognize. */
     if (rc <= VERR_INVALID_EXE_SIGNATURE && rc > VERR_BAD_EXE_FORMAT)
-        rc = rtldrkLdrOpen(pReader, phMod);
+        rc = rtldrkLdrOpen(pReader, fFlags, enmArch, phMod);
 #endif
 
     LogFlow(("rtldrOpenWithReader: %s: returns %Rrc *phMod=%p\n", pReader->pfnLogName(pReader), rc, *phMod));

@@ -853,6 +853,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_IMAGE_TOO_BIG                      (-612)
 /** The image base address is to high for this image type. */
 #define VERR_IMAGE_BASE_TOO_HIGH                (-614)
+/** Mismatching architecture. */
+#define VERR_LDR_ARCH_MISMATCH                  (-615)
 /** The PE loader encountered delayed imports, a feature which hasn't been implemented yet. */
 #define VERR_LDRPE_DELAY_IMPORT                 (-620)
 /** The PE loader doesn't have a clue what the security data directory entry is all about. */

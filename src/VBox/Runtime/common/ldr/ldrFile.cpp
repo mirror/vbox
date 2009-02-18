@@ -240,16 +240,32 @@ static int rtldrFileCreate(PRTLDRREADER *ppReader, const char *pszFilename)
 
 
 /**
- * Open a binary image file.
+ * Open a binary image file, extended version.
  *
  * @returns iprt status code.
  * @param   pszFilename Image filename.
- * @param   phLdrMod    Where to store the handle to the loaded module.
+ * @param   fFlags      Reserved, MBZ.
+ * @param   enmArch     CPU architecture specifier for the image to be loaded.
+ * @param   phLdrMod    Where to store the handle to the loader module.
  */
-RTDECL(int) RTLdrOpen(const char *pszFilename, PRTLDRMOD phLdrMod)
+RTDECL(int) RTLdrOpen(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod)
 {
-    LogFlow(("RTLdrOpen: pszFilename=%p:{%s} phLdrMod=%p\n",
-             pszFilename, pszFilename, phLdrMod));
+    LogFlow(("RTLdrOpen: pszFilename=%p:{%s} fFlags=%#x enmArch=%d phLdrMod=%p\n",
+             pszFilename, pszFilename, fFlags, enmArch, phLdrMod));
+    AssertMsgReturn(!fFlags, ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(enmArch > RTLDRARCH_INVALID && enmArch < RTLDRARCH_END, ("%d\n", enmArch), VERR_INVALID_PARAMETER);
+
+    /*
+     * Resolve RTLDRARCH_HOST.
+     */
+    if (enmArch == RTLDRARCH_HOST)
+#if   defined(RT_ARCH_AMD64)
+        enmArch = RTLDRARCH_AMD64;
+#elif defined(RT_ARCH_X86)
+        enmArch = RTLDRARCH_X86_32;
+#else
+        enmArch = RTLDRARCH_WHATEVER;
+#endif
 
     /*
      * Create file reader & invoke worker which identifies and calls the image interpreter.
@@ -258,7 +274,7 @@ RTDECL(int) RTLdrOpen(const char *pszFilename, PRTLDRMOD phLdrMod)
     int rc = rtldrFileCreate(&pReader, pszFilename);
     if (RT_SUCCESS(rc))
     {
-        rc = rtldrOpenWithReader(pReader, phLdrMod);
+        rc = rtldrOpenWithReader(pReader, fFlags, enmArch, phLdrMod);
         if (RT_SUCCESS(rc))
         {
             LogFlow(("RTLdrOpen: return %Rrc *phLdrMod\n", rc, *phLdrMod));
@@ -276,15 +292,29 @@ RTDECL(int) RTLdrOpen(const char *pszFilename, PRTLDRMOD phLdrMod)
  * Opens a binary image file using kLdr.
  *
  * @returns iprt status code.
- * @param   pszFilename     Image filename.
- * @param   phLdrMod        Where to store the handle to the loaded module.
+ * @param   pszFilename Image filename.
+ * @param   fFlags      Reserved, MBZ.
+ * @param   enmArch     CPU architecture specifier for the image to be loaded.
+ * @param   phLdrMod    Where to store the handle to the loaded module.
  * @remark  Primarily for testing the loader.
  */
-RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, PRTLDRMOD phLdrMod)
+RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod)
 {
 #ifdef LDR_WITH_KLDR
-    LogFlow(("RTLdrOpenkLdr: pszFilename=%p:{%s} phLdrMod=%p\n",
-             pszFilename, pszFilename, phLdrMod));
+    LogFlow(("RTLdrOpenkLdr: pszFilename=%p:{%s} fFlags=%#x enmArch=%d phLdrMod=%p\n",
+             pszFilename, pszFilename, fFlags, enmArch, phLdrMod));
+
+    /*
+     * Resolve RTLDRARCH_HOST.
+     */
+    if (enmArch == RTLDRARCH_HOST)
+# if   defined(RT_ARCH_AMD64)
+        enmArch = RTLDRARCH_AMD64;
+# elif defined(RT_ARCH_X86)
+        enmArch = RTLDRARCH_X86_32;
+# else
+        enmArch = RTLDRARCH_WHATEVER;
+# endif
 
     /*
      * Create file reader & invoke worker which identifies and calls the image interpreter.
@@ -293,7 +323,7 @@ RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, PRTLDRMOD phLdrMod)
     int rc = rtldrFileCreate(&pReader, pszFilename);
     if (RT_SUCCESS(rc))
     {
-        rc = rtldrkLdrOpen(pReader, phLdrMod);
+        rc = rtldrkLdrOpen(pReader, fFlags, enmArch, phLdrMod);
         if (RT_SUCCESS(rc))
         {
             LogFlow(("RTLdrOpenkLdr: return %Rrc *phLdrMod\n", rc, *phLdrMod));
@@ -306,7 +336,7 @@ RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, PRTLDRMOD phLdrMod)
     return rc;
 
 #else
-    return RTLdrOpen(pszFilename, phLdrMod);
+    return RTLdrOpen(pszFilename, fFlags, enmArch, phLdrMod);
 #endif
 }
 

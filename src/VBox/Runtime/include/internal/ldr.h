@@ -343,7 +343,7 @@ DECLINLINE(bool) rtldrIsValid(RTLDRMOD hLdrMod)
         && ((PRTLDRMODINTERNAL)hLdrMod)->u32Magic == RTLDRMOD_MAGIC;
 }
 
-int rtldrOpenWithReader(PRTLDRREADER pReader, PRTLDRMOD phMod);
+int rtldrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phMod);
 
 
 /**
@@ -371,11 +371,11 @@ DECLCALLBACK(int) rtldrNativeClose(PRTLDRMODINTERNAL pMod);
  */
 int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle);
 
-int rtldrPEOpen(PRTLDRREADER pReader, RTFOFF offNtHdrs, PRTLDRMOD phLdrMod);
-int rtldrELFOpen(PRTLDRREADER pReader, PRTLDRMOD phLdrMod);
-int rtldrkLdrOpen(PRTLDRREADER pReader, PRTLDRMOD phLdrMod);
-/*int rtldrLXOpen(PRTLDRREADER pReader, RTFOFF offLX, PRTLDRMOD phLdrMod);
-int rtldrMachoOpen(PRTLDRREADER pReader, RTFOFF offSomething, PRTLDRMOD phLdrMod);*/
+int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offNtHdrs, PRTLDRMOD phLdrMod);
+int rtldrELFOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod);
+int rtldrkLdrOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod);
+/*int rtldrLXOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offLX, PRTLDRMOD phLdrMod);
+int rtldrMachoOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offSomething, PRTLDRMOD phLdrMod);*/
 
 
 __END_DECLS

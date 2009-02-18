@@ -183,7 +183,7 @@ int main(int argc, char **argv)
      */
     RTUINTPTR LoadAddr = (RTUINTPTR)RTStrToUInt64(argv[1]);
     RTLDRMOD hLdrMod;
-    int rc = RTLdrOpen(argv[2], &hLdrMod);
+    int rc = RTLdrOpen(argv[2], 0, RTLDRARCH_WHATEVER, &hLdrMod);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstLdr-3: Failed to open '%s': %Rra\n", argv[2], rc);

@@ -943,22 +943,26 @@ static void rtldrPEConvert32BitLoadConfigTo64Bit(PIMAGE_LOAD_CONFIG_DIRECTORY64 
  * @returns iprt status code.
  * @param   pFileHdr    Pointer to the file header that needs validating.
  * @param   pszLogName  The log name to  prefix the errors with.
+ * @param   penmArch    Where to store the CPU architecture.
  */
-int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, const char *pszLogName)
+int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, const char *pszLogName, PRTLDRARCH penmArch)
 {
     size_t cbOptionalHeader;
     switch (pFileHdr->Machine)
     {
         case IMAGE_FILE_MACHINE_I386:
             cbOptionalHeader = sizeof(IMAGE_OPTIONAL_HEADER32);
+            *penmArch = RTLDRARCH_X86_32;
             break;
         case IMAGE_FILE_MACHINE_AMD64:
             cbOptionalHeader = sizeof(IMAGE_OPTIONAL_HEADER64);
+            *penmArch = RTLDRARCH_AMD64;
             break;
 
         default:
             Log(("rtldrPEOpen: %s: Unsupported Machine=%#x\n",
                  pszLogName, pFileHdr->Machine));
+            *penmArch = RTLDRARCH_INVALID;
             return VERR_BAD_EXE_FORMAT;
     }
     if (pFileHdr->SizeOfOptionalHeader != cbOptionalHeader)
@@ -1416,10 +1420,12 @@ int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64
  *
  * @returns iprt status code.
  * @param   pReader     The loader reader instance which will provide the raw image bits.
+ * @param   fFlags      Reserved, MBZ.
+ * @param   enmArch     Architecture specifier.
  * @param   offNtHdrs   The offset of the NT headers (where you find "PE\0\0").
  * @param   phLdrMod    Where to store the handle.
  */
-int rtldrPEOpen(PRTLDRREADER pReader, RTFOFF offNtHdrs, PRTLDRMOD phLdrMod)
+int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offNtHdrs, PRTLDRMOD phLdrMod)
 {
     /*
      * Read and validate the file header.
@@ -1428,10 +1434,18 @@ int rtldrPEOpen(PRTLDRREADER pReader, RTFOFF offNtHdrs, PRTLDRMOD phLdrMod)
     int rc = pReader->pfnRead(pReader, &FileHdr, sizeof(FileHdr), offNtHdrs + 4);
     if (RT_FAILURE(rc))
         return rc;
+    RTLDRARCH enmArchImage;
     const char *pszLogName = pReader->pfnLogName(pReader);
-    rc = rtldrPEValidateFileHeader(&FileHdr, pszLogName);
+    rc = rtldrPEValidateFileHeader(&FileHdr, pszLogName, &enmArchImage);
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Match the CPU architecture.
+     */
+    if (    enmArch != RTLDRARCH_WHATEVER
+        &&  enmArch != enmArchImage)
+        return VERR_LDR_ARCH_MISMATCH;
 
     /*
      * Read and validate the "optional" header. Convert 32->64 if necessary.

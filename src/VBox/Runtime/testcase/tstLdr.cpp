@@ -126,9 +126,9 @@ static int testLdrOne(const char *pszFilename)
         /* open it */
         int rc;
         if (!strncmp(aLoads[i].pszName, "kLdr-", sizeof("kLdr-") - 1))
-            rc = RTLdrOpenkLdr(pszFilename, &aLoads[i].hLdrMod);
+            rc = RTLdrOpenkLdr(pszFilename, 0, RTLDRARCH_WHATEVER, &aLoads[i].hLdrMod);
         else
-            rc = RTLdrOpen(pszFilename, &aLoads[i].hLdrMod);
+            rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_WHATEVER, &aLoads[i].hLdrMod);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstLdr: Failed to open '%s'/%d, rc=%Rrc. aborting test.\n", pszFilename, i, rc);
