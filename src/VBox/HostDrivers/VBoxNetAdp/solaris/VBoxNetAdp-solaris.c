@@ -63,7 +63,6 @@
 #define DEVICE_DESC_MOD          "VirtualBox AdpMod"
 #define VBOXNETADP_MTU           1500
 
-static int VBoxNetAdpSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
 static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 static int VBoxNetAdpSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
 
@@ -440,41 +439,6 @@ static int VBoxNetAdpSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 }
 
 
-/**
- * Info entry point, called by solaris kernel for obtaining driver info.
- *
- * @param   pDip            The module structure instance (do not use).
- * @param   enmCmd          Information request type.
- * @param   pvArg           Type specific argument.
- * @param   ppvResult       Where to store the requested info.
- *
- * @returns  corresponding solaris error code.
- */
-static int VBoxNetAdpSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg, void **ppResult)
-{
-    LogFlow((DEVICE_NAME ":VBoxNetAdpSolarisGetInfo pDip=%p enmCmd=%d pArg=%p instance=%d\n", pDip, enmCmd,
-                getminor((dev_t)pvArg)));
-
-    switch (enmCmd)
-    {
-        case DDI_INFO_DEVT2DEVINFO:
-        {
-            *ppResult = g_pVBoxNetAdpSolarisDip;
-            return DDI_SUCCESS;
-        }
-
-        case DDI_INFO_DEVT2INSTANCE:
-        {
-            int instance = getminor((dev_t)pvArg);
-            *ppResult = (void *)(uintptr_t)instance;
-            return DDI_SUCCESS;
-        }
-    }
-
-    return DDI_FAILURE;
-}
-
-
 static int vboxNetAdpSolarisGenerateMac(PRTMAC pMac)
 {
     pMac->au8[0] = 0x00;
@@ -510,7 +474,7 @@ static int vboxNetAdpSolarisSetMacAddress(gld_mac_info_t *pMacInfo, unsigned cha
 
 static int vboxNetAdpSolarisSend(gld_mac_info_t *pMacInfo, mblk_t *pMsg)
 {
-
+    return GLD_SUCCESS;
 }
 
 
