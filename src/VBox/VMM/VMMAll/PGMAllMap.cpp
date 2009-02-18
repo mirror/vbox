@@ -551,7 +551,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM, bool fResolveConflicts)
         /*
          * Resolve the page directory.
          */
-        PX86PD pPD = pVM->pgm.s.CTX_SUFF(pGst32BitPd);
+        PX86PD pPD = pgmGstGet32bitPDPtr(&pVM->pgm.s);
         Assert(pPD);
 
         for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
