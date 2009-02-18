@@ -67,8 +67,8 @@
 *******************************************************************************/
 /** @todo this quoting macros probably should be moved to a common place.
   * The indirection is for expanding macros passed to the first macro. */
-#define VBOXSOLQUOTE2(x)                #x
-#define VBOXSOLQUOTE(x)                 VBOXSOLQUOTE2(x)
+#define VBOXSOLQUOTE2(x)         #x
+#define VBOXSOLQUOTE(x)          VBOXSOLQUOTE2(x)
 /** The module name. */
 #define DEVICE_NAME              "vboxdrv"
 /** The module description as seen in 'modinfo'. */
