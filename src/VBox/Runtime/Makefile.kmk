@@ -689,6 +689,10 @@ RuntimeGuestR3Mini_SOURCES = \
 	r3/fileio.cpp \
 	r3/fs.cpp \
 	r3/path.cpp
+RuntimeGuestR3Mini_SOURCES.freebsd = \
+	r3/posix/fileio-posix.cpp \
+	r3/posix/path-posix.cpp \
+	r3/posix/utf8-posix.cpp
 RuntimeGuestR3Mini_SOURCES.linux = \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/path-posix.cpp \
@@ -697,10 +701,13 @@ RuntimeGuestR3Mini_SOURCES.solaris = \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/utf8-posix.cpp
-RuntimeGuestR3Mini_SOURCES.freebsd = \
-	r3/posix/fileio-posix.cpp \
-	r3/posix/path-posix.cpp \
-	r3/posix/utf8-posix.cpp
+RuntimeGuestR3Mini_SOURCES.win = \
+	r3/win/fileio-win.cpp \
+	r3/win/path-win.cpp \
+	r3/win/utf8-win.cpp \
+	win/errmsgwin.cpp \
+	win/RTErrConvertFromWin32.cpp
+
 # VBox specific stuff.
 RuntimeGuestR3Mini_SOURCES += \
 	VBox/logbackdoor.cpp \
