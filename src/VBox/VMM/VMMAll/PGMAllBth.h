@@ -4652,7 +4652,13 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
 
 #  ifndef PGM_WITHOUT_MAPPINGS
-    /* Apply all hypervisor mappings to the new CR3. */
+    /* Apply all hypervisor mappings to the new CR3. 
+     * Note that SyncCR3 will be executed in case CR3 is changed in a guest paging mode; this will
+     * make sure we check for conflicts in the new CR3 root.
+     */
+#   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+    Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL));
+#   endif
     rc = PGMMapActivateAll(pVM);
     AssertRCReturn(rc, rc);
 #  endif
@@ -4753,10 +4759,7 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
     Assert(!HWACCMIsNestedPagingActive(pVM));
 
 # ifndef PGM_WITHOUT_MAPPINGS
-    /* Remove the hypervisor mappings from the shadow page table.
-     * Note that SyncCR3 will be executed in case CR3 is changed in a guest paging mode; this will
-     * make sure we check for conflicts in the new CR3 root.
-     */
+    /* Remove the hypervisor mappings from the shadow page table. */
     PGMMapDeactivateAll(pVM);
 # endif
 
