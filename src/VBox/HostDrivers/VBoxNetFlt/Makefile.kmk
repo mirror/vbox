@@ -218,7 +218,7 @@ endif #ifeq ($(KBUILD_TARGET), win)
 #
 SYSMODS.win += VBoxNetAdp
 VBoxNetAdp_TEMPLATE = VBOXR0DRV
-VBoxNetAdp_INST = $(INST_VBOXNETFLT)
+#VBoxNetAdp_INST = $(INST_VBOXNETADP)
 if defined(VBOX_SIGNING_MODE)
  VBoxNetAdp_NOINST = true
 endif
