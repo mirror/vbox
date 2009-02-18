@@ -326,6 +326,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 
                 /* Set the PGM_PDFLAGS_MAPPING flag in the page directory pointer entry. (legacy PAE guest mode) */
                 pShwPdpt->a[iPdPt].u |= PGM_PLXFLAGS_MAPPING;
+                break;
             }
 
             default:
