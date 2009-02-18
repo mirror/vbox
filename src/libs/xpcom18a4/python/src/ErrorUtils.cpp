@@ -249,40 +249,45 @@ PyObject *PyXPCOM_BuildErrorMessage(nsresult r)
     char msg[512];
     bool gotMsg = false;
 
-    const RTCOMERRMSG* pMsg = RTErrCOMGet(r);
-    if (strncmp(pMsg->pszMsgFull, "Unknown", 7) != 0)
+    if (!gotMsg)
     {
-        gotMsg = true;
-        PR_snprintf(msg, sizeof(msg), "%s (%s)", 
-                    pMsg->pszMsgFull, pMsg->pszDefine);
-        gotMsg = true;
-    }
-
-    nsresult rc;
-    nsCOMPtr <nsIExceptionService> es;
-    es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
-    if (!gotMsg && NS_SUCCEEDED (rc))
-    {
-        nsCOMPtr <nsIExceptionManager> em;
-        rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+        nsresult rc;
+        nsCOMPtr <nsIExceptionService> es;
+        es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
         if (NS_SUCCEEDED (rc))
         {
-            nsCOMPtr <nsIException> ex;
-            rc = em->GetExceptionFromProvider(r, NULL, getter_AddRefs (ex));
-            if  (NS_SUCCEEDED (rc) && ex)
+            nsCOMPtr <nsIExceptionManager> em;
+            rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+            if (NS_SUCCEEDED (rc))
             {
-                nsXPIDLCString emsg;
-                ex->GetMessage(getter_Copies(emsg));
-                PR_snprintf(msg, sizeof(msg), "%s",
-                            emsg.get());
-                gotMsg = true;
+                nsCOMPtr <nsIException> ex;
+                rc = em->GetExceptionFromProvider(r, NULL, getter_AddRefs (ex));
+                if  (NS_SUCCEEDED (rc) && ex)
+                {
+                    nsXPIDLCString emsg;
+                    ex->GetMessage(getter_Copies(emsg));
+                    PR_snprintf(msg, sizeof(msg), "%s",
+                                emsg.get());
+                    gotMsg = true;
+                }
             }
         }
     }
 
     if (!gotMsg)
     {
-        PR_snprintf(msg, sizeof(msg), "Error %d in module %d",
+        const RTCOMERRMSG* pMsg = RTErrCOMGet(r);
+        if (strncmp(pMsg->pszMsgFull, "Unknown", 7) != 0)
+        {
+            PR_snprintf(msg, sizeof(msg), "%s (%s)",
+                        pMsg->pszMsgFull, pMsg->pszDefine);
+            gotMsg = true;
+        }
+    }
+
+    if (!gotMsg)
+    {
+        PR_snprintf(msg, sizeof(msg), "Error 0x%x in module 0x%x",
                     NS_ERROR_GET_CODE(r), NS_ERROR_GET_MODULE(r));
     }
     PyObject *evalue = Py_BuildValue("is", r, msg);
