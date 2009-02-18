@@ -144,14 +144,35 @@ g_verbose = True
 def split_no_quotes(s):
    return s.split()
 
-def startVm(mgr,vb,mach,type,perf):
+def createVm(ctx,name,kind,base):
+    mgr = ctx['mgr']
+    vb = ctx['vb']
+    session = mgr.getSessionObject(vb)
+    mach = vb.createMachine(name, kind, base,
+                            "00000000-0000-0000-0000-000000000000")
+    mach.saveSettings()
+    print "created machine with UUID",mach.id
+    vb.registerMachine(mach)
+
+def removeVm(ctx,mach):
+    mgr = ctx['mgr']
+    vb = ctx['vb']
+    print "removing machine ",mach.name,"with UUID",mach.id
+    mach = vb.unregisterMachine(mach.id)
+    if mach:
+         mach.deleteSettings()
+
+def startVm(ctx,mach,type):
+    mgr = ctx['mgr']
+    vb = ctx['vb']
+    perf = ctx['perf']
     session = mgr.getSessionObject(vb)
     uuid = mach.id
     progress = vb.openRemoteSession(session, uuid, type, "")
     progress.waitForCompletion(-1)
     completed = progress.completed
     rc = progress.resultCode
-    print "Completed:", completed, "rc:",rc
+    print "Completed:", completed, "rc:",hex(rc&0xffffffff)
     if int(rc) == 0:
         # we ignore exceptions to allow starting VM even if
         # perf collector cannot be started
@@ -162,7 +183,12 @@ def startVm(mgr,vb,mach,type,perf):
             if g_verbose:
                 traceback.print_exc()
             pass
-    session.close()
+         # if session not opened, close doesn't make sense
+        session.close()
+    else:
+        # Not yet implemented error string query API for remote API
+        if not ctx['remote']:
+            print session.QueryErrorObject(rc)
 
 def getMachines(ctx):
     return ctx['vb'].getMachines2()
@@ -281,7 +307,32 @@ def startCmd(ctx, args):
         type = args[2]
     else:
         type = "gui"
-    startVm(ctx['mgr'], ctx['vb'], mach, type, ctx['perf'])
+    startVm(ctx, mach, type)
+    return 0
+
+def createCmd(ctx, args):
+    if (len(args) < 3 or len(args) > 4):
+        print "usage: create name ostype <basefolder>"
+        return 0
+    name = args[1]
+    oskind = args[2]
+    if len(args) == 4:
+        base = args[3]
+    else:
+        base = ''
+    try:
+         ctx['vb'].getGuestOSType(oskind)
+    except Exception, e:
+        print 'Unknown OS type:',oskind
+        return 0
+    createVm(ctx, name, oskind, base)
+    return 0
+
+def removeCmd(ctx, args):
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    removeVm(ctx, mach)
     return 0
 
 def pauseCmd(ctx, args):
@@ -381,6 +432,8 @@ aliases = {'s':'start',
 
 commands = {'help':['Prints help information', helpCmd],
             'start':['Start virtual machine by name or uuid', startCmd],
+            'create':['Create virtual machine', createCmd],
+            'remove':['Remove virtual machine', removeCmd],
             'pause':['Pause virtual machine', pauseCmd],
             'resume':['Resume virtual machine', resumeCmd],
             'stats':['Stats for virtual machine', statsCmd],

@@ -1496,7 +1496,8 @@
         Optionally, you may specify an UUID of to assign to the created machine.
         However, this is not recommended and you should normally pass an empty
         (null) UUID to this method so that a new UUID will be automatically
-        generated for every created machine.
+        generated for every created machine. You can use UUID
+        00000000-0000-0000-0000-000000000000 as null value.
 
         <note>
           There is no way to change the name of the settings file or

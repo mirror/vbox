@@ -748,6 +748,7 @@ STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
                                         IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
+    LogFlowThisFunc (("aName=\"%ls\",aOsTypeId =\"%ls\",aBaseFolder=\"%ls\"\n", aName, aOsTypeId, aBaseFolder));
 
     CheckComArgStrNotEmptyOrNull (aName);
     CheckComArgOutPointerValid (aMachine);

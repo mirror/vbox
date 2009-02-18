@@ -50,6 +50,7 @@
 #include <nsIConsoleService.h>
 #ifdef VBOX
 #include <nsIExceptionService.h>
+#include <iprt/err.h>
 #endif
 #include "nspr.h" // PR_fprintf
 
@@ -209,7 +210,7 @@ void PyXPCOM_LogError(const char *fmt, ...)
 	// NOTE: It is tricky to use logger.exception here - the exception
 	// state when called back from the C code is clear.  Only Python 2.4
 	// and later allows an explicit exc_info tuple().
-	
+
 	// Don't use VLogF here, instead arrange for exception info and
 	// traceback to be in the same buffer.
 	char buff[512];
@@ -242,51 +243,64 @@ void PyXPCOM_LogDebug(const char *fmt, ...)
 }
 #endif
 
+#ifdef VBOX
+PyObject *PyXPCOM_BuildErrorMessage(nsresult r)
+{
+    char msg[512];
+    bool gotMsg = false;
+
+    const RTCOMERRMSG* pMsg = RTErrCOMGet(r);
+    if (strncmp(pMsg->pszMsgFull, "Unknown", 7) != 0)
+    {
+        gotMsg = true;
+        PR_snprintf(msg, sizeof(msg), "%s (%s)", 
+                    pMsg->pszMsgFull, pMsg->pszDefine);
+        gotMsg = true;
+    }
+
+    nsresult rc;
+    nsCOMPtr <nsIExceptionService> es;
+    es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
+    if (!gotMsg && NS_SUCCEEDED (rc))
+    {
+        nsCOMPtr <nsIExceptionManager> em;
+        rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+        if (NS_SUCCEEDED (rc))
+        {
+            nsCOMPtr <nsIException> ex;
+            rc = em->GetExceptionFromProvider(r, NULL, getter_AddRefs (ex));
+            if  (NS_SUCCEEDED (rc) && ex)
+            {
+                nsXPIDLCString emsg;
+                ex->GetMessage(getter_Copies(emsg));
+                PR_snprintf(msg, sizeof(msg), "%s",
+                            emsg.get());
+                gotMsg = true;
+            }
+        }
+    }
+
+    if (!gotMsg)
+    {
+        PR_snprintf(msg, sizeof(msg), "Error %d in module %d",
+                    NS_ERROR_GET_CODE(r), NS_ERROR_GET_MODULE(r));
+    }
+    PyObject *evalue = Py_BuildValue("is", r, msg);
+    return evalue;
+}
+#endif
 
 PyObject *PyXPCOM_BuildPyException(nsresult r)
 {
-#ifndef VBOX 
+#ifndef VBOX
 	// Need the message etc.
 	PyObject *evalue = Py_BuildValue("i", r);
-	PyErr_SetObject(PyXPCOM_Error, evalue);
-	Py_XDECREF(evalue);
-	return NULL;
 #else
-        char msg[256];
-        
-        nsresult rc;
-        nsCOMPtr <nsIExceptionService> es;
-        es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
-        bool gotMsg = false;
-        if (NS_SUCCEEDED (rc))
-        {
-            nsCOMPtr <nsIExceptionManager> em;
-            rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
-            if (NS_SUCCEEDED (rc))
-            {
-                nsCOMPtr <nsIException> ex;
-                rc = em->GetExceptionFromProvider(r, NULL, getter_AddRefs (ex));
-                if  (NS_SUCCEEDED (rc) && ex)
-                {       
-                    nsXPIDLCString emsg;
-                    ex->GetMessage(getter_Copies(emsg));
-                    PR_snprintf(msg, sizeof(msg), "%s",
-                                emsg.get());
-                    gotMsg = true;
-                }
-            }
-        }
-
-        if (!gotMsg)
-        {
-            PR_snprintf(msg, sizeof(msg), "Error %d in module %d", 
-                        NS_ERROR_GET_CODE(r), NS_ERROR_GET_MODULE(r));
-        }
-        PyObject *evalue = Py_BuildValue("is", r, msg);
+        PyObject *evalue = PyXPCOM_BuildErrorMessage(r);
+#endif
 	PyErr_SetObject(PyXPCOM_Error, evalue);
 	Py_XDECREF(evalue);
 	return NULL;
-#endif
 }
 
 nsresult PyXPCOM_SetCOMErrorFromPyException()
@@ -347,15 +361,15 @@ char *PyTraceback_AsString(PyObject *exc_tb)
 	if (obFuncTB==NULL)
 		TRACEBACK_FETCH_ERROR("cant find traceback.print_tb\n");
 
-	argsTB = Py_BuildValue("OOO", 
+	argsTB = Py_BuildValue("OOO",
 			exc_tb  ? exc_tb  : Py_None,
-			Py_None, 
+			Py_None,
 			obStringIO);
-	if (argsTB==NULL) 
+	if (argsTB==NULL)
 		TRACEBACK_FETCH_ERROR("cant make print_tb arguments\n");
 
 	obResult = PyObject_CallObject(obFuncTB, argsTB);
-	if (obResult==NULL) 
+	if (obResult==NULL)
 		TRACEBACK_FETCH_ERROR("traceback.print_tb() failed\n");
 	/* Now call the getvalue() method in the StringIO instance */
 	Py_DECREF(obFuncStringIO);
@@ -364,7 +378,7 @@ char *PyTraceback_AsString(PyObject *exc_tb)
 		TRACEBACK_FETCH_ERROR("cant find getvalue function\n");
 	Py_DECREF(obResult);
 	obResult = PyObject_CallObject(obFuncStringIO, NULL);
-	if (obResult==NULL) 
+	if (obResult==NULL)
 		TRACEBACK_FETCH_ERROR("getvalue() failed.\n");
 
 	/* And it should be a string all ready to go - duplicate it. */
