@@ -584,7 +584,11 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
         }
         STAM_PROFILE_STOP(&pPool->StatMonitorR3, a);
     }
-    else if (    (pPage->fCR3Mix || pPage->cModifications < 96) /* it's cheaper here. */
+    else if (    (   pPage->cModifications < 96 /* it's cheaper here. */
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                  || pPage->fCR3Mix
+#endif
+                  )
              &&  cbBuf <= 4)
     {
         /* Clear the shadow entry. */

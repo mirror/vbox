@@ -1634,6 +1634,7 @@ typedef struct PGMPOOLPAGE
     /** This is used by the R3 access handlers when invoked by an async thread.
      * It's a hack required because of REMR3NotifyHandlerPhysicalDeregister. */
     bool volatile       fReusedFlushPending;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /** Used to indicate that the guest is mapping the page is also used as a CR3.
      * In these cases the access handler acts differently and will check
      * for mapping conflicts like the normal CR3 handler.
@@ -1641,6 +1642,7 @@ typedef struct PGMPOOLPAGE
      *       replaced by a list of pages which share access handler.
      */
     bool                fCR3Mix;
+#endif
 } PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
 
 
