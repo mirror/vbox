@@ -894,6 +894,62 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
     }
 }
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+/**
+ * Checks if the page is the active CR3 or is one of the four PDs of a PAE PDPT
+ *
+ * @returns VBox status code (appropriate for GC return).
+ * @param   pVM         VM Handle.
+ * @param   pPage       PGM pool page
+ */
+bool pgmPoolIsActiveRootPage(PVM pVM, PPGMPOOLPAGE pPage)
+{
+    /* First check the simple case. */
+    if (pPage == pVM->pgm.s.CTX_SUFF(pShwPageCR3))
+    {
+        LogFlow(("pgmPoolIsActiveRootPage found CR3 root\n"));
+        pPage->cModifications = 0; /* reset counter */
+        return true;
+    }
+
+    switch (PGMGetShadowMode(pVM))
+    {
+        case PGMMODE_PAE:
+        case PGMMODE_PAE_NX:
+        {
+            switch (pPage->enmKind)
+            {
+                case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
+                case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
+                {
+                    PX86PDPT pPdpt = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
+                    Assert(pPdpt);
+
+                    for (unsigned i=0;i<X86_PG_PAE_PDPE_ENTRIES;i++)
+                    {
+                        if (    pPdpt->a[i].n.u1Present
+                            &&  pPage->Core.Key == pPdpt->a[i].u & X86_PDPE_PG_MASK)
+                        {
+                            LogFlow(("pgmPoolIsActiveRootPage found PAE PDPE root\n"));
+                            pPage->cModifications = 0; /* reset counter */
+                            return true;
+                        }
+                    }
+                    break;
+                }
+            }
+
+            break;
+        }
+    }
+
+    return false;
+}
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
+
 
 # ifndef IN_RING3
 /**
@@ -1200,62 +1256,6 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE
     return rc;
 }
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-/**
- * Checks if the page is the active CR3 or is one of the four PDs of a PAE PDPT
- *
- * @returns VBox status code (appropriate for GC return).
- * @param   pVM         VM Handle.
- * @param   pPage       PGM pool page
- */
-bool pgmPoolIsActiveRootpage(PVM pVM, PPGMPOOLPAGE pPage)
-{
-    /* First check the simple case. */
-    if (pPage == pVM->pgm.s.CTX_SUFF(pShwPageCR3))
-    {
-        LogFlow(("pgmPoolIsActiveRootpage found CR3 root\n"));
-        pPage->cModifications = 0; /* reset counter */
-        return true;
-    }
-
-    switch (PGMGetShadowMode(pVM))
-    {
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-        {
-            switch (pPage->enmKind)
-            {
-                case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-                case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
-                case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
-                case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
-                case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
-                {
-                    PX86PDPT pPdpt = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
-                    Assert(pPdpt);
-
-                    for (unsigned i=0;i<X86_PG_PAE_PDPE_ENTRIES;i++)
-                    {
-                        if (    pPdpt->a[i].n.u1Present
-                            &&  pPage->Core.Key == pPdpt->a[i].u & X86_PDPE_PG_MASK)
-                        {
-                            LogFlow(("pgmPoolIsActiveRootpage found PAE PDPE root\n"));
-                            pPage->cModifications = 0; /* reset counter */
-                            return true;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            break;
-        }
-    }
-
-    return false;
-}
-#endif
-
 /**
  * \#PF Handler callback for PT write accesses.
  *
@@ -1294,7 +1294,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     bool fReused = false;
     if (    (   pPage->cModifications < 48   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-             || pgmPoolIsActiveRootpage(pVM, pPage)
+             || pgmPoolIsActiveRootPage(pVM, pPage)
 #else
              || pPage->fCR3Mix
 #endif
