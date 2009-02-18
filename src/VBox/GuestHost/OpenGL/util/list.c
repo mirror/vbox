@@ -1,5 +1,11 @@
 #include "cr_list.h"
+#ifndef VBOX
 #include <assert.h>
+#else  /* VBOX */
+  /* assert.h causes trouble on darwin (eprintf.o + classic linker). */
+# include <iprt/assert.h>
+# define assert(expr) Assert(expr)
+#endif /* VBOX */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
