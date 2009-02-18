@@ -82,7 +82,7 @@ public:
     /* private instance data */
 private:
     /** weak VirtualBox parent */
-    VirtualBox*         mVirtualBox;
+    const ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
 
     struct Task; /* Worker thread for import */
 
