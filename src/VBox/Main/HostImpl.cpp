@@ -766,7 +766,12 @@ STDMETHODIMP Host::COMGETTER(TapInterfaces) (ComSafeArrayOut (IHostNetworkInterf
 
     return S_OK;
 }
-#endif /* #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
+#else /* !defined(RT_OS_WINDOWS) || !defined(VBOX_WITH_NETFLT) */
+STDMETHODIMP Host::COMGETTER(TapInterfaces) (ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces))
+{
+    return NS_ERROR_NOT_IMPLEMENTED;
+}
+#endif /* !defined(RT_OS_WINDOWS) && !defined(VBOX_WITH_NETFLT) */
 
 /**
  * Returns a list of host network interfaces.
