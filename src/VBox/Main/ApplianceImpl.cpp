@@ -1653,7 +1653,7 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
 /* static */
 DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 {
-    std::auto_ptr <Task> task(static_cast<Task *>(pvUser));
+    std::auto_ptr<Task> task(static_cast<Task *>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
 
     Appliance *app = task->that;
@@ -1920,7 +1920,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 /* If in the next block an error occur we have to deregister
                    the machine, so make an extra try/catch block. */
                 ComPtr<ISession> session;
+                bool fSessionOpen = false;
                 ComPtr<IHardDisk> srcHdVBox;
+
                 try
                 {
                     /* In order to attach hard disks we need to open a session
@@ -1929,6 +1931,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     CheckComRCThrowRC(rc);
                     rc = app->mVirtualBox->OpenSession(session, newMachineId);
                     CheckComRCThrowRC(rc);
+                    fSessionOpen = true;
 
                     int result;
                     /* The disk image has to be on the same place as the OVF file. So
@@ -2026,8 +2029,8 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                             if (!RTPathExists(strSrcFilePath.c_str()))
                                 /* This isn't allowed */
                                 throw setError(VBOX_E_FILE_ERROR,
-                                               tr("Source virtual disk image file '%s' doesn't exists",
-                                                  strSrcFilePath.c_str()));
+                                               tr("Source virtual disk image file '%s' doesn't exist"),
+                                                  strSrcFilePath.c_str());
                             /* Clone the disk image (this is necessary cause the id has
                              * to be recreated for the case the same hard disk is
                              * attached already from a previous import) */
@@ -2099,9 +2102,11 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                         CheckComRCThrowRC(rc);
                         rc = sMachine->SaveSettings();
                         CheckComRCThrowRC(rc);
-                        rc = session->Close();
-                        CheckComRCThrowRC(rc);
-                    }
+                    } // end for (itHD = avsdeHDs.begin();
+
+                    // only now that we're done with all disks, close the session
+                    rc = session->Close();
+                    CheckComRCThrowRC(rc);
                 }
                 catch(HRESULT aRC)
                 {
