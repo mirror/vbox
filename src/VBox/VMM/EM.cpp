@@ -2606,7 +2606,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
                   || PATMShouldUseRawMode(pVM, (RTGCPTR)pCtx->eip),
                   ("Tried to execute code with IF at EIP=%08x!\n", pCtx->eip));
         if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL)
-            &&  PGMMapHasConflicts(pVM, pCtx->cr3, false))
+            &&  PGMMapHasConflicts(pVM, false))
         {
             AssertMsgFailed(("We should not get conflicts any longer!!!\n"));
             return VERR_INTERNAL_ERROR;
@@ -2719,7 +2719,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
          * Let's go paranoid!
          */
         if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL)
-            &&  PGMMapHasConflicts(pVM, pCtx->cr3, false))
+            &&  PGMMapHasConflicts(pVM, false))
         {
             AssertMsgFailed(("We should not get conflicts any longer!!!\n"));
             return VERR_INTERNAL_ERROR;

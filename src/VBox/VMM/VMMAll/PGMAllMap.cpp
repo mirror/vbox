@@ -530,10 +530,9 @@ int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
  * @returns true if conflict detected.
  * @returns false if not.
  * @param   pVM                 The virtual machine.
- * @param   cr3                 Guest context CR3 register.
  * @param   fResolveConflicts   Whether to resolve found conflicts or not (only valid in ring 3)
  */
-VMMDECL(bool) PGMMapHasConflicts(PVM pVM, uint64_t cr3, bool fResolveConflicts)
+VMMDECL(bool) PGMMapHasConflicts(PVM pVM, bool fResolveConflicts)
 {
     /*
      * Can skip this if mappings are safely fixed.
@@ -554,7 +553,6 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM, uint64_t cr3, bool fResolveConflicts)
          */
         PX86PD pPD = pVM->pgm.s.CTX_SUFF(pGst32BitPd);
         Assert(pPD);
-        Assert(pPD == (PX86PD)PGMPhysGCPhys2R3PtrAssert(pVM, cr3 & X86_CR3_PAGE_MASK, sizeof(*pPD)));
 
         for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
         {
