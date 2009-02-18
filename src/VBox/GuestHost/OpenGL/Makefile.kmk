@@ -80,6 +80,8 @@ VBoxOGLcrutil_LIBS.win = \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
 VBoxOGLcrutil_LIBS = \
+	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI)
 VBoxOGLcrutil_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
