@@ -2381,7 +2381,7 @@ void VBoxProblemReporter::showHelpWebDialog()
 void VBoxProblemReporter::showHelpAboutDialog()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString fullVersion (QString ("%1.%2").arg (vbox.GetVersion())
+    QString fullVersion (QString ("%1 r%2").arg (vbox.GetVersion())
                                           .arg (vbox.GetRevision()));
     AssertWrapperOk (vbox);
 
