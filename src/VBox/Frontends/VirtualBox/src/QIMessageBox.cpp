@@ -45,6 +45,7 @@ QIArrowSplitter::QIArrowSplitter (QWidget *aParent)
     , mMainLayout (new QVBoxLayout (this))
 {
     VBoxGlobal::setLayoutMargin (mMainLayout, 0);
+    qApp->installEventFilter (this);
 }
 
 void QIArrowSplitter::addWidget (const QString &aName, QWidget *aWidget)
@@ -73,7 +74,7 @@ void QIArrowSplitter::addWidget (const QString &aName, QWidget *aWidget)
     mMainLayout->insertLayout (0, lineLayout);
 }
 
-void QIArrowSplitter::toggleWidget()
+void QIArrowSplitter::toggleWidget (ToggleType aType)
 {
     QToolButton *arrowButton = qobject_cast <QToolButton*> (sender());
 
@@ -84,9 +85,13 @@ void QIArrowSplitter::toggleWidget()
         {
             QWidget *relatedWidget = mWidgetsList [mButtonsList.indexOf (itemButton)];
             Assert (relatedWidget);
-            relatedWidget->setVisible (!relatedWidget->isVisible());
-            itemButton->setIcon (VBoxGlobal::iconSet (relatedWidget->isVisible() ?
-                                 ":/arrow_down_10px.png" : ":/arrow_right_10px.png"));
+            if ((relatedWidget->isVisible() && aType != ExpandOnly) ||
+                (!relatedWidget->isVisible() && aType != CollapsOnly))
+            {
+                relatedWidget->setVisible (!relatedWidget->isVisible());
+                itemButton->setIcon (VBoxGlobal::iconSet (relatedWidget->isVisible() ?
+                                     ":/arrow_down_10px.png" : ":/arrow_right_10px.png"));
+            }
         }
     }
 
@@ -112,6 +117,45 @@ void QIArrowSplitter::toggleWidget()
     /* Unable to resize on some platforms because it was fixed already */
     window()->setFixedSize (window()->minimumSizeHint());
 #endif
+}
+
+bool QIArrowSplitter::eventFilter (QObject *aObject, QEvent *aEvent)
+{
+    if (!aObject->isWidgetType())
+        return QWidget::eventFilter (aObject, aEvent);
+
+    QWidget *widget = qobject_cast <QWidget*> (aObject);
+    if (widget->window() != window())
+        return QWidget::eventFilter (aObject, aEvent);
+
+    /* Process some keyboard events */
+    if (aEvent->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *kEvent = static_cast <QKeyEvent*> (aEvent);
+        QToolButton *arrowButton = qobject_cast <QToolButton*> (QApplication::focusWidget());
+        int slot = arrowButton ? mButtonsList.indexOf (arrowButton) : -1;
+        switch (kEvent->key())
+        {
+            case Qt::Key_Plus:
+            {
+                if (slot != -1 && !mWidgetsList [slot]->isVisible())
+                    arrowButton->animateClick();
+                else
+                    toggleWidget (ExpandOnly);
+                break;
+            }
+            case Qt::Key_Minus:
+            {
+                if (slot != -1 && mWidgetsList [slot]->isVisible())
+                    arrowButton->animateClick();
+                else
+                    toggleWidget (CollapsOnly);
+                break;
+            }
+        }
+    }
+
+    return QWidget::eventFilter (aObject, aEvent);
 }
 
 /** @class QIMessageBox
