@@ -1273,7 +1273,7 @@ DECLHIDDEN(int) vboxNetFltInitGlobalsBase(PVBOXNETFLTGLOBALS pGlobals)
             pGlobals->TrunkFactory.pfnRelease = vboxNetFltFactoryRelease;
             pGlobals->TrunkFactory.pfnCreateAndConnect = vboxNetFltFactoryCreateAndConnect;
 #if defined(RT_OS_WINDOWS) && defined(VBOX_TAPMINIPORT)
-            strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetTap");
+            strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetAdp");
 #else
             strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetFlt");
 #endif

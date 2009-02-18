@@ -6551,6 +6551,10 @@
       <desc>List of host network interfaces currently defined on the host.</desc>
     </attribute>
 
+    <attribute name="tapInterfaces" type="IHostNetworkInterface" safearray="yes" readonly="yes">
+      <desc>List of host tap interfaces currently defined on the host.</desc>
+    </attribute>
+    
     <attribute name="processorCount" type="unsigned long" readonly="yes">
       <desc>Number of (logical) CPUs installed in the host system.</desc>
     </attribute>

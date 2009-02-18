@@ -744,6 +744,28 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > 
     return rc;
 }
 
+STDMETHODIMP Host::COMGETTER(TapInterfaces) (ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces))
+{
+    if (ComSafeArrayOutIsNull (aNetworkInterfaces))
+        return E_POINTER;
+
+    AutoWriteLock alock (this);
+    CHECK_READY();
+
+    std::list <ComObjPtr <HostNetworkInterface> > list;
+#ifdef VBOX_WITH_HOSTNETIF_API
+    int rc = NetIfListTap(list);
+    if (rc)
+    {
+        Log(("Failed to get host tap network interface list with rc=%Vrc\n", rc));
+    }
+#else
+#endif
+    SafeIfaceArray <IHostNetworkInterface> networkInterfaces (list);
+    networkInterfaces.detachTo (ComSafeArrayOutArg (aNetworkInterfaces));
+
+    return S_OK;
+}
 #endif /* #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
 
 /**
@@ -2472,8 +2494,12 @@ extern "C" HRESULT RenameConnection (PCWSTR GuidString, PCWSTR NewName)
 
     return S_OK;
 }
+#ifdef VBOX_WITH_NETFLT
+# define DRIVERHWID _T("sun_VBoxNetAdp")
+#else
+# define DRIVERHWID _T("vboxtap")
+#endif
 
-#define DRIVERHWID _T("vboxtap")
 
 #define SetErrBreak(strAndArgs) \
     if (1) { \

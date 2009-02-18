@@ -455,7 +455,7 @@ VBoxNIList::VBoxNIList (QWidget *aParent)
     layout->addWidget (mList);
 
     /* Prepare actions */
-# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
+# if defined (Q_WS_WIN)
     mAddAction = new QAction (mList);
     mDelAction = new QAction (mList);
     mList->addAction (mAddAction);
@@ -466,9 +466,9 @@ VBoxNIList::VBoxNIList (QWidget *aParent)
                                               ":/add_host_iface_disabled_16px.png"));
     mDelAction->setIcon (VBoxGlobal::iconSet (":/remove_host_iface_16px.png",
                                               ":/remove_host_iface_disabled_16px.png"));
-# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
+# endif /* Q_WS_WIN */
 
-# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
+# if defined (Q_WS_WIN)
     /* Prepare toolbar */
     VBoxToolBar *toolBar = new VBoxToolBar (this);
     toolBar->setUsesTextLabel (false);
@@ -477,20 +477,22 @@ VBoxNIList::VBoxNIList (QWidget *aParent)
     toolBar->addAction (mAddAction);
     toolBar->addAction (mDelAction);
     layout->addWidget (toolBar);
-# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
+# endif /* Q_WS_WIN */
 
     /* Setup connections */
     connect (mList, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
              this, SLOT (onCurrentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
-# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
+# if defined (Q_WS_WIN)
     connect (mAddAction, SIGNAL (triggered (bool)),
              this, SLOT (addHostInterface()));
     connect (mDelAction, SIGNAL (triggered (bool)),
              this, SLOT (delHostInterface()));
-# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
+# endif /* Q_WS_WIN */
 
+#if !defined(Q_WS_WIN) && !defined(VBOX_WITH_NETFLT)
     /* Populating interface list */
     populateInterfacesList();
+#endif
 
     /* Applying language settings */
     retranslateUi();
@@ -548,11 +550,22 @@ void VBoxNIList::setCurrentInterface (const QString &aName)
 void VBoxNIList::onCurrentItemChanged (QTreeWidgetItem *aCurrent,
                                        QTreeWidgetItem *)
 {
-# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
-    VBoxNIListItem *item = aCurrent &&
-        aCurrent->type() == VBoxNIListItem::typeId ?
-        static_cast<VBoxNIListItem*> (aCurrent) : 0;
-    mDelAction->setEnabled (item && !item->isWrong());
+# if defined (Q_WS_WIN)
+#  if defined (VBOX_WITH_NETFLT)
+    if(mEnmAttachmentType == KNetworkAttachmentType_HostOnly)
+#  endif
+    {
+        VBoxNIListItem *item = aCurrent &&
+            aCurrent->type() == VBoxNIListItem::typeId ?
+            static_cast<VBoxNIListItem*> (aCurrent) : 0;
+        mDelAction->setEnabled (item && !item->isWrong());
+    }
+#  if defined (VBOX_WITH_NETFLT)
+    else
+    {
+        mDelAction->setEnabled (false);
+    }
+#  endif
 # else
     NOREF (aCurrent);
 # endif
@@ -563,7 +576,7 @@ void VBoxNIList::onCurrentItemChanged (QTreeWidgetItem *aCurrent,
 
 void VBoxNIList::addHostInterface()
 {
-# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
+# if defined (Q_WS_WIN)
     /* Allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
 
@@ -606,14 +619,14 @@ void VBoxNIList::addHostInterface()
 
     /* Allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
-# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
+# endif /* Q_WS_WIN */
 }
 
 void VBoxNIList::delHostInterface()
 {
     Assert (mList->currentItem());
 
-# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
+# if defined (Q_WS_WIN)
     /* Allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
 
@@ -663,7 +676,7 @@ void VBoxNIList::delHostInterface()
         vboxProblem().cannotRemoveHostInterface (host, iFace, this);
 
     emit listChanged();
-# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
+# endif /* Q_WS_WIN */
 }
 
 void VBoxNIList::retranslateUi()
@@ -672,7 +685,7 @@ void VBoxNIList::retranslateUi()
 
     mList->setWhatsThis (tr ("Lists all available host interfaces."));
 
-# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
+# if defined (Q_WS_WIN)
     mAddAction->setText (tr ("A&dd New Host Interface"));
     mDelAction->setText (tr ("&Remove Selected Host Interface"));
     mAddAction->setWhatsThis (tr ("Adds a new host interface."));
@@ -681,15 +694,33 @@ void VBoxNIList::retranslateUi()
         QString (" (%1)").arg (mAddAction->shortcut().toString()));
     mDelAction->setToolTip (mDelAction->text().remove ('&') +
         QString (" (%1)").arg (mDelAction->shortcut().toString()));
-# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
+# endif /* Q_WS_WIN */
 }
 
+#if defined(Q_WS_WIN) && defined(VBOX_WITH_NETFLT)
+void VBoxNIList::updateInterfacesList(KNetworkAttachmentType enmAttachmentType)
+{
+    bool bHostOnly = enmAttachmentType == KNetworkAttachmentType_HostOnly;
+    mEnmAttachmentType = enmAttachmentType;
+    mAddAction->setEnabled(bHostOnly);
+    mDelAction->setEnabled(bHostOnly);
+    populateInterfacesList(enmAttachmentType);
+}
+
+void VBoxNIList::populateInterfacesList(KNetworkAttachmentType enmAttachmentType)
+#else
 void VBoxNIList::populateInterfacesList()
+#endif
 {
     /* Load current inner list */
     QList<QTreeWidgetItem*> itemsList;
     CHostNetworkInterfaceVector interfaces =
-        vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces();
+#if defined(Q_WS_WIN) && defined(VBOX_WITH_NETFLT)
+            enmAttachmentType == KNetworkAttachmentType_HostOnly ?
+                    vboxGlobal().virtualBox().GetHost().GetTapInterfaces()
+                    :
+#endif
+                    vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces();
     for (CHostNetworkInterfaceVector::ConstIterator it = interfaces.begin();
          it != interfaces.end(); ++it)
         itemsList << new VBoxNIListItem (it->GetName());
@@ -896,11 +927,18 @@ void VBoxVMSettingsNetworkPage::updateInterfaceList()
 {
     VBoxVMSettingsNetwork *page =
         static_cast <VBoxVMSettingsNetwork*> (mTwAdapters->currentWidget());
+    KNetworkAttachmentType enmType = vboxGlobal().toNetworkAttachmentType (page->mCbNAType->currentText());
 
-    bool isHostInterfaceAttached = vboxGlobal().toNetworkAttachmentType (
-        page->mCbNAType->currentText()) == KNetworkAttachmentType_HostInterface;
+    bool isHostInterfaceAttached = enmType == KNetworkAttachmentType_HostInterface;
 
     mNIList->setEnabled (isHostInterfaceAttached);
+# ifdef Q_WS_WIN
+    if(!isHostInterfaceAttached)
+    {
+        mNIList->setEnabled (enmType == KNetworkAttachmentType_HostOnly);
+    }
+    mNIList->updateInterfacesList(enmType);
+# endif
 }
 #endif
 

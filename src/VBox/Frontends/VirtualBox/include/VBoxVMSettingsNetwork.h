@@ -105,7 +105,9 @@ public:
 
     bool isWrongInterface() const;
     void setCurrentInterface (const QString &aName);
-
+#if defined (Q_WS_WIN) && defined(VBOX_WITH_NETFLT)
+    void updateInterfacesList(KNetworkAttachmentType enmAttachmentType);
+#endif
 signals:
 
     void listChanged();
@@ -122,15 +124,20 @@ protected:
     void retranslateUi();
 
 private:
-
+#if defined (Q_WS_WIN) && defined(VBOX_WITH_NETFLT)
+    void populateInterfacesList(KNetworkAttachmentType enmAttachmentType);
+#else
     void populateInterfacesList();
-
+#endif
     QILabelSeparator *mLbTitle;
     QTreeWidget      *mList;
 
-# if defined (Q_WS_WIN) && !defined(VBOX_WITH_NETFLT)
+# if defined (Q_WS_WIN)
     QAction *mAddAction;
     QAction *mDelAction;
+#  ifdef VBOX_WITH_NETFLT
+    KNetworkAttachmentType mEnmAttachmentType;
+#  endif
 # endif
 };
 #endif /* Q_WS_WIN || VBOX_WITH_NETFLT */

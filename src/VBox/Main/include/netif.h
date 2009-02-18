@@ -76,5 +76,9 @@ typedef NETIFINFO const *PCNETIFINFO;
 
 int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list);
 
+#if defined(VBOX_WITH_NETFLT) && defined(RT_OS_WINDOWS)
+int NetIfListTap(std::list <ComObjPtr <HostNetworkInterface> > &list);
+#endif
+
 #endif
 
