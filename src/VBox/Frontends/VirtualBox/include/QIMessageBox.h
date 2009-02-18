@@ -56,15 +56,24 @@ class QIArrowSplitter : public QWidget
 
 public:
 
+    enum ToggleType
+    {
+        Toggle = 0,
+        CollapsOnly,
+        ExpandOnly
+    };
+
     QIArrowSplitter (QWidget *aParent = 0);
 
     void addWidget (const QString &aName, QWidget *aWidget);
 
 public slots:
 
-    void toggleWidget();
+    void toggleWidget (ToggleType aType = Toggle);
 
 private:
+
+    bool eventFilter (QObject *aObject, QEvent *aEvent);
 
     QVBoxLayout *mMainLayout;
     QList <QToolButton*> mButtonsList;
