@@ -150,8 +150,8 @@ static struct module_info g_VBoxNetFltSolarisModInfo =
     DEVICE_NAME,
     0,                              /* min. packet size */
     INFPSZ,                         /* max. packet size */
-    0,                              /* hi-water mask */
-    0                               /* lo-water mask */
+    0,                              /* hi-water mark */
+    0                               /* lo-water mark */
 };
 
 /**
@@ -389,9 +389,6 @@ PVBOXNETFLTINS volatile g_VBoxNetFltSolarisInstance;
 
 /** Goes along with the instance to determine type of stream being opened/created. */
 VBOXNETFLTSTREAMTYPE volatile g_VBoxNetFltSolarisStreamType;
-
-/** GCC C++ hack. */
-unsigned __gxx_personality_v0 = 0xdecea5ed;
 
 
 /**

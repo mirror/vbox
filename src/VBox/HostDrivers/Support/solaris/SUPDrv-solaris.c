@@ -180,9 +180,6 @@ static void *g_pVBoxDrvSolarisState;
 /** Device extention & session data association structure */
 static SUPDRVDEVEXT         g_DevExt;
 
-/* GCC C++ hack. */
-unsigned __gxx_personality_v0 = 0xcccccccc;
-
 /** Hash table */
 static PSUPDRVSESSION       g_apSessionHashTab[19];
 /** Spinlock protecting g_apSessionHashTab. */

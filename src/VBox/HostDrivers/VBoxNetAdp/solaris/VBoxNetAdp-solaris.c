@@ -60,7 +60,6 @@
 #define DEVICE_NAME              "vboxnet"
 /** The module descriptions as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV          "VirtualBox NetAdp"
-#define DEVICE_DESC_MOD          "VirtualBox AdpMod"
 #define VBOXNETADP_MTU           1500
 
 static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
@@ -81,8 +80,8 @@ static struct module_info g_VBoxNetAdpSolarisModInfo =
     DEVICE_NAME,
     0,                                /* min. packet size */
     INFPSZ,                           /* max. packet size */
-    0,                                /* hi-water mask */
-    0                                 /* lo-water mask */
+    0,                                /* hi-water mark */
+    0                                 /* lo-water mark */
 };
 
 /**
@@ -195,9 +194,6 @@ static dev_info_t *g_pVBoxNetAdpSolarisDip = NULL;
 
 /** The default ethernet broadcast address */
 static uchar_t achBroadcastAddr[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-
-/** GCC C++ hack. */
-unsigned __gxx_personality_v0 = 0xbadb100d;
 
 
 /**
@@ -496,6 +492,8 @@ static int vboxNetAdpSolarisSetMulticast(gld_mac_info_t *pMacInfo, unsigned char
 
 static int vboxNetAdpSolarisSetPromisc(gld_mac_info_t *pMacInfo, int fPromisc)
 {
-
+    NOREF(pMacInfo);
+    NOREF(fPromisc);
+    return GLD_SUCCESS;
 }
 
