@@ -1862,17 +1862,16 @@ if1of ($(KBUILD_TARGET), linux)
    export VBOX_LINUX_INCS           := $(VBOX_LINUX_SRC)/include
    # XXX hack alert! support splitted Linux kernels (make O=<build directory>)
    # XXX put this crap elsewhere
-   kernelsrc := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
-   ifneq ($(kernelsrc),)
-    kernelpath := $(realpath $(VBOX_LINUX_SRC)/$(kernelsrc))
-   else
+   kernelpath := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
+   ifeq ($(kernelpath),)
     # Linux >= 2.6.25
     kernelpath := $(shell $(SED_EXT) -ne 's+^MAKEARGS *:= *-C *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
-    ifneq ($(kernelpath),)
-     ifneq ($(patsubst /%,,$(kernelpath)),)
-      # relative path
-      kernelpath := $(realpath $(VBOX_LINUX_SRC)/$(kernelpath))
-     endif
+   endif
+   ifneq ($(kernelpath),)
+    # absolute path?
+    ifneq ($(patsubst /%,,$(kernelpath)),)
+     # no, relative path
+     kernelpath := $(realpath $(VBOX_LINUX_SRC)/$(kernelpath))
     endif
    endif
    ifneq ($(kernelpath),)
