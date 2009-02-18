@@ -1,8 +1,12 @@
 #include "cr_list.h"
 #include "cr_error.h"
+#include "cr_mem.h"
+
+#if CR_TESTING_LIST
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#endif
 
 struct CRListIterator {
 	void *element;
@@ -18,13 +22,13 @@ struct CRList {
 
 CRList *crAllocList( void )
 {
-	CRList *l = malloc( sizeof( CRList ) );
+	CRList *l = crAlloc( sizeof( CRList ) );
 	CRASSERT( l );
 
-	l->head = malloc( sizeof( CRListIterator ) );
+	l->head = crAlloc( sizeof( CRListIterator ) );
 	CRASSERT( l->head );
 
-	l->tail = malloc( sizeof( CRListIterator ) );
+	l->tail = crAlloc( sizeof( CRListIterator ) );
 	CRASSERT( l->tail );
 
 	l->head->prev = NULL;
@@ -51,10 +55,10 @@ void crFreeList( CRList *l )
 		t2->prev = NULL;
 		t2->next = NULL;
 		t2->element = NULL;
-		free( t2 );
+		crFree( t2 );
 	}
 	l->size = 0;
-	free( l );
+	crFree( l );
 }
 
 unsigned crListSize( const CRList *l )
@@ -76,7 +80,7 @@ void crListInsert( CRList *l, CRListIterator *iter, void *elem )
 	CRASSERT( iter != NULL );
 	CRASSERT( iter != l->head );
 
-	p = malloc( sizeof( CRListIterator ) );
+	p = crAlloc( sizeof( CRListIterator ) );
 	CRASSERT( p != NULL );
 	p->prev = iter->prev;
 	p->next = iter;
@@ -101,7 +105,7 @@ void crListErase( CRList *l, CRListIterator *iter )
 	iter->prev = NULL;
 	iter->next = NULL;
 	iter->element = NULL;
-	free( iter );
+	crFree( iter );
 
 	l->size--;
 }
