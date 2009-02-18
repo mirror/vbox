@@ -9,6 +9,7 @@
 #import "VBoxSDLMain-darwin.h"
 #import <sys/param.h> /* for MAXPATHLEN */
 #import <unistd.h>
+#import <iprt/assert.h>
 
 /* For some reaon, Apple removed setAppleMenu from the headers in 10.4,
  but the method still is there and works. To avoid warnings, we declare
@@ -90,7 +91,8 @@ static NSString *getApplicationName(void)
 		CFURLRef url = CFBundleCopyBundleURL(CFBundleGetMainBundle());
 		CFURLRef url2 = CFURLCreateCopyDeletingLastPathComponent(0, url);
 		if (CFURLGetFileSystemRepresentation(url2, true, (UInt8 *)parentdir, MAXPATHLEN)) {
-	        assert ( chdir (parentdir) == 0 );   /* chdir to the binary app's parent */
+	        int rc = chdir(parentdir);   /* chdir to the binary app's parent */
+	        Assert(rc == 0);
 		}
 		CFRelease(url);
 		CFRelease(url2);
