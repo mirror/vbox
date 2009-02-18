@@ -37,6 +37,7 @@
 
 #ifdef VBOX_WITH_NETFLT
 #include "VBox/WinNetConfig.h"
+#include "devguid.h"
 #endif
 
 #include <iphlpapi.h>
@@ -432,6 +433,74 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
         }
 
         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
+    }
+#endif /* #  if defined VBOX_WITH_NETFLT */
+    return VINF_SUCCESS;
+}
+
+int NetIfListTap(std::list <ComObjPtr <HostNetworkInterface> > &list)
+{
+#ifndef VBOX_WITH_NETFLT
+    /* VBoxNetAdp is available only when VBOX_WITH_NETFLT is enabled */
+    return VERR_NOT_IMPLEMENTED;
+#else /* #  if defined VBOX_WITH_NETFLT */
+    INetCfg              *pNc;
+    INetCfgComponent     *pMpNcc;
+    LPWSTR               lpszApp = NULL;
+    HRESULT              hr;
+    IEnumNetCfgComponent  *pEnumComponent;
+
+    /* we are using the INetCfg API for getting the list of miniports */
+    hr = VBoxNetCfgWinQueryINetCfg( FALSE,
+                       VBOX_APP_NAME,
+                       &pNc,
+                       &lpszApp );
+    Assert(hr == S_OK);
+    if(hr == S_OK)
+    {
+        hr = VBoxNetCfgWinGetComponentEnum(pNc, &GUID_DEVCLASS_NET, &pEnumComponent);
+        if(hr == S_OK)
+        {
+            while(hr = VBoxNetCfgWinGetNextComponent(pEnumComponent, &pMpNcc) == S_OK)
+            {
+                ULONG uComponentStatus;
+                hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
+#ifndef DEBUG_bird
+                Assert(hr == S_OK);
+#endif
+                if(hr == S_OK)
+                {
+                    if(uComponentStatus == 0)
+                    {
+                        LPWSTR pId;
+                        hr = pMpNcc->GetId(&pId);
+                        Assert(hr == S_OK);
+                        if(hr == S_OK)
+                        {
+                            if(!wcscmp(pId, L"sun_VBoxNetAdp"))
+                            {
+                                vboxNetWinAddComponent(&list, pMpNcc);
+                            }
+                            CoTaskMemFree(pId);
+                        }
+                    }
+                }
+                VBoxNetCfgWinReleaseRef(pMpNcc);
+            }
+            Assert(hr == S_OK || hr == S_FALSE);
+
+            VBoxNetCfgWinReleaseRef(pEnumComponent);
+        }
+        else
+        {
+            LogRel(("failed to get the sun_VBoxNetFlt component, error (0x%x)", hr));
+        }
+
+        VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
+    }
+    else if(lpszApp)
+    {
+        CoTaskMemFree(lpszApp);
     }
 #endif /* #  if defined VBOX_WITH_NETFLT */
     return VINF_SUCCESS;
