@@ -4753,7 +4753,10 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
     Assert(!HWACCMIsNestedPagingActive(pVM));
 
 # ifndef PGM_WITHOUT_MAPPINGS
-    /* Remove the hypervisor mappings from the shadow page table. */
+    /* Remove the hypervisor mappings from the shadow page table.
+     * Note that SyncCR3 will be executed in case CR3 is changed in a guest paging mode; this will
+     * make sure we check for conflicts in the new CR3 root.
+     */
     PGMMapDeactivateAll(pVM);
 # endif
 
