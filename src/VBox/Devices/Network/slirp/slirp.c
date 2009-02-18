@@ -28,7 +28,6 @@
         UPD_NFDS((so)->s);                           \
     } while(0)
 
-#  define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0
 #  define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
 
 #  define DO_CHECK_FD_SET(so, events, fdset) (FD_ISSET((so)->s, fdset))
@@ -74,6 +73,7 @@
                                                 && ((so)->s == polls[so->so_poll_index].fd)                     \
                                                 && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)))
 #  define DO_UNIX_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset) /*specific for Unix API */
+#  define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0 /* specific for Windows Winsock API */
 # endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
 # ifndef RT_OS_WINDOWS
@@ -97,7 +97,7 @@
             DO_ENGAGE_EVENT1((so), fdset, ICMP);    \
     } while (0)
 # else /* !RT_OS_WINDOWS */
-#  define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0
+#  define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
 #  define ICMP_ENGAGE_EVENT(so, fdset) do {} while(0)
 #endif /* RT_OS_WINDOWS */
 
