@@ -2981,7 +2981,7 @@ int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
 #endif
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-bool            pgmPoolIsActiveRootpage(PVM pVM, PPGMPOOLPAGE pPage);
+bool            pgmPoolIsActiveRootPage(PVM pVM, PPGMPOOLPAGE pPage);
 
 void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE);
 void            pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
