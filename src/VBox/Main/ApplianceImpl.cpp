@@ -1680,6 +1680,8 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
     HRESULT rc = S_OK;
 
+    ComPtr<IVirtualBox> pVirtualBox(app->mVirtualBox);
+
     // rollback for errors:
     // 1) a list of images that we created/imported
     list<MyHardDiskAttachment> llHardDiskAttachments;
@@ -1725,7 +1727,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
             /* Now that we know the base system get our internal defaults based on that. */
             ComPtr<IGuestOSType> osType;
-            CHECK_ERROR_THROW(app->mVirtualBox, GetGuestOSType(Bstr(strOsTypeVBox), osType.asOutParam()));
+            CHECK_ERROR_THROW(pVirtualBox, GetGuestOSType(Bstr(strOsTypeVBox), osType.asOutParam()));
 
             /* Create the machine */
             /* First get the name */
@@ -1734,9 +1736,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Missing VM name"));
             const Utf8Str &strNameVBox = vsdeName.front()->strConfig;
-            CHECK_ERROR_THROW(app->mVirtualBox, CreateMachine(Bstr(strNameVBox), Bstr(strOsTypeVBox),
-                                                              Bstr(), Guid(),
-                                                              pNewMachine.asOutParam()));
+            CHECK_ERROR_THROW(pVirtualBox, CreateMachine(Bstr(strNameVBox), Bstr(strOsTypeVBox),
+                                                         Bstr(), Guid(),
+                                                         pNewMachine.asOutParam()));
 
             if (!task->progress.isNull())
                 rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
@@ -1888,7 +1890,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             }
 
             /* Now its time to register the machine before we add any hard disks */
-            CHECK_ERROR_THROW(app->mVirtualBox, RegisterMachine(pNewMachine));
+            CHECK_ERROR_THROW(pVirtualBox, RegisterMachine(pNewMachine));
 
             Guid newMachineId;
             CHECK_ERROR_THROW(pNewMachine, COMGETTER(Id)(newMachineId.asOutParam()));
@@ -1912,7 +1914,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 {
                     /* In order to attach hard disks we need to open a session
                      * for the new machine */
-                    CHECK_ERROR_THROW(app->mVirtualBox, OpenSession(session, newMachineId));
+                    CHECK_ERROR_THROW(pVirtualBox, OpenSession(session, newMachineId));
                     fSessionOpen = true;
 
                     int result;
@@ -1971,7 +1973,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                                 || (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed")))
                                 srcFormat = L"VMDK";
                             /* Create an empty hard disk */
-                            CHECK_ERROR_THROW(app->mVirtualBox, CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam()));
+                            CHECK_ERROR_THROW(pVirtualBox, CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam()));
 
                             /* Create a dynamic growing disk image with the given capacity */
                             ComPtr<IProgress> progress;
@@ -1997,14 +1999,14 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                              * attached already from a previous import) */
 
                             /* First open the existing disk image */
-                            CHECK_ERROR_THROW(app->mVirtualBox, OpenHardDisk(Bstr(strSrcFilePath), srcHdVBox.asOutParam()));
+                            CHECK_ERROR_THROW(pVirtualBox, OpenHardDisk(Bstr(strSrcFilePath), srcHdVBox.asOutParam()));
                             fSourceHdNeedsClosing = true;
 
                             /* We need the format description of the source disk image */
                             Bstr srcFormat;
                             CHECK_ERROR_THROW(srcHdVBox, COMGETTER(Format)(srcFormat.asOutParam()));
                             /* Create a new hard disk interface for the destination disk image */
-                            CHECK_ERROR_THROW(app->mVirtualBox, CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam()));
+                            CHECK_ERROR_THROW(pVirtualBox, CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam()));
                             /* Clone the source disk image */
                             CHECK_ERROR_THROW(srcHdVBox, CloneTo(dstHdVBox, progress.asOutParam()));
 
@@ -2142,7 +2144,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
              ++itM)
         {
             const MyHardDiskAttachment &mhda = *itM;
-            rc2 = app->mVirtualBox->OpenSession(session, mhda.uuid);
+            rc2 = pVirtualBox->OpenSession(session, mhda.uuid);
             if (SUCCEEDED(rc2))
             {
                 ComPtr<IMachine> sMachine;
@@ -2176,7 +2178,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
         {
             const Guid &guid = *itID;
             ComPtr<IMachine> failedMachine;
-            rc2 = app->mVirtualBox->UnregisterMachine(guid, failedMachine.asOutParam());
+            rc2 = pVirtualBox->UnregisterMachine(guid, failedMachine.asOutParam());
             if (SUCCEEDED(rc2))
                 rc2 = failedMachine->DeleteSettings();
         }
