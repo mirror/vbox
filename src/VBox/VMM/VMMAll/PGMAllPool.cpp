@@ -1234,9 +1234,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
      */
     bool fReused = false;
     if (    (   pPage->cModifications < 48   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
              || pPage->fCR3Mix
-#endif
             )
         &&  !(fReused = pgmPoolMonitorIsReused(pVM, pPage, pRegFrame, &Cpu, pvFault))
         &&  !pgmPoolMonitorIsForking(pPool, &Cpu, GCPhysFault & PAGE_OFFSET_MASK))
@@ -1946,9 +1944,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         {
             PPGMPOOLPAGE pNewHead = &pPool->aPages[pPage->iMonitoredNext];
             pNewHead->iMonitoredPrev = NIL_PGMPOOL_IDX;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
             pNewHead->fCR3Mix = pPage->fCR3Mix;
-#endif
             rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1),
                                                    pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pNewHead),
                                                    pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pNewHead),
@@ -2030,6 +2026,12 @@ static void pgmPoolMonitorChainChangeCR3Mix(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
  * @param   idxRoot     The CR3 (root) page index.
  * @param   GCPhysCR3   The (new) CR3 value.
  */
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+int pgmPoolMonitorMonitorCR3(PPGMPOOL pPool, RTGCPHYS GCPhysCR3)
+{
+    return VINF_SUCCESS;
+}
+#else
 int pgmPoolMonitorMonitorCR3(PPGMPOOL pPool, uint16_t idxRoot, RTGCPHYS GCPhysCR3)
 {
     Assert(idxRoot != NIL_PGMPOOL_IDX && idxRoot < PGMPOOL_IDX_FIRST);
@@ -2076,6 +2078,7 @@ int pgmPoolMonitorMonitorCR3(PPGMPOOL pPool, uint16_t idxRoot, RTGCPHYS GCPhysCR
     pgmPoolMonitorChainChangeCR3Mix(pPool, pPage, true);
     return rc;
 }
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 
 /**
@@ -2085,6 +2088,12 @@ int pgmPoolMonitorMonitorCR3(PPGMPOOL pPool, uint16_t idxRoot, RTGCPHYS GCPhysCR
  * @param   pPool       The pool.
  * @param   idxRoot     The CR3 (root) page index.
  */
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+int pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, RTGCPHYS GCPhysCR3)
+{
+    return VINF_SUCCESS;
+}
+#else
 int pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot)
 {
     Assert(idxRoot != NIL_PGMPOOL_IDX && idxRoot < PGMPOOL_IDX_FIRST);
@@ -2106,6 +2115,7 @@ int pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot)
     pPage->GCPhys = NIL_RTGCPHYS;
     return rc;
 }
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 # endif /* PGMPOOL_WITH_MIXED_PT_CR3 */
 
@@ -4114,10 +4124,9 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         pPage->fMonitored= false;
         pPage->fCached   = false;
         pPage->fReusedFlushPending = false;
+        pPage->fCR3Mix = false;
 #ifdef PGMPOOL_WITH_USER_TRACKING
         pPage->iUserHead = NIL_PGMPOOL_USER_INDEX;
-#else
-        pPage->fCR3Mix = false;
 #endif
 #ifdef PGMPOOL_WITH_CACHE
         pPage->iAgeNext  = NIL_PGMPOOL_IDX;
@@ -4501,12 +4510,11 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     pPage->fMonitored = false;
     pPage->fCached = false;
     pPage->fReusedFlushPending = false;
+    pPage->fCR3Mix = false;
 #ifdef PGMPOOL_WITH_MONITORING
     pPage->cModifications = 0;
     pPage->iModifiedNext = NIL_PGMPOOL_IDX;
     pPage->iModifiedPrev = NIL_PGMPOOL_IDX;
-#else
-    pPage->fCR3Mix = false;
 #endif
 #ifdef PGMPOOL_WITH_USER_TRACKING
     pPage->cPresent = 0;

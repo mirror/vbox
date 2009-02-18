@@ -128,10 +128,8 @@ __BEGIN_DECLS
 PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
 PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPDE);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
 PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3);
 PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM);
-#endif
 PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4);
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
 # ifndef IN_RING3
@@ -413,8 +411,6 @@ PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPDE)
 }
 
 
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_PGM_POOL
 
@@ -437,6 +433,59 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     /*
      * Register/Modify write phys handler for guest's CR3 if it changed.
      */
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+
+    if (pVM->pgm.s.GCPhysGstCR3Monitored != GCPhysCR3)
+    {
+        rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), GCPhysCR3);
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("PGMHandlerPhysicalModify/PGMR3HandlerPhysicalRegister failed, rc=%Rrc GCPhysGstCR3Monitored=%RGp GCPhysCR3=%RGp\n",
+                             rc, pVM->pgm.s.GCPhysGstCR3Monitored, GCPhysCR3));
+            return rc;
+        }
+        pVM->pgm.s.GCPhysGstCR3Monitored = GCPhysCR3;
+    }
+
+#if PGM_GST_TYPE == PGM_TYPE_PAE
+    /*
+     * Do the 4 PDs.
+     */
+    PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(&pVM->pgm.s);
+    for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
+    {
+        if (pGuestPDPT->a[i].n.u1Present)
+        {
+            RTGCPHYS GCPhys = pGuestPDPT->a[i].u & X86_PDPE_PG_MASK;
+            if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != GCPhys)
+            {
+                Assert(pVM->pgm.s.enmShadowMode == PGMMODE_PAE || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX);
+
+                rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), GCPhys);
+            }
+
+            if (RT_FAILURE(rc))
+            {
+                AssertMsgFailed(("PGMHandlerPhysicalModify/PGMR3HandlerPhysicalRegister failed, rc=%Rrc GCPhysGstCR3Monitored=%RGp GCPhysCR3=%RGp\n",
+                                 rc, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i], GCPhys));
+                return rc;
+            }
+            pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = GCPhys;
+        }
+        else if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != NIL_RTGCPHYS)
+        {
+            rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]);
+            AssertRC(rc);
+            pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
+        }
+    }
+
+#else
+    /* prot/real/amd64 mode stub */
+
+#endif
+
+#else
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
 
     if (pVM->pgm.s.GCPhysGstCR3Monitored != GCPhysCR3)
@@ -524,6 +573,7 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     /* prot/real/amd64 mode stub */
 
 #endif
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
     return rc;
 }
 
@@ -543,6 +593,36 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
      * PGMSyncCR3 will reinstall it if required and PGMSyncCR3 will be executed
      * before we enter GC again.
      */
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+
+    /* Unmonitor the root. (pd or pdpt) */
+    if (pVM->pgm.s.GCPhysGstCR3Monitored != NIL_RTGCPHYS)
+    {
+        rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), pVM->pgm.s.GCPhysGstCR3Monitored);
+        AssertRCReturn(rc, rc);
+        pVM->pgm.s.GCPhysGstCR3Monitored = NIL_RTGCPHYS;
+    }
+
+#if PGM_GST_TYPE == PGM_TYPE_PAE
+    /* The 4 PDs. */
+    for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
+    {
+        if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != NIL_RTGCPHYS)
+        {
+            Assert(pVM->pgm.s.enmShadowMode == PGMMODE_PAE || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX);
+            int rc2 = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]);
+            AssertRC(rc2);
+            if (RT_FAILURE(rc2))
+                rc = rc2;
+            pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
+        }
+    }
+#else
+    /* prot/real/amd64 mode stub */
+#endif
+
+#else
+
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
     if (pVM->pgm.s.GCPhysGstCR3Monitored != NIL_RTGCPHYS)
     {
@@ -588,14 +668,13 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
 #else
     /* prot/real/amd64 mode stub */
 #endif
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
     return rc;
 
 }
 
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_PGM
-
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
