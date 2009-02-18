@@ -1651,7 +1651,7 @@ ifdef VBOX_SIGNING_MODE
     VBOX_PATH_SELFSIGN := $(PATH_DEVTOOLS)/win.x86/selfsign/r1
    endif
   endif
-  VBOX_SIGNTOOL ?= $(VBOX_PATH_SELFSIGN)/SignTool.exe
+  VBOX_SIGNTOOL ?= $(PATH_DEVTOOLS)/bin/retry.cmd $(VBOX_PATH_SELFSIGN)/SignTool.exe
   VBOX_INF2CAT  ?= $(VBOX_PATH_SELFSIGN)/Inf2Cat.exe
 
   # There are three signing modes; 'test', 'development' and 'release'.
