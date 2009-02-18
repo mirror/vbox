@@ -161,25 +161,29 @@ ifdef VBOX_WITH_QT4_SUN
  qt4-bin_MODE = 755
  ifeq ($(KBUILD_TARGET),darwin)
   qt4-bin_INST = $(INST_VIRTUALBOX)Contents/
-ifneq ($(KBUILD_TARGET_ARCH),amd64)
-  qt4-bin_SOURCES = \
-	$(VBOX_PATH_QT4)/Frameworks/QtCore.framework/Versions/4/QtCore=>Frameworks/QtCore.framework/Versions/4/QtCore \
-	$(VBOX_PATH_QT4)/Frameworks/QtGui.framework/Versions/4/QtGui=>Frameworks/QtGui.framework/Versions/4/QtGui \
-	$(VBOX_PATH_QT4)/Frameworks/QtNetwork.framework/Versions/4/QtNetwork=>Frameworks/QtNetwork.framework/Versions/4/QtNetwork \
+  ifeq ($(KBUILD_TARGET_ARCH),amd64)
+   qt4-bin_SOURCES = $(foreach qtmod,QtCore QtGui QtNetwork \
+		,$(VBOX_PATH_QT4)/lib/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox)
+  else
+   qt4-bin_SOURCES = $(foreach qtmod,QtCore QtGui QtNetwork \
+		,$(VBOX_PATH_QT4)/Frameworks/$(qtmod).framework/Versions/4/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/4/$(qtmod))
+  endif
+  ## @todo this should be done as part of the Qt build!
+  ## @todo Qt 4.5 bug: _debug.dylib for all plugins! QT45
+  qt4-bin_SOURCES += \
 	$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
   qt4-bin_CLEAN = $(PATH_qt4-bin)/libqtaccessiblewidgets.dylib
-$$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib: $$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib | $$(dir $$@)
+$$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib: \
+		$$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(if-expr $(KBUILD_TARGET_ARCH) == "amd64",_debug,).dylib | $$(dir $$@)
 	$(call MSG_TOOL,install_name_tool,accessible,$<,$@)
 	$(QUIET)$(INSTALL) $< $@
 	$(QUIET)install_name_tool \
-		-change                         QtCore.framework/Versions/4/QtCore \
-		 @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
-		-change                         QtGui.framework/Versions/4/QtGui \
-		 @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui \
-		-change                         QtNetwork.framework/Versions/4/QtNetwork \
-		 @executable_path/../Frameworks/QtNetwork.framework/Versions/4/QtNetwork \
+		$(foreach qtmod, QtCore QtGui QtNetwork
+		,-change                       $(qtmod).framework/Versions/4/QtCore \
+		@executable_path/../Frameworks/$(qtmod).framework/Versions/4/QtCore \
+		-change                        $(qtmod)VBox.framework/Versions/4/QtCoreVBox \
+		@executable_path/../Frameworks/$(qtmod)VBox.framework/Versions/4/QtCoreVBox ) \
 		$@
-endif
 
  else ifeq ($(KBUILD_TARGET),win)
   qt4-bin_INST = $(INST_BIN)
