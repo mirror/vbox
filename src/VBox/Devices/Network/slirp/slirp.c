@@ -91,10 +91,10 @@
 #  define rdhup_poll (POLLHUP)
 #  define nval_poll (POLLNVAL)
 
-#  define ICMP_ENGAGE_EVENT(so, fdset)               \
-    do {                                             \
-        if (pData->icmp_socket.s != -1)              \
-            DO_ENGAGE_EVENT1((so), fdset, ICMP);   \
+#  define ICMP_ENGAGE_EVENT(so, fdset)              \
+    do {                                            \
+        if (pData->icmp_socket.s != -1)             \
+            DO_ENGAGE_EVENT1((so), fdset, ICMP);    \
     } while (0)
 # else /* !RT_OS_WINDOWS */
 #  define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
@@ -183,7 +183,7 @@
 #if VBOX_WITH_DEBUG_NAT_SOCKETS
 # if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
 #  if defined(RT_OS_WINDOWS)
-#   define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)              \
+#   define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)             \
     do {                                                                                \
         LogRel(("  " #proto " %R[natsock] %R[natwinnetevents]\n", (so), (winevent)));   \
     } while (0)
@@ -200,10 +200,10 @@
     } while (0)
 #  endif /* !RT_OS_WINDOWS */
 # else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
-#  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)                              \
-    do {                                                                                                \
-            LogRel(("  " #proto " %R[natsock] %s %s %s\n", (so), FD_ISSET((so)->s, (r_fdset))?"READ":"",\
-                     FD_ISSET((so)->s, (w_fdset))?"WRITE":"", FD_ISSET((so)->s, (x_fdset))?"OOB":""));  \
+#  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)                                  \
+    do {                                                                                                    \
+            LogRel(("  " #proto " %R[natsock] %s %s %s\n", (so), FD_ISSET((so)->s, (r_fdset))?"READ":"",    \
+                     FD_ISSET((so)->s, (w_fdset))?"WRITE":"", FD_ISSET((so)->s, (x_fdset))?"OOB":""));      \
     } while (0)
 # endif
 #else /* VBOX_WITH_DEBUG_NAT_SOCKETS */
