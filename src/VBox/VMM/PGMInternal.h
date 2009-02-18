@@ -1634,6 +1634,7 @@ typedef struct PGMPOOLPAGE
     /** This is used by the R3 access handlers when invoked by an async thread.
      * It's a hack required because of REMR3NotifyHandlerPhysicalDeregister. */
     bool volatile       fReusedFlushPending;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /** Used to indicate that the guest is mapping the page is also used as a CR3.
      * In these cases the access handler acts differently and will check
      * for mapping conflicts like the normal CR3 handler.
@@ -1641,6 +1642,7 @@ typedef struct PGMPOOLPAGE
      *       replaced by a list of pages which share access handler.
      */
     bool                fCR3Mix;
+#endif
 } PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
 
 
@@ -2047,8 +2049,10 @@ typedef struct PGMMODEDATA
     DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     DECLR3CALLBACKMEMBER(int,       pfnR3GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstUnmonitorCR3,(PVM pVM));
+#endif
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstWriteHandlerCR3;
     R3PTRTYPE(const char *)         pszR3GstWriteHandlerCR3;
@@ -2058,8 +2062,10 @@ typedef struct PGMMODEDATA
     DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     DECLRCCALLBACKMEMBER(int,       pfnRCGstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstUnmonitorCR3,(PVM pVM));
+#endif
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstWriteHandlerCR3;
     RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstPAEWriteHandlerCR3;
@@ -2067,8 +2073,10 @@ typedef struct PGMMODEDATA
     DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     DECLR0CALLBACKMEMBER(int,       pfnR0GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstUnmonitorCR3,(PVM pVM));
+#endif
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstWriteHandlerCR3;
     R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstPAEWriteHandlerCR3;
@@ -2168,9 +2176,11 @@ typedef struct PGM
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     uint32_t                        u32Alignment;
 #endif
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /** The physical address of the currently monitored guest CR3 page.
      * When this value is NIL_RTGCPHYS no page is being monitored. */
     RTGCPHYS                        GCPhysGstCR3Monitored;
+#endif
     /** @name 32-bit Guest Paging.
      * @{ */
     /** The guest's page directory, R3 pointer. */
@@ -2334,8 +2344,10 @@ typedef struct PGM
     DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     DECLR3CALLBACKMEMBER(int,       pfnR3GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstUnmonitorCR3,(PVM pVM));
+#endif
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstWriteHandlerCR3;
     R3PTRTYPE(const char *)         pszR3GstWriteHandlerCR3;
@@ -2345,8 +2357,10 @@ typedef struct PGM
     DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     DECLRCCALLBACKMEMBER(int,       pfnRCGstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstUnmonitorCR3,(PVM pVM));
+#endif
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstWriteHandlerCR3;
     RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstPAEWriteHandlerCR3;
@@ -2358,8 +2372,10 @@ typedef struct PGM
     DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     DECLR0CALLBACKMEMBER(int,       pfnR0GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstUnmonitorCR3,(PVM pVM));
+#endif
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstWriteHandlerCR3;
     R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstPAEWriteHandlerCR3;
@@ -2960,13 +2976,8 @@ void            pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
 int             pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolMonitorModifiedInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolMonitorModifiedClearAll(PVM pVM);
-# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-int             pgmPoolMonitorMonitorCR3(PPGMPOOL pPool, RTGCPHYS GCPhysCR3);
-int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, RTGCPHYS GCPhysCR3);
-# else
 int             pgmPoolMonitorMonitorCR3(PPGMPOOL pPool, uint16_t idxRoot, RTGCPHYS GCPhysCR3);
 int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
-# endif
 #endif
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY

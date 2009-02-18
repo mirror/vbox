@@ -1156,7 +1156,9 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.enmGuestMode     = PGMMODE_INVALID;
     pVM->pgm.s.enmHostMode      = SUPPAGINGMODE_INVALID;
     pVM->pgm.s.GCPhysCR3        = NIL_RTGCPHYS;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pVM->pgm.s.GCPhysGstCR3Monitored = NIL_RTGCPHYS;
+#endif
     pVM->pgm.s.fA20Enabled      = true;
     pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1; /* default; checked later */
     pVM->pgm.s.pGstPaePdptR3    = NULL;
@@ -3064,8 +3066,10 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
     Assert(pVM->pgm.s.pfnR3GstGetPage);
     pVM->pgm.s.pfnR3GstModifyPage           = pModeData->pfnR3GstModifyPage;
     pVM->pgm.s.pfnR3GstGetPDE               = pModeData->pfnR3GstGetPDE;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pVM->pgm.s.pfnR3GstMonitorCR3           = pModeData->pfnR3GstMonitorCR3;
     pVM->pgm.s.pfnR3GstUnmonitorCR3         = pModeData->pfnR3GstUnmonitorCR3;
+#endif
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pVM->pgm.s.pfnR3GstWriteHandlerCR3      = pModeData->pfnR3GstWriteHandlerCR3;
     pVM->pgm.s.pszR3GstWriteHandlerCR3      = pModeData->pszR3GstWriteHandlerCR3;
@@ -3075,8 +3079,10 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
     pVM->pgm.s.pfnRCGstGetPage              = pModeData->pfnRCGstGetPage;
     pVM->pgm.s.pfnRCGstModifyPage           = pModeData->pfnRCGstModifyPage;
     pVM->pgm.s.pfnRCGstGetPDE               = pModeData->pfnRCGstGetPDE;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pVM->pgm.s.pfnRCGstMonitorCR3           = pModeData->pfnRCGstMonitorCR3;
     pVM->pgm.s.pfnRCGstUnmonitorCR3         = pModeData->pfnRCGstUnmonitorCR3;
+#endif
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pVM->pgm.s.pfnRCGstWriteHandlerCR3      = pModeData->pfnRCGstWriteHandlerCR3;
     pVM->pgm.s.pfnRCGstPAEWriteHandlerCR3   = pModeData->pfnRCGstPAEWriteHandlerCR3;
@@ -3084,8 +3090,10 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
     pVM->pgm.s.pfnR0GstGetPage              = pModeData->pfnR0GstGetPage;
     pVM->pgm.s.pfnR0GstModifyPage           = pModeData->pfnR0GstModifyPage;
     pVM->pgm.s.pfnR0GstGetPDE               = pModeData->pfnR0GstGetPDE;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pVM->pgm.s.pfnR0GstMonitorCR3           = pModeData->pfnR0GstMonitorCR3;
     pVM->pgm.s.pfnR0GstUnmonitorCR3         = pModeData->pfnR0GstUnmonitorCR3;
+#endif
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pVM->pgm.s.pfnR0GstWriteHandlerCR3      = pModeData->pfnR0GstWriteHandlerCR3;
     pVM->pgm.s.pfnR0GstPAEWriteHandlerCR3   = pModeData->pfnR0GstPAEWriteHandlerCR3;
