@@ -178,7 +178,7 @@ $$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib: \
 	$(call MSG_TOOL,install_name_tool,accessible,$<,$@)
 	$(QUIET)$(INSTALL) $< $@
 	$(QUIET)install_name_tool \
-		$(foreach qtmod, QtCore QtGui QtNetwork
+		$(foreach qtmod, QtCore QtGui QtNetwork \
 		,-change                       $(qtmod).framework/Versions/4/QtCore \
 		@executable_path/../Frameworks/$(qtmod).framework/Versions/4/QtCore \
 		-change                        $(qtmod)VBox.framework/Versions/4/QtCoreVBox \
