@@ -218,6 +218,8 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
  */
 void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 {
+    Log(("pgmMapSetShadowPDEs new pde %x (mappings enabled %d)\n", iNewPDE, pgmMapAreMappingsEnabled(&pVM->pgm.s)));
+
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
@@ -348,14 +350,13 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
  */
 void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE)
 {
-    Assert(pShwPageCR3);
+    Log(("pgmMapClearShadowPDEs old pde %x (mappings enabled %d)\n", iOldPDE, pgmMapAreMappingsEnabled(&pVM->pgm.s)));
 
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (!pVM->pgm.s.CTX_SUFF(pShwPageCR3))
-        return;    /* too early */
+    Assert(pShwPageCR3);
 #endif
 
     unsigned i = pMap->cPTs;
@@ -425,6 +426,8 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
  */
 VMMDECL(int) PGMMapActivateAll(PVM pVM)
 {
+    Log(("PGMMapActivateAll fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
+
     /*
      * Can skip this if mappings are safely fixed.
      */
@@ -460,6 +463,8 @@ VMMDECL(int) PGMMapActivateAll(PVM pVM)
  */
 VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
 {
+    Log(("PGMMapDeactivateAll fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
+
     /*
      * Can skip this if mappings are safely fixed.
      */
@@ -603,6 +608,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
     return false;
 }
 
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
 /**
  * Checks and resolves (ring 3 only) guest conflicts with VMM GC mappings.
  *
@@ -711,5 +717,7 @@ VMMDECL(int) PGMMapResolveConflicts(PVM pVM)
 
     return VINF_SUCCESS;
 }
+# endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
+
 #endif /* IN_RING0 */
 

@@ -2245,7 +2245,6 @@ VMMDECL(unsigned) PGMAssertCR3(PVM pVM, uint64_t cr3, uint64_t cr4)
     unsigned cErrors = PGM_BTH_PFN(AssertCR3, pVM)(pVM, cr3, cr4, 0, ~(RTGCPTR)0);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
     return cErrors;
-    return 0;
 }
 
 #endif /* VBOX_STRICT */

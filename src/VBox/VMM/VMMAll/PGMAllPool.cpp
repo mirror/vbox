@@ -487,6 +487,10 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
             {
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 const unsigned iShw = off / sizeof(X86PTE);         // ASSUMING 32-bit guest paging!
+
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                LogFlow(("pgmPoolMonitorChainChanging: PGMPOOLKIND_32BIT_PD %x\n", iShw));
+#  endif
                 if (uShw.pPD->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
                     Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
