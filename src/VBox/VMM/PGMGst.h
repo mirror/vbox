@@ -118,10 +118,8 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, vo
 PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
 PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPDE);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
 PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3);
 PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM);
-#endif
 __END_DECLS
 
 
@@ -144,10 +142,8 @@ PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
     pModeData->pfnR3GstGetPDE             = PGM_GST_NAME(GetPDE);
     pModeData->pfnR3GstGetPage            = PGM_GST_NAME(GetPage);
     pModeData->pfnR3GstModifyPage         = PGM_GST_NAME(ModifyPage);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pModeData->pfnR3GstMonitorCR3         = PGM_GST_NAME(MonitorCR3);
     pModeData->pfnR3GstUnmonitorCR3       = PGM_GST_NAME(UnmonitorCR3);
-#endif
 
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
 # if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
@@ -175,12 +171,10 @@ PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
         AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(ModifyPage),  rc), rc);
         rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(GetPDE),           &pModeData->pfnRCGstGetPDE);
         AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(GetPDE), rc), rc);
-# ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(MonitorCR3),       &pModeData->pfnRCGstMonitorCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(MonitorCR3), rc), rc);
         rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(UnmonitorCR3),     &pModeData->pfnRCGstUnmonitorCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(UnmonitorCR3), rc), rc);
-# endif
 # ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
         rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(WriteHandlerCR3),  &pModeData->pfnRCGstWriteHandlerCR3);
@@ -198,12 +192,10 @@ PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
         AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_R0_STR(ModifyPage),  rc), rc);
         rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_GST_NAME_R0_STR(GetPDE),           &pModeData->pfnR0GstGetPDE);
         AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_R0_STR(GetPDE), rc), rc);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_GST_NAME_R0_STR(MonitorCR3),       &pModeData->pfnR0GstMonitorCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_R0_STR(MonitorCR3), rc), rc);
         rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_GST_NAME_R0_STR(UnmonitorCR3),     &pModeData->pfnR0GstUnmonitorCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_R0_STR(UnmonitorCR3), rc), rc);
-#endif
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
 # if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
         rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_GST_NAME_R0_STR(WriteHandlerCR3),  &pModeData->pfnR0GstWriteHandlerCR3);
@@ -234,9 +226,9 @@ PGM_GST_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
     int rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
 #else
     int rc = PGM_BTH_NAME(MapCR3)(pVM, GCPhysCR3);
+#endif
     if (RT_SUCCESS(rc) && !pVM->pgm.s.fMappingsFixed)
         rc = PGM_GST_NAME(MonitorCR3)(pVM, GCPhysCR3);
-#endif
     return rc;
 }
 
@@ -265,11 +257,11 @@ PGM_GST_DECL(int, Exit)(PVM pVM)
 {
     int rc;
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    rc = PGM_BTH_PFN(UnmapCR3, pVM)(pVM);
-#else
     rc = PGM_GST_NAME(UnmonitorCR3)(pVM);
     if (RT_SUCCESS(rc))
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        rc = PGM_BTH_PFN(UnmapCR3, pVM)(pVM);
+#else
         rc = PGM_BTH_NAME(UnmapCR3)(pVM);
 #endif
     return rc;
