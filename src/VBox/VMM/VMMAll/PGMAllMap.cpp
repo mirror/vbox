@@ -569,10 +569,17 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
 
+#ifdef IN_RING3
                     Log(("PGMHasMappingConflicts: Conflict was detected at %08RX32 for mapping %s (32 bits)\n"
                          "                        iPDE=%#x iPT=%#x PDE=%RGp.\n",
                         (iPT + iPDE) << X86_PD_SHIFT, pCur->pszDesc,
                         iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
+#else
+                    Log(("PGMHasMappingConflicts: Conflict was detected at %08RX32 for mapping (32 bits)\n"
+                         "                        iPDE=%#x iPT=%#x PDE=%RGp.\n",
+                        (iPT + iPDE) << X86_PD_SHIFT,
+                        iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
+#endif
                     return true;
                 }
         }
@@ -593,9 +600,15 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
                     && (pVM->fRawR0Enabled || Pde.n.u1User))
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
+#ifdef IN_RING3
                     Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping %s (PAE)\n"
                          "                        PDE=%016RX64.\n",
                         GCPtr, pCur->pszDesc, Pde.u));
+#else
+                    Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping (PAE)\n"
+                         "                        PDE=%016RX64.\n",
+                        GCPtr, Pde.u));
+#endif
                     return true;
                 }
                 GCPtr += (1 << X86_PD_PAE_SHIFT);
@@ -648,11 +661,11 @@ VMMDECL(int) PGMMapResolveConflicts(PVM pVM)
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
 
+#ifdef IN_RING3
                     Log(("PGMHasMappingConflicts: Conflict was detected at %08RX32 for mapping %s (32 bits)\n"
                          "                        iPDE=%#x iPT=%#x PDE=%RGp.\n",
                         (iPT + iPDE) << X86_PD_SHIFT, pCur->pszDesc,
                         iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
-#ifdef IN_RING3
                     int rc = pgmR3SyncPTResolveConflict(pVM, pCur, pPD, iPDE << X86_PD_SHIFT);
                     AssertRCReturn(rc, rc);
 
@@ -664,6 +677,10 @@ VMMDECL(int) PGMMapResolveConflicts(PVM pVM)
                         pCur = pCur->CTX_SUFF(pNext);
                     break;
 #else
+                    Log(("PGMHasMappingConflicts: Conflict was detected at %08RX32 for mapping (32 bits)\n"
+                         "                        iPDE=%#x iPT=%#x PDE=%RGp.\n",
+                        (iPT + iPDE) << X86_PD_SHIFT,
+                        iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
                     return VINF_PGM_SYNC_CR3;
 #endif
                 }
@@ -688,10 +705,10 @@ VMMDECL(int) PGMMapResolveConflicts(PVM pVM)
                     && (pVM->fRawR0Enabled || Pde.n.u1User))
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
+#ifdef IN_RING3
                     Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping %s (PAE)\n"
                          "                        PDE=%016RX64.\n",
                         GCPtr, pCur->pszDesc, Pde.u));
-#ifdef IN_RING3
                     int rc = pgmR3SyncPTResolveConflictPAE(pVM, pCur, GCPtr);
                     AssertRCReturn(rc, rc);
 
@@ -703,6 +720,9 @@ VMMDECL(int) PGMMapResolveConflicts(PVM pVM)
                         pCur = pCur->CTX_SUFF(pNext);
                     break;
 #else
+                    Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping (PAE)\n"
+                         "                        PDE=%016RX64.\n",
+                        GCPtr, Pde.u));
                     return VINF_PGM_SYNC_CR3;
 #endif
                 }
