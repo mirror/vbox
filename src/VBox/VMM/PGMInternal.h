@@ -2968,11 +2968,7 @@ void            pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt);
 uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT);
 void            pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPGMPAGE pPhysPage);
 #ifdef PGMPOOL_WITH_MONITORING
-# ifdef IN_RING3
-void            pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, RTHCPTR pvAddress, PDISCPUSTATE pCpu);
-# else
-void            pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, RTGCPTR pvAddress, PDISCPUSTATE pCpu);
-# endif
+void            pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, PDISCPUSTATE pCpu);
 int             pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolMonitorModifiedInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolMonitorModifiedClearAll(PVM pVM);
