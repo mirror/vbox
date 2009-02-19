@@ -471,6 +471,8 @@ VMMR0_SOURCES   = \
 VMMR0_SOURCES.darwin.x86 = \
 	VMMR0/PGMR0DynMap.cpp
 
+# disable annoying warnings about array subscript above array bounds in aPages[]
+VMMAll/PGMAllPool.cpp_CXXFLAGS = $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
 
 ifeq ($(VBOX_LDR_FMT),pe)
 VMMR0_SOURCES += VMMR0/VMMR0.def
