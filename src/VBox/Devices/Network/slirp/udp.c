@@ -707,9 +707,9 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
         return NULL;
 
     so->s = socket(AF_INET,SOCK_DGRAM,0);
-    if (so->s == -1) 
+    if (so->s == -1)
     {
-        LogRel(("NAT: can't create datagram socket\n "));
+        LogRel(("NAT: can't create datagram socket\n"));
         RTMemFree(so);
         return NULL;
     }
