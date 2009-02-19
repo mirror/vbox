@@ -168,7 +168,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     buf = RTMemAlloc(cb);
     if (buf == NULL)
     {
-        LogRel(("Can't allocate buffer for sending buffer\n"));
+        LogRel(("NAT: Can't allocate send buffer\n"));
         return VERR_NO_MEMORY;
     }
     memcpy(buf, pvBuf, cb);
@@ -374,10 +374,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         polls = NULL;
         polls = (struct pollfd *)RTMemAlloc((1 + nFDs) * sizeof(struct pollfd) + sizeof(uint32_t)); /* allocation for all sockets + Management pipe*/
         if (polls == NULL)
-        {
-            LogRel(("Can't allocate memory for polling\n"));
             return VERR_NO_MEMORY;
-        }
 
         slirp_select_fill(pThis->pNATState, &nFDs, &polls[1]); /*don't bother Slirp with knowelege about managemant pipe*/
         ms = slirp_get_timeout_ms(pThis->pNATState);
@@ -413,7 +410,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             RTReqProcess(pThis->pReqQueue, 0);
         }
         RTMemFree(polls);
-# else /* !RT_OS_WINDOWS */
+# else /* RT_OS_WINDOWS */
         slirp_select_fill(pThis->pNATState, &nFDs);
         ms = slirp_get_timeout_ms(pThis->pNATState);
         struct timeval tv = { 0, ms*1000 };
@@ -422,7 +419,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             && event != WSA_WAIT_TIMEOUT)
         {
             int error = WSAGetLastError();
-            LogRel(("WSAWaitForMultipleEvents returned %d (error %d)\n", event, error));
+            LogRel(("NAT: WSAWaitForMultipleEvents returned %d (error %d)\n", event, error));
             RTAssertReleasePanic();
         }
 
@@ -475,7 +472,7 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_SLIRP_MT
+# ifdef VBOX_WITH_SLIRP_MT
 static DECLCALLBACK(int) drvNATAsyncIoGuest(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
@@ -494,7 +491,7 @@ static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD
 
     return VINF_SUCCESS;
 }
-#endif
+# endif /* VBOX_WITH_SLIRP_MT */
 
 #endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
@@ -563,7 +560,7 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
     if (cDroppedPackets < 64)
     {
         cDroppedPackets++;
-        LogRel(("NAT: Dropping package (couldn't alloc queue item to)\n"));
+        LogRel(("NAT: Dropping package (couldn't allocate queue item)\n"));
     }
     RTMemFree((void *)pu8Buf);
 #endif
@@ -891,14 +888,14 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             rc = RTReqCreateQueue(&pThis->pReqQueue);
             if (RT_FAILURE(rc))
             {
-                LogRel(("Can't create request queue\n"));
+                LogRel(("NAT: Can't create request queue\n"));
                 return rc;
             }
 
             rc = PDMDrvHlpPDMQueueCreate(pDrvIns, sizeof(DRVNATQUEUITEM), 50, 0, drvNATQueueConsumer, &pThis->pSendQueue);
             if (RT_FAILURE(rc))
             {
-                LogRel(("Can't create send queue\n"));
+                LogRel(("NAT: Can't create send queue\n"));
                 return rc;
             }
 
