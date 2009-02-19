@@ -261,11 +261,7 @@ int pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * @param   GCPhysFault The fault physical address.
  * @param   cbEntry     The entry size.
  */
-#ifdef IN_RING3
-DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTHCPTR pvFault, RTGCPHYS GCPhysFault, const unsigned cbEntry)
-#else
-DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTGCPTR pvFault, RTGCPHYS GCPhysFault, const unsigned cbEntry)
-#endif
+DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvFault, RTGCPHYS GCPhysFault, const unsigned cbEntry)
 {
 #ifdef IN_RC
     return (const void *)((RTGCUINTPTR)pvFault & ~(RTGCUINTPTR)(cbEntry - 1));
@@ -304,11 +300,7 @@ DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTGCPTR pvFau
  * @param   pCpu        The disassembler state for figuring out the write size.
  *                      This need not be specified if the caller knows we won't do cross entry accesses.
  */
-#ifdef IN_RING3
-void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, RTHCPTR pvAddress, PDISCPUSTATE pCpu)
-#else
-void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, RTGCPTR pvAddress, PDISCPUSTATE pCpu)
-#endif
+void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, PDISCPUSTATE pCpu)
 {
     Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
     const unsigned off     = GCPhysFault & PAGE_OFFSET_MASK;
@@ -468,7 +460,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPTPae->a[iShw2].n.u1Present)
                     {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-                        PCX86PTEPAE pGstPte = (PCX86PTEPAE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
+                        PCX86PTEPAE pGstPte = (PCX86PTEPAE)pgmPoolMonitorGCPtr2CCPtr(pPool, 
+                                                                                     (CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR))((RTGCUINTPTR)pvAddress + sizeof(X86PTEPAE)), 
+                                                                                     GCPhysFault + sizeof(X86PTEPAE), sizeof(*pGstPte));
                         Log4(("pgmPoolMonitorChainChanging pae: deref %016RX64 GCPhys %016RX64\n", uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PAE_PG_MASK));
                         pgmPoolTracDerefGCPhysHint(pPool, pPage,
                                                 uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK,
