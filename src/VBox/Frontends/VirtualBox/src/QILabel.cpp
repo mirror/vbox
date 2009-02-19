@@ -187,6 +187,12 @@ void QILabel::setWordWrap (bool aOn)
     mLabel->setWordWrap (aOn);
 }
 
+void QILabel::setMinimumWidth (int aMinWidth)
+{
+    mLabel->setMinimumWidth (aMinWidth);
+    QWidget::setMinimumWidth (aMinWidth);
+}
+
 QString QILabel::text () const
 {
     return mLabel->fullText();

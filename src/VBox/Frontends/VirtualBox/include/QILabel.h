@@ -69,6 +69,7 @@ public:
     void setTextFormat (Qt::TextFormat aFormat);
     void setTextInteractionFlags (Qt::TextInteractionFlags aFlags);
     void setWordWrap (bool aOn);
+    void setMinimumWidth (int aMinWidth);
     QString text() const;
     Qt::TextFormat textFormat() const;
     Qt::TextInteractionFlags textInteractionFlags() const;
