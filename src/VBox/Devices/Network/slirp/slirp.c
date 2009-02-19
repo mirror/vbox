@@ -204,10 +204,12 @@
     } while (0)
 #  endif /* !RT_OS_WINDOWS */
 # else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
-#  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)                                  \
-    do {                                                                                                    \
-            LogRel(("  " #proto " %R[natsock] %s %s %s\n", (so), FD_ISSET((so)->s, (r_fdset))?"READ":"",    \
-                     FD_ISSET((so)->s, (w_fdset))?"WRITE":"", FD_ISSET((so)->s, (x_fdset))?"OOB":""));      \
+#  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)  \
+    do {                                                                    \
+            LogRel(("  " #proto " %R[natsock] %s %s %s\n", (so),            \
+                FD_ISSET((so)->s, (r_fdset))?"READ":"",                     \
+                FD_ISSET((so)->s, (w_fdset))?"WRITE":"",                    \
+                FD_ISSET((so)->s, (x_fdset))?"OOB":""));                    \
     } while (0)
 # endif
 #else /* VBOX_WITH_DEBUG_NAT_SOCKETS */
