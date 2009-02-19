@@ -211,7 +211,7 @@ endif # VBOX_WITH_QT4_SUN
 #
 ifdef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
 INSTALLS += buildserver-additions
-buildserver-additions_INST = $(INST_ADDITIONS)
+buildserver-additions_INST = $(INST_ADDITIONS_ISO)
 buildserver-additions_MODE = 0644
 buildserver-additions_SOURCES = $(PATH_TARGET)/VBoxGuestAdditions.iso
 buildserver-additions_CLEANS = $(PATH_TARGET)/VBoxGuestAdditions.iso $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
@@ -292,7 +292,7 @@ ifn1of ($(KBUILD_TARGET), l4 linux win)
   ifndef VBOX_WITH_WIN32_ADDITIONS
    ifneq ($(wildcard $(VBOX_PATH_STAGED)/VBoxGuestAdditions.iso),)
     INSTALLS += staged-additions
-    staged-additions_INST = $(INST_ADDITIONS)
+    staged-additions_INST = $(INST_ADDITIONS_ISO)
     staged-additions_MODE = 0644
     staged-additions_SOURCES = $(VBOX_PATH_STAGED)/VBoxGuestAdditions.iso
    endif
