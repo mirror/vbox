@@ -513,7 +513,7 @@ class PortPool
            synchronized (known)
            {
               while (!initStarted)
-              { 
+              {
                  try {
                    known.wait();
                  } catch (InterruptedException e) {
@@ -548,8 +548,8 @@ class PortPool
                 URL wsdl = PortPool.class.getClassLoader().getResource("vboxwebService.wsdl");
                 if (wsdl == null)
                     throw new LinkageError("vboxwebService.wsdl not found, but it should have been in the jar");
-                svc = new VboxService(wsdl, 
-                                      new QName("http://www.virtualbox.org/Service", 
+                svc = new VboxService(wsdl,
+                                      new QName("http://www.virtualbox.org/Service",
                                                 "vboxService"));
             }
             port = svc.getVboxServicePort();
@@ -575,12 +575,24 @@ public class IWebsessionManager {
     private static PortPool pool = new PortPool(true);
     protected VboxPortType port;
 
-    public IWebsessionManager(URL url) {
+    public IWebsessionManager(URL url)
+    {
         connect(url);
     }
 
-    public IWebsessionManager(String url) {
+    public IWebsessionManager(String url)
+    {
         connect(url);
+    }
+
+    public IWebsessionManager(URL url, Map<String, Object> requestContext, Map<String, Object> responseContext)
+    {
+        connect(url.toExternalForm(), requestContext, responseContext);
+    }
+
+    public IWebsessionManager(String url, Map<String, Object> requestContext, Map<String, Object> responseContext)
+    {
+        connect(url, requestContext, responseContext);
     }
 
     public void connect(URL url)
@@ -594,6 +606,22 @@ public class IWebsessionManager {
         ((BindingProvider)port).getRequestContext().
                 put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
     }
+
+    public void connect(String url, Map<String, Object> requestContext, Map<String, Object> responseContext)
+    {
+         this.port = pool.getPort();
+
+         ((BindingProvider)port).getRequestContext();
+         if (requestContext != null)
+               ((BindingProvider)port).getRequestContext().putAll(requestContext);
+
+         if (responseContext != null)
+               ((BindingProvider)port).getResponseContext().putAll(responseContext);
+
+         ((BindingProvider)port).getRequestContext().
+                put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
+    }
+
 
     public void disconnect(com.sun.xml.ws.commons.virtualbox.IVirtualBox refIVirtualBox)
     {
