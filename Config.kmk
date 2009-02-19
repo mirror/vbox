@@ -83,6 +83,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  INST_SYS             = $(INST_BIN)
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_BIN)additions/
+ INST_ADDITIONS_ISO   = $(INST_BIN)
 
  # other paths
  INST_TESTSUITE       = testsuite/
@@ -99,6 +100,7 @@ else
  INST_SYS             = $(INST_BIN)
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_BIN)additions/
+ INST_ADDITIONS_ISO   = $(INST_ADDITIONS)
 
  INST_TESTSUITE       = testsuite/
  INST_LIB             = lib/
@@ -114,6 +116,7 @@ VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_INS)/$(INST_SDK))
 VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_INS)/$(INST_DIST))
 VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_INS)/$(INST_TESTSUITE))
 VBOX_PATH_ADDITIONS   = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS))
+VBOX_PATH_ADDITIONS_ISO = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_ISO))
 VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_LIB))
 
 

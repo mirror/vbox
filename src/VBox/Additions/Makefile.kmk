@@ -170,7 +170,7 @@ endif # win.x86
 # Build the Guest Additions ISO image.
 #
 ifndef VBOX_WITHOUT_ADDITIONS_ISO
-$(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
+$(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso: \
 		$(filter-out %=deleteme=,\
 			$(subst =,=deleteme= ,\
 				$(GUESTADDITIONS_FILESPEC.win.x86) \
@@ -205,7 +205,7 @@ $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 
 # Alias for creating the iso.
 .PHONY: additions-iso
-additions-iso: $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso
+additions-iso: $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso
 
 endif
 
