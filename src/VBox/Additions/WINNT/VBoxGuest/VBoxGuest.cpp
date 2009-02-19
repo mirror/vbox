@@ -1362,8 +1362,8 @@ BOOLEAN VBoxGuestIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext)
 }
 
 /**
- * Worker thread to do periodic things such as synchronize the
- * system time and notify other drivers of events.
+ * Worker thread to do periodic things such as notify other
+ * drivers of events.
  *
  * @param   pDevExt device extension pointer
  */
@@ -1374,52 +1374,12 @@ VOID vboxWorkerThread(PVOID context)
     pDevExt = (PVBOXGUESTDEVEXT)context;
     dprintf(("VBoxGuest::vboxWorkerThread entered\n"));
 
-    VMMDevReqHostTime *req = NULL;
-
-    int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqHostTime), VMMDevReq_GetHostTime);
-
-    if (RT_FAILURE(rc))
-    {
-        dprintf(("VBoxGuest::vboxWorkerThread: could not allocate request buffer, exiting rc = %d!\n", rc));
-        return;
-    }
-
     /* perform the hypervisor address space reservation */
     reserveHypervisorMemory(pDevExt);
 
     do
     {
-        /*
-         * Do the time sync
-         */
-        {
-            LARGE_INTEGER systemTime;
-            #define TICKSPERSEC  10000000
-            #define TICKSPERMSEC 10000
-            #define SECSPERDAY   86400
-            #define SECS_1601_TO_1970  ((369 * 365 + 89) * (uint64_t)SECSPERDAY)
-            #define TICKS_1601_TO_1970 (SECS_1601_TO_1970 * TICKSPERSEC)
-
-
-            req->header.rc = VERR_GENERAL_FAILURE;
-
-            rc = VbglGRPerform (&req->header);
-
-            if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
-            {
-                uint64_t hostTime = req->time;
-
-                // Windows was originally designed in 1601...
-                systemTime.QuadPart = hostTime * (uint64_t)TICKSPERMSEC + (uint64_t)TICKS_1601_TO_1970;
-                dprintf(("VBoxGuest::vboxWorkerThread: synching time with host time (msec/UTC): %llu\n", hostTime));
-                ZwSetSystemTime(&systemTime, NULL);
-            }
-            else
-            {
-                dprintf(("VBoxGuest::PowerStateRequest: error performing request to VMMDev."
-                          "rc = %d, VMMDev rc = %Rrc\n", rc, req->header.rc));
-            }
-        }
+        /* Nothing to do here yet. */
 
         /*
          * Go asleep unless we're supposed to terminate
@@ -1439,9 +1399,6 @@ VOID vboxWorkerThread(PVOID context)
     } while (!pDevExt->stopThread);
 
     dprintf(("VBoxGuest::vboxWorkerThread: we've been asked to terminate!\n"));
-
-    /* free our request buffer */
-    VbglGRFree (&req->header);
 
     if (pDevExt->workerThread)
     {
