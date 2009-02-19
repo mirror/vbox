@@ -225,7 +225,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mTextLabel = new QILabel (aText);
     mTextLabel->setAlignment (Qt::AlignLeft | Qt::AlignTop);
     mTextLabel->setWordWrap (true);
-    QSizePolicy sp (QSizePolicy::Preferred, QSizePolicy::Preferred);
+    QSizePolicy sp (QSizePolicy::Minimum, QSizePolicy::Minimum);
     sp.setHeightForWidth (true);
     mTextLabel->setSizePolicy (sp);
     messageVBoxLayout->addWidget (mTextLabel);
