@@ -1,6 +1,5 @@
 /** @file
  * VBox HDD Container API.
- * Will replace VBoxHDD.h.
  */
 
 /*
