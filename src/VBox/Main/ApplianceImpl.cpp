@@ -148,6 +148,8 @@ struct VirtualDisk
 {
     uint32_t            idController;           // SCSI (or IDE) controller this disk is connected to;
                                                 // points into VirtualSystem.mapControllers
+    uint32_t            ulAddressOnParent;      // parsed strAddressOnParent of hardware item; will be 0 or 1 for IDE
+                                                // and possibly higher for disks attached to SCSI controllers (untested)
     Utf8Str             strDiskId;              // if the hard disk has an ovf:/disk/<id> reference,
                                                 // this receives the <id> component; points to one of the
                                                 // references in Appliance::Data.mapDisks
@@ -751,6 +753,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
 
                         VirtualDisk vd;
                         vd.idController = i.ulParent;
+                        i.strAddressOnParent.toInt(vd.ulAddressOnParent);
                         bool fFound = false;
                         // ovf://disk/lamp
                         // 12345678901234
@@ -1512,9 +1515,10 @@ STDMETHODIMP Appliance::Interpret()
                             throw setError(E_FAIL,
                                            tr("Internal inconsistency looking up hard disk controller."));
 
-                        /* controller to attach to @todo bus? */
-                        Utf8StrFmt strExtraConfig("controller=%RI16",
-                                                  pController->ulIndex);
+                        /* controller to attach to, and the bus within that controller */
+                        Utf8StrFmt strExtraConfig("controller=%RI16;channel=%RI16",
+                                                  pController->ulIndex,
+                                                  hd.ulAddressOnParent);
                         pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
                                            hd.strDiskId,
                                            di.strHref,
@@ -2102,16 +2106,56 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                         mhda.uuid = newMachineId;
                         mhda.pMachine = pNewMachine;
                         mhda.busType = StorageBus_IDE;
-                        mhda.lChannel = (long)hdc.ulBusNumber; // ?!? @todo this is still wrong
-                        mhda.lDevice = (long)0;         // ?!? @todo this is still wrong
 
                         switch (hdc.system)
                         {
-                            case HardDiskController::IDE: mhda.busType = StorageBus_IDE; break;
-                            case HardDiskController::SATA: mhda.busType = StorageBus_SATA; break;
-                                                           //case HardDiskController::SCSI: sbt = StorageBus_SCSI; break; // @todo: not available yet
+                            case HardDiskController::IDE:
+                                // For the IDE bus, the channel parameter can be either 0 or 1, to specify the primary
+                                // or secondary IDE controller, respectively. For the primary controller of the IDE bus,
+                                // the device number can be either 0 or 1, to specify the master or the slave device,
+                                // respectively. For the secondary IDE controller, the device number is always 1 because
+                                // the master device is reserved for the CD-ROM drive.
+                                switch (vd.ulAddressOnParent)
+                                {
+                                    case 0:     // interpret this as primary master
+                                        mhda.lChannel = (long)0;
+                                        mhda.lDevice = (long)0;
+                                    break;
+
+                                    case 1:     // interpret this as primary slave
+                                        mhda.lChannel = (long)0;
+                                        mhda.lDevice = (long)1;
+                                    break;
+
+                                    case 2:     // interpret this as secondary slave
+                                        mhda.lChannel = (long)1;
+                                        mhda.lDevice = (long)1;
+                                    break;
+
+                                    default:
+                                        throw setError(VERR_NOT_IMPLEMENTED,
+                                                       tr("Invalid channel %RI16 specified; IDE conrollers support only 0, 1 or 2"), vd.ulAddressOnParent);
+                                    break;
+                                }
+                            break;
+
+                            case HardDiskController::SATA:
+                                mhda.busType = StorageBus_SATA;
+                                mhda.lChannel = (long)vd.ulAddressOnParent;
+                                mhda.lDevice = (long)0;
+                            break;
+
+                            case HardDiskController::SCSI:
+//                                 mhda.busType = StorageBus_SCSI;
+                                throw setError(VERR_NOT_IMPLEMENTED,
+                                               tr("SCSI controller support is not available yet in VirtualBox"));
+                                    // @ŧodo
+                            break;
+
                             default: break;
                         }
+
+                        Log(("Attaching disk %s to channel %d on device %d\n", pcszDstFilePath, mhda.lChannel, mhda.lDevice));
 
                         rc = sMachine->AttachHardDisk(hdId,
                                                       mhda.busType,
