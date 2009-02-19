@@ -481,6 +481,7 @@ tcp_connect(PNATState pData, struct socket *inso)
 
     (void) tcp_mss(pData, sototcpcb(so), 0);
 
+    fd_nonblock(inso->s);
     if ((s = accept(inso->s,(struct sockaddr *)&addr,&addrlen)) < 0)
     {
         tcp_close(pData, sototcpcb(so)); /* This will sofree() as well */

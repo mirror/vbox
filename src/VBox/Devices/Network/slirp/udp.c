@@ -365,6 +365,7 @@ udp_attach(PNATState pData, struct socket *so)
         addr.sin_family = AF_INET;
         addr.sin_port = 0;
         addr.sin_addr.s_addr = INADDR_ANY;
+        fd_nonblock(so->s);
         if (bind(so->s, (struct sockaddr *)&addr, sizeof(addr)) < 0)
         {
             int lasterrno = errno;
@@ -393,6 +394,10 @@ udp_attach(PNATState pData, struct socket *so)
             NSOCK_INC();
             QSOCKET_UNLOCK(udb);
         }
+    }
+    else 
+    {
+        LogRel(("NAT: can't create datagramm socket\n"));
     }
     return so->s;
 }
@@ -702,7 +707,14 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
         return NULL;
 
     so->s = socket(AF_INET,SOCK_DGRAM,0);
+    if (so->s == -1) 
+    {
+        LogRel(("NAT: can't create datagram socket\n "));
+        RTMemFree(so);
+        return NULL;
+    }
     so->so_expire = curtime + SO_EXPIRE;
+    fd_nonblock(so->s);
     SOCKET_LOCK_CREATE(so);
     QSOCKET_LOCK(udb);
     insque(pData, so,&udb);
