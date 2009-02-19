@@ -658,11 +658,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
      * for normal menus (because Qt will not do it on pressing ESC if the menu
      * is constructed of dynamic items only) */
     connect (mDevicesMountFloppyMenu, SIGNAL (aboutToHide()),
-             this, SLOT (clearStatusBar()));
+             statusBar(), SLOT (clearMessage()));
     connect (mDevicesMountDVDMenu, SIGNAL (aboutToHide()),
-             this, SLOT (clearStatusBar()));
+             statusBar(), SLOT (clearMessage()));
     connect (mDevicesNetworkMenu, SIGNAL (aboutToHide()),
-             this, SLOT (clearStatusBar()));
+             statusBar(), SLOT (clearMessage()));
 
     connect (fd_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
