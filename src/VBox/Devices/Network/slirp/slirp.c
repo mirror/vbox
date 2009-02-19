@@ -97,7 +97,11 @@
             DO_ENGAGE_EVENT1((so), fdset, ICMP);    \
     } while (0)
 # else /* !RT_OS_WINDOWS */
-#  define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
+#  ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC 
+#   define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
+#  else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+#   define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0
+#  endif /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 #  define ICMP_ENGAGE_EVENT(so, fdset) do {} while(0)
 #endif /* RT_OS_WINDOWS */
 
