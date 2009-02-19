@@ -161,8 +161,7 @@ static struct dev_ops g_VBoxNetAdpSolarisDevOps =
     nodev,                          /* reset */
     &g_VBoxNetAdpSolarisCbOps,
     (struct bus_ops *)0,
-    nodev,                          /* power */
-    ddi_quiesce_not_supported
+    nodev                           /* power */
 };
 
 /**
