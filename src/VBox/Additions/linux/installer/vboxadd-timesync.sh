@@ -150,7 +150,7 @@ if [ "$system" = "arch" ]; then
     . /etc/rc.d/functions
     daemon() {
         $@
-        test $? -eq 0 && add_daemon `basename $1`
+        test $? -eq 0 && add_daemon rc.`basename $1`
     }
 
     killproc() {
@@ -165,6 +165,11 @@ if [ "$system" = "arch" ]; then
     succ_msg() {
         stat_done
     }
+
+    begin() {
+        stat_busy "$1"
+    }
+
 fi
  
 if [ "$system" = "slackware" ]; then
@@ -185,13 +190,8 @@ if [ "$system" = "slackware" ]; then
         echo " ...done."
     }
 
-    status() {
-        echo -n "Checking for vboxadd-timesync"
-        if [ -f /var/run/$1 ]; then
-            echo " ...running"
-        else
-            echo " ...not running"
-        fi
+    begin() {
+        echo -n "$1"
     }
 
 fi
@@ -255,9 +255,14 @@ restart() {
     stop && start
 }
 
-dmnstatus() {
-    status vboxadd-timesync
-}
+    status() {
+        echo -n "Checking for vboxadd-timesync"
+        if [ -f /var/run/$1 ]; then
+            echo " ...running"
+        else
+            echo " ...not running"
+        fi
+    }
 
 case "$1" in
 start)
@@ -270,7 +275,7 @@ restart)
     restart
     ;;
 status)
-    dmnstatus
+    status
     ;;
 *)
     echo "Usage: $0 {start|stop|restart|status}"
