@@ -73,7 +73,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  INST_VBOXDRV         = $(INST_DIST)VBoxDrv.kext/
  INST_VBOXDRV_TIGER   = $(INST_DIST)VBoxDrvTiger.kext/
  INST_VBOXNETFLT      = $(INST_DIST)VBoxNetFlt.kext/
- INST_VBOXNETTAP      = $(INST_DIST)VBoxNetTap.kext/
+ INST_VBOXNETADP      = $(INST_DIST)VBoxNetAdp.kext/
  INST_VBOXUSB         = $(INST_DIST)VBoxUSB.kext/
  INST_VBOXUSB_TIGER   = $(INST_DIST)VBoxUSBTiger.kext/
 
