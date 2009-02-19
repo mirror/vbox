@@ -1728,7 +1728,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             /* Now that we know the base system get our internal defaults based on that. */
             ComPtr<IGuestOSType> osType;
             rc = pVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox), osType.asOutParam());
-            if (rc) throw rc;
+            if (FAILED(rc)) throw rc;
 
             /* Create the machine */
             /* First get the name */
@@ -1740,7 +1740,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             rc = pVirtualBox->CreateMachine(Bstr(strNameVBox), Bstr(strOsTypeVBox),
                                                  Bstr(), Guid(),
                                                  pNewMachine.asOutParam());
-            if (rc) throw rc;
+            if (FAILED(rc)) throw rc;
 
             if (!task->progress.isNull())
                 rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
@@ -1754,17 +1754,17 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             const Utf8Str &memoryVBox = vsdeRAM.front()->strConfig;
             ULONG tt = (ULONG)RTStrToUInt64(memoryVBox.c_str());
             rc = pNewMachine->COMSETTER(MemorySize)(tt);
-            if (rc) throw rc;
+            if (FAILED(rc)) throw rc;
 
             /* VRAM */
             /* Get the recommended VRAM for this guest OS type */
             ULONG vramVBox;
             rc = osType->COMGETTER(RecommendedVRAM)(&vramVBox);
-            if (rc) throw rc;
+            if (FAILED(rc)) throw rc;
 
             /* Set the VRAM */
             rc = pNewMachine->COMSETTER(VRAMSize)(vramVBox);
-            if (rc) throw rc;
+            if (FAILED(rc)) throw rc;
 
             if (!task->progress.isNull())
                 task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
@@ -1780,11 +1780,11 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     uint32_t audio = RTStrToUInt32(audioAdapterVBox.c_str());
                     ComPtr<IAudioAdapter> audioAdapter;
                     rc = pNewMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
-                    if (rc) throw rc;
+                    if (FAILED(rc)) throw rc;
                     rc = audioAdapter->COMSETTER(Enabled)(true);
-                    if (rc) throw rc;
+                    if (FAILED(rc)) throw rc;
                     rc = audioAdapter->COMSETTER(AudioController)(static_cast<AudioControllerType_T>(audio));
-                    if (rc) throw rc;
+                    if (FAILED(rc)) throw rc;
                 }
             }
 
@@ -1796,9 +1796,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
             ComPtr<IUSBController> usbController;
             rc = pNewMachine->COMGETTER(USBController)(usbController.asOutParam());
-            if (rc) throw rc;
+            if (FAILED(rc)) throw rc;
             rc = usbController->COMSETTER(Enabled)(fUSBEnabled);
-            if (rc) throw rc;
+            if (FAILED(rc)) throw rc;
 
             if (!task->progress.isNull())
                 task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
@@ -1810,9 +1810,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 /* No network adapters, so we have to disable our default one */
                 ComPtr<INetworkAdapter> nwVBox;
                 rc = pNewMachine->GetNetworkAdapter(0, nwVBox.asOutParam());
-                if (rc) throw rc;
+                if (FAILED(rc)) throw rc;
                 rc = nwVBox->COMSETTER(Enabled)(false);
-                if (rc) throw rc;
+                if (FAILED(rc)) throw rc;
             }
             else
             {
@@ -1828,13 +1828,13 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
                     ComPtr<INetworkAdapter> nwVBox;
                     rc = pNewMachine->GetNetworkAdapter((ULONG)a, nwVBox.asOutParam());
-                    if (rc) throw rc;
+                    if (FAILED(rc)) throw rc;
                     /* Enable the network card & set the adapter type */
                     /* NAT is set as default */
                     rc = nwVBox->COMSETTER(Enabled)(true);
-                    if (rc) throw rc;
+                    if (FAILED(rc)) throw rc;
                     rc = nwVBox->COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1));
-                    if (rc) throw rc;
+                    if (FAILED(rc)) throw rc;
                 }
             }
 
@@ -1845,9 +1845,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             bool fFloppyEnabled = vsdeFloppy.size() > 0;
             ComPtr<IFloppyDrive> floppyDrive;
             rc = pNewMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
-            if (rc) throw rc;
+            if (FAILED(rc)) throw rc;
             rc = floppyDrive->COMSETTER(Enabled)(fFloppyEnabled);
-            if (rc) throw rc;
+            if (FAILED(rc)) throw rc;
 
             if (!task->progress.isNull())
                 task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
@@ -1864,7 +1864,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 /* Set the appropriate IDE controller in the virtual BIOS of the VM */
                 ComPtr<IBIOSSettings> biosSettings;
                 rc = pNewMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
-                if (rc) throw rc;
+                if (FAILED(rc)) throw rc;
 
                 const char *pcszIDEType = vsdeHDCIDE.front()->strConfig.c_str();
                 if (!strcmp(pcszIDEType, "PIIX3"))
@@ -1875,7 +1875,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Invalid IDE controller type \"%s\""),
                                    pcszIDEType);
-                if (rc) throw rc;
+                if (FAILED(rc)) throw rc;
             }
 #ifdef VBOX_WITH_AHCI
             /* Hard disk controller SATA */
@@ -1889,9 +1889,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     /* For now we have just to enable the AHCI controller. */
                     ComPtr<ISATAController> hdcSATAVBox;
                     rc = pNewMachine->COMGETTER(SATAController)(hdcSATAVBox.asOutParam());
-                    if (rc) throw rc;
+                    if (FAILED(rc)) throw rc;
                     rc = hdcSATAVBox->COMSETTER(Enabled)(true);
-                    if (rc) throw rc;
+                    if (FAILED(rc)) throw rc;
                 }
                 else
                 {
@@ -1912,11 +1912,11 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
             /* Now its time to register the machine before we add any hard disks */
             rc = pVirtualBox->RegisterMachine(pNewMachine);
-            if (rc) throw rc;
+            if (FAILED(rc)) throw rc;
 
             Guid newMachineId;
             rc = pNewMachine->COMGETTER(Id)(newMachineId.asOutParam());
-            if (rc) throw rc;
+            if (FAILED(rc)) throw rc;
 
             if (!task->progress.isNull())
                 task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
@@ -1938,7 +1938,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     /* In order to attach hard disks we need to open a session
                      * for the new machine */
                     rc = pVirtualBox->OpenSession(session, newMachineId);
-                    if (rc) throw rc;
+                    if (FAILED(rc)) throw rc;
                     fSessionOpen = true;
 
                     int result;
@@ -1998,12 +1998,12 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                                 srcFormat = L"VMDK";
                             /* Create an empty hard disk */
                             rc = pVirtualBox->CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
-                            if (rc) throw rc;
+                            if (FAILED(rc)) throw rc;
 
                             /* Create a dynamic growing disk image with the given capacity */
                             ComPtr<IProgress> progress;
                             rc = dstHdVBox->CreateDynamicStorage(di.iCapacity / _1M, progress.asOutParam());
-                            if (rc) throw rc;
+                            if (FAILED(rc)) throw rc;
 
                             /* Advance to the next operation */
                             if (!task->progress.isNull())
@@ -2026,19 +2026,19 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
                             /* First open the existing disk image */
                             rc = pVirtualBox->OpenHardDisk(Bstr(strSrcFilePath), srcHdVBox.asOutParam());
-                            if (rc) throw rc;
+                            if (FAILED(rc)) throw rc;
                             fSourceHdNeedsClosing = true;
 
                             /* We need the format description of the source disk image */
                             Bstr srcFormat;
                             rc = srcHdVBox->COMGETTER(Format)(srcFormat.asOutParam());
-                            if (rc) throw rc;
+                            if (FAILED(rc)) throw rc;
                             /* Create a new hard disk interface for the destination disk image */
                             rc = pVirtualBox->CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
-                            if (rc) throw rc;
+                            if (FAILED(rc)) throw rc;
                             /* Clone the source disk image */
                             rc = srcHdVBox->CloneTo(dstHdVBox, progress.asOutParam());
-                            if (rc) throw rc;
+                            if (FAILED(rc)) throw rc;
 
                             /* Advance to the next operation */
                             if (!task->progress.isNull())
@@ -2052,19 +2052,19 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                         while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
                         {
                             rc = progress->COMGETTER(Percent(&currentPercent));
-                            if (rc) throw rc;
+                            if (FAILED(rc)) throw rc;
                             if (!task->progress.isNull())
                                 task->progress->notifyProgress(currentPercent);
                             if (fCompleted)
                                 break;
                             /* Make sure the loop is not too tight */
                             rc = progress->WaitForCompletion(100);
-                            if (rc) throw rc;
+                            if (FAILED(rc)) throw rc;
                         }
                         // report result of asynchronous operation
                         HRESULT vrc;
                         rc = progress->COMGETTER(ResultCode)(&vrc);
-                        if (rc) throw rc;
+                        if (FAILED(rc)) throw rc;
 
                         // if the thread of the progress object has an error, then
                         // retrieve the error info from there, or it'll be lost
@@ -2080,7 +2080,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                         if (fSourceHdNeedsClosing)
                         {
                             rc = srcHdVBox->Close();
-                            if (rc) throw rc;
+                            if (FAILED(rc)) throw rc;
                             fSourceHdNeedsClosing = false;
                         }
 
@@ -2089,10 +2089,10 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                         /* Now use the new uuid to attach the disk image to our new machine */
                         ComPtr<IMachine> sMachine;
                         rc = session->COMGETTER(Machine)(sMachine.asOutParam());
-                        if (rc) throw rc;
+                        if (FAILED(rc)) throw rc;
                         Guid hdId;
                         rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());
-                        if (rc) throw rc;
+                        if (FAILED(rc)) throw rc;
 
                         /* For now we assume we have one controller of every type only */
                         HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
@@ -2117,17 +2117,17 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                                                       mhda.busType,
                                                       mhda.lChannel,
                                                       mhda.lDevice);
-                        if (rc) throw rc;
+                        if (FAILED(rc)) throw rc;
 
                         llHardDiskAttachments.push_back(mhda);
 
                         rc = sMachine->SaveSettings();
-                        if (rc) throw rc;
+                        if (FAILED(rc)) throw rc;
                     } // end for (itHD = avsdeHDs.begin();
 
                     // only now that we're done with all disks, close the session
                     rc = session->Close();
-                    if (rc) throw rc;
+                    if (FAILED(rc)) throw rc;
                     fSessionOpen = false;
                 }
                 catch(HRESULT aRC)
