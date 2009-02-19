@@ -84,6 +84,12 @@ public:
         return mOwnSizeHint.isValid() ? mOwnSizeHint : QLabel::sizeHint();
     }
 
+    QSize minimumSizeHint() const
+    {
+        /* If there is an updated minimumSizeHint() present - using it. */
+        return mOwnSizeHint.isValid() ? mOwnSizeHint : QLabel::minimumSizeHint();
+    }
+
 protected:
 
     void resizeEvent (QResizeEvent *aEvent);
