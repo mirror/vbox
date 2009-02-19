@@ -32,8 +32,8 @@ VBoxService_INCS     = ../include
 VBoxService_SOURCES  = \
 	VBoxService.cpp \
 	VBoxUtils.cpp \
-	VBoxService.rc
-
+	VBoxService.rc \
+	VBoxTimeSync.cpp
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_SOURCES += \
 	VBoxVMInfo.cpp \

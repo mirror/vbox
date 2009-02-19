@@ -23,6 +23,7 @@
 #ifdef VBOX_WITH_GUEST_PROPS
     #include "VBoxVMInfo.h"
 #endif
+#include "VBoxTimeSync.h"
 #include "resource.h"
 
 #define VBOXSERVICE_NAME _T("VBoxService")
@@ -52,6 +53,12 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         vboxVMInfoDestroy,
     },
 #endif
+    {
+        "TimeSync",
+        vboxTimeSyncInit,
+        vboxTimeSyncThread,
+        vboxTimeSyncDestroy,
+    },
     {
         NULL
     }
