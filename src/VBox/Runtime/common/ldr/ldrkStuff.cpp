@@ -668,7 +668,11 @@ int rtldrkLdrOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTL
 
     /* Try open it. */
     PKLDRMOD pMod;
+#if 0
+    int krc = kLdrModOpenFromRdr(&pRdr->Core, fFlags, enmCpuArch, &pMod);
+#else
     int krc = kLdrModOpenFromRdr(&pRdr->Core, &pMod);
+#endif
     if (!krc)
     {
         /* Create a module wrapper for it. */
