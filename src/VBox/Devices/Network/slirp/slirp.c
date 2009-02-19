@@ -625,32 +625,29 @@ void slirp_term(PNATState pData)
 
 #define CONN_CANFSEND(so) (((so)->so_state & (SS_FCANTSENDMORE|SS_ISFCONNECTED)) == SS_ISFCONNECTED)
 #define CONN_CANFRCV(so)  (((so)->so_state & (SS_FCANTRCVMORE|SS_ISFCONNECTED)) == SS_ISFCONNECTED)
-#define UPD_NFDS(x)       if (nfds < (x)) nfds = (x)
+#define UPD_NFDS(x)       do { if (nfds < (x)) nfds = (x); } while (0)
 
 /*
  * curtime kept to an accuracy of 1ms
  */
-#ifdef RT_OS_WINDOWS
 static void updtime(PNATState pData)
 {
+#ifdef RT_OS_WINDOWS
     struct _timeb tb;
 
     _ftime(&tb);
-    curtime = (u_int)tb.time * (u_int)1000;
+    curtime  = (u_int)tb.time * (u_int)1000;
     curtime += (u_int)tb.millitm;
-}
 #else
-static void updtime(PNATState pData)
-{
-        gettimeofday(&tt, 0);
+    gettimeofday(&tt, 0);
 
-        curtime = (u_int)tt.tv_sec * (u_int)1000;
-        curtime += (u_int)tt.tv_usec / (u_int)1000;
+    curtime  = (u_int)tt.tv_sec  * (u_int)1000;
+    curtime += (u_int)tt.tv_usec / (u_int)1000;
 
-        if ((tt.tv_usec % 1000) >= 500)
-           curtime++;
-}
+    if ((tt.tv_usec % 1000) >= 500)
+        curtime++;
 #endif
+}
 
 #ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 void slirp_select_fill(PNATState pData, int *pnfds,
@@ -1210,7 +1207,7 @@ tcp_input_close:
                         SOCKET_LOCK(so->so_next);
                     son = so->so_next;
                 }
-                if (    so->so_prev != &udb
+                if (   so->so_prev != &udb
                     && so->so_prev != NULL)
                 {
                     SOCKET_LOCK(so->so_prev);
@@ -1264,6 +1261,7 @@ struct ethhdr
     unsigned char   h_source[ETH_ALEN];         /* source ether addr    */
     unsigned short  h_proto;                    /* packet type ID field */
 };
+AssertCompileSize(struct ethhdr, 14);
 
 struct arphdr
 {
@@ -1281,12 +1279,12 @@ struct arphdr
     unsigned char   ar_tha[ETH_ALEN];   /* target hardware address      */
     unsigned char   ar_tip[4];          /* target IP address            */
 };
+AssertCompileSize(struct arphdr, 28);
 
-static
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-void arp_input(PNATState pData, struct mbuf *m)
+static void arp_input(PNATState pData, struct mbuf *m)
 #else
-void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
+static void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 #endif
 {
     struct ethhdr *eh;
