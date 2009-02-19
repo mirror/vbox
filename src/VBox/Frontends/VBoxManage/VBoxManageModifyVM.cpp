@@ -1388,13 +1388,13 @@ int handleModifyVM(HandlerArg *a)
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
                     CHECK_ERROR_RET(nic, AttachToInternalNetwork(), 1);
                 }
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
                 else if (strcmp(nics[n], "hostonly") == 0)
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
                     CHECK_ERROR_RET(nic, AttachToHostOnlyNetwork(), 1);
                 }
-#endif /* RT_OS_LINUX */
+#endif /* defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) */
                 else
                 {
                     errorArgument("Invalid type '%s' specfied for NIC %lu", nics[n], n + 1);
