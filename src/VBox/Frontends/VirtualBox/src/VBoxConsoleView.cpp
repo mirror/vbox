@@ -736,6 +736,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
     , mDesktopGeo (DesktopGeo_Invalid)
     , mPassCAD (false)
+    , mHideHostPointer (false)
 {
     Assert (!mConsole.isNull() &&
             !mConsole.GetDisplay().isNull() &&
@@ -1209,12 +1210,19 @@ bool VBoxConsoleView::event (QEvent *e)
                  * workaround we save/restore the arrow cursor manually. See
                  * http://trolltech.com/developer/task-tracker/index_html?id=206165&method=entry
                  * for details. */
-                QCursor cursor = viewport()->cursor();
+                QCursor cursor;
+                if (!mHideHostPointer)
+                    cursor = viewport()->cursor();
+                else
+                    cursor = QCursor (Qt::BlankCursor);
                 mFrameBuf->resizeEvent (re);
-                viewport()->setCursor(cursor);
+                viewport()->setCursor (cursor);
 #else
                 mFrameBuf->resizeEvent (re);
-                viewport()->unsetCursor();
+                if (!mHideHostPointer)
+                    viewport()->unsetCursor();
+                else
+                    viewport()->setCursor (QCursor (Qt::BlankCursor));
 #endif
 
                 /* This event appears in case of guest video was changed
@@ -3778,6 +3786,7 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
             viewport()->setCursor (Qt::BlankCursor);
         }
     }
+    mHideHostPointer = !me->isVisible();
 }
 
 inline QRgb qRgbIntensity (QRgb rgb, int mul, int div)

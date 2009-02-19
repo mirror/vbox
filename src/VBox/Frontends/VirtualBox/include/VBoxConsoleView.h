@@ -340,6 +340,7 @@ private:
     QRect mDesktopGeometry;
     QRect mLastSizeHint;
     bool mPassCAD;
+    bool mHideHostPointer;
 };
 
 #endif // !___VBoxConsoleView_h___
