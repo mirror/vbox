@@ -149,9 +149,8 @@ typedef struct _VBOXRec
     xf86CursorInfoPtr pCurs;
     size_t pointerHeaderSize;
     size_t pointerSize;
-    Bool pointerOffscreen;
-    Bool usingHWCursor;
     Bool useDevice;
+    Bool forceSWCursor;
     /** Are we currently switched to a virtual terminal?  If so, it is not
      * safe to touch the hardware. */
     Bool vtSwitch;

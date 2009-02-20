@@ -483,7 +483,6 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
         pVBox->reqp = p;
         pVBox->pCurs = NULL;
         pVBox->pointerHeaderSize = size;
-        pVBox->pointerOffscreen = FALSE;
         pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
     } else {
         if (NULL != p) {
@@ -551,27 +550,7 @@ static void vbox_set_cursor_colors (ScrnInfoPtr pScrn, int bg, int fg)
 static void
 vbox_set_cursor_position (ScrnInfoPtr pScrn, int x, int y)
 {
-    /* VBOXPtr pVBox = pScrn->driverPrivate; */
-
-    /* TRACE_ENTRY (); */
-
-    /* don't disable the mouse cursor if we go out of our visible area
-     * since the mouse cursor is drawn by the host anyway */
-#if 0
-    if (((x < 0) || (x > pScrn->pScreen->width))
-        || ((y < 0) || (y > pScrn->pScreen->height))) {
-        if (!pVBox->pointerOffscreen) {
-            pVBox->pointerOffscreen = TRUE;
-            vbox_vmm_hide_cursor (pScrn, pVBox);
-        }
-    }
-    else {
-        if (pVBox->pointerOffscreen) {
-            pVBox->pointerOffscreen = FALSE;
-            vbox_vmm_show_cursor (pScrn, pVBox);
-        }
-    }
-#endif
+    (void) pScrn; (void) x; (void) y;
 }
 
 static void vbox_hide_cursor (ScrnInfoPtr pScrn)
