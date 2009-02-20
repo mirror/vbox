@@ -2015,7 +2015,12 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
             rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlagsFrom,
                               szComment, &ImageUuid, &ParentUuid, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
         } else {
-            rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, enmTypeFrom,
+            VDIMAGETYPE enmTypeTo = enmTypeFrom; /** @todo Please, review this! It's an ugly hack I think... */
+            if (    !strcmp(pszBackend, "RAW")
+                &&  enmTypeTo != VD_IMAGE_TYPE_FIXED)
+                enmTypeTo = VD_IMAGE_TYPE_FIXED;
+
+            rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, enmTypeTo,
                               cbSize, uImageFlagsFrom, szComment,
                               &PCHSGeometryFrom, &LCHSGeometryFrom,
                               NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
