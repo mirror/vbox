@@ -163,7 +163,14 @@ ifdef VBOX_WITH_QT4_SUN
   qt4-bin_INST = $(INST_VIRTUALBOX)Contents/
   ifeq ($(KBUILD_TARGET_ARCH),amd64)
    qt4-bin_SOURCES = $(foreach qtmod,QtCore QtGui QtNetwork \
-		,$(VBOX_PATH_QT4)/lib/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox)
+		,$(VBOX_PATH_QT4)/lib/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox) \
+		$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib \
+		$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib \
+		$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
+   qt4-bin_SYMLINKS = \
+		Frameworks/QtGuiVBox.framework/Resources=>Versions/4/Resources/ \
+		$(foreach qtmod,QtCore QtGui QtNetwork \
+		,Frameworks/$(qtmod)VBox.framework/$(qtmod)VBox=>Versions/4/$(qtmod)VBox)
   else
    qt4-bin_SOURCES = $(foreach qtmod,QtCore QtGui QtNetwork \
 		,$(VBOX_PATH_QT4)/Frameworks/$(qtmod).framework/Versions/4/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/4/$(qtmod))
