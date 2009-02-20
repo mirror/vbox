@@ -168,7 +168,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
                     sizeof(Info.IPv6NetMask.au8));
         }
         close(Sock);
-    }   
+    }
 
     /*
      * Construct UUID with interface name and the MAC address if available.
@@ -189,7 +189,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
 
     ComObjPtr<HostNetworkInterface> IfObj;
     IfObj.createObject();
-    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), &Info)))
+    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), TRUE, &Info)))
         pList->push_back(IfObj);
 }
 

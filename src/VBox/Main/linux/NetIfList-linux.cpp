@@ -145,7 +145,7 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                 {
                     ComObjPtr<HostNetworkInterface> IfObj;
                     IfObj.createObject();
-                    if (SUCCEEDED(IfObj->init(Bstr(pszName), &Info)))
+                    if (SUCCEEDED(IfObj->init(Bstr(pszName), TRUE, &Info)))
                         list.push_back(IfObj);
                 }
 
