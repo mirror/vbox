@@ -686,7 +686,7 @@ out:
  *
  * @returns VBox status code.
  */
-VBOXDDU_DECL(int) VDInit()
+VBOXDDU_DECL(int) VDInit(void)
 {
     int rc = vdAddBackends(aStaticBackends, RT_ELEMENTS(aStaticBackends));
     if (RT_SUCCESS(rc))
@@ -700,7 +700,7 @@ VBOXDDU_DECL(int) VDInit()
  *
  * @returns VBox status code.
  */
-VBOXDDU_DECL(int) VDShutdown()
+VBOXDDU_DECL(int) VDShutdown(void)
 {
     PVBOXHDDBACKEND *pBackends = g_apBackends;
     unsigned cBackends = g_cBackends;
