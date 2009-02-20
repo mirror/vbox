@@ -19,7 +19,7 @@
 # additional information or have any questions.
 #
 
-SCRIPT_NAME="loadadp"
+SCRIPT_NAME="loadnetadp"
 XNU_VERSION=`LC_ALL=C uname -r | LC_ALL=C cut -d . -f 1`
 
 DRVNAME="VBoxNetAdp.kext"

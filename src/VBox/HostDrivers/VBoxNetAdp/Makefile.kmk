@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2008 Sun Microsystems, Inc.
+# Copyright (C) 2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -25,31 +25,36 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 if1of ($(KBUILD_TARGET), solaris darwin)
 #
-# vboxnetadp(.o) - The lower case driver.
+# VBoxNetAdp - Virtual Network Adapter
 # Note! On Solaris the name has to be <= 8 chars long.
 #
  ifdef VBOX_WITH_VBOXDRV
-SYSMODS += vboxnetadp
-vboxnetadp_TEMPLATE         = VBOXR0DRV
-vboxnetadp_INST = $(INST_VBOXNETADP)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
-vboxnetadp_NAME.solaris     = vboxnet
-vboxnetadp_DEFS             = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
-vboxnetadp_DEPS.solaris    += $(VBOX_SVN_REV_KMK)
-vboxnetadp_LDFLAGS.solaris += -N misc/gld
-vboxnetadp_LDFLAGS.darwin   = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
-vboxnetadp_INCS            := \
-	$(PATH_SUB_CURRENT)
-vboxnetadp_LIBS            += \
-	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
-vboxnetadp_LIBS.solaris    += \
+SYSMODS += VBoxNetAdp
+VBoxNetAdp_TEMPLATE         = VBOXR0DRV
+VBoxNetAdp_INST = $(INST_VBOXNETADP)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
+VBoxNetAdp_NAME.solaris     = vboxnet
+VBoxNetAdp_DEPS.solaris    += $(VBOX_SVN_REV_KMK)
+VBoxNetAdp_DEFS             = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
+VBoxNetAdp_LDFLAGS.darwin   = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
+VBoxNetAdp_LDFLAGS.solaris += -N misc/gld
+VBoxNetAdp_INCS             = \
+	.
+VBoxNetAdp_SOURCES.darwin   = \
+	darwin/VBoxNetAdp-darwin.cpp
+VBoxNetAdp_SOURCES.solaris  = \
+	solaris/VBoxNetAdp-solaris.c
+VBoxNetAdp_SOURCES          = \
+	VBoxNetAdp.c
+VBoxNetAdp_LIBS.solaris    += \
 	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
-vboxnetadp_SOURCES.solaris = solaris/VBoxNetAdp-solaris.c
-vboxnetadp_SOURCES.darwin  = darwin/VBoxNetAdp-darwin.cpp
-vboxnetadp_SOURCES         = VBoxNetAdp.c
+VBoxNetAdp_LIBS            += \
+	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
  endif
 endif
 
+#
 # Darwin extras.
+#
 ifeq ($(KBUILD_TARGET),darwin)
 INSTALLS += VBoxNetAdp.kext
 VBoxNetAdp.kext_INST     = $(INST_VBOXNETADP)Contents/
@@ -76,5 +81,4 @@ Scripts-darwin-adp_SOURCES = \
 endif # darwin
 
 include	$(KBUILD_PATH)/subfooter.kmk
-
 
