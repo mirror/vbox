@@ -400,7 +400,7 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                         Log(("vboxNetWinAddComponent: collectNetIfInfo() -> %Vrc\n", rc));
                     }
 
-                    if (SUCCEEDED (iface->init (name, &Info)))
+                    if (SUCCEEDED (iface->init (name, TRUE, &Info)))
                         list.push_back (iface);
                 }
             }

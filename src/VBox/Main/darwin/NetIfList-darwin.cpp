@@ -125,7 +125,7 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 
         ComObjPtr<HostNetworkInterface> IfObj;
         IfObj.createObject();
-        if (SUCCEEDED(IfObj->init(Bstr(pEtherNICs->szName), pNew)))
+        if (SUCCEEDED(IfObj->init(Bstr(pEtherNICs->szName), TRUE, pNew)))
             list.push_back(IfObj);
         RTMemFree(pNew);
 
