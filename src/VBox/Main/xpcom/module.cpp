@@ -84,7 +84,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Console, IConsole)
 
 COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX(ComObjPtr <OUSBDevice>, IUSBDevice, OUSBDevice)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX(ComObjPtr <RemoteUSBDevice>, IHostUSBDevice, RemoteUSBDevice)
-COM_IMPL_READONLY_ENUM_AND_COLLECTION(SharedFolder)
 
 /**
  *  Singleton class factory that holds a reference to the created instance

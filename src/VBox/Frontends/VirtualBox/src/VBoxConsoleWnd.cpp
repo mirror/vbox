@@ -744,7 +744,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     }
 
 #ifdef Q_WS_MAC
-    /* We have to make sure that we are get the front most process. This is
+    /* We have to make sure that we are getting the front most process. This is
      * necessary for Qt versions > 4.3.3 */
     ProcessSerialNumber psn = { 0, kCurrentProcess };
     ::SetFrontProcess (&psn);
@@ -910,8 +910,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     }
 
     /* initialize shared folders stuff */
-    CSharedFolderCollection sfcoll = cconsole.GetSharedFolders();
-    if (sfcoll.isNull())
+    CSharedFolderVector sfvec = cconsole.GetSharedFolders();
+    if (sfvec.size() == 0)
     {
         /* hide shared folders menu action & sf_separator & sf_status_icon */
         mDevicesSFDialogAction->setVisible (false);
@@ -2046,17 +2046,20 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         /// @todo later: add global folders
 
         /* permanent folders */
-        CSharedFolderEnumerator en = cmachine.GetSharedFolders().Enumerate();
-        while (en.HasMore())
+        CSharedFolderVector psfvec = cmachine.GetSharedFolders();
+
+        for (int i = 0; i < psfvec.size(); ++i)
         {
-            CSharedFolder sf = en.GetNext();
+            CSharedFolder sf = psfvec[i];
             sfs.insert (sf.GetName(), sf.GetHostPath());
         }
+
         /* transient folders */
-        en = cconsole.GetSharedFolders().Enumerate();
-        while (en.HasMore())
+        CSharedFolderVector tsfvec = cconsole.GetSharedFolders();
+
+        for (int i = 0; i < tsfvec.size(); ++i)
         {
-            CSharedFolder sf = en.GetNext();
+            CSharedFolder sf = tsfvec[i];
             sfs.insert (sf.GetName(), sf.GetHostPath());
         }
 

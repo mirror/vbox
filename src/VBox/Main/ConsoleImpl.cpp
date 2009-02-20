@@ -1312,9 +1312,9 @@ STDMETHODIMP Console::COMGETTER(RemoteDisplayInfo) (IRemoteDisplayInfo **aRemote
 }
 
 STDMETHODIMP
-Console::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
+Console::COMGETTER(SharedFolders) (ComSafeArrayOut (ISharedFolder *, aSharedFolders))
 {
-    CheckComArgOutPointerValid(aSharedFolders);
+    CheckComArgOutSafeArrayPointerValid(aSharedFolders);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1326,10 +1326,8 @@ Console::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
     HRESULT rc = loadDataFromSavedState();
     CheckComRCReturnRC (rc);
 
-    ComObjPtr <SharedFolderCollection> coll;
-    coll.createObject();
-    coll->init (mSharedFolders);
-    coll.queryInterfaceTo (aSharedFolders);
+    SafeIfaceArray <ISharedFolder> sf;
+    sf.detachTo (ComSafeArrayOutArg(aSharedFolders));
 
     return S_OK;
 }
@@ -4957,20 +4955,13 @@ HRESULT Console::fetchSharedFolders (BOOL aGlobal)
 
         mMachineSharedFolders.clear();
 
-        ComPtr <ISharedFolderCollection> coll;
-        rc = mMachine->COMGETTER(SharedFolders) (coll.asOutParam());
+        SafeIfaceArray <ISharedFolder> folders;
+        rc = mMachine->COMGETTER(SharedFolders) (ComSafeArrayAsOutParam(folders));
         AssertComRCReturnRC (rc);
 
-        ComPtr <ISharedFolderEnumerator> en;
-        rc = coll->Enumerate (en.asOutParam());
-        AssertComRCReturnRC (rc);
-
-        BOOL hasMore = FALSE;
-        while (SUCCEEDED (rc = en->HasMore (&hasMore)) && hasMore)
+        for (size_t i = 0; i < folders.size(); ++i)
         {
-            ComPtr <ISharedFolder> folder;
-            rc = en->GetNext (folder.asOutParam());
-            CheckComRCBreakRC (rc);
+            ComPtr <ISharedFolder> folder = folders[i];
 
             Bstr name;
             Bstr hostPath;

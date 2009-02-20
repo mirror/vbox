@@ -709,7 +709,7 @@ STDMETHODIMP VirtualBox::COMGETTER(GuestOSTypes) (IGuestOSTypeCollection **aGues
 }
 
 STDMETHODIMP
-VirtualBox::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
+VirtualBox::COMGETTER(SharedFolders) (ComSafeArrayOut (ISharedFolder *, aSharedFolders))
 {
     CheckComArgOutSafeArrayPointerValid(aSharedFolders);
 

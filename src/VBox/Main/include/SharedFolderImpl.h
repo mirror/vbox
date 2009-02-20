@@ -110,35 +110,5 @@ private:
     Data m;
 };
 
-COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (SharedFolder)
-
-    STDMETHOD(FindByName) (IN_BSTR aName, ISharedFolder **aSharedFolder)
-    {
-        if (!aName)
-            return E_INVALIDARG;
-        if (!aSharedFolder)
-            return E_POINTER;
-
-        *aSharedFolder = NULL;
-        Vector::value_type found;
-        Vector::iterator it = vec.begin();
-        while (it != vec.end() && !found)
-        {
-            Bstr name;
-            (*it)->COMGETTER(Name) (name.asOutParam());
-            if (name == aName)
-                found = *it;
-            ++ it;
-        }
-
-        if (!found)
-            return setError (E_INVALIDARG, SharedFolderCollection::tr (
-                "Could not find the shared folder '%ls'"), aName);
-
-        return found.queryInterfaceTo (aSharedFolder);
-    }
-
-COM_DECL_READONLY_ENUM_AND_COLLECTION_END (SharedFolder)
-
 #endif // ____H_SHAREDFOLDERIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

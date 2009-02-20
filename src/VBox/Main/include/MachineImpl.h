@@ -522,7 +522,7 @@ public:
     STDMETHOD(COMGETTER(CurrentSnapshot)) (ISnapshot **aCurrentSnapshot);
     STDMETHOD(COMGETTER(SnapshotCount)) (ULONG *aSnapshotCount);
     STDMETHOD(COMGETTER(CurrentStateModified))(BOOL *aCurrentStateModified);
-    STDMETHOD(COMGETTER(SharedFolders)) (ISharedFolderCollection **aSharedFolders);
+    STDMETHOD(COMGETTER(SharedFolders)) (ComSafeArrayOut (ISharedFolder *, aSharedFolders));
     STDMETHOD(COMGETTER(ClipboardMode)) (ClipboardMode_T *aClipboardMode);
     STDMETHOD(COMSETTER(ClipboardMode)) (ClipboardMode_T aClipboardMode);
     STDMETHOD(COMGETTER(GuestPropertyNotificationPatterns)) (BSTR *aPattern);

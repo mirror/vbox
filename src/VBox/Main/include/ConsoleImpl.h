@@ -117,7 +117,7 @@ public:
     STDMETHOD(COMGETTER(USBDevices)) (IUSBDeviceCollection **aUSBDevices);
     STDMETHOD(COMGETTER(RemoteUSBDevices)) (IHostUSBDeviceCollection **aRemoteUSBDevices);
     STDMETHOD(COMGETTER(RemoteDisplayInfo)) (IRemoteDisplayInfo **aRemoteDisplayInfo);
-    STDMETHOD(COMGETTER(SharedFolders)) (ISharedFolderCollection **aSharedFolders);
+    STDMETHOD(COMGETTER(SharedFolders)) (ComSafeArrayOut (ISharedFolder *, aSharedFolders));
 
     // IConsole methods
     STDMETHOD(PowerUp) (IProgress **aProgress);
