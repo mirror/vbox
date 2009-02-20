@@ -788,14 +788,14 @@ DECLINLINE(int) VDCFGQueryStringAlloc(PVDINTERFACECONFIG pCfgIf,
                                       void *pvUser, const char *pszName,
                                       char **ppszString)
 {
-    size_t cch;
-    int rc = pCfgIf->pfnQuerySize(pvUser, pszName, &cch);
+    size_t cb;
+    int rc = pCfgIf->pfnQuerySize(pvUser, pszName, &cb);
     if (RT_SUCCESS(rc))
     {
-        char *pszString = (char *)RTMemAlloc(cch);
+        char *pszString = (char *)RTMemAlloc(cb);
         if (pszString)
         {
-            rc = pCfgIf->pfnQuery(pvUser, pszName, pszString, cch);
+            rc = pCfgIf->pfnQuery(pvUser, pszName, pszString, cb);
             if (RT_SUCCESS(rc))
                 *ppszString = pszString;
             else
@@ -824,22 +824,22 @@ DECLINLINE(int) VDCFGQueryStringAllocDef(PVDINTERFACECONFIG pCfgIf,
                                          char **ppszString,
                                          const char *pszDef)
 {
-    size_t cch;
-    int rc = pCfgIf->pfnQuerySize(pvUser, pszName, &cch);
+    size_t cb;
+    int rc = pCfgIf->pfnQuerySize(pvUser, pszName, &cb);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
     {
-        cch = strlen(pszDef) + 1;
+        cb = strlen(pszDef) + 1;
         rc = VINF_SUCCESS;
     }
     if (RT_SUCCESS(rc))
     {
-        char *pszString = (char *)RTMemAlloc(cch);
+        char *pszString = (char *)RTMemAlloc(cb);
         if (pszString)
         {
-            rc = pCfgIf->pfnQuery(pvUser, pszName, pszString, cch);
-            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+            rc = pCfgIf->pfnQuery(pvUser, pszName, pszString, cb);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
             {
-                memcpy(pszString, pszDef, cch);
+                memcpy(pszString, pszDef, cb);
                 rc = VINF_SUCCESS;
             }
             if (RT_SUCCESS(rc))
@@ -1091,14 +1091,14 @@ typedef VBOXHDD *PVBOXHDD;
  *
  * @returns VBox status code.
  */
-VBOXDDU_DECL(int) VDInit();
+VBOXDDU_DECL(int) VDInit(void);
 
 /**
  * Destroys loaded HDD backends.
  *
  * @returns VBox status code.
  */
-VBOXDDU_DECL(int) VDShutdown();
+VBOXDDU_DECL(int) VDShutdown(void);
 
 /**
  * Lists all HDD backends and their capabilities in a caller-provided buffer.
