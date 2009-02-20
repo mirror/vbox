@@ -13,6 +13,7 @@
 #include "cr_mem.h"
 #include "cr_hash.h"
 #include "server_dispatch.h"
+#include "state/cr_texture.h"
 #include <signal.h>
 #include <stdlib.h>
 #define DEBUG_FP_EXCEPTIONS 0
@@ -556,6 +557,13 @@ static void crVBoxServerSaveContextStateCB(unsigned long key, void *data1, void 
     rc = SSMR3PutMem(pSSM, &key, sizeof(key));
     CRASSERT(rc == VINF_SUCCESS);
     
+#ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
+    if (cr_server.curClient)
+    {
+        crServerDispatchMakeCurrent(cr_server.curClient->currentWindow, 0, pContext->id);
+    }
+#endif
+
     rc = crStateSaveContext(pContext, pSSM);
     CRASSERT(rc == VINF_SUCCESS);
 }
@@ -568,6 +576,9 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
     uint32_t ui32;
     GLboolean b;
     unsigned long key;
+#ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
+    unsigned long ctxID=-1, winID=-1;
+#endif
 
     /* We shouldn't be called if there's no clients at all*/
     CRASSERT(cr_server.numClients>0);
@@ -601,6 +612,15 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
     crHashtableWalk(cr_server.pContextCreateInfoTable, crVBoxServerSaveCreateInfoCB, pSSM);
 
+#ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
+    /* Save current win and ctx IDs, as we'd rebind contexts when saving textures */
+    if (cr_server.curClient)
+    {
+        ctxID = cr_server.curClient->currentContextNumber;
+        winID = cr_server.curClient->currentWindow;
+    }
+#endif
+
     /* Save contexts state tracker data */
     /* @todo For now just some blind data dumps, 
      * but I've a feeling those should be saved/restored in a very strict sequence to
@@ -608,6 +628,14 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
      * Should be tested more with multiply guest opengl apps working when saving VM snapshot.
      */
     crHashtableWalk(cr_server.contextTable, crVBoxServerSaveContextStateCB, pSSM);
+
+#ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
+    /* Restore original win and ctx IDs*/
+    if (cr_server.curClient)
+    {
+        crServerDispatchMakeCurrent(winID, 0, ctxID);
+    }
+#endif
 
     /* Save windows creation info */
     ui32 = crHashtableNumElements(cr_server.pWindowCreateInfoTable);
@@ -828,8 +856,8 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM)
                 //pClient->currentWindow = winID;
             }
 
-                /* Restore client active context and window */
-                crServerDispatchMakeCurrent(winID, 0, ctxID);
+            /* Restore client active context and window */
+            crServerDispatchMakeCurrent(winID, 0, ctxID);
 
             if (0)
             {

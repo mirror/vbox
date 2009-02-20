@@ -17,6 +17,11 @@
 extern "C" {
 #endif
 
+/* Tells state tracker to rely on diff_api to store/load texture images
+ * and avoid host memory allocation.
+ */
+#define CR_STATE_NO_TEXTURE_IMAGE_STORE
+
 typedef struct {
     GLubyte redbits;
     GLubyte greenbits;

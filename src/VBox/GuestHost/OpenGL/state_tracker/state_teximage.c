@@ -543,6 +543,7 @@ crStateTexImage1D(GLenum target, GLint level, GLint internalFormat,
     else
         tl->bytes = crImageSize(format, type, width, 1);
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     if (tl->bytes)
     {
         /* this is not a proxy texture target so alloc storage */
@@ -552,13 +553,14 @@ crStateTexImage1D(GLenum target, GLint level, GLint internalFormat,
         if (!tl->img)
         {
             crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
-                                     "glTexImage1D out of memory");
+                         "glTexImage1D out of memory");
             return;
         }
         if (pixels)
             crPixelCopy1D((GLvoid *) tl->img, format, type,
-                                        pixels, format, type, width, &(c->unpack));
+                          pixels, format, type, width, &(c->unpack));
     }
+#endif
 
     tl->width = width;
     tl->height = 1;
@@ -593,8 +595,8 @@ crStateTexImage1D(GLenum target, GLint level, GLint internalFormat,
 
 void STATE_APIENTRY
 crStateTexImage2D(GLenum target, GLint level, GLint internalFormat,
-                                    GLsizei width, GLsizei height, GLint border,
-                                    GLenum format, GLenum type, const GLvoid * pixels)
+                  GLsizei width, GLsizei height, GLint border,
+                  GLenum format, GLenum type, const GLvoid * pixels)
 {
     CRContext *g = GetCurrentContext();
     CRTextureState *t = &(g->texture);
@@ -638,6 +640,7 @@ crStateTexImage2D(GLenum target, GLint level, GLint internalFormat,
         tl->bytes = crImageSize(format, type, width, height);
     }
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     /* allocate the image buffer and fill it */
     if (tl->bytes)
     {
@@ -648,7 +651,7 @@ crStateTexImage2D(GLenum target, GLint level, GLint internalFormat,
         if (!tl->img)
         {
             crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
-                                     "glTexImage2D out of memory");
+                         "glTexImage2D out of memory");
             return;
         }
         if (pixels)
@@ -660,11 +663,12 @@ crStateTexImage2D(GLenum target, GLint level, GLint internalFormat,
             else
             {
                 crPixelCopy2D(width, height,
-                                            (GLvoid *) tl->img, format, type, NULL, /* dst */
-                                            pixels, format, type, &(c->unpack));    /* src */
+                              (GLvoid *) tl->img, format, type, NULL, /* dst */
+                              pixels, format, type, &(c->unpack));    /* src */
             }
         }
     }
+#endif
 
     tl->width = width;
     tl->height = height;
@@ -740,6 +744,7 @@ crStateTexImage3D(GLenum target, GLint level,
     else
         tl->bytes = crTextureSize(format, type, width, height, depth);
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     if (tl->bytes)
     {
         /* this is not a proxy texture target so alloc storage */
@@ -749,13 +754,14 @@ crStateTexImage3D(GLenum target, GLint level,
         if (!tl->img)
         {
             crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
-                                     "glTexImage3D out of memory");
+                         "glTexImage3D out of memory");
             return;
         }
         if (pixels)
             crPixelCopy3D(width, height, depth, (GLvoid *) (tl->img), format, type,
-                                        NULL, pixels, format, type, &(c->unpack));
+                          NULL, pixels, format, type, &(c->unpack));
     }
+#endif
 
     tl->internalFormat = internalFormat;
     tl->border = border;
@@ -819,11 +825,13 @@ crStateTexSubImage1D(GLenum target, GLint level, GLint xoffset,
         return; /* GL error state already set */
     }
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     xoffset += tl->border;
 
     crPixelCopy1D((void *) (tl->img + xoffset * tl->bytesPerPixel),
-                                tl->format, tl->type,
-                                pixels, format, type, width, &(c->unpack));
+                  tl->format, tl->type,
+                  pixels, format, type, width, &(c->unpack));
+#endif
 
 #ifdef CR_SGIS_generate_mipmap
     if (level == tobj->baseLevel && tobj->generateMipmap) {
@@ -843,8 +851,8 @@ crStateTexSubImage1D(GLenum target, GLint level, GLint xoffset,
 
 void STATE_APIENTRY
 crStateTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
-                                         GLsizei width, GLsizei height,
-                                         GLenum format, GLenum type, const GLvoid * pixels)
+                     GLsizei width, GLsizei height,
+                     GLenum format, GLenum type, const GLvoid * pixels)
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -854,8 +862,10 @@ crStateTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
     CRTextureLevel *tl;
     GLubyte *subimg = NULL;
     GLubyte *img = NULL;
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     GLubyte *src;
     int i;
+#endif
 
     FLUSH();
 
@@ -868,14 +878,14 @@ crStateTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
     CRASSERT(tobj);
     CRASSERT(tl);
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     xoffset += tl->border;
     yoffset += tl->border;
 
-    subimg =
-        (GLubyte *) crAlloc(crImageSize(tl->format, tl->type, width, height));
+    subimg = (GLubyte *) crAlloc(crImageSize(tl->format, tl->type, width, height));
 
     crPixelCopy2D(width, height, subimg, tl->format, tl->type, NULL,    /* dst */
-                                pixels, format, type, &(c->unpack));    /* src */
+                  pixels, format, type, &(c->unpack));                  /* src */
 
     img = tl->img +
         xoffset * tl->bytesPerPixel + yoffset * tl->width * tl->bytesPerPixel;
@@ -891,6 +901,7 @@ crStateTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
     }
 
     crFree(subimg);
+#endif
 
 #ifdef CR_SGIS_generate_mipmap
     if (level == tobj->baseLevel && tobj->generateMipmap) {
@@ -924,8 +935,10 @@ crStateTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
     CRTextureLevel *tl = tobj->level[0] + level;
     GLubyte *subimg = NULL;
     GLubyte *img = NULL;
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     GLubyte *src;
     int i;
+#endif
 
     FLUSH();
 
@@ -934,6 +947,7 @@ crStateTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
         return; /* GL error state already set */
     }
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     xoffset += tl->border;
     yoffset += tl->border;
     zoffset += tl->border;
@@ -943,7 +957,7 @@ crStateTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
         crAlloc(crTextureSize(tl->format, tl->type, width, height, depth));
 
     crPixelCopy3D(width, height, depth, subimg, tl->format, tl->type, NULL,
-                                pixels, format, type, &(c->unpack));
+                  pixels, format, type, &(c->unpack));
 
     img = tl->img + xoffset * tl->bytesPerPixel +
         yoffset * tl->width * tl->bytesPerPixel +
@@ -960,6 +974,7 @@ crStateTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
     }
 
     crFree(subimg);
+#endif
 
 #ifdef CR_SGIS_generate_mipmap
     if (level == tobj->baseLevel && tobj->generateMipmap) {
@@ -1013,6 +1028,7 @@ crStateCompressedTexImage1DARB(GLenum target, GLint level,
     else
         tl->bytes = imageSize;
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     if (tl->bytes)
     {
         /* this is not a proxy texture target so alloc storage */
@@ -1022,12 +1038,13 @@ crStateCompressedTexImage1DARB(GLenum target, GLint level,
         if (!tl->img)
         {
             crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
-                                     "glTexImage1D out of memory");
+                         "glTexImage1D out of memory");
             return;
         }
         if (data)
             crMemcpy(tl->img, data, imageSize);
     }
+#endif
 
     tl->width = width;
     tl->height = 1;
@@ -1058,9 +1075,9 @@ crStateCompressedTexImage1DARB(GLenum target, GLint level,
 
 void STATE_APIENTRY
 crStateCompressedTexImage2DARB(GLenum target, GLint level,
-                                                             GLenum internalFormat, GLsizei width,
-                                                             GLsizei height, GLint border,
-                                                             GLsizei imageSize, const GLvoid * data)
+                               GLenum internalFormat, GLsizei width,
+                               GLsizei height, GLint border,
+                               GLsizei imageSize, const GLvoid * data)
 {
     CRContext *g = GetCurrentContext();
     CRTextureState *t = &(g->texture);
@@ -1091,6 +1108,7 @@ crStateCompressedTexImage2DARB(GLenum target, GLint level,
     else
         tl->bytes = imageSize;
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     if (tl->bytes)
     {
         /* this is not a proxy texture target so alloc storage */
@@ -1100,12 +1118,13 @@ crStateCompressedTexImage2DARB(GLenum target, GLint level,
         if (!tl->img)
         {
             crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
-                                     "glTexImage2D out of memory");
+                         "glTexImage2D out of memory");
             return;
         }
         if (data)
             crMemcpy(tl->img, data, imageSize);
     }
+#endif
 
     tl->width = width;
     tl->height = height;
@@ -1170,6 +1189,7 @@ crStateCompressedTexImage3DARB(GLenum target, GLint level,
     else
         tl->bytes = imageSize;
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     if (tl->bytes)
     {
         /* this is not a proxy texture target so alloc storage */
@@ -1179,12 +1199,13 @@ crStateCompressedTexImage3DARB(GLenum target, GLint level,
         if (!tl->img)
         {
             crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
-                                     "glCompressedTexImage3D out of memory");
+                         "glCompressedTexImage3D out of memory");
             return;
         }
         if (data)
             crMemcpy(tl->img, data, imageSize);
     }
+#endif
 
     tl->width = width;
     tl->height = height;
@@ -1233,6 +1254,7 @@ crStateCompressedTexSubImage1DARB(GLenum target, GLint level, GLint xoffset,
         return; /* GL error state already set */
     }
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     xoffset += tl->border;
 
     if (xoffset == 0 && width == tl->width) {
@@ -1241,7 +1263,9 @@ crStateCompressedTexSubImage1DARB(GLenum target, GLint level, GLint xoffset,
     }
     else {
         /* XXX this depends on the exact compression method */
+        crWarning("Not implemented part crStateCompressedTexSubImage1DARB");
     }
+#endif
 
 #ifdef CR_SGIS_generate_mipmap
     if (level == tobj->baseLevel && tobj->generateMipmap) {
@@ -1280,17 +1304,21 @@ crStateCompressedTexSubImage2DARB(GLenum target, GLint level, GLint xoffset,
         return; /* GL error state already set */
     }
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     xoffset += tl->border;
     yoffset += tl->border;
 
-    if (xoffset == 0 && width == tl->width &&
-            yoffset == 0 && height == tl->height) {
+    if (xoffset == 0 && width == tl->width 
+        && yoffset == 0 && height == tl->height) 
+    {
         /* just memcpy */
         crMemcpy(tl->img, data, imageSize);
     }
     else {
         /* XXX this depends on the exact compression method */
+        crWarning("Not implemented part crStateCompressedTexSubImage2DARB");
     }
+#endif
 
 #ifdef CR_SGIS_generate_mipmap
     if (level == tobj->baseLevel && tobj->generateMipmap) {
@@ -1330,19 +1358,22 @@ crStateCompressedTexSubImage3DARB(GLenum target, GLint level, GLint xoffset,
         return; /* GL error state already set */
     }
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     xoffset += tl->border;
     yoffset += tl->border;
     zoffset += tl->border;
 
     if (xoffset == 0 && width == tl->width &&
-            yoffset == 0 && height == tl->height &&
-            zoffset == 0 && depth == tl->depth) {
+        yoffset == 0 && height == tl->height &&
+        zoffset == 0 && depth == tl->depth) {
         /* just memcpy */
         crMemcpy(tl->img, data, imageSize);
     }
     else {
         /* XXX this depends on the exact compression method */
+        crWarning("Not implemented part crStateCompressedTexSubImage3DARB");
     }
+#endif
 
 #ifdef CR_SGIS_generate_mipmap
     if (level == tobj->baseLevel && tobj->generateMipmap) {
@@ -1387,13 +1418,17 @@ crStateGetCompressedTexImageARB(GLenum target, GLint level, GLvoid * img)
         return;
     }
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     crMemcpy(img, tl->img, tl->bytes);
+#else
+    diff_api.GetCompressedTexImageARB(target, level, img);
+#endif
 }
 
 
 void STATE_APIENTRY
 crStateGetTexImage(GLenum target, GLint level, GLenum format,
-                                     GLenum type, GLvoid * pixels)
+                   GLenum type, GLvoid * pixels)
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -1452,17 +1487,21 @@ crStateGetTexImage(GLenum target, GLint level, GLenum format,
             return;
     }
 
+#ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
 #ifdef CR_OPENGL_VERSION_1_2
     if (target == GL_TEXTURE_3D)
     {
         crPixelCopy3D(tl->width, tl->height, tl->depth, (GLvoid *) pixels, format,
-                                    type, NULL, (tl->img), format, type, &(c->pack));
+                      type, NULL, (tl->img), format, type, &(c->pack));
     }
     else
 #endif
-    if ((target == GL_TEXTURE_2D) || (target == GL_TEXTURE_1D))
+    if ((target == GL_TEXTURE_1D) || (target == GL_TEXTURE_2D))
     {
         crPixelCopy2D(tl->width, tl->height, (GLvoid *) pixels, format, type, NULL, /* dst */
-                                    (tl->img), format, type, &(c->pack));   /* src */
+                      tl->img, format, type, &(c->pack));                           /* src */
     }
+#else
+    diff_api.GetTexImage(target, level, format, type, pixels);
+#endif
 }

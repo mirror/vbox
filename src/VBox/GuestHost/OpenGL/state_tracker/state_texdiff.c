@@ -593,8 +593,8 @@ int crStateTextureCheckDirtyImages(CRContext *from, CRContext *to, GLenum target
  */
 void
 crStateTextureObjectDiff(CRContext *fromCtx,
-                                                 const CRbitvalue *bitID, const CRbitvalue *nbitID,
-                                                 CRTextureObj *tobj, GLboolean alwaysDirty)
+                         const CRbitvalue *bitID, const CRbitvalue *nbitID,
+                         CRTextureObj *tobj, GLboolean alwaysDirty)
 {
     CRTextureState *from = &(fromCtx->texture);
     glAble able[2];
@@ -683,8 +683,8 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                         }
                         if (tl->compressed) {
                             diff_api.CompressedTexImage1DARB(GL_TEXTURE_1D, lvl,
-                                                                                             tl->internalFormat, tl->width,
-                                                                                             tl->border, tl->bytes, tl->img);
+                                                             tl->internalFormat, tl->width,
+                                                             tl->border, tl->bytes, tl->img);
                         }
                         else {
                             /* alignment must be one */
@@ -696,12 +696,21 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                                 diff_api.TexParameteri(GL_TEXTURE_1D, GL_GENERATE_MIPMAP_SGIS, 1);
                             }
                             diff_api.TexImage1D(GL_TEXTURE_1D, lvl,
-                                                                    tl->internalFormat,
-                                                                    tl->width, tl->border,
-                                                                    tl->format, tl->type, tl->img);
+                                                tl->internalFormat,
+                                                tl->width, tl->border,
+                                                tl->format, tl->type, tl->img);
                         }
                         if (!alwaysDirty)
+                        {
                             CLEARDIRTY(tl->dirty, nbitID);
+                        }
+#ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
+                        else
+                        {
+                            crFree(tl->img);
+                            tl->img = NULL;
+                        }
+#endif
                     }
                 }
                 break;
@@ -714,11 +723,12 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                         if (tl->generateMipmap) {
                             diff_api.TexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP_SGIS, 1);
                         }
+
                         if (tl->compressed) {
                             diff_api.CompressedTexImage2DARB(GL_TEXTURE_2D, lvl,
-                                                                                             tl->internalFormat, tl->width,
-                                                                                             tl->height, tl->border,
-                                                                                             tl->bytes, tl->img);
+                                     tl->internalFormat, tl->width,
+                                     tl->height, tl->border,
+                                     tl->bytes, tl->img);
                         }
                         else {
                             /* alignment must be one */
@@ -727,12 +737,22 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                             diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
                             diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
                             diff_api.TexImage2D(GL_TEXTURE_2D, lvl,
-                                                                    tl->internalFormat,
-                                                                    tl->width, tl->height, tl->border,
-                                                                    tl->format, tl->type, tl->img);
+                                                tl->internalFormat,
+                                                tl->width, tl->height, tl->border,
+                                                tl->format, tl->type, tl->img);
                         }
+
                         if (!alwaysDirty)
+                        {
                             CLEARDIRTY(tl->dirty, nbitID);
+                        }
+#ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
+                        else
+                        {
+                            crFree(tl->img);
+                            tl->img = NULL;
+                        }
+#endif
                     }
                 }
                 break;
@@ -748,9 +768,9 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                         }
                         if (tl->compressed) {
                             diff_api.CompressedTexImage3DARB(GL_TEXTURE_3D, lvl,
-                                                                                             tl->internalFormat, tl->width,
-                                                                                             tl->height, tl->depth,
-                                                                                             tl->border, tl->bytes, tl->img);
+                                                             tl->internalFormat, tl->width,
+                                                             tl->height, tl->depth,
+                                                             tl->border, tl->bytes, tl->img);
                         }
                         else {
                             /* alignment must be one */
@@ -759,13 +779,22 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                             diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
                             diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
                             diff_api.TexImage3D(GL_TEXTURE_3D, lvl,
-                                                                    tl->internalFormat,
-                                                                    tl->width, tl->height, tl->depth,
-                                                                    tl->border, tl->format,
-                                                                    tl->type, tl->img);
+                                                tl->internalFormat,
+                                                tl->width, tl->height, tl->depth,
+                                                tl->border, tl->format,
+                                                tl->type, tl->img);
                         }
                         if (!alwaysDirty)
+                        {
                             CLEARDIRTY(tl->dirty, nbitID);
+                        }
+#ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
+                        else
+                        {
+                            crFree(tl->img);
+                            tl->img = NULL;
+                        }
+#endif
                     }
                 }
                 break;
@@ -780,9 +809,9 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                     {
                         if (tl->compressed) {
                             diff_api.CompressedTexImage2DARB(GL_TEXTURE_RECTANGLE_NV, lvl,
-                                                                                             tl->internalFormat, tl->width,
-                                                                                             tl->height, tl->border,
-                                                                                             tl->bytes, tl->img);
+                                                             tl->internalFormat, tl->width,
+                                                             tl->height, tl->border,
+                                                             tl->bytes, tl->img);
                         }
                         else {
                             /* alignment must be one */
@@ -791,12 +820,21 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                             diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
                             diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
                             diff_api.TexImage2D(GL_TEXTURE_RECTANGLE_NV, lvl,
-                                                                    tl->internalFormat,
-                                                                    tl->width, tl->height, tl->border,
-                                                                    tl->format, tl->type, tl->img);
+                                                tl->internalFormat,
+                                                tl->width, tl->height, tl->border,
+                                                tl->format, tl->type, tl->img);
                         }
                         if (!alwaysDirty)
+                        {
                             CLEARDIRTY(tl->dirty, nbitID);
+                        }
+#ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
+                        else
+                        {
+                            crFree(tl->img);
+                            tl->img = NULL;
+                        }
+#endif
                     }
                 }
                 break;
@@ -813,13 +851,13 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                         {
                             if (tl->generateMipmap) {
                                 diff_api.TexParameteri(GL_TEXTURE_CUBE_MAP_ARB,
-                                                                             GL_GENERATE_MIPMAP_SGIS, 1);
+                                                       GL_GENERATE_MIPMAP_SGIS, 1);
                             }
                             if (tl->compressed) {
                                 diff_api.CompressedTexImage2DARB(target,
-                                                                                                 lvl, tl->internalFormat,
-                                                                                                 tl->width, tl->height,
-                                                                                                 tl->border, tl->bytes, tl->img);
+                                                                 lvl, tl->internalFormat,
+                                                                 tl->width, tl->height,
+                                                                 tl->border, tl->bytes, tl->img);
                             }
                             else {
                                 /* alignment must be one */
@@ -828,12 +866,21 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                                 diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
                                 diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
                                 diff_api.TexImage2D(target, lvl,
-                                                                        tl->internalFormat,
-                                                                        tl->width, tl->height, tl->border,
-                                                                        tl->format, tl->type, tl->img);
+                                                    tl->internalFormat,
+                                                    tl->width, tl->height, tl->border,
+                                                    tl->format, tl->type, tl->img);
                             }
                             if (!alwaysDirty)
+                            {
                                 CLEARDIRTY(tl->dirty, nbitID);
+                            }
+#ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
+                            else
+                            {
+                                crFree(tl->img);
+                                tl->img = NULL;
+                            }
+#endif
                         }
                     } /* for lvl */
                 }  /* for face */
