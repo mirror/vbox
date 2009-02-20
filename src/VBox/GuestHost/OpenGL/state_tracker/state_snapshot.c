@@ -591,21 +591,21 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     crHashtableWalk(pContext->shared->textureTable, crStateSaveSharedTextureCB, pSSM);
 
 #ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
-	/* Restore previous texture bindings via diff_api */
-	if (ui32)
+    /* Restore previous texture bindings via diff_api */
+    if (ui32)
     {
         CRTextureUnit *pTexUnit;
 
         pTexUnit = &pContext->texture.unit[pContext->texture.curTextureUnit];
 
-	    diff_api.BindTexture(GL_TEXTURE_1D, pTexUnit->currentTexture1D->name);
-	    diff_api.BindTexture(GL_TEXTURE_2D, pTexUnit->currentTexture2D->name);
-	    diff_api.BindTexture(GL_TEXTURE_3D, pTexUnit->currentTexture3D->name);
+        diff_api.BindTexture(GL_TEXTURE_1D, pTexUnit->currentTexture1D->name);
+        diff_api.BindTexture(GL_TEXTURE_2D, pTexUnit->currentTexture2D->name);
+        diff_api.BindTexture(GL_TEXTURE_3D, pTexUnit->currentTexture3D->name);
 #ifdef CR_ARB_texture_cube_map
-    	diff_api.BindTexture(GL_TEXTURE_CUBE_MAP_ARB, pTexUnit->currentTextureCubeMap->name);
+        diff_api.BindTexture(GL_TEXTURE_CUBE_MAP_ARB, pTexUnit->currentTextureCubeMap->name);
 #endif
 #ifdef CR_NV_texture_rectangle
-    	diff_api.BindTexture(GL_TEXTURE_RECTANGLE_NV, pTexUnit->currentTextureRect->name);
+        diff_api.BindTexture(GL_TEXTURE_RECTANGLE_NV, pTexUnit->currentTextureRect->name);
 #endif
     }
 #endif
