@@ -132,59 +132,44 @@ vbox_show_shape(unsigned short w, unsigned short h, CARD32 bg, unsigned char *im
 * Helper functions and macros                                             *
 **************************************************************************/
 
+/* This is called by the X server every time it loads a new cursor to see
+ * whether our "cursor hardware" can handle the cursor.  This provides us with
+ * a mechanism (the only one!) to switch back from a software to a hardware
+ * cursor. */
 static Bool
 vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
 {
-    Bool rc = FALSE;
+    Bool rc = TRUE;
     uint32_t fFeatures = 0;
-
-    TRACE_ENTRY();
-    int vrc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
-    if (RT_FAILURE(vrc))
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                 "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", vrc);
-    else
-    {
-        if (   !(fFeatures & VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER)
-            && (fFeatures & VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE)
-            && (fFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE)
-           )
-            rc = TRUE;
-    }
-    TRACE_LOG("rc=%s\n", BOOL_STR(rc));
-    return rc;
-}
-
-/**
- * This function checks whether the X server agrees with us about whether
- * to use a host or a guest-drawn cursor and gives it a nudge if it doesn't.
- * Disabling and re-enabling framebuffer access was one of the few
- * reliable (although not particularly nice) methods I could find to
- * force the server to recheck whether to use a hardware or a software
- * cursor.
- */
-static void
-vboxRecheckHWCursor(ScrnInfoPtr pScrn)
-{
-    int vrc;
-    uint32_t fFeatures;
     VBOXPtr pVBox = pScrn->driverPrivate;
 
     TRACE_ENTRY();
-    /* Check whether we are using the hardware cursor or not, and whether this
-       has changed since the last time we checked. */
-    vrc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
-    if (!!(fFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE) != pVBox->usingHWCursor)
-    {
-        pVBox->usingHWCursor = !!(fFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE);
-        /* This triggers a cursor image reload */
-        if (pVBox->accessEnabled)
-        {
-            pScrn->EnableDisableFBAccess(pScrn->scrnIndex, FALSE);
-            pScrn->EnableDisableFBAccess(pScrn->scrnIndex, TRUE);
+    /* We may want to force the use of a software cursor.  Currently this is
+     * needed if the guest uses a large virtual resolution, as in this case
+     * the host and guest tend to disagree about the pointer location. */
+    if (pVBox->forceSWCursor)
+        rc = FALSE;
+    /* Query information about mouse integration from the host. */
+    if (rc) {
+        int vrc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
+        if (RT_FAILURE(vrc)) {
+            xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                     "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", vrc);
+            rc = FALSE;
         }
     }
-    TRACE_EXIT();
+    /* If we got the information from the host then make sure the host wants
+     * to draw the pointer. */
+    if (rc)
+    {
+        if (   (fFeatures & VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER)
+            || !(fFeatures & VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE)
+            ||!(fFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE)
+           )
+            rc = FALSE;
+    }
+    TRACE_LOG("rc=%s\n", BOOL_STR(rc));
+    return rc;
 }
 
 /**
@@ -476,7 +461,6 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
             pVBox->reqp = p;
             pVBox->pCurs = NULL;
             pVBox->pointerHeaderSize = size;
-            pVBox->pointerOffscreen = FALSE;
             pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
             return TRUE;
         }
@@ -511,10 +495,12 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     int rc;
 
     TRACE_ENTRY();
-    pVBox->reqp->fFlags = VBOX_MOUSE_POINTER_VISIBLE;
-    rc = VbglR3SetPointerShapeReq(pVBox->reqp);
-    if (RT_FAILURE(rc))
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not unhide the virtual mouse pointer.\n");
+    if (vbox_host_uses_hwcursor(pScrn)) {
+        pVBox->reqp->fFlags = VBOX_MOUSE_POINTER_VISIBLE;
+        rc = VbglR3SetPointerShapeReq(pVBox->reqp);
+        if (RT_FAILURE(rc))
+            xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not unhide the virtual mouse pointer.\n");
+    }
 }
 
 static void
@@ -551,34 +537,23 @@ vbox_set_cursor_colors(ScrnInfoPtr pScrn, int bg, int fg)
  * Since we already know the position (exactly where the host pointer is),
  * we only use this function to poll for whether we need to switch from a
  * hardware to a software cursor (that is, whether the user has disabled
- * pointer integration).  Sadly we this doesn't work the other way round,
- * as the server updates the software cursor itself without calling us.
+ * pointer integration).  Sadly this doesn't work the other way round,
+ * as the server updates the software cursor itself without notifying us.
  */
 static void
 vbox_set_cursor_position(ScrnInfoPtr pScrn, int x, int y)
 {
-    vboxRecheckHWCursor(pScrn);
-    /* don't disable the mouse cursor if we go out of our visible area
-     * since the mouse cursor is drawn by the host anyway */
-#if 0
-    if (   (x < 0 || x > pScrn->pScreen->width)
-        || (y < 0 || y > pScrn->pScreen->height))
+    VBOXPtr pVBox = pScrn->driverPrivate;
+
+    if (pVBox->accessEnabled && !vbox_host_uses_hwcursor(pScrn))
     {
-        if (!pVBox->pointerOffscreen)
-        {
-            pVBox->pointerOffscreen = TRUE;
-            vbox_vmm_hide_cursor(pScrn, pVBox);
-        }
+        /* This triggers a cursor image reload, and before reloading, the X
+         * server will check whether we can "handle" the new cursor "in
+         * hardware".  We can use this check to force a switch to a software
+         * cursor if we need to do so. */
+        pScrn->EnableDisableFBAccess(pScrn->scrnIndex, FALSE);
+        pScrn->EnableDisableFBAccess(pScrn->scrnIndex, TRUE);
     }
-    else
-    {
-        if (pVBox->pointerOffscreen)
-        {
-            pVBox->pointerOffscreen = FALSE;
-            vbox_vmm_show_cursor(pScrn, pVBox);
-        }
-    }
-#endif
 }
 
 static void
@@ -742,7 +717,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     reqp->height = h;
     reqp->xHot   = bitsp->xhot;
     reqp->yHot   = bitsp->yhot;
-    reqp->fFlags = VBOX_MOUSE_POINTER_SHAPE;
+    reqp->fFlags = VBOX_MOUSE_POINTER_VISIBLE | VBOX_MOUSE_POINTER_SHAPE;
     reqp->header.size = sizeRequest;
 
 #ifdef DEBUG_POINTER
@@ -823,7 +798,8 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     reqp->height = h;
     reqp->xHot   = bitsp->xhot;
     reqp->yHot   = bitsp->yhot;
-    reqp->fFlags = VBOX_MOUSE_POINTER_SHAPE | VBOX_MOUSE_POINTER_ALPHA;
+    reqp->fFlags =   VBOX_MOUSE_POINTER_VISIBLE | VBOX_MOUSE_POINTER_SHAPE
+                   | VBOX_MOUSE_POINTER_ALPHA;
     reqp->header.size = sizeRequest;
 
     memcpy(p + offsetof(VMMDevReqMousePointer, pointerData) + sizeMask, bitsp->argb, w * h * 4);
@@ -875,9 +851,6 @@ vbox_cursor_init(ScreenPtr pScreen)
     TRACE_ENTRY();
     if (!pVBox->useDevice)
         return FALSE;
-    /* Initially assume we are using a hardware cursor, but this is
-       updated every time the mouse moves anyway. */
-    pVBox->usingHWCursor = TRUE;
     pVBox->pCurs = pCurs = xf86CreateCursorInfoRec();
     if (!pCurs)
         RETERROR(pScrn->scrnIndex, FALSE,
@@ -918,26 +891,23 @@ vbox_cursor_init(ScreenPtr pScreen)
 Bool
 vboxEnableVbva(ScrnInfoPtr pScrn)
 {
-    int rc;
+    bool rc = TRUE;
     int scrnIndex = pScrn->scrnIndex;
     VBOXPtr pVBox = pScrn->driverPrivate;
 
     TRACE_ENTRY();
     if (pVBox->useVbva != TRUE)
-        return FALSE;
-    rc = VbglR3VideoAccelEnable(true);
-    if (RT_FAILURE(rc))
-    {
+        rc = FALSE;
+    if (rc && RT_FAILURE(VbglR3VideoAccelEnable(true)))
         /* Request not accepted - disable for old hosts. */
         xf86DrvMsg(scrnIndex, X_ERROR,
                    "Unable to activate VirtualBox graphics acceleration "
                    "- the request to the virtual machine failed.  "
                    "You may be running an old version of VirtualBox.\n");
-        pVBox->useVbva = FALSE;
+    pVBox->useVbva = rc;
+    if (!rc)
         VbglR3VideoAccelEnable(false);
-        return FALSE;
-    }
-    return TRUE;
+    return rc;
 }
 
 /**

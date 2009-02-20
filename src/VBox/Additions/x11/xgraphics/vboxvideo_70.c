@@ -862,10 +862,10 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
 static Bool
 VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
 {
-    VBOXPtr pVBox;
-
     int bpp = pScrn->depth == 24 ? 32 : 16;
     int xRes = pMode->HDisplay;
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+
     if (pScrn->virtualX * pScrn->virtualY * bpp / 8
         >= pScrn->videoRam * 1024)
     {
@@ -883,7 +883,16 @@ VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
                    xRes, xRes - (xRes % 8));
         xRes = xRes - (xRes % 8);
     }
-    pVBox = VBOXGetRec(pScrn);
+
+    /* We force a software cursor if the guests virtual resolution is different
+     * to it's actual resolution, as in this case host and guest will disagree
+     * about the pointer position. */
+    if (   (pScrn->virtualX - xRes >= 8)
+        || (pScrn->virtualY - pMode->VDisplay >= 8))
+        pVBox->forceSWCursor = TRUE;
+    else
+        pVBox->forceSWCursor = FALSE;
+
     pScrn->vtSema = TRUE;
     /* Disable linear framebuffer mode before making changes to the resolution. */
     outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
