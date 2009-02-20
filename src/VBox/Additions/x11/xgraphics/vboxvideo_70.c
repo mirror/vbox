@@ -563,27 +563,29 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         DisplayModePtr m;
         int x = 0, y = 0;
 
-        sscanf(pScrn->display->modes[i], "%dx%d", &x, &y);
-        m                = xnfcalloc(sizeof(DisplayModeRec), 1);
-        m->status        = MODE_OK;
-        m->type          = M_T_BUILTIN;
-        /* VBox does only support screen widths which are a multiple of 8 */
-        m->HDisplay      = (x + 7) & ~7;
-        m->HSyncStart    = m->HDisplay + 2;
-        m->HSyncEnd      = m->HDisplay + 4;
-        m->HTotal        = m->HDisplay + 6;
-        m->VDisplay      = y;
-        m->VSyncStart    = m->VDisplay + 2;
-        m->VSyncEnd      = m->VDisplay + 4;
-        m->VTotal        = m->VDisplay + 6;
-        m->Clock         = m->HTotal * m->VTotal * 60 / 1000; /* kHz */
-        m->name          = strdup(pScrn->display->modes[i]);
-        if (!m_prev)
-            pScrn->modePool = m;
-        else
-            m_prev->next = m;
-        m->prev = m_prev;
-        m_prev  = m;
+        if (sscanf(pScrn->display->modes[i], "%dx%d", &x, &y) == 2)
+        {
+            m                = xnfcalloc(sizeof(DisplayModeRec), 1);
+            m->status        = MODE_OK;
+            m->type          = M_T_BUILTIN;
+            /* VBox only supports screen widths which are a multiple of 8 */
+            m->HDisplay      = (x + 7) & ~7;
+            m->HSyncStart    = m->HDisplay + 2;
+            m->HSyncEnd      = m->HDisplay + 4;
+            m->HTotal        = m->HDisplay + 6;
+            m->VDisplay      = y;
+            m->VSyncStart    = m->VDisplay + 2;
+            m->VSyncEnd      = m->VDisplay + 4;
+            m->VTotal        = m->VDisplay + 6;
+            m->Clock         = m->HTotal * m->VTotal * 60 / 1000; /* kHz */
+            m->name          = strdup(pScrn->display->modes[i]);
+            if (!m_prev)
+                pScrn->modePool = m;
+            else
+                m_prev->next = m;
+            m->prev = m_prev;
+            m_prev  = m;
+        }
     }
 
     /* Colour weight - we always call this, since we are always in

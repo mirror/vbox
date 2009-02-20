@@ -508,20 +508,22 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         DisplayModePtr m;
         int x = 0, y = 0;
 
-        sscanf(pScrn->display->modes[i], "%dx%d", &x, &y);
-        m                = xnfcalloc(sizeof(DisplayModeRec), 1);
-        m->status        = MODE_OK;
-        m->type          = M_T_BUILTIN;
-        /* VBox does only support screen widths which are a multiple of 8 */
-        m->HDisplay      = (x + 7) & ~7;
-        m->VDisplay      = y;
-        m->name          = strdup(pScrn->display->modes[i]);
-        if (!m_prev)
-            pScrn->modePool = m;
-        else
-            m_prev->next = m;
-        m->prev = m_prev;
-        m_prev  = m;
+        if (sscanf(pScrn->display->modes[i], "%dx%d", &x, &y) == 2)
+        {
+            m                = xnfcalloc(sizeof(DisplayModeRec), 1);
+            m->status        = MODE_OK;
+            m->type          = M_T_BUILTIN;
+            /* VBox only supports screen widths which are a multiple of 8 */
+            m->HDisplay      = (x + 7) & ~7;
+            m->VDisplay      = y;
+            m->name          = strdup(pScrn->display->modes[i]);
+            if (!m_prev)
+                pScrn->modePool = m;
+            else
+                m_prev->next = m;
+            m->prev = m_prev;
+            m_prev  = m;
+        }
     }
 
     /* Set a sane minimum mode size and the maximum allowed by the available VRAM */
