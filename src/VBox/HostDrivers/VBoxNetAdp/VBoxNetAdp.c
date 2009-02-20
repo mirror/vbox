@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,9 @@
  * additional information or have any questions.
  */
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define LOG_GROUP LOG_GROUP_NET_TAP_DRV
 #include "VBoxNetAdpInternal.h"
 
@@ -40,6 +43,7 @@
 #include <sys/errno.h>
 #include <sys/param.h>
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -47,11 +51,28 @@
     ( (PVBOXNETADP)((uint8_t *)pIfPort - RT_OFFSETOF(VBOXNETADP, MyPort)) )
 
 
+
+/**
+ * Generate a suitable MAC address.
+ *
+ * @param   pThis       The instance.
+ * @param   pMac        Where to return the MAC address.
+ */
 DECLHIDDEN(void) vboxNetAdpComposeMACAddress(PVBOXNETADP pThis, PRTMAC pMac)
 {
-    /* Note that terminating 0 is included. */
-    memcpy(pMac->au8, "\0vbox", sizeof(pMac->au8));
-    pMac->au8[sizeof(pMac->au8) - 1] += pThis->uUnit;
+#if 0 /* Use a locally administered version of the OUI we use for the guest NICs. */
+    pMac->au8[0] = 0x08 | 2;
+    pMac->au8[1] = 0x00;
+    pMac->au8[2] = 0x27;
+#else /* this is what \0vb comes down to. It seems to be unassigned atm. */
+    pMac->au8[0] = 0;
+    pMac->au8[1] = 0x76;
+    pMac->au8[2] = 0x62;
+#endif
+
+    pMac->au8[3] = pThis->uUnit >> 16;
+    pMac->au8[4] = pThis->uUnit >> 8;
+    pMac->au8[5] = pThis->uUnit;
 }
 
 
@@ -912,7 +933,7 @@ int vboxNetAdpCreate (PINTNETTRUNKFACTORY pIfFactory, PVBOXNETADP *ppNew)
     {
         RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
         PVBOXNETADP pThis = &pGlobals->aAdapters[i];
-    
+
         RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
         if (vboxNetAdpIsVoid(pThis))
         {
@@ -941,7 +962,7 @@ int vboxNetAdpDestroy (PVBOXNETADP pThis)
 {
     int rc;
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    
+
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
     if (pThis->enmState != kVBoxNetAdpState_Available || pThis->cBusy)
     {
