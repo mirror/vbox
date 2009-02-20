@@ -1437,17 +1437,15 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
 #endif
     /* now VM mappings */
     {
-        ComPtr<ISharedFolderCollection> sfColl;
-        ComPtr<ISharedFolderEnumerator> sfEnum;
-        CHECK_ERROR_RET(machine, COMGETTER(SharedFolders)(sfColl.asOutParam()), rc);
-        CHECK_ERROR_RET(sfColl, Enumerate(sfEnum.asOutParam()), rc);
+        com::SafeIfaceArray <ISharedFolder> folders;
+
+        CHECK_ERROR_RET(machine, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), rc);
         ULONG index = 0;
-        BOOL fMore;
-        sfEnum->HasMore(&fMore);
-        while (fMore)
+
+        for (size_t i = 0; i < folders.size(); ++i)
         {
-            ComPtr<ISharedFolder> sf;
-            CHECK_ERROR_RET(sfEnum, GetNext(sf.asOutParam()), rc);
+            ComPtr <ISharedFolder> sf = folders[i];
+
             Bstr name, hostPath;
             BOOL writable;
             sf->COMGETTER(Name)(name.asOutParam());
@@ -1466,23 +1464,20 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
                 RTPrintf("Name: '%lS', Host path: '%lS' (machine mapping), %s\n",
                          name.raw(), hostPath.raw(), writable ? "writable" : "readonly");
             ++numSharedFolders;
-            CHECK_ERROR_RET(sfEnum, HasMore(&fMore), rc);
         }
     }
     /* transient mappings */
     if (console)
     {
-        ComPtr<ISharedFolderCollection> sfColl;
-        ComPtr<ISharedFolderEnumerator> sfEnum;
-        CHECK_ERROR_RET(console, COMGETTER(SharedFolders)(sfColl.asOutParam()), rc);
-        CHECK_ERROR_RET(sfColl, Enumerate(sfEnum.asOutParam()), rc);
+        com::SafeIfaceArray <ISharedFolder> folders;
+
+        CHECK_ERROR_RET(console, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), rc);
         ULONG index = 0;
-        BOOL fMore;
-        sfEnum->HasMore(&fMore);
-        while (fMore)
+
+        for (size_t i = 0; i < folders.size(); ++i)
         {
-            ComPtr<ISharedFolder> sf;
-            CHECK_ERROR_RET(sfEnum, GetNext(sf.asOutParam()), rc);
+            ComPtr <ISharedFolder> sf = folders[i];
+
             Bstr name, hostPath;
             sf->COMGETTER(Name)(name.asOutParam());
             sf->COMGETTER(HostPath)(hostPath.asOutParam());
@@ -1498,7 +1493,6 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
             else
                 RTPrintf("Name: '%lS', Host path: '%lS' (transient mapping)\n", name.raw(), hostPath.raw());
             ++numSharedFolders;
-            CHECK_ERROR_RET(sfEnum, HasMore(&fMore), rc);
         }
     }
     if (!numSharedFolders && details != VMINFO_MACHINEREADABLE)

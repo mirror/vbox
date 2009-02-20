@@ -1410,7 +1410,7 @@
 
     <attribute name="guestOSTypes" type="IGuestOSTypeCollection" readonly="yes"/>
 
-    <attribute name="sharedFolders" type="ISharedFolderCollection" readonly="yes">
+    <attribute name="sharedFolders" type="ISharedFolder" readonly="yes" safearray="yes">
       <desc>
         Collection of global shared folders. Global shared folders are
         available to all virtual machines.
@@ -4156,7 +4156,7 @@
       </desc>
     </attribute>
 
-    <attribute name="sharedFolders" type="ISharedFolderCollection" readonly="yes">
+    <attribute name="sharedFolders" type="ISharedFolder" readonly="yes" safearray="yes">
       <desc>
         Collection of shared folders for this machine (permanent shared
         folders). These folders are shared automatically at machine startup
@@ -5614,7 +5614,7 @@
       </desc>
     </attribute>
 
-    <attribute name="sharedFolders" type="ISharedFolderCollection" readonly="yes">
+    <attribute name="sharedFolders" type="ISharedFolder" readonly="yes" safearray="yes">
       <desc>
         Collection of shared folders for the current session.  These folders
         are called transient shared folders because they are available to the
@@ -11584,39 +11584,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   /////////////////////////////////////////////////////////////////////////
   -->
 
-  <enumerator
-     name="ISharedFolderEnumerator" type="ISharedFolder"
-     uuid="1d420fd8-e7c1-4511-abf4-a504dc6d0cbf"
-     />
-
-  <collection
-     name="ISharedFolderCollection" type="ISharedFolder"
-     enumerator="ISharedFolderEnumerator"
-     uuid="9c7e2282-bb16-4fa7-9138-f383c5e02353"
-     readonly="yes">
-
-    <method name="findByName">
-      <desc>
-        Searches this collection for a shared folder with the given logical
-        name.
-        <note>
-          The method returns an error if the given name does not correspond to
-          any shared folder in the collection.
-        </note>
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>Logical name of the shared folder to search for</desc>
-      </param>
-      <param name="sharedFolder" type="ISharedFolder" dir="return">
-        <desc>Found shared folder object</desc>
-      </param>
-    </method>
-
-  </collection>
-
   <interface
      name="ISharedFolder" extends="$unknown"
-     uuid="ef41869b-ef31-4b30-8e8f-95af35c0e378"
+     uuid="64637bb2-9e17-471c-b8f3-f8968dd9884e"
      wsmap="struct"
      >
     <desc>

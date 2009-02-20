@@ -271,7 +271,7 @@ void VBoxVMSettingsSF::getFromGlobal()
     AssertMsgFailed (("Global shared folders are not implemented yet\n"));
     //SFTreeViewItem *root = searchRoot (true, GlobalType);
     //root->setHidden (false);
-    //getFrom (vboxGlobal().virtualBox().GetSharedFolders().Enumerate(), root);
+    //getFrom (vboxGlobal().virtualBox().GetSharedFolders(), root);
 }
 
 void VBoxVMSettingsSF::getFromMachine (const CMachine &aMachine)
@@ -279,7 +279,7 @@ void VBoxVMSettingsSF::getFromMachine (const CMachine &aMachine)
     mMachine = aMachine;
     SFTreeViewItem *root = searchRoot (true, MachineType);
     root->setHidden (false);
-    getFrom (mMachine.GetSharedFolders().Enumerate(), root);
+    getFrom (mMachine.GetSharedFolders(), root);
 }
 
 void VBoxVMSettingsSF::getFromConsole (const CConsole &aConsole)
@@ -287,7 +287,7 @@ void VBoxVMSettingsSF::getFromConsole (const CConsole &aConsole)
     mConsole = aConsole;
     SFTreeViewItem *root = searchRoot (true, ConsoleType);
     root->setHidden (false);
-    getFrom (mConsole.GetSharedFolders().Enumerate(), root);
+    getFrom (mConsole.GetSharedFolders(), root);
 }
 
 
@@ -302,9 +302,9 @@ void VBoxVMSettingsSF::putBackToGlobal()
     ///* Searching for GlobalType item's root */
     //SFTreeViewItem *root = searchRoot (true, GlobalType);
     //Assert (root);
-    //CSharedFolderEnumerator en =
-    //    vboxGlobal().virtualBox().GetSharedFolders().Enumerate();
-    //putBackTo (en, root);
+    //CSharedFolderVector vec =
+    //    vboxGlobal().virtualBox().GetSharedFolders();
+    //putBackTo (vec, root);
 }
 
 void VBoxVMSettingsSF::putBackToMachine()
@@ -317,8 +317,8 @@ void VBoxVMSettingsSF::putBackToMachine()
     /* Searching for MachineType item's root */
     SFTreeViewItem *root = searchRoot (true,  MachineType);
     Assert (root);
-    CSharedFolderEnumerator en = mMachine.GetSharedFolders().Enumerate();
-    putBackTo (en, root);
+    CSharedFolderVector sfvec = mMachine.GetSharedFolders();
+    putBackTo (sfvec, root);
 }
 
 void VBoxVMSettingsSF::putBackToConsole()
@@ -331,8 +331,8 @@ void VBoxVMSettingsSF::putBackToConsole()
     /* Searching for ConsoleType item's root */
     SFTreeViewItem *root = searchRoot (true, ConsoleType);
     Assert (root);
-    CSharedFolderEnumerator en = mConsole.GetSharedFolders().Enumerate();
-    putBackTo (en, root);
+    CSharedFolderVector sfvec = mConsole.GetSharedFolders();
+    putBackTo (sfvec, root);
 }
 
 
@@ -621,12 +621,12 @@ void VBoxVMSettingsSF::createSharedFolder (const QString & aName,
 }
 
 
-void VBoxVMSettingsSF::getFrom (const CSharedFolderEnumerator &aEn,
+void VBoxVMSettingsSF::getFrom (const CSharedFolderVector &aVec,
                                 SFTreeViewItem *aRoot)
 {
-    while (aEn.HasMore())
+    for (int i = 0; i < aVec.size(); ++i)
     {
-        CSharedFolder sf = aEn.GetNext();
+        CSharedFolder sf = aVec[i];
         QStringList fields;
         fields << sf.GetName() /* name */
                << sf.GetHostPath() /* path */
@@ -640,16 +640,16 @@ void VBoxVMSettingsSF::getFrom (const CSharedFolderEnumerator &aEn,
     processCurrentChanged (aRoot->childCount() ? aRoot->child (0) : aRoot);
 }
 
-void VBoxVMSettingsSF::putBackTo (CSharedFolderEnumerator &aEn,
+void VBoxVMSettingsSF::putBackTo (CSharedFolderVector &aVec,
                                   SFTreeViewItem *aRoot)
 {
     Assert (!aRoot->text (1).isNull());
     SFDialogType type = (SFDialogType)aRoot->text (1).toInt();
 
     /* delete all changed folders from vm */
-    while (aEn.HasMore())
+    for (int idx = 0; idx < aVec.size(); ++idx)
     {
-        CSharedFolder sf = aEn.GetNext();
+        CSharedFolder sf = aVec[idx];
 
         /* Iterate through this root's children */
         int i = 0;

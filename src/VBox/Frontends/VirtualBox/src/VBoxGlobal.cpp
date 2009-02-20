@@ -2542,7 +2542,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
         }
         /* Shared folders */
         {
-            ulong count = aMachine.GetSharedFolders().GetCount();
+            ulong count = aMachine.GetSharedFolders().size();
             if (count > 0)
             {
                 item = QString (sSectionItemTpl2)

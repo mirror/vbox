@@ -90,8 +90,8 @@ private:
                              bool aWritable,
                              SFDialogType aType);
 
-    void getFrom (const CSharedFolderEnumerator &aEn, SFTreeViewItem *aItem);
-    void putBackTo (CSharedFolderEnumerator &aEn, SFTreeViewItem *aItem);
+    void getFrom (const CSharedFolderVector &aVec, SFTreeViewItem *aItem);
+    void putBackTo     (CSharedFolderVector &aVec, SFTreeViewItem *aItem);
 
     SFTreeViewItem* searchRoot (bool aIsPermanent,
                                 SFDialogType aType = WrongType);
@@ -111,4 +111,3 @@ private:
 };
 
 #endif // __VBoxVMSettingsSF_h__
-
