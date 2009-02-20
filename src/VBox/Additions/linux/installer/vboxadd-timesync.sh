@@ -51,6 +51,9 @@ elif [ -f /etc/arch-release ]; then
 elif [ -f /etc/slackware-version ]; then
     system=slackware
     PIDFILE="/var/run/vboxadd-timesync"
+elif [ -f /etc/lfs-release ]; then
+    system=lfs
+    PIDFILE="/var/run/vboxadd-timesync.pid"
 else
     system=other
     if [ -d /var/run -a -w /var/run ]; then
@@ -196,6 +199,29 @@ if [ "$system" = "slackware" ]; then
 
 fi
 
+if [ "$system" = "lfs" ]; then
+    . /etc/rc.d/init.d/functions
+    daemon() {
+        loadproc $1 $2
+    }
+
+    fail_msg() {
+        echo_failure
+    }
+
+    succ_msg() {
+        echo_ok
+    }
+
+    begin() {
+        echo $1
+    }
+
+    status() {
+        statusproc $1
+    }
+fi
+
 if [ "$system" = "other" ]; then
     fail_msg() {
         echo " ...fail!"
@@ -230,7 +256,7 @@ start() {
         }
         daemon $binary --daemonize
         RETVAL=$?
-        test $RETVAL -eq 0 && touch $PIDFILE
+        test $RETVAL -eq 0 && echo `pidof vboxadd-timesync` > $PIDFILE
         succ_msg
     fi
     return $RETVAL
@@ -257,7 +283,7 @@ restart() {
 
     status() {
         echo -n "Checking for vboxadd-timesync"
-        if [ -f /var/run/$1 ]; then
+        if [ -f $PIDFILE ]; then
             echo " ...running"
         else
             echo " ...not running"

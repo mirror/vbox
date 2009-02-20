@@ -43,6 +43,8 @@ elif [ -f /etc/SuSE-release ]; then
     system=suse
 elif [ -f /etc/gentoo-release ]; then
     system=gentoo
+elif [ -f /etc/lfs-release -a -d /etc/rc.d/init.d ]; then
+    system=lfs
 else
     system=other
 fi
@@ -111,6 +113,19 @@ if [ "$system" = "gentoo" ]; then
     if [ "`which $0`" = "/sbin/rc" ]; then
         shift
     fi
+fi
+
+if [ "$system" = "lfs" ]; then
+    . /etc/rc.d/init.d/functions
+    fail_msg() {
+        echo_failure
+    }
+    succ_msg() {
+        echo_ok
+    }
+    begin() {
+        echo $1
+    }
 fi
 
 if [ "$system" = "other" ]; then
