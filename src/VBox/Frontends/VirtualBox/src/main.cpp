@@ -436,7 +436,7 @@ int main (int argc, char **argv, char **envp)
      * are really about to start a VM. Don't do this if we are only starting
      * the selector window. */
     bool fInitSUPLib = false;
-    for (int i = 0; i < argc; i++)
+    for (int i = 1; i < argc; i++)
     {
         if (!::strcmp (argv[i], "-startvm" ))
         {
