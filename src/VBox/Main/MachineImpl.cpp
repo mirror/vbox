@@ -3429,6 +3429,12 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
     HRESULT rc = sessionMachine->init (this);
     AssertComRC (rc);
 
+    /* NOTE: doing return from this function after this point but
+     * before the end is forbidden since it may call SessionMachine::uninit()
+     * (through the ComObjPtr's destructor) which requests the VirtualBox write
+     * lock while still holding the Machine lock in alock so that a deadlock
+     * is possible due to the wrong lock order. */
+
     if (SUCCEEDED (rc))
     {
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
@@ -3561,6 +3567,10 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
         mData->mSession.mProgress->notifyComplete (rc);
         mData->mSession.mProgress.setNull();
     }
+
+    /* Leave the lock since SessionMachine::uninit() locks VirtualBox which
+     * would break the lock order */
+    alock.leave();
 
     /* uninitialize the created session machine on failure */
     if (FAILED (rc))
