@@ -45,7 +45,7 @@
  *    out/<platform>/obj/Runtime/errmsgvboxcomdata.h
  *    (<result> extraction for the %Rhrc format specifier)
  *
-     Copyright (C) 2006-2008 Sun Microsystems, Inc.
+     Copyright (C) 2006-2009 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -1408,7 +1408,7 @@
 
     <attribute name="progressOperations" type="IProgress" readonly="yes" safearray="yes"/>
 
-    <attribute name="guestOSTypes" type="IGuestOSTypeCollection" readonly="yes"/>
+    <attribute name="guestOSTypes" type="IGuestOSType" readonly="yes" safearray="yes"/>
 
     <attribute name="sharedFolders" type="ISharedFolder" readonly="yes" safearray="yes">
       <desc>
@@ -7100,7 +7100,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="bc415228-eed0-402c-92f5-96fc4e2dd7e4"
+    uuid="cfe9e64c-4430-435b-9e7c-e3d8e417bd58"
     wsmap="struct"
   >
     <desc>
@@ -7150,18 +7150,6 @@
       <desc>Returns recommended network adapter for this OS type.</desc>
     </attribute>
   </interface>
-
-
-  <enumerator
-     name="IGuestOSTypeEnumerator" type="IGuestOSType"
-     uuid="a3335e02-4669-4e3c-80c7-c4dc7056a07c"
-     />
-
-  <collection
-     name="IGuestOSTypeCollection" type="IGuestOSType" enumerator="IGuestOSTypeEnumerator"
-     uuid="a5e36749-a610-498b-9f29-2e36c1042d65"
-     readonly="yes"
-     />
 
   <interface
      name="IGuest" extends="$unknown"

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -99,8 +99,6 @@ private:
     const uint32_t mMonitorCount;
     const NetworkAdapterType_T mNetworkAdapterType;
 };
-
-COM_DECL_READONLY_ENUM_AND_COLLECTION (GuestOSType)
 
 #endif // ____H_GUESTOSTYPEIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
