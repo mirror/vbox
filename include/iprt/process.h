@@ -49,7 +49,7 @@ __BEGIN_DECLS
  *
  * In addition to using the policy assigned to the process at startup (DEFAULT)
  * it is possible to change the process priority at runtime. This allows for
- * a GUI, resource manager or admin to adjust the general priorty of a task
+ * a GUI, resource manager or admin to adjust the general priority of a task
  * without upsetting the fine-tuned priority of the threads within.
  */
 typedef enum RTPROCPRIORITY
@@ -57,7 +57,7 @@ typedef enum RTPROCPRIORITY
     /** Invalid priority. */
     RTPROCPRIORITY_INVALID = 0,
     /** Default priority.
-     * Derive the schedulding policy from the priority of the RTR3Init()
+     * Derive the scheduling policy from the priority of the RTR3Init()
      * and RTProcSetPriority() callers and the rights the process have
      * to alter its own priority.
      */
@@ -73,7 +73,7 @@ typedef enum RTPROCPRIORITY
      */
     RTPROCPRIORITY_LOW,
     /** Normal priority.
-     * Assume a scheduling policy which shares the cpu resources fairly with
+     * Assume a scheduling policy which shares the CPU resources fairly with
      * other processes running with the default priority of the host OS.
      */
     RTPROCPRIORITY_NORMAL,
@@ -177,7 +177,7 @@ typedef const RTPROCSTATUS *PCRTPROCSTATUS;
  * @{ */
 /** Block indefinitly waiting for the process to exit. */
 #define RTPROCWAIT_FLAGS_BLOCK      0
-/** Don't block, just check if the process have exitted. */
+/** Don't block, just check if the process have exited. */
 #define RTPROCWAIT_FLAGS_NOBLOCK    1
 /** @} */
 
@@ -186,7 +186,7 @@ typedef const RTPROCSTATUS *PCRTPROCSTATUS;
  *
  * @returns VINF_SUCCESS when the status code for the process was collected and put in *pProcStatus.
  * @returns VERR_PROCESS_NOT_FOUND if the specified process wasn't found.
- * @returns VERR_PROCESS_RUNNING when the RTPROCWAIT_FLAG_NOBLOCK and the process haven't exitted yet.
+ * @returns VERR_PROCESS_RUNNING when the RTPROCWAIT_FLAG_NOBLOCK and the process haven't exited yet.
  *
  * @param   Process         The process to wait for.
  * @param   fFlags          The wait flags, any of the RTPROCWAIT_FLAGS_ \#defines.
@@ -199,7 +199,7 @@ RTR3DECL(int) RTProcWait(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProc
  *
  * @returns VINF_SUCCESS when the status code for the process was collected and put in *pProcStatus.
  * @returns VERR_PROCESS_NOT_FOUND if the specified process wasn't found.
- * @returns VERR_PROCESS_RUNNING when the RTPROCWAIT_FLAG_NOBLOCK and the process haven't exitted yet.
+ * @returns VERR_PROCESS_RUNNING when the RTPROCWAIT_FLAG_NOBLOCK and the process haven't exited yet.
  * @returns VERR_INTERRUPTED when the wait was interrupted by the arrival of a signal or other async event.
  *
  * @param   Process         The process to wait for.
