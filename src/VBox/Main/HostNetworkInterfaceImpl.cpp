@@ -50,7 +50,7 @@ void HostNetworkInterface::FinalRelease()
  * @param   aInterfaceName name of the network interface
  * @param   aGuid GUID of the host network interface
  */
-HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid)
+HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid, BOOL aReal)
 {
     LogFlowThisFunc (("aInterfaceName={%ls}, aGuid={%s}\n",
                       aInterfaceName.raw(), aGuid.toString().raw()));
@@ -64,6 +64,8 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid)
 
     unconst (mInterfaceName) = aInterfaceName;
     unconst (mGuid) = aGuid;
+    mReal = aReal;
+
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -109,7 +111,7 @@ static Bstr composeHardwareAddress(PRTMAC aMacPtr)
  * @param   aInterfaceName name of the network interface
  * @param   aGuid GUID of the host network interface
  */
-HRESULT HostNetworkInterface::init (Bstr aInterfaceName, PNETIFINFO pIf)
+HRESULT HostNetworkInterface::init (Bstr aInterfaceName, BOOL aReal, PNETIFINFO pIf)
 {
 //    LogFlowThisFunc (("aInterfaceName={%ls}, aGuid={%s}\n",
 //                      aInterfaceName.raw(), aGuid.toString().raw()));
@@ -124,6 +126,8 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, PNETIFINFO pIf)
 
     unconst (mInterfaceName) = aInterfaceName;
     unconst (mGuid) = pIf->Uuid;
+    mReal = aReal;
+
     m.IPAddress = pIf->IPAddress.u;
     m.networkMask = pIf->IPNetMask.u;
     m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
@@ -308,6 +312,25 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Status) (HostNetworkInterfaceStatus
     *aStatus = m.status;
 
     return S_OK;
+}
+
+/**
+ * Returns true if this is a "real" adapter, false if this is  a Virtualbox Host Adapter
+ *
+ * @returns COM status code
+ * @param   aReal address of result pointer
+ */
+STDMETHODIMP HostNetworkInterface::COMGETTER(Real) (BOOL *aReal)
+{
+    CheckComArgOutPointerValid(aReal);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    *aReal = mReal;
+
+    return S_OK;
+
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

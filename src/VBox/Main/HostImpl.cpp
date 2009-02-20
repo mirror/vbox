@@ -613,7 +613,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, 
 
     ComObjPtr<HostNetworkInterface> IfObj;
     IfObj.createObject();
-    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), Guid(Uuid))))
+    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), Guid(Uuid), true)))
         pList->push_back(IfObj);
 }
 
@@ -728,7 +728,7 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > 
             ComObjPtr <HostNetworkInterface> iface;
             iface.createObject();
             /* remove the curly bracket at the end */
-            if (SUCCEEDED (iface->init (name, Guid (IfGuid))))
+            if (SUCCEEDED (iface->init (name, Guid (IfGuid), true)))
             {
                 pPist->push_back (iface);
                 rc = VINF_SUCCESS;
@@ -743,36 +743,7 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > 
 
     return rc;
 }
-
-STDMETHODIMP Host::COMGETTER(TapInterfaces) (ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces))
-{
-    if (ComSafeArrayOutIsNull (aNetworkInterfaces))
-        return E_POINTER;
-
-    AutoWriteLock alock (this);
-    CHECK_READY();
-
-    std::list <ComObjPtr <HostNetworkInterface> > list;
-#ifdef VBOX_WITH_HOSTNETIF_API
-    int rc = NetIfListTap(list);
-    if (rc)
-    {
-        Log(("Failed to get host tap network interface list with rc=%Vrc\n", rc));
-    }
-#else
-#endif
-    SafeIfaceArray <IHostNetworkInterface> networkInterfaces (list);
-    networkInterfaces.detachTo (ComSafeArrayOutArg (aNetworkInterfaces));
-
-    return S_OK;
-}
-#else /* !defined(RT_OS_WINDOWS) || !defined(VBOX_WITH_NETFLT) */
-STDMETHODIMP Host::COMGETTER(TapInterfaces) (ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces))
-{
-    return NS_ERROR_NOT_IMPLEMENTED;
-}
-#endif /* !defined(RT_OS_WINDOWS) && !defined(VBOX_WITH_NETFLT) */
-
+#endif /* defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
 /**
  * Returns a list of host network interfaces.
  *
@@ -803,7 +774,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut (IHostNetworkIn
     {
         ComObjPtr<HostNetworkInterface> IfObj;
         IfObj.createObject();
-        if (SUCCEEDED(IfObj->init(Bstr(pEtherNICs->szName), Guid(pEtherNICs->Uuid))))
+        if (SUCCEEDED(IfObj->init(Bstr(pEtherNICs->szName), Guid(pEtherNICs->Uuid), true)))
             list.push_back(IfObj);
 
         /* next, free current */
@@ -958,7 +929,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut (IHostNetworkIn
                     iface.createObject();
                     /* remove the curly bracket at the end */
                     szNetworkGUID [strlen(szNetworkGUID) - 1] = '\0';
-                    if (SUCCEEDED (iface->init (name, Guid (szNetworkGUID + 1))))
+                    if (SUCCEEDED (iface->init (name, Guid (szNetworkGUID + 1), true)))
                         list.push_back (iface);
                 }
             }
@@ -1084,7 +1055,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut (IHostNetworkIn
 
                         ComObjPtr<HostNetworkInterface> IfObj;
                         IfObj.createObject();
-                        if (SUCCEEDED(IfObj->init(Bstr(pReq->ifr_name), Guid(uuid))))
+                        if (SUCCEEDED(IfObj->init(Bstr(pReq->ifr_name), Guid(uuid), true)))
                             list.push_back(IfObj);
                     }
                 }
@@ -3070,7 +3041,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
 
                         /* initialize the object returned to the caller by
                          * CreateHostNetworkInterface() */
-                        rc = d->iface->init (d->name, guid);
+                        rc = d->iface->init (d->name, guid, false);
                         endLoop = true;
                         break;
                     }

@@ -155,7 +155,11 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
 
     mAdapter.SetCableConnected (mCbCable->isChecked());
 
-    if (type == KNetworkAttachmentType_HostInterface)
+    if (type == KNetworkAttachmentType_HostInterface
+#if defined (Q_WS_WIN) && defined (VBOX_WITH_NETFLT)
+            || type == KNetworkAttachmentType_HostOnly
+#endif
+            )
     {
 #if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
         mAdapter.SetHostInterface (mInterfaceName);
@@ -714,16 +718,16 @@ void VBoxNIList::populateInterfacesList()
 {
     /* Load current inner list */
     QList<QTreeWidgetItem*> itemsList;
-    CHostNetworkInterfaceVector interfaces =
-#if defined(Q_WS_WIN) && defined(VBOX_WITH_NETFLT)
-            enmAttachmentType == KNetworkAttachmentType_HostOnly ?
-                    vboxGlobal().virtualBox().GetHost().GetTapInterfaces()
-                    :
-#endif
-                    vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces();
+    CHostNetworkInterfaceVector interfaces = vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces();
     for (CHostNetworkInterfaceVector::ConstIterator it = interfaces.begin();
          it != interfaces.end(); ++it)
-        itemsList << new VBoxNIListItem (it->GetName());
+    {
+#if defined(Q_WS_WIN) && defined(VBOX_WITH_NETFLT)
+        /* display real for not host-only and viceversa */
+        if((enmAttachmentType == KNetworkAttachmentType_HostOnly) != it->GetReal())
+#endif
+            itemsList << new VBoxNIListItem (it->GetName());
+    }
 
     /* Save current list item name */
     QString currentListItemName = mList->currentItem() ?
@@ -854,8 +858,11 @@ bool VBoxVMSettingsNetworkPage::revalidate (QString &aWarning,
             vboxGlobal().toNetworkAttachmentType (page->mCbNAType->currentText());
 
 #if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
-        if (type == KNetworkAttachmentType_HostInterface &&
-            page->interfaceName().isNull())
+        if ((type == KNetworkAttachmentType_HostInterface
+#if defined (Q_WS_WIN) && defined (VBOX_WITH_NETFLT)
+                || type == KNetworkAttachmentType_HostOnly
+#endif
+                ) && page->interfaceName().isNull())
         {
             valid = false;
             aWarning = tr ("No host network interface is selected");

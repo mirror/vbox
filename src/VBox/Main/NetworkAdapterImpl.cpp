@@ -942,6 +942,15 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
     else
     if (!(attachmentNode = aAdapterNode.findKey ("HostOnlyNetwork")).isNull())
     {
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+        Bstr name = attachmentNode.stringValue ("name");
+        /* name can be empty, but not null */
+        ComAssertRet (!name.isNull(), E_FAIL);
+
+        rc = COMSETTER(HostInterface) (name);
+        CheckComRCReturnRC (rc);
+#endif
+
         /* Host Interface Networking */
         rc = AttachToHostOnlyNetwork();
         CheckComRCReturnRC (rc);
@@ -1041,6 +1050,10 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
         case NetworkAttachmentType_HostOnly:
         {
             Key attachmentNode = aAdapterNode.createKey ("HostOnlyNetwork");
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+            Assert (!mData->mHostInterface.isNull());
+            attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
+#endif
             break;
         }
         default:
@@ -1199,6 +1212,10 @@ void NetworkAdapter::detach()
         }
         case NetworkAttachmentType_HostOnly:
         {
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+            /* reset handle and device name */
+            mData->mHostInterface = "";
+#endif
             break;
         }
     }

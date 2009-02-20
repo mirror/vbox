@@ -97,7 +97,6 @@ public:
     STDMETHOD(COMGETTER(UTCTime))(LONG64 *aUTCTime);
 
     // IHost methods
-    STDMETHOD(COMGETTER(TapInterfaces))(ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces));
 #ifdef RT_OS_WINDOWS
 
     STDMETHOD(CreateHostNetworkInterface) (IN_BSTR aName,

@@ -1037,20 +1037,13 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         AssertLogRelMsgRCReturn(rc, ("drvIntNetWinConstruct failed, rc=%Rrc", rc), rc);
 # endif
 
-        if (OpenReq.enmTrunkType == kIntNetTrunkType_NetFlt)
-        {
-            /*
-             * <Describe what this does here or/and in the function docs of drvIntNetWinIfGuidToBindName>.
-             */
-            char szBindName[INTNET_MAX_TRUNK_NAME];
-            rc = drvIntNetWinIfGuidToBindName(OpenReq.szTrunk, szBindName, INTNET_MAX_TRUNK_NAME);
-            AssertLogRelMsgRCReturn(rc, ("drvIntNetWinIfGuidToBindName failed, rc=%Rrc", rc), rc);
-            strcpy(OpenReq.szTrunk, szBindName);
-        }
-        else
-        {
-            strcpy(OpenReq.szTrunk, "dummy name");
-        }
+        /*
+         * <Describe what this does here or/and in the function docs of drvIntNetWinIfGuidToBindName>.
+         */
+        char szBindName[INTNET_MAX_TRUNK_NAME];
+        rc = drvIntNetWinIfGuidToBindName(OpenReq.szTrunk, szBindName, INTNET_MAX_TRUNK_NAME);
+        AssertLogRelMsgRCReturn(rc, ("drvIntNetWinIfGuidToBindName failed, rc=%Rrc", rc), rc);
+        strcpy(OpenReq.szTrunk, szBindName);
     }
 #endif /* WINDOWS && NETFLT */
 

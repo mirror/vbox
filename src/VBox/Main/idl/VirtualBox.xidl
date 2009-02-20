@@ -6440,7 +6440,7 @@
 
   <interface
      name="IHostNetworkInterface" extends="$unknown"
-     uuid="832720ac-2df6-41d4-a867-a0b40df14c7f"
+     uuid="4fc2445f-fb73-4f55-b3b4-ecee47c7077b"
      wsmap="managed"
      >
     <desc>
@@ -6483,6 +6483,11 @@
 
     <attribute name="status" type="HostNetworkInterfaceStatus" readonly="yes">
       <desc>Status of the interface.</desc>
+    </attribute>
+    
+    <attribute name="real" type="boolean" readonly="yes">
+      <desc>True if this is a real interface false 
+      if this is a Virtualbox Host Adapter interface.</desc>
     </attribute>
   </interface>
 
@@ -6554,10 +6559,6 @@
 
     <attribute name="networkInterfaces" type="IHostNetworkInterface" safearray="yes" readonly="yes">
       <desc>List of host network interfaces currently defined on the host.</desc>
-    </attribute>
-
-    <attribute name="tapInterfaces" type="IHostNetworkInterface" safearray="yes" readonly="yes">
-      <desc>List of host tap interfaces currently defined on the host.</desc>
     </attribute>
 
     <attribute name="processorCount" type="unsigned long" readonly="yes">
