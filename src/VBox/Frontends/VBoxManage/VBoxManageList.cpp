@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -133,17 +133,17 @@ int handleList(HandlerArg *a)
     else
     if (strcmp(a->argv[0], "ostypes") == 0)
     {
-        ComPtr<IGuestOSTypeCollection> coll;
-        ComPtr<IGuestOSTypeEnumerator> enumerator;
-        CHECK_ERROR(a->virtualBox, COMGETTER(GuestOSTypes)(coll.asOutParam()));
-        if (SUCCEEDED(rc) && coll)
+        com::SafeIfaceArray <IGuestOSType> coll;
+        rc = a->virtualBox->COMGETTER(GuestOSTypes)(ComSafeArrayAsOutParam(coll));
+        if (SUCCEEDED(rc))
         {
-            CHECK_ERROR(coll, Enumerate(enumerator.asOutParam()));
-            BOOL hasMore;
-            while (SUCCEEDED(enumerator->HasMore(&hasMore)) && hasMore)
+            /*
+             * Iterate through the collection.
+             */
+            for (size_t i = 0; i < coll.size(); ++ i)
             {
                 ComPtr<IGuestOSType> guestOS;
-                CHECK_ERROR_BREAK(enumerator, GetNext(guestOS.asOutParam()));
+                guestOS = coll[i];
                 Bstr guestId;
                 guestOS->COMGETTER(Id)(guestId.asOutParam());
                 RTPrintf("ID:          %lS\n", guestId.raw());

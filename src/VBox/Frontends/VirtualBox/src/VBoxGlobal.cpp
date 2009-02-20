@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -5535,24 +5535,22 @@ void VBoxGlobal::init()
     }
 #endif
 
-    /* Initialize guest OS Type list */
-    CGuestOSTypeCollection coll = mVBox.GetGuestOSTypes();
-    int osTypeCount = coll.GetCount();
+    /* Initialize guest OS Type list. */
+    CGuestOSTypeVector coll = mVBox.GetGuestOSTypes();
+    int osTypeCount = coll.size();
     AssertMsg (osTypeCount > 0, ("Number of OS types must not be zero"));
     if (osTypeCount > 0)
     {
-        CGuestOSTypeEnumerator en = coll.Enumerate();
-
-        /* Here we assume 'Other' type is always the first, so we
-         * remember it and will append it to the list when finish */
-        CGuestOSType otherType (en.GetNext());
+        /* Here we assume the 'Other' type is always the first, so we
+         * remember it and will append it to the list when finished. */
+        CGuestOSType otherType = coll[0];
         QString otherFamilyId (otherType.GetFamilyId());
 
         /* Fill the lists with all the available OS Types except
-         * the 'Other' one type, it will be appended. */
-        while (en.HasMore())
+         * the 'Other' type, which will be appended. */
+        for (int i = 1; i < coll.size(); ++i)
         {
-            CGuestOSType os (en.GetNext());
+            CGuestOSType os = coll[i];
             QString familyId (os.GetFamilyId());
             if (!mFamilyIDs.contains (familyId))
             {
@@ -5562,7 +5560,7 @@ void VBoxGlobal::init()
             mTypes [mFamilyIDs.indexOf (familyId)].append (os);
         }
 
-        /* Append the 'Other' OS Type to the end of list */
+        /* Append the 'Other' OS Type to the end of list. */
         if (!mFamilyIDs.contains (otherFamilyId))
         {
             mFamilyIDs << otherFamilyId;
@@ -5571,7 +5569,7 @@ void VBoxGlobal::init()
         mTypes [mFamilyIDs.indexOf (otherFamilyId)].append (otherType);
     }
 
-    /* Fill in OS type icon dictionary */
+    /* Fill in OS type icon dictionary. */
     static const char *kOSTypeIcons [][2] =
     {
         {"Other",           ":/os_other.png"},
