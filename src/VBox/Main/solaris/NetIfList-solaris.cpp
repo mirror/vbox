@@ -91,8 +91,8 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
         SolarisNICMap.insert(NICPair("rtls", "Realtek 8139 Fast Ethernet"));
         SolarisNICMap.insert(NICPair("skge", "SksKonnect Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("spwr", "SMC EtherPower II 10/100 (9432) Ethernet"));
+        SolarisNICMap.insert(NICPair("vboxnet", "VirtualBox Host Ethernet"));
         SolarisNICMap.insert(NICPair("vnic", "Virtual Network Interface Ethernet"));
-        SolarisNICMap.insert(NICPair("xge", "Neterior Xframe Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("xge", "Neterior Xframe 10Gigabit Ethernet"));
     }
 
