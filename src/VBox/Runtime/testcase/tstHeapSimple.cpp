@@ -38,6 +38,7 @@
 #include <iprt/string.h>
 #include <iprt/param.h>
 #include <iprt/assert.h>
+#include <iprt/log.h>
 
 
 int main(int argc, char *argv[])
