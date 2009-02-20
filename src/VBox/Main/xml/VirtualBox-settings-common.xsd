@@ -606,6 +606,7 @@
     </xsd:element>
     <xsd:element name="HostOnlyNetwork">
       <xsd:complexType>
+        <xsd:attribute name="name" type="xsd:string" use="optional"/>
       </xsd:complexType>
     </xsd:element>
   </xsd:choice>

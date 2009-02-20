@@ -1371,6 +1371,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                           HifName.raw());
                     }
 
+                    BOOL real;
+                    hrc = hostInterface->COMGETTER(Real)(&real);
+                    if(FAILED(hrc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Real) failed, hrc (0x%x)", hrc));
+                        H();
+                    }
+
+                    if(!real)
+                    {
+                        LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Real) failed, hrc (0x%x)", hrc));
+                        return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                                              N_("Interface ('%ls') is a Host Adapter interface"),
+                                                              HifName.raw());
+                    }
+
                     Guid hostIFGuid;
                     hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());
                     if(FAILED(hrc))
@@ -1636,12 +1652,68 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
                 rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
-                rc = CFGMR3InsertString(pCfg, "Trunk", "vboxnet0");             RC_CHECK();
-                rc = CFGMR3InsertString(pCfg, "Network", "HostInterfaceNetworking-vboxnet0"); RC_CHECK();
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
+#if defined(RT_OS_WINDOWS)
+                Bstr HifName;
+                hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
+                if(FAILED(hrc))
+                {
+                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));
+                    H();
+                }
+
+                Utf8Str HifNameUtf8(HifName);
+                const char *pszHifName = HifNameUtf8.raw();
+                ComPtr<IHostNetworkInterface> hostInterface;
+                rc = host->FindHostNetworkInterfaceByName(HifName, hostInterface.asOutParam());
+                if (!SUCCEEDED(rc))
+                {
+                    AssertBreakpoint();
+                    LogRel(("NetworkAttachmentType_HostOnly: FindByName failed, rc (0x%x)", rc));
+                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                      N_("Inexistent host networking interface, name '%ls'"),
+                                      HifName.raw());
+                }
+
+                BOOL real;
+                hrc = hostInterface->COMGETTER(Real)(&real);
+                if(FAILED(hrc))
+                {
+                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Real) failed, hrc (0x%x)", hrc));
+                    H();
+                }
+
+                if(real)
+                {
+                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Real) failed, hrc (0x%x)", hrc));
+                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                                          N_("Interface ('%ls') is not a Host Adapter interface"),
+                                                          HifName.raw());
+                }
+
+                Guid hostIFGuid;
+                hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());
+                if(FAILED(hrc))
+                {
+                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Id) failed, hrc (0x%x)", hrc));
+                    H();
+                }
+                char szDriverGUID[RTUUID_STR_LENGTH];
+                strcpy(szDriverGUID , hostIFGuid.toString().raw());
+                const char *pszTrunk = szDriverGUID;
+
                 /* TODO: set the proper Trunk and Network values, currently the driver uses the first adapter instance */
                 rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp); RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "Trunk", pszTrunk);               RC_CHECK();
+                char szNetwork[80];
+                RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
+                rc = CFGMR3InsertString(pCfg, "Network", szNetwork);            RC_CHECK();
+#elif defined(RT_OS_DARWIN)
+                rc = CFGMR3InsertString(pCfg, "Trunk", "vboxnet0");             RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "Network", "HostInterfaceNetworking-vboxnet0"); RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp); RC_CHECK();
 #else
+                rc = CFGMR3InsertString(pCfg, "Trunk", "vboxnet0");             RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "Network", "HostInterfaceNetworking-vboxnet0"); RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
 #endif
                 break;
