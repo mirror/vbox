@@ -162,36 +162,30 @@ ifdef VBOX_WITH_QT4_SUN
  ifeq ($(KBUILD_TARGET),darwin)
   qt4-bin_INST = $(INST_VIRTUALBOX)Contents/
   ifeq ($(KBUILD_TARGET_ARCH),amd64)
-   qt4-bin_SOURCES = $(foreach qtmod,QtCore QtGui QtNetwork \
-		,$(VBOX_PATH_QT4)/lib/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox) \
-		$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib \
-		$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib \
-		$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
-   qt4-bin_SYMLINKS = \
-		Frameworks/QtGuiVBox.framework/Resources=>Versions/4/Resources/ \
-		$(foreach qtmod,QtCore QtGui QtNetwork \
-		,Frameworks/$(qtmod)VBox.framework/$(qtmod)VBox=>Versions/4/$(qtmod)VBox)
+   qt4-bin_SOURCES = $(foreach qtmod, QtCore QtGui QtNetwork \
+   		,$(VBOX_PATH_QT4)/lib/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox) \
+   	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib \
+   	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib \
+   	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
   else
    qt4-bin_SOURCES = $(foreach qtmod,QtCore QtGui QtNetwork \
-		,$(VBOX_PATH_QT4)/Frameworks/$(qtmod).framework/Versions/4/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/4/$(qtmod))
+   	,$(VBOX_PATH_QT4)/Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod).framework/Versions/4/$(qtmod)VBox)
+   ifdef VBOX_WITH_COCOA_QT
+    qt4-bin_SOURCES += \
+    	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib \
+    	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib \
+    	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
+   endif
   endif
-  ## @todo this should be done as part of the Qt build!
   ## @todo Qt 4.5 bug: _debug.dylib for all plugins! QT45
   qt4-bin_SOURCES += \
-	$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
-  qt4-bin_CLEAN = $(PATH_qt4-bin)/libqtaccessiblewidgets.dylib
-$$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib: \
-		$$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(if-expr $(KBUILD_TARGET_ARCH) == "amd64",_debug,).dylib | $$(dir $$@)
-	$(call MSG_TOOL,install_name_tool,accessible,$<,$@)
-	$(QUIET)$(INSTALL) $< $@
-	$(QUIET)install_name_tool \
-		$(foreach qtmod, QtCore QtGui QtNetwork \
-		,-change                       $(qtmod).framework/Versions/4/QtCore \
-		@executable_path/../Frameworks/$(qtmod).framework/Versions/4/QtCore \
-		-change                        $(qtmod)VBox.framework/Versions/4/QtCoreVBox \
-		@executable_path/../Frameworks/$(qtmod)VBox.framework/Versions/4/QtCoreVBox ) \
-		$@
-
+  	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(if-expr $(KBUILD_TARGET_ARCH) == "amd64",_debug,).dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
+  qt4-bin_SYMLINKS = $(foreach qtmod, QtCore QtGui QtNetwork \
+  		,Frameworks/$(qtmod)VBox.framework/$(qtmod)VBox=>Versions/4/$(qtmod)VBox)
+  ifdef VBOX_WITH_COCOA_QT
+   qt4-bin_SYMLINKS += \
+   	Frameworks/QtGuiVBox.framework/Resources=>Versions/4/Resources/
+  endif
  else ifeq ($(KBUILD_TARGET),win)
   qt4-bin_INST = $(INST_BIN)
   qt4-bin_SOURCES = \
