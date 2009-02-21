@@ -168,13 +168,13 @@ ifdef VBOX_WITH_QT4_SUN
    	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib \
    	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
   else
-   qt4-bin_SOURCES = $(foreach qtmod,QtCore QtGui QtNetwork \
-   	,$(VBOX_PATH_QT4)/Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod).framework/Versions/4/$(qtmod)VBox)
+   qt4-bin_SOURCES = $(foreach qtmod, QtCore QtGui QtNetwork \
+   	,$(VBOX_PATH_QT4)/Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox)
    ifdef VBOX_WITH_COCOA_QT
     qt4-bin_SOURCES += \
-    	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib \
-    	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib \
-    	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
+    	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib \
+    	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib \
+    	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
    endif
   endif
   ## @todo Qt 4.5 bug: _debug.dylib for all plugins! QT45
