@@ -999,7 +999,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         if (pThis->pDrvMediaAsyncPort)
             uOpenFlags |= VD_OPEN_FLAGS_ASYNC_IO;
 
-        /** Try to open backend in asyc I/O mode first. */
+        /* Try to open backend in asyc I/O mode first. */
         rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);
         if (rc == VERR_NOT_SUPPORTED)
         {
