@@ -1116,9 +1116,11 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 || UNIX_CHECK_FD_SET(so, NetworkEvents, rderr))
             {
                 int err;
-                int inq = -1, outq;
+                int inq, outq;
+                int status;
+                inq = outq = 0;
                 socklen_t optlen = sizeof(int);
-                int status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
+                status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
                 if (status != 0) 
                     LogRel(("NAT: can't get error status from %R[natsock]\n", so));
 #ifndef RT_OS_SOLARIS
@@ -1132,7 +1134,6 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 if (status != 0) 
                     LogRel(("NAT: can't get depth of OUT queue from %R[natsock]\n", so));
 #else
-                inq = outq = -1;
                 /*
                  * Solaris has bit different ioctl commands and its handlings
                  * hint: streamio(7) I_NREAD 
