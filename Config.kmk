@@ -124,7 +124,7 @@ VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_LIB))
 .DELETE_ON_ERROR:
 
 # Notify about important kBuild updates.
-ifneq ($(call if-expr, $(KMK_REVISION) >= 2243 && $(KBUILD_KMK_REVISION) >= 2206,fine,old),fine)
+ifneq ($(call if-expr, $(KMK_REVISION) >= 2274 && $(KBUILD_KMK_REVISION) >= 2206,fine,old),fine)
  $(error You must update kBuild! KMK_REVISION=$(KMK_REVISION) KBUILD_KMK_REVISION=$(KBUILD_KMK_REVISION) KBUILD_PATH=$(KBUILD_PATH))
 endif
 
