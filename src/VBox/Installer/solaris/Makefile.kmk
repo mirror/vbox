@@ -32,6 +32,9 @@ VBOX_SOL_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
 #
 # Globals
 #
+ifdef VBOX_WITH_COMBINED_SOLARIS_PACKAGE ## @todo remove this when tinderclient.pl is updated.
+ VBOX_WITH_COMBINED_PACKAGE := 1
+endif
 VBOX_PATH_SOL_INST_SRC := $(PATH_SUB_CURRENT)
 SOLARIS_DIR_NAME_64    := amd64
 SOLARIS_DIR_NAME_32    := i386
@@ -59,7 +62,7 @@ SOL_OBJCOPY            := /usr/sfw/bin/gobjcopy --strip-unneeded -R .comment
 # Base package
 PKGINFO_ARCH     = $(shell uname -p)
 PKGINFO_REVSTAMP = $(date %Y.%m.%d.%H.%M)
-ifndef VBOX_WITH_COMBINED_SOLARIS_PACKAGE
+ifndef VBOX_WITH_COMBINED_PACKAGE
  PKG_FILENAME    = VirtualBox-$(VBOX_VERSION_STRING)-SunOS-$(KBUILD_TARGET_ARCH)-r$(VBOX_SVN_REV)
 else
  PKG_FILENAME    = VirtualBox-$(VBOX_VERSION_STRING)-SunOS-r$(VBOX_SVN_REV)
@@ -276,7 +279,7 @@ OTHER_CLEAN += \
 	$(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).tar.gz \
 	$(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg
 
-ifdef VBOX_WITH_COMBINED_SOLARIS_PACKAGE
+ifdef VBOX_WITH_COMBINED_PACKAGE
  SOLARIS_ARCH_DEPFILES = $(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_STRIP_EXES)) \
 	$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_STRIP_BINS)) \
 	$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_STRIP_OBJS)) \
@@ -361,7 +364,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		VBoxISAExec \
 		$(SOLARIS_ARCH_DEPFILES)
 	$(call MSG_L1,Installing binaries $(SOLARIS_INST_DIR))
-ifdef VBOX_WITH_COMBINED_SOLARIS_PACKAGE
+ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(QUIET)$(if $(VBOX_WITH_ADDITIONS_PACKING),$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN_32)/additions/VBoxGuestAdditions.iso            $(SOLARIS_INST_DIR)/additions/)
 else
 	$(QUIET)$(if $(VBOX_WITH_ADDITIONS_PACKING),$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARIS_INST_DIR)/additions/)
@@ -378,7 +381,7 @@ endif
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf            $(SOLARIS_INST_DIR)/vboxflt.conf
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)
-ifdef VBOX_WITH_COMBINED_SOLARIS_PACKAGE
+ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS)/solaris.x86/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2     $(SOLARIS_INST_DIR_32)/libSDL-1.2.so.0,)
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS)/solaris.amd64/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2   $(SOLARIS_INST_DIR_64)/libSDL-1.2.so.0,)
 	@# @todo -XXX- how to get rid of this manual MKDIR ?
@@ -428,7 +431,7 @@ endif
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_SOL_INST_SRC) -- $(SOLARIS_INST_DIR)/makepackage.sh $(if $(VBOX_WITH_HARDENING),--hardened) \
 		$(SOLARIS_INST_DIR) \
 		$(PKG_FILENAME) \
-		$(if $(VBOX_WITH_SOLARIS_COMBINED_PACKAGE),neutral,$(KBUILD_TARGET_ARCH)) \
+		$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE),neutral,$(KBUILD_TARGET_ARCH)) \
 		$(VBOX_SVN_REV) \
 		$(if $(VBOX_WITH_SOLARIS_VBI),$(VBIPKG_FILENAME).pkg,)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_INST_DIR)/$(PKG_FILENAME).tar.gz $(SOLARIS_OUT_BIN)
@@ -502,7 +505,7 @@ $(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_COMMON)): \
 
 
 #
-#  -=-=-=-=-=-=-=- VBI package  -=-=-=-=-=-=-=- 
+#  -=-=-=-=-=-=-=- VBI package  -=-=-=-=-=-=-=-
 #
 $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 		$(VBOX_VERSION_STAMP) \
@@ -534,7 +537,7 @@ $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 
 
 #
-#  -=-=-=-=-=-=-=- Debug package  -=-=-=-=-=-=-=- 
+#  -=-=-=-=-=-=-=- Debug package  -=-=-=-=-=-=-=-
 #
 $(PATH_BIN)/$(DBG_ARCHIVE): \
 		$(VBOX_VERSION_STAMP) \
