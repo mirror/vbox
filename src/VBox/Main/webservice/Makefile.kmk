@@ -68,28 +68,29 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 #
-# Find the gSOAP tools.
+# Find the gSOAP toolkit.
 #
 ifeq ($(VBOX_GSOAP_INSTALLED),)
  VBOX_GSOAP_INSTALLED = 1
- VBOX_PATH_GSOAP   := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_BLD)/gsoap/*)))
+ VBOX_PATH_GSOAP := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_HST)/gsoap/*)))
  ifeq ($(VBOX_PATH_GSOAP),)
-  ifeq ($(KBUILD_HOST_ARCH),amd64)
-   VBOX_PATH_GSOAP  := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS)/$(KBUILD_HOST).x86/gsoap/*)))
+  ifdef KBUILD_DEVTOOLS_HST
+   VBOX_PATH_GSOAP := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_HST_ALT)/gsoap/*)))
   endif
  endif
  ifeq ($(VBOX_PATH_GSOAP),)
   $(warning VBOX_PATH_GSOAP not found...)
-  VBOX_GSOAP_INSTALLED=
- else
-  VBOX_PATH_GSOAP_BIN = $(VBOX_PATH_GSOAP)/bin
+  VBOX_GSOAP_INSTALLED =
  endif
 else
- VBOX_PATH_GSOAP     := $(VBOX_PATH_GSOAP)
- VBOX_PATH_GSOAP_BIN := $(VBOX_PATH_GSOAP)
+ VBOX_PATH_GSOAP       := $(VBOX_PATH_GSOAP)
 endif
-VBOX_SOAPCPP2 = $(VBOX_PATH_GSOAP_BIN)/soapcpp2$(HOSTSUFF_EXE)
-VBOX_WSDL2H   = $(VBOX_PATH_GSOAP_BIN)/wsdl2h$(HOSTSUFF_EXE)
+VBOX_PATH_GSOAP_BIN    := $(strip $(if $(VBOX_PATH_GSOAP_BIN),   $(VBOX_PATH_GSOAP_BIN),   $(VBOX_PATH_GSOAP)/bin))
+VBOX_PATH_GSOAP_IMPORT := $(strip $(if $(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP)/import))
+VBOX_GSOAP_INCS        := $(strip $(if $(VBOX_GSOAP_INCS),       $(VBOX_GSOAP_INCS),       $(VBOX_PATH_GSOAP) $(VBOX_PATH_GSOAP_IMPORT) ))
+VBOX_GSOAP_CXX_SOURCES := $(strip $(if $(VBOX_GSOAP_CXX_SOURCES),$(VBOX_GSOAP_CXX_SOURCES),$(VBOX_PATH_GSOAP)/stdsoap2.cpp))
+VBOX_SOAPCPP2          := $(VBOX_PATH_GSOAP_BIN)/soapcpp2$(HOSTSUFF_EXE)
+VBOX_WSDL2H            := $(VBOX_PATH_GSOAP_BIN)/wsdl2h$(HOSTSUFF_EXE)
 
 
 #
@@ -151,7 +152,7 @@ ifdef VBOX_GSOAP_INSTALLED
   vboxsoap_CXXFLAGS.win += -bigobj
  endif
  vboxsoap_INCS := \
-	gsoap \
+	$(VBOX_GSOAP_INCS) \
 	$(VBOXWEB_OUT_DIR) \
 	$(PATH_SUB_CURRENT)
  ifdef VBOX_WITHOUT_SPLIT_SOAPC
@@ -182,7 +183,7 @@ ifdef VBOX_GSOAP_INSTALLED
  endif
  vboxsoap_CLEAN := $(vboxsoap_SOURCES) # lazy bird
  vboxsoap_SOURCES += \
-	gsoap/stdsoap2.cpp
+	$(VBOX_GSOAP_CXX_SOURCES)
 
  vboxsoap_ORDERDEPS = \
 	$(VBOXWEB_IDL_SRC) \
@@ -211,7 +212,7 @@ endif
  vboxwebsrv_TEMPLATE = VBOXMAINCLIENTEXE
  vboxwebsrv_DEFS += SOCKET_CLOSE_ON_EXEC
  vboxwebsrv_INCS = \
-     	gsoap \
+     	$(VBOX_GSOAP_INCS) \
      	$(VBOXWEB_OUT_DIR) \
      	.
  vboxwebsrv_CXXFLAGS.win = -EHsc ## @todo need to fix this template one day
@@ -244,7 +245,7 @@ endif
   webtest_CXXFLAGS.win += -bigobj
  endif
  webtest_INCS := \
-     gsoap \
+     $(VBOX_GSOAP_INCS) \
      $(VBOXWEB_OUT_DIR) \
      .
  webtest_LIBS += \
@@ -454,7 +455,7 @@ $(VBOXWEB_OUT_DIR)/gsoap_generate_all_ts \
 : $(VBOXWEB_GSOAPH_FROM_GSOAP) $(VBOXWEB_GSOAPH_FROM_XSLT) $(NSMAP) $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,lots of files,$(GSOAPH_RELEVANT))
 	$(RM) -f $@
-	$(REDIRECT) -C $(VBOXWEB_OUT_DIR) -- $(VBOX_SOAPCPP2) $(VBOXWEB_SOAPCPP2_SKIP_FILES) -L -w -I$(VBOX_PATH_WEBSERVICE)/gsoap $(GSOAPH_RELEVANT)
+	$(REDIRECT) -C $(VBOXWEB_OUT_DIR) -- $(VBOX_SOAPCPP2) $(VBOXWEB_SOAPCPP2_SKIP_FILES) -L -w -I$(VBOX_PATH_GSOAP_IMPORT) $(GSOAPH_RELEVANT)
 	$(APPEND) $@ done
 
 # copy the generated headers and stuff. This has to be a seperate rule if we
