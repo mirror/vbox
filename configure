@@ -87,6 +87,7 @@ LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
 LIBCAP="-lcap"
 GSOAP=""
+GSOAP_IMPORT=""
 LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib -lXext -lX11"
 INCX11="/usr/local/include"
 LIBXCURSOR="-lXcursor"
@@ -1625,19 +1626,40 @@ setup_wine()
 }
 
 #
-#
+# Check for gSOAP.
 #
 check_gsoap()
 {
   test_header "GSOAP compiler"
   if [ -z "$GSOAP" ]; then
-    GSOAP="/usr/bin"
+    GSOAP="/usr"
   fi
-  if which_wrapper "$GSOAP/soapcpp2" > /dev/null; then
-    if which_wrapper "$GSOAP/wsdl2h" > /dev/null; then
-      cnf_append "VBOX_GSOAP_INSTALLED" "1"
-      cnf_append "VBOX_PATH_GSOAP"      "$GSOAP"
-      log_success "found"
+  if which_wrapper "$GSOAP/bin/soapcpp2" > /dev/null; then
+    if which_wrapper "$GSOAP/bin/wsdl2h" > /dev/null; then
+      if [ -f "$GSOAP/include/stdsoap2.h" ]; then
+        # TODO: Check for libgsoap++.a/so
+
+        if [ -z "$GSOAP_IMPORT" ]; then
+          GSOAP_IMPORT="$GSOAP/share/gsoap/import"
+          if [ ! -d "$GSOAP_IMPORT"  -a  -d "$GSOAP/include/gsoap" ]; then
+            GSOAP_IMPORT="$GSOAP/include/gsoap"
+          fi
+        fi
+        if [ -f "$GSOAP_IMPORT/stlvector.h" ]; then
+          cnf_append "VBOX_GSOAP_INSTALLED"   "1"
+          cnf_append "VBOX_PATH_GSOAP"        "$GSOAP"
+          cnf_append "VBOX_PATH_GSOAP_IMPORT" "$GSOAP_IMPORT"
+          cnf_append "VBOX_GSOAP_CXX_SOURCES" ""
+          cnf_append "VBOX_GSOAP_CXX_LIBS"    "libgsoap++"
+          log_success "found"
+        else
+          log_failure "stlvector.h not found -- disabling webservice"
+          cnf_append "VBOX_WITH_WEBSERVICES" ""
+        fi
+      else
+        log_failure "stdsoap2.h not found -- disabling webservice"
+        cnf_append "VBOX_WITH_WEBSERVICES" ""
+      fi
     else
       log_failure "wsdl2h not found -- disabling webservice"
       cnf_append "VBOX_WITH_WEBSERVICES" ""
@@ -1727,7 +1749,9 @@ Paths:
   --with-linux=DIR         Linux kernel source directory [$LINUX]
   --with-mkisofs=PATH      location of mkisofs [$MKISOFS]
   --with-qt-dir=DIR        directory for Qt4 headers/libraries [pkgconfig]
-  --with-gsoap-dir=PATH    directory for SOAP compiler (soapcpp2 and wsdl2h)
+  --with-gsoap-dir=PATH    directory for gSOAP compiler/headers/libraries
+                           (soapcpp2 and wsdl2h, soapstd2.h, libgsoap++.a/so)
+  --with-gsoap-import=PATH directory for gSOAP import files (stlvector.h)
   --out-path=PATH          the folder to which configuration and build output
                            should go
 
@@ -1775,6 +1799,9 @@ for option in $*; do
       ;;
     --with-gsoap-dir=*)
       GSOAP=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-gsoap-import=*)
+      GSOAP_IMPORT=`echo $option | cut -d'=' -f2`
       ;;
     --with-iasl=*)
       IASL=`echo $option | cut -d'=' -f2`
