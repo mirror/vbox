@@ -70,13 +70,20 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Find the gSOAP toolkit.
 #
+# Note! We're not using the gSOAP toolkit correctly. The main issue is that
+#       compiling soapcpp2.cpp instead of using the library. So, in order
+#       to make this work with a locally installed gSOAP toolkit there are
+#       some hoops to jump thru to say the least... Shipping soapcpp2.cpp/h
+#       is out of the question without also including the two soap tools.
+#
 ifeq ($(VBOX_GSOAP_INSTALLED),)
  VBOX_GSOAP_INSTALLED = 1
- VBOX_PATH_GSOAP := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_HST)/gsoap/*)))
+ VBOX_PATH_GSOAP := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS)/common/gsoap/*)))
  ifeq ($(VBOX_PATH_GSOAP),)
-  ifdef KBUILD_DEVTOOLS_HST
-   VBOX_PATH_GSOAP := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_HST_ALT)/gsoap/*)))
-  endif
+  VBOX_PATH_GSOAP := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_HST)/gsoap/*)))
+ endif
+ if "$(VBOX_PATH_GSOAP)" == "" && defined(KBUILD_DEVTOOLS_HST)
+  VBOX_PATH_GSOAP := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_HST_ALT)/gsoap/*)))
  endif
  ifeq ($(VBOX_PATH_GSOAP),)
   $(warning VBOX_PATH_GSOAP not found...)
@@ -85,12 +92,28 @@ ifeq ($(VBOX_GSOAP_INSTALLED),)
 else
  VBOX_PATH_GSOAP       := $(VBOX_PATH_GSOAP)
 endif
-VBOX_PATH_GSOAP_BIN    := $(strip $(if $(VBOX_PATH_GSOAP_BIN),   $(VBOX_PATH_GSOAP_BIN),   $(VBOX_PATH_GSOAP)/bin))
+VBOX_PATH_GSOAP_BIN    := $(strip $(VBOX_PATH_GSOAP_BIN))
+if "$(VBOX_PATH_GSOAP_BIN)" == ""
+ VBOX_PATH_GSOAP_BIN   := $(VBOX_PATH_GSOAP)/bin
+ if      "$(KBUILD_HOST)" == "darwin"
+  VBOX_PATH_GSOAP_BIN  := $(VBOX_PATH_GSOAP_BIN)/macosx
+ else if "$(KBUILD_HOST)" == "win"
+  VBOX_PATH_GSOAP_BIN  := $(VBOX_PATH_GSOAP_BIN)/win32
+ else if "$(KBUILD_HOST)" == "linux"
+  VBOX_PATH_GSOAP_BIN  := $(VBOX_PATH_GSOAP_BIN)/linux386
+ else
+  VBOX_PATH_GSOAP_BIN  := $(VBOX_PATH_GSOAP_BIN)/$(KBUILD_HOST)
+ endif
+ if !exists($(VBOX_PATH_GSOAP_BIN))
+  VBOX_PATH_GSOAP_BIN  := $(VBOX_PATH_GSOAP)/bin
+ endif
+endif
+VBOX_SOAPCPP2          := $(VBOX_PATH_GSOAP_BIN)/soapcpp2$(HOSTSUFF_EXE)
+VBOX_WSDL2H            := $(VBOX_PATH_GSOAP_BIN)/wsdl2h$(HOSTSUFF_EXE)
+
 VBOX_PATH_GSOAP_IMPORT := $(strip $(if $(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP)/import))
 VBOX_GSOAP_INCS        := $(strip $(if $(VBOX_GSOAP_INCS),       $(VBOX_GSOAP_INCS),       $(VBOX_PATH_GSOAP) $(VBOX_PATH_GSOAP_IMPORT) ))
 VBOX_GSOAP_CXX_SOURCES := $(strip $(if $(VBOX_GSOAP_CXX_SOURCES),$(VBOX_GSOAP_CXX_SOURCES),$(VBOX_PATH_GSOAP)/stdsoap2.cpp))
-VBOX_SOAPCPP2          := $(VBOX_PATH_GSOAP_BIN)/soapcpp2$(HOSTSUFF_EXE)
-VBOX_WSDL2H            := $(VBOX_PATH_GSOAP_BIN)/wsdl2h$(HOSTSUFF_EXE)
 
 
 #
