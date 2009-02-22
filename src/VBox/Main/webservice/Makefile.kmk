@@ -76,6 +76,16 @@ include $(KBUILD_PATH)/subheader.kmk
 #       some hoops to jump thru to say the least... Shipping soapcpp2.cpp/h
 #       is out of the question without also including the two soap tools.
 #
+# Some observations on distros for OSE / configure:
+#       The proposed gentoo ebuild screws up several things in the install phase
+#       and thus fails to ship stdsoap2.cpp and relatives.
+#
+#       debian (2.7.9l-0.2) stuffs stdsoap2.cpp and a handful of the import files
+#       into /usr/include/gsoap.
+#
+#       fedora (2.7.12-fc10.x86_64) uses the default install layout and does not
+#       ship stdsoap2.cpp and friends.
+#
 ifeq ($(VBOX_GSOAP_INSTALLED),)
  VBOX_GSOAP_INSTALLED = 1
  VBOX_PATH_GSOAP := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS)/common/gsoap/*)))
@@ -114,6 +124,7 @@ VBOX_WSDL2H            := $(VBOX_PATH_GSOAP_BIN)/wsdl2h$(HOSTSUFF_EXE)
 VBOX_PATH_GSOAP_IMPORT := $(strip $(if $(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP)/import))
 VBOX_GSOAP_INCS        := $(strip $(if $(VBOX_GSOAP_INCS),       $(VBOX_GSOAP_INCS),       $(VBOX_PATH_GSOAP) $(VBOX_PATH_GSOAP_IMPORT) ))
 VBOX_GSOAP_CXX_SOURCES := $(strip $(if $(VBOX_GSOAP_CXX_SOURCES),$(VBOX_GSOAP_CXX_SOURCES),$(VBOX_PATH_GSOAP)/stdsoap2.cpp))
+VBOX_GSOAP_CXX_LIBS    := $(strip $(if $(VBOX_GSOAP_CXX_LIBS),   $(VBOX_GSOAP_CXX_LIBS),))
 
 
 #
@@ -207,7 +218,8 @@ ifdef VBOX_GSOAP_INSTALLED
  vboxsoap_CLEAN := $(vboxsoap_SOURCES) # lazy bird
  vboxsoap_SOURCES += \
 	$(VBOX_GSOAP_CXX_SOURCES)
-
+ vboxsoap_LIBS += \
+	$(VBOX_GSOAP_CXX_LIBS)
  vboxsoap_ORDERDEPS = \
 	$(VBOXWEB_IDL_SRC) \
 	$(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
