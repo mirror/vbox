@@ -24,6 +24,8 @@
 #include "Logging.h"
 
 #include <iprt/cpputils.h>
+#include <iprt/ldr.h>
+#include <iprt/process.h>
 
 #include <VBox/settings.h>
 
@@ -328,6 +330,44 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioController)(AudioControllerType_T aAud
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
+
+AudioAdapter::Data::Data()
+{
+    /* Generic defaults */
+    mEnabled = false;
+    mAudioController = AudioControllerType_AC97;
+    /* Driver defaults which are OS specific */
+#if defined (RT_OS_WINDOWS)
+# ifdef VBOX_WITH_WINMM
+    mAudioDriver = AudioDriverType_WinMM;
+# else /* VBOX_WITH_WINMM */
+    mAudioDriver = AudioDriverType_DirectSound;
+# endif /* !VBOX_WITH_WINMM */
+#elif defined (RT_OS_SOLARIS)
+    mAudioDriver = AudioDriverType_SolAudio;
+#elif defined (RT_OS_LINUX)
+# if defined (VBOX_WITH_PULSE)
+    /* Check for the pulse library & that the pulse audio daemon is running. */
+    if (RTLdrIsLoadable ("libpulse.so.0") &&
+        RTProcIsRunningByName ("pulseaudio"))
+        mAudioDriver = AudioDriverType_Pulse;
+    else
+# endif /* VBOX_WITH_PULSE */
+# if defined (VBOX_WITH_ALSA)
+        /* Check if we can load the ALSA library */
+        if (RTLdrIsLoadable ("libasound.so.2"))
+            mAudioDriver = AudioDriverType_ALSA;
+        else
+# endif /* VBOX_WITH_ALSA */
+            mAudioDriver = AudioDriverType_OSS;
+#elif defined (RT_OS_DARWIN)
+    mAudioDriver = AudioDriverType_CoreAudio;
+#elif defined (RT_OS_OS2)
+    mAudioDriver = AudioDriverType_MMP;;
+#else
+    mAudioDriver = AudioDriverType_Null;
+#endif
+}
 
 /**
  *  Loads settings from the given machine node.
