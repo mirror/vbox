@@ -511,11 +511,11 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
      * Can skip this if mappings are safely fixed.
      */
     if (pVM->pgm.s.fMappingsFixed)
-        return VINF_SUCCESS;
+        return;
 
 # ifdef IN_RING0
     AssertFailed();
-    return VERR_INTERNAL_ERROR;
+    return;
 # else
 #  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
