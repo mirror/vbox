@@ -429,8 +429,6 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
  */
 void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iPDE)
 {
-    Log(("pgmMapCheckShadowPDEs pde %x (mappings enabled %d)\n", iPDE, pgmMapAreMappingsEnabled(&pVM->pgm.s)));
-
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
