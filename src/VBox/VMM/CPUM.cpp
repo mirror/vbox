@@ -751,7 +751,7 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
 
         pCtx->trHid.u32Limit            = 0xffff;
         pCtx->trHid.Attr.n.u1Present    = 1;
-        pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_386_TSS_BUSY;
+        pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_286_TSS_BUSY;
 
         pCtx->dr[6]                     = X86_DR6_INIT_VAL;
         pCtx->dr[7]                     = X86_DR7_INIT_VAL;
