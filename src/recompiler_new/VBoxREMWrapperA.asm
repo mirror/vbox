@@ -1,7 +1,8 @@
 ; $Id$
 ;; @file
-;
 ; VBoxREM Wrapper, Assembly routines and wrapper Templates.
+;
+
 ;
 ; Copyright (C) 2006-2007 Sun Microsystems, Inc.
 ;
