@@ -60,25 +60,32 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
  SOLARIS_ADD_INST_DIR_32    := $(SOLARIS_ADD_INST_DIR)
  VBOX_SOLPACKFILES = \
 	$(SOLARIS_ADD_BIN_64)/vboxguest \
+	$(SOLARIS_ADD_BIN_64)/vboxvfs \
 	$(SOLARIS_ADD_BIN_64)/VBoxClient \
 	$(SOLARIS_ADD_BIN_64)/VBoxService \
 	$(SOLARIS_ADD_BIN_64)/VBoxControl \
 	$(SOLARIS_ADD_BIN_64)/vboxvideo_drv_13.so \
 	$(SOLARIS_ADD_BIN_64)/vboxvideo_drv_14.so \
+	$(SOLARIS_ADD_BIN_64)/vboxvideo_drv_15.so \
 	$(SOLARIS_ADD_BIN_64)/vboxvideo_drv_70.so \
 	$(SOLARIS_ADD_BIN_64)/vboxvideo_drv_71.so \
 	$(SOLARIS_ADD_BIN_64)/vboxmouse_drv_14.so \
+	$(SOLARIS_ADD_BIN_64)/vboxmouse_drv_15.so \
 	$(SOLARIS_ADD_BIN_64)/vboxmouse_drv_70.so \
 	$(SOLARIS_ADD_BIN_64)/vboxmouse_drv_71.so \
 	$(SOLARIS_ADD_BIN_32)/vboxguest \
+	$(SOLARIS_ADD_BIN_32)/vboxvfs \
+	$(SOLARIS_ADD_BIN_32)/vboxvfsmount \
 	$(SOLARIS_ADD_BIN_32)/VBoxClient \
 	$(SOLARIS_ADD_BIN_32)/VBoxService \
 	$(SOLARIS_ADD_BIN_32)/VBoxControl \
 	$(SOLARIS_ADD_BIN_32)/vboxvideo_drv_13.so \
 	$(SOLARIS_ADD_BIN_32)/vboxvideo_drv_14.so \
+	$(SOLARIS_ADD_BIN_32)/vboxvideo_drv_15.so \
 	$(SOLARIS_ADD_BIN_32)/vboxvideo_drv_70.so \
 	$(SOLARIS_ADD_BIN_32)/vboxvideo_drv_71.so \
 	$(SOLARIS_ADD_BIN_32)/vboxmouse_drv_14.so \
+	$(SOLARIS_ADD_BIN_32)/vboxmouse_drv_15.so \
 	$(SOLARIS_ADD_BIN_32)/vboxmouse_drv_70.so \
 	$(SOLARIS_ADD_BIN_32)/vboxmouse_drv_71.so
 else
@@ -90,16 +97,20 @@ else
  endif
  VBOX_SOLPACKFILES = \
 	$(SOLARIS_ADD_BIN)/vboxguest \
+	$(SOLARIS_ADD_BIN)/vboxvfs \
+	$(SOLARIS_ADD_BIN)/vboxvfsmount \
 	$(SOLARIS_ADD_BIN)/VBoxClient \
 	$(SOLARIS_ADD_BIN)/VBoxService \
 	$(SOLARIS_ADD_BIN)/VBoxControl \
 	$(SOLARIS_ADD_BIN)/vboxvideo_drv_13.so \
 	$(SOLARIS_ADD_BIN)/vboxvideo_drv_14.so \
 	$(SOLARIS_ADD_BIN)/vboxvideo_drv_15.so \
+	$(SOLARIS_ADD_BIN)/vboxvideo_drv_16.so \
 	$(SOLARIS_ADD_BIN)/vboxvideo_drv_70.so \
 	$(SOLARIS_ADD_BIN)/vboxvideo_drv_71.so \
 	$(SOLARIS_ADD_BIN)/vboxmouse_drv_14.so \
 	$(SOLARIS_ADD_BIN)/vboxmouse_drv_15.so \
+	$(SOLARIS_ADD_BIN)/vboxmouse_drv_16.so \
 	$(SOLARIS_ADD_BIN)/vboxmouse_drv_70.so \
 	$(SOLARIS_ADD_BIN)/vboxmouse_drv_71.so
 endif
@@ -153,29 +164,36 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf  $(SOLARIS_ADD_INST_DIR)/vboxguest.conf
 ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxguest                                          $(SOLARIS_ADD_INST_DIR_64)/vboxguest
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxvfs                                            $(SOLARIS_ADD_INST_DIR_64)/vboxvfs
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxClient                                      $(SOLARIS_ADD_INST_DIR_64)/VBoxClient
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxService                                     $(SOLARIS_ADD_INST_DIR_64)/VBoxService
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxControl                                     $(SOLARIS_ADD_INST_DIR_64)/VBoxControl
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxvideo_drv_13.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_13.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxvideo_drv_14.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_14.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxvideo_drv_15.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_15.so
+	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxvideo_drv_16.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_16.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxvideo_drv_70.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxvideo_drv_71.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_71.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxmouse_drv_14.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxmouse_drv_14.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxmouse_drv_15.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxmouse_drv_15.so
+	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxmouse_drv_16.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxmouse_drv_16.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxmouse_drv_70.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxmouse_drv_71.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxmouse_drv_71.so
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxguest                                          $(SOLARIS_ADD_INST_DIR_32)/vboxguest
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxvfs                                            $(SOLARIS_ADD_INST_DIR_32)/vboxvfs
+	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_ADD_BIN_32)/vboxvfsmount                                       $(SOLARIS_ADD_INST_DIR_32)/vboxvfsmount
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxClient                                      $(SOLARIS_ADD_INST_DIR_32)/VBoxClient
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxService                                     $(SOLARIS_ADD_INST_DIR_32)/VBoxService
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxControl                                     $(SOLARIS_ADD_INST_DIR_32)/VBoxControl
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxvideo_drv_13.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_13.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxvideo_drv_14.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_14.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxvideo_drv_15.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_15.so
+	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxvideo_drv_16.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_16.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxvideo_drv_70.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxvideo_drv_71.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_71.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxmouse_drv_14.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxmouse_drv_14.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxmouse_drv_15.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxmouse_drv_15.so
+	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxmouse_drv_16.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxmouse_drv_16.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxmouse_drv_70.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxmouse_drv_71.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxmouse_drv_71.so
  ifdef VBOX_COMPRESS
@@ -186,6 +204,7 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_13.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_14.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_15.so
+	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_16.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_70.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_64)/vboxvideo_drv_71.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_64)/vboxmouse_drv_14.so
@@ -198,6 +217,7 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_13.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_14.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_15.so
+	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_16.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_70.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_32)/vboxvideo_drv_71.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_32)/vboxmouse_drv_14.so
@@ -207,16 +227,20 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
  endif # VBOX_COMPRESS
 else  # !VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN)/vboxguest                                             $(SOLARIS_ADD_INST_DIR_ISA)/vboxguest
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN)/vboxvfs                                               $(SOLARIS_ADD_INST_DIR_ISA)/vboxvfs
+	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_ADD_BIN)/vboxvfsmount                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxvfsmount
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxClient                                         $(SOLARIS_ADD_INST_DIR_ISA)/VBoxClient
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxService                                        $(SOLARIS_ADD_INST_DIR_ISA)/VBoxService
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxControl                                        $(SOLARIS_ADD_INST_DIR_ISA)/VBoxControl
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxvideo_drv_13.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_13.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxvideo_drv_14.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_14.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxvideo_drv_15.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_15.so
+	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxvideo_drv_16.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_16.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxvideo_drv_70.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxvideo_drv_71.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_71.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_14.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_14.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_15.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_15.so
+	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_16.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_16.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_70.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_71.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_71.so
  ifdef VBOX_COMPRESS
@@ -227,10 +251,12 @@ else  # !VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_13.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_14.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_15.so
+	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_16.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_70.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/vboxvideo_drv_71.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_14.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_15.so
+	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_16.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_70.so
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_71.so
  endif # VBOX_COMPRESS

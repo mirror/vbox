@@ -71,14 +71,27 @@ filelist_fixup prototype '$2 == "none"'                                         
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxService=VBoxService"'              '$4 = "4755"'
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxService=amd64/VBoxService"'  '$4 = "4755"'
 
-# 32-bit kernel module
+# 32-bit vboxguest
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest"'              '$3 = "usr/kernel/drv/vboxguest=vboxguest"; $6="sys"'
 
-# 64-bit kernel module
+# 64-bit vboxguest
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxguest=amd64/vboxguest"'  '$3 = "usr/kernel/drv/amd64/vboxguest=amd64/vboxguest"; $6="sys"'
 
-# kernel module config file
+# vboxguest module config file
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxguest.conf"'    '$3 = "usr/kernel/drv/vboxguest.conf=vboxguest.conf"'
+
+# 32-bit vboxvfs
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxvfs=vboxvfs"'                  '$3 = "usr/kernel/fs/vboxvfs=vboxvfs"; $6="sys"'
+
+# 64-bit vboxvfs
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxvfs=amd64/vboxvfs"'      '$3 = "usr/kernel/fs/amd64/vboxvfs=amd64/vboxvfs"; $6="sys"'
+
+# vboxvfsmount binary (always 32-bit on combined package)
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxvfsmount=vboxvfsmount"'         '$3 = "etc/fs/vboxvfs/mount=vboxvfsmount"; $6="sys"'
+
+# this is required for amd64-specific package where we do not build 32-bit binaries
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxvfsmount=vboxvfsmount"'   '$3 = "etc/fs/vboxvfs/mount=amd64/vboxvfsmount"; $6="sys"'
+
 
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxservice.xml=vboxservice.xml"'  '$3 = "var/svc/manifest/system/virtualbox/vboxservice.xml=vboxservice.xml"'
 echo " --- start of prototype  ---" 

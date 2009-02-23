@@ -28,7 +28,7 @@ echo "This script will unload the VirtualBox Guest kernel module..."
 pkill -INT VBoxClient
 
 # vboxguest.sh would've been installed, we just need to call it.
-/opt/VirtualBoxAdditions/vboxguest.sh stop
+/opt/VirtualBoxAdditions/vboxguest.sh stopall
 
 # remove devlink.tab entry for vboxguest
 sed -e '
