@@ -64,6 +64,27 @@ typedef struct RTLDRREADERFILE
 *   Internal Functions                                                         *
 *******************************************************************************/
 
+RTDECL(bool) RTLdrIsLoadable(const char *pszName)
+{
+    /*
+     * Quick validation.
+     */
+    if (!pszName)
+        return false;
+
+    bool fLoadable = false;
+    RTLDRMOD hLib;
+    /*
+     * Try to load the library.
+     */
+    int rc = RTLdrLoad(pszName, &hLib);
+    if (RT_SUCCESS(rc))
+    {
+        fLoadable = true;
+        RTLdrClose(hLib);
+    }
+    return fLoadable;
+}
 
 /**
  * Gets the address of a named exported symbol.
