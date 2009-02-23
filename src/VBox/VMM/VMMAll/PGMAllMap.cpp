@@ -508,9 +508,9 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
     Log(("PGMMapCheck fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
 
     /*
-     * Can skip this if mappings are safely fixed.
+     * Can skip this if mappings are disabled.
      */
-    if (pVM->pgm.s.fMappingsFixed)
+    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
 # ifdef IN_RING0
@@ -544,10 +544,17 @@ VMMDECL(int) PGMMapActivateAll(PVM pVM)
 {
     Log(("PGMMapActivateAll fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    /*
+     * Can skip this if mappings are disabled.
+     */
+    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
+#else
     /*
      * Can skip this if mappings are safely fixed.
      */
     if (pVM->pgm.s.fMappingsFixed)
+#endif
         return VINF_SUCCESS;
 
 #ifdef IN_RING0
@@ -581,10 +588,17 @@ VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
 {
     Log(("PGMMapDeactivateAll fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    /*
+     * Can skip this if mappings are disabled.
+     */
+    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
+#else
     /*
      * Can skip this if mappings are safely fixed.
      */
     if (pVM->pgm.s.fMappingsFixed)
+#endif
         return VINF_SUCCESS;
 
 #ifdef IN_RING0
@@ -618,10 +632,17 @@ VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
  */
 int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
 {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    /*
+     * Can skip this if mappings are disabled.
+     */
+    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
+#else
     /*
      * Can skip this if mappings are safely fixed.
      */
     if (pVM->pgm.s.fMappingsFixed)
+#endif
         return VINF_SUCCESS;
 
 #ifdef IN_RING0
