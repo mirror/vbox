@@ -1,0 +1,35 @@
+# $Id$
+## @file
+# Sub-Makefile for liblzf.
+#
+
+#
+# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+
+SUB_DEPTH = ../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += VBox-liblzf
+VBox-liblzf_TEMPLATE = VBOXR3
+VBox-liblzf_BLD_TYPE = release # WARNING! Always optimizing this lib.
+VBox-liblzf_DEFS = ULTRA_FAST=1 STRICT_ALIGN=0 INIT_HTAB=1 HLOG=17
+VBox-liblzf_SOURCES = \
+	lzf_c.c \
+	lzf_d.c
+
+include $(KBUILD_PATH)/subfooter.kmk
+
