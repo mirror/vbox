@@ -1,4 +1,4 @@
-# $Id$
+: Config.kmk 43241 2009-02-23 16:18:14Z bird $
 ## @file
 # The global build configuration file for VBox.
 #
@@ -483,8 +483,8 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_SOLARIS_NSL_RESOLVED = 1
 # VBOX_WITH_NETADP = 1
 endif
-# Use the new version of liblzf. Remove with the old liblzf.
-VBOX_WITH_NEW_LIBLZF = 1
+## Use the new version of liblzf. Remove with the old liblzf.
+#VBOX_WITH_NEW_LIBLZF = 1
 
 #
 # Branding
