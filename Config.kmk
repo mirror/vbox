@@ -536,7 +536,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_PDM_ASYNC_COMPLETION=
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
   # Temporary:
-  VBOX_WITH_WEBSERVICES=
   VBOX_WITH_CROGL=
   # Permanent (no working SDL).
   VBOX_WITH_VBOXSDL=
