@@ -348,8 +348,8 @@ AudioAdapter::Data::Data()
 #elif defined (RT_OS_LINUX)
 # if defined (VBOX_WITH_PULSE)
     /* Check for the pulse library & that the pulse audio daemon is running. */
-    if (RTLdrIsLoadable ("libpulse.so.0") &&
-        RTProcIsRunningByName ("pulseaudio"))
+    if (RTProcIsRunningByName ("pulseaudio") &&
+        RTLdrIsLoadable ("libpulse.so.0"))
         mAudioDriver = AudioDriverType_Pulse;
     else
 # endif /* VBOX_WITH_PULSE */
