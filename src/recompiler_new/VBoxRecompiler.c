@@ -67,7 +67,6 @@ extern void tlb_flush_page(CPUX86State *env, target_ulong addr);
 extern void tlb_flush(CPUState *env, int flush_global);
 extern void sync_seg(CPUX86State *env1, int seg_reg, int selector);
 extern void sync_ldtr(CPUX86State *env1, int selector);
-extern int  sync_tr(CPUX86State *env1, int selector);
 
 #ifdef VBOX_STRICT
 unsigned long get_phys_page_offset(target_ulong addr);
@@ -1720,7 +1719,7 @@ REMR3DECL(int)  REMR3State(PVM pVM)
     fFlags = CPUMGetAndClearChangedFlagsREM(pVM);
     LogFlow(("CPUMGetAndClearChangedFlagsREM %x\n", fFlags));
     if (fFlags & (  CPUM_CHANGED_CR4  | CPUM_CHANGED_CR3  | CPUM_CHANGED_CR0
-                  | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_LDTR | CPUM_CHANGED_TR
+                  | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_LDTR
                   | CPUM_CHANGED_FPU_REM | CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_CPUID))
     {
         if (fFlags & CPUM_CHANGED_GLOBAL_TLB_FLUSH)
@@ -1782,26 +1781,10 @@ REMR3DECL(int)  REMR3State(PVM pVM)
                 pVM->rem.s.Env.ldt.selector = pCtx->ldtr;
                 pVM->rem.s.Env.ldt.base     = pCtx->ldtrHid.u64Base;
                 pVM->rem.s.Env.ldt.limit    = pCtx->ldtrHid.u32Limit;
-                pVM->rem.s.Env.ldt.flags    = (pCtx->ldtrHid.Attr.u << 8) & 0xFFFFFF;;
+                pVM->rem.s.Env.ldt.flags    = (pCtx->ldtrHid.Attr.u << 8) & 0xFFFFFF;
             }
             else
                 sync_ldtr(&pVM->rem.s.Env, pCtx->ldtr);
-        }
-
-        if (fFlags & CPUM_CHANGED_TR)
-        {
-            if (fHiddenSelRegsValid)
-            {
-                pVM->rem.s.Env.tr.selector = pCtx->tr;
-                pVM->rem.s.Env.tr.base     = pCtx->trHid.u64Base;
-                pVM->rem.s.Env.tr.limit    = pCtx->trHid.u32Limit;
-                pVM->rem.s.Env.tr.flags    = (pCtx->trHid.Attr.u << 8) & 0xFFFFFF;;
-            }
-            else
-                sync_tr(&pVM->rem.s.Env, pCtx->tr);
-
-            /** @note do_interrupt will fault if the busy flag is still set.... */
-            pVM->rem.s.Env.tr.flags &= ~DESC_TSS_BUSY_MASK;
         }
 
         if (fFlags & CPUM_CHANGED_CPUID)
@@ -1819,6 +1802,16 @@ REMR3DECL(int)  REMR3State(PVM pVM)
         if (fFlags & CPUM_CHANGED_FPU_REM)
             save_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->fpu); /* 'save' is an excellent name. */
     }
+
+    /*
+     * Sync TR unconditionally to make life simpler.
+     */
+    pVM->rem.s.Env.tr.selector = pCtx->tr;
+    pVM->rem.s.Env.tr.base     = pCtx->trHid.u64Base;
+    pVM->rem.s.Env.tr.limit    = pCtx->trHid.u32Limit;
+    pVM->rem.s.Env.tr.flags    = (pCtx->trHid.Attr.u << 8) & 0xFFFFFF;
+    /* Note! do_interrupt will fault if the busy flag is still set... */
+    pVM->rem.s.Env.tr.flags &= ~DESC_TSS_BUSY_MASK;
 
     /*
      * Update selector registers.
@@ -2160,15 +2153,37 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
         VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
     }
 
-    if (pCtx->ldtr != pVM->rem.s.Env.ldt.selector)
+    if (    pCtx->ldtr             != pVM->rem.s.Env.ldt.selector
+        ||  pCtx->ldtrHid.u64Base  != pVM->rem.s.Env.ldt.base
+        ||  pCtx->ldtrHid.u32Limit != pVM->rem.s.Env.ldt.limit
+        ||  pCtx->ldtrHid.Attr.u   != ((pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF))
     {
-        pCtx->ldtr      = pVM->rem.s.Env.ldt.selector;
+        pCtx->ldtr              = pVM->rem.s.Env.ldt.selector;
+        pCtx->ldtrHid.u64Base   = pVM->rem.s.Env.ldt.base;
+        pCtx->ldtrHid.u32Limit  = pVM->rem.s.Env.ldt.limit;
+        pCtx->ldtrHid.Attr.u    = (pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF;
         STAM_COUNTER_INC(&gStatREMLDTRChange);
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
     }
-    if (pCtx->tr != pVM->rem.s.Env.tr.selector)
+
+    if (    pCtx->tr             != pVM->rem.s.Env.tr.selector
+        ||  pCtx->trHid.u64Base  != pVM->rem.s.Env.tr.base
+        ||  pCtx->trHid.u32Limit != pVM->rem.s.Env.tr.limit
+            /* Qemu and AMD/Intel have different ideas about the busy flag ... */
+        ||  pCtx->trHid.Attr.u   != (  (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF
+                                     ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8
+                                     : 0) )
     {
-        pCtx->tr        = pVM->rem.s.Env.tr.selector;
+        Log(("REM: TR changed! %#x{%#llx,%#x,%#x} -> %#x{%llx,%#x,%#x}\n",
+             pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
+             pVM->rem.s.Env.tr.selector, (uint64_t)pVM->rem.s.Env.tr.base, pVM->rem.s.Env.tr.limit,
+             (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8 : 0));
+        pCtx->tr                = pVM->rem.s.Env.tr.selector;
+        pCtx->trHid.u64Base     = pVM->rem.s.Env.tr.base;
+        pCtx->trHid.u32Limit    = pVM->rem.s.Env.tr.limit;
+        pCtx->trHid.Attr.u      = (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF;
+        if (pCtx->trHid.Attr.u)
+            pCtx->trHid.Attr.u |= DESC_TSS_BUSY_MASK >> 8;
         STAM_COUNTER_INC(&gStatREMTRChange);
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
     }
@@ -2176,7 +2191,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     /** @todo These values could still be out of sync! */
     pCtx->csHid.u64Base    = pVM->rem.s.Env.segs[R_CS].base;
     pCtx->csHid.u32Limit   = pVM->rem.s.Env.segs[R_CS].limit;
-    /** @note QEmu saves the 2nd dword of the descriptor; we should store the attribute word only! */
+    /* Note! QEmu saves the 2nd dword of the descriptor; we should store the attribute word only! */
     pCtx->csHid.Attr.u     = (pVM->rem.s.Env.segs[R_CS].flags >> 8) & 0xF0FF;
 
     pCtx->dsHid.u64Base    = pVM->rem.s.Env.segs[R_DS].base;
@@ -2198,14 +2213,6 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     pCtx->ssHid.u64Base    = pVM->rem.s.Env.segs[R_SS].base;
     pCtx->ssHid.u32Limit   = pVM->rem.s.Env.segs[R_SS].limit;
     pCtx->ssHid.Attr.u     = (pVM->rem.s.Env.segs[R_SS].flags >> 8) & 0xF0FF;
-
-    pCtx->ldtrHid.u64Base  = pVM->rem.s.Env.ldt.base;
-    pCtx->ldtrHid.u32Limit = pVM->rem.s.Env.ldt.limit;
-    pCtx->ldtrHid.Attr.u   = (pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF;
-
-    pCtx->trHid.u64Base    = pVM->rem.s.Env.tr.base;
-    pCtx->trHid.u32Limit   = pVM->rem.s.Env.tr.limit;
-    pCtx->trHid.Attr.u     = (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF;
 
     /* Sysenter MSR */
     pCtx->SysEnter.cs      = pVM->rem.s.Env.sysenter_cs;

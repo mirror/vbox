@@ -621,7 +621,7 @@ typedef enum CPUMCPUVENDOR
  * @{ */
 VMMDECL(void)       CPUMGetGuestGDTR(PVM pVM, PVBOXGDTR pGDTR);
 VMMDECL(RTGCPTR)    CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit);
-VMMDECL(RTSEL)      CPUMGetGuestTR(PVM pVM);
+VMMDECL(RTSEL)      CPUMGetGuestTR(PVM pVM, PCPUMSELREGHID pHidden);
 VMMDECL(RTSEL)      CPUMGetGuestLDTR(PVM pVM);
 VMMDECL(uint64_t)   CPUMGetGuestCR0(PVM pVM);
 VMMDECL(uint64_t)   CPUMGetGuestCR2(PVM pVM);
@@ -660,7 +660,6 @@ VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefRCPtr(PVM pVM);
 VMMDECL(uint32_t)   CPUMGetGuestCpuIdStdMax(PVM pVM);
 VMMDECL(uint32_t)   CPUMGetGuestCpuIdExtMax(PVM pVM);
 VMMDECL(uint32_t)   CPUMGetGuestCpuIdCentaurMax(PVM pVM);
-VMMDECL(CPUMSELREGHID *) CPUMGetGuestTRHid(PVM pVM);
 VMMDECL(uint64_t)   CPUMGetGuestEFER(PVM pVM);
 VMMDECL(uint64_t)   CPUMGetGuestMsr(PVM pVM, unsigned idMsr);
 VMMDECL(void)       CPUMSetGuestMsr(PVM pVM, unsigned idMsr, uint64_t valMsr);
