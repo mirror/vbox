@@ -9,6 +9,7 @@
 #include <OpenGL/OpenGL.h>
 
 #include <iprt/time.h>
+#include <iprt/assert.h>
 
 #include <stdio.h>
 
@@ -35,10 +36,17 @@ enum
     kEventVBoxUpdateDock   = 'udck'
 };
 
-#define renderspuSetWindowContext(w, c) \
-    ( SetWRefCon( (w), (unsigned long) (c) ) )
-#define renderspuGetWindowContext(w) \
+#ifdef __LP64__ /** @todo port to 64-bit darwin. */
+# define renderspuSetWindowContext(w, c) \
+    AssertFailed()
+# define renderspuGetWindowContext(w) \
     ( (ContextInfo *) GetWRefCon( ((w)->nativeWindow ? (w)->nativeWindow : (w)->window) ) )
+#else
+# define renderspuSetWindowContext(w, c) \
+    ( SetWRefCon( (w), (unsigned long) (c) ) )
+# define renderspuGetWindowContext(w) \
+    ( (ContextInfo *) GetWRefCon( ((w)->nativeWindow ? (w)->nativeWindow : (w)->window) ) )
+#endif
 
 /* Debug macros */
 #define DEBUG_MSG_RESULT(result, text) \
@@ -87,21 +95,28 @@ windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData)
     case kEventClassWindow:
         switch (kind) {
         case kEventWindowActivated:
+#ifndef __LP64__ /* not available for 64-bit processes? */
         case kEventWindowDrawContent:
+#endif
             break;
 
         case kEventWindowClose:
             HideWindow( window );
+#ifdef __LP64__ /** @todo port to 64-bit darwin. */
+#else
             SetWRefCon( window, (int)NULL );
+#endif
 
             crWarning( "Render SPU: caught kEventWindowClose -- quitting." );
             break;
 
         case kEventWindowShown:
             /* build gl */
+#ifndef __LP64__ /** @todo port to 64-bit darwin! Need to cehck if this event is generated or not (it probably isn't). */
             if( window == FrontWindow() )
                 SetUserFocusWindow( window );
             InvalWindowRect( window, &rectPort );
+#endif
             break;
 
         case kEventWindowBoundsChanged:
@@ -275,7 +290,11 @@ renderspuWindowAttachContext(WindowInfo *wi, WindowRef window,
             return GL_FALSE;
         }
         AGLDrawable drawable;
+#ifdef __LP64__ /** @todo port to 64-bit darwin. */
+        drawable = NULL;
+#else
         drawable = (AGLDrawable) GetWindowPort(window);
+#endif
         /* New global buffer name */
         wi->bufferName = gCurrentBufferName++;
         /* Set the new buffer name to the dummy context. This enable the
@@ -291,7 +310,11 @@ renderspuWindowAttachContext(WindowInfo *wi, WindowRef window,
     AGLDrawable newDrawable;
 
     oldDrawable = render_spu.ws.aglGetDrawable(context->context);
+#ifdef __LP64__ /** @todo port to 64-bit darwin. */
+    newDrawable = oldDrawable;
+#else
     newDrawable = (AGLDrawable) GetWindowPort(window);
+#endif
     /* Only switch the context if the drawable has changed */
     if (oldDrawable != newDrawable)
     {
@@ -303,7 +326,11 @@ renderspuWindowAttachContext(WindowInfo *wi, WindowRef window,
         render_spu.ws.aglSetInteger (context->context, AGL_BUFFER_NAME, &wi->bufferName);
         CHECK_AGL_RC (result, "Render SPU: SetInteger Failed");
         /* Set the new drawable */
+#ifdef __LP64__ /** @todo port to 64-bit darwin. */
+        result = -1;
+#else
         result = render_spu.ws.aglSetDrawable(context->context, newDrawable);
+#endif
         CHECK_AGL_RC (result, "Render SPU: SetDrawable Failed");
         renderspuSetWindowContext( window, context );
     }
@@ -407,7 +434,11 @@ renderspu_SystemGetMaxWindowSize(WindowInfo *window,
 
     OSStatus status = noErr;
     HISize s;
+#ifdef __LP64__ /** @todo port to 64-bit darwin. */
+    status = -1;
+#else
     status = GetWindowResizeLimits (window->window, NULL, &s);
+#endif
     CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU: GetWindowResizeLimits Failed");
 
     *w = s.width;
@@ -647,7 +678,10 @@ renderspu_SystemVBoxCreateWindow(VisualInfo *visual, GLboolean showIt,
         /* Make the correct z-layering */
         SendWindowGroupBehind (gParentGroup, gMasterGroup);
         /* and set the gParentGroup as parent for gMasterGroup. */
+#ifdef __LP64__ /** @todo port to 64-bit darwin. */
+#else
         SetWindowGroupParent (gMasterGroup, gParentGroup);
+#endif
     }
 
     /* The parent has to be in its own group */
