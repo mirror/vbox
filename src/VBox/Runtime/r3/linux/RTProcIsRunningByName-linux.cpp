@@ -36,6 +36,7 @@
 #include <iprt/process.h>
 #include <iprt/dir.h>
 #include <iprt/path.h>
+#include <iprt/stream.h>
 #include <iprt/param.h>
 #include <iprt/assert.h>
 
@@ -65,32 +66,34 @@ RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
                 RTStrToUInt32(DirEntry.szName) > 0)
             {
                 /*
-                 * Build the path to the proc exec file of this process.
+                 * Build the path to the proc cmdline file of this process.
                  */
                 char *pszPath;
-                RTStrAPrintf(&pszPath, "/proc/%s/exe", DirEntry.szName);
-                /*
-                 * Read the file name of the link pointing at.
-                 */
-                char szExe[RTPATH_MAX];
-                size_t cchExe = sizeof(szExe)-1;
-                int cchLink = readlink(pszPath, szExe, cchExe);
-                if (cchLink > 0 && (size_t)cchLink <= cchExe)
+                RTStrAPrintf(&pszPath, "/proc/%s/cmdline", DirEntry.szName);
+                PRTSTREAM pStream;
+                rc = RTStrmOpen(pszPath, "r", &pStream);
+                if(RT_SUCCESS(rc))
                 {
-                    szExe[cchLink] = '\0';
+                    char szLine[RTPATH_MAX];
+                    /*
+                     * The fist line should be the application path always.
+                     */
+                    RTStrmGetLine(pStream, szLine, sizeof(szLine));
                     /*
                      * We are interested on the file name part only.
                      */
-                    char *pszFilename = RTPathFilename(szExe);
+                    char *pszFilename = RTPathFilename(szLine);
                     if (RTStrCmp(pszFilename, pszName) == 0)
                     {
                         /*
                          * Clean up
                          */
+                        RTStrmClose(pStream);
                         RTStrFree(pszPath);
                         RTDirClose(pDir);
                         return true;
                     }
+                    RTStrmClose(pStream);
                 }
                 RTStrFree(pszPath);
             }
