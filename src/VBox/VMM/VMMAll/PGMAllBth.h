@@ -4627,6 +4627,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     if (rc == VERR_PGM_POOL_FLUSHED)
     {
         Log(("MapCR3: PGM pool flushed -> signal sync cr3\n"));
+        pVM->pgm.s.CTX_SUFF(pShwPageCR3) = pOldShwPageCR3;
         Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
         return VINF_PGM_SYNC_CR3;
     }
