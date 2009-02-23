@@ -28,14 +28,13 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/process.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
-#include <iprt/process.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 
@@ -43,49 +42,61 @@
 
 int main(int argc, char **argv)
 {
+    int cErrors = 0;
+
     RTR3Init();
+    RTPrintf("tstRTPRocIsRunningByName: TESTING...\n");
 
+    /*
+     * Test 1: Check for a definitely not running process.
+     */
     int rc = VERR_GENERAL_FAILURE;
-
     char szExecPath[RTPATH_MAX] = { "vbox-5b05e1ff-6ae2-4d10-885a-7d25018c4c5b" };
-    /* Check for a definitely not running process. */
-    RTPrintf("tstRTProcIsRunningByName: Searching for a not running process with the name %s...\n", szExecPath);
     bool fRunning = RTProcIsRunningByName(szExecPath);
     if (!fRunning)
-    {
-        RTPrintf("tstRTProcIsRunningByName: Success!\n");
-        rc = VINF_SUCCESS;
-    }
+        RTPrintf("tstRTProcIsRunningByName: Process '%s' is not running (expected).\n", szExecPath);
     else
-        RTPrintf("tstRTProcIsRunningByName: Expected failure but got success!\n");
-    /* If the first test succeeded, check for a running process. For that we
-     * use the name of this testcase. */
-    if (RT_SUCCESS(rc))
     {
-        /* Reset */
-        rc = VERR_GENERAL_FAILURE;
-        if (RTProcGetExecutableName(szExecPath, RTPATH_MAX))
-        {
-            /* Strip any path components */
-            char *pszFilename;
-            if ((pszFilename = RTPathFilename(szExecPath)))
-            {
-                RTPrintf("tstRTProcIsRunningByName: Searching for a running process with the name %s...\n", pszFilename);
-                bool fRunning = RTProcIsRunningByName(pszFilename);
-                if (fRunning)
-                {
-                    RTPrintf("tstRTProcIsRunningByName: Success!\n");
-                    rc = VINF_SUCCESS;
-                }
-                else
-                    RTPrintf("tstRTProcIsRunningByName: Expected success but got failure!\n");
-            }
-            else
-                RTPrintf("tstRTProcIsRunningByName: RTPathFilename failed!\n", rc);
-        }
-        else
-            RTPrintf("tstRTProcIsRunningByName: RTProcGetExecutableName failed!\n", rc);
+        RTPrintf("tstRTProcIsRunningByName: FAILURE - '%s' is running! (test 1)\n", szExecPath);
+        cErrors++;
     }
 
-    return RT_SUCCESS(rc) ? 0 : 1;
+    /*
+     * Test 2: Check for our own process.
+     */
+    if (RTProcGetExecutableName(szExecPath, RTPATH_MAX))
+    {
+        /* Strip any path components */
+        char *pszFilename = RTPathFilename(szExecPath);
+        if (pszFilename)
+        {
+            bool fRunning = RTProcIsRunningByName(pszFilename);
+            if (fRunning)
+                RTPrintf("tstRTProcIsRunningByName: Process '%s' (self) is running\n", pszFilename);
+            else
+            {
+                RTPrintf("tstRTProcIsRunningByName: FAILURE - Process '%s' (self) is not running!\n", pszFilename);
+                cErrors++;
+            }
+        }
+        else
+        {
+            RTPrintf("tstRTProcIsRunningByName: FAILURE - RTPathFilename failed!\n");
+            cErrors++;
+        }
+    }
+    else
+    {
+        RTPrintf("tstRTProcIsRunningByName: FAILURE - RTProcGetExecutableName failed!\n");
+        cErrors++;
+    }
+
+    /*
+     * Summary.
+     */
+    if (!cErrors)
+        RTPrintf("tstRTProcIsRunningByName: SUCCESS\n");
+    else
+        RTPrintf("tstRTProcIsRunningByName: FAILURE - %d errors\n", cErrors);
+    return cErrors ? 1 : 0;
 }

@@ -32,15 +32,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_PROCESS
-#include <iprt/string.h>
 #include <iprt/process.h>
+#include <iprt/string.h>
 #include <iprt/dir.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/param.h>
 #include <iprt/assert.h>
-
-#include <unistd.h>
 
 
 RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
@@ -51,51 +49,48 @@ RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
     if (!pszName)
         return false;
 
+    bool fFoundIt = false;
     PRTDIR pDir;
     int rc = RTDirOpen(&pDir, "/proc");
     AssertMsgRCReturn(rc, ("RTDirOpen on /proc failed: rc=%Rrc\n", rc), false);
     if (RT_SUCCESS(rc))
     {
         RTDIRENTRY DirEntry;
-        while(RT_SUCCESS(RTDirRead(pDir, &DirEntry, NULL)))
+        while (RT_SUCCESS(RTDirRead(pDir, &DirEntry, NULL)))
         {
             /*
              * Filter numeric directory entries only.
              */
-            if (DirEntry.enmType == RTDIRENTRYTYPE_DIRECTORY &&
-                RTStrToUInt32(DirEntry.szName) > 0)
+            if (    DirEntry.enmType == RTDIRENTRYTYPE_DIRECTORY
+                &&  RTStrToUInt32(DirEntry.szName) > 0)
             {
                 /*
-                 * Build the path to the proc cmdline file of this process.
+                 * The first line of the 'cmdline' file is the argv[0] passed to
+                 * execv, which is what we're interested in... (Alternatively we
+                 * could try readlink 'exe'. Check what happens to set-uid procs.)
                  */
-                char *pszPath;
-                RTStrAPrintf(&pszPath, "/proc/%s/cmdline", DirEntry.szName);
                 PRTSTREAM pStream;
-                rc = RTStrmOpen(pszPath, "r", &pStream);
-                if(RT_SUCCESS(rc))
+                rc = RTStrmOpenF("r", &pStream, "/proc/%s/cmdline", &DirEntry.szName[0]);
+                if (RT_SUCCESS(rc))
                 {
                     char szLine[RTPATH_MAX];
-                    /*
-                     * The fist line should be the application path always.
-                     */
-                    RTStrmGetLine(pStream, szLine, sizeof(szLine));
-                    /*
-                     * We are interested on the file name part only.
-                     */
-                    char *pszFilename = RTPathFilename(szLine);
-                    if (RTStrCmp(pszFilename, pszName) == 0)
+                    rc = RTStrmGetLine(pStream, szLine, sizeof(szLine));
+                    RTStrmClose(pStream);
+                    if (    RT_SUCCESS(rc)
+                        ||  rc == VERR_BUFFER_OVERFLOW)
                     {
                         /*
-                         * Clean up
+                         * We are interested on the file name part only.
                          */
-                        RTStrmClose(pStream);
-                        RTStrFree(pszPath);
-                        RTDirClose(pDir);
-                        return true;
+                        char const *pszFilename = RTPathFilename(szLine);
+                        if (RTStrCmp(pszFilename, pszName) == 0)
+                        {
+                            /* Found it! */
+                            RTDirClose(pDir);
+                            return true;
+                        }
                     }
-                    RTStrmClose(pStream);
                 }
-                RTStrFree(pszPath);
             }
         }
         RTDirClose(pDir);
