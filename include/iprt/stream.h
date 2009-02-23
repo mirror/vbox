@@ -66,6 +66,30 @@ extern RTDATADECL(PRTSTREAM)    g_pStdOut;
 RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM *ppStream);
 
 /**
+ * Opens a file stream.
+ *
+ * @returns iprt status code.
+ * @param   pszMode         The open mode. See fopen() standard.
+ *                          Format: <a|r|w>[+][b|t]
+ * @param   ppStream        Where to store the opened stream.
+ * @param   pszFilenameFmt  Filename path format string.
+ * @param   args            Arguments to the format string.
+ */
+RTR3DECL(int) RTStrmOpenFV(const char *pszMode, PRTSTREAM *ppStream, const char *pszFilenameFmt, va_list args);
+
+/**
+ * Opens a file stream.
+ *
+ * @returns iprt status code.
+ * @param   pszMode         The open mode. See fopen() standard.
+ *                          Format: <a|r|w>[+][b|t]
+ * @param   ppStream        Where to store the opened stream.
+ * @param   pszFilenameFmt  Filename path format string.
+ * @param   ...             Arguments to the format string.
+ */
+RTR3DECL(int) RTStrmOpenF(const char *pszMode, PRTSTREAM *ppStream, const char *pszFilenameFmt, ...);
+
+/**
  * Closes the specified stream.
  *
  * @returns iprt status code.
