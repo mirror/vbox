@@ -37,6 +37,7 @@
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/string.h>
 
 
 
@@ -50,10 +51,8 @@ int main(int argc, char **argv)
     /*
      * Test 1: Check for a definitely not running process.
      */
-    int rc = VERR_GENERAL_FAILURE;
     char szExecPath[RTPATH_MAX] = { "vbox-5b05e1ff-6ae2-4d10-885a-7d25018c4c5b" };
-    bool fRunning = RTProcIsRunningByName(szExecPath);
-    if (!fRunning)
+    if (!RTProcIsRunningByName(szExecPath))
         RTPrintf("tstRTProcIsRunningByName: Process '%s' is not running (expected).\n", szExecPath);
     else
     {
@@ -62,7 +61,19 @@ int main(int argc, char **argv)
     }
 
     /*
-     * Test 2: Check for our own process.
+     * Test 2: Check for a definitely not running process.
+     */
+    strcpy(szExecPath, "/bin/vbox-5b05e1ff-6ae2-4d10-885a-7d25018c4c5b");
+    if (!RTProcIsRunningByName(szExecPath))
+        RTPrintf("tstRTProcIsRunningByName: Process '%s' is not running (expected).\n", szExecPath);
+    else
+    {
+        RTPrintf("tstRTProcIsRunningByName: FAILURE - '%s' is running! (test 1)\n", szExecPath);
+        cErrors++;
+    }
+
+    /*
+     * Test 3: Check for our own process, filename only.
      */
     if (RTProcGetExecutableName(szExecPath, RTPATH_MAX))
     {
@@ -70,8 +81,7 @@ int main(int argc, char **argv)
         char *pszFilename = RTPathFilename(szExecPath);
         if (pszFilename)
         {
-            bool fRunning = RTProcIsRunningByName(pszFilename);
-            if (fRunning)
+            if (RTProcIsRunningByName(pszFilename))
                 RTPrintf("tstRTProcIsRunningByName: Process '%s' (self) is running\n", pszFilename);
             else
             {
@@ -84,12 +94,24 @@ int main(int argc, char **argv)
             RTPrintf("tstRTProcIsRunningByName: FAILURE - RTPathFilename failed!\n");
             cErrors++;
         }
+
+        /*
+         * Test 4: Check for our own process, full path.
+         */
+        if (RTProcIsRunningByName(szExecPath))
+            RTPrintf("tstRTProcIsRunningByName: Process '%s' (self) is running\n", szExecPath);
+        else
+        {
+            RTPrintf("tstRTProcIsRunningByName: FAILURE - Process '%s' (self) is not running!\n", szExecPath);
+            cErrors++;
+        }
     }
     else
     {
         RTPrintf("tstRTProcIsRunningByName: FAILURE - RTProcGetExecutableName failed!\n");
         cErrors++;
     }
+
 
     /*
      * Summary.

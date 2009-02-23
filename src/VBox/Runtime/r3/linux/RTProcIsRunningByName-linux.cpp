@@ -51,7 +51,11 @@ RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
     if (!pszName)
         return false;
 
-    bool fFoundIt = false;
+    bool const fWithPath = RTPathHavePath(pszName);
+
+    /*
+     * Enumerate /proc.
+     */
     PRTDIR pDir;
     int rc = RTDirOpen(&pDir, "/proc");
     AssertMsgRCReturn(rc, ("RTDirOpen on /proc failed: rc=%Rrc\n", rc), false);
@@ -98,8 +102,8 @@ RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
                     /*
                      * We are interested on the file name part only.
                      */
-                    char const *pszFilename = RTPathFilename(szExe);
-                    if (RTStrCmp(pszFilename, pszName) == 0)
+                    char const *pszProcName = fWithPath ? szExe : RTPathFilename(szExe);
+                    if (RTStrCmp(pszProcName, pszName) == 0)
                     {
                         /* Found it! */
                         RTDirClose(pDir);
