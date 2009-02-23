@@ -36,7 +36,7 @@ VBoxNetAdp_NAME.solaris     = vboxnet
 VBoxNetAdp_DEPS.solaris    += $(VBOX_SVN_REV_KMK)
 VBoxNetAdp_DEFS             = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
 VBoxNetAdp_LDFLAGS.darwin   = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
-VBoxNetAdp_LDFLAGS.solaris += -N misc/gld
+VBoxNetAdp_LDFLAGS.solaris += -N misc/gld -N drv/vboxdrv
 VBoxNetAdp_INCS             = \
 	.
 VBoxNetAdp_SOURCES.darwin   = \

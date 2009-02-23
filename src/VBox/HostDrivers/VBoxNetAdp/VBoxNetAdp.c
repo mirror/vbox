@@ -34,6 +34,7 @@
 #include <iprt/spinlock.h>
 #include <iprt/uuid.h>
 
+#ifndef RT_OS_SOLARIS
 #include <net/ethernet.h>
 #include <net/if_ether.h>
 #include <net/if_types.h>
@@ -42,6 +43,7 @@
 #include <net/if_dl.h>
 #include <sys/errno.h>
 #include <sys/param.h>
+#endif
 
 
 /*******************************************************************************
