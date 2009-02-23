@@ -519,6 +519,7 @@ VMMDECL(int) CPUMSetGuestIDTR(PVM pVM, uint32_t addr, uint16_t limit)
 VMMDECL(int) CPUMSetGuestTR(PVM pVM, uint16_t tr)
 {
     PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
+    AssertMsgFailed(("Need to load the hidden bits too!\n"));
 
     pCpumCpu->Guest.tr  = tr;
     pCpumCpu->fChanged |= CPUM_CHANGED_TR;
@@ -887,10 +888,11 @@ VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit)
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestTR(PVM pVM)
+VMMDECL(RTSEL) CPUMGetGuestTR(PVM pVM, PCPUMSELREGHID pHidden)
 {
     PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
+    if (pHidden)
+        *pHidden = pCpumCpu->Guest.trHid;
     return pCpumCpu->Guest.tr;
 }
 
@@ -1076,14 +1078,6 @@ VMMDECL(uint32_t) CPUMGetGuestEFlags(PVM pVM)
     PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
 
     return pCpumCpu->Guest.eflags.u32;
-}
-
-
-VMMDECL(CPUMSELREGHID *) CPUMGetGuestTRHid(PVM pVM)
-{
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return &pCpumCpu->Guest.trHid;
 }
 
 

@@ -133,20 +133,13 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     *pShadowDescr = Desc;
 
     /* Check if we change the LDT selector */
-    if (Sel == CPUMGetGuestLDTR(pVM))
+    if (Sel == CPUMGetGuestLDTR(pVM)) /** @todo this isn't correct in two(+) ways! 1. It shouldn't be done until the LDTR is reloaded. 2. It caused the next instruction to be emulated.  */
     {
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
         return VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT;
     }
 
-    /* Or the TR selector */
-    if (Sel == CPUMGetGuestTR(pVM))
-    {
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
-        return VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT;
-    }
-
-#ifdef VBOX_STRICT
+#ifdef LOG_ENABLED
     if (Sel == (pRegFrame->cs & X86_SEL_MASK))
         Log(("GDT write to selector in CS register %04X\n", pRegFrame->cs));
     else if (Sel == (pRegFrame->ds & X86_SEL_MASK))
@@ -399,66 +392,3 @@ VMMRCDECL(int) selmRCShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     return VERR_SELM_SHADOW_TSS_WRITE;
 }
 
-
-/**
- * Gets ss:esp for ring1 in main Hypervisor's TSS.
- *
- * @returns VBox status code.
- * @param   pVM     VM Handle.
- * @param   pSS     Ring1 SS register value.
- * @param   pEsp    Ring1 ESP register value.
- */
-VMMRCDECL(int) SELMGCGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp)
-{
-    if (pVM->selm.s.fSyncTSSRing0Stack)
-    {
-        uint8_t *   GCPtrGuestTss = (uint8_t *)(uintptr_t)pVM->selm.s.GCPtrGuestTss;
-        bool        fTriedAlready = false;
-        int         rc;
-        VBOXTSS     tss;
-
-        Assert(pVM->selm.s.GCPtrGuestTss && pVM->selm.s.cbMonitoredGuestTss);
-
-l_tryagain:
-        rc  = MMGCRamRead(pVM, &tss.ss0,  GCPtrGuestTss + RT_OFFSETOF(VBOXTSS, ss0), sizeof(tss.ss0));
-        rc |= MMGCRamRead(pVM, &tss.esp0, GCPtrGuestTss + RT_OFFSETOF(VBOXTSS, esp0), sizeof(tss.esp0));
-#ifdef DEBUG
-        rc |= MMGCRamRead(pVM, &tss.offIoBitmap, GCPtrGuestTss + RT_OFFSETOF(VBOXTSS, offIoBitmap), sizeof(tss.offIoBitmap));
-#endif
-
-        if (RT_FAILURE(rc))
-        {
-            if (!fTriedAlready)
-            {
-                /* Shadow page might be out of sync. Sync and try again */
-                /** @todo might cross page boundary */
-                fTriedAlready = true;
-                rc = PGMPrefetchPage(pVM, (RTGCPTR)(uintptr_t)GCPtrGuestTss);
-                if (rc != VINF_SUCCESS)
-                    return rc;
-                goto l_tryagain;
-            }
-            AssertMsgFailed(("Unable to read TSS structure at %RRv\n", GCPtrGuestTss));
-            return rc;
-        }
-
-#ifdef LOG_ENABLED
-        uint32_t ssr0  = pVM->selm.s.Tss.ss1;
-        uint32_t espr0 = pVM->selm.s.Tss.esp1;
-        ssr0 &= ~1;
-
-        if (ssr0 != tss.ss0 || espr0 != tss.esp0)
-            Log(("SELMGetRing1Stack: Updating TSS ring 0 stack to %04X:%08X\n", tss.ss0, tss.esp0));
-
-        Log(("offIoBitmap=%#x\n", tss.offIoBitmap));
-#endif
-        /* Update our TSS structure for the guest's ring 1 stack */
-        SELMSetRing1Stack(pVM, tss.ss0 | 1, (RTGCPTR32)tss.esp0);
-        pVM->selm.s.fSyncTSSRing0Stack = false;
-    }
-
-    *pSS  = pVM->selm.s.Tss.ss1;
-    *pEsp = pVM->selm.s.Tss.esp1;
-
-    return VINF_SUCCESS;
-}

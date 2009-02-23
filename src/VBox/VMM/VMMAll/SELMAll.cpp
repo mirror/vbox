@@ -928,7 +928,6 @@ VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL 
 
     /* Else compatibility or 32 bits mode. */
     return (pHiddenSel->Attr.n.u1DefBig) ? CPUMODE_32BIT : CPUMODE_16BIT;
-
 }
 
 
@@ -960,11 +959,12 @@ VMMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP)
  * Sets ss:esp for ring1 in main Hypervisor's TSS.
  *
  * @param   pVM     VM Handle.
- * @param   ss      Ring1 SS register value.
+ * @param   ss      Ring1 SS register value. Pass 0 if invalid.
  * @param   esp     Ring1 ESP register value.
  */
-VMMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
+void selmSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
 {
+    Assert((ss & 1) || esp == 0);
     pVM->selm.s.Tss.ss1  = ss;
     pVM->selm.s.Tss.esp1 = (uint32_t)esp;
 }
@@ -974,13 +974,12 @@ VMMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
 /**
  * Gets ss:esp for ring1 in main Hypervisor's TSS.
  *
+ * Returns SS=0 if the ring-1 stack isn't valid.
+ *
  * @returns VBox status code.
  * @param   pVM     VM Handle.
  * @param   pSS     Ring1 SS register value.
  * @param   pEsp    Ring1 ESP register value.
- *
- * @todo Merge in the GC version of this, eliminating it - or move this to
- *       SELM.cpp, making it SELMR3GetRing1Stack.
  */
 VMMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp)
 {
@@ -1039,7 +1038,7 @@ l_tryagain:
         Log(("offIoBitmap=%#x\n", tss.offIoBitmap));
 # endif
         /* Update our TSS structure for the guest's ring 1 stack */
-        SELMSetRing1Stack(pVM, tss.ss0 | 1, (RTGCPTR32)tss.esp0);
+        selmSetRing1Stack(pVM, tss.ss0 | 1, (RTGCPTR32)tss.esp0);
         pVM->selm.s.fSyncTSSRing0Stack = false;
     }
 
@@ -1189,36 +1188,19 @@ VMMDECL(RTRCPTR) SELMGetHyperGDT(PVM pVM)
  */
 VMMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap)
 {
-    if (!CPUMAreHiddenSelRegsValid(pVM))
-    {
-        /*
-         * Do we have a valid TSS?
-         */
-        if (    pVM->selm.s.GCSelTss == RTSEL_MAX
-            || !pVM->selm.s.fGuestTss32Bit)
-            return VERR_SELM_NO_TSS;
+    /*
+     * The TR hidden register is always valid.
+     */
+    CPUMSELREGHID trHid;
+    RTSEL tr = CPUMGetGuestTR(pVM, &trHid);
+    if (!(tr & X86_SEL_MASK))
+        return VERR_SELM_NO_TSS;
 
-        /*
-         * Fill in return values.
-         */
-        *pGCPtrTss = (RTGCUINTPTR)pVM->selm.s.GCPtrGuestTss;
-        *pcbTss = pVM->selm.s.cbGuestTss;
-        if (pfCanHaveIOBitmap)
-            *pfCanHaveIOBitmap = pVM->selm.s.fGuestTss32Bit;
-    }
-    else
-    {
-        CPUMSELREGHID *pHiddenTRReg;
-
-        pHiddenTRReg = CPUMGetGuestTRHid(pVM);
-
-        *pGCPtrTss = pHiddenTRReg->u64Base;
-        *pcbTss    = pHiddenTRReg->u32Limit;
-
-        if (pfCanHaveIOBitmap)
-            *pfCanHaveIOBitmap =  pHiddenTRReg->Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_AVAIL
-                               || pHiddenTRReg->Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_BUSY;
-    }
+    *pGCPtrTss = trHid.u64Base;
+    *pcbTss    = trHid.u32Limit + (trHid.u32Limit != UINT32_MAX); /* be careful. */
+    if (pfCanHaveIOBitmap)
+        *pfCanHaveIOBitmap = trHid.Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_AVAIL
+                          || trHid.Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_BUSY;
     return VINF_SUCCESS;
 }
 

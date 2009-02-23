@@ -42,7 +42,7 @@ DEF_HELPER(void, helper_ljmp_protected, (int new_cs, target_ulong new_eip,
                            int next_eip_addend))
 DEF_HELPER(void, helper_lcall_real, (int new_cs, target_ulong new_eip1,
                        int shift, int next_eip))
-DEF_HELPER(void, helper_lcall_protected, (int new_cs, target_ulong new_eip, 
+DEF_HELPER(void, helper_lcall_protected, (int new_cs, target_ulong new_eip,
                             int shift, int next_eip_addend))
 DEF_HELPER(void, helper_iret_real, (int shift))
 DEF_HELPER(void, helper_iret_protected, (int shift, int next_eip))
@@ -113,7 +113,7 @@ DEF_HELPER(target_ulong, helper_inl, (uint32_t port))
 
 DEF_HELPER(void, helper_svm_check_intercept_param, (uint32_t type, uint64_t param))
 DEF_HELPER(void, helper_vmexit, (uint32_t exit_code, uint64_t exit_info_1))
-DEF_HELPER(void, helper_svm_check_io, (uint32_t port, uint32_t param, 
+DEF_HELPER(void, helper_svm_check_io, (uint32_t port, uint32_t param,
                          uint32_t next_eip_addend))
 DEF_HELPER(void, helper_vmrun, (int aflag, int next_eip_addend))
 DEF_HELPER(void, helper_vmmcall, (void))
@@ -133,7 +133,7 @@ DEF_HELPER(void, helper_flds_ST0, (uint32_t val))
 DEF_HELPER(void, helper_fldl_ST0, (uint64_t val))
 DEF_HELPER(void, helper_fildl_ST0, (int32_t val))
 DEF_HELPER(void, helper_fildll_ST0, (int64_t val))
-#ifndef VBOX 
+#ifndef VBOX
 DEF_HELPER(uint32_t, helper_fsts_ST0, (void))
 DEF_HELPER(uint64_t, helper_fstl_ST0, (void))
 DEF_HELPER(int32_t, helper_fist_ST0, (void))
@@ -256,7 +256,6 @@ void helper_record_call(void);
 /* in op_helper.c */
 void sync_seg(CPUX86State *env1, int seg_reg, int selector);
 void sync_ldtr(CPUX86State *env1, int selector);
-int  sync_tr(CPUX86State *env1, int selector);
 
 #endif
 
