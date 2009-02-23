@@ -49,6 +49,8 @@ __BEGIN_DECLS
  */
 RTDECL(const char *) RTLdrGetSuff(void);
 
+RTDECL(bool) RTLdrIsLoadable(const char *pszName);
+
 /**
  * Loads a dynamic load library (/shared object) image file using native
  * OS facilities.
