@@ -97,6 +97,7 @@ int handleImportAppliance(HandlerArg *a)
         bool fIsIgnore = false;
         Utf8Str strThisArg(a->argv[i]);
         if (    (strThisArg == "--dry-run")
+             || (strThisArg == "-dry-run")
              || (strThisArg == "-n")
            )
             fExecute = false;
@@ -155,18 +156,18 @@ int handleImportAppliance(HandlerArg *a)
     do
     {
         Bstr bstrOvfFilename(strOvfFilename);
-        ComPtr<IAppliance> appliance;
-        CHECK_ERROR_BREAK(a->virtualBox, CreateAppliance(appliance.asOutParam()));
+        ComPtr<IAppliance> pAppliance;
+        CHECK_ERROR_BREAK(a->virtualBox, CreateAppliance(pAppliance.asOutParam()));
 
-        CHECK_ERROR_BREAK(appliance, Read(bstrOvfFilename));
+        CHECK_ERROR_BREAK(pAppliance, Read(bstrOvfFilename));
 
         RTPrintf("Interpreting %s... ", strOvfFilename.c_str());
-        CHECK_ERROR_BREAK(appliance, Interpret());
+        CHECK_ERROR_BREAK(pAppliance, Interpret());
         RTPrintf("OK.\n");
 
         // fetch all disks
         com::SafeArray<BSTR> retDisks;
-        CHECK_ERROR_BREAK(appliance,
+        CHECK_ERROR_BREAK(pAppliance,
                           COMGETTER(Disks)(ComSafeArrayAsOutParam(retDisks)));
         if (retDisks.size() > 0)
         {
@@ -178,7 +179,7 @@ int handleImportAppliance(HandlerArg *a)
 
         // fetch virtual system descriptions
         com::SafeIfaceArray<IVirtualSystemDescription> aVirtualSystemDescriptions;
-        CHECK_ERROR_BREAK(appliance,
+        CHECK_ERROR_BREAK(pAppliance,
                           COMGETTER(VirtualSystemDescriptions)(ComSafeArrayAsOutParam(aVirtualSystemDescriptions)));
 
         uint32_t cVirtualSystemDescriptions = aVirtualSystemDescriptions.size();
@@ -468,7 +469,7 @@ int handleImportAppliance(HandlerArg *a)
             if (fExecute)
             {
                 ComPtr<IProgress> progress;
-                CHECK_ERROR_BREAK(appliance,
+                CHECK_ERROR_BREAK(pAppliance,
                                   ImportMachines(progress.asOutParam()));
 
                 showProgress(progress);
@@ -486,6 +487,78 @@ int handleImportAppliance(HandlerArg *a)
                     RTPrintf("Successfully imported the appliance.\n");
             }
         } // end if (aVirtualSystemDescriptions.size() > 0)
+    } while (0);
+
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
+int handleExportAppliance(HandlerArg *a)
+{
+    HRESULT rc = S_OK;
+
+    Utf8Str strOutputFile;
+    std::list< ComPtr<IMachine> > llMachines;
+
+    do
+    {
+        for (int i = 0;
+            i < a->argc;
+            ++i)
+        {
+            Utf8Str strThisArg(a->argv[i]);
+
+            if (    strThisArg == "--output"
+                || strThisArg == "-output"
+                || strThisArg == "-o"
+            )
+            {
+                if (++i < a->argc)
+                {
+                    if (strOutputFile.length())
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can only specify --output once.");
+                    else
+                        strOutputFile = strThisArg;
+                }
+                else
+                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "Missing argument to --output option.");
+            }
+            else
+            {
+                // must be machine: try UUID or name
+                ComPtr<IMachine> machine;
+                /* assume it's a UUID */
+                rc = a->virtualBox->GetMachine(Guid(strThisArg), machine.asOutParam());
+                if (FAILED(rc) || !machine)
+                {
+                    /* must be a name */
+                    CHECK_ERROR_BREAK(a->virtualBox, FindMachine(Bstr(strThisArg), machine.asOutParam()));
+                }
+
+                if (machine)
+                    llMachines.push_back(machine);
+            }
+        }
+
+        if (llMachines.size() == 0)
+            return errorSyntax(USAGE_EXPORTAPPLIANCE, "Missing arguments to export command.");
+
+        ComPtr<IAppliance> pAppliance;
+        CHECK_ERROR_BREAK(a->virtualBox, CreateAppliance(pAppliance.asOutParam()));
+
+        std::list< ComPtr<IMachine> >::iterator itM;
+        for (itM = llMachines.begin();
+             itM != llMachines.end();
+             ++itM)
+        {
+            ComPtr<IMachine> pMachine = *itM;
+            CHECK_ERROR_BREAK(pMachine, Export(pAppliance));
+        }
+
+        if (FAILED(rc))
+            break;
+
+        CHECK_ERROR_BREAK(pAppliance, Write(Bstr(strOutputFile)));
+
     } while (0);
 
     return SUCCEEDED(rc) ? 0 : 1;
