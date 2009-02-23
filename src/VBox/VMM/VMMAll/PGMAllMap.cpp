@@ -418,6 +418,124 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 }
 #endif /* !IN_RING0 */
 
+#ifdef VBOX_STRICT
+/**
+ * Clears all PDEs involved with the mapping in the shadow page table.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pShwPageCR3 CR3 root page
+ * @param   pMap        Pointer to the mapping in question.
+ * @param   iPDE        The index of the 32-bit PDE corresponding to the base of the mapping.
+ */
+void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iPDE)
+{
+    Log(("pgmMapCheckShadowPDEs pde %x (mappings enabled %d)\n", iPDE, pgmMapAreMappingsEnabled(&pVM->pgm.s)));
+
+    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
+        return;
+
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    Assert(pShwPageCR3);
+#endif
+
+    unsigned i = pMap->cPTs;
+    PGMMODE  enmShadowMode = PGMGetShadowMode(pVM);
+
+    iPDE += i;
+    while (i-- > 0)
+    {
+        iPDE--;
+
+        switch(enmShadowMode)
+        {
+            case PGMMODE_32_BIT:
+            {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                PX86PD pShw32BitPd = (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
+#else
+                PX86PD pShw32BitPd = pgmShwGet32BitPDPtr(&pVM->pgm.s);
+#endif
+                AssertFatal(pShw32BitPd);
+
+                AssertMsg(pShw32BitPd->a[iPDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT),
+                          ("Expected %x vs %x\n", pShw32BitPd->a[iPDE].u, (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT)));
+                break;
+            }
+
+            case PGMMODE_PAE:
+            case PGMMODE_PAE_NX:
+            {
+                PX86PDPT  pPdpt = NULL;
+                PX86PDPAE pShwPaePd = NULL;
+
+                const unsigned iPD = iPDE / 256;         /* iPDE * 2 / 512; iPDE is in 4 MB pages */
+                unsigned iPaePDE = iPDE * 2 % 512;
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                pPdpt     = (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
+                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pPdpt, (iPD << X86_PDPT_SHIFT));
+#else
+                pPdpt     = pgmShwGetPaePDPTPtr(&pVM->pgm.s); 
+                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPD << X86_PDPT_SHIFT)); 
+#endif
+                AssertFatal(pShwPaePd);
+
+                AssertMsg(pShwPaePd->a[iPaePDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0),
+                         ("Expected %RX64 vs %RX64\n", pShwPaePd->a[iPDE].u, (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT)));
+
+                iPaePDE++;
+                AssertFatal(iPaePDE < 512);
+
+                AssertMsg(pShwPaePd->a[iPaePDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1),
+                         ("Expected %RX64 vs %RX64\n", pShwPaePd->a[iPDE].u, (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT)));
+                break;
+            }
+
+            default:
+                AssertFailed();
+                break;
+        }
+    }
+}
+
+/**
+ * Check the hypervisor mappings in the active CR3.
+ *
+ * @param   pVM         The virtual machine.
+ */
+VMMDECL(void) PGMMapCheck(PVM pVM)
+{
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    Log(("PGMMapCheck fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
+
+    /*
+     * Can skip this if mappings are safely fixed.
+     */
+    if (pVM->pgm.s.fMappingsFixed)
+        return VINF_SUCCESS;
+
+# ifdef IN_RING0
+    AssertFailed();
+    return VERR_INTERNAL_ERROR;
+# else
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+#  endif
+
+    /*
+     * Iterate mappings.
+     */
+    for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
+    {
+        unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
+
+        pgmMapCheckShadowPDEs(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pCur, iPDE);
+    }
+    return VINF_SUCCESS;
+# endif /* IN_RING0 */
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
+}
+#endif
+
 /**
  * Apply the hypervisor mappings to the active CR3.
  *
