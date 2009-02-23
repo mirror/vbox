@@ -49,7 +49,15 @@ __BEGIN_DECLS
  */
 RTDECL(const char *) RTLdrGetSuff(void);
 
-RTDECL(bool) RTLdrIsLoadable(const char *pszName);
+/**
+ * Checks if a library is loadable or not.
+ *
+ * This may attempt load and unload the library.
+ *
+ * @returns true/false accordingly.
+ * @param   pszFilename     Image filename.
+ */
+RTDECL(bool) RTLdrIsLoadable(const char *pszFilename);
 
 /**
  * Loads a dynamic load library (/shared object) image file using native
