@@ -36,7 +36,7 @@ BLDDIRS                   += $(VBOX_FBSD_ADD_INS_OUT_DIR)
 VBOX_FBSD_ADD_PKG_FILENAME := VBoxFreeBSDAdditions.tbz
 VBOX_FBSD_ADD_PKGINFO_ARCH    = $(shell uname -p)
 VBOX_PATH_FREEBSD_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/Installer
-VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/installer
+VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/Installer
 
 ifeq ($(KBUILD_TYPE),debug)
  VBOX_FBSD_ADD_BIN_COPY         := $(CP) -f
