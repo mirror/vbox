@@ -739,7 +739,7 @@ RTDECL(int) RTFileReadAllByHandleEx(RTFILE File, RTFOFF off, RTFOFF cbMax, uint3
  * @param   pvFile          Pointer to the memory.
  * @param   cbFile          The size of the memory.
  */
-RTDECL(int) RTFileReadAllFree(void **ppvFile, size_t *pcbFile);
+RTDECL(void) RTFileReadAllFree(void *pvFile, size_t cbFile);
 
 #endif /* IN_RING3 */
 
