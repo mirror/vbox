@@ -19,7 +19,7 @@
 # additional information or have any questions.
 #
 
-SCRIPT_NAME="loadusb"
+SCRIPT_NAME="loadnetflt"
 XNU_VERSION=`LC_ALL=C uname -r | LC_ALL=C cut -d . -f 1`
 
 DRVNAME="VBoxNetFlt.kext"
