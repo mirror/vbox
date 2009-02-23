@@ -104,6 +104,7 @@ PROGRAMS.win += \
 	ntGetTimerResolution
 PROGRAMS.linux += \
 	tstRTProcWait \
+	tstRTProcIsRunningByName \
 	tstBitOperationsPIC3 \
 	tstInlineAsmPIC \
 	tstInlineAsmPIC3 \
@@ -295,6 +296,8 @@ tstRand_SOURCES = tstRand.cpp
 tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
 
 tstRTProcWait_SOURCES = tstRTProcWait.cpp
+
+tstRTProcIsRunningByName_SOURCES = tstRTProcIsRunningByName.cpp
 
 tstSemMutex_SOURCES = tstSemMutex.cpp
 
