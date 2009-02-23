@@ -503,8 +503,6 @@ void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 VMMDECL(void) PGMMapCheck(PVM pVM)
 {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    Log(("PGMMapCheck fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
-
     /*
      * Can skip this if mappings are disabled.
      */
