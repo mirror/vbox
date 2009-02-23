@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -51,6 +51,7 @@
 #include <sys/sunldi.h>
 #include <sys/gld.h>
 
+#include "../VBoxNetAdpInternal.h"
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -64,12 +65,6 @@
 
 static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 static int VBoxNetAdpSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
-
-static int VBoxNetAdpSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fFile, int fStream, cred_t *pCred);
-static int VBoxNetAdpSolarisModClose(queue_t *pQueue, int fFile, cred_t *pCred);
-static int VBoxNetAdpSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg);
-static int VBoxNetAdpSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg);
-static int VBoxNetAdpSolarisModWriteService(queue_t *pQueue);
 
 /**
  * Streams: module info.
@@ -403,8 +398,8 @@ static int VBoxNetAdpSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
                     int rc = gld_unregister(pMacInfo);
                     if (rc == DDI_SUCCESS)
                     {
-                        RTMemFree(pState);
                         gld_mac_free(pMacInfo);
+                        RTMemFree(pState);
                         return DDI_SUCCESS;
                     }
                     else
@@ -463,24 +458,39 @@ static int vboxNetAdpSolarisSend(gld_mac_info_t *pMacInfo, mblk_t *pMsg)
 
 static int vboxNetAdpSolarisStub(gld_mac_info_t *pMacInfo)
 {
-    NOREF(pMacInfo);
     return GLD_SUCCESS;
 }
 
 
 static int vboxNetAdpSolarisSetMulticast(gld_mac_info_t *pMacInfo, unsigned char *pMulticastAddr, int fMulticast)
 {
-    NOREF(pMacInfo);
-    NOREF(pMulticastAddr);
-    NOREF(fMulticast);
     return GLD_SUCCESS;
 }
 
 
 static int vboxNetAdpSolarisSetPromisc(gld_mac_info_t *pMacInfo, int fPromisc)
 {
-    NOREF(pMacInfo);
-    NOREF(fPromisc);
+    /* Host requesting promiscuous intnet connection... */
     return GLD_SUCCESS;
+}
+
+
+int vboxNetAdpOsConnectIt(PVBOXNETADP pThis)
+{
+    /* Nothing to do here. */
+    return VINF_SUCCESS;
+}
+
+
+int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
+{
+    /* Nothing to do here. */
+    return VINF_SUCCESS;
+}
+
+
+void vboxNetAdpOsDestroy(PVBOXNETADP pThis)
+{
+    /* Nothing to do here. */
 }
 
