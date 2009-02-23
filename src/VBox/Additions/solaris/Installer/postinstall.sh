@@ -19,16 +19,48 @@
 
 uncompress_files()
 {
-    # self-overwriting
+    # Remove compressed names from the pkg
+    /usr/sbin/removef $PKGINST "$1/VBoxClient.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/VBoxService.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/VBoxControl.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxvideo_drv_13.so.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxvideo_drv_14.so.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxvideo_drv_15.so.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxvideo_drv_16.so.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxvideo_drv_71.so.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxmouse_drv_14.so.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxmouse_drv_15.so.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxmouse_drv_16.so.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxmouse_drv_70.so.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxmouse_drv_71.so.Z" 1>/dev/null
+
+    # Add uncompressed names to the pkg
+    /usr/sbin/installf -c none $PKGINST "$1/VBoxClient" f
+    /usr/sbin/installf -c none $PKGINST "$1/VBoxService" f
+    /usr/sbin/installf -c none $PKGINST "$1/VBoxControl" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxvideo_drv_13.so" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxvideo_drv_14.so" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxvideo_drv_15.so" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxvideo_drv_16.so" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxvideo_drv_71.so" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxmouse_drv_14.so" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxmouse_drv_15.so" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxmouse_drv_16.so" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxmouse_drv_70.so" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxmouse_drv_71.so" f
+
+    # Overwrite compressed with uncompressed file
     uncompress -f "$1/VBoxClient.Z" > /dev/null 2>&1
     uncompress -f "$1/VBoxService.Z" > /dev/null 2>&1
     uncompress -f "$1/VBoxControl.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxvideo_drv_13.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxvideo_drv_14.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxvideo_drv_15.so.Z" > /dev/null 2>&1
+    uncompress -f "$1/vboxvideo_drv_16.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxvideo_drv_71.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxmouse_drv_14.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxmouse_drv_15.so.Z" > /dev/null 2>&1
+    uncompress -f "$1/vboxmouse_drv_16.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxmouse_drv_70.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxmouse_drv_71.so.Z" > /dev/null 2>&1
 }
@@ -50,7 +82,7 @@ fi
 
 # vboxguest.sh would've been installed, we just need to call it.
 echo "Configuring VirtualBox guest kernel module..."
-$vboxadditions_path/vboxguest.sh restart silentunload
+$vboxadditions_path/vboxguest.sh restartall silentunload
 
 sed -e '
 /name=vboxguest/d' /etc/devlink.tab > /etc/devlink.vbox
@@ -96,6 +128,10 @@ case "$xorgversion" in
         vboxmouse_src="vboxmouse_drv_14.so"
         vboxvideo_src="vboxvideo_drv_14.so"
         ;;
+    1.5.99 | 1.6.* )
+        vboxmouse_src="vboxmouse_drv_16.so"
+        vboxvideo_src="vboxvideo_drv_16.so"
+        ;;    
     1.5.* )
         vboxmouse_src="vboxmouse_drv_15.so"
         vboxvideo_src="vboxvideo_drv_15.so"
@@ -129,9 +165,9 @@ else
         cp "$vboxadditions_path/$vboxmouse_src" "$vboxmouse_dest"
         cp "$vboxadditions_path/$vboxvideo_src" "$vboxvideo_dest"
 
-        # Removing redundent files
-        /usr/sbin/removef $PKGINST $vboxadditions_path/vboxmouse_drv_* 1>/dev/null 2>/dev/null
-        /usr/sbin/removef $PKGINST $vboxadditions_path/vboxvideo_drv_* 1>/dev/null 2>/dev/null
+        # Removing redundent names from pkg and files from disk
+        /usr/sbin/removef $PKGINST $vboxadditions_path/vboxmouse_drv_* 1>/dev/null
+        /usr/sbin/removef $PKGINST $vboxadditions_path/vboxvideo_drv_* 1>/dev/null
         rm -f $vboxadditions_path/vboxmouse_drv_*
         rm -f $vboxadditions_path/vboxvideo_drv_*
     fi
@@ -145,15 +181,16 @@ else
         cp "$vboxadditions64_path/$vboxmouse_src" "$vboxmouse_dest"
         cp "$vboxadditions64_path/$vboxvideo_src" "$vboxvideo_dest"
 
-        # Removing redundent files
-        /usr/sbin/removef $PKGINST $vboxadditions64_path/vboxmouse_drv_* 1>/dev/null 2>/dev/null
-        /usr/sbin/removef $PKGINST $vboxadditions64_path/vboxvideo_drv_* 1>/dev/null 2>/dev/null
+        # Removing redundent names from pkg and files from disk
+        /usr/sbin/removef $PKGINST $vboxadditions64_path/vboxmouse_drv_* 1>/dev/null
+        /usr/sbin/removef $PKGINST $vboxadditions64_path/vboxvideo_drv_* 1>/dev/null
         rm -f $vboxadditions64_path/vboxmouse_drv_*
         rm -f $vboxadditions64_path/vboxvideo_drv_*
     fi
 
     # Some distros like Indiana have no xorg.conf, deal with this
     if test ! -f '/etc/X11/xorg.conf' && test ! -f '/etc/X11/.xorg.conf'; then
+        /usr/sbin/removef $PKGINST $vboxadditions_path/solarix_xorg.conf 1>/dev/null
         mv -f $vboxadditions_path/solaris_xorg.conf /etc/X11/.xorg.conf
     fi
 
@@ -177,12 +214,6 @@ else
     echo "*** Failed to configure client!! Couldn't find autostart directory."
     retval=2
 fi
-
-
-# Remove redundant files
-/usr/sbin/removef $PKGINST $vboxadditions_path/etc/devlink.tab 1>/dev/null
-/usr/sbin/removef $PKGINST $vboxadditions_path/etc 1>/dev/null
-rm -rf $vboxadditions_path/etc
 
 # Finalize
 /usr/sbin/removef -f $PKGINST
