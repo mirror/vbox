@@ -1,7 +1,7 @@
 /* $Id$ */
 /** @file
  *
- * IAppliance and IVirtualSystem COM class implementations
+ * IAppliance and IVirtualSystem COM class implementations.
  */
 
 /*
@@ -29,6 +29,7 @@
 #include "VirtualBoxImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "ProgressImpl.h"
+#include "MachineImpl.h"
 
 #include "Logging.h"
 
@@ -1608,6 +1609,12 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
     return rc;
 }
 
+STDMETHODIMP Appliance::Write(IN_BSTR path)
+{
+    HRESULT rc = S_OK;
+    return rc;
+}
+
 HRESULT Appliance::searchUniqueVMName(Utf8Str& aName) const
 {
     IMachine *machine = NULL;
@@ -2497,3 +2504,8 @@ const VirtualSystemDescriptionEntry* VirtualSystemDescription::findControllerFro
     return NULL;
 }
 
+STDMETHODIMP Machine::Export(IAppliance *appliance)
+{
+    HRESULT rc = S_OK;
+    return rc;
+}

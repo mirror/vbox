@@ -314,6 +314,12 @@ static void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_IMPORTAPPLIANCE)
     {
         RTPrintf("VBoxManage import           <ovf>\n"
+                 "\n"); // @todo
+    }
+
+    if (u64Cmd & USAGE_EXPORTAPPLIANCE)
+    {
+        RTPrintf("VBoxManage export           <machines> -o <ovf>\n"
                  "\n");
     }
 
@@ -3006,6 +3012,7 @@ int main(int argc, char *argv[])
 #endif /* VBOX_WITH_GUEST_PROPS defined */
         { "metrics",          handleMetrics },
         { "import",           handleImportAppliance },
+        { "export",           handleExportAppliance },
         { NULL,               NULL }
     };
 

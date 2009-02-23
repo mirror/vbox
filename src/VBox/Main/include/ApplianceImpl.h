@@ -76,7 +76,7 @@ public:
     STDMETHOD(Read)(IN_BSTR path);
     STDMETHOD(Interpret)(void);
     STDMETHOD(ImportMachines)(IProgress **aProgress);
-
+    STDMETHOD(Write)(IN_BSTR path);
     /* public methods only for internal purposes */
 
     /* private instance data */

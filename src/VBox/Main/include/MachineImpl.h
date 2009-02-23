@@ -59,6 +59,7 @@
 // helper declarations
 ////////////////////////////////////////////////////////////////////////////////
 
+class IAppliance;
 class VirtualBox;
 class Progress;
 class CombinedProgress;
@@ -546,6 +547,7 @@ public:
     STDMETHOD(SaveSettingsWithBackup) (BSTR *aBakFileName);
     STDMETHOD(DiscardSettings)();
     STDMETHOD(DeleteSettings)();
+    STDMETHOD(Export)(IAppliance *appliance);
     STDMETHOD(GetSnapshot) (IN_GUID aId, ISnapshot **aSnapshot);
     STDMETHOD(FindSnapshot) (IN_BSTR aName, ISnapshot **aSnapshot);
     STDMETHOD(SetCurrentSnapshot) (IN_GUID aId);

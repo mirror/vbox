@@ -1730,8 +1730,8 @@
     <method name="createAppliance">
       <desc>
         Creates a new appliance object, which represents an appliance in the Open Virtual Machine
-        Format (OVF). This can then be used to import an OVF appliance into VirtualBox; see the
-        documentation for <link to="IAppliance" /> for details.
+        Format (OVF). This can then be used to import an OVF appliance into VirtualBox or to export
+        machines as an OVF appliance; see the documentation for <link to="IAppliance" /> for details.
       </desc>
       <param name="appliance" type="IAppliance" dir="return">
         <desc>New appliance.</desc>
@@ -2853,48 +2853,79 @@
      wsmap="managed"
      >
     <desc>
-        Represents an appliance in OVF format. An instance of this is returned by
-        <link to="IVirtualBox::createAppliance" />.
+        Represents a platform-independent appliance in OVF format. An instance of this is returned
+        by <link to="IVirtualBox::createAppliance" />, which can then be used to import and export
+        appliances with VirtualBox.
 
-        Importing an OVF appliance into VirtualBox involves the following sequence
-        of API calls:
+        The OVF standard suggests two different physical file formats:
 
         <ol>
-          <li>
-          Call <link to="IVirtualBox::createAppliance" />. This will create an empty IAppliance object.
+            <li>If the OVF is distributed as a set of files, then @a file must be a fully qualified
+                path name to an existing OVF descriptor file with an <tt>.ovf</tt> file extension. If
+                this descriptor file references other files, as OVF appliances distributed as a set of
+                files most likely do, those files must be in the same directory as the descriptor file.</li>
+
+            <li>If the OVF is distributed as a single file, it must be in TAR format and have the
+                <tt>.ova</tt> file extension. This TAR file must then contain at least the OVF descriptor
+                files and optionally other files.
+
+                At this time, VirtualBox does not not yet support the packed (TAR) variant; support will
+                be added with a later version.</li>
+        </ol>
+
+        <b>Importing</b> an OVF appliance into VirtualBox as instances of
+        <link to="IMachine" /> involves the following sequence of API calls:
+
+        <ol>
+          <li>Call <link to="IVirtualBox::createAppliance" />. This will create an empty IAppliance object.
           </li>
 
-          <li>
-          On the new object, call <link to="#read" /> with the full path of the OVF file you
-          would like to import. So long as this file is syntactically valid, this will succeed
-          and return an instance of IAppliance that contains the parsed data from the OVF file.
+          <li>On the new object, call <link to="#read" /> with the full path of the OVF file you
+              would like to import. So long as this file is syntactically valid, this will succeed
+              and return an instance of IAppliance that contains the parsed data from the OVF file.
           </li>
 
           <li>Next, call <link to="#interpret" />, which analyzes the OVF data and sets up the
-          contents of the IAppliance attributes accordingly. These can be inspected by a
-          VirtualBox front-end such as the GUI, and the suggestions can be displayed to the
-          user. In particular, the <link to="#virtualSystemDescriptions" /> array contains
-          instances of <link to="IVirtualSystemDescription" /> which represent the virtual
-          systems in the OVF, which in turn describe the virtual hardware prescribed
-          by the OVF (network and hardware adapters, virtual disk images, memory size and so on).
-          The GUI can then give the user the option to confirm and/or change these suggestions.
+              contents of the IAppliance attributes accordingly. These can be inspected by a
+              VirtualBox front-end such as the GUI, and the suggestions can be displayed to the
+              user. In particular, the <link to="#virtualSystemDescriptions" /> array contains
+              instances of <link to="IVirtualSystemDescription" /> which represent the virtual
+              systems in the OVF, which in turn describe the virtual hardware prescribed by the
+              OVF (network and hardware adapters, virtual disk images, memory size and so on).
+              The GUI can then give the user the option to confirm and/or change these suggestions.
           </li>
 
-          <li>If desired, call <link to="IVirtualSystemDescription::setFinalValues" /> for
-          each virtual system to override the suggestions made by VirtualBox.
+          <li>If desired, call <link to="IVirtualSystemDescription::setFinalValues" /> for each
+              virtual system to override the suggestions made by VirtualBox.
           </li>
 
           <li>Finally, call <link to="#importMachines" /> to  create virtual machines in
-          VirtualBox as instances of <link to="IMachine" /> that match the information in the
-          virtual system descriptions.
+              VirtualBox as instances of <link to="IMachine" /> that match the information in the
+              virtual system descriptions.
           </li>
+        </ol>
+
+        <b>Exporting</b> VirtualBox machines into an OVF appliance involves the following steps:
+
+        <ol>
+            <li>As with importing, first call <link to="IVirtualBox::createAppliance" /> to create
+                an empty IAppliance object.
+            </li>
+
+            <li>For each machine you would like to export, call <link to="IMachine::export" />
+                with the IAppliance object you just created. This creates an instance of
+                <link to="IVirtualSystemDescription" /> inside the appliance.
+            </li>
+
+            <li>Finally, call <link to="#write" /> with a path specification to have the OVF
+                file written.</li>
         </ol>
 
     </desc>
 
     <attribute name="path" type="wstring" readonly="yes">
       <desc>Path to the main file of the OVF appliance, which is either the <tt>.ovf</tt> or
-      the <tt>.ova</tt> file passed to <link to="IAppliance::read" />.</desc>
+          the <tt>.ova</tt> file passed to <link to="IAppliance::read" />.</desc>
     </attribute>
 
     <attribute name="disks" type="wstring" readonly="yes" safearray="yes">
@@ -2912,26 +2943,32 @@
 
         <ol>
             <li>Disk ID (unique string identifier given to disk)</li>
+
             <li>Capacity (unsigned integer indicating the maximum capacity of the disk)</li>
+
             <li>Populated size (optional unsigned integer indicating the current size of the
             disk; can be approximate; -1 if unspecified)</li>
+
             <li>Format (string identifying the disk format, typically
             "http://www.vmware.com/specifications/vmdk.html#sparse")</li>
+
             <li>Reference (where to find the disk image, typically a file name; if empty,
             then the disk should be created on import)</li>
+
             <li>Image size (optional unsigned integer indicating the size of the image,
             which need not necessarily be the same as the values specified above, since
             the image may be compressed or sparse; -1 if not specified)</li>
+
             <li>Chunk size (optional unsigned integer if the image is split into chunks;
             presently unsupported and always -1)</li>
+
             <li>Compression (optional string equalling "gzip" if the image is gzip-compressed)</li>
         </ol>
       </desc>
     </attribute>
 
     <attribute name="virtualSystemDescriptions" type="IVirtualSystemDescription" readonly="yes" safearray="yes">
-      <desc>
-      Array of virtual system descriptions. One such description is created
+      <desc> Array of virtual system descriptions. One such description is created
       for each virtual system found in the OVF. The array is empty until after <link to="#interpret" />
       has been called.
       </desc>
@@ -2941,23 +2978,9 @@
       <desc>
         Reads an OVF file into the appliance object.
 
-        The OVF standard suggests two different file formats:
-
-        <ol>
-          <li>If the OVF is distributed as a set of files, then @a file must be a fully qualified
-          path name to an existing OVF descriptor file with an <tt>.ovf</tt> file extension. If
-          this descriptor file references other files, as OVF appliances distributed as a set of
-          files most likely do, those files must be in the same directory as the descriptor file.</li>
-
-          <li>If the OVF is distributed as a single file, it must be in TAR format and have the
-          <tt>.ova</tt> file extension. This TAR file must then contain at least the OVF descriptor
-          files and optionally other files. This variant is not yet supported by VirtualBox;
-          support will be added in a later version.</li>
-        </ol>
-
         This method succeeds if the OVF is syntactically valid and, by itself, without errors. The
         mere fact that this method returns successfully does not mean that VirtualBox supports all
-        features requested by the appliance; this can be examined after a call to <link to="#interpret" />.
+        features requested by the appliance; this can only be examined after a call to <link to="#interpret" />.
       </desc>
       <param name="file" type="wstring" dir="in">
         <desc>
@@ -2997,6 +3020,21 @@
 
       <param name="aProgress" type="IProgress" dir="return">
         <desc></desc>
+      </param>
+    </method>
+
+    <method name="write">
+      <desc>
+          Writes the contents of the appliance exports into a new OVF file.
+
+          Calling this method is the final step of exporting an appliance from VirtualBox;
+          see <link to="IAppliance" /> for an overview.
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>
+          Name of appliance file to open (either with an <tt>.ovf</tt> or <tt>.ova</tt> extension, depending
+          on whether the appliance is distributed as a set of files or as a single file, respectively).
+        </desc>
       </param>
     </method>
 
@@ -4683,6 +4721,16 @@
 
       </desc>
     </method>
+
+    <method name="export">
+        <desc>Exports the machine to an OVF appliance. See <link to="IAppliance" /> for the
+              steps required to export VirtualBox machines to OVF.
+        </desc>
+
+        <param name="appliance" type="IAppliance" dir="in">
+            <desc>Appliance to export this machine to.</desc>
+        </param>
+    </method >
 
     <method name="getSnapshot">
       <desc>
@@ -6484,9 +6532,9 @@
     <attribute name="status" type="HostNetworkInterfaceStatus" readonly="yes">
       <desc>Status of the interface.</desc>
     </attribute>
-    
+
     <attribute name="real" type="boolean" readonly="yes">
-      <desc>True if this is a real interface false 
+      <desc>True if this is a real interface false
       if this is a Virtualbox Host Adapter interface.</desc>
     </attribute>
   </interface>
