@@ -45,7 +45,7 @@ endif
 VBOX_LNX_ADD_INS_OUT_DIR           := $(PATH_TARGET)/Additions/Installer/linux
 BLDDIRS                            += $(VBOX_LNX_ADD_INS_OUT_DIR)
 VBOX_PATH_LINUX_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/installer
-VBOX_PATH_X11_ADDITION_INSTALLER   := $(PATH_ROOT)/src/VBox/Additions/x11/installer
+VBOX_PATH_X11_ADDITION_INSTALLER   := $(PATH_ROOT)/src/VBox/Additions/x11/Installer
 
 ifeq ($(KBUILD_TYPE),debug)
  VBOX_LNX_ADD_BIN_COPY              = $(CP) -f
