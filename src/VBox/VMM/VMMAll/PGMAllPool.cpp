@@ -39,6 +39,7 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <iprt/asm.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************
@@ -255,36 +256,27 @@ int pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 /**
  * Wrapper for getting the current context pointer to the entry being modified.
  *
- * @returns Pointer to the current context mapping of the entry.
- * @param   pPool       The pool.
- * @param   pvFault     The fault virtual address.
- * @param   GCPhysFault The fault physical address.
- * @param   cbEntry     The entry size.
+ * @returns VBox status code suitable for scheduling.
+ * @param   pVM         VM Handle.
+ * @param   pvDst       Destination address
+ * @param   pvSrc       Source guest virtual address.
+ * @param   GCPhysSrc   The source guest physical address.
+ * @param   cb          Size of data to read
  */
-DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvFault, RTGCPHYS GCPhysFault, const unsigned cbEntry)
+DECLINLINE(int) pgmPoolPhysSimpleReadGCPhys(PVM pVM, void *pvDst, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvSrc, RTGCPHYS GCPhysSrc, size_t cb)
 {
 #ifdef IN_RC
-    return (const void *)((RTGCUINTPTR)pvFault & ~(RTGCUINTPTR)(cbEntry - 1));
-
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-    void *pvRet;
-    int rc = PGMDynMapGCPageOff(pPool->pVMR0, GCPhysFault & ~(RTGCPHYS)(cbEntry - 1), &pvRet);
-    AssertFatalRCSuccess(rc);
-    return pvRet;
-
-#elif defined(IN_RING0)
-    void *pvRet;
-    int rc = pgmRamGCPhys2HCPtr(&pPool->pVMR0->pgm.s, GCPhysFault & ~(RTGCPHYS)(cbEntry - 1), &pvRet);
-    AssertFatalRCSuccess(rc);
-    return pvRet;
-
+    int rc = MMGCRamRead(pVM, (RTRCPTR)((RTRCUINTPTR)pvDst & ~(cb - 1)), (RTRCPTR)pvSrc, cb);
+    if (RT_FAILURE(rc))
+        rc = PGMPhysSimpleReadGCPhys(pVM, pvDst, GCPhysSrc & ~(RTGCPHYS)(cb - 1), cb);
+    return rc;
 #elif defined(IN_RING3)
-    return (RTHCPTR)((uintptr_t)pvFault & ~(RTHCUINTPTR)(cbEntry - 1));
+    memcpy(pvDst, (RTHCPTR)((uintptr_t)pvSrc & ~(RTHCUINTPTR)(cb - 1)), cb);
+    return VINF_SUCCESS;
 #else
-# error "huh?"
+    return PGMPhysSimpleReadGCPhys(pVM, pvDst, GCPhysSrc & ~(RTGCPHYS)(cb - 1), cb);
 #endif
 }
-
 
 /**
  * Process shadow entries before they are changed by the guest.
@@ -331,11 +323,14 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 if (uShw.pPT->a[iShw].n.u1Present)
                 {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-                    PCX86PTE pGstPte = (PCX86PTE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
-                    Log4(("pgmPoolMonitorChainChanging 32_32: deref %016RX64 GCPhys %08RX32\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PG_MASK));
+                    X86PTE GstPte;
+                    
+                    int rc = pgmPoolPhysSimpleReadGCPhys(pPool->CTX_SUFF(pVM), &GstPte, pvAddress, GCPhysFault, sizeof(GstPte));
+                    AssertRC(rc);
+                    Log4(("pgmPoolMonitorChainChanging 32_32: deref %016RX64 GCPhys %08RX32\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, GstPte.u & X86_PTE_PG_MASK));
                     pgmPoolTracDerefGCPhysHint(pPool, pPage,
                                                uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK,
-                                               pGstPte->u & X86_PTE_PG_MASK);
+                                               GstPte.u & X86_PTE_PG_MASK);
 #  endif
                     uShw.pPT->a[iShw].u = 0;
                 }
@@ -353,11 +348,14 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPTPae->a[iShw].n.u1Present)
                     {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-                        PCX86PTE pGstPte = (PCX86PTE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
-                        Log4(("pgmPoolMonitorChainChanging pae_32: deref %016RX64 GCPhys %08RX32\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PG_MASK));
+                        X86PTE GstPte;
+                        int rc = pgmPoolPhysSimpleReadGCPhys(pPool->CTX_SUFF(pVM), &GstPte, pvAddress, GCPhysFault, sizeof(GstPte));
+                        AssertRC(rc);
+
+                        Log4(("pgmPoolMonitorChainChanging pae_32: deref %016RX64 GCPhys %08RX32\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, GstPte.u & X86_PTE_PG_MASK));
                         pgmPoolTracDerefGCPhysHint(pPool, pPage,
                                                    uShw.pPTPae->a[iShw].u & X86_PTE_PAE_PG_MASK,
-                                                   pGstPte->u & X86_PTE_PG_MASK);
+                                                   GstPte.u & X86_PTE_PG_MASK);
 #  endif
                         uShw.pPTPae->a[iShw].u = 0;
                     }
@@ -440,11 +438,14 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 if (uShw.pPTPae->a[iShw].n.u1Present)
                 {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-                    PCX86PTEPAE pGstPte = (PCX86PTEPAE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
-                    Log4(("pgmPoolMonitorChainChanging pae: deref %016RX64 GCPhys %016RX64\n", uShw.pPTPae->a[iShw].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PAE_PG_MASK));
+                    X86PTEPAE GstPte;
+                    int rc = pgmPoolPhysSimpleReadGCPhys(pPool->CTX_SUFF(pVM), &GstPte, pvAddress, GCPhysFault, sizeof(GstPte));
+                    AssertRC(rc);
+
+                    Log4(("pgmPoolMonitorChainChanging pae: deref %016RX64 GCPhys %016RX64\n", uShw.pPTPae->a[iShw].u & X86_PTE_PAE_PG_MASK, GstPte.u & X86_PTE_PAE_PG_MASK));
                     pgmPoolTracDerefGCPhysHint(pPool, pPage,
                                                uShw.pPTPae->a[iShw].u & X86_PTE_PAE_PG_MASK,
-                                               pGstPte->u & X86_PTE_PAE_PG_MASK);
+                                               GstPte.u & X86_PTE_PAE_PG_MASK);
 #  endif
                     uShw.pPTPae->a[iShw].u = 0;
                 }
@@ -460,18 +461,21 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPTPae->a[iShw2].n.u1Present)
                     {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-                        PCX86PTEPAE pGstPte = (PCX86PTEPAE)pgmPoolMonitorGCPtr2CCPtr(pPool, 
-                                                                                     (CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR))((RTGCUINTPTR)pvAddress + sizeof(X86PTEPAE)), 
-                                                                                     GCPhysFault + sizeof(X86PTEPAE), sizeof(*pGstPte));
-                        Log4(("pgmPoolMonitorChainChanging pae: deref %016RX64 GCPhys %016RX64\n", uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PAE_PG_MASK));
+                        X86PTEPAE GstPte;
+#   ifdef IN_RING3
+                        int rc = pgmPoolPhysSimpleReadGCPhys(pPool->CTX_SUFF(pVM), &GstPte, (RTHCPTR)((RTHCUINTPTR)pvAddress + sizeof(GstPte)), GCPhysFault + sizeof(GstPte), sizeof(GstPte));
+#   else
+                        int rc = pgmPoolPhysSimpleReadGCPhys(pPool->CTX_SUFF(pVM), &GstPte, pvAddress + sizeof(GstPte), GCPhysFault + sizeof(GstPte), sizeof(GstPte));
+#   endif
+                        AssertRC(rc);
+                        Log4(("pgmPoolMonitorChainChanging pae: deref %016RX64 GCPhys %016RX64\n", uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK, GstPte.u & X86_PTE_PAE_PG_MASK));
                         pgmPoolTracDerefGCPhysHint(pPool, pPage,
-                                                uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK,
-                                                pGstPte->u & X86_PTE_PAE_PG_MASK);
+                                                   uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK,
+                                                   GstPte.u & X86_PTE_PAE_PG_MASK);
 #  endif
                         uShw.pPTPae->a[iShw2].u = 0;
                     }
                 }
-
                 break;
             }
 
