@@ -58,7 +58,7 @@
 
 PVBOXHGCMSVCHELPERS g_pHelpers;
 static IFramebuffer* g_pFrameBuffer;
-static uint64_t g_winId = 0;
+static ULONG64 g_winId = 0;
 
 #ifndef RT_OS_WINDOWS
 #define DWORD int
