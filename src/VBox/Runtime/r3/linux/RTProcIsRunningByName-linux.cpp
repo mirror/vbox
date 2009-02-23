@@ -40,6 +40,8 @@
 #include <iprt/param.h>
 #include <iprt/assert.h>
 
+#include <unistd.h>
+
 
 RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
 {
@@ -65,30 +67,43 @@ RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
                 &&  RTStrToUInt32(DirEntry.szName) > 0)
             {
                 /*
-                 * The first line of the 'cmdline' file is the argv[0] passed to
-                 * execv, which is what we're interested in... (Alternatively we
-                 * could try readlink 'exe'. Check what happens to set-uid procs.)
+                 * Try readlink on exe first since it's more faster and reliable.
+                 * Fall back on reading the first line in cmdline if that fails
+                 * (access errors typically). cmdline is unreliable as it might
+                 * contain whatever the execv caller passes as argv[0].
                  */
-                PRTSTREAM pStream;
-                rc = RTStrmOpenF("r", &pStream, "/proc/%s/cmdline", &DirEntry.szName[0]);
+                char szName[RTPATH_MAX];
+                RTStrPrintf(szName, sizeof(szName), "/proc/%s/exe", &DirEntry.szName[0]);
+                char szExe[RTPATH_MAX];
+                int cchLink = readlink(szName, szExe, sizeof(szExe) - 1);
+                if (    cchLink > 0
+                    &&  (size_t)cchLink < sizeof(szExe))
+                {
+                    szExe[cchLink] = '\0';
+                    rc = VINF_SUCCESS;
+                }
+                else
+                {
+                    RTStrPrintf(szName, sizeof(szName), "/proc/%s/cmdline", &DirEntry.szName[0]);
+                    PRTSTREAM pStream;
+                    rc = RTStrmOpen(szName, "r", &pStream);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTStrmGetLine(pStream, szExe, sizeof(szExe));
+                        RTStrmClose(pStream);
+                    }
+                }
                 if (RT_SUCCESS(rc))
                 {
-                    char szLine[RTPATH_MAX];
-                    rc = RTStrmGetLine(pStream, szLine, sizeof(szLine));
-                    RTStrmClose(pStream);
-                    if (    RT_SUCCESS(rc)
-                        ||  rc == VERR_BUFFER_OVERFLOW)
+                    /*
+                     * We are interested on the file name part only.
+                     */
+                    char const *pszFilename = RTPathFilename(szExe);
+                    if (RTStrCmp(pszFilename, pszName) == 0)
                     {
-                        /*
-                         * We are interested on the file name part only.
-                         */
-                        char const *pszFilename = RTPathFilename(szLine);
-                        if (RTStrCmp(pszFilename, pszName) == 0)
-                        {
-                            /* Found it! */
-                            RTDirClose(pDir);
-                            return true;
-                        }
+                        /* Found it! */
+                        RTDirClose(pDir);
+                        return true;
                     }
                 }
             }
