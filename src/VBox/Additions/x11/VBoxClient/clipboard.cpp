@@ -1094,7 +1094,6 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
         }
         LogRel(("vboxClipboardConvertCText: Xutf8TextListToTextProperty failed.  Reason: %s\n",
                 pcReason));
-        XFree(property.value);
         LogFlowFunc(("rc = false\n"));
         return false;
     }
