@@ -71,6 +71,7 @@ extern void sync_ldtr(CPUX86State *env1, int selector);
 unsigned long get_phys_page_offset(target_ulong addr);
 #endif
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -229,8 +230,8 @@ AssertCompile(RT_SIZEOFMEMB(REM, Env) <= REM_ENV_SIZE);
 #endif
 
 
-/* Prologue code, must be in lower 4G to simplify jumps to/from generated code */
-uint8_t* code_gen_prologue;
+/** Prologue code, must be in lower 4G to simplify jumps to/from generated code. */
+uint8_t *code_gen_prologue;
 
 /**
  * Initializes the REM.
@@ -273,6 +274,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     pVM->rem.s.fIgnoreAll = true;
 
     code_gen_prologue = RTMemExecAlloc(_1K);
+    AssertLogRelReturn(code_gen_prologue, VERR_NO_MEMORY);
 
     cpu_exec_init_all(0);
 
@@ -382,6 +384,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     STAM_REG(pVM, &gStatSelOutOfSyncStateBack[4],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/FS",        STAMUNIT_OCCURENCES,     "FS out of sync");
     STAM_REG(pVM, &gStatSelOutOfSyncStateBack[5],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/GS",        STAMUNIT_OCCURENCES,     "GS out of sync");
 
+    /** @todo missing /REM/Tb*Count stats */
 
 #endif
 
@@ -968,6 +971,7 @@ REMR3DECL(int) REMR3Run(PVM pVM)
             rc = VINF_EM_RESCHEDULE_HWACC;
             break;
 
+        /** @todo missing VBOX_WITH_VMI/EXECP_PARAV_CALL   */
         /*
          * An EM RC was raised (VMR3Reset/Suspend/PowerOff/some-fatal-error).
          */
@@ -1363,6 +1367,7 @@ void remR3UnprotectCode(CPUState *env, RTGCPTR GCPtr)
         CSAMR3UnmonitorPage(env->pVM, GCPtr, CSAM_TAG_REM);
 #endif
 }
+
 
 /**
  * Called when the CPU is initialized, any of the CRx registers are changed or
@@ -3158,6 +3163,7 @@ uint64_t remR3PhysReadU64(RTGCPHYS SrcGCPhys)
     return val;
 }
 
+
 /**
  * Read guest RAM and ROM, signed 64-bit.
  *
@@ -4159,6 +4165,7 @@ void cpu_wrmsr(CPUX86State *env, uint32_t msr, uint64_t val)
 {
     CPUMSetGuestMsr(env->pVM, msr, val);
 }
+
 /* -+- I/O Ports -+- */
 
 #undef LOG_GROUP
@@ -5042,6 +5049,7 @@ void *memcpy(void *dst, const void *src, size_t size)
 
 #endif
 
-void cpu_smm_update(CPUState* env)
+void cpu_smm_update(CPUState *env)
 {
 }
+
