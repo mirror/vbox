@@ -1420,8 +1420,10 @@ static DECLCALLBACK(int) selmR3GuestLDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
 static DECLCALLBACK(int) selmR3GuestTSSWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log(("selmR3GuestTSSWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf));
+    Log(("selmR3GuestTSSWriteHandler: write %.*Rhxs to %RGv size %d\n", RT_MIN(8, cbBuf), pvBuf, GCPtr, cbBuf));
+
     VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
@@ -1476,20 +1478,16 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
         pVM->selm.s.fGuestTss32Bit = pDesc->Gen.u4Type == X86_SEL_TYPE_SYS_386_TSS_AVAIL
                                   || pDesc->Gen.u4Type == X86_SEL_TYPE_SYS_386_TSS_BUSY;
 
-        /* Note: We should monitor the whole TSS to catch accesses to the virtual interrupt redirection bitmap, but
-         *       that causes some problems and with Windows guests some overhead as the entire TSS is rather big (3 pages).
-         *       We'll assume for now that the bitmap is static.
+        /*
+         * Presently we monitor the TSS and the interrupt redirection bitmap if it's present.
+         * We're assuming the guest is playing nice and that the bits we're monitoring won't
+         * cross page boundraries. (The TSS core must be on a single page, while the bitmap
+         * probably doesn't need to be.)
          */
-#if 1
-        /* Don't bother with anything but the core structure. (Actually all we care for is the r0 ss.) */
         if (cbTss > sizeof(VBOXTSS))
             cbTss = sizeof(VBOXTSS);
-#endif
-        /* The guest's TSS can span multiple pages now. We will monitor the whole thing. */
-#ifndef DEBUG_michael
-        AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + RT_MIN(sizeof(VBOXTSS), cbTss) - 1) >> PAGE_SHIFT),
+        AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + cbTss - 1) >> PAGE_SHIFT),
                   ("GCPtrTss=%RGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
-#endif
 
         // All system GDTs are marked not present above. That explains why this check fails.
         //if (pDesc->Gen.u1Present)
@@ -1543,46 +1541,59 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
                 }
             }
 
-            /* Update the ring 0 stack selector and base address */
-            /* feeling very lazy; reading too much */
-            VBOXTSS tss;
-            rc = PGMPhysSimpleReadGCPtr(pVM, &tss, GCPtrTss, RT_OFFSETOF(VBOXTSS, offIoBitmap) + sizeof(tss.offIoBitmap));
+            /*
+             * Update the ring 0 stack selector and base address.
+             * (Reading up to and including offIoBitmap to save effort in the VME case.)
+             */
+            VBOXTSS Tss;
+            rc = PGMPhysSimpleReadGCPtr(pVM, &Tss, GCPtrTss, RT_OFFSETOF(VBOXTSS, offIoBitmap) + sizeof(Tss.offIoBitmap));
             if (RT_SUCCESS(rc))
             {
 #ifdef LOG_ENABLED
-                uint32_t ssr0, espr0;
-
-                SELMGetRing1Stack(pVM, &ssr0, &espr0);
-                ssr0 &= ~1;
-
-                if (ssr0 != tss.ss0 || espr0 != tss.esp0)
-                    Log(("SELMR3SyncTSS: Updating TSS ring 0 stack to %04X:%08X\n", tss.ss0, tss.esp0));
-                Log(("offIoBitmap=%#x\n", tss.offIoBitmap));
+                if (LogIsEnabled())
+                {
+                    uint32_t ssr0, espr0;
+                    SELMGetRing1Stack(pVM, &ssr0, &espr0);
+                    if ((ssr0 & ~1) != Tss.ss0 || espr0 != Tss.esp0)
+                    {
+                        RTGCPHYS GCPhys = NIL_RTGCPHYS;
+                        rc = PGMGstGetPage(pVM, GCPtrTss, NULL, &GCPhys); AssertRC(rc);
+                        Log(("SELMR3SyncTSS: Updating TSS ring 0 stack to %04X:%08X from %04X:%08X; TSS Phys=%VGp)\n",
+                             Tss.ss0, Tss.esp0, (ssr0 & ~1), espr0,  GCPhys));
+                        AssertMsg(ssr0 != Tss.ss0,
+                                  ("ring-1 leak into TSS.SS0! %04X:%08X from %04X:%08X; TSS Phys=%VGp)\n",
+                                   Tss.ss0, Tss.esp0, (ssr0 & ~1), espr0,  GCPhys));
+                    }
+                    Log(("offIoBitmap=%#x\n", Tss.offIoBitmap));
+                }
 #endif /* LOG_ENABLED */
-                /* Update our TSS structure for the guest's ring 1 stack */
-                SELMSetRing1Stack(pVM, tss.ss0 | 1, tss.esp0);
+                AssertMsg(!(Tss.ss0 & 3), ("ring-1 leak into TSS.SS0? %04X:%08X\n", Tss.ss0, Tss.esp0));
 
-                /* Should we sync the virtual interrupt redirection bitmap as well? */
+
+                /* Update our TSS structure for the guest's ring 1 stack */
+                SELMSetRing1Stack(pVM, Tss.ss0 | 1, Tss.esp0);
+
+                /*
+                 * Should we sync the virtual interrupt redirection bitmap as well?
+                 */
                 if (CPUMGetGuestCR4(pVM) & X86_CR4_VME)
                 {
-                    uint32_t offRedirBitmap;
-
                     /* Make sure the io bitmap offset is valid; anything less than sizeof(VBOXTSS) means there's none. */
-                    if (tss.offIoBitmap < RT_OFFSETOF(VBOXTSS, IntRedirBitmap) + sizeof(tss.IntRedirBitmap))
+                    if (Tss.offIoBitmap < RT_OFFSETOF(VBOXTSS, IntRedirBitmap) + sizeof(Tss.IntRedirBitmap))
                     {
-                        Log(("Invalid io bitmap offset detected (%x)!\n", tss.offIoBitmap));
-                        tss.offIoBitmap = RT_OFFSETOF(VBOXTSS, IntRedirBitmap) + sizeof(tss.IntRedirBitmap);
+                        Log(("Invalid io bitmap offset detected (%x)!\n", Tss.offIoBitmap));
+                        Tss.offIoBitmap = RT_OFFSETOF(VBOXTSS, IntRedirBitmap) + sizeof(Tss.IntRedirBitmap);
                     }
 
-                    offRedirBitmap = tss.offIoBitmap - sizeof(tss.IntRedirBitmap);
+                    uint32_t offRedirBitmap = Tss.offIoBitmap - sizeof(Tss.IntRedirBitmap);
 
                     /** @todo not sure how the partial case is handled; probably not allowed */
-                    if (offRedirBitmap + sizeof(tss.IntRedirBitmap) <= pVM->selm.s.cbGuestTss)
+                    if (offRedirBitmap + sizeof(Tss.IntRedirBitmap) <= pVM->selm.s.cbGuestTss)
                     {
-                        rc = PGMPhysSimpleReadGCPtr(pVM, &pVM->selm.s.Tss.IntRedirBitmap, GCPtrTss + offRedirBitmap, sizeof(tss.IntRedirBitmap));
+                        rc = PGMPhysSimpleReadGCPtr(pVM, &pVM->selm.s.Tss.IntRedirBitmap, GCPtrTss + offRedirBitmap, sizeof(Tss.IntRedirBitmap));
                         AssertRC(rc);
                         Log2(("Redirection bitmap:\n"));
-                        Log2(("%.*Rhxd\n", sizeof(tss.IntRedirBitmap), &pVM->selm.s.Tss.IntRedirBitmap));
+                        Log2(("%.*Rhxd\n", sizeof(Tss.IntRedirBitmap), &pVM->selm.s.Tss.IntRedirBitmap));
                     }
                 }
             }
@@ -1752,6 +1763,8 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
 VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 {
 #ifdef VBOX_STRICT
+    if (VM_FF_ISSET(pVM, VM_FF_SELM_SYNC_TSS))
+        return true;
 
     RTSEL SelTss = CPUMGetGuestTR(pVM);
     if (SelTss & X86_SEL_MASK)
@@ -1767,15 +1780,15 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
         if (pDesc->Gen.u1Granularity)
             cbTss = (cbTss << PAGE_SHIFT) | PAGE_OFFSET_MASK;
         cbTss++;
-# if 1
-        /* Don't bother with anything but the core structure. (Actually all we care for is the r0 ss.) */
+
+        /*
+         * We only care about the Ring-0 ESP and SS values and the interrupt redirection bitmap.
+         * See SELMR3SyncTSS for details.
+         */
         if (cbTss > sizeof(VBOXTSS))
             cbTss = sizeof(VBOXTSS);
-# endif
-# ifndef DEBUG_michael
-        AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + sizeof(VBOXTSS) - 1) >> PAGE_SHIFT),
+        AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + cbTss - 1) >> PAGE_SHIFT),
                   ("GCPtrTss=%RGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
-# endif
 
         // All system GDTs are marked not present above. That explains why this check fails.
         //if (pDesc->Gen.u1Present)
@@ -1800,7 +1813,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
             int rc = PGMPhysSimpleReadGCPtr(pVM, &ESPR0, GCPtrGuestTSS + RT_OFFSETOF(VBOXTSS, esp0), sizeof(ESPR0));
             if (RT_SUCCESS(rc))
             {
-                RTSEL SelSS0;
+                RTSEL   SelSS0;
                 rc = PGMPhysSimpleReadGCPtr(pVM, &SelSS0, GCPtrGuestTSS + RT_OFFSETOF(VBOXTSS, ss0), sizeof(SelSS0));
                 if (RT_SUCCESS(rc))
                 {
@@ -1809,10 +1822,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
                         return true;
 
                     RTGCPHYS GCPhys;
-                    uint64_t fFlags;
-
-                    rc = PGMGstGetPage(pVM, GCPtrGuestTSS, &fFlags, &GCPhys);
-                    AssertRC(rc);
+                    rc = PGMGstGetPage(pVM, GCPtrGuestTSS, NULL, &GCPhys); AssertRC(rc);
                     AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%RGv Phys=%RGp\n",
                                      (pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1, SelSS0, ESPR0, GCPtrGuestTSS, GCPhys));
                 }
