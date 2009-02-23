@@ -322,6 +322,7 @@ RuntimeR3_SOURCES.win = \
 	generic/mppresent-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/semsrw-generic.cpp \
+	generic/RTProcIsRunningByName-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r3/posix/env-posix.cpp \
 	r3/win/RTSystemQueryOSInfo-win.cpp \
@@ -370,6 +371,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/linux/sched-linux.cpp \
 	r3/linux/sysfs.cpp \
 	r3/linux/time-linux.cpp \
+	r3/linux/RTProcIsRunningByName-linux.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
 	r3/posix/alloc-posix.cpp \
 	r3/posix/dir-posix.cpp \
@@ -422,6 +424,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/uuid-generic.cpp \
 	generic/RTMpGetCurFrequency-generic.cpp \
 	generic/RTMpGetMaxFrequency-generic.cpp \
+	generic/RTProcIsRunningByName-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	r3/os2/filelock-os2.cpp \
 	r3/os2/mp-os2.cpp \
@@ -460,6 +463,7 @@ RuntimeR3_SOURCES.darwin = \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp\
+	generic/RTProcIsRunningByName-generic.cpp \
 	r3/darwin/alloc-darwin.cpp \
 	r3/darwin/filelock-darwin.cpp \
 	r3/darwin/mp-darwin.cpp \
@@ -509,6 +513,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTMpGetOnlineSet-generic.cpp \
 	generic/RTMpGetSet-generic.cpp \
 	generic/RTMpIsCpuOnline-generic.cpp \
+	generic/RTProcIsRunningByName-generic.cpp \
 	r3/freebsd/alloc-freebsd.cpp \
 	r3/freebsd/rtProcInitExePath-freebsd.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
@@ -546,6 +551,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/sched-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
+	generic/RTProcIsRunningByName-generic.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
@@ -602,6 +608,7 @@ RuntimeR3L4_SOURCES = \
 	generic/semsrw-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
+	generic/RTProcIsRunningByName-generic.cpp \
 	l4/l4-errno.cpp \
 	l4/rtProcInitExePath-l4.cpp \
 	l4/process-l4env.cpp \

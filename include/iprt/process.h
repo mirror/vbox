@@ -247,6 +247,15 @@ RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName);
  */
 RTR3DECL(int)   RTProcDaemonize(bool fNoChDir, bool fNoClose, const char *pszPidfile);
 
+/**
+ * Check if the given process is running on the system. This check is case
+ * sensitive.
+ *
+ * @returns true if the process is running & false otherwise.
+ * @param   pszName  Process name to search for.
+ */
+RTR3DECL(bool)  RTProcIsRunningByName(const char *pszName);
+
 #endif /* IN_RING3 */
 
 /** @} */
