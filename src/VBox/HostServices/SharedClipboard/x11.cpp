@@ -1323,7 +1323,6 @@ static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
         }
         LogRelFunc (("Xutf8TextListToTextProperty failed.  Reason: %s\n",
                 pcReason));
-        XFree(property.value);
         vboxClipboardEmptyGuestBuffer();
         return false;
     }
