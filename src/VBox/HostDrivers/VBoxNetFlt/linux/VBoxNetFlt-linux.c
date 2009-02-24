@@ -238,7 +238,7 @@ static void vboxTapNetDevInit(struct net_device *pNetDev)
 
 static int vboxTapRegisterNetDev(void)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     struct net_device *pNetDev;
 
     /* No need for private data. */
