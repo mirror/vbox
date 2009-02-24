@@ -153,12 +153,12 @@ void DisplayHelp()
     {
         std::string str(g_aOptions[i].pszLong);
         str += ", -";
-        str += (char)g_aOptions[i].uShort;
+        str += g_aOptions[i].iShort;
         str += ":";
 
         const char *pcszDescr = "";
 
-        switch (g_aOptions[i].uShort)
+        switch (g_aOptions[i].iShort)
         {
             case 'h':
                 pcszDescr = "Print this help message and exit.";
