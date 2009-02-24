@@ -97,6 +97,7 @@ struct HandlerArg
 {
     int argc;
     char **argv;
+
 #ifdef USE_XPCOM_QUEUE
     nsCOMPtr<nsIEventQueue> eventQ;
 #endif
@@ -116,7 +117,8 @@ typedef enum
     VMINFO_STANDARD         = 1,    /**< standard details */
     VMINFO_STATISTICS       = 2,    /**< guest statistics */
     VMINFO_FULL             = 3,    /**< both */
-    VMINFO_MACHINEREADABLE  = 4     /**< both, and make it machine readable */
+    VMINFO_MACHINEREADABLE  = 4,    /**< both, and make it machine readable */
+    VMINFO_COMPACT          = 5
 } VMINFO_DETAILS;
 
 /*
@@ -148,9 +150,10 @@ extern int handleGuestProperty(HandlerArg *a);
 /* VBoxManageVMInfo.cpp */
 void showSnapshots(ComPtr<ISnapshot> rootSnapshot, VMINFO_DETAILS details, const com::Bstr &prefix = "", int level = 0);
 int handleShowVMInfo(HandlerArg *a);
-HRESULT showVMInfo(ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
-                   ComPtr <IConsole> console = ComPtr <IConsole> (),
-                   VMINFO_DETAILS details = VMINFO_NONE);
+HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
+                   ComPtr<IMachine> machine,
+                   VMINFO_DETAILS details = VMINFO_NONE,
+                   ComPtr <IConsole> console = ComPtr<IConsole>());
 
 /* VBoxManageList.cpp */
 int handleList(HandlerArg *a);

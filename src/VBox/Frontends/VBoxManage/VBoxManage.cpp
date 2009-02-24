@@ -1815,7 +1815,7 @@ static int handleSnapshot(HandlerArg *a)
             /* get the machine of the given snapshot */
             ComPtr<IMachine> machine;
             snapshot->COMGETTER(Machine)(machine.asOutParam());
-            showVMInfo(a->virtualBox, machine, console);
+            showVMInfo(a->virtualBox, machine, VMINFO_NONE, console);
         }
         else
         {
@@ -3023,6 +3023,7 @@ int main(int argc, char *argv[])
         {
             handlerArg.argc = argc - iCmdArg;
             handlerArg.argv = &argv[iCmdArg];
+
             rc = commandHandlers[commandIndex].handler(&handlerArg);
             break;
         }
