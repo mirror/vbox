@@ -204,13 +204,9 @@ int handleList(HandlerArg *a)
                             {
                                 case MachineState_Running:
                                 case MachineState_Paused:
-                                    {
-                                        Guid uuid;
-                                        rc = machines [i]->COMGETTER(Id) (uuid.asOutParam());
-                                        if (SUCCEEDED(rc))
-                                            RTPrintf ("%s\n", uuid.toString().raw());
-                                        break;
-                                    }
+                                    rc = showVMInfo(a->virtualBox,
+                                                    machines[i],
+                                                    (fOptLong) ? VMINFO_STANDARD : VMINFO_COMPACT);
                             }
                         }
                     }
