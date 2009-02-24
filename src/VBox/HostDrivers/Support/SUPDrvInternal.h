@@ -184,7 +184,7 @@
 #elif defined(RT_OS_LINUX)
 
 /* check kernel version */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 # error Unsupported kernel version!
 #endif
 
