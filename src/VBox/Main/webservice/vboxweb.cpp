@@ -253,7 +253,6 @@ int main(int argc, char* argv[])
                             "All rights reserved.\n", VBOX_VERSION_STRING);
 
     int c;
-    int i = 1;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0 /* fFlags */);
@@ -261,26 +260,6 @@ int main(int argc, char* argv[])
     {
         switch (c)
         {
-            case VERR_GETOPT_UNKNOWN_OPTION:
-                RTStrmPrintf(g_pStdErr, "Unknown option %s\n", argv[i]);
-                exit(1);
-            break;
-
-            case VERR_GETOPT_REQUIRED_ARGUMENT_MISSING:
-                RTStrmPrintf(g_pStdErr, "Option %s requires an argument value\n", ValueUnion.pDef->pszLong);
-                exit(1);
-            break;
-
-            case VERR_GETOPT_INVALID_ARGUMENT_FORMAT:
-                RTStrmPrintf(g_pStdErr, "Argument to option %s has invalid format\n", ValueUnion.pDef->pszLong);
-                exit(1);
-            break;
-
-            default:
-                RTStrmPrintf(g_pStdErr, "RTGetOpt returned %d\n", c);
-                exit(1);
-            break;
-
             case 'H':
                 g_pcszBindToHost = ValueUnion.psz;
             break;
@@ -326,8 +305,18 @@ int main(int argc, char* argv[])
             break;
 #endif
             case VINF_GETOPT_NOT_OPTION:
-                RTStrmPrintf(g_pStdErr, "Unknown option %s\n", argv[i]);
+                RTStrmPrintf(g_pStdErr, "Unknown option %s\n", ValueUnion.psz);
             return 1;
+
+            default:
+                if (c > 0)
+                    RTStrmPrintf(g_pStdErr, "missing case: %c\n", c);
+                else if (ValueUnion.pDef)
+                    RTStrmPrintf(g_pStdErr, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    RTStrmPrintf(g_pStdErr, "%Rrs", c);
+                exit(1);
+            break;
         }
     }
 
