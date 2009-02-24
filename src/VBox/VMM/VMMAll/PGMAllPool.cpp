@@ -3770,7 +3770,6 @@ DECLINLINE(void) pgmPoolTrackDerefPD(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PD 
                 pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
             else
                 AssertFatalMsgFailed(("%x\n", pShwPD->a[i].u & X86_PDE_PG_MASK));
-            /** @todo 64-bit guests: have to ensure that we're not exhausting the dynamic mappings! */
         }
     }
 }
@@ -4014,6 +4013,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             break;
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        case PGMPOOLKIND_32BIT_PD_PHYS:
         case PGMPOOLKIND_32BIT_PD:
             pgmPoolTrackDerefPD(pPool, pPage, (PX86PD)pvShw);
             break;
