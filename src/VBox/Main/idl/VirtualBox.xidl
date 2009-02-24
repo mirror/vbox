@@ -2171,8 +2171,8 @@
 
         An error is returned if the supplied @a key does not exist. @c NULL is
         returned in @a nextKey if the supplied key is the last key. When
-        supplying @c NULL for the @a key, the first key item is returned in @a
-        nextKey (if there is any). @a nextValue is an optional parameter and
+        supplying @c NULL for the @a key, the first key item is returned in
+        @a nextKey (if there is any). @a nextValue is an optional parameter and
         if supplied, the next key's value is returned in it.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
@@ -2529,8 +2529,8 @@
 
     <method name="waitForPropertyChange">
       <desc>
-        Blocks the caller until any of the properties represented by the @a
-        what argument changes the value or until the given timeout interval
+        Blocks the caller until any of the properties represented by the
+        @a what argument changes the value or until the given timeout interval
         expires.
 
         The @a what argument is a comma separated list of property masks that
@@ -4089,8 +4089,8 @@
         Type of the session.  If <link to="#sessionState"/> is
         SessionSpawning or SessionOpen, this attribute contains the
         same value as passed to the
-        <link to="IVirtualBox::openRemoteSession"/> method in the @a
-        type parameter. If the session was opened directly using
+        <link to="IVirtualBox::openRemoteSession"/> method in the
+        @a type parameter. If the session was opened directly using
         <link to="IVirtualBox::openSession"/>, or if
         <link to="#sessionState"/> is SessionClosed, the value of this
         attribute is @c null.
@@ -4489,8 +4489,8 @@
 
         An error is returned if the supplied @a key does not exist. @c NULL is
         returned in @a nextKey if the supplied key is the last key. When
-        supplying @c NULL for the @a key, the first key item is returned in @a
-        nextKey (if there is any). @a nextValue is an optional parameter and
+        supplying @c NULL for the @a key, the first key item is returned in
+        @a nextKey (if there is any). @a nextValue is an optional parameter and
         if supplied, the next key's value is returned in it.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
@@ -5268,8 +5268,8 @@
         <link to="IConsole::detachUSBDevice"/>.
 
         This notification is sent in case of both a succeeded and a
-        failed request completion. When the request succeeds, the @a
-        error parameter is @c null, and the given device has been
+        failed request completion. When the request succeeds, the
+        @a error parameter is @c null, and the given device has been
         already added to (when @a attached is @c true) or removed from
         (when @a attached is @c false) the collection represented by
         <link to="IConsole::USBDevices"/>. On failure, the collection
@@ -8738,8 +8738,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         index in the second array.
 
         Note that for properties that do not have assigned values,
-        <tt>null</tt> is returned at the appropriate index in the @a
-        returnValues array.
+        <tt>null</tt> is returned at the appropriate index in the
+        @a returnValues array.
 
       </desc>
       <param name="names" type="wstring" dir="in">
@@ -9876,11 +9876,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The @a pixelFormat parameter defines whether the direct mode is
         available or not. If @a pixelFormat is <link
         to="FramebufferPixelFormat_Opaque"/> then direct access to the guest
-        VRAM buffer is not available -- the @a VRAM, @a bitsPerPixel and @a
-        bytesPerLine parameters must be ignored and the implementation must use
+        VRAM buffer is not available -- the @a VRAM, @a bitsPerPixel and
+        @a bytesPerLine parameters must be ignored and the implementation must use
         the indirect mode (where it provides its own buffer in one of the
-        supported formats). In all other cases, @a pixelFormat together with @a
-        bitsPerPixel and @a bytesPerLine define the format of the video memory
+        supported formats). In all other cases, @a pixelFormat together with
+        @a bitsPerPixel and @a bytesPerLine define the format of the video memory
         buffer pointed to by the @a VRAM parameter and the implementation is
         free to choose which mode to use. To indicate that this frame buffer uses
         the direct mode, the implementation of the <link to="#usesGuestVRAM"/>
@@ -9892,8 +9892,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The @a width and @a height parameters represent the size of the
         requested display mode in both modes. In case of indirect mode, the
         provided memory buffer should be big enough to store data of the given
-        display mode. In case of direct mode, it is guaranteed that the given @a
-        VRAM buffer contains enough space to represent the display mode of the
+        display mode. In case of direct mode, it is guaranteed that the given
+        @a VRAM buffer contains enough space to represent the display mode of the
         given size. Note that this frame buffer's <link to="#width"/> and <link
         to="#height"/> attributes must return exactly the same values as
         passed to this method after the resize is completed (see below).
