@@ -1028,7 +1028,11 @@ static void do_interrupt_protected(int intno, int is_int, int error_code,
     if ((type & 1) == 0) {
         env->eflags &= ~IF_MASK;
     }
+#ifndef VBOX
     env->eflags &= ~(TF_MASK | VM_MASK | RF_MASK | NT_MASK);
+#else
+    env->eflags &= ~(TF_MASK | VM_MASK | RF_MASK | NT_MASK | VIF_MASK | VIP_MASK);
+#endif
 }
 #ifdef VBOX
 
@@ -1294,7 +1298,12 @@ static void do_interrupt64(int intno, int is_int, int error_code,
     if ((type & 1) == 0) {
         env->eflags &= ~IF_MASK;
     }
+
+#ifndef VBOX
     env->eflags &= ~(TF_MASK | VM_MASK | RF_MASK | NT_MASK);
+#else
+    env->eflags &= ~(TF_MASK | VM_MASK | RF_MASK | NT_MASK | VIF_MASK | VIP_MASK);
+#endif
 }
 #endif
 
