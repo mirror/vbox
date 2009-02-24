@@ -268,7 +268,7 @@ VBoxSVC_SOURCES = \
 	MachineImpl.cpp \
 	SnapshotImpl.cpp \
 	MediumImpl.cpp \
-	HardDisk2Impl.cpp \
+	HardDiskImpl.cpp \
 	HardDiskAttachmentImpl.cpp \
 	HardDiskFormatImpl.cpp \
 	ProgressImpl.cpp \
