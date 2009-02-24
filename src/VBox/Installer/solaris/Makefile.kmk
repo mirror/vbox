@@ -125,8 +125,9 @@ SOLARIS_STRIP_EXES = \
 	VBoxZoneAccess \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
 	VBoxManage \
-	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE) \
+	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE,) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
+	$(if $(VBOX_WITH_USB),VBoxUSBHelper,) \
 	VBoxSVC \
 	VBoxXPCOMIPCD \
 	kchmviewer
@@ -134,7 +135,8 @@ SOLARIS_STRIP_EXES = \
 # Strip these binaries
 SOLARIS_STRIP_BINS = \
 	vboxdrv \
-	$(if $(VBOX_WITH_NETFLT),vboxflt) \
+	$(if $(VBOX_WITH_NETFLT),vboxflt,) \
+	$(if $(VBOX_WITH_USB),vboxusb,) \
 	VBoxDD.so \
 	VBoxDD2.so \
 	VBoxREM.so \
@@ -162,7 +164,7 @@ SOLARIS_STRIP_BINS = \
 	components/VBoxXPCOMIPCC.so
 ifdef VBOX_WITH_HARDENING
 SOLARIS_STRIP_BINS += \
-	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE.so) \
+	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE.so,) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL.so,) \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox.so,)
 endif
@@ -199,7 +201,8 @@ SOLARIS_EXTRAS = \
 	VBox.png \
 	autoresponse \
 	vboxdrv.conf \
-	$(if $(VBOX_WITH_NETFLT),vboxflt.conf) \
+	$(if $(VBOX_WITH_NETFLT),vboxflt.conf,) \
+	$(if $(VBOX_WITH_USB),vboxusb.conf,) \
 	vboxdrv.sh \
 	VBox.sh \
 	$(if $(VBOX_WITH_VBOXSDL),libSDL-1.2.so.0,) \
@@ -376,7 +379,8 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(if $(VBOX_OSE),,$(PATH_BIN)/LICENSE) \
 		$(if $(and $(VBOX_LICENSE_BINS),$(VBOX_WITH_QTGUI)),$(VBOX_LICENSE_BINS),) \
 		$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf \
-		$(if $(VBOX_WITH_NETFLT),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf) \
+		$(if $(VBOX_WITH_NETFLT),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf,) \
+		$(if $(VBOX_WITH_USB),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/solaris/vboxusb.conf,) \
 		$(if $(not $(VBOX_WITH_NETFLT))$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh,) \
 		$(if $(not $(VBOX_WITH_NETFLT))$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh,) \
 		$(addprefix $(PATH_BIN)/,$(filter-out $(SOLARIS_EXTRAS) $(SOLARIS_QTLIBS),$(SOLARIS_ARCH_FILES))) \
@@ -397,7 +401,8 @@ endif
 		--output $(SOLARIS_INST_DIR)/vbox.pkginfo \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf               $(SOLARIS_INST_DIR)/vboxdrv.conf
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf            $(SOLARIS_INST_DIR)/vboxflt.conf
+	$(QUIET)$(if $(VBOX_WITH_NETFLT),$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf         $(SOLARIS_INST_DIR)/vboxflt.conf,)
+	$(QUIET)$(if $(VBOX_WITH_USB),$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/solaris/vboxusb.conf               $(SOLARIS_INST_DIR)/vboxusb.conf,)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)
 ifdef VBOX_WITH_COMBINED_PACKAGE

@@ -133,11 +133,18 @@ symlink_fixup  prototype '$2 == "none"'                                         
 filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxdrv=i386/vboxdrv"'                             '$3 = "platform/i86pc/kernel/drv/vboxdrv=i386/vboxdrv"; $6 = "sys"'
 filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxdrv=amd64/vboxdrv"'                           '$3 = "platform/i86pc/kernel/drv/amd64/vboxdrv=amd64/vboxdrv"; $6 = "sys"'
 
+# NetFilter vboxflt
 filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxflt=i386/vboxflt"'                             '$3 = "platform/i86pc/kernel/drv/vboxflt=i386/vboxflt"; $6 = "sys"'
 filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxflt=amd64/vboxflt"'                           '$3 = "platform/i86pc/kernel/drv/amd64/vboxflt=amd64/vboxflt"; $6 = "sys"'
 
+# USB vboxusb
+filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxusb=i386/vboxusb"'                             '$3 = "platform/i86pc/kernel/drv/vboxusb=i386/vboxusb"; $6 = "sys"'
+filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxusb=amd64/vboxusb"'                           '$3 = "platform/i86pc/kernel/drv/amd64/vboxusb=amd64/vboxusb"; $6 = "sys"'
+
+# All the driver conf files
 filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv.conf=vboxdrv.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxdrv.conf=vboxdrv.conf"'
 filelist_fixup prototype '$3 == "opt/VirtualBox/vboxflt.conf=vboxflt.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxflt.conf=vboxflt.conf"'
+filelist_fixup prototype '$3 == "opt/VirtualBox/vboxusb.conf=vboxusb.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxusb.conf=vboxusb.conf"'
 
 # hardening requires some executables to be marked setuid.
 if test -n "$HARDENED"; then
@@ -155,6 +162,16 @@ if test -n "$HARDENED"; then
             ) \
        { $4 = "4755" } { print }' prototype > prototype2
     mv -f prototype2 prototype    
+fi
+
+# VBoxUSBHelper needs to be marked setuid.
+if test -f $VBOX_INSTALLED_DIR/amd64/VBoxUSBHelper || test -f $VBOX_INSTALLED_DIR/i386/VBoxUSBHelper; then
+    $VBOX_AWK 'NF == 6 \
+        && (    $3 == "opt/VirtualBox/amd64/VBoxUSBHelper=amd64/VBoxUSBHelper" \
+            ||  $3 == "opt/VirtualBox/i386/VBoxUSBHelper=i386/VBoxUSBHelper" \
+            ) \
+       { $4 = "4755" } { print }' prototype > prototype2
+    mv -f prototype2 prototype        
 fi
 
 # desktop links and icons
