@@ -152,6 +152,19 @@ void QIAbstractWizard::initializeWizardHdr()
     Assert (logoImages.count());
     for (int i = 0; i < logoImages.count(); ++ i)
         VBoxGlobal::adoptLabelPixmap (logoImages [i]);
+
+#ifdef Q_WS_MAC
+    /* On the Mac we need at least a size of 14 points. */
+    QList<QLabel*> pageHeaders =
+        findChildren<QLabel*> (QRegExp ("m.+Hdr"));
+    for (int i = 0; i < pageHeaders.count(); ++i)
+    {
+        QLabel *lb = pageHeaders [i];
+        QFont f = lb->font();
+        f.setPointSize (14);
+        lb->setFont (f);
+    }
+#endif /* Q_WS_MAC */
 }
 
 void QIAbstractWizard::initializeWizardFtr()
