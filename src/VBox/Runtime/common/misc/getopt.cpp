@@ -36,6 +36,7 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
+#include <limits.h>
 
 
 
@@ -55,40 +56,41 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
     for (size_t i = 0; i < cOptions; i++)
     {
         Assert(!(paOptions[i].fFlags & ~RTGETOPT_VALID_MASK));
+        Assert(paOptions[i].uShort > 0 && paOptions[i].uShort <= (unsigned)INT_MAX);
 
-        bool fShort = (    *pszArgThis == '-'
-                        && (uint32_t)pszArgThis[1] == paOptions[i].uShort
-                      );
+        bool fShort = *pszArgThis == '-'
+                    && (uint32_t)pszArgThis[1] == paOptions[i].uShort
+                    && paOptions[i].uShort;
 
         if ((paOptions[i].fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
         {
             /*
-                * A value is required with the argument. We're trying to very
-                * understanding here and will permit any of the following:
-                *      -svalue, -s:value, -s=value,
-                *      -s value, -s: value, -s= value
-                * (Ditto for long options.)
-                */
+             * A value is required with the argument. We're trying to be very
+             * understanding here and will permit any of the following:
+             *      -svalue, -s:value, -s=value,
+             *      -s value, -s: value, -s= value
+             * (Ditto for long options.)
+             */
             size_t cchLong = 2;
-            if (    (    paOptions[i].pszLong
-                        && !strncmp(pszArgThis, paOptions[i].pszLong, (cchLong = strlen(paOptions[i].pszLong)))
-                        && (   pszArgThis[cchLong] == '\0'
-                            || pszArgThis[cchLong] == ':'
-                            || pszArgThis[cchLong] == '=')
+            if (    (   paOptions[i].pszLong
+                     && !strncmp(pszArgThis, paOptions[i].pszLong, (cchLong = strlen(paOptions[i].pszLong)))
+                     && (   pszArgThis[cchLong] == '\0'
+                         || pszArgThis[cchLong] == ':'
+                         || pszArgThis[cchLong] == '=')
                     )
-                 || fShort
+                ||  fShort
                 )
             {
                 pValueUnion->pDef = &paOptions[i]; /* in case of error. */
 
                 /*
-                    * Find the argument value
-                    */
+                 * Find the argument value
+                 */
                 const char *pszValue;
                 if (    fShort
-                     ?     pszArgThis[2] == '\0'
-                        || ((pszArgThis[2] == ':' || pszArgThis[2] == '=') && pszArgThis[3] == '\0')
-                     :  pszArgThis[cchLong] == '\0' || pszArgThis[cchLong + 1] == '\0')
+                    ?       pszArgThis[2] == '\0'
+                        ||  ((pszArgThis[2] == ':' || pszArgThis[2] == '=') && pszArgThis[3] == '\0')
+                    :   pszArgThis[cchLong] == '\0' || pszArgThis[cchLong + 1] == '\0')
                 {
                     if (iThis + 1 >= argc)
                         return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
@@ -97,15 +99,15 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
                 }
                 else /* same argument. */
                     pszValue = fShort
-                                ? &pszArgThis[2  + (pszArgThis[2] == ':' || pszArgThis[2] == '=')]
-                                : &pszArgThis[cchLong + 1];
+                             ? &pszArgThis[2  + (pszArgThis[2] == ':' || pszArgThis[2] == '=')]
+                             : &pszArgThis[cchLong + 1];
 
                 /*
-                    * Transform into a option value as requested.
-                    * If decimal conversion fails, we'll check for "0x<xdigit>" and
-                    * try a 16 based conversion. We will not interpret any of the
-                    * generic ints as octals.
-                    */
+                 * Transform into a option value as requested.
+                 * If decimal conversion fails, we'll check for "0x<xdigit>" and
+                 * try a 16 based conversion. We will not interpret any of the
+                 * generic ints as octals.
+                 */
                 switch (paOptions[i].fFlags & (RTGETOPT_REQ_MASK | RTGETOPT_FLAG_HEX | RTGETOPT_FLAG_OCT | RTGETOPT_FLAG_DEC))
                 {
                     case RTGETOPT_REQ_STRING:
@@ -181,9 +183,9 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
             }
         }
         else if (   (   paOptions[i].pszLong
-                        && !strcmp(pszArgThis, paOptions[i].pszLong))
-                    || (   fShort
-                        && pszArgThis[2] == '\0') /** @todo implement support for ls -lsR like stuff?  */
+                     && !strcmp(pszArgThis, paOptions[i].pszLong))
+                 || (   fShort
+                     && pszArgThis[2] == '\0') /** @todo implement support for ls -lsR like stuff?  */
                 )
         {
             pValueUnion->pDef = &paOptions[i];
@@ -191,6 +193,17 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
         }
     }
 
-    return VERR_GETOPT_UNKNOWN_OPTION;
+    /* Option or not? */
+    if (*pszArgThis == '-')
+        return VERR_GETOPT_UNKNOWN_OPTION;
+
+    /*
+     * Not an option.
+     */
+    (*piThis)--;
+    /** @todo Sort options and arguments (i.e. stuff that doesn't start with '-'), stop when
+     * encountering the first argument. */
+
+    return 0;
 }
 
