@@ -42,6 +42,11 @@ public:
 
     bool isValid() const { return mAppliance != NULL; }
 
+    static int minGuestRAM() { return mMinGuestRAM; }
+    static int maxGuestRAM() { return mMaxGuestRAM; }
+    static int minGuestCPUCount() { return mMinGuestCPUCount; }
+    static int maxGuestCPUCount() { return mMaxGuestCPUCount; }
+
 public slots:
     void restoreDefaults();
 
@@ -49,9 +54,16 @@ protected:
     void retranslateUi();
 
 private:
+    static void initSystemSettings();
+
     /* Private member vars */
     CAppliance *mAppliance;
     VirtualSystemModel *mModel;
+
+    static int mMinGuestRAM;
+    static int mMaxGuestRAM;
+    static int mMinGuestCPUCount;
+    static int mMaxGuestCPUCount;
 };
 
 #endif /* __VBoxImportApplianceWgt_h__ */

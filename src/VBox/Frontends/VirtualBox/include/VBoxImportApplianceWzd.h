@@ -29,26 +29,6 @@
 
 class QIWidgetValidator;
 
-class VBoxImportAppliance
-{
-public:
-    static void import (QWidget *aParent = NULL);
-
-    static int minGuestRAM() { return mMinGuestRAM; }
-    static int maxGuestRAM() { return mMaxGuestRAM; }
-    static int minGuestCPUCount() { return mMinGuestCPUCount; }
-    static int maxGuestCPUCount() { return mMaxGuestCPUCount; }
-
-private:
-    /* Private member vars */
-    static void initSystemSettings();
-
-    static int mMinGuestRAM;
-    static int mMaxGuestRAM;
-    static int mMinGuestCPUCount;
-    static int mMaxGuestCPUCount;
-};
-
 class VBoxImportApplianceWzd : public QIWithRetranslateUI<QIAbstractWizard>,
                                public Ui::VBoxImportApplianceWzd
 {
@@ -70,6 +50,7 @@ private slots:
     void onPageShow();
 
 private:
+    /* Private member vars */
     QIWidgetValidator *mWValFileSelector;
 };
 

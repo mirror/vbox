@@ -407,14 +407,14 @@ public:
                 case KVirtualSystemDescriptionType_CPU:
                 {
                     QSpinBox *e = new QSpinBox (aParent);
-                    e->setRange (VBoxImportAppliance::minGuestCPUCount(), VBoxImportAppliance::maxGuestCPUCount());
+                    e->setRange (VBoxImportApplianceWgt::minGuestCPUCount(), VBoxImportApplianceWgt::maxGuestCPUCount());
                     editor = e;
                     break;
                 }
                 case KVirtualSystemDescriptionType_Memory:
                 {
                     QSpinBox *e = new QSpinBox (aParent);
-                    e->setRange (VBoxImportAppliance::minGuestRAM(), VBoxImportAppliance::maxGuestRAM());
+                    e->setRange (VBoxImportApplianceWgt::minGuestRAM(), VBoxImportApplianceWgt::maxGuestRAM());
                     e->setSuffix (" " + VBoxImportApplianceWgt::tr ("MB"));
                     editor = e;
                     break;
@@ -960,11 +960,19 @@ void VirtualSystemModel::putBack()
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxImportApplianceWgt
 
+int VBoxImportApplianceWgt::mMinGuestRAM = -1;
+int VBoxImportApplianceWgt::mMaxGuestRAM = -1;
+int VBoxImportApplianceWgt::mMinGuestCPUCount = -1;
+int VBoxImportApplianceWgt::mMaxGuestCPUCount = -1;
+
 VBoxImportApplianceWgt::VBoxImportApplianceWgt (QWidget *aParent)
     : QIWithRetranslateUI<QWidget> (aParent)
     , mAppliance (NULL)
     , mModel (NULL)
 {
+    /* Make sure all static content is properly initialized */
+    initSystemSettings();
+
     /* Apply UI decorations */
     Ui::VBoxImportApplianceWgt::setupUi (this);
 
@@ -1085,5 +1093,20 @@ void VBoxImportApplianceWgt::retranslateUi()
 {
     /* Translate uic generated strings */
     Ui::VBoxImportApplianceWgt::retranslateUi (this);
+}
+
+/* static */
+void VBoxImportApplianceWgt::initSystemSettings()
+{
+    if (mMinGuestRAM == -1)
+    {
+        /* We need some global defaults from the current VirtualBox
+           installation */
+        CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
+        mMinGuestRAM = sp.GetMinGuestRAM();
+        mMaxGuestRAM = sp.GetMaxGuestRAM();
+        mMinGuestCPUCount = sp.GetMinGuestCPUCount();
+        mMaxGuestCPUCount = sp.GetMaxGuestCPUCount();
+    }
 }
 
