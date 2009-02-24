@@ -38,7 +38,18 @@ if test "$currentzone" = "global"; then
         if test "$rc" -eq 0; then
             if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
                 /opt/VirtualBox/vboxdrv.sh fltstart
-                rc=$?            
+                rc=$?
+            fi
+            if test -f /platform/i86pc/kernel/drv/vboxusb.conf; then
+                /opt/VirtualBox/vboxdrv.sh usbstart
+                rc=$?
+                if test "$rc" -eq 0; then
+                    # add vboxusb to the devlink.tab
+                    sed -e '
+                    /name=vboxusb/d' /etc/devlink.tab > /etc/devlink.vbox
+                    echo "type=ddi_pseudo;name=vboxusb	\D" >> /etc/devlink.vbox
+                    mv -f /etc/devlink.vbox /etc/devlink.tab
+                fi
             fi
         fi
     fi
