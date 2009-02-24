@@ -63,7 +63,7 @@ int main()
         { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
         { NULL,                 'q', RTGETOPT_REQ_NOTHING },
         { "--quiet",            384, RTGETOPT_REQ_NOTHING },
-        { "-quiet2",            385, RTGETOPT_REQ_NOTHING },
+        { "-startvm",           385, RTGETOPT_REQ_NOTHING },
     };
 
     char *argv2[] =
@@ -84,9 +84,10 @@ int main()
         "--verbose",
         "-q",
         "--quiet",
-        "-quiet2",
-        /* "filename1", */
-        /* "filename2", */
+        "-startvm",
+        "filename1",
+        "-q",
+        "filename2",
         NULL
     };
     int argc2 = (int)RT_ELEMENTS(argv2) - 1;
@@ -132,6 +133,14 @@ int main()
     CHECK(Val.pDef == &s_aOpts2[4]);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 385, 1);
     CHECK(Val.pDef == &s_aOpts2[5]);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1);
+    CHECK(Val.psz && !strcmp(Val.psz, "filename1"));
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'q', 1);
+    CHECK(Val.pDef == &s_aOpts2[3]);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1);
+    CHECK(Val.psz && !strcmp(Val.psz, "filename2"));
+
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 0, 0);
     CHECK(Val.pDef == NULL);
     CHECK(argc2 == GetState.iNext);
@@ -147,3 +156,4 @@ int main()
 
     return !!cErrors;
 }
+
