@@ -113,6 +113,8 @@
 #define VBOX_NAME		"VBoxVideo"
 #define VBOX_DRIVER_NAME	"vboxvideo"
 
+#define VBOXPTR(p) ((VBOXPtr)((p)->driverPrivate))
+
 /*XXX*/
 
 typedef struct _VBOXRec
