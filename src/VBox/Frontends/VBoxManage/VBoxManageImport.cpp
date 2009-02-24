@@ -40,6 +40,7 @@
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/stream.h>
+#include <iprt/getopt.h>
 
 #include <VBox/log.h>
 
@@ -492,6 +493,11 @@ int handleImportAppliance(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static const RTGETOPTDEF g_aExportOptions[]
+    = {
+        { "--output",             'o', RTGETOPT_REQ_STRING },
+      };
+
 int handleExportAppliance(HandlerArg *a)
 {
     HRESULT rc = S_OK;
@@ -501,41 +507,53 @@ int handleExportAppliance(HandlerArg *a)
 
     do
     {
-        for (int i = 0;
-            i < a->argc;
-            ++i)
-        {
-            Utf8Str strThisArg(a->argv[i]);
+        int c;
 
-            if (    strThisArg == "--output"
-                || strThisArg == "-output"
-                || strThisArg == "-o"
-            )
+        RTGETOPTUNION ValueUnion;
+        RTGETOPTSTATE GetState;
+        RTGetOptInit(&GetState,
+                     a->argc,
+                     a->argv,
+                     g_aExportOptions,
+                     RT_ELEMENTS(g_aExportOptions),
+                     0, // start at 0 even though arg 1 was "list" because main() has hacked both the argc and argv given to us
+                     0 /* fFlags */);
+        while ((c = RTGetOpt(&GetState, &ValueUnion)))
+        {
+            switch (c)
             {
-                if (++i < a->argc)
-                {
+                case 'o':   // --output
                     if (strOutputFile.length())
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can only specify --output once.");
                     else
-                        strOutputFile = strThisArg;
-                }
-                else
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "Missing argument to --output option.");
-            }
-            else
-            {
-                // must be machine: try UUID or name
-                ComPtr<IMachine> machine;
-                /* assume it's a UUID */
-                rc = a->virtualBox->GetMachine(Guid(strThisArg), machine.asOutParam());
-                if (FAILED(rc) || !machine)
-                {
-                    /* must be a name */
-                    CHECK_ERROR_BREAK(a->virtualBox, FindMachine(Bstr(strThisArg), machine.asOutParam()));
-                }
+                        strOutputFile = ValueUnion.psz;
+                break;
 
-                if (machine)
-                    llMachines.push_back(machine);
+                case VINF_GETOPT_NOT_OPTION:
+                {
+                    Utf8Str strMachine(ValueUnion.psz);
+                    // must be machine: try UUID or name
+                    ComPtr<IMachine> machine;
+                    /* assume it's a UUID */
+                    rc = a->virtualBox->GetMachine(Guid(strMachine), machine.asOutParam());
+                    if (FAILED(rc) || !machine)
+                    {
+                        /* must be a name */
+                        CHECK_ERROR_BREAK(a->virtualBox, FindMachine(Bstr(strMachine), machine.asOutParam()));
+                    }
+
+                    if (machine)
+                        llMachines.push_back(machine);
+                }
+                break;
+
+                default:
+                    if (c > 0)
+                        return errorSyntax(USAGE_LIST, "missing case: %c\n", c);
+                    else if (ValueUnion.pDef)
+                        return errorSyntax(USAGE_LIST, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                    else
+                        return errorSyntax(USAGE_LIST, "%Rrs", c);
             }
         }
 
@@ -543,7 +561,9 @@ int handleExportAppliance(HandlerArg *a)
             break;
 
         if (llMachines.size() == 0)
-            return errorSyntax(USAGE_EXPORTAPPLIANCE, "Missing arguments to export command.");
+            return errorSyntax(USAGE_EXPORTAPPLIANCE, "At least one machine must be specified with the export command.");
+        if (!strOutputFile.length())
+            return errorSyntax(USAGE_EXPORTAPPLIANCE, "Missing --output argument with export command.");
 
         ComPtr<IAppliance> pAppliance;
         CHECK_ERROR_BREAK(a->virtualBox, CreateAppliance(pAppliance.asOutParam()));
