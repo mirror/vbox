@@ -28,7 +28,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 BLDDIRS += \
 	$(VBOX_PATH_CROGL_GENFILES)/
 
-DLLS += VBoxOGL VBoxOGLarrayspu VBoxOGLpassthroughspu VBoxOGLpackspu
+DLLS += VBoxOGL VBoxOGLarrayspu VBoxOGLpassthroughspu VBoxOGLpackspu VBoxOGLfeedbackspu
 
 #
 # VBoxOGL
@@ -203,6 +203,42 @@ $(VBOX_PATH_CROGL_GENFILES)/packspu_beginend.c: $(PATH_SUB_CURRENT)/pack/packspu
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 
 $(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h: $(addprefix $(PATH_SUB_CURRENT)/pack/,packspu_proto.py packspu_special packspu_unimplemented_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+#
+# VBoxOGLfeedbackspu
+#
+VBoxOGLfeedbackspu_TEMPLATE    = VBOXCROGLR3GUESTDLL
+VBoxOGLfeedbackspu_INCS        = \
+	feedback
+VBoxOGLarrayspu_INTERMEDIATES = \
+	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_proto.h
+VBoxOGLfeedbackspu_SOURCES     = \
+	feedback/feedbackspu_config.c \
+	feedback/feedbackspu_init.c \
+	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu.c \
+	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_state.c
+VBoxOGLfeedbackspu_SOURCES.win = \
+	feedback/feedback.def
+VBoxOGLfeedbackspu_CLEAN       = \
+	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_proto.h \
+	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu.c \
+	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_state.c
+VBoxOGLfeedbackspu_LIBS        = \
+	$(VBOX_LIB_OGL_CRUTIL) \
+	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
+
+#
+# Generate files for VBoxOGLfeedbackspu.
+#
+$(VBOX_PATH_CROGL_GENFILES)/feedbackspu.c: $(addprefix $(PATH_SUB_CURRENT)/feedback/,feedback.py feedback_special select_special feedback_state_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_state.c: $(addprefix $(PATH_SUB_CURRENT)/feedback/,feedback_state.py feedback_state_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_proto.h: $(addprefix $(PATH_SUB_CURRENT)/feedback/,feedbackspu_proto.py feedback_special select_special feedback_state_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 
 include	$(KBUILD_PATH)/subfooter.kmk

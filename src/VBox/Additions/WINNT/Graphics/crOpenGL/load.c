@@ -518,7 +518,7 @@ stubInit(void)
     app_id = crGetenv( "CR_APPLICATION_ID_NUMBER" );
 
     crNetInit( NULL, NULL );
-    strcpy(response, "2 0 array 1 pack");
+    strcpy(response, "3 0 array 1 feedback 2 pack");
     spuchain = crStrSplit( response, " " );
     num_spus = crStrToInt( spuchain[0] );
     spu_ids = (int *) crAlloc( num_spus * sizeof( *spu_ids ) );
