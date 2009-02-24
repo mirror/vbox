@@ -114,9 +114,10 @@ static void makeTimeStr (char *s, int cb, int64_t millies)
 # pragma optimize("g", off)
 #endif
 
-HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
-                    ComPtr <IConsole> console /*= ComPtr <IConsole> ()*/,
-                    VMINFO_DETAILS details /*= VMINFO_NONE*/)
+HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
+                    ComPtr<IMachine> machine,
+                    VMINFO_DETAILS details /*= VMINFO_NONE*/,
+                    ComPtr<IConsole> console /*= ComPtr <IConsole> ()*/)
 {
     HRESULT rc;
 
@@ -138,35 +139,48 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
     CHECK_ERROR (machine, COMGETTER(Accessible) (&accessible));
     CheckComRCReturnRC (rc);
 
+    Guid uuid;
+    rc = machine->COMGETTER(Id) (uuid.asOutParam());
+
     if (!accessible)
     {
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("name=\"<inaccessible>\"\n");
+        if (details == VMINFO_COMPACT)
+            RTPrintf("\"<inaccessible>\" {%s}\n", uuid.toString().raw());
         else
-            RTPrintf ("Name:            <inaccessible!>\n");
-        Guid uuid;
-        rc = machine->COMGETTER(Id) (uuid.asOutParam());
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf ("UUID=\"%s\"\n", uuid.toString().raw());
-        else
-            RTPrintf ("UUID:            %s\n", uuid.toString().raw());
-        if (details != VMINFO_MACHINEREADABLE)
         {
-            Bstr settingsFilePath;
-            rc = machine->COMGETTER(SettingsFilePath) (settingsFilePath.asOutParam());
-            RTPrintf ("Config file:     %lS\n", settingsFilePath.raw());
-            ComPtr<IVirtualBoxErrorInfo> accessError;
-            rc = machine->COMGETTER(AccessError) (accessError.asOutParam());
-            RTPrintf ("Access error details:\n");
-            ErrorInfo ei (accessError);
-            GluePrintErrorInfo(ei);
-            RTPrintf ("\n");
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("name=\"<inaccessible>\"\n");
+            else
+                RTPrintf ("Name:            <inaccessible!>\n");
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf ("UUID=\"%s\"\n", uuid.toString().raw());
+            else
+                RTPrintf ("UUID:            %s\n", uuid.toString().raw());
+            if (details != VMINFO_MACHINEREADABLE)
+            {
+                Bstr settingsFilePath;
+                rc = machine->COMGETTER(SettingsFilePath) (settingsFilePath.asOutParam());
+                RTPrintf ("Config file:     %lS\n", settingsFilePath.raw());
+                ComPtr<IVirtualBoxErrorInfo> accessError;
+                rc = machine->COMGETTER(AccessError) (accessError.asOutParam());
+                RTPrintf ("Access error details:\n");
+                ErrorInfo ei (accessError);
+                GluePrintErrorInfo(ei);
+                RTPrintf ("\n");
+            }
         }
         return S_OK;
     }
 
     Bstr machineName;
     rc = machine->COMGETTER(Name)(machineName.asOutParam());
+
+    if (details == VMINFO_COMPACT)
+    {
+        RTPrintf("\"%lS\" {%s}\n", machineName.raw(), uuid.toString().raw());
+        return S_OK;
+    }
+
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("name=\"%lS\"\n", machineName.raw());
     else
@@ -183,8 +197,6 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
     else
         RTPrintf("Guest OS:        %lS\n", osName.raw());
 
-    Guid uuid;
-    rc = machine->COMGETTER(Id)(uuid.asOutParam());
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("UUID=\"%s\"\n", uuid.toString().raw());
     else
@@ -1935,7 +1947,7 @@ int handleShowVMInfo(HandlerArg *a)
         /* get the session console */
         rc = a->session->COMGETTER(Console)(console.asOutParam());
 
-    rc = showVMInfo (a->virtualBox, machine, console, details);
+    rc = showVMInfo(a->virtualBox, machine, details, console);
 
     if (console)
         a->session->Close();

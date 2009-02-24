@@ -92,7 +92,7 @@ typedef struct RTOPTIONDEF
     /** The short option character.
      * This doesn't have to be a character, it may also be a \#define or enum value if
      * there isn't any short version of this option. */
-    int             iShort;
+    uint32_t        uShort;
     /** The flags (RTGETOPT_*). */
     unsigned        fFlags;
 } RTOPTIONDEF;
@@ -201,9 +201,9 @@ typedef RTOPTIONUNION const *PCRTOPTIONUNION;
  *                  if (ch > 0)
  *                      Error("missing case: %c\n", ch);
  *                  else if (ValueUnion.pDef)
- *                      Error("%s: %Rrc, ValueUnion.pDef->pszLong);
+ *                      Error("%s: %Rrs", ValueUnion.pDef->pszLong, ch);
  *                  else
- *                      Error("%Rrc, ValueUnion.pDef->pszLong);
+ *                      Error("%Rrs", ch);
  *                  return 1;
  *          }
  *      }

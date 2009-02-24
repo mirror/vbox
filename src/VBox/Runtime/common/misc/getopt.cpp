@@ -52,66 +52,66 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
     int iThis = (*piThis)++;
     const char *pszArgThis = argv[iThis];
 
-    if (*pszArgThis == '-')
+    for (size_t i = 0; i < cOptions; i++)
     {
-/** @todo implement '--'. */
-        for (size_t i = 0; i < cOptions; i++)
+        Assert(!(paOptions[i].fFlags & ~RTGETOPT_VALID_MASK));
+
+        bool fShort = (    *pszArgThis == '-'
+                        && (uint32_t)pszArgThis[1] == paOptions[i].uShort
+                        );
+
+        if ((paOptions[i].fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
         {
-            Assert(!(paOptions[i].fFlags & ~RTGETOPT_VALID_MASK));
-            Assert(paOptions[i].iShort > 0);
-
-            if ((paOptions[i].fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
+            /*
+                * A value is required with the argument. We're trying to very
+                * understanding here and will permit any of the following:
+                *      -svalue, -s:value, -s=value,
+                *      -s value, -s: value, -s= value
+                * (Ditto for long options.)
+                */
+            bool fShort = false;
+            size_t cchLong = 2;
+            if (    (    paOptions[i].pszLong
+                        && !strncmp(pszArgThis, paOptions[i].pszLong, (cchLong = strlen(paOptions[i].pszLong)))
+                        && (   pszArgThis[cchLong] == '\0'
+                            || pszArgThis[cchLong] == ':'
+                            || pszArgThis[cchLong] == '=')
+                    )
+                    || fShort
+                )
             {
+                pValueUnion->pDef = &paOptions[i]; /* in case of error. */
+
                 /*
-                 * A value is required with the argument. We're trying to very
-                 * understanding here and will permit any of the following:
-                 *      -svalue, -s:value, -s=value,
-                 *      -s value, -s: value, -s= value
-                 * (Ditto for long options.)
-                 */
-                bool fShort = false;
-                size_t cchLong = 2;
-                if (    (   paOptions[i].pszLong
-                         && !strncmp(pszArgThis, paOptions[i].pszLong, (cchLong = strlen(paOptions[i].pszLong)))
-                         && (   pszArgThis[cchLong] == '\0'
-                             || pszArgThis[cchLong] == ':'
-                             || pszArgThis[cchLong] == '=')
-                        )
-                    ||  (fShort = (pszArgThis[1] == paOptions[i].iShort))
-                   )
+                    * Find the argument value
+                    */
+                const char *pszValue;
+                if (    fShort
+                    ?       pszArgThis[2] == '\0'
+                        || ((pszArgThis[2] == ':' || pszArgThis[2] == '=') && pszArgThis[3] == '\0')
+                    :   pszArgThis[cchLong] == '\0' || pszArgThis[cchLong + 1] == '\0')
                 {
-                    pValueUnion->pDef = &paOptions[i]; /* in case of error. */
+                    if (iThis + 1 >= argc)
+                        return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
+                    pszValue = argv[iThis + 1];
+                    (*piThis)++;
+                }
+                else /* same argument. */
+                    pszValue = fShort
+                                ? &pszArgThis[2  + (pszArgThis[2] == ':' || pszArgThis[2] == '=')]
+                                : &pszArgThis[cchLong + 1];
 
-                    /*
-                     * Find the argument value
-                     */
-                    const char *pszValue;
-                    if (    fShort
-                        ?       pszArgThis[2] == '\0'
-                            || ((pszArgThis[2] == ':' || pszArgThis[2] == '=') && pszArgThis[3] == '\0')
-                        :   pszArgThis[cchLong] == '\0' || pszArgThis[cchLong + 1] == '\0')
-                    {
-                        if (iThis + 1 >= argc)
-                            return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
-                        pszValue = argv[iThis + 1];
-                        (*piThis)++;
-                    }
-                    else /* same argument. */
-                        pszValue = fShort
-                                 ? &pszArgThis[2  + (pszArgThis[2] == ':' || pszArgThis[2] == '=')]
-                                 : &pszArgThis[cchLong + 1];
-
-                    /*
-                     * Transform into a option value as requested.
-                     * If decimal conversion fails, we'll check for "0x<xdigit>" and
-                     * try a 16 based conversion. We will not interpret any of the
-                     * generic ints as octals.
-                     */
-                    switch (paOptions[i].fFlags & (RTGETOPT_REQ_MASK | RTGETOPT_FLAG_HEX | RTGETOPT_FLAG_OCT | RTGETOPT_FLAG_DEC))
-                    {
-                        case RTGETOPT_REQ_STRING:
-                            pValueUnion->psz = pszValue;
-                            break;
+                /*
+                    * Transform into a option value as requested.
+                    * If decimal conversion fails, we'll check for "0x<xdigit>" and
+                    * try a 16 based conversion. We will not interpret any of the
+                    * generic ints as octals.
+                    */
+                switch (paOptions[i].fFlags & (RTGETOPT_REQ_MASK | RTGETOPT_FLAG_HEX | RTGETOPT_FLAG_OCT | RTGETOPT_FLAG_DEC))
+                {
+                    case RTGETOPT_REQ_STRING:
+                        pValueUnion->psz = pszValue;
+                        break;
 
 #define MY_INT_CASE(req,type,memb,convfn) \
                         case req: \
@@ -136,73 +136,62 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
                             break; \
                         }
 
-                        MY_INT_CASE(RTGETOPT_REQ_INT8,   int8_t,   i,   RTStrToInt8Full)
-                        MY_INT_CASE(RTGETOPT_REQ_INT16,  int16_t,  i,   RTStrToInt16Full)
-                        MY_INT_CASE(RTGETOPT_REQ_INT32,  int32_t,  i,   RTStrToInt32Full)
-                        MY_INT_CASE(RTGETOPT_REQ_INT64,  int64_t,  i,   RTStrToInt64Full)
-                        MY_INT_CASE(RTGETOPT_REQ_UINT8,  uint8_t,  u,   RTStrToUInt8Full)
-                        MY_INT_CASE(RTGETOPT_REQ_UINT16, uint16_t, u,   RTStrToUInt16Full)
-                        MY_INT_CASE(RTGETOPT_REQ_UINT32, uint32_t, u,   RTStrToUInt32Full)
-                        MY_INT_CASE(RTGETOPT_REQ_UINT64, uint64_t, u,   RTStrToUInt64Full)
+                    MY_INT_CASE(RTGETOPT_REQ_INT8,   int8_t,   i,   RTStrToInt8Full)
+                    MY_INT_CASE(RTGETOPT_REQ_INT16,  int16_t,  i,   RTStrToInt16Full)
+                    MY_INT_CASE(RTGETOPT_REQ_INT32,  int32_t,  i,   RTStrToInt32Full)
+                    MY_INT_CASE(RTGETOPT_REQ_INT64,  int64_t,  i,   RTStrToInt64Full)
+                    MY_INT_CASE(RTGETOPT_REQ_UINT8,  uint8_t,  u,   RTStrToUInt8Full)
+                    MY_INT_CASE(RTGETOPT_REQ_UINT16, uint16_t, u,   RTStrToUInt16Full)
+                    MY_INT_CASE(RTGETOPT_REQ_UINT32, uint32_t, u,   RTStrToUInt32Full)
+                    MY_INT_CASE(RTGETOPT_REQ_UINT64, uint64_t, u,   RTStrToUInt64Full)
 
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT8   | RTGETOPT_FLAG_HEX, int8_t,   i,   RTStrToInt8Full,   16)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT16  | RTGETOPT_FLAG_HEX, int16_t,  i,   RTStrToInt16Full,  16)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT32  | RTGETOPT_FLAG_HEX, int32_t,  i,   RTStrToInt32Full,  16)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT64  | RTGETOPT_FLAG_HEX, int64_t,  i,   RTStrToInt64Full,  16)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT8  | RTGETOPT_FLAG_HEX, uint8_t,  u,   RTStrToUInt8Full,  16)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT16 | RTGETOPT_FLAG_HEX, uint16_t, u,   RTStrToUInt16Full, 16)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX, uint32_t, u,   RTStrToUInt32Full, 16)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX, uint64_t, u,   RTStrToUInt64Full, 16)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT8   | RTGETOPT_FLAG_HEX, int8_t,   i,   RTStrToInt8Full,   16)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT16  | RTGETOPT_FLAG_HEX, int16_t,  i,   RTStrToInt16Full,  16)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT32  | RTGETOPT_FLAG_HEX, int32_t,  i,   RTStrToInt32Full,  16)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT64  | RTGETOPT_FLAG_HEX, int64_t,  i,   RTStrToInt64Full,  16)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT8  | RTGETOPT_FLAG_HEX, uint8_t,  u,   RTStrToUInt8Full,  16)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT16 | RTGETOPT_FLAG_HEX, uint16_t, u,   RTStrToUInt16Full, 16)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX, uint32_t, u,   RTStrToUInt32Full, 16)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX, uint64_t, u,   RTStrToUInt64Full, 16)
 
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT8   | RTGETOPT_FLAG_DEC, int8_t,   i,   RTStrToInt8Full,   10)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT16  | RTGETOPT_FLAG_DEC, int16_t,  i,   RTStrToInt16Full,  10)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT32  | RTGETOPT_FLAG_DEC, int32_t,  i,   RTStrToInt32Full,  10)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT64  | RTGETOPT_FLAG_DEC, int64_t,  i,   RTStrToInt64Full,  10)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT8  | RTGETOPT_FLAG_DEC, uint8_t,  u,   RTStrToUInt8Full,  10)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT16 | RTGETOPT_FLAG_DEC, uint16_t, u,   RTStrToUInt16Full, 10)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_DEC, uint32_t, u,   RTStrToUInt32Full, 10)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_DEC, uint64_t, u,   RTStrToUInt64Full, 10)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT8   | RTGETOPT_FLAG_DEC, int8_t,   i,   RTStrToInt8Full,   10)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT16  | RTGETOPT_FLAG_DEC, int16_t,  i,   RTStrToInt16Full,  10)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT32  | RTGETOPT_FLAG_DEC, int32_t,  i,   RTStrToInt32Full,  10)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT64  | RTGETOPT_FLAG_DEC, int64_t,  i,   RTStrToInt64Full,  10)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT8  | RTGETOPT_FLAG_DEC, uint8_t,  u,   RTStrToUInt8Full,  10)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT16 | RTGETOPT_FLAG_DEC, uint16_t, u,   RTStrToUInt16Full, 10)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_DEC, uint32_t, u,   RTStrToUInt32Full, 10)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_DEC, uint64_t, u,   RTStrToUInt64Full, 10)
 
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT8   | RTGETOPT_FLAG_OCT, int8_t,   i,   RTStrToInt8Full,   8)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT16  | RTGETOPT_FLAG_OCT, int16_t,  i,   RTStrToInt16Full,  8)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT32  | RTGETOPT_FLAG_OCT, int32_t,  i,   RTStrToInt32Full,  8)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_INT64  | RTGETOPT_FLAG_OCT, int64_t,  i,   RTStrToInt64Full,  8)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT8  | RTGETOPT_FLAG_OCT, uint8_t,  u,   RTStrToUInt8Full,  8)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT16 | RTGETOPT_FLAG_OCT, uint16_t, u,   RTStrToUInt16Full, 8)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT, uint32_t, u,   RTStrToUInt32Full, 8)
-                        MY_BASE_INT_CASE(RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_OCT, uint64_t, u,   RTStrToUInt64Full, 8)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT8   | RTGETOPT_FLAG_OCT, int8_t,   i,   RTStrToInt8Full,   8)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT16  | RTGETOPT_FLAG_OCT, int16_t,  i,   RTStrToInt16Full,  8)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT32  | RTGETOPT_FLAG_OCT, int32_t,  i,   RTStrToInt32Full,  8)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_INT64  | RTGETOPT_FLAG_OCT, int64_t,  i,   RTStrToInt64Full,  8)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT8  | RTGETOPT_FLAG_OCT, uint8_t,  u,   RTStrToUInt8Full,  8)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT16 | RTGETOPT_FLAG_OCT, uint16_t, u,   RTStrToUInt16Full, 8)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT, uint32_t, u,   RTStrToUInt32Full, 8)
+                    MY_BASE_INT_CASE(RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_OCT, uint64_t, u,   RTStrToUInt64Full, 8)
 #undef MY_INT_CASE
 #undef MY_BASE_INT_CASE
 
-                        default:
-                            AssertMsgFailed(("i=%d f=%#x\n", i, paOptions[i].fFlags));
-                            return VERR_INTERNAL_ERROR;
-                    }
-                    return paOptions[i].iShort;
+                    default:
+                        AssertMsgFailed(("i=%d f=%#x\n", i, paOptions[i].fFlags));
+                        return VERR_INTERNAL_ERROR;
                 }
-            }
-            else if (   (   paOptions[i].pszLong
-                         && !strcmp(pszArgThis, paOptions[i].pszLong))
-                     || (   pszArgThis[1] == paOptions[i].iShort
-                         && pszArgThis[2] == '\0') /** @todo implement support for ls -lsR like stuff?  */
-                    )
-            {
-                pValueUnion->pDef = &paOptions[i];
-                return paOptions[i].iShort;
+                return paOptions[i].uShort;
             }
         }
-
-
-        return VERR_GETOPT_UNKNOWN_OPTION;
+        else if (   (   paOptions[i].pszLong
+                        && !strcmp(pszArgThis, paOptions[i].pszLong))
+                    || (   fShort
+                        && pszArgThis[2] == '\0') /** @todo implement support for ls -lsR like stuff?  */
+                )
+        {
+            pValueUnion->pDef = &paOptions[i];
+            return (int)paOptions[i].uShort;
+        }
     }
 
-    /*
-     * Not an option.
-     */
-    (*piThis)--;
-    /** @todo Sort options and arguments (i.e. stuff that doesn't start with '-'), stop when
-     * encountering the first argument. */
-
-    return 0;
+    return VERR_GETOPT_UNKNOWN_OPTION;
 }
 
