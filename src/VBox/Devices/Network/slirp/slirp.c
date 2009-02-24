@@ -1118,8 +1118,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 int err;
                 int inq, outq;
                 int status;
-                inq = outq = 0;
                 socklen_t optlen = sizeof(int);
+                inq = outq = 0;
                 status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
                 if (status != 0) 
                     LogRel(("NAT: can't get error status from %R[natsock]\n", so));
@@ -1557,3 +1557,20 @@ void *slirp_get_queue(PNATState pData)
     return pData->pReqQueue;
 }
 #endif
+
+uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport)
+{
+    uint16_t hdport, hsport, service;
+    hdport = ntohs(dport);
+    hsport = ntohs(sport); 
+    Log2(("proto: %d, dport: %d sport: %d\n", proto, hdport, hsport));
+    service = 0;
+    switch (hdport) 
+    {
+        case 500:
+            if (hsport == 500) service = 500;
+        break;
+    } 
+    Log2(("service : %d\n", service));
+    return htons(service);
+}

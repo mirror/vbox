@@ -201,7 +201,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
          */
         if ((so = socreate()) == NULL)
             goto bad;
-        if (udp_attach(pData, so) == -1)
+        if (udp_attach(pData, so, slirp_get_service(IPPROTO_UDP, uh->uh_dport, uh->uh_sport)) == -1)
         {
             DEBUG_MISC((dfd," udp_attach errno = %d-%s\n",
                         errno,strerror(errno)));
@@ -348,7 +348,7 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
 }
 
 int
-udp_attach(PNATState pData, struct socket *so)
+udp_attach(PNATState pData, struct socket *so, int service_port)
 {
     struct sockaddr_in addr;
     struct sockaddr sa_addr;
@@ -363,7 +363,7 @@ udp_attach(PNATState pData, struct socket *so)
          * here so that emulation of ytalk etc. don't have to do it
          */
         addr.sin_family = AF_INET;
-        addr.sin_port = 0;
+        addr.sin_port = service_port;
         addr.sin_addr.s_addr = INADDR_ANY;
         fd_nonblock(so->s);
         if (bind(so->s, (struct sockaddr *)&addr, sizeof(addr)) < 0)
