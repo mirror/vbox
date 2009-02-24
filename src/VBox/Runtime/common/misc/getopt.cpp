@@ -36,7 +36,6 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
-#include <limits.h>
 
 
 
@@ -56,11 +55,10 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
     for (size_t i = 0; i < cOptions; i++)
     {
         Assert(!(paOptions[i].fFlags & ~RTGETOPT_VALID_MASK));
-        Assert(paOptions[i].uShort > 0 && paOptions[i].uShort <= (unsigned)INT_MAX);
+        Assert(paOptions[i].iShort > 0);
 
         bool fShort = *pszArgThis == '-'
-                    && (uint32_t)pszArgThis[1] == paOptions[i].uShort
-                    && paOptions[i].uShort;
+                    && (uint32_t)pszArgThis[1] == paOptions[i].iShort;
 
         if ((paOptions[i].fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
         {
@@ -179,7 +177,7 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
                         AssertMsgFailed(("i=%d f=%#x\n", i, paOptions[i].fFlags));
                         return VERR_INTERNAL_ERROR;
                 }
-                return paOptions[i].uShort;
+                return paOptions[i].iShort;
             }
         }
         else if (   (   paOptions[i].pszLong
@@ -189,7 +187,7 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
                 )
         {
             pValueUnion->pDef = &paOptions[i];
-            return (int)paOptions[i].uShort;
+            return paOptions[i].iShort;
         }
     }
 

@@ -92,7 +92,7 @@ typedef struct RTOPTIONDEF
     /** The short option character.
      * This doesn't have to be a character, it may also be a \#define or enum value if
      * there isn't any short version of this option. */
-    uint32_t        uShort;
+    int             iShort;
     /** The flags (RTGETOPT_*). */
     unsigned        fFlags;
 } RTOPTIONDEF;
