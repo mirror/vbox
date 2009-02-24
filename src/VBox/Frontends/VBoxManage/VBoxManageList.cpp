@@ -83,7 +83,7 @@ enum enOptionCodes
     LISTSYSTEMPROPERTIES
 };
 
-static const RTOPTIONDEF g_aListOptions[]
+static const RTGETOPTDEF g_aListOptions[]
     = {
         { "--long",             'l', RTGETOPT_REQ_NOTHING },
         { "vms",                LISTVMS, RTGETOPT_REQ_NOTHING },
@@ -110,10 +110,11 @@ int handleList(HandlerArg *a)
 
     int command = 0;
     int c;
-    int i = 0;          // start at 0 even though arg 1 was "list" because main() has hacked both the argc and argv given to us
 
-    RTOPTIONUNION ValueUnion;
-    while ((c = RTGetOpt(a->argc, a->argv, g_aListOptions, RT_ELEMENTS(g_aListOptions), &i, &ValueUnion)))
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aListOptions, RT_ELEMENTS(g_aListOptions), 0, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
         {

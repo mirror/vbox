@@ -669,7 +669,7 @@ int main(int argc, char **argv)
      */
     RTR3Init();
 
-    static RTOPTIONDEF const s_aOptions[] =
+    static RTGETOPTDEF const s_aOptions[] =
     {
         { "--duration",     'd', RTGETOPT_REQ_UINT32 },
         { "--file",         'f', RTGETOPT_REQ_STRING },
@@ -716,8 +716,10 @@ int main(int argc, char **argv)
     int rc;
     int ch;
     int iArg = 1;
-    RTOPTIONUNION Value;
-    while ((ch = RTGetOpt(argc,argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), &iArg, &Value)))
+    RTGETOPTUNION Value;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &Value)))
         switch (ch)
         {
             case 'd':
@@ -806,6 +808,9 @@ int main(int argc, char **argv)
             case 'h':
                 RTPrintf("syntax: tstIntNet-1 [-pStx-] [-d <secs>] [-f <file>] [-r <size>] [-s <size>]\n");
                 return 1;
+            case VINF_GETOPT_NOT_OPTION:
+                RTPrintf("tstIntNetR0: invalid argument: %s\n", Value.psz);
+                return 1;
 
             default:
                 if (RT_SUCCESS(ch))
@@ -816,12 +821,6 @@ int main(int argc, char **argv)
                     RTPrintf("tstIntNetR0: invalid argument: %Rrc - %s\n", ch, argv[iArg]);
                 return 1;
         }
-    if (iArg < argc)
-    {
-        RTPrintf("tstIntNetR0: invalid argument: %s\n", argv[iArg]);
-        return 1;
-    }
-
 
     RTPrintf("tstIntNet-1: TESTING...\n");
 

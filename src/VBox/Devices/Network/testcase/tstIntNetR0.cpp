@@ -399,7 +399,7 @@ int main(int argc, char **argv)
      */
     RTR3Init();
 
-    static RTOPTIONDEF const s_aOptions[] =
+    static RTGETOPTDEF const s_aOptions[] =
     {
         { "--recv-buffer",  'r', RTGETOPT_REQ_UINT32 },
         { "--send-buffer",  's', RTGETOPT_REQ_UINT32 },
@@ -409,9 +409,10 @@ int main(int argc, char **argv)
     uint32_t cbSend = 1536*2;
 
     int ch;
-    int iArg = 1;
-    RTOPTIONUNION Value;
-    while ((ch = RTGetOpt(argc,argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), &iArg, &Value)))
+    RTGETOPTUNION Value;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &Value)))
         switch (ch)
         {
             case 'r':
@@ -422,15 +423,14 @@ int main(int argc, char **argv)
                 cbSend = Value.u32;
                 break;
 
+            case VINF_GETOPT_NOT_OPTION:
+                RTPrintf("tstIntNetR0: invalid argument: %s\n", Value.psz);
+                return 1;
+
             default:
                 RTPrintf("tstIntNetR0: invalid argument: %s\n", Value.psz);
                 return 1;
         }
-    if (iArg < argc)
-    {
-        RTPrintf("tstIntNetR0: invalid argument: %s\n", argv[iArg]);
-        return 1;
-    }
 
     /*
      * Create an INTNET instance.

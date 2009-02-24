@@ -41,7 +41,7 @@ __BEGIN_DECLS
  * @{
  */
 
-/** @name RTOPTIONDEF::fFlags
+/** @name RTGETOPTDEF::fFlags
  *
  * @remarks When neither of the RTGETOPT_FLAG_HEX, RTGETOPT_FLAG_OCT and RTGETOPT_FLAG_DEC
  *          flags are specified with a integer value format, RTGetOpt will default to
@@ -84,7 +84,7 @@ __BEGIN_DECLS
 /**
  * An option definition.
  */
-typedef struct RTOPTIONDEF
+typedef struct RTGETOPTDEF
 {
     /** The long option.
      * This is optional */
@@ -95,11 +95,11 @@ typedef struct RTOPTIONDEF
     int             iShort;
     /** The flags (RTGETOPT_*). */
     unsigned        fFlags;
-} RTOPTIONDEF;
+} RTGETOPTDEF;
 /** Pointer to an option definition. */
-typedef RTOPTIONDEF *PRTOPTIONDEF;
+typedef RTGETOPTDEF *PRTGETOPTDEF;
 /** Pointer to an const option definition. */
-typedef const RTOPTIONDEF *PCRTOPTIONDEF;
+typedef const RTGETOPTDEF *PCRTGETOPTDEF;
 
 /**
  * Option argument union.
@@ -111,11 +111,11 @@ typedef const RTOPTIONDEF *PCRTOPTIONDEF;
  *          use which ever of the integer members for accessing the value regardless
  *          of restrictions indicated in the \a fFlags.
  */
-typedef union RTOPTIONUNION
+typedef union RTGETOPTUNION
 {
     /** Pointer to the definition on failure or when the option doesn't take an argument.
      * This can be NULL for some errors. */
-    PCRTOPTIONDEF   pDef;
+    PCRTGETOPTDEF   pDef;
     /** A RTGETOPT_ARG_FORMAT_STRING option argument. */
     const char     *psz;
 
@@ -143,14 +143,57 @@ typedef union RTOPTIONUNION
     int64_t         i;
     /** An unsigned integer value. */
     uint64_t        u;
-} RTOPTIONUNION;
+} RTGETOPTUNION;
 /** Pointer to an option argument union. */
-typedef RTOPTIONUNION *PRTOPTIONUNION;
+typedef RTGETOPTUNION *PRTGETOPTUNION;
 /** Pointer to a const option argument union. */
-typedef RTOPTIONUNION const *PCRTOPTIONUNION;
+typedef RTGETOPTUNION const *PCRTGETOPTUNION;
 
 
 /**
+ * RTGetOpt state.
+ */
+typedef struct RTGETOPTSTATE
+{
+    /** The next argument. */
+    int             iNext;
+    /** Argument array. */
+    char          **argv;
+    /** Number of items in argv. */
+    int             argc;
+    /** Option definition array. */
+    PCRTGETOPTDEF   paOptions;
+    /** Number of items in paOptions. */
+    size_t          cOptions;
+    /* More members will be added later for dealing with initial
+       call, optional sorting, '--' and so on. */
+} RTGETOPTSTATE;
+/** Pointer to RTGetOpt state. */
+typedef RTGETOPTSTATE *PRTGETOPTSTATE;
+
+
+/**
+ * Initialize the RTGetOpt state.
+ *
+ * @returns VINF_SUCCESS, or VERR_INVALID_PARAMETER if fFlags is invalid.
+ * @param   pState      The state.
+ *
+ * @param   argc        Argument count, to be copied from what comes in with
+ *                      main().
+ * @param   argv        Argument array, to be copied from what comes in with
+ *                      main(). This may end up being modified by the
+ *                      option/argument sorting.
+ * @param   paOptions   Array of RTGETOPTDEF structures, which must specify what
+ *                      options are understood by the program.
+ * @param   cOptions    Number of array items passed in with paOptions.
+ * @param   iFirst      The argument to start with (in argv).
+ * @param   fFlags      The flags. MBZ for now.
+ */
+RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
+                         PCRTGETOPTDEF paOptions, size_t cOptions,
+                         int iFirst, uint32_t fFlags);
+
+/*
  * Command line argument parser, handling both long and short options and checking
  * argument formats, if desired.
  *
@@ -170,7 +213,7 @@ typedef RTOPTIONUNION const *PCRTOPTIONUNION;
  * @code
  * int main(int argc, char *argv[])
  * {
- *      static const RTOPTIONDEF s_aOptions[] =
+ *      static const RTGETOPTDEF s_aOptions[] =
  *      {
  *          { "--optwithstring",    's', RTGETOPT_REQ_STRING },
  *          { "--optwithint",       'i', RTGETOPT_REQ_INT32 },
@@ -179,8 +222,10 @@ typedef RTOPTIONUNION const *PCRTOPTIONUNION;
  *
  *      int ch;
  *      int i = 1;
- *      RTOPTIONUNION ValueUnion;
- *      while ((ch = RTGetOpt(argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), &i, &ValueUnion)))
+ *      RTGETOPTUNION ValueUnion;
+ *      RTGETOPTSTATE GetState;
+ *      RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+ *      while ((ch = RTGetOpt(&GetState, &ValueUnion)))
  *      {
  *          // for options that require an argument, ValueUnion has received the value
  *          switch (ch)
@@ -197,6 +242,10 @@ typedef RTOPTIONUNION const *PCRTOPTIONUNION;
  *                  g_fOptVerbose = true;
  *                  break;
  *
+ *              case VINF_GETOPT_NOT_OPTION:
+ *                  // handle non-option argument in ValueUnion.psz.
+ *                  break;
+ *
  *              default:
  *                  if (ch > 0)
  *                      Error("missing case: %c\n", ch);
@@ -208,25 +257,17 @@ typedef RTOPTIONUNION const *PCRTOPTIONUNION;
  *          }
  *      }
  *
- *      while (i < argc)
- *      {
- *          //do stuff to argv[i].
- *      }
- *
  *      return 0;
  * }
  * @endcode
  *
- * @param argc          argument count, to be copied from what comes in with main().
- * @param argv          argument array, to be copied from what comes in with main().
- *                      This may end up being modified by the option/argument sorting.
- * @param paOptions     array of RTOPTIONDEF structures, which must specify what options are understood by the program.
- * @param cOptions      number of array items passed in with paOptions.
- * @param piThis        address of stack counter used internally by RTGetOpt; value must be initialized to 1 before the first call!
- * @param pValueUnion   union with value; in the event of an error, psz member points to erroneous parameter; otherwise, for options
- *                      that require an argument, this contains the value of that argument, depending on the type that is required.
+ * @param pState        The state previously initialized with RTGetOptInit.
+ * @param pValueUnion   Union with value; in the event of an error, psz member
+ *                      points to erroneous parameter; otherwise, for options
+ *                      that require an argument, this contains the value of
+ *                      that argument, depending on the type that is required.
  */
-RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOptions, int *piThis, PRTOPTIONUNION pValueUnion);
+RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion);
 
 /** @} */
 

@@ -262,21 +262,25 @@ static int supSvcWinDelete(int argc, char **argv)
      * Parse the arguments.
      */
     bool fVerbose = false;
-    static const RTOPTIONDEF s_aOptions[] =
+    static const RTGETOPTDEF s_aOptions[] =
     {
         { "--verbose", 'v', RTGETOPT_REQ_NOTHING }
     };
-    int iArg = 0;
     int ch;
-    RTOPTIONUNION Value;
-    while ((ch = RTGetOpt(argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), &iArg, &Value)))
+    RTGETOPTUNION Value;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /* fFlags*/);
+    while ((ch = RTGetOpt(&GetState, &Value)))
         switch (ch)
         {
-            case 'v':   fVerbose = true;  break;
-            default:    return supSvcDisplayGetOptError("delete", ch, argc, argv, iArg, &Value);
+            case 'v':
+                fVerbose = true;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return supSvcDisplayTooManyArgsError("delete", argc, argv, iArg);
+            default:
+                return supSvcDisplayGetOptError("delete", ch, argc, argv, iArg, &Value);
         }
-    if (iArg != argc)
-        return supSvcDisplayTooManyArgsError("delete", argc, argv, iArg);
 
     /*
      * Create the service.
@@ -327,7 +331,7 @@ static int supSvcWinCreate(int argc, char **argv)
     };
     int iArg = 0;
     int ch;
-    RTOPTIONUNION Value;
+    RTGETOPTUNION Value;
     while ((ch = RTGetOpt(argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), &iArg, &Value)))
         switch (ch)
         {
@@ -547,7 +551,7 @@ static VOID WINAPI supSvcWinServiceMain(DWORD cArgs, LPSTR *papszArgs)
             int iArg = 1; /* the first arg is the service name */
             int ch;
             int rc = 0;
-            RTOPTIONUNION Value;
+            RTGETOPTUNION Value;
             while (   !rc
                    && (ch = RTGetOpt(cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), &iArg, &Value)))
                 switch (ch)
@@ -645,7 +649,7 @@ static int supSvcWinRunIt(int argc, char **argv)
     };
     int iArg = 0;
     int ch;
-    RTOPTIONUNION Value;
+    RTGETOPTUNION Value;
     while ((ch = RTGetOpt(argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), &iArg, &Value)))
         switch (ch)
         {
@@ -700,7 +704,7 @@ static int supSvcWinShowVersion(int argc, char **argv)
     };
     int iArg = 0;
     int ch;
-    RTOPTIONUNION Value;
+    RTGETOPTUNION Value;
     while ((ch = RTGetOpt(argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), &iArg, &Value)))
         switch (ch)
         {

@@ -952,6 +952,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_GETOPT_REQUIRED_ARGUMENT_MISSING   (-826)
 /** RTGetOpt: command line option has argument with bad format. */
 #define VERR_GETOPT_INVALID_ARGUMENT_FORMAT     (-827)
+/** RTGetOpt: Not an option. */
+#define VINF_GETOPT_NOT_OPTION                  828
 /** @} */
 
 /** @name RTCache status codes
