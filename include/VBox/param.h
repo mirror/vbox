@@ -57,7 +57,7 @@
 /** Maximum number of bytes we can dynamically map into the hypervisor region.
  * This must be a power of 2 number of pages!
  */
-#define MM_HYPER_DYNAMIC_SIZE       (8 * PAGE_SIZE)
+#define MM_HYPER_DYNAMIC_SIZE       (16 * PAGE_SIZE)
 
 /** @} */
 

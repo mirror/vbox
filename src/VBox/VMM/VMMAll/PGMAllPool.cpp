@@ -2403,6 +2403,7 @@ void pgmPoolClearAll(PVM pVM)
  */
 int pgmPoolSyncCR3(PVM pVM)
 {
+    LogFlow(("pgmPoolSyncCR3\n"));
     /*
      * When monitoring shadowed pages, we reset the modification counters on CR3 sync.
      * Occasionally we will have to clear all the shadow page tables because we wanted
