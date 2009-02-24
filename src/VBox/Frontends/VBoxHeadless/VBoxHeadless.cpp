@@ -460,7 +460,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
         OPT_COMMENT,
     };
 
-    static const RTOPTIONDEF g_aOptions[] =
+    static const RTGETOPTDEF s_aOptions[] =
     {
         { "-startvm", 's', RTGETOPT_REQ_STRING },
         { "--startvm", 's', RTGETOPT_REQ_STRING },
@@ -502,9 +502,10 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 
     // parse the command line
     int ch;
-    int i = 1;
-    RTOPTIONUNION ValueUnion;
-    while ((ch = RTGetOpt(argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), &i, &ValueUnion)))
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
         if (ch < 0)
         {
@@ -571,7 +572,11 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
                 pszFileNameParam = ValueUnion.psz;
                 break;
 #endif /* VBOX_FFMPEG defined */
+            case VINF_GETOPT_NOT_OPTION:
+                /* ignore */
+                break;
             default: /* comment */
+                /** @todo If we would not ignore this, that would be really really nice... */
                 break;
         }
     }

@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     /*
      * Parse args
      */
-    static const RTOPTIONDEF g_aOptions[] =
+    static const RTGETOPTDEF g_aOptions[] =
     {
         { "--interations",      'i', RTGETOPT_REQ_INT32 },
         { "--hex",              'h', RTGETOPT_REQ_NOTHING },
@@ -64,9 +64,10 @@ int main(int argc, char **argv)
     bool fHex = true;
     bool fSpin = false;
     int ch;
-    int iArg = 1;
-    RTOPTIONUNION ValueUnion;
-    while ((ch = RTGetOpt(argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), &iArg, &ValueUnion)))
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (ch)
         {
@@ -86,6 +87,10 @@ int main(int argc, char **argv)
                 fSpin = true;
                 break;
 
+            case VINF_GETOPT_NOT_OPTION:
+                RTPrintf("tstGIP-2: syntax error: %s\n", ValueUnion.psz);
+                return 1;
+
             default:
                 if (ch < 0)
                     RTPrintf("tstGIP-2: %Rrc: %s\n", ch, ValueUnion.psz);
@@ -93,11 +98,6 @@ int main(int argc, char **argv)
                     RTPrintf("tstGIP-2: syntax error: %s\n", ValueUnion.psz);
                 return 1;
         }
-    }
-    if (iArg < argc)
-    {
-        RTPrintf("tstGIP-2: syntax error: %s\n", ValueUnion.psz);
-        return 1;
     }
 
     /*
