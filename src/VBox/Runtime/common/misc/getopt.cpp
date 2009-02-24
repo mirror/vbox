@@ -58,7 +58,7 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
 
         bool fShort = (    *pszArgThis == '-'
                         && (uint32_t)pszArgThis[1] == paOptions[i].uShort
-                        );
+                      );
 
         if ((paOptions[i].fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
         {
@@ -76,7 +76,7 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
                             || pszArgThis[cchLong] == ':'
                             || pszArgThis[cchLong] == '=')
                     )
-                    || fShort
+                 || fShort
                 )
             {
                 pValueUnion->pDef = &paOptions[i]; /* in case of error. */
@@ -86,9 +86,9 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
                     */
                 const char *pszValue;
                 if (    fShort
-                    ?       pszArgThis[2] == '\0'
+                     ?     pszArgThis[2] == '\0'
                         || ((pszArgThis[2] == ':' || pszArgThis[2] == '=') && pszArgThis[3] == '\0')
-                    :   pszArgThis[cchLong] == '\0' || pszArgThis[cchLong + 1] == '\0')
+                     :  pszArgThis[cchLong] == '\0' || pszArgThis[cchLong + 1] == '\0')
                 {
                     if (iThis + 1 >= argc)
                         return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
