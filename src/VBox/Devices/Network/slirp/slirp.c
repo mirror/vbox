@@ -1479,19 +1479,20 @@ void if_encap(PNATState pData, uint8_t *ip_data, int ip_data_len)
 int slirp_redir(PNATState pData, int is_udp, int host_port,
                 struct in_addr guest_addr, int guest_port)
 {
+    struct socket *so;
+    Log2(("NAT: set redirect %s hp:%d gp:%d\n", (is_udp?"UDP":"TCP"), host_port, guest_port));
     if (is_udp)
     {
-        if (!udp_listen(pData, htons(host_port), guest_addr.s_addr,
-                        htons(guest_port), 0))
-            return -1;
+        so = udp_listen(pData, htons(host_port), guest_addr.s_addr,
+                        htons(guest_port), 0);
     }
     else
     {
-        if (!solisten(pData, htons(host_port), guest_addr.s_addr,
-                      htons(guest_port), 0))
-            return -1;
+        so = solisten(pData, htons(host_port), guest_addr.s_addr,
+                      htons(guest_port), 0);
     }
-    return 0;
+    Log2(("NAT: redirecting socket %R[natsock]\n", so));
+    return (so != NULL ? 0 : -1);
 }
 
 int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,
