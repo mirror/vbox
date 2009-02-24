@@ -98,6 +98,8 @@ private:
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
 
     static DECLCALLBACK(int) taskThread(RTTHREAD thread, void *pvUser);
+
+    friend class Machine;
 };
 
 struct VirtualSystemDescriptionEntry
@@ -161,8 +163,6 @@ public:
 
     /* public methods only for internal purposes */
 
-    /* private instance data */
-private:
     void addEntry(VirtualSystemDescriptionType_T aType,
                   const Utf8Str &strRef,
                   const Utf8Str &aOrigValue,
@@ -174,6 +174,8 @@ private:
     std::list<VirtualSystemDescriptionEntry*> findByType(VirtualSystemDescriptionType_T aType);
     const VirtualSystemDescriptionEntry* findControllerFromID(uint32_t id);
 
+    /* private instance data */
+private:
     struct Data;
     Data *m;
 };

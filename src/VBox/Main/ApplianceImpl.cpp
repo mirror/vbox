@@ -214,7 +214,10 @@ struct Appliance::Task
     HRESULT rc;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+//
 // globals
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 static Utf8Str stripFilename(const Utf8Str &strFile)
@@ -224,8 +227,14 @@ static Utf8Str stripFilename(const Utf8Str &strFile)
     return str2;
 }
 
-// IVirtualBox public methods
 ////////////////////////////////////////////////////////////////////////////////
+//
+// IVirtualBox public methods
+//
+////////////////////////////////////////////////////////////////////////////////
+
+// This code is here so we won't have to include the appliance headers in the
+// IVirtualBox implementation.
 
 /**
  * Implementation for IVirtualBox::createAppliance.
@@ -247,7 +256,10 @@ STDMETHODIMP VirtualBox::CreateAppliance(IAppliance** anAppliance)
     return rc;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
 // Appliance::task methods
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 HRESULT Appliance::Task::startThread()
@@ -261,13 +273,55 @@ HRESULT Appliance::Task::startThread()
     return S_OK;
 }
 
-// IAppliance constructor / destructor
+////////////////////////////////////////////////////////////////////////////////
+//
+// Appliance constructor / destructor
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 DEFINE_EMPTY_CTOR_DTOR(Appliance)
 struct shutup {};
 
-// IAppliance private methods
+/**
+ * Appliance COM initializer.
+ * @param
+ * @return
+ */
+
+HRESULT Appliance::init(VirtualBox *aVirtualBox)
+{
+    HRESULT rc;
+
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    /* Weak reference to a VirtualBox object */
+    unconst(mVirtualBox) = aVirtualBox;
+
+    // initialize data
+    m = new Data;
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
+    return S_OK;
+}
+
+/**
+ * Appliance COM uninitializer.
+ * @return
+ */
+void Appliance::uninit()
+{
+    delete m;
+    m = NULL;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Appliance private methods
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -357,6 +411,8 @@ HRESULT Appliance::LoopThruSections(const char *pcszPath,
 
 /**
  * Private helper method that handles disk sections in the OVF XML.
+ * Gets called indirectly from IAppliance::read().
+ *
  * @param pcszPath Path spec of the XML file, for error messages.
  * @param pReferencesElement "References" element from OVF, for looking up file specifications; can be NULL if no such element is present.
  * @param pSectionElem Section element for which this helper is getting called.
@@ -435,6 +491,8 @@ HRESULT Appliance::HandleDiskSection(const char *pcszPath,
 
 /**
  * Private helper method that handles network sections in the OVF XML.
+ * Gets called indirectly from IAppliance::read().
+ *
  * @param pcszPath Path spec of the XML file, for error messages.
  * @param pSectionElem Section element for which this helper is getting called.
  * @return
@@ -462,6 +520,7 @@ HRESULT Appliance::HandleNetworkSection(const char *pcszPath,
 
 /**
  * Private helper method that handles a "VirtualSystem" element in the OVF XML.
+ * Gets called indirectly from IAppliance::read().
  *
  * @param pcszPath
  * @param pContentElem
@@ -832,43 +891,17 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
     return S_OK;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
 // IAppliance public methods
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Appliance initializer.
- *
- * This loads the given appliance.
+ * Public method implementation.
  * @param
  * @return
  */
-
-HRESULT Appliance::init(VirtualBox *aVirtualBox)
-{
-    HRESULT rc;
-
-    /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
-
-    /* Weak reference to a VirtualBox object */
-    unconst(mVirtualBox) = aVirtualBox;
-
-    // initialize data
-    m = new Data;
-
-    /* Confirm a successful initialization */
-    autoInitSpan.setSucceeded();
-
-    return S_OK;
-}
-
-void Appliance::uninit()
-{
-    delete m;
-    m = NULL;
-}
-
 STDMETHODIMP Appliance::COMGETTER(Path)(BSTR *aPath)
 {
     if (!aPath)
@@ -884,6 +917,11 @@ STDMETHODIMP Appliance::COMGETTER(Path)(BSTR *aPath)
     return S_OK;
 }
 
+/**
+ * Public method implementation.
+ * @param
+ * @return
+ */
 STDMETHODIMP Appliance::COMGETTER(Disks)(ComSafeArrayOut(BSTR, aDisks))
 {
     CheckComArgOutSafeArrayPointerValid(aDisks);
@@ -934,6 +972,11 @@ STDMETHODIMP Appliance::COMGETTER(Disks)(ComSafeArrayOut(BSTR, aDisks))
     return S_OK;
 }
 
+/**
+ * Public method implementation.
+ * @param
+ * @return
+ */
 STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVirtualSystemDescription*, aVirtualSystemDescriptions))
 {
     CheckComArgOutSafeArrayPointerValid(aVirtualSystemDescriptions);
@@ -949,7 +992,13 @@ STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVi
     return S_OK;
 }
 
-void convertCIMOSType2VBoxOSType(Utf8Str &osTypeVBox, CIMOSType_T c)
+/**
+ * Private helper func that suggests a VirtualBox guest OS type
+ * for the given OVF operating system type.
+ * @param osTypeVBox
+ * @param c
+ */
+static void convertCIMOSType2VBoxOSType(Utf8Str &osTypeVBox, CIMOSType_T c)
 {
     switch (c)
     {
@@ -1135,6 +1184,11 @@ void convertCIMOSType2VBoxOSType(Utf8Str &osTypeVBox, CIMOSType_T c)
     }
 }
 
+/**
+ * Public method implementation.
+ * @param path
+ * @return
+ */
 STDMETHODIMP Appliance::Read(IN_BSTR path)
 {
     HRESULT rc = S_OK;
@@ -1199,6 +1253,10 @@ STDMETHODIMP Appliance::Read(IN_BSTR path)
     return S_OK;
 }
 
+/**
+ * Public method implementation.
+ * @return
+ */
 STDMETHODIMP Appliance::Interpret()
 {
     // @todo:
@@ -1548,6 +1606,11 @@ STDMETHODIMP Appliance::Interpret()
     return rc;
 }
 
+/**
+ * Public method implementation.
+ * @param aProgress
+ * @return
+ */
 STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
 {
     CheckComArgOutPointerValid(aProgress);
@@ -1670,6 +1733,11 @@ struct MyHardDiskAttachment
     int32_t lDevice;
 };
 
+/**
+ * Worker thread implementation for ImportMachines().
+ * @param aThread
+ * @param pvUser
+ */
 /* static */
 DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 {
@@ -1677,9 +1745,6 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
 
     Appliance *app = task->that;
-
-    /// @todo ugly hack, fix ComAssert... (same as in HardDisk::taskThread)
-//     #define setError app->setError
 
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", app));
@@ -2270,7 +2335,10 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
     return VINF_SUCCESS;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
 // IVirtualSystemDescription constructor / destructor
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 DEFINE_EMPTY_CTOR_DTOR(VirtualSystemDescription)
@@ -2282,6 +2350,10 @@ struct VirtualSystemDescription::Data
     list<Utf8Str> warnings;
 };
 
+/**
+ * COM initializer.
+ * @return
+ */
 HRESULT VirtualSystemDescription::init()
 {
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -2293,9 +2365,12 @@ HRESULT VirtualSystemDescription::init()
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
-
     return S_OK;
 }
+
+/**
+* COM uninitializer.
+*/
 
 void VirtualSystemDescription::uninit()
 {
@@ -2303,6 +2378,17 @@ void VirtualSystemDescription::uninit()
     m = NULL;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// IVirtualSystemDescription public methods
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Public method implementation.
+ * @param
+ * @return
+ */
 STDMETHODIMP VirtualSystemDescription::COMGETTER(Count)(ULONG *aCount)
 {
     if (!aCount)
@@ -2318,6 +2404,10 @@ STDMETHODIMP VirtualSystemDescription::COMGETTER(Count)(ULONG *aCount)
     return S_OK;
 }
 
+/**
+ * Public method implementation.
+ * @return
+ */
 STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
                                                       ComSafeArrayOut(BSTR, aRefs),
                                                       ComSafeArrayOut(BSTR, aOrigValues),
@@ -2375,6 +2465,10 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
     return S_OK;
 }
 
+/**
+ * Public method implementation.
+ * @return
+ */
 STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnabled),
                                                       ComSafeArrayIn(IN_BSTR, argConfigValues),
                                                       ComSafeArrayIn(IN_BSTR, argExtraConfigValues))
@@ -2415,6 +2509,10 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
     return S_OK;
 }
 
+/**
+* Public method implementation.
+ * @return
+ */
 STDMETHODIMP VirtualSystemDescription::GetWarnings(ComSafeArrayOut(BSTR, aWarnings))
 {
     if (ComSafeArrayOutIsNull(aWarnings))
@@ -2442,6 +2540,14 @@ STDMETHODIMP VirtualSystemDescription::GetWarnings(ComSafeArrayOut(BSTR, aWarnin
     return S_OK;
 }
 
+/**
+ * Internal method; adds a new description item to the member list.
+ * @param aType Type of description for the new item.
+ * @param strRef Reference item; only used with hard disk controllers.
+ * @param aOrigValue Corresponding original value from OVF.
+ * @param aAutoValue Initial configuration value (can be overridden by caller with setFinalValues).
+ * @param strExtraConfig Extra configuration; meaning dependent on type.
+ */
 void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
                                         const Utf8Str &strRef,
                                         const Utf8Str &aOrigValue,
@@ -2468,6 +2574,12 @@ void VirtualSystemDescription::addWarning(const char* aWarning, ...)
     m->warnings.push_back(str);
 }
 
+/**
+ * Private method; returns a list of description items containing all the items from the member
+ * description items of this virtual system that match the given type.
+ * @param aType
+ * @return
+ */
 std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::findByType(VirtualSystemDescriptionType_T aType)
 {
     std::list<VirtualSystemDescriptionEntry*> vsd;
@@ -2484,6 +2596,13 @@ std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::findByType(V
     return vsd;
 }
 
+/**
+ * Private method; looks thru the member hardware items for the IDE, SATA, or SCSI controller with
+ * the given reference ID. Useful when needing the controller for a particular
+ * virtual disk.
+ * @param id
+ * @return
+ */
 const VirtualSystemDescriptionEntry* VirtualSystemDescription::findControllerFromID(uint32_t id)
 {
     Utf8Str strRef = Utf8StrFmt("%RI32", id);
@@ -2506,8 +2625,153 @@ const VirtualSystemDescriptionEntry* VirtualSystemDescription::findControllerFro
     return NULL;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// IMachine public methods
+//
+////////////////////////////////////////////////////////////////////////////////
+
+// This code is here so we won't have to include the appliance headers in the
+// IMachine implementation, and we also need to access private appliance data.
+
+/**
+* Public method implementation.
+* @param appliance
+* @return
+*/
+
 STDMETHODIMP Machine::Export(IAppliance *appliance)
 {
     HRESULT rc = S_OK;
+
+    if (!appliance)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    ComObjPtr<VirtualSystemDescription> pNewDesc;
+
+    try
+    {
+        Bstr bstrName;
+        Bstr bstrDescription;
+        Bstr bstrGuestOSType;
+        uint32_t cCPUs;
+        uint32_t ulMemSizeMB;
+        BOOL fDVDEnabled;
+        BOOL fFloppyEnabled;
+        ComPtr<IUSBController> pUsbController;
+        ComPtr<IAudioAdapter> pAudioAdapter;
+
+        // get name
+        bstrName = mUserData->mName;
+        // get description
+        bstrName = mUserData->mDescription;
+        // get guest OS
+        bstrGuestOSType = mUserData->mOSTypeId;
+        // CPU count
+        cCPUs = mHWData->mCPUCount;
+        // memory size in MB
+        ulMemSizeMB = mHWData->mMemorySize;
+        // VRAM size?
+        // BIOS settings?
+        // 3D acceleration enabled?
+        // hardware virtualization enabled?
+        // nested paging enabled?
+        // HWVirtExVPIDEnabled?
+        // PAEEnabled?
+        // snapshotFolder?
+        // VRDPServer?
+
+        // floppy
+        rc = mFloppyDrive->COMGETTER(Enabled)(&fFloppyEnabled);
+        if (FAILED(rc)) throw rc;
+
+        // CD-ROM ?!?
+        // ComPtr<IDVDDrive> pDVDDrive;
+        fDVDEnabled = 1;
+
+        // hardDiskAttachments
+//         mHDData->mAttachments @todo
+
+        // this is more tricky so use the COM method
+        rc = COMGETTER(USBController)(pUsbController.asOutParam());
+        if (FAILED(rc)) throw rc;
+
+        pAudioAdapter = mAudioAdapter;
+
+        // create a new virtual system
+        rc = pNewDesc.createObject();
+        CheckComRCThrowRC(rc);
+        rc = pNewDesc->init();
+        CheckComRCThrowRC(rc);
+
+        /* Guest OS type */
+        Utf8Str strOsTypeVBox(bstrGuestOSType),
+                strCIMOSType = "Linux"; // @todo convert back
+        pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
+                           "",
+                           strCIMOSType,
+                           strOsTypeVBox);
+
+        /* VM name */
+        Utf8Str strVMName(bstrName);
+        pNewDesc->addEntry(VirtualSystemDescriptionType_Name,
+                           "",
+                           strVMName,
+                           Utf8Str(bstrName));
+
+        /* CPU count*/
+        Utf8Str strCpuCount = Utf8StrFmt("%RI32", cCPUs);
+        pNewDesc->addEntry(VirtualSystemDescriptionType_CPU,
+                           "",
+                           strCpuCount,
+                           strCpuCount);
+
+        /* Memory */
+        Utf8Str strMemory = Utf8StrFmt("%RI32", (uint64_t)ulMemSizeMB * _1M);
+        pNewDesc->addEntry(VirtualSystemDescriptionType_CPU,
+                           "",
+                           strMemory,
+                           strMemory);
+
+//     <const name="HardDiskControllerIDE" value="6" />
+//     <const name="HardDiskControllerSATA" value="7" />
+//     <const name="HardDiskControllerSCSI" value="8" />
+//     <const name="HardDiskImage" value="9" />
+
+        /* Floppy Drive */
+        if (fFloppyEnabled)
+            pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy, "", "", "");
+
+        /* CD Drive */
+        if (fDVDEnabled)
+            pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");
+
+//     <const name="LogicalNetwork" value="12" />
+
+//     <const name="NetworkAdapter" value="13" />
+
+//     <const name="USBController" value="14" />
+
+//     <const name="SoundCard" value="15" />
+
+        // finally, add the virtual system to the appliance
+        Appliance *pAppliance = static_cast<Appliance*>(appliance);
+        AutoCaller autoCaller(pAppliance);
+        if (FAILED(rc)) throw rc;
+
+        AutoWriteLock alock(pAppliance);
+
+        pAppliance->m->virtualSystemDescriptions.push_back(pNewDesc);
+    }
+    catch(HRESULT arc)
+    {
+        rc = arc;
+    }
+
     return rc;
 }

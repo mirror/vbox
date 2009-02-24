@@ -3049,16 +3049,16 @@
     a configuration value.</desc>
 
     <const name="Ignore" value="1" />
-    <const name="Name" value="2" />
-    <const name="OS" value="3" />
+    <const name="OS" value="2" />
+    <const name="Name" value="3" />
     <const name="CPU" value="4" />
     <const name="Memory" value="5" />
     <const name="HardDiskControllerIDE" value="6" />
     <const name="HardDiskControllerSATA" value="7" />
     <const name="HardDiskControllerSCSI" value="8" />
     <const name="HardDiskImage" value="9" />
-    <const name="CDROM" value="10" />
-    <const name="Floppy" value="11" />
+    <const name="Floppy" value="10" />
+    <const name="CDROM" value="11" />
     <const name="LogicalNetwork" value="12" />
     <const name="NetworkAdapter" value="13" />
     <const name="USBController" value="14" />
