@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxImportAppliance class declaration
+ * VBoxImportApplianceWzd class declaration
  */
 
 /*
@@ -20,16 +20,14 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxImportAppliance_h__
-#define __VBoxImportAppliance_h__
+#ifndef __VBoxImportApplianceWzd_h__
+#define __VBoxImportApplianceWzd_h__
 
-#include "VBoxImportApplianceDlg.gen.h"
+#include "VBoxImportApplianceWzd.gen.h"
+#include "QIAbstractWizard.h"
 #include "QIWithRetranslateUI.h"
-#include "QIDialog.h"
 
-class CAppliance;
-class CVirtualSystemDescription;
-class VirtualSystemModel;
+class QIWidgetValidator;
 
 class VBoxImportAppliance
 {
@@ -51,28 +49,29 @@ private:
     static int mMaxGuestCPUCount;
 };
 
-class VBoxImportApplianceDlg : public QIWithRetranslateUI<QIDialog>,
-                               public Ui::VBoxImportApplianceDlg
+class VBoxImportApplianceWzd : public QIWithRetranslateUI<QIAbstractWizard>,
+                               public Ui::VBoxImportApplianceWzd
 {
     Q_OBJECT;
 
 public:
-    VBoxImportApplianceDlg (CAppliance *aAppliance, QWidget *aParent);
-
-public slots:
-    void accept();
+    VBoxImportApplianceWzd (QWidget* aParent = NULL);
 
 protected:
     void retranslateUi();
 
 private slots:
-    void restoreDefaults();
+    void revalidate (QIWidgetValidator *aWval);
+    void enableNext (const QIWidgetValidator *aWval);
+
+    void accept();
+
+    void showNextPage();
+    void onPageShow();
 
 private:
-    /* Private member vars */
-    CAppliance *mAppliance;
-    VirtualSystemModel *mModel;
+    QIWidgetValidator *mWValFileSelector;
 };
 
-#endif /* __VBoxImportAppliance_h__ */
+#endif /* __VBoxImportApplianceWzd_h__ */
 

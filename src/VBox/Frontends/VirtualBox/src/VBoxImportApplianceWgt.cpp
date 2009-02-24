@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxImportAppliance class implementation
+ * VBoxImportApplianceWgt class implementation
  */
 
 /*
@@ -20,7 +20,8 @@
  * additional information or have any questions.
  */
 
-#include "VBoxImportAppliance.h"
+#include "VBoxImportApplianceWgt.h"
+#include "VBoxImportApplianceWzd.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxFilePathSelectorWidget.h"
@@ -158,7 +159,7 @@ public:
         QVariant v;
         if (aColumn == DescriptionSection &&
             aRole == Qt::DisplayRole)
-            v = VBoxImportApplianceDlg::tr ("Virtual System %1").arg (mNumber + 1);
+            v = VBoxImportApplianceWgt::tr ("Virtual System %1").arg (mNumber + 1);
         return v;
     }
 
@@ -246,20 +247,20 @@ public:
                 {
                     switch (mType)
                     {
-                        case KVirtualSystemDescriptionType_Name: v = VBoxImportApplianceDlg::tr ("Name"); break;
-                        case KVirtualSystemDescriptionType_OS: v = VBoxImportApplianceDlg::tr ("Guest OS Type"); break;
-                        case KVirtualSystemDescriptionType_CPU: v = VBoxImportApplianceDlg::tr ("CPU"); break;
-                        case KVirtualSystemDescriptionType_Memory: v = VBoxImportApplianceDlg::tr ("RAM"); break;
-                        case KVirtualSystemDescriptionType_HardDiskControllerIDE: v = VBoxImportApplianceDlg::tr ("Hard Disk Controller IDE"); break;
-                        case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = VBoxImportApplianceDlg::tr ("Hard Disk Controller SATA"); break;
-                        case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = VBoxImportApplianceDlg::tr ("Hard Disk Controller SCSI"); break;
-                        case KVirtualSystemDescriptionType_CDROM: v = VBoxImportApplianceDlg::tr ("DVD"); break;
-                        case KVirtualSystemDescriptionType_Floppy: v = VBoxImportApplianceDlg::tr ("Floppy"); break;
-                        case KVirtualSystemDescriptionType_NetworkAdapter: v = VBoxImportApplianceDlg::tr ("Network Adapter"); break;
-                        case KVirtualSystemDescriptionType_USBController: v = VBoxImportApplianceDlg::tr ("USB Controller"); break;
-                        case KVirtualSystemDescriptionType_SoundCard: v = VBoxImportApplianceDlg::tr ("Sound Card"); break;
-                        case KVirtualSystemDescriptionType_HardDiskImage: v = VBoxImportApplianceDlg::tr ("Virtual Disk Image"); break;
-                        default: v = VBoxImportApplianceDlg::tr ("Unknown Hardware Item"); break;
+                        case KVirtualSystemDescriptionType_Name: v = VBoxImportApplianceWgt::tr ("Name"); break;
+                        case KVirtualSystemDescriptionType_OS: v = VBoxImportApplianceWgt::tr ("Guest OS Type"); break;
+                        case KVirtualSystemDescriptionType_CPU: v = VBoxImportApplianceWgt::tr ("CPU"); break;
+                        case KVirtualSystemDescriptionType_Memory: v = VBoxImportApplianceWgt::tr ("RAM"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerIDE: v = VBoxImportApplianceWgt::tr ("Hard Disk Controller IDE"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = VBoxImportApplianceWgt::tr ("Hard Disk Controller SATA"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = VBoxImportApplianceWgt::tr ("Hard Disk Controller SCSI"); break;
+                        case KVirtualSystemDescriptionType_CDROM: v = VBoxImportApplianceWgt::tr ("DVD"); break;
+                        case KVirtualSystemDescriptionType_Floppy: v = VBoxImportApplianceWgt::tr ("Floppy"); break;
+                        case KVirtualSystemDescriptionType_NetworkAdapter: v = VBoxImportApplianceWgt::tr ("Network Adapter"); break;
+                        case KVirtualSystemDescriptionType_USBController: v = VBoxImportApplianceWgt::tr ("USB Controller"); break;
+                        case KVirtualSystemDescriptionType_SoundCard: v = VBoxImportApplianceWgt::tr ("Sound Card"); break;
+                        case KVirtualSystemDescriptionType_HardDiskImage: v = VBoxImportApplianceWgt::tr ("Virtual Disk Image"); break;
+                        default: v = VBoxImportApplianceWgt::tr ("Unknown Hardware Item"); break;
                     }
                 }
                 else if (aColumn == OriginalValueSection)
@@ -269,7 +270,7 @@ public:
                     switch (mType)
                     {
                         case KVirtualSystemDescriptionType_OS: v = vboxGlobal().vmGuestOSTypeDescription (mConfigValue); break;
-                        case KVirtualSystemDescriptionType_Memory: v = mConfigValue + " " + VBoxImportApplianceDlg::tr ("MB"); break;
+                        case KVirtualSystemDescriptionType_Memory: v = mConfigValue + " " + VBoxImportApplianceWgt::tr ("MB"); break;
                         case KVirtualSystemDescriptionType_SoundCard: v = vboxGlobal().toString (static_cast<KAudioControllerType> (mConfigValue.toInt())); break;
                         case KVirtualSystemDescriptionType_NetworkAdapter: v = vboxGlobal().toString (static_cast<KNetworkAdapterType> (mConfigValue.toInt())); break;
                         default: v = mConfigValue; break;
@@ -282,7 +283,7 @@ public:
                 if (aColumn == ConfigValueSection)
                 {
                     if (!mOrigValue.isEmpty())
-                        v = VBoxImportApplianceDlg::tr ("<b>Original Value:</b> %1").arg (mOrigValue);
+                        v = VBoxImportApplianceWgt::tr ("<b>Original Value:</b> %1").arg (mOrigValue);
                 }
                 break;
             }
@@ -414,7 +415,7 @@ public:
                 {
                     QSpinBox *e = new QSpinBox (aParent);
                     e->setRange (VBoxImportAppliance::minGuestRAM(), VBoxImportAppliance::maxGuestRAM());
-                    e->setSuffix (" " + VBoxImportApplianceDlg::tr ("MB"));
+                    e->setSuffix (" " + VBoxImportApplianceWgt::tr ("MB"));
                     editor = e;
                     break;
                 }
@@ -925,8 +926,8 @@ QVariant VirtualSystemModel::headerData (int aSection, Qt::Orientation aOrientat
     QString title;
     switch (aSection)
     {
-        case DescriptionSection: title = VBoxImportApplianceDlg::tr ("Description"); break;
-        case ConfigValueSection: title = VBoxImportApplianceDlg::tr ("Configuration"); break;
+        case DescriptionSection: title = VBoxImportApplianceWgt::tr ("Description"); break;
+        case ConfigValueSection: title = VBoxImportApplianceWgt::tr ("Configuration"); break;
     }
     return title;
 }
@@ -957,157 +958,132 @@ void VirtualSystemModel::putBack()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// VBoxImportAppliance
+// VBoxImportApplianceWgt
 
-int VBoxImportAppliance::mMinGuestRAM = -1;
-int VBoxImportAppliance::mMaxGuestRAM = -1;
-int VBoxImportAppliance::mMinGuestCPUCount = -1;
-int VBoxImportAppliance::mMaxGuestCPUCount = -1;
-
-/* static */
-void VBoxImportAppliance::import (QWidget *aParent /* = NULL */)
+VBoxImportApplianceWgt::VBoxImportApplianceWgt (QWidget *aParent)
+    : QIWithRetranslateUI<QWidget> (aParent)
+    , mAppliance (NULL)
+    , mModel (NULL)
 {
-    initSystemSettings();
-
-    /* We need a file to import; request one from the user */
-    QString file = VBoxGlobal::getOpenFileName ("",
-                                                VBoxGlobal::tr ("Open Virtualization Format (%1)").arg ("*.ovf"),
-                                                aParent,
-                                                VBoxGlobal::tr ("Select an appliance to import"));
-    if (!file.isEmpty())
-    {
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        /* Create a appliance object */
-        CAppliance appliance = vbox.CreateAppliance();
-        bool fResult = appliance.isOk();
-        if (fResult)
-        {
-            /* Read the appliance */
-            appliance.Read (file);
-            fResult = appliance.isOk();
-            if (fResult)
-            {
-                /* Now we have to interpret that stuff */
-                appliance.Interpret();
-                fResult = appliance.isOk();
-                if (fResult)
-                {
-                    /* Let the user do some tuning */
-                    VBoxImportApplianceDlg settingsDlg (&appliance, aParent);
-                    if (settingsDlg.exec() == QDialog::Accepted)
-                    {
-                        /* Start the import asynchronously */
-                        CProgress progress;
-                        progress = appliance.ImportMachines();
-                        fResult = appliance.isOk();
-                        if (fResult)
-                        {
-                            /* Show some progress, so the user know whats going on */
-                            vboxProblem().showModalProgressDialog (progress, VBoxImportApplianceDlg::tr ("Importing Appliance ..."), aParent);
-                            if (!progress.isOk() || progress.GetResultCode() != 0)
-                            {
-                                vboxProblem().cannotImportAppliance (progress, appliance);
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (!fResult)
-            vboxProblem().cannotImportAppliance (appliance);
-    }
-}
-
-/* static */
-void VBoxImportAppliance::initSystemSettings()
-{
-    if (mMinGuestRAM == -1)
-    {
-        /* We need some global defaults from the current VirtualBox
-           installation */
-        CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
-        mMinGuestRAM = sp.GetMinGuestRAM();
-        mMaxGuestRAM = sp.GetMaxGuestRAM();
-        mMinGuestCPUCount = sp.GetMinGuestCPUCount();
-        mMaxGuestCPUCount = sp.GetMaxGuestCPUCount();
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// VBoxImportApplianceDlg
-
-VBoxImportApplianceDlg::VBoxImportApplianceDlg (CAppliance *aAppliance, QWidget *aParent)
-    : QIWithRetranslateUI<QIDialog> (aParent)
-    , mAppliance (aAppliance)
-{
-    AssertPtr (aAppliance);
-
     /* Apply UI decorations */
-    Ui::VBoxImportApplianceDlg::setupUi (this);
+    Ui::VBoxImportApplianceWgt::setupUi (this);
 
-    QVector<CVirtualSystemDescription> vsds = aAppliance->GetVirtualSystemDescriptions();
-
-    mModel = new VirtualSystemModel (vsds, this);
-
-    VirtualSystemSortProxyModel *proxy = new VirtualSystemSortProxyModel (this);
-    proxy->setSourceModel (mModel);
-    proxy->sort (DescriptionSection, Qt::DescendingOrder);
-
-    VirtualSystemDelegate *delegate = new VirtualSystemDelegate (proxy, this);
-
-    /* Set our own model */
-    mTvSettings->setModel (proxy);
-    /* Set our own delegate */
-    mTvSettings->setItemDelegate (delegate);
-    /* For now we hide the original column. This data is displayed as tooltip
-       also. */
-    mTvSettings->setColumnHidden (OriginalValueSection, true);
     /* Make the tree looking nicer */
     mTvSettings->setRootIsDecorated (false);
     mTvSettings->setAlternatingRowColors (true);
-    mTvSettings->expandAll();
     mTvSettings->header()->setStretchLastSection (true);
     mTvSettings->header()->setResizeMode (QHeaderView::ResizeToContents);
-
-    /* Check for warnings & if there are one display them. */
-    bool fWarningsEnabled = false;
-    for (int i = 0; i < vsds.size(); ++i)
-    {
-        QVector<QString> warnings = vsds[i].GetWarnings();
-        if (warnings.size() > 0)
-        {
-            mWarningTextEdit->append (tr("Virtual System %1:").arg (i+1));
-            foreach (const QString& text, warnings)
-                mWarningTextEdit->append ("- " + text);
-            fWarningsEnabled = true;
-        }
-    }
-    mWarningWidget->setShown (fWarningsEnabled);
-
-    connect (mButtonBox->button (QDialogButtonBox::RestoreDefaults), SIGNAL (clicked ()),
-             this, SLOT (restoreDefaults ()));
 
     /* Applying language settings */
     retranslateUi();
 }
 
-void VBoxImportApplianceDlg::accept()
+bool VBoxImportApplianceWgt::setFile (const QString& aFile)
 {
-    mModel->putBack();
-    QIDialog::accept();
+    bool fResult = false;
+    if (!aFile.isEmpty())
+    {
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        /* Create a appliance object */
+        mAppliance = new CAppliance(vbox.CreateAppliance());
+        fResult = mAppliance->isOk();
+        if (fResult)
+        {
+            /* Read the appliance */
+            mAppliance->Read (aFile);
+            fResult = mAppliance->isOk();
+            if (fResult)
+            {
+                /* Now we have to interpret that stuff */
+                mAppliance->Interpret();
+                fResult = mAppliance->isOk();
+                if (fResult)
+                {
+                    if (mModel)
+                        delete mModel;
+
+                    QVector<CVirtualSystemDescription> vsds = mAppliance->GetVirtualSystemDescriptions();
+
+                    mModel = new VirtualSystemModel (vsds, this);
+
+                    VirtualSystemSortProxyModel *proxy = new VirtualSystemSortProxyModel (this);
+                    proxy->setSourceModel (mModel);
+                    proxy->sort (DescriptionSection, Qt::DescendingOrder);
+
+                    VirtualSystemDelegate *delegate = new VirtualSystemDelegate (proxy, this);
+
+                    /* Set our own model */
+                    mTvSettings->setModel (proxy);
+                    /* Set our own delegate */
+                    mTvSettings->setItemDelegate (delegate);
+                    /* For now we hide the original column. This data is displayed as tooltip
+                       also. */
+                    mTvSettings->setColumnHidden (OriginalValueSection, true);
+                    mTvSettings->expandAll();
+
+                    /* Check for warnings & if there are one display them. */
+                    bool fWarningsEnabled = false;
+                    for (int i = 0; i < vsds.size(); ++i)
+                    {
+                        QVector<QString> warnings = vsds[i].GetWarnings();
+                        if (warnings.size() > 0)
+                        {
+                            mWarningTextEdit->append (tr("Virtual System %1:").arg (i+1));
+                            foreach (const QString& text, warnings)
+                                mWarningTextEdit->append ("- " + text);
+                            fWarningsEnabled = true;
+                        }
+                    }
+                    mWarningWidget->setShown (fWarningsEnabled);
+                }
+            }
+        }
+        if (!fResult)
+        {
+            vboxProblem().cannotImportAppliance (mAppliance, this);
+            /* Delete the appliance in a case of an error */
+            delete mAppliance;
+            mAppliance = NULL;
+        }
+    }
+    return fResult;
 }
 
-void VBoxImportApplianceDlg::retranslateUi()
+bool VBoxImportApplianceWgt::import()
 {
-    /* Translate uic generated strings */
-    Ui::VBoxImportApplianceDlg::retranslateUi (this);
-
-    mButtonBox->button (QDialogButtonBox::Ok)->setText (tr ("&Import"));
+    if (mAppliance)
+    {
+        mModel->putBack();
+        /* Start the import asynchronously */
+        CProgress progress;
+        progress = mAppliance->ImportMachines();
+        bool fResult = mAppliance->isOk();
+        if (fResult)
+        {
+            /* Show some progress, so the user know whats going on */
+            vboxProblem().showModalProgressDialog (progress, tr ("Importing Appliance ..."), this);
+            if (!progress.isOk() || progress.GetResultCode() != 0)
+            {
+                vboxProblem().cannotImportAppliance (progress, mAppliance, this);
+                return false;
+            }
+            else
+                return true;
+        }
+        if (!fResult)
+            vboxProblem().cannotImportAppliance (mAppliance, this);
+    }
+    return false;
 }
 
-void VBoxImportApplianceDlg::restoreDefaults()
+void VBoxImportApplianceWgt::restoreDefaults()
 {
     mModel->restoreDefaults();
+}
+
+void VBoxImportApplianceWgt::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxImportApplianceWgt::retranslateUi (this);
 }
 

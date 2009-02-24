@@ -2087,32 +2087,32 @@ void VBoxProblemReporter::cannotRunInSelectorMode()
             "<p>The application will now terminate.</p>"));
 }
 
-void VBoxProblemReporter::cannotImportAppliance (const CAppliance &aAppliance)
+void VBoxProblemReporter::cannotImportAppliance (CAppliance *aAppliance, QWidget *aParent /* = NULL */)
 {
-    if (aAppliance.isNull())
+    if (aAppliance->isNull())
     {
-        message (mainWindowShown(),
+        message (aParent ? aParent : mainWindowShown(),
                  Error,
                  tr ("Failed to open appliance."));
     }else
     {
         /* Preserve the current error info before calling the object again */
-        COMResult res (aAppliance);
+        COMResult res (*aAppliance);
 
-        message (mainWindowShown(),
+        message (aParent ? aParent : mainWindowShown(),
                  Error,
-                 tr ("Failed to open/interpret appliance <b>%1</b>.").arg (aAppliance.GetPath()),
+                 tr ("Failed to open/interpret appliance <b>%1</b>.").arg (aAppliance->GetPath()),
                  formatErrorInfo (res));
     }
 }
 
-void VBoxProblemReporter::cannotImportAppliance (const CProgress &aProgress, const CAppliance& aAppliance)
+void VBoxProblemReporter::cannotImportAppliance (const CProgress &aProgress, CAppliance* aAppliance, QWidget *aParent /* = NULL */)
 {
     AssertWrapperOk (aProgress);
 
-    message (mainWindowShown(),
+    message (aParent ? aParent : mainWindowShown(),
              Error,
-             tr ("Failed to import appliance <b>%1</b>.").arg (aAppliance.GetPath()),
+             tr ("Failed to import appliance <b>%1</b>.").arg (aAppliance->GetPath()),
              formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
