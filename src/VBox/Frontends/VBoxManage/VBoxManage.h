@@ -175,6 +175,9 @@ int handleCloseMedium(HandlerArg *a);
 int handleImportAppliance(HandlerArg *a);
 int handleExportAppliance(HandlerArg *a);
 
+// VBoxManageSnapshot.cpp
+int handleSnapshot(HandlerArg *a);
+
 /* VBoxManageUSB.cpp */
 /* VBoxManageTODO.cpp */
 
