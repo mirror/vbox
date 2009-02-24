@@ -49,13 +49,26 @@ public:
     void setMode (Mode aMode);
     Mode mode() const;
 
+    void setEditable (bool aOn);
+    bool isEditable() const;
+
     void setResetEnabled (bool aEnabled);
     bool isResetEnabled () const;
 
+    void setFileDialogTitle (const QString& aTitle);
+    QString fileDialogTitle() const;
+
+    void setFileFilters (const QString& aFilters);
+    QString fileFilters() const;
+
+    void resetModified();
     bool isModified() const;
     bool isPathSelected() const;
 
     QString path() const;
+
+signals:
+    void pathChanged (const QString &);
 
 public slots:
 
@@ -91,8 +104,11 @@ private:
     Mode mMode;
     QString mPath;
     QString mHomeDir;
+    QString mFileFilters;
+    QString mFileDialogTitle;
     QString mNoneStr;
     QString mNoneTip;
+    bool mIsEditable;
     bool mIsEditableMode;
     bool mIsMouseAwaited;
 

@@ -61,6 +61,7 @@ VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent)
     , mCopyAction (new QAction (this))
     , mMode (Mode_Folder)
     , mHomeDir (QDir::current().absolutePath())
+    , mIsEditable (true)
     , mIsEditableMode (false)
     , mIsMouseAwaited (false)
     , mModified (false)
@@ -80,23 +81,19 @@ VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent)
     mCopyAction->setShortcutContext (Qt::WidgetShortcut);
 
     /* Initial Setup */
-    setEditable (true);
-    Assert (lineEdit());
     setInsertPolicy (QComboBox::NoInsert);
     setContextMenuPolicy (Qt::ActionsContextMenu);
     setMinimumWidth (200);
 
     /* Setup connections */
     connect (this, SIGNAL (activated (int)), this, SLOT (onActivated (int)));
-    connect (lineEdit(), SIGNAL (textEdited (const QString &)),
-             this, SLOT (onTextEdited (const QString &)));
     connect (mCopyAction, SIGNAL (triggered (bool)), this, SLOT (copyToClipboard()));
+
+    /* Editable by default */
+    setEditable (true);
 
     /* Applying language settings */
     retranslateUi();
-
-    /* Installing necessary event filters */
-    lineEdit()->installEventFilter (this);
 }
 
 VBoxFilePathSelectorWidget::~VBoxFilePathSelectorWidget()
@@ -112,6 +109,37 @@ void VBoxFilePathSelectorWidget::setMode (Mode aMode)
 VBoxFilePathSelectorWidget::Mode VBoxFilePathSelectorWidget::mode() const
 {
     return mMode;
+}
+
+void VBoxFilePathSelectorWidget::setEditable (bool aOn)
+{
+    mIsEditable = aOn;
+
+    if (mIsEditable)
+    {
+        QComboBox::setEditable (true);
+        Assert (lineEdit());
+        connect (lineEdit(), SIGNAL (textEdited (const QString &)),
+                 this, SLOT (onTextEdited (const QString &)));
+
+        /* Installing necessary event filters */
+        lineEdit()->installEventFilter (this);
+    }else
+    {
+        if (lineEdit())
+        {
+            /* Installing necessary event filters */
+            lineEdit()->installEventFilter (this);
+            disconnect (lineEdit(), SIGNAL (textEdited (const QString &)),
+                        this, SLOT (onTextEdited (const QString &)));
+        }
+        QComboBox::setEditable (false);
+    }
+}
+
+bool VBoxFilePathSelectorWidget::isEditable() const
+{
+    return mIsEditable;
 }
 
 void VBoxFilePathSelectorWidget::setResetEnabled (bool aEnabled)
@@ -131,9 +159,34 @@ bool VBoxFilePathSelectorWidget::isResetEnabled() const
     return (count() - 1  == ResetId);
 }
 
+void VBoxFilePathSelectorWidget::resetModified()
+{
+    mModified = false;
+}
+
 bool VBoxFilePathSelectorWidget::isModified() const
 {
     return mModified;
+}
+
+void VBoxFilePathSelectorWidget::setFileDialogTitle (const QString& aTitle)
+{
+    mFileDialogTitle = aTitle;
+}
+
+QString VBoxFilePathSelectorWidget::fileDialogTitle() const
+{
+    return mFileDialogTitle;
+}
+
+void VBoxFilePathSelectorWidget::setFileFilters (const QString& aFilters)
+{
+    mFileFilters = aFilters;
+}
+
+QString VBoxFilePathSelectorWidget::fileFilters() const
+{
+    return mFileFilters;
 }
 
 /**
@@ -177,7 +230,8 @@ void VBoxFilePathSelectorWidget::focusInEvent (QFocusEvent *aEvent)
 {
     if (isPathSelected())
     {
-        mIsEditableMode = true;
+        if (mIsEditable)
+            mIsEditableMode = true;
         if (aEvent->reason() == Qt::MouseFocusReason)
             mIsMouseAwaited = true;
         else
@@ -304,6 +358,7 @@ void VBoxFilePathSelectorWidget::changePath (const QString &aPath,
     setPath (aPath, aRefreshText);
     if (!mModified && mPath != oldPath)
         mModified = true;
+    emit pathChanged (aPath);
 }
 
 void VBoxFilePathSelectorWidget::selectPath()
@@ -316,8 +371,8 @@ void VBoxFilePathSelectorWidget::selectPath()
 
     /* Open existing file or directory. */
     QString path = mMode == Mode_File ?
-        VBoxGlobal::getOpenFileName (initDir, QString::null, parentWidget(), QString::null) :
-        VBoxGlobal::getExistingDirectory (initDir, parentWidget());
+        VBoxGlobal::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle) :
+        VBoxGlobal::getExistingDirectory (initDir, parentWidget(), mFileDialogTitle);
     if (path.isNull())
         return;
 
@@ -398,7 +453,7 @@ QString VBoxFilePathSelectorWidget::shrinkText (int aWidth) const
 
 void VBoxFilePathSelectorWidget::refreshText()
 {
-    if (mIsEditableMode)
+    if (mIsEditable && mIsEditableMode)
     {
         /* Cursor positioning variables */
         int curPos = -1;
