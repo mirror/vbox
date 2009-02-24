@@ -34,7 +34,6 @@
 #include "VBoxVMLogViewer.h"
 #include "VBoxGlobal.h"
 #include "VBoxUtils.h"
-#include "VBoxChangeLogWgt.h"
 
 #ifdef Q_WS_X11
 #include <iprt/env.h>
@@ -48,7 +47,6 @@
 #include <QStackedWidget>
 #include <QDesktopWidget>
 #include <QToolButton>
-#include <QFile>
 
 // VBoxVMDetailsView class
 ////////////////////////////////////////////////////////////////////////////////
@@ -700,17 +698,6 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* bring the VM list to the focus */
     mVMListView->setFocus();
-
-//    VBoxChangeLogWgt *cl = new VBoxChangeLogWgt (this);
-//    cl->exec();
-
-//    QIMessageBox *mb = new QIMessageBox ("Changlog", "sdfsds", QIMessageBox::Information, 1, 0, 0);
-//    QFile file ("/mnt/data/projects/innotek/vbox/out/linux.amd64/debug/bin/ChangeLog.html");
-//    file.open(QIODevice::ReadOnly);
-//    QString bla (file.readAll());
-//    mb->setDetailsText (bla);
-//    mb->setDetailsShown (true);
-//    mb->exec();
 }
 
 VBoxSelectorWnd::~VBoxSelectorWnd()
