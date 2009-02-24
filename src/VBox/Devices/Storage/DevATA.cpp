@@ -6085,6 +6085,38 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
     return VINF_SUCCESS;
 }
 
+/**
+ * Convert config value to DEVPCBIOSBOOT.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance data.
+ * @param   pCfgHandle  Configuration handle.
+ * @param   penmChipset Where to store the chipset type.
+ */
+static int ataControllerFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, CHIPSET *penmChipset)
+{
+    char szType[20];
+
+    int rc = CFGMR3QueryString(pCfgHandle, "Type", &szType[0], sizeof(szType));
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: Querying \"Type\" as a string failed"));
+    if (!strcmp(szType, "PIIX3"))
+        *penmChipset = CHIPSET_PIIX3;
+    else if (!strcmp(szType, "PIIX4"))
+        *penmChipset = CHIPSET_PIIX4;
+    else if (!strcmp(szType, "ICH6"))
+        *penmChipset = CHIPSET_ICH6;
+    else
+    {
+        PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                            N_("Configuration error: The \"Type\" value \"%s\" is unknown"),
+                            szType);
+        rc = VERR_INTERNAL_ERROR;
+    }
+    return rc;
+}
+
 
 /**
  * Construct a device instance for a VM.
@@ -6146,33 +6178,12 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     Log(("%s: DelayIRQMillies=%d\n", __FUNCTION__, DelayIRQMillies));
     Assert(DelayIRQMillies < 50);
 
-    pThis->u8Type = CHIPSET_PIIX3;
-    uint32_t type;
-    rc = CFGMR3QueryU32Def(pCfgHandle, "Type", &type, 0);
+    CHIPSET enmChipset = CHIPSET_PIIX3;
+    rc = ataControllerFromCfg(pDevIns, pCfgHandle, &enmChipset);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 configuration error: failed to read Type as integer"));
-    Log(("%s: type=%d\n", __FUNCTION__, type));
-    /** See IDEControllerType in VirtualBox.xidl */
-    switch (type)
-    {
-        case 0:
-            /** @todo: what is right here? */
-            AssertMsgFailed(("What do we do here: type Null\n"));
-            break;
-        case 1:
-            pThis->u8Type = CHIPSET_PIIX3;
-            break;
-        case 2:
-            pThis->u8Type = CHIPSET_PIIX4;
-            break; 
-        case 3:
-            pThis->u8Type = CHIPSET_ICH6;
-            break;
-        default:
-            AssertMsgFailed(("Unknown IDE type: %d\n", type));
-    }
-
+        return rc;
+    pThis->u8Type = (uint8_t)enmChipset;
+    
     /*
      * Initialize data (most of it anyway).
      */

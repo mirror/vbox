@@ -79,7 +79,23 @@
 # include <devguid.h>
 #endif
 
-
+/**
+ * Translate IDEControllerType_T to string representation.
+ */
+const char* controllerString(IDEControllerType_T enmType)
+{
+    switch (enmType)
+    {
+        case IDEControllerType_PIIX3:
+            return "PIIX3";
+        case IDEControllerType_PIIX4:
+            return "PIIX4";
+        case IDEControllerType_ICH6:
+            return "ICH6";
+        default:
+            return "Unknown";
+    }
+}
 /*
  * VC++ 8 / amd64 has some serious trouble with this function.
  * As a temporary measure, we'll drop global optimizations.
@@ -779,7 +795,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     afPciDeviceNo[1] = true;
     rc = CFGMR3InsertInteger(pIdeInst, "PCIFunctionNo",        1);                  RC_CHECK();
     rc = CFGMR3InsertNode(pIdeInst,    "Config", &pCfg);                            RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "Type", (uint32_t)controllerType);              RC_CHECK();
+    rc = CFGMR3InsertString(pCfg,  "Type", controllerString(controllerType));       RC_CHECK();
 
     /* Attach the status driver */
     rc = CFGMR3InsertNode(pIdeInst,    "LUN#999", &pLunL0);                         RC_CHECK();
