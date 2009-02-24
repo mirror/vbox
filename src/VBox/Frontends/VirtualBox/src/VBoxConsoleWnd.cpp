@@ -437,7 +437,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mVMMenu->addAction (mVmResetAction);
     mVMMenu->addAction (mVmPauseAction);
     mVMMenu->addAction (mVmACPIShutdownAction);
+#ifndef Q_WS_MAC
     mVMMenu->addSeparator();
+#endif /* Q_WS_MAC */
     mVMMenu->addAction (mVmCloseAction);
 
     /* Devices submenu */

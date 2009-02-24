@@ -255,7 +255,9 @@ void VBoxHelpActions::addTo (QMenu *aMenu)
     updateAction->setEnabled (vboxGlobal().virtualBox().
         GetExtraData (VBoxDefs::GUI_UpdateDlgWinID).isEmpty());
 
+#ifndef Q_WS_MAC
     aMenu->addSeparator();
+#endif /* Q_WS_MAC */
     aMenu->addAction (aboutAction);
 }
 
