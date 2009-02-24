@@ -456,6 +456,8 @@ VMMDECL(int)        PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 VMMDECL(int)        PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 # ifdef IN_RC
 VMMDECL(int)        PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
+VMMDECL(int)        PGMDynLockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage);
+VMMDECL(int)        PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage);
 # endif
 VMMDECL(void)       PGMDynMapStartAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapReleaseAutoSet(PVMCPU pVCpu);

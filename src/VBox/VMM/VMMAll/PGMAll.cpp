@@ -2130,8 +2130,8 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 /**
  * Temporarily maps one host page specified by HC physical address.
  *
- * Be WARNED that the dynamic page mapping area is small, 8 pages, thus the space is
- * reused after 8 mappings (or perhaps a few more if you score with the cache).
+ * Be WARNED that the dynamic page mapping area is small, 16 pages, thus the space is
+ * reused after 16 mappings (or perhaps a few more if you score with the cache).
  *
  * @returns VINF_SUCCESS, will bail out to ring-3 on failure.
  * @param   pVM         VM handle.
@@ -2184,14 +2184,25 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
         }
     }
     AssertCompile(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 8);
+    AssertCompile((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) == 16);
     STAM_COUNTER_INC(&pVM->pgm.s.StatRCDynMapCacheMisses);
 
     /*
      * Update the page tables.
      */
     register unsigned iPage = pVM->pgm.s.iDynPageMapLast;
+#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    for (unsigned i=0;i<(MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT);i++)
+    {
+        pVM->pgm.s.iDynPageMapLast = iPage = (iPage + 1) & ((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) - 1);
+        if (!(pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u & PGM_PTFLAGS_DYN_LOCKED))
+            break;
+        iPage++;
+    }
+    AssertRelease(i != (MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT));
+#  else
     pVM->pgm.s.iDynPageMapLast = iPage = (iPage + 1) & ((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) - 1);
-    Assert((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) == 16);
+#  endif
 
     pVM->pgm.s.aHCPhysDynPageMapCache[iPage & (RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) - 1)] = HCPhys;
     pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u = (uint32_t)HCPhys | X86_PTE_P | X86_PTE_A | X86_PTE_D;
@@ -2203,6 +2214,41 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     Log4(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%p iPage=%d\n", HCPhys, pv, iPage));
     return VINF_SUCCESS;
 }
+
+/**
+ * Temporarily lock a dynamic page to prevent it from being reused.
+ *
+ * @returns VINF_SUCCESS, will bail out to ring-3 on failure.
+ * @param   pVM         VM handle.
+ * @param   GCPage      GC address of page
+ */
+VMMDECL(int) PGMDynLockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
+{
+    unsigned iPage;
+
+    iPage = ((uintptr_t)(GCPage - pVM->pgm.s.pbDynPageMapBaseGC)) >> PAGE_SHIFT;
+    Assert(!(pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u & PGM_PTFLAGS_DYN_LOCKED));
+    pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u |= PGM_PTFLAGS_DYN_LOCKED;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Unlock a dynamic page
+ *
+ * @returns VINF_SUCCESS, will bail out to ring-3 on failure.
+ * @param   pVM         VM handle.
+ * @param   GCPage      GC address of page
+ */
+VMMDECL(int) PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
+{
+    unsigned iPage;
+
+    iPage = ((uintptr_t)(GCPage - pVM->pgm.s.pbDynPageMapBaseGC)) >> PAGE_SHIFT;
+    Assert(pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u & PGM_PTFLAGS_DYN_LOCKED);
+    pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u &= ~PGM_PTFLAGS_DYN_LOCKED;
+    return VINF_SUCCESS;
+}
+
 # endif /* IN_RC */
 
 #endif /* IN_RC || VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
