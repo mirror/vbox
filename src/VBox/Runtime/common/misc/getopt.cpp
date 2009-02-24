@@ -39,26 +39,43 @@
 
 
 
-RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOptions, int *piThis, PRTOPTIONUNION pValueUnion)
+RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
+                         PCRTGETOPTDEF paOptions, size_t cOptions,
+                         int iFirst, uint32_t fFlags)
+{
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+
+    pState->argv        = argv;
+    pState->argc        = argc;
+    pState->paOptions   = paOptions;
+    pState->cOptions    = cOptions;
+    pState->iNext       = iFirst;
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
 {
     pValueUnion->u64 = 0;
     pValueUnion->pDef = NULL;
 
-    if (    !piThis
-         || *piThis >= argc
-       )
+    if (pState->iNext >= pState->argc)
         return 0;
 
-    int iThis = (*piThis)++;
-    const char *pszArgThis = argv[iThis];
+    int             iThis = pState->iNext++;
+    const char     *pszArgThis = pState->argv[iThis];
+    size_t const    cOptions  = pState->cOptions;
+    PCRTGETOPTDEF   paOptions = pState->paOptions;
 
     for (size_t i = 0; i < cOptions; i++)
     {
         Assert(!(paOptions[i].fFlags & ~RTGETOPT_VALID_MASK));
         Assert(paOptions[i].iShort > 0);
+        Assert(paOptions[i].iShort != VINF_GETOPT_NOT_OPTION);
 
         bool fShort = *pszArgThis == '-'
-                    && (uint32_t)pszArgThis[1] == paOptions[i].iShort;
+                    && pszArgThis[1] == paOptions[i].iShort;
 
         if ((paOptions[i].fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
         {
@@ -90,10 +107,10 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
                         ||  ((pszArgThis[2] == ':' || pszArgThis[2] == '=') && pszArgThis[3] == '\0')
                     :   pszArgThis[cchLong] == '\0' || pszArgThis[cchLong + 1] == '\0')
                 {
-                    if (iThis + 1 >= argc)
+                    if (iThis + 1 >= pState->argc)
                         return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
-                    pszValue = argv[iThis + 1];
-                    (*piThis)++;
+                    pszValue = pState->argv[iThis + 1];
+                    pState->iNext++;
                 }
                 else /* same argument. */
                     pszValue = fShort
@@ -195,13 +212,13 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
     if (*pszArgThis == '-')
         return VERR_GETOPT_UNKNOWN_OPTION;
 
+    /** @todo Handle '--' and possibly implement an RTGetOptInit that lets us
+     *        optionally sort the stuff and set other policeis sorts the result.  */
+
     /*
      * Not an option.
      */
-    (*piThis)--;
-    /** @todo Sort options and arguments (i.e. stuff that doesn't start with '-'), stop when
-     * encountering the first argument. */
-
-    return 0;
+    pValueUnion->psz = pszArgThis;
+    return VINF_GETOPT_NOT_OPTION;
 }
 
