@@ -2149,32 +2149,41 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
      * Check the cache.
      */
     register unsigned iCache;
-    if (    pVM->pgm.s.aHCPhysDynPageMapCache[iCache = 0] == HCPhys
-        ||  pVM->pgm.s.aHCPhysDynPageMapCache[iCache = 1] == HCPhys
-        ||  pVM->pgm.s.aHCPhysDynPageMapCache[iCache = 2] == HCPhys
-        ||  pVM->pgm.s.aHCPhysDynPageMapCache[iCache = 3] == HCPhys)
+    for (iCache = 0;iCache < RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache);iCache++)
     {
         static const uint8_t au8Trans[MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT][RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache)] =
         {
-            { 0, 5, 6, 7 },
-            { 0, 1, 6, 7 },
-            { 0, 1, 2, 7 },
-            { 0, 1, 2, 3 },
-            { 4, 1, 2, 3 },
-            { 4, 5, 2, 3 },
-            { 4, 5, 6, 3 },
-            { 4, 5, 6, 7 },
+            { 0,  9, 10, 11, 12, 13, 14, 15},
+            { 0,  1, 10, 11, 12, 13, 14, 15},
+            { 0,  1,  2, 11, 12, 13, 14, 15},
+            { 0,  1,  2,  3, 12, 13, 14, 15},
+            { 0,  1,  2,  3,  4, 13, 14, 15},
+            { 0,  1,  2,  3,  4,  5, 14, 15},
+            { 0,  1,  2,  3,  4,  5,  6, 15},
+            { 0,  1,  2,  3,  4,  5,  6,  7},
+            { 8,  1,  2,  3,  4,  5,  6,  7},
+            { 8,  9,  2,  3,  4,  5,  6,  7},
+            { 8,  9, 10,  3,  4,  5,  6,  7},
+            { 8,  9, 10, 11,  4,  5,  6,  7},
+            { 8,  9, 10, 11, 12,  5,  6,  7},
+            { 8,  9, 10, 11, 12, 13,  6,  7},
+            { 8,  9, 10, 11, 12, 13, 14,  7},
+            { 8,  9, 10, 11, 12, 13, 14, 15},
         };
-        AssertCompile(RT_ELEMENTS(au8Trans) == 8);
-        AssertCompile(RT_ELEMENTS(au8Trans[0]) == 4);
-        int iPage = au8Trans[pVM->pgm.s.iDynPageMapLast][iCache];
-        void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
-        *ppv = pv;
-        STAM_COUNTER_INC(&pVM->pgm.s.StatRCDynMapCacheHits);
-        //Log(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%p iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
-        return VINF_SUCCESS;
+        AssertCompile(RT_ELEMENTS(au8Trans) == 16);
+        AssertCompile(RT_ELEMENTS(au8Trans[0]) == 8);
+
+        if (pVM->pgm.s.aHCPhysDynPageMapCache[iCache] == HCPhys)
+        {
+            int iPage = au8Trans[pVM->pgm.s.iDynPageMapLast][iCache];
+            void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
+            *ppv = pv;
+            STAM_COUNTER_INC(&pVM->pgm.s.StatRCDynMapCacheHits);
+            Log4(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%p iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
+            return VINF_SUCCESS;
+        }
     }
-    Assert(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 4);
+    AssertCompile(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 8);
     STAM_COUNTER_INC(&pVM->pgm.s.StatRCDynMapCacheMisses);
 
     /*
@@ -2182,7 +2191,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
      */
     register unsigned iPage = pVM->pgm.s.iDynPageMapLast;
     pVM->pgm.s.iDynPageMapLast = iPage = (iPage + 1) & ((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) - 1);
-    Assert((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) == 8);
+    Assert((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) == 16);
 
     pVM->pgm.s.aHCPhysDynPageMapCache[iPage & (RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) - 1)] = HCPhys;
     pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u = (uint32_t)HCPhys | X86_PTE_P | X86_PTE_A | X86_PTE_D;
