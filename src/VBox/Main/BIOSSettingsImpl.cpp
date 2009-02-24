@@ -441,6 +441,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(IDEControllerType)(IDEControllerType_T aCon
     {
         case IDEControllerType_PIIX3:
         case IDEControllerType_PIIX4:
+        case IDEControllerType_ICH6:
             break;
         default:
             return setError (E_INVALIDARG,
@@ -600,6 +601,8 @@ HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
                 mData->mIDEControllerType = IDEControllerType_PIIX3;
             else if (strcmp (typeStr, "PIIX4") == 0)
                 mData->mIDEControllerType = IDEControllerType_PIIX4;
+            else if (strcmp (typeStr, "ICH6") == 0)
+                mData->mIDEControllerType = IDEControllerType_ICH6;
             else
                 ComAssertMsgFailedRet (("Invalid boot menu mode '%s'", typeStr),
                                        E_FAIL);
@@ -696,6 +699,9 @@ HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
                 break;
             case IDEControllerType_PIIX4:
                 ideControllerTypeStr = "PIIX4";
+                break;
+            case IDEControllerType_ICH6:
+                ideControllerTypeStr = "ICH6";
                 break;
             default:
                 ComAssertMsgFailedRet (("Invalid IDE Controller type: %d",

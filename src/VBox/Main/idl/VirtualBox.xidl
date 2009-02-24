@@ -880,6 +880,7 @@
     </const>
     <const name="PIIX3"           value="1"/>
     <const name="PIIX4"           value="2"/>
+    <const name="ICH6"            value="3"/>
   </enum>
 
   <enum

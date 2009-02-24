@@ -275,28 +275,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Virtual IDE controller type.
      */
     IDEControllerType_T controllerType;
-    BOOL fPIIX4, fICH6;
     hrc = biosSettings->COMGETTER(IDEControllerType)(&controllerType);               H();
-    switch (controllerType)
-    {
-        case IDEControllerType_PIIX3:
-            fPIIX4 = FALSE;
-            break;
-        case IDEControllerType_PIIX4:
-            fPIIX4 = TRUE;
-            break;
-        default:
-            AssertMsgFailed(("Invalid IDE controller type '%d'", controllerType));
-            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
-                              N_("Invalid IDE controller type '%d'"), controllerType);
-    }
-#ifdef VBOX_WITH_SMC
-    /** @todo: gross hack, rewrite appropriately */
-    fPIIX4 = FALSE;
-    fICH6 = TRUE;
-#else
-    fICH6 = FALSE;
-#endif
 
     /*
      * PDM config.
@@ -800,8 +779,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     afPciDeviceNo[1] = true;
     rc = CFGMR3InsertInteger(pIdeInst, "PCIFunctionNo",        1);                  RC_CHECK();
     rc = CFGMR3InsertNode(pIdeInst,    "Config", &pCfg);                            RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "PIIX4", fPIIX4);               /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "ICH6",  fICH6);                /* boolean */   RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "Type", (uint32_t)controllerType);              RC_CHECK();
 
     /* Attach the status driver */
     rc = CFGMR3InsertNode(pIdeInst,    "LUN#999", &pLunL0);                         RC_CHECK();

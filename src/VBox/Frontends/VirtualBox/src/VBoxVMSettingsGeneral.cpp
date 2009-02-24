@@ -137,6 +137,7 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
     /* IDE Controller Type */
     mCbIDEController->addItem (""); /* KIDEControllerType_PIIX3 */
     mCbIDEController->addItem (""); /* KIDEControllerType_PIIX4 */
+    mCbIDEController->addItem (""); /* KIDEControllerType_ICH6  */
 
     qApp->installEventFilter (this);
 
@@ -459,6 +460,7 @@ void VBoxVMSettingsGeneral::retranslateUi()
     /* IDE Controller Type */
     mCbIDEController->setItemText (0, vboxGlobal().toString (KIDEControllerType_PIIX3));
     mCbIDEController->setItemText (1, vboxGlobal().toString (KIDEControllerType_PIIX4));
+    mCbIDEController->setItemText (2, vboxGlobal().toString (KIDEControllerType_ICH6));
 
     /* Path selector */
     mPsSnapshot->setWhatsThis (tr ("Displays the path where snapshots of this "

@@ -6123,7 +6123,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0IRQDelay\0R0Enabled\0PIIX4\0ICH6\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0IRQDelay\0R0Enabled\0Type\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("PIIX3 configuration error: unknown option specified"));
 
@@ -6147,24 +6147,31 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     Assert(DelayIRQMillies < 50);
 
     pThis->u8Type = CHIPSET_PIIX3;
-    bool fPIIX4;
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "PIIX4", &fPIIX4, false);
+    uint32_t type;
+    rc = CFGMR3QueryU32Def(pCfgHandle, "Type", &type, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 configuration error: failed to read PIIX4 as boolean"));
-    Log(("%s: fPIIX4=%d\n", __FUNCTION__, fPIIX4));
-    if (fPIIX4)
-        pThis->u8Type = CHIPSET_PIIX4;
-
-    /** @todo: Need to implement better IDE chipset configuration mechanism */
-    bool fICH6;
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "ICH6", &fICH6, false);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 configuration error: failed to read ICH6 as boolean"));
-    Log(("%s: fICH6=%d\n", __FUNCTION__, fICH6));
-    if (fICH6)
-        pThis->u8Type = CHIPSET_ICH6;
+                                N_("PIIX3 configuration error: failed to read Type as integer"));
+    Log(("%s: type=%d\n", __FUNCTION__, type));
+    /** See IDEControllerType in VirtualBox.xidl */
+    switch (type)
+    {
+        case 0:
+            /** @todo: what is right here? */
+            AssertMsgFailed(("What do we do here: type Null\n"));
+            break;
+        case 1:
+            pThis->u8Type = CHIPSET_PIIX3;
+            break;
+        case 2:
+            pThis->u8Type = CHIPSET_PIIX4;
+            break; 
+        case 3:
+            pThis->u8Type = CHIPSET_ICH6;
+            break;
+        default:
+            AssertMsgFailed(("Unknown IDE type: %d\n", type));
+    }
 
     /*
      * Initialize data (most of it anyway).
