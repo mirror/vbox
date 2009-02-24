@@ -745,7 +745,9 @@ void VBoxSelectorWnd::fileMediaMgr()
 
 void VBoxSelectorWnd::fileImportAppliance()
 {
-    VBoxImportAppliance::import (this);
+    VBoxImportApplianceWzd wzd (this);
+
+    wzd.exec();
 }
 
 void VBoxSelectorWnd::fileSettings()

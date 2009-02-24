@@ -28,94 +28,6 @@
 #include <QFileInfo>
 
 ////////////////////////////////////////////////////////////////////////////////
-// VBoxImportAppliance
-
-int VBoxImportAppliance::mMinGuestRAM = -1;
-int VBoxImportAppliance::mMaxGuestRAM = -1;
-int VBoxImportAppliance::mMinGuestCPUCount = -1;
-int VBoxImportAppliance::mMaxGuestCPUCount = -1;
-
-/* static */
-void VBoxImportAppliance::import (QWidget *aParent /* = NULL */)
-{
-    initSystemSettings();
-
-    VBoxImportApplianceWzd importWzd (aParent);
-    if (importWzd.exec() == QDialog::Accepted)
-    {
-    }
-    return;
-
-#if 0
-    /* We need a file to import; request one from the user */
-    QString file = VBoxGlobal::getOpenFileName ("",
-                                                VBoxGlobal::tr ("Open Virtualization Format (%1)").arg ("*.ovf"),
-                                                aParent,
-                                                VBoxGlobal::tr ("Select an appliance to import"));
-//    QString file = "/home/poetzsch/projects/innotek/plan9.ovf";
-//    QString file = "/Users/poetzsch/projects/innotek/plan9.ovf";
-    if (!file.isEmpty())
-    {
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        /* Create a appliance object */
-        CAppliance appliance = vbox.CreateAppliance();
-        bool fResult = appliance.isOk();
-        if (fResult)
-        {
-            /* Read the appliance */
-            appliance.Read (file);
-            fResult = appliance.isOk();
-            if (fResult)
-            {
-                /* Now we have to interpret that stuff */
-                appliance.Interpret();
-                fResult = appliance.isOk();
-                if (fResult)
-                {
-                    /* Let the user do some tuning */
-                    VBoxImportApplianceWgt settingsDlg (&appliance, aParent);
-                    if (settingsDlg.exec() == QDialog::Accepted)
-                    {
-                        /* Start the import asynchronously */
-                        CProgress progress;
-                        progress = appliance.ImportMachines();
-                        fResult = appliance.isOk();
-                        if (fResult)
-                        {
-                            /* Show some progress, so the user know whats going on */
-                            vboxProblem().showModalProgressDialog (progress, VBoxImportApplianceWgt::tr ("Importing Appliance ..."), aParent);
-                            if (!progress.isOk() || progress.GetResultCode() != 0)
-                            {
-                                vboxProblem().cannotImportAppliance (progress, appliance);
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (!fResult)
-            vboxProblem().cannotImportAppliance (appliance);
-    }
-#endif
-}
-
-/* static */
-void VBoxImportAppliance::initSystemSettings()
-{
-    if (mMinGuestRAM == -1)
-    {
-        /* We need some global defaults from the current VirtualBox
-           installation */
-        CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
-        mMinGuestRAM = sp.GetMinGuestRAM();
-        mMaxGuestRAM = sp.GetMaxGuestRAM();
-        mMinGuestCPUCount = sp.GetMinGuestCPUCount();
-        mMaxGuestCPUCount = sp.GetMaxGuestCPUCount();
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // VBoxImportApplianceWzd
 
 VBoxImportApplianceWzd::VBoxImportApplianceWzd (QWidget *aParent /* = NULL */)
@@ -132,7 +44,6 @@ VBoxImportApplianceWzd::VBoxImportApplianceWzd (QWidget *aParent /* = NULL */)
     mFileSelector->setResetEnabled (false);
     mFileSelector->setFileDialogTitle (tr ("Select an appliance to import"));
     mFileSelector->setFileFilters (tr ("Open Virtualization Format (%1)").arg ("*.ovf"));
-//    mFileSelector->setPath ("/home/poetzsch/downloads/Appliances/Plan9.ovf");
 #ifdef Q_WS_MAC
     /* Editable boxes are uncommon on the Mac */
     mFileSelector->setEditable (false);
