@@ -130,7 +130,7 @@ ULONG64             g_cManagedObjects = 0;
  *
  ****************************************************************************/
 
-static const RTOPTIONDEF g_aOptions[]
+static const RTGETOPTDEF g_aOptions[]
     = {
         { "--help",             'h', RTGETOPT_REQ_NOTHING },
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
@@ -254,8 +254,10 @@ int main(int argc, char* argv[])
 
     int c;
     int i = 1;
-    RTOPTIONUNION ValueUnion;
-    while ((c = RTGetOpt(argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), &i, &ValueUnion)))
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
         {
@@ -323,12 +325,10 @@ int main(int argc, char* argv[])
                 g_fDaemonize = true;
             break;
 #endif
+            case VINF_GETOPT_NOT_OPTION:
+                RTStrmPrintf(g_pStdErr, "Unknown option %s\n", argv[i]);
+            return 1;
         }
-    }
-    if (i != argc)
-    {
-        RTStrmPrintf(g_pStdErr, "Unknown option %s\n", argv[i]);
-        exit(1);
     }
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)

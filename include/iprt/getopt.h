@@ -175,7 +175,10 @@ typedef RTGETOPTSTATE *PRTGETOPTSTATE;
 /**
  * Initialize the RTGetOpt state.
  *
- * @returns VINF_SUCCESS, or VERR_INVALID_PARAMETER if fFlags is invalid.
+ * The passed in argument vector may be sorted if fFlags indicates that this is
+ * desired (to be implemented).
+ *
+ * @returns VINF_SUCCESS, VERR_INVALID_PARAMETER or VERR_INVALID_POINTER.
  * @param   pState      The state.
  *
  * @param   argc        Argument count, to be copied from what comes in with
