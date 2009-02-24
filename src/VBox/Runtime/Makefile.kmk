@@ -811,6 +811,7 @@ $(PATH_BIN)/VBoxRT.so: $$(TARGET_VBoxRT) | $$(dir $$@)
 	$(INSTALL) $< $@
 	chcon -t texrel_shlib_t $@ || true
 
+VBoxRT:: VBoxRTDummy
   endif # chcon present.
  endif # building VBoxRT
 endif # linux
