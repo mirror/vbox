@@ -69,7 +69,6 @@ RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOpt
                 *      -s value, -s: value, -s= value
                 * (Ditto for long options.)
                 */
-            bool fShort = false;
             size_t cchLong = 2;
             if (    (    paOptions[i].pszLong
                         && !strncmp(pszArgThis, paOptions[i].pszLong, (cchLong = strlen(paOptions[i].pszLong)))
