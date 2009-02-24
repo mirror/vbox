@@ -48,13 +48,17 @@ SOLARIS_OUT_BIN_32     := $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin
 SOLARIS_OUT_BIN        := $(PATH_BIN)
 
 SOLARIS_DBG_DIR        := $(PATH_TARGET)/Installer/solaris/installdbg
+SOLARIS_DBG_DIR_32     := $(SOLARIS_DBG_DIR)/$(SOLARIS_DIR_NAME_32)
+SOLARIS_DBG_DIR_64     := $(SOLARIS_DBG_DIR)/$(SOLARIS_DIR_NAME_64)
 SOLARIS_VBI_DIR        := $(PATH_TARGET)/Installer/solaris/installvbi
 
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
  SOLARIS_INST_DIR_ISA  := $(SOLARIS_INST_DIR_64)
+ SOLARIS_DBG_DIR_ISA   := $(SOLARIS_DBG_DIR_64)
  SOL_DBG_OBJCOPY       := /usr/sfw/bin/gobjcopy --only-keep-debug
 else
  SOLARIS_INST_DIR_ISA  := $(SOLARIS_INST_DIR_32)
+ SOLARIS_DBG_DIR_ISA   := $(SOLARIS_DBG_DIR_32)
  SOL_DBG_OBJCOPY       := $(CP) -p    # Solaris ld/gobjcopy(2.15) don't get along on x86, works only on amd64. So just using cp for now.
 endif
 SOL_OBJCOPY            := /usr/sfw/bin/gobjcopy --strip-unneeded -R .comment
@@ -269,6 +273,10 @@ SOLARIS_ARCH_FILES := \
 	$(SOLARIS_QTLIBS) \
 	$(SOLARIS_COMMON)
 
+SOLARIS_DBG_FILES := \
+	$(SOLARIS_STRIP_EXES) \
+	$(SOLARIS_STRIP_BINS)
+
 OTHER_CLEAN += \
 	$(addprefix $(SOLARIS_INST_DIR)/, $(SOLARIS_ARCH_FILES)) \
 	$(SOLARIS_INST_DIR)/$(PKG_FILENAME).tar.gz \
@@ -294,6 +302,8 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(if $(VBOX_WITH_NEW_RECOMPILER),,$(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_STRIP_OBJ_64))) \
 	$(addprefix $(SOLARIS_OUT_BIN_32)/,VBoxPython.so) \
 	$(addprefix $(SOLARIS_OUT_BIN_64)/,VBoxPython.so)
+ SOLARIS_DBG_DEPFILES = $(addprefix $(SOLARIS_DBG_DIR_64)/,$(SOLARIS_DBG_FILES)) \
+	$(addprefix $(SOLARIS_DBG_DIR_32)/,$(SOLARIS_DBG_FILES))
 else
  SOLARIS_ARCH_DEPFILES = $(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_STRIP_EXES)) \
 	$(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_STRIP_BINS)) \
@@ -302,6 +312,7 @@ else
 	$(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_STRIP_OBJS)) \
 	$(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_NO_STRIP)) \
 	$(addprefix $(SOLARIS_INST_DIR_ISA)/,$(SOLARIS_QTLIBS))
+ SOLARIS_DBG_DEPFILES = $(addprefix $(SOLARIS_DBG_DIR_ISA)/,$(SOLARIS_DBG_FILES))
 endif
 SOLARIS_ARCH_DEPFILES += $(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_COMMON))
 
@@ -327,7 +338,15 @@ BLDDIRS += $(foreach d,\
 	additions \
 	components \
 	accessible \
-,$(SOLARIS_DBG_DIR)/$(d)/)
+	$(SOLARIS_DIR_NAME_64) \
+	$(SOLARIS_DIR_NAME_64)/components \
+	$(SOLARIS_DIR_NAME_64)/accessible \
+	$(SOLARIS_DIR_NAME_64)/$(VBOX_SOL_PYTHON_DIR_64) \
+	$(SOLARIS_DIR_NAME_32) \
+	$(SOLARIS_DIR_NAME_32)/components \
+	$(SOLARIS_DIR_NAME_32)/nls \
+	$(SOLARIS_DIR_NAME_32)/accessible \
+,$(SOLARIS_DBG_DIR)/$(d))
 
 
 include $(KBUILD_PATH)/subfooter.kmk
@@ -442,7 +461,7 @@ endif
 
 
 #
-# 32-bit
+# 32-bit Main Package
 #
 $(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_STRIP_BINS)): \
 		$(SOLARIS_INST_DIR_32)/% : $(SOLARIS_OUT_BIN_32)/% | $$(dir $$@)
@@ -469,7 +488,7 @@ $(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_QTLIBS)): \
 	$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s,) $< $@
 
 #
-# 64-bit
+# 64-bit Main Package
 #
 $(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_STRIP_BINS)): \
 		$(SOLARIS_INST_DIR_64)/% : $(SOLARIS_OUT_BIN_64)/% | $$(dir $$@)
@@ -505,7 +524,7 @@ $(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_COMMON)): \
 
 
 #
-#  -=-=-=-=-=-=-=- VBI package  -=-=-=-=-=-=-=-
+#  -=-=-=-=-=-=-=- VBI package -=-=-=-=-=-=-=-
 #
 $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 		$(VBOX_VERSION_STAMP) \
@@ -537,20 +556,28 @@ $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 
 
 #
-#  -=-=-=-=-=-=-=- Debug package  -=-=-=-=-=-=-=-
+#  -=-=-=-=-=-=-=- Debug package -=-=-=-=-=-=-=-
 #
 $(PATH_BIN)/$(DBG_ARCHIVE): \
 		$(VBOX_VERSION_STAMP) \
 		$(VBOX_PATH_SOL_INST_SRC)/Makefile.kmk \
-		$(addprefix $(SOLARIS_DBG_DIR)/,$(SOLARIS_STRIP_BINS)) \
-		$(addprefix $(SOLARIS_DBG_DIR)/,$(SOLARIS_STRIP_EXES))
+		$(SOLARIS_DBG_DEPFILES)
 	$(call MSG_L1,Installing debug binaries $(SOLARIS_DBG_DIR))
 	$(call MSG_L1,Packing $@)
-	$(QUIET)/usr/sfw/bin/gtar --owner 0 --group 0 -cjRhf $(PATH_BIN)/$(DBG_ARCHIVE) -C $(SOLARIS_DBG_DIR) $(SOLARIS_STRIP_BINS) $(SOLARIS_STRIP_EXES)
+	$(QUIET)/usr/sfw/bin/gtar --owner 0 --group 0 -cjRhf $(PATH_BIN)/$(DBG_ARCHIVE) -C $(SOLARIS_DBG_DIR) $(SOLARIS_DBG_DEPFILES)
 	$(QUIET)$(CHMOD) 0644 $@
 
-$(addprefix $(SOLARIS_DBG_DIR)/,$(SOLARIS_STRIP_BINS) $(SOLARIS_STRIP_EXES)): \
-		$(SOLARIS_DBG_DIR)/% : $(PATH_BIN)/% | $$(dir $$@)
-	$(QUIET)$(SOL_DBG_OBJCOPY) $< $@
+#
+# 32-bit Debug package
+#
+$(addprefix $(SOLARIS_DBG_DIR_32)/,$(SOLARIS_STRIP_BINS) $(SOLARIS_STRIP_EXES)): \
+		$(SOLARIS_DBG_DIR_32)/% : $(SOLARIS_OUT_BIN_32)/% | $$(dir $$@)
+	$(SOL_DBG_OBJCOPY) $< $@
 
+#
+# 64-bit Debug package
+#
+$(addprefix $(SOLARIS_DBG_DIR_64)/,$(SOLARIS_STRIP_BINS) $(SOLARIS_STRIP_EXES)): \
+		$(SOLARIS_DBG_DIR_64)/% : $(SOLARIS_OUT_BIN_64)/% | $$(dir $$@)
+	$(SOL_DBG_OBJCOPY) $< $@
 
