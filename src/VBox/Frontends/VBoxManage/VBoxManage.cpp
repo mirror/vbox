@@ -276,7 +276,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_LIST)
     {
-        RTPrintf("VBoxManage list             vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
+        RTPrintf("VBoxManage list [--long|-l] vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
                  "                            hostifs|hostinfo|hddbackends|hdds|dvds|floppies|\n"
                  "                            usbhost|usbfilters|systemproperties\n"
                  "\n");
