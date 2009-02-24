@@ -135,7 +135,7 @@ public:
             /** Session type string (for indirect sessions) */
             Bstr mType;
 
-            /** Sesison machine object */
+            /** Session machine object */
             ComObjPtr <SessionMachine> mMachine;
         };
 
