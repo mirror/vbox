@@ -454,7 +454,7 @@ int main(int argc, char **argv)
      */
     RTR3Init();
 
-    static RTOPTIONDEF const s_aOptions[] =
+    static RTGETOPTDEF const s_aOptions[] =
     {
         { "--base",         'b', RTGETOPT_REQ_UINT32 },
         { "--max",          'm', RTGETOPT_REQ_UINT32 },
@@ -468,9 +468,10 @@ int main(int argc, char **argv)
     uint32_t cThreads = 0;
 
     int ch;
-    int iArg = 1;
-    RTOPTIONUNION Value;
-    while ((ch = RTGetOpt(argc,argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), &iArg, &Value)))
+    RTGETOPTUNION Value;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &Value)))
         switch (ch)
         {
             case 'b':
@@ -492,6 +493,10 @@ int main(int argc, char **argv)
                 RTPrintf("syntax: tstHandleTable [-b <base>] [-m <max>] [-t <threads>]\n");
                 return 1;
 
+            case VINF_GETOPT_NOT_OPTION:
+                RTPrintf("tstHandleTable: unexpected non-option: %s\n", Value.psz);
+                break;
+
             default:
                 if (RT_SUCCESS(ch))
                     RTPrintf("tstHandleTable: invalid argument (%#x): %s\n", ch, Value.psz);
@@ -499,11 +504,6 @@ int main(int argc, char **argv)
                     RTPrintf("tstHandleTable: invalid argument: %Rrc - \n", ch, Value.pDef->pszLong);
                 return 1;
         }
-    if (iArg < argc)
-    {
-        RTPrintf("tstHandleTable: invalid argument: %s\n", argv[iArg]);
-        return 1;
-    }
 
     /*
      * If any argument was specified, run the requested test setup.

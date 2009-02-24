@@ -415,7 +415,7 @@ int main(int argc, char **argv)
      */
     bool fCalcFrequency = false;
     uint32_t cMsDuration = 1000; /* 1 sec */
-    static const RTOPTIONDEF s_aOptions[] =
+    static const RTGETOPTDEF s_aOptions[] =
     {
         { "--duration",         'd', RTGETOPT_REQ_UINT32 },
         { "--calc-frequency",   'f', RTGETOPT_REQ_NOTHING },
@@ -423,8 +423,10 @@ int main(int argc, char **argv)
     };
     int iArg = 1;
     int ch;
-    RTOPTIONUNION Value;
-    while ((ch = RTGetOpt(argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), &iArg, &Value)))
+    RTGETOPTUNION Value;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &Value)))
         switch (ch)
         {
             case 'd':   cMsDuration = Value.u32; break;
@@ -433,15 +435,15 @@ int main(int argc, char **argv)
                 RTPrintf("usage: tstTSC\n"
                          "   or: tstTSC <-f|--calc-frequency> [--duration|-d ms]\n");
                 return 1;
+
+            case VINF_GETOPT_NOT_OPTION:
+                RTStrmPrintf(g_pStdErr, "tstTSC: too many arguments\n");
+                break;
+
             default:
                 RTStrmPrintf(g_pStdErr, "tstTSC: Unknown arg or error (ch=%d)\n", ch);
                 return 1;
         }
-    if (iArg != argc)
-    {
-        RTStrmPrintf(g_pStdErr, "tstTSC: too many arguments\n");
-        return 1;
-    }
 
     if (fCalcFrequency)
         return tstTSCCalcFrequency(cMsDuration);
