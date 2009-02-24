@@ -2457,7 +2457,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
 
 # if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
     /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-    PGMDynLockHCPage(pVM, pPdeDst);
+    PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
 
     /*
@@ -2527,7 +2527,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
             }
             *pPdeDst = PdeDst;
 # if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
-            PGMDynUnlockHCPage(pVM, pPdeDst);
+            PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
             return VINF_SUCCESS;
         }
@@ -2535,7 +2535,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
         {
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
 # if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
-            PGMDynUnlockHCPage(pVM, pPdeDst);
+            PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
             return VINF_PGM_SYNC_CR3;
         }
@@ -2568,7 +2568,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                          | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
                 *pPdeDst = PdeDst;
 # if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)            
-                PGMDynUnlockHCPage(pVM, pPdeDst);
+                PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
 
                 /*
@@ -2674,7 +2674,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
             }
             *pPdeDst = PdeDst;
 # if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)            
-            PGMDynUnlockHCPage(pVM, pPdeDst);
+            PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
 
             /*
