@@ -688,6 +688,22 @@ void VBoxProblemReporter::cannotAccessUSB (const COMBaseWithEI &aObj)
     if (res.rc() == E_NOTIMPL)
         return;
 
+#ifdef RT_OS_LINUX
+    /* xxx There is no macro to turn an error into a warning, but we need
+     *     to do that here. */
+    if (res.rc() == (VBOX_E_HOST_ERROR & ~0x80000000))
+    {
+        message (mainWindowShown(), VBoxProblemReporter::Warning,
+                 tr ("Could not access USB on the host system, because "
+                     "neither the USB file system (usbfs) nor the DBus "
+                     "and hal services are currently available. If you "
+                     "wish to use host USB devices inside guest systems, "
+                     "you must correct this and restart VirtualBox."),
+                 formatErrorInfo (res),
+                 "cannotAccessUSB" /* aAutoConfirmId */);
+        return;
+    }
+#endif
     message (mainWindowShown(), res.isWarning() ? Warning : Error,
              tr ("Failed to access the USB subsystem."),
              formatErrorInfo (res),
