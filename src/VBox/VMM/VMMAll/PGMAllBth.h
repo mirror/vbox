@@ -81,6 +81,10 @@ __END_DECLS
  */
 PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
+# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+    PGMDynCheckLocks(pVM);
+# endif
+
 # if  (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT || PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64) \
     && PGM_SHW_TYPE != PGM_TYPE_NESTED    \
     && (PGM_SHW_TYPE != PGM_TYPE_EPT || PGM_GST_TYPE == PGM_TYPE_PROT)
@@ -2451,6 +2455,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
 # endif /* PGM_WITHOUT_MAPPINGS */
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
+# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+    PGMDynLockHCPage(pVM, pPdeDst);
+# endif
+
     /*
      * Sync page directory entry.
      */
@@ -2517,11 +2526,17 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                 }
             }
             *pPdeDst = PdeDst;
+# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+            PGMDynUnlockHCPage(pVM, pPdeDst);
+# endif
             return VINF_SUCCESS;
         }
         else if (rc == VERR_PGM_POOL_FLUSHED)
         {
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+            PGMDynUnlockHCPage(pVM, pPdeDst);
+# endif
             return VINF_PGM_SYNC_CR3;
         }
         else
@@ -2552,6 +2567,9 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                 PdeDst.u = (PdeDst.u & (SHW_PDE_PG_MASK | X86_PDE_AVL_MASK))
                          | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
                 *pPdeDst = PdeDst;
+# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)            
+                PGMDynUnlockHCPage(pVM, pPdeDst);
+# endif
 
                 /*
                  * Directory/page user or supervisor privilege: (same goes for read/write)
@@ -2655,6 +2673,9 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                 PdeDst.b.u1Write = 0;
             }
             *pPdeDst = PdeDst;
+# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)            
+            PGMDynUnlockHCPage(pVM, pPdeDst);
+# endif
 
             /*
              * Fill the shadow page table.
