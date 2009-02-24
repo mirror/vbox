@@ -1499,8 +1499,8 @@ STDMETHODIMP Appliance::Interpret()
                        )
                     {
                         /* If the href is empty use the VM name as filename */
-                        Utf8Str strFilename = di.strHref.c_str();
-                        if (di.strHref.c_str()[0] == 0)
+                        Utf8Str strFilename = di.strHref;
+                        if (!strFilename.length())
                             strFilename = Utf8StrFmt("%s.vmdk", nameVBox.c_str());
                         /* Construct a unique target path */
                         Utf8StrFmt strPath("%ls%c%s",
