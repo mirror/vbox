@@ -545,9 +545,13 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mFileMenu = menuBar()->addMenu (QString::null);
     mFileMenu->addAction (mFileMediaMgrAction);
     mFileMenu->addAction (mFileApplianceImportAction);
+#ifndef Q_WS_MAC
     mFileMenu->addSeparator();
+#endif /* Q_WS_MAC */
     mFileMenu->addAction (mFileSettingsAction);
+#ifndef Q_WS_MAC
     mFileMenu->addSeparator();
+#endif /* Q_WS_MAC */
     mFileMenu->addAction (mFileExitAction);
 
     mVMMenu = menuBar()->addMenu (QString::null);
