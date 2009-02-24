@@ -503,6 +503,9 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
         case IDEControllerType_PIIX4:
             pszIdeController = "PIIX4";
             break;
+        case IDEControllerType_ICH6:
+            pszIdeController = "ICH6";
+            break;
         default:
             pszIdeController = "unknown";
     }

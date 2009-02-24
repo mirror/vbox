@@ -3437,6 +3437,8 @@ void VBoxGlobal::retranslateUi()
         tr ("PIIX3", "IDEControllerType");
     mIDEControllerTypes [KIDEControllerType_PIIX4] =
         tr ("PIIX4", "IDEControllerType");
+    mIDEControllerTypes [KIDEControllerType_ICH6] =
+        tr ("ICH6", "IDEControllerType");
 
     mUSBDeviceStates [KUSBDeviceState_NotSupported] =
         tr ("Not supported", "USBDeviceState");

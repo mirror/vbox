@@ -236,6 +236,7 @@
   <xsd:restriction base="xsd:string">
     <xsd:enumeration value="PIIX3"/>
     <xsd:enumeration value="PIIX4"/>
+    <xsd:enumeration value="ICH6"/>
   </xsd:restriction>
 </xsd:simpleType>
 
