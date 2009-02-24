@@ -2226,6 +2226,7 @@ VMMDECL(int) PGMDynLockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
 {
     unsigned iPage;
 
+    Assert(GCPage >= pVM->pgm.s.pbDynPageMapBaseGC && GCPage < (pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE));
     iPage = ((uintptr_t)(GCPage - pVM->pgm.s.pbDynPageMapBaseGC)) >> PAGE_SHIFT;
     Assert(!(pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u & PGM_PTFLAGS_DYN_LOCKED));
     pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u |= PGM_PTFLAGS_DYN_LOCKED;
@@ -2243,6 +2244,7 @@ VMMDECL(int) PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
 {
     unsigned iPage;
 
+    Assert(GCPage >= pVM->pgm.s.pbDynPageMapBaseGC && GCPage < (pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE));
     iPage = ((uintptr_t)(GCPage - pVM->pgm.s.pbDynPageMapBaseGC)) >> PAGE_SHIFT;
     Assert(pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u & PGM_PTFLAGS_DYN_LOCKED);
     pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u &= ~PGM_PTFLAGS_DYN_LOCKED;
