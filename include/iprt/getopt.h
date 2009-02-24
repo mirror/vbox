@@ -275,7 +275,7 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
  * @returns VERR_GETOPT_REQUIRED_ARGUMENT_MISSING and pValueUnion->pDef if
  *          a required argument (aka value) was missing for an option.
  * @returns VERR_GETOPT_INVALID_ARGUMENT_FORMAT and pValueUnion->pDef if
- *          argument (aka value) convertion failed.
+ *          argument (aka value) conversion failed.
  *
  * @param   pState      The state previously initialized with RTGetOptInit.
  * @param   pValueUnion Union with value; in the event of an error, psz member
