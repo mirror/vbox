@@ -563,10 +563,8 @@ tstDarwinKeyboard_INCS = include
 tstDarwinKeyboard_SOURCES = \
 	src/darwin/tstDarwinKeyboard.cpp \
 	src/darwin/DarwinKeyboard.cpp
-ifdef VBOX_WITH_COCOA_QT
- tstDarwinKeyboard_SOURCES = \
+tstDarwinKeyboard_SOURCES.amd64 = \
 	src/darwin/VBoxCocoaApplication.m
-endif
 tstDarwinKeyboard_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
 tstDarwinKeyboard_LIBS = \
 	$(LIB_RUNTIME)
