@@ -185,7 +185,7 @@ int handleExportAppliance(HandlerArg *a);
 int handleSnapshot(HandlerArg *a);
 
 /* VBoxManageUSB.cpp */
-/* VBoxManageTODO.cpp */
+int handleUSBFilter(HandlerArg *a);
 
 #endif /* !VBOX_ONLY_DOCS */
 unsigned long VBoxSVNRev();

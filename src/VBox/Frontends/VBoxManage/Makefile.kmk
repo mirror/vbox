@@ -52,6 +52,7 @@ else # !VBOX_ONLY_DOCS
  	VBoxManageList.cpp \
  	VBoxManageDisk.cpp \
  	VBoxManageSnapshot.cpp \
+ 	VBoxManageUSB.cpp \
  	VBoxInternalManage.cpp \
  	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
  	VBoxManageSVN.cpp

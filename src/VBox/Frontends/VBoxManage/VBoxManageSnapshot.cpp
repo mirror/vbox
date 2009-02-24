@@ -19,8 +19,6 @@
  * additional information or have any questions.
  */
 
-#ifndef VBOX_ONLY_DOCS
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -284,4 +282,3 @@ int handleSnapshot(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-#endif /* !VBOX_ONLY_DOCS */
