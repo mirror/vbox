@@ -400,8 +400,10 @@ ifdef VBOX_WITH_ICHAT_THEATER
  	src/darwin/VBoxIChatTheaterWrapper.m
 endif
 
-VirtualBox_SOURCES.darwin.amd64 += \
+ifdef VBOX_WITH_COCOA_QT
+ VirtualBox_SOURCES.darwin += \
 	src/darwin/VBoxCocoaApplication.m
+endif
 
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
@@ -561,8 +563,10 @@ tstDarwinKeyboard_INCS = include
 tstDarwinKeyboard_SOURCES = \
 	src/darwin/tstDarwinKeyboard.cpp \
 	src/darwin/DarwinKeyboard.cpp
-tstDarwinKeyboard_SOURCES.amd64 = \
+ifdef VBOX_WITH_COCOA_QT
+ tstDarwinKeyboard_SOURCES = \
 	src/darwin/VBoxCocoaApplication.m
+endif
 tstDarwinKeyboard_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
 tstDarwinKeyboard_LIBS = \
 	$(LIB_RUNTIME)
