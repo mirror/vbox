@@ -539,6 +539,9 @@ int handleExportAppliance(HandlerArg *a)
             }
         }
 
+        if (FAILED(rc))
+            break;
+
         if (llMachines.size() == 0)
             return errorSyntax(USAGE_EXPORTAPPLIANCE, "Missing arguments to export command.");
 
