@@ -319,7 +319,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_EXPORTAPPLIANCE)
     {
-        RTPrintf("VBoxManage export           <machines> -o <ovf>\n"
+        RTPrintf("VBoxManage export           <machines> [--output|-o] <ovf>\n"
                  "\n");
     }
 
