@@ -196,14 +196,15 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
                          PCRTGETOPTDEF paOptions, size_t cOptions,
                          int iFirst, uint32_t fFlags);
 
-/*
+/**
  * Command line argument parser, handling both long and short options and checking
  * argument formats, if desired.
  *
  * This is to be called in a loop until it returns 0 (meaning that all options
- * were parsed) or a negative value (meaning that an error occured). The passed in
- * argument vector is sorted into options and non-option arguments, such that when
- * returning 0 the *piThis is the index of the first non-option argument.
+ * were parsed) or a negative value (meaning that an error occured). How non-option
+ * arguments are dealt with depends on the flags passed to RTGetOptInit. The default
+ * (fFlags = 0) is to return VINF_GETOPT_NOT_OPTION with pValueUnion->psz pointing to
+ * the argument string.
  *
  * For example, for a program which takes the following options:
  *
@@ -264,8 +265,20 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
  * }
  * @endcode
  *
- * @param pState        The state previously initialized with RTGetOptInit.
- * @param pValueUnion   Union with value; in the event of an error, psz member
+ * @returns 0 when done parsing.
+ * @returns IPRT error status on parse error.
+ * @returns VINF_GETOPT_NOT_OPTION when encountering a non-option argument and
+ *          RTGETOPT_FLAG_SORT was not specified. pValueUnion->psz points to the
+ *          argument string.
+ * @returns VERR_GETOPT_UNKNOWN_OPTION when encountering an unknown option.
+ *          pValueUnion->psz points to the option string.
+ * @returns VERR_GETOPT_REQUIRED_ARGUMENT_MISSING and pValueUnion->pDef if
+ *          a required argument (aka value) was missing for an option.
+ * @returns VERR_GETOPT_INVALID_ARGUMENT_FORMAT and pValueUnion->pDef if
+ *          argument (aka value) convertion failed.
+ *
+ * @param   pState      The state previously initialized with RTGetOptInit.
+ * @param   pValueUnion Union with value; in the event of an error, psz member
  *                      points to erroneous parameter; otherwise, for options
  *                      that require an argument, this contains the value of
  *                      that argument, depending on the type that is required.
