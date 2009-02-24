@@ -35,6 +35,7 @@ typedef struct VBOXNETADPGLOBALS *PVBOXNETADPGLOBALS;
 
 #define VBOXNETADP_MAX_INSTANCES   8
 #define VBOXNETADP_NAME            "vboxnet"
+#define VBOXNETADP_MAX_NAME_LEN    32
 #define VBOXNETADP_MTU             1500
 #if defined(RT_OS_DARWIN)
 # define VBOXNETADP_MAX_FAMILIES   4
@@ -141,7 +142,7 @@ struct VBoxNetAdapter
 #endif
     } u;
     /** The interface name. */
-    char szName[1];
+    char szName[VBOXNETADP_MAX_NAME_LEN];
 };
 typedef struct VBoxNetAdapter VBOXNETADP;
 typedef VBOXNETADP *PVBOXNETADP;
@@ -267,6 +268,16 @@ DECLHIDDEN(int) vboxNetAdpOsDisconnectIt(PVBOXNETADP pThis);
  * @remarks Owns the semaphores for the global list, the network lock and the out-bound trunk port.
  */
 DECLHIDDEN(int) vboxNetAdpOsConnectIt(PVBOXNETADP pThis);
+
+/**
+ * This is called to perform OS-specific structure initializations.
+ *
+ * @return  IPRT status code.
+ * @param   pThis           The new instance.
+ *
+ * @remarks Owns no locks.
+ */
+DECLHIDDEN(int) vboxNetAdpOsInit(PVBOXNETADP pThis);
 
 /**
  * Counter part to vboxNetAdpOsCreate().
