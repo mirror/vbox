@@ -63,17 +63,10 @@
 #endif
 #ifdef CONFIG_X86_LOCAL_APIC
 # include <asm/apic.h>
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-#  include <asm/nmi.h>
-# endif
+# include <asm/nmi.h>
 #endif
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
 # include <linux/platform_device.h>
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-# include <asm/pgtable.h>
-# define global_flush_tlb __flush_tlb_global
 #endif
 
 #include <iprt/mem.h>
@@ -86,47 +79,7 @@
 # else
 #  define VBOX_DEV_FMASK     (S_IRUGO | S_IWUGO)
 # endif
-
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-
-#  define VBOX_REGISTER_DEVFS()                         \
-({                                                      \
-    void *rc = NULL;                                    \
-    if (devfs_mk_cdev(MKDEV(DEVICE_MAJOR, 0),           \
-                  S_IFCHR | VBOX_DEV_FMASK,             \
-                  DEVICE_NAME) == 0)                    \
-        rc = (void *)' '; /* return not NULL */         \
-    rc;                                                 \
- })
-
-#  define VBOX_UNREGISTER_DEVFS(handle)                 \
-    devfs_remove(DEVICE_NAME);
-
-# else /* < 2.6.0 */
-
-#  define VBOX_REGISTER_DEVFS()                         \
-    devfs_register(NULL, DEVICE_NAME, DEVFS_FL_DEFAULT, \
-                   DEVICE_MAJOR, 0,                     \
-                   S_IFCHR | VBOX_DEV_FMASK,            \
-                   &gFileOpsVBoxDrv, NULL)
-
-#  define VBOX_UNREGISTER_DEVFS(handle)                 \
-    if (handle != NULL)                                 \
-        devfs_unregister(handle)
-
-# endif /* < 2.6.0 */
 #endif /* CONFIG_DEV_FS && !CONFIG_VBOXDEV_AS_MISC */
-
-#ifndef CONFIG_VBOXDRV_AS_MISC
-# if defined(CONFIG_DEVFS_FS) && LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 0)
-#  define VBOX_REGISTER_DEVICE(a,b,c)     devfs_register_chrdev(a,b,c)
-#  define VBOX_UNREGISTER_DEVICE(a,b)     devfs_unregister_chrdev(a,b)
-# else
-#  define VBOX_REGISTER_DEVICE(a,b,c)     register_chrdev(a,b,c)
-#  define VBOX_UNREGISTER_DEVICE(a,b)     unregister_chrdev(a,b)
-# endif
-#endif /* !CONFIG_VBOXDRV_AS_MISC */
-
 
 #ifdef CONFIG_X86_HIGH_ENTRY
 # error "CONFIG_X86_HIGH_ENTRY is not supported by VBoxDrv at this time."
@@ -183,15 +136,6 @@ extern int nmi_active;
  * Device extention & session data association structure.
  */
 static SUPDRVDEVEXT         g_DevExt;
-
-/** Registered devfs device handle. */
-#if defined(CONFIG_DEVFS_FS) && !defined(CONFIG_VBOXDRV_AS_MISC)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-static void                *g_hDevFsVBoxDrv = NULL;
-# else
-static devfs_handle_t       g_hDevFsVBoxDrv = NULL;
-# endif
-#endif
 
 #ifndef CONFIG_VBOXDRV_AS_MISC
 /** Module major number */
@@ -264,8 +208,7 @@ static struct miscdevice gMiscDevice =
     minor:      MISC_DYNAMIC_MINOR,
     name:       DEVICE_NAME,
     fops:       &gFileOpsVBoxDrv,
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && \
-     LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 17)
+# if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 17)
     devfs_name: DEVICE_NAME,
 # endif
 };
@@ -446,13 +389,12 @@ static int __init VBoxDrvLinuxInit(void)
      * compared with another counter increased in the timer interrupt handler. Therefore
      * we don't allow to setup an NMI watchdog.
      */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && !defined(VBOX_REDHAT_KABI)
+# if !defined(VBOX_REDHAT_KABI)
     /*
      * First test: NMI actiated? Works only works with Linux 2.6 -- 2.4 does not export
      *             the nmi_watchdog variable.
      */
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || \
-      (defined CONFIG_X86_64 && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || defined CONFIG_X86_64
 #   ifdef DO_DISABLE_NMI
     if (nmi_atomic_read(&nmi_active) > 0)
     {
@@ -530,15 +472,14 @@ static int __init VBoxDrvLinuxInit(void)
             /* performance counter generates NMI and is not masked? */
             if ((GET_APIC_DELIVERY_MODE(v) == APIC_MODE_NMI) && !(v & APIC_LVT_MASKED))
             {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || \
-     (defined CONFIG_X86_64 && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || defined CONFIG_X86_64
                 printk(KERN_ERR DEVICE_NAME
                 ": NMI watchdog either active or at least initialized. Please disable the NMI\n"
                                 DEVICE_NAME
                 ": watchdog by specifying 'nmi_watchdog=0' at kernel command line.\n");
                 return -EINVAL;
 # else /* < 2.6.19 */
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && !defined(VBOX_REDHAT_KABI)
+#  if !defined(VBOX_REDHAT_KABI)
 nmi_activated:
 #  endif
                 printk(KERN_ERR DEVICE_NAME
@@ -571,10 +512,10 @@ nmi_activated:
      * Register character device.
      */
     g_iModuleMajor = DEVICE_MAJOR;
-    rc = VBOX_REGISTER_DEVICE((dev_t)g_iModuleMajor, DEVICE_NAME, &gFileOpsVBoxDrv);
+    rc = register_chrdev((dev_t)g_iModuleMajor, DEVICE_NAME, &gFileOpsVBoxDrv);
     if (rc < 0)
     {
-        dprintf(("VBOX_REGISTER_DEVICE failed with rc=%#x!\n", rc));
+        dprintf(("register_chrdev() failed with rc=%#x!\n", rc));
         return rc;
     }
 
@@ -587,17 +528,16 @@ nmi_activated:
         g_iModuleMajor = rc;
     rc = 0;
 
-#ifdef CONFIG_DEVFS_FS
+# ifdef CONFIG_DEVFS_FS
     /*
      * Register a device entry
      */
-    g_hDevFsVBoxDrv = VBOX_REGISTER_DEVFS();
-    if (g_hDevFsVBoxDrv == NULL)
+    if (devfs_mk_cdev(MKDEV(DEVICE_MAJOR, 0), S_IFCHR | VBOX_DEV_FMASK, DEVICE_NAME) != 0)
     {
         dprintf(("devfs_register failed!\n"));
         rc = -EINVAL;
     }
-#endif
+# endif
 #endif /* !CONFIG_VBOXDRV_AS_MISC */
     if (!rc)
     {
@@ -657,14 +597,14 @@ nmi_activated:
          * Failed, cleanup and return the error code.
          */
 #if defined(CONFIG_DEVFS_FS) && !defined(CONFIG_VBOXDRV_AS_MISC)
-        VBOX_UNREGISTER_DEVFS(g_hDevFsVBoxDrv);
+        devfs_remove(DEVICE_NAME);
 #endif
     }
 #ifdef CONFIG_VBOXDRV_AS_MISC
     misc_deregister(&gMiscDevice);
     dprintf(("VBoxDrv::ModuleInit returning %#x (minor:%d)\n", rc, gMiscDevice.minor));
 #else
-    VBOX_UNREGISTER_DEVICE(g_iModuleMajor, DEVICE_NAME);
+    unregister_chrdev(g_iModuleMajor, DEVICE_NAME);
     dprintf(("VBoxDrv::ModuleInit returning %#x (major:%d)\n", rc, g_iModuleMajor));
 #endif
     return rc;
@@ -700,9 +640,9 @@ static void __exit VBoxDrvLinuxUnload(void)
     /*
      * Unregister a device entry
      */
-    VBOX_UNREGISTER_DEVFS(g_hDevFsVBoxDrv);
+    devfs_remove(DEVICE_NAME);
 # endif /* devfs */
-    VBOX_UNREGISTER_DEVICE(g_iModuleMajor, DEVICE_NAME);
+    unregister_chrdev(g_iModuleMajor, DEVICE_NAME);
 #endif /* !CONFIG_VBOXDRV_AS_MISC */
 
     /*
@@ -1080,10 +1020,6 @@ MODULE_LICENSE("GPL");
 MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(SUPDRV_IOC_VERSION) ")");
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 module_param(force_async_tsc, int, 0444);
-#else
-MODULE_PARM(force_async_tsc, "i");
-#endif
 MODULE_PARM_DESC(force_async_tsc, "force the asynchronous TSC mode");
 
