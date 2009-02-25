@@ -4362,7 +4362,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         AssertMsg(   pPage->enmKind == PGMPOOLKIND_64BIT_PML4
                   || pPage->enmKind == PGMPOOLKIND_PAE_PDPT
                   || pPage->enmKind == PGMPOOLKIND_PAE_PDPT_FOR_32BIT
-                  || pPage->enmKind == PGMPOOLKIND_32BIT_PD,
+                  || pPage->enmKind == PGMPOOLKIND_32BIT_PD
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD
