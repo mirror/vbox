@@ -445,78 +445,79 @@ typedef struct VBOXGDTR_VER1_6
 
 
 /**
- * Task Segment
+ * 32-bit Task Segment used in raw mode.
+ * @todo Move this to SELM! Use X86TSS32 instead.
  */
 #pragma pack(1)
 typedef struct VBOXTSS
 {
-    /** Back link to previous task. (static) */
+    /** 0x00 - Back link to previous task. (static) */
     RTSEL       selPrev;
     uint16_t    padding1;
-    /** Ring-0 stack pointer. (static) */
+    /** 0x04 - Ring-0 stack pointer. (static) */
     uint32_t    esp0;
-    /** Ring-0 stack segment. (static) */
+    /** 0x08 - Ring-0 stack segment. (static) */
     RTSEL       ss0;
     uint16_t    padding_ss0;
-    /** Ring-1 stack pointer. (static) */
+    /** 0x0c - Ring-1 stack pointer. (static) */
     uint32_t    esp1;
-    /** Ring-1 stack segment. (static) */
+    /** 0x10 - Ring-1 stack segment. (static) */
     RTSEL       ss1;
     uint16_t    padding_ss1;
-    /** Ring-2 stack pointer. (static) */
+    /** 0x14 - Ring-2 stack pointer. (static) */
     uint32_t    esp2;
-    /** Ring-2 stack segment. (static) */
+    /** 0x18 - Ring-2 stack segment. (static) */
     RTSEL       ss2;
     uint16_t    padding_ss2;
-    /** Page directory for the task. (static) */
+    /** 0x1c - Page directory for the task. (static) */
     uint32_t    cr3;
-    /** EIP before task switch. */
+    /** 0x20 - EIP before task switch. */
     uint32_t    eip;
-    /** EFLAGS before task switch. */
+    /** 0x24 - EFLAGS before task switch. */
     uint32_t    eflags;
-    /** EAX before task switch. */
+    /** 0x28 - EAX before task switch. */
     uint32_t    eax;
-    /** ECX before task switch. */
+    /** 0x2c - ECX before task switch. */
     uint32_t    ecx;
-    /** EDX before task switch. */
+    /** 0x30 - EDX before task switch. */
     uint32_t    edx;
-    /** EBX before task switch. */
+    /** 0x34 - EBX before task switch. */
     uint32_t    ebx;
-    /** ESP before task switch. */
+    /** 0x38 - ESP before task switch. */
     uint32_t    esp;
-    /** EBP before task switch. */
+    /** 0x3c - EBP before task switch. */
     uint32_t    ebp;
-    /** ESI before task switch. */
+    /** 0x40 - ESI before task switch. */
     uint32_t    esi;
-    /** EDI before task switch. */
+    /** 0x44 - EDI before task switch. */
     uint32_t    edi;
-    /** ES before task switch. */
+    /** 0x48 - ES before task switch. */
     RTSEL       es;
     uint16_t    padding_es;
-    /** CS before task switch. */
+    /** 0x4c - CS before task switch. */
     RTSEL       cs;
     uint16_t    padding_cs;
-    /** SS before task switch. */
+    /** 0x50 - SS before task switch. */
     RTSEL       ss;
     uint16_t    padding_ss;
-    /** DS before task switch. */
+    /** 0x54 - DS before task switch. */
     RTSEL       ds;
     uint16_t    padding_ds;
-    /** FS before task switch. */
+    /** 0x58 - FS before task switch. */
     RTSEL       fs;
     uint16_t    padding_fs;
-    /** GS before task switch. */
+    /** 0x5c - GS before task switch. */
     RTSEL       gs;
     uint16_t    padding_gs;
-    /** LDTR before task switch. */
+    /** 0x60 - LDTR before task switch. */
     RTSEL       selLdt;
     uint16_t    padding_ldt;
-    /** Debug trap flag */
+    /** 0x64 - Debug trap flag */
     uint16_t    fDebugTrap;
-    /** Offset relative to the TSS of the start of the I/O Bitmap
+    /** 0x66 -  Offset relative to the TSS of the start of the I/O Bitmap
      * and the end of the interrupt redirection bitmap. */
     uint16_t    offIoBitmap;
-    /** 32 bytes for the virtual interrupt redirection bitmap. (VME) */
+    /** 0x68 -  32 bytes for the virtual interrupt redirection bitmap. (VME) */
     uint8_t     IntRedirBitmap[32];
 } VBOXTSS;
 #pragma pack()
