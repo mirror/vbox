@@ -328,8 +328,6 @@ VMMDECL(int)        PGMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTG
 VMMDECL(int)        PGMMap(PVM pVM, RTGCPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPages, unsigned fFlags);
 VMMDECL(int)        PGMMapSetPage(PVM pVM, RTGCPTR GCPtr, uint64_t cb, uint64_t fFlags);
 VMMDECL(int)        PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-VMMDECL(int)        PGMMapActivateAll(PVM pVM);
-VMMDECL(int)        PGMMapDeactivateAll(PVM pVM);
 #ifndef IN_RING0
 VMMDECL(bool)       PGMMapHasConflicts(PVM pVM);
 VMMDECL(int)        PGMMapResolveConflicts(PVM pVM);
