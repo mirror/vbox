@@ -45,11 +45,12 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
 {
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
-    pState->argv        = argv;
-    pState->argc        = argc;
-    pState->paOptions   = paOptions;
-    pState->cOptions    = cOptions;
-    pState->iNext       = iFirst;
+    pState->argv         = argv;
+    pState->argc         = argc;
+    pState->paOptions    = paOptions;
+    pState->cOptions     = cOptions;
+    pState->iNext        = iFirst;
+    pState->pszNextShort = NULL;
 
     /* validate the options. */
     for (size_t i = 0; i < cOptions; i++)
@@ -126,11 +127,64 @@ static PCRTGETOPTDEF rtGetOptSearchShort(int chOption, PCRTGETOPTDEF paOptions, 
 
 RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
 {
+    /*
+     * Make sure the union is completely cleared out, whatever happens below.
+     */
     pValueUnion->u64 = 0;
     pValueUnion->pDef = NULL;
 
-    if (pState->iNext >= pState->argc)
-        return 0;
+    /*
+     * The next option.
+     */
+    bool            fShort;
+    int             iThis;
+    const char     *pszArgThis;
+    PCRTGETOPTDEF   pOpt;
+
+    if (pState->pszNextShort)
+    {
+        /*
+         * We've got short options left over from the previous call.
+         */
+        pOpt = rtGetOptSearchShort(*pState->pszNextShort, pState->paOptions, pState->cOptions);
+        if (!pOpt)
+        {
+            pValueUnion->psz = pState->pszNextShort;
+            return VERR_GETOPT_UNKNOWN_OPTION;
+        }
+        pState->pszNextShort++;
+        pszArgThis = pState->pszNextShort - 2;
+        iThis = pState->iNext;
+        fShort = true;
+    }
+    else
+    {
+        /*
+         * Pop off the next argument.
+         */
+        if (pState->iNext >= pState->argc)
+            return 0;
+        iThis = pState->iNext++;
+        pszArgThis = pState->argv[iThis];
+
+        /*
+         * Do a long option search first and the a short option one.
+         * This way we can make sure single dash long options doesn't
+         * get mixed up with short ones.
+         */
+        pOpt = rtGetOptSearchLong(pszArgThis, pState->paOptions, pState->cOptions);
+        if (    !pOpt
+            &&  pszArgThis[0] == '-'
+            &&  pszArgThis[1] != '-'
+            &&  pszArgThis[1] != '\0')
+        {
+            pOpt = rtGetOptSearchShort(pszArgThis[1], pState->paOptions, pState->cOptions);
+            fShort = pOpt != NULL;
+        }
+        else
+            fShort = false;
+    }
+
 
     /** @todo Handle '--' and possibly implement an RTGetOptInit that lets us
      *        optionally sort the stuff and set other policeis sorts the result.  */
@@ -139,27 +193,6 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
      *                  tar -xzvf foobar.tar.gz
      */
 
-    /*
-     * Pop off the next argument.
-     */
-    int             iThis = pState->iNext++;
-    const char     *pszArgThis = pState->argv[iThis];
-
-    /*
-     * Do a long option search first and the a short option one.
-     * This way we can make sure single dash long options doesn't
-     * get mixed up with short ones.
-     */
-    bool            fShort = false;
-    PCRTGETOPTDEF   pOpt   = rtGetOptSearchLong(pszArgThis, pState->paOptions, pState->cOptions);
-    if (    !pOpt
-        &&  pszArgThis[0] == '-'
-        &&  pszArgThis[1] != '-'
-        &&  pszArgThis[1] != '\0')
-    {
-        pOpt = rtGetOptSearchShort(pszArgThis[1], pState->paOptions, pState->cOptions);
-        fShort = pOpt != NULL;
-    }
     if (pOpt)
     {
         pValueUnion->pDef = pOpt; /* in case of no value or error. */
@@ -190,6 +223,11 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                 }
                 else /* same argument. */
                     pszValue = &pszArgThis[2  + (pszArgThis[2] == ':' || pszArgThis[2] == '=')];
+                if (pState->pszNextShort)
+                {
+                    pState->pszNextShort = NULL;
+                    pState->iNext++;
+                }
             }
             else
             {
@@ -284,6 +322,29 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                     return VERR_INTERNAL_ERROR;
             }
         }
+        else if (fShort)
+        {
+            /*
+             * Deal with "compressed" short option lists, correcting the next
+             * state variables for the start and end cases.
+             */
+            if (pszArgThis[2])
+            {
+                if (!pState->pszNextShort)
+                {
+                    /* start */
+                    pState->pszNextShort = &pszArgThis[2];
+                    pState->iNext--;
+                }
+            }
+            else if (pState->pszNextShort)
+            {
+                /* end */
+                pState->pszNextShort = NULL;
+                pState->iNext++;
+            }
+        }
+
         return pOpt->iShort;
     }
 
@@ -293,7 +354,10 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
      */
 
     if (*pszArgThis == '-')
+    {
+        pValueUnion->psz = pszArgThis;
         return VERR_GETOPT_UNKNOWN_OPTION;
+    }
 
     pValueUnion->psz = pszArgThis;
     return VINF_GETOPT_NOT_OPTION;

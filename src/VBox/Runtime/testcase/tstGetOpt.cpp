@@ -40,21 +40,36 @@ int main()
 {
     int cErrors = 0;
     RTR3Init();
+    RTPrintf("tstGetOpt: TESTING...\n");
 
     RTGETOPTSTATE GetState;
     RTGETOPTUNION Val;
 #define CHECK(expr)  do { if (!(expr)) { RTPrintf("tstGetOpt: error line %d (iNext=%d): %s\n", __LINE__, GetState.iNext, #expr); cErrors++; } } while (0)
+#define CHECK2(expr, fmt) \
+    do { \
+        if (!(expr)) { \
+            RTPrintf("tstGetOpt: error line %d (iNext=%d): %s\n", __LINE__, GetState.iNext, #expr); \
+            RTPrintf fmt; \
+            cErrors++; \
+         } \
+    } while (0)
+
+#define CHECK_pDef(paOpts, i) \
+    CHECK2(Val.pDef == &(paOpts)[(i)], ("Got #%d (%p) expected #%d\n", (int)(Val.pDef - &(paOpts)[0]), Val.pDef, i));
 
 #define CHECK_GETOPT(expr, chRet, iInc) \
     do { \
         const int iPrev = GetState.iNext; \
-        CHECK((expr) == (chRet)); \
-        CHECK(GetState.iNext == (iInc) + iPrev); \
+        const int rc = (expr); \
+        CHECK2(rc == (chRet), ("got %d, expected %d\n", rc, (chRet))); \
+        CHECK2(GetState.iNext == (iInc) + iPrev, ("iNext=%d expected %d\n", GetState.iNext, (iInc) + iPrev)); \
         GetState.iNext = (iInc) + iPrev; \
     } while (0)
 
+
+
     /*
-     * Simple.
+     * The basics.
      */
     static const RTGETOPTDEF s_aOpts2[] =
     {
@@ -63,31 +78,45 @@ int main()
         { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
         { NULL,                 'q', RTGETOPT_REQ_NOTHING },
         { "--quiet",            384, RTGETOPT_REQ_NOTHING },
-        { "-startvm",           385, RTGETOPT_REQ_NOTHING },
+        { "-novalue",           385, RTGETOPT_REQ_NOTHING },
+        { "-startvm",           386, RTGETOPT_REQ_STRING },
+        { "nodash",             387, RTGETOPT_REQ_NOTHING },
+        { "nodashval",          388, RTGETOPT_REQ_STRING },
     };
 
     char *argv2[] =
     {
         "-s",               "string1",
         "--optwithstring",  "string2",
+
         "-i",               "-42",
         "-i:-42",
         "-i=-42",
         "-i:",              "-42",
         "-i=",              "-42",
+
         "--optwithint",     "42",
         "--optwithint:42",
         "--optwithint=42",
         "--optwithint:",    "42",
         "--optwithint=",    "42",
+
         "-v",
         "--verbose",
         "-q",
         "--quiet",
-        "-startvm",
+
+        "-novalue",
+        "-startvm",         "myvm",
+
+        "nodash",
+        "nodashval",        "string3",
+
         "filename1",
         "-q",
         "filename2",
+
+        "-vqi999",
         NULL
     };
     int argc2 = (int)RT_ELEMENTS(argv2) - 1;
@@ -124,23 +153,44 @@ int main()
     CHECK(Val.i32 == 42);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'v', 1);
-    CHECK(Val.pDef == &s_aOpts2[2]);
+    CHECK_pDef(s_aOpts2, 2);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'v', 1);
-    CHECK(Val.pDef == &s_aOpts2[2]);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'q', 1);
-    CHECK(Val.pDef == &s_aOpts2[3]);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 384, 1);
-    CHECK(Val.pDef == &s_aOpts2[4]);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 385, 1);
-    CHECK(Val.pDef == &s_aOpts2[5]);
+    CHECK_pDef(s_aOpts2, 2);
 
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'q', 1);
+    CHECK_pDef(s_aOpts2, 3);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 384, 1);
+    CHECK_pDef(s_aOpts2, 4);
+
+    /* -novalue / -startvm (single dash long options) */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 385, 1);
+    CHECK_pDef(s_aOpts2, 5);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 386, 2);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "myvm"));
+
+    /* no-dash options */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 387, 1);
+    CHECK_pDef(s_aOpts2, 7);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 388, 2);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string3"));
+
+    /* non-option, option, non-option  */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1);
     CHECK(Val.psz && !strcmp(Val.psz, "filename1"));
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'q', 1);
-    CHECK(Val.pDef == &s_aOpts2[3]);
+    CHECK_pDef(s_aOpts2, 3);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1);
     CHECK(Val.psz && !strcmp(Val.psz, "filename2"));
 
+    /* compress short options */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'v', 0);
+    CHECK_pDef(s_aOpts2, 2);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'q', 0);
+    CHECK_pDef(s_aOpts2, 3);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
+    CHECK(Val.i32 == 999);
+
+    /* the end */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 0, 0);
     CHECK(Val.pDef == NULL);
     CHECK(argc2 == GetState.iNext);
