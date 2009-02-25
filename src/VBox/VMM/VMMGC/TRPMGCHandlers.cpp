@@ -624,6 +624,8 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
         case OP_RDTSC:  /* just in case */
         case OP_CLTS:
         case OP_WBINVD: /* nop */
+        case OP_RDMSR:
+        case OP_WRMSR:
         {
             uint32_t cbIgnored;
             rc = EMInterpretInstructionCPU(pVM, pCpu, pRegFrame, PC, &cbIgnored);
