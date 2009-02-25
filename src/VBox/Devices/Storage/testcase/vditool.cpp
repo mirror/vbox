@@ -44,16 +44,19 @@ static void ascii2upper(char *psz)
 
 static int UsageExit()
 {
-    RTPrintf("Usage:   vditool <Command> [Params]\n" \
-             "Commands and params:\n" \
-             "    NEW Filename Mbytes          - create new image;\n" \
-             "    DD  Filename DDFilename      - create new image from DD format image;\n" \
-             "    CONVERT Filename             - convert VDI image from old format;\n" \
-             "    DUMP Filename                - debug dump;\n" \
-             "    RESETGEO Filename            - reset geometry information;\n" \
-             "    COPY FromImage ToImage       - make image copy;\n" \
-             "    COPYDD FromImage DDFilename  - make a DD copy of the image;\n" \
-             "    SHRINK Filename              - optimize (reduce) VDI image size.\n");
+    RTPrintf("Usage:   vditool <Command> [Params]\n"
+             "Commands and params:\n"
+             "    NEW Filename Mbytes          - create new image\n"
+#if 0
+             "    DD  Filename DDFilename      - create new image from DD format image\n"
+             "    CONVERT Filename             - convert VDI image from old format\n"
+             "    DUMP Filename                - debug dump\n"
+             "    RESETGEO Filename            - reset geometry information\n"
+             "    COPY FromImage ToImage       - make image copy\n"
+             "    COPYDD FromImage DDFilename  - make a DD copy of the image\n"
+             "    SHRINK Filename              - optimize (reduce) VDI image size\n"
+#endif
+             );
     return 1;
 }
 
@@ -103,13 +106,24 @@ static int NewImage(const char *pszFilename, uint32_t cMBs)
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = VDICreateBaseImage(pszUtf8Filename,
-                            VDI_IMAGE_TYPE_NORMAL,
-                            (uint64_t)cMBs * (uint64_t)(1024 * 1024),
-                            "Newly created test image", NULL, NULL);
+    PVBOXHDD hdd;
+    rc = VDCreate(NULL, &hdd);
+    if (RT_FAILURE(rc))
+        return PrintDone(rc);
+    
+    PDMMEDIAGEOMETRY geo = { 0 }; /* auto-detect */
+    rc = VDCreateBase(hdd, "vdi", pszUtf8Filename,
+                      VD_IMAGE_TYPE_NORMAL,
+                      (uint64_t)cMBs * _1M,
+                      VD_IMAGE_FLAGS_NONE,
+                      "Newly created test image",
+                      &geo, &geo, NULL,
+                      VD_OPEN_FLAGS_NORMAL,
+                      NULL, NULL);
     return PrintDone(rc);
 }
 
+#if 0
 static int ConvertDDImage(const char *pszFilename, const char *pszDDFilename)
 {
     RTPrintf("Converting VDI: from DD image file=\"%s\" to file=\"%s\"...\n",
@@ -188,7 +202,9 @@ static int ConvertDDImage(const char *pszFilename, const char *pszDDFilename)
 
     return rc;
 }
+#endif
 
+#if 0
 static DECLCALLBACK(int) ProcessCallback(PVM pVM, unsigned uPercent, void *pvUser)
 {
     unsigned *pPercent = (unsigned *)pvUser;
@@ -204,7 +220,9 @@ static DECLCALLBACK(int) ProcessCallback(PVM pVM, unsigned uPercent, void *pvUse
 
     return VINF_SUCCESS;
 }
+#endif
 
+#if 0
 static int ConvertOldImage(const char *pszFilename)
 {
     RTPrintf("Converting VDI image file=\"%s\" to a new format...\n"
@@ -222,7 +240,9 @@ static int ConvertOldImage(const char *pszFilename)
     RTPrintf("\n");
     return PrintDone(rc);
 }
+#endif
 
+#if 0
 static int DumpImage(const char *pszFilename)
 {
     RTPrintf("Dumping VDI image file=\"%s\" into the log file...\n", pszFilename);
@@ -241,7 +261,9 @@ static int DumpImage(const char *pszFilename)
     }
     return PrintDone(rc);
 }
+#endif
 
+#if 0
 static int ResetImageGeometry(const char *pszFilename)
 {
     RTPrintf("Resetting geometry info of VDI image file=\"%s\"\n", pszFilename);
@@ -262,7 +284,9 @@ static int ResetImageGeometry(const char *pszFilename)
     VDIDiskCloseImage(pVdi);
     return PrintDone(rc);
 }
+#endif
 
+#if 0
 static int CopyImage(const char *pszDstFile, const char *pszSrcFile)
 {
     RTPrintf("Copying VDI image file=\"%s\" to image file=\"%s\"...\n"
@@ -283,7 +307,9 @@ static int CopyImage(const char *pszDstFile, const char *pszSrcFile)
     RTPrintf("\n");
     return PrintDone(rc);
 }
+#endif
 
+#if 0
 static int CopyToDD(const char *pszDstFile, const char *pszSrcFile)
 {
     RTPrintf("Copying VDI image file=\"%s\" to DD file=\"%s\"...\n",
@@ -330,7 +356,9 @@ static int CopyToDD(const char *pszDstFile, const char *pszSrcFile)
     VDIDiskCloseImage(pVdi);
     return PrintDone(rc);
 }
+#endif
 
+#if 0
 static int ShrinkImage(const char *pszFilename)
 {
     RTPrintf("Shrinking VDI image file=\"%s\"...\n"
@@ -348,6 +376,7 @@ static int ShrinkImage(const char *pszFilename)
     RTPrintf("\n");
     return PrintDone(rc);
 }
+#endif
 
 int main(int argc, char **argv)
 {
@@ -355,7 +384,8 @@ int main(int argc, char **argv)
     putenv((char*)"VBOX_LOG_FLAGS=");
 
     RTR3Init();
-    RTPrintf("vditool    Copyright (c) 2008 Sun Microsystems, Inc.\n\n");
+    RTPrintf("vditool -- for internal use only!\n"
+             "Copyright (c) 2009 Sun Microsystems, Inc.\n\n");
 
     /*
      * Do cmd line parsing.
@@ -385,16 +415,16 @@ int main(int argc, char **argv)
         rc = RTStrToUInt32Ex(argv[3], NULL, 10, &cMBs);
         if (RT_FAILURE(rc))
             return SyntaxError("Invalid number!");
-        if (    cMBs < 2
-            ||  cMBs > 1024*1024)
+        if (cMBs < 2 || cMBs > _1M)
         {
             RTPrintf("error: Disk size %RU32 (MB) is not within the range %u-%u!\n",
-                     cMBs, 2, 1024*1024);
+                     cMBs, 2, _1M);
             return 1;
         }
 
         rc = NewImage(argv[2], cMBs);
     }
+#if 0
     else if (strcmp(szCmd, "DD") == 0)
     {
         if (argc != 4)
@@ -437,6 +467,7 @@ int main(int argc, char **argv)
             return SyntaxError("Invalid argument count!");
         rc = ShrinkImage(argv[2]);
     }
+#endif
     else
         return SyntaxError("Invalid command!");
 
