@@ -337,7 +337,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
                      ||  s.ss0  != (pVM->selm.s.Tss.ss1 & ~1)) /* undo raw-r0 */
                )
             {
-                Log(("selmRCGuestTSSWriteHandler: R0 stack: %RTsel:%RGv -> %RTsel:%RGv\n",
+                Log(("selmRCGuestTSSWriteHandler: R0 stack: %RTsel:%RGv -> %RTsel:%RGv [x-page]\n",
                      (RTSEL)(pVM->selm.s.Tss.ss1 & ~1), (RTGCPTR)pVM->selm.s.Tss.esp1, (RTSEL)s.ss0, (RTGCPTR)s.esp0));
                 pVM->selm.s.Tss.esp1 = s.esp0;
                 pVM->selm.s.Tss.ss1  = s.ss0 | 1;
