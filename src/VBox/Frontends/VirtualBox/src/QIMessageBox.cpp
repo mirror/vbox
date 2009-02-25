@@ -34,7 +34,129 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QStyleOptionFocusRect>
+#include <QStylePainter>
 #include <QToolButton>
+
+/** @class QIArrowButton
+ *
+ *  The QIArrowButton class is an arrow tool-botton with text-label.
+ */
+QIArrowButton::QIArrowButton (const QString &aName, QWidget *aParent)
+    : QWidget (aParent)
+    , mIsExpanded (false)
+    , mButton (new QToolButton())
+    , mLabel (new QLabel (aName))
+{
+    /* Setup itself */
+    setFocusPolicy (Qt::StrongFocus);
+
+    /* Setup tool-button */
+    mButton->setAutoRaise (true);
+    mButton->setFixedSize (14, 16);
+    mButton->setFocusPolicy (Qt::NoFocus);
+    mButton->setStyleSheet ("QToolButton {border: 0px none black;}");
+    connect (mButton, SIGNAL (clicked (bool)), this, SLOT (buttonClicked()));
+    updateIcon();
+
+    /* Setup text-label */
+    mLabel->setBuddy (mButton);
+    mLabel->setStyleSheet ("QLabel {padding: 0px 1px 0px 1px;}");
+
+    /* Setup main-layout */
+    QHBoxLayout *mainLayout = new QHBoxLayout (this);
+    VBoxGlobal::setLayoutMargin (mainLayout, 0);
+    mainLayout->addWidget (mButton);
+    mainLayout->addWidget (mLabel);
+    mainLayout->addStretch();
+
+    /* Install event-filter */
+    qApp->installEventFilter (this);
+}
+
+bool QIArrowButton::isExpanded() const
+{
+    return mIsExpanded;
+}
+
+void QIArrowButton::animateClick()
+{
+    mButton->animateClick();
+}
+
+void QIArrowButton::buttonClicked()
+{
+    mIsExpanded = !mIsExpanded;
+    updateIcon();
+    emit clicked();
+}
+
+void QIArrowButton::updateIcon()
+{
+    mButton->setIcon (VBoxGlobal::iconSet (mIsExpanded ?
+                      ":/arrow_down_10px.png" : ":/arrow_right_10px.png"));
+}
+
+bool QIArrowButton::eventFilter (QObject *aObject, QEvent *aEvent)
+{
+    /* Process only QIArrowButton or children */
+    if (!(aObject == this || children().contains (aObject)))
+        return QWidget::eventFilter (aObject, aEvent);
+
+    /* Process some keyboard events */
+    if (aEvent->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *kEvent = static_cast <QKeyEvent*> (aEvent);
+        switch (kEvent->key())
+        {
+            /* "+" as expand */
+            case Qt::Key_Plus:
+            {
+                if (!mIsExpanded)
+                    mButton->animateClick();
+                break;
+            }
+            /* "-" as collapse */
+            case Qt::Key_Minus:
+            {
+                if (mIsExpanded)
+                    mButton->animateClick();
+                break;
+            }
+            /* Space as toggle */
+            case Qt::Key_Space:
+            {
+                mButton->animateClick();
+                break;
+            }
+        }
+    }
+
+    /* Process some mouse events */
+    if ((aEvent->type() == QEvent::MouseButtonPress ||
+         aEvent->type() == QEvent::MouseButtonDblClick)
+        && aObject == mLabel)
+    {
+        /* Label click as toggle */
+        mButton->animateClick();
+    }
+
+    /* Default one handler */
+    return QWidget::eventFilter (aObject, aEvent);
+}
+
+void QIArrowButton::paintEvent (QPaintEvent *aEvent)
+{
+    if (hasFocus())
+    {
+        QStylePainter painter (this);
+        QStyleOptionFocusRect option;
+        option.initFrom (this);
+        option.rect = mLabel->frameGeometry();
+        painter.drawPrimitive (QStyle::PE_FrameFocusRect, option);
+    }
+    QWidget::paintEvent (aEvent);
+}
 
 /** @class QIArrowSplitter
  *
@@ -44,54 +166,39 @@ QIArrowSplitter::QIArrowSplitter (QWidget *aParent)
     : QWidget (aParent)
     , mMainLayout (new QVBoxLayout (this))
 {
+    /* Setup main-layout */
     VBoxGlobal::setLayoutMargin (mMainLayout, 0);
+
+    /* Install event-filter */
     qApp->installEventFilter (this);
 }
 
 void QIArrowSplitter::addWidget (const QString &aName, QWidget *aWidget)
 {
-    /* Creating arrow tool-button */
-    QToolButton *arrowButton = new QToolButton();
-    connect (arrowButton, SIGNAL (clicked (bool)), this, SLOT (toggleWidget()));
-    arrowButton->setIcon (VBoxGlobal::iconSet (":/arrow_right_10px.png"));
-    arrowButton->setFocusPolicy (Qt::StrongFocus);
-    arrowButton->setAutoRaise (true);
-    arrowButton->setFixedSize (14, 16);
-    arrowButton->setStyleSheet ("QToolButton { border: 0px none black; }");
-    mButtonsList.append (arrowButton);
+    /* Creating arrow button */
+    QIArrowButton *button = new QIArrowButton (aName);
+    connect (button, SIGNAL (clicked()), this, SLOT (toggleWidget()));
 
-    /* Creating description label */
-    QLabel *descriptionLabel = new QLabel (aName);
-    descriptionLabel->setBuddy (arrowButton);
-
+    /* Append internal lists */
+    mButtonsList.append (button);
     mWidgetsList.append (aWidget);
 
-    QHBoxLayout *lineLayout = new QHBoxLayout();
-    lineLayout->addWidget (arrowButton);
-    lineLayout->addWidget (descriptionLabel);
-
-    mMainLayout->insertWidget (0, aWidget);
-    mMainLayout->insertLayout (0, lineLayout);
+    /* Append layout with children */
+    mMainLayout->addWidget (button);
+    mMainLayout->addWidget (aWidget);
 }
 
-void QIArrowSplitter::toggleWidget (ToggleType aType)
+void QIArrowSplitter::toggleWidget()
 {
-    QToolButton *arrowButton = qobject_cast <QToolButton*> (sender());
+    QIArrowButton *clickedButton = qobject_cast <QIArrowButton*> (sender());
 
-    /* Toggle all or the specified arrow & related widget */
-    foreach (QToolButton *itemButton, mButtonsList)
+    foreach (QIArrowButton *button, mButtonsList)
     {
-        if ((itemButton == arrowButton) || (!arrowButton))
+        if ((button == clickedButton) || !clickedButton)
         {
-            QWidget *relatedWidget = mWidgetsList [mButtonsList.indexOf (itemButton)];
+            QWidget *relatedWidget = mWidgetsList [mButtonsList.indexOf (button)];
             Assert (relatedWidget);
-            if ((relatedWidget->isVisible() && aType != ExpandOnly) ||
-                (!relatedWidget->isVisible() && aType != CollapsOnly))
-            {
-                relatedWidget->setVisible (!relatedWidget->isVisible());
-                itemButton->setIcon (VBoxGlobal::iconSet (relatedWidget->isVisible() ?
-                                     ":/arrow_down_10px.png" : ":/arrow_right_10px.png"));
-            }
+            relatedWidget->setVisible (button->isExpanded());
         }
     }
 
@@ -109,52 +216,43 @@ void QIArrowSplitter::toggleWidget (ToggleType aType)
 
     /* Now resize window to minimum possible size */
     window()->resize (window()->minimumSizeHint());
-    qApp->processEvents();
-#ifdef Q_WS_WIN
-    /* Set fixed size to which one current we have */
-    window()->setFixedSize (window()->size());
-#else
-    /* Unable to resize on some platforms because it was fixed already */
-    window()->setFixedSize (window()->minimumSizeHint());
-#endif
 }
 
 bool QIArrowSplitter::eventFilter (QObject *aObject, QEvent *aEvent)
 {
-    if (!aObject->isWidgetType())
+    /* Process only parent window children */
+    if (!(aObject == window() || window()->children().contains (aObject)))
         return QWidget::eventFilter (aObject, aEvent);
 
-    QWidget *widget = qobject_cast <QWidget*> (aObject);
-    if (widget->window() != window())
-        return QWidget::eventFilter (aObject, aEvent);
+    /* Do not process QIArrowButton children */
+    foreach (QIArrowButton *button, mButtonsList)
+        if (button->children().contains (aObject))
+            return QWidget::eventFilter (aObject, aEvent);
 
     /* Process some keyboard events */
     if (aEvent->type() == QEvent::KeyPress)
     {
         QKeyEvent *kEvent = static_cast <QKeyEvent*> (aEvent);
-        QToolButton *arrowButton = qobject_cast <QToolButton*> (QApplication::focusWidget());
-        int slot = arrowButton ? mButtonsList.indexOf (arrowButton) : -1;
         switch (kEvent->key())
         {
             case Qt::Key_Plus:
             {
-                if (slot != -1 && !mWidgetsList [slot]->isVisible())
-                    arrowButton->animateClick();
-                else
-                    toggleWidget (ExpandOnly);
+                foreach (QIArrowButton *button, mButtonsList)
+                    if (!button->isExpanded())
+                        button->animateClick();
                 break;
             }
             case Qt::Key_Minus:
             {
-                if (slot != -1 && mWidgetsList [slot]->isVisible())
-                    arrowButton->animateClick();
-                else
-                    toggleWidget (CollapsOnly);
+                foreach (QIArrowButton *button, mButtonsList)
+                    if (button->isExpanded())
+                        button->animateClick();
                 break;
             }
         }
     }
 
+    /* Default one handler */
     return QWidget::eventFilter (aObject, aEvent);
 }
 
@@ -509,6 +607,8 @@ void QIMessageBox::showEvent (QShowEvent *e)
         qApp->processEvents();
         mTextLabel->setMinimumWidth (mTextLabel->width());
         mTextLabel->updateSizeHint();
+        qApp->processEvents();
+        setFixedWidth (width());
         mDetailsSplitter->toggleWidget();
         mWasPolished = true;
     }
