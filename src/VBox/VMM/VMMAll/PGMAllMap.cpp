@@ -418,7 +418,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 }
 #endif /* !IN_RING0 */
 
-#ifdef VBOX_STRICT
+#if defined(VBOX_STRICT) && !defined(IN_RING0)
 /**
  * Clears all PDEs involved with the mapping in the shadow page table.
  *
@@ -506,9 +506,6 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
-# ifdef IN_RING0
-    AssertFailed();
-# else
 #  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 #  endif
@@ -522,10 +519,9 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
 
         pgmMapCheckShadowPDEs(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pCur, iPDE);
     }
-# endif /* IN_RING0 */
 #endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 }
-#endif
+#endif /* defined(VBOX_STRICT) && !defined(IN_RING0) */
 
 /**
  * Apply the hypervisor mappings to the active CR3.
