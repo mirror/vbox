@@ -1474,7 +1474,11 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
     /*
      * Reject any attempts at flushing the currently active shadow CR3 mapping
      */
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    if (pgmPoolIsActiveRootPage(pVM, pPage))
+#else
     if (PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) == pPage->Core.Key)
+#endif
     {
         /* Refresh the cr3 mapping by putting it at the head of the age list. */
         LogFlow(("pgmPoolCacheFreeOne refuse CR3 mapping\n"));
@@ -3149,7 +3153,11 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pUserPage);
 
     /* Safety precaution in case we change the paging for other modes too in the future. */
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    Assert(!pgmPoolIsActiveRootPage(pVM, pPage));
+#else
     Assert(PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) != pPage->Core.Key);
+#endif
 
 #ifdef VBOX_STRICT
     /*
@@ -4348,15 +4356,21 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
      */
-    if (PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) == pPage->Core.Key)
-    {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    if (pgmPoolIsActiveRootPage(pVM, pPage))
+    {
         AssertMsg(   pPage->enmKind == PGMPOOLKIND_64BIT_PML4
                   || pPage->enmKind == PGMPOOLKIND_PAE_PDPT
                   || pPage->enmKind == PGMPOOLKIND_PAE_PDPT_FOR_32BIT
                   || pPage->enmKind == PGMPOOLKIND_32BIT_PD,
+                  || pPage->enmKind == PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD
+                  || pPage->enmKind == PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD
+                  || pPage->enmKind == PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD
+                  || pPage->enmKind == PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD,
                   ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(pPool->CTX_SUFF(pVM)), pPage->Core.Key, pPage->enmKind));
 #else
+    if (PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) == pPage->Core.Key)
+    {
         AssertMsg(pPage->enmKind == PGMPOOLKIND_64BIT_PML4,
                   ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(pPool->CTX_SUFF(pVM)), pPage->Core.Key, pPage->enmKind));
 #endif
