@@ -41,6 +41,7 @@
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
+#include <iprt/alloca.h>
 
 #include <sys/systm.h>
 __BEGIN_DECLS /* Buggy 10.4 headers, fixed in 10.5. */
@@ -62,10 +63,13 @@ __END_DECLS
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define VBOXNETADP_MAX_FAMILIES   4
-#define VBOXNETADP_NAME           "vboxnet"
-#define VBOXNETADP_MTU            1500
-#define VBOXNETADP_DETACH_TIMEOUT 500
+/** The maximum number of SG segments.
+ * Used to prevent stack overflow and similar bad stuff. */
+#define VBOXNETADP_DARWIN_MAX_SEGS       32
+#define VBOXNETADP_DARWIN_MAX_FAMILIES   4
+#define VBOXNETADP_DARWIN_NAME           "vboxnet"
+#define VBOXNETADP_DARWIN_MTU            1500
+#define VBOXNETADP_DARWIN_DETACH_TIMEOUT 500
 
 #define VBOXNETADP_FROM_IFACE(iface) ((PVBOXNETADP) ifnet_softc(iface))
 
@@ -120,11 +124,10 @@ static void vboxNetAdpDarwinComposeUUID(PVBOXNETADP pThis, PRTUUID pUuid)
  */
 DECLINLINE(ifnet_t) vboxNetAdpDarwinRetainIfNet(PVBOXNETADP pThis)
 {
-    ifnet_t pIfNet = NULL;
+    if (pThis->u.s.pIface)
+        ifnet_reference(pThis->u.s.pIface);
 
-    ifnet_reference(pThis->u.s.pIface);
-
-    return pIfNet;
+    return pThis->u.s.pIface;
 }
 
 
@@ -140,69 +143,6 @@ DECLINLINE(void) vboxNetAdpDarwinReleaseIfNet(PVBOXNETADP pThis, ifnet_t pIfNet)
     NOREF(pThis);
     if (pIfNet)
         ifnet_release(pIfNet);
-}
-
-
-
-static errno_t vboxNetAdpDarwinOutput(ifnet_t pIface, mbuf_t pMBuf)
-{
-    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
-    Assert(pThis);
-    if (vboxNetAdpPrepareToReceive(pThis))
-    {
-        if (/* converted to SG */0)
-            vboxNetAdpReceive(pThis, NULL);
-        else
-            vboxNetAdpCancelReceive(pThis);
-    }
-    mbuf_freem_list(pMBuf);
-    return 0;
-}
-
-static void vboxNetAdpDarwinAttachFamily(PVBOXNETADP pThis, protocol_family_t Family)
-{
-    u_int32_t i;
-    for (i = 0; i < VBOXNETADP_MAX_FAMILIES; i++)
-        if (pThis->u.s.aAttachedFamilies[i] == 0)
-        {
-            pThis->u.s.aAttachedFamilies[i] = Family;
-            break;
-        }
-}
-
-static void vboxNetAdpDarwinDetachFamily(PVBOXNETADP pThis, protocol_family_t Family)
-{
-    u_int32_t i;
-    for (i = 0; i < VBOXNETADP_MAX_FAMILIES; i++)
-        if (pThis->u.s.aAttachedFamilies[i] == Family)
-            pThis->u.s.aAttachedFamilies[i] = 0;
-}
-
-static errno_t vboxNetAdpDarwinAddProto(ifnet_t pIface, protocol_family_t Family, const struct ifnet_demux_desc *pDemuxDesc, u_int32_t nDesc)
-{
-    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
-    Assert(pThis);
-    vboxNetAdpDarwinAttachFamily(pThis, Family);
-    LogFlow(("vboxNetAdpAddProto: Family=%d.\n", Family));
-    return ether_add_proto(pIface, Family, pDemuxDesc, nDesc);
-}
-
-static errno_t vboxNetAdpDarwinDelProto(ifnet_t pIface, protocol_family_t Family)
-{
-    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
-    Assert(pThis);
-    LogFlow(("vboxNetAdpDelProto: Family=%d.\n", Family));
-    vboxNetAdpDarwinDetachFamily(pThis, Family);
-    return ether_del_proto(pIface, Family);
-}
-
-static void vboxNetAdpDarwinDetach(ifnet_t pIface)
-{
-    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
-    Assert(pThis);
-    Log2(("vboxNetAdpDarwinDetach: Signaling detach to vboxNetAdpUnregisterDevice.\n"));
-    /* Let vboxNetAdpDarwinUnregisterDevice know that the interface has been detached. */
-    RTSemEventSignal(pThis->u.s.hEvtDetached);
 }
 
 /**
@@ -499,6 +439,75 @@ DECLINLINE(void) vboxNetAdpDarwinMBufToSG(PVBOXNETADP pThis, mbuf_t pMBuf, void 
     AssertMsg(!pvFrame, ("pvFrame=%p pMBuf=%p iSeg=%d\n", pvFrame, pMBuf, iSeg));
 }
 
+
+static errno_t vboxNetAdpDarwinOutput(ifnet_t pIface, mbuf_t pMBuf)
+{
+    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
+    Assert(pThis);
+    if (vboxNetAdpPrepareToReceive(pThis))
+    {
+        unsigned cSegs = vboxNetAdpDarwinMBufCalcSGSegs(pThis, pMBuf, NULL);
+        if (cSegs < VBOXNETADP_DARWIN_MAX_SEGS)
+        {
+            PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
+            vboxNetAdpDarwinMBufToSG(pThis, pMBuf, NULL, pSG, cSegs, INTNETTRUNKDIR_HOST);
+            vboxNetAdpReceive(pThis, pSG);
+        }
+        else
+            vboxNetAdpCancelReceive(pThis);
+    }
+    mbuf_freem_list(pMBuf);
+    return 0;
+}
+
+static void vboxNetAdpDarwinAttachFamily(PVBOXNETADP pThis, protocol_family_t Family)
+{
+    u_int32_t i;
+    for (i = 0; i < VBOXNETADP_MAX_FAMILIES; i++)
+        if (pThis->u.s.aAttachedFamilies[i] == 0)
+        {
+            pThis->u.s.aAttachedFamilies[i] = Family;
+            break;
+        }
+}
+
+static void vboxNetAdpDarwinDetachFamily(PVBOXNETADP pThis, protocol_family_t Family)
+{
+    u_int32_t i;
+    for (i = 0; i < VBOXNETADP_MAX_FAMILIES; i++)
+        if (pThis->u.s.aAttachedFamilies[i] == Family)
+            pThis->u.s.aAttachedFamilies[i] = 0;
+}
+
+static errno_t vboxNetAdpDarwinAddProto(ifnet_t pIface, protocol_family_t Family, const struct ifnet_demux_desc *pDemuxDesc, u_int32_t nDesc)
+{
+    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
+    Assert(pThis);
+    vboxNetAdpDarwinAttachFamily(pThis, Family);
+    LogFlow(("vboxNetAdpAddProto: Family=%d.\n", Family));
+    return ether_add_proto(pIface, Family, pDemuxDesc, nDesc);
+}
+
+static errno_t vboxNetAdpDarwinDelProto(ifnet_t pIface, protocol_family_t Family)
+{
+    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
+    Assert(pThis);
+    LogFlow(("vboxNetAdpDelProto: Family=%d.\n", Family));
+    vboxNetAdpDarwinDetachFamily(pThis, Family);
+    return ether_del_proto(pIface, Family);
+}
+
+static void vboxNetAdpDarwinDetach(ifnet_t pIface)
+{
+    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
+    Assert(pThis);
+    Log2(("vboxNetAdpDarwinDetach: Signaling detach to vboxNetAdpUnregisterDevice.\n"));
+    /* Let vboxNetAdpDarwinUnregisterDevice know that the interface has been detached. */
+    RTSemEventSignal(pThis->u.s.hEvtDetached);
+}
+
+
+
 int  vboxNetAdpPortOsXmit(PVBOXNETADP pThis, PINTNETSG pSG, uint32_t fDst)
 {
     int rc = VINF_SUCCESS;
@@ -508,28 +517,31 @@ int  vboxNetAdpPortOsXmit(PVBOXNETADP pThis, PINTNETSG pSG, uint32_t fDst)
         /*
          * Create a mbuf for the gather list and push it onto the host stack.
          */
-        if (fDst & INTNETTRUNKDIR_HOST)
+        mbuf_t pMBuf = vboxNetAdpDarwinMBufFromSG(pThis, pSG);
+        if (pMBuf)
         {
-            mbuf_t pMBuf = vboxNetAdpDarwinMBufFromSG(pThis, pSG);
-            if (pMBuf)
-            {
-                /* This is what IONetworkInterface::inputPacket does. */
-                unsigned const cbEthHdr = 14;
-                mbuf_pkthdr_setheader(pMBuf, mbuf_data(pMBuf));
-                mbuf_pkthdr_setlen(pMBuf, mbuf_pkthdr_len(pMBuf) - cbEthHdr);
-                mbuf_setdata(pMBuf, (uint8_t *)mbuf_data(pMBuf) + cbEthHdr, mbuf_len(pMBuf) - cbEthHdr);
-                mbuf_pkthdr_setrcvif(pMBuf, pIfNet); /* will crash without this. */
+            /* This is what IONetworkInterface::inputPacket does. */
+            unsigned const cbEthHdr = 14;
+            mbuf_pkthdr_setheader(pMBuf, mbuf_data(pMBuf));
+            mbuf_pkthdr_setlen(pMBuf, mbuf_pkthdr_len(pMBuf) - cbEthHdr);
+            mbuf_setdata(pMBuf, (uint8_t *)mbuf_data(pMBuf) + cbEthHdr, mbuf_len(pMBuf) - cbEthHdr);
+            mbuf_pkthdr_setrcvif(pMBuf, pIfNet); /* will crash without this. */
 
-                errno_t err = ifnet_input(pIfNet, pMBuf, NULL);
-                if (err)
-                    rc = RTErrConvertFromErrno(err);
-            }
-            else
-                rc = VERR_NO_MEMORY;
+            Log(("vboxNetAdpPortOsXmit: calling ifnet_input()\n"));
+            errno_t err = ifnet_input(pIfNet, pMBuf, NULL);
+            if (err)
+                rc = RTErrConvertFromErrno(err);
+        }
+        else
+        {
+            Log(("vboxNetAdpPortOsXmit: failed to convert SG to mbuf.\n"));
+            rc = VERR_NO_MEMORY;
         }
 
         vboxNetAdpDarwinReleaseIfNet(pThis, pIfNet);
     }
+    else
+        Log(("vboxNetAdpPortOsXmit: failed to retain the interface.\n"));
 
     return rc;
 }
