@@ -931,7 +931,7 @@ bool pgmPoolIsActiveRootPage(PVM pVM, PPGMPOOLPAGE pPage)
                     for (unsigned i=0;i<X86_PG_PAE_PDPE_ENTRIES;i++)
                     {
                         if (    pPdpt->a[i].n.u1Present
-                            &&  pPage->Core.Key == pPdpt->a[i].u & X86_PDPE_PG_MASK)
+                            &&  pPage->Core.Key == (pPdpt->a[i].u & X86_PDPE_PG_MASK))
                         {
                             LogFlow(("pgmPoolIsActiveRootPage found PAE PDPE root\n"));
                             pPage->cModifications = 1; /* reset counter (can't use 0, or else it will be reinserted in the modified list) */
