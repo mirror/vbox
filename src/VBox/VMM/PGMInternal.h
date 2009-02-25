@@ -56,7 +56,7 @@
 /*
  * Enable to use the PGM pool for all levels in the paging chain in all paging modes.
  */
-//#define VBOX_WITH_PGMPOOL_PAGING_ONLY
+#define VBOX_WITH_PGMPOOL_PAGING_ONLY
 
 /**
  * Solve page is out of sync issues inside Guest Context (in PGMGC.cpp).
@@ -1638,7 +1638,10 @@ typedef struct PGMPOOLPAGE
     /** This is used by the R3 access handlers when invoked by an async thread.
      * It's a hack required because of REMR3NotifyHandlerPhysicalDeregister. */
     bool volatile       fReusedFlushPending;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages). */
+    bool                fLocked;
+#else
     /** Used to indicate that the guest is mapping the page is also used as a CR3.
      * In these cases the access handler acts differently and will check
      * for mapping conflicts like the normal CR3 handler.
@@ -2981,7 +2984,10 @@ int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
 #endif
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-bool            pgmPoolIsActiveRootPage(PVM pVM, PPGMPOOLPAGE pPage);
+int             pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
+int             pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
+
+bool            pgmPoolIsPageLocked(PVM pVM, PPGMPOOLPAGE pPage);
 
 void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE);
 void            pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
@@ -4723,6 +4729,36 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     }
 }
 #endif /* PGMPOOL_WITH_CACHE */
+
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+/**
+ * Locks a page to prevent flushing (important for cr3 root pages or shadow pae pd pages).
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM Handle.
+ * @param   pPage       PGM pool page
+ */
+DECLINLINE(int) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
+{
+    Assert(!pPage->fLocked);
+    pPage->fLocked = true;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Unlocks a page to allow flushing again
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM Handle.
+ * @param   pPage       PGM pool page
+ */
+DECLINLINE(int) pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
+{
+    Assert(pPage->fLocked);
+    pPage->fLocked = false;
+    return VINF_SUCCESS;
+}
+#endif
 
 /**
  * Tells if mappings are to be put into the shadow page table or not

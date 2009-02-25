@@ -909,22 +909,24 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
 /**
- * Checks if the page is the active CR3 or is one of the four PDs of a PAE PDPT
+ * Checks if the page is locked (e.g. the active CR3 or one of the four PDs of a PAE PDPT)
  *
- * @returns VBox status code (appropriate for GC return).
+ * @returns VBox status code.
  * @param   pVM         VM Handle.
  * @param   pPage       PGM pool page
  */
-bool pgmPoolIsActiveRootPage(PVM pVM, PPGMPOOLPAGE pPage)
+bool pgmPoolIsPageLocked(PVM pVM, PPGMPOOLPAGE pPage)
 {
-    /* First check the simple case. */
-    if (pPage == pVM->pgm.s.CTX_SUFF(pShwPageCR3))
+    if (pPage->fLocked)
     {
-        LogFlow(("pgmPoolIsActiveRootPage found CR3 root\n"));
+        LogFlow(("pgmPoolIsPageLocked found root page %s\n", pgmPoolPoolKindToStr(pPage->enmKind)));
         if (pPage->cModifications)
             pPage->cModifications = 1; /* reset counter (can't use 0, or else it will be reinserted in the modified list) */
         return true;
     }
+
+#ifdef VBOX_STRICT
+    Assert(pPage != pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 
 # ifndef IN_RING0
     switch (PGMGetShadowMode(pVM))
@@ -945,15 +947,8 @@ bool pgmPoolIsActiveRootPage(PVM pVM, PPGMPOOLPAGE pPage)
 
                     for (unsigned i=0;i<X86_PG_PAE_PDPE_ENTRIES;i++)
                     {
-                        if (   (pPdpt->a[i].u & PGM_PLXFLAGS_MAPPING)
-                            &&  pPage->Core.Key == (pPdpt->a[i].u & X86_PDPE_PG_MASK))
-                        {
-                            Assert(pPdpt->a[i].n.u1Present);
-                            LogFlow(("pgmPoolIsActiveRootPage found PAE PDPE root\n"));
-                            if (pPage->cModifications)
-                                pPage->cModifications = 1; /* reset counter (can't use 0, or else it will be reinserted in the modified list) */
-                            return true;
-                        }
+                        Assert(   !(pPdpt->a[i].u & PGM_PLXFLAGS_MAPPING) 
+                               || (pPage->Core.Key != (pPdpt->a[i].u & X86_PDPE_PG_MASK)));
                     }
                     break;
                 }
@@ -963,6 +958,7 @@ bool pgmPoolIsActiveRootPage(PVM pVM, PPGMPOOLPAGE pPage)
         }
     }
 # endif
+#endif /* VBOX_STRICT */
     return false;
 }
 #endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
@@ -1314,7 +1310,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     bool fReused = false;
     if (    (   pPage->cModifications < 48   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-             || pgmPoolIsActiveRootPage(pVM, pPage)
+             || pgmPoolIsPageLocked(pVM, pPage)
 #else
              || pPage->fCR3Mix
 #endif
@@ -1477,7 +1473,7 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
      * Reject any attempts at flushing the currently active shadow CR3 mapping
      */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (pgmPoolIsActiveRootPage(pPool->CTX_SUFF(pVM), pPage))
+    if (pgmPoolIsPageLocked(pPool->CTX_SUFF(pVM), pPage))
 #else
     if (PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) == pPage->Core.Key)
 #endif
@@ -3156,7 +3152,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
 
     /* Safety precaution in case we change the paging for other modes too in the future. */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    Assert(!pgmPoolIsActiveRootPage(pPool->CTX_SUFF(pVM), pPage));
+    Assert(!pgmPoolIsPageLocked(pPool->CTX_SUFF(pVM), pPage));
 #else
     Assert(PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) != pPage->Core.Key);
 #endif
@@ -4359,7 +4355,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
      */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (pgmPoolIsActiveRootPage(pPool->CTX_SUFF(pVM), pPage))
+    if (pgmPoolIsPageLocked(pPool->CTX_SUFF(pVM), pPage))
     {
         AssertMsg(   pPage->enmKind == PGMPOOLKIND_64BIT_PML4
                   || pPage->enmKind == PGMPOOLKIND_PAE_PDPT

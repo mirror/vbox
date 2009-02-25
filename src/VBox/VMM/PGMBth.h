@@ -147,13 +147,15 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
     {
+        Assert(pVM->pgm.s.pShwPageCR3R3->enmKind != PGMPOOLKIND_FREE);
+
+        /* Mark the page as unlocked; allow flushing again. */
+        pgmPoolUnlockPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+
         /* Remove the hypervisor mappings from the shadow page table. */
         pgmMapDeactivateCR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 
-        /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
-        /** @todo Coordinate this better with the pool. */
-        if (pVM->pgm.s.pShwPageCR3R3->enmKind != PGMPOOLKIND_FREE)
-            pgmPoolFreeByPage(pPool, pVM->pgm.s.pShwPageCR3R3, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
+        pgmPoolFreeByPage(pPool, pVM->pgm.s.pShwPageCR3R3, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
         pVM->pgm.s.pShwPageCR3R3 = 0;
         pVM->pgm.s.pShwPageCR3RC = 0;
         pVM->pgm.s.pShwPageCR3R0 = 0;
@@ -178,6 +180,10 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
         return VINF_PGM_SYNC_CR3;
     }
     AssertRCReturn(rc, rc);
+
+    /* Mark the page as locked; disallow flushing. */
+    pgmPoolLockPage(pPool, pVM->pgm.s.pShwPageCR3R3);
+
     pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.pShwPageCR3R3);
     pVM->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVM->pgm.s.pShwPageCR3R3);
     pVM->pgm.s.pShwRootR3    = (R3PTRTYPE(void *))pVM->pgm.s.pShwPageCR3R3->pvPageR3;
