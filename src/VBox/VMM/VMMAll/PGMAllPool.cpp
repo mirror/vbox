@@ -1253,7 +1253,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     bool fReused = false;
     if (    (   pPage->cModifications < 48   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-             || pgmPoolIsPageLocked(pVM, pPage)
+             || pgmPoolIsPageLocked(&pVM->pgm.s, pPage)
 #else
              || pPage->fCR3Mix
 #endif
@@ -1416,7 +1416,7 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
      * Reject any attempts at flushing the currently active shadow CR3 mapping
      */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (pgmPoolIsPageLocked(pPool->CTX_SUFF(pVM), pPage))
+    if (pgmPoolIsPageLocked(&pPool->CTX_SUFF(pVM)->pgm.s, pPage))
 #else
     if (PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) == pPage->Core.Key)
 #endif
@@ -3095,7 +3095,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
 
     /* Safety precaution in case we change the paging for other modes too in the future. */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    Assert(!pgmPoolIsPageLocked(pPool->CTX_SUFF(pVM), pPage));
+    Assert(!pgmPoolIsPageLocked(&pPool->CTX_SUFF(pVM)->pgm.s, pPage));
 #else
     Assert(PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) != pPage->Core.Key);
 #endif
@@ -4298,7 +4298,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
      */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (pgmPoolIsPageLocked(pPool->CTX_SUFF(pVM), pPage))
+    if (pgmPoolIsPageLocked(&pPool->CTX_SUFF(pVM)->pgm.s, pPage))
     {
         AssertMsg(   pPage->enmKind == PGMPOOLKIND_64BIT_PML4
                   || pPage->enmKind == PGMPOOLKIND_PAE_PDPT
