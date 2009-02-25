@@ -4758,6 +4758,26 @@ DECLINLINE(int) pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     pPage->fLocked = false;
     return VINF_SUCCESS;
 }
+
+/**
+ * Checks if the page is locked (e.g. the active CR3 or one of the four PDs of a PAE PDPT)
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM Handle.
+ * @param   pPage       PGM pool page
+ */
+DECLINLINE(bool) pgmPoolIsPageLocked(PVM pVM, PPGMPOOLPAGE pPage)
+{
+    if (pPage->fLocked)
+    {
+        LogFlow(("pgmPoolIsPageLocked found root page %s\n", pgmPoolPoolKindToStr(pPage->enmKind)));
+        if (pPage->cModifications)
+            pPage->cModifications = 1; /* reset counter (can't use 0, or else it will be reinserted in the modified list) */
+        return true;
+    }
+    Assert(pPage != pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    return false;
+}
 #endif
 
 /**
