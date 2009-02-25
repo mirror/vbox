@@ -2192,7 +2192,8 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
      */
     register unsigned iPage = pVM->pgm.s.iDynPageMapLast;
 #  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    for (unsigned i=0;i<(MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT);i++)
+    unsigned i;
+    for (i=0;i<(MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT);i++)
     {
         pVM->pgm.s.iDynPageMapLast = iPage = (iPage + 1) & ((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) - 1);
         if (!(pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u & PGM_PTFLAGS_DYN_LOCKED))

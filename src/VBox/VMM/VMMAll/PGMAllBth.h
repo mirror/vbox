@@ -4642,20 +4642,22 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     PPGMPOOLPAGE pOldShwPageCR3    = pVM->pgm.s.CTX_SUFF(pShwPageCR3);
     uint32_t     iOldShwUserTable  = pVM->pgm.s.iShwUserTable;
     uint32_t     iOldShwUser       = pVM->pgm.s.iShwUser;
+    PPGMPOOLPAGE pNewShwPageCR3;
 
     Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
-    rc = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    rc = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, &pNewShwPageCR3);
     if (rc == VERR_PGM_POOL_FLUSHED)
     {
         Log(("MapCR3: PGM pool flushed -> signal sync cr3\n"));
-        pVM->pgm.s.CTX_SUFF(pShwPageCR3) = pOldShwPageCR3;
         Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
         return VINF_PGM_SYNC_CR3;
     }
     AssertRCReturn(rc, rc);
     rc = VINF_SUCCESS;
+
     pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
     pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
+    pVM->pgm.s.CTX_SUFF(pShwPageCR3) = pNewShwPageCR3;
 #  ifdef IN_RING0
     pVM->pgm.s.pShwPageCR3R3 = MMHyperCCToR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
     pVM->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
@@ -4681,7 +4683,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL));
 #   endif
-    rc = PGMMapActivateAll(pVM);
+    rc = pgmMapActivateCR3(pVM, pNewShwPageCR3);
     AssertRCReturn(rc, rc);
 #  endif
 
@@ -4782,7 +4784,7 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
 
 # ifndef PGM_WITHOUT_MAPPINGS
     /* Remove the hypervisor mappings from the shadow page table. */
-    PGMMapDeactivateAll(pVM);
+    pgmMapDeactivateCR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 # endif
 
     pVM->pgm.s.pShwRootR3 = 0;

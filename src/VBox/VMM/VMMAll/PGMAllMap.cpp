@@ -531,8 +531,9 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
  *
  * @returns VBox status.
  * @param   pVM         The virtual machine.
+ * @param   pShwPageCR3 CR3 root page
  */
-VMMDECL(int) PGMMapActivateAll(PVM pVM)
+int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
 {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /*
@@ -551,7 +552,7 @@ VMMDECL(int) PGMMapActivateAll(PVM pVM)
     Log4(("PGMMapActivateAll fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
 
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    Assert(pShwPageCR3 && pShwPageCR3 == pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 # endif
 
     /*
@@ -562,45 +563,6 @@ VMMDECL(int) PGMMapActivateAll(PVM pVM)
         unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
 
         pgmMapSetShadowPDEs(pVM, pCur, iPDE);
-    }
-    return VINF_SUCCESS;
-}
-
-/**
- * Remove the hypervisor mappings from the active CR3
- *
- * @returns VBox status.
- * @param   pVM         The virtual machine.
- */
-VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
-{
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    /*
-     * Can skip this if mappings are disabled.
-     */
-    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
-#else
-    /*
-     * Can skip this if mappings are safely fixed.
-     */
-    if (pVM->pgm.s.fMappingsFixed)
-#endif
-        return VINF_SUCCESS;
-
-    Log(("PGMMapDeactivateAll fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
-
-# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-# endif
-
-    /*
-     * Iterate mappings.
-     */
-    for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
-    {
-        unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
-
-        pgmMapClearShadowPDEs(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pCur, iPDE);
     }
     return VINF_SUCCESS;
 }
@@ -629,7 +591,7 @@ int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
         return VINF_SUCCESS;
 
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    Assert(pShwPageCR3);
 # endif
 
     /*

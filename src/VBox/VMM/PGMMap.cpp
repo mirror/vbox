@@ -651,7 +651,7 @@ VMMR3DECL(int) PGMR3MappingsDisable(PVM pVM)
     int rc = PGMR3MappingsSize(pVM, &cb);
     AssertRCReturn(rc, rc);
 
-    rc = PGMMapDeactivateAll(pVM);
+    rc = pgmMapDeactivateCR3(pVM, pVM->pgm.s.pShwPageCR3R3);
     AssertRCReturn(rc, rc);
 
     /*
