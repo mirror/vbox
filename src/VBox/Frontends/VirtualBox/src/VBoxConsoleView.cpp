@@ -4090,11 +4090,7 @@ void VBoxConsoleView::setMouseCoalescingEnabled (bool aOn)
        the keyboard/mouse is grabbed (this is when we have a valid
        event handler). */
     if (aOn || mKeyboardGrabbed)
-# ifdef QT_MAC_USE_COCOA
-        ::VBoxCocoaApplication_setMouseCoalescingEnabled (aOn);
-# else
-        ::SetMouseCoalescingEnabled (aOn, NULL);
-# endif
+        ::darwinSetMouseCoalescingEnabled (aOn);
 }
 
 #endif /* Q_WS_MAC */

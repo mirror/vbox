@@ -26,6 +26,7 @@
 #include "VBoxCocoaApplication.h"
 #include "DarwinKeyboard.h"
 #include <iprt/assert.h>
+#import <AppKit/NSWindow.h>
 #import <AppKit/NSEvent.h>
 
 #include <stdio.h>
@@ -292,17 +293,6 @@ uint32_t VBoxCocoaApplication_getEventModifierFlagsXlated(const void *pvEvent)
 
 
 /**
- * Calls the + (void)setMouseCoalescingEnabled:(BOOL)flag class method.
- *
- * @param   fEnabled    Whether to enable or disable coalescing.
- */
-void VBoxCocoaApplication_setMouseCoalescingEnabled(bool fEnabled)
-{
-    [NSEvent setMouseCoalescingEnabled:fEnabled];
-}
-
-
-/**
  * Get the name for a Cocoa event type.
  *
  * @returns Read-only name string.
@@ -336,7 +326,7 @@ const char *VBoxCocoaApplication_eventTypeName(unsigned long eEvtType)
         EVT_CASE(NSOtherMouseDown);
         EVT_CASE(NSOtherMouseUp);
         EVT_CASE(NSOtherMouseDragged);
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
+#if MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_5
         EVT_CASE(NSEventTypeGesture);
         EVT_CASE(NSEventTypeMagnify);
         EVT_CASE(NSEventTypeSwipe);
@@ -466,7 +456,7 @@ void VBoxCocoaApplication_printEvent(const char *pszPrefix, const void *pvEvent)
         case NSOtherMouseDown:
         case NSOtherMouseUp:
         case NSOtherMouseDragged:
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
+#if MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_5
         case NSEventTypeGesture:
         case NSEventTypeMagnify:
         case NSEventTypeSwipe:

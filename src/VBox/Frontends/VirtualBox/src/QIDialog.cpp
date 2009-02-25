@@ -49,7 +49,7 @@ void QIDialog::showEvent (QShowEvent * /* aEvent */)
 # ifdef QT_MAC_USE_COCOA
         /** @todo Carbon -> Cocoa */
 # else
-        ChangeWindowAttributes (::darwinToWindowRef (this), kWindowNoAttributes, kWindowResizableAttribute);
+        ChangeWindowAttributes (::darwinToNativeWindow (this), kWindowNoAttributes, kWindowResizableAttribute);
 # endif
 #endif /* Q_WS_MAC */
     }

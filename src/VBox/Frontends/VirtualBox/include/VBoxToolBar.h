@@ -80,7 +80,7 @@ public:
 # ifdef QT_MAC_USE_COCOA
             /** @todo Carbon -> Cocoa */
 # else  /* !QT_MAC_USE_COCOA */
-            WindowRef window = ::darwinToWindowRef (this);
+            WindowRef window = ::darwinToNativeWindow (this);
             EventHandlerUPP eventHandler = ::NewEventHandlerUPP (VBoxToolBar::macEventFilter);
             EventTypeSpec eventTypes[2];
             eventTypes[0].eventClass = kEventClassMouse;
@@ -122,7 +122,7 @@ public:
     void setShowToolBarButton (bool aShow)
     {
 #ifdef Q_WS_MAC
-        ::darwinSetShowToolBarButton (this, aShow);
+        ::darwinSetShowsToolbarButton (this, aShow);
 #else  /* Q_WS_MAC */
         NOREF (aShow);
 #endif /* !Q_WS_MAC */

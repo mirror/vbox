@@ -163,7 +163,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
     QWidget* viewport = mView->viewport();
     Assert (VALID_PTR (viewport));
 
-    HIViewRef viewRef = ::darwinToHIViewRef (viewport);
+    HIViewRef viewRef = ::darwinToNativeView (viewport);
     Assert (VALID_PTR (viewRef));
     /* Get the dimensions of this HIView */
     HIRect viewRect;

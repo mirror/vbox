@@ -367,6 +367,7 @@ VBoxSettingsToolBarSelector::VBoxSettingsToolBarSelector (QWidget *aParent /* = 
     mTbSelector = new VBoxToolBar (aParent);
     mTbSelector->setUsesTextLabel (true);
     mTbSelector->setIconSize (QSize (32, 32));
+    mTbSelector->setShowToolBarButton (false);
     /* Init the action group for house keeping */
     mActionGroup = new QActionGroup (this);
     mActionGroup->setExclusive (true);

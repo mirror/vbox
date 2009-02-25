@@ -19,7 +19,6 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-
 #include "VBoxSettingsDialog.h"
 #include "VBoxSettingsUtils.h"
 #include "VBoxGlobal.h"
@@ -38,7 +37,6 @@
 #include <QPushButton>
 #include <QStackedWidget>
 
-
 #if MAC_LEOPARD_STYLE
 # define VBOX_GUI_WITH_TOOLBAR_SETTINGS
 #endif /* MAC_LEOPARD_STYLE */
@@ -55,6 +53,7 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     /* Apply UI decorations */
     Ui::VBoxSettingsDialog::setupUi (this);
 
+//    setToolbar (new VBoxToolBar (this));
 #ifdef Q_WS_MAC
 //    VBoxGlobal::setLayoutMargin (centralWidget()->layout(), 0);
     /* No status bar on the mac */
@@ -276,6 +275,7 @@ void VBoxSettingsDialog::categoryChanged (int aId)
     mLbTitle->setText (mSelector->itemText (aId));
     mStack->setCurrentIndex (mStack->indexOf (rootPage));
 #else /* Q_WS_MAC */
+# ifndef QT_MAC_USE_COCOA
     QSize cs = size();
     /* First make all fully resizeable */
     setMinimumSize (QSize (minimumWidth(), 0));
@@ -299,6 +299,11 @@ void VBoxSettingsDialog::categoryChanged (int aId)
         /* Make the widget fixed size */
         setFixedSize (ss);
     }
+# else /* QT_MAC_USE_COCOA */
+    for (int i = 0; i < mStack->count(); ++i)
+        mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
+    mStack->setCurrentIndex (mStack->indexOf (rootPage));
+# endif /* QT_MAC_USE_COCOA */
 #endif /* !Q_WS_MAC */
 # ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     setWindowTitle (dialogTitle());
@@ -414,6 +419,7 @@ void VBoxSettingsDialog::showEvent (QShowEvent *aEvent)
 
     int minWidth = mSelector->minWidth();
 #ifdef Q_WS_MAC
+# ifndef QT_MAC_USE_COCOA
     /* Set all size policies to ignored */
     for (int i = 0; i < mStack->count(); ++i)
         mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
@@ -431,6 +437,9 @@ void VBoxSettingsDialog::showEvent (QShowEvent *aEvent)
     }
 
     categoryChanged (mSelector->currentId());
+# else /* QT_MAC_USE_COCOA */
+    categoryChanged (mSelector->currentId());
+# endif /* QT_MAC_USE_COCOA */
 #else /* Q_WS_MAC */
     /* Resize to the minimum possible size */
     QSize s = minimumSize();

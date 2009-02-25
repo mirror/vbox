@@ -151,7 +151,9 @@ endif
 VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QIMAGE VBOX_WITHOUT_QHTTP
+ifndef VBOX_WITH_COCOA_QT
 VirtualBox_DEFS.darwin.x86= VBOX_GUI_USE_QUARTZ2D USE_HID_FOR_MODIFIERS
+endif
 VirtualBox_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox_DEFS.linux     = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
@@ -402,7 +404,11 @@ endif
 
 ifdef VBOX_WITH_COCOA_QT
  VirtualBox_SOURCES.darwin += \
-	src/darwin/VBoxCocoaApplication.m
+	src/darwin/VBoxCocoaApplication.m \
+	src/darwin/VBoxUtils-darwin-cocoa.m
+else
+ VirtualBox_SOURCES.darwin += \
+	src/darwin/VBoxUtils-darwin-carbon.cpp
 endif
 
 # The Qt modules we're using.
