@@ -907,63 +907,6 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
     }
 }
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-/**
- * Checks if the page is locked (e.g. the active CR3 or one of the four PDs of a PAE PDPT)
- *
- * @returns VBox status code.
- * @param   pVM         VM Handle.
- * @param   pPage       PGM pool page
- */
-bool pgmPoolIsPageLocked(PVM pVM, PPGMPOOLPAGE pPage)
-{
-    if (pPage->fLocked)
-    {
-        LogFlow(("pgmPoolIsPageLocked found root page %s\n", pgmPoolPoolKindToStr(pPage->enmKind)));
-        if (pPage->cModifications)
-            pPage->cModifications = 1; /* reset counter (can't use 0, or else it will be reinserted in the modified list) */
-        return true;
-    }
-
-#ifdef VBOX_STRICT
-    Assert(pPage != pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-
-# ifndef IN_RING0
-    switch (PGMGetShadowMode(pVM))
-    {
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-        {
-            switch (pPage->enmKind)
-            {
-                case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-                case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
-                case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
-                case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
-                case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
-                {
-                    PX86PDPT pPdpt = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
-                    Assert(pPdpt);
-
-                    for (unsigned i=0;i<X86_PG_PAE_PDPE_ENTRIES;i++)
-                    {
-                        Assert(   !(pPdpt->a[i].u & PGM_PLXFLAGS_MAPPING) 
-                               || (pPage->Core.Key != (pPdpt->a[i].u & X86_PDPE_PG_MASK)));
-                    }
-                    break;
-                }
-            }
-
-            break;
-        }
-    }
-# endif
-#endif /* VBOX_STRICT */
-    return false;
-}
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
-
-
 # ifndef IN_RING3
 /**
  * Checks if a access could be a fork operation in progress.
