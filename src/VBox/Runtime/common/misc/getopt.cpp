@@ -61,6 +61,8 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
         Assert(paOptions[i].iShort != '-');
     }
 
+    /** @todo Add an flag for sorting the arguments so that all the options comes
+     *        first. */
     return VINF_SUCCESS;
 }
 
@@ -133,6 +135,12 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
     pValueUnion->u64 = 0;
     pValueUnion->pDef = NULL;
 
+    /** @todo Handle '--' (end of options).*/
+    /** @todo Add a flag to RTGetOptInit for handling the various help options in
+     *        a common way. (-?,-h,-help,--help,++) */
+    /** @todo Add a flag to RTGetOptInit for handling the standard version options
+     *        in a common way. (-V,--version) */
+
     /*
      * The next option.
      */
@@ -184,14 +192,6 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
         else
             fShort = false;
     }
-
-
-    /** @todo Handle '--' and possibly implement an RTGetOptInit that lets us
-     *        optionally sort the stuff and set other policeis sorts the result.  */
-    /** @todo Implement short form short option like in:
-     *                  ls -latr .
-     *                  tar -xzvf foobar.tar.gz
-     */
 
     if (pOpt)
     {
