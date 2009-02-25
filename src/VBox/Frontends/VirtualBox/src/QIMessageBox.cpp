@@ -213,9 +213,11 @@ void QIArrowSplitter::toggleWidget()
     /* Update main layout of message window at last */
     window()->layout()->update();
     window()->layout()->activate();
+    qApp->processEvents();
 
     /* Now resize window to minimum possible size */
     window()->resize (window()->minimumSizeHint());
+    qApp->processEvents();
 
     /* Check if we have to make dialog fixed in height */
     bool makeFixedHeight = true;
@@ -228,7 +230,7 @@ void QIArrowSplitter::toggleWidget()
         }
     }
     if (makeFixedHeight)
-        window()->setMaximumHeight (window()->minimumSizeHint().height());
+        window()->setFixedHeight (window()->minimumSizeHint().height());
     else
         window()->setMaximumHeight (QWIDGETSIZE_MAX);
 }
