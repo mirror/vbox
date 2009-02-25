@@ -1422,6 +1422,11 @@ static DECLCALLBACK(int) selmR3GuestTSSWriteHandler(PVM pVM, RTGCPTR GCPtr, void
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
     Log(("selmR3GuestTSSWriteHandler: write %.*Rhxs to %RGv size %d\n", RT_MIN(8, cbBuf), pvBuf, GCPtr, cbBuf));
 
+    /** @todo This can be optimized by checking for the ESP0 offset and tracking TR
+     *        reloads in REM (setting VM_FF_SELM_SYNC_TSS if TR is reloaded). We
+     *        should probably also deregister the virtual handler if TR.base/size
+     *        changes while we're in REM. */
+
     VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
 
     return VINF_PGM_HANDLER_DO_DEFAULT;
