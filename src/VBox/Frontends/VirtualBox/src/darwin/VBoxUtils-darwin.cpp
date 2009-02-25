@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,122 +19,73 @@
  * additional information or have any questions.
  */
 
+#include "VBoxUtils-darwin.h"
 
-
-#include "VBoxUtils.h"
-#include "VBoxFrameBuffer.h"
-#include "VBoxConsoleView.h"
-
-#include <iprt/assert.h>
-#include <iprt/mem.h>
-
-#include <CoreFoundation/CFBundle.h>
-#include <Carbon/Carbon.h>
-
-/* Qt includes */
-#include <QImage>
-#include <QPixmap>
-#include <QPainter>
 #include <QApplication>
+#include <QWidget>
 #include <QToolBar>
-#include <QMainWindow>
-#include <QStatusBar>
+#include <QPainter>
+#include <QPixmap>
+
+#include <Carbon/Carbon.h>
 
 #if QT_VERSION < 0x040400
 extern void qt_mac_set_menubar_icons(bool b);
 #endif /* QT_VERSION < 0x040400 */
 
-#ifndef QT_MAC_USE_COCOA
-
-/**
- * Callback for deleting the QImage object when CGImageCreate is done
- * with it (which is probably not until the returned CFGImageRef is released).
- *
- * @param   info        Pointer to the QImage.
- */
-static void darwinDataProviderReleaseQImage (void *info, const void *, size_t)
+NativeViewRef darwinToNativeView (QWidget *aWidget)
 {
-    QImage *qimg = (QImage *)info;
-    delete qimg;
+    return reinterpret_cast<NativeViewRef>(aWidget->winId());
 }
 
-/**
- * Converts a QPixmap to a CGImage.
- *
- * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
- * @param   aPixmap     Pointer to the QPixmap instance to convert.
- */
-CGImageRef darwinToCGImageRef (const QImage *aImage)
+NativeWindowRef darwinToNativeWindow (QWidget *aWidget)
 {
-    QImage *imageCopy = new QImage (*aImage);
-    /** @todo this code assumes 32-bit image input, the lazy bird convert image to 32-bit method is anything but optimal... */
-    if (imageCopy->format() != QImage::Format_ARGB32)
-        *imageCopy = imageCopy->convertToFormat (QImage::Format_ARGB32);
-    Assert (!imageCopy->isNull());
-
-    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
-    CGDataProviderRef dp = CGDataProviderCreateWithData (imageCopy, aImage->bits(), aImage->numBytes(), darwinDataProviderReleaseQImage);
-
-    CGBitmapInfo bmpInfo = kCGImageAlphaFirst | kCGBitmapByteOrder32Host;
-    CGImageRef ir = CGImageCreate (imageCopy->width(), imageCopy->height(), 8, 32, imageCopy->bytesPerLine(), cs,
-                                   bmpInfo, dp, 0 /*decode */, 0 /* shouldInterpolate */,
-                                   kCGRenderingIntentDefault);
-    CGColorSpaceRelease (cs);
-    CGDataProviderRelease (dp);
-
-    Assert (ir);
-    return ir;
+    return darwinToNativeWindowImpl (::darwinToNativeView (aWidget));
 }
 
-/**
- * Converts a QPixmap to a CGImage.
- *
- * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
- * @param   aPixmap     Pointer to the QPixmap instance to convert.
- */
-CGImageRef darwinToCGImageRef (const QPixmap *aPixmap)
-{
-    return aPixmap->toMacCGImageRef();
+NativeWindowRef darwinToNativeWindow (NativeViewRef aView)
+{ 
+    return darwinToNativeWindowImpl (aView);
 }
 
-/**
- * Loads an image using Qt and converts it to a CGImage.
- *
- * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
- * @param   aSource     The source name.
- */
-CGImageRef darwinToCGImageRef (const char *aSource)
-{
-    QPixmap qpm (QString(":/") + aSource);
-    Assert (!qpm.isNull());
-    return ::darwinToCGImageRef (&qpm);
-}
-
-#endif /* !QT_MAC_USE_COCOA */
-
-void darwinSetShowToolBarButton (QToolBar *aToolBar, bool aShow)
+void darwinSetShowsToolbarButton (QToolBar *aToolBar, bool aEnabled)
 {
     QWidget *parent = aToolBar->parentWidget();
     if (parent)
-    {
-#ifdef QT_MAC_USE_COCOA
-        /** @todo Carbon -> Cocoa */
-#else
-        int err = ChangeWindowAttributes (::darwinToWindowRef (parent), aShow ? kWindowToolbarButtonAttribute:kWindowNoAttributes,
-                                                                        aShow ? kWindowNoAttributes:kWindowToolbarButtonAttribute);
-        AssertCarbonOSStatus (err);
-#endif
-    }
+        darwinSetShowsToolbarButtonImpl (::darwinToNativeWindow (parent), aEnabled);
 }
 
-void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget)
+QString darwinSystemLanguage (void)
 {
-#ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa */
-#else
-    HIRect r = ::darwinToHIRect (aTarget);
-    TransitionWindowWithOptions (::darwinToWindowRef (aWidget), kWindowSlideTransitionEffect, kWindowResizeTransitionAction, &r, false, NULL);
-#endif
+    /* Get the locales supported by our bundle */
+    CFArrayRef supportedLocales = ::CFBundleCopyBundleLocalizations (::CFBundleGetMainBundle());
+    /* Check them against the languages currently selected by the user */
+    CFArrayRef preferredLocales = ::CFBundleCopyPreferredLocalizationsFromArray (supportedLocales);
+    /* Get the one which is on top */
+    CFStringRef localeId = (CFStringRef)::CFArrayGetValueAtIndex (preferredLocales, 0);
+    /* Convert them to a C-string */
+    char localeName[20];
+    ::CFStringGetCString (localeId, localeName, sizeof (localeName), kCFStringEncodingUTF8);
+    /* Some cleanup */
+    ::CFRelease (supportedLocales);
+    ::CFRelease (preferredLocales);
+    QString id(localeName);
+    /* Check for some misbehavior */
+    if (id.isEmpty() ||
+        id.toLower() == "english")
+        id = "en";
+    return id;
+}
+
+void darwinDisableIconsInMenus (void)
+{
+    /* No icons in the menu of a mac application. */
+#if QT_VERSION < 0x040400
+    qt_mac_set_menubar_icons (false);
+#else /* QT_VERSION < 0x040400 */
+    /* Available since Qt 4.4 only */
+    QApplication::instance()->setAttribute (Qt::AA_DontShowIconsInMenus, true);
+#endif /* QT_VERSION >= 0x040400 */
 }
 
 /* Proxy icon creation */
@@ -156,177 +107,12 @@ QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText)
     return dragPixmap;
 }
 
-QString darwinSystemLanguage (void)
-{
-    /* Get the locales supported by our bundle */
-    CFArrayRef supportedLocales = CFBundleCopyBundleLocalizations (CFBundleGetMainBundle());
-    /* Check them against the languages currently selected by the user */
-    CFArrayRef preferredLocales = CFBundleCopyPreferredLocalizationsFromArray (supportedLocales);
-    /* Get the one which is on top */
-    CFStringRef localeId = (CFStringRef)CFArrayGetValueAtIndex (preferredLocales, 0);
-    /* Convert them to a C-string */
-    char localeName[20];
-    CFStringGetCString (localeId, localeName, sizeof (localeName), kCFStringEncodingUTF8);
-    /* Some cleanup */
-    CFRelease (supportedLocales);
-    CFRelease (preferredLocales);
-    QString id(localeName);
-    /* Check for some misbehavior */
-    if (id.isEmpty() ||
-        id.toLower() == "english")
-        id = "en";
-    return id;
-}
 
-bool darwinIsMenuOpen (void)
-{
-#ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa */
-    return false;
-#else
-    MenuTrackingData outData;
-    return (GetMenuTrackingData (NULL, &outData) != menuNotFoundErr);
-#endif
-}
-
-void darwinDisableIconsInMenus (void)
-{
-    /* No icons in the menu of a mac application. */
-#if QT_VERSION < 0x040400
-    qt_mac_set_menubar_icons (false);
-#else /* QT_VERSION < 0x040400 */
-    /* Available since Qt 4.4 only */
-    QApplication::instance()->setAttribute (Qt::AA_DontShowIconsInMenus, true);
-#endif /* QT_VERSION >= 0x040400 */
-}
-
-#ifndef QT_MAC_USE_COCOA
-
-/* Currently not used! */
-OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
-{
-    NOREF (aInHandlerCallRef);
-
-    OSStatus status = eventNotHandledErr;
-
-    switch (GetEventKind (aInEvent))
-    {
-        case kEventWindowGetRegion:
-        {
-            WindowRegionCode code;
-            RgnHandle rgn;
-
-            /* which region code is being queried? */
-            GetEventParameter (aInEvent, kEventParamWindowRegionCode, typeWindowRegionCode, NULL, sizeof (code), NULL, &code);
-
-            /* if it is the opaque region code then set the region to Empty and return noErr to stop the propagation */
-            if (code == kWindowOpaqueRgn)
-            {
-                printf("test1\n");
-                GetEventParameter (aInEvent, kEventParamRgnHandle, typeQDRgnHandle, NULL, sizeof (rgn), NULL, &rgn);
-                SetEmptyRgn (rgn);
-                status = noErr;
-            }
-            /* if the content of the whole window is queried return a copy of our saved region. */
-            else if (code == (kWindowStructureRgn))// || kWindowGlobalPortRgn || kWindowUpdateRgn))
-            {
-                printf("test2\n");
-                GetEventParameter (aInEvent, kEventParamRgnHandle, typeQDRgnHandle, NULL, sizeof (rgn), NULL, &rgn);
-                QRegion *pRegion = static_cast <QRegion*> (aInUserData);
-                if (!pRegion->isEmpty() && pRegion)
-                {
-                    CopyRgn (pRegion->handle(), rgn);
-                    status = noErr;
-                }
-            }
-            break;
-        }
-        case kEventControlDraw:
-        {
-            printf("test3\n");
-            CGContextRef ctx;
-            HIRect bounds;
-
-            GetEventParameter (aInEvent, kEventParamCGContextRef, typeCGContextRef, NULL, sizeof (ctx), NULL, &ctx);
-            HIViewGetBounds ((HIViewRef)aInUserData, &bounds);
-
-            CGContextClearRect (ctx, bounds);
-            status = noErr;
-            break;
-        }
-    }
-
-    return status;
-}
-
-OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
-{
-    if (!aInUserData)
-        return ::CallNextEventHandler (aInHandlerCallRef, aInEvent);
-
-    UInt32 eventClass = ::GetEventClass (aInEvent);
-    UInt32 eventKind = ::GetEventKind (aInEvent);
-    /* For debugging events */
-    /*
-    if (!(eventClass == 'cute'))
-        ::darwinDebugPrintEvent ("view: ", aInEvent);
-    */
-    VBoxConsoleView *view = static_cast<VBoxConsoleView *> (aInUserData);
-
-    if (eventClass == kEventClassVBox)
-    {
-        if (eventKind == kEventVBoxShowWindow)
-        {
-//            printf ("ShowWindow requested\n");
-            WindowRef w;
-            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
-                return noErr;
-            ShowWindow (w);
-            SelectWindow (w);
-            return noErr;
-        }
-        if (eventKind == kEventVBoxMoveWindow)
-        {
-//            printf ("MoveWindow requested\n");
-            WindowPtr w;
-            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
-                return noErr;
-            HIPoint p;
-            if (GetEventParameter (aInEvent, kEventParamOrigin, typeHIPoint, NULL, sizeof (p), NULL, &p) != noErr)
-                return noErr;
-            ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
-            QPoint p1 = view->mapToGlobal (QPoint (p.x, p.y));
-            MoveWindow (w, p1.x(), p1.y(), true);
-            ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether, 0);
-            return noErr;
-        }
-        if (eventKind == kEventVBoxResizeWindow)
-        {
-//            printf ("ResizeWindow requested\n");
-            WindowPtr w;
-            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
-                return noErr;
-            HISize s;
-            if (GetEventParameter (aInEvent, kEventParamDimensions, typeHISize, NULL, sizeof (s), NULL, &s) != noErr)
-                return noErr;
-            ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
-            SizeWindow (w, s.width, s.height, true);
-            ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether, 0);
-            return noErr;
-        }
-        if (eventKind == kEventVBoxUpdateDock)
-        {
-//            printf ("UpdateDock requested\n");
-            view->updateDockIcon();
-            return noErr;
-        }
-    }
-
-    return ::CallNextEventHandler (aInHandlerCallRef, aInEvent);
-}
-
-#endif /* !QT_MAC_USE_COCOA */
-
+/********************************************************************************
+ *
+ * Old carbon stuff. Have to converted soon!
+ *
+ ********************************************************************************/
 
 /* Event debugging stuff. Borrowed from Knuts Qt patch. */
 #if defined (DEBUG)
@@ -533,3 +319,4 @@ void darwinDebugPrintEvent (const char *psz, EventRef evtRef)
 }
 
 #endif /* DEBUG */
+

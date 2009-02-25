@@ -251,7 +251,7 @@ void VBoxDockIconPreview::updateDockPreview (CGImageRef aVMImage)
     CGContextDrawImage (context, flipRect (iconRect), aVMImage);
 
     /* Process the content of any external OpenGL window. */
-    WindowRef w = darwinToWindowRef (mMainWnd);
+    WindowRef w = darwinToNativeWindow (mMainWnd);
     WindowGroupRef g = GetWindowGroup (w);
     WindowGroupContentOptions wgco = kWindowGroupContentsReturnWindows | kWindowGroupContentsRecurse | kWindowGroupContentsVisible;
     ItemCount c = CountWindowGroupContents (g, wgco);

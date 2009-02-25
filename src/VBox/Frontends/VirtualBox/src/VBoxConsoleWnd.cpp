@@ -1269,7 +1269,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
                 /** @todo Carbon -> Cocoa */
 # else
                 HIRect viewRect;
-                HIViewGetBounds (::darwinToHIViewRef (this), &viewRect);
+                HIViewGetBounds (::darwinToNativeView (this), &viewRect);
                 CGContextClearRect (::darwinToCGContextRef (this), viewRect);
 # endif
             }
@@ -2384,7 +2384,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             /** @todo Carbon -> Cocoa */
 # else  /* !QT_MAC_USE_COCOA */
             OSStatus status;
-            WindowRef windowRef = ::darwinToWindowRef (this);
+            WindowRef windowRef = ::darwinToNativeWindow (this);
             Assert (VALID_PTR (windowRef));
             /* See above.
             status = RemoveEventHandler (mDarwinRegionEventHandlerRef);
@@ -2431,9 +2431,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         /** @todo Carbon -> Cocoa */
 # else  /* !QT_MAC_USE_COCOA */
         OSStatus status;
-        HIViewRef viewRef = ::darwinToHIViewRef (console->viewport());
+        HIViewRef viewRef = ::darwinToNativeView (console->viewport());
         Assert (VALID_PTR (viewRef));
-        WindowRef windowRef = ::darwinToWindowRef (viewRef);
+        WindowRef windowRef = ::darwinToNativeWindow (viewRef);
         Assert (VALID_PTR (windowRef));
         /* @todo=poetzsch: Currently this isn't necessary. I should
          * investigate if we can/should use this. */
@@ -2517,7 +2517,7 @@ void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
 # else  /* !QT_MAC_USE_COCOA */
     /* setWindowState removes the window group connection somehow. So save it
      * temporary. */
-    WindowGroupRef g = GetWindowGroup (::darwinToWindowRef (this));
+    WindowGroupRef g = GetWindowGroup (::darwinToNativeWindow (this));
     if (aSeamless)
         if (aOn)
         {
@@ -2539,7 +2539,7 @@ void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
         /* Here we are going really fullscreen */
         setWindowState (windowState() ^ Qt::WindowFullScreen);
     /* Reassign the correct window group. */
-    SetWindowGroup (::darwinToWindowRef (this), g);
+    SetWindowGroup (::darwinToNativeWindow (this), g);
 # endif /* !QT_MAC_USE_COCOA */
 #else
     NOREF (aOn);
@@ -3030,7 +3030,7 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
         /* If we are using the Quartz2D backend we have to trigger
          * an repaint only. All the magic clipping stuff is done
          * in the paint engine. */
-        HIViewReshapeStructure (::darwinToHIViewRef (console->viewport()));
+        HIViewReshapeStructure (::darwinToNativeView (console->viewport()));
 //        HIWindowInvalidateShadow (::darwinToWindowRef (console->viewport()));
 //        ReshapeCustomWindow (::darwinToWindowRef (this));
     }
