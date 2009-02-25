@@ -139,6 +139,9 @@ typedef struct SELM
     /** The guest TSS selector at last sync (part of monitoring).
      * Contains RTSEL_MAX if not set. */
     RTSEL                   GCSelTss;
+    /** The last known offset of the I/O bitmap.
+     * This is only used if we monitor the bitmap. */
+    uint16_t                offGuestIoBitmap;
 
     /** Indicates that the Guest GDT access handler have been registered. */
     bool                    fGDTRangeRegistered;
@@ -148,8 +151,7 @@ typedef struct SELM
 
     /** Indicates whether the TSS stack selector & base address need to be refreshed.  */
     bool                    fSyncTSSRing0Stack;
-    /** alignment . */
-    RTUINT                  uPadding2;
+    bool                    fPadding2[1+2];
 
     /** SELMR3UpdateFromCPUM() profiling. */
     STAMPROFILE             StatUpdateFromCPUM;
