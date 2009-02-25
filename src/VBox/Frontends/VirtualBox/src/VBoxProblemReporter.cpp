@@ -2315,14 +2315,13 @@ QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &aInfo,
 QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
                                                 HRESULT aWrapperRC /* = S_OK */)
 {
+    /* Compose complex details string with internal <!--EOM--> delimiter to
+     * make it possible to split string into info & details parts which will
+     * be used separately in QIMessageBox */
     QString formatted;
 
     if (!aInfo.text().isEmpty())
-        formatted += QString ("<table bgcolor=#FFFFFF border=0 cellspacing=0 "
-                              "cellpadding=0 width=100%>"
-                              "<tr><td><p>%1.</p></td></tr>"
-                              "</table><p></p>")
-                              .arg (VBoxGlobal::highlight (aInfo.text()));
+        formatted += QString ("<p>%1</p><!--EOM-->").arg (aInfo.text());
 
     formatted += "<table bgcolor=#EEEEEE border=0 cellspacing=0 "
                  "cellpadding=0 width=100%>";

@@ -216,6 +216,21 @@ void QIArrowSplitter::toggleWidget()
 
     /* Now resize window to minimum possible size */
     window()->resize (window()->minimumSizeHint());
+
+    /* Check if we have to make dialog fixed in height */
+    bool makeFixedHeight = true;
+    foreach (QIArrowButton *button, mButtonsList)
+    {
+        if (button->isExpanded())
+        {
+            makeFixedHeight = false;
+            break;
+        }
+    }
+    if (makeFixedHeight)
+        window()->setMaximumHeight (window()->minimumSizeHint().height());
+    else
+        window()->setMaximumHeight (QWIDGETSIZE_MAX);
 }
 
 bool QIArrowSplitter::eventFilter (QObject *aObject, QEvent *aEvent)
@@ -344,10 +359,11 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
 
     mDetailsText = new QTextEdit();
     {
-        /* calculate the minimum size dynamically, approx. for 40 chars and
-         * 6 lines */
+        /* Calculate the minimum size dynamically, approx.
+         * for 40 chars, 4 lines & 2 <table> margins */
         QFontMetrics fm = mDetailsText->fontMetrics();
-        mDetailsText->setMinimumSize (40 * fm.width ('m'), fm.lineSpacing() * 6);
+        mDetailsText->setMinimumSize (fm.width ('m') * 40,
+                                      fm.lineSpacing() * 4 + 4 * 2);
     }
     mDetailsText->setReadOnly (true);
     mDetailsText->setSizePolicy (QSizePolicy::Expanding,
@@ -512,7 +528,9 @@ QPushButton *QIMessageBox::createButton (int aButton)
  */
 void QIMessageBox::setDetailsText (const QString &aText)
 {
-    mDetailsText->setText (aText);
+    QStringList parts (aText.split ("<!--EOM-->"));
+    mTextLabel->setText (mTextLabel->text() + parts [0]);
+    mDetailsText->setText (parts [1]);
 }
 
 /** @fn QIMessageBox::isDetailsShown() const
