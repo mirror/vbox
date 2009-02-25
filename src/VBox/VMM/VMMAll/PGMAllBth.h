@@ -4655,6 +4655,9 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     AssertRCReturn(rc, rc);
     rc = VINF_SUCCESS;
 
+#  ifdef IN_RC
+    /** NOTE: We can't deal with jumps to ring 3 here as we're now in an inconsistent state! */
+#  endif
     pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
     pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
     pVM->pgm.s.CTX_SUFF(pShwPageCR3) = pNewShwPageCR3;
@@ -4689,6 +4692,10 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 
     /* Set the current hypervisor CR3. */
     CPUMSetHyperCR3(pVM, PGMGetHyperCR3(pVM));
+
+#  ifdef IN_RC
+    /** NOTE: Everything safe again. */
+#  endif
 
     /* Clean up the old CR3 root. */
     if (pOldShwPageCR3)

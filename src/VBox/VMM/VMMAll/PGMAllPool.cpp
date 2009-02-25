@@ -4473,16 +4473,23 @@ void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint3
  * @retval  VERR_PGM_POOL_FLUSHED if the pool was flushed.
  *
  * @param   pPool       The pool.
+ * @param   enmKind     Page table kind
  * @param   iUser       The user of the page.
  */
-static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, uint16_t iUser)
+static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_t iUser)
 {
     LogFlow(("pgmPoolMakeMoreFreePages: iUser=%#x\n", iUser));
 
     /*
      * If the pool isn't full grown yet, expand it.
      */
-    if (pPool->cCurPages < pPool->cMaxPages)
+    if (    pPool->cCurPages < pPool->cMaxPages
+#if defined(VBOX_WITH_PGMPOOL_PAGING_ONLY) && defined(IN_RC)
+        /* Hack alert: we can't deal with jumps to ring 3 when called from MapCR3 and allocating pages for PAE PDs. */
+        &&  enmKind != PGMPOOLKIND_PAE_PD_FOR_PAE_PD
+        &&  (enmKind < PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD || enmKind > PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD)
+#endif
+        )
     {
         STAM_PROFILE_ADV_SUSPEND(&pPool->StatAlloc, a);
 #ifdef IN_RING3
@@ -4566,7 +4573,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     uint16_t    iNew = pPool->iFreeHead;
     if (iNew == NIL_PGMPOOL_IDX)
     {
-        rc = pgmPoolMakeMoreFreePages(pPool, iUser);
+        rc = pgmPoolMakeMoreFreePages(pPool, enmKind, iUser);
         if (RT_FAILURE(rc))
         {
             if (rc != VERR_PGM_POOL_CLEARED)
