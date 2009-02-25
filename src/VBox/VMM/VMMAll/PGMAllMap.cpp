@@ -429,9 +429,6 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
  */
 void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iPDE)
 {
-    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
-        return;
-
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pShwPageCR3);
 #endif
