@@ -4658,6 +4658,9 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  ifdef IN_RC
     /** NOTE: We can't deal with jumps to ring 3 here as we're now in an inconsistent state! */
 #  endif
+    /* Mark the page as locked; disallow flushing. */
+    pgmPoolLockPage(pPool, pNewShwPageCR3);
+
     pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
     pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
     pVM->pgm.s.CTX_SUFF(pShwPageCR3) = pNewShwPageCR3;
@@ -4700,14 +4703,15 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     /* Clean up the old CR3 root. */
     if (pOldShwPageCR3)
     {
+        Assert(pOldShwPageCR3->enmKind != PGMPOOLKIND_FREE);
 #  ifndef PGM_WITHOUT_MAPPINGS
         /* Remove the hypervisor mappings from the shadow page table. */
         pgmMapDeactivateCR3(pVM, pOldShwPageCR3);
 #  endif
-        /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
-        /** @todo Coordinate this better with the pool. */
-        if (pOldShwPageCR3->enmKind != PGMPOOLKIND_FREE)
-            pgmPoolFreeByPage(pPool, pOldShwPageCR3, iOldShwUser, iOldShwUserTable);
+        /* Mark the page as unlocked; allow flushing again. */
+        pgmPoolUnlockPage(pPool, pOldShwPageCR3);
+
+        pgmPoolFreeByPage(pPool, pOldShwPageCR3, iOldShwUser, iOldShwUserTable);
     }
 
 # endif
@@ -4802,6 +4806,10 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
     if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+
+        /* Mark the page as unlocked; allow flushing again. */
+        pgmPoolUnlockPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+
         pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
         pVM->pgm.s.pShwPageCR3R3 = 0;
         pVM->pgm.s.pShwPageCR3R0 = 0;
