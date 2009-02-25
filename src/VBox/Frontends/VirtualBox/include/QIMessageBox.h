@@ -44,6 +44,45 @@ class QSpacerItem;
 class QToolButton;
 class QVBoxLayout;
 
+/** @class QIArrowButton
+ *
+ *  The QIArrowButton class is an arrow tool-botton with text-label.
+ *  It is declared here until moved into separate file in case
+ *  of it will be used somewhere except problem-reporter dialog.
+ */
+class QIArrowButton : public QWidget
+{
+    Q_OBJECT;
+
+public:
+
+    QIArrowButton (const QString &aName, QWidget *aParent = 0);
+
+    bool isExpanded() const;
+
+    void animateClick();
+
+signals:
+
+    void clicked();
+
+private slots:
+
+    void buttonClicked();
+
+private:
+
+    void updateIcon();
+
+    bool eventFilter (QObject *aObject, QEvent *aEvent);
+
+    void paintEvent (QPaintEvent *aEvent);
+
+    bool mIsExpanded;
+    QToolButton *mButton;
+    QLabel *mLabel;
+};
+
 /** @class QIArrowSplitter
  *
  *  The QIArrowSplitter class is a folding widget placeholder.
@@ -56,27 +95,20 @@ class QIArrowSplitter : public QWidget
 
 public:
 
-    enum ToggleType
-    {
-        Toggle = 0,
-        CollapsOnly,
-        ExpandOnly
-    };
-
     QIArrowSplitter (QWidget *aParent = 0);
 
     void addWidget (const QString &aName, QWidget *aWidget);
 
 public slots:
 
-    void toggleWidget (ToggleType aType = Toggle);
+    void toggleWidget();
 
 private:
 
     bool eventFilter (QObject *aObject, QEvent *aEvent);
 
     QVBoxLayout *mMainLayout;
-    QList <QToolButton*> mButtonsList;
+    QList <QIArrowButton*> mButtonsList;
     QList <QWidget*> mWidgetsList;
 };
 
