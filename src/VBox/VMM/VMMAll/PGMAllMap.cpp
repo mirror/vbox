@@ -475,13 +475,15 @@ void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                 AssertFatal(pShwPaePd);
 
                 AssertMsg(pShwPaePd->a[iPaePDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0),
-                         ("Expected %RX64 vs %RX64\n", pShwPaePd->a[iPDE].u, (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT)));
+                         ("Expected %RX64 vs %RX64\n", pShwPaePd->a[iPDE].u, (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPaePT0)));
 
                 iPaePDE++;
                 AssertFatal(iPaePDE < 512);
 
                 AssertMsg(pShwPaePd->a[iPaePDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1),
-                         ("Expected %RX64 vs %RX64\n", pShwPaePd->a[iPDE].u, (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT)));
+                         ("Expected %RX64 vs %RX64\n", pShwPaePd->a[iPDE].u, (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPaePT1)));
+
+                Assert(pPdpt->a[iPD].u & PGM_PLXFLAGS_MAPPING);
                 break;
             }
 
