@@ -586,7 +586,7 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
     }
     else if (    (   pPage->cModifications < 96 /* it's cheaper here. */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-                  || pgmPoolIsPageLocked(pVM, pPage)
+                  || pgmPoolIsPageLocked(&pVM->pgm.s, pPage)
 #else
                   || pPage->fCR3Mix
 #endif
