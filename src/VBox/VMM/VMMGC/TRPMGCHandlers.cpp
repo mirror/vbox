@@ -389,7 +389,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
          */
         else if (Cpu.prefix & PREFIX_LOCK)
         {
-            Log(("TRPMGCTrap06Handler: pc=%RGv op=%d\n", pRegFrame->eip, Cpu.pCurInstr->opcode));
+            Log(("TRPMGCTrap06Handler: pc=%08x op=%d\n", pRegFrame->eip, Cpu.pCurInstr->opcode));
 #ifdef DTRACE_EXPERIMENT /** @todo fix/remove/permanent-enable this when DIS/PATM handles invalid lock sequences. */
             Assert(!PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip));
             rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP, 0x6);
@@ -852,6 +852,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
      */
     X86EFLAGS eflags;
     eflags.u32 = CPUMRawGetEFlags(pVM, pRegFrame); /* Get the correct value. */
+    Log3(("TRPM #GP V86: cs:eip=%04x:%08x IOPL=%d efl=%08x\n", pRegFrame->cs, pRegFrame->eip, eflags.Bits.u2IOPL, eflags.u));
     if (eflags.Bits.u2IOPL != 3)
     {
         Assert(eflags.Bits.u2IOPL == 0);
@@ -877,7 +878,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
  */
 DECLASM(int) TRPMGCTrap0dHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
-    LogFlow(("TRPMGCTrap0dHandler: eip=%RGv\n", pRegFrame->eip));
+    LogFlow(("TRPMGCTrap0dHandler: eip=%08RX32\n", pRegFrame->eip));
     PVM pVM = TRPM2VM(pTrpm);
 
     int rc = trpmGCTrap0dHandler(pVM, pTrpm, pRegFrame);
@@ -931,7 +932,7 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
  */
 DECLASM(int) TRPMGCTrap0eHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
-    LogBird(("TRPMGCTrap0eHandler: eip=%RGv\n", pRegFrame->eip));
+    LogBird(("TRPMGCTrap0eHandler: eip=%08RX32\n", pRegFrame->eip));
     PVM pVM = TRPM2VM(pTrpm);
 
     /*
