@@ -1374,9 +1374,11 @@ STDMETHODIMP Appliance::Interpret()
                                    vsysThis.strSoundCardType,
                                    Utf8StrFmt("%RI32", (uint32_t)AudioControllerType_AC97));
 
+ #ifdef VBOX_WITH_USB
             /* USB Controller */
             if (vsysThis.fHasUsbController)
                 pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
+ #endif /* VBOX_WITH_USB */
 
             NetworksMap::const_iterator itN;
             for (itN = m->mapNetworks.begin();
@@ -1864,6 +1866,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                 }
             }
 
+#ifdef VBOX_WITH_USB
             /* USB Controller */
             std::list<VirtualSystemDescriptionEntry*> vsdeUSBController = vsdescThis->findByType(VirtualSystemDescriptionType_USBController);
             // USB support is enabled if there's at least one such entry; to disable USB support,
@@ -1875,6 +1878,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
             if (FAILED(rc)) throw rc;
             rc = usbController->COMSETTER(Enabled)(fUSBEnabled);
             if (FAILED(rc)) throw rc;
+#endif /* VBOX_WITH_USB */
 
             if (!task->progress.isNull())
                 task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
