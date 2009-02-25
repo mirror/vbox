@@ -493,7 +493,7 @@ VBoxNIList::VBoxNIList (QWidget *aParent)
              this, SLOT (delHostInterface()));
 # endif /* Q_WS_WIN */
 
-#if !defined(Q_WS_WIN) && !defined(VBOX_WITH_NETFLT)
+#if !defined(Q_WS_WIN) || !defined(VBOX_WITH_NETFLT))
     /* Populating interface list */
     populateInterfacesList();
 #endif
