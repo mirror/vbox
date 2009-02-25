@@ -1282,6 +1282,8 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
     pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
+    if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
+        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
     pCtx->cr4 = env->cr[4];
 
     /*
@@ -1402,6 +1404,8 @@ void remR3FlushTLB(CPUState *env, bool fGlobal)
     pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
+    if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
+        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
     pCtx->cr4 = env->cr[4];
 
     /*
@@ -1437,6 +1441,8 @@ void remR3ChangeCpuMode(CPUState *env)
     pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
+    if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
+        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
     pCtx->cr4 = env->cr[4];
 
 #ifdef TARGET_X86_64
@@ -2136,9 +2142,11 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     pCtx->cr0           = pVM->rem.s.Env.cr[0];
     pCtx->cr2           = pVM->rem.s.Env.cr[2];
     pCtx->cr3           = pVM->rem.s.Env.cr[3];
+    if ((pVM->rem.s.Env.cr[4] ^ pCtx->cr4) & X86_CR4_VME)
+        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
     pCtx->cr4           = pVM->rem.s.Env.cr[4];
 
-    for (i=0;i<8;i++)
+    for (i = 0; i < 8; i++)
         pCtx->dr[i] = pVM->rem.s.Env.dr[i];
 
     pCtx->gdtr.cbGdt    = pVM->rem.s.Env.gdt.limit;
@@ -2348,9 +2356,11 @@ static void remR3StateUpdate(PVM pVM)
     pCtx->cr0           = pVM->rem.s.Env.cr[0];
     pCtx->cr2           = pVM->rem.s.Env.cr[2];
     pCtx->cr3           = pVM->rem.s.Env.cr[3];
+    if ((pVM->rem.s.Env.cr[4] ^ pCtx->cr4) & X86_CR4_VME)
+        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
     pCtx->cr4           = pVM->rem.s.Env.cr[4];
 
-    for (i=0;i<8;i++)
+    for (i = 0; i < 8; i++)
         pCtx->dr[i] = pVM->rem.s.Env.dr[i];
 
     pCtx->gdtr.cbGdt    = pVM->rem.s.Env.gdt.limit;
@@ -2369,15 +2379,37 @@ static void remR3StateUpdate(PVM pVM)
         VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
     }
 
-    if (pCtx->ldtr != pVM->rem.s.Env.ldt.selector)
+    if (    pCtx->ldtr             != pVM->rem.s.Env.ldt.selector
+        ||  pCtx->ldtrHid.u64Base  != pVM->rem.s.Env.ldt.base
+        ||  pCtx->ldtrHid.u32Limit != pVM->rem.s.Env.ldt.limit
+        ||  pCtx->ldtrHid.Attr.u   != ((pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF))
     {
-        pCtx->ldtr      = pVM->rem.s.Env.ldt.selector;
+        pCtx->ldtr              = pVM->rem.s.Env.ldt.selector;
+        pCtx->ldtrHid.u64Base   = pVM->rem.s.Env.ldt.base;
+        pCtx->ldtrHid.u32Limit  = pVM->rem.s.Env.ldt.limit;
+        pCtx->ldtrHid.Attr.u    = (pVM->rem.s.Env.ldt.flags >> 8) & 0xFFFF;
         STAM_COUNTER_INC(&gStatREMLDTRChange);
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
     }
-    if (pCtx->tr != pVM->rem.s.Env.tr.selector)
+
+    if (    pCtx->tr             != pVM->rem.s.Env.tr.selector
+        ||  pCtx->trHid.u64Base  != pVM->rem.s.Env.tr.base
+        ||  pCtx->trHid.u32Limit != pVM->rem.s.Env.tr.limit
+            /* Qemu and AMD/Intel have different ideas about the busy flag ... */
+        ||  pCtx->trHid.Attr.u   != (  (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF
+                                     ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8
+                                     : 0) )
     {
-        pCtx->tr        = pVM->rem.s.Env.tr.selector;
+        Log(("REM: TR changed! %#x{%#llx,%#x,%#x} -> %#x{%llx,%#x,%#x}\n",
+             pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
+             pVM->rem.s.Env.tr.selector, (uint64_t)pVM->rem.s.Env.tr.base, pVM->rem.s.Env.tr.limit,
+             (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8 : 0));
+        pCtx->tr                = pVM->rem.s.Env.tr.selector;
+        pCtx->trHid.u64Base     = pVM->rem.s.Env.tr.base;
+        pCtx->trHid.u32Limit    = pVM->rem.s.Env.tr.limit;
+        pCtx->trHid.Attr.u      = (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF;
+        if (pCtx->trHid.Attr.u)
+            pCtx->trHid.Attr.u |= DESC_TSS_BUSY_MASK >> 8;
         STAM_COUNTER_INC(&gStatREMTRChange);
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
     }
@@ -2407,14 +2439,6 @@ static void remR3StateUpdate(PVM pVM)
     pCtx->ssHid.u64Base    = pVM->rem.s.Env.segs[R_SS].base;
     pCtx->ssHid.u32Limit   = pVM->rem.s.Env.segs[R_SS].limit;
     pCtx->ssHid.Attr.u     = (pVM->rem.s.Env.segs[R_SS].flags >> 8) & 0xFFFF;
-
-    pCtx->ldtrHid.u64Base  = pVM->rem.s.Env.ldt.base;
-    pCtx->ldtrHid.u32Limit = pVM->rem.s.Env.ldt.limit;
-    pCtx->ldtrHid.Attr.u   = (pVM->rem.s.Env.ldt.flags >> 8) & 0xFFFF;
-
-    pCtx->trHid.u64Base    = pVM->rem.s.Env.tr.base;
-    pCtx->trHid.u32Limit   = pVM->rem.s.Env.tr.limit;
-    pCtx->trHid.Attr.u     = (pVM->rem.s.Env.tr.flags >> 8) & 0xFFFF;
 
     /* Sysenter MSR */
     pCtx->SysEnter.cs      = pVM->rem.s.Env.sysenter_cs;

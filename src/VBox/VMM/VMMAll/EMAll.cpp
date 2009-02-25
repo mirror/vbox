@@ -2093,15 +2093,15 @@ static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
     case USE_REG_CR4:
         oldval = CPUMGetGuestCR4(pVM);
         rc = CPUMSetGuestCR4(pVM, val); AssertRC(rc);
-        val   = CPUMGetGuestCR4(pVM);
+        val = CPUMGetGuestCR4(pVM);
 
-        msrEFER = CPUMGetGuestEFER(pVM);
         /* Illegal to disable PAE when long mode is active. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
+        msrEFER = CPUMGetGuestEFER(pVM);
         if (    (msrEFER & MSR_K6_EFER_LMA)
             &&  (oldval & X86_CR4_PAE)
             &&  !(val & X86_CR4_PAE))
         {
-            return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
+            return VERR_EM_INTERPRETER; /** @todo generate #GP(0) */
         }
 
         if (    (oldval & (X86_CR4_PGE|X86_CR4_PAE|X86_CR4_PSE))
@@ -2111,8 +2111,9 @@ static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
             rc = PGMFlushTLB(pVM, CPUMGetGuestCR3(pVM), true /* global */);
             AssertRCReturn(rc, rc);
         }
-# ifdef IN_RC
+
         /* Feeling extremely lazy. */
+# ifdef IN_RC
         if (    (oldval & (X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME))
             !=  (val    & (X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME)))
         {
@@ -2120,6 +2121,9 @@ static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
             VM_FF_SET(pVM, VM_FF_TO_R3);
         }
 # endif
+        if ((val ^ oldval) & X86_CR4_VME)
+            VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+
         return PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
 
     case USE_REG_CR8:
