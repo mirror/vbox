@@ -330,6 +330,7 @@ DECLHIDDEN(bool) vboxNetAdpPrepareToReceive(PVBOXNETADP pThis)
         vboxNetAdpBusy(pThis);
     }
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    Log(("vboxNetAdpPrepareToReceive: fCanReceive=%d.\n", fCanReceive));
 
     return fCanReceive;
 }
@@ -349,6 +350,7 @@ DECLHIDDEN(void) vboxNetAdpReceive(PVBOXNETADP pThis, PINTNETSG pSG)
     AssertPtr(pSG);
     AssertPtr(pThis->pSwitchPort);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
+    Log(("vboxNetAdpReceive: forwarding packet to internal net...\n"));
     pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, INTNETTRUNKDIR_HOST);
     vboxNetAdpIdle(pThis);
     vboxNetAdpRelease(pThis);
@@ -361,6 +363,7 @@ DECLHIDDEN(void) vboxNetAdpReceive(PVBOXNETADP pThis, PINTNETSG pSG)
  */
 DECLHIDDEN(void) vboxNetAdpCancelReceive(PVBOXNETADP pThis)
 {
+    Log(("vboxNetAdpCancelReceive: cancelled.\n"));
     vboxNetAdpIdle(pThis);
     vboxNetAdpRelease(pThis);
 }
@@ -404,6 +407,8 @@ NETADP_DECL_CALLBACK(int) vboxNetAdpPortXmit(PINTNETTRUNKIFPORT pIfPort, PINTNET
     AssertPtr(pSG);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
 
+    Log(("vboxNetAdpPortXmit: outgoing packet (len=%d)\n", pSG->cbTotal));
+
     /*
      * Do a retain/busy, invoke the OS specific code.
      */
@@ -438,7 +443,7 @@ NETADP_DECL_CALLBACK(bool) vboxNetAdpPortIsPromiscuous(PINTNETTRUNKIFPORT pIfPor
      */
     AssertPtr(pThis);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
-    Assert(vboxNetAdpGetStateWithLock(pThis) == kVBoxNetAdpState_Connected);
+    Assert(vboxNetAdpGetStateWithLock(pThis) == kVBoxNetAdpState_Active);
 
     /*
      * Ask the OS specific code.
@@ -459,7 +464,7 @@ NETADP_DECL_CALLBACK(void) vboxNetAdpPortGetMacAddress(PINTNETTRUNKIFPORT pIfPor
      */
     AssertPtr(pThis);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
-    Assert(vboxNetAdpGetStateWithLock(pThis) == kVBoxNetAdpState_Connected);
+    Assert(vboxNetAdpGetStateWithLock(pThis) == kVBoxNetAdpState_Active);
 
     /*
      * Forward the question to the OS specific code.
@@ -547,6 +552,8 @@ NETADP_DECL_CALLBACK(bool) vboxNetAdpPortSetActive(PINTNETTRUNKIFPORT pIfPort, b
                 break;
             case kVBoxNetAdpState_Active:
                 vboxNetAdpSetState(pThis, kVBoxNetAdpState_Connected);
+                break;
+            default:
                 break;
         }
     }
