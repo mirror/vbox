@@ -165,6 +165,9 @@ typedef struct RTGETOPTSTATE
     PCRTGETOPTDEF   paOptions;
     /** Number of items in paOptions. */
     size_t          cOptions;
+    /** The next short option.
+     * (For parsing ls -latrT4 kind of option lists.) */
+    const char     *pszNextShort;
     /* More members will be added later for dealing with initial
        call, optional sorting, '--' and so on. */
 } RTGETOPTSTATE;
