@@ -523,6 +523,7 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
 }
 #endif /* defined(VBOX_STRICT) && !defined(IN_RING0) */
 
+#ifndef IN_RING0
 /**
  * Apply the hypervisor mappings to the active CR3.
  *
@@ -547,10 +548,6 @@ VMMDECL(int) PGMMapActivateAll(PVM pVM)
     /* @note A log flush (in RC) can cause problems when called from MapCR3 (inconsistent state will trigger assertions). */
     Log4(("PGMMapActivateAll fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
 
-#ifdef IN_RING0
-    AssertFailed();
-    return VERR_INTERNAL_ERROR;
-#else
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 # endif
@@ -565,7 +562,6 @@ VMMDECL(int) PGMMapActivateAll(PVM pVM)
         pgmMapSetShadowPDEs(pVM, pCur, iPDE);
     }
     return VINF_SUCCESS;
-#endif /* IN_RING0 */
 }
 
 /**
@@ -591,10 +587,6 @@ VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
 
     Log(("PGMMapDeactivateAll fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
 
-#ifdef IN_RING0
-    AssertFailed();
-    return VERR_INTERNAL_ERROR;
-#else
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 # endif
@@ -609,7 +601,6 @@ VMMDECL(int) PGMMapDeactivateAll(PVM pVM)
         pgmMapClearShadowPDEs(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pCur, iPDE);
     }
     return VINF_SUCCESS;
-#endif /* IN_RING0 */
 }
 
 
@@ -635,10 +626,6 @@ int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
 #endif
         return VINF_SUCCESS;
 
-#ifdef IN_RING0
-    AssertFailed();
-    return VERR_INTERNAL_ERROR;
-#else
 # ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 # endif
@@ -653,10 +640,8 @@ int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
         pgmMapClearShadowPDEs(pVM, pShwPageCR3, pCur, iPDE);
     }
     return VINF_SUCCESS;
-#endif /* IN_RING0 */
 }
 
-#ifndef IN_RING0
 /**
  * Checks guest PD for conflicts with VMM GC mappings.
  *
