@@ -641,7 +641,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                  * structure. (Invalidate here; faults later on when it tries to change the page
                  * table entries -> recheck; probably only applies to the RC case.)
                  */
+# ifndef IN_RING0
                 else
+# endif /* !IN_RING0 */
                 {
                     if (uShw.pPDPae->a[iShw].n.u1Present)
                     {
