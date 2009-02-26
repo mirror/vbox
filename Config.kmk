@@ -2510,6 +2510,7 @@ endif
 
 #
 # Template for building hardened Ring-3 executables.
+# These shall have no extra runpaths, esp. not origin ones.
 #
 TEMPLATE_VBOXR3HARDENEDEXE = Hardened VBox Ring-3 EXE
 TEMPLATE_VBOXR3HARDENEDEXE_EXTENDS = VBOXR3EXE
@@ -2518,6 +2519,14 @@ TEMPLATE_VBOXR3HARDENEDEXE_LDFLAGS.darwin = $(TEMPLATE_VBOXR3EXE_LDFLAGS.darwin)
 ifeq ($(KBUILD_TARGET),linux)
 # not necessary except USE_LIB_PCAP is defined in SUPR3HardenedMain.cpp
 # TEMPLATE_VBOXR3HARDENEDEXE_LIBS += cap
+endif
+ifn1of ($(KBUILD_TARGET), win os2)
+ ifdef VBOX_WITH_RUNPATH
+  TEMPLATE_VBOXR3HARDENEDEXE_LDFLAGS       := $(filter-out '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)',$(TEMPLATE_VBOXR3EXE_LDFLAGS))
+ else ifdef VBOX_WITH_ORIGIN
+  TEMPLATE_VBOXR3HARDENEDEXE_LDFLAGS       := $(filter-out '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)',$(TEMPLATE_VBOXR3EXE_LDFLAGS))
+  TEMPLATE_VBOXR3HARDENEDEXE_LDFLAGS.linux := $(filter-out -Wl,-z,origin,$(TEMPLATE_VBOXR3EXE_LDFLAGS.linux))
+ endif
 endif
 
 #
