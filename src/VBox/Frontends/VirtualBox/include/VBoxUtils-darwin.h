@@ -71,6 +71,8 @@ NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView);
  *
  ********************************************************************************/
 void darwinSetShowsToolbarButtonImpl (NativeWindowRef aWindow, bool aEnabled);
+void darwinSetShowsResizeIndicatorImpl (NativeWindowRef aWindow, bool aEnabled);
+void darwinSetHidesAllTitleButtonsImpl (NativeWindowRef aWindow);
 void darwinSetMouseCoalescingEnabled (bool aEnabled);
 
 /********************************************************************************
@@ -122,6 +124,8 @@ NativeWindowRef darwinToNativeWindow (NativeViewRef aView);
  *
  ********************************************************************************/
 void darwinSetShowsToolbarButton (QToolBar *aToolBar, bool aEnabled);
+void darwinSetShowsResizeIndicator (QWidget *aWidget, bool aEnabled);
+void darwinSetHidesAllTitleButtons (QWidget *aWidget);
 void darwinDisableIconsInMenus (void);
 
 /********************************************************************************
@@ -129,9 +133,9 @@ void darwinDisableIconsInMenus (void);
  * Simple helper methods (Qt Wrapper)
  *
  ********************************************************************************/
+void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);
 QString darwinSystemLanguage (void);
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
-void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);
 
 
 

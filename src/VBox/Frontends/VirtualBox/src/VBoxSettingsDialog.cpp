@@ -298,6 +298,7 @@ void VBoxSettingsDialog::categoryChanged (int aId)
         /* Make the widget fixed size */
         setFixedSize (ss);
     }
+    ::darwinSetShowsResizeIndicator (this, false);
 #endif /* !Q_WS_MAC */
 # ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     setWindowTitle (dialogTitle());
@@ -413,6 +414,9 @@ void VBoxSettingsDialog::showEvent (QShowEvent *aEvent)
 
     int minWidth = mSelector->minWidth();
 #ifdef Q_WS_MAC
+    /* Remove all title bar buttons (Buggy Qt) */
+    ::darwinSetHidesAllTitleButtons (this);
+
     /* Set all size policies to ignored */
     for (int i = 0; i < mStack->count(); ++i)
         mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);

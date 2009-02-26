@@ -32,12 +32,33 @@ NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView)
 {
     if (aView)
         return [aView window];
-    return 0;
+    return NULL;
 }
 
 void darwinSetShowsToolbarButtonImpl (NativeWindowRef aWindow, bool aEnabled)
 {
     [aWindow setShowsToolbarButton:aEnabled];
+}
+
+void darwinSetShowsResizeIndicatorImpl (NativeWindowRef aWindow, bool aEnabled)
+{
+    [aWindow setShowsResizeIndicator:aEnabled];
+}
+
+void darwinSetHidesAllTitleButtonsImpl (NativeWindowRef aWindow)
+{
+    NSButton *closeButton = [aWindow standardWindowButton:NSWindowCloseButton];
+    if (closeButton != Nil)
+        [closeButton setHidden:YES];
+    NSButton *minButton = [aWindow standardWindowButton:NSWindowMiniaturizeButton];
+    if (minButton != Nil)
+        [minButton setHidden:YES];
+    NSButton *zoomButton = [aWindow standardWindowButton:NSWindowZoomButton];
+    if (zoomButton != Nil)
+        [zoomButton setHidden:YES];
+    NSButton *iconButton = [aWindow standardWindowButton:NSWindowDocumentIconButton];
+    if (iconButton != Nil)
+        [iconButton setHidden:YES];
 }
 
 /**
@@ -67,3 +88,4 @@ void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int w
 
     [aWindow setFrame:windowFrame display:YES animate:YES];
 }
+
