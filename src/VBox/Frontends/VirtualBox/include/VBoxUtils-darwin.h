@@ -43,6 +43,7 @@ typedef NSView *NativeViewRef;
 class QWidget;
 class QToolBar;
 class QPixmap;
+class QRect;
 
 # ifdef QT_MAC_USE_COCOA
 /* Cast this to void, cause Cocoa classes aren't usable in the C++ context. */
@@ -71,6 +72,13 @@ NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView);
  ********************************************************************************/
 void darwinSetShowsToolbarButtonImpl (NativeWindowRef aWindow, bool aEnabled);
 void darwinSetMouseCoalescingEnabled (bool aEnabled);
+
+/********************************************************************************
+ *
+ * Simple helper methods (OS System native)
+ *
+ ********************************************************************************/
+void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int width, int height);
 
 __END_DECLS
 
@@ -123,6 +131,7 @@ void darwinDisableIconsInMenus (void);
  ********************************************************************************/
 QString darwinSystemLanguage (void);
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
+void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);
 
 
 

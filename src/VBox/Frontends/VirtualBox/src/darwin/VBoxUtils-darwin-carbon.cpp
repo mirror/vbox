@@ -44,7 +44,11 @@ void darwinSetMouseCoalescingEnabled (bool aEnabled)
     ::SetMouseCoalescingEnabled (aEnabled, NULL);
 }
 
-
+void darwinWindowAnimateResizeImpl (NativeWindowRef aWidget, int x, int y, int width, int height)
+{
+    HIRect r = CGRectMake (x, y, width, height);
+    TransitionWindowWithOptions (aWidget, kWindowSlideTransitionEffect, kWindowResizeTransitionAction, &r, false, NULL);
+}
 
 
 
@@ -117,12 +121,6 @@ CGImageRef darwinToCGImageRef (const char *aSource)
     QPixmap qpm (QString(":/") + aSource);
     Assert (!qpm.isNull());
     return ::darwinToCGImageRef (&qpm);
-}
-
-void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget)
-{
-    HIRect r = ::darwinToHIRect (aTarget);
-    TransitionWindowWithOptions (::darwinToNativeWindow (aWidget), kWindowSlideTransitionEffect, kWindowResizeTransitionAction, &r, false, NULL);
 }
 
 bool darwinIsMenuOpen (void)
