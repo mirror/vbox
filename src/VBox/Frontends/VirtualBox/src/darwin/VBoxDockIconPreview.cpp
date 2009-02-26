@@ -31,7 +31,7 @@
 # error "Q_WS_MAC isn't defined"
 #endif
 
-//#ifndef QT_MAC_USE_COCOA
+#ifndef QT_MAC_USE_COCOA
 /* Import private function to capture the window content of any given window. */
 CG_EXTERN_C_BEGIN
 typedef int CGSWindowID;
@@ -40,7 +40,7 @@ CG_EXTERN CGSWindowID GetNativeWindowFromWindowRef(WindowRef ref);
 CG_EXTERN CGSConnectionID CGSMainConnectionID(void);
 CG_EXTERN void CGContextCopyWindowCaptureContentsToRect(CGContextRef c, CGRect dstRect, CGSConnectionID connection, CGSWindowID window, int zero);
 CG_EXTERN_C_END
-//#endif /* !QT_MAC_USE_COCOA */
+#endif /* !QT_MAC_USE_COCOA */
 
 VBoxDockIconPreview::VBoxDockIconPreview (VBoxConsoleWnd *aMainWnd, const QPixmap& aOverlayImage)
     :  mMainWnd (aMainWnd)
@@ -207,9 +207,9 @@ void VBoxDockIconPreview::updateDockOverlay()
 #endif /* !QT_MAC_USE_COCOA */
 }
 
-//#ifndef QT_MAC_USE_COCOA
 void VBoxDockIconPreview::updateDockPreview (CGImageRef aVMImage)
 {
+#ifndef QT_MAC_USE_COCOA
     Assert (aVMImage);
 
     /* Init all dependend images in the case it wasn't done already */
@@ -250,7 +250,6 @@ void VBoxDockIconPreview::updateDockPreview (CGImageRef aVMImage)
     /* Draw the VM content */
     CGContextDrawImage (context, flipRect (iconRect), aVMImage);
 
-#ifndef QT_MAC_USE_COCOA
     /* Process the content of any external OpenGL window. */
     WindowRef w = darwinToNativeWindow (mMainWnd);
     WindowGroupRef g = GetWindowGroup (w);
@@ -293,7 +292,6 @@ void VBoxDockIconPreview::updateDockPreview (CGImageRef aVMImage)
             }
         }
     }
-#endif /* QT_MAC_USE_COCOA */
 
     /* Draw the glossy overlay */
     CGContextDrawImage (context, flipRect (mMonitorRect), mDockMonitorGlossy);
@@ -306,6 +304,7 @@ void VBoxDockIconPreview::updateDockPreview (CGImageRef aVMImage)
     EndCGContextForApplicationDockTile (context);
 
     CGColorSpaceRelease (cs);
+#endif /* QT_MAC_USE_COCOA */
 }
 //#endif /* !QT_MAC_USE_COCOA */
 
