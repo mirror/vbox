@@ -1131,7 +1131,7 @@ void VBoxSelectorWnd::showContextMenu (const QPoint &aPoint)
     /* Send a context menu request */
     const QModelIndex &index = mVMListView->indexAt (aPoint);
     if (index.isValid())
-        if (VBoxVMItem *item = mVMListView->model()->data (index,
+        if (mVMListView->model()->data (index,
             VBoxVMModel::VBoxVMItemPtrRole).value <VBoxVMItem*>())
                 mVMCtxtMenu->exec (mVMListView->mapToGlobal (aPoint));
 }

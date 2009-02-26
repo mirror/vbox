@@ -121,12 +121,12 @@ public:
     int childCount() const { return mChildItems.count(); }
     int columnCount() const { return 3; }
 
-    virtual Qt::ItemFlags itemFlags (int aColumn) const { return 0; }
-    virtual bool setData (int aColumn, const QVariant &aValue, int aRole) { return false; }
-    virtual QVariant data (int aColumn, int aRole) const { return QVariant(); }
-    virtual QWidget * createEditor (QWidget *aParent, const QStyleOptionViewItem &aOption, const QModelIndex &aIndex) const { return NULL; }
-    virtual bool setEditorData (QWidget *aEditor, const QModelIndex &aIndex) const { return false; }
-    virtual bool setModelData (QWidget *aEditor, QAbstractItemModel *aModel, const QModelIndex &aIndex) { return false; }
+    virtual Qt::ItemFlags itemFlags (int /* aColumn */) const { return 0; }
+    virtual bool setData (int /* aColumn */, const QVariant & /* aValue */, int /* aRole */) { return false; }
+    virtual QVariant data (int /* aColumn */, int /* aRole */) const { return QVariant(); }
+    virtual QWidget * createEditor (QWidget * /* aParent */, const QStyleOptionViewItem & /* aOption */, const QModelIndex & /* aIndex */) const { return NULL; }
+    virtual bool setEditorData (QWidget * /* aEditor */, const QModelIndex & /* aIndex */) const { return false; }
+    virtual bool setModelData (QWidget * /* aEditor */, QAbstractItemModel * /* aModel */, const QModelIndex & /* aIndex */) { return false; }
 
     virtual void restoreDefaults() {}
     virtual void putBack (QVector<BOOL>& aFinalStates, QVector<QString>& aFinalValues, QVector<QString>& aFinalExtraValues)
@@ -380,7 +380,7 @@ public:
         return flags;
     }
 
-    virtual QWidget * createEditor (QWidget *aParent, const QStyleOptionViewItem &aOption, const QModelIndex &aIndex) const
+    virtual QWidget * createEditor (QWidget *aParent, const QStyleOptionViewItem & /* aOption */, const QModelIndex &aIndex) const
     {
         QWidget *editor = NULL;
         if (aIndex.column() == ConfigValueSection)
@@ -465,7 +465,7 @@ public:
         return editor;
     }
 
-    virtual bool setEditorData (QWidget *aEditor, const QModelIndex &aIndex) const
+    virtual bool setEditorData (QWidget *aEditor, const QModelIndex & /* aIndex */) const
     {
         bool fDone = false;
         switch (mType)
@@ -540,7 +540,7 @@ public:
         return fDone;
     }
 
-    virtual bool setModelData (QWidget *aEditor, QAbstractItemModel *aModel, const QModelIndex &aIndex)
+    virtual bool setModelData (QWidget *aEditor, QAbstractItemModel * /* aModel */, const QModelIndex & /* aIndex */)
     {
         bool fDone = false;
         switch (mType)

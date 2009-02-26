@@ -490,7 +490,7 @@ void VBoxVMSettingsGeneral::textChangedVRAM (const QString &aText)
     mSlVideo->setValue (aText.toInt());
 }
 
-void VBoxVMSettingsGeneral::stateChangedVirt (int aState)
+void VBoxVMSettingsGeneral::stateChangedVirt (int /* aState */)
 {
     mCbNestedPaging->setEnabled (mCbVirt->checkState());
 }
