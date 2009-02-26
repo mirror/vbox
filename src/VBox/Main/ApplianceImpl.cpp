@@ -290,8 +290,6 @@ struct shutup {};
 
 HRESULT Appliance::init(VirtualBox *aVirtualBox)
 {
-    HRESULT rc;
-
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -1629,7 +1627,7 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
     {
         /* Figure out how many sub operation the import will need */
         /* One for the appliance */
-        int opCount = 1;
+        size_t opCount = 1;
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
         for (it = m->virtualSystemDescriptions.begin();
              it != m->virtualSystemDescriptions.end();
@@ -2023,7 +2021,6 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     if (FAILED(rc)) throw rc;
                     fSessionOpen = true;
 
-                    int result;
                     /* The disk image has to be on the same place as the OVF file. So
                      * strip the filename out of the full file path. */
                     Utf8Str strSrcDir = stripFilename(Utf8Str(app->m->bstrPath).raw());
@@ -2252,7 +2249,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                     if (FAILED(rc)) throw rc;
                     fSessionOpen = false;
                 }
-                catch(HRESULT aRC)
+                catch(HRESULT /* aRC */)
                 {
                     if (fSourceHdNeedsClosing)
                         srcHdVBox->Close();
