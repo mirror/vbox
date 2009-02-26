@@ -236,7 +236,9 @@ extern winVersion_t winVersion;
 typedef struct VBOXGUESTSESSION
 {
     /** Array containing HGCM client IDs associated with this session.
-     * This will be automatically disconnected when the session is closed. */
+     * This will be automatically disconnected when the session is closed. 
+	 * Note that array size also affects/is maximum number of supported opengl threads per guest process.
+     */
     uint32_t volatile           aHGCMClientIds[8];
 } VBOXGUESTSESSION, *PVBOXGUESTSESSION;
 #endif
