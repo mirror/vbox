@@ -1374,11 +1374,11 @@ STDMETHODIMP Appliance::Interpret()
                                    vsysThis.strSoundCardType,
                                    Utf8StrFmt("%RI32", (uint32_t)AudioControllerType_AC97));
 
- #ifdef VBOX_WITH_USB
+#ifdef VBOX_WITH_USB
             /* USB Controller */
             if (vsysThis.fHasUsbController)
                 pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
- #endif /* VBOX_WITH_USB */
+#endif /* VBOX_WITH_USB */
 
             NetworksMap::const_iterator itN;
             for (itN = m->mapNetworks.begin();
