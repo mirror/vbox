@@ -3202,6 +3202,13 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
+#if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+            /* In 32 bits PAE mode we *must* invalidate the TLB when changing a PDPT entry; the CPU fetches them only during cr3 load, so any
+             * non-present PDPT will continue to cause page faults.
+             */
+            ASMReloadCR3();
+#endif
+            /* no break */
         case PGMPOOLKIND_PAE_PD_PHYS:
         case PGMPOOLKIND_PAE_PDPT_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
@@ -3209,7 +3216,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_64BIT_PML4:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-# if !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) && !defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+#if !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) && !defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
         case PGMPOOLKIND_ROOT_PAE_PD:
 #endif
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY

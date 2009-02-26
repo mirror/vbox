@@ -875,11 +875,6 @@ int pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppP
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
-    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-    PGMDynLockHCPage(pVM, (uint8_t *)pPdpe);
-# endif
-
     /* Allocate page directory if not present. */
     if (    !pPdpe->n.u1Present
         &&  !(pPdpe->u & X86_PDPE_PG_MASK))
@@ -888,6 +883,11 @@ int pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppP
         bool        fPaging       = !!(CPUMGetGuestCR0(pVM) & X86_CR0_PG);
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
+
+# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+        /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+        PGMDynLockHCPage(pVM, (uint8_t *)pPdpe);
+# endif
 
         if (fNestedPaging || !fPaging)
         {
@@ -924,19 +924,26 @@ int pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppP
             return VINF_PGM_SYNC_CR3;
         }
         AssertRCReturn(rc, rc);
+
+        /* The PD was cached or created; hook it up now. */
+        pPdpe->u |= pShwPage->Core.Key
+                 | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
+
+# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+        /* In 32 bits PAE mode we *must* invalidate the TLB when changing a PDPT entry; the CPU fetches them only during cr3 load, so any
+         * non-present PDPT will continue to cause page faults.
+         */
+        ASMReloadCR3();
+        PGMDynUnlockHCPage(pVM, (uint8_t *)pPdpe);
+# endif
     }
     else
     {
         pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
-    }
-    /* The PD was cached or created; hook it up now. */
-    pPdpe->u |= pShwPage->Core.Key
-             | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
-    PGMDynUnlockHCPage(pVM, (uint8_t *)pPdpe);
-# endif
+        Assert((pPdpe->u & X86_PDPE_PG_MASK) == pShwPage->Core.Key));
+    }
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;
 }
