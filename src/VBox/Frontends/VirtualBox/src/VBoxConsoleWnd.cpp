@@ -3030,7 +3030,9 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
         /* If we are using the Quartz2D backend we have to trigger
          * an repaint only. All the magic clipping stuff is done
          * in the paint engine. */
+#ifndef QT_MAC_USE_COCOA
         HIViewReshapeStructure (::darwinToNativeView (console->viewport()));
+#endif /* QT_MAC_USE_COCOA */
 //        HIWindowInvalidateShadow (::darwinToWindowRef (console->viewport()));
 //        ReshapeCustomWindow (::darwinToWindowRef (this));
     }
