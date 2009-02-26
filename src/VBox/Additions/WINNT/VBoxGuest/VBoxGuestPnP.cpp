@@ -332,6 +332,12 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             {
                 IoDetachDevice(pDevExt->nextLowerDriver);
             }
+
+#ifdef VBOX_WITH_HGCM
+            if (pDevExt->SessionSpinlock != NIL_RTSPINLOCK)
+                RTSpinlockDestroy(pDevExt->SessionSpinlock);
+#endif
+
             UNICODE_STRING win32Name;
             RtlInitUnicodeString(&win32Name, VBOXGUEST_DEVICE_NAME_DOS);
             IoDeleteSymbolicLink(&win32Name);

@@ -48,6 +48,8 @@ __END_DECLS
 # endif
 #endif
 
+#include <iprt/spinlock.h>
+
 #include <VBox/VBoxGuest.h>
 
 /*******************************************************************************
@@ -197,6 +199,10 @@ typedef struct VBOXGUESTDEVEXT
     /* Preallocated VMMDevEvents for IRQ handler */
     VMMDevEvents *irqAckEvents;
 
+#ifdef VBOX_WITH_HGCM
+    /** Spinlock various items in the VBOXGUESTSESSION. */
+    RTSPINLOCK SessionSpinlock;
+#endif
 
     struct
     {
@@ -220,6 +226,20 @@ typedef enum
     WINVISTA = 5
 } winVersion_t;
 extern winVersion_t winVersion;
+
+#ifdef VBOX_WITH_HGCM
+/**
+ * The VBoxGuest per session data.
+ *
+ * @remark  Just to store hgcm ID's, perhaps could combine with one from common/VBoxGuest/vboxguestinternal.h?
+ */
+typedef struct VBOXGUESTSESSION
+{
+    /** Array containing HGCM client IDs associated with this session.
+     * This will be automatically disconnected when the session is closed. */
+    uint32_t volatile           aHGCMClientIds[8];
+} VBOXGUESTSESSION, *PVBOXGUESTSESSION;
+#endif
 
 extern "C"
 {
