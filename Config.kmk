@@ -292,7 +292,7 @@ VBOX_WITH_QTGUI = 1
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
  VBOX_WITH_COCOA_QT = 1
 endif
-if1of ($(USERNAME), poetzsch)
+if1of ($(USERNAME),poetzsch)
  ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.x86)
   VBOX_WITH_COCOA_QT = 1
  endif
@@ -3057,7 +3057,7 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQT4GUIEXE_INCS += \
  	$(LIB_SDL_INC)
   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS = \
- 	-g -pipe $(VBOX_GCC_WARN) -frtti -fno-exceptions -Wno-non-virtual-dtor \
+ 	-g -pipe $(filter-out -Wno-unused,$(VBOX_GCC_WARN)) -frtti -fno-exceptions -Wno-non-virtual-dtor \
  	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
  	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS.x86 = -m32
