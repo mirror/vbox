@@ -1580,9 +1580,15 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
             {
                 if ((PGMPOOLKIND)pPage->enmKind == enmKind)
                 {
+                    /* Put it at the start of the use list to make sure pgmPoolTrackAddUser 
+                     * doesn't flush it in case there are no more free use records.
+                     */
+                    pgmPoolCacheUsed(pPool, pPage);
+
                     int rc = pgmPoolTrackAddUser(pPool, pPage, iUser, iUserTable);
                     if (RT_SUCCESS(rc))
                     {
+                        Assert((PGMPOOLKIND)pPage->enmKind == enmKind);
                         *ppPage = pPage;
                         STAM_COUNTER_INC(&pPool->StatCacheHits);
                         return VINF_PGM_CACHED_PAGE;
