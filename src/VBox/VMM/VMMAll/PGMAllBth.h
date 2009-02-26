@@ -4657,6 +4657,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 
 #  ifdef IN_RC
     /** NOTE: We can't deal with jumps to ring 3 here as we're now in an inconsistent state! */
+    VMMGCLogDisable(pVM);
 #  endif
     /* Mark the page as locked; disallow flushing. */
     pgmPoolLockPage(pPool, pNewShwPageCR3);
@@ -4697,7 +4698,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     CPUMSetHyperCR3(pVM, PGMGetHyperCR3(pVM));
 
 #  ifdef IN_RC
-    /** NOTE: Everything safe again. */
+    VMMGCLogEnable(pVM);
 #  endif
 
     /* Clean up the old CR3 root. */
