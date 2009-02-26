@@ -26,6 +26,7 @@
 #include <QObject> /* drag in QT_MAC_USE_COCOA */
 
 #ifdef QT_MAC_USE_COCOA
+# include <ApplicationServices/ApplicationServices.h>
 /** @todo include chocolatey headers... */
 #else
 # include <Carbon/Carbon.h>
@@ -43,15 +44,15 @@ public:
     ~VBoxDockIconPreview();
 
     void updateDockOverlay();
-#ifndef QT_MAC_USE_COCOA
+//#ifndef QT_MAC_USE_COCOA
     void updateDockPreview (CGImageRef aVMImage);
-#endif
+//#endif
     void updateDockPreview (VBoxFrameBuffer *aFrameBuffer);
 
 private:
-#ifdef QT_MAC_USE_COCOA
+//#ifdef QT_MAC_USE_COCOA
     /** @todo Carbon -> Cocoa */
-#else
+//#else
     inline void initPreviewImages();
     inline void initOverlayData (int aBitmapByteCount);
     inline CGImageRef stateImage() const;
@@ -66,13 +67,13 @@ private:
         aRect.origin.y = aToRect.origin.y + (aToRect.size.height - aRect.size.height) / 2.0;
         return aRect;
     }
-#endif /* !QT_MAC_USE_COCOA */
+//#endif /* !QT_MAC_USE_COCOA */
 
     /* Private member vars */
     VBoxConsoleWnd *mMainWnd;
-#ifdef QT_MAC_USE_COCOA
+//#ifdef QT_MAC_USE_COCOA
     /** @todo Carbon -> Cocoa */
-#else
+//#else
     const CGRect mDockIconRect;
 
     CGImageRef mOverlayImage;
@@ -87,7 +88,7 @@ private:
 
     CGRect mUpdateRect;
     CGRect mMonitorRect;
-#endif
+//#endif
 };
 
 #endif /* !___VBoxDockIconPreview_h___ */

@@ -21,6 +21,8 @@
 
 #include "VBoxUtils-darwin.h"
 
+#include <iprt/assert.h>
+
 #include <QApplication>
 #include <QWidget>
 #include <QToolBar>
@@ -125,6 +127,70 @@ QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText)
     painter.drawText (QRect (aPixmap.width() + m, 0, tbRect.width(), h - 1), Qt::AlignLeft | Qt::AlignVCenter, aText);
     painter.end();
     return dragPixmap;
+}
+
+/**
+ * Callback for deleting the QImage object when CGImageCreate is done
+ * with it (which is probably not until the returned CFGImageRef is released).
+ *
+ * @param   info        Pointer to the QImage.
+ */
+static void darwinDataProviderReleaseQImage (void *info, const void *, size_t)
+{
+    QImage *qimg = (QImage *)info;
+    delete qimg;
+}
+
+/**
+ * Converts a QPixmap to a CGImage.
+ *
+ * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
+ * @param   aPixmap     Pointer to the QPixmap instance to convert.
+ */
+CGImageRef darwinToCGImageRef (const QImage *aImage)
+{
+    QImage *imageCopy = new QImage (*aImage);
+    /** @todo this code assumes 32-bit image input, the lazy bird convert image to 32-bit method is anything but optimal... */
+    if (imageCopy->format() != QImage::Format_ARGB32)
+        *imageCopy = imageCopy->convertToFormat (QImage::Format_ARGB32);
+    Assert (!imageCopy->isNull());
+
+    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+    CGDataProviderRef dp = CGDataProviderCreateWithData (imageCopy, aImage->bits(), aImage->numBytes(), darwinDataProviderReleaseQImage);
+
+    CGBitmapInfo bmpInfo = kCGImageAlphaFirst | kCGBitmapByteOrder32Host;
+    CGImageRef ir = CGImageCreate (imageCopy->width(), imageCopy->height(), 8, 32, imageCopy->bytesPerLine(), cs,
+                                   bmpInfo, dp, 0 /*decode */, 0 /* shouldInterpolate */,
+                                   kCGRenderingIntentDefault);
+    CGColorSpaceRelease (cs);
+    CGDataProviderRelease (dp);
+
+    Assert (ir);
+    return ir;
+}
+
+/**
+ * Converts a QPixmap to a CGImage.
+ *
+ * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
+ * @param   aPixmap     Pointer to the QPixmap instance to convert.
+ */
+CGImageRef darwinToCGImageRef (const QPixmap *aPixmap)
+{
+    return aPixmap->toMacCGImageRef();
+}
+
+/**
+ * Loads an image using Qt and converts it to a CGImage.
+ *
+ * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
+ * @param   aSource     The source name.
+ */
+CGImageRef darwinToCGImageRef (const char *aSource)
+{
+    QPixmap qpm (QString(":/") + aSource);
+    Assert (!qpm.isNull());
+    return ::darwinToCGImageRef (&qpm);
 }
 
 /********************************************************************************

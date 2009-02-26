@@ -158,6 +158,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
 
     Assert (mImage);
 
+#ifndef QT_MAC_USE_COCOA
     VBoxConsoleWnd *main = qobject_cast <VBoxConsoleWnd *> (vboxGlobal().mainWindow());
     Assert (VALID_PTR (main));
     QWidget* viewport = mView->viewport();
@@ -251,6 +252,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
         HIRect destRect = ::darwinToHIRect (ir);
         HIViewDrawCGImage (ctx, &destRect, subImage);
     }
+#endif /* QT_MAC_USE_COCOA */
 }
 
 void VBoxQuartz2DFrameBuffer::resizeEvent (VBoxResizeEvent *aEvent)
