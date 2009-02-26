@@ -1627,7 +1627,7 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
     {
         /* Figure out how many sub operation the import will need */
         /* One for the appliance */
-        size_t opCount = 1;
+        uint32_t opCount = 1;
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
         for (it = m->virtualSystemDescriptions.begin();
              it != m->virtualSystemDescriptions.end();
@@ -1638,7 +1638,7 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
             /* One for every hard disk of the Virtual System */
             std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
-            opCount += avsdeHDs.size();
+            opCount += (uint32_t)avsdeHDs.size();
         }
         Bstr progressDesc = BstrFmt(tr("Import appliance '%ls'"),
                                     m->bstrPath.raw());
@@ -2556,7 +2556,7 @@ void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
                                         const Utf8Str &strExtraConfig /*= ""*/)
 {
     VirtualSystemDescriptionEntry vsde;
-    vsde.ulIndex = m->descriptions.size();      // each entry gets an index so the client side can reference them
+    vsde.ulIndex = (uint32_t)m->descriptions.size();      // each entry gets an index so the client side can reference them
     vsde.type = aType;
     vsde.strRef = strRef;
     vsde.strOrig = aOrigValue;
