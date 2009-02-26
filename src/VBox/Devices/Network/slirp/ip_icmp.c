@@ -606,8 +606,10 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
 
     icmpstat.icps_reflect++;
 
+    return;
+
 end_error:
-    ;
+    LogRel(("NAT: error occured while sending ICMP error message \n"));
 }
 #undef ICMP_MAXDATALEN
 
