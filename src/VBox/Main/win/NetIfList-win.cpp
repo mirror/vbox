@@ -699,17 +699,8 @@ static int enableStatic()
     return r;
 }
 
-static bool bTest = true;
-
 int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 {
-    if(bTest)
-    {
-        bTest = false;
-        Assert(0);
-        enableStatic();
-    }
-
 #ifndef VBOX_WITH_NETFLT
     static const char *NetworkKey = "SYSTEM\\CurrentControlSet\\Control\\Network\\"
                                     "{4D36E972-E325-11CE-BFC1-08002BE10318}";
