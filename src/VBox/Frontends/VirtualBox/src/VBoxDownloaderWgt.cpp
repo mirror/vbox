@@ -76,7 +76,7 @@ void VBoxDownloaderWgt::acknowledgeStart()
 }
 
 /* This function is used to store content length */
-void VBoxDownloaderWgt::acknowledgeProcess (const QHttpResponseHeader &aResponse)
+void VBoxDownloaderWgt::acknowledgeProcess (const QHttpResponseHeader & /* aResponse */)
 {
     /* Abort connection as we already got all we need */
     mHttp->abort();

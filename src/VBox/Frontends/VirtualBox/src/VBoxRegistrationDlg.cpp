@@ -195,7 +195,7 @@ bool VBoxRegistrationDlg::hasToBeShown()
            (!regData.isRegistered() && regData.triesLeft() > 0);
 }
 
-VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *aParent)
+VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget * /* aParent */)
     : QIWithRetranslateUI <QIAbstractWizard> (0)
     , mSelf (aSelf)
     , mWvalReg (0)

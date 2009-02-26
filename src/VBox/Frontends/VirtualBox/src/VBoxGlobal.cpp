@@ -3892,7 +3892,7 @@ QRect VBoxGlobal::normalizeGeometry (const QRect &aRectangle, const QRegion &aBo
  */
 /* static */
 QRect VBoxGlobal::getNormalized (const QRect &aRectangle, const QRegion &aBoundRegion,
-                                 bool aCanResize /* = true */)
+                                 bool /* aCanResize = true */)
 {
     /* Storing available horizontal sub-rectangles & vertical shifts */
     int windowVertical = aRectangle.center().y();
