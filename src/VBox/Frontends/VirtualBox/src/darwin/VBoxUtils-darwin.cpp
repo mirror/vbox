@@ -40,24 +40,39 @@ NativeViewRef darwinToNativeView (QWidget *aWidget)
 
 NativeWindowRef darwinToNativeWindow (QWidget *aWidget)
 {
-    return darwinToNativeWindowImpl (::darwinToNativeView (aWidget));
+    return ::darwinToNativeWindowImpl (::darwinToNativeView (aWidget));
 }
 
 NativeWindowRef darwinToNativeWindow (NativeViewRef aView)
 {
-    return darwinToNativeWindowImpl (aView);
+    return ::darwinToNativeWindowImpl (aView);
 }
 
 void darwinSetShowsToolbarButton (QToolBar *aToolBar, bool aEnabled)
 {
     QWidget *parent = aToolBar->parentWidget();
     if (parent)
-        darwinSetShowsToolbarButtonImpl (::darwinToNativeWindow (parent), aEnabled);
+        ::darwinSetShowsToolbarButtonImpl (::darwinToNativeWindow (parent), aEnabled);
 }
 
 void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget)
 {
-    darwinWindowAnimateResizeImpl (::darwinToNativeWindow (aWidget), aTarget.x(), aTarget.y(), aTarget.width(), aTarget.height());
+    ::darwinWindowAnimateResizeImpl (::darwinToNativeWindow (aWidget), aTarget.x(), aTarget.y(), aTarget.width(), aTarget.height());
+}
+
+void darwinSetHidesAllTitleButtons (QWidget *aWidget)
+{
+#ifdef QT_MAC_USE_COCOA
+    /* Currently only necessary in the Cocoa version */
+    ::darwinSetHidesAllTitleButtonsImpl (::darwinToNativeWindow (aWidget));
+#else /* QT_MAC_USE_COCOA */
+    NOREF (aWidget);
+#endif /* !QT_MAC_USE_COCOA */
+}
+
+void darwinSetShowsResizeIndicator (QWidget *aWidget, bool aEnabled)
+{
+    ::darwinSetShowsResizeIndicatorImpl (::darwinToNativeWindow (aWidget), aEnabled);
 }
 
 QString darwinSystemLanguage (void)

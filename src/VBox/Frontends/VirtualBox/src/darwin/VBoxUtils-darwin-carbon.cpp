@@ -29,27 +29,42 @@
 
 NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView)
 {
-    return reinterpret_cast<WindowRef> (::HIViewGetWindow (aView));
+    if (aView)
+        return reinterpret_cast<WindowRef> (::HIViewGetWindow (aView));
+    return NULL;
 }
 
 void darwinSetShowsToolbarButtonImpl (NativeWindowRef aWindow, bool aEnabled)
 {
-    int err = ::ChangeWindowAttributes (aWindow, aEnabled ? kWindowToolbarButtonAttribute:kWindowNoAttributes,
-                                                 aEnabled ? kWindowNoAttributes:kWindowToolbarButtonAttribute);
+    int err = ::ChangeWindowAttributes (aWindow, aEnabled ? kWindowToolbarButtonAttribute : kWindowNoAttributes,
+                                                 aEnabled ? kWindowNoAttributes : kWindowToolbarButtonAttribute);
+    AssertCarbonOSStatus (err);
+}
+
+void darwinSetShowsResizeIndicatorImpl (NativeWindowRef aWindow, bool aEnabled)
+{
+    int err = ::ChangeWindowAttributes (aWindow, aEnabled ? kWindowResizableAttribute : kWindowNoAttributes,
+                                                 aEnabled ? kWindowNoAttributes : kWindowResizableAttribute);
     AssertCarbonOSStatus (err);
 }
 
 void darwinSetMouseCoalescingEnabled (bool aEnabled)
 {
-    ::SetMouseCoalescingEnabled (aEnabled, NULL);
+    int err = ::SetMouseCoalescingEnabled (aEnabled, NULL);
+    AssertCarbonOSStatus (err);
 }
 
 void darwinWindowAnimateResizeImpl (NativeWindowRef aWidget, int x, int y, int width, int height)
 {
     HIRect r = CGRectMake (x, y, width, height);
-    TransitionWindowWithOptions (aWidget, kWindowSlideTransitionEffect, kWindowResizeTransitionAction, &r, false, NULL);
+    int err = ::TransitionWindowWithOptions (aWidget,
+                                             kWindowSlideTransitionEffect,
+                                             kWindowResizeTransitionAction,
+                                             &r,
+                                             false,
+                                             NULL);
+    AssertCarbonOSStatus (err);
 }
-
 
 
 /********************************************************************************
