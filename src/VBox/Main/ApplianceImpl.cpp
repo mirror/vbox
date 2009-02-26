@@ -2208,7 +2208,7 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
                                     break;
 
                                     default:
-                                        throw setError(VERR_NOT_IMPLEMENTED,
+                                        throw setError(VBOX_E_NOT_SUPPORTED,
                                                        tr("Invalid channel %RI16 specified; IDE conrollers support only 0, 1 or 2"), vd.ulAddressOnParent);
                                     break;
                                 }
@@ -2222,9 +2222,9 @@ DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
 
                             case HardDiskController::SCSI:
 //                                 mhda.busType = StorageBus_SCSI;
-                                throw setError(VERR_NOT_IMPLEMENTED,
+                                throw setError(VBOX_E_NOT_SUPPORTED,
                                                tr("SCSI controller support is not available yet in VirtualBox"));
-                                    // @ŧodo
+                                    // @todo
                             break;
 
                             default: break;
