@@ -944,7 +944,10 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGM pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE *p
     PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pPGM);
     AssertReturn(pPdpt, VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT);    /* can't happen */
     if (!pPdpt->a[iPdPt].n.u1Present)
+    {
+        LogFlow(("pgmShwGetPaePoolPagePD: PD %d not present (%RX64)\n", iPdPt, pPdpt->a[iPdPt].u));
         return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
+    }
 
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(PGM2VM(pPGM), pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
