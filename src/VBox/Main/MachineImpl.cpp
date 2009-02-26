@@ -7766,12 +7766,11 @@ HRESULT SessionMachine::init (Machine *aMachine)
     {
         key = ((uint32_t)'V' << 24) | i;
         int sem = ::semget (key, 1, S_IRUSR | S_IWUSR | IPC_CREAT | IPC_EXCL);
-        if (sem < 0 && errno == EEXIST)
-            continue;
-        mIPCSem = sem;
-        if (sem >= 0)
+        if (sem >= 0 || (errno != EEXIST && errno != EACCES))
         {
-            mIPCKey = BstrFmt ("%u", key);
+            mIPCSem = sem;
+            if (sem >= 0)
+                mIPCKey = BstrFmt ("%u", key);
             break;
         }
     }
