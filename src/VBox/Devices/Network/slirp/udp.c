@@ -251,6 +251,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         *ip = save_ip;
         DEBUG_MISC((dfd,"udp tx errno = %d-%s\n", errno, strerror(errno)));
         icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0, strerror(errno));
+        /* in case we receive ICMP on this socket we'll aware that ICMP has been already sent to host*/
+        so->so_m = NULL; 
     }
 
     m_free(pData, so->so_m);   /* used for ICMP if error on sorecvfrom */

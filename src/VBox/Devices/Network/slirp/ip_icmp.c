@@ -251,6 +251,12 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     sofound:
     if (found == 1 && icm == NULL)
     {
+        if (so->so_state == SS_NOFDREF) 
+        {
+            /* socket is shutdowning we've already sent ICMP on it.*/
+            LogRel(("NAT: Received icmp on shutdowning socket (probably corresponding ICMP socket has been already sent)\n"));
+            return NULL;
+        }
         icm = RTMemAlloc(sizeof(struct icmp_msg));
         icm->im_m = so->so_m;
         icm->im_so = so;
@@ -389,7 +395,6 @@ freeit:
                         Log((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
                                     errno, strerror(errno)));
                         icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0, strerror(errno));
-                        m_free(pData, m);
                     }
                 }
                 else
