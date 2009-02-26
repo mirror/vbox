@@ -86,8 +86,6 @@ int VBoxMouseQueryPosition(unsigned int *pcx, unsigned int *pcy)
         rc = VERR_ACCESS_DENIED;
     if (RT_SUCCESS(rc))
         rc = VbglR3GetMouseStatus(&fFeatures, &cx, &cy);
-    else
-        ErrorF("Error querying host mouse position! rc = %d\n", rc);
     if (   RT_SUCCESS(rc)
         && !(fFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE))
         rc = VERR_NOT_SUPPORTED;
