@@ -46,6 +46,319 @@
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
 
+#include <Wbemidl.h>
+#include <comdef.h>
+
+static HRESULT netIfWinCreateIWbemServices(IWbemServices ** ppSvc)
+{
+    HRESULT hres;
+
+    // Step 3: ---------------------------------------------------
+    // Obtain the initial locator to WMI -------------------------
+
+    IWbemLocator *pLoc = NULL;
+
+    hres = CoCreateInstance(
+        CLSID_WbemLocator,
+        0,
+        CLSCTX_INPROC_SERVER,
+        IID_IWbemLocator, (LPVOID *) &pLoc);
+    if(SUCCEEDED(hres))
+    {
+        // Step 4: -----------------------------------------------------
+        // Connect to WMI through the IWbemLocator::ConnectServer method
+
+        IWbemServices *pSvc = NULL;
+
+        // Connect to the root\cimv2 namespace with
+        // the current user and obtain pointer pSvc
+        // to make IWbemServices calls.
+        hres = pLoc->ConnectServer(
+             _bstr_t(L"ROOT\\CIMV2"), // Object path of WMI namespace
+             NULL,                    // User name. NULL = current user
+             NULL,                    // User password. NULL = current
+             0,                       // Locale. NULL indicates current
+             NULL,                    // Security flags.
+             0,                       // Authority (e.g. Kerberos)
+             0,                       // Context object
+             &pSvc                    // pointer to IWbemServices proxy
+             );
+        if(SUCCEEDED(hres))
+        {
+            LogRel(("Connected to ROOT\\CIMV2 WMI namespace\n"));
+
+            // Step 5: --------------------------------------------------
+            // Set security levels on the proxy -------------------------
+
+            hres = CoSetProxyBlanket(
+               pSvc,                        // Indicates the proxy to set
+               RPC_C_AUTHN_WINNT,           // RPC_C_AUTHN_xxx
+               RPC_C_AUTHZ_NONE,            // RPC_C_AUTHZ_xxx
+               NULL,                        // Server principal name
+               RPC_C_AUTHN_LEVEL_CALL,      // RPC_C_AUTHN_LEVEL_xxx
+               RPC_C_IMP_LEVEL_IMPERSONATE, // RPC_C_IMP_LEVEL_xxx
+               NULL,                        // client identity
+               EOAC_NONE                    // proxy capabilities
+            );
+            if(SUCCEEDED(hres))
+            {
+                *ppSvc = pSvc;
+                /* do not need it any more */
+                pLoc->Release();
+                return hres;
+            }
+            else
+            {
+                LogRel(("Could not set proxy blanket. Error code = 0x%x\n", hres));
+            }
+
+            pSvc->Release();
+        }
+        else
+        {
+            LogRel(("Could not connect. Error code = 0x%x\n", hres));
+        }
+
+        pLoc->Release();
+    }
+    else
+    {
+        LogRel(("Failed to create IWbemLocator object. Err code = 0x%x\n", hres));
+//        CoUninitialize();
+    }
+
+    return hres;
+}
+
+static HRESULT netIfWinFindAdapterClassById(IWbemServices * pSvc, GUID * pGuid, IWbemClassObject **pAdapterConfig)
+{
+    HRESULT hres;
+    WCHAR aQueryString[256];
+    char uuidStr[RTUUID_STR_LENGTH];
+    int rc = RTUuidToStr((PCRTUUID)pGuid, uuidStr, sizeof(uuidStr));
+    if(RT_SUCCESS(rc))
+    {
+        swprintf(aQueryString, L"SELECT * FROM Win32_NetworkAdapterConfiguration WHERE SettingID = \"{%S}\"", uuidStr);
+        // Step 6: --------------------------------------------------
+        // Use the IWbemServices pointer to make requests of WMI ----
+
+        IEnumWbemClassObject* pEnumerator = NULL;
+        hres = pSvc->ExecQuery(
+            bstr_t("WQL"),
+            bstr_t(aQueryString),
+            WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+            NULL,
+            &pEnumerator);
+        if(SUCCEEDED(hres))
+        {
+            // Step 7: -------------------------------------------------
+            // Get the data from the query in step 6 -------------------
+
+            IWbemClassObject *pclsObj;
+            ULONG uReturn = 0;
+
+            while (pEnumerator)
+            {
+                HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1,
+                    &pclsObj, &uReturn);
+
+                if(SUCCEEDED(hres))
+                {
+                    if(uReturn)
+                    {
+                        pEnumerator->Release();
+                        *pAdapterConfig = pclsObj;
+                        hres = S_OK;
+                        return hres;
+                    }
+                    else
+                    {
+                        hres = S_FALSE;
+                    }
+                }
+
+            }
+            pEnumerator->Release();
+        }
+        else
+        {
+            Log(("Query for operating system name failed. Error code = 0x%x\n", hres));
+        }
+    }
+    else
+    {
+        hres = -1;
+    }
+
+    return hres;
+}
+
+static HRESULT netIfAdapterConfigPath(IWbemClassObject *pObj, BSTR * pStr)
+{
+    VARIANT index;
+
+    // Get the value of the key property
+    HRESULT hr = pObj->Get(L"Index", 0, &index, 0, 0);
+    if(SUCCEEDED(hr))
+    {
+        WCHAR strIndex[8];
+        swprintf(strIndex, L"%u", index.uintVal);
+        *pStr = (bstr_t(L"Win32_NetworkAdapterConfiguration.Index='") + strIndex + "'").copy();
+    }
+    else
+    {
+        DWORD dwError = GetLastError();
+        Assert(0);
+        hr = HRESULT_FROM_WIN32( dwError );
+    }
+    return hr;
+}
+
+static HRESULT netIfExecMethod(IWbemServices * pSvc, IWbemClassObject *pClass, BSTR ObjPath,
+        BSTR MethodName, LPWSTR *pArgNames, LPVARIANT *pArgs, UINT cArgs,
+        IWbemClassObject** ppOutParams
+        )
+{
+    HRESULT hres;
+    // Step 6: --------------------------------------------------
+    // Use the IWbemServices pointer to make requests of WMI ----
+
+    IWbemClassObject* pInParamsDefinition = NULL;
+    hres = pClass->GetMethod(MethodName, 0,
+        &pInParamsDefinition, NULL);
+    if(SUCCEEDED(hres))
+    {
+        IWbemClassObject* pClassInstance = NULL;
+        hres = pInParamsDefinition->SpawnInstance(0, &pClassInstance);
+
+        if(SUCCEEDED(hres))
+        {
+            for(UINT i = 0; i < cArgs; i++)
+            {
+                // Store the value for the in parameters
+                hres = pClassInstance->Put(pArgNames[i], 0,
+                    pArgs[i], 0);
+                if(FAILED(hres))
+                {
+                    break;
+                }
+            }
+
+            if(SUCCEEDED(hres))
+            {
+                IWbemClassObject* pOutParams = NULL;
+                hres = pSvc->ExecMethod(ObjPath, MethodName, 0,
+                        NULL, pClassInstance, &pOutParams, NULL);
+                if(SUCCEEDED(hres))
+                {
+                    *ppOutParams = pOutParams;
+                }
+            }
+
+            pClassInstance->Release();
+        }
+
+        pInParamsDefinition->Release();
+    }
+
+    return hres;
+}
+
+static HRESULT createIpArray(SAFEARRAY **ppArray, in_addr* aIp, UINT cIp)
+{
+    HRESULT hr;
+    SAFEARRAY * pIpArray = SafeArrayCreateVector(VT_BSTR, 0, cIp);
+    if(pIpArray)
+    {
+        for(UINT i = 0; i < cIp; i++)
+        {
+            char* addr = inet_ntoa(aIp[i]);
+            BSTR val = bstr_t(addr).copy();
+            long aIndex[1];
+            aIndex[0] = i;
+            hr = SafeArrayPutElement(pIpArray, aIndex, val);
+            if(FAILED(hr))
+            {
+                SysFreeString(val);
+                SafeArrayDestroy(pIpArray);
+                break;
+            }
+        }
+
+        if(SUCCEEDED(hr))
+        {
+            *ppArray = pIpArray;
+        }
+    }
+    else
+    {
+        DWORD dwError = GetLastError();
+        Assert(0);
+        hr = HRESULT_FROM_WIN32( dwError );
+    }
+
+    return hr;
+}
+
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnableStatic(IWbemServices * pSvc, IWbemClassObject *pObj,  in_addr* aIp,  in_addr * aMask, UINT cIp)
+{
+    IWbemClassObject * pClass;
+    BSTR ClassName = SysAllocString(L"Win32_NetworkAdapterConfiguration");
+    HRESULT hr;
+    if(ClassName)
+    {
+        hr = pSvc->GetObject(ClassName, 0, NULL, &pClass, NULL);
+        if(SUCCEEDED(hr))
+        {
+            BSTR ObjPath;
+            hr = netIfAdapterConfigPath(pObj, &ObjPath);
+            if(SUCCEEDED(hr))
+            {
+                LPWSTR argNames[] = {L"IPAddress", L"SubnetMask"};
+                VARIANT ipAddresses;
+                VariantInit(&ipAddresses);
+                ipAddresses.vt = VT_ARRAY | VT_BSTR;
+                SAFEARRAY *pIpArray;
+                hr = createIpArray(&pIpArray, aIp, cIp);
+                if(SUCCEEDED(hr))
+                {
+                    ipAddresses.parray = pIpArray;
+                    VARIANT ipMasks;
+                    VariantInit(&ipMasks);
+                    ipMasks.vt = VT_ARRAY | VT_BSTR;
+                    SAFEARRAY *pMaskArray;
+                    hr = createIpArray(&pMaskArray, aMask, cIp);
+                    if(SUCCEEDED(hr))
+                    {
+                        ipMasks.parray = pMaskArray;
+                        LPVARIANT args[] = {&ipAddresses, &ipMasks};
+                        IWbemClassObject * pOutParams;
+
+                        hr = netIfExecMethod(pSvc, pClass, ObjPath,
+                                bstr_t(L"EnableStatic"), argNames, args, 2, &pOutParams);
+                        if(SUCCEEDED(hr))
+                        {
+                        }
+                        SafeArrayDestroy(pMaskArray);
+                    }
+                    SafeArrayDestroy(pIpArray);
+                }
+                SysFreeString(ObjPath);
+            }
+            pClass->Release();
+        }
+        SysFreeString(ClassName);
+    }
+    else
+    {
+        DWORD dwError = GetLastError();
+        Assert(0);
+        hr = HRESULT_FROM_WIN32( dwError );
+    }
+
+    return hr;
+}
+
 
 static int collectNetIfInfo(Bstr &strName, PNETIFINFO pInfo)
 {
@@ -337,8 +650,66 @@ static int NetIfListHostAdapters(std::list <ComObjPtr <HostNetworkInterface> > &
     return VINF_SUCCESS;
 }
 
+//TODO: this is sample currently, hardcoded balues should be removed and exposed to the API
+static int enableStatic()
+{
+    INetCfg *pnc;
+    LPWSTR lpszLockedBy = NULL;
+    int r = 1;
+    HRESULT hr;
+
+            hr = VBoxNetCfgWinQueryINetCfg(FALSE, L"VirtualBox", &pnc, &lpszLockedBy);
+            if(hr == S_OK)
+            {
+                INetCfgComponent  *pComponent;
+                HRESULT hr = pnc->FindComponent(L"*msloop", &pComponent);
+                if(hr == S_OK)
+                {
+                    GUID guid;
+                    hr = pComponent->GetInstanceGuid(&guid);
+                    if(SUCCEEDED(hr))
+                    {
+                        IWbemServices * pSvc;
+                        hr = netIfWinCreateIWbemServices(&pSvc);
+                        if(SUCCEEDED(hr))
+                        {
+                            IWbemClassObject *pAdapterConfig;
+                            hr = netIfWinFindAdapterClassById(pSvc, &guid, &pAdapterConfig);
+                            if(SUCCEEDED(hr))
+                            {
+                                in_addr ip[1];
+                                in_addr mask[1];
+                                ip[0].S_un.S_addr = inet_addr("192.168.5.1");
+                                mask[0].S_un.S_addr = inet_addr("255.255.255.0");
+
+                                hr = VBoxNetCfgWinEnableStatic(pSvc, pAdapterConfig,  ip,  mask, 1);
+                                if(SUCCEEDED(hr))
+                                {
+                                    printf("succees!!!\n");
+                                    r = 0;
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+
+
+    return r;
+}
+
+static bool bTest = true;
+
 int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 {
+    if(bTest)
+    {
+        bTest = false;
+        Assert(0);
+        enableStatic();
+    }
+
 #ifndef VBOX_WITH_NETFLT
     static const char *NetworkKey = "SYSTEM\\CurrentControlSet\\Control\\Network\\"
                                     "{4D36E972-E325-11CE-BFC1-08002BE10318}";
