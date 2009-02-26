@@ -176,6 +176,30 @@ VMMRCDECL(int) vmmGCLoggerFlush(PRTLOGGERRC pLogger)
 
 
 /**
+ * Disables the GC logger temporarily
+ *
+ * @param   pVM             The VM handle.
+ */
+VMMRCDECL(void) VMMGCLogDisable(PVM pVM)
+{
+    if (pVM->vmm.s.pRCLoggerRC)
+        pVM->vmm.s.pRCLoggerRC->fFlags |= RTLOGFLAGS_DISABLED;
+}
+
+
+/**
+ * Enables the GC logger again
+ *
+ * @param   pVM             The VM handle.
+ */
+VMMRCDECL(void) VMMGCLogEnable(PVM pVM)
+{
+    if (pVM->vmm.s.pRCLoggerRC)
+        pVM->vmm.s.pRCLoggerRC->fFlags &= ~RTLOGFLAGS_DISABLED;
+}
+
+
+/**
  * Switches from guest context to host context.
  *
  * @param   pVM         The VM handle.
