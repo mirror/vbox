@@ -7757,15 +7757,36 @@ HRESULT SessionMachine::init (Machine *aMachine)
                       ipcSem.raw(), arc),
                      E_FAIL);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-    Utf8Str configFile = aMachine->mData->mConfigFileFull;
-    char *configFileCP = NULL;
-    int error;
-    RTStrUtf8ToCurrentCP (&configFileCP, configFile);
-    key_t key = ::ftok (configFileCP, 'V');
-    RTStrFree (configFileCP);
+# ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
+    AssertCompileSize(key_t, 4);
+    key_t key;
+    mIPCSem = -1;
+    mIPCKey = "0";
+    for (uint32_t i = 0; i < 1 << 24; i++)
+    {
+        key = ((uint32_t)'V' << 24) | i;
+        int sem = ::semget (key, 1, S_IRUSR | S_IWUSR | IPC_CREAT | IPC_EXCL);
+        if (sem < 0 && errno == EEXIST)
+            continue;
+        mIPCSem = sem;
+        if (sem >= 0)
+        {
+            mIPCKey = BstrFmt ("%u", key);
+            break;
+        }
+    }
+# else /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
+    Utf8Str semName = aMachine->mData->mConfigFileFull;
+    char *pszSemName = NULL;
+    RTStrUtf8ToCurrentCP (&pszSemName, semName);
+    key_t key = ::ftok (pszSemName, 'V');
+    RTStrFree (pszSemName);
+
     mIPCSem = ::semget (key, 1, S_IRWXU | S_IRWXG | S_IRWXO | IPC_CREAT);
-    error = errno;
-    if (mIPCSem < 0 && error == ENOSYS)
+# endif /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
+
+    int errnoSave = errno;
+    if (mIPCSem < 0 && errnoSave == ENOSYS)
     {
         setError (E_FAIL,
                   tr ("Cannot create IPC semaphore. Most likely your host kernel lacks "
@@ -7773,7 +7794,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
                       "CONFIG_SYSVIPC=y"));
         return E_FAIL;
     }
-    ComAssertMsgRet (mIPCSem >= 0, ("Cannot create IPC semaphore, errno=%d", error),
+    ComAssertMsgRet (mIPCSem >= 0, ("Cannot create IPC semaphore, errno=%d", errnoSave),
                      E_FAIL);
     /* set the initial value to 1 */
     int rv = ::semctl (mIPCSem, 0, SETVAL, 1);
@@ -7894,6 +7915,9 @@ void SessionMachine::uninit (Uninit::Reason aReason)
         if (mIPCSem >= 0)
             ::semctl (mIPCSem, 0, IPC_RMID);
         mIPCSem = -1;
+# ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
+        mIPCKey = "0";
+# endif /* VBOX_WITH_NEW_SYS_V_KEYGEN */
 #else
 # error "Port me!"
 #endif
@@ -8058,6 +8082,9 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     if (mIPCSem >= 0)
         ::semctl (mIPCSem, 0, IPC_RMID);
     mIPCSem = -1;
+# ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
+    mIPCKey = "0";
+# endif /* VBOX_WITH_NEW_SYS_V_KEYGEN */
 #else
 # error "Port me!"
 #endif
@@ -8117,7 +8144,11 @@ STDMETHODIMP SessionMachine::GetIPCId (BSTR *aId)
     mIPCSemName.cloneTo (aId);
     return S_OK;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+# ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
+    mIPCKey.cloneTo (aId);
+# else /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
     mData->mConfigFileFull.cloneTo (aId);
+# endif /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
     return S_OK;
 #else
 # error "Port me!"

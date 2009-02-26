@@ -987,6 +987,9 @@ private:
                                         HMTX *aIPCSem, bool aAllowClosing);
 #elif defined (VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     int mIPCSem;
+# ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
+    Bstr mIPCKey;
+# endif /*VBOX_WITH_NEW_SYS_V_KEYGEN */
 #else
 # error "Port me!"
 #endif

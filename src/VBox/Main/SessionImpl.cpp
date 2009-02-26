@@ -955,11 +955,19 @@ HRESULT Session::grabIPCSemaphore()
 
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 
+# ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
+    Utf8Str ipcKey = ipcId;
+    key_t key = RTStrToUInt32(ipcKey.raw());
+    AssertMsgReturn (key != 0,
+                    ("Key value of 0 is not valid for IPC semaphore"),
+                    E_FAIL);
+# else /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
     Utf8Str semName = ipcId;
     char *pszSemName = NULL;
     RTStrUtf8ToCurrentCP (&pszSemName, semName);
     key_t key = ::ftok (pszSemName, 'V');
     RTStrFree (pszSemName);
+# endif /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
 
     mIPCSem = ::semget (key, 0, 0);
     AssertMsgReturn (mIPCSem >= 0,
