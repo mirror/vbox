@@ -59,7 +59,6 @@
 // helper declarations
 ////////////////////////////////////////////////////////////////////////////////
 
-class IAppliance;
 class VirtualBox;
 class Progress;
 class CombinedProgress;
