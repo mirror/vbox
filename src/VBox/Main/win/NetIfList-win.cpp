@@ -46,6 +46,7 @@
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
 
+#ifdef VBOX_WITH_NETFLT
 #include <Wbemidl.h>
 #include <comdef.h>
 
@@ -300,7 +301,7 @@ static HRESULT createIpArray(SAFEARRAY **ppArray, in_addr* aIp, UINT cIp)
     return hr;
 }
 
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnableStatic(IWbemServices * pSvc, IWbemClassObject *pObj,  in_addr* aIp,  in_addr * aMask, UINT cIp)
+static HRESULT VBoxNetCfgWinEnableStatic(IWbemServices * pSvc, IWbemClassObject *pObj,  in_addr* aIp,  in_addr * aMask, UINT cIp)
 {
     IWbemClassObject * pClass;
     BSTR ClassName = SysAllocString(L"Win32_NetworkAdapterConfiguration");
@@ -460,7 +461,6 @@ static int collectNetIfInfo(Bstr &strName, PNETIFINFO pInfo)
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_NETFLT
 # define VBOX_APP_NAME L"VirtualBox"
 
 static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > * pPist, INetCfgComponent * pncc, bool bReal)
@@ -650,6 +650,7 @@ static int NetIfListHostAdapters(std::list <ComObjPtr <HostNetworkInterface> > &
     return VINF_SUCCESS;
 }
 
+#if 0
 //TODO: this is sample currently, hardcoded balues should be removed and exposed to the API
 static int enableStatic()
 {
@@ -658,7 +659,7 @@ static int enableStatic()
     int r = 1;
     HRESULT hr;
 
-            hr = VBoxNetCfgWinQueryINetCfg(FALSE, L"VirtualBox", &pnc, &lpszLockedBy);
+            hr = VBoxNetCfgWinQueryINetCfg(FALSE, VBOX_APP_NAME, &pnc, &lpszLockedBy);
             if(hr == S_OK)
             {
                 INetCfgComponent  *pComponent;
@@ -698,6 +699,7 @@ static int enableStatic()
 
     return r;
 }
+#endif
 
 int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 {

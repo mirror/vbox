@@ -331,8 +331,9 @@ ifdef VBOX_WITH_NETFLT
  #needed to include intsafe.h indirectly included by comdef.h 
  VBoxSVC_INCS.win += $(foreach VARSDK, $(VBoxSVC_SDKS), $(PATH_SDK_$(VARSDK)_INC)/crt)
  #needed to include comsupp.lib
- VBoxSVC_LIBPATH += $(if $(VBOX_USE_VCC80),$(PATH_TOOL_VCC80_LIB),$(PATH_TOOL_VCC70_LIB))
- VBoxSVC_LIBS.win += wbemuuid.lib comsupp.lib
+ VBoxSVC_LIBS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib
+ #VBoxSVC_LIBPATH.win += $(if $(VBOX_USE_VCC80),$(PATH_TOOL_VCC80_LIB),$(PATH_TOOL_VCC70_LIB))
+ VBoxSVC_LIBS.win += wbemuuid.lib
  VBoxSVC_LIBS.win += $(PATH_LIB)/WinNetConfig.lib
  ifdef VBOX_NETFLT_ONDEMAND_BIND
   VBoxSVC_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
