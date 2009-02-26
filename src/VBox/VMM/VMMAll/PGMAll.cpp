@@ -942,7 +942,7 @@ int pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppP
         pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
-        Assert((pPdpe->u & X86_PDPE_PG_MASK) == pShwPage->Core.Key));
+        Assert((pPdpe->u & X86_PDPE_PG_MASK) == pShwPage->Core.Key);
     }
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;
