@@ -3093,6 +3093,8 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     } u;
     u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pUserPage);
 
+    LogFlow(("pgmPoolTrackClearPageUser: clear %x in %s (flushing %s)\n", iUserTable, pgmPoolPoolKindToStr(pUserPage->enmKind), pgmPoolPoolKindToStr(pPage->enmKind)));
+
     /* Safety precaution in case we change the paging for other modes too in the future. */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(!pgmPoolIsPageLocked(&pPool->CTX_SUFF(pVM)->pgm.s, pPage));
