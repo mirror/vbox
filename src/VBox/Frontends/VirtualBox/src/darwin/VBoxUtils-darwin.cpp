@@ -44,7 +44,7 @@ NativeWindowRef darwinToNativeWindow (QWidget *aWidget)
 }
 
 NativeWindowRef darwinToNativeWindow (NativeViewRef aView)
-{ 
+{
     return darwinToNativeWindowImpl (aView);
 }
 
@@ -53,6 +53,11 @@ void darwinSetShowsToolbarButton (QToolBar *aToolBar, bool aEnabled)
     QWidget *parent = aToolBar->parentWidget();
     if (parent)
         darwinSetShowsToolbarButtonImpl (::darwinToNativeWindow (parent), aEnabled);
+}
+
+void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget)
+{
+    darwinWindowAnimateResizeImpl (::darwinToNativeWindow (aWidget), aTarget.x(), aTarget.y(), aTarget.width(), aTarget.height());
 }
 
 QString darwinSystemLanguage (void)
@@ -106,7 +111,6 @@ QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText)
     painter.end();
     return dragPixmap;
 }
-
 
 /********************************************************************************
  *

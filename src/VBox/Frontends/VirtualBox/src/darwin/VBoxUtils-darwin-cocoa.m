@@ -26,6 +26,7 @@
 #import <AppKit/NSWindow.h>
 #import <AppKit/NSView.h>
 #import <AppKit/NSEvent.h>
+#import <AppKit/NSToolbar.h>
 
 NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView)
 {
@@ -49,3 +50,20 @@ void darwinSetMouseCoalescingEnabled (bool aEnabled)
     [NSEvent setMouseCoalescingEnabled:aEnabled];
 }
 
+void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int width, int height)
+{
+    /* It seems that Qt doesn't return the height of the window with the
+     * toolbar height included. So add this size manually. Could easily be that
+     * the Trolls fix this in the final release. */
+    NSToolbar *toolbar = [aWindow toolbar];
+    NSRect windowFrame = [aWindow frame];
+    int toolbarHeight = 0;
+    if(toolbar && [toolbar isVisible])
+        toolbarHeight = NSHeight (windowFrame) - NSHeight ([[aWindow contentView] frame]);
+    int h = height + toolbarHeight;
+    int h1 = h - NSHeight (windowFrame);
+    windowFrame.size.height = h;
+    windowFrame.origin.y -= h1;
+
+    [aWindow setFrame:windowFrame display:YES animate:YES];
+}
