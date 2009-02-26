@@ -845,40 +845,50 @@ vbox_cursor_init(ScreenPtr pScreen)
 {
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     VBOXPtr pVBox = pScrn->driverPrivate;
-    xf86CursorInfoPtr pCurs;
-    Bool rc;
+    xf86CursorInfoPtr pCurs = NULL;
+    Bool rc = TRUE;
 
     TRACE_ENTRY();
     if (!pVBox->useDevice)
         return FALSE;
     pVBox->pCurs = pCurs = xf86CreateCursorInfoRec();
-    if (!pCurs)
-        RETERROR(pScrn->scrnIndex, FALSE,
-                 "Failed to create X Window cursor information structures for virtual mouse.\n");
+    if (!pCurs) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                   "Failed to create X Window cursor information structures for virtual mouse.\n");
+        rc = FALSE;
+    }
+    if (rc) {
+        pCurs->MaxWidth = VBOX_MAX_CURSOR_WIDTH;
+        pCurs->MaxHeight = VBOX_MAX_CURSOR_HEIGHT;
+        pCurs->Flags =   HARDWARE_CURSOR_TRUECOLOR_AT_8BPP
+                       | HARDWARE_CURSOR_SOURCE_MASK_INTERLEAVE_1
+                       | HARDWARE_CURSOR_BIT_ORDER_MSBFIRST;
 
-    pCurs->MaxWidth = VBOX_MAX_CURSOR_WIDTH;
-    pCurs->MaxHeight = VBOX_MAX_CURSOR_HEIGHT;
-    pCurs->Flags = HARDWARE_CURSOR_TRUECOLOR_AT_8BPP
-                 | HARDWARE_CURSOR_SOURCE_MASK_INTERLEAVE_1
-                 | HARDWARE_CURSOR_BIT_ORDER_MSBFIRST;
-
-    pCurs->SetCursorColors   = vbox_set_cursor_colors;
-    pCurs->SetCursorPosition = vbox_set_cursor_position;
-    pCurs->LoadCursorImage   = vbox_load_cursor_image;
-    pCurs->HideCursor        = vbox_hide_cursor;
-    pCurs->ShowCursor        = vbox_show_cursor;
-    pCurs->UseHWCursor       = vbox_use_hw_cursor;
-    pCurs->RealizeCursor     = vbox_realize_cursor;
+        pCurs->SetCursorColors   = vbox_set_cursor_colors;
+        pCurs->SetCursorPosition = vbox_set_cursor_position;
+        pCurs->LoadCursorImage   = vbox_load_cursor_image;
+        pCurs->HideCursor        = vbox_hide_cursor;
+        pCurs->ShowCursor        = vbox_show_cursor;
+        pCurs->UseHWCursor       = vbox_use_hw_cursor;
+        pCurs->RealizeCursor     = vbox_realize_cursor;
 
 #ifdef ARGB_CURSOR
-    pCurs->UseHWCursorARGB   = vbox_use_hw_cursor_argb;
-    pCurs->LoadCursorARGB    = vbox_load_cursor_argb;
+        pCurs->UseHWCursorARGB   = vbox_use_hw_cursor_argb;
+        pCurs->LoadCursorARGB    = vbox_load_cursor_argb;
 #endif
 
-    rc = xf86InitCursor(pScreen, pCurs);
-    if (rc == TRUE)
-        return TRUE;
-    RETERROR(pScrn->scrnIndex, FALSE, "Failed to enable mouse pointer integration.\n");
+        /* Hide the host cursor before we initialise if we wish to use a
+         * software cursor. */
+        if (pVBox->forceSWCursor)
+            vbox_vmm_hide_cursor(pScrn, pVBox);
+        rc = xf86InitCursor(pScreen, pCurs);
+    }
+    if (!rc)
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                   "Failed to enable mouse pointer integration.\n");
+    if (!rc && (pCurs != NULL))
+        xf86DestroyCursorInfoRec(pCurs);
+    return rc;
 }
 
 /**
