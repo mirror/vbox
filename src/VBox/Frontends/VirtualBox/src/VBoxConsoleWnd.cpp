@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -3132,11 +3132,11 @@ void VBoxConsoleWnd::prepareDVDMenu()
     CHostDVDDrive selected = csession.GetMachine().GetDVDDrive().GetHostDrive();
 
     hostDVDMap.clear();
-    CHostDVDDriveEnumerator en =
-        vboxGlobal().virtualBox().GetHost().GetDVDDrives().Enumerate();
-    while (en.HasMore())
+    CHostDVDDriveVector drvvec =
+        vboxGlobal().virtualBox().GetHost().GetDVDDrives();
+    for (int i = 0; i < drvvec.size(); ++i)
     {
-        CHostDVDDrive hostDVD = en.GetNext();
+        CHostDVDDrive hostDVD = drvvec[i];
         /** @todo set icon */
         QString drvName = hostDVD.GetName();
         QString description = hostDVD.GetDescription();
