@@ -1053,7 +1053,7 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
 
     LogFlow(("vboxNetFltFactoryCreateAndConnect: pszName=%p:{%s} fFlags=%#x\n", pszName, pszName, fFlags));
     Assert(pGlobals->cFactoryRefs > 0);
-    AssertMsgReturn(fFlags & ~(INTNETTRUNKFACTORY_FLAG_NO_PROMISC),
+    AssertMsgReturn(!(fFlags & ~(INTNETTRUNKFACTORY_FLAG_NO_PROMISC)),
                     ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
 
     /*
