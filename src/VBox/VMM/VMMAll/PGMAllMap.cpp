@@ -279,7 +279,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                     if (PGMGetGuestMode(pVM) < PGMMODE_PAE)
                     {
                         /* Fake PDPT entry; access control handled on the page table level, so allow everything. */
-                        GstPdpe.u  = X86_PDPE_P;   /* rw/us are reserved for PAE pdpte's; accessed bit causes invalid VT-x guest state errors */
+                        GstPdpe.u = X86_PDPE_P;   /* rw/us are reserved for PAE pdpte's; accessed bit causes invalid VT-x guest state errors */
                     }
                     else
                     {
@@ -288,7 +288,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                         if (pGstPdpe)
                             GstPdpe = *pGstPdpe;
                         else
-                            GstPdpe.u  = X86_PDPE_P;   /* rw/us are reserved for PAE pdpte's; accessed bit causes invalid VT-x guest state errors */
+                            GstPdpe.u = X86_PDPE_P;   /* rw/us are reserved for PAE pdpte's; accessed bit causes invalid VT-x guest state errors */
                     }
                     int rc = pgmShwSyncPaePDPtr(pVM, (iPdPt << X86_PDPT_SHIFT), &GstPdpe, &pShwPaePd);
                     AssertFatal(RT_SUCCESS(rc));
