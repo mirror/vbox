@@ -988,28 +988,105 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
 DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszName, PVBOXNETFLTINS *ppInstance, void *pvContext)
 {
     PINTNETTRUNKIFPORT pIfPort;
+    PVBOXNETFLTINS pCur;
     int rc;
 
+    *ppInstance = NULL;
     rc = RTSemFastMutexRequest(pGlobals->hFastMtx);
     AssertRCReturn(rc, rc);
 
     /*
      * Look for an existing instance in the list.
      *
-     * If found that it's being destroyed, wait for it to go away.
-     * Return instances in other states ASSUMING that it has lost the
-     * connection.
+     * There might be an existing one in the list if the driver was unbound
+     * while it was connected to an internal network. We're running into
+     * a destruction race that is a bit similar to the one in
+     * vboxNetFltFactoryCreateAndConnect, only the roles are reversed
+     * and we're not in a position to back down. Instead of backing down
+     * we'll delay a bit giving the other thread time to complete the
+     * destructor.
      */
-    *ppInstance = vboxNetFltFindInstanceLocked(pGlobals, pszName);
-    while (*ppInstance)
+    pCur = vboxNetFltFindInstanceLocked(pGlobals, pszName);
+    while (pCur)
     {
-        VBOXNETFTLINSSTATE enmState = vboxNetFltGetState(*ppInstance);
+#if 0
+        uint32_t cRefs = ASMAtomicIncU32(&pCur->cRefs);
+        if (cRefs > 1)
+        {
+            VBOXNETFTLINSSTATE enmState = vboxNetFltGetState(pCur);
+            switch (enmState)
+            {
+                case kVBoxNetFltInsState_Unconnected:
+                case kVBoxNetFltInsState_Connected:
+                case kVBoxNetFltInsState_Disconnecting:
+                    if (pCur->fDisconnectedFromHost)
+                    {
+                        /* Wait for it to exit the transitional disconnecting
+                           state. It might otherwise be running the risk of
+                           upsetting the OS specific code...  */
+                        /** @todo This reconnect stuff should be serialized correctly for static
+                         *        devices. Shouldn't it? In the dynamic case we're using the INTNET
+                         *        outbound thrunk lock, but that doesn't quite cut it here, or does
+                         *        it? We could either transition to initializing  or make a callback
+                         *        while owning the mutext here... */
+                        if (enmState == kVBoxNetFltInsState_Disconnecting)
+                        {
+                            do
+                            {
+                                RTSemFastMutexRelease(pGlobals->hFastMtx);
+                                RTThreadSleep(2); /* (2ms) */
+                                RTSemFastMutexRequest(pGlobals->hFastMtx);
+                                enmState = ;
+                            }
+                            while (enmState == kVBoxNetFltInsState_Disconnecting);
+                            AssertMsg(enmState == kVBoxNetFltInsState_Unconnected, ("%d\n", enmState));
+                            Assert(pCur->fDisconnectedFromHost);
+                        }
+
+                        RTSemFastMutexRelease(pGlobals->hFastMtx);
+                        *ppInstance = pCur;
+                        return VINF_ALREADY_INITIALIZED;
+                    }
+                    /* fall thru */
+
+                default:
+                {
+                    bool fDfH = pCur->fDisconnectedFromHost;
+                    RTSemFastMutexRelease(pGlobals->hFastMtx);
+                    vboxNetFltRelease(pCur, false /* fBusy */);
+                    LogRel(("VBoxNetFlt: Huh? An instance of '%s' already exists! [pCur=%p cRefs=%d fDfH=%RTbool enmState=%d]\n",
+                            pszName, pCur, cRefs - 1, fDfH, enmState));
+                    *ppInstance = NULL;
+                    return VERR_INTNET_FLT_IF_BUSY;
+                }
+            }
+        }
+
+        /* Zero references, it's being destroyed. Delay a bit so the destructor
+           can finish its work and try again. (vboxNetFltNewInstance will fail
+           with duplicate name if we don't.) */
+# ifdef RT_STRICT
+        Assert(cRefs == 1);
+        enmState = vboxNetFltGetState(pCur);
+        AssertMsg(   enmState == kVBoxNetFltInsState_Unconnected
+                  || enmState == kVBoxNetFltInsState_Disconnecting
+                  || enmState == kVBoxNetFltInsState_Destroyed, ("%d\n", enmState));
+# endif
+        ASMAtomicDecU32(&pCur->cRefs);
+        RTSemFastMutexRelease(pGlobals->hFastMtx);
+        RTThreadSleep(2); /* (2ms) */
+        rc = RTSemFastMutexRequest(pGlobals->hFastMtx);
+        AssertRCReturn(rc, rc);
+
+#else /* old code: */
+        VBOXNETFTLINSSTATE enmState = vboxNetFltGetState(pCur);
         if (    enmState != kVBoxNetFltInsState_Destroying
             &&  enmState != kVBoxNetFltInsState_Destroyed)
         {
             /** @todo r=bird: who is making sure this is a genuine reconnection case? */
-            vboxNetFltRetain(*ppInstance, false /* fBusy */);
+            vboxNetFltRetain(pCur, false /* fBusy */);
             RTSemFastMutexRelease(pGlobals->hFastMtx);
+            *ppInstance = pCur;
             return VINF_ALREADY_INITIALIZED;
         }
 
@@ -1018,9 +1095,10 @@ DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, cons
         RTSemEventWait(pGlobals->hBlockEvent, 2);
         rc = RTSemFastMutexRequest(pGlobals->hFastMtx);
         AssertRCReturn(rc, rc);
+#endif
 
         /* try again */
-        *ppInstance = vboxNetFltFindInstanceLocked(pGlobals, pszName);
+        pCur = vboxNetFltFindInstanceLocked(pGlobals, pszName);
     }
 
     RTSemFastMutexRelease(pGlobals->hFastMtx);
