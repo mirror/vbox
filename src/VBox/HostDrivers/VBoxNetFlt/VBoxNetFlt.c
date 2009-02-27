@@ -1036,7 +1036,7 @@ DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, cons
                                 RTSemFastMutexRelease(pGlobals->hFastMtx);
                                 RTThreadSleep(2); /* (2ms) */
                                 RTSemFastMutexRequest(pGlobals->hFastMtx);
-                                enmState = ;
+                                enmState = vboxNetFltGetState(pCur);
                             }
                             while (enmState == kVBoxNetFltInsState_Disconnecting);
                             AssertMsg(enmState == kVBoxNetFltInsState_Unconnected, ("%d\n", enmState));
