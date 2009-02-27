@@ -223,8 +223,8 @@ int handleList(HandlerArg *a)
             if (SUCCEEDED(rc))
             {
                 /*
-                * Iterate through the collection.
-                */
+                 * Iterate through the collection.
+                 */
                 for (size_t i = 0; i < coll.size(); ++ i)
                 {
                     ComPtr<IGuestOSType> guestOS;
@@ -244,17 +244,13 @@ int handleList(HandlerArg *a)
         {
             ComPtr<IHost> host;
             CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-            ComPtr<IHostDVDDriveCollection> coll;
-            ComPtr<IHostDVDDriveEnumerator> enumerator;
-            CHECK_ERROR(host, COMGETTER(DVDDrives)(coll.asOutParam()));
-            if (SUCCEEDED(rc) && coll)
+            com::SafeIfaceArray <IHostDVDDrive> coll;
+            CHECK_ERROR(host, COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(coll)));
+            if (SUCCEEDED(rc))
             {
-                CHECK_ERROR(coll, Enumerate(enumerator.asOutParam()));
-                BOOL hasMore;
-                while (SUCCEEDED(enumerator->HasMore(&hasMore)) && hasMore)
+                for (size_t i = 0; i < coll.size(); ++ i)
                 {
-                    ComPtr<IHostDVDDrive> dvdDrive;
-                    CHECK_ERROR_BREAK(enumerator, GetNext(dvdDrive.asOutParam()));
+                    ComPtr<IHostDVDDrive> dvdDrive = coll[i];
                     Bstr name;
                     dvdDrive->COMGETTER(Name)(name.asOutParam());
                     RTPrintf("Name:        %lS\n\n", name.raw());
@@ -778,4 +774,4 @@ int handleList(HandlerArg *a)
 }
 
 #endif /* !VBOX_ONLY_DOCS */
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */
