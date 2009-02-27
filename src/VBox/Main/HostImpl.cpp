@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2007 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -290,9 +290,9 @@ void Host::uninit()
  * @returns COM status code
  * @param drives address of result pointer
  */
-STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut (IHostDVDDrive *, aDrives))
+STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **aDrives)
 {
-    CheckComArgOutSafeArrayPointerValid(aDrives);
+    CheckComArgOutPointerValid(aDrives);
     AutoWriteLock alock (this);
     CHECK_READY();
     std::list <ComObjPtr <HostDVDDrive> > list;
@@ -398,8 +398,10 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut (IHostDVDDrive *, aDriv
     /* PORTME */
 #endif
 
-    SafeIfaceArray <IHostDVDDrive> array (list);
-    array.detachTo(ComSafeArrayOutArg(aDrives));
+    ComObjPtr<HostDVDDriveCollection> collection;
+    collection.createObject();
+    collection->init (list);
+    collection.queryInterfaceTo(aDrives);
     return rc;
 }
 
@@ -3319,41 +3321,6 @@ void Host::unregisterMetrics (PerformanceCollector *aCollector)
     aCollector->unregisterBaseMetricsFor (this);
 };
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
-STDMETHODIMP Host::FindHostDVDDrive(IN_BSTR aName, IHostDVDDrive **aDrive)
-{
-    CheckComArgNotNull(aName);
-    CheckComArgOutPointerValid(aDrive);
-    AutoReadLock alock (this);
-
-    *aDrive = NULL;
-
-    SafeIfaceArray <IHostDVDDrive> drivevec;
-    HRESULT rc = COMGETTER(DVDDrives) (ComSafeArrayAsOutParam(drivevec));
-    CheckComRCReturnRC (rc);
-
-    for (size_t i = 0; i < drivevec.size(); ++i)
-    {
-        Bstr name;
-        rc = drivevec[i]->COMGETTER(Name) (name.asOutParam());
-        CheckComRCReturnRC (rc);
-        if (name == aName)
-        {
-            ComObjPtr<HostDVDDrive> found;
-            found.createObject();
-            Bstr udi, description;
-            rc = drivevec[i]->COMGETTER(Udi) (udi.asOutParam());
-            CheckComRCReturnRC (rc);
-            rc = drivevec[i]->COMGETTER(Description) (description.asOutParam());
-            CheckComRCReturnRC (rc);
-            found->init(name, udi, description);
-            return found.queryInterfaceTo(aDrive);
-        }
-    }
-
-    return setError (VBOX_E_OBJECT_NOT_FOUND, HostDVDDrive::tr (
-        "The host DVD drive named '%ls' could not be found"), aName);
-}
 
 STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInterface **networkInterface)
 {
