@@ -3111,7 +3111,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     else
         LogRel((DEVICE_NAME ":vboxNetFltOsInitInstance failed to create mutex. rc=%Rrc\n", rc));
 
-    NOREF(pvContext)
+    NOREF(pvContext);
     return rc;
 }
 
