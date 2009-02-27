@@ -758,7 +758,7 @@ static DECLCALLBACK(int) vboxNetAdpFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
 
     LogFlow(("vboxNetAdpFactoryCreateAndConnect: pszName=%p:{%s} fFlags=%#x\n", pszName, pszName, fFlags));
     Assert(pGlobals->cFactoryRefs > 0);
-    AssertMsgReturn(fFlags,
+    AssertMsgReturn(!fFlags,
                     ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
 
     /*
