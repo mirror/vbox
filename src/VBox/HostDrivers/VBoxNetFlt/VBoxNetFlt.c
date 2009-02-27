@@ -221,12 +221,13 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>
-#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/spinlock.h>
-#include <iprt/semaphore.h>
-#include <iprt/time.h>
 #include <iprt/uuid.h>
+#include <iprt/mem.h>
+#include <iprt/time.h>
+#include <iprt/semaphore.h>
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
