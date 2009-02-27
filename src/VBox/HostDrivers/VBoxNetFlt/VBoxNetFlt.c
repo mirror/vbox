@@ -1130,8 +1130,11 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
     /*
      * Dynamically create a new instance.
      */
-    rc = vboxNetFltNewInstance(pGlobals, pszName, pSwitchPort,
+    rc = vboxNetFltNewInstance(pGlobals,
+                               pszName,
+                               pSwitchPort,
                                !!(fFlags & INTNETTRUNKFACTORY_FLAG_NO_PROMISC),
+                               NULL,
                                ppIfPort);
 #endif
     LogFlow(("vboxNetFltFactoryCreateAndConnect: returns %Rrc\n", rc));
