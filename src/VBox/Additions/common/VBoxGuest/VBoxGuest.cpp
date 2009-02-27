@@ -1111,6 +1111,73 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
 }
 
 
+#ifdef RT_ARCH_AMD64
+/** The 32-bit version HGCM call for 64-bit driver. */
+static int VBoxGuestCommonIOCtl_HGCMCall32(PVBOXGUESTDEVEXT pDevExt,
+                                           PVBOXGUESTSESSION pSession,
+                                           VBoxGuestHGCMCallInfo *pInfo,
+                                           uint32_t cMillies, bool fInterruptible,
+                                           size_t cbExtra, size_t cbData, size_t *pcbDataReturned)
+{
+    /*
+     * Some more validations.
+     */
+    if (pInfo->cParms > 4096) /* (Just make sure it doesn't overflow the next check.) */
+    {
+        Log(("VBoxGuestCommonIOCtl: HGCM_CALL: cParm=%RX32 is not sane\n", pInfo->cParms));
+        return VERR_INVALID_PARAMETER;
+    }
+    const size_t cbActual = cbExtra + sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter32);
+    if (cbData < cbActual)
+    {
+        Log(("VBoxGuestCommonIOCtl: HGCM_CALL: cbData=%#zx (%zu) required size is %#zx (%zu)\n",
+             cbData, cbActual));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /*
+     * Validate the client id.
+     */
+    const uint32_t u32ClientId = pInfo->u32ClientID;
+    unsigned i;
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pDevExt->SessionSpinlock, &Tmp);
+    for (i = 0; i < RT_ELEMENTS(pSession->aHGCMClientIds); i++)
+        if (pSession->aHGCMClientIds[i] == u32ClientId)
+            break;
+    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock, &Tmp);
+    if (RT_UNLIKELY(i >= RT_ELEMENTS(pSession->aHGCMClientIds)))
+    {
+        static unsigned s_cErrors = 0;
+        if (s_cErrors++ > 32)
+            LogRel(("VBoxGuestCommonIOCtl: HGCM_CALL: Invalid handle. u32Client=%RX32\n", u32ClientId));
+        return VERR_INVALID_HANDLE;
+    }
+
+    /*
+     * The VbglHGCMCall call will invoke the callback if the HGCM
+     * call is performed in an ASYNC fashion. This function can
+     * deal with cancelled requests, so we let user more requests
+     * be interruptible (should add a flag for this later I guess).
+     */
+    Log(("VBoxGuestCommonIOCtl: HGCM_CALL: u32Client=%RX32\n", pInfo->u32ClientID));
+    int rc;
+    if (fInterruptible)
+        rc = VbglHGCMCall32(pInfo, VBoxGuestHGCMAsyncWaitCallbackInterruptible, pDevExt, cMillies);
+    else
+        rc = VbglHGCMCall32(pInfo, VBoxGuestHGCMAsyncWaitCallback, pDevExt, cMillies);
+    if (RT_SUCCESS(rc))
+    {
+        Log(("VBoxGuestCommonIOCtl: HGCM_CALL: result=%Rrc\n", pInfo->result));
+        if (pcbDataReturned)
+            *pcbDataReturned = cbActual;
+    }
+    Log(("VBoxGuestCommonIOCtl: HGCM_CALL: Failed. rc=%Rrc.\n", rc));
+    return rc;
+}
+#endif
+
+
 /**
  * @returns VBox status code. Unlike the other HGCM IOCtls this will combine
  *          the VbglHGCMConnect/Disconnect return code with the Info.result.
@@ -1272,6 +1339,24 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
                                            !!pInfo->fInterruptible || pSession->R0Process != NIL_RTR0PROCESS,
                                            RT_OFFSETOF(VBoxGuestHGCMCallInfoTimed, info), cbData, pcbDataReturned);
     }
+# ifdef RT_ARCH_AMD64
+    else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_32(0)))
+    {
+        CHECKRET_MIN_SIZE("HGCM_CALL", sizeof(VBoxGuestHGCMCallInfo));
+        bool fInterruptible = pSession->R0Process != NIL_RTR0PROCESS;
+        rc = VBoxGuestCommonIOCtl_HGCMCall32(pDevExt, pSession, (VBoxGuestHGCMCallInfo *)pvData, RT_INDEFINITE_WAIT,
+                                             fInterruptible,
+                                             0, cbData, pcbDataReturned);
+    }
+    else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMED_32(0)))
+    {
+        CHECKRET_MIN_SIZE("HGCM_CALL_TIMED", sizeof(VBoxGuestHGCMCallInfoTimed));
+        VBoxGuestHGCMCallInfoTimed *pInfo = (VBoxGuestHGCMCallInfoTimed *)pvData;
+        rc = VBoxGuestCommonIOCtl_HGCMCall32(pDevExt, pSession, &pInfo->info, pInfo->u32Timeout,
+                                             !!pInfo->fInterruptible || pSession->R0Process != NIL_RTR0PROCESS,
+                                             RT_OFFSETOF(VBoxGuestHGCMCallInfoTimed, info), cbData, pcbDataReturned);
+    }    
+# endif   
 #endif /* VBOX_WITH_HGCM */
     else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_LOG(0)))
     {
@@ -1301,11 +1386,17 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
 
 #ifdef VBOX_WITH_HGCM
             case VBOXGUEST_IOCTL_HGCM_CONNECT:
+# ifdef RT_ARCH_AMD64
+            case VBOXGUEST_IOCTL_HGCM_CONNECT_32:
+# endif              
                 CHECKRET_MIN_SIZE("HGCM_CONNECT", sizeof(VBoxGuestHGCMConnectInfo));
                 rc = VBoxGuestCommonIOCtl_HGCMConnect(pDevExt, pSession, (VBoxGuestHGCMConnectInfo *)pvData, pcbDataReturned);
                 break;
 
             case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
+# ifdef RT_ARCH_AMD64
+            case VBOXGUEST_IOCTL_HGCM_DISCONNECT_32:
+# endif              
                 CHECKRET_MIN_SIZE("HGCM_DISCONNECT", sizeof(VBoxGuestHGCMDisconnectInfo));
                 rc = VBoxGuestCommonIOCtl_HGCMDisconnect(pDevExt, pSession, (VBoxGuestHGCMDisconnectInfo *)pvData, pcbDataReturned);
                 break;
@@ -1314,6 +1405,7 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
                 CHECKRET_MIN_SIZE("CLIPBOARD_CONNECT", sizeof(uint32_t));
                 rc = VBoxGuestCommonIOCtl_HGCMClipboardReConnect(pDevExt, (uint32_t *)pvData, pcbDataReturned);
                 break;
+                
 #endif /* VBOX_WITH_HGCM */
 
             default:

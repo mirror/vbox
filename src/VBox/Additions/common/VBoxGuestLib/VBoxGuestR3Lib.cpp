@@ -336,6 +336,9 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     Hdr.u32Magic = VBGLBIGREQ_MAGIC;
     Hdr.cbData = cbData;
     Hdr.pvDataR3 = pvData;
+# if HC_ARCH_BITS == 32
+    Hdr.u32Padding = 0;
+# endif
 
 /** @todo test status code passing! */
     int rc = ioctl((int)g_File, iFunction, &Hdr);
