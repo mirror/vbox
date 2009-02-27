@@ -50,16 +50,28 @@
 
 #if PGM_GST_TYPE == PGM_TYPE_REAL \
  || PGM_GST_TYPE == PGM_TYPE_PROT
-# define GSTPT                      SHWPT
-# define PGSTPT                     PSHWPT
-# define GSTPTE                     SHWPTE
-# define PGSTPTE                    PSHWPTE
-# define GSTPD                      SHWPD
-# define PGSTPD                     PSHWPD
-# define GSTPDE                     SHWPDE
-# define PGSTPDE                    PSHWPDE
-# define GST_PTE_PG_MASK            SHW_PTE_PG_MASK
 
+# if PGM_SHW_TYPE == PGM_TYPE_EPT
+#  define GSTPT                      X86PTPAE
+#  define PGSTPT                     PX86PTPAE
+#  define GSTPTE                     X86PTEPAE
+#  define PGSTPTE                    PX86PTEPAE
+#  define GSTPD                      X86PDPAE
+#  define PGSTPD                     PX86PDPAE
+#  define GSTPDE                     X86PDEPAE
+#  define PGSTPDE                    PX86PDEPAE
+#  define GST_PTE_PG_MASK            X86_PTE_PAE_PG_MASK
+# else
+#  define GSTPT                      SHWPT
+#  define PGSTPT                     PSHWPT
+#  define GSTPTE                     SHWPTE
+#  define PGSTPTE                    PSHWPTE
+#  define GSTPD                      SHWPD
+#  define PGSTPD                     PSHWPD
+#  define GSTPDE                     SHWPDE
+#  define PGSTPDE                    PSHWPDE
+#  define GST_PTE_PG_MASK            SHW_PTE_PG_MASK
+# endif
 #elif PGM_GST_TYPE == PGM_TYPE_32BIT
 # define GSTPT                      X86PT
 # define PGSTPT                     PX86PT
