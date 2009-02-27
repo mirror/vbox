@@ -5647,94 +5647,6 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
 
 #endif /* VBOX_WITH_USB */
 
-/**
-  * Call the initialisation script for a dynamic TAP interface.
-  *
-  * The initialisation script should create a TAP interface, set it up and write its name to
-  * standard output followed by a carriage return.  Anything further written to standard
-  * output will be ignored.  If it returns a non-zero exit code, or does not write an
-  * intelligible interface name to standard output, it will be treated as having failed.
-  * For now, this method only works on Linux.
-  *
-  * @returns COM status code
-  * @param   tapDevice           string to store the name of the tap device created to
-  * @param   tapSetupApplication the name of the setup script
-  */
-HRESULT Console::callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapDevice,
-                                         Bstr &tapSetupApplication)
-{
-    LogFlowThisFunc(("\n"));
-#ifdef RT_OS_LINUX
-    /* Command line to start the script with. */
-    char szCommand[4096];
-    /* Result code */
-    int rc;
-
-    /* Get the script name. */
-    Utf8Str tapSetupAppUtf8(tapSetupApplication), tapDeviceUtf8(tapDevice);
-    RTStrPrintf(szCommand, sizeof(szCommand), "%s %d %s", tapSetupAppUtf8.raw(),
-                isStatic ? tapFD : 0, isStatic ? tapDeviceUtf8.raw() : "");
-    /*
-     * Create the process and read its output.
-     */
-    Log2(("About to start the TAP setup script with the following command line: %s\n",
-          szCommand));
-    FILE *pfScriptHandle = popen(szCommand, "r");
-    if (pfScriptHandle == 0)
-    {
-        int iErr = errno;
-        LogRel(("Failed to start the TAP interface setup script %s, error text: %s\n",
-              szCommand, strerror(iErr)));
-        LogFlowThisFunc(("rc=E_FAIL\n"));
-        return setError(E_FAIL, tr ("Failed to run the host networking set up command %s: %s"),
-                        szCommand, strerror(iErr));
-    }
-    /* If we are using a dynamic TAP interface, we need to get the interface name. */
-    if (!isStatic)
-    {
-        /* Buffer to read the application output to.  It doesn't have to be long, as we are only
-            interested in the first few (normally 5 or 6) bytes. */
-        char acBuffer[64];
-        /* The length of the string returned by the application.  We only accept strings of 63
-           characters or less. */
-        size_t cBufSize;
-
-        /* Read the name of the device from the application. */
-        fgets(acBuffer, sizeof(acBuffer), pfScriptHandle);
-        cBufSize = strlen(acBuffer);
-        /* The script must return the name of the interface followed by a carriage return as the
-          first line of its output.  We need a null-terminated string. */
-        if ((cBufSize < 2) || (acBuffer[cBufSize - 1] != '\n'))
-        {
-            pclose(pfScriptHandle);
-            LogRel(("The TAP interface setup script did not return the name of a TAP device.\n"));
-            LogFlowThisFunc(("rc=E_FAIL\n"));
-            return setError(E_FAIL, tr ("The host networking set up command did not supply an interface name"));
-        }
-        /* Overwrite the terminating newline character. */
-        acBuffer[cBufSize - 1] = 0;
-        tapDevice = acBuffer;
-    }
-    rc = pclose(pfScriptHandle);
-    if (!WIFEXITED(rc))
-    {
-        LogRel(("The TAP interface setup script terminated abnormally.\n"));
-        LogFlowThisFunc(("rc=E_FAIL\n"));
-        return setError(E_FAIL, tr ("The host networking set up command did not run correctly"));
-    }
-    if (WEXITSTATUS(rc) != 0)
-    {
-        LogRel(("The TAP interface setup script returned a non-zero exit code.\n"));
-        LogFlowThisFunc(("rc=E_FAIL\n"));
-        return setError(E_FAIL, tr ("The host networking set up command returned a non-zero exit code"));
-    }
-    LogFlowThisFunc(("rc=S_OK\n"));
-    return S_OK;
-#else /* RT_OS_LINUX not defined */
-    LogFlowThisFunc(("rc=E_NOTIMPL\n"));
-    ReturnComNotImplemented();  /* not yet supported */
-#endif
-}
 
 /**
  *  Helper function to handle host interface device creation and attachment.
@@ -5756,7 +5668,8 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
     NOREF(networkAdapter);
     return S_OK;
 
-#else /* RT_OS_LINUX */
+#else /* RT_OS_LINUX && !VBOX_WITH_NETFLT */
+
     LogFlowThisFunc(("\n"));
     /* sanity check */
     AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
@@ -5775,148 +5688,91 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
     AssertComRC(rc);
 
     /*
-     * Try get the FD.
+     * Allocate a host interface device
      */
-    LONG        ltapFD;
-    rc = networkAdapter->COMGETTER(TAPFileDescriptor)(&ltapFD);
-    if (SUCCEEDED(rc))
-        maTapFD[slot] = (RTFILE)ltapFD;
-    else
-        maTapFD[slot] = NIL_RTFILE;
-
-    /*
-     * Are we supposed to use an existing TAP interface?
-     */
-    if (maTapFD[slot] != NIL_RTFILE)
+    int rcVBox = RTFileOpen(&maTapFD[slot], "/dev/net/tun",
+                            RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_INHERIT);
+    if (VBOX_SUCCESS(rcVBox))
     {
-        /* nothing to do */
-        Assert(ltapFD >= 0);
-        Assert((LONG)maTapFD[slot] == ltapFD);
-        rc = S_OK;
+        /*
+         * Set/obtain the tap interface.
+         */
+        struct ifreq IfReq;
+        memset(&IfReq, 0, sizeof(IfReq));
+        /* The name of the TAP interface we are using */
+        Bstr tapDeviceName;
+        rc = networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
+        if (FAILED(rc))
+            tapDeviceName.setNull();  /* Is this necessary? */
+        if (tapDeviceName.isEmpty())
+        {
+            LogRel(("No TAP device name was supplied.\n"));
+            rc = setError(E_FAIL, tr ("No TAP device name was supplied for the host networking interface"));
+        }
+
+        if (SUCCEEDED(rc))
+        {
+            /* If we are using a static TAP device then try to open it. */
+            Utf8Str str(tapDeviceName);
+            if (str.length() <= sizeof(IfReq.ifr_name))
+                strcpy(IfReq.ifr_name, str.raw());
+            else
+                memcpy(IfReq.ifr_name, str.raw(), sizeof(IfReq.ifr_name) - 1); /** @todo bitch about names which are too long... */
+            IfReq.ifr_flags = IFF_TAP | IFF_NO_PI;
+            rcVBox = ioctl(maTapFD[slot], TUNSETIFF, &IfReq);
+            if (rcVBox != 0)
+            {
+                LogRel(("Failed to open the host network interface %ls\n", tapDeviceName.raw()));
+                rc = setError(E_FAIL, tr ("Failed to open the host network interface %ls"),
+                              tapDeviceName.raw());
+            }
+        }
+        if (SUCCEEDED(rc))
+        {
+            /*
+             * Make it pollable.
+             */
+            if (fcntl(maTapFD[slot], F_SETFL, O_NONBLOCK) != -1)
+            {
+                Log(("attachToHostInterface: %RTfile %ls\n", maTapFD[slot], tapDeviceName.raw()));
+                /*
+                 * Here is the right place to communicate the TAP file descriptor and
+                 * the host interface name to the server if/when it becomes really
+                 * necessary.
+                 */
+                maTAPDeviceName[slot] = tapDeviceName;
+                rcVBox = VINF_SUCCESS;
+            }
+            else
+            {
+                int iErr = errno;
+
+                LogRel(("Configuration error: Failed to configure /dev/net/tun non blocking. Error: %s\n", strerror(iErr)));
+                rcVBox = VERR_HOSTIF_BLOCKING;
+                rc = setError(E_FAIL, tr ("could not set up the host networking device for non blocking access: %s"),
+                                          strerror(errno));
+            }
+        }
     }
     else
     {
-        /*
-         * Allocate a host interface device
-         */
-        int rcVBox = RTFileOpen(&maTapFD[slot], "/dev/net/tun",
-                                RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_INHERIT);
-        if (VBOX_SUCCESS(rcVBox))
+        LogRel(("Configuration error: Failed to open /dev/net/tun rc=%Rrc\n", rcVBox));
+        switch (rcVBox)
         {
-            /*
-             * Set/obtain the tap interface.
-             */
-            bool isStatic = false;
-            struct ifreq IfReq;
-            memset(&IfReq, 0, sizeof(IfReq));
-            /* The name of the TAP interface we are using and the TAP setup script resp. */
-            Bstr tapDeviceName, tapSetupApplication;
-            rc = networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
-            if (FAILED(rc))
-            {
-                tapDeviceName.setNull();  /* Is this necessary? */
-            }
-            else if (!tapDeviceName.isEmpty())
-            {
-                isStatic = true;
-                /* If we are using a static TAP device then try to open it. */
-                Utf8Str str(tapDeviceName);
-                if (str.length() <= sizeof(IfReq.ifr_name))
-                    strcpy(IfReq.ifr_name, str.raw());
-                else
-                    memcpy(IfReq.ifr_name, str.raw(), sizeof(IfReq.ifr_name) - 1); /** @todo bitch about names which are too long... */
-                IfReq.ifr_flags = IFF_TAP | IFF_NO_PI;
-                rcVBox = ioctl(maTapFD[slot], TUNSETIFF, &IfReq);
-                if (rcVBox != 0)
-                {
-                    LogRel(("Failed to open the host network interface %ls\n", tapDeviceName.raw()));
-                    rc = setError(E_FAIL, tr ("Failed to open the host network interface %ls"),
-                                          tapDeviceName.raw());
-                }
-            }
-            if (SUCCEEDED(rc))
-            {
-                networkAdapter->COMGETTER(TAPSetupApplication)(tapSetupApplication.asOutParam());
-                if (tapSetupApplication.isEmpty())
-                {
-                    if (tapDeviceName.isEmpty())
-                    {
-                        LogRel(("No setup application was supplied for the TAP interface.\n"));
-                        rc = setError(E_FAIL, tr ("No setup application was supplied for the host networking interface"));
-                    }
-                }
-                else
-                {
-                    rc = callTapSetupApplication(isStatic, maTapFD[slot], tapDeviceName,
-                                                 tapSetupApplication);
-                }
-            }
-            if (SUCCEEDED(rc))
-            {
-                if (!isStatic)
-                {
-                    Utf8Str str(tapDeviceName);
-                    if (str.length() <= sizeof(IfReq.ifr_name))
-                        strcpy(IfReq.ifr_name, str.raw());
-                    else
-                        memcpy(IfReq.ifr_name, str.raw(), sizeof(IfReq.ifr_name) - 1); /** @todo bitch about names which are too long... */
-                    IfReq.ifr_flags = IFF_TAP | IFF_NO_PI;
-                    rcVBox = ioctl(maTapFD[slot], TUNSETIFF, &IfReq);
-                    if (rcVBox != 0)
-                    {
-                        LogRel(("Failed to open the host network interface %ls returned by the setup script", tapDeviceName.raw()));
-                        rc = setError(E_FAIL, tr ("Failed to open the host network interface %ls returned by the setup script"), tapDeviceName.raw());
-                    }
-                }
-                if (SUCCEEDED(rc))
-                {
-                    /*
-                    * Make it pollable.
-                    */
-                    if (fcntl(maTapFD[slot], F_SETFL, O_NONBLOCK) != -1)
-                    {
-                        Log(("attachToHostInterface: %RTfile %ls\n", maTapFD[slot], tapDeviceName.raw()));
-
-                        /*
-                        * Here is the right place to communicate the TAP file descriptor and
-                        * the host interface name to the server if/when it becomes really
-                        * necessary.
-                        */
-                        maTAPDeviceName[slot] = tapDeviceName;
-                        rcVBox = VINF_SUCCESS;
-                    }
-                    else
-                    {
-                        int iErr = errno;
-
-                        LogRel(("Configuration error: Failed to configure /dev/net/tun non blocking. Error: %s\n", strerror(iErr)));
-                        rcVBox = VERR_HOSTIF_BLOCKING;
-                        rc = setError(E_FAIL, tr ("could not set up the host networking device for non blocking access: %s"),
-                                              strerror(errno));
-                    }
-                }
-            }
+            case VERR_ACCESS_DENIED:
+                /* will be handled by our caller */
+                rc = rcVBox;
+                break;
+            default:
+                rc = setError(E_FAIL, tr ("Could not set up the host networking device: %Rrc"), rcVBox);
+                break;
         }
-        else
-        {
-            LogRel(("Configuration error: Failed to open /dev/net/tun rc=%Rrc\n", rcVBox));
-            switch (rcVBox)
-            {
-                case VERR_ACCESS_DENIED:
-                    /* will be handled by our caller */
-                    rc = rcVBox;
-                    break;
-                default:
-                    rc = setError(E_FAIL, tr ("Could not set up the host networking device: %Rrc"), rcVBox);
-                    break;
-            }
-        }
-        /* in case of failure, cleanup. */
-        if (VBOX_FAILURE(rcVBox) && SUCCEEDED(rc))
-        {
-            LogRel(("General failure attaching to host interface\n"));
-            rc = setError(E_FAIL, tr ("General failure attaching to host interface"));
-        }
+    }
+    /* in case of failure, cleanup. */
+    if (VBOX_FAILURE(rcVBox) && SUCCEEDED(rc))
+    {
+        LogRel(("General failure attaching to host interface\n"));
+        rc = setError(E_FAIL, tr ("General failure attaching to host interface"));
     }
     LogFlowThisFunc(("rc=%d\n", rc));
     return rc;
@@ -5977,43 +5833,6 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
             AssertRC(rcVBox);
             maTapFD[slot] = NIL_RTFILE;
         }
-        /*
-         * Execute the termination command.
-         */
-        networkAdapter->COMGETTER(TAPTerminateApplication)(tapTerminateApplication.asOutParam());
-        if (tapTerminateApplication)
-        {
-            /* Get the program name. */
-            Utf8Str tapTermAppUtf8(tapTerminateApplication);
-
-            /* Build the command line. */
-            char szCommand[4096];
-            RTStrPrintf(szCommand, sizeof(szCommand), "%s %d %s", tapTermAppUtf8.raw(),
-                        isStatic ? maTapFD[slot] : 0, maTAPDeviceName[slot].raw());
-            /** @todo check for overflow or use RTStrAPrintf! */
-
-            /*
-             * Create the process and wait for it to complete.
-             */
-            Log(("Calling the termination command: %s\n", szCommand));
-            int rcCommand = system(szCommand);
-            if (rcCommand == -1)
-            {
-                LogRel(("Failed to execute the clean up script for the TAP interface"));
-                rc = setError(E_FAIL, tr ("Failed to execute the clean up script for the TAP interface"));
-            }
-            if (!WIFEXITED(rc))
-            {
-                LogRel(("The TAP interface clean up script terminated abnormally.\n"));
-                rc = setError(E_FAIL, tr ("The TAP interface clean up script terminated abnormally"));
-            }
-            if (WEXITSTATUS(rc) != 0)
-            {
-                LogRel(("The TAP interface clean up script returned a non-zero exit code.\n"));
-                rc = setError(E_FAIL, tr ("The TAP interface clean up script returned a non-zero exit code"));
-            }
-        }
-
         if (isStatic)
         {
             /* If we are using a static TAP device, we close it now, after having called the

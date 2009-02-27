@@ -65,12 +65,6 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork()
     /* Setup dialog for current platform */
 #if !defined (Q_WS_X11) || defined (VBOX_WITH_NETFLT)
     setTapVisible (false);
-#else
-    /* Setup iconsets */
-    mTbSetup_x11->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
-                                                ":/select_file_dis_16px.png"));
-    mTbTerminate_x11->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
-                                                    ":/select_file_dis_16px.png"));
 #endif
 
     /* Applying language settings */
@@ -115,8 +109,6 @@ void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
 #endif
 #if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
     mLeInterface_x11->setText (aAdapter.GetHostInterface());
-    mLeSetup_x11->setText (aAdapter.GetTAPSetupApplication());
-    mLeTerminate_x11->setText (aAdapter.GetTAPTerminateApplication());
 #endif
 }
 
@@ -167,10 +159,6 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
 #if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
         QString iface = mLeInterface_x11->text();
         mAdapter.SetHostInterface (iface.isEmpty() ? QString::null : iface);
-        QString setup = mLeSetup_x11->text();
-        mAdapter.SetTAPSetupApplication (setup.isEmpty() ? QString::null : setup);
-        QString term = mLeTerminate_x11->text();
-        mAdapter.SetTAPTerminateApplication (term.isEmpty() ? QString::null : term);
 #endif
     }
     else if (type == KNetworkAttachmentType_Internal)
@@ -199,10 +187,6 @@ void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
     connect (mCbNetwork, SIGNAL (activated (const QString&)),
              mValidator, SLOT (revalidate()));
     connect (mPbMAC, SIGNAL (clicked()), this, SLOT (genMACClicked()));
-#if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
-    connect (mTbSetup_x11, SIGNAL (clicked()), this, SLOT (tapSetupClicked()));
-    connect (mTbTerminate_x11, SIGNAL (clicked()), this, SLOT (tapTerminateClicked()));
-#endif
 
     mValidator->revalidate();
 }
@@ -217,11 +201,7 @@ QWidget* VBoxVMSettingsNetwork::setOrderAfter (QWidget *aAfter)
     setTabOrder (mLeMAC, mPbMAC);
     setTabOrder (mPbMAC, mCbCable);
     setTabOrder (mCbCable, mLeInterface_x11);
-    setTabOrder (mLeInterface_x11, mLeSetup_x11);
-    setTabOrder (mLeSetup_x11, mTbSetup_x11);
-    setTabOrder (mTbSetup_x11, mLeTerminate_x11);
-    setTabOrder (mLeTerminate_x11, mTbTerminate_x11);
-    return mTbTerminate_x11;
+    return mLeInterface_x11;
 }
 
 void VBoxVMSettingsNetwork::setNetworksList (const QStringList &aList)
@@ -289,26 +269,6 @@ void VBoxVMSettingsNetwork::genMACClicked()
     mLeMAC->setText (mAdapter.GetMACAddress());
 }
 
-#if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
-void VBoxVMSettingsNetwork::tapSetupClicked()
-{
-    QString selected = QFileDialog::getOpenFileName (
-        this, tr ("Select TAP setup application"), "/");
-
-    if (!selected.isEmpty())
-        mLeSetup_x11->setText (selected);
-}
-
-void VBoxVMSettingsNetwork::tapTerminateClicked()
-{
-    QString selected = QFileDialog::getOpenFileName (
-        this, tr ("Select TAP terminate application"), "/");
-
-    if (!selected.isEmpty())
-        mLeTerminate_x11->setText (selected);
-}
-#endif
-
 void VBoxVMSettingsNetwork::prepareComboboxes()
 {
     /* Save the current selected value */
@@ -373,12 +333,6 @@ void VBoxVMSettingsNetwork::setTapEnabled (bool aEnabled)
     mGbTap->setEnabled (aEnabled);
     mLbInterface_x11->setEnabled (aEnabled);
     mLeInterface_x11->setEnabled (aEnabled);
-    mLbSetup_x11->setEnabled (aEnabled);
-    mLeSetup_x11->setEnabled (aEnabled);
-    mTbSetup_x11->setEnabled (aEnabled);
-    mLbTerminate_x11->setEnabled (aEnabled);
-    mLeTerminate_x11->setEnabled (aEnabled);
-    mTbTerminate_x11->setEnabled (aEnabled);
 }
 
 void VBoxVMSettingsNetwork::setTapVisible (bool aVisible)
@@ -386,12 +340,6 @@ void VBoxVMSettingsNetwork::setTapVisible (bool aVisible)
     mGbTap->setVisible (aVisible);
     mLbInterface_x11->setVisible (aVisible);
     mLeInterface_x11->setVisible (aVisible);
-    mLbSetup_x11->setVisible (aVisible);
-    mLeSetup_x11->setVisible (aVisible);
-    mTbSetup_x11->setVisible (aVisible);
-    mLbTerminate_x11->setVisible (aVisible);
-    mLeTerminate_x11->setVisible (aVisible);
-    mTbTerminate_x11->setVisible (aVisible);
 #ifdef Q_WS_MAC
     /* Make sure the layout is recalculated (Important on the mac). */
     layout()->activate();
