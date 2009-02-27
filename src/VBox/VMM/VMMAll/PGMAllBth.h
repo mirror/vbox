@@ -4508,7 +4508,9 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         rc = PGMMap(pVM, (RTGCPTR)pVM->pgm.s.GCPtrCR3Mapping, HCPhysGuestCR3, PAGE_SIZE, 0);
         if (RT_SUCCESS(rc))
         {
+# ifdef IN_RC
             PGM_INVL_PG(pVM->pgm.s.GCPtrCR3Mapping);
+# endif
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
             pVM->pgm.s.pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -4523,7 +4525,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
             pVM->pgm.s.pGstPaePdptR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
 #  endif
             pVM->pgm.s.pGstPaePdptRC = (RCPTRTYPE(PX86PDPT))((RCPTRTYPE(uint8_t *))pVM->pgm.s.GCPtrCR3Mapping + off);
-            Log(("Cached mapping %RGv\n", pVM->pgm.s.pGstPaePdptRC));
+            Log(("Cached mapping %RRv\n", pVM->pgm.s.pGstPaePdptRC));
 
             /*
              * Map the 4 PDs too.
