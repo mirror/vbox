@@ -38,14 +38,14 @@
 #include <VBox/sup.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
-#include <VBox/version.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/spinlock.h>
 #include <iprt/uuid.h>
+#include <VBox/version.h>
 
 /** r=bird: why is this here in the agnositc code? */
-#ifndef RT_OS_SOLARIS
+#ifdef RT_OS_DARWIN
 # include <net/ethernet.h>
 # include <net/if_ether.h>
 # include <net/if_types.h>
@@ -62,31 +62,6 @@
 *******************************************************************************/
 #define IFPORT_2_VBOXNETADP(pIfPort) \
     ( (PVBOXNETADP)((uint8_t *)pIfPort - RT_OFFSETOF(VBOXNETADP, MyPort)) )
-
-
-
-/**
- * Generate a suitable MAC address.
- *
- * @param   pThis       The instance.
- * @param   pMac        Where to return the MAC address.
- */
-DECLHIDDEN(void) vboxNetAdpComposeMACAddress(PVBOXNETADP pThis, PRTMAC pMac)
-{
-#if 0 /* Use a locally administered version of the OUI we use for the guest NICs. */
-    pMac->au8[0] = 0x08 | 2;
-    pMac->au8[1] = 0x00;
-    pMac->au8[2] = 0x27;
-#else /* this is what \0vb comes down to. It seems to be unassigned atm. */
-    pMac->au8[0] = 0;
-    pMac->au8[1] = 0x76;
-    pMac->au8[2] = 0x62;
-#endif
-
-    pMac->au8[3] = pThis->uUnit >> 16;
-    pMac->au8[4] = pThis->uUnit >> 8;
-    pMac->au8[5] = pThis->uUnit;
-}
 
 
 AssertCompileMemberSize(VBOXNETADP, enmState, sizeof(uint32_t));
@@ -121,7 +96,7 @@ DECLINLINE(void) vboxNetAdpSetState(PVBOXNETADP pThis, VBOXNETADPSTATE enmNewSta
 
 
 /**
- * Sets the enmState member atomically.
+ * Sets the enmState member atomically after first acquiring the spinlock.
  *
  * Used for all updates.
  *
@@ -130,9 +105,8 @@ DECLINLINE(void) vboxNetAdpSetState(PVBOXNETADP pThis, VBOXNETADPSTATE enmNewSta
  */
 DECLINLINE(void) vboxNetAdpSetStateWithLock(PVBOXNETADP pThis, VBOXNETADPSTATE enmNewState)
 {
-    VBOXNETADPSTATE enmState;
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    Log(("vboxNetAdpSetStateWithLock: pThis=%p, state=%d.\n", pThis, enmState));
+    Log(("vboxNetAdpSetStateWithLock: pThis=%p, state=%d.\n", pThis, enmNewState));
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
     vboxNetAdpSetState(pThis, enmNewState);
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
@@ -192,7 +166,6 @@ DECLINLINE(bool) vboxNetAdpCheckAndSetState(PVBOXNETADP pThis, VBOXNETADPSTATE e
 
 /**
  * Finds a instance by its name, the caller does the locking.
- *
  *
  * @returns Pointer to the instance by the given name. NULL if not found.
  * @param   pGlobals        The globals.
@@ -332,6 +305,30 @@ DECLHIDDEN(void) vboxNetAdpBusy(PVBOXNETADP pThis)
     Assert(cBusy > 0 && cBusy < UINT32_MAX / 2);
 
     NOREF(cBusy);
+}
+
+
+/**
+ * Generate a suitable MAC address.
+ *
+ * @param   pThis       The instance.
+ * @param   pMac        Where to return the MAC address.
+ */
+DECLHIDDEN(void) vboxNetAdpComposeMACAddress(PVBOXNETADP pThis, PRTMAC pMac)
+{
+#if 0 /* Use a locally administered version of the OUI we use for the guest NICs. */
+    pMac->au8[0] = 0x08 | 2;
+    pMac->au8[1] = 0x00;
+    pMac->au8[2] = 0x27;
+#else /* this is what \0vb comes down to. It seems to be unassigned atm. */
+    pMac->au8[0] = 0;
+    pMac->au8[1] = 0x76;
+    pMac->au8[2] = 0x62;
+#endif
+
+    pMac->au8[3] = 0; /* pThis->uUnit >> 16; */
+    pMac->au8[4] = 0; /* pThis->uUnit >> 8; */
+    pMac->au8[5] = pThis->uUnit;
 }
 
 
@@ -846,9 +843,8 @@ static DECLCALLBACK(void *) vboxNetAdpQueryFactoryInterface(PCSUPDRVFACTORY pSup
  */
 DECLHIDDEN(bool) vboxNetAdpCanUnload(PVBOXNETADPGLOBALS pGlobals)
 {
-    int rc;
-    unsigned i;
     bool fRc = true; /* Assume it can be unloaded. */
+    unsigned i;
 
     for (i = 0; i < RT_ELEMENTS(pGlobals->aAdapters); i++)
     {
