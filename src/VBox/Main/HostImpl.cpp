@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -290,9 +290,9 @@ void Host::uninit()
  * @returns COM status code
  * @param drives address of result pointer
  */
-STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **aDrives)
+STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut (IHostDVDDrive *, aDrives))
 {
-    CheckComArgOutPointerValid(aDrives);
+    CheckComArgOutSafeArrayPointerValid(aDrives);
     AutoWriteLock alock (this);
     CHECK_READY();
     std::list <ComObjPtr <HostDVDDrive> > list;
@@ -398,10 +398,8 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **aDrives)
     /* PORTME */
 #endif
 
-    ComObjPtr<HostDVDDriveCollection> collection;
-    collection.createObject();
-    collection->init (list);
-    collection.queryInterfaceTo(aDrives);
+    SafeIfaceArray <IHostDVDDrive> array (list);
+    array.detachTo(ComSafeArrayOutArg(aDrives));
     return rc;
 }
 
@@ -3321,6 +3319,33 @@ void Host::unregisterMetrics (PerformanceCollector *aCollector)
     aCollector->unregisterBaseMetricsFor (this);
 };
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
+STDMETHODIMP Host::FindHostDVDDrive(IN_BSTR aName, IHostDVDDrive **aDrive)
+{
+    CheckComArgNotNull(aName);
+    CheckComArgOutPointerValid(aDrive);
+    AutoReadLock alock (this);
+
+    *aDrive = NULL;
+
+    for (DriveInfoList::const_iterator it = mHostDrives.DVDBegin();
+            it != mHostDrives.DVDEnd(); ++it)
+    {
+        Bstr device (it->mDevice.c_str());
+        if (device == aName)
+        {
+            ComObjPtr<HostDVDDrive> found;
+            HRESULT rc = found.createObject();
+            CheckComRCReturnRC (rc);
+            rc = found->init (device, Bstr (it->mUdi.c_str()), Bstr (it->mDescription.c_str()));
+            CheckComRCReturnRC (rc);
+            return found.queryInterfaceTo (aDrive);
+        }
+    }
+
+    return setError (VBOX_E_OBJECT_NOT_FOUND, HostDVDDrive::tr (
+        "The host DVD drive named '%ls' could not be found"), aName);
+}
 
 STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInterface **networkInterface)
 {
