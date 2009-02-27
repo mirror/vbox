@@ -94,6 +94,7 @@ typedef struct CRVBOXHGCMBUFFER {
 /* Some forward declarations */
 static void crVBoxHGCMReceiveMessage(CRConnection *conn);
 
+#ifndef IN_GUEST
 static bool _crVBoxHGCMReadBytes(CRConnection *conn, void *buf, uint32_t len)
 {
     CRASSERT(conn && buf);
@@ -108,6 +109,7 @@ static bool _crVBoxHGCMReadBytes(CRConnection *conn, void *buf, uint32_t len)
 
     return TRUE;
 }
+#endif
 
 /*@todo get rid of it*/
 static bool _crVBoxHGCMWriteBytes(CRConnection *conn, const void *buf, uint32_t len)
@@ -612,9 +614,9 @@ static void crVBoxHGCMReceiveMessage(CRConnection *conn)
             hgcm_buffer->magic     = CR_VBOXHGCM_BUFFER_MAGIC;
             hgcm_buffer->kind      = CR_VBOXHGCM_MEMORY_BIG;
             hgcm_buffer->allocated = sizeof(CRVBOXHGCMBUFFER) + len;
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
             hgcm_buffer->pDDS      = NULL;
-#endif
+# endif
         }
 
         hgcm_buffer->len = len;
