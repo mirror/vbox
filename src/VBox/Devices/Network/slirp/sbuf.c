@@ -165,7 +165,7 @@ sbappendsb(struct sbuf *sb, struct mbuf *m)
             nn = sb->sb_rptr - sb->sb_data;
             if (nn > len)
                 nn = len;
-            memcpy(sb->sb_data,m->m_data+n,nn);
+            memcpy(sb->sb_data, m->m_data+n, nn);
             n += nn;
         }
     }
@@ -194,7 +194,7 @@ sbcopy(struct sbuf *sb, int off, int len, char *to)
     {
         if (len > sb->sb_cc)
             len = sb->sb_cc;
-        memcpy(to,from,len);
+        memcpy(to, from, len);
     }
     else
     {
@@ -202,10 +202,10 @@ sbcopy(struct sbuf *sb, int off, int len, char *to)
         off = (sb->sb_data + sb->sb_datalen) - from;
         if (off > len)
             off = len;
-        memcpy(to,from,off);
+        memcpy(to, from, off);
         len -= off;
         if (len)
-            memcpy(to+off,sb->sb_data,len);
+            memcpy(to+off, sb->sb_data, len);
     }
 }
 

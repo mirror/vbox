@@ -50,7 +50,7 @@ tcp_fasttimo(PNATState pData)
 
     so = tcb.so_next;
     if (so)
-        QSOCKET_FOREACH (so, so_next,tcp)
+        QSOCKET_FOREACH (so, so_next, tcp)
         /* { */
             if (   (tp = (struct tcpcb *)so->so_tcpcb)
                 && (tp->t_flags & TF_DELACK))
@@ -94,7 +94,7 @@ tcp_slowtimo(PNATState pData)
         {
             if (tp->t_timer[i] && --tp->t_timer[i] == 0)
             {
-                tcp_timers(pData, tp,i);
+                tcp_timers(pData, tp, i);
                 if (ipnxt->so_prev != ip)
                     goto tpgone;
             }
