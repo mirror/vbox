@@ -229,7 +229,6 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
         case VERR_VMM_RING0_ASSERTION:
         case VINF_EM_DBG_HYPER_ASSERTION:
         {
-            bool fIsRing0 = rcErr == VERR_VMM_RING0_ASSERTION;
             const char *pszMsg1 = VMMR3GetRZAssertMsg1(pVM);
             while (pszMsg1 && *pszMsg1 == '\n')
                 pszMsg1++;

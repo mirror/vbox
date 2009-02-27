@@ -1322,7 +1322,6 @@ RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax)
     if (!psz2)
         return 1;
 
-    const char *pszStart1 = psz1;
     for (;;)
     {
         /* Get the codepoints */
