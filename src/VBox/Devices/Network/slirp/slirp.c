@@ -476,7 +476,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
 #ifdef RT_OS_WINDOWS
     {
         WSADATA Data;
-        WSAStartup(MAKEWORD(2,0), &Data);
+        WSAStartup(MAKEWORD(2, 0), &Data);
     }
 # if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
     pData->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -1321,7 +1321,7 @@ static void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         case ARPOP_REQUEST:
             if ((htip & pData->netmask) == ntohl(special_addr.s_addr))
             {
-                if (   CTL_CHECK(htip,CTL_DNS)
+                if (   CTL_CHECK(htip, CTL_DNS)
                     || CTL_CHECK(htip, CTL_ALIAS)
                     || CTL_CHECK(htip, CTL_TFTP))
                     goto arp_ok;

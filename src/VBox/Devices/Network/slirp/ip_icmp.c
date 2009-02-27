@@ -394,7 +394,7 @@ freeit:
                     {
                         Log((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
                                     errno, strerror(errno)));
-                        icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0, strerror(errno));
+                        icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
                     }
                 }
                 else

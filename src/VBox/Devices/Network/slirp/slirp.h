@@ -326,8 +326,8 @@ uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport);
 #define MAX_MRU 16384
 
 #ifndef RT_OS_WINDOWS
-# define min(x,y) ((x) < (y) ? (x) : (y))
-# define max(x,y) ((x) > (y) ? (x) : (y))
+# define min(x, y) ((x) < (y) ? (x) : (y))
+# define max(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
 #ifdef RT_OS_WINDOWS

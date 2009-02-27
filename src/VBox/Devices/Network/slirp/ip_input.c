@@ -106,7 +106,7 @@ ip_input(PNATState pData, struct mbuf *m)
      * ip->ip_sum = cksum(m, hlen);
      * if (ip->ip_sum) {
      */
-    if(cksum(m,hlen))
+    if (cksum(m, hlen))
     {
         ipstat.ips_badsum++;
         goto bad;
@@ -142,7 +142,7 @@ ip_input(PNATState pData, struct mbuf *m)
     /* check ip_ttl for a correct ICMP reply */
     if (ip->ip_ttl==0 || ip->ip_ttl == 1)
     {
-        icmp_error(pData, m, ICMP_TIMXCEED,ICMP_TIMXCEED_INTRANS, 0,"ttl");
+        icmp_error(pData, m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, 0, "ttl");
         goto bad;
     }
 

@@ -376,7 +376,7 @@ int tcp_fconnect(PNATState pData, struct socket *so)
     DEBUG_CALL("tcp_fconnect");
     DEBUG_ARG("so = %lx", (long )so);
 
-    if ((ret = so->s = socket(AF_INET,SOCK_STREAM,0)) >= 0)
+    if ((ret = so->s = socket(AF_INET, SOCK_STREAM, 0)) >= 0)
     {
         int opt, s = so->s;
         struct sockaddr_in addr;

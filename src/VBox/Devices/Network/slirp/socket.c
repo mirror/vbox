@@ -193,7 +193,7 @@ soread(PNATState pData, struct socket *so)
     nn = readv(so->s, (struct iovec *)iov, n);
     DEBUG_MISC((dfd, " ... read nn = %d bytes\n", nn));
 #else
-    nn = recv(so->s, iov[0].iov_base, iov[0].iov_len,0);
+    nn = recv(so->s, iov[0].iov_base, iov[0].iov_len, 0);
 #endif
     if (nn <= 0)
     {
@@ -225,7 +225,7 @@ soread(PNATState pData, struct socket *so)
         {
             /* nn == 0 means peer has performed an orderly shutdown */
             DEBUG_MISC((dfd, " --- soread() disconnected, nn = %d, errno = %d-%s\n",
-                        nn, errno,strerror(errno)));
+                        nn, errno, strerror(errno)));
             sofcantrcvmore(so);
             tcp_sockclosed(pData, sototcpcb(so));
             SOCKET_UNLOCK(so);
@@ -246,7 +246,7 @@ soread(PNATState pData, struct socket *so)
     if (n == 2 && nn == iov[0].iov_len)
     {
         int ret;
-        ret = recv(so->s, iov[1].iov_base, iov[1].iov_len,0);
+        ret = recv(so->s, iov[1].iov_base, iov[1].iov_len, 0);
         if (ret > 0)
             nn += ret;
     }
@@ -366,7 +366,7 @@ sosendoob(struct socket *so)
 int
 sowrite(PNATState pData, struct socket *so)
 {
-    int  n,nn;
+    int n, nn;
     struct sbuf *sb = &so->so_rcv;
     size_t len = sb->sb_cc;
     struct iovec iov[2];
@@ -449,7 +449,7 @@ sowrite(PNATState pData, struct socket *so)
     if (n == 2 && nn == iov[0].iov_len)
     {
         int ret;
-        ret = send(so->s, iov[1].iov_base, iov[1].iov_len,0);
+        ret = send(so->s, iov[1].iov_base, iov[1].iov_len, 0);
         if (ret > 0)
             nn += ret;
     }
@@ -537,7 +537,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         m->m_len = recvfrom(so->s, m->m_data, len, 0,
                             (struct sockaddr *)&addr, &addrlen);
         Log2((" did recvfrom %d, errno = %d-%s\n",
-                    m->m_len, errno,strerror(errno)));
+                    m->m_len, errno, strerror(errno)));
         if(m->m_len < 0)
         {
             u_char code = ICMP_UNREACH_PORT;
@@ -548,7 +548,7 @@ sorecvfrom(PNATState pData, struct socket *so)
                 code = ICMP_UNREACH_NET;
 
             Log2((dfd," rx error, tx icmp ICMP_UNREACH:%i\n", code));
-            icmp_error(pData, so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
+            icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, strerror(errno));
             so->so_m = NULL;
             m_free(pData, m);
         }
@@ -719,10 +719,10 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = port;
 
-    if (   ((s = socket(AF_INET,SOCK_STREAM,0)) < 0)
-        || (setsockopt(s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt,sizeof(int)) < 0)
+    if (   ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        || (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,(char *)&opt, sizeof(int)) < 0)
         || (bind(s,(struct sockaddr *)&addr, sizeof(addr)) < 0)
-        || (listen(s,1) < 0))
+        || (listen(s, 1) < 0))
     {
 #ifdef RT_OS_WINDOWS
         int tmperrno = WSAGetLastError(); /* Don't clobber the real reason we failed */
@@ -743,7 +743,7 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 #endif
         return NULL;
     }
-    setsockopt(s,SOL_SOCKET,SO_OOBINLINE,(char *)&opt,sizeof(int));
+    setsockopt(s, SOL_SOCKET, SO_OOBINLINE,(char *)&opt, sizeof(int));
 
     getsockname(s,(struct sockaddr *)&addr,&addrlen);
     so->so_fport = addr.sin_port;
@@ -807,7 +807,7 @@ sofcantrcvmore(struct  socket *so)
 {
     if ((so->so_state & SS_NOFDREF) == 0)
     {
-        shutdown(so->s,0);
+        shutdown(so->s, 0);
     }
     so->so_state &= ~(SS_ISFCONNECTING);
     if (so->so_state & SS_FCANTSENDMORE)
@@ -860,7 +860,7 @@ static void
 send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, const struct sockaddr_in *addr)
 {
     struct ip *ip;
-    uint32_t dst,src;
+    uint32_t dst, src;
     char ip_copy[256];
     struct icmp *icp;
     int old_ip_len = 0;
@@ -1096,8 +1096,8 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
             code = ICMP_UNREACH_NET;
 
         DEBUG_MISC((dfd," udp icmp rx errno = %d-%s\n",
-                    errno,strerror(errno)));
-        icmp_error(pData, so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
+                    errno, strerror(errno)));
+        icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, strerror(errno));
         so->so_m = NULL;
     }
     else

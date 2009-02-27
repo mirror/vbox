@@ -221,7 +221,7 @@ struct ipq_t
 #define IPREASS_HMASK           (IPREASS_NHASH - 1)
 #define IPREASS_HASH(x,y) \
 (((((x) & 0xF) | ((((x) >> 8) & 0xF) << 4)) ^ (y)) & IPREASS_HMASK)
-TAILQ_HEAD(ipqhead,ipq_t);
+TAILQ_HEAD(ipqhead, ipq_t);
 
 /*
  * Structure attached to inpcb.ip_moptions and

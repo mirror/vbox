@@ -49,8 +49,8 @@
 #define TCP_PAWS_IDLE   (24 * 24 * 60 * 60 * PR_SLOWHZ)
 
 /* for modulo comparisons of timestamps */
-#define TSTMP_LT(a,b)   ((int)((a)-(b)) < 0)
-#define TSTMP_GEQ(a,b)  ((int)((a)-(b)) >= 0)
+#define TSTMP_LT(a, b)   ((int)((a)-(b)) < 0)
+#define TSTMP_GEQ(a, b)  ((int)((a)-(b)) >= 0)
 
 #ifndef TCP_ACK_HACK
 #define DELAY_ACK(tp, ti)                           \
@@ -656,7 +656,8 @@ findso:
              */
             if (so->so_emu)
             {
-                if (tcp_emu(pData, so,m)) sbappend(pData, so, m);
+                if (tcp_emu(pData, so, m))
+                    sbappend(pData, so, m);
             }
             else
                 sbappend(pData, so, m);
@@ -742,7 +743,7 @@ findso:
             {
                 u_char code = ICMP_UNREACH_NET;
                 DEBUG_MISC((dfd," tcp fconnect errno = %d-%s\n",
-                            errno,strerror(errno)));
+                            errno, strerror(errno)));
                 if (errno == ECONNREFUSED)
                 {
                     /* ACK the SYN, send RST to refuse the connection */
@@ -760,7 +761,7 @@ findso:
                     m->m_data -= sizeof(struct tcpiphdr)+off-sizeof(struct tcphdr);
                     m->m_len  += sizeof(struct tcpiphdr)+off-sizeof(struct tcphdr);
                     *ip = save_ip;
-                    icmp_error(pData, m, ICMP_UNREACH,code, 0,strerror(errno));
+                    icmp_error(pData, m, ICMP_UNREACH, code, 0, strerror(errno));
                     tp->t_socket->so_m = NULL;
                 }
                 tp = tcp_close(pData, tp);
@@ -834,7 +835,7 @@ cont_input:
             if (tiflags & TH_RST)
             {
                 if (tiflags & TH_ACK)
-                    tp = tcp_drop(pData, tp,0); /* XXX Check t_softerror! */
+                    tp = tcp_drop(pData, tp, 0); /* XXX Check t_softerror! */
                 Log2(("RST(%x) is on SYN_SENT =>drop\n", tiflags));
                 goto drop;
             }
@@ -1113,7 +1114,7 @@ close:
      */
     if (tiflags & TH_SYN)
     {
-        tp = tcp_drop(pData, tp,0);
+        tp = tcp_drop(pData, tp, 0);
         goto dropwithreset;
     }
 
@@ -1282,7 +1283,7 @@ synrx_to_est:
             else
 #endif
                 if (tp->t_rtt && SEQ_GT(ti->ti_ack, tp->t_rtseq))
-                    tcp_xmit_timer(pData, tp,tp->t_rtt);
+                    tcp_xmit_timer(pData, tp, tp->t_rtt);
 
             /*
              * If all outstanding data is acked, stop retransmit
@@ -1520,7 +1521,7 @@ dodata:
             {
                 if (so->so_emu) 
                 {
-                    if (tcp_emu(pData, so,m))
+                    if (tcp_emu(pData, so, m))
                         sbappend(pData, so, m);
                 }
                 else
