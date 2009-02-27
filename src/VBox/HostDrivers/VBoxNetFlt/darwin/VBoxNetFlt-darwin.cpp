@@ -1184,8 +1184,9 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 }
 
 
-int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis)
+int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
 {
+    NOREF(pvContext);
     return vboxNetFltDarwinAttachToInterface(pThis, false /* fRediscovery */);
 }
 

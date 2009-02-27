@@ -407,14 +407,12 @@ DECLHIDDEN(void) vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis);
  *
  * @return  IPRT status code.
  * @param   pThis           The new instance.
+ * @param   pvContext       The user supplied context in the static config only.
+ *                          NULL in the dynamic config.
  *
  * @remarks Owns no locks.
  */
-DECLHIDDEN(int) vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis
-#ifdef VBOXNETFLT_STATIC_CONFIG
-        , void * pContext
-#endif
-        );
+DECLHIDDEN(int) vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext);
 
 /**
  * This is called to perform structure initializations.
