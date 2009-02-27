@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -451,16 +451,15 @@ HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
 
         Bstr src = typeNode.stringValue ("src");
 
-        /* find the corresponding object */
+        /* find the correspoding object */
         ComObjPtr <Host> host = mParent->virtualBox()->host();
 
-        com::SafeIfaceArray <IHostDVDDrive> coll;
-        rc = host->COMGETTER(DVDDrives) (ComSafeArrayAsOutParam(coll));
+        ComPtr <IHostDVDDriveCollection> coll;
+        rc = host->COMGETTER(DVDDrives) (coll.asOutParam());
         AssertComRC (rc);
 
         ComPtr <IHostDVDDrive> drive;
-        rc = host->FindHostDVDDrive (src, drive.asOutParam());
-
+        rc = coll->FindByName (src, drive.asOutParam());
         if (SUCCEEDED (rc))
         {
             rc = CaptureHostDrive (drive);

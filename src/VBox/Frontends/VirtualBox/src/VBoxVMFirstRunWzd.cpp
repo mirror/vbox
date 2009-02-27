@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -175,19 +175,21 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
     if (sender() == mRbCdType)
     {
         /* Search for the host dvd-drives */
-        CHostDVDDriveVector coll =
+        CHostDVDDriveCollection coll =
             vboxGlobal().virtualBox().GetHost().GetDVDDrives();
-        mHostDVDs.resize (coll.size());
-
-        for (int id = 0; id < coll.size(); ++id)
+        mHostDVDs.resize (coll.GetCount());
+        int id = 0;
+        CHostDVDDriveEnumerator en = coll.Enumerate();
+        while (en.HasMore())
         {
-            CHostDVDDrive hostDVD = coll[id];
+            CHostDVDDrive hostDVD = en.GetNext();
             QString name = hostDVD.GetName();
             QString description = hostDVD.GetDescription();
             QString fullName = description.isEmpty() ?
                 name : QString ("%1 (%2)").arg (description, name);
             mCbHost->insertItem (id, fullName);
             mHostDVDs [id] = hostDVD;
+            ++ id;
         }
 
         /* Switch media images type to DVD */
@@ -219,7 +221,7 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
     }
 
     /* Repopulate the media list */
-    mCbImage->repopulate();
+        mCbImage->repopulate();
 
     /* Revalidate updated page */
     mWvalType->revalidate();
