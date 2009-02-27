@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2007 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,7 @@
 #define ____H_HOSTDVDDRIVEIMPL
 
 #include "VirtualBoxBase.h"
+#include "Collection.h"
 
 class ATL_NO_VTABLE HostDVDDrive :
     public VirtualBoxBaseNEXT,
@@ -80,6 +81,36 @@ private:
     const Bstr mDescription;
     const Bstr mUdi;
 };
+
+COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostDVDDrive)
+
+    STDMETHOD(FindByName) (IN_BSTR aName, IHostDVDDrive **aDrive)
+    {
+        if (!aName)
+            return E_INVALIDARG;
+        if (!aDrive)
+            return E_POINTER;
+
+        *aDrive = NULL;
+        Vector::value_type found;
+        Vector::iterator it = vec.begin();
+        while (it != vec.end() && !found)
+        {
+            Bstr n;
+            (*it)->COMGETTER(Name) (n.asOutParam());
+            if (n == aName)
+                found = *it;
+            ++ it;
+        }
+
+        if (!found)
+            return setError (E_INVALIDARG, HostDVDDriveCollection::tr (
+                "The host DVD drive named '%ls' could not be found"), aName);
+
+        return found.queryInterfaceTo (aDrive);
+    }
+
+COM_DECL_READONLY_ENUM_AND_COLLECTION_END (HostDVDDrive)
 
 #endif // ____H_HOSTDVDDRIVEIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
