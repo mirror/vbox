@@ -81,7 +81,7 @@ __END_DECLS
  */
 PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY) && defined(VBOX_STRICT)
     PGMDynCheckLocks(pVM);
 # endif
 
