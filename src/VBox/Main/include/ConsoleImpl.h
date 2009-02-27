@@ -544,6 +544,10 @@ private:
     PPDMLED     mapNetworkLeds[8];
     PPDMLED     mapSharedFolderLed;
     PPDMLED     mapUSBLed[2];
+#if !defined(VBOX_WITH_NETFLT) && defined(RT_OS_LINUX)
+    Utf8Str     maTAPDeviceName[8];
+    RTFILE      maTapFD[8];
+#endif
 
     bool mVMStateChangeCallbackDisabled;
 
