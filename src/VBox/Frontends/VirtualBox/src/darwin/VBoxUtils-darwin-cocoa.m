@@ -27,11 +27,19 @@
 #import <AppKit/NSView.h>
 #import <AppKit/NSEvent.h>
 #import <AppKit/NSToolbar.h>
+#import <AppKit/NSColor.h>
 
 NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView)
 {
     if (aView)
         return [aView window];
+    return NULL;
+}
+
+NativeViewRef darwinToNativeViewImpl (NativeWindowRef aWindow)
+{
+    if (aWindow)
+        return [aWindow contentView];   
     return NULL;
 }
 
@@ -61,6 +69,22 @@ void darwinSetHidesAllTitleButtonsImpl (NativeWindowRef aWindow)
         [iconButton setHidden:YES];
 }
 
+void darwinSetShowsWindowTransparentImpl (NativeWindowRef aWindow, bool aEnabled)
+{
+    if (aEnabled)
+    {
+        [aWindow setOpaque:NO];
+        [aWindow setBackgroundColor:[NSColor clearColor]];
+        [aWindow setHasShadow:NO];
+    }
+    else
+    {
+        [aWindow setOpaque:YES];
+        [aWindow setBackgroundColor:[NSColor windowBackgroundColor]];
+        [aWindow setHasShadow:YES];
+    }
+}
+
 /**
  * Calls the + (void)setMouseCoalescingEnabled:(BOOL)flag class method.
  *
@@ -87,5 +111,10 @@ void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int w
     windowFrame.origin.y -= h1;
 
     [aWindow setFrame:windowFrame display:YES animate:YES];
+}
+
+void darwinWindowInvalidateShadowImpl (NativeWindowRef aWindow)
+{
+    [aWindow invalidateShadow];
 }
 

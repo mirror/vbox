@@ -34,38 +34,109 @@ NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView)
     return NULL;
 }
 
+NativeViewRef darwinToNativeViewImpl (NativeWindowRef aWindow)
+{
+    NativeViewRef view = NULL;
+    if (aWindow)
+    {
+        OSStatus result = GetRootControl (aWindow, &view);
+        AssertCarbonOSStatus (result);
+    }
+    return view;
+}
+
 void darwinSetShowsToolbarButtonImpl (NativeWindowRef aWindow, bool aEnabled)
 {
-    int err = ::ChangeWindowAttributes (aWindow, aEnabled ? kWindowToolbarButtonAttribute : kWindowNoAttributes,
-                                                 aEnabled ? kWindowNoAttributes : kWindowToolbarButtonAttribute);
-    AssertCarbonOSStatus (err);
+    OSStatus result = ::ChangeWindowAttributes (aWindow, aEnabled ? kWindowToolbarButtonAttribute : kWindowNoAttributes,
+                                                         aEnabled ? kWindowNoAttributes : kWindowToolbarButtonAttribute);
+    AssertCarbonOSStatus (result);
 }
 
 void darwinSetShowsResizeIndicatorImpl (NativeWindowRef aWindow, bool aEnabled)
 {
-    int err = ::ChangeWindowAttributes (aWindow, aEnabled ? kWindowResizableAttribute : kWindowNoAttributes,
-                                                 aEnabled ? kWindowNoAttributes : kWindowResizableAttribute);
-    AssertCarbonOSStatus (err);
+    OSStatus result = ::ChangeWindowAttributes (aWindow, aEnabled ? kWindowResizableAttribute : kWindowNoAttributes,
+                                                         aEnabled ? kWindowNoAttributes : kWindowResizableAttribute);
+    AssertCarbonOSStatus (result);
+}
+
+void darwinSetShowsWindowTransparentImpl (NativeWindowRef aWindow, bool aEnabled)
+{
+    Assert (VALID_PTR (aWindow));
+    OSStatus result;
+    if (aEnabled)
+    {
+        HIViewRef viewRef = ::darwinToNativeViewImpl (aWindow);
+        Assert (VALID_PTR (viewRef));
+        /* @todo=poetzsch: Currently this isn't necessary. I should
+         * investigate if we can/should use this. */
+        /*
+           EventTypeSpec wCompositingEvent = { kEventClassWindow, kEventWindowGetRegion };
+           status = InstallWindowEventHandler ((WindowPtr)winId(), DarwinRegionHandler, GetEventTypeCount (wCompositingEvent), &wCompositingEvent, &mCurrRegion, &mDarwinRegionEventHandlerRef);
+           AssertCarbonOSStatus (status);
+           HIViewRef contentView = 0;
+           status = HIViewFindByID(HIViewGetRoot(windowRef), kHIViewWindowContentID, &contentView);
+           AssertCarbonOSStatus (status);
+           EventTypeSpec drawEvent = { kEventClassControl, kEventControlDraw };
+           status = InstallControlEventHandler (contentView, DarwinRegionHandler, GetEventTypeCount (drawEvent), &drawEvent, &contentView, NULL);
+           AssertCarbonOSStatus (status);
+         */
+        UInt32 features;
+        result = ::GetWindowFeatures (aWindow, &features);
+        AssertCarbonOSStatus (result);
+        if (( features & kWindowIsOpaque ) != 0)
+        {
+            result = ::HIWindowChangeFeatures (aWindow, 0, kWindowIsOpaque);
+            AssertCarbonOSStatus (result);
+        }
+        result = ::HIViewReshapeStructure (viewRef);
+        AssertCarbonOSStatus (result);
+        result = ::SetWindowAlpha (aWindow, 0.999);
+        AssertCarbonOSStatus (result);
+        /* For now disable the shadow of the window. This feature cause errors
+         * if a window in vbox looses focus, is reselected and than moved. */
+        /** @todo Search for an option to enable this again. A shadow on every
+         * window has a big coolness factor. */
+        result = ::ChangeWindowAttributes (aWindow, kWindowNoShadowAttribute, 0);
+        AssertCarbonOSStatus (result);
+    }
+    else
+    {
+        /* See above.
+           status = RemoveEventHandler (mDarwinRegionEventHandlerRef);
+           AssertCarbonOSStatus (status);
+         */
+        result = ::ReshapeCustomWindow (aWindow);
+        AssertCarbonOSStatus (result);
+        result = ::SetWindowAlpha (aWindow, 1.0);
+        AssertCarbonOSStatus (result);
+    }
 }
 
 void darwinSetMouseCoalescingEnabled (bool aEnabled)
 {
-    int err = ::SetMouseCoalescingEnabled (aEnabled, NULL);
-    AssertCarbonOSStatus (err);
+    OSStatus result = ::SetMouseCoalescingEnabled (aEnabled, NULL);
+    AssertCarbonOSStatus (result);
 }
 
 void darwinWindowAnimateResizeImpl (NativeWindowRef aWidget, int x, int y, int width, int height)
 {
     HIRect r = CGRectMake (x, y, width, height);
-    int err = ::TransitionWindowWithOptions (aWidget,
-                                             kWindowSlideTransitionEffect,
-                                             kWindowResizeTransitionAction,
-                                             &r,
-                                             false,
-                                             NULL);
-    AssertCarbonOSStatus (err);
+    OSStatus result = ::TransitionWindowWithOptions (aWidget,
+                                                     kWindowSlideTransitionEffect,
+                                                     kWindowResizeTransitionAction,
+                                                     &r,
+                                                     false,
+                                                     NULL);
+    AssertCarbonOSStatus (result);
 }
 
+void darwinWindowInvalidateShapeImpl (NativeWindowRef aWindow)
+{
+    OSStatus result = HIViewReshapeStructure (::darwinToNativeViewImpl (aWindow));
+    AssertCarbonOSStatus (result);
+//    HIWindowInvalidateShadow (::darwinToWindowRef (console->viewport()));
+//    ReshapeCustomWindow (::darwinToWindowRef (this));
+}
 
 /********************************************************************************
  *
@@ -73,18 +144,6 @@ void darwinWindowAnimateResizeImpl (NativeWindowRef aWidget, int x, int y, int w
  *
  ********************************************************************************/
 #include "VBoxConsoleView.h"
-
-/**
- * Callback for deleting the QImage object when CGImageCreate is done
- * with it (which is probably not until the returned CFGImageRef is released).
- *
- * @param   info        Pointer to the QImage.
- */
-static void darwinDataProviderReleaseQImage (void *info, const void *, size_t)
-{
-    QImage *qimg = (QImage *)info;
-    delete qimg;
-}
 
 bool darwinIsMenuOpen (void)
 {

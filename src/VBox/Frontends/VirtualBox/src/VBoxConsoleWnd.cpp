@@ -1166,12 +1166,8 @@ void VBoxConsoleWnd::unlockActionsSwitch()
     if (!mIsSeamless)
     {
         /* Fade back to the normal gamma */
-# ifdef QT_MAC_USE_COCOA
-        /** @todo Carbon -> Cocoa */
-# else
         CGDisplayFade (mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false);
         CGReleaseDisplayFadeReservation (mFadeToken);
-# endif
     }
     console->setMouseCoalescingEnabled (true);
 #endif
@@ -1265,13 +1261,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
             if (mIsSeamless)
             {
                 /* Clear the background */
-# ifdef QT_MAC_USE_COCOA
-                /** @todo Carbon -> Cocoa */
-# else
-                HIRect viewRect;
-                HIViewGetBounds (::darwinToNativeView (this), &viewRect);
-                CGContextClearRect (::darwinToCGContextRef (this), viewRect);
-# endif
+                CGContextClearRect (::darwinToCGContextRef (this), ::darwinToCGRect (frameGeometry()));
             }
             break;
         }
@@ -2249,12 +2239,8 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     if (!aSeamless)
     {
         /* Fade to black */
-# ifdef QT_MAC_USE_COCOA
-        /** @todo Carbon -> Cocoa */
-# else
         CGAcquireDisplayFadeReservation (kCGMaxDisplayReservationInterval, &mFadeToken);
         CGDisplayFade (mFadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
-# endif
     }
 #endif
 
@@ -2380,21 +2366,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
              * winId. So please be careful on rearrangement of the method
              * calls. */
             /* Undo all mac specific installations */
-# ifdef QT_MAC_USE_COCOA
-            /** @todo Carbon -> Cocoa */
-# else  /* !QT_MAC_USE_COCOA */
-            OSStatus status;
-            WindowRef windowRef = ::darwinToNativeWindow (this);
-            Assert (VALID_PTR (windowRef));
-            /* See above.
-            status = RemoveEventHandler (mDarwinRegionEventHandlerRef);
-            AssertCarbonOSStatus (status);
-            */
-            status = ReshapeCustomWindow (windowRef);
-            AssertCarbonOSStatus (status);
-            status = SetWindowAlpha (windowRef, 1.0);
-            AssertCarbonOSStatus (status);
-# endif /* !QT_MAC_USE_COCOA */
+            ::darwinSetShowsWindowTransparent (this, false);
         }
 #endif
 
@@ -2427,46 +2399,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
          * switched to fullscreen. Qt changes the winId on the fullscreen
          * switch and make this stuff useless with the old winId. So please be
          * careful on rearrangement of the method calls. */
-# ifdef QT_MAC_USE_COCOA
-        /** @todo Carbon -> Cocoa */
-# else  /* !QT_MAC_USE_COCOA */
-        OSStatus status;
-        HIViewRef viewRef = ::darwinToNativeView (console->viewport());
-        Assert (VALID_PTR (viewRef));
-        WindowRef windowRef = ::darwinToNativeWindow (viewRef);
-        Assert (VALID_PTR (windowRef));
-        /* @todo=poetzsch: Currently this isn't necessary. I should
-         * investigate if we can/should use this. */
-        /*
-           EventTypeSpec wCompositingEvent = { kEventClassWindow, kEventWindowGetRegion };
-           status = InstallWindowEventHandler ((WindowPtr)winId(), DarwinRegionHandler, GetEventTypeCount (wCompositingEvent), &wCompositingEvent, &mCurrRegion, &mDarwinRegionEventHandlerRef);
-           AssertCarbonOSStatus (status);
-           HIViewRef contentView = 0;
-           status = HIViewFindByID(HIViewGetRoot(windowRef), kHIViewWindowContentID, &contentView);
-           AssertCarbonOSStatus (status);
-           EventTypeSpec drawEvent = { kEventClassControl, kEventControlDraw };
-           status = InstallControlEventHandler (contentView, DarwinRegionHandler, GetEventTypeCount (drawEvent), &drawEvent, &contentView, NULL);
-           AssertCarbonOSStatus (status);
-           */
-        UInt32 features;
-        status = GetWindowFeatures (windowRef, &features);
-        AssertCarbonOSStatus (status);
-        if (( features & kWindowIsOpaque ) != 0)
-        {
-            status = HIWindowChangeFeatures (windowRef, 0, kWindowIsOpaque);
-            AssertCarbonOSStatus (status);
-        }
-        status = HIViewReshapeStructure (viewRef);
-        AssertCarbonOSStatus (status);
-        status = SetWindowAlpha(windowRef, 0.999);
-        AssertCarbonOSStatus (status);
-        /* For now disable the shadow of the window. This feature cause errors
-         * if a window in vbox looses focus, is reselected and than moved. */
-        /** @todo Search for an option to enable this again. A shadow on every
-         * window has a big coolness factor. */
-        status = ChangeWindowAttributes (windowRef, kWindowNoShadowAttribute, 0);
-        AssertCarbonOSStatus (status);
-# endif /* !QT_MAC_USE_COCOA */
+        ::darwinSetShowsWindowTransparent (this, true);
     }
 #endif
 
@@ -2512,12 +2445,11 @@ void VBoxConsoleWnd::changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &
 void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
 {
 #ifdef Q_WS_MAC
-# ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa */
-# else  /* !QT_MAC_USE_COCOA */
+# ifndef QT_MAC_USE_COCOA
     /* setWindowState removes the window group connection somehow. So save it
      * temporary. */
     WindowGroupRef g = GetWindowGroup (::darwinToNativeWindow (this));
+# endif  /* !QT_MAC_USE_COCOA */
     if (aSeamless)
         if (aOn)
         {
@@ -2525,7 +2457,9 @@ void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
             mNormalGeometry = geometry();
             mSavedFlags = windowFlags();
             /* Remove the frame from the window */
+            const QRect fullscreen (qApp->desktop()->screenGeometry (qApp->desktop()->screenNumber (this)));
             setParent (0, Qt::Window | Qt::FramelessWindowHint | (windowFlags() & 0xffff0000));
+            setGeometry (fullscreen);
             /* Set it maximized */
             setWindowState (windowState() ^ Qt::WindowMaximized);
         }
@@ -2538,6 +2472,7 @@ void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
     else
         /* Here we are going really fullscreen */
         setWindowState (windowState() ^ Qt::WindowFullScreen);
+# ifndef QT_MAC_USE_COCOA
     /* Reassign the correct window group. */
     SetWindowGroup (::darwinToNativeWindow (this), g);
 # endif /* !QT_MAC_USE_COCOA */
@@ -3030,11 +2965,7 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
         /* If we are using the Quartz2D backend we have to trigger
          * an repaint only. All the magic clipping stuff is done
          * in the paint engine. */
-#ifndef QT_MAC_USE_COCOA
-        HIViewReshapeStructure (::darwinToNativeView (console->viewport()));
-#endif /* QT_MAC_USE_COCOA */
-//        HIWindowInvalidateShadow (::darwinToWindowRef (console->viewport()));
-//        ReshapeCustomWindow (::darwinToWindowRef (this));
+        ::darwinWindowInvalidateShape (console->viewport());
     }
     else
 # endif
