@@ -40,6 +40,8 @@ typedef NSView *NativeViewRef;
 #else
 # include <iprt/cdefs.h> /* for __BEGIN_DECLS/__END_DECLS & stuff */
 # include <qglobal.h> /* for QT_MAC_USE_COCOA */
+
+# include <ApplicationServices/ApplicationServices.h>
 class QWidget;
 class QToolBar;
 class QPixmap;
@@ -64,6 +66,7 @@ __BEGIN_DECLS
  *
  ********************************************************************************/
 NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView);
+NativeViewRef darwinToNativeViewImpl (NativeWindowRef aWindow);
 
 /********************************************************************************
  *
@@ -73,6 +76,7 @@ NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView);
 void darwinSetShowsToolbarButtonImpl (NativeWindowRef aWindow, bool aEnabled);
 void darwinSetShowsResizeIndicatorImpl (NativeWindowRef aWindow, bool aEnabled);
 void darwinSetHidesAllTitleButtonsImpl (NativeWindowRef aWindow);
+void darwinSetShowsWindowTransparentImpl (NativeWindowRef aWindow, bool aEnabled);
 void darwinSetMouseCoalescingEnabled (bool aEnabled);
 
 /********************************************************************************
@@ -81,6 +85,9 @@ void darwinSetMouseCoalescingEnabled (bool aEnabled);
  *
  ********************************************************************************/
 void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int width, int height);
+void darwinWindowInvalidateShapeImpl (NativeWindowRef aWindow);
+void darwinWindowInvalidateShadowImpl (NativeWindowRef aWindow);
+
 
 __END_DECLS
 
@@ -118,6 +125,14 @@ NativeWindowRef darwinToNativeWindow (QWidget *aWidget);
  */
 NativeWindowRef darwinToNativeWindow (NativeViewRef aView);
 
+/**
+ * Returns a reference to the native View of the Window.
+ *
+ * @returns either HIViewRef or NSView* of the Window.
+ * @param   aWidget   Pointer to the native Window
+ */
+NativeViewRef darwinToNativeView (NativeWindowRef aWindow);
+
 /********************************************************************************
  *
  * Simple setter methods (Qt Wrapper)
@@ -126,6 +141,7 @@ NativeWindowRef darwinToNativeWindow (NativeViewRef aView);
 void darwinSetShowsToolbarButton (QToolBar *aToolBar, bool aEnabled);
 void darwinSetShowsResizeIndicator (QWidget *aWidget, bool aEnabled);
 void darwinSetHidesAllTitleButtons (QWidget *aWidget);
+void darwinSetShowsWindowTransparent (QWidget *aWidget, bool aEnabled);
 void darwinDisableIconsInMenus (void);
 
 /********************************************************************************
@@ -134,10 +150,10 @@ void darwinDisableIconsInMenus (void);
  *
  ********************************************************************************/
 void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);
+void darwinWindowInvalidateShape (QWidget *aWidget);
+void darwinWindowInvalidateShadow (QWidget *aWidget);
 QString darwinSystemLanguage (void);
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
-
-
 
 
 
@@ -165,6 +181,9 @@ DECLINLINE(CGContextRef) darwinToCGContextRef (QWidget *aWidget)
 {
     return static_cast<CGContext *> (aWidget->macCGHandle());
 }
+
+DECLINLINE(CGRect) darwinToCGRect (const QRect& aRect) { return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height()); }
+DECLINLINE(CGRect) darwinFlipCGRect (CGRect aRect, int aTargetHeight) { aRect.origin.y = aTargetHeight - aRect.origin.y - aRect.size.height; return aRect; }
 
 # ifndef QT_MAC_USE_COCOA
 
@@ -201,7 +220,6 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
 
 bool darwinIsMenuOpen (void);
 
-void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);
 # endif /* !QT_MAC_USE_COCOA */
 
 # ifdef DEBUG

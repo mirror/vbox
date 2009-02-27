@@ -132,7 +132,7 @@ STDMETHODIMP VBoxQuartz2DFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG
 
         CGRect *cgRct = &rgnRcts->rcts[rgnRcts->used];
         cgRct->origin.x = rect.x();
-        cgRct->origin.y = rect.y();
+        cgRct->origin.y = height() - rect.y() - rect.height();
         cgRct->size.width = rect.width();
         cgRct->size.height = rect.height();
 //        printf ("Region rect[%d - %d]: %d %d %d %d\n", rgnRcts->used, aCount, rect.x(), rect.y(), rect.height(), rect.width());
@@ -158,20 +158,20 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
 
     Assert (mImage);
 
-#ifndef QT_MAC_USE_COCOA
     VBoxConsoleWnd *main = qobject_cast <VBoxConsoleWnd *> (vboxGlobal().mainWindow());
     Assert (VALID_PTR (main));
     QWidget* viewport = mView->viewport();
     Assert (VALID_PTR (viewport));
-
-    HIViewRef viewRef = ::darwinToNativeView (viewport);
-    Assert (VALID_PTR (viewRef));
-    /* Get the dimensions of this HIView */
-    HIRect viewRect;
-    HIViewGetBounds (viewRef, &viewRect);
-    /* Get the context of this window from qt */
+    /* Get the dimensions of the viewport */
+    CGRect viewRect = ::darwinToCGRect (viewport->geometry());
+    /* Get the context of this window from Qt */
     CGContextRef ctx = ::darwinToCGContextRef (viewport);
     Assert (VALID_PTR (ctx));
+
+    /* Flip the context */
+    CGContextTranslateCTM (ctx, 0, viewRect.size.height);
+    CGContextScaleCTM (ctx, 1.0, -1.0);
+
     /* We handle the seamless mode as a special case. */
     if (main->isTrueSeamless())
     {
@@ -214,7 +214,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
         /* In any case clip the drawing to the view window */
         CGContextClipToRect (ctx, viewRect);
         /* At this point draw the real vm image */
-        HIViewDrawCGImage (ctx, &viewRect, subImage);
+        CGContextDrawImage (ctx, ::darwinFlipCGRect (viewRect, viewRect.size.height), subImage);
 #ifdef COMP_WITH_SHADOW
         CGContextEndTransparencyLayer (ctx);
 #endif
@@ -229,9 +229,9 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
         QRect is = QRect (ir.x() + mView->contentsX(), ir.y() + mView->contentsY(), ir.width(), ir.height());
         CGImageRef subImage;
         if (!mView->pauseShot().isNull())
-            subImage = CGImageCreateWithImageInRect (::darwinToCGImageRef (&mView->pauseShot()), ::darwinToHIRect (is));
+            subImage = CGImageCreateWithImageInRect (::darwinToCGImageRef (&mView->pauseShot()), ::darwinToCGRect (is));
         else
-            subImage = CGImageCreateWithImageInRect (mImage, ::darwinToHIRect (is));
+            subImage = CGImageCreateWithImageInRect (mImage, ::darwinToCGRect (is));
         Assert (VALID_PTR (subImage));
         /* Ok, for more performance we set a clipping path of the
          * regions given by this paint event. */
@@ -241,7 +241,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
             CGContextBeginPath (ctx);
             /* Add all region rects to the current context as path components */
             for (int i = 0; i < a.size(); ++i)
-                CGContextAddRect (ctx, ::darwinToHIRect (a[i]));
+                CGContextAddRect (ctx, ::darwinFlipCGRect (::darwinToCGRect (a[i]), viewRect.size.height));
             /* Now convert the path to a clipping path. */
             CGContextClip (ctx);
         }
@@ -249,10 +249,8 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
         /* In any case clip the drawing to the view window */
         CGContextClipToRect (ctx, viewRect);
         /* At this point draw the real vm image */
-        HIRect destRect = ::darwinToHIRect (ir);
-        HIViewDrawCGImage (ctx, &destRect, subImage);
+        CGContextDrawImage (ctx, ::darwinFlipCGRect (::darwinToCGRect (ir), viewRect.size.height), subImage);
     }
-#endif /* QT_MAC_USE_COCOA */
 }
 
 void VBoxQuartz2DFrameBuffer::resizeEvent (VBoxResizeEvent *aEvent)

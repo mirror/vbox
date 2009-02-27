@@ -50,16 +50,16 @@ NativeWindowRef darwinToNativeWindow (NativeViewRef aView)
     return ::darwinToNativeWindowImpl (aView);
 }
 
+NativeViewRef darwinToNativeView (NativeWindowRef aWindow)
+{
+    return ::darwinToNativeViewImpl (aWindow);
+}
+
 void darwinSetShowsToolbarButton (QToolBar *aToolBar, bool aEnabled)
 {
     QWidget *parent = aToolBar->parentWidget();
     if (parent)
         ::darwinSetShowsToolbarButtonImpl (::darwinToNativeWindow (parent), aEnabled);
-}
-
-void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget)
-{
-    ::darwinWindowAnimateResizeImpl (::darwinToNativeWindow (aWidget), aTarget.x(), aTarget.y(), aTarget.width(), aTarget.height());
 }
 
 void darwinSetHidesAllTitleButtons (QWidget *aWidget)
@@ -70,6 +70,35 @@ void darwinSetHidesAllTitleButtons (QWidget *aWidget)
 #else /* QT_MAC_USE_COCOA */
     NOREF (aWidget);
 #endif /* !QT_MAC_USE_COCOA */
+}
+
+void darwinSetShowsWindowTransparent (QWidget *aWidget, bool aEnabled)
+{
+    ::darwinSetShowsWindowTransparentImpl (::darwinToNativeWindow (aWidget), aEnabled);
+}
+
+void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget)
+{
+    ::darwinWindowAnimateResizeImpl (::darwinToNativeWindow (aWidget), aTarget.x(), aTarget.y(), aTarget.width(), aTarget.height());
+}
+
+void darwinWindowInvalidateShape (QWidget *aWidget)
+{
+#ifdef QT_MAC_USE_COCOA
+    /* Here a simple update is enough! */
+    aWidget->update();
+#else /* QT_MAC_USE_COCOA */
+    ::darwinWindowInvalidateShapeImpl (::darwinToNativeWindow (aWidget));
+#endif /* QT_MAC_USE_COCOA */
+}
+;
+void darwinWindowInvalidateShadow (QWidget *aWidget)
+{
+#ifdef QT_MAC_USE_COCOA
+    ::darwinWindowInvalidateShadowImpl (::darwinToNativeWindow (aWidget));
+#else /* QT_MAC_USE_COCOA */
+    NOREF (aWidget);
+#endif /* QT_MAC_USE_COCOA */
 }
 
 void darwinSetShowsResizeIndicator (QWidget *aWidget, bool aEnabled)
@@ -109,6 +138,7 @@ void darwinDisableIconsInMenus (void)
     QApplication::instance()->setAttribute (Qt::AA_DontShowIconsInMenus, true);
 #endif /* QT_VERSION >= 0x040400 */
 }
+
 
 /* Proxy icon creation */
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText)
