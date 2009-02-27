@@ -595,7 +595,6 @@ endif
 
 ifeq ($(KBUILD_TARGET),solaris)
  VBOX_WITH_SECURELABEL=
- VBOX_WITH_USB=
  VBOX_WITH_OGL=
 endif
 
