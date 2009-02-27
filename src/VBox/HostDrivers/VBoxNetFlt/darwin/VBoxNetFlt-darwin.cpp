@@ -170,7 +170,7 @@ static kern_return_t    VBoxNetFltDarwinStart(struct kmod_info *pKModInfo, void 
              * for establishing the connect to the support driver.
              */
             memset(&g_VBoxNetFltGlobals, 0, sizeof(g_VBoxNetFltGlobals));
-            rc = vboxNetFltInitGlobals(&g_VBoxNetFltGlobals);
+            rc = vboxNetFltInitGlobalsAndIdc(&g_VBoxNetFltGlobals);
             if (RT_SUCCESS(rc))
             {
                 LogRel(("VBoxFltDrv: version " VBOX_VERSION_STRING " r%d\n", VBOX_SVN_REV));
@@ -203,7 +203,7 @@ static kern_return_t VBoxNetFltDarwinStop(struct kmod_info *pKModInfo, void *pvD
      * This is important as I/O kit / xnu will to be able to do usage
      * tracking for us!
      */
-    int rc = vboxNetFltTryDeleteGlobals(&g_VBoxNetFltGlobals);
+    int rc = vboxNetFltTryDeleteIdcAndGlobals(&g_VBoxNetFltGlobals);
     if (RT_FAILURE(rc))
     {
         Log(("VBoxNetFltDarwinStop - failed, busy.\n"));

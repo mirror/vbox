@@ -98,7 +98,7 @@ unsigned dev_get_flags(const struct net_device *dev)
 
         flags = (dev->flags & ~(IFF_PROMISC |
                                 IFF_ALLMULTI |
-                                IFF_RUNNING)) | 
+                                IFF_RUNNING)) |
                 (dev->gflags & (IFF_PROMISC |
                                 IFF_ALLMULTI));
 
@@ -208,7 +208,7 @@ struct net_device_stats *vboxTapGetStats(struct net_device *pNetDev)
 static int vboxTapValidateAddr(struct net_device *dev)
 {
     Log(("vboxTapValidateAddr: %02x:%02x:%02x:%02x:%02x:%02x\n",
-         dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2], 
+         dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2],
          dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5]));
     return -EADDRNOTAVAIL;
 }
@@ -220,7 +220,7 @@ static void vboxTapNetDevInit(struct net_device *pNetDev)
     ether_setup(pNetDev);
     /// @todo Use Sun vendor id
     memcpy(pNetDev->dev_addr, "\0vbnet", ETH_ALEN);
-    Log(("vboxTapNetDevInit: pNetDev->dev_addr = %.6Rhxd\n", pNetDev->dev_addr)); 
+    Log(("vboxTapNetDevInit: pNetDev->dev_addr = %.6Rhxd\n", pNetDev->dev_addr));
     pNetDev->open = vboxTapOpen;
     pNetDev->stop = vboxTapStop;
     pNetDev->hard_start_xmit = vboxTapXmit;
@@ -296,7 +296,7 @@ static int __init VBoxNetFltLinuxInit(void)
          * for establishing the connect to the support driver.
          */
         memset(&g_VBoxNetFltGlobals, 0, sizeof(g_VBoxNetFltGlobals));
-        rc = vboxNetFltInitGlobals(&g_VBoxNetFltGlobals);
+        rc = vboxNetFltInitGlobalsAndIdc(&g_VBoxNetFltGlobals);
         if (RT_SUCCESS(rc))
         {
             rc = vboxTapRegisterNetDev();
@@ -336,7 +336,7 @@ static void __exit VBoxNetFltLinuxUnload(void)
      */
     rc = vboxTapUnregisterNetDev();
     AssertRC(rc);
-    rc = vboxNetFltTryDeleteGlobals(&g_VBoxNetFltGlobals);
+    rc = vboxNetFltTryDeleteIdcAndGlobals(&g_VBoxNetFltGlobals);
     AssertRC(rc); NOREF(rc);
 
     RTR0Term();
@@ -597,7 +597,7 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
      */
     if (!pBuf)
         return 0;
-    
+
     pThis = VBOX_FLT_PT_TO_INST(pPacketType);
     pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
     if (pThis->u.s.pDev != pSkbDev)
@@ -668,7 +668,7 @@ static void  vboxNetFltLinuxFreeSkBuff(struct sk_buff *pBuf, PINTNETSG pSG)
         kunmap(pSG->aSegs[i+1].pv);
     }
 #endif
-            
+
     dev_kfree_skb(pBuf);
 }
 
@@ -1087,7 +1087,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
         else
         {
             if (pThis->u.s.fPromiscuousSet)
-            {    
+            {
                 rtnl_lock();
                 dev_set_promiscuity(pDev, -1);
                 rtnl_unlock();
