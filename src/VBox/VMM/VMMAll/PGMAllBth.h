@@ -1571,8 +1571,10 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
             /*
              * Update statistics and commit the entry.
              */
+#if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
             if (!PteSrc.n.u1Global)
                 pShwPage->fSeenNonGlobal = true;
+#endif
             *pPteDst = PteDst;
         }
         /* else MMIO or invalid page, we must handle them manually in the #PF handler. */
