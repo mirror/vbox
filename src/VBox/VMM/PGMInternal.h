@@ -2984,11 +2984,6 @@ int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
 #endif
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-int             pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
-int             pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
-
-bool            pgmPoolIsPageLocked(PVM pVM, PPGMPOOLPAGE pPage);
-
 void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE);
 void            pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
 int             pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
