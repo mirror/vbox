@@ -330,13 +330,16 @@ ifdef VBOX_WITH_USB
 endif
 
 ifdef VBOX_WITH_NETFLT
- #needed to include intsafe.h indirectly included by comdef.h
- VBoxSVC_INCS.win += $(foreach VARSDK, $(VBoxSVC_SDKS), $(PATH_SDK_$(VARSDK)_INC)/crt)
- #needed to include comsupp.lib
- VBoxSVC_LIBS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib
- #VBoxSVC_LIBPATH.win += $(if $(VBOX_USE_VCC80),$(PATH_TOOL_VCC80_LIB),$(PATH_TOOL_VCC70_LIB))
- VBoxSVC_LIBS.win += wbemuuid.lib
- VBoxSVC_LIBS.win += $(PATH_LIB)/WinNetConfig.lib
+ # Note! The includes from the TOOL has lower prioirty than the SDKs, 
+ #       since comdef.h is in both the DDK and VCC we want to make sure
+ #       we're using the VCC since we're not using the DDK compiler/crt.
+ #       Since this is potentially risky, restrict it to the source file 
+ #       needing it.
+ win/NetIfList-win.cpp_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
+ VBoxSVC_LIBS.win += \
+	$(PATH_LIB)/WinNetConfig.lib \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib 
  ifdef VBOX_NETFLT_ONDEMAND_BIND
   VBoxSVC_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
  endif
@@ -406,7 +409,7 @@ $$(PATH_VBoxSVC)/xml_SettingsConverter_xsl.h: $(VBOX_XML_CONVERTER_TEMPLATE) $(V
 	$(QUIET)$(VBOX_BIN2C) _xml_SettingsConverter_xsl $< $@
 
 VirtualBoxImplExtra.cpp_DEPS  = \
-	$(PATH_VBoxSVC)/xml_VirtualBox_settings_xsd.h \
+ 	$(PATH_VBoxSVC)/xml_VirtualBox_settings_xsd.h \
 	$(PATH_VBoxSVC)/xml_VirtualBox_settings_common_xsd.h \
 	$(PATH_VBoxSVC)/xml_SettingsConverter_xsl.h
 VBoxSVC_CLEAN                += $(VirtualBoxImplExtra.cpp_DEPS)
