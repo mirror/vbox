@@ -4790,7 +4790,9 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
            || PGM_SHW_TYPE == PGM_TYPE_PAE    \
            || PGM_SHW_TYPE == PGM_TYPE_AMD64))
 
+#  if PGM_GST_TYPE != PGM_TYPE_REAL
     Assert(!HWACCMIsNestedPagingActive(pVM));
+#  endif
 
 # ifndef PGM_WITHOUT_MAPPINGS
     if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
