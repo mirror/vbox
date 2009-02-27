@@ -3742,7 +3742,7 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
         rc = SUPR0ComponentQueryFactory(pSession, pszName, INTNETTRUNKFACTORY_UUID_STR, (void **)&pTrunkFactory);
         if (RT_SUCCESS(rc))
         {
-            rc = pTrunkFactory->pfnCreateAndConnect(pTrunkFactory, pNetwork->szTrunk, &pTrunkIF->SwitchPort, !
+            rc = pTrunkFactory->pfnCreateAndConnect(pTrunkFactory, pNetwork->szTrunk, &pTrunkIF->SwitchPort,
                                                     pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE
                                                     ? INTNETTRUNKFACTORY_FLAG_NO_PROMISC : 0,
                                                     &pTrunkIF->pIfPort);
