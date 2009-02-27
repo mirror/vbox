@@ -1158,7 +1158,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     }
 
     Log(("vboxNetFltOsInitInstance: this=%p: Notifier installed.\n", pThis));
-    NOREF(pvContext)
+    NOREF(pvContext);
     return pThis->fDisconnectedFromHost ? VERR_INTNET_FLT_IF_FAILED : VINF_SUCCESS;
 }
 
