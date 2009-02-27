@@ -24,6 +24,7 @@
 *******************************************************************************/
 #ifndef VBOX_ONLY_DOCS
 #include <VBox/com/com.h>
+#include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint2.h>
 #include <VBox/com/EventQueue.h>
@@ -1090,10 +1091,11 @@ int handleModifyVM(HandlerArg *a)
             {
                 ComPtr<IHost> host;
                 CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                ComPtr<IHostDVDDriveCollection> hostDVDs;
-                CHECK_ERROR(host, COMGETTER(DVDDrives)(hostDVDs.asOutParam()));
+                com::SafeIfaceArray <IHostDVDDrive> hostDVDs;
+                rc = host->COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(hostDVDs));
+
                 ComPtr<IHostDVDDrive> hostDVDDrive;
-                rc = hostDVDs->FindByName(Bstr(dvd + 5), hostDVDDrive.asOutParam());
+                rc = host->FindHostDVDDrive(Bstr(dvd + 5), hostDVDDrive.asOutParam());
                 if (!hostDVDDrive)
                 {
                     /* 2nd try: try with the real name, important on Linux+libhal */
@@ -1104,7 +1106,7 @@ int handleModifyVM(HandlerArg *a)
                         rc = E_FAIL;
                         break;
                     }
-                    rc = hostDVDs->FindByName(Bstr(szPathReal), hostDVDDrive.asOutParam());
+                    rc = host->FindHostDVDDrive(Bstr(szPathReal), hostDVDDrive.asOutParam());
                     if (!hostDVDDrive)
                     {
                         errorArgument("Invalid host DVD drive name");

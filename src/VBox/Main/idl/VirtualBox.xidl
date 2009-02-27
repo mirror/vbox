@@ -6340,34 +6340,6 @@
 
   </interface>
 
-  <enumerator
-     name="IHostDVDDriveEnumerator" type="IHostDVDDrive"
-     uuid="1ed7cfaf-c363-40df-aa4e-89c1afb7d96b"
-     />
-
-  <collection
-     name="IHostDVDDriveCollection" type="IHostDVDDrive"
-     enumerator="IHostDVDDriveEnumerator"
-     uuid="1909c533-1a1e-445f-a4e1-a267cffc30ed"
-     readonly="yes"
-     >
-    <method name="findByName">
-      <desc>
-        Searches this collection for a host drive with the given name.
-        <note>
-          The method returns an error if the given name does not
-          correspond to any host drive in the collection.
-        </note>
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>Name of the host drive to search for</desc>
-      </param>
-      <param name="drive" type="IHostDVDDrive" dir="return">
-        <desc>Found host drive object</desc>
-      </param>
-    </method>
-  </collection>
-
   <interface
      name="IHostFloppyDrive" extends="$unknown"
      uuid="b6a4d1a9-4221-43c3-bd52-021a5daa9ed2"
@@ -6542,7 +6514,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="7c172c42-b209-4bdc-9ddf-a84f222bd59a"
+     uuid="ba0cb246-478a-4a2b-930e-51ce740ada9c"
      wsmap="managed"
      >
     <desc>
@@ -6557,7 +6529,7 @@
       such as global USB device filters and host interface networking.
 
     </desc>
-    <attribute name="DVDDrives" type="IHostDVDDriveCollection" readonly="yes">
+    <attribute name="DVDDrives" type="IHostDVDDrive" readonly="yes" safearray="yes">
       <desc>List of DVD drives available on the host.</desc>
     </attribute>
 
@@ -6832,12 +6804,29 @@
       </param>
     </method>
 
+    <method name="findHostDVDDrive">
+      <desc>
+        Searches for a host DVD drive with the given @c name.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Given @c name does not correspond to any host drive.
+        </result>
+
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the host drive to search for</desc>
+      </param>
+      <param name="drive" type="IHostDVDDrive" dir="return">
+        <desc>Found host drive object</desc>
+      </param>
+    </method>
+
     <method name="findHostNetworkInterfaceByName">
       <desc>
         Searches through all host network interfaces for an interface with
-        the given name.
+        the given @c name.
         <note>
-          The method returns an error if the given name does not
+          The method returns an error if the given @c name does not
           correspond to any host network interface.
         </note>
       </desc>
