@@ -67,9 +67,11 @@ typedef enum VBOXNETFTLINSSTATE
     /** Disconnecting from the internal network and possibly the host network interface.
      * Partly for reasons of deadlock avoidance again. */
     kVBoxNetFltInsState_Disconnecting,
+#ifdef VBOXNETFLT_STATIC_CONFIG
     /** Destroying the instance
      * Partly for reasons of deadlock avoidance again. */
     kVBoxNetFltInsState_Destroying,
+#endif
     /** The instance has been disconnected from both the host and the internal network. */
     kVBoxNetFltInsState_Destroyed,
 
@@ -254,17 +256,26 @@ typedef struct VBOXNETFLTGLOBALS
     SUPDRVFACTORY SupDrvFactory;
     /** The number of current factory references. */
     int32_t volatile cFactoryRefs;
-#ifdef VBOXNETFLT_STATIC_CONFIG
-    /* wait timer event */
-    RTSEMEVENT hTimerEvent;
-#endif
+    /** Whether the IDC connection is open or not.
+     * This is only for cleaning up correctly after the separate IDC init on Windows. */
+    bool fIDCOpen;
     /** The SUPDRV IDC handle (opaque struct). */
     SUPDRVIDCHANDLE SupDrvIDC;
+
+#ifdef VBOXNETFLT_STATIC_CONFIG
+    /** Something we can block on while waiting for an instance to be unlinked. */
+    RTSEMEVENT hBlockEvent;
+#endif
 } VBOXNETFLTGLOBALS;
 
 
+DECLHIDDEN(int) vboxNetFltInitGlobalsAndIdc(PVBOXNETFLTGLOBALS pGlobals);
 DECLHIDDEN(int) vboxNetFltInitGlobals(PVBOXNETFLTGLOBALS pGlobals);
-DECLHIDDEN(int) vboxNetFltTryDeleteGlobals(PVBOXNETFLTGLOBALS pGlobals);
+DECLHIDDEN(int) vboxNetFltInitIdc(PVBOXNETFLTGLOBALS pGlobals);
+DECLHIDDEN(int) vboxNetFltTryDeleteIdcAndGlobals(PVBOXNETFLTGLOBALS pGlobals);
+DECLHIDDEN(void) vboxNetFltDeleteGlobals(PVBOXNETFLTGLOBALS pGlobals);
+DECLHIDDEN(int) vboxNetFltTryDeleteIdc(PVBOXNETFLTGLOBALS pGlobals);
+
 DECLHIDDEN(bool) vboxNetFltCanUnload(PVBOXNETFLTGLOBALS pGlobals);
 DECLHIDDEN(PVBOXNETFLTINS) vboxNetFltFindInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszName);
 
@@ -273,11 +284,8 @@ DECLHIDDEN(void) vboxNetFltRelease(PVBOXNETFLTINS pThis, bool fBusy);
 
 #ifdef VBOXNETFLT_STATIC_CONFIG
 DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszName, PVBOXNETFLTINS *ppInstance, void * pContext);
-DECLHIDDEN(int) vboxNetFltInitGlobalsBase(PVBOXNETFLTGLOBALS pGlobals);
-DECLHIDDEN(int) vboxNetFltInitIdc(PVBOXNETFLTGLOBALS pGlobals);
-DECLHIDDEN(void) vboxNetFltDeleteGlobalsBase(PVBOXNETFLTGLOBALS pGlobals);
-DECLHIDDEN(int) vboxNetFltTryDeleteIdc(PVBOXNETFLTGLOBALS pGlobals);
 #endif
+
 
 
 /** @name The OS specific interface.

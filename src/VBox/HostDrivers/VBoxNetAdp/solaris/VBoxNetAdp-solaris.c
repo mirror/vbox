@@ -26,7 +26,7 @@
 # define LOG_ENABLED
 #endif
 
-#define LOG_GROUP LOG_GROUP_NET_TAP_DRV
+#define LOG_GROUP LOG_GROUP_NET_ADP_DRV
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/version.h>

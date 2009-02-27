@@ -3742,7 +3742,10 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
         rc = SUPR0ComponentQueryFactory(pSession, pszName, INTNETTRUNKFACTORY_UUID_STR, (void **)&pTrunkFactory);
         if (RT_SUCCESS(rc))
         {
-            rc = pTrunkFactory->pfnCreateAndConnect(pTrunkFactory, pNetwork->szTrunk, &pTrunkIF->SwitchPort, &pTrunkIF->pIfPort, !!(pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE));
+            rc = pTrunkFactory->pfnCreateAndConnect(pTrunkFactory, pNetwork->szTrunk, &pTrunkIF->SwitchPort, !
+                                                    pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE
+                                                    ? INTNETTRUNKFACTORY_FLAG_NO_PROMISC : 0,
+                                                    &pTrunkIF->pIfPort);
             pTrunkFactory->pfnRelease(pTrunkFactory);
             if (RT_SUCCESS(rc))
             {
@@ -3898,7 +3901,7 @@ static int intnetR0OpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
      * Search networks by name.
      */
     PINTNETNETWORK pCur;
-    uint8_t cchName = strlen(pszNetwork);
+    uint8_t cchName = (uint8_t)strlen(pszNetwork);
     Assert(cchName && cchName < sizeof(pCur->szName)); /* caller ensures this */
 
     pCur = pIntNet->pNetworks;
@@ -4007,7 +4010,7 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
         //pNew->cActiveIFs = 0;
         pNew->fFlags = fFlags;
         size_t cchName = strlen(pszNetwork);
-        pNew->cchName = cchName;
+        pNew->cchName = (uint8_t)cchName;
         Assert(cchName && cchName < sizeof(pNew->szName));  /* caller's responsibility. */
         memcpy(pNew->szName, pszNetwork, cchName);          /* '\0' by alloc. */
         pNew->enmTrunkType = enmTrunkType;

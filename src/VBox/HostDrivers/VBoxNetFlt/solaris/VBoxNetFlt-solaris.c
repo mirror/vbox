@@ -429,7 +429,7 @@ int _init(void)
              * for establishing the connect to the support driver.
              */
             memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
-            rc = vboxNetFltInitGlobals(&g_VBoxNetFltSolarisGlobals);
+            rc = vboxNetFltInitGlobalsAndIdc(&g_VBoxNetFltSolarisGlobals);
             if (RT_SUCCESS(rc))
             {
                 rc = mod_install(&g_VBoxNetFltSolarisModLinkage);
@@ -437,7 +437,7 @@ int _init(void)
                     return rc;
 
                 LogRel((DEVICE_NAME ":mod_install failed. rc=%d\n", rc));
-                vboxNetFltTryDeleteGlobals(&g_VBoxNetFltSolarisGlobals);
+                vboxNetFltTryDeleteIdcAndGlobals(&g_VBoxNetFltSolarisGlobals);
             }
             else
                 LogRel((DEVICE_NAME ":failed to initialize globals.\n"));
@@ -464,7 +464,7 @@ int _fini(void)
     /*
      * Undo the work done during start (in reverse order).
      */
-    rc = vboxNetFltTryDeleteGlobals(&g_VBoxNetFltSolarisGlobals);
+    rc = vboxNetFltTryDeleteIdcAndGlobals(&g_VBoxNetFltSolarisGlobals);
     if (RT_FAILURE(rc))
     {
         LogRel((DEVICE_NAME ":_fini - busy!\n"));
@@ -2975,7 +2975,7 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
         {
             int Pcp:3;
             int Cfi:1;
-            int Vid:12; 
+            int Vid:12;
         } VLANHEADER;
 
         VLANHEADER *pVlanHdr = (VLANHEADER *)(pMsg->b_rptr + sizeof(RTNETETHERHDR));

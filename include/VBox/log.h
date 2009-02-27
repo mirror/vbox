@@ -235,10 +235,10 @@ typedef enum LOGGROUP
     LOG_GROUP_MM_PHYS,
     /** MM Page pool group. */
     LOG_GROUP_MM_POOL,
+    /** The network adaptor driver group. */
+    LOG_GROUP_NET_ADP_DRV,
     /** The network filter driver group. */
     LOG_GROUP_NET_FLT_DRV,
-    /** The network tap driver group. */
-    LOG_GROUP_NET_TAP_DRV,
     /** PATM group. */
     LOG_GROUP_PATM,
     /** PDM group. */
@@ -428,8 +428,8 @@ typedef enum LOGGROUP
     "MM_HYPER_HEAP",\
     "MM_PHYS",      \
     "MM_POOL",      \
+    "NET_ADP_DRV",  \
     "NET_FLT_DRV",  \
-    "NET_TAP_DRV",  \
     "PATM",         \
     "PDM",          \
     "PDM_ASYNC_COMPLETION", \
