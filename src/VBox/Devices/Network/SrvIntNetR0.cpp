@@ -3702,7 +3702,11 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
             pszName = "VBoxNetFlt";
             break;
         case kIntNetTrunkType_NetAdp:
+#if defined(RT_OS_DARWIN) && !defined(VBOXNETADP_DO_NOT_USE_NETFLT)
+            pszName = "VBoxNetFlt";
+#else /* VBOXNETADP_DO_NOT_USE_NETFLT */
             pszName = "VBoxNetAdp";
+#endif /* VBOXNETADP_DO_NOT_USE_NETFLT */
             break;
         case kIntNetTrunkType_SrvNat:
             pszName = "VBoxSrvNat";

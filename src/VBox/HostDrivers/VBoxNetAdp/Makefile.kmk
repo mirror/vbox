@@ -43,8 +43,9 @@ VBoxNetAdp_SOURCES.darwin   = \
 	darwin/VBoxNetAdp-darwin.cpp
 VBoxNetAdp_SOURCES.solaris  = \
 	solaris/VBoxNetAdp-solaris.c
-VBoxNetAdp_SOURCES          = \
-	VBoxNetAdp.c
+VBoxNetAdp_SOURCES          =
+#VBoxNetAdp_SOURCES          = \
+#	VBoxNetAdp.c
 VBoxNetAdp_LIBS.solaris    += \
 	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 VBoxNetAdp_LIBS            += \

@@ -64,6 +64,7 @@ typedef struct VBOXNETADPGLOBALS *PVBOXNETADPGLOBALS;
      3) Destroy
 */
 
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
 enum VBoxNetAdpState
 {
     kVBoxNetAdpState_Invalid,
@@ -73,9 +74,11 @@ enum VBoxNetAdpState
     kVBoxNetAdpState_Active
 };
 typedef enum VBoxNetAdpState VBOXNETADPSTATE;
+#endif /* VBOXANETADP_DO_NOT_USE_NETFLT */
 
 struct VBoxNetAdapter
 {
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
     /** The spinlock protecting the state variables and host interface handle. */
     RTSPINLOCK        hSpinlock;
 
@@ -102,10 +105,11 @@ struct VBoxNetAdapter
     PINTNETTRUNKSWPORT pSwitchPort;
     /** Pointer to the globals. */
     PVBOXNETADPGLOBALS pGlobals;
-    /** Corresponds to the digit at the end of device name. */
-    uint8_t           uUnit;
     /** The event that is signaled when we go idle and that pfnWaitForIdle blocks on. */
     RTSEMEVENT        hEventIdle;
+#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
+    /** Corresponds to the digit at the end of device name. */
+    uint8_t           uUnit;
 
     union
     {
@@ -147,6 +151,7 @@ struct VBoxNetAdapter
 typedef struct VBoxNetAdapter VBOXNETADP;
 typedef VBOXNETADP *PVBOXNETADP;
 
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
 /**
  * The global data of the VBox filter driver.
  *
@@ -302,6 +307,7 @@ DECLHIDDEN(void) vboxNetAdpOsDestroy(PVBOXNETADP pThis);
 DECLHIDDEN(int) vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMac);
 
 /** @} */
+#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
 
 
 __END_DECLS
