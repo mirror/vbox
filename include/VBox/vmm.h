@@ -113,11 +113,12 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_32BIT_HACK = 0x7fffffff
 } VMMCALLHOST;
 
-RTRCPTR             VMMGetStackRC(PVM pVM);
-VMCPUID             VMMGetCpuId(PVM pVM);
-PVMCPU              VMMGetCpu(PVM pVM);
-VMMDECL(PVMCPU)     VMMGetCpuEx(PVM pVM, RTCPUID idCpu);
-VMMDECL(uint32_t)   VMMGetSvnRev(void);
+RTRCPTR              VMMGetStackRC(PVM pVM);
+VMCPUID              VMMGetCpuId(PVM pVM);
+PVMCPU               VMMGetCpu(PVM pVM);
+VMMDECL(PVMCPU)      VMMGetCpuEx(PVM pVM, RTCPUID idCpu);
+VMMDECL(uint32_t)    VMMGetSvnRev(void);
+VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM);
 
 /** @def VMMIsHwVirtExtForced
  * Checks if forced to use the hardware assisted virtualization extensions.

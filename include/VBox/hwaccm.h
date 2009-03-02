@@ -89,7 +89,9 @@ VMMR0DECL(int)  HWACCMR0Init(void);
 VMMR0DECL(int)  HWACCMR0Term(void);
 VMMR0DECL(int)  HWACCMR0InitVM(PVM pVM);
 VMMR0DECL(int)  HWACCMR0TermVM(PVM pVM);
-VMMR0DECL(int)  HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState);
+VMMR0DECL(int)  HWACCMR0EnableAllCpus(PVM pVM);
+VMMR0DECL(int)  HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled);
+VMMR0DECL(int)  HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled);
 /** @} */
 #endif /* IN_RING0 */
 
