@@ -1,5 +1,5 @@
 /*
- * $Id: damagestr.h 43555 2009-03-02 10:37:38Z michael $
+ * $Id: damagestr.h,v 1.6 2005/07/03 07:02:01 daniels Exp $
  *
  * Copyright © 2003 Keith Packard
  *
