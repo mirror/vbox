@@ -185,10 +185,6 @@ typedef struct _VBOXRec
     int drmFD;
 } VBOXRec, *VBOXPtr;
 
-typedef struct {
-    int dummy;
-} VBOXDRIContextRec, *VBOXDRIContextPtr;
-
 extern Bool vbox_init(int scrnIndex, VBOXPtr pVBox);
 extern Bool vbox_cursor_init (ScreenPtr pScreen);
 extern Bool vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox);
