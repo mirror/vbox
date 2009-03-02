@@ -652,6 +652,12 @@ static bool vboxNetFltDestroyInstance(PVBOXNETFLTINS pThis)
  * way or the other, it should not the other way around. (see suggestion further down)
  *
  * If I'm wrong, then please explain in full.
+ *
+ * r=misha: this code is to prevent race conditions between PVBOXNETFLTINS construct (which occurs on binding to adapter
+ * rather than on vboxNetFltFactoryCreateAndConnect for static_config) and destruction,
+ * namely the instance returned by vboxNetFltFindInstanceLocked in vboxNetFltSearchCreateInstance could be actually the instance being removed.
+ * I guess an approach similar to what you added to vboxNetFltFactoryCreateAndConnect could be used in vboxNetFltSearchCreateInstance in this case we could remove
+ * this ugly hack.
  */
     if (cRefs != 0)
     {
@@ -1141,12 +1147,12 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
     rc = RTSemFastMutexRequest(pGlobals->hFastMtx);
     AssertRCReturn(rc, rc);
 
-#if defined(VBOX_TAPMINIPORT) && defined(RT_OS_WINDOWS)
-    /* temporary hack to pick up the first adapter */
-    pCur = pGlobals->pInstanceHead; /** @todo Don't for get to remove this temporary hack... :-) */
-#else
+//#if defined(VBOX_TAPMINIPORT) && defined(RT_OS_WINDOWS)
+//    /* temporary hack to pick up the first adapter */
+//    pCur = pGlobals->pInstanceHead; /** @todo Don't for get to remove this temporary hack... :-) */
+//#else
     pCur = vboxNetFltFindInstanceLocked(pGlobals, pszName);
-#endif
+//#endif
     if (pCur)
     {
 #ifdef VBOXNETFLT_STATIC_CONFIG
