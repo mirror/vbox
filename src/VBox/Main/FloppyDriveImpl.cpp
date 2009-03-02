@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -458,15 +458,16 @@ HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
 
         Bstr src = typeNode.stringValue ("src");
 
-        /* find the correspoding object */
+        /* find the corresponding object */
         ComObjPtr <Host> host = mParent->virtualBox()->host();
 
-        ComPtr <IHostFloppyDriveCollection> coll;
-        rc = host->COMGETTER(FloppyDrives) (coll.asOutParam());
+        com::SafeIfaceArray <IHostFloppyDrive> coll;
+        rc = host->COMGETTER(FloppyDrives) (ComSafeArrayAsOutParam(coll));
         AssertComRC (rc);
 
         ComPtr <IHostFloppyDrive> drive;
-        rc = coll->FindByName (src, drive.asOutParam());
+        rc = host->FindHostFloppyDrive (src, drive.asOutParam());
+
         if (SUCCEEDED (rc))
         {
             rc = CaptureHostDrive (drive);

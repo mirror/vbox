@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -59,15 +59,14 @@ void VBoxVMSettingsFD::getFrom (const CMachine &aMachine)
     mMachine = aMachine;
 
     /* Read out the host floppy drive list and prepare the combobox */
-    CHostFloppyDriveCollection coll =
+    CHostFloppyDriveVector coll =
         vboxGlobal().virtualBox().GetHost().GetFloppyDrives();
-    mHostFDs.resize (coll.GetCount());
+    mHostFDs.resize (coll.size());
     mCbHostFD->clear();
-    int id = 0;
-    CHostFloppyDriveEnumerator en = coll.Enumerate();
-    while (en.HasMore())
+
+    for (int id = 0; id < coll.size(); ++id)
     {
-        CHostFloppyDrive hostFloppy = en.GetNext();
+        CHostFloppyDrive hostFloppy = coll[id];
         /** @todo set icon? */
         QString name = hostFloppy.GetName();
         QString description = hostFloppy.GetDescription();
@@ -76,7 +75,6 @@ void VBoxVMSettingsFD::getFrom (const CMachine &aMachine)
             QString ("%1 (%2)").arg (description, name);
         mCbHostFD->insertItem (id, fullName);
         mHostFDs [id] = hostFloppy;
-        ++ id;
     }
 
     CFloppyDrive floppy = aMachine.GetFloppyDrive();
@@ -90,7 +88,7 @@ void VBoxVMSettingsFD::getFrom (const CMachine &aMachine)
             QString fullName = description.isEmpty() ?
                 name :
                 QString ("%1 (%2)").arg (description, name);
-            if (coll.FindByName (name).isNull())
+            if (vboxGlobal().virtualBox().GetHost().FindHostFloppyDrive (name).isNull())
             {
                 /* If the floppy drive is not currently available, add it to
                  * the end of the list with a special mark */

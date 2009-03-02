@@ -23,7 +23,6 @@
 #define ____H_HOSTFLOPPYDRIVEIMPL
 
 #include "VirtualBoxBase.h"
-#include "Collection.h"
 
 class ATL_NO_VTABLE HostFloppyDrive :
     public VirtualBoxBaseNEXT,
@@ -81,36 +80,6 @@ private:
     const Bstr mDescription;
     const Bstr mUdi;
 };
-
-COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostFloppyDrive)
-
-    STDMETHOD(FindByName) (IN_BSTR aName, IHostFloppyDrive **aDrive)
-    {
-        if (!aName)
-            return E_INVALIDARG;
-        if (!aDrive)
-            return E_POINTER;
-
-        *aDrive = NULL;
-        Vector::value_type found;
-        Vector::iterator it = vec.begin();
-        while (it != vec.end() && !found)
-        {
-            Bstr n;
-            (*it)->COMGETTER(Name) (n.asOutParam());
-            if (n == aName)
-                found = *it;
-            ++ it;
-        }
-
-        if (!found)
-            return setError (E_INVALIDARG, HostFloppyDriveCollection::tr (
-                "The host floppy drive named '%ls' could not be found"), aName);
-
-        return found.queryInterfaceTo (aDrive);
-    }
-
-COM_DECL_READONLY_ENUM_AND_COLLECTION_END (HostFloppyDrive)
 
 #endif // ____H_HOSTFLOPPYDRIVEIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

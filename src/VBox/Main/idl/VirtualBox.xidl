@@ -6373,34 +6373,6 @@
     </attribute>
   </interface>
 
-  <enumerator
-     name="IHostFloppyDriveEnumerator" type="IHostFloppyDrive"
-     uuid="ce04c924-4f54-432a-9dec-11fddc3ea875"
-     />
-
-  <collection
-     name="IHostFloppyDriveCollection" type="IHostFloppyDrive"
-     enumerator="IHostFloppyDriveEnumerator"
-     uuid="fd84bb86-c59a-4037-a557-755ff263a460"
-     readonly="yes"
-     >
-    <method name="findByName">
-      <desc>
-        Searches this collection for a host drive with the given name.
-        <note>
-          The method returns an error if the given name does not
-          correspond to any host drive in the collection.
-        </note>
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>Name of the host drive to search for</desc>
-      </param>
-      <param name="drive" type="IHostFloppyDrive" dir="return">
-        <desc>Found host drive object</desc>
-      </param>
-    </method>
-  </collection>
-
   <enum
     name="HostNetworkInterfaceType"
     uuid="763754FA-3246-4539-9590-9E603EDBF706"
@@ -6533,7 +6505,7 @@
       <desc>List of DVD drives available on the host.</desc>
     </attribute>
 
-    <attribute name="floppyDrives" type="IHostFloppyDriveCollection" readonly="yes">
+    <attribute name="floppyDrives" type="IHostFloppyDrive" readonly="yes" safearray="yes">
       <desc>List of floppy drives available on the host.</desc>
     </attribute>
 
@@ -6818,6 +6790,23 @@
       </param>
       <param name="drive" type="IHostDVDDrive" dir="return">
         <desc>Found host drive object</desc>
+      </param>
+    </method>
+
+    <method name="findHostFloppyDrive">
+      <desc>
+        Searches for a host floppy drive with the given @c name.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Given @c name does not correspond to any host floppy drive.
+        </result>
+
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the host floppy drive to search for</desc>
+      </param>
+      <param name="drive" type="IHostFloppyDrive" dir="return">
+        <desc>Found host floppy drive object</desc>
       </param>
     </method>
 

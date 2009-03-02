@@ -197,21 +197,19 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
     else if (sender() == mRbFdType)
     {
         /* Search for the host floppy-drives */
-        CHostFloppyDriveCollection coll =
+        CHostFloppyDriveVector coll =
             vboxGlobal().virtualBox().GetHost().GetFloppyDrives();
-        mHostFloppys.resize (coll.GetCount());
-        int id = 0;
-        CHostFloppyDriveEnumerator en = coll.Enumerate();
-        while (en.HasMore())
+        mHostFloppys.resize (coll.size());
+
+        for (int id = 0; id < coll.size(); ++id)
         {
-            CHostFloppyDrive hostFloppy = en.GetNext();
+            CHostFloppyDrive hostFloppy = coll[id];
             QString name = hostFloppy.GetName();
             QString description = hostFloppy.GetDescription();
             QString fullName = description.isEmpty() ?
                 name : QString ("%1 (%2)").arg (description, name);
             mCbHost->insertItem (id, fullName);
             mHostFloppys [id] = hostFloppy;
-            ++ id;
         }
 
         /* Switch media images type to FD */
