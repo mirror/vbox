@@ -7,8 +7,11 @@
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 #ifndef RT_OS_WINDOWS
-#include <sys/ioctl.h>
-#include <poll.h>
+# include <sys/ioctl.h>
+# include <poll.h>
+#else
+# define _WINSOCK2API_
+# include <IPHlpApi.h>
 #endif
 
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
@@ -224,7 +227,7 @@ static const uint8_t special_ethaddr[6] =
 };
 
 #ifdef RT_OS_WINDOWS
-
+# ifndef VBOX_WITH_MULTI_DNS
 static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                                struct in_addr *pdns_addr,
                                const char **ppszDomain)
@@ -264,7 +267,6 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         goto get_dns_prefix;
     }
 
-#ifndef VBOX_WITH_MULTI_DNS
     pIPAddr = &(FixedInfo->DnsServerList);
     inet_aton(pIPAddr->IpAddress.String, &tmp_addr);
     Log(("nat: DNS Servers:\n"));
@@ -279,26 +281,6 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             LogRel(("NAT: ignored DNS address: %s\n", pIPAddr ->IpAddress.String));
         pIPAddr = pIPAddr ->Next;
     }
-#else
-    /*localhost mask */
-    for (pIPAddr = &FixedInfo->DnsServerList; pIPAddr != NULL; pIPAddr = pIPAddr->Next)
-    {
-        struct dns_entry *da;
-        if(!inet_aton(pIPAddr->IpAddress.String, &tmp_addr))
-            continue;
-        da = RTMemAllocZ(sizeof (struct dns_entry));
-        if (da == NULL)
-        {
-            LogRel(("can't alloc memory for DNS entry\n"));
-            return -1;
-        }
-        /*check */
-        if ((da->de_addr.s_addr & htonl(IN_CLASSA_NET)) == ntohl(INADDR_LOOPBACK & IN_CLASSA_NET)) {
-            da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
-        }
-        LIST_INSERT_HEAD(&pData->dns_list_head, da, de_list);
-    }
-#endif
     if (FixedInfo)
     {
         GlobalFree(FixedInfo);
@@ -338,8 +320,117 @@ get_dns_prefix:
     }
     return rc;
 }
+# else /* !VBOX_WITH_MULTI_DNS */
+static int get_dns_addr_domain(PNATState pData, bool fVerbose,
+                               struct in_addr *pdns_addr,
+                               const char **ppszDomain)
+{
+    OSVERSIONINFOEX osvi;
+    DWORDLONG condition = 0;
+    int op = VER_GREATER_EQUAL;
 
-#else
+    /* DNS information retriving is window's version specific,
+     * so the OS version should be defined first 
+     */
+    memset(&osvi, 0, sizeof(OSVERSIONINFOEX));
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    osvi.dwMajorVersion = 5; /* Win XP*/
+    osvi.dwMinorVersion = 1;
+    
+    VER_SET_CONDITION(condition, VER_MAJORVERSION, op);
+    VER_SET_CONDITION(condition, VER_MINORVERSION, op);
+    
+    if (VerifyVersionInfo(&osvi, 
+                VER_MAJORVERSION 
+            | VER_MINORVERSION, 
+             condition))
+    {
+        /* WinXP sp1 and latter */
+        /* Get amount of memory required for operation */
+        ULONG flags = GAA_FLAG_INCLUDE_PREFIX; /*GAA_FLAG_INCLUDE_ALL_INTERFACES;*/ /* all interfaces registered in NDIS */
+        PIP_ADAPTER_ADDRESSES addresses = NULL;
+        PIP_ADAPTER_ADDRESSES addr = NULL;
+        PIP_ADAPTER_DNS_SERVER_ADDRESS dns = NULL;
+        ULONG size = 0;
+        char *suffix;
+        struct dns_entry *da = NULL;
+        ULONG ret = ERROR_SUCCESS;
+        
+        /* @todo add SKIPing flags to get only required information */
+
+        ret = pData->pfGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, addresses, &size);
+        if (ret != ERROR_BUFFER_OVERFLOW) 
+        {
+            LogRel(("NAT: error %lu occured on capacity detection operation\n", ret));
+            return VERR_INVALID_PARAMETER; /* @todo: find better error code */
+        }
+        
+        if (size == 0) 
+        {
+            LogRel(("NAT: Win socket API returns non capacity\n"));
+            return VERR_INVALID_PARAMETER; /* @todo: find better error code */
+        }
+        
+        addresses = RTMemAllocZ(size);
+        if (addresses == NULL) 
+        {
+            LogRel(("NAT: No memory available \n"));
+            return VERR_NO_MEMORY;
+        }
+
+        ret = pData->pfGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, addresses, &size);
+        if (ret != ERROR_SUCCESS)
+        {
+            LogRel(("NAT: error %lu occured on fetching adapters info\n", ret));
+            return VERR_INVALID_PARAMETER; /* @todo: find better error code */
+        }
+        addr = addresses;
+        while(addr != NULL) 
+        {
+            size_t buff_size;
+            if (addr->OperStatus != IfOperStatusUp)
+                goto next;
+            dns = addr->FirstDnsServerAddress;
+            while (dns != NULL) 
+            {
+                struct sockaddr *saddr = dns->Address.lpSockaddr;
+                if (saddr->sa_family != AF_INET)
+                    goto next_dns;
+                /* add dns server to list */
+                da = RTMemAllocZ(sizeof(struct dns_entry));
+                if (da == NULL)
+                {
+                    LogRel(("NAT: Can't allocate buffer for DNS entry\n"));
+                    return VERR_NO_MEMORY;
+                }
+                LogRel(("NAT: adding %R[IP4] to DNS server list\n", &((struct sockaddr_in *)saddr)->sin_addr));
+                da->de_addr.s_addr = ((struct sockaddr_in *)saddr)->sin_addr.s_addr;
+                LIST_INSERT_HEAD(&pData->dns_list_head, da, de_list);
+            next_dns:    
+                dns = dns->Next;
+            }
+            buff_size = wcstombs(NULL, addr->DnsSuffix, 0);
+            if (buff_size == 0) 
+                goto next;
+            suffix = RTMemAllocZ(buff_size);
+            wcstombs(suffix, addr->DnsSuffix, buff_size);
+            LogRel(("NAT: adding %s to DNS suffix list\n", suffix));
+            *ppszDomain = suffix;
+            next:
+            addr = addr->Next;
+        }
+        /*@todo add dns suffix if required */
+        LogRel(("NAT: adding dns suffix %s to the list \n", ppszDomain));
+    }
+    else
+    {
+        /* Win 2000 and earlier */
+    }
+    return VINF_SUCCESS; 
+}
+# endif /* VBOX_WITH_MULTI_DNS */
+
+#else /* !RT_OS_WINDOWS */
 
 static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                                struct in_addr *pdns_addr,
@@ -1568,7 +1659,7 @@ uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport)
     switch (hdport) 
     {
         case 500:
-            if (hsport == 500) service = 500;
+                /* service = sport; */
         break;
     } 
     Log2(("service : %d\n", service));

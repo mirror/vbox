@@ -106,6 +106,9 @@ typedef struct NATState
 #ifndef VBOX_WITH_MULTI_DNS
     struct in_addr dns_addr;
 #else
+# ifdef RT_OS_WINDOWS
+    ULONG (WINAPI * pfGetAdaptersAddresses)(ULONG, ULONG, PVOID, PIP_ADAPTER_ADDRESSES, PULONG);
+# endif
     struct dns_list_head dns_list_head;
 #endif
     struct in_addr tftp_server;
