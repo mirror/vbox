@@ -206,12 +206,24 @@ endif # VBOX_WITH_QT4_SUN
 
 
 #
+# For building the combined package, just get the additions .ISO
+# once for amd64 to prevent version inconsistences. In all other
+# cases we get the .ISO per target architecture.
+#
+ifdef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
+ ifdef VBOX_WITH_COMBINED_PACKAGE
+  ifeq ($(KBUILD_TARGET_ARCH),amd64) 
+   INSTALLS += buildserver-additions
+  endif
+ else
+  INSTALLS += buildserver-additions
+ endif
+
+#
 # Install additions iso from the build server.
 # The $(CP)/$(RM) stuff can be replaced by a simple $(TOUCH) once that has
 # been added to kBuild.
 #
-ifdef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
-INSTALLS += buildserver-additions
 buildserver-additions_INST = $(INST_ADDITIONS_ISO)
 buildserver-additions_MODE = 0644
 buildserver-additions_SOURCES = $(PATH_TARGET)/VBoxGuestAdditions.iso
