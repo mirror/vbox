@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,15 +58,14 @@ void VBoxVMSettingsCD::getFrom (const CMachine &aMachine)
     mMachine = aMachine;
 
     /* Read out the host DVD drive list and prepare the combobox */
-    CHostDVDDriveCollection coll =
+    CHostDVDDriveVector coll =
         vboxGlobal().virtualBox().GetHost().GetDVDDrives();
-    mHostCDs.resize (coll.GetCount());
+    mHostCDs.resize (coll.size());
     mCbHostCD->clear();
-    int id = 0;
-    CHostDVDDriveEnumerator en = coll.Enumerate();
-    while (en.HasMore())
+
+    for (int id = 0; id < coll.size(); ++id)
     {
-        CHostDVDDrive hostDVD = en.GetNext();
+        CHostDVDDrive hostDVD = coll[id];
         /// @todo (r=dmik) set icon?
         QString name = hostDVD.GetName();
         QString description = hostDVD.GetDescription();
@@ -74,7 +73,6 @@ void VBoxVMSettingsCD::getFrom (const CMachine &aMachine)
             name : QString ("%1 (%2)").arg (description, name);
         mCbHostCD->insertItem (id, fullName);
         mHostCDs [id] = hostDVD;
-        ++ id;
     }
 
     CDVDDrive dvd = mMachine.GetDVDDrive();
@@ -88,7 +86,7 @@ void VBoxVMSettingsCD::getFrom (const CMachine &aMachine)
             QString fullName = description.isEmpty() ?
                 name :
                 QString ("%1 (%2)").arg (description, name);
-            if (coll.FindByName (name).isNull())
+            if (vboxGlobal().virtualBox().GetHost().FindHostDVDDrive (name).isNull())
             {
                 /* If the DVD drive is not currently available,
                  * add it to the end of the list with a special mark */

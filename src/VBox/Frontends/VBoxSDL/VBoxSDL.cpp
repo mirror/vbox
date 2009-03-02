@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1771,10 +1771,10 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             ComPtr <IHost> host;
             CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host)(host.asOutParam()));
-            ComPtr <IHostDVDDriveCollection> coll;
-            CHECK_ERROR_BREAK (host, COMGETTER(DVDDrives)(coll.asOutParam()));
+            SafeIfaceArray <IHostDVDDrive> coll;
+            CHECK_ERROR_BREAK (host, COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(coll)));
             ComPtr <IHostDVDDrive> hostDrive;
-            rc = coll->FindByName (medium, hostDrive.asOutParam());
+            rc = host->FindHostDVDDrive (medium, hostDrive.asOutParam());
             if (SUCCEEDED (rc))
             {
                 done = true;
