@@ -127,7 +127,10 @@ endif
 vboxvideo_drv_70_INCS = \
 	$(VBOX_PATH_X11_XORG_7_0) \
 	$(VBOX_PATH_X11_XORG_7_0)/X11 \
-	$(VBOX_PATH_X11_XORG_7_0)/xorg
+	$(VBOX_PATH_X11_XORG_7_0)/xorg \
+	$(VBOX_PATH_X11_ROOT)/glproto-1.4.3 \
+	$(VBOX_PATH_X11_ROOT)/libdrm-1.0.5 \
+	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.3
 vboxvideo_drv_70_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils.c
@@ -143,7 +146,10 @@ vboxvideo_drv_71_DEFS := $(vboxvideo_drv_70_DEFS)
 vboxvideo_drv_71_INCS = \
 	$(VBOX_PATH_X11_XORG_7_1) \
 	$(VBOX_PATH_X11_XORG_7_1)/X11 \
-	$(VBOX_PATH_X11_XORG_7_1)/xorg
+	$(VBOX_PATH_X11_XORG_7_1)/xorg \
+	$(VBOX_PATH_X11_ROOT)/glproto-1.4.7 \
+	$(VBOX_PATH_X11_ROOT)/libdrm-2.0.1 \
+	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.3
 vboxvideo_drv_71_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils.c
@@ -159,7 +165,10 @@ vboxvideo_drv_13_DEFS := $(vboxvideo_drv_70_DEFS)
 vboxvideo_drv_13_INCS = \
 	$(VBOX_PATH_X11_XORG_1_3) \
 	$(VBOX_PATH_X11_XORG_1_3)/X11 \
-	$(VBOX_PATH_X11_XORG_1_3)/xorg
+	$(VBOX_PATH_X11_XORG_1_3)/xorg \
+	$(VBOX_PATH_X11_ROOT)/glproto-1.4.8 \
+	$(VBOX_PATH_X11_ROOT)/libdrm-2.3.0 \
+	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.3
 vboxvideo_drv_13_SOURCES = \
 	vboxvideo_13.c \
 	vboxutils.c
@@ -178,7 +187,10 @@ vboxvideo_drv_14_DEFS := $(vboxvideo_drv_70_DEFS)
 vboxvideo_drv_14_INCS = \
 	$(VBOX_PATH_X11_XORG_1_4) \
 	$(VBOX_PATH_X11_XORG_1_4)/X11 \
-	$(VBOX_PATH_X11_XORG_1_4)/xorg
+	$(VBOX_PATH_X11_XORG_1_4)/xorg \
+	$(VBOX_PATH_X11_ROOT)/glproto-1.4.8 \
+	$(VBOX_PATH_X11_ROOT)/libdrm-2.3.0 \
+	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.4
 vboxvideo_drv_14_SOURCES  = \
 	vboxvideo_13.c \
 	vboxutils.c
@@ -194,10 +206,14 @@ vboxvideo_drv_15_DEFS := $(vboxvideo_drv_70_DEFS) NO_ANSIC PCIACCESS VBOX_NO_LOW
 vboxvideo_drv_15_INCS = \
 	$(VBOX_PATH_X11_XORG_1_5) \
 	$(VBOX_PATH_X11_XORG_1_5)/X11 \
-	$(VBOX_PATH_X11_XORG_1_5)/xorg
+	$(VBOX_PATH_X11_XORG_1_5)/xorg \
+	$(VBOX_PATH_X11_ROOT)/glproto-1.4.9 \
+	$(VBOX_PATH_X11_ROOT)/libdrm-2.3.1 \
+	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.4
 vboxvideo_drv_15_SOURCES  = \
 	vboxvideo_15.c \
-	vboxutils.c
+	vboxutils.c \
+	vboxvideo_dri.c
 
 
 #
@@ -210,7 +226,10 @@ vboxvideo_drv_16_DEFS := $(vboxvideo_drv_15_DEFS)
 vboxvideo_drv_16_INCS = \
 	$(VBOX_PATH_X11_XORG_1_6) \
 	$(VBOX_PATH_X11_XORG_1_6)/X11 \
-	$(VBOX_PATH_X11_XORG_1_6)/xorg
+	$(VBOX_PATH_X11_XORG_1_6)/xorg \
+	$(VBOX_PATH_X11_ROOT)/glproto-1.4.9 \
+	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.5 \
+	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.4
 vboxvideo_drv_16_SOURCES  = \
 	vboxvideo_15.c \
 	vboxutils.c
