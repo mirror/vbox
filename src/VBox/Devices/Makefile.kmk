@@ -653,6 +653,7 @@ VBOX_SLIRP_SOURCES = \
 
 # some day will be deleted
 VBOX_WITH_SIMPLIFIED_SLIRP_SYNC=1
+VBOX_WITH_MULTI_DNS=1
 
 Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
 define def_vbox_slirp_cflags
