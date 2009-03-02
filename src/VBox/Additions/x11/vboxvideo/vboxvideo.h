@@ -108,10 +108,25 @@
 
 #include "fb.h"
 
-#define VBOX_VERSION		4000
+#define VBOX_VERSION		4000  /* Why? */
 #include "xf86Cursor.h"
-#define VBOX_NAME		"VBoxVideo"
-#define VBOX_DRIVER_NAME	"vboxvideo"
+#define VBOX_NAME		      "VBoxVideo"
+#define VBOX_DRIVER_NAME	  "vboxvideo"
+
+/* DRI support */
+#define _XF86DRI_SERVER_
+#include "dri.h"
+#include "GL/glxint.h"
+#include "GL/glxtokens.h"
+
+/* For some reason this is not in the header files. */
+extern void GlxSetVisualConfigs(int nconfigs, __GLXvisualConfig *configs,
+                                void **configprivs);
+#define VBOX_VIDEO_MAJOR  1
+#define VBOX_VIDEO_MINOR  0
+#define VBOX_DRM_DRIVER_NAME  "tdfx"    /* For now, as this driver is basically a stub. */
+#define VBOX_DRI_DRIVER_NAME  "swrast"  /* For starters. */
+#define VBOX_MAX_DRAWABLES    256       /* At random. */
 
 #define VBOXPTR(p) ((VBOXPtr)((p)->driverPrivate))
 
@@ -160,7 +175,16 @@ typedef struct _VBOXRec
     int viewportX, viewportY;
     VMMDevMemory *pVMMDevMemory;
     VBVAMEMORY *pVbvaMemory;
+    Bool useDRI;
+    int cVisualConfigs;
+    __GLXvisualConfig *pVisualConfigs;
+    DRIInfoRec *pDRIInfo;
+    int drmFD;
 } VBOXRec, *VBOXPtr;
+
+typedef struct {
+    int dummy;
+} VBOXDRIContextRec, *VBOXDRIContextPtr;
 
 extern Bool vbox_init(int scrnIndex, VBOXPtr pVBox);
 extern Bool vbox_cursor_init (ScreenPtr pScreen);
@@ -181,5 +205,8 @@ extern Bool vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx,
 extern Bool vboxHostLikesVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBits);
 extern Bool vboxSaveVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBits);
 extern Bool vboxRetrieveVideoMode(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits);
+
+/* DRI stuff */
+extern Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, VBOXPtr pVBox);
 
 #endif /* _VBOXVIDEO_H_ */
