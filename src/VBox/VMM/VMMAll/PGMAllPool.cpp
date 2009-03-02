@@ -4117,6 +4117,8 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
  */
 static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 {
+    PVM pVM = pPool->CTX_SUFF(pVM);
+
     STAM_PROFILE_START(&pPool->StatFlushAllInt, a);
     LogFlow(("pgmPoolFlushAllInt:\n"));
 
@@ -4129,6 +4131,12 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         return;
     }
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    /* Unmap the old CR3 value before flushing everything. */
+    int rc = PGM_BTH_PFN(UnmapCR3, pVM)(pVM);
+    AssertRC(rc);
+#endif
+
     /*
      * Nuke the free list and reinsert all pages into it.
      */
@@ -4137,7 +4145,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         PPGMPOOLPAGE pPage = &pPool->aPages[i];
 
 #ifdef IN_RING3
-        Assert(pPage->Core.Key == MMPage2Phys(pPool->pVMR3, pPage->pvPageR3));
+        Assert(pPage->Core.Key == MMPage2Phys(pVM, pPage->pvPageR3));
 #endif
 #ifdef PGMPOOL_WITH_MONITORING
         if (pPage->fMonitored)
@@ -4192,7 +4200,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     /*
      * Clear all the GCPhys links and rebuild the phys ext free list.
      */
-    for (PPGMRAMRANGE pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
     {
@@ -4250,7 +4258,6 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         pPage->iMonitoredPrev = NIL_PGMPOOL_IDX;
         if (pPage->fMonitored)
         {
-            PVM pVM = pPool->CTX_SUFF(pVM);
             int rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1),
                                                        pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pPage),
                                                        pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pPage),
@@ -4274,7 +4281,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     /*
      * Finally, assert the FF.
      */
-    VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
 
     STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
 }
