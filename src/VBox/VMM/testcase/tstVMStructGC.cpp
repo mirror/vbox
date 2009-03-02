@@ -43,7 +43,7 @@ AssertCompileSize(RTRCPTR,  4);
 #ifdef VBOX_WITH_64_BITS_GUESTS
 AssertCompileSize(RTGCPTR,  8);
 #else
-AssertCompileSize(RTGCPTR,  8);
+AssertCompileSize(RTGCPTR,  4);
 #endif
 AssertCompileSize(RTGCPHYS, 8);
 AssertCompileSize(RTHCPHYS, 8);
