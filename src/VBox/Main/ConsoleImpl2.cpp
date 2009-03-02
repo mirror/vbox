@@ -832,7 +832,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pCfg, "PortCount", cPorts);                    RC_CHECK();
 
             /* Needed configuration values for the bios. */
-            rc = CFGMR3InsertString(pBiosCfg, "SataHardDiskDevice", "ahci");        RC_CHECK();
+            if (pBiosCfg)
+            {
+                rc = CFGMR3InsertString(pBiosCfg, "SataHardDiskDevice", "ahci");        RC_CHECK();
+            }
 
             for (uint32_t i = 0; i < 4; i++)
             {
@@ -844,7 +847,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 LONG lPortNumber = -1;
                 hrc = sataController->GetIDEEmulationPort(i, &lPortNumber);             H();
                 rc = CFGMR3InsertInteger(pCfg, s_apszConfig[i], lPortNumber);           RC_CHECK();
-                rc = CFGMR3InsertInteger(pBiosCfg, s_apszBiosConfig[i], lPortNumber);   RC_CHECK();
+                if (pBiosCfg)
+                {
+                    rc = CFGMR3InsertInteger(pBiosCfg, s_apszBiosConfig[i], lPortNumber);   RC_CHECK();
+                }
             }
 
             /* Attach the status driver */
