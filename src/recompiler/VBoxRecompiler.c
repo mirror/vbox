@@ -2860,12 +2860,10 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
  * @param   pVM         VM Handle.
  * @param   GCPhys      Start physical address.
  * @param   cb          The size of the range.
- * @todo    Rename to REMR3NotifyPhysRamDeregister (for MMIO2) as we won't
- *          reserve any memory soon.
  */
-REMR3DECL(void) REMR3NotifyPhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cb)
+REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb)
 {
-    Log(("REMR3NotifyPhysReserve: GCPhys=%RGp cb=%d\n", GCPhys, cb));
+    Log(("REMR3NotifyPhysRamDeregister: GCPhys=%RGp cb=%d\n", GCPhys, cb));
     VM_ASSERT_EMT(pVM);
 
     /*

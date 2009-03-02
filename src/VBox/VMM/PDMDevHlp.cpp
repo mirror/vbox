@@ -348,7 +348,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GC
     LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: GCPhysStart=%RGp cbRange=%#x pvBinary=%p fShadow=%RTbool pszDesc=%p:{%s}\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, pvBinary, fShadow, pszDesc, pszDesc));
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    uint32_t fFlags = 0;
+    if (fShadow)
+        fFlags |= PGMPHYS_ROM_FLAG_SHADOWED;
+    /** @todo PGMPHYS_ROM_FLAG_PERMANENT_BINARY */
+    int rc = PGMR3PhysRomRegister(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvBinary, fFlags, pszDesc);
+#else
     int rc = MMR3PhysRomRegister(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvBinary, fShadow, pszDesc);
+#endif
 
     LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
@@ -2129,6 +2137,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR
 /** @copydoc PDMDEVHLPR3::pfnPhysReserve */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc)
 {
+#ifndef VBOX_WITH_NEW_PHYS_CODE
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_PhysReserve: caller='%s'/%d: GCPhys=%RGp cbRange=%#x pszDesc=%p:{%s}\n",
@@ -2139,6 +2148,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GC
     LogFlow(("pdmR3DevHlp_PhysReserve: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
     return rc;
+#else
+    AssertFailed();
+    return VERR_ACCESS_DENIED;
+#endif
 }
 
 
@@ -2504,13 +2517,17 @@ static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLea
 
 
 /** @copydoc PDMDEVHLPR3::pfnROMProtectShadow */
-static DECLCALLBACK(int) pdmR3DevHlp_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
+static DECLCALLBACK(int) pdmR3DevHlp_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, PGMROMPROT enmProt)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_ROMProtectShadow: caller='%s'/%d: GCPhysStart=%RGp cbRange=%#x\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange));
+    LogFlow(("pdmR3DevHlp_ROMProtectShadow: caller='%s'/%d: GCPhysStart=%RGp cbRange=%#x enmProt=%d\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, enmProt));
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    int rc = PGMR3PhysRomProtect(pDevIns->Internal.s.pVMR3, GCPhysStart, cbRange, enmProt);
+#else
     int rc = MMR3PhysRomProtect(pDevIns->Internal.s.pVMR3, GCPhysStart, cbRange);
+#endif
 
     LogFlow(("pdmR3DevHlp_ROMProtectShadow: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
@@ -3049,7 +3066,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_GetCpuId(PPDMDEVINS pDevIns, uin
 
 
 /** @copydoc PDMDEVHLPR3::pfnROMProtectShadow */
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, PGMROMPROT enmProt)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));

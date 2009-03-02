@@ -170,7 +170,6 @@ static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam)
 }
 
 
-
 /**
  * Sets up a range RAM.
  *
@@ -244,9 +243,9 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     pNew->fFlags        = 0;
 
     pNew->pvR3          = NULL;
+#ifndef VBOX_WITH_NEW_PHYS_CODE
     pNew->paChunkR3Ptrs = NULL;
 
-#ifndef VBOX_WITH_NEW_PHYS_CODE
     /* Allocate memory for chunk to HC ptr lookup array. */
     rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->paChunkR3Ptrs);
     AssertRCReturn(rc, rc);
@@ -302,7 +301,7 @@ int pgmR3PhysRamReset(PVM pVM)
                 {
                     case PGMPAGETYPE_RAM:
                         if (!PGM_PAGE_IS_ZERO(pPage))
-                            pgmPhysFreePage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)i << PAGE_SHIFT));
+                            pgmPhysFreePage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
                         break;
 
                     case PGMPAGETYPE_MMIO2:
@@ -350,13 +349,13 @@ int pgmR3PhysRamReset(PVM pVM)
                                 break;
                             case PGM_PAGE_STATE_SHARED:
                             case PGM_PAGE_STATE_WRITE_MONITORED:
-                                rc = pgmPhysPageMakeWritable(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)i << PAGE_SHIFT));
+                                rc = pgmPhysPageMakeWritable(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
                                 AssertLogRelRCReturn(rc, rc);
                             case PGM_PAGE_STATE_ALLOCATED:
                             {
                                 void *pvPage;
                                 PPGMPAGEMAP pMapIgnored;
-                                rc = pgmPhysPageMap(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)i << PAGE_SHIFT), &pMapIgnored, &pvPage);
+                                rc = pgmPhysPageMap(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pMapIgnored, &pvPage);
                                 AssertLogRelRCReturn(rc, rc);
                                 ASMMemZeroPage(pvPage);
                                 break;
@@ -487,7 +486,9 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
         pNew->fFlags        = 0; /* Some MMIO flag here? */
 
         pNew->pvR3          = NULL;
+#ifndef VBOX_WITH_NEW_PHYS_CODE
         pNew->paChunkR3Ptrs = NULL;
+#endif
 
         uint32_t iPage = cPages;
         while (iPage-- > 0)
@@ -700,7 +701,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
             //pNew->RamRange.fFlags = 0;
 
             pNew->RamRange.pvR3 = pvPages;       ///@todo remove this [new phys code]
+#ifndef VBOX_WITH_NEW_PHYS_CODE
             pNew->RamRange.paChunkR3Ptrs = NULL; ///@todo remove this [new phys code]
+#endif
 
             uint32_t iPage = cPages;
             while (iPage-- > 0)
@@ -994,7 +997,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
     }
     else
     {
-        REMR3NotifyPhysReserve(pVM, pCur->RamRange.GCPhys, pCur->RamRange.cb);
+        REMR3NotifyPhysRamDeregister(pVM, pCur->RamRange.GCPhys, pCur->RamRange.cb);
         pgmR3PhysUnlinkRamRange(pVM, &pCur->RamRange);
     }
 
@@ -1503,7 +1506,6 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 }
 
 
-
 /**
  * Called by PGMR3Reset to reset the shadow, switch to the virgin,
  * and verify that the virgin part is untouched.
@@ -1698,6 +1700,7 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
     return VINF_SUCCESS;
 }
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 
 /**
  * Interface that the MMR3RamRegister(), MMR3RomRegister() and MMIO handler
@@ -1850,7 +1853,6 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
     return rc;
 }
 
-#ifndef VBOX_WITH_NEW_PHYS_CODE
 
 /**
  * Register a chunk of a the physical memory range with PGM. MM is responsible
@@ -2049,7 +2051,6 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
 }
 
 #endif /* !VBOX_WITH_NEW_PHYS_CODE */
-
 
 /**
  * Interface MMR3RomRegister() and MMR3PhysReserve calls to update the

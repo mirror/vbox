@@ -1,7 +1,8 @@
 ; $Id$
 ;; @file
-;
 ; VBoxREM Definition File.
+;
+
 ;
 ; Copyright (C) 2006-2007 Sun Microsystems, Inc.
 ;
@@ -38,7 +39,7 @@ EXPORTS
     REMR3ReplayHandlerNotifications
     REMR3NotifyPhysRamRegister
     REMR3NotifyPhysRamChunkRegister
-    REMR3NotifyPhysReserve
+    REMR3NotifyPhysRamDeregister
     REMR3NotifyPhysRomRegister
     REMR3NotifyHandlerPhysicalModify
     REMR3NotifyHandlerPhysicalRegister

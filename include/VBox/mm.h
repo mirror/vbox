@@ -43,6 +43,7 @@ __BEGIN_DECLS
  * @{
  */
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 /** @name RAM Page Flags
  * Since internal ranges have a byte granularity it's possible for a
  * page be flagged for several uses. The access virtualization in PGM
@@ -52,7 +53,6 @@ __BEGIN_DECLS
  * Bits 0-11 only since they are fitted into the offset part of a physical memory address.
  * @{
  */
-#if 1
 /** Reserved - Not RAM, ROM nor MMIO2.
  * If this bit is cleared the memory is assumed to be some kind of RAM.
  * Normal MMIO may set it but that depends on whether the RAM range was
@@ -81,12 +81,9 @@ __BEGIN_DECLS
  * @remark Involved in the shadow ROM hack.
  */
 #define MM_RAM_FLAGS_MMIO2              RT_BIT(3)
-#endif
 
-#ifndef VBOX_WITH_NEW_PHYS_CODE
 /** Physical backing memory is allocated dynamically. Not set implies a one time static allocation. */
 #define MM_RAM_FLAGS_DYNAMIC_ALLOC      RT_BIT(11)
-#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
 /** The shift used to get the reference count. */
 #define MM_RAM_FLAGS_CREFS_SHIFT        62
@@ -106,7 +103,6 @@ __BEGIN_DECLS
 #define MM_RAM_FLAGS_NO_REFS_MASK       UINT64_C(0x0000ffffffffffff)
 /** @} */
 
-#ifndef VBOX_WITH_NEW_PHYS_CODE
 /** @name MMR3PhysRegisterEx registration type
  * @{
  */
@@ -120,7 +116,7 @@ typedef enum
     MM_PHYS_TYPE_32BIT_HACK = 0x7fffffff
 } MMPHYSREG;
 /** @} */
-#endif
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
 /**
  * Memory Allocation Tags.
@@ -352,13 +348,13 @@ VMMR3DECL(int)      MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, siz
 /** @defgroup grp_mm_phys   Guest Physical Memory Manager
  * @ingroup grp_mm_r3
  * @{ */
-VMMR3DECL(int)      MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, const char *pszDesc);
 #ifndef VBOX_WITH_NEW_PHYS_CODE
+VMMR3DECL(int)      MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, const char *pszDesc);
 VMMR3DECL(int)      MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, MMPHYSREG enmType, const char *pszDesc);
-#endif
 VMMR3DECL(int)      MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc);
 VMMR3DECL(int)      MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
 VMMR3DECL(int)      MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
+#endif
 VMMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM);
 /** @} */
 

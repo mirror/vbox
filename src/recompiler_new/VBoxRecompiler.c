@@ -2688,10 +2688,7 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     pVM->rem.s.fIgnoreAll = true;
 
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-    if (fFlags & MM_RAM_FLAGS_RESERVED)
-        cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
-    else
-        cpu_register_physical_memory(GCPhys, cb, GCPhys);
+    cpu_register_physical_memory(GCPhys, cb, GCPhys);
 #else
     if (!GCPhys)
         cpu_register_physical_memory(GCPhys, cb, GCPhys | IO_MEM_RAM_MISSING);
@@ -2809,12 +2806,10 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
  * @param   pVM         VM Handle.
  * @param   GCPhys      Start physical address.
  * @param   cb          The size of the range.
- * @todo    Rename to REMR3NotifyPhysRamDeregister (for MMIO2) as we won't
- *          reserve any memory soon.
  */
-REMR3DECL(void) REMR3NotifyPhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cb)
+REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb)
 {
-    Log(("REMR3NotifyPhysReserve: GCPhys=%RGp cb=%d\n", GCPhys, cb));
+    Log(("REMR3NotifyPhysRamDeregister: GCPhys=%RGp cb=%d\n", GCPhys, cb));
     VM_ASSERT_EMT(pVM);
 
     /*
