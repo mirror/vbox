@@ -100,7 +100,34 @@ __END_DECLS
 /**
  * The (common) global data.
  */
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
 static VBOXNETADPGLOBALS g_VBoxNetAdpGlobals;
+
+#else /* !VBOXANETADP_DO_NOT_USE_NETFLT */
+
+/**
+ * Generate a suitable MAC address.
+ *
+ * @param   pThis       The instance.
+ * @param   pMac        Where to return the MAC address.
+ */
+DECLHIDDEN(void) vboxNetAdpComposeMACAddress(PVBOXNETADP pThis, PRTMAC pMac)
+{
+#if 0 /* Use a locally administered version of the OUI we use for the guest NICs. */
+    pMac->au8[0] = 0x08 | 2;
+    pMac->au8[1] = 0x00;
+    pMac->au8[2] = 0x27;
+#else /* this is what \0vb comes down to. It seems to be unassigned atm. */
+    pMac->au8[0] = 0;
+    pMac->au8[1] = 0x76;
+    pMac->au8[2] = 0x62;
+#endif
+
+    pMac->au8[3] = 0; /* pThis->uUnit >> 16; */
+    pMac->au8[4] = 0; /* pThis->uUnit >> 8; */
+    pMac->au8[5] = pThis->uUnit;
+}
+#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
 
 
 
@@ -116,6 +143,7 @@ static void vboxNetAdpDarwinComposeUUID(PVBOXNETADP pThis, PRTUUID pUuid)
     vboxNetAdpComposeMACAddress(pThis, (PRTMAC)pUuid->Gen.au8Node);
 }
 
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
 /**
  * Reads and retains the host interface handle.
  *
@@ -439,9 +467,10 @@ DECLINLINE(void) vboxNetAdpDarwinMBufToSG(PVBOXNETADP pThis, mbuf_t pMBuf, void 
     AssertMsg(!pvFrame, ("pvFrame=%p pMBuf=%p iSeg=%d\n", pvFrame, pMBuf, iSeg));
 }
 
-
+#endif /* VBOXANETADP_DO_NOT_USE_NETFLT */
 static errno_t vboxNetAdpDarwinOutput(ifnet_t pIface, mbuf_t pMBuf)
 {
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
     PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
     Assert(pThis);
     if (vboxNetAdpPrepareToReceive(pThis))
@@ -456,6 +485,7 @@ static errno_t vboxNetAdpDarwinOutput(ifnet_t pIface, mbuf_t pMBuf)
         else
             vboxNetAdpCancelReceive(pThis);
     }
+#endif /* VBOXANETADP_DO_NOT_USE_NETFLT */
     mbuf_freem_list(pMBuf);
     return 0;
 }
@@ -507,6 +537,7 @@ static void vboxNetAdpDarwinDetach(ifnet_t pIface)
 }
 
 
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
 
 int  vboxNetAdpPortOsXmit(PVBOXNETADP pThis, PINTNETSG pSG, uint32_t fDst)
 {
@@ -586,6 +617,10 @@ int  vboxNetAdpOsConnectIt(PVBOXNETADP pThis)
     /* Nothing to do here. */
     return VINF_SUCCESS;
 }
+#else /* !VBOXANETADP_DO_NOT_USE_NETFLT */
+VBOXNETADP g_vboxnet0;
+
+#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
 
 
 int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
@@ -724,8 +759,15 @@ static kern_return_t    VBoxNetAdpDarwinStart(struct kmod_info *pKModInfo, void 
          * This will call back vboxNetAdpOsOpenSupDrv (and maybe vboxNetAdpOsCloseSupDrv)
          * for establishing the connect to the support driver.
          */
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
         memset(&g_VBoxNetAdpGlobals, 0, sizeof(g_VBoxNetAdpGlobals));
         rc = vboxNetAdpInitGlobals(&g_VBoxNetAdpGlobals);
+#else /* !VBOXANETADP_DO_NOT_USE_NETFLT */
+        RTMAC Mac;
+        vboxNetAdpOsInit(&g_vboxnet0);
+        vboxNetAdpComposeMACAddress(&g_vboxnet0, &Mac);
+        rc = vboxNetAdpOsCreate(&g_vboxnet0, &Mac);
+#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
         if (RT_SUCCESS(rc))
         {
             LogRel(("VBoxAdpDrv: version " VBOX_VERSION_STRING " r%d\n", VBOX_SVN_REV));
@@ -738,7 +780,9 @@ static kern_return_t    VBoxNetAdpDarwinStart(struct kmod_info *pKModInfo, void 
     else
         printf("VBoxAdpDrv: failed to initialize IPRT (rc=%d)\n", rc);
 
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
     memset(&g_VBoxNetAdpGlobals, 0, sizeof(g_VBoxNetAdpGlobals));
+#endif /* VBOXANETADP_DO_NOT_USE_NETFLT */
     return KMOD_RETURN_FAILURE;
 }
 
@@ -755,6 +799,7 @@ static kern_return_t VBoxNetAdpDarwinStop(struct kmod_info *pKModInfo, void *pvD
      * This is important as I/O kit / xnu will to be able to do usage
      * tracking for us!
      */
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
     int rc = vboxNetAdpTryDeleteGlobals(&g_VBoxNetAdpGlobals);
     if (RT_FAILURE(rc))
     {
@@ -766,6 +811,9 @@ static kern_return_t VBoxNetAdpDarwinStop(struct kmod_info *pKModInfo, void *pvD
      * Undo the work done during start (in reverse order).
      */
     memset(&g_VBoxNetAdpGlobals, 0, sizeof(g_VBoxNetAdpGlobals));
+#else /* !VBOXANETADP_DO_NOT_USE_NETFLT */
+    vboxNetAdpOsDestroy(&g_vboxnet0);
+#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
 
     RTR0Term();
 
