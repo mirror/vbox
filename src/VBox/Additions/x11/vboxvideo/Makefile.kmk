@@ -212,8 +212,9 @@ vboxvideo_drv_15_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.4
 vboxvideo_drv_15_SOURCES  = \
 	vboxvideo_15.c \
-	vboxutils.c \
-	vboxvideo_dri.c
+	vboxutils.c
+vboxvideo_drv_15_SOURCES += \
+	$(if $(VBOX_OSE),,vboxvideo_dri.c)
 
 
 #
