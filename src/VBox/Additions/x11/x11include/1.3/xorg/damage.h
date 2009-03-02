@@ -1,5 +1,5 @@
 /*
- * $Id: damage.h 43555 2009-03-02 10:37:38Z michael $
+ * $Id$
  *
  * Copyright © 2003 Keith Packard
  *

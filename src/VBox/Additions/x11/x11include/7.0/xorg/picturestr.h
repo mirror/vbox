@@ -1,5 +1,5 @@
 /*
- * $Id: picturestr.h 43555 2009-03-02 10:37:38Z michael $
+ * $Id: picturestr.h,v 1.15 2005/12/09 18:35:21 ajax Exp $
  *
  * Copyright © 2000 SuSE, Inc.
  *
