@@ -27,6 +27,7 @@ if test "$currentisa" = "i86xpv"; then
     exit 2
 fi
 
+osversion=`uname -r`
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
     echo "Configuring VirtualBox kernel modules..."
@@ -40,7 +41,8 @@ if test "$currentzone" = "global"; then
                 /opt/VirtualBox/vboxdrv.sh fltstart
                 rc=$?
             fi
-            if test -f /platform/i86pc/kernel/drv/vboxusb.conf; then
+
+            if test -f /platform/i86pc/kernel/drv/vboxusb.conf && test "$osversion" != "5.10"; then
                 /opt/VirtualBox/vboxdrv.sh usbstart
                 rc=$?
                 if test "$rc" -eq 0; then
@@ -107,6 +109,11 @@ if test "$currentzone" = "global"; then
 
     # create the device link
     /usr/sbin/devfsadm -i vboxdrv
+
+    # don't create link for Solaris 10
+    if test -f /platform/i86pc/kernel/drv/vboxusb.conf && test "$osversion" != "5.10"; then
+        /usr/sbin/devfsadm -i vboxusb
+    fi
     sync
 
     # We need to touch the desktop link in order to add it to the menu right away
