@@ -3016,11 +3016,11 @@ void VBoxConsoleWnd::prepareFloppyMenu()
     CHostFloppyDrive selected = csession.GetMachine().GetFloppyDrive().GetHostDrive();
 
     hostFloppyMap.clear();
-    CHostFloppyDriveEnumerator en =
-        vboxGlobal().virtualBox().GetHost().GetFloppyDrives().Enumerate();
-    while (en.HasMore())
+    CHostFloppyDriveVector drvvec =
+        vboxGlobal().virtualBox().GetHost().GetFloppyDrives();
+    for (int i = 0; i < drvvec.size(); ++i)
     {
-        CHostFloppyDrive hostFloppy = en.GetNext();
+        CHostFloppyDrive hostFloppy = drvvec[i];
         /** @todo set icon */
         QString drvName = hostFloppy.GetName();
         QString description = hostFloppy.GetDescription();

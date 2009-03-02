@@ -1195,10 +1195,10 @@ int handleModifyVM(HandlerArg *a)
                 {
                     ComPtr<IHost> host;
                     CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                    ComPtr<IHostFloppyDriveCollection> hostFloppies;
-                    CHECK_ERROR(host, COMGETTER(FloppyDrives)(hostFloppies.asOutParam()));
+                    com::SafeIfaceArray <IHostFloppyDrive> hostFloppies;
+                    CHECK_ERROR(host, COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(hostFloppies)));
                     ComPtr<IHostFloppyDrive> hostFloppyDrive;
-                    rc = hostFloppies->FindByName(Bstr(floppy + 5), hostFloppyDrive.asOutParam());
+                    rc = host->FindHostFloppyDrive(Bstr(floppy + 5), hostFloppyDrive.asOutParam());
                     if (!hostFloppyDrive)
                     {
                         errorArgument("Invalid host floppy drive name");

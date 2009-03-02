@@ -1710,10 +1710,10 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             ComPtr <IHost> host;
             CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host)(host.asOutParam()));
-            ComPtr <IHostFloppyDriveCollection> coll;
-            CHECK_ERROR_BREAK (host, COMGETTER(FloppyDrives)(coll.asOutParam()));
+            com::SafeIfaceArray <IHostFloppyDrive> coll;
+            CHECK_ERROR_BREAK (host, COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(coll)));
             ComPtr <IHostFloppyDrive> hostDrive;
-            rc = coll->FindByName (medium, hostDrive.asOutParam());
+            rc = host->FindHostFloppyDrive (medium, hostDrive.asOutParam());
             if (SUCCEEDED (rc))
             {
                 done = true;

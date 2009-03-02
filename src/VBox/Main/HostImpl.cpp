@@ -409,7 +409,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut (IHostDVDDrive *, aDriv
  * @returns COM status code
  * @param drives address of result pointer
  */
-STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **aDrives)
+STDMETHODIMP Host::COMGETTER(FloppyDrives) (ComSafeArrayOut (IHostFloppyDrive *, aDrives))
 {
     CheckComArgOutPointerValid(aDrives);
     AutoWriteLock alock (this);
@@ -461,10 +461,8 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **aDrives
     /* PORTME */
 #endif
 
-    ComObjPtr<HostFloppyDriveCollection> collection;
-    collection.createObject();
-    collection->init (list);
-    collection.queryInterfaceTo(aDrives);
+    SafeIfaceArray<IHostFloppyDrive> collection (list);
+    collection.detachTo(ComSafeArrayOutArg (aDrives));
     return rc;
 }
 
@@ -3352,6 +3350,40 @@ STDMETHODIMP Host::FindHostDVDDrive(IN_BSTR aName, IHostDVDDrive **aDrive)
 
     return setError (VBOX_E_OBJECT_NOT_FOUND, HostDVDDrive::tr (
         "The host DVD drive named '%ls' could not be found"), aName);
+}
+
+STDMETHODIMP Host::FindHostFloppyDrive(IN_BSTR aName, IHostFloppyDrive **aDrive)
+{
+    CheckComArgNotNull(aName);
+    CheckComArgOutPointerValid(aDrive);
+
+    *aDrive = NULL;
+
+    SafeIfaceArray <IHostFloppyDrive> drivevec;
+    HRESULT rc = COMGETTER(FloppyDrives) (ComSafeArrayAsOutParam(drivevec));
+    CheckComRCReturnRC (rc);
+
+    for (size_t i = 0; i < drivevec.size(); ++i)
+    {
+        Bstr name;
+        rc = drivevec[i]->COMGETTER(Name) (name.asOutParam());
+        CheckComRCReturnRC (rc);
+        if (name == aName)
+        {
+            ComObjPtr<HostFloppyDrive> found;
+            found.createObject();
+            Bstr udi, description;
+            rc = drivevec[i]->COMGETTER(Udi) (udi.asOutParam());
+            CheckComRCReturnRC (rc);
+            rc = drivevec[i]->COMGETTER(Description) (description.asOutParam());
+            CheckComRCReturnRC (rc);
+            found->init(name, udi, description);
+            return found.queryInterfaceTo(aDrive);
+        }
+    }
+
+    return setError (VBOX_E_OBJECT_NOT_FOUND, HostFloppyDrive::tr (
+        "The host floppy drive named '%ls' could not be found"), aName);
 }
 
 STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInterface **networkInterface)
