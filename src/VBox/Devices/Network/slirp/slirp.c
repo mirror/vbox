@@ -362,27 +362,27 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         if (ret != ERROR_BUFFER_OVERFLOW) 
         {
             LogRel(("NAT: error %lu occured on capacity detection operation\n", ret));
-            return VERR_INVALID_PARAMETER; /* @todo: find better error code */
+            return -1;
         }
         
         if (size == 0) 
         {
             LogRel(("NAT: Win socket API returns non capacity\n"));
-            return VERR_INVALID_PARAMETER; /* @todo: find better error code */
+            return -1;
         }
         
         addresses = RTMemAllocZ(size);
         if (addresses == NULL) 
         {
             LogRel(("NAT: No memory available \n"));
-            return VERR_NO_MEMORY;
+            return -1;
         }
 
         ret = pData->pfGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, addresses, &size);
         if (ret != ERROR_SUCCESS)
         {
             LogRel(("NAT: error %lu occured on fetching adapters info\n", ret));
-            return VERR_INVALID_PARAMETER; /* @todo: find better error code */
+            return -1; 
         }
         addr = addresses;
         while(addr != NULL) 
@@ -432,7 +432,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     {
         /* Win 2000 and earlier */
     }
-    return VINF_SUCCESS; 
+    return 0; 
 }
 # endif /* VBOX_WITH_MULTI_DNS */
 
