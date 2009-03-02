@@ -109,10 +109,24 @@ icmp_init(PNATState pData)
                                     GetProcAddress(pData->hmIcmpLibrary, "IcmpParseReplies");
         pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE))
                                     GetProcAddress(pData->hmIcmpLibrary, "IcmpCloseHandle");
+# ifdef VBOX_WITH_MULTI_DNS 
+        pData->pfGetAdaptersAddresses = (ULONG (WINAPI *)(HANDLE))
+                                    GetProcAddress(pData->hmIcmpLibrary, "GetAdaptersAddresses");
+        if (pData->pfGetAdaptersAddresses == NULL) 
+        {
+            LogRel(("NAT: Can't find GetAdapterAddresses in Iphlpapi.dll"));
+        }
+# endif
     }
+
     if (pData->pfIcmpParseReplies == NULL)
     {
+# ifdef VBOX_WITH_MULTI_DNS 
+        if(pData->pfGetAdaptersAddresses == NULL) 
+            FreeLibrary(pData->hmIcmpLibrary);
+# else
         FreeLibrary(pData->hmIcmpLibrary);
+# endif
         pData->hmIcmpLibrary = LoadLibrary("Icmp.dll");
         if (pData->hmIcmpLibrary == NULL)
         {
