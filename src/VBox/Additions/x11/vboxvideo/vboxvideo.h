@@ -115,7 +115,10 @@
 
 /* DRI support */
 #define _XF86DRI_SERVER_
+/* Hack to work around a libdrm header which is broken on Solaris */
+#define u_int64_t uint64_t
 #include "dri.h"
+#undef u_int64_t
 #include "GL/glxint.h"
 #include "GL/glxtokens.h"
 
