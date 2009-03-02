@@ -70,10 +70,10 @@ VBoxSharedCrOpenGL_SOURCES = \
 VBoxSharedCrOpenGL_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSharedCrOpenGL.dylib
 VBoxSharedCrOpenGL_LIBS = \
 	$(PATH_LIB)/VBoxOGLcrserverlib$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxOGLhostcrpacker$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxOGLhostcrstate$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxOGLcrunpacker$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBoxOGLhostcrpacker$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
 	$(VBOX_LIB_OGL_HOSTCRUTIL) \
 	$(LIB_RUNTIME) \
 	$(LIB_VMM)
