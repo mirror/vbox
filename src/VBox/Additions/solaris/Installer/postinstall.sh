@@ -69,12 +69,12 @@ solaris64dir="amd64"
 vboxadditions_path="/opt/VirtualBoxAdditions"
 vboxadditions64_path=$vboxadditions_path/$solaris64dir
 
-# get what ISA the guest is running 
-cputype=`isainfo -k` 
-if test "$cputype" = "amd64"; then 
+# get what ISA the guest is running
+cputype=`isainfo -k`
+if test "$cputype" = "amd64"; then
     isadir=$solaris64dir
 else
-    isadir="" 
+    isadir=""
 fi
 vboxadditionsisa_path=$vboxadditions_path/$isadir
 
@@ -134,15 +134,15 @@ case "$xorgversion" in
     1.5.99 | 1.6.* )
         vboxmouse_src="vboxmouse_drv_16.so"
         vboxvideo_src="vboxvideo_drv_16.so"
-        ;;    
+        ;;
     1.5.* )
         vboxmouse_src="vboxmouse_drv_15.so"
         vboxvideo_src="vboxvideo_drv_15.so"
-        ;;    
+        ;;
     7.1.* | *7.2.* )
         vboxmouse_src="vboxmouse_drv_71.so"
         vboxvideo_src="vboxvideo_drv_71.so"
-	    ;;
+        ;;
     6.9.* | 7.0.* )
         vboxmouse_src="vboxmouse_drv_70.so"
         vboxvideo_src="vboxvideo_drv_70.so"
