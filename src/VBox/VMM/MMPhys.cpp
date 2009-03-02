@@ -42,6 +42,21 @@
 
 
 /**
+ * Get the size of the base RAM.
+ * This usually means the size of the first contigous block of physical memory.
+ *
+ * @returns The guest base RAM size.
+ * @param   pVM         The VM handle.
+ * @thread  Any.
+ */
+VMMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM)
+{
+    return pVM->mm.s.cbRamBase;
+}
+
+#ifndef VBOX_WITH_NEW_PHYS_CODE
+
+/**
  * Register externally allocated RAM for the virtual machine.
  *
  * The memory registered with the VM thru this interface must not be freed
@@ -220,7 +235,7 @@ VMMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigne
  *          manually from the device yet. At present I doubt we need such features...
  */
 VMMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary,
-                                  bool fShadow, const char *pszDesc)
+                                   bool fShadow, const char *pszDesc)
 {
     /*
      * Validate input.
@@ -400,22 +415,8 @@ VMMR3DECL(int) MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const c
     int rc = PGMR3PhysSetFlags(pVM, GCPhys, cbRange, MM_RAM_FLAGS_RESERVED, ~0);
     AssertRC(rc);
 
-    REMR3NotifyPhysReserve(pVM, GCPhys, cbRange);
+    REMR3NotifyPhysRamDeregister(pVM, GCPhys, cbRange);
     return rc;
-}
-
-
-/**
- * Get the size of the base RAM.
- * This usually means the size of the first contigous block of physical memory.
- *
- * @returns The guest base RAM size.
- * @param   pVM         The VM handle.
- * @thread  Any.
- */
-VMMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM)
-{
-    return pVM->mm.s.cbRamBase;
 }
 
 
@@ -489,3 +490,4 @@ VMMR3DECL(int) MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
     return VERR_INVALID_PARAMETER;
 }
 
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */

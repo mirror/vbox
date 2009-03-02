@@ -347,7 +347,7 @@ static DECLCALLBACKPTR(void, pfnREMR3ReplayInvalidatedPages)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3ReplayHandlerNotifications)(PVM pVM);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamRegister)(PVM, RTGCPHYS, RTUINT, unsigned);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamChunkRegister)(PVM, RTGCPHYS, RTUINT, RTHCUINTPTR, unsigned);
-static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysReserve)(PVM, RTGCPHYS, RTUINT);
+static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamDeregister)(PVM, RTGCPHYS, RTUINT);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRomRegister)(PVM, RTGCPHYS, RTUINT, void *, bool);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyHandlerPhysicalModify)(PVM, PGMPHYSHANDLERTYPE, RTGCPHYS, RTGCPHYS, RTGCPHYS, bool, bool);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyHandlerPhysicalRegister)(PVM, PGMPHYSHANDLERTYPE, RTGCPHYS, RTGCPHYS, bool);
@@ -1029,7 +1029,7 @@ static const REMFNDESC g_aExports[] =
     { "REMR3ReplayHandlerNotifications",        (void *)&pfnREMR3ReplayHandlerNotifications,        &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyPhysRamRegister",             (void *)&pfnREMR3NotifyPhysRamRegister,             &g_aArgsNotifyPhysRamRegister[0],           RT_ELEMENTS(g_aArgsNotifyPhysRamRegister),             REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyPhysRamChunkRegister",        (void *)&pfnREMR3NotifyPhysRamChunkRegister,        &g_aArgsNotifyPhysRamChunkRegister[0],      RT_ELEMENTS(g_aArgsNotifyPhysRamChunkRegister),        REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
-    { "REMR3NotifyPhysReserve",                 (void *)&pfnREMR3NotifyPhysReserve,                 &g_aArgsNotifyPhysReserve[0],               RT_ELEMENTS(g_aArgsNotifyPhysReserve),                 REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
+    { "REMR3NotifyPhysRamDeregister",           (void *)&pfnREMR3NotifyPhysRamDeregister,           &g_aArgsNotifyPhysRamDeregister[0],         RT_ELEMENTS(g_aArgsNotifyPhysRamDeregister),           REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyPhysRomRegister",             (void *)&pfnREMR3NotifyPhysRomRegister,             &g_aArgsNotifyPhysRomRegister[0],           RT_ELEMENTS(g_aArgsNotifyPhysRomRegister),             REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyHandlerPhysicalModify",       (void *)&pfnREMR3NotifyHandlerPhysicalModify,       &g_aArgsNotifyHandlerPhysicalModify[0],     RT_ELEMENTS(g_aArgsNotifyHandlerPhysicalModify),       REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyHandlerPhysicalRegister",     (void *)&pfnREMR3NotifyHandlerPhysicalRegister,     &g_aArgsNotifyHandlerPhysicalRegister[0],   RT_ELEMENTS(g_aArgsNotifyHandlerPhysicalRegister),     REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
@@ -2171,11 +2171,11 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 #endif
 }
 
-REMR3DECL(void) REMR3NotifyPhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cb)
+REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb)
 {
 #ifndef USE_REM_STUBS
-    Assert(VALID_PTR(pfnREMR3NotifyPhysReserve));
-    pfnREMR3NotifyPhysReserve(pVM, GCPhys, cb);
+    Assert(VALID_PTR(pfnREMR3NotifyPhysRamDeregister));
+    pfnREMR3NotifyPhysRamDeregister(pVM, GCPhys, cb);
 #endif
 }
 

@@ -499,7 +499,9 @@ VMMR3DECL(void) MMR3TermUVM(PUVM pUVM)
  */
 VMMR3DECL(void) MMR3Reset(PVM pVM)
 {
+#ifndef VBOX_WITH_NEW_PHYS_CODE
     mmR3PhysRomReset(pVM);
+#endif
 }
 
 

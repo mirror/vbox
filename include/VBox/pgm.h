@@ -274,31 +274,6 @@ typedef enum PGMMODE
 #define PGMMODE_IS_LONG_MODE(enmMode) ((enmMode) == PGMMODE_AMD64_NX || (enmMode) == PGMMODE_AMD64)
 
 /**
- * The current ROM page protection.
- */
-typedef enum PGMROMPROT
-{
-    /** The customary invalid value. */
-    PGMROMPROT_INVALID = 0,
-    /** Read from the virgin ROM page, ignore writes.
-     * Map the virgin page, use write access handler to ignore writes. */
-    PGMROMPROT_READ_ROM_WRITE_IGNORE,
-    /** Read from the virgin ROM page, write to the shadow RAM.
-     * Map the virgin page, use write access handler change the RAM. */
-    PGMROMPROT_READ_ROM_WRITE_RAM,
-    /** Read from the shadow ROM page, ignore writes.
-     * Map the shadow page read-only, use write access handler to ignore writes. */
-    PGMROMPROT_READ_RAM_WRITE_IGNORE,
-    /** Read from the shadow ROM page, ignore writes.
-     * Map the shadow page read-write, disabled write access handler. */
-    PGMROMPROT_READ_RAM_WRITE_RAM,
-    /** The end of valid values. */
-    PGMROMPROT_END,
-    /** The usual 32-bit type size hack. */
-    PGMROMPROT_32BIT_HACK = 0x7fffffff
-} PGMROMPROT;
-
-/**
  * Is the ROM mapped (true) or is the shadow RAM mapped (false).
  *
  * @returns boolean.

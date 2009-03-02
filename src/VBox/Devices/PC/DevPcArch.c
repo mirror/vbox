@@ -251,6 +251,7 @@ static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return rc;
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
     /*
      * Reserve ROM/MMIO areas:
      * 1. 0x000a0000-0x000fffff
@@ -263,6 +264,7 @@ static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpPhysReserve(pDevIns, 0xfff80000, 0x80000, "High ROM Region");
     if (RT_FAILURE(rc))
         return rc;
+#endif
 
     return VINF_SUCCESS;
 }
