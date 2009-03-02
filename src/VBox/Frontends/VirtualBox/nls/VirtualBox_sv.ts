@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1" language="sv">
+<!DOCTYPE TS>
+<TS version="2.0" language="sv">
 <defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
@@ -661,7 +662,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1652"/>
         <source>&amp;Floppy Image...</source>
-        <translation>&amp;Diskettavbildning</translation>
+        <translation>&amp;Diskettavbildning...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1653"/>
@@ -1537,7 +1538,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="145"/>
         <source>Next Check:</source>
-        <translation>Nästa kontroll</translation>
+        <translation>Nästa kontroll:</translation>
     </message>
 </context>
 <context>
@@ -4838,7 +4839,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="63"/>
         <source>Welcome to the First Run Wizard!</source>
-        <translation>Välkommen till förstagångsguiden</translation>
+        <translation>Välkommen till förstagångsguiden!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="307"/>
@@ -5696,7 +5697,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="394"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>du har tilldelat mindre än &lt;b&gt;1%&lt;/b&gt; för grafikminnet vilket är den minsta mängd som krävs för att växla den virtuella maskinen till helskärmsläge eller sömlöst läge.</translation>
+        <translation>du har tilldelat mindre än &lt;b&gt;%1&lt;/b&gt; för grafikminnet vilket är den minsta mängd som krävs för att växla den virtuella maskinen till helskärmsläge eller sömlöst läge.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="709"/>

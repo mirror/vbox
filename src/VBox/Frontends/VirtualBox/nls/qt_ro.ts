@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1">
+<!DOCTYPE TS><TS version="1.1" language="ro">
+<defaultcodec></defaultcodec>
 <context>
     <name>PPDOptionsModel</name>
     <message>
         <location filename="../src/gui/dialogs/qprintdialog_unix.cpp" line="1595"/>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nume</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qprintdialog_unix.cpp" line="1597"/>
         <source>Value</source>
-        <translation type="unfinished"></translation>
+        <translation>Valoare</translation>
     </message>
 </context>
 <context>

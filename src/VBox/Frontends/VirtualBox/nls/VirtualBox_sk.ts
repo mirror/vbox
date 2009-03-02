@@ -1241,17 +1241,17 @@ verzia %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1736"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Indikuje, či je klávesnica odchytávaná hosťovaným OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) alebo nie (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1983"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Indikuje, či je Vzdialená plocha (VRDP server) povolená (&lt;img src=:/vrdp_16px.png/&gt;) alebo nie (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1741"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazí momentálne priradený kláves Hostiteľa.&lt;b&gt;Tento kláves, ak je stlačený sám, prepína medzi stavom zachytenia myši a klávesnice. Môžete ho tiež použiť v kombinácii s inými klávesmi na rýchle spúšťanie akcii z hlavného menu.</translation>
     </message>
 </context>
 <context>
@@ -1623,7 +1623,7 @@ verzia %1</translation>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
         <source>&lt;reset to default&gt;</source>
-        <translation type="unfinished">&lt;vrátiť sa na východziu&gt;</translation>
+        <translation>&lt;nastaviť na východzie&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="214"/>
@@ -2860,7 +2860,7 @@ verzia %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="405"/>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Pripájanie tohoto pevného disku bude vykonané nepriamo využitím novo vytvoreného rozdielového pevného disku.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="523"/>
@@ -2877,12 +2877,12 @@ verzia %1</translation>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="573"/>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;Niektoré z médii v tejto skupine pevných diskov nie sú dostupné. Použite, prosím, Správcu virtuálnych médii v režime &lt;b&gt;Zobrazenie diferenčných pevných diskov&lt;/b&gt; na preskúmanie týchto médii.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="592"/>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1&lt;hr&gt;Tento základný pevný disk je nepriamo pripojený pomocou nasledujúceho diferenčného pevného disku:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1946"/>
@@ -3547,68 +3547,68 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1033"/>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="unfinished">Vyberte súbor s obrazom CD/DVD-ROM</translation>
+        <translation>Vyberte súbor s obrazom CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1039"/>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="unfinished">Obrazy diskiet (*.img);;Všetky súbory (*)</translation>
+        <translation>Obrazy diskiet (*.img);;Všetky súbory (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1040"/>
         <source>Select a floppy disk image file</source>
-        <translation type="unfinished">Vyberte súbor s obrazom diskety</translation>
+        <translation>Vyberte súbor s obrazom diskety</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1429"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Nepripojený&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1898"/>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished">--</translation>
+        <translation>--</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="36"/>
         <source>Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuálny diskový manažér</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="59"/>
         <source>Hard &amp;Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Pevné &amp;disky</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="279"/>
         <source>Name</source>
-        <translation type="unfinished">Názov</translation>
+        <translation>Názov</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="86"/>
         <source>Virtual Size</source>
-        <translation type="unfinished">Virtuálna veľkosť</translation>
+        <translation>Virtuálna veľkosť</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="91"/>
         <source>Actual Size</source>
-        <translation type="unfinished">Skutočná veľkosť</translation>
+        <translation>Skutočná veľkosť</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="169"/>
         <source>&amp;CD/DVD Images</source>
-        <translation type="unfinished">Obrazy &amp;CD/DVD</translation>
+        <translation>Obrazy &amp;CD/DVD</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="284"/>
         <source>Size</source>
-        <translation type="unfinished">Veľkosť</translation>
+        <translation>Veľkosť</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="257"/>
         <source>&amp;Floppy Images</source>
-        <translation type="unfinished">Obrazy &amp;diskiet</translation>
+        <translation>Obrazy &amp;diskiet</translation>
     </message>
 </context>
 <context>
@@ -3616,42 +3616,42 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="563"/>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="unfinished">Hostiteľské rozhranie VirtualBoxu %1</translation>
+        <translation>Hostiteľské rozhranie VirtualBoxu %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="624"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Chcete odstrániť vybrané hostiteľské sieťové rozhranie &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka:&lt;/b&gt; Toto rozhranie môže byť používané jednou alebo viacerými sieťovými kartami tohto alebo iného virtuálneho počítača. Po jeho odstránení nebudú tieto karty fungovať, pokiaľ neopravíte ich nastavenie vybraním iného rozhrania alebo iného typu pripojenia karty.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="656"/>
         <source>Host &amp;Interfaces</source>
-        <translation type="unfinished">Rozhrania &amp;hostiteľa</translation>
+        <translation>Rozhrania &amp;hostiteľa</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="658"/>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished">Zobrazí všetky dostupné rozhrania hostiteľa</translation>
+        <translation>Zobrazí všetky dostupné rozhrania hostiteľa.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="661"/>
         <source>A&amp;dd New Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Pridať nové rozhranie hostiteľa</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="662"/>
         <source>&amp;Remove Selected Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Odstrániť vybrané rozhranie hostiteľa</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="663"/>
         <source>Adds a new host interface.</source>
-        <translation type="unfinished">Pridá nové rozhranie hostiteľa.</translation>
+        <translation>Pridá nové rozhranie hostiteľa.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="664"/>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished">Odstráni vybrané rozhranie hostiteľa.</translation>
+        <translation>Odstráni vybrané rozhranie hostiteľa.</translation>
     </message>
 </context>
 <context>
@@ -3787,106 +3787,106 @@ ako veľkosť virtuálneho pevného disku.&lt;/p&gt;</translation>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="904"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; &amp;Späť</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="697"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Ď&amp;alší &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dokončiť</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="213"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Typ</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="214"/>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">Umiestnenie</translation>
+        <translation>Umiestnenie</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="215"/>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">Veľkosť</translation>
+        <translation>Veľkosť</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="216"/>
         <source>Bytes</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bytov</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
         <source>Cancel</source>
-        <translation type="unfinished">Zrušiť</translation>
+        <translation>Zrušiť</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový virtuálny pevný disk pre váš virtuálny stroj.&lt;/p&gt;&lt;p&gt;Použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt; pre posun na nasledujúcu stranu sprievodcu a tlačidlo &lt;b&gt;Späť&lt;/b&gt; pre posun na predchádzajúcu stranu.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ úložiska pevného disku</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vyberte typ virtuálneho pevného disku, ktorý chcete vytvoriť.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Dynamicky sa zväčšujúce úložisko&lt;/b&gt; najprv zaberá veľmi málo miesta na fyzickom pevnom disku. Potom dynamicky rastie (až do definovanej veľkosti) podľa toho, koľko miesta si OS hosťa nárokuje.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Úložisko s fixnou veľkosťou&lt;/b&gt; nerastie. Je uložené v súbore o približne rovnakej veľkosti ako virtuálny pevný disk. Vytvorenie úložiska s pevno veľkosťou môže trvať dlhší čas v závislosti od jeho veľkosti a výkonu vášho disku pri zápise.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
         <source>Storage Type</source>
-        <translation type="unfinished">Typ úložiska</translation>
+        <translation>Typ úložiska</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dynamicky sa zväčšujúce úložisko</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Ú&amp;ložisko s fixnou veľkosťou</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Stlačte tlačidlo&lt;b&gt;Výber&lt;/b&gt; a vyberte umiestnenie súboru, ktoré bude slúžiť na ukladanie dát pevného disku alebo napíšte jeho meno do poľa vstupu.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
         <source>&amp;Location</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Umiestnenie</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vyberte veľkosť virtuálneho pevného disku v megabajtoch. Túto veľkosť bude vidieť OS hosťa ako maximálnu veľkosť pevného disku.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Veľkosť</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Chystáte sa vytvoriť nový virtuálny pevný disk s nasledujúcimi parametrami:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ak sú vyššie uvedené nastavenia správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Po jeho stlačení bude vytvorený nový pevný disk.</translation>
     </message>
 </context>
 <context>
@@ -4067,87 +4067,87 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="143"/>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished">Odporúčaná veľkosť bootovacieho pevného disku je &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation>Odporúčaná veľkosť bootovacieho pevného disku je &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tento sprievodca vás prevedie krokmi potrebnými na vytvorenie nového virtuálneho stroja pre VirtualBox.&lt;/p&gt;&lt;p&gt;Použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt; pre prechod na nasledujúcu stranu sprievodcu a tlačidlo &lt;b&gt;Späť&lt;/b&gt; pre návrat na predchádzajúcu stranu.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1119"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; &amp;Späť</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="918"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Ď&amp;alej &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Zadajte názov nového virtuálneho stroja a vyberte typ hosťovaného operačného systému, ktorý naň hodláte inštalovať.&lt;/p&gt;&lt;p&gt;Názov virtuálneho počítača obvykle indikuje jeho softvérovú a hardvérovú konfiguráciu. Bude použité ďalšími komponentami VirtualBoxu pre identifikáciu vášho virtuálneho stroja.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1020"/>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Chystáte sa vytvoriť nový virtuálny pevný disk s nasledujúcimi parametrami:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1067"/>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ak je vyššie uvedené v poriadku, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Potom sa začne vytvárať virtuálny stroj.&lt;/p&gt;&lt;p&gt;Poznámka: Všetky tieto i ďalšie nastavenia pre virtuálny stroj môžete kedykoľvek zmeniť v dialógovom okne &lt;b&gt;Nastavenia&lt;/b&gt;, ktoré vyvoláte z ponuky v hlavnom menu.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1126"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dokončiť</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="166"/>
         <source>MB</source>
         <comment>megabytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="163"/>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished">Názov</translation>
+        <translation>Názov</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="164"/>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">Typ OS</translation>
+        <translation>Typ OS</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="165"/>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished">Základná pamäť</translation>
+        <translation>Základná pamäť</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="171"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bootovací pevný disk</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1149"/>
         <source>Cancel</source>
-        <translation type="unfinished">Zrušiť</translation>
+        <translation>Zrušiť</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="782"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vyberte obraz pevného disku, ktorý bude použitý ako bootovací pevný disk pre virtuálny stroj. Môžete buď vytvoriť nový pevný disk pomocou tlačidla &lt;b&gt;Nový&lt;/b&gt; alebo vybrať existujúci obraz pevného disku z rozbaľovacieho menu alebo stlačením tlačidla &lt;b&gt;Existujúci&lt;/b&gt; (spustí sa dialógové okno Správcu virtuálnych médii).&lt;/p&gt;&lt;p&gt;Ak potrebujete sofistikovanejšie nastavenie pevného disku, môžete tento krok preskočiť a pripojiť pevné disky neskôr v dialógovom okne Nastavení virtuálneho stroja.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="820"/>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation>Boo&amp;tovací pevný disk (Primary Master)</translation>
     </message>
 </context>
 <context>
@@ -4155,22 +4155,22 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="118"/>
         <source>Operating &amp;System:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ope&amp;račný systém:</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="120"/>
         <source>Displays the operating system family that you plan to install into this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazí rodinu operačného systému, ktorú sa chystáte nainštalovať na tento virtuálny stroj.</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="121"/>
         <source>V&amp;ersion:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verzia:</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="124"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">Zobrazí typ operačného systému, ktorý sa chystáte nainštalovať na tento virtuálny stroj (nazýva sa hosťovský operačný systém).</translation>
+        <translation>Zobrazí typ operačného systému, ktorý sa chystáte nainštalovať na tento virtuálny stroj (nazýva sa hosťovský operačný systém).</translation>
     </message>
 </context>
 <context>
@@ -4452,17 +4452,17 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1782"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Virtuálny počítač hlásí, že hosťovský OS nepodporuje &lt;b&gt;integráciu kurzoru myši&lt;/b&gt; v aktuálnom video režime. Pre možnosť používania myši v hosťovskom OS ju musíte odchytávať (kliknutím do okna VM alebo stlačením klávesu hostiteľa).&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1801"/>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Virtuálny stroj je práve v &lt;b&gt;pozastavenom&lt;/b&gt; stave, preto neprijíma žiadne vstupy z klávesnice alebo myši. Ak chcete pokračovať v práci vo virtuálnom stroji, musíte ho obnoviť výberom zodpovedajúcej akcie z panelu ponúk.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2055"/>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nie je možné spustiť VirtualBox v režime &lt;i&gt;Výber VS&lt;/i&gt; kvôli lokálnym obmedzeniam.&lt;/p&gt;&lt;p&gt;Aplikácia bude teraz ukončená.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2083"/>
@@ -4497,17 +4497,17 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2132"/>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Počas behu virtuálneho stroja sa vyskytla kritická chyba! Virtuálny stroj bude vypnutý. Odporúča sa použiť schránku pre skopírovanie nasledujúcej chybovej správy pre neskoršie preskúmanie:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2144"/>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vyskytla sa chyba pri behu virtuálneho stroja! Podrobnosti o chybe sú zobrazené nižšie. Môžete sa pokúsiť opraviť popísanú chybu a obnoviť beh virtuálneho stroja.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2154"/>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Beh virtuálneho stroja môže skončiť chybovým stavom popísaným nižšie. Môžete túto správu ignorovať, ale odporúča sa podniknúť príslušné kroky, aby táto chyba nenastala.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2268"/>
@@ -4531,13 +4531,13 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <location filename="../src/VBoxProblemReporter.cpp" line="2291"/>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Volaný:</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2299"/>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Volaný&amp;nbsp;RC:</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="599"/>
@@ -4582,7 +4582,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1537"/>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nepodarilo sa stiahnuť obraz CD Hosťovských doplnkov VirtualBox z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1547"/>
@@ -4741,13 +4741,13 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <location filename="../src/VBoxProblemReporter.cpp" line="1925"/>
         <source>Switch</source>
         <comment>fullscreen</comment>
-        <translation type="unfinished"></translation>
+        <translation>Prepnúť</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1947"/>
         <source>Switch</source>
         <comment>seamless</comment>
-        <translation type="unfinished"></translation>
+        <translation>Prepnúť</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2025"/>
@@ -4758,19 +4758,19 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <location filename="../src/VBoxProblemReporter.cpp" line="2027"/>
         <source>Reset</source>
         <comment>machine</comment>
-        <translation type="unfinished">Reštartovať</translation>
+        <translation>Reštartovať</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2046"/>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pokračovať</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2047"/>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vrátiť sa späť</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="585"/>
@@ -4781,13 +4781,13 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <location filename="../src/VBoxProblemReporter.cpp" line="1220"/>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vy&amp;tvoriť</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1221"/>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Vybrať</translation>
+        <translation>Vybrať</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1031"/>
@@ -4832,62 +4832,62 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="266"/>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">&amp;Obsah...</translation>
+        <translation>&amp;Obsah...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="269"/>
         <source>Show the online help contents</source>
-        <translation type="unfinished">Zobrazí obsah online nápovedy</translation>
+        <translation>Zobrazí obsah online nápovedy</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="271"/>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished"></translation>
+        <translation>Webová stránka &amp;VirtualBoxu...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="273"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished">Otvorí webový prehliadač a prejde na stránku produktu VirtualBox</translation>
+        <translation>Otvorí webový prehliadač a prejde na stránku produktu VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="275"/>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Resetovať všetky varovania</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="277"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished">Sposobí, že všetky potlačené upozornenia a správy sa budú znova zobrazovať</translation>
+        <translation>Spôsobí, že všetky potlačené upozornenia a správy sa budú znova zobrazovať</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="279"/>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Registrovať VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="281"/>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>Otvorí registračný formulár pre VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="283"/>
         <source>C&amp;heck for Updates...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Skontrolovať aktualizácie...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="285"/>
         <source>Check for a new VirtualBox version</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykoná kontrolu novej verzie VirtualBoxu</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="287"/>
         <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished">&amp;O aplikácii VirtualBox...</translation>
+        <translation>&amp;O aplikácii VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="289"/>
         <source>Show a dialog with product information</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazí dialógové okno s informáciami o produkte</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1652"/>
@@ -4903,7 +4903,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <location filename="../src/VBoxProblemReporter.cpp" line="1111"/>
         <source>Release</source>
         <comment>detach medium</comment>
-        <translation type="unfinished">Uvoľniť</translation>
+        <translation>Uvoľniť</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1120"/>
@@ -4929,7 +4929,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <location filename="../src/VBoxProblemReporter.cpp" line="1143"/>
         <source>Remove</source>
         <comment>medium</comment>
-        <translation type="unfinished">Odstrániť</translation>
+        <translation>Odstrániť</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
@@ -4945,13 +4945,13 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <location filename="../src/VBoxProblemReporter.cpp" line="1176"/>
         <source>Delete</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished">Vymazať</translation>
+        <translation>Vymazať</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1177"/>
         <source>Keep</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nechať</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1189"/>

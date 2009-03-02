@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1">
+<!DOCTYPE TS><TS version="1.1" language="tr">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -24,13 +25,13 @@
         <location filename="../src/VBoxGlobal.cpp" line="3083"/>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation></translation>
+        <translation>--</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3095"/>
         <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Serdar SOYTETİR &lt;tulliana@gmail.com&gt;</translation>
+        <translation>Serdar SOYTETİR &lt;tulliana@gmail.com&gt; .</translation>
     </message>
 </context>
 <context>
@@ -38,38 +39,34 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="141"/>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished">Yeni bir eklenti eklemek için çift tıklayın</translation>
+        <translation>Yeni bir eklenti eklemek için çift tıklayın</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Hard Disk</source>
-        <translation type="unfinished">Sabit Disk</translation>
+        <translation>Sabit Disk</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Slot</source>
-        <translation type="unfinished">Yuva</translation>
+        <translation>Yuva</translation>
     </message>
 </context>
 <context>
     <name>BootItemsList</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>Move Up (Ctrl-Up)</source>
         <translation type="obsolete">Yurarı Taşı (Ctrl-Yukarı)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Move Down (Ctrl-Down)</source>
         <translation type="obsolete">Aşağı Taşı (Ctrl-Aşağı)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Moves the selected boot device up.</source>
         <translation type="obsolete">Seçilen başlangıç aygıtını yukarı taşır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Moves the selected boot device down.</source>
         <translation type="obsolete">Seçilen başlangıç aygıtını aşağı taşır.</translation>
     </message>
@@ -77,7 +74,6 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Başlangıç aygıtlarının sıralamasını tanımlar. Bir başlangıç ögesini etkinleştirmek ya da pasifleştirmek için soldaki seçme kutularını kullanın. Aygıt sıralamasını değiştirmek için nesneleri yukarı veya aşağı taşıyın.</translation>
     </message>
@@ -115,17 +111,17 @@
     <message>
         <location filename="../src/main.cpp" line="447"/>
         <source>VirtualBox - Error In %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - %1 içerisinde hata</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="453"/>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="474"/>
         <source>It may help to reinstall VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox uygulamasının yeniden yüklenmesine yardımcı olabilir.</translation>
     </message>
 </context>
 <context>
@@ -133,7 +129,7 @@
     <message>
         <location filename="../src/QIHelpButton.cpp" line="120"/>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Yardım</translation>
+        <translation>&amp;Yardım</translation>
     </message>
 </context>
 <context>
@@ -364,12 +360,12 @@
     <message>
         <location filename="../include/QIHttp.h" line="90"/>
         <source>Connection timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Bağlantıda zaman aşımı oluştu</translation>
     </message>
     <message>
         <location filename="../include/QIHttp.h" line="93"/>
         <source>Could not locate the file on the server (response: %1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Sunucu üzerindeki dosya konumlandırılamadı (yanıt: %1)</translation>
     </message>
 </context>
 <context>
@@ -377,7 +373,7 @@
     <message>
         <location filename="../src/QILabel.cpp" line="363"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopyala</translation>
     </message>
 </context>
 <context>
@@ -411,7 +407,6 @@
 <context>
     <name>QIRichLabel</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>Copy to clipboard</source>
         <translation type="obsolete">Panoya kopyala</translation>
     </message>
@@ -449,7 +444,6 @@
         <translation>VirtualBox - Hakkında</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;VirtualBox Grafiksel Kullanıcı Arayüzü Sürümü %1&lt;br&gt;
@@ -458,12 +452,12 @@
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="48"/>
         <source>VirtualBox Graphical User Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox Grafiksel Kullanıcı Arayüzü</translation>
     </message>
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="49"/>
         <source>Version %1</source>
-        <translation type="unfinished">Sürüm %1</translation>
+        <translation>Sürüm %1</translation>
     </message>
 </context>
 <context>
@@ -511,67 +505,54 @@ Version %1</source>
 <context>
     <name>VBoxAddSFDialog</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>Add Share</source>
         <translation type="obsolete">Paylaşılan Dizin Ekle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Edit Share</source>
         <translation type="obsolete">Paylaşılan Dizini Düzenle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Select a folder to share</source>
         <translation type="obsolete">Paylaşmak için bir dizin seçin</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Folder Path</source>
         <translation type="obsolete">Dizin Yolu</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Folder Name</source>
         <translation type="obsolete">Dizin Adı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the path to an existing folder on the host PC.</source>
         <translation type="obsolete">Sunucu bilgisayar üzerindeki dizinin yolunu gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation type="obsolete">Paylaşılan dizinlerin isimlerini gösterir (misafir İşletim Sistemi tarafından görüldüğü şekilde).</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Opens the dialog to select a folder.</source>
         <translation type="obsolete">Bir dizin seçmek için pencere açar.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Cancel</source>
         <translation type="obsolete">İptal</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;TAMAM</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Make Permanent</source>
         <translation type="obsolete">&amp;Kalıcı Yap</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Read-only</source>
         <translation type="obsolete">&amp;Salt-okunur</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
         <translation type="obsolete">Eğer seçilirse Misafir İşletim Sistemi paylaşılan dizine yazamayacak.</translation>
     </message>
@@ -581,27 +562,27 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="121"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>İptal</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="124"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">VirtualBox Guest Additions CD kalıbı &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; adresinden indiriliyor...&lt;/nobr&gt;</translation>
+        <translation>VirtualBox Guest Additions CD kalıbı &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; adresinden indiriliyor...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="126"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">VirtualBox Guest Additions CD kalıbı indirme işlemini iptal et</translation>
+        <translation>VirtualBox Guest Additions CD kalıbı indirme işlemini iptal et</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="157"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;İndirilen dosyalar &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; olarak kaydedilemedi.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;İndirilen dosyalar &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; olarak kaydedilemedi.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="162"/>
         <source>Select folder to save Guest Additions image to</source>
-        <translation type="unfinished">Guest Additions kalıbını kaydetmek için gereken dizini seç</translation>
+        <translation>Guest Additions kalıbını kaydetmek için gereken dizini seç</translation>
     </message>
 </context>
 <context>
@@ -637,27 +618,22 @@ Version %1</source>
         <translation>Makine durumunu kayededilmiş anlık duruma geri döndür</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Help</source>
         <translation type="obsolete">Yardım</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;TAMAM</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Cancel</source>
         <translation type="obsolete">İptal</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
@@ -671,7 +647,6 @@ Version %1</source>
         <translation>Kapatma sinyali gönd&amp;er</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
@@ -680,7 +655,6 @@ Version %1</source>
 &lt;p&gt;Eğer makine bu eyleme yanıt vermezse misafir işletim sistemi ACPI Güç Düğmesi olaylarına destek vermiyor olabilir. Bu durumda &lt;b&gt;Makineyi Kapat&lt;/b&gt; seçeneğini kullanabilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
 &lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Sanal Makineyi kapatır.&lt;/p&gt;
@@ -694,17 +668,17 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="104"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sanal makinenin şimdiki çalıştırılan durumunu sunucu bilgisayarın sabit diskine kaydeder.&lt;/p&gt;&lt;p&gt;Bu sanal makine bir sonraki açılışında kaydedilen durumdaki aşamadan yeniden yüklenir ve çalışmanıza hemen başlamanızı sağlar.&lt;/p&gt;&lt;p&gt;Makine durumunu kaydetmenin sanal makine için ayırdığınız bellek miktarına göre değişmekle birlikte biraz uzun süreceğini unutmayın.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="130"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sanal makineye ACPI Güç Düğmesine basma etkisi gönderir.&lt;/p&gt;&lt;p&gt;Normal olarak sanal makineniz içerisindeki misafir işletim sistemi bunu algılar ve temiz bir kapatma işlemi yapar. Bu çalışan uygulamalarınıza gerekli değişiklikleri, verileri ve durumlarını kaydetme fırsatı vereceğinden tavsiye edilen bir kapatma yöntemidir.&lt;/p&gt;&lt;p&gt;Eğer makine bu eyleme yanıt vermezse misafir işletim sistemi ACPI Güç Düğmesi olaylarına destek vermiyor olabilir. Bu durumda &lt;b&gt;Makineyi Kapat&lt;/b&gt; seçeneğini kullanabilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sanal Makineyi kapatır.&lt;/p&gt;&lt;p&gt;Bu eylemin sanal makine içerisindeki misafir işletim sistemini hemen kapatacağını ve &lt;i&gt;veri kaybı&lt;/i&gt; yaşayabileceğinizi unutmayın. Bu eylem &lt;b&gt;Kapatma sinyali gönder&lt;/b&gt; seçeneği yanıt vermediği zaman tavsiye edilir.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -715,7 +689,6 @@ Version %1</source>
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>innotek VirtualBox</source>
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
@@ -862,7 +835,6 @@ Version %1</source>
         <translation>Bağlı olan CD/DVD-ROM ortamını ayır</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
         <translation type="obsolete">Uzak Masaüstü (RDP) Sunucusu</translation>
@@ -898,12 +870,10 @@ Version %1</source>
         <translation>Misafir Eklentilerini yükleyici kalıbı bağla</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Statistics...</source>
         <translation type="obsolete">İ&amp;statistikler...</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Command line...</source>
         <translation type="obsolete">&amp;Komut satırı...</translation>
     </message>
@@ -968,12 +938,10 @@ Version %1</source>
         <translation>&amp;Yardım</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Misafir ekranını otomatik olarak boyutlandırma fonksiyonunun Açık (&lt;img src=auto_resize_on_16px.png/&gt;) yada Kapalı (&lt;img src=auto_resize_off_16px.png/&gt;) olduğunu gösterir. Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Misafir işletim sistemi tarafından sunucunun fare işaretçisinin yakalanıp yakalanmadığını gösterir: &lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) açık&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalndı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalanmadı&lt;/nobr&gt;&lt;br&gt; Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
     </message>
@@ -1086,7 +1054,6 @@ Version %1</source>
         <translation>Tam masaüstü uyumu kipine geç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
         <translation type="obsolete">Misafir işletim sistemi tarafından klavyenin yakalanıp yakalanmadığını gösterir (&lt;img src=hostkey_captured_16px.png/&gt;) ya da (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
@@ -1199,7 +1166,6 @@ Version %1</source>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Denetleyici pasifleştirilmiş&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
         <translation type="obsolete">Uzak Masaüstünün (VRDP Sunucu) etkin olup olmadığını gösterir (&lt;img src=vrdp_16px.png/&gt;) ya da (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
@@ -1221,7 +1187,6 @@ Version %1</source>
         <translation type="obsolete">&amp;İçindekiler...</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -1271,32 +1236,32 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1689"/>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">Gün&amp;lük Kayıtları...</translation>
+        <translation>Gün&amp;lük Kayıtları...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1724"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir ekranını otomatik olarak boyutlandırma fonksiyonunun Açık (&lt;img src=auto_resize_on_16px.png/&gt;) yada Kapalı (&lt;img src=auto_resize_off_16px.png/&gt;) olduğunu gösterir. Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1733"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir işletim sistemi tarafından sunucunun fare işaretçisinin yakalanıp yakalanmadığını gösterir: &lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) açık&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalndı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalanmadı&lt;/nobr&gt;&lt;br&gt; Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1736"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir işletim sistemi tarafından klavyenin yakalanıp yakalanmadığını gösterir (&lt;img src=hostkey_captured_16px.png/&gt;) ya da (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1983"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Uzak Masaüstünün (VRDP Sunucu) etkin olup olmadığını gösterir (&lt;img src=vrdp_16px.png/&gt;) ya da (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1741"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atanmış sunucu anahtarını gösterir.&lt;br&gt; Sunucu anahtarına yanlız basıldığında klavye ve farenin yakalanma durumunu değiştirir. İşlemlerinizi daha hızlı yapmak için ana menüden diğer kullanılabilir tuş kombinasyonlarını görebilirsiniz.</translation>
     </message>
 </context>
 <context>
@@ -1327,7 +1292,6 @@ Version %1</source>
         <translation type="obsolete">Sanal Disk Yöneticisi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">&amp;Sabit Diskler</translation>
     </message>
@@ -1342,37 +1306,30 @@ Version %1</source>
         <translation type="obsolete">&amp;Disket Kalıpları</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Help</source>
         <translation type="obsolete">Yardım</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Invoke dialog&apos;s help</source>
         <translation type="obsolete">Pencerenin yardımını aç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;TAMAM</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Accept dialog</source>
         <translation type="obsolete">Kabul penceresi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Cancel</source>
         <translation type="obsolete">İptal</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Cancel dialog</source>
         <translation type="obsolete">İptal penceresi</translation>
     </message>
@@ -1408,27 +1365,22 @@ Version %1</source>
         <translation type="obsolete">&amp;Yenile</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>New</source>
         <translation type="obsolete">Yeni</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Add</source>
         <translation type="obsolete">Ekle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Remove</source>
         <translation type="obsolete">Sil</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Release</source>
         <translation type="obsolete">Bırak</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Refresh</source>
         <translation type="obsolete">Yenile</translation>
     </message>
@@ -1463,27 +1415,22 @@ Version %1</source>
         <translation type="obsolete">&amp;Eylemler</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Location</source>
         <translation type="obsolete">Konum</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Disk Type</source>
         <translation type="obsolete">Disk Tipi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Storage Type</source>
         <translation type="obsolete">Depolama Tipi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Attached to</source>
         <translation type="obsolete">Şuraya eklendi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Snapshot</source>
         <translation type="obsolete">Anlık Görüntü</translation>
     </message>
@@ -1568,7 +1515,6 @@ Version %1</source>
         <translation type="obsolete">&amp;Seç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>All hard disk images (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
         <translation type="obsolete">Tüm sabit disk kalıpları (*.vdi; *.vmdk);;Sanal Disk Kalıpları (*.vdi);;VMDK Kalıpları (*.vmdk);;Tüm dosyalar (*)</translation>
     </message>
@@ -1671,67 +1617,67 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
         <source>&lt;reset to default&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;öntanımlı ayarlara geri dön&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="214"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Şu anki ön tanımlı yol, değişiklikler onaylandıktan ve bu diyaloğu tekrar açtıktan sonra görüntülenecektir.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="218"/>
         <source>&lt;not selected&gt;</source>
-        <translation type="unfinished">&lt;seçilmedi&gt;</translation>
+        <translation>&lt;seçilmedi&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="220"/>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lütfen istediğiniz yolu belirlemek için açılabilir menüden &lt;b&gt;Diğer...&lt;/b&gt; ögesini seçin.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="232"/>
         <source>Other...</source>
-        <translation type="unfinished"></translation>
+        <translation>Diğer...</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="236"/>
         <source>Reset</source>
-        <translation type="unfinished">Sıfırla</translation>
+        <translation>Sıfırla</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="243"/>
         <source>Opens a dialog to select a different folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bir dizin seçmek için pencere açar.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="246"/>
         <source>Resets the folder path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dizin yolunu öntanımlı değere döndürür.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="251"/>
         <source>Opens a dialog to select a different file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Farklı bir dosya seçmek için pencere açar.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="254"/>
         <source>Resets the file path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yolunu öntanımlı değere döndürür.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="262"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopyala</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="423"/>
         <source>Please type the desired folder path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lütfen dizin yolunu buraya yazın.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="424"/>
         <source>Please type the desired file path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lütfen dosya yolunu buraya yazın.</translation>
     </message>
 </context>
 <context>
@@ -1739,32 +1685,32 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="156"/>
         <source>General</source>
-        <translation type="unfinished">Genel</translation>
+        <translation>Genel</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="159"/>
         <source>Input</source>
-        <translation type="unfinished"></translation>
+        <translation> Girdi </translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="162"/>
         <source>Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncelle</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="165"/>
         <source>Language</source>
-        <translation type="unfinished">Dil</translation>
+        <translation>Dil</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="169"/>
         <source>USB</source>
-        <translation type="unfinished">USB </translation>
+        <translation>USB </translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="183"/>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - %1</translation>
     </message>
 </context>
 <context>
@@ -1777,42 +1723,42 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished">Varsayılan sanal makine klasörüne yolu gösterir. Eğer açıkça aksi hali belirtilmemişse daha önceden var olan ya da yeni oluşturulmuş sabit diskleri eklemek için bu klasör kullanılır.</translation>
+        <translation>Varsayılan sanal makine klasörüne yolu gösterir. Eğer açıkça aksi hali belirtilmemişse daha önceden var olan ya da yeni oluşturulmuş sabit diskleri eklemek için bu klasör kullanılır.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="86"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation type="unfinished">Uzak Masaüstü (VRDP) istemcileri için kimlik doğrulamayı sağlayan kütüphanenin yolunu gösterir.</translation>
+        <translation>Uzak Masaüstü (VRDP) istemcileri için kimlik doğrulamayı sağlayan kütüphanenin yolunu gösterir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>Öntanımlı  Sabit Disk &amp;Dizini:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="68"/>
         <source>Default &amp;Machine Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>Öntanımlı &amp;Makine Dizini:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="98"/>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;RDP Kimlik Doğrulama Kütüphanesi:</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="79"/>
         <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eğer açıkça aksi hali belirtilmemişse daha önceden var olan ya da yeni oluşturulmuş sabit diskleri eklemek için bu dizin kullanılır.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="128"/>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçildiğinde sağ tıklama menüsü olan sistem çekmecesi simgesi etkinleştirilecektir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="131"/>
         <source>&amp;Show System Tray Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem Çekmecesi Simgesini &amp;Göster</translation>
     </message>
 </context>
 <context>
@@ -1820,22 +1766,22 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="61"/>
         <source>Host &amp;Key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Makine &amp;Anahtarı:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation type="unfinished">VM penceresinde, kullanılan anahtarı, makine anahtarı olarak gösterir. Girdi alanını aktif hale getirin ve yeni bir makine anahtarına basın. alfa numerik... işaretci hareketi ve anahtar düzenlemesinin, makine anahtarı olarak kullanılamayacağını unutmayın.</translation>
+        <translation>VM penceresinde, kullanılan anahtarı, makine anahtarı olarak gösterir. Girdi alanını aktif hale getirin ve yeni bir makine anahtarına basın. Alfa numeriklerin, imleç hareketlerinin ve anahtar düzenlemelerinin makine anahtarı olarak kullanılamayacağını unutmayın.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="91"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished">Seçildiği zaman, Sanal Makine penceresi aktif duruma geçirildiği her an klavye otomatik olarak yakalanır.Klavye yakalandığı zaman her bir system tuşu ki bunlar alt+tab gibi olanlar Sanal Makineye yönlendirilebilir.</translation>
+        <translation>Seçildiği zaman, Sanal Makine penceresi etkin duruma her geçirildiğinde klavye otomatik olarak yakalanır. Klavye yakalandığı zaman tüm sistem tuş kombinasyonları (alt+tab gibi olanlar da dahil ) Sanal Makineye yönlendirilir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="94"/>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Klavyeyi Otomatik Yakala</translation>
     </message>
 </context>
 <context>
@@ -1844,65 +1790,65 @@ Version %1</source>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="89"/>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"> (bütünleşik)</translation>
+        <translation> (bütünleşik)</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="115"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished">&lt;kullanılamaz&gt;</translation>
+        <translation>&lt;kullanılamaz&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="116"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished">&lt;bilinmeyen&gt;</translation>
+        <translation>&lt;bilinmeyen&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="129"/>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished">Öntanımlı</translation>
+        <translation>Öntanımlı</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="303"/>
         <source>Language:</source>
-        <translation type="unfinished">Dil:</translation>
+        <translation>Dil:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
         <source>&amp;Interface Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Arayüz dili:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kullanıcı arayüzü için kullanılabilecek dilleri listeler. Etkin dil &lt;b&gt;kalın&lt;/b&gt; yazılmıştır. Sistem dilini kullanmak için &lt;i&gt;Öntanımlı&lt;/i&gt; seçeneğini seçin.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="94"/>
         <source>Name</source>
-        <translation type="unfinished">İsim</translation>
+        <translation>İsim</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="99"/>
         <source>Id</source>
-        <translation type="unfinished"></translation>
+        <translation>Kimlik</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="104"/>
         <source>Language</source>
-        <translation type="unfinished">Dil</translation>
+        <translation>Dil</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="109"/>
         <source>Author</source>
-        <translation type="unfinished"></translation>
+        <translation>Yazar</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
         <source>Author(s):</source>
-        <translation type="unfinished">Çeviren:</translation>
+        <translation>Çeviren(ler):</translation>
     </message>
 </context>
 <context>
@@ -1910,27 +1856,27 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="45"/>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu seçenek işarfetlendiğinde uygulama VirtualBox web sayfasına periyodik olarak bağlanacak ve yeni sürüm olup olmadığını kontrol edecektir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="48"/>
         <source>&amp;Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncellemeleri &amp;kontrol et</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="90"/>
         <source>&amp;Once per:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu sürede bir &amp;kez:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="103"/>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation type="unfinished"></translation>
+        <translation>Yeni sürüm kontrolünün ne sıklıkla yapılacağını belirler. Yeni sürüm kontrolünü tamamen pasifleştirmek istiyorsanız yukarıdaki işaretleme kutusunun işaretini kaldırın.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="145"/>
         <source>Next Check:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sonraki Kontrol:</translation>
     </message>
 </context>
 <context>
@@ -2110,7 +2056,6 @@ Version %1</source>
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Adapter</source>
         <comment>details report (audio)</comment>
         <translation type="obsolete">Bağdaştırıcı</translation>
@@ -2307,13 +2252,11 @@ Version %1</source>
         <translation>Ağ</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Primary</source>
         <comment>DiskControllerType</comment>
         <translation type="obsolete">Birincil</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Secondary</source>
         <comment>DiskControllerType</comment>
         <translation type="obsolete">İkincil</translation>
@@ -2385,19 +2328,16 @@ Version %1</source>
         <translation>Tut</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Master</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">Ana</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Slave</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">Köle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Device&amp;nbsp;%1</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">Aygıt&amp;nbsp;%1</translation>
@@ -2818,97 +2758,97 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="1843"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Sağlayıcı Kimliği: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1848"/>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Ürün Kimliği: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1853"/>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Sürüm: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1858"/>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Ürün: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1863"/>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Üretici: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1868"/>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Seri No.: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1873"/>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1880"/>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Durum: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2202"/>
         <source>host interface, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>makine arayüzü, %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2205"/>
         <source>internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>dahili ağ, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="179"/>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">Bağdaştırıcı %1</translation>
+        <translation>Bağdaştırıcı %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="322"/>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Tip&amp;nbsp;(Biçim):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="328"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Şuna eklendi:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="329"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Eklenmedi &amp;nbsp;&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="337"/>
         <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;i&gt;Erişilebilirlik kontrol ediliyor...&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="355"/>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;Ortam erişilebilirliği kontrol edilemedi.&lt;br&gt;%1.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="405"/>
@@ -2920,13 +2860,13 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="523"/>
         <source>Checking...</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kontrol ediliyor...</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="527"/>
         <source>Inaccessible</source>
         <comment>medium</comment>
-        <translation type="unfinished">Erişilemez</translation>
+        <translation>Erişilemez</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="573"/>
@@ -2942,31 +2882,31 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="1946"/>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>3D Hızlandırma</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished">Etkin</translation>
+        <translation>Etkin</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished">Pasifleştirilmiş</translation>
+        <translation>Pasifleştirilmiş</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3115"/>
         <source>Setting Up</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ayarlanıyor</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3154"/>
         <source>Differencing</source>
         <comment>DiskType</comment>
-        <translation type="unfinished">Ayırıcı Özellik</translation>
+        <translation>Ayrım</translation>
     </message>
 </context>
 <context>
@@ -2990,291 +2930,234 @@ Version %1</source>
 <context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>Category</source>
         <translation type="obsolete">Kategori</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>[id]</source>
         <translation type="obsolete">[kimlik]</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>[link]</source>
         <translation type="obsolete">[bağlantı]</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>[name]</source>
         <translation type="obsolete">[ad]</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Sol taraftaki listeden bir ayar kategorisi seçin ve daha fazla bilgi almak için fareyi ayar öğelerinin  üzerine getirin&lt;/i&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> General </source>
         <translation type="obsolete"> Genel </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>0</source>
         <translation type="obsolete">0</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#general</source>
         <translation type="obsolete">#genel</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Input </source>
         <translation type="obsolete"> Girdi </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>1</source>
         <translation type="obsolete">1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#input</source>
         <translation type="obsolete">#girdi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> USB </source>
         <translation type="obsolete"> USB </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>2</source>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#usb</source>
         <translation type="obsolete">#usb</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Default &amp;Folders</source>
         <translation type="obsolete">Öntanımlı &amp;Dizinler</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Machines</source>
         <translation type="obsolete">Makineler</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>VDI files</source>
         <translation type="obsolete">VDI dosyaları</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Select</source>
         <translation type="obsolete">Seç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Keyboard</source>
         <translation type="obsolete">&amp;Klavye</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Host Key</source>
         <translation type="obsolete">&amp;Sunucu Anahtarı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Auto capture keyboard</source>
         <translation type="obsolete">&amp;Klavyeyi otomatik yakala</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;USB Device Filters</source>
         <translation type="obsolete">&amp;USB Aygıtı Filtreleri</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Add Empty (Ins)</source>
         <translation type="obsolete">Boş Ekle (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Add From (Alt+Ins)</source>
         <translation type="obsolete">Dışarıdan Ekle (Alt+Ins)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Remove (Del)</source>
         <translation type="obsolete">Kaldır (Del)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Removes the selected USB filter.</source>
         <translation type="obsolete">Seçili USB filtresini kaldırır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+Up</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Move Up (Ctrl+Up)</source>
         <translation type="obsolete">Yurarı Taşı (Ctrl-Üst yön tuşu)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Moves the selected USB filter up.</source>
         <translation type="obsolete">Seçili USB filtresini yukarı taşır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+Down</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Move Down (Ctrl+Down)</source>
         <translation type="obsolete">Aşağı Taşı (Ctrl-Alt yön tuşu)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Moves the selected USB filter down.</source>
         <translation type="obsolete">Seçili USB filtresini aşağı taşır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Help</source>
         <translation type="obsolete">Yardım</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">Diyalog yardımını gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">Geçersiz ayarlar bulundu</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;TAMAM</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">Değişiklikleri kabul et (kaydet) ve diyaloğu kapat.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Cancel</source>
         <translation type="obsolete">İptal</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">Değişikliklerden vazgeç ve diyaloğu kapat.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>VirtualBox Preferences</source>
         <translation type="obsolete">VirtualBox Tercihleri</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
         <translation type="obsolete">VM penceresinde, kullanılan anahtarı, makine anahtarı olarak gösterir. Girdi alanını aktif hale getirin ve yeni bir makine anahtarına basın. alfa numerik... işaretci hareketi ve anahtar düzenlemesinin, makine anahtarı olarak kullanılamayacağını unutmayın.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">Yeni Filtre %1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Language</source>
         <translation type="obsolete">Dil</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Language </source>
         <translation type="obsolete"> Dil </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>3</source>
         <translation type="obsolete">3</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#language</source>
         <translation type="obsolete">#dil</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Interface Language</source>
         <translation type="obsolete">&amp;Arayüz dili</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Author(s):</source>
         <translation type="obsolete">Çeviren:</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Language:</source>
         <translation type="obsolete">Dil:</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> (built-in)</source>
         <comment>Language</comment>
         <translation type="obsolete"> (bütünleşik)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
         <translation type="obsolete">&lt;kullanılamaz&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
         <translation type="obsolete">&lt;bilinmeyen&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>
 &lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
@@ -3287,98 +3170,79 @@ to the system default language.&lt;/qt&gt;
                                     </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Default</source>
         <comment>Language</comment>
         <translation type="obsolete">Öntanımlı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Varsayılan VDI klasörüne yolu gösterir. Eğer açıkça aksi hali belirtilmemişse daha önceden var olan ya da yeni oluşturulmuş sabit diskleri eklemek için bu klasör kullanılır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Sanal makine dizin yolunu ön tanımlı değerlerine geri döndürür. Şu anki ön tanımlı yol, değişiklikleri onayladıktan ve bu diyaloğu yeniden açtığınızda görüntülenir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">VDI dizinini ön tanımlı değerlerine tekrar döndürür. Şu anki ön tanımlı yol, değişiklikler onaylandıktan ve bu diyaloğu tekrar açtıktan sonra görüntülenecektir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="obsolete">Varsayılan sanal makine klasörüne yolu gösterir. Eğer açıkça aksi hali belirtilmemişse daha önceden var olan ya da yeni oluşturulmuş sabit diskleri eklemek için bu klasör kullanılır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Opens a dialog to select the default VDI folder.</source>
         <translation type="obsolete">Öntanımlı VDI dizinini seçmek için diyaloğu açar.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Opens a dialog to select the default virtual machine folder.</source>
         <translation type="obsolete">Ön tanımlı sanal makine dizini seçmek için bir diyalog açar.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation type="obsolete">Seçildiği zaman, Sanal Makine penceresi aktif duruma geçirildiği her an klavye otomatik olarak yakalanır.Klavye yakalandığı zaman her bir system tuşu ki bunlar alt+tab gibi olanlar Sanal Makineye yönlendirilebilir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
         <translation type="obsolete">Bütün evrensel USB filtrelerini listeler. Sol taraftaki işaretleme kutusu, kısmi filtrenin etkin olup olmadığını belirler.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
         <translation type="obsolete">Başlangıçta boş olarak ayarlanan alanlar ile beraber, yeni bir USB filtresi ekler. Böyle bir filtrenin, eklenen tüm USB aygıtları ile eşleşeceğini unutmayın.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">Bütün alanları, ana PC ye bağlı seçili USB aracının değerlerine göre ayarlanmış yeni bir USB filtresi ekle.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>V&amp;RDP Authentication Library</source>
         <translation type="obsolete">V&amp;RDP Kimlik Doğrulama Kütüphanesi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation type="obsolete">Uzak Masaüstü (VRDP) istemcileri için kimlik doğrulamayı sağlayan kütüphanenin yolunu gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Opens a dialog to select the VRDP authentication library file.</source>
         <translation type="obsolete">VRDP kimlik doğrulama kütüphanesi dosyasını seçmek için bir pencere açar.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Kimlik doğrulama kütüphanesi dosyasını öntanımlı değerine döndürür. Değişiklikler kabul edildikten sonra geçerli öntanımlı kütüphane dosyası gösterilir ve bu pencere yeniden açılır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Extended Features</source>
         <translation type="obsolete">&amp;Genişletilmiş Özellikler</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">&amp;VT-x/AMD-V Etkin</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation type="obsolete">Sanal makinenin sunucu makine üzerindeki işlemcinin Intel için VT-x ve AMD için AMD-V gibi donanım sanallaştırma eklentilerini öntanımlı olarak kullanıp kullanmayacağını belirtir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>
                                               &lt;qt&gt;Lists all global USB
                                               filters. The checkbox to the left
@@ -3399,17 +3263,14 @@ to the system default language.&lt;/qt&gt;
                                             </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">Boş Filtre Ekle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">Boş Filtre &amp;Ekle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>
               &lt;qt&gt;Adds a new USB filter with all fields initially set to
               empty strings. Note that such a filter will match any attached USB
@@ -3422,17 +3283,14 @@ to the system default language.&lt;/qt&gt;
             </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">Aygıttan Filtre Ekle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">&amp;Aygıttan Filtre Ekle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
@@ -3443,17 +3301,14 @@ to the system default language.&lt;/qt&gt;
             </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Remove Filter</source>
         <translation type="obsolete">Filtreyi Kaldır</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">Filtreyi &amp;Kaldır</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
@@ -3462,17 +3317,14 @@ to the system default language.&lt;/qt&gt;
             </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">Filtreyi Yukarı Taşı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">Filtreyi &amp;Yukarı Taşı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
@@ -3481,17 +3333,14 @@ to the system default language.&lt;/qt&gt;
             </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">Filtreyi Aşağı Taşı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">Filtreyi &amp;Aşağı Taşı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
@@ -3503,92 +3352,74 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxHardDiskSettings</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>Slot</source>
         <translation type="obsolete">Yuva</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Hard Disk</source>
         <translation type="obsolete">Sabit Disk</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>VBoxHardDiskSettings</source>
         <translation type="obsolete">VBoxSabitDiskAyarları</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">&amp;Sabit Diskler</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Enable SATA Controller</source>
         <translation type="obsolete">&amp;SATA Denetleyicisini Etkinleştir</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Hard Disks &amp;Attachments</source>
         <translation type="obsolete"> Sabit Disk &amp;Eklentileri</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Add Attachment</source>
         <translation type="obsolete">Eklenti Ekle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Add Attachment</source>
         <translation type="obsolete">Eklenti &amp;Ekle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Remove Attachment</source>
         <translation type="obsolete">Eklenti Kaldır</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Remove Attachment</source>
         <translation type="obsolete">Eklenti &amp;Kaldır</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Delete</source>
         <translation type="obsolete">Sil</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Select Hard Disk</source>
         <translation type="obsolete">Sabit Disk Seç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Select Hard Disk</source>
         <translation type="obsolete">&amp;Sabit Disk Seç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; zaten &lt;i&gt;%2&lt;/i&gt; konumuna eklenmiş bir sabit disk kullanıyor</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Double-click to add a new attachment</source>
         <translation type="obsolete">Yeni bir eklenti eklemek için çift tıklayın</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; için bir sabit disk seçilmedi</translation>
     </message>
@@ -3598,17 +3429,17 @@ to the system default language.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="unfinished">&amp;Kabul Ediyorum</translation>
+        <translation>&amp;Kabul Ediyorum</translation>
     </message>
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished">Kabul Et&amp;miyorum</translation>
+        <translation>Kabul Et&amp;miyorum</translation>
     </message>
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
         <source>VirtualBox License</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox Lisansı</translation>
     </message>
 </context>
 <context>
@@ -3679,12 +3510,12 @@ to the system default language.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="262"/>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kullanılabilir ortam yok. İstediğiniz ortamı eklemek için Sanal Ortam Yöneticisi&apos;ni kullanın.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="263"/>
         <source>&lt;no media&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;ortam yok&gt;</translation>
     </message>
 </context>
 <context>
@@ -3692,168 +3523,168 @@ to the system default language.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="619"/>
         <source>&amp;Actions</source>
-        <translation type="unfinished">&amp;Eylemler</translation>
+        <translation>&amp;Eylemler</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="621"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">&amp;Yeni...</translation>
+        <translation>&amp;Yeni...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="622"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Ekle...</translation>
+        <translation>&amp;Ekle...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="624"/>
         <source>R&amp;emove</source>
-        <translation type="unfinished">&amp;Kaldır</translation>
+        <translation>&amp;Kaldır</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="625"/>
         <source>Re&amp;lease</source>
-        <translation type="unfinished">&amp;Bırak</translation>
+        <translation>&amp;Bırak</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="626"/>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">&amp;Yenile</translation>
+        <translation>&amp;Yenile</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="635"/>
         <source>Create a new virtual hard disk</source>
-        <translation type="unfinished">Yeni sanal sabit disk oluştur</translation>
+        <translation>Yeni sanal sabit disk oluştur</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="636"/>
         <source>Add an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Varolan bir ortam ekle</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="638"/>
         <source>Remove the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçili ortamı kaldır</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="639"/>
         <source>Release the selected medium by detaching it from the machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçili ortamı makineden ayırarak bırak</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="640"/>
         <source>Refresh the media list</source>
-        <translation type="unfinished">Ortam listesini yenile</translation>
+        <translation>Ortam listesini yenile</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="310"/>
         <source>Location</source>
-        <translation type="unfinished">Konum</translation>
+        <translation>Konum</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="131"/>
         <source>Type (Format)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tip (Biçim)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="327"/>
         <source>Attached to</source>
-        <translation type="unfinished">Şuraya eklendi</translation>
+        <translation>Şuraya eklendi</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="665"/>
         <source>Checking accessibility</source>
-        <translation type="unfinished">Erişilebilirlik kontrolü</translation>
+        <translation>Erişilebilirlik kontrol ediliyor</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="675"/>
         <source>&amp;Select</source>
-        <translation type="unfinished">&amp;Seç</translation>
+        <translation>&amp;Seç</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1022"/>
         <source>All hard disk images (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tüm sabit disk kalıpları (%1)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1023"/>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tüm dosyalar (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1026"/>
         <source>Select a hard disk image file</source>
-        <translation type="unfinished">Bir sabit disk kalıbı seçin</translation>
+        <translation>Bir sabit disk kalıbı seçin</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1032"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="unfinished">CD/DVD-ROM kalıpları (*.iso);;Tüm dosyalar (*)</translation>
+        <translation>CD/DVD-ROM kalıpları (*.iso);;Tüm dosyalar (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1033"/>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="unfinished">Bir CD/DVD-ROM kalıbı seç</translation>
+        <translation>Bir CD/DVD-ROM kalıbı seç</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1039"/>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="unfinished">Disket kalıpları (*.img);;Tüm dosyalar (*)</translation>
+        <translation>Disket kalıpları (*.img);;Tüm dosyalar (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1040"/>
         <source>Select a floppy disk image file</source>
-        <translation type="unfinished">Bir Disket kalıbı seç</translation>
+        <translation>Bir Disket kalıbı seç</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1429"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Eklenmedi &amp;nbsp;&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1898"/>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished">Türkiye</translation>
+        <translation>--</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="36"/>
         <source>Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Sanal Ortam Yöneticisi</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="59"/>
         <source>Hard &amp;Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sabit Diskler</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="279"/>
         <source>Name</source>
-        <translation type="unfinished">İsim</translation>
+        <translation>İsim</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="86"/>
         <source>Virtual Size</source>
-        <translation type="unfinished">Sanal Boyut</translation>
+        <translation>Sanal Boyut</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="91"/>
         <source>Actual Size</source>
-        <translation type="unfinished">Gerçek Boyut</translation>
+        <translation>Gerçek Boyut</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="169"/>
         <source>&amp;CD/DVD Images</source>
-        <translation type="unfinished">&amp;CD/DVD Kalıpları</translation>
+        <translation>&amp;CD/DVD Kalıpları</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="284"/>
         <source>Size</source>
-        <translation type="unfinished">Boyut</translation>
+        <translation>Boyut</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="257"/>
         <source>&amp;Floppy Images</source>
-        <translation type="unfinished">&amp;Disket Kalıpları</translation>
+        <translation>&amp;Disket Kalıpları</translation>
     </message>
 </context>
 <context>
@@ -3861,42 +3692,42 @@ to the system default language.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="563"/>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="unfinished">VirtualBox Sunucu Arayüzü %1</translation>
+        <translation>VirtualBox Sunucu Arayüzü %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="624"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Seçilen ağ arayüzünü kaldırmak istiyor musunuz &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Not:&lt;/b&gt; Bu arayüz bir ya da birden fazla ağ bağdaştırıcısı tarafından ya da bir ya da birden fazla sanal makine tarafından kullanılıyor olabilir. Bu arayüz kaldırıldıktan sonra bu bağdaştırıcılar siz ayarlarını yeni bir arayüz adı ya da ekleme tipi seçerek düzeltene kadar çalışmayacaktır. &lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Seçilen ağ arayüzünü kaldırmak istiyor musunuz &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Not:&lt;/b&gt; Bu arayüz bir ya da birden fazla ağ bağdaştırıcısı tarafından ya da bir ya da birden fazla sanal makine tarafından kullanılıyor olabilir. Bu arayüz kaldırıldıktan sonra bu bağdaştırıcılar siz ayarlarını yeni bir arayüz adı ya da ekleme tipi seçerek düzeltene kadar çalışmayacaktır. &lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="656"/>
         <source>Host &amp;Interfaces</source>
-        <translation type="unfinished">Sunucu Arayüzler&amp;i</translation>
+        <translation>Sunucu Arayüzler&amp;i</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="658"/>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished">Tüm sunucu arayüzlerini listeler.</translation>
+        <translation>Tüm sunucu arayüzlerini listeler.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="661"/>
         <source>A&amp;dd New Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Yeni Sunucu Arayüzü Ekle</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="662"/>
         <source>&amp;Remove Selected Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçilen &amp;Sunucu Arayüzünü Kaldır</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="663"/>
         <source>Adds a new host interface.</source>
-        <translation type="unfinished">Yeni sunucu arayüzü ekler.</translation>
+        <translation>Yeni sunucu arayüzü ekler.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="664"/>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished">Seçilen sunucu arayüzünü kaldırır.</translation>
+        <translation>Seçilen sunucu arayüzünü kaldırır.</translation>
     </message>
 </context>
 <context>
@@ -3904,10 +3735,9 @@ to the system default language.&lt;/qt&gt;
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="30"/>
         <source>Create New Virtual Disk</source>
-        <translation>Yeni sanal disk oluştur</translation>
+        <translation>Yeni Sanal Disk Oluştur</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
@@ -3920,7 +3750,6 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
         <translation>Sanal Disk Oluşturma Sihirbazına Hoşgeldiniz!</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
@@ -3952,7 +3781,6 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">Sanal Sürücü Kalıbı Tipi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;&lt;b&gt;Seç&lt;/b&gt; simgesine basarak sanal sabit disk kalıbının saklanacağı
@@ -3964,12 +3792,10 @@ konumu ve oluşturulacak dosyanın adını seçebilirsiniz ya da aşağıdaki al
         <translation type="obsolete">Kal&amp;ıp Dosyası Adı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Select</source>
         <translation type="obsolete">Seç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Sanal sabit disk kalıbının boyutunu megabyte cinsinden seçin. Bu boyut, misafir işletim sistemine
@@ -3991,7 +3817,6 @@ sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
         <translation type="obsolete">Aşağıdaki ayarlara göre yeni bir sanal sabit disk kalıbı oluşturacaksınız:</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
@@ -4010,7 +3835,6 @@ sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
         <translation>&lt;nobr&gt;%1 Byte&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tip:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Konum:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Boyut:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
@@ -4027,56 +3851,56 @@ sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="904"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; &amp;Geri</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="697"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;İleri &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bitir</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="213"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tip</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="214"/>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">Konum</translation>
+        <translation>Konum</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="215"/>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">Boyut</translation>
+        <translation>Boyut</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="216"/>
         <source>Bytes</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bayt</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>İptal</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Bu sihirbaz, size kendi sanal makineniz için yeni bir sanal sabit disk kalıbı oluşturmanız için yardım eder.&lt;/p&gt;&lt;p&gt;&lt;b&gt;İleri&lt;/b&gt; düğmesini kullanarak sihirbazın bir sonraki sayfasına, &lt;b&gt;Geri&lt;/b&gt; düğmesine basarak da bir önceki sayfasına gidebilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Sabit Disk Depolama Tipi</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
@@ -4086,47 +3910,47 @@ sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
         <source>Storage Type</source>
-        <translation type="unfinished">Depolama Tipi</translation>
+        <translation>Depolama Tipi</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dinamik olarak genişleyen kalıp</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sabit boyutlu depolama</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Seç&lt;/b&gt; simgesine basarak sanal sabit disk kalıbının saklanacağı konumu ve oluşturulacak dosyanın adını seçebilirsiniz ya da aşağıdaki alanına bir dosya ismi yazabilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
         <source>&amp;Location</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Konum</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sanal sabit disk kalıbının boyutunu megabayt cinsinden seçin. Bu boyut, misafir işletim sistemine sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Boyut</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Aşağıdaki ayarlara göre yeni bir sanal sabit disk kalıbı oluşturacaksınız:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eğer aşağıdaki ayarlar doğruysa &lt;b&gt;Bitir&lt;/b&gt; düğmesine basın. Bitir düğmesine bastığınızda, yeni bir sabit disk kalıbı oluşturulacaktır.</translation>
     </message>
 </context>
 <context>
@@ -4137,7 +3961,6 @@ sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
         <translation>Yeni Sanal Makine Oluştur</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
@@ -4153,7 +3976,6 @@ oluşturmanız için yardımcı olacaktır.&lt;/p&gt;
         <translation>Sanal Makine Oluşturma Sihirbazına Hoşgeldiniz!</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
@@ -4189,17 +4011,14 @@ Bu isim tüm VirtualBox bileşenleri tarafından sanal makinenizi tanımak için
         <translation>Te&amp;mel Bellek Boyutu</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
@@ -4214,7 +4033,6 @@ Bu isim tüm VirtualBox bileşenleri tarafından sanal makinenizi tanımak için
         <translation>Bellek</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Select a hard disk image to be used
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
@@ -4247,7 +4065,6 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation>Sanal Sabit Disk Sürücü</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>
                             &lt;p&gt;
                             You are going to create a new virtual machine
@@ -4262,7 +4079,6 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
                             </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>
                             &lt;p&gt;
                             If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
@@ -4296,12 +4112,10 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;İsim:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;İşletim Sistemi Tipi:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Temel Bellek:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Başlangıç (Boot) Sabit Diski:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
@@ -4318,27 +4132,27 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Bu sihirbaz size VirtualBox içerisinde yeni bir sanal makine oluşturmanız için yardımcı olacaktır.&lt;/p&gt;&lt;p&gt; Sonraki sayfaya gitmek için &lt;b&gt;İleri&lt;/b&gt;, önceki sayfaya dönmek için &lt;b&gt;Geri&lt;/b&gt; düğmesini kullanın.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1119"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; &amp;Geri</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="918"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;İleri &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Yeni sanal makine için bir isim girin ve bu sanal makineye kurmayı düşündüğünüz misafir işletim sisteminin tipini seçin.&lt;/p&gt;&lt;p&gt;Sanal makinenin adı genellikle o makinenin yazılım ve donanım yapılandırması hakkında bilgiler içerir. Bu isim tüm VirtualBox bileşenleri tarafından sanal makinenizi tanımak için kullanılacaktır.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1020"/>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Aşağıdaki ayarlara göre yeni bir sanal makine oluşturacaksınız:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1067"/>
@@ -4348,52 +4162,52 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1126"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bitir</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="166"/>
         <source>MB</source>
         <comment>megabytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="163"/>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished">İsim</translation>
+        <translation>İsim</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="164"/>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">İşletim Sistemi Tipi</translation>
+        <translation>İşletim Sistemi Tipi</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="165"/>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished">Temel Bellek</translation>
+        <translation>Temel Bellek</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="171"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Başlangıç (Boot) Sabit Diski</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1149"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>İptal</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="782"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sanal makineyi başlatmak için (boot)  kullanılacak bir sabit disk kalıbı seçin. &lt;b&gt;Yeni&lt;/b&gt; düğmesine tıklayarak Yeni bir sabit disk oluşturabilirsiniz ya da açılabilir listeden bir &lt;b&gt;Varolan sabit disk&lt;/b&gt; seçebilirsiniz.&lt;/p&gt;&lt;p&gt;Eğer daha karmaşık bir sabit disk ayarlamasına gereksinim duyuyorsanız bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekleyebilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="820"/>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Başlangıç (Boot) Sabit Diski (Primary Master)</translation>
     </message>
 </context>
 <context>
@@ -4401,22 +4215,22 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="118"/>
         <source>Operating &amp;System:</source>
-        <translation type="unfinished"></translation>
+        <translation>İşletim Siste&amp;mi:</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="120"/>
         <source>Displays the operating system family that you plan to install into this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sanal makine içerisine kurmak istediğiniz işletim sistemi tipini gösterir.</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="121"/>
         <source>V&amp;ersion:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sürüm:</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="124"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">Sanak makine içerisine kurmak istediğiniz şiletim sistemi tipini gösterir (misafir işletim sistemi olarak da adlandırılır).</translation>
+        <translation>Sanal makine içerisine kurmak istediğiniz şiletim sistemi tipini gösterir (misafir işletim sistemi olarak da adlandırılır).</translation>
     </message>
 </context>
 <context>
@@ -4473,12 +4287,10 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation>&lt;p&gt;VirtualBoc COM nesnesi oluşturulamadı.&lt;/p&gt;&lt;p&gt;Uygulama şimdi sonlandırılacak.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Genel Kullanıcı Grafiksel Arayüzü yapılandırması yüklenemedi.&lt;/p&gt;&lt;p&gt;Uygulama şimdi sonlandırılacak.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Genel Kullanıcı Grafiksel Arayüzü yapılandırması kaydedilemedi.&lt;/p&gt;</translation>
     </message>
@@ -4508,12 +4320,10 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation>Ayarlar &lt;b&gt;%1&lt;/b&gt; sanal makinesine uygulanamadı.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; sanal makinesinin ayarları kaydedilemedi.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; sanal makinesinin ayarları yüklenemedi.</translation>
     </message>
@@ -4604,7 +4414,6 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="obsolete">&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; kalıp dosyası zaten var. Bu dosyaları kullanan yeni bir sanal sabit disk oluşturamassınız, çünkü aynı zamanda başka bir sanal sabit disk taradından da kullanılıyor olabilir.&lt;/p&gt;&lt;p&gt;Lütfen farklı bir kalıp dosyası ismi belirtin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sabit disk kalıp dosyasını silmek istiyor musunuz?&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Hayır&lt;/b&gt; derseniz sanal sabit disk kaydedilmemiş olacak ve koleksiyondan kaldırılacaktır, ancak kalıp dosyası fiziksel diskinizde kalacaktır.&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Evet&lt;/b&gt; derseniz, kalıp dosyası sabit diskinizden kalıcı olarak silinecektir. Bu işlem geri alınamaz.&lt;/p&gt;</translation>
     </message>
@@ -4624,12 +4433,10 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; sanal sabit disk kalıbı oluşturulamadı.&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
         <translation type="obsolete">&lt;b&gt;%4&lt;/b&gt; makinesinin %3 denetleyicisinin %2 aygıt yivine  %1 UUID kullanan bir sabit disk kalıbı eklenemedi.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">&lt;b&gt;%3&lt;/b&gt; makinesinin %2 denetleyicisinin %1 aygıt yivinden bir sabit disk kalıbı ayrılamadı.</translation>
     </message>
@@ -4704,13 +4511,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation>&lt;b&gt;%3&lt;/b&gt;sanal makinesi için &lt;b&gt;%1&lt;/b&gt; paylaşılan dizini kaldırılamadı (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; dizinine işaret eden).</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Sanal Makine ekranına &lt;b&gt;fare ile&lt;/b&gt; tıkladınız ya da &lt;b&gt;Sunucu anahtarına&lt;/b&gt; bastınız.
 Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/b&gt; ve sunucu makinenizdeki diğer uygulamalarınızın fare ve klavyenizi kullanamamasına neden olur (sadece fare işaretçisi uyumu misafir işletim sistemi tarafından desteklenmiyorsa)&lt;/p&gt;&lt;p&gt;İstediğiniz zaman &lt;b&gt;Sunucu anahtarına&lt;/b&gt; basarak klavye ve fare işaretçinizi (eğer yakalandıysa) &lt;i&gt;serbest&lt;/i&gt; bırakabilir ve normal işlevine döndürebilirsiniz. Şu anda kullanılan Sunucu anahtarı Sanal Makine ekranının altındaki durum çubuğunda _&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp; simgesinden hemen sonraki_ gösteriliyor. Bu simge ve fare simgesinin yanındaki simge, fare ve klavyenin şimdiki yakalanma durumunu gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;&lt;b&gt;Klavyeyi otomatik yakala&lt;/b&gt; seçeneğiniz etkinleştirilmiş. Bu sanal makinenin Sanal Makine ekranı etkinleştirildiğinde klavyenizi otomatik olarak &lt;b&gt;yakalamasına&lt;/b&gt; neden olur; klavyeniz yakalandığında tüm klavye kısayollarınız (sistem kısayollarınız da dahil, Alt-Tab gibi) sanal makineye yönlendirilir.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Sunucu anahtarına&lt;/b&gt; basarak klavyenizi ve fare işaretçinizi (eğer yakalandıysa) &lt;i&gt;serbest&lt;/i&gt; bırakabilir ve normal işlevine döndürebilirsiniz. Şu anda kullanılan Sunucu anahtarı Sanal Makine ekranının altındaki durum çubuğunda _&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp; simgesinden hemen sonraki_ gösteriliyor. Bu simge ve fare simgesinin yanındaki simge, fare ve klavyenin şimdiki yakalanma durumunu gösterir.</translation>
     </message>
@@ -4837,7 +4642,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>Sanal makinenin anlık görüntü dizini &lt;b&gt;%1&lt;b&gt; &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;olarak değiştirilemedi.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Misafir işletim sisteminin video kipinden dolayı Tam uyum kipine geçilemedi.&lt;/p&gt;&lt;p&gt;Sanal makineyi en az &lt;b&gt;%1&lt;/b&gt; ekran kartı belleği kullanacak şekilde yapılandırmalısınız.&lt;/p&gt;</translation>
     </message>
@@ -4909,27 +4713,27 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="641"/>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Genel VirtualBox ayarları &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; adresine kaydedilemedi.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="655"/>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Genel Kullanıcı Grafiksel Arayüzü yapılandırması &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; adresinden yüklenemedi.&lt;/p&gt;&lt;p&gt;Uygulama şimdi sonlandırılacak.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="669"/>
         <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Genel Kullanıcı Grafiksel Arayüzü yapılandırması &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; adresine kaydedilemedi.&lt;/p&gt;&lt;p&gt;Uygulama şimdi sonlandırılacak.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="740"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesinin ayarları &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; adresine kaydedilemedi.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="762"/>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesinin ayarları &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; adresinden yüklenemedi.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1065"/>
@@ -4994,7 +4798,7 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <location filename="../src/VBoxProblemReporter.cpp" line="1729"/>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Makine anahtarı &lt;b&gt;%1&lt;/b&gt; olarak ayarlandı.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1701"/>
@@ -5041,7 +4845,7 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2025"/>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sanal makineyi sıfırlamak istiyor musunuz?&lt;/p&gt;&lt;p&gt;Makine sıfırlandığında bu makinede çalışan tüm uygulamaların verileri kaybedilecek.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2027"/>
@@ -5064,7 +4868,7 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="585"/>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; dosyası &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3) konumuna kopyalanamadı.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1220"/>
@@ -5121,62 +4925,62 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="266"/>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">&amp;İçindekiler...</translation>
+        <translation>&amp;İçindekiler...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="269"/>
         <source>Show the online help contents</source>
-        <translation type="unfinished">Çevrimiçi yardım içeriğini göster</translation>
+        <translation>Çevrimiçi yardım içeriğini göster</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="271"/>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;VirtualBox Web Sayfası...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="273"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished"></translation>
+        <translation>Tarayıcıyı aç ve VirtualBox ürününün Web sitesine git</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="275"/>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Tüm &amp;Uyarıları Sıfırla</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="277"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished"></translation>
+        <translation>Tüm gizli tutulan uyarıları ve mesajları yeniden göstermeyi sağlar</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="279"/>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished">Vi&amp;rtualBox&apos;u Kaydet...</translation>
+        <translation>Vi&amp;rtualBox&apos;u Kaydet...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="281"/>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished">VirtualBox kayıt formunu aç</translation>
+        <translation>VirtualBox kayıt formunu aç</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="283"/>
         <source>C&amp;heck for Updates...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Güncellemeleri Kontrol Et...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="285"/>
         <source>Check for a new VirtualBox version</source>
-        <translation type="unfinished"></translation>
+        <translation>Yeni VirtualBox sürümünü kontrol et</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="287"/>
         <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished">VirtualBox H&amp;akkında...</translation>
+        <translation>VirtualBox H&amp;akkında...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="289"/>
         <source>Show a dialog with product information</source>
-        <translation type="unfinished"></translation>
+        <translation>Ürün bilgilerini gösteren bir pencere aç</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1652"/>
@@ -5192,7 +4996,7 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <location filename="../src/VBoxProblemReporter.cpp" line="1111"/>
         <source>Release</source>
         <comment>detach medium</comment>
-        <translation type="unfinished">Bırak</translation>
+        <translation>Bırak</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1120"/>
@@ -5218,12 +5022,12 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <location filename="../src/VBoxProblemReporter.cpp" line="1143"/>
         <source>Remove</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kaldır</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; kalıp dosyası zaten var. Bu dosyaları kullanan yeni bir sanal sabit disk oluşturamassınız, çünkü aynı zamanda başka bir sanal sabit disk taradından da kullanılıyor olabilir.&lt;/p&gt;&lt;p&gt;Lütfen farklı bir kalıp dosyası ismi belirtin.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1171"/>
@@ -5234,13 +5038,13 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <location filename="../src/VBoxProblemReporter.cpp" line="1176"/>
         <source>Delete</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished">Sil</translation>
+        <translation>Sil</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1177"/>
         <source>Keep</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished"></translation>
+        <translation>Koru</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1189"/>
@@ -5270,17 +5074,17 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1270"/>
         <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; to the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; &lt;b&gt;%3&lt;/b&gt; makinesine bağlanamadı.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1283"/>
         <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; &lt;b&gt;%3&lt;/b&gt; makinesinden ayrılamadı.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1295"/>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; açılamadı.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1305"/>
@@ -5316,13 +5120,13 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
         <source>&amp;More</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Daha Fazla</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1903"/>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">&amp;Çık</translation>
+        <translation>&amp;Çık</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1890"/>
@@ -5338,7 +5142,7 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <location filename="../src/VBoxProblemReporter.cpp" line="1900"/>
         <source>O&amp;verwrite</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Üzerine Yaz</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2009"/>
@@ -5349,19 +5153,19 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <location filename="../src/VBoxProblemReporter.cpp" line="2166"/>
         <source>hard disk</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">sabit disk</translation>
+        <translation>sabit disk</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2168"/>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">CD/DVD Kalıbı</translation>
+        <translation>CD/DVD Kalıbı</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2170"/>
         <source>floppy image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">disket kalıbı</translation>
+        <translation>disket kalıbı</translation>
     </message>
 </context>
 <context>
@@ -5372,7 +5176,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>VirtualBox Kayıt Formu</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Lütfen VirtualBox kullandığınızı öğrenebilmemiz ve sizi VirtualBox haberleri ve güncellemeleri gibi konularda bilgilendirebilmemiz için kayıt formunu doldurun.&lt;/p&gt;&lt;p&gt;Aşağıdaki alanlara Latin karakterlerini kullanarak tam adınızı ve e-posta adresinizi girin. Lütfen innotek&apos;in bu bilgileri sadece ürün kullanımı istatistiklerini toplamak ve size VirtualBox ilgili haberleri göndermek için kullandığını unutmayın. Özellikle innotek&apos;in sizin bilgilerinizi üçüncü şahıslara iletmeyeceğini bilmelisiniz. Sizin kişisel bilgilerinizi nasıl kullandığımız konusunda detaylı bilgi almak için VirtualBox Web sitesinde yer alan &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; adresindeki VirtualBox El Kitabının &lt;b&gt;Privacy Policy&lt;/b&gt; bölümüne bakın.&lt;/p&gt;</translation>
     </message>
@@ -5402,7 +5205,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>&amp;Lütfen bu bilgileri benimle iletişim kurmak için kullanmayın</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
         <translation type="obsolete">Eğer innotek firmasından yukarıya girdiğiniz e-posta adresinize e-posta almak istemiyorsanız bu kutucuğu işaretleyin.</translation>
     </message>
@@ -5412,7 +5214,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>VirtualBox Kayıt Formununa Hoşgeldiniz!</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Confirm</source>
         <translation type="obsolete">&amp;Doğrula</translation>
     </message>
@@ -5434,22 +5235,22 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="112"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Lütfen VirtualBox kullandığınızı öğrenebilmemiz ve sizi VirtualBox haberleri ve güncellemeleri gibi konularda bilgilendirebilmemiz için kayıt formunu doldurun.&lt;/p&gt;&lt;p&gt;Aşağıdaki alanlara Latin karakterlerini kullanarak tam adınızı ve e-posta adresinizi girin. Lütfen innotek&apos;in bu bilgileri sadece ürün kullanımı istatistiklerini toplamak ve size VirtualBox ilgili haberleri göndermek için kullandığını unutmayın. Özellikle innotek&apos;in sizin bilgilerinizi üçüncü şahıslara iletmeyeceğini bilmelisiniz. Sizin kişisel bilgilerinizi nasıl kullandığımız konusunda detaylı bilgi almak için VirtualBox Web sitesinde yer alan &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; adresindeki VirtualBox El Kitabının &lt;b&gt;Privacy Policy&lt;/b&gt; bölümüne bakın.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="174"/>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eğer Sun Microsystems firmasından yukarıya girdiğiniz e-posta adresinize e-posta almak istemiyorsanız bu kutucuğu işaretleyin.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="212"/>
         <source>C&amp;onfirm</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Doğrula</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="238"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>İptal</translation>
     </message>
 </context>
 <context>
@@ -5460,17 +5261,14 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>Paylaşılan Dizinler</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Cancel</source>
         <translation type="obsolete">İptal</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Help</source>
         <translation type="obsolete">Yardım</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;TAMAM</translation>
     </message>
@@ -5483,7 +5281,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>innotek VirtualBox</source>
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
@@ -5544,7 +5341,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>&amp;Yeni...</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>New</source>
         <translation type="obsolete">Yeni</translation>
     </message>
@@ -5564,7 +5360,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>A&amp;yarlar...</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Settings</source>
         <translation type="obsolete">Ayarlar</translation>
     </message>
@@ -5584,7 +5379,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>&amp;Sil</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Delete</source>
         <translation type="obsolete">Sil</translation>
     </message>
@@ -5599,7 +5393,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>Va&amp;zgeç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Discard</source>
         <translation type="obsolete">Vazgeç</translation>
     </message>
@@ -5614,7 +5407,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>&amp;Yenile</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Refresh</source>
         <translation type="obsolete">Yenile</translation>
     </message>
@@ -5634,7 +5426,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation type="obsolete">&amp;İçindekiler...</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -5704,7 +5495,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>&amp;Göster</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Show</source>
         <translation type="obsolete">Göster</translation>
     </message>
@@ -5719,7 +5509,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>Başla&amp;t</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Start</source>
         <translation type="obsolete">Başlat</translation>
     </message>
@@ -5729,7 +5518,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>Seçili sanal makineyi başlat</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;VirtualBox Uygulamasına Hoşgeldiniz!&lt;/h3&gt;&lt;p&gt;Bu pencerenin sol tarafı bilgisayarınızdaki sanal işletim sistemlerinin tümünün listesini gösterir. Liste şimdi boş çünkü henüz bir sanal makine oluşturmadınız.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Yeni bir sanal makine oluşturmak için pencerenin yukarısındaki ana araç çubuğunda bulunan &lt;b&gt;Yeni&lt;/b&gt; düğmesine tıklayın.&lt;/p&gt;&lt;p&gt;Ayrıca &lt;b&gt;F1&lt;/b&gt; tuşuna basarak yardım alabilirsiniz ya da en yeni bilgileri ve haberleri almak için &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; adresini ziyaret edebilirsiniz.&lt;/p&gt;</translation>
     </message>
@@ -5744,7 +5532,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>Gün&amp;lük Kayıtlarını Göster...</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Show Log...</source>
         <translation type="obsolete">Günlük Kayıtlarını Göster...</translation>
     </message>
@@ -5779,7 +5566,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>D&amp;evam Et</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Resume</source>
         <translation type="obsolete">Devam Et</translation>
     </message>
@@ -5799,7 +5585,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
         <translation>&amp;Duraklat</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Pause</source>
         <translation type="obsolete">Duraklat</translation>
     </message>
@@ -5811,23 +5596,23 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1455"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1239"/>
         <source>&amp;Virtual Media Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Sanal &amp;Ortam Yöneticisi...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1241"/>
         <source>Display the Virtual Media Manager dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Sanal Ortam Yöneticisi Penceresini Göster</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1301"/>
         <source>Log</source>
         <comment>icon text</comment>
-        <translation type="unfinished"></translation>
+        <translation>Günlük Kaydı</translation>
     </message>
 </context>
 <context>
@@ -5835,43 +5620,39 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="96"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Sol taraftaki listeden bir ayar kategorisi seçin ve daha fazla bilgi almak için fareyi ayar öğelerinin  üzerine getirin&lt;/i&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="132"/>
         <source>Invalid settings detected</source>
-        <translation type="unfinished">Geçersiz ayarlar bulundu</translation>
+        <translation>Geçersiz ayarlar bulundu</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="254"/>
         <source>Settings</source>
-        <translation type="unfinished">Ayarlar</translation>
+        <translation>Ayarlar</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="133"/>
         <source>Non-optimal settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>Eniyileştirilmemiş ayarlar bulundu</translation>
     </message>
 </context>
 <context>
     <name>VBoxSharedFoldersSettings</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>Name</source>
         <translation type="obsolete">İsim</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Path</source>
         <translation type="obsolete">Yol</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Shared &amp;Folders</source>
         <translation type="obsolete">Paylaşılan &amp;Klasörler</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
 Use
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
@@ -5885,93 +5666,75 @@ bir Linux makineden bu dizine erişebilmek için &lt;tt&gt;mount -t vboxsf payla
 Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Adds a new shared folder definition.</source>
         <translation type="obsolete">Yeni bir paylaşılan dizin tanımı oluşturur.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Removes the selected shared folder definition.</source>
         <translation type="obsolete">Seçilen paylaşılan dizin tanımını kaldırır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Machine Folders</source>
         <translation type="obsolete"> Makine Dizinleri</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Transient Folders</source>
         <translation type="obsolete"> Geçici Dizinler</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <translation type="obsolete">&lt;nobr&gt;İsim:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Yol:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Edits the selected shared folder definition.</source>
         <translation type="obsolete">Seçilen paylaşılan dizin tanımını düzenler.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>VBoxSharedFoldersSettings</source>
         <comment>don&apos;t translate</comment>
         <translation type="obsolete">VBoxSharedFoldersSettings</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Add a new shared folder (Ins)</source>
         <translation type="obsolete">Yeni bir paylaşılan dizin ekle (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Space</source>
         <translation type="obsolete">Space</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Edit the selected shared folder (Space)</source>
         <translation type="obsolete">Seçilen paylaşılan dizini düzenle (Space)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Remove the selected shared folder (Del)</source>
         <translation type="obsolete">Seçilen paylaşılan dizini kaldır (Del)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Access</source>
         <translation type="obsolete">Erişim</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
         <translation type="obsolete">Seçilen paylaşılan dizini düzenle (Ctrl+Space)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Full</source>
         <translation type="obsolete">Tam</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Read-only</source>
         <translation type="obsolete">Salt-okunur</translation>
     </message>
@@ -5984,7 +5747,6 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation>VBoxSnapshotDetailsDlg</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Snapshot Details </source>
         <translation type="obsolete"> Anlık Görüntü Ayrıntıları </translation>
     </message>
@@ -6004,22 +5766,18 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation>&amp;Makine Ayrıntıları</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Help</source>
         <translation type="obsolete">Yardım</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;TAMAM</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Cancel</source>
         <translation type="obsolete">İptal</translation>
     </message>
@@ -6031,7 +5789,7 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="39"/>
         <source>Snapshot Details</source>
-        <translation type="unfinished"></translation>
+        <translation> Anlık Görüntü Ayrıntıları</translation>
     </message>
 </context>
 <context>
@@ -6047,62 +5805,54 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation>VBoxSnapshotsWgt</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>snapshotActionGroup</source>
         <translation type="obsolete">snapshotActionGroup</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Discard Snapshot</source>
         <translation type="obsolete">Anlık Görüntüsüyü Sil</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="unfinished">A&amp;nlık Görüntüyü Sil</translation>
+        <translation>A&amp;nlık Görüntüyü Sil</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ctrl+Shift+D</source>
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>curStateActionGroup</source>
         <translation type="obsolete">curStateActionGroup</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Take Snapshot</source>
         <translation type="obsolete">Anlık Görüntü Kaydet</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="unfinished">Anlık Gö&amp;rüntü Kaydet</translation>
+        <translation>Anlık Gö&amp;rüntü Kaydet</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Discard Current Snapshot and State</source>
         <translation type="obsolete">Geçerli Anlık Görüntüyü ve Durumu Sil</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="unfinished">Geçerl&amp;i Anlık Görüntüyü ve Durumu Sil</translation>
+        <translation>Geçerl&amp;i Anlık Görüntüyü ve Durumu Sil</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Show Details</source>
         <translation type="obsolete">Ayrıntıları Göster</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="685"/>
         <source>S&amp;how Details</source>
-        <translation type="unfinished">&amp;Ayrıntıları Göster</translation>
+        <translation>&amp;Ayrıntıları Göster</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Space</source>
         <translation type="obsolete">Space</translation>
     </message>
@@ -6172,55 +5922,50 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="687"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="unfinished">Sanal makine için seçilen anlık görüntüyü sil</translation>
+        <translation>Sanal makine için seçilen anlık görüntüyü sil</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ctrl+Shift+S</source>
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="688"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="unfinished">Geçerli sanal makinenin bir anlık görüntüsünü al</translation>
+        <translation>Geçerli sanal makinenin bir anlık görüntüsünü al</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Revert to Current Snapshot</source>
         <translation type="obsolete">Geçeli Anlık Görüntüye Döndür</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="unfinished">Geçe&amp;li Anlık Görüntüye Döndür</translation>
+        <translation>Geçe&amp;li Anlık Görüntüye Döndür</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ctrl+Shift+R</source>
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="689"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="unfinished">Sanal makinenin geçerli durumunu kaydedilen geçerli anlık görüntüdeki durumdan geri yükle</translation>
+        <translation>Sanal makinenin geçerli durumunu kaydedilen geçerli anlık görüntüdeki durumdan geri yükle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ctrl+Shift+B</source>
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="690"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="unfinished">Geçerli anlık görüntüyü sil ve makineyi anlık görüntü alınmdan önceki duruma döndür</translation>
+        <translation>Geçerli anlık görüntüyü sil ve makineyi anlık görüntü alınmdan önceki duruma döndür</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="691"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="unfinished">Seçilen anlık görüntünün ayrıntılarını göster</translation>
+        <translation>Seçilen anlık görüntünün ayrıntılarını göster</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
     </message>
@@ -6238,7 +5983,6 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation>Etkinleştir</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>%1 %2</source>
         <translation type="obsolete">%1 %2</translation>
     </message>
@@ -6261,22 +6005,18 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation>Anlık Görün&amp;tü Açıklaması</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Help</source>
         <translation type="obsolete">Yardım</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;TAMAM</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Cancel</source>
         <translation type="obsolete">İptal</translation>
     </message>
@@ -6286,113 +6026,97 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1679"/>
         <source>Show Selector Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçici Penceresini Göster</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1681"/>
         <source>Show the selector window assigned to this menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu menüye atanan seçici penceresini göster</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1683"/>
         <source>Hide Tray Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem Çekmecesi Simgesini Gizle</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1685"/>
         <source>Remove this icon from the system tray</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu simgeyi sistem çekmecesinden kaldır</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1873"/>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Diğer Makineler...</translation>
     </message>
 </context>
 <context>
     <name>VBoxUSBFilterSettings</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
         <translation type="obsolete">VBoxUSBFilterSettings</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Name</source>
         <translation type="obsolete">&amp;İsim</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the filter name.</source>
         <translation type="obsolete">Filtre adını gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Manufacturer</source>
         <translation type="obsolete">Ü&amp;retici</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Pro&amp;duct</source>
         <translation type="obsolete">Ürü&amp;n</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Serial No.</source>
         <translation type="obsolete">&amp;Seri numarası.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>R&amp;emote</source>
         <translation type="obsolete">U&amp;zak</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Action</source>
         <translation type="obsolete">&amp;Eylem</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Vendor ID</source>
         <translation type="obsolete">&amp;Sağlayıcı Kimliği</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Product ID</source>
         <translation type="obsolete">Ü&amp;rün Kimliği</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Revision</source>
         <translation type="obsolete">&amp;Sürüm</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Por&amp;t</source>
         <translation type="obsolete">Por&amp;t</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Any</source>
         <comment>remote</comment>
         <translation type="obsolete">Herhangi biri</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Yes</source>
         <comment>remote</comment>
         <translation type="obsolete">Evet</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>No</source>
         <comment>remote</comment>
         <translation type="obsolete">Hayır</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
@@ -6401,7 +6125,6 @@ olarak tanımlar. Boş bir ifade herhangi bir değerle
 eşleşebilir.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
@@ -6410,7 +6133,6 @@ olarak tanımlar. Boş bir ifade herhangi bir değerle
 eşleşebilir.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
@@ -6419,7 +6141,6 @@ olarak tanımlar. Boş bir ifade herhangi bir değerle
 eşleşebilir.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
@@ -6448,57 +6169,57 @@ eşleşebilir.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="80"/>
         <source>1 day</source>
-        <translation type="unfinished"></translation>
+        <translation>1 gün</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="81"/>
         <source>2 days</source>
-        <translation type="unfinished"></translation>
+        <translation>2 gün</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="82"/>
         <source>3 days</source>
-        <translation type="unfinished"></translation>
+        <translation>3 gün</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="83"/>
         <source>4 days</source>
-        <translation type="unfinished"></translation>
+        <translation>4 gün</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="84"/>
         <source>5 days</source>
-        <translation type="unfinished"></translation>
+        <translation>5 gün</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="85"/>
         <source>6 days</source>
-        <translation type="unfinished"></translation>
+        <translation>6 gün</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="88"/>
         <source>1 week</source>
-        <translation type="unfinished"></translation>
+        <translation>1 hafta</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="89"/>
         <source>2 weeks</source>
-        <translation type="unfinished"></translation>
+        <translation>2 hafta</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="90"/>
         <source>3 weeks</source>
-        <translation type="unfinished"></translation>
+        <translation>3 hafta</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="93"/>
         <source>1 month</source>
-        <translation type="unfinished"></translation>
+        <translation>1 ay</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="139"/>
         <source>Never</source>
-        <translation type="unfinished"></translation>
+        <translation>Asla</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="324"/>
@@ -6508,32 +6229,32 @@ eşleşebilir.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="267"/>
         <source>Chec&amp;k</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrol &amp;Et</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="271"/>
         <source>&amp;Close</source>
-        <translation type="unfinished">&amp;Kapat</translation>
+        <translation>&amp;Kapat</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="264"/>
         <source>VirtualBox Update Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox Güncelleme Sihirbazı</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="266"/>
         <source>Check for Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncellemeleri Kontrol Et</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="268"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>İptal</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="270"/>
         <source>Summary</source>
-        <translation type="unfinished">Özet</translation>
+        <translation>Özet</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="286"/>
@@ -6548,7 +6269,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="292"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaten son sürüm VirtualBox kullanıyorsunuz. Lütfen daha sonra yeni sürüm kontrolü yapın.</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="280"/>
@@ -6645,7 +6366,6 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation>Kal&amp;ıp Dosyası</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>VDM</source>
         <translation type="obsolete">VDM</translation>
     </message>
@@ -6660,7 +6380,6 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation>&lt;p&gt;Şu ortamdan başlatmayı (boot) seçtiniz:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Eğer yukarıdakiler doğru ise,&lt;b&gt;Bitir&lt;/b&gt; düğmesine basın. Düğmeye bastığınızda, seçilen ortam sanal makineye bağlanacak ve makine çalıştırılmaya başlanacak.&lt;/p&gt;&lt;p&gt;Sanal makineyi kapattığınızda belirtilen ortamın otomatik olarak ayrılacağını ve başlangıç aygıtının yeniden sabit disk olarak ayarlanacağını unutmayın.&lt;/p&gt;&lt;p&gt;Kur uygulamasına bağlı olarak değişmekle birlikte, kur işleminin yeniden başlamasını engellemek için kur bittikten sonra ortamı el ile ayırmanız (eject) gerekebilir. Bu işlemi &lt;b&gt;Aygıtlar&lt;/b&gt; menüsündeki &lt;b&gt;Ayır...&lt;/b&gt; ile yapabilirsiniz.&lt;/p&gt;</translation>
     </message>
@@ -6685,7 +6404,6 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation>Sunucu Sürücüsü  %1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tip:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Kaynak:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
@@ -6717,12 +6435,12 @@ eşleşebilir.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; &amp;Geri</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="549"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;İleri &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="723"/>
@@ -6737,35 +6455,33 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="812"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bitir</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="107"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tip</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="108"/>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kaynak</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>İptal</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMInformationDlg</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>Session Information Dialog</source>
         <translation type="obsolete">Oturum Bilgileri Penceresi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Close</source>
         <translation type="obsolete">&amp;Kapat</translation>
     </message>
@@ -6845,7 +6561,6 @@ p, li { white-space: pre-wrap; }
         <translation>Ağ Bağdaştırıcısı İstatistikleri</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Not attached</source>
         <translation type="obsolete">Eklenmedi</translation>
     </message>
@@ -6896,41 +6611,38 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMInformationDlg.cpp" line="431"/>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">Etkin</translation>
+        <translation>Etkin</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="431"/>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">Pasifleştirilmiş</translation>
+        <translation>Pasifleştirilmiş</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="455"/>
         <source>Nested Paging</source>
-        <translation type="unfinished"></translation>
+        <translation>Yerleşik Sayfalama</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="30"/>
         <source>VBoxVMInformationDlg</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxSanalMakineBilgileriPenceresi</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMListBox</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
         <translation type="obsolete">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Oturum %4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 tarihinden bu yana erişilemez&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Inaccessible</source>
         <translation type="obsolete">Erişilemez</translation>
     </message>
@@ -6940,59 +6652,59 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="153"/>
         <source>Inaccessible</source>
-        <translation type="unfinished">Erişilemez</translation>
+        <translation>Erişilemez</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="173"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Oturum %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Oturum %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="184"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 tarihinden bu yana erişilemez&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 tarihinden bu yana erişilemez&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1748"/>
         <source>S&amp;how</source>
-        <translation type="unfinished">&amp;Göster</translation>
+        <translation>&amp;Göster</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1750"/>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation type="unfinished">Seçili sanal makine penceresine geçiş yap</translation>
+        <translation>Seçili sanal makine penceresine geçiş yap</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1810"/>
         <source>S&amp;tart</source>
-        <translation type="unfinished">Başla&amp;t</translation>
+        <translation>Başla&amp;t</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1812"/>
         <source>Start the selected virtual machine</source>
-        <translation type="unfinished">Seçili sanal makineyi başlat</translation>
+        <translation>Seçili sanal makineyi başlat</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1767"/>
         <source>R&amp;esume</source>
-        <translation type="unfinished">D&amp;evam Et</translation>
+        <translation>D&amp;evam Et</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1769"/>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished">Sanal makine uygulamasını devam ettir</translation>
+        <translation>Sanal makine uygulamasını devam ettir</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1776"/>
         <source>&amp;Pause</source>
-        <translation type="unfinished">&amp;Duraklat</translation>
+        <translation>&amp;Duraklat</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1778"/>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Sanal makine uygulamasını askıya al</translation>
     </message>
 </context>
 <context>
@@ -7028,12 +6740,10 @@ p, li { white-space: pre-wrap; }
         <translation>VirtualBox Günlük Kayıtlarını Farklı Kaydet</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Help</source>
         <translation type="obsolete">Yardım</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -7051,137 +6761,110 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMNetworkSettings</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>VBoxVMNetworkSettings</source>
         <translation type="obsolete">VBoxVMNetworkSettings</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Enable Network Adapter</source>
         <translation type="obsolete">Ağ Bağdaştırıcısını &amp;Etkinleştir</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Attached to</source>
         <translation type="obsolete">Şur&amp;aya eklendi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;MAC Address</source>
         <translation type="obsolete">&amp;MAC Adresi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Generate</source>
         <translation type="obsolete">&amp;Oluştur</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Generates a new random MAC address.</source>
         <translation type="obsolete">Yeni rastgele bir MAC adresi oluşturur.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ca&amp;ble Connected</source>
         <translation type="obsolete">Ka&amp;blo Bağlı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Host Interface Settings</source>
         <translation type="obsolete">Sunucu Arayüzü Ayarları</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Interface Name</source>
         <translation type="obsolete">Aray&amp;üz Adı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;File Descriptor</source>
         <translation type="obsolete">&amp;Dosya Tanımlayıcı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Setup Application</source>
         <translation type="obsolete">&amp;Ayarlama Uygulaması</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Select</source>
         <translation type="obsolete">Seç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Terminate Application</source>
         <translation type="obsolete">Uygulamayı Kapa&amp;t</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Select TAP setup application</source>
         <translation type="obsolete">TAP ayarlama uygulamasını seç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Select TAP terminate application</source>
         <translation type="obsolete">TAP sonlandırma uygulamasını seç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation type="obsolete">Seçilirse bu sanal ağ bağdaştırıcısını sanal makineye bağlar.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Sanal bağdaştırıcının Sunucu İşletim Sisiteminin gerçek ağına nasıl bağlanacağını denetler.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="obsolete">Sanal ağ kablosunun başlangıçta makineye takılı olup olmadığını gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the name of the host interface selected for this adapter.</source>
         <translation type="obsolete">Bu bağdaştırıcı için seçilen sunucu arayüzünün adını gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the TAP interface name.</source>
         <translation type="obsolete">TAP arayüzünün adını gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the command executed to set up the TAP interface.</source>
         <translation type="obsolete">TAP arayüzünü ayarlamak için çalıştırılacak komutu gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Selects the setup application.</source>
         <translation type="obsolete">Ayarlama uygulamasını seçer.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">TAP arayüzünü sonlandırmak için çalıştırılacak komutu gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Selects the terminate application.</source>
         <translation type="obsolete">Sonlandırma uygulamasını seçer.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Bu bağdaştırıcının MAC adresini gösterir. Bu ifade {0-9,A-F} kümesinden seçilen 12 karakterden oluşur. İkinci karakterin her zaman bir rakam olması gerektiğini unutmayın.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Network Name</source>
         <translation type="obsolete">&amp; Ağ Adı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Adapter &amp;Type</source>
         <translation type="obsolete">Bağdaştırıcı &amp;Tipi</translation>
     </message>
@@ -7189,37 +6872,30 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMParallelPortSettings</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>VBoxVMParallelPortSettings</source>
         <translation type="obsolete">VBoxVMParalelPortAyarları</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Enable Parallel Port</source>
         <translation type="obsolete">&amp;Paralel Portu Etkinleştir</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">Port &amp;Numarası</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/O Po&amp;rtu</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">Port &amp;Yolu</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the host parallel device name.</source>
         <translation type="obsolete">Sunucunun paralel aygıt adını gösterir.</translation>
     </message>
@@ -7227,77 +6903,62 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSerialPortSettings</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>VBoxVMSerialPortSettings</source>
         <translation type="obsolete">VirtualBox Sanal Makine Seri Port Ayarları</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Enable Serial Port</source>
         <translation type="obsolete">S&amp;eri Portu Etkinleştir</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
         <translation type="obsolete">Seçildiğinde sanal makinenin verilen seri portunu etkinleştirir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">Port &amp;Numarası</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">Seri port numarasını gösterir. Standart seri portlardan birini seçebilirsiniz. Ya da &lt;b&gt;Kullanıcı-tanımlı&lt;/b&gt; ögesini seçerek port parametrelerini el ile belirleyebilirsiniz.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Seri portun IRQ numaralarını gösterir.  Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;255&lt;/tt&gt; arasındaki tüm sayılardır. &lt;tt&gt;15&lt;/tt&gt;&apos;ten daha büyük sayılar sadece sanal makine için &lt;b&gt;IO APIC&lt;/b&gt; etkinleştirildiyse kullanılabilir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/O Po&amp;rtu</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Seri portun temel I/O adreslerini gösterir. Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;0xFFFF&lt;/tt&gt; arasındaki tüm sayılardır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Port &amp;Mode</source>
         <translation type="obsolete">Port &amp;Kipi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
         <translation type="obsolete">Bu seri portun çalışma kipini denetler. Eğer &lt;b&gt;Çevrimdışı&lt;/b&gt; seçmişseniz misafir işletim sistemi seri portu bulur ama kullanamaz.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Create Pipe</source>
         <translation type="obsolete">&amp;Boru Oluştur</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
         <translation type="obsolete">Eğer seçilirse makine başlatılırken &lt;b&gt;Port Yolu&lt;/b&gt; alanı içerisinde belirlenen boru oluşturulur. Aksi taktirde sanal makine var olan boruyu kullanır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">Port &amp;Yolu</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Eğer seri port &lt;b&gt;Sunucu Borusu&lt;/b&gt; kipinde çalışıyorsa seri portun sunucu üzerindeki borusunun yolunu gösterir ya da &lt;b&gt;Sunucu Aygıtı&lt;/b&gt; kipinde çalışıyorsa sunucunun seri portunun adını gösterir.</translation>
     </message>
@@ -7312,22 +6973,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="36"/>
         <source>Enable &amp;Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sesi Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="77"/>
         <source>Host Audio &amp;Driver:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sunucu &amp;Ses Sürücüsü:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="90"/>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ses çıktı sürücüsünü denetler.&lt;b&gt;Belirsiz Ses Sürücüsü&lt;/b&gt; misafirin bir ses kartı görmesini sağlar ancak bu karta yapılan tüm erişimler yoksayılır.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="97"/>
         <source>Audio &amp;Controller:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ses Denetleyicisi:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="110"/>
@@ -7340,12 +7001,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="175"/>
         <source>Host CD/DVD drive is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Sunucu CD/DVD sürücüsü seçilmemiş</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="177"/>
         <source>CD/DVD image file is not selected</source>
-        <translation type="unfinished">CD/DVD kalıp dosyası seçilmemiş</translation>
+        <translation>CD/DVD kalıp dosyası seçilmemiş</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="33"/>
@@ -7355,22 +7016,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="36"/>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation type="unfinished">&amp;CD/DVD-ROM Sürücüsünü Bağla</translation>
+        <translation>&amp;CD/DVD-ROM Sürücüsünü Bağla</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="83"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation type="unfinished">Belirtilen Sunucu CD/DVD sürücüsünü sanal CD/DVD sürücüsüne bağlar.</translation>
+        <translation>Belirtilen Sunucu CD/DVD sürücüsünü sanal CD/DVD sürücüsüne bağlar.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="86"/>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation type="unfinished">Sunucu C&amp;D/DVD Sürücüsü</translation>
+        <translation>Sunucu C&amp;D/DVD Sürücüsü</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="112"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished">Sunucudaki sanal makineye bağlanabilecek olan CD/DVD sürücülerini listeler.</translation>
+        <translation>Sunucudaki sanal makineye bağlanabilecek olan CD/DVD sürücülerini listeler.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="125"/>
@@ -7380,22 +7041,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="128"/>
         <source>Enable &amp;Passthrough</source>
-        <translation type="unfinished"></translation>
+        <translation>Düz Geçişi &amp;Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="135"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation type="unfinished">Belirtilen CD/DVD kalıbını sanal CD/DVD sürücüsüne bağlar.</translation>
+        <translation>Belirtilen CD/DVD kalıbını sanal CD/DVD sürücüsüne bağlar.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="138"/>
         <source>&amp;ISO Image File</source>
-        <translation type="unfinished">&amp;ISO Kalıp Dosyası</translation>
+        <translation>&amp;ISO Kalıp Dosyası</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="148"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation type="unfinished">Sanal CD/DVD sürücüsüne bağlanacak kalıp dosyasını gösterir ve hızlıca başka bir kalıp seçmenize izin verir.</translation>
+        <translation>Sanal CD/DVD sürücüsüne bağlanacak kalıp dosyasını gösterir ve hızlıca başka bir kalıp seçmenize izin verir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
@@ -7405,575 +7066,462 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bir DC/DVD kalıbı seçerek bağlamak için Sanal Disk Yöneticisini çalıştırır.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
-        <location filename="" line="7012467"/>
         <source>Category</source>
         <translation type="obsolete">Kategori</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>[id]</source>
         <translation type="obsolete">[kimlik]</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>[link]</source>
         <translation type="obsolete">[bağlantı]</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>[name]</source>
         <translation type="obsolete">[isim]</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>VBoxVMSettingsDlg</source>
         <translation type="obsolete">VBoxVMSettingsDlg</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Daha fazla bilgi almak için, sol taraftaki listeden ayarlar kategorisini seçin ve fareyi herhangi bir ayar ögesinin üzerinde tutun&lt;i&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> General </source>
         <translation type="obsolete"> Genel </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>0</source>
         <translation type="obsolete">0</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#general</source>
         <translation type="obsolete">#genel</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Hard Disks </source>
         <translation type="obsolete"> Sabit Diskler </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>1</source>
         <translation type="obsolete">1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#hdds</source>
         <translation type="obsolete">#sabitdiskler</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Floppy </source>
         <translation type="obsolete"> Disket</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>2</source>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#floppy</source>
         <translation type="obsolete">#disket</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> CD/DVD-ROM </source>
         <translation type="obsolete"> CD/DVD-ROM </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>3</source>
         <translation type="obsolete">3</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#dvd</source>
         <translation type="obsolete">#dvd</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Audio </source>
         <translation type="obsolete"> Ses </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>4</source>
         <translation type="obsolete">4</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#audio</source>
         <translation type="obsolete">#ses</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Network </source>
         <translation type="obsolete"> Ağ </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>5</source>
         <translation type="obsolete">5</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#network</source>
         <translation type="obsolete">#ağ</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> USB </source>
         <translation type="obsolete"> USB </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>6</source>
         <translation type="obsolete">6</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#usb</source>
         <translation type="obsolete">#usb</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Remote Display </source>
         <translation type="obsolete"> Uzak Masaüstü </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>7</source>
         <translation type="obsolete">7</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#vrdp</source>
         <translation type="obsolete">#vrdp</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Shared Folders </source>
         <translation type="obsolete"> Paylaşılan Dizinler </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>8</source>
         <translation type="obsolete">8</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#sfolders</source>
         <translation type="obsolete">#paylaşılandizinler</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Identification</source>
         <translation type="obsolete">K&amp;imlik</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Name</source>
         <translation type="obsolete">&amp;İsim</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the name of the virtual machine.</source>
         <translation type="obsolete">Sanal makinenin adını gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>OS &amp;Type</source>
         <translation type="obsolete">İşletim Sistemi &amp;Tipi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Base &amp;Memory Size</source>
         <translation type="obsolete">Temel Bellek &amp;Boyutu</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation type="obsolete">Sanal makineye sağlanan bellek miktarını kontrol eder. Eğer çok fazla bellek atarsanız makine başlamayabilir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>MB</source>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Video Memory Size</source>
         <translation type="obsolete">&amp;Ekran Kartı Bellek Boyutu</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation type="obsolete">Sanal makineye sağlanan video belleği miktarını kontrol eder.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Basic</source>
         <translation type="obsolete">&amp;Temel</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Select</source>
         <translation type="obsolete">Seç</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Selects the snapshot folder path.</source>
         <translation type="obsolete">Ekran görüntüsü dizininin yolunu seçer.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Reset</source>
         <translation type="obsolete">Sıfırla</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Extended Features</source>
         <translation type="obsolete">Gelişmiş Özellikler</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Enable A&amp;CPI</source>
         <translation type="obsolete">A&amp;CPI Etkin</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Enable IO A&amp;PIC</source>
         <translation type="obsolete">IO A&amp;CPI Etkin</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Boo&amp;t Order</source>
         <translation type="obsolete">Başlangıç Sı&amp;ralaması</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Advanced</source>
         <translation type="obsolete">&amp;Gelişmiş</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Description</source>
         <translation type="obsolete">&amp;Açıklama</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Primary Master</source>
         <translation type="obsolete">&amp;Primary Master</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;not selected&gt;</source>
         <translation type="obsolete">&lt;seçilmedi&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>P&amp;rimary Slave</source>
         <translation type="obsolete">P&amp;rimary Slave</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Secondary (IDE 1) Slave</source>
         <translation type="obsolete">&amp;Secondary (IDE 1) Slave</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Mount Floppy Drive</source>
         <translation type="obsolete">&amp;Disket Sürücüyü Bağla</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Host Floppy &amp;Drive</source>
         <translation type="obsolete">Sunucu &amp;Disket Sürücüsü</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
         <translation type="obsolete">Belirtilen Sunucu Disket sürücüsünü sanal Disket sürücüsüne bağlar.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Image File</source>
         <translation type="obsolete">Kal&amp;ıp Dosyası</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
         <translation type="obsolete">Belirtilen Disket kalıbını sanal Disket sürücüsüne bağlar.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Mount CD/DVD Drive</source>
         <translation type="obsolete">&amp;CD/DVD-ROM Sürücüsünü Bağla</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Host CD/DVD &amp;Drive</source>
         <translation type="obsolete">Sunucu C&amp;D/DVD Sürücüsü</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
         <translation type="obsolete">Belirtilen Sunucu CD/DVD sürücüsünü sanal CD/DVD sürücüsüne bağlar.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;ISO Image File</source>
         <translation type="obsolete">&amp;ISO Kalıp Dosyası</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
         <translation type="obsolete">Belirtilen CD/DVD kalıbını sanal CD/DVD sürücüsüne bağlar.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Enable Audio</source>
         <translation type="obsolete">&amp;Sesi Etkinleştir</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Host Audio &amp;Driver</source>
         <translation type="obsolete">Sunucu &amp;Ses Sürücüsü</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Enable &amp;USB Controller</source>
         <translation type="obsolete">&amp;USB Denetleyicisini Etkinleştir</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>USB Device &amp;Filters</source>
         <translation type="obsolete">USB Aygıtı &amp;Filtreleri</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Add Empty (Ins)</source>
         <translation type="obsolete">Boş Ekle (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Add From (Alt+Ins)</source>
         <translation type="obsolete">Dışarıdan Ekle (Alt+Ins)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Remove (Del)</source>
         <translation type="obsolete">Kaldır (Del)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Removes the selected USB filter.</source>
         <translation type="obsolete">Seçili USB filtresini kaldırır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+Up</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Move Up (Ctrl+Up)</source>
         <translation type="obsolete">Yurarı Taşı (Ctrl-Üst yön tuşu)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Moves the selected USB filter up.</source>
         <translation type="obsolete">Seçili USB filtresini yukarı taşır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+Down</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Move Down (Ctrl+Down)</source>
         <translation type="obsolete">Aşağı Taşı (Ctrl-Alt yön tuşu)</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Moves the selected USB filter down.</source>
         <translation type="obsolete">Seçili USB filtresini aşağı taşır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Enable VRDP Server</source>
         <translation type="obsolete">VRDP Sunucusunu &amp;Etkinleştir</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Defines the VRDP authentication method.</source>
         <translation type="obsolete">VRDP Kimlik Doğrulama yöntemini tanımlar.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation type="obsolete">Misafir kimlik doğrulaması için zaman aşımı süresini milisaniye cinsinden belirtir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Help</source>
         <translation type="obsolete">Yardım</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">Pencere yardımını gösterir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">Geçersiz ayarlar bulundu</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;TAMAM</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">Değişiklikleri kabul et (kaydet) ve pencereyi kapat.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Cancel</source>
         <translation type="obsolete">İptal</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">Değişikliklerden vazgeç ve pencereyi kapat.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
         <translation type="obsolete">Seçildiğinde belirtilen sanal sabit diski Birincil (Primary) IDE denetleyicisinin Ana (Master) yivine (slot) ekler.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
         <translation type="obsolete">Seçildiğinde belirtilen sanal sabit diski Birincil (Primary) IDE denetleyicisinin İkincil (Slave) yivine (slot) ekler.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
         <translation type="obsolete">Seçildiğinde belirtilen sanal sabit diski İkincil (Secondary) IDE denetleyicisinin İkincil (Slave) yivine (slot) ekler.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
         <translation type="obsolete">Bu IDE yivine elemek için sanal sabit diskleri gösterir ve hızlıca başka bir sabit seçmenize izin verir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Sanal CD/DVD sürücüsüne bağlanacak kalıp dosyasını gösterir ve hızlıca başka bir kalıp seçmenize izin verir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
         <translation type="obsolete">Seçildiğinde belirtilen ortamı sanal makinenin Disket sürücüsüne bağlar.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Sanal Disket sürücüsüne bağlanacak kalıp dosyasını gösterir ve hızlıca başka bir kalıp seçmenize izin verir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
         <translation type="obsolete">Seçildiğinde sanal makine bir Uzak Masaüstü Protokolü (RDP) sunucusu gibi davranır ve uzak istemcilerin standart bir RDP istemcisi kullanarak bağlanmasına ve sanal makineyi kullanmasına (sanal makine çalışırken) izin verir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
         <translation type="obsolete">&lt;eklenmedi&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> - Settings</source>
         <translation type="obsolete"> -Ayarlar</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">Yeni Filtre %1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Shared Clipboard</source>
         <translation type="obsolete">&amp;Paylaşılan Pano</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>S&amp;napshot Folder</source>
         <translation type="obsolete">A&amp;nlık Görüntü Dizini</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Sanak makine içerisine kurmak istediğiniz şiletim sistemi tipini gösterir (misafir işletim sistemi olarak da adlandırılır).</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
@@ -7982,7 +7530,6 @@ ve Güç Yönetimi Arayüzünü (ACPI) destekleyecektir. &lt;b&gt;Not:&lt;/b&gt;
 işletim sistemi yükledikten sonra bunu pasifleştirmeyin!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
@@ -7991,239 +7538,192 @@ destekleyecektir ki bu sanal makine başarımını biraz düşürür. &lt;b&gt;N
 işletim sistemi yükledikten sonra bunu pasifleştirmeyin!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Misafir işletim sistemi ile sunucu işletim sistemi arasındaki pano paylaşımını tanımlar. Bu özelliğin Misafir Eklentileri gerektirdiğini unutmatın.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Bu sanal makinenin anlık görüntülerinin nereye kaydedileceğini tanımlar. Anlık görüntülerin çok yer kaplayabileceğini unutmayın.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Anlık görüntü dizinini öntanımlı ayarlarına döndürür. Güncel öntanımlı yol bu ayarlar kabul edildikten sonra bu pencere yeniden açılarak gösterilecektir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
         <translation type="obsolete">Sanal makinenin tanımını gösterir. Tanımlama alanı misafir işletim sisteminin yapılandırma detaylarını yorum olarak eklemek için kullanışlıdır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
         <translation type="obsolete">Var olan bir sanal diski seçmek ya da yeni bir sanal disk oluşturmak için Sanal Disk Yöneticisini çalıştırır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
         <translation type="obsolete">Sanal makineye bağlanabilecek olan, sunucu üzerindeki Disket sürücüleri listeler.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
         <translation type="obsolete">Bir Disket kalıbı seçerek bağlamak için Sanal Disk Yöneticisini çalıştırır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
         <translation type="obsolete">Sunucudaki sanal makineye bağlanabilecek olan CD/DVD sürücülerini listeler.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
         <translation type="obsolete">Bir DC/DVD kalıbı seçerek bağlamak için Sanal Disk Yöneticisini çalıştırır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Ses çıktı sürücüsünü denetler.&lt;b&gt;Belirsiz Ses Sürücüsü&lt;/b&gt; misafirin bir ses kartı görmesini sağlar ancak bu karta yapılan tüm erişimler yoksayılır.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
         <translation type="obsolete">Seçildiğinde bu makine için sanal USB denetleyicisini etkinleştirir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
         <translation type="obsolete">Bu makinenin tüm USB filtrelerini listeler. Soldaki işaretleme kutusu özel bir filtrenin etkin olup olmadığını belirler.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
         <translation type="obsolete">Başlangıçta boş olarak ayarlanan bütün alanlar ile beraber, yeni bir USB filtresi ekler. Böyle bir filtrenin, tüm takılan USB araçlarını eşleyeceğini unutmayın.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">Sunucu makineye bütün alanları ile birlikte seçili USB aracının değerlerine göre ayarlanmış yeni bir USB filtresi ekle.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation type="obsolete">Bağdaştırıcı %1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Host &amp;Interfaces</source>
         <translation type="obsolete">Sunucu Arayüzler&amp;i</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Lists all available host interfaces.</source>
         <translation type="obsolete">Tüm sunucu arayüzlerini listeler.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Adds a new host interface.</source>
         <translation type="obsolete">Yeni sunucu arayüzü ekler.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Removes the selected host interface.</source>
         <translation type="obsolete">Seçilen sunucu arayüzünü kaldırır.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;No suitable interfaces&gt;</source>
         <translation type="obsolete">&lt;Uygun arayüz yok&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Add</source>
         <translation type="obsolete">Ekle</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Remove</source>
         <translation type="obsolete">Kaldır</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>VirtualBox Host Interface %1</source>
         <translation type="obsolete">VirtualBox Sunucu Arayüzü %1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seçilen ağ arayüzünü kaldırmak istiyor musunuz &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Not:&lt;/b&gt; Bu arayüz bir ya da birden fazla ağ bağdaştırıcısı tarafından ya da bir ya da birden fazla sanal makine tarafından kullanılıyor olabilir. Bu arayüz kaldırıldıktan sonra bu bağdaştırıcılar siz ayarlarını yeni bir arayüz adı ya da ekleme tipi seçerek düzeltene kadar çalışmayacaktır. &lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>9</source>
         <translation type="obsolete">9</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Serial Ports </source>
         <translation type="obsolete"> Seri Portlar </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#serialPorts</source>
         <translation type="obsolete">#seriPortlar</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">&amp;VT-x/AMD-V Etkin</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
         <translation type="obsolete">Seçildiğinde sanal makine sunucu makine üzerindeki işlemcinin Intel için VT-x ve AMD için AMD-V gibi donanım sanallaştırma eklentilerini kullanmayı deneyecektir. Grileştirilmiş seçme kutusu bu ayarın genel ayarlar tarafından belirlendiği anlamına gelir.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Other &amp;Settings</source>
         <translation type="obsolete">Diğer A&amp;yarlar</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Remember Media Mounted at Runtime</source>
         <translation type="obsolete">Çalışma Sı&amp;rasında Bağlanan Ortamı Hatırla</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>O&amp;ther</source>
         <translation type="obsolete">D&amp;iğer</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Enable Passthrough</source>
         <translation type="obsolete">Düz Geçişi &amp;Etkinleştir</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Server Port </source>
         <translation type="obsolete">&amp;Sunucu Portu </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Authentication &amp;Method </source>
         <translation type="obsolete">Kimlik Doğrulama &amp;Yöntemi </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Authentication &amp;Timeout </source>
         <translation type="obsolete">Kimlik Doğrulama &amp;Zaman Aşımı </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;VRDP Sunucusunun port numarasını gösterir. Portu öntanımlı değerine döndürmek için &lt;tt&gt;0&lt;/tt&gt; (sıfır) belirtebilirsiniz.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Primary Master hard disk is not selected</source>
         <translation type="obsolete">Primary Master sabit disk seçilmedi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Primary Slave hard disk is not selected</source>
         <translation type="obsolete">Primary Slave sabit disk seçilmedi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Primary Slave hard disk is already attached to a different slot</source>
         <translation type="obsolete">Primary Slave sabit disk zaten başka bir yive eklendi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Secondary Slave hard disk is not selected</source>
         <translation type="obsolete">Secondary Slave sabit disk seçilmedi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Secondary Slave hard disk is already attached to a different slot</source>
         <translation type="obsolete">Secondary Slave sabit disk zaten başka bir yive eklendi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>CD/DVD image file is not selected</source>
         <translation type="obsolete">CD/DVD kalıp dosyası seçilmemiş</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Floppy image file is not selected</source>
         <translation type="obsolete">Disket kalıp dosyası seçilmemiş</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Incorrect host network interface is selected</source>
         <translation type="obsolete">Yanlış sunucu ağ arayüzü seçildi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Duplicate port number is selected </source>
         <translation type="obsolete">İkinci kez aynı port numarası seçildi </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Duplicate port path is entered </source>
         <translation type="obsolete">İkinci kez aynı port yolu girildi </translation>
     </message>
@@ -8233,108 +7733,87 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">%2 sayfası üzerinde &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
         <translation type="obsolete">Port %1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>00</source>
         <translation type="obsolete">00</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>01</source>
         <translation type="obsolete">01</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>02</source>
         <translation type="obsolete">02</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>03</source>
         <translation type="obsolete">03</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>04</source>
         <translation type="obsolete">04</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>05</source>
         <translation type="obsolete">05</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>08</source>
         <translation type="obsolete">08</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>10</source>
         <translation type="obsolete">10</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>09</source>
         <translation type="obsolete">09</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>06</source>
         <translation type="obsolete">06</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source> Parallel Ports </source>
         <translation type="obsolete">Paralel Portlar </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>07</source>
         <translation type="obsolete">07</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>#parallelPorts</source>
         <translation type="obsolete">#paralelPortlar </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Remove Filter</source>
         <translation type="obsolete">Filtreyi Kaldır</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">Filtreyi &amp;Kaldır</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">Filtreyi Yukarı Taşı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">Filtreyi &amp;Yukarı Taşı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">Filtreyi Aşağı Taşı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">Filtreyi &amp;Aşağı Taşı</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
@@ -8343,100 +7822,96 @@ makes the guest see an audio card, however every access to it will be ignored.&l
             </translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Internal network name is not set</source>
         <translation type="obsolete">İç ağ adı belirtilmedi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Port path is not specified </source>
         <translation type="obsolete">Port yolu belirtilmedi</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
         <translation type="obsolete">Port %1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
         <source>USBActionGroup</source>
         <translation type="obsolete">USBActionGroup</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="412"/>
         <source>General</source>
-        <translation type="unfinished">Genel</translation>
+        <translation>Genel</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="415"/>
         <source>Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Depolama</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="418"/>
         <source>Hard Disks</source>
-        <translation type="unfinished">Sabit Diskler</translation>
+        <translation>Sabit Diskler</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="421"/>
         <source>CD/DVD-ROM</source>
-        <translation type="unfinished">CD/DVD-ROM</translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="424"/>
         <source>Floppy</source>
-        <translation type="unfinished">Disket</translation>
+        <translation>Disket</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="427"/>
         <source>Audio</source>
-        <translation type="unfinished">Ses</translation>
+        <translation>Ses</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="430"/>
         <source>Network</source>
-        <translation type="unfinished">Ağ</translation>
+        <translation>Ağ</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="435"/>
         <source>Ports</source>
-        <translation type="unfinished"></translation>
+        <translation>Portlar</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="438"/>
         <source>Serial Ports</source>
-        <translation type="unfinished">Seri Portlar </translation>
+        <translation>Seri Portlar </translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="443"/>
         <source>Parallel Ports</source>
-        <translation type="unfinished">Paralel Portlar </translation>
+        <translation>Paralel Portlar </translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="448"/>
         <source>USB</source>
-        <translation type="unfinished">USB </translation>
+        <translation>USB </translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="451"/>
         <source>Shared Folders</source>
-        <translation type="unfinished">Paylaşılan Dizinler</translation>
+        <translation>Paylaşılan Dizinler</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="454"/>
         <source>Remote Display</source>
-        <translation type="unfinished">Uzak Masaüstü</translation>
+        <translation>Uzak Masaüstü</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="475"/>
         <source>%1 - %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 %2</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="369"/>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; sayfasında %2</translation>
     </message>
 </context>
 <context>
@@ -8444,52 +7919,52 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="173"/>
         <source>Host floppy drive is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Sunucu disket sürücüsü seçilmemiş</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="175"/>
         <source>Floppy image file is not selected</source>
-        <translation type="unfinished">Disket kalıp dosyası seçilmemiş</translation>
+        <translation>Disket kalıp dosyası seçilmemiş</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="33"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="unfinished">Seçildiğinde belirtilen ortamı sanal makinenin Disket sürücüsüne bağlar.</translation>
+        <translation>Seçildiğinde belirtilen ortamı sanal makinenin Disket sürücüsüne bağlar.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="36"/>
         <source>&amp;Mount Floppy Drive</source>
-        <translation type="unfinished">&amp;Disket Sürücüyü Bağla</translation>
+        <translation>&amp;Disket Sürücüyü Bağla</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="83"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation type="unfinished">Belirtilen Sunucu Disket sürücüsünü sanal Disket sürücüsüne bağlar.</translation>
+        <translation>Belirtilen Sunucu Disket sürücüsünü sanal Disket sürücüsüne bağlar.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="86"/>
         <source>Host Floppy &amp;Drive</source>
-        <translation type="unfinished">Sunucu &amp;Disket Sürücüsü</translation>
+        <translation>Sunucu &amp;Disket Sürücüsü</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="112"/>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished">Sanal makineye bağlanabilecek olan, sunucu üzerindeki Disket sürücüleri listeler.</translation>
+        <translation>Sanal makineye bağlanabilecek olan, sunucu üzerindeki Disket sürücüleri listeler.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="119"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation type="unfinished">Belirtilen Disket kalıbını sanal Disket sürücüsüne bağlar.</translation>
+        <translation>Belirtilen Disket kalıbını sanal Disket sürücüsüne bağlar.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="122"/>
         <source>&amp;Image File</source>
-        <translation type="unfinished">Kal&amp;ıp Dosyası</translation>
+        <translation>Kal&amp;ıp Dosyası</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="132"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation type="unfinished">Sanal Disket sürücüsüne bağlanacak kalıp dosyasını gösterir ve hızlıca başka bir kalıp seçmenize izin verir.</translation>
+        <translation>Sanal Disket sürücüsüne bağlanacak kalıp dosyasını gösterir ve hızlıca başka bir kalıp seçmenize izin verir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
@@ -8499,7 +7974,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bir Disket kalıbı seçerek bağlamak için Sanal Disk Yöneticisini çalıştırır.</translation>
     </message>
 </context>
 <context>
@@ -8507,32 +7982,32 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="440"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="468"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished">Bu sanal makinenin anlık görüntülerinin nereye kaydedileceğini tanımlar. Anlık görüntülerin çok yer kaplayabileceğini unutmayın.</translation>
+        <translation>Bu sanal makinenin anlık görüntülerinin nereye kaydedileceğini tanımlar. Anlık görüntülerin çok yer kaplayabileceğini unutmayın.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="37"/>
         <source>&amp;Basic</source>
-        <translation type="unfinished">&amp;Temel</translation>
+        <translation>&amp;Temel</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="49"/>
         <source>Identification</source>
-        <translation type="unfinished"></translation>
+        <translation>Kimlik</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="75"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;İsim:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="88"/>
         <source>Displays the name of the virtual machine.</source>
-        <translation type="unfinished">Sanal makinenin adını gösterir.</translation>
+        <translation>Sanal makinenin adını gösterir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
@@ -8542,82 +8017,82 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="104"/>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Te&amp;mel Bellek Boyutu</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="230"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished">Sanal makineye sağlanan bellek miktarını kontrol eder. Eğer çok fazla bellek atarsanız makine başlamayabilir.</translation>
+        <translation>Sanal makineye sağlanan bellek miktarını kontrol eder. Eğer çok fazla bellek atarsanız makine başlamayabilir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="349"/>
         <source>&lt;</source>
-        <translation type="unfinished">&lt;</translation>
+        <translation>&lt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="375"/>
         <source>&gt;</source>
-        <translation type="unfinished">&gt;</translation>
+        <translation>&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="418"/>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="279"/>
         <source>&amp;Video Memory Size</source>
-        <translation type="unfinished">&amp;Ekran Kartı Bellek Boyutu</translation>
+        <translation>&amp;Ekran Kartı Bellek Boyutu</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="405"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished">Sanal makineye sağlanan video belleği miktarını kontrol eder.</translation>
+        <translation>Sanal makineye sağlanan video belleği miktarını kontrol eder.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="462"/>
         <source>&amp;Advanced</source>
-        <translation type="unfinished">&amp;Gelişmiş</translation>
+        <translation>&amp;Gelişmiş</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="468"/>
         <source>Boo&amp;t Order:</source>
-        <translation type="unfinished"></translation>
+        <translation>Başlangıç Sı&amp;ralaması:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="522"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="unfinished">Başlangıç aygıtlarının sıralamasını tanımlar. Bir başlangıç ögesini etkinleştirmek ya da pasifleştirmek için soldaki seçme kutularını kullanın. Aygıt sıralamasını değiştirmek için nesneleri yukarı veya aşağı taşıyın.</translation>
+        <translation>Başlangıç aygıtlarının sıralamasını tanımlar. Bir başlangıç ögesini etkinleştirmek ya da pasifleştirmek için soldaki seçme kutularını kullanın. Aygıt sıralamasını değiştirmek için nesneleri yukarı veya aşağı taşıyın.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="541"/>
         <source>[device]</source>
-        <translation type="unfinished"></translation>
+        <translation>[aygıt]</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="562"/>
         <source>Move Up (Ctrl-Up)</source>
-        <translation type="unfinished">Yurarı Taşı (Ctrl-Yukarı)</translation>
+        <translation>Yurarı Taşı (Ctrl-Yukarı)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="565"/>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished">Seçilen başlangıç aygıtını yukarı taşır.</translation>
+        <translation>Seçilen başlangıç aygıtını yukarı taşır.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="584"/>
         <source>Move Down (Ctrl-Down)</source>
-        <translation type="unfinished">Aşağı Taşı (Ctrl-Aşağı)</translation>
+        <translation>Aşağı Taşı (Ctrl-Aşağı)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="587"/>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished">Seçilen başlangıç aygıtını aşağı taşır.</translation>
+        <translation>Seçilen başlangıç aygıtını aşağı taşır.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="624"/>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>Genişletilmiş Özellikler:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="645"/>
@@ -8627,7 +8102,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="648"/>
         <source>Enable A&amp;CPI</source>
-        <translation type="unfinished">A&amp;CPI Etkin</translation>
+        <translation>A&amp;CPI Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="661"/>
@@ -8637,7 +8112,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="664"/>
         <source>Enable IO A&amp;PIC</source>
-        <translation type="unfinished">IO A&amp;CPI Etkin</translation>
+        <translation>IO A&amp;CPI Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="677"/>
@@ -8647,7 +8122,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="680"/>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">&amp;VT-x/AMD-V Etkin</translation>
+        <translation>&amp;VT-x/AMD-V Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="693"/>
@@ -8657,17 +8132,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="696"/>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished"></translation>
+        <translation>PA&amp;E/NX Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="721"/>
         <source>&amp;Shared Clipboard:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Paylaşılan Pano:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="744"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished">Misafir işletim sistemi ile sunucu işletim sistemi arasındaki pano paylaşımını tanımlar. Bu özelliğin Misafir Eklentileri gerektirdiğini unutmatın.</translation>
+        <translation>Misafir işletim sistemi ile sunucu işletim sistemi arasındaki pano paylaşımını tanımlar. Bu özelliğin Misafir Eklentileri gerektirdiğini unutmatın.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="757"/>
@@ -8677,27 +8152,27 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="784"/>
         <source>&amp;IDE Controller Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IDE Denetleyici Tipi:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="797"/>
         <source>S&amp;napshot Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;nlık Görüntü Dizini:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="834"/>
         <source>&amp;Description</source>
-        <translation type="unfinished">&amp;Açıklama</translation>
+        <translation>&amp;Açıklama</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="840"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished">Sanal makinenin tanımını gösterir. Tanımlama alanı misafir işletim sisteminin yapılandırma detaylarını yorum olarak eklemek için kullanışlıdır.</translation>
+        <translation>Sanal makinenin tanımını gösterir. Tanımlama alanı misafir işletim sisteminin yapılandırma detaylarını yorum olarak eklemek için kullanışlıdır.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="851"/>
         <source>&amp;Other</source>
-        <translation type="unfinished"></translation>
+        <translation>D&amp;iğer</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="886"/>
@@ -8707,12 +8182,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="889"/>
         <source>&amp;Remember Mounted Media</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bağlanan Ortamı Anımsa</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="873"/>
         <source>Runtime:</source>
-        <translation type="unfinished"></translation>
+        <translation>Çalışma zamanı:</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="376"/>
@@ -8737,7 +8212,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="712"/>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished"></translation>
+        <translation>3D Hızlandırmayı &amp;Etkinleştir</translation>
     </message>
 </context>
 <context>
@@ -8745,27 +8220,27 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="742"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;%1&lt;/i&gt; için bir sabit disk seçilmedi</translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; için bir sabit disk seçilmedi</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="754"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;%1&lt;/i&gt; zaten &lt;i&gt;%2&lt;/i&gt; konumuna eklenmiş bir sabit disk kullanıyor</translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; zaten &lt;i&gt;%2&lt;/i&gt; konumuna eklenmiş bir sabit disk kullanıyor</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="775"/>
         <source>&amp;Add Attachment</source>
-        <translation type="unfinished">Eklenti &amp;Ekle</translation>
+        <translation>Eklenti &amp;Ekle</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="776"/>
         <source>&amp;Remove Attachment</source>
-        <translation type="unfinished">Eklenti &amp;Kaldır</translation>
+        <translation>Eklenti &amp;Kaldır</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="777"/>
         <source>&amp;Select Hard Disk</source>
-        <translation type="unfinished">&amp;Sabit Disk Seç</translation>
+        <translation>&amp;Sabit Disk Seç</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="786"/>
@@ -8785,12 +8260,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="36"/>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="unfinished">&amp;SATA Denetleyicisini Etkinleştir</translation>
+        <translation>&amp;SATA Denetleyicisini Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="49"/>
         <source>&amp;Attachments</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Eklentiler</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
@@ -8818,27 +8293,27 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="289"/>
         <source>Select TAP setup application</source>
-        <translation type="unfinished">TAP ayarlama uygulamasını seç</translation>
+        <translation>TAP ayarlama uygulamasını seç</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="298"/>
         <source>Select TAP terminate application</source>
-        <translation type="unfinished">TAP sonlandırma uygulamasını seç</translation>
+        <translation>TAP sonlandırma uygulamasını seç</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="33"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished">Seçilirse bu sanal ağ bağdaştırıcısını sanal makineye bağlar.</translation>
+        <translation>Seçilirse bu sanal ağ bağdaştırıcısını sanal makineye bağlar.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="36"/>
         <source>&amp;Enable Network Adapter</source>
-        <translation type="unfinished">Ağ Bağdaştırıcısını &amp;Etkinleştir</translation>
+        <translation>Ağ Bağdaştırıcısını &amp;Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="77"/>
         <source>A&amp;dapter Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bağdaştırıcı &amp;Tipi:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="90"/>
@@ -8848,7 +8323,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="97"/>
         <source>&amp;Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>Şur&amp;aya eklendi:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
@@ -8863,82 +8338,82 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="130"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu bağdaştırıcı için seçilen iç ağ adını gösterir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
         <source>&amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;MAC Adresi:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="159"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">Bu bağdaştırıcının MAC adresini gösterir. Bu ifade {0-9,A-F} kümesinden seçilen 12 karakterden oluşur. İkinci karakterin her zaman bir rakam olması gerektiğini unutmayın.</translation>
+        <translation>Bu bağdaştırıcının MAC adresini gösterir. Bu ifade {0-9,A-F} kümesinden seçilen 12 karakterden oluşur. İkinci karakterin her zaman bir rakam olması gerektiğini unutmayın.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="166"/>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Yeni rastgele bir MAC adresi oluşturur.</translation>
+        <translation>Yeni rastgele bir MAC adresi oluşturur.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="169"/>
         <source>&amp;Generate</source>
-        <translation type="unfinished">&amp;Oluştur</translation>
+        <translation>&amp;Oluştur</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="176"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">Sanal ağ kablosunun başlangıçta makineye takılı olup olmadığını gösterir.</translation>
+        <translation>Sanal ağ kablosunun başlangıçta makineye takılı olup olmadığını gösterir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Ca&amp;ble Connected</source>
-        <translation type="unfinished">Ka&amp;blo Bağlı</translation>
+        <translation>Ka&amp;blo Bağlı</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="196"/>
         <source>&amp;Interface Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Aray&amp;üz Adı:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="215"/>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished">TAP arayüzünün adını gösterir.</translation>
+        <translation>TAP arayüzünün adını gösterir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="222"/>
         <source>&amp;Setup Application:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Uygulamayı Ayarla:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="241"/>
         <source>Displays the command executed to set up the TAP interface.</source>
-        <translation type="unfinished">TAP arayüzünü ayarlamak için çalıştırılacak komutu gösterir.</translation>
+        <translation>TAP arayüzünü ayarlamak için çalıştırılacak komutu gösterir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="248"/>
         <source>Selects the setup application.</source>
-        <translation type="unfinished">Ayarlama uygulamasını seçer.</translation>
+        <translation>Ayarlama uygulamasını seçer.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="258"/>
         <source>&amp;Terminate Application:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sonlandırma Uygulaması:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="277"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished">TAP arayüzünü sonlandırmak için çalıştırılacak komutu gösterir.</translation>
+        <translation>TAP arayüzünü sonlandırmak için çalıştırılacak komutu gösterir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="284"/>
         <source>Selects the terminate application.</source>
-        <translation type="unfinished">Sonlandırma uygulamasını seçer.</translation>
+        <translation>Sonlandırma uygulamasını seçer.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="186"/>
         <source>Host Interface Settings</source>
-        <translation type="unfinished">Sunucu Arayüzü Ayarları</translation>
+        <translation>Sunucu Arayüzü Ayarları</translation>
     </message>
 </context>
 <context>
@@ -8946,12 +8421,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="810"/>
         <source>No host network interface is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Hiç sunucu ağ arayüzü seçilmedi</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="817"/>
         <source>Internal network name is not set</source>
-        <translation type="unfinished">İç ağ adı belirtilmedi</translation>
+        <translation>İç ağ adı belirtilmedi</translation>
     </message>
 </context>
 <context>
@@ -8960,7 +8435,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="113"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="33"/>
@@ -8970,12 +8445,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="36"/>
         <source>&amp;Enable Parallel Port</source>
-        <translation type="unfinished">&amp;Paralel Portu Etkinleştir</translation>
+        <translation>&amp;Paralel Portu Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port &amp;Numarası:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="90"/>
@@ -8985,7 +8460,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="113"/>
@@ -8995,7 +8470,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished"></translation>
+        <translation>I/O Po&amp;rtu:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="136"/>
@@ -9005,12 +8480,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="143"/>
         <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port &amp;Yolu:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="156"/>
         <source>Displays the host parallel device name.</source>
-        <translation type="unfinished">Sunucunun paralel aygıt adını gösterir.</translation>
+        <translation>Sunucunun paralel aygıt adını gösterir.</translation>
     </message>
 </context>
 <context>
@@ -9018,17 +8493,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="223"/>
         <source>Duplicate port number is selected </source>
-        <translation type="unfinished">İkinci kez aynı port numarası seçildi </translation>
+        <translation>İkinci kez aynı port numarası seçildi </translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="239"/>
         <source>Port path is not specified </source>
-        <translation type="unfinished">Port yolu belirtilmedi</translation>
+        <translation>Port yolu belirtilmedi</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="240"/>
         <source>Duplicate port path is entered </source>
-        <translation type="unfinished">İkinci kez aynı port yolu girildi </translation>
+        <translation>İkinci kez aynı port yolu girildi </translation>
     </message>
 </context>
 <context>
@@ -9036,72 +8511,72 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="183"/>
         <source>&amp;Add New Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Yeni &amp;Paylaşılan Dizin Ekle</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="184"/>
         <source>&amp;Edit Selected Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçili Paylaşılan Dizini &amp;Düzenle</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="185"/>
         <source>&amp;Remove Selected Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçili Paylaşılan Dizini &amp;Kaldır</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="198"/>
         <source>Adds a new shared folder definition.</source>
-        <translation type="unfinished">Yeni bir paylaşılan dizin tanımı oluşturur.</translation>
+        <translation>Yeni bir paylaşılan dizin tanımı oluşturur.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="199"/>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished">Seçilen paylaşılan dizin tanımını düzenler.</translation>
+        <translation>Seçilen paylaşılan dizin tanımını düzenler.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="200"/>
         <source>Removes the selected shared folder definition.</source>
-        <translation type="unfinished">Seçilen paylaşılan dizin tanımını kaldırır.</translation>
+        <translation>Seçilen paylaşılan dizin tanımını kaldırır.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="252"/>
         <source> Machine Folders</source>
-        <translation type="unfinished"> Makine Dizinleri</translation>
+        <translation> Makine Dizinleri</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="259"/>
         <source> Transient Folders</source>
-        <translation type="unfinished"> Geçici Dizinler</translation>
+        <translation> Geçici Dizinler</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="359"/>
         <source>Full</source>
-        <translation type="unfinished">Tam</translation>
+        <translation>Tam</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="360"/>
         <source>Read-only</source>
-        <translation type="unfinished">Salt-okunur</translation>
+        <translation>Salt-okunur</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="63"/>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu makinden erişilebilir tüm paylaşılan dizinleri listeler. DOS benzeri bir işletim sistemi üzerinde &lt;i&gt;paylasim&lt;/i&gt; olarak adlandırılan bir paylaşıma erişmek için &lt;tt&gt;net use x: \\vboxsvr\paylasim&lt;/tt&gt; kullanın ya da bir Linux makineden bu dizine erişebilmek için &lt;tt&gt;mount -t vboxsf paylasim mount_point&lt;/tt&gt; kullanın. Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="73"/>
         <source>Name</source>
-        <translation type="unfinished">İsim</translation>
+        <translation>İsim</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="78"/>
         <source>Path</source>
-        <translation type="unfinished">Yol</translation>
+        <translation>Yol</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="83"/>
         <source>Access</source>
-        <translation type="unfinished">Erişim</translation>
+        <translation>Erişim</translation>
     </message>
 </context>
 <context>
@@ -9109,47 +8584,47 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="120"/>
         <source>Add Share</source>
-        <translation type="unfinished">Paylaşılan Dizin Ekle</translation>
+        <translation>Paylaşılan Dizin Ekle</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="123"/>
         <source>Edit Share</source>
-        <translation type="unfinished">Paylaşılan Dizini Düzenle</translation>
+        <translation>Paylaşılan Dizini Düzenle</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="30"/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Pencere</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="36"/>
         <source>Folder Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dizin Yolu:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="49"/>
         <source>Folder Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dizin Adı:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="59"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished">Paylaşılan dizinlerin isimlerini gösterir (misafir İşletim Sistemi tarafından görüldüğü şekilde).</translation>
+        <translation>Paylaşılan dizinlerin isimlerini gösterir (misafir İşletim Sistemi tarafından görüldüğü şekilde).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="66"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished">Eğer seçilirse Misafir İşletim Sistemi paylaşılan dizine yazamayacak.</translation>
+        <translation>Eğer seçilirse Misafir İşletim Sistemi paylaşılan dizine yazamayacak.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="69"/>
         <source>&amp;Read-only</source>
-        <translation type="unfinished">&amp;Salt-okunur</translation>
+        <translation>&amp;Salt-okunur</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="76"/>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished">&amp;Kalıcı Yap</translation>
+        <translation>&amp;Kalıcı Yap</translation>
     </message>
 </context>
 <context>
@@ -9158,77 +8633,77 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="130"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="33"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation type="unfinished">Seçildiğinde sanal makinenin verilen seri portunu etkinleştirir.</translation>
+        <translation>Seçildiğinde sanal makinenin verilen seri portunu etkinleştirir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="36"/>
         <source>&amp;Enable Serial Port</source>
-        <translation type="unfinished">S&amp;eri Portu Etkinleştir</translation>
+        <translation>S&amp;eri Portu Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port &amp;Numarası:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="90"/>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished">Seri port numarasını gösterir. Standart seri portlardan birini seçebilirsiniz. Ya da &lt;b&gt;Kullanıcı-tanımlı&lt;/b&gt; ögesini seçerek port parametrelerini el ile belirleyebilirsiniz.</translation>
+        <translation>Seri port numarasını gösterir. Standart seri portlardan birini seçebilirsiniz. Ya da &lt;b&gt;Kullanıcı-tanımlı&lt;/b&gt; ögesini seçerek port parametrelerini el ile belirleyebilirsiniz.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="113"/>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished">Seri portun IRQ numaralarını gösterir.  Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;255&lt;/tt&gt; arasındaki tüm sayılardır. &lt;tt&gt;15&lt;/tt&gt;&apos;ten daha büyük sayılar sadece sanal makine için &lt;b&gt;IO APIC&lt;/b&gt; etkinleştirildiyse kullanılabilir.</translation>
+        <translation>Seri portun IRQ numaralarını gösterir.  Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;255&lt;/tt&gt; arasındaki tüm sayılardır. &lt;tt&gt;15&lt;/tt&gt;&apos;ten daha büyük sayılar sadece sanal makine için &lt;b&gt;IO APIC&lt;/b&gt; etkinleştirildiyse kullanılabilir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished"></translation>
+        <translation>I/O Po&amp;rtu:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="136"/>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished">Seri portun temel I/O adreslerini gösterir. Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;0xFFFF&lt;/tt&gt; arasındaki tüm sayılardır.</translation>
+        <translation>Seri portun temel I/O adreslerini gösterir. Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;0xFFFF&lt;/tt&gt; arasındaki tüm sayılardır.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="143"/>
         <source>Port &amp;Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port &amp;Kipi:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="156"/>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished">Bu seri portun çalışma kipini denetler. Eğer &lt;b&gt;Çevrimdışı&lt;/b&gt; seçmişseniz misafir işletim sistemi seri portu bulur ama kullanamaz.</translation>
+        <translation>Bu seri portun çalışma kipini denetler. Eğer &lt;b&gt;Çevrimdışı&lt;/b&gt; seçmişseniz misafir işletim sistemi seri portu bulur ama kullanamaz.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="176"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation type="unfinished">Eğer seçilirse makine başlatılırken &lt;b&gt;Port Yolu&lt;/b&gt; alanı içerisinde belirlenen boru oluşturulur. Aksi taktirde sanal makine var olan boruyu kullanır.</translation>
+        <translation>Eğer seçilirse makine başlatılırken &lt;b&gt;Port Yolu&lt;/b&gt; alanı içerisinde belirlenen boru oluşturulur. Aksi taktirde sanal makine var olan boruyu kullanır.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="179"/>
         <source>&amp;Create Pipe</source>
-        <translation type="unfinished">&amp;Boru Oluştur</translation>
+        <translation>&amp;Boru Oluştur</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="186"/>
         <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port &amp;Yolu:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation type="unfinished">Eğer seri port &lt;b&gt;Sunucu Borusu&lt;/b&gt; kipinde çalışıyorsa seri portun sunucu üzerindeki borusunun yolunu gösterir ya da &lt;b&gt;Sunucu Aygıtı&lt;/b&gt; kipinde çalışıyorsa sunucunun seri portunun adını gösterir.</translation>
+        <translation>Eğer seri port &lt;b&gt;Sunucu Borusu&lt;/b&gt; kipinde çalışıyorsa seri portun sunucu üzerindeki borusunun yolunu gösterir ya da &lt;b&gt;Sunucu Aygıtı&lt;/b&gt; kipinde çalışıyorsa sunucunun seri portunun adını gösterir.</translation>
     </message>
 </context>
 <context>
@@ -9236,17 +8711,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="261"/>
         <source>Duplicate port number is selected </source>
-        <translation type="unfinished">İkinci kez aynı port numarası seçildi </translation>
+        <translation>İkinci kez aynı port numarası seçildi </translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="279"/>
         <source>Port path is not specified </source>
-        <translation type="unfinished">Port yolu belirtilmedi</translation>
+        <translation>Port yolu belirtilmedi</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="280"/>
         <source>Duplicate port path is entered </source>
-        <translation type="unfinished">İkinci kez aynı port yolu girildi </translation>
+        <translation>İkinci kez aynı port yolu girildi </translation>
     </message>
 </context>
 <context>
@@ -9254,32 +8729,32 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="239"/>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished">Boş Filtre &amp;Ekle</translation>
+        <translation>Boş Filtre &amp;Ekle</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="240"/>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished">&amp;Aygıttan Filtre Ekle</translation>
+        <translation>&amp;Aygıttan Filtre Ekle</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="241"/>
         <source>&amp;Edit Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtreyi &amp;Düzenle</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="242"/>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished">Filtreyi &amp;Kaldır</translation>
+        <translation>Filtreyi &amp;Kaldır</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="243"/>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished">Filtreyi &amp;Yukarı Taşı</translation>
+        <translation>Filtreyi &amp;Yukarı Taşı</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="244"/>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished">Filtreyi &amp;Aşağı Taşı</translation>
+        <translation>Filtreyi &amp;Aşağı Taşı</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="262"/>
@@ -9294,38 +8769,38 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="266"/>
         <source>Edits the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçili USB filtresini düzenler.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="267"/>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished">Seçili USB filtresini kaldırır.</translation>
+        <translation>Seçili USB filtresini kaldırır.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="268"/>
         <source>Moves the selected USB filter up.</source>
-        <translation type="unfinished">Seçili USB filtresini yukarı taşır.</translation>
+        <translation>Seçili USB filtresini yukarı taşır.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="269"/>
         <source>Moves the selected USB filter down.</source>
-        <translation type="unfinished">Seçili USB filtresini aşağı taşır.</translation>
+        <translation>Seçili USB filtresini aşağı taşır.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="271"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">Yeni Filtre %1</translation>
+        <translation>Yeni Filtre %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="33"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished">Seçildiğinde bu makine için sanal USB denetleyicisini etkinleştirir.</translation>
+        <translation>Seçildiğinde bu makine için sanal USB denetleyicisini etkinleştirir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="36"/>
         <source>Enable &amp;USB Controller</source>
-        <translation type="unfinished">&amp;USB Denetleyicisini Etkinleştir</translation>
+        <translation>&amp;USB Denetleyicisini Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="77"/>
@@ -9335,12 +8810,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="80"/>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0 (E&amp;HCI) Denetleyicisini Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="87"/>
         <source>USB Device &amp;Filters</source>
-        <translation type="unfinished">USB Aygıtı &amp;Filtreleri</translation>
+        <translation>USB Aygıtı &amp;Filtreleri</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="115"/>
@@ -9350,7 +8825,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="122"/>
         <source>[filter]</source>
-        <translation type="unfinished"></translation>
+        <translation>[filtre]</translation>
     </message>
 </context>
 <context>
@@ -9359,34 +8834,34 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="62"/>
         <source>Any</source>
         <comment>remote</comment>
-        <translation type="unfinished">Herhangi biri</translation>
+        <translation>Herhangi biri</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="63"/>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation type="unfinished">Evet</translation>
+        <translation>Evet</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="64"/>
         <source>No</source>
         <comment>remote</comment>
-        <translation type="unfinished">Hayır</translation>
+        <translation>Hayır</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;İsim:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="55"/>
         <source>Displays the filter name.</source>
-        <translation type="unfinished">Filtre adını gösterir.</translation>
+        <translation>Filtre adını gösterir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="62"/>
         <source>&amp;Vendor ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sağlayıcı Kimliği:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="75"/>
@@ -9396,7 +8871,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="82"/>
         <source>&amp;Product ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ü&amp;rün Kimliği:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="95"/>
@@ -9406,7 +8881,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="102"/>
         <source>&amp;Revision:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sürüm:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="115"/>
@@ -9416,7 +8891,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="122"/>
         <source>&amp;Manufacturer:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ü&amp;retici:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="135"/>
@@ -9426,7 +8901,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="142"/>
         <source>Pro&amp;duct:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ürü&amp;n:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="155"/>
@@ -9436,7 +8911,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="162"/>
         <source>&amp;Serial No.:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Seri No.:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="175"/>
@@ -9446,7 +8921,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="182"/>
         <source>Por&amp;t:</source>
-        <translation type="unfinished"></translation>
+        <translation>Por&amp;t:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="195"/>
@@ -9456,7 +8931,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="202"/>
         <source>R&amp;emote:</source>
-        <translation type="unfinished"></translation>
+        <translation>U&amp;zak:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
@@ -9466,7 +8941,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="228"/>
         <source>&amp;Action:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Eylem:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="247"/>
@@ -9476,7 +8951,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
         <source>USB Filter Details</source>
-        <translation type="unfinished"></translation>
+        <translation>USB Filtre Ayrıntıları</translation>
     </message>
 </context>
 <context>
@@ -9484,42 +8959,42 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="33"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">Seçildiğinde sanal makine bir Uzak Masaüstü Protokolü (RDP) sunucusu gibi davranır ve uzak istemcilerin standart bir RDP istemcisi kullanarak bağlanmasına ve sanal makineyi kullanmasına (sanal makine çalışırken) izin verir.</translation>
+        <translation>Seçildiğinde sanal makine bir Uzak Masaüstü Protokolü (RDP) sunucusu gibi davranır ve uzak istemcilerin standart bir RDP istemcisi kullanarak bağlanmasına ve sanal makineyi kullanmasına (sanal makine çalışırken) izin verir.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="36"/>
         <source>&amp;Enable VRDP Server</source>
-        <translation type="unfinished">VRDP Sunucusunu &amp;Etkinleştir</translation>
+        <translation>VRDP Sunucusunu &amp;Etkinleştir</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="77"/>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sunucu Portu:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="96"/>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;VRDP Sunucusunun port numarasını gösterir. Portu öntanımlı değerine döndürmek için &lt;tt&gt;0&lt;/tt&gt; (sıfır) belirtebilirsiniz.&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="103"/>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kimlik Doğrulama &amp;Yöntemi:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="116"/>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished">VRDP Kimlik Doğrulama yöntemini tanımlar.</translation>
+        <translation>VRDP Kimlik Doğrulama yöntemini tanımlar.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="123"/>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kimlik Doğrulama &amp;Zaman Aşımı:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="142"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished">Misafir kimlik doğrulaması için zaman aşımı süresini milisaniye cinsinden belirtir.</translation>
+        <translation>Misafir kimlik doğrulaması için zaman aşımı süresini milisaniye cinsinden belirtir.</translation>
     </message>
 </context>
 </TS>
