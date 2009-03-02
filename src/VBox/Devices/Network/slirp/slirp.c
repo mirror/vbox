@@ -404,7 +404,13 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                     return VERR_NO_MEMORY;
                 }
                 LogRel(("NAT: adding %R[IP4] to DNS server list\n", &((struct sockaddr_in *)saddr)->sin_addr));
-                da->de_addr.s_addr = ((struct sockaddr_in *)saddr)->sin_addr.s_addr;
+                if ((((struct sockaddr_in *)saddr)->sin_addr.s_addr & htonl(IN_CLASSA_NET)) == ntohl(INADDR_LOOPBACK & IN_CLASSA_NET)) {
+                    da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
+                } 
+                else 
+                {
+                    da->de_addr.s_addr = ((struct sockaddr_in *)saddr)->sin_addr.s_addr;
+                }
                 LIST_INSERT_HEAD(&pData->dns_list_head, da, de_list);
             next_dns:    
                 dns = dns->Next;
