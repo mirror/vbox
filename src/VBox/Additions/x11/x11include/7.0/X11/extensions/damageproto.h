@@ -1,5 +1,5 @@
 /*
- * $Id: damageproto.h,v 1.2 2004/07/29 19:29:55 stukreit Exp $
+ * $Id$
  *
  * Copyright © 2003 Keith Packard
  *

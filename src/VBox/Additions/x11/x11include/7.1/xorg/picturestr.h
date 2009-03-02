@@ -1,5 +1,5 @@
 /*
- * $Id: picturestr.h,v 1.14 2005/08/24 11:18:33 daniels Exp $
+ * $Id$
  *
  * Copyright © 2000 SuSE, Inc.
  *
