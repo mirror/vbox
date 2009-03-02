@@ -65,9 +65,19 @@ uncompress_files()
     uncompress -f "$1/vboxmouse_drv_71.so.Z" > /dev/null 2>&1
 }
 
-vboxadditions_path="/opt/VirtualBoxAdditions"
-vboxadditions64_path=$vboxadditions_path/amd64
 solaris64dir="amd64"
+vboxadditions_path="/opt/VirtualBoxAdditions"
+vboxadditions64_path=$vboxadditions_path/$solaris64dir
+
+# get what ISA the guest is running 
+cputype=`isainfo -k` 
+if test "$cputype" = "amd64"; then 
+    isadir=$solaris64dir
+else
+    isadir="" 
+fi
+vboxadditionsisa_path=$vboxadditions_path/$isadir
+
 
 # uncompress if necessary
 if test -f "$vboxadditions_path/VBoxClient.Z" || test -f "$vboxadditions64_path/VBoxClient.Z"; then
@@ -92,13 +102,6 @@ mv -f /etc/devlink.vbox /etc/devlink.tab
 # create the device link
 /usr/sbin/devfsadm -i vboxguest
 sync
-
-# get what ISA the guest is running 
-cputype=`isainfo -k` 
-isadir="" 
-if test "$cputype" = "amd64"; then 
-    isadir="amd64" 
-fi
 
 # create links
 echo "Creating links..."
@@ -214,6 +217,35 @@ else
     echo "*** Failed to configure client!! Couldn't find autostart directory."
     retval=2
 fi
+
+# Shared Folder kernel module (different for S10 & Nevada)
+osverstr=`uname -r`
+vboxvfsmod="vboxvfs"
+vboxvfsunused="vboxvfs_s10"
+if test "$osverstr" = "5.10"; then
+    vboxvfsmod="vboxvfs_s10"
+    vboxvfsunused="vboxvfs"
+fi
+
+# Move the appropriate module to kernel/fs & remove the unused module name from pkg and file from disk
+# 64-bit shared folder module
+if test -f "$vboxadditions64_path/$vboxvfsmod"; then
+    /usr/sbin/installf -c none $PKGINST "usr/kernel/fs/$solaris64dir/vboxvfs" f
+    mv -f $vboxadditions64_path/$vboxvfsmod /usr/kernel/fs/$solaris64dir/vboxvfs
+    /usr/sbin/removef $PKGINST $vboxadditions64_path/$vboxvfsmod 1>/dev/null
+    /usr/sbin/removef $PKGINST $vboxadditions64_path/$vboxvfsunused 1>/dev/null
+    rm -f $vboxadditions64_path/$vboxvfsunused
+fi
+
+# 32-bit shared folder module
+if test -f "$vboxadditions_path/$vboxvfsmod"; then
+    /usr/sbin/installf -c none $PKGINST "usr/kernel/fs/vboxvfs" f
+    mv -f $vboxadditions_path/$vboxvfsmod /usr/kernel/fs/vboxvfs
+    /usr/sbin/removef $PKGINST $vboxadditions_path/$vboxvfsmod 1>/dev/null
+    /usr/sbin/removef $PKGINST $vboxadditions_path/$vboxvfsunused 1>/dev/null
+    rm -f $vboxadditions_path/$vboxvfsunused
+fi
+
 
 # Finalize
 /usr/sbin/removef -f $PKGINST
