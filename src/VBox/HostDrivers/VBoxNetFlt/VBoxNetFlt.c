@@ -227,6 +227,7 @@
 #include <iprt/mem.h>
 #include <iprt/time.h>
 #include <iprt/semaphore.h>
+#include <iprt/thread.h>
 
 
 /*******************************************************************************
@@ -644,7 +645,7 @@ static bool vboxNetFltDestroyInstance(PVBOXNETFLTINS pThis)
      * specific code do its part of the cleanup outside the mutex.
      */
     rc = RTSemFastMutexRequest(pGlobals->hFastMtx); AssertRC(rc);
-#ifdef VBOXNETFLT_STATIC_CONFIG
+#if 0 //#ifdef VBOXNETFLT_STATIC_CONFIG
 /** @todo r=bird: This looks kind of insane! I ASSUME this is specific to the
  * static config and to devices in the Unconnected state only. This *looks* like
  * a very unhealthy race between driver unloading and vboxNetFltFactoryCreateAndConnect.
@@ -995,6 +996,7 @@ DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, cons
 {
     PINTNETTRUNKIFPORT pIfPort;
     PVBOXNETFLTINS pCur;
+    VBOXNETFTLINSSTATE enmState;
     int rc;
 
     *ppInstance = NULL;
@@ -1015,11 +1017,11 @@ DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, cons
     pCur = vboxNetFltFindInstanceLocked(pGlobals, pszName);
     while (pCur)
     {
-#if 0
+#if 1
         uint32_t cRefs = ASMAtomicIncU32(&pCur->cRefs);
         if (cRefs > 1)
         {
-            VBOXNETFTLINSSTATE enmState = vboxNetFltGetState(pCur);
+            enmState = vboxNetFltGetState(pCur);
             switch (enmState)
             {
                 case kVBoxNetFltInsState_Unconnected:
@@ -1156,7 +1158,7 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
     if (pCur)
     {
 #ifdef VBOXNETFLT_STATIC_CONFIG
-# if 0 /** @todo r=bird: We need to fix the race here. The race is against release+destructor, the
+# if 1 /** @todo r=bird: We need to fix the race here. The race is against release+destructor, the
         * tell tale is a cRefs of and since cRefs is manipulated in an atomic fashion we can simply attempt
         * to grab a reference atomically, the worst thing that can happen is that we have to decrement it again..
         * Here is my suggestion: */
