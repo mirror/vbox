@@ -562,24 +562,19 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
  *
  * @returns VBox status code.
  * @param   pVM                 The VM to operate on.
- * @param   enmNewHwAccmState   New hwaccm state
  *
  */
-VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
+VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
 {
-    Assert(sizeof(HWACCMR0Globals.enmHwAccmState) == sizeof(uint32_t));
+    AssertCompile(sizeof(HWACCMR0Globals.enmHwAccmState) == sizeof(uint32_t));
 
     /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
     if (ASMAtomicReadBool(&HWACCMR0Globals.fSuspended))
         return VERR_HWACCM_SUSPEND_PENDING;
 
-    if (ASMAtomicCmpXchgU32((volatile uint32_t *)&HWACCMR0Globals.enmHwAccmState, enmNewHwAccmState, HWACCMSTATE_UNINITIALIZED))
+    if (ASMAtomicCmpXchgU32((volatile uint32_t *)&HWACCMR0Globals.enmHwAccmState, HWACCMSTATE_ENABLED, HWACCMSTATE_UNINITIALIZED))
     {
         int rc;
-
-        /* Don't setup hwaccm as that might not work (vt-x & 64 bits raw mode) */
-        if (enmNewHwAccmState == HWACCMSTATE_DISABLED)
-            return VINF_SUCCESS;
 
         if (   HWACCMR0Globals.vmx.fSupported
             && HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
@@ -636,12 +631,7 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
 
         return rc;
     }
-
-    if (HWACCMR0Globals.enmHwAccmState == enmNewHwAccmState)
-        return VINF_SUCCESS;
-
-    /* Request to change the mode is not allowed */
-    return VERR_ACCESS_DENIED;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1130,7 +1120,7 @@ VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
 
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);   
     if (pVM->hwaccm.s.vmx.fSupported)
-        rc  = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
+        rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
     else
         rc = SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);
@@ -1172,6 +1162,80 @@ VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu()
 VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu)
 {
     return &HWACCMR0Globals.aCpuInfo[idCpu];
+}
+
+/**
+ * Disable VT-x if it's active *and* the current switcher turns off paging
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ * @param   pfVTxDisabled   VT-x was disabled or not (out)
+ */
+VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled)
+{
+    Assert(!(ASMGetFlags() & X86_EFL_IF));
+
+    *pfVTxDisabled = false;
+
+    if (    HWACCMR0Globals.enmHwAccmState != HWACCMSTATE_ENABLED
+        ||  !HWACCMR0Globals.vmx.fSupported /* no such issues with AMD-V */)
+        return VINF_SUCCESS;    /* nothing to do */
+
+    switch(VMMGetSwitcher(pVM))
+    {
+    case VMMSWITCHER_32_TO_32:
+    case VMMSWITCHER_PAE_TO_PAE:
+        return VINF_SUCCESS;    /* safe switchers as they don't turn off paging */
+
+    case VMMSWITCHER_32_TO_PAE: 
+    case VMMSWITCHER_PAE_TO_32: /* is this one actually used?? */
+    case VMMSWITCHER_AMD64_TO_32:
+    case VMMSWITCHER_AMD64_TO_PAE:
+        break;                  /* unsafe switchers */
+
+    default:
+        AssertFailed();
+        return VERR_INTERNAL_ERROR;
+    }
+
+    PHWACCM_CPUINFO pCpu = HWACCMR0GetCurrentCpu();
+    void           *pvPageCpu;
+    RTHCPHYS        pPageCpuPhys;
+
+    AssertReturn(pCpu && pCpu->pMemObj, VERR_INTERNAL_ERROR);
+    pvPageCpu    = RTR0MemObjAddress(pCpu->pMemObj);
+    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
+
+    *pfVTxDisabled = true;
+    return VMXR0DisableCpu(pCpu, pvPageCpu, pPageCpuPhys);
+}
+
+/**
+ * Reeable VT-x if was active *and* the current switcher turned off paging
+ *
+ * @returns VBox status code.
+ * @param   pVM          VM handle.
+ * @param   fVTxDisabled VT-x was disabled or not
+ */
+VMMR0DECL(int) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
+{
+    Assert(!(ASMGetFlags() & X86_EFL_IF));
+
+    if (!fVTxDisabled)
+        return VINF_SUCCESS;    /* nothing to do */
+
+    Assert(   HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED
+           && HWACCMR0Globals.vmx.fSupported);
+
+    PHWACCM_CPUINFO pCpu = HWACCMR0GetCurrentCpu();
+    void           *pvPageCpu;
+    RTHCPHYS        pPageCpuPhys;
+
+    AssertReturn(pCpu && pCpu->pMemObj, VERR_INTERNAL_ERROR);
+    pvPageCpu    = RTR0MemObjAddress(pCpu->pMemObj);
+    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
+
+    return VMXR0EnableCpu(pCpu, pVM, pvPageCpu, pPageCpuPhys);
 }
 
 #ifdef VBOX_STRICT

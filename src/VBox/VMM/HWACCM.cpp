@@ -226,7 +226,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
 # else
         if (!pVM->hwaccm.s.fAllowed)
 # endif
-            return VM_SET_ERROR(pVM, VERR_INVALID_PARAMETER, "64-bit guest support was requested without also enabling VT-x.");
+            return VM_SET_ERROR(pVM, VERR_INVALID_PARAMETER, "64-bit guest support was requested without also enabling HWVirtEx (VT-x/AMD-V).");
     }
 #else
     /* On 64-bit hosts 64-bit guest support is enabled by default, but allow this to be overridden
@@ -446,58 +446,16 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         return VINF_SUCCESS;
     }
 
-    /*
-     * Note that we have a global setting for VT-x/AMD-V usage. VMX root mode changes the way the CPU operates. Our 64 bits switcher will trap
-     * because it turns off paging, which is not allowed in VMX root mode.
-     *
-     * To simplify matters we'll just force all running VMs to either use raw or VT-x mode. No mixing allowed in the VT-x case.
-     * There's no such problem with AMD-V. (@todo)
-     *
-     */
-    /* If we enabled or disabled hwaccm mode, then it can't be changed until all the VMs are shutdown. */
-    rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_ENABLE, (pVM->hwaccm.s.fAllowed) ? HWACCMSTATE_ENABLED : HWACCMSTATE_DISABLED, NULL);
+    if (!pVM->hwaccm.s.fAllowed)
+        return VINF_SUCCESS;    /* nothing to do */
+
+    /* Enable VT-x or AMD-V on all host CPUs. */
+    rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_ENABLE, 0, NULL);
     if (RT_FAILURE(rc))
     {
         LogRel(("HWACCMR3InitFinalize: SUPCallVMMR0Ex VMMR0_DO_HWACC_ENABLE failed with %Rrc\n", rc));
-        LogRel(("HWACCMR3InitFinalize: disallowed %s of HWACCM\n", pVM->hwaccm.s.fAllowed ? "enabling" : "disabling"));
-
-#ifdef RT_OS_DARWIN
-        /*
-         * This is 100% fatal if we didn't prepare for a HwVirtExt setup because of
-         * missing ring-0 allocations. For VMs that require HwVirtExt it doesn't normally
-         * make sense to try run them in software mode, so fail that too.
-         */
-        if (VMMIsHwVirtExtForced(pVM))
-            VM_SET_ERROR(pVM, rc, "An active VM already uses software virtualization. It is not allowed to "
-                         "simultaneously use VT-x.");
-        else
-            VM_SET_ERROR(pVM, rc, "An active VM already uses Intel VT-x hardware acceleration. It is not "
-                         "allowed to simultaneously use software virtualization.");
         return rc;
-
-#else  /* !RT_OS_DARWIN */
-
-        /* Invert the selection */
-        pVM->hwaccm.s.fAllowed ^= 1;
-        if (pVM->hwaccm.s.fAllowed)
-        {
-            if (pVM->hwaccm.s.vmx.fSupported)
-                VM_SET_ERROR(pVM, rc, "An active VM already uses Intel VT-x hardware acceleration. It is not allowed "
-                                      "to simultaneously use software virtualization.\n");
-            else
-                VM_SET_ERROR(pVM, rc, "An active VM already uses AMD-V hardware acceleration. It is not allowed to "
-                                      "simultaneously use software virtualization.\n");
-        }
-        else
-            VM_SET_ERROR(pVM, rc, "An active VM already uses software virtualization. It is not allowed to simultaneously "
-                                  "use VT-x or AMD-V.\n");
-        return rc;
-#endif /* !RT_OS_DARWIN */
     }
-
-    if (pVM->hwaccm.s.fAllowed == false)
-        return VINF_SUCCESS;    /* disabled */
-
     Assert(!pVM->fHWACCMEnabled || VMMIsHwVirtExtForced(pVM));
 
     if (pVM->hwaccm.s.vmx.fSupported)
