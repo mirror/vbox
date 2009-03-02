@@ -1,5 +1,5 @@
 /*
- * $Id: damage.h,v 1.3 2005/07/01 22:43:41 daniels Exp $
+ * $Id$
  *
  * Copyright © 2003 Keith Packard
  *
