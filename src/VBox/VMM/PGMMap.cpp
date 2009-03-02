@@ -685,6 +685,7 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
     pVM->pgm.s.fMappingsFixed    = false;
     pVM->pgm.s.GCPtrMappingFixed = 0;
     pVM->pgm.s.cbMappingFixed    = 0;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
 
     /*
@@ -694,14 +695,13 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
      * is using the CR3 page both as a PD and a PT, e.g. the pool may
      * be monitoring it.
      */
-#ifdef PGMPOOL_WITH_MONITORING
+# ifdef PGMPOOL_WITH_MONITORING
     pgmPoolFlushAll(pVM);
-#endif
+# endif
     /* Remap CR3 as we have just flushed the CR3 shadow PML4 in case we're in long mode. */
     int rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
     AssertRCSuccess(rc);
 
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
     AssertRCSuccess(rc);
 #endif
