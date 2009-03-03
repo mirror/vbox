@@ -499,6 +499,7 @@ include	$(KBUILD_PATH)/subfooter.kmk
 
 
 # Alias the PGM templates to the object in which they are defined.
+PGMInternal.o \
 PGMBth.o   PGMGst.o   PGMShw.o \
 PGMBth.obj PGMGst.obj PGMShw.obj: PGM.o
 PGMAllBth.o   PGMAllGst.o   PGMAllShw.o \

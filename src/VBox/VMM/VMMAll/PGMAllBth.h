@@ -4494,7 +4494,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
      */
     RTHCPHYS    HCPhysGuestCR3;
     RTHCPTR     HCPtrGuestCR3;
-    int rc = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhysCR3 & GST_CR3_PAGE_MASK, &HCPtrGuestCR3, &HCPhysGuestCR3);
+    int rc = pgmRamGCPhys2HCPtrAndHCPhys(&pVM->pgm.s, GCPhysCR3 & GST_CR3_PAGE_MASK, &HCPtrGuestCR3, &HCPhysGuestCR3);
     if (RT_SUCCESS(rc))
     {
         rc = PGMMap(pVM, (RTGCPTR)pVM->pgm.s.GCPtrCR3Mapping, HCPhysGuestCR3, PAGE_SIZE, 0);
@@ -4531,10 +4531,10 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                     RTHCPTR     HCPtr;
                     RTHCPHYS    HCPhys;
                     RTGCPHYS    GCPhys = pGuestPDPT->a[i].u & X86_PDPE_PG_MASK;
-                    int rc2 = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
+                    int rc2 = pgmRamGCPhys2HCPtrAndHCPhys(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
                     if (RT_SUCCESS(rc2))
                     {
-                        rc = PGMMap(pVM, GCPtr, HCPhys & X86_PTE_PAE_PG_MASK, PAGE_SIZE, 0);
+                        rc = PGMMap(pVM, GCPtr, HCPhys, PAGE_SIZE, 0);
                         AssertRCReturn(rc, rc);
 
                         pVM->pgm.s.apGstPaePDsR3[i]     = (R3PTRTYPE(PX86PDPAE))HCPtr;
