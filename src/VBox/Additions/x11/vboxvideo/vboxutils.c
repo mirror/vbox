@@ -47,28 +47,9 @@
 
 /* #define DEBUG_POINTER */
 
-#ifdef DEBUG_michael
-# define DEBUG_VIDEO
-#endif
-
 #define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
 
 #ifdef DEBUG_VIDEO
-# define TRACE_ENTRY() \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, ": entering\n"); \
-} while(0)
-# define TRACE_EXIT() \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, ": leaving\n"); \
-} while(0)
-# define TRACE_LOG(...) \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, __VA_ARGS__); \
-} while(0)
 # define TRACE_LINE() do \
     { \
         ErrorF ("%s: line %d\n", __FUNCTION__, __LINE__); \
@@ -76,9 +57,6 @@ do { \
 # define PUT_PIXEL(c) ErrorF ("%c", c)
 #else /* DEBUG_VIDEO not defined */
 # define PUT_PIXEL(c) do { } while(0)
-# define TRACE_ENTRY() do { } while(0)
-# define TRACE_EXIT() do { } while(0)
-# define TRACE_LOG(...) do { } while(0)
 # define TRACE_LINE() do { } while(0)
 #endif /* DEBUG_VIDEO not defined */
 
