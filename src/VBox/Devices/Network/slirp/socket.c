@@ -560,6 +560,7 @@ sorecvfrom(PNATState pData, struct socket *so)
              * for the 4 minute (or whatever) timeout... So we time them
              * out much quicker (10 seconds  for now...)
              */
+#ifndef VBOX_WITH_SLIRP_DNS_PROXY
             if (so->so_expire)
             {
                 if (so->so_fport == htons(53))
@@ -567,6 +568,18 @@ sorecvfrom(PNATState pData, struct socket *so)
                 else
                     so->so_expire = curtime + SO_EXPIRE;
             }
+#else
+            if (so->so_expire)
+            {
+                if (so->so_fport != htons(53))
+                    so->so_expire = curtime + SO_EXPIRE;
+            }
+            /* 
+             *  last argument should be changed if Slirp will inject IP attributes
+             *  Note: Here we can't check if dnsproxy's sent initial request
+             */
+            dnsproxy_answer(pData, so, m, sizeof(struct ip));  
+#endif
 
 #if 0
             if (m->m_len == len)

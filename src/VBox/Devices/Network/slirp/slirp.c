@@ -586,6 +586,9 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     if (get_dns_addr_domain(pData, true, NULL, &pData->pszDomain) < 0)
 #endif
         fNATfailed = 1;
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+    dnsproxy_init(pData);
+#endif
 
     getouraddr(pData);
     return fNATfailed ? VINF_NAT_DNS : VINF_SUCCESS;
