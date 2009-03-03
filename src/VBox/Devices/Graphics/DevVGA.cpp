@@ -1381,7 +1381,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
         if (((++s->cLatchAccesses) & 0x3ff) == 0x3ff)
         {
             uint64_t u64CurTime = RTTimeSystemNanoTS();
-            /* About 1000 accesses per 10 ms or more will trigger a reschedule
+            /* About 1000 (or more) accesses per 10 ms will trigger a reschedule
              * to the recompiler
              */
             if (u64CurTime - s->u64LastLatchedAccess < 10000000)
