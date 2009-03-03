@@ -6342,7 +6342,7 @@
 
   <interface
      name="IHostFloppyDrive" extends="$unknown"
-     uuid="b6a4d1a9-4221-43c3-bd52-021a5daa9ed2"
+     uuid="3f02d604-e908-4919-9fd1-8a4afd68fc63"
      wsmap="managed"
      >
     <desc>
@@ -6486,7 +6486,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="ba0cb246-478a-4a2b-930e-51ce740ada9c"
+     uuid="234a43b3-66a5-4f15-a2a5-c46dbf4c4508"
      wsmap="managed"
      >
     <desc>
