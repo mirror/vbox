@@ -1323,6 +1323,11 @@ bool VBoxConsoleView::event (QEvent *e)
                  * mouse capability change that disables integration */
                 if (mMouseAbsolute)
                     setPointerShape (me);
+                else
+                    /* Note: actually we should still remember the requested
+                     * cursor shape.  If we can't do that, at least remember
+                     * the requested visiblilty. */
+                    mHideHostPointer = !me->isVisible();
                 return true;
             }
             case VBoxDefs::MouseCapabilityEventType:
