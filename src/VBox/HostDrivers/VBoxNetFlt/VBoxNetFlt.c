@@ -645,27 +645,7 @@ static bool vboxNetFltDestroyInstance(PVBOXNETFLTINS pThis)
      * specific code do its part of the cleanup outside the mutex.
      */
     rc = RTSemFastMutexRequest(pGlobals->hFastMtx); AssertRC(rc);
-#if 0 //#ifdef VBOXNETFLT_STATIC_CONFIG
-/** @todo r=bird: This looks kind of insane! I ASSUME this is specific to the
- * static config and to devices in the Unconnected state only. This *looks* like
- * a very unhealthy race between driver unloading and vboxNetFltFactoryCreateAndConnect.
- * If I'm right, then vboxNetFltFactoryCreateAndConnect should be made to back down one
- * way or the other, it should not the other way around. (see suggestion further down)
- *
- * If I'm wrong, then please explain in full.
- *
- * r=misha: this code is to prevent race conditions between PVBOXNETFLTINS construct (which occurs on binding to adapter
- * rather than on vboxNetFltFactoryCreateAndConnect for static_config) and destruction,
- * namely the instance returned by vboxNetFltFindInstanceLocked in vboxNetFltSearchCreateInstance could be actually the instance being removed.
- * I guess an approach similar to what you added to vboxNetFltFactoryCreateAndConnect could be used in vboxNetFltSearchCreateInstance in this case we could remove
- * this ugly hack.
- */
-    if (cRefs != 0)
-    {
-        Assert(cRefs < UINT32_MAX / 2);
-        RTSemFastMutexRelease(pGlobals->hFastMtx);
-        return false;
-    }
+#ifdef VBOXNETFLT_STATIC_CONFIG
     vboxNetFltSetState(pThis, kVBoxNetFltInsState_Destroying);
 #else
     vboxNetFltSetState(pThis, kVBoxNetFltInsState_Disconnecting);
@@ -1017,7 +997,6 @@ DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, cons
     pCur = vboxNetFltFindInstanceLocked(pGlobals, pszName);
     while (pCur)
     {
-#if 1
         uint32_t cRefs = ASMAtomicIncU32(&pCur->cRefs);
         if (cRefs > 1)
         {
@@ -1086,25 +1065,6 @@ DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, cons
         rc = RTSemFastMutexRequest(pGlobals->hFastMtx);
         AssertRCReturn(rc, rc);
 
-#else /* old code: */
-        VBOXNETFTLINSSTATE enmState = vboxNetFltGetState(pCur);
-        if (    enmState != kVBoxNetFltInsState_Destroying
-            &&  enmState != kVBoxNetFltInsState_Destroyed)
-        {
-            /** @todo r=bird: who is making sure this is a genuine reconnection case? */
-            vboxNetFltRetain(pCur, false /* fBusy */);
-            RTSemFastMutexRelease(pGlobals->hFastMtx);
-            *ppInstance = pCur;
-            return VINF_ALREADY_INITIALIZED;
-        }
-
-        /* wait 2 ms */ /** @todo r=bird: Doesn't RTThreadSleep() work here? If it's bust, I'd like to know it so we can fix it... */
-        RTSemFastMutexRelease(pGlobals->hFastMtx);
-        RTSemEventWait(pGlobals->hBlockEvent, 2);
-        rc = RTSemFastMutexRequest(pGlobals->hFastMtx);
-        AssertRCReturn(rc, rc);
-#endif
-
         /* try again */
         pCur = vboxNetFltFindInstanceLocked(pGlobals, pszName);
     }
@@ -1158,10 +1118,6 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
     if (pCur)
     {
 #ifdef VBOXNETFLT_STATIC_CONFIG
-# if 1 /** @todo r=bird: We need to fix the race here. The race is against release+destructor, the
-        * tell tale is a cRefs of and since cRefs is manipulated in an atomic fashion we can simply attempt
-        * to grab a reference atomically, the worst thing that can happen is that we have to decrement it again..
-        * Here is my suggestion: */
         /* Try grab a reference. If the count had already reached zero we're racing the
            destructor code and must back down. */
         uint32_t cRefs = ASMAtomicIncU32(&pCur->cRefs);
@@ -1188,18 +1144,6 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
         RTSemFastMutexRelease(pGlobals->hFastMtx);
         if (pCur)
             vboxNetFltRelease(pCur, false /* fBusy */);
-
-# else
-        if (vboxNetFltGetState(pCur) == kVBoxNetFltInsState_Unconnected)
-        {
-            vboxNetFltRetain(pCur, false /* fBusy */); /** @todo r=bird: Who releases this on failure?  */
-            pCur->fDisablePromiscuous = !!(fFlags & INTNETTRUNKFACTORY_FLAG_NO_PROMISC);
-            rc = vboxNetFltConnectIt(pCur, pSwitchPort, ppIfPort);
-        }
-        else
-            rc = VERR_INTNET_FLT_IF_BUSY;
-        RTSemFastMutexRelease(pGlobals->hFastMtx);
-# endif
 #else
         rc = VERR_INTNET_FLT_IF_BUSY;
         RTSemFastMutexRelease(pGlobals->hFastMtx);
@@ -1402,12 +1346,6 @@ DECLHIDDEN(void) vboxNetFltDeleteGlobals(PVBOXNETFLTGLOBALS pGlobals)
      */
     RTSemFastMutexDestroy(pGlobals->hFastMtx);
     pGlobals->hFastMtx = NIL_RTSEMFASTMUTEX;
-
-#ifdef VBOXNETFLT_STATIC_CONFIG
-    RTSemEventDestroy(pGlobals->hBlockEvent);
-    pGlobals->hBlockEvent = NIL_RTSEMEVENT;
-#endif
-
 }
 
 
@@ -1426,28 +1364,19 @@ DECLHIDDEN(int) vboxNetFltInitGlobals(PVBOXNETFLTGLOBALS pGlobals)
     int rc = RTSemFastMutexCreate(&pGlobals->hFastMtx);
     if (RT_SUCCESS(rc))
     {
-#ifdef VBOXNETFLT_STATIC_CONFIG
-        rc = RTSemEventCreate(&pGlobals->hBlockEvent);
-        if (RT_SUCCESS(rc))
-        {
-#endif
-            pGlobals->pInstanceHead = NULL;
+        pGlobals->pInstanceHead = NULL;
 
-            pGlobals->TrunkFactory.pfnRelease = vboxNetFltFactoryRelease;
-            pGlobals->TrunkFactory.pfnCreateAndConnect = vboxNetFltFactoryCreateAndConnect;
+        pGlobals->TrunkFactory.pfnRelease = vboxNetFltFactoryRelease;
+        pGlobals->TrunkFactory.pfnCreateAndConnect = vboxNetFltFactoryCreateAndConnect;
 #if defined(RT_OS_WINDOWS) && defined(VBOX_TAPMINIPORT)
-            strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetAdp");
+        strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetAdp");
 #else
-            strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetFlt");
+        strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetFlt");
 #endif
-            pGlobals->SupDrvFactory.pfnQueryFactoryInterface = vboxNetFltQueryFactoryInterface;
-            pGlobals->fIDCOpen = false;
+        pGlobals->SupDrvFactory.pfnQueryFactoryInterface = vboxNetFltQueryFactoryInterface;
+        pGlobals->fIDCOpen = false;
 
-            return rc;
-#ifdef VBOXNETFLT_STATIC_CONFIG
-        }
-        RTSemFastMutexDestroy(pGlobals->hFastMtx);
-#endif
+        return rc;
     }
 
     return rc;
