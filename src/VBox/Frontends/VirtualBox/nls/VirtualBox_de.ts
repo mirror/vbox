@@ -5273,7 +5273,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation>Zeigt alle an diese Maschine angeschlossenen Festplatten. Durch Mausklick oder Betätigen der Leertaste auf dem ausgewählten Eintrag aktivieren Sie eine Drop-Down-Liste und können den Anschlusstyp wählen. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite um Festplatten hinzuzufügen oder zu entfernen.</translation>
+        <translation>Zeigt alle an diese Maschine angeschlossenen Festplatten. Durch Mausklick oder Betätigen der Leertaste auf dem ausgewählten Eintrag aktivieren Sie eine Drop-Down-Liste und können den Anschlusstyp wählen. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite, um Festplatten hinzuzufügen oder zu entfernen.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="790"/>
@@ -5823,7 +5823,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="115"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>Zeigt alle USB-Filter dieser VM. Die Checkbox auf der linken Seite legt fest, ob ein Filter aktiviert ist oder nicht. Benutzen Sie das Kontextmenü oder die Button auf der rechten Seite um Filter hinzuzufügen oder zu entfernen.</translation>
+        <translation>Zeigt alle USB-Filter dieser VM. Die Checkbox auf der linken Seite legt fest, ob ein Filter aktiviert ist oder nicht. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite, um Filter hinzuzufügen oder zu entfernen.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="122"/>
