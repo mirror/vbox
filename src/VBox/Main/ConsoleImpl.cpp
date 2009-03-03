@@ -1326,7 +1326,7 @@ Console::COMGETTER(SharedFolders) (ComSafeArrayOut (ISharedFolder *, aSharedFold
     HRESULT rc = loadDataFromSavedState();
     CheckComRCReturnRC (rc);
 
-    SafeIfaceArray <ISharedFolder> sf;
+    SafeIfaceArray <ISharedFolder> sf (mSharedFolders);
     sf.detachTo (ComSafeArrayOutArg(aSharedFolders));
 
     return S_OK;
