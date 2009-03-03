@@ -244,12 +244,12 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
                 uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
 # endif
 
-                if ((u16 >> (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT)) != MM_RAM_FLAGS_CREFS_PHYSEXT)
+                if ((u16 >> PGMPOOL_TD_CREFS_SHIFT) != MM_RAM_FLAGS_CREFS_PHYSEXT)
                     pgmPoolTrackFlushGCPhysPT(pVM,
                                               pPage,
                                               u16 & MM_RAM_FLAGS_IDX_MASK,
-                                              u16 >> (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT));
-                else if (u16 != ((MM_RAM_FLAGS_CREFS_PHYSEXT << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT)) | MM_RAM_FLAGS_IDX_OVERFLOWED))
+                                              u16 >> PGMPOOL_TD_CREFS_SHIFT);
+                else if (u16 != ((MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT) | MM_RAM_FLAGS_IDX_OVERFLOWED))
                     pgmPoolTrackFlushGCPhysPTs(pVM, pPage, u16 & MM_RAM_FLAGS_IDX_MASK);
                 else
                     rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPage);
@@ -968,7 +968,12 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             AssertRCReturn(rc, rc);
 
             /* Do the actual remapping here. This page now serves as an alias for the backing memory specified. */
-            pPage->HCPhys = pPageRemap->HCPhys & MM_RAM_FLAGS_NO_REFS_MASK;
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+            AssertReleaseFailed(); /** @todo see todo above! */
+#else
+            pPage->HCPhys = pPageRemap->HCPhys;
+            PGM_PAGE_SET_TRACKING(pPage, 0);
+#endif
 
             LogFlow(("PGMHandlerPhysicalPageAlias %RGp -> %RGp - %RHp\n", GCPhysPage, GCPhysPageRemap, pPageRemap->HCPhys));
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);

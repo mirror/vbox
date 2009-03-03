@@ -98,9 +98,6 @@ __BEGIN_DECLS
 #define MM_RAM_FLAGS_IDX_MASK           0x3fff
 /** The idx value when we're out of of extents or there are simply too many mappings of this page. */
 #define MM_RAM_FLAGS_IDX_OVERFLOWED     MM_RAM_FLAGS_IDX_MASK
-
-/** Mask for masking off any references to the page. */
-#define MM_RAM_FLAGS_NO_REFS_MASK       UINT64_C(0x0000ffffffffffff)
 /** @} */
 
 /** @name MMR3PhysRegisterEx registration type

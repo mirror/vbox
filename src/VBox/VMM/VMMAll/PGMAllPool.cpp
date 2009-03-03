@@ -319,7 +319,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
                     X86PTE GstPte;
-                    
+
                     int rc = pgmPoolPhysSimpleReadGCPhys(pPool->CTX_SUFF(pVM), &GstPte, pvAddress, GCPhysFault, sizeof(GstPte));
                     AssertRC(rc);
                     Log4(("pgmPoolMonitorChainChanging 32_32: deref %016RX64 GCPhys %08RX32\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, GstPte.u & X86_PTE_PG_MASK));
@@ -370,9 +370,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
 
                 LogFlow(("pgmPoolMonitorChainChanging PAE for 32 bits: iGst=%x idx = %d page idx=%d\n", iGst, iShwPdpt, pPage->enmKind - PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD));
-                if (iShwPdpt == pPage->enmKind - PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD)
+                if (iShwPdpt == pPage->enmKind - (unsigned)PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD)
                 {
-                    for (unsigned i=0;i<2;i++)
+                    for (unsigned i = 0; i < 2; i++)
                     {
 #  ifndef IN_RING0
                         if ((uShw.pPDPae->a[iShw + i].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
@@ -677,7 +677,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 #endif /* !IN_RING0 */
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
 # ifndef IN_RING0
-                    else 
+                    else
 # endif /* !IN_RING0 */
                     if (uShw.pPDPae->a[iShw2].n.u1Present)
                     {
@@ -1579,7 +1579,7 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
             {
                 if ((PGMPOOLKIND)pPage->enmKind == enmKind)
                 {
-                    /* Put it at the start of the use list to make sure pgmPoolTrackAddUser 
+                    /* Put it at the start of the use list to make sure pgmPoolTrackAddUser
                      * doesn't flush it in case there are no more free use records.
                      */
                     pgmPoolCacheUsed(pPool, pPage);
@@ -2333,7 +2333,7 @@ void pgmPoolClearAll(PVM pVM)
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
-            pRam->aPages[iPage].HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
+            PGM_PAGE_SET_TRACKING(&pRam->aPages[iPage], 0);
     }
 
     pPool->iPhysExtFreeHead = 0;
@@ -2916,7 +2916,7 @@ void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, uint16_t iShw, uint1
     LogFlow(("pgmPoolTrackFlushGCPhysPT: HCPhys=%RHp iShw=%d cRefs=%d\n", pPhysPage->HCPhys, iShw, cRefs));
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPT, f);
     pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, iShw, cRefs);
-    pPhysPage->HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
+    PGM_PAGE_SET_TRACKING(pPhysPage, 0);
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPT, f);
 }
 
@@ -2954,7 +2954,7 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
     /* insert the list into the free list and clear the ram range entry. */
     pPhysExt->iNext = pPool->iPhysExtFreeHead;
     pPool->iPhysExtFreeHead = iPhysExtStart;
-    pPhysPage->HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
+    PGM_PAGE_SET_TRACKING(pPhysPage, 0);
 
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPTs, f);
 }
@@ -3059,7 +3059,7 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
         }
     }
 
-    pPhysPage->HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
+    PGM_PAGE_SET_TRACKING(pPhysPage, 0);
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPTsSlow, s);
     return VINF_SUCCESS;
 }
@@ -3358,7 +3358,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
         paPhysExts[iPhysExt].aidx[2] = iShwPT;
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedMany);
         LogFlow(("pgmPoolTrackPhysExtAddref: %d:{,,%d}\n", iPhysExt, iShwPT));
-        return iPhysExt | (MM_RAM_FLAGS_CREFS_PHYSEXT << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT));
+        return iPhysExt | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
     }
 
     /* general treatment. */
@@ -3373,14 +3373,14 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
                 paPhysExts[iPhysExt].aidx[i] = iShwPT;
                 STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedMany);
                 LogFlow(("pgmPoolTrackPhysExtAddref: %d:{%d} i=%d cMax=%d\n", iPhysExt, iShwPT, i, cMax));
-                return iPhysExtStart | (MM_RAM_FLAGS_CREFS_PHYSEXT << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT));
+                return iPhysExtStart | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
             }
         if (!--cMax)
         {
             STAM_COUNTER_INC(&pVM->pgm.s.StatTrackOverflows);
             pgmPoolTrackPhysExtFreeList(pVM, iPhysExtStart);
             LogFlow(("pgmPoolTrackPhysExtAddref: overflow (1) iShwPT=%d\n", iShwPT));
-            return MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT));
+            return MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
         }
     }
 
@@ -3390,12 +3390,12 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
     {
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackOverflows);
         pgmPoolTrackPhysExtFreeList(pVM, iPhysExtStart);
-        return MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT));
+        return MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
     }
     pNew->iNext = iPhysExtStart;
     pNew->aidx[0] = iShwPT;
     LogFlow(("pgmPoolTrackPhysExtAddref: added new extent %d:{%d}->%d\n", iPhysExt, iShwPT, iPhysExtStart));
-    return iPhysExt | (MM_RAM_FLAGS_CREFS_PHYSEXT << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT));
+    return iPhysExt | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
 }
 
 
@@ -3410,12 +3410,12 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
  */
 uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
 {
-    if ((u16 >> (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT)) != MM_RAM_FLAGS_CREFS_PHYSEXT)
+    if ((u16 >> PGMPOOL_TD_CREFS_SHIFT) != MM_RAM_FLAGS_CREFS_PHYSEXT)
     {
         /*
          * Convert to extent list.
          */
-        Assert((u16 >> (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT)) == 1);
+        Assert((u16 >> PGMPOOL_TD_CREFS_SHIFT) == 1);
         uint16_t iPhysExt;
         PPGMPOOLPHYSEXT pPhysExt = pgmPoolTrackPhysExtAlloc(pVM, &iPhysExt);
         if (pPhysExt)
@@ -3424,12 +3424,12 @@ uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
             STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliased);
             pPhysExt->aidx[0] = u16 & MM_RAM_FLAGS_IDX_MASK;
             pPhysExt->aidx[1] = iShwPT;
-            u16 = iPhysExt | (MM_RAM_FLAGS_CREFS_PHYSEXT << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT));
+            u16 = iPhysExt | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
         }
         else
-            u16 = MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT));
+            u16 = MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
     }
-    else if (u16 != (MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT))))
+    else if (u16 != (MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT)))
     {
         /*
          * Insert into the extent list.
@@ -3488,15 +3488,14 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                         /* lonely node */
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                         Log2(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64 idx=%d lonely\n", pPhysPage->HCPhys, pPage->idx));
-                        pPhysPage->HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
+                        PGM_PAGE_SET_TRACKING(pPhysPage, 0);
                     }
                     else if (iPhysExtPrev == NIL_PGMPOOL_PHYSEXT_INDEX)
                     {
                         /* head */
                         Log2(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64 idx=%d head\n", pPhysPage->HCPhys, pPage->idx));
-                        pPhysPage->HCPhys = (pPhysPage->HCPhys & MM_RAM_FLAGS_NO_REFS_MASK)    /** @todo PAGE FLAGS */
-                                          | ((uint64_t)MM_RAM_FLAGS_CREFS_PHYSEXT << MM_RAM_FLAGS_CREFS_SHIFT)
-                                          | ((uint64_t)iPhysExtNext << MM_RAM_FLAGS_IDX_SHIFT);
+                        PGM_PAGE_SET_TRACKING(pPhysPage, (PGMPOOL_TD_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT)
+                                                       | (iPhysExtNext << PGMPOOL_TD_IDX_SHIFT));
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                     }
                     else
@@ -4206,7 +4205,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
-            pRam->aPages[iPage].HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
+            PGM_PAGE_SET_TRACKING(&pRam->aPages[iPage], 0);
     }
 
     pPool->iPhysExtFreeHead = 0;
