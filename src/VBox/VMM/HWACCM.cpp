@@ -1189,6 +1189,21 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
 }
 
 /**
+ * Force execution of the current IO code in the recompiler
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   pCtx        Partial VM execution context
+ */
+VMMR3DECL(void) HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx)
+{
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
+    Assert(pVM->fHWACCMEnabled);
+    pVCpu->hwaccm.s.EmulateIoBlock.fEnabled         = true;
+    pVCpu->hwaccm.s.EmulateIoBlock.GCPtrFunctionEsp = pCtx->rsp;
+}
+
+/**
  * Checks if we can currently use hardware accelerated raw mode.
  *
  * @returns boolean
@@ -1197,7 +1212,15 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
  */
 VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     Assert(pVM->fHWACCMEnabled);
+
+    if (    RT_UNLIKELY(pVCpu->hwaccm.s.EmulateIoBlock.fEnabled)
+        &&  pCtx->rsp < pVCpu->hwaccm.s.EmulateIoBlock.GCPtrFunctionEsp)
+        return false;
+
+    pVCpu->hwaccm.s.EmulateIoBlock.fEnabled = false;
 
     /* AMD SVM supports real & protected mode with or without paging. */
     if (pVM->hwaccm.s.svm.fEnabled)

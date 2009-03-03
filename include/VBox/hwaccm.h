@@ -119,6 +119,7 @@ VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM);
 VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM);
 VMMR3DECL(int)  HWACCMR3InjectNMI(PVM pVM);
+VMMR3DECL(void) HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx);
 
 /** @} */
 #endif /* IN_RING3 */
