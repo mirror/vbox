@@ -578,6 +578,7 @@ typedef struct PGMPAGE
 {
     /** The physical address and a whole lot of other stuff. All bits are used! */
     RTHCPHYS    HCPhys;
+#define HCPhysX HCPhys /**< Temporary while in the process of eliminating direct access to PGMPAGE::HCPhys. */
     /** The page state. */
     uint32_t    u2StateX : 2;
     /** Flag indicating that a write monitored page was written to when set. */
@@ -585,8 +586,8 @@ typedef struct PGMPAGE
     /** For later. */
     uint32_t    fSomethingElse : 1;
     /** The Page ID.
-     * @todo  Merge with HCPhys once we've liberated HCPhys of its stuff.
-     *        The HCPhys will be 100% static. */
+     * @todo  Merge with HCPhysX once we've liberated HCPhysX of its stuff.
+     *        The HCPhysX will then be 100% static. */
     uint32_t    idPageX : 28;
     /** The page type (PGMPAGETYPE). */
     uint32_t    u3Type : 3;
@@ -611,7 +612,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_CLEAR(pPage) \
     do { \
-        (pPage)->HCPhys         = 0; \
+        (pPage)->HCPhysX        = 0; \
         (pPage)->u2StateX       = 0; \
         (pPage)->fWrittenToX    = 0; \
         (pPage)->fSomethingElse = 0; \
@@ -626,7 +627,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_INIT(pPage, _HCPhys, _idPage, _uType, _uState) \
     do { \
-        (pPage)->HCPhys         = (_HCPhys); \
+        (pPage)->HCPhysX        = (_HCPhys); \
         (pPage)->u2StateX       = (_uState); \
         (pPage)->fWrittenToX    = 0; \
         (pPage)->fSomethingElse = 0; \
@@ -694,7 +695,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns host physical address (RTHCPHYS).
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_HCPHYS(pPage)      ( (pPage)->HCPhys & UINT64_C(0x0000fffffffff000) )
+#define PGM_PAGE_GET_HCPHYS(pPage)      ( (pPage)->HCPhysX & UINT64_C(0x0000fffffffff000) )
 
 /**
  * Sets the host physical address of the guest page.
@@ -702,8 +703,8 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   _HCPhys     The new host physical address.
  */
 #define PGM_PAGE_SET_HCPHYS(pPage, _HCPhys) \
-                                        do { (pPage)->HCPhys = (((pPage)->HCPhys) & UINT64_C(0xffff000000000fff)) \
-                                                             | ((_HCPhys) & UINT64_C(0x0000fffffffff000)); } while (0)
+                                        do { (pPage)->HCPhysX = (((pPage)->HCPhys) & UINT64_C(0xffff000000000fff)) \
+                                                              | ((_HCPhys) & UINT64_C(0x0000fffffffff000)); } while (0)
 
 /**
  * Get the Page ID.
@@ -712,8 +713,8 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_GET_PAGEID(pPage)      ( (pPage)->idPageX )
 /* later:
-#define PGM_PAGE_GET_PAGEID(pPage)      (   ((uint32_t)(pPage)->HCPhys >> (48 - 12))
-                                         |  ((uint32_t)(pPage)->HCPhys & 0xfff) )
+#define PGM_PAGE_GET_PAGEID(pPage)      (   ((uint32_t)(pPage)->HCPhysX >> (48 - 12))
+                                         |  ((uint32_t)(pPage)->HCPhysX & 0xfff) )
 */
 /**
  * Sets the Page ID.
@@ -721,9 +722,9 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->idPageX = (_idPage); } while (0)
 /* later:
-#define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->HCPhys = (((pPage)->HCPhys) & UINT64_C(0x0000fffffffff000)) \
-                                                                  | ((_idPage) & 0xfff) \
-                                                                  | (((_idPage) & 0x0ffff000) << (48-12)); } while (0)
+#define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->HCPhysX = (((pPage)->HCPhysX) & UINT64_C(0x0000fffffffff000)) \
+                                                                   | ((_idPage) & 0xfff) \
+                                                                   | (((_idPage) & 0x0ffff000) << (48-12)); } while (0)
 */
 
 /**
@@ -734,12 +735,12 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_GET_CHUNKID(pPage)     ( (pPage)->idPageX >> GMM_CHUNKID_SHIFT )
 /* later:
 #if GMM_CHUNKID_SHIFT == 12
-# define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhys >> 48) )
+# define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhysX >> 48) )
 #elif GMM_CHUNKID_SHIFT > 12
-# define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhys >> (48 + (GMM_CHUNKID_SHIFT - 12)) )
+# define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhysX >> (48 + (GMM_CHUNKID_SHIFT - 12)) )
 #elif GMM_CHUNKID_SHIFT < 12
-# define PGM_PAGE_GET_CHUNKID(pPage)    (   ( (uint32_t)((pPage)->HCPhys >> 48)   << (12 - GMM_CHUNKID_SHIFT) ) \
-                                         |  ( (uint32_t)((pPage)->HCPhys & 0xfff) >> GMM_CHUNKID_SHIFT ) )
+# define PGM_PAGE_GET_CHUNKID(pPage)    (   ( (uint32_t)((pPage)->HCPhysX >> 48)   << (12 - GMM_CHUNKID_SHIFT) ) \
+                                         |  ( (uint32_t)((pPage)->HCPhysX & 0xfff) >> GMM_CHUNKID_SHIFT ) )
 #else
 # error "GMM_CHUNKID_SHIFT isn't defined or something."
 #endif
@@ -753,10 +754,10 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)   ( (pPage)->idPageX & GMM_PAGEID_IDX_MASK )
 /* later:
 #if GMM_CHUNKID_SHIFT <= 12
-# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (uint32_t)((pPage)->HCPhys & GMM_PAGEID_IDX_MASK) )
+# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (uint32_t)((pPage)->HCPhysX & GMM_PAGEID_IDX_MASK) )
 #else
-# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  (   (uint32_t)((pPage)->HCPhys & 0xfff) \
-                                             |  ( (uint32_t)((pPage)->HCPhys >> 48) & (RT_BIT_32(GMM_CHUNKID_SHIFT - 12) - 1) ) )
+# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  (   (uint32_t)((pPage)->HCPhysX & 0xfff) \
+                                             |  ( (uint32_t)((pPage)->HCPhysX >> 48) & (RT_BIT_32(GMM_CHUNKID_SHIFT - 12) - 1) ) )
 #endif
 */
 
@@ -781,11 +782,11 @@ typedef PPGMPAGE *PPPGMPAGE;
     do { \
         (pPage)->u3Type = (_enmType); \
         if ((_enmType) == PGMPAGETYPE_ROM) \
-            (pPage)->HCPhys |= MM_RAM_FLAGS_ROM; \
+            (pPage)->HCPhysX |= MM_RAM_FLAGS_ROM; \
         else if ((_enmType) == PGMPAGETYPE_ROM_SHADOW) \
-            (pPage)->HCPhys |= MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2; \
+            (pPage)->HCPhysX |= MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2; \
         else if ((_enmType) == PGMPAGETYPE_MMIO2) \
-            (pPage)->HCPhys |= MM_RAM_FLAGS_MMIO2; \
+            (pPage)->HCPhysX |= MM_RAM_FLAGS_MMIO2; \
     } while (0)
 #endif
 
@@ -795,14 +796,14 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_IS_RESERVED(pPage)     ( !!((pPage)->HCPhys & MM_RAM_FLAGS_RESERVED) )
+#define PGM_PAGE_IS_RESERVED(pPage)     ( !!((pPage)->HCPhysX & MM_RAM_FLAGS_RESERVED) )
 
 /**
  * Checks if the page is marked for MMIO.
  * @returns true/false.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_IS_MMIO(pPage)         ( !!((pPage)->HCPhys & MM_RAM_FLAGS_MMIO) )
+#define PGM_PAGE_IS_MMIO(pPage)         ( !!((pPage)->HCPhysX & MM_RAM_FLAGS_MMIO) )
 
 /**
  * Checks if the page is backed by the ZERO page.
@@ -966,7 +967,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_GET_TRACKING(pPage) \
-    ( *((uint16_t *)&(pPage)->HCPhys + 3) )
+    ( *((uint16_t *)&(pPage)->HCPhysX + 3) )
 
 /** @def PGM_PAGE_SET_TRACKING
  * Sets the packed shadow page pool tracking data associated with a guest page.
@@ -974,7 +975,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   u16TrackingData     The tracking data to store.
  */
 #define PGM_PAGE_SET_TRACKING(pPage, u16TrackingData) \
-    do { *((uint16_t *)&(pPage)->HCPhys + 3) = (u16TrackingData); } while (0)
+    do { *((uint16_t *)&(pPage)->HCPhysX + 3) = (u16TrackingData); } while (0)
 
 /** @def PGM_PAGE_GET_TD_CREFS
  * Gets the @a cRefs tracking data member.
@@ -3480,8 +3481,8 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
 }
 
 #endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
-
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+
 /**
  * Maps the page into current context (RC and maybe R0).
  *
@@ -3527,8 +3528,8 @@ DECLINLINE(void *) pgmDynMapHCPageOff(PPGM pPGM, RTHCPHYS HCPhys)
     pv = (void *)((uintptr_t)pv | (HCPhys & PAGE_OFFSET_MASK));
     return pv;
 }
-#endif /*  VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 || IN_RC */
 
+#endif /*  VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 || IN_RC */
 
 #ifndef IN_RC
 /**
@@ -3559,48 +3560,6 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
 }
 #endif /* !IN_RC */
 
-#if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-
-# ifndef VBOX_WITH_NEW_PHYS_CODE
-/**
- * Convert GC Phys to HC Virt.
- *
- * @returns VBox status.
- * @param   pPGM        PGM handle.
- * @param   GCPhys      The GC physical address.
- * @param   pHCPtr      Where to store the corresponding HC virtual address.
- *
- * @deprecated  This will be eliminated by PGMPhysGCPhys2CCPtr. Only user is
- *              pgmPoolMonitorGCPtr2CCPtr.
- */
-DECLINLINE(int) pgmRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
-{
-    PPGMRAMRANGE pRam;
-    PPGMPAGE pPage;
-    int rc = pgmPhysGetPageAndRangeEx(pPGM, GCPhys, &pPage, &pRam);
-    if (RT_FAILURE(rc))
-    {
-        *pHCPtr = 0; /* Shut up silly GCC warnings. */
-        return rc;
-    }
-    RTGCPHYS off = GCPhys - pRam->GCPhys;
-
-    if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-    {
-        unsigned iChunk = off >> PGM_DYNAMIC_CHUNK_SHIFT;
-        *pHCPtr = (RTHCPTR)(pRam->paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
-        return VINF_SUCCESS;
-    }
-    if (pRam->pvR3)
-    {
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvR3 + off);
-        return VINF_SUCCESS;
-    }
-    *pHCPtr = 0; /* Shut up silly GCC warnings. */
-    return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
-}
-# endif /* !VBOX_WITH_NEW_PHYS_CODE */
-#endif /* !IN_RC && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) */
 
 /**
  * Convert GC Phys to HC Virt and HC Phys.
@@ -3613,8 +3572,9 @@ DECLINLINE(int) pgmRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
  *
  * @deprecated  Will go away or be changed. Only user is MapCR3. MapCR3 will have to do ring-3
  *              and ring-0 locking of the CR3 in a lazy fashion I'm fear... or perhaps not. we'll see.
+ *              Either way, we have to make sure the page is writable in MapCR3.
  */
-DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr, PRTHCPHYS pHCPhys)
+DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr, PRTHCPHYS pHCPhys)
 {
     PPGMRAMRANGE pRam;
     PPGMPAGE pPage;
@@ -3627,7 +3587,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys,
     }
     RTGCPHYS off = GCPhys - pRam->GCPhys;
 
-    *pHCPhys = pPage->HCPhys; /** @todo PAGE FLAGS */
+    *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage);
     if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
     {
         unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
@@ -3646,94 +3606,6 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys,
     }
     *pHCPtr = 0;
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
-}
-
-
-/**
- * Clears flags associated with a RAM address.
- *
- * @returns VBox status code.
- * @param   pPGM        PGM handle.
- * @param   GCPhys      Guest context physical address.
- * @param   fFlags      fFlags to clear. (Bits 0-11.)
- */
-DECLINLINE(int) pgmRamFlagsClearByGCPhys(PPGM pPGM, RTGCPHYS GCPhys, unsigned fFlags)
-{
-    PPGMPAGE pPage;
-    int rc = pgmPhysGetPageEx(pPGM, GCPhys, &pPage);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    fFlags &= ~X86_PTE_PAE_PG_MASK;
-    pPage->HCPhys &= ~(RTHCPHYS)fFlags; /** @todo PAGE FLAGS */
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Clears flags associated with a RAM address.
- *
- * @returns VBox status code.
- * @param   pPGM        PGM handle.
- * @param   GCPhys      Guest context physical address.
- * @param   fFlags      fFlags to clear. (Bits 0-11.)
- * @param   ppRamHint   Where to read and store the ram list hint.
- *                      The caller initializes this to NULL before the call.
- */
-DECLINLINE(int) pgmRamFlagsClearByGCPhysWithHint(PPGM pPGM, RTGCPHYS GCPhys, unsigned fFlags, PPGMRAMRANGE *ppRamHint)
-{
-    PPGMPAGE pPage;
-    int rc = pgmPhysGetPageWithHintEx(pPGM, GCPhys, &pPage, ppRamHint);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    fFlags &= ~X86_PTE_PAE_PG_MASK;
-    pPage->HCPhys &= ~(RTHCPHYS)fFlags; /** @todo PAGE FLAGS */
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Sets (bitwise OR) flags associated with a RAM address.
- *
- * @returns VBox status code.
- * @param   pPGM        PGM handle.
- * @param   GCPhys      Guest context physical address.
- * @param   fFlags      fFlags to set clear. (Bits 0-11.)
- */
-DECLINLINE(int) pgmRamFlagsSetByGCPhys(PPGM pPGM, RTGCPHYS GCPhys, unsigned fFlags)
-{
-    PPGMPAGE pPage;
-    int rc = pgmPhysGetPageEx(pPGM, GCPhys, &pPage);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    fFlags &= ~X86_PTE_PAE_PG_MASK;
-    pPage->HCPhys |= fFlags; /** @todo PAGE FLAGS */
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Sets (bitwise OR) flags associated with a RAM address.
- *
- * @returns VBox status code.
- * @param   pPGM        PGM handle.
- * @param   GCPhys      Guest context physical address.
- * @param   fFlags      fFlags to set clear. (Bits 0-11.)
- * @param   ppRamHint   Where to read and store the ram list hint.
- *                      The caller initializes this to NULL before the call.
- */
-DECLINLINE(int) pgmRamFlagsSetByGCPhysWithHint(PPGM pPGM, RTGCPHYS GCPhys, unsigned fFlags, PPGMRAMRANGE *ppRamHint)
-{
-    PPGMPAGE pPage;
-    int rc = pgmPhysGetPageWithHintEx(pPGM, GCPhys, &pPage, ppRamHint);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    fFlags &= ~X86_PTE_PAE_PG_MASK;
-    pPage->HCPhys |= fFlags; /** @todo PAGE FLAGS */
-    return VINF_SUCCESS;
 }
 
 
@@ -4267,7 +4139,6 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
 
 #endif /* !IN_RC */
 
-
 /**
  * Gets the shadow page directory, 32-bit.
  *
@@ -4391,6 +4262,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
 #endif
 }
 
+
 /**
  * Gets the shadow page directory for the specified address, PAE.
  *
@@ -4416,6 +4288,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, PX86PDPT pPdpt, RTGCPTR GCPtr
     return NULL;
 #endif
 }
+
 
 /**
  * Gets the shadow page directory entry, PAE.
@@ -4455,6 +4328,7 @@ DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
 }
 
 #ifndef IN_RC
+
 /**
  * Gets the shadow page map level-4 pointer.
  *
@@ -4551,23 +4425,6 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, unsigne
 }
 
 #endif /* !IN_RC */
-
-/**
- * Checks if any of the specified page flags are set for the given page.
- *
- * @returns true if any of the flags are set.
- * @returns false if all the flags are clear.
- * @param   pPGM        PGM handle.
- * @param   GCPhys      The GC physical address.
- * @param   fFlags      The flags to check for.
- */
-DECLINLINE(bool) pgmRamTestFlags(PPGM pPGM, RTGCPHYS GCPhys, uint64_t fFlags)
-{
-    PPGMPAGE pPage = pgmPhysGetPage(pPGM, GCPhys);
-    return pPage
-        && (pPage->HCPhys & fFlags) != 0; /** @todo PAGE FLAGS */
-}
-
 
 /**
  * Gets the page state for a physical handler.
@@ -4814,6 +4671,7 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #endif /* PGMPOOL_WITH_CACHE */
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+
 /**
  * Locks a page to prevent flushing (important for cr3 root pages or shadow pae pd pages).
  *
@@ -4828,6 +4686,7 @@ DECLINLINE(int) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Unlocks a page to allow flushing again
  *
@@ -4841,6 +4700,7 @@ DECLINLINE(int) pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     pPage->fLocked = false;
     return VINF_SUCCESS;
 }
+
 
 /**
  * Checks if the page is locked (e.g. the active CR3 or one of the four PDs of a PAE PDPT)
@@ -4859,7 +4719,8 @@ DECLINLINE(bool) pgmPoolIsPageLocked(PPGM pPGM, PPGMPOOLPAGE pPage)
     }
     return false;
 }
-#endif
+
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 /**
  * Tells if mappings are to be put into the shadow page table or not
@@ -4867,7 +4728,6 @@ DECLINLINE(bool) pgmPoolIsPageLocked(PPGM pPGM, PPGMPOOLPAGE pPage)
  * @returns boolean result
  * @param   pVM         VM handle.
  */
-
 DECLINLINE(bool) pgmMapAreMappingsEnabled(PPGM pPGM)
 {
 #ifdef IN_RING0
