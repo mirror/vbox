@@ -137,7 +137,7 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceTyp
     m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
     m.status = (HostNetworkInterfaceStatus)pIf->enmStatus;
 #else /* !RT_OS_WINDOWS */
-    m.type = pIf->enmType;
+    m.mediumType = pIf->enmMediumType;
     m.status = pIf->enmStatus;
 #endif /* !RT_OS_WINDOWS */
 
