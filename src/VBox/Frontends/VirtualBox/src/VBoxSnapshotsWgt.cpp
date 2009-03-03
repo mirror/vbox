@@ -799,10 +799,10 @@ void VBoxSnapshotsWgt::populateSnapshots (const CSnapshot &aSnapshot, QTreeWidge
         mCurSnapshotItem = si;
     }
 
-    CSnapshotEnumerator en = aSnapshot.GetChildren().Enumerate();
-    while (en.HasMore())
+    CSnapshotVector snapvec = aSnapshot.GetChildren();
+    for (int i = 0; i < snapvec.size(); ++i)
     {
-        CSnapshot sn = en.GetNext();
+        CSnapshot sn = snapvec[i];
         populateSnapshots (sn, si);
     }
 

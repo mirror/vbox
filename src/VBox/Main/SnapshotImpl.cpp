@@ -283,19 +283,17 @@ STDMETHODIMP Snapshot::COMGETTER(Parent) (ISnapshot **aParent)
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Children) (ISnapshotCollection **aChildren)
+STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut (ISnapshot *, aChildren))
 {
-    CheckComArgOutPointerValid(aChildren);
+    CheckComArgOutSafeArrayPointerValid(aChildren);
 
     AutoWriteLock alock (this);
     CHECK_READY();
 
     AutoWriteLock chLock (childrenLock ());
 
-    ComObjPtr <SnapshotCollection> collection;
-    collection.createObject();
-    collection->init (children());
-    collection.queryInterfaceTo (aChildren);
+    SafeIfaceArray <ISnapshot> collection (children());
+    collection.detachTo (ComSafeArrayOutArg (aChildren));
 
     return S_OK;
 }

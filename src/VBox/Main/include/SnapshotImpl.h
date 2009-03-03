@@ -86,7 +86,7 @@ public:
     STDMETHOD(COMGETTER(Online)) (BOOL *aOnline);
     STDMETHOD(COMGETTER(Machine)) (IMachine **aMachine);
     STDMETHOD(COMGETTER(Parent)) (ISnapshot **aParent);
-    STDMETHOD(COMGETTER(Children)) (ISnapshotCollection **aChildren);
+    STDMETHOD(COMGETTER(Children)) (ComSafeArrayOut (ISnapshot *, aChildren));
 
     // ISnapshot methods
 
@@ -123,8 +123,6 @@ private:
 
     Data mData;
 };
-
-COM_DECL_READONLY_ENUM_AND_COLLECTION (Snapshot)
 
 #endif // ____H_SNAPSHOTIMPL
 

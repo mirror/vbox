@@ -7456,21 +7456,9 @@
   /////////////////////////////////////////////////////////////////////////
   -->
 
-  <enumerator
-     name="ISnapshotEnumerator" type="ISnapshot"
-     uuid="25cfa2a4-1f1d-4f05-9658-b7a5894ef1a3"
-     />
-
-  <collection
-     name="ISnapshotCollection" type="ISnapshot"
-     enumerator="ISnapshotEnumerator"
-     uuid="23852e3c-94cd-4801-ab05-ed35675b3894"
-     readonly="yes"
-     />
-
   <interface
      name="ISnapshot" extends="$unknown"
-     uuid="9f1bbf79-13b0-4da2-abba-4a992c65c083"
+     uuid="5db6b1d9-c76b-4424-a6f4-8257f642d6ea"
      wsmap="managed"
      >
     <desc>
@@ -7663,7 +7651,7 @@
       </desc>
     </attribute>
 
-    <attribute name="children" type="ISnapshotCollection" readonly="yes">
+    <attribute name="children" type="ISnapshot" readonly="yes" safearray="yes">
       <desc>
         Child snapshots (all snapshots having this one as a parent).
         <note>
