@@ -6447,8 +6447,41 @@
   </enum>
 
   <interface
+     name="IHostNetworkInterfaceIpConfig" extends="$unknown"
+     uuid="38f31587-1ad2-4593-ab0c-d16f6e36c0ee"
+     wsmap="managed"
+     >
+    <desc>
+      Reprents IP settings for one of host's network interfaces. IP V6 address and network
+      mask are strings of 32 hexdecimal digits grouped by four. Groups are
+      separated by colons.
+      For example, fe80:0000:0000:0000:021e:c2ff:fed2:b030.
+    </desc>
+
+    <attribute name="IPAddress" type="unsigned long" readonly="yes">
+      <desc>Returns the IP V4 address of the interface.</desc>
+    </attribute>
+
+    <attribute name="networkMask" type="unsigned long" readonly="yes">
+      <desc>Returns the network mask of the interface.</desc>
+    </attribute>
+
+    <attribute name="defaultGateway" type="unsigned long" readonly="yes">
+      <desc>Returns the network mask of the interface.</desc>
+    </attribute>
+
+    <attribute name="IPV6Address" type="wstring" readonly="yes">
+      <desc>Returns the IP V6 address of the interface.</desc>
+    </attribute>
+
+    <attribute name="IPV6NetworkMask" type="wstring" readonly="yes">
+      <desc>Returns the IP V6 network mask of the interface.</desc>
+    </attribute>
+  </interface>
+
+  <interface
      name="IHostNetworkInterface" extends="$unknown"
-     uuid="c312bf73-b353-4add-9db7-481b891ec08c"
+     uuid="3fd5d8d9-c503-4c1a-b88c-e78fb78f8559"
      wsmap="managed"
      >
     <desc>
@@ -6465,20 +6498,8 @@
       <desc>Returns the interface UUID.</desc>
     </attribute>
 
-    <attribute name="IPAddress" type="unsigned long" readonly="yes">
-      <desc>Returns the IP V4 address of the interface.</desc>
-    </attribute>
-
-    <attribute name="networkMask" type="unsigned long" readonly="yes">
-      <desc>Returns the network mask of the interface.</desc>
-    </attribute>
-
-    <attribute name="IPV6Address" type="wstring" readonly="yes">
-      <desc>Returns the IP V6 address of the interface.</desc>
-    </attribute>
-
-    <attribute name="IPV6NetworkMask" type="wstring" readonly="yes">
-      <desc>Returns the IP V6 network mask of the interface.</desc>
+    <attribute name="ipConfig" type="IHostNetworkInterfaceIpConfig" readonly="yes">
+      <desc>Returns the adapter ip config information </desc>
     </attribute>
 
     <attribute name="hardwareAddress" type="wstring" readonly="yes">

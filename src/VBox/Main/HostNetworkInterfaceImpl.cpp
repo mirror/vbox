@@ -73,6 +73,18 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid, HostNetwork
     return S_OK;
 }
 
+void HostNetworkInterface::uninit()
+{
+    LogFlowThisFunc (("\n"));
+
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
+
+    m.ipConfig.setNull();
+}
+
 #ifdef VBOX_WITH_HOSTNETIF_API
 static Bstr composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
 {
@@ -128,10 +140,12 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceTyp
     unconst (mGuid) = pIf->Uuid;
     mIfType = ifType;
 
-    m.IPAddress = pIf->IPAddress.u;
-    m.networkMask = pIf->IPNetMask.u;
-    m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
-    m.IPV6NetworkMask = composeIPv6Address(&pIf->IPv6NetMask);
+    m.ipConfig.createObject();
+
+    HRESULT hr = m.ipConfig->init (pIf);
+    if(FAILED(hr))
+        return hr;
+
     m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
 #ifdef RT_OS_WINDOWS
     m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
@@ -187,75 +201,15 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Id) (OUT_GUID aGuid)
     return S_OK;
 }
 
-
-/**
- * Returns the IP address of the host network interface.
- *
- * @returns COM status code
- * @param   aIPAddress address of result pointer
- */
-STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (ULONG *aIPAddress)
+STDMETHODIMP HostNetworkInterface::COMGETTER(IpConfig) (IHostNetworkInterfaceIpConfig **aIpConfig)
 {
-    CheckComArgOutPointerValid(aIPAddress);
+    if (!aIpConfig)
+        return E_POINTER;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    *aIPAddress = m.IPAddress;
-
-    return S_OK;
-}
-
-/**
- * Returns the netwok mask of the host network interface.
- *
- * @returns COM status code
- * @param   aNetworkMask address of result pointer
- */
-STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask) (ULONG *aNetworkMask)
-{
-    CheckComArgOutPointerValid(aNetworkMask);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    *aNetworkMask = m.networkMask;
-
-    return S_OK;
-}
-
-/**
- * Returns the IP V6 address of the host network interface.
- *
- * @returns COM status code
- * @param   aIPV6Address address of result pointer
- */
-STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Address) (BSTR *aIPV6Address)
-{
-    CheckComArgOutPointerValid(aIPV6Address);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    m.IPV6Address.cloneTo (aIPV6Address);
-
-    return S_OK;
-}
-
-/**
- * Returns the IP V6 network mask of the host network interface.
- *
- * @returns COM status code
- * @param   aIPV6Mask address of result pointer
- */
-STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6NetworkMask) (BSTR *aIPV6Mask)
-{
-    CheckComArgOutPointerValid(aIPV6Mask);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    m.IPV6NetworkMask.cloneTo (aIPV6Mask);
+    m.ipConfig.queryInterfaceTo (aIpConfig);
 
     return S_OK;
 }
