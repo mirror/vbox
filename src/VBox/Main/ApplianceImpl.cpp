@@ -198,14 +198,14 @@ struct VirtualSystem
     }
 };
 
-struct Appliance::Task
+struct Appliance::TaskImportMachines
 {
-    Task(Appliance *aThat, Progress *aProgress)
+    TaskImportMachines(Appliance *aThat, Progress *aProgress)
         : that(aThat)
         , progress(aProgress)
         , rc(S_OK)
     {}
-    ~Task() {}
+    ~TaskImportMachines() {}
 
     HRESULT startThread();
 
@@ -262,9 +262,9 @@ STDMETHODIMP VirtualBox::CreateAppliance(IAppliance** anAppliance)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT Appliance::Task::startThread()
+HRESULT Appliance::TaskImportMachines::startThread()
 {
-    int vrc = RTThreadCreate(NULL, Appliance::taskThread, this,
+    int vrc = RTThreadCreate(NULL, Appliance::taskThreadImportMachines, this,
                              0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
                              "Appliance::Task");
     ComAssertMsgRCRet(vrc,
@@ -1652,7 +1652,7 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
         CheckComRCThrowRC(rc);
 
         /* Initialize our worker task */
-        std::auto_ptr<Task> task(new Task(this, progress));
+        std::auto_ptr<TaskImportMachines> task(new TaskImportMachines(this, progress));
         //AssertComRCThrowRC (task->autoCaller.rc());
 
         rc = task->startThread();
@@ -1672,7 +1672,7 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
     return rc;
 }
 
-STDMETHODIMP Appliance::Write(IN_BSTR path)
+STDMETHODIMP Appliance::Write(IN_BSTR path, IProgress **aProgress)
 {
     HRESULT rc = S_OK;
     return rc;
@@ -1739,9 +1739,9 @@ struct MyHardDiskAttachment
  * @param pvUser
  */
 /* static */
-DECLCALLBACK(int) Appliance::taskThread(RTTHREAD aThread, void *pvUser)
+DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pvUser)
 {
-    std::auto_ptr<Task> task(static_cast<Task *>(pvUser));
+    std::auto_ptr<TaskImportMachines> task(static_cast<TaskImportMachines*>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
 
     Appliance *app = task->that;
@@ -2695,9 +2695,6 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         // ComPtr<IDVDDrive> pDVDDrive;
         fDVDEnabled = 1;
 
-        // hardDiskAttachments
-//         mHDData->mAttachments @todo
-
         // this is more tricky so use the COM method
         rc = COMGETTER(USBController)(pUsbController.asOutParam());
         if (FAILED(rc)) throw rc;
@@ -2739,10 +2736,81 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
                            strMemory,
                            strMemory);
 
+        uint32_t uControllerId = 1;
+        Utf8Str strIdeControllerID;
+        Utf8Str strSataControllerID;
+
 //     <const name="HardDiskControllerIDE" value="6" />
+        ComPtr<IBIOSSettings> pBiosSettings;
+        pBiosSettings = mBIOSSettings;
+        Utf8Str strConfig;
+        IDEControllerType_T ctlr;
+        rc = pBiosSettings->COMGETTER(IDEControllerType)(&ctlr);
+        if (FAILED(rc)) throw rc;
+        switch(ctlr)
+        {
+            case IDEControllerType_PIIX3: strConfig = "PIIX3"; break;
+            case IDEControllerType_PIIX4: strConfig = "PIIX4"; break;
+            case IDEControllerType_ICH6: strConfig = "ICH6"; break;
+        }
+
+        if (strConfig.length())
+        {
+            strIdeControllerID = Utf8StrFmt("%RI32", uControllerId++);
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE, strIdeControllerID, strConfig, "");
+        }
+
+#ifdef VBOX_WITH_AHCI
 //     <const name="HardDiskControllerSATA" value="7" />
+        ComPtr<ISATAController> pSataController;
+        pSataController = mSATAController;
+        BOOL fSataEnabled;
+        rc = pSataController->COMGETTER(Enabled)(&fSataEnabled);
+        if (FAILED(rc)) throw rc;
+        if (fSataEnabled)
+        {
+            strSataControllerID = Utf8StrFmt("%RI32", uControllerId++);
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, strSataControllerID, strConfig, "");
+        }
+#endif // VBOX_WITH_AHCI
+
 //     <const name="HardDiskControllerSCSI" value="8" />
+        // @todo
+
 //     <const name="HardDiskImage" value="9" />
+        // hardDiskAttachments
+//         mHDData->mAttachments @todo
+        HDData::AttachmentList::iterator itA;
+        for (itA = mHDData->mAttachments.begin();
+             itA != mHDData->mAttachments.end();
+             ++itA)
+        {
+            ComObjPtr<HardDiskAttachment> pHDA = *itA;
+
+            // get the attachment's data
+            ComPtr<IHardDisk> pHardDisk;
+            StorageBus_T storageBus;
+            LONG lChannel;
+            LONG lDevice;
+
+            rc = pHDA->COMGETTER(HardDisk)(pHardDisk.asOutParam());
+            if (FAILED(rc)) throw rc;
+
+            rc = pHDA->COMGETTER(Bus)(&storageBus);
+            if (FAILED(rc)) throw rc;
+
+            rc = pHDA->COMGETTER(Channel)(&lChannel);
+            if (FAILED(rc)) throw rc;
+
+            rc = pHDA->COMGETTER(Device)(&lDevice);
+            if (FAILED(rc)) throw rc;
+
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
+                               "", // hd.strDiskId,
+                               "", // di.strHref,
+                               "",
+                               ""); // strExtraConfig
+        }
 
         /* Floppy Drive */
         if (fFloppyEnabled)

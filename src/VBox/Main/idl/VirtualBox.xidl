@@ -2926,7 +2926,10 @@
 
     <attribute name="path" type="wstring" readonly="yes">
       <desc>Path to the main file of the OVF appliance, which is either the <tt>.ovf</tt> or
-          the <tt>.ova</tt> file passed to <link to="IAppliance::read" />.</desc>
+          the <tt>.ova</tt> file passed to <link to="#read" /> (for import) or
+          <link to="#write" /> (for export).
+          This attribute is empty until one of these methods has been called.
+      </desc>
     </attribute>
 
     <attribute name="disks" type="wstring" readonly="yes" safearray="yes">
@@ -2970,8 +2973,9 @@
 
     <attribute name="virtualSystemDescriptions" type="IVirtualSystemDescription" readonly="yes" safearray="yes">
       <desc> Array of virtual system descriptions. One such description is created
-      for each virtual system found in the OVF. The array is empty until after <link to="#interpret" />
-      has been called.
+      for each virtual system found in the OVF.
+      This array is empty until either <link to="#interpret" /> (for import) or <link to="IMachine::export" />
+      (for export) has been called.
       </desc>
     </attribute>
 
@@ -3014,9 +3018,9 @@
         Calling this method is the final step of importing an appliance into VirtualBox;
         see <link to="IAppliance" /> for an overview.
 
-        Since importing the appliance may imply copying disk images, which can take a long
-        time, this method operates asynchronously and returns an IProgress object to allow
-        the caller to monitor the progress.
+        Since importing the appliance will most probably involve copying and converting
+        disk images, which can take a long time, this method operates asynchronously and
+        returns an IProgress object to allow the caller to monitor the progress.
       </desc>
 
       <param name="aProgress" type="IProgress" dir="return">
@@ -3030,12 +3034,19 @@
 
           Calling this method is the final step of exporting an appliance from VirtualBox;
           see <link to="IAppliance" /> for an overview.
+
+          Since importing the appliance will most probably involve copying and converting
+          disk images, which can take a long time, this method operates asynchronously and
+          returns an IProgress object to allow the caller to monitor the progress.
       </desc>
       <param name="path" type="wstring" dir="in">
         <desc>
           Name of appliance file to open (either with an <tt>.ovf</tt> or <tt>.ova</tt> extension, depending
           on whether the appliance is distributed as a set of files or as a single file, respectively).
         </desc>
+      </param>
+      <param name="aProgress" type="IProgress" dir="return">
+          <desc></desc>
       </param>
     </method>
 
@@ -3134,7 +3145,7 @@
         The matching item in the aRefs[] array will be used as with IDE controllers (see above).
       </li>
       <li>
-        "Harddisk": a virtual hard disk, most probably as a reference to an image file. There can be an
+        "HardDiskImage": a virtual hard disk, most probably as a reference to an image file. There can be an
         arbitrary number of these items, one for each virtual disk image that accompanies the OVF. The
         array item in aOrigValues[] will contain the file specification from the OVF file, whereas the
         item in aConfigValues[] will contain a qualified path specification to where the hard disk image
