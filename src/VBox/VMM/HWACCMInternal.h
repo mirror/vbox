@@ -549,6 +549,16 @@ typedef struct HWACCMCPU
         uint64_t                    intInfo;
     } Event;
 
+    /** IO Block emulation state. */
+    struct
+    {
+        bool                    fEnabled;
+        uint8_t                 u8Align[7];
+
+        /** Esp at the start of the io code we wish to emulate in the recompiler. */
+        RTGCPTR                 GCPtrFunctionEsp;
+    } EmulateIoBlock;
+
     /** Currenty shadow paging mode. */
     PGMMODE                 enmShadowMode;
 
