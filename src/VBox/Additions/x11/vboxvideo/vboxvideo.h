@@ -56,6 +56,42 @@
 #ifndef _VBOXVIDEO_H_
 #define _VBOXVIDEO_H_
 
+#ifdef DEBUG_michael
+# define DEBUG_VIDEO 1
+#endif
+
+#ifdef DEBUG_VIDEO
+
+#define TRACE_ENTRY() \
+do { \
+    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
+    xf86Msg(X_INFO, ": entering\n"); \
+} while(0)
+#define TRACE_EXIT() \
+do { \
+    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
+    xf86Msg(X_INFO, ": leaving\n"); \
+} while(0)
+#define TRACE_LOG(...) \
+do { \
+    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
+    xf86Msg(X_INFO, __VA_ARGS__); \
+} while(0)
+# define TRACE_LINE() do \
+{ \
+    ErrorF ("%s: line %d\n", __FUNCTION__, __LINE__); \
+    } while(0)
+
+#else  /* DEBUG_VIDEO not defined */
+
+#define TRACE_ENTRY()  do { } while(0)
+#define TRACE_EXIT()   do { } while(0)
+#define TRACE_LOG(...) do { } while(0)
+
+#endif  /* DEBUG_VIDEO not defined */
+
+#define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
+
 #include <VBox/VBoxGuest.h>
 
 /* All drivers should typically include these */
@@ -117,6 +153,8 @@
 #define _XF86DRI_SERVER_
 /* Hack to work around a libdrm header which is broken on Solaris */
 #define u_int64_t uint64_t
+/* Get rid of a warning due to a broken header file */
+enum drm_bo_type { DRM_BO_TYPE };
 #include "dri.h"
 #undef u_int64_t
 #include "GL/glxint.h"
@@ -206,6 +244,8 @@ extern Bool vboxSaveVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint3
 extern Bool vboxRetrieveVideoMode(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits);
 
 /* DRI stuff */
-extern Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, VBOXPtr pVBox);
+extern Bool VBOXDRIScreenInit(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox);
+extern Bool VBOXDRIFinishScreenInit(ScreenPtr pScreen);
+extern void VBOXDRICloseScreen(ScreenPtr pScreen, VBOXPtr pVBox);
 
 #endif /* _VBOXVIDEO_H_ */
