@@ -22,6 +22,9 @@
 #define _slirp_state_h_
 #include <iprt/req.h>
 #include "ip_icmp.h"
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+# include "dnsproxy/dnsproxy.h"
+#endif
 
 /** Number of DHCP clients supported by NAT. */
 #define NB_ADDR     16
@@ -175,6 +178,36 @@ typedef struct NATState
 #endif
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
     int fIcmp;
+#endif
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+    /* from dnsproxy/dnsproxy.h*/
+    unsigned int authoritative_port;
+    unsigned int authoritative_timeout;
+    unsigned int recursive_port;
+    unsigned int recursive_timeout;
+    unsigned int stats_timeout;
+    unsigned int port;
+
+    unsigned long active_queries;
+    unsigned long all_queries;
+    unsigned long authoritative_queries;
+    unsigned long recursive_queries;
+    unsigned long removed_queries;
+    unsigned long dropped_queries;
+    unsigned long answered_queries;
+    unsigned long dropped_answers;
+    unsigned long late_answers;
+    unsigned long hash_collisions;
+    /*dnsproxy/dnsproxy.c*/
+    unsigned short queryid;
+    struct sockaddr_in authoritative_addr;
+    struct sockaddr_in recursive_addr;
+    int sock_query;
+    int sock_answer;
+    /* dnsproxy/hash.c */
+    #define HASHSIZE 10
+    #define HASH(id) (id & ((1 << HASHSIZE) - 1))
+    struct request *request_hash[1 << HASHSIZE];
 #endif
     STAMPROFILE StatFill;
     STAMPROFILE StatPoll;
@@ -589,5 +622,34 @@ typedef struct NATState
 #define SOWRITE(ret, data, so) DO_SOWRITE((ret), (data), (so))
 #define SORECVFROM(data, so) DO_SORECFROM((data), (so))
 #define UDP_DETACH(data, so, so_next) DO_UDP_DETACH((data), (so), (so_next))
+
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+/* dnsproxy/dnsproxy.c */
+# define authoritative_port pData->authoritative_port
+# define authoritative_timeout pData->authoritative_timeout
+# define recursive_port pData->recursive_port
+# define recursive_timeout pData->recursive_timeout
+# define stats_timeout pData->stats_timeout
+/* dnsproxy/hash.c */
+# define dns_port pData->port
+# define request_hash pData->request_hash
+# define hash_collisions pData->hash_collisions
+# define active_queries pData->active_queries
+# define all_queries pData->all_queries
+# define authoritative_queries pData->authoritative_queries
+# define recursive_queries pData->recursive_queries
+# define removed_queries pData->removed_queries
+# define dropped_queries pData->dropped_queries
+# define answered_queries pData->answered_queries
+# define dropped_answers pData->dropped_answers
+# define late_answers pData->late_answers
+
+/* dnsproxy/dnsproxy.c */
+# define queryid pData->queryid
+# define authoritative_addr pData->authoritative_addr
+# define recursive_addr pData->recursive_addr
+# define sock_query pData->sock_query
+# define sock_answer pData->sock_answer
+#endif
 
 #endif /* !_slirp_state_h_ */
