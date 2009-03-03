@@ -3100,7 +3100,7 @@
 
       The list below identifies the value sets that are possible depending on the
       <link to="VirtualSystemDescriptionType" /> enum value in the array item in aTypes[]. In each case,
-      the array item with the same index in aOrigValue[] will contain the original value as contained
+      the array item with the same index in aOvfValues[] will contain the original value as contained
       in the OVF file (just for informational purposes), and the corresponding item in aVboxValues[]
       will contain a suggested value to be used for VirtualBox. Depending on the description type,
       the aExtraConfigValues[] array item may also be used.
@@ -3242,8 +3242,8 @@
     </method>
 
     <method name="getWarnings">
-      <desc>Returns textual warnings which occurs on the virtual system
-      interpretion.</desc>
+      <desc>Returns textual warnings which occured during the virtual system
+          interpretion.</desc>
 
       <param name="aWarnings" type="wstring" dir="return" safearray="yes">
         <desc></desc>
