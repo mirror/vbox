@@ -1672,20 +1672,23 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
      */
     int rc = VINF_SUCCESS;
     RTGCPHYS GCPhysCR3;
-    if (    pVM->pgm.s.enmGuestMode == PGMMODE_PAE
-        ||  pVM->pgm.s.enmGuestMode == PGMMODE_PAE_NX
-        ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64
-        ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64_NX)
+    switch (pVM->pgm.s.enmGuestMode)
+    {
+    case PGMMODE_PAE:
+    case PGMMODE_PAE_NX:
         GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAE_PAGE_MASK);
-    else
+        break;
+    case PGMMODE_AMD64:
+    case PGMMODE_AMD64_NX:
+        GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_AMD64_PAGE_MASK);
+        break;
+    default:
         GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
+        break;
+    }
+
     if (pVM->pgm.s.GCPhysCR3 != GCPhysCR3)
     {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        /* Unmap the old CR3 value before activating the new one. */
-        rc = PGM_BTH_PFN(UnmapCR3, pVM)(pVM);
-        AssertRC(rc);
-#endif
         RTGCPHYS GCPhysOldCR3 = pVM->pgm.s.GCPhysCR3;
         pVM->pgm.s.GCPhysCR3  = GCPhysCR3;
         rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
@@ -1769,13 +1772,20 @@ VMMDECL(int) PGMUpdateCR3(PVM pVM, uint64_t cr3)
      */
     int rc = VINF_SUCCESS;
     RTGCPHYS GCPhysCR3;
-    if (    pVM->pgm.s.enmGuestMode == PGMMODE_PAE
-        ||  pVM->pgm.s.enmGuestMode == PGMMODE_PAE_NX
-        ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64
-        ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64_NX)
+    switch (pVM->pgm.s.enmGuestMode)
+    {
+    case PGMMODE_PAE:
+    case PGMMODE_PAE_NX:
         GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAE_PAGE_MASK);
-    else
+        break;
+    case PGMMODE_AMD64:
+    case PGMMODE_AMD64_NX:
+        GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_AMD64_PAGE_MASK);
+        break;
+    default:
         GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
+        break;
+    }
     if (pVM->pgm.s.GCPhysCR3 != GCPhysCR3)
     {
         pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
@@ -1846,25 +1856,31 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool 
 
         RTGCPHYS GCPhysCR3Old = pVM->pgm.s.GCPhysCR3;
         RTGCPHYS GCPhysCR3;
-        if (    pVM->pgm.s.enmGuestMode == PGMMODE_PAE
-            ||  pVM->pgm.s.enmGuestMode == PGMMODE_PAE_NX
-            ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64
-            ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64_NX)
+        switch (pVM->pgm.s.enmGuestMode)
+        {
+        case PGMMODE_PAE:
+        case PGMMODE_PAE_NX:
             GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAE_PAGE_MASK);
-        else
+            break;
+        case PGMMODE_AMD64:
+        case PGMMODE_AMD64_NX:
+            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_AMD64_PAGE_MASK);
+            break;
+        default:
             GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
+            break;
+        }
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         if (pVM->pgm.s.GCPhysCR3 != GCPhysCR3)
         {
-            /* Unmap the old CR3 value before activating the new one. */
-            rc = PGM_BTH_PFN(UnmapCR3, pVM)(pVM);
-            AssertRC(rc);
+            pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
+            rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
         }
-#endif
-
+#else
         pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
         rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
+#endif
 #ifdef IN_RING3
         if (rc == VINF_PGM_SYNC_CR3)
             rc = pgmPoolSyncCR3(pVM);
