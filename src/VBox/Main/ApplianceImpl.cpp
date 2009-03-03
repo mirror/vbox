@@ -2209,7 +2209,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
 
                                     default:
                                         throw setError(VBOX_E_NOT_SUPPORTED,
-                                                       tr("Invalid channel %RI16 specified; IDE conrollers support only 0, 1 or 2"), vd.ulAddressOnParent);
+                                                       tr("Invalid channel %RI16 specified; IDE controllers support only 0, 1 or 2"), vd.ulAddressOnParent);
                                     break;
                                 }
                             break;
@@ -2737,8 +2737,8 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
                            strMemory);
 
         uint32_t uControllerId = 1;
-        Utf8Str strIdeControllerID;
-        Utf8Str strSataControllerID;
+        uint32_t uidIdeController;
+        uint32_t uidSataController;
 
 //     <const name="HardDiskControllerIDE" value="6" />
         ComPtr<IBIOSSettings> pBiosSettings;
@@ -2756,8 +2756,8 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
         if (strVbox.length())
         {
-            strIdeControllerID = Utf8StrFmt("%RI32", uControllerId++);
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE, strIdeControllerID, strVbox, "");
+            uidIdeController = uControllerId++;
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE, Utf8StrFmt("%d", uidIdeController), strVbox, "");
         }
 
 #ifdef VBOX_WITH_AHCI
@@ -2769,8 +2769,8 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         if (FAILED(rc)) throw rc;
         if (fSataEnabled)
         {
-            strSataControllerID = Utf8StrFmt("%RI32", uControllerId++);
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, strSataControllerID, strVbox, "");
+            uidSataController = uControllerId++;
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, Utf8StrFmt("%d", uidSataController), strVbox, "");
         }
 #endif // VBOX_WITH_AHCI
 
@@ -2787,11 +2787,14 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         {
             ComObjPtr<HardDiskAttachment> pHDA = *itA;
 
-            // get the attachment's data
+            // the attachment's data
             ComPtr<IHardDisk> pHardDisk;
             StorageBus_T storageBus;
             LONG lChannel;
             LONG lDevice;
+
+            // and how this translates to the virtual system
+            LONG lChannelVsys;
 
             rc = pHDA->COMGETTER(HardDisk)(pHardDisk.asOutParam());
             if (FAILED(rc)) throw rc;
@@ -2805,14 +2808,53 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
             rc = pHDA->COMGETTER(Device)(&lDevice);
             if (FAILED(rc)) throw rc;
 
+            Bstr bstrLocation;
+            rc = pHardDisk->COMGETTER(Location)(bstrLocation.asOutParam());
             Bstr bstrName;
             rc = pHardDisk->COMGETTER(Name)(bstrName.asOutParam());
 
+            uint32_t uidControllerVsys;
+
+            switch (storageBus)
+            {
+                case HardDiskController::IDE:
+                    // this is the exact reverse to what we're doing in Appliance::taskThreadImportMachines,
+                    // and it must be updated when that is changed!
+
+                    if (lChannel == 0 && lDevice == 0)      // primary master
+                        lChannelVsys = 0;
+                    else if (lChannel == 0 && lDevice == 1) // primary slave
+                        lChannelVsys = 1;
+                    else if (lChannel == 1 && lDevice == 1) // secondary slave; secondary master is always CDROM
+                        lChannelVsys = 2;
+                    else
+                        throw setError(VBOX_E_NOT_SUPPORTED,
+                                       tr("Cannot handle hard disk attachment: channel is %d, device is %d"), lChannel, lDevice);
+                        break;
+
+                    uidControllerVsys = uidIdeController;
+                break;
+
+                case HardDiskController::SATA:
+                    lChannelVsys = lChannel;        // should be between 0 and 29
+                    uidControllerVsys = uidSataController;
+                break;
+
+                case HardDiskController::SCSI:
+                        // mhda.busType = StorageBus_SCSI;
+                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                tr("SCSI controller support is not available yet in VirtualBox"));
+                        // @todo
+                break;
+
+                default: break;
+            }
+
             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                               Utf8Str(bstrName), // hd.strDiskId,
-                               "", // di.strHref,
-                               "",
-                               ""); // strExtraConfig
+                               Utf8Str(bstrName), // disk ID: let's use the name
+                               "",                // OVF value: unknown as of now
+                               Utf8Str(bstrLocation), // vbox value: media path
+                               Utf8StrFmt("controller=%d;channel=%d", uidControllerVsys, lChannelVsys));
         }
 
         /* Floppy Drive */
