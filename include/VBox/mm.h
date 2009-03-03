@@ -85,15 +85,10 @@ __BEGIN_DECLS
 /** Physical backing memory is allocated dynamically. Not set implies a one time static allocation. */
 #define MM_RAM_FLAGS_DYNAMIC_ALLOC      RT_BIT(11)
 
-/** The (shifted) cRef value used to indiciate that the idx is the head of a
- * physical cross reference extent list. */
-#define MM_RAM_FLAGS_CREFS_PHYSEXT      0x3
 /** The shift used to get the page pool idx. (Apply MM_RAM_FLAGS_IDX_MASK to the result when shifting down). */
 #define MM_RAM_FLAGS_IDX_SHIFT          48
 /** The mask applied to the the page pool idx after using MM_RAM_FLAGS_IDX_SHIFT to shift it down. */
 #define MM_RAM_FLAGS_IDX_MASK           0x3fff
-/** The idx value when we're out of of extents or there are simply too many mappings of this page. */
-#define MM_RAM_FLAGS_IDX_OVERFLOWED     MM_RAM_FLAGS_IDX_MASK
 /** @} */
 
 /** @name MMR3PhysRegisterEx registration type
