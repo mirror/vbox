@@ -1,6 +1,6 @@
 /*
  * common defines for all CPUs
- * 
+ *
  * Copyright (c) 2003 Fabrice Bellard
  *
  * This library is free software; you can redistribute it and/or
@@ -40,7 +40,7 @@
 #error TARGET_LONG_BITS must be defined before including this header
 #endif
 
-#ifndef TARGET_PHYS_ADDR_BITS 
+#ifndef TARGET_PHYS_ADDR_BITS
 #if TARGET_LONG_BITS >= HOST_LONG_BITS
 #define TARGET_PHYS_ADDR_BITS TARGET_LONG_BITS
 #else
@@ -85,7 +85,7 @@ typedef uint64_t target_phys_addr_t;
 
 #define HOST_LONG_SIZE (HOST_LONG_BITS / 8)
 
-#define EXCP_INTERRUPT 	0x10000 /* async interruption */
+#define EXCP_INTERRUPT  0x10000 /* async interruption */
 #define EXCP_HLT        0x10001 /* hlt instruction reached */
 #define EXCP_DEBUG      0x10002 /* cpu stopped after a breakpoint or singlestep */
 #define EXCP_HALTED     0x10003 /* cpu is halted (waiting for external event) */
@@ -125,9 +125,9 @@ typedef struct CPUTLBEntry {
        bit 3                      : indicates that the entry is invalid
        bit 2..0                   : zero
     */
-    target_ulong addr_read; 
-    target_ulong addr_write; 
-    target_ulong addr_code; 
+    target_ulong addr_read;
+    target_ulong addr_write;
+    target_ulong addr_code;
       /* Addend to virtual address to get physical address.  IO accesses
        use the correcponding iotlb value.  */
 #if TARGET_PHYS_ADDR_BITS == 64
@@ -137,9 +137,9 @@ typedef struct CPUTLBEntry {
     target_phys_addr_t addend;
 #endif
     /* padding to get a power of two size */
-    uint8_t dummy[(1 << CPU_TLB_ENTRY_BITS) - 
-                  (sizeof(target_ulong) * 3 + 
-                   ((-sizeof(target_ulong) * 3) & (sizeof(target_phys_addr_t) - 1)) + 
+    uint8_t dummy[(1 << CPU_TLB_ENTRY_BITS) -
+                  (sizeof(target_ulong) * 3 +
+                   ((-sizeof(target_ulong) * 3) & (sizeof(target_phys_addr_t) - 1)) +
                    sizeof(target_phys_addr_t))];
 } CPUTLBEntry;
 
@@ -173,6 +173,8 @@ typedef struct icount_decr_u16 {
     /* The meaning of the MMU modes is defined in the target code. */   \
     CPUTLBEntry tlb_table[NB_MMU_MODES][CPU_TLB_SIZE];                  \
     target_phys_addr_t iotlb[NB_MMU_MODES][CPU_TLB_SIZE];               \
+    /** addends for HVA -> GPA translations */                          \
+    VBOX_ONLY(target_phys_addr_t   phys_addends[NB_MMU_MODES][CPU_TLB_SIZE]); \
     struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];           \
     /* buffer for temporaries in the code generator */                  \
     long temp_buf[CPU_TEMP_BUF_NLONGS];                                 \
@@ -212,6 +214,6 @@ typedef struct icount_decr_u16 {
     /* user data */                                                     \
     void *opaque;                                                       \
                                                                         \
-    const char *cpu_model_str;                                          
+    const char *cpu_model_str;
 
 #endif

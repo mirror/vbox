@@ -12,6 +12,8 @@
 
 #include "config.h"
 
+#define VBOX_ONLY(x) x
+
 #ifndef _MSC_VER
 #define qemu_snprintf(pszBuf, cbBuf, ...) RTStrPrintf((pszBuf), (cbBuf), __VA_ARGS__)
 #else
@@ -48,6 +50,8 @@
 #else /* !VBOX */
 
 #include <stdarg.h>
+
+#define VBOX_ONLY(x)
 
 #define qemu_snprintf snprintf   /* bird */
 #define qemu_vsnprintf vsnprintf /* bird */
