@@ -2356,6 +2356,13 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
             break;
 
         /*
+         * (MM)IO intensive code block detected; fall back to the recompiler for better performance
+         */
+        case VINF_EM_RAW_EMULATE_IO_BLOCK:
+            rc = VINF_EM_RESCHEDULE_REM;
+            break;
+
+        /*
          * Execute instruction.
          */
         case VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT:

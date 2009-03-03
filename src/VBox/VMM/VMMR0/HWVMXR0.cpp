@@ -2428,7 +2428,7 @@ ResumeExecution:
                     goto ResumeExecution;
                 }
 #ifdef VBOX_STRICT
-                if (rc != VINF_EM_RAW_EMULATE_INSTR)
+                if (rc != VINF_EM_RAW_EMULATE_INSTR && rc != VINF_EM_RAW_EMULATE_IO_BLOCK)
                     Log2(("PGMTrap0eHandler failed with %d\n", rc));
 #endif
                 /* Need to go back to the recompiler to emulate the instruction. */
