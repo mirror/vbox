@@ -232,9 +232,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
             Assert(PGM_PAGE_GET_HCPHYS(pPage));
 
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-            /* This code also makes ASSUMPTIONS about the cRefs and stuff. */
-            Assert(MM_RAM_FLAGS_IDX_SHIFT < MM_RAM_FLAGS_CREFS_SHIFT);
-            const uint16_t u16 = pRam->aPages[i].HCPhys >> MM_RAM_FLAGS_IDX_SHIFT; /** @todo PAGE FLAGS */
+            const uint16_t u16 = PGM_PAGE_GET_TRACKING(&pRam->aPages[i]);
             if (u16)
             {
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
@@ -243,14 +241,13 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
                 PVMCPU pVCpu = VMMGetCpu(pVM);
                 uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
 # endif
-
-                if ((u16 >> PGMPOOL_TD_CREFS_SHIFT) != MM_RAM_FLAGS_CREFS_PHYSEXT)
+                if (PGMPOOL_TD_GET_CREFS(u16) != PGMPOOL_TD_CREFS_PHYSEXT)
                     pgmPoolTrackFlushGCPhysPT(pVM,
                                               pPage,
-                                              u16 & MM_RAM_FLAGS_IDX_MASK,
-                                              u16 >> PGMPOOL_TD_CREFS_SHIFT);
-                else if (u16 != ((MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT) | MM_RAM_FLAGS_IDX_OVERFLOWED))
-                    pgmPoolTrackFlushGCPhysPTs(pVM, pPage, u16 & MM_RAM_FLAGS_IDX_MASK);
+                                              PGMPOOL_TD_GET_IDX(u16),
+                                              PGMPOOL_TD_GET_CREFS(u16));
+                else if (u16 != PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED))
+                    pgmPoolTrackFlushGCPhysPTs(pVM, pPage, PGMPOOL_TD_GET_IDX(u16));
                 else
                     rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPage);
                 fFlushTLBs = true;

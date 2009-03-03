@@ -1949,18 +1949,31 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
 /** The idx value when we're out of of PGMPOOLPHYSEXT entries or/and there are
  * simply too many mappings of this page. */
 #define PGMPOOL_TD_IDX_OVERFLOWED       PGMPOOL_TD_IDX_MASK
+
+/** @def PGMPOOL_TD_MAKE
+ * Makes a 16-bit tracking data word.
+ *
+ * @returns tracking data.
+ * @param   cRefs       The @a cRefs field. Must be within bounds!
+ * @param   idx         The @a idx field. Must also be within bounds! */
+#define PGMPOOL_TD_MAKE(cRefs, idx)     ( ((cRefs) << PGMPOOL_TD_CREFS_SHIFT) | (idx) )
+
+/** @def PGMPOOL_TD_GET_CREFS
+ * Get the @a cRefs field from a tracking data word.
+ *
+ * @returns The @a cRefs field
+ * @param   u16         The tracking data word. */
+#define PGMPOOL_TD_GET_CREFS(u16)       ( ((u16) >> PGMPOOL_TD_CREFS_SHIFT) & PGMPOOL_TD_CREFS_MASK )
+
+/** @def PGMPOOL_TD_GET_IDX
+ * Get the @a idx field from a tracking data word.
+ *
+ * @returns The @a idx field
+ * @param   u16         The tracking data word. */
+#define PGMPOOL_TD_GET_IDX(u16)         ( ((u16) >> PGMPOOL_TD_IDX_SHIFT)   & PGMPOOL_TD_IDX_MASK   )
 /** @} */
 
-#ifdef MM_RAM_FLAGS_CREFS_SHIFT
-# if MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT != PGMPOOL_TD_CREFS_SHIFT
-#  error "MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT != PGMPOOL_TD_CREFS_SHIFT"
-# endif
-# if MM_RAM_FLAGS_CREFS_MASK != MM_RAM_FLAGS_CREFS_MASK
-#  error "MM_RAM_FLAGS_CREFS_MASK != MM_RAM_FLAGS_CREFS_MASK"
-# endif
-# if MM_RAM_FLAGS_CREFS_PHYSEXT != MM_RAM_FLAGS_CREFS_PHYSEXT
-#  error "MM_RAM_FLAGS_CREFS_PHYSEXT != MM_RAM_FLAGS_CREFS_PHYSEXT"
-# endif
+#ifdef MM_RAM_FLAGS_IDX_SHIFT
 # if MM_RAM_FLAGS_IDX_SHIFT - 48 != PGMPOOL_TD_IDX_SHIFT
 #  error "MM_RAM_FLAGS_IDX_SHIFT - 48 != PGMPOOL_TD_IDX_SHIFT"
 # endif
