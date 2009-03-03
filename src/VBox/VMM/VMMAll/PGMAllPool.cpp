@@ -3427,9 +3427,9 @@ uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
             u16 = PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
         }
         else
-            u16 = PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, MM_RAM_FLAGS_IDX_OVERFLOWED);
+            u16 = PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED);
     }
-    else if (u16 != PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, MM_RAM_FLAGS_IDX_OVERFLOWED))
+    else if (u16 != PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED))
     {
         /*
          * Insert into the extent list.
