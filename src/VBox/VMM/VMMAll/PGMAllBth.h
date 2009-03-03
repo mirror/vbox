@@ -945,7 +945,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
     const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PPGMPOOLPAGE    pShwPde;
     PX86PDPAE       pPDDst;
-    
+
     /* Fetch the pgm pool shadow descriptor. */
     rc = pgmShwGetPaePoolPagePD(&pVM->pgm.s, GCPtrPage, &pShwPde);
     AssertRCSuccessReturn(rc, rc);
@@ -1424,15 +1424,15 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVM pVM, PPGMPOOLPAGE p
     if (!u16)
     {
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackVirgin);
-        u16 = (1 << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT)) | pShwPage->idx;
+        u16 = (1 << PGMPOOL_TD_CREFS_SHIFT) | pShwPage->idx;
     }
     else
         u16 = pgmPoolTrackPhysExtAddref(pVM, u16, pShwPage->idx);
 
-    /* write back, trying to be clever... */
-    Log2(("SyncPageWorkerTrackAddRef: u16=%#x pPage->HCPhys=%RHp->%RHp iPTDst=%#x\n",
-          u16, pPage->HCPhys, (pPage->HCPhys & MM_RAM_FLAGS_NO_REFS_MASK) | ((uint64_t)u16 << MM_RAM_FLAGS_CREFS_SHIFT), iPTDst));
-    *((uint16_t *)&pPage->HCPhys + 3) = u16; /** @todo PAGE FLAGS */
+    /* write back */
+    Log2(("SyncPageWorkerTrackAddRef: u16=%#x->%#x  iPTDst=%#x\n", u16, PGM_PAGE_GET_TRACKING(pPage), iPTDst));
+    PGM_PAGE_SET_TRACKING(pPage, u16);
+
 # endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
     /* update statistics. */
@@ -1654,7 +1654,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
     const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PPGMPOOLPAGE    pShwPde;
     PX86PDPAE       pPDDst;
-    
+
     /* Fetch the pgm pool shadow descriptor. */
     int rc = pgmShwGetPaePoolPagePD(&pVM->pgm.s, GCPtrPage, &pShwPde);
     AssertRCSuccessReturn(rc, rc);
@@ -2389,7 +2389,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
     PPGMPOOLPAGE    pShwPde;
     PX86PDPAE       pPDDst;
     PSHWPDE         pPdeDst;
-    
+
     /* Fetch the pgm pool shadow descriptor. */
     rc = pgmShwGetPaePoolPagePD(&pVM->pgm.s, GCPtrPage, &pShwPde);
     AssertRCSuccessReturn(rc, rc);
@@ -2569,7 +2569,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                 PdeDst.u = (PdeDst.u & (SHW_PDE_PG_MASK | X86_PDE_AVL_MASK))
                          | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
                 *pPdeDst = PdeDst;
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)            
+# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
                 PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
 
@@ -2675,7 +2675,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                 PdeDst.b.u1Write = 0;
             }
             *pPdeDst = PdeDst;
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)            
+# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
             PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
 
@@ -2814,7 +2814,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
     PPGMPOOLPAGE    pShwPde;
     PX86PDPAE       pPDDst;
     PSHWPDE         pPdeDst;
-    
+
     /* Fetch the pgm pool shadow descriptor. */
     rc = pgmShwGetPaePoolPagePD(&pVM->pgm.s, GCPtrPage, &pShwPde);
     AssertRCSuccessReturn(rc, rc);
@@ -4687,7 +4687,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
 
 #  ifndef PGM_WITHOUT_MAPPINGS
-    /* Apply all hypervisor mappings to the new CR3. 
+    /* Apply all hypervisor mappings to the new CR3.
      * Note that SyncCR3 will be executed in case CR3 is changed in a guest paging mode; this will
      * make sure we check for conflicts in the new CR3 root.
      */

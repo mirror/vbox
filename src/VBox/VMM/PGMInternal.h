@@ -958,6 +958,35 @@ typedef PPGMPAGE *PPPGMPAGE;
      || (pPage)->u2HandlerVirtStateX == PGM_PAGE_HNDL_VIRT_STATE_ALL )
 
 
+
+
+/** @def PGM_PAGE_GET_TRACKING
+ * Gets the packed shadow page pool tracking data associated with a guest page.
+ * @returns uint16_t containing the data.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_GET_TRACKING(pPage) \
+    ( *((uint16_t *)&(pPage)->HCPhys + 3) )
+
+/** @def PGM_PAGE_SET_TRACKING
+ * Sets the packed shadow page pool tracking data associated with a guest page.
+ * @param   pPage               Pointer to the physical guest page tracking structure.
+ * @param   u16TrackingData     The tracking data to store.
+ */
+#define PGM_PAGE_SET_TRACKING(pPage, u16TrackingData) \
+    do { *((uint16_t *)&(pPage)->HCPhys + 3) = (u16TrackingData); } while (0)
+
+/** @def PGM_PAGE_GET_TD_CREFS
+ * Gets the @a cRefs tracking data member.
+ * @returns cRefs.
+ * @param   pPage               Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_GET_TD_CREFS(pPage) \
+    ((PGM_PAGE_GET_TRACKING(pPage) >> PGMPOOL_TD_CREFS_SHIFT) & PGMPOOL_TD_CREFS_MASK)
+
+#define PGM_PAGE_GET_TD_IDX(pPage) \
+    ((PGM_PAGE_GET_TRACKING(pPage) >> PGMPOOL_TD_IDX_SHIFT)   & PGMPOOL_TD_IDX_MASK)
+
 /**
  * Ram range for GC Phys to HC Phys conversion.
  *
@@ -1475,6 +1504,7 @@ typedef const PGMPOOLUSER *PCPGMPOOLUSER;
 
 /**
  * Node in the chain of physical cross reference extents.
+ * @todo Calling this an 'extent' is not quite right, find a better name.
  */
 #pragma pack(1)
 typedef struct PGMPOOLPHYSEXT
@@ -1884,6 +1914,63 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
 # define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  PGMPOOL_PAGE_2_PTR(PGM2VM(pPGM), pPage)
 #endif
 
+
+/** @name Per guest page tracking data.
+ * This is currently as a 16-bit word in the PGMPAGE structure, the idea though
+ * is to use more bits for it and split it up later on. But for now we'll play
+ * safe and change as little as possible.
+ *
+ * The 16-bit word has two parts:
+ *
+ * The first 14-bit forms the @a idx field. It is either the index of a page in
+ * the shadow page pool, or and index into the extent list.
+ *
+ * The 2 topmost bits makes up the @a cRefs field, which counts the number of
+ * shadow page pool references to the page. If cRefs equals
+ * PGMPOOL_CREFS_PHYSEXT, then the @a idx field is an indext into the extent
+ * (misnomer) table and not the shadow page pool.
+ *
+ * See PGM_PAGE_GET_TRACKING and PGM_PAGE_SET_TRACKING for how to get and set
+ * the 16-bit word.
+ *
+ * @{ */
+/** The shift count for getting to the cRefs part. */
+#define PGMPOOL_TD_CREFS_SHIFT          14
+/** The mask applied after shifting the tracking data down by
+ * PGMPOOL_TD_CREFS_SHIFT. */
+#define PGMPOOL_TD_CREFS_MASK           0x3
+/** The cRef value used to indiciate that the idx is the head of a
+ * physical cross reference list. */
+#define PGMPOOL_TD_CREFS_PHYSEXT        PGMPOOL_TD_CREFS_MASK
+/** The shift used to get idx. */
+#define PGMPOOL_TD_IDX_SHIFT            0
+/** The mask applied to the idx after shifting down by PGMPOOL_TD_IDX_SHIFT. */
+#define PGMPOOL_TD_IDX_MASK             0x3fff
+/** The idx value when we're out of of PGMPOOLPHYSEXT entries or/and there are
+ * simply too many mappings of this page. */
+#define PGMPOOL_TD_IDX_OVERFLOWED       PGMPOOL_TD_IDX_MASK
+/** @} */
+
+#ifdef MM_RAM_FLAGS_CREFS_SHIFT
+# if MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT != PGMPOOL_TD_CREFS_SHIFT
+#  error "MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT != PGMPOOL_TD_CREFS_SHIFT"
+# endif
+# if MM_RAM_FLAGS_CREFS_MASK != MM_RAM_FLAGS_CREFS_MASK
+#  error "MM_RAM_FLAGS_CREFS_MASK != MM_RAM_FLAGS_CREFS_MASK"
+# endif
+# if MM_RAM_FLAGS_CREFS_PHYSEXT != MM_RAM_FLAGS_CREFS_PHYSEXT
+#  error "MM_RAM_FLAGS_CREFS_PHYSEXT != MM_RAM_FLAGS_CREFS_PHYSEXT"
+# endif
+# if MM_RAM_FLAGS_IDX_SHIFT - 48 != PGMPOOL_TD_IDX_SHIFT
+#  error "MM_RAM_FLAGS_IDX_SHIFT - 48 != PGMPOOL_TD_IDX_SHIFT"
+# endif
+# if MM_RAM_FLAGS_IDX_MASK != PGMPOOL_TD_IDX_MASK
+#  error "MM_RAM_FLAGS_IDX_MASK != PGMPOOL_TD_IDX_MASK"
+# endif
+# if MM_RAM_FLAGS_IDX_OVERFLOWED != PGMPOOL_TD_IDX_OVERFLOWED
+#  error "MM_RAM_FLAGS_IDX_OVERFLOWED != PGMPOOL_TD_IDX_OVERFLOWED"
+# endif
+#endif
 
 
 /**
@@ -4676,17 +4763,17 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
      * Just deal with the simple case here.
      */
 # ifdef LOG_ENABLED
-    const RTHCPHYS HCPhysOrg = pPhysPage->HCPhys; /** @todo PAGE FLAGS */
+    const unsigned uOrg = PGM_PAGE_GET_TRACKING(pPhysPage);
 # endif
-    const unsigned cRefs = pPhysPage->HCPhys >> MM_RAM_FLAGS_CREFS_SHIFT; /** @todo PAGE FLAGS */
+    const unsigned cRefs = PGM_PAGE_GET_TD_CREFS(pPhysPage);
     if (cRefs == 1)
     {
-        Assert(pPoolPage->idx == ((pPhysPage->HCPhys >> MM_RAM_FLAGS_IDX_SHIFT) & MM_RAM_FLAGS_IDX_MASK));
-        pPhysPage->HCPhys = pPhysPage->HCPhys & MM_RAM_FLAGS_NO_REFS_MASK;
+        Assert(pPoolPage->idx == PGM_PAGE_GET_TD_IDX(pPhysPage));
+        PGM_PAGE_SET_TRACKING(pPhysPage, 0);
     }
     else
         pgmPoolTrackPhysExtDerefGCPhys(pPool, pPoolPage, pPhysPage);
-    Log2(("pgmTrackDerefGCPhys: HCPhys=%RHp -> %RHp\n", HCPhysOrg, pPhysPage->HCPhys));
+    Log2(("pgmTrackDerefGCPhys: %x -> %x HCPhys=%RGp\n", uOrg, PGM_PAGE_GET_TRACKING(pPhysPage), PGM_PAGE_GET_HCPHYS(pPhysPage) ));
 }
 #endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
