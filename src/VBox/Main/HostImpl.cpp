@@ -3458,7 +3458,7 @@ STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_GUID id, IHostNetworkInterfac
 #endif
 }
 
-STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType type, ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces))
+STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_T type, ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces))
 {
     com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
     HRESULT hr = COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces));
@@ -3472,7 +3472,7 @@ STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType type
     for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
     {
         IHostNetworkInterface * networkInterface = hostNetworkInterfaces[i];
-        HostNetworkInterfaceType t;
+        HostNetworkInterfaceType_T t;
         hr = networkInterface->COMGETTER(InterfaceType)(&t);
         if(FAILED(hr))
         {
