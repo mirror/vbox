@@ -90,27 +90,32 @@ VMMR0DECL(int) ModuleInit(void)
             rc = HWACCMR0Init();
             if (RT_SUCCESS(rc))
             {
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                rc = PGMR0DynMapInit();
-#endif
+                rc = PGMRegisterStringFormatTypes();
                 if (RT_SUCCESS(rc))
                 {
-                    LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
-                    g_pIntNet = NULL;
-                    LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
-                    rc = INTNETR0Create(&g_pIntNet);
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+                    rc = PGMR0DynMapInit();
+#endif
                     if (RT_SUCCESS(rc))
                     {
-                        LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
-                        return VINF_SUCCESS;
-                    }
+                        LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
+                        g_pIntNet = NULL;
+                        LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
+                        rc = INTNETR0Create(&g_pIntNet);
+                        if (RT_SUCCESS(rc))
+                        {
+                            LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
+                            return VINF_SUCCESS;
+                        }
 
-                    /* bail out */
-                    g_pIntNet = NULL;
-                    LogFlow(("ModuleTerm: returns %Rrc\n", rc));
+                        /* bail out */
+                        g_pIntNet = NULL;
+                        LogFlow(("ModuleTerm: returns %Rrc\n", rc));
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                    PGMR0DynMapTerm();
+                        PGMR0DynMapTerm();
 #endif
+                    }
+                    PGMDeregisterStringFormatTypes();
                 }
                 HWACCMR0Term();
             }
@@ -148,6 +153,7 @@ VMMR0DECL(void) ModuleTerm(void)
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PGMR0DynMapTerm();
 #endif
+    PGMDeregisterStringFormatTypes();
     HWACCMR0Term();
 
     GMMR0Term();

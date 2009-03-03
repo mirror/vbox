@@ -283,7 +283,8 @@ typedef enum PGMMODE
     (    (enmProt) == PGMROMPROT_READ_ROM_WRITE_IGNORE \
       || (enmProt) == PGMROMPROT_READ_ROM_WRITE_RAM )
 
-
+VMMDECL(int)        PGMRegisterStringFormatTypes(void);
+VMMDECL(void)       PGMDeregisterStringFormatTypes(void);
 VMMDECL(RTHCPHYS)   PGMGetHyperCR3(PVM pVM);
 VMMDECL(RTHCPHYS)   PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode);
 VMMDECL(RTHCPHYS)   PGMGetEPTCR3(PVM pVM);

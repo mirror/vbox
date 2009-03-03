@@ -1198,6 +1198,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
 #ifdef VBOX_STRICT
     VMR3AtStateRegister(pVM, pgmR3ResetNoMorePhysWritesFlag, NULL);
 #endif
+    PGMRegisterStringFormatTypes();
 
     /*
      * Get the configured RAM size - to estimate saved state size.
@@ -2253,6 +2254,7 @@ static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmSta
  */
 VMMR3DECL(int) PGMR3Term(PVM pVM)
 {
+    PGMDeregisterStringFormatTypes();
     return PDMR3CritSectDelete(&pVM->pgm.s.CritSect);
 }
 
@@ -2281,6 +2283,9 @@ VMMR3DECL(int) PGMR3TermCPU(PVM pVM)
  */
 static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    AssertReleaseFailed(); /** @todo */
+#else
     PPGM pPGM = &pVM->pgm.s;
 
     /* No more writes to physical memory after this point! */
@@ -2360,6 +2365,7 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
             }
         }
     }
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
     return SSMR3PutU32(pSSM, ~0); /* terminator. */
 }
 
@@ -2374,6 +2380,9 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 {
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    AssertReleaseFailed(); /** @todo */
+#else
     /*
      * Validate version.
      */
@@ -2622,6 +2631,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
 
     return rc;
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 }
 
 

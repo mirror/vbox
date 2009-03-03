@@ -981,6 +981,7 @@ int pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppP
     return VINF_SUCCESS;
 }
 
+
 /**
  * Gets the pointer to the shadow page directory entry for an address, PAE.
  *
@@ -1007,8 +1008,8 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGM pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE *p
     *ppShwPde = pShwPde;
     return VINF_SUCCESS;
 }
-#endif
 
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 #ifndef IN_RC
 
 /**
@@ -1545,6 +1546,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperAmd64CR3(PVM pVM)
 {
     return pVM->pgm.s.HCPhysShwCR3;
 }
+
 
 /**
  * Gets the current CR3 register value for the HC intermediate memory context.
@@ -2195,8 +2197,8 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
     return VINF_SUCCESS;
 }
 
-
 # ifdef IN_RC
+
 /**
  * Temporarily maps one host page specified by HC physical address.
  *
@@ -2286,6 +2288,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Temporarily lock a dynamic page to prevent it from being reused.
  *
@@ -2303,6 +2306,7 @@ VMMDECL(int) PGMDynLockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
     pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u |= PGM_PTFLAGS_DYN_LOCKED;
     return VINF_SUCCESS;
 }
+
 
 /**
  * Unlock a dynamic page
@@ -2322,7 +2326,8 @@ VMMDECL(int) PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
     return VINF_SUCCESS;
 }
 
-# ifdef VBOX_STRICT
+
+#  ifdef VBOX_STRICT
 /**
  * Check for lock leaks.
  *
@@ -2333,10 +2338,141 @@ VMMDECL(void) PGMDynCheckLocks(PVM pVM)
     for (unsigned i=0;i<(MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT);i++)
         Assert(!(pVM->pgm.s.paDynPageMap32BitPTEsGC[i].u & PGM_PTFLAGS_DYN_LOCKED));
 }
-# endif
-# endif /* IN_RC */
+#  endif /* VBOX_STRICT */
 
+# endif /* IN_RC */
 #endif /* IN_RC || VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
+
+#ifdef LOG_ENABLED
+
+/** Format handler for PGMPAGE.
+ * @copydoc FNRTSTRFORMATTYPE */
+static DECLCALLBACK(size_t) pgmFormatTypeHandlerPage(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                                    const char *pszType, void const *pvValue,
+                                                    int cchWidth, int cchPrecision, unsigned fFlags,
+                                                    void *pvUser)
+{
+    size_t    cch;
+    PCPGMPAGE pPage = (PCPGMPAGE)pvValue;
+    if (VALID_PTR(pPage))
+    {
+        char szTmp[80];
+        switch (PGM_PAGE_GET_TYPE(pPage))
+        {
+            case PGMPAGETYPE_RAM:
+                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-RAM", PGM_PAGE_GET_HCPHYS(pPage));
+                break;
+            case PGMPAGETYPE_MMIO2:
+                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-MMIO2", PGM_PAGE_GET_HCPHYS(pPage));
+                break;
+            case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-M2ALI", PGM_PAGE_GET_HCPHYS(pPage));
+                break;
+            case PGMPAGETYPE_ROM_SHADOW:
+                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-ROMSH", PGM_PAGE_GET_HCPHYS(pPage));
+                break;
+            case PGMPAGETYPE_ROM:
+                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-ROM", PGM_PAGE_GET_HCPHYS(pPage));
+                break;
+            case PGMPAGETYPE_MMIO:
+                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-MMIO", PGM_PAGE_GET_HCPHYS(pPage));
+                break;
+            default:
+                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-%d", PGM_PAGE_GET_HCPHYS(pPage), PGM_PAGE_GET_TYPE(pPage));
+                break;
+        }
+        cch = pfnOutput(pvArgOutput, szTmp, cch);
+    }
+    else
+        cch = pfnOutput(pvArgOutput, "<bad-pgmpage-ptr>", sizeof("<bad-pgmpage-ptr>") - 1);
+    return cch;
+}
+
+
+/** Format handler for PGMRAMRANGE.
+ * @copydoc FNRTSTRFORMATTYPE */
+static DECLCALLBACK(size_t) pgmFormatTypeHandlerRamRange(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                                         const char *pszType, void const *pvValue,
+                                                         int cchWidth, int cchPrecision, unsigned fFlags,
+                                                         void *pvUser)
+{
+    size_t              cch;
+    PGMRAMRANGE const  *pRam = (PGMRAMRANGE const *)pvValue;
+    if (VALID_PTR(pRam))
+    {
+        char szTmp[80];
+        cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RGp-%RGp", pRam->GCPhys, pRam->GCPhysLast);
+        cch = pfnOutput(pvArgOutput, szTmp, cch);
+    }
+    else
+        cch = pfnOutput(pvArgOutput, "<bad-pgmramrange-ptr>", sizeof("<bad-pgmramrange-ptr>") - 1);
+    return cch;
+}
+
+/** Format type andlers to be registered/deregistered. */
+static const struct
+{
+    char                szType[24];
+    PFNRTSTRFORMATTYPE  pfnHandler;
+} g_aPgmFormatTypes[] =
+{
+    { "pgmpage",        pgmFormatTypeHandlerPage },
+    { "pgmramrange",    pgmFormatTypeHandlerRamRange }
+};
+
+#endif /* LOG_ENABLED */
+
+
+/**
+ * Registers the global string format types.
+ *
+ * This should be called at module load time or in some other manner that ensure
+ * that it's called exactly one time.
+ *
+ * @returns IPRT status code on RTStrFormatTypeRegister failure.
+ */
+VMMDECL(int) PGMRegisterStringFormatTypes(void)
+{
+#ifdef LOG_ENABLED
+    int         rc = VINF_SUCCESS;
+    unsigned    i;
+    for (i = 0; RT_SUCCESS(rc) && i < RT_ELEMENTS(g_aPgmFormatTypes); i++)
+    {
+        rc = RTStrFormatTypeRegister(g_aPgmFormatTypes[i].szType, g_aPgmFormatTypes[i].pfnHandler, NULL);
+# ifdef IN_RING0
+        if (rc == VERR_ALREADY_EXISTS)
+        {
+            /* in case of cleanup failure in ring-0 */
+            RTStrFormatTypeDeregister(g_aPgmFormatTypes[i].szType);
+            rc = RTStrFormatTypeRegister(g_aPgmFormatTypes[i].szType, g_aPgmFormatTypes[i].pfnHandler, NULL);
+        }
+# endif
+    }
+    if (RT_FAILURE(rc))
+        while (i-- > 0)
+            RTStrFormatTypeDeregister(g_aPgmFormatTypes[i].szType);
+
+    return rc;
+#else
+    return VINF_SUCCESS;
+#endif
+}
+
+
+/**
+ * Deregisters the global string format types.
+ *
+ * This should be called at module unload time or in some other manner that
+ * ensure that it's called exactly one time.
+ */
+VMMDECL(void) PGMDeregisterStringFormatTypes(void)
+{
+#ifdef LOG_ENABLED
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aPgmFormatTypes); i++)
+        RTStrFormatTypeDeregister(g_aPgmFormatTypes[i].szType);
+#endif
+}
+
 #ifdef VBOX_STRICT
 
 /**
