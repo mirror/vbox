@@ -557,6 +557,8 @@ typedef struct HWACCMCPU
 
         /** Esp at the start of the io code we wish to emulate in the recompiler. */
         RTGCPTR                 GCPtrFunctionEsp;
+
+        uint64_t                cr0;
     } EmulateIoBlock;
 
     /** Currenty shadow paging mode. */
