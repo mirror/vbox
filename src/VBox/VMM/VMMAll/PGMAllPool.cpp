@@ -3340,7 +3340,7 @@ void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
 /**
  * Insert a reference into a list of physical cross reference extents.
  *
- * @returns The new ram range flags (top 16-bits).
+ * @returns The new tracking data for PGMPAGE.
  *
  * @param   pVM         The VM handle.
  * @param   iPhysExt    The physical extent index of the list head.
@@ -3358,7 +3358,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
         paPhysExts[iPhysExt].aidx[2] = iShwPT;
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedMany);
         LogFlow(("pgmPoolTrackPhysExtAddref: %d:{,,%d}\n", iPhysExt, iShwPT));
-        return iPhysExt | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
+        return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
     }
 
     /* general treatment. */
@@ -3373,14 +3373,14 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
                 paPhysExts[iPhysExt].aidx[i] = iShwPT;
                 STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedMany);
                 LogFlow(("pgmPoolTrackPhysExtAddref: %d:{%d} i=%d cMax=%d\n", iPhysExt, iShwPT, i, cMax));
-                return iPhysExtStart | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
+                return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExtStart);
             }
         if (!--cMax)
         {
             STAM_COUNTER_INC(&pVM->pgm.s.StatTrackOverflows);
             pgmPoolTrackPhysExtFreeList(pVM, iPhysExtStart);
             LogFlow(("pgmPoolTrackPhysExtAddref: overflow (1) iShwPT=%d\n", iShwPT));
-            return MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
+            return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED);
         }
     }
 
@@ -3390,19 +3390,19 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
     {
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackOverflows);
         pgmPoolTrackPhysExtFreeList(pVM, iPhysExtStart);
-        return MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
+        return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED);
     }
     pNew->iNext = iPhysExtStart;
     pNew->aidx[0] = iShwPT;
     LogFlow(("pgmPoolTrackPhysExtAddref: added new extent %d:{%d}->%d\n", iPhysExt, iShwPT, iPhysExtStart));
-    return iPhysExt | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
+    return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
 }
 
 
 /**
  * Add a reference to guest physical page where extents are in use.
  *
- * @returns The new ram range flags (top 16-bits).
+ * @returns The new tracking data for PGMPAGE.
  *
  * @param   pVM         The VM handle.
  * @param   u16         The ram range flags (top 16-bits).
@@ -3410,31 +3410,31 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
  */
 uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
 {
-    if ((u16 >> PGMPOOL_TD_CREFS_SHIFT) != MM_RAM_FLAGS_CREFS_PHYSEXT)
+    if (PGMPOOL_TD_GET_CREFS(u16) != PGMPOOL_TD_CREFS_PHYSEXT)
     {
         /*
          * Convert to extent list.
          */
-        Assert((u16 >> PGMPOOL_TD_CREFS_SHIFT) == 1);
+        Assert(PGMPOOL_TD_GET_CREFS(u16) == 1);
         uint16_t iPhysExt;
         PPGMPOOLPHYSEXT pPhysExt = pgmPoolTrackPhysExtAlloc(pVM, &iPhysExt);
         if (pPhysExt)
         {
-            LogFlow(("pgmPoolTrackPhysExtAddref: new extent: %d:{%d, %d}\n", iPhysExt, u16 & MM_RAM_FLAGS_IDX_MASK, iShwPT));
+            LogFlow(("pgmPoolTrackPhysExtAddref: new extent: %d:{%d, %d}\n", iPhysExt, PGMPOOL_TD_GET_IDX(u16), iShwPT));
             STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliased);
-            pPhysExt->aidx[0] = u16 & MM_RAM_FLAGS_IDX_MASK;
+            pPhysExt->aidx[0] = PGMPOOL_TD_GET_IDX(u16);
             pPhysExt->aidx[1] = iShwPT;
-            u16 = iPhysExt | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
+            u16 = PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
         }
         else
-            u16 = MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT);
+            u16 = PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, MM_RAM_FLAGS_IDX_OVERFLOWED);
     }
-    else if (u16 != (MM_RAM_FLAGS_IDX_OVERFLOWED | (MM_RAM_FLAGS_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT)))
+    else if (u16 != PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, MM_RAM_FLAGS_IDX_OVERFLOWED))
     {
         /*
          * Insert into the extent list.
          */
-        u16 = pgmPoolTrackPhysExtInsert(pVM, u16 & MM_RAM_FLAGS_IDX_MASK, iShwPT);
+        u16 = pgmPoolTrackPhysExtInsert(pVM, PGMPOOL_TD_GET_IDX(u16), iShwPT);
     }
     else
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedLots);
@@ -3451,11 +3451,11 @@ uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
  */
 void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE pPhysPage)
 {
-    const unsigned cRefs = pPhysPage->HCPhys >> MM_RAM_FLAGS_CREFS_SHIFT; /** @todo PAGE FLAGS */
-    AssertFatalMsg(cRefs == MM_RAM_FLAGS_CREFS_PHYSEXT, ("cRefs=%d HCPhys=%RHp pPage=%p:{.idx=%d}\n", cRefs, pPhysPage->HCPhys, pPage, pPage->idx));
+    const unsigned cRefs = PGM_PAGE_GET_TD_CREFS(pPhysPage);
+    AssertFatalMsg(cRefs == PGMPOOL_TD_CREFS_PHYSEXT, ("cRefs=%d HCPhys=%RHp pPage=%p:{.idx=%d}\n", cRefs, pPhysPage->HCPhys, pPage, pPage->idx));
 
-    uint16_t iPhysExt = (pPhysPage->HCPhys >> MM_RAM_FLAGS_IDX_SHIFT) & MM_RAM_FLAGS_IDX_MASK;
-    if (iPhysExt != MM_RAM_FLAGS_IDX_OVERFLOWED)
+    uint16_t iPhysExt = PGM_PAGE_GET_TD_IDX(pPhysPage);
+    if (iPhysExt != PGMPOOL_TD_IDX_OVERFLOWED)
     {
         uint16_t        iPhysExtPrev = NIL_PGMPOOL_PHYSEXT_INDEX;
         PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
@@ -3494,8 +3494,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                     {
                         /* head */
                         Log2(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64 idx=%d head\n", pPhysPage->HCPhys, pPage->idx));
-                        PGM_PAGE_SET_TRACKING(pPhysPage, (PGMPOOL_TD_CREFS_PHYSEXT << PGMPOOL_TD_CREFS_SHIFT)
-                                                       | (iPhysExtNext << PGMPOOL_TD_IDX_SHIFT));
+                        PGM_PAGE_SET_TRACKING(pPhysPage, PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExtNext));
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                     }
                     else

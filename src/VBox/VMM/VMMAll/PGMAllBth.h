@@ -1413,18 +1413,12 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVM pVM, PPGMPOOLPAGE p
 {
 # ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     /*
-     * We're making certain assumptions about the placement of cRef and idx.
-     */
-    Assert(MM_RAM_FLAGS_IDX_SHIFT == 48);
-    Assert(MM_RAM_FLAGS_CREFS_SHIFT > MM_RAM_FLAGS_IDX_SHIFT);
-
-    /*
      * Just deal with the simple first time here.
      */
     if (!u16)
     {
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackVirgin);
-        u16 = (1 << PGMPOOL_TD_CREFS_SHIFT) | pShwPage->idx;
+        u16 = PGMPOOL_TD_MAKE(1, pShwPage->idx);
     }
     else
         u16 = pgmPoolTrackPhysExtAddref(pVM, u16, pShwPage->idx);
