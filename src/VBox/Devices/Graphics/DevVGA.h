@@ -300,6 +300,10 @@ typedef struct VGAState {
     STAMPROFILE                 StatRZMemoryWrite;
     STAMPROFILE                 StatR3MemoryWrite;
 
+    /* Keep track of ring 0 latched accesses to the VGA MMIO memory. */
+    uint64_t                    u64LastLatchedAccess;
+    uint32_t                    cLatchAccesses;
+
 #ifdef VBE_BYTEWISE_IO
     /** VBE read/write data/index flags */
     uint8_t                     fReadVBEData;
