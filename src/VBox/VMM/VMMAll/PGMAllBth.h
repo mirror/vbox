@@ -1478,7 +1478,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                 if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
                 {
 #if PGM_SHW_TYPE == PGM_TYPE_EPT
-                    PteDst.u             = (HCPhys & EPT_PTE_PG_MASK);
+                    PteDst.u             = PGM_PAGE_GET_HCPHYS(pPage);
                     PteDst.n.u1Present   = 1;
                     PteDst.n.u1Execute   = 1;
                     PteDst.n.u1IgnorePAT = 1;
@@ -1526,7 +1526,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,DirtyPageSkipped));
 #if PGM_SHW_TYPE == PGM_TYPE_EPT
-                    PteDst.u             = (HCPhys & EPT_PTE_PG_MASK);
+                    PteDst.u             = PGM_PAGE_GET_HCPHYS(pPage);
                     PteDst.n.u1Present   = 1;
                     PteDst.n.u1Write     = 1;
                     PteDst.n.u1Execute   = 1;
