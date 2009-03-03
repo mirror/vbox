@@ -372,6 +372,9 @@ static void vmmR0RecordRC(PVM pVM, int rc)
         case VINF_EM_RAW_EMULATE_INSTR:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetEmulate);
             break;
+        case VINF_EM_RAW_EMULATE_IO_BLOCK:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetIOBlockEmulate);
+            break;
         case VINF_PATCH_EMULATE_INSTR:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPatchEmulate);
             break;

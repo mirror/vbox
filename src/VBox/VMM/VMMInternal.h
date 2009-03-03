@@ -301,6 +301,7 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetStaleSelector;
     STAMCOUNTER                 StatRZRetIRETTrap;
     STAMCOUNTER                 StatRZRetEmulate;
+    STAMCOUNTER                 StatRZRetIOBlockEmulate;
     STAMCOUNTER                 StatRZRetPatchEmulate;
     STAMCOUNTER                 StatRZRetIORead;
     STAMCOUNTER                 StatRZRetIOWrite;
