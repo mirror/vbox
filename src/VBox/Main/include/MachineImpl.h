@@ -280,7 +280,7 @@ public:
      *  is necessary because hard disk data requires different procedures when
      *  taking or discarding snapshots, etc.
      *
-     *  The data variable is |mHWData|.
+     *  The data variable is |mHDData|.
      */
     struct HDData
     {
