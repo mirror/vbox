@@ -8201,12 +8201,6 @@
 
       The array of hard disk attachments is returned by
       <link to="IMachine::hardDiskAttachments"/>.
-
-      <note>
-        With the COM API, this is an interface like all the others. With the
-        webservice, this is mapped to a structure, so querying the attribute
-        will not return an object, but a complete structure.
-      </note>
     </desc>
     <attribute name="hardDisk" type="IHardDisk" readonly="yes">
       <desc>Hard disk object associated with this attachment.</desc>
