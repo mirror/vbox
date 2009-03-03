@@ -29,8 +29,8 @@
 #include <VBox/log.h>
 
 #include "VirtualBox_XPCOM.h"
+#include "VirtualBox_CXPCOM.h"
 #include "VBox/com/com.h"
-#include "cbinding.h"
 
 using namespace std;
 

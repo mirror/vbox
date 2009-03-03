@@ -1,5 +1,5 @@
 /* $Revision$ */
-/** @file cbinding.h
+/** @file VBoxXPCOMCGlue.h
  * Glue for dynamically linking with VBoxXPCOMC.
  */
 
@@ -31,7 +31,7 @@
 #ifndef ___VBoxXPCOMC_cglue_h
 #define ___VBoxXPCOMC_cglue_h
 
-#include "cbinding.h"
+#include "VirtualBox_CXPCOM.h"
 
 #ifdef __cplusplus
 extern "C" {

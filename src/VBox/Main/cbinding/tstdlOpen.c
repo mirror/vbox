@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <dlfcn.h>
-#include "cbinding.h"
+#include "VirtualBox_CXPCOM.h"
 
 static char *nsIDToString(nsID *guid);
 static void listVMs(IVirtualBox *virtualBox, ISession *session);
