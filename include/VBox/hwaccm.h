@@ -33,6 +33,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/pgm.h>
+#include <VBox/cpum.h>
 #include <iprt/mp.h>
 
 
@@ -64,6 +65,14 @@ __BEGIN_DECLS
  * @param   pVM         The VM to operate on.
  */
 #define HWACCMIsEnabled(pVM)    ((pVM)->fHWACCMEnabled)
+
+ /**
+ * Check if the current CPU state is valid for emulating IO blocks in the recompiler
+ *
+ * @returns boolean
+ * @param   pCtx        CPU context
+ */
+#define HWACCMCanEmulateIoBlock(pCtx)    (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
 
 VMMDECL(int)    HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
 VMMDECL(bool)   HWACCMHasPendingIrq(PVM pVM);
