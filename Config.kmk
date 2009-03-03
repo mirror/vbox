@@ -1604,7 +1604,7 @@ $(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
 	$(APPEND) '$@' 'VBOX_GCC_VERSION_CXX           ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CXX))'
 	$(APPEND) '$@' 'VBOX_GCC_LIBGCC                ?= $(shell $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-libgcc-file-name)'
 	$(APPEND) '$@' 'VBOX_GCC_Wno-pointer-sign      ?= $(call VBOX_GCC_CHECK_CC,-Wno-pointer-sign,)'
-	$(APPEND) '$@' 'VBOX_GCC_Wno-array_bounds      ?= $(call VBOX_GCC_CHECK_CC,-Wno-array-bounds,)'
+	$(APPEND) '$@' 'VBOX_GCC_Wno-array_bounds      ?= $$(if $$(int-ge $$(VBOX_GCC_VERSION_CXX),40300),-Wno-array-bounds,)'
 # -Wextra produces additional useful warnings but includes -Wno-missing-field-initializers (too noisy)
 	$(APPEND) '$@' 'VBOX_GCC_Wextra                ?= $(call VBOX_GCC_CHECK_CC,-Wextra,)'
 	$(APPEND) '$@' 'VBOX_GCC_Wno-missing-field-initializers ?= $(call VBOX_GCC_CHECK_CC,-Wno-missing-field-initializers,)'
