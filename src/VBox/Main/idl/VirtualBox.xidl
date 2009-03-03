@@ -3101,23 +3101,23 @@
       The list below identifies the value sets that are possible depending on the
       <link to="VirtualSystemDescriptionType" /> enum value in the array item in aTypes[]. In each case,
       the array item with the same index in aOrigValue[] will contain the original value as contained
-      in the OVF file (just for informational purposes), and the corresponding item in aConfigValues[]
+      in the OVF file (just for informational purposes), and the corresponding item in aVboxValues[]
       will contain a suggested value to be used for VirtualBox. Depending on the description type,
       the aExtraConfigValues[] array item may also be used.
 
       <ul>
       <li>
         "OS": the guest operating system type. There must be exactly one such array item on import. The
-        corresponding item in aConfigValues[] contains the suggested guest operating system for VirtualBox.
+        corresponding item in aVboxValues[] contains the suggested guest operating system for VirtualBox.
         This will be one of the values listed in <link to="IVirtualBox::guestOSTypes" />. The corresponding
-        item in aOrigValues[] will contain a numerical value that described the operating system in the OVF
+        item in aOvfValues[] will contain a numerical value that described the operating system in the OVF
         (see <link to="CIMOSType" />).
       </li>
       <li>
         "Name": the name to give to the new virtual machine. There can be at most one such array item;
         if none is present on import, then an automatic name will be created from the operating system
-        type. The correponding item im aOrigValues[] will contain the suggested virtual machine name
-        from the OVF file, and aConfigValues[] will contain a suggestion for a unique VirtualBox
+        type. The correponding item im aOvfValues[] will contain the suggested virtual machine name
+        from the OVF file, and aVboxValues[] will contain a suggestion for a unique VirtualBox
         <link to="IMachine" /> name that does not exist yet.
       </li>
       <li>
@@ -3130,26 +3130,30 @@
       </li>
       <li>
         "HarddiskControllerIDE": an IDE hard disk controller. There can be at most one such item. This
-        has no value in aOrigValues[] or aConfigValues[].
+        has no value in aOvfValues[] or aVboxValues[].
         The matching item in the aRefs[] array will contain an integer that items of the "Harddisk"
         type can use to specify which hard disk controller a virtual disk should be connected to.
       </li>
       <li>
         "HarddiskControllerSATA": an SATA hard disk controller. There can be at most one such item. This
-        has no value in aOrigValues[] or aConfigValues[].
+        has no value in aOvfValues[] or aVboxValues[].
         The matching item in the aRefs[] array will be used as with IDE controllers (see above).
       </li>
       <li>
         "HarddiskControllerSCSI": a SCSI hard disk controller. There can be at most one such item.
-        The items in aOrigValues[] and aConfigValues[] will either be "LsiLogic" or "BusLogic".
+        The items in aOvfValues[] and aVboxValues[] will either be "LsiLogic" or "BusLogic".
         The matching item in the aRefs[] array will be used as with IDE controllers (see above).
       </li>
       <li>
         "HardDiskImage": a virtual hard disk, most probably as a reference to an image file. There can be an
-        arbitrary number of these items, one for each virtual disk image that accompanies the OVF. The
-        array item in aOrigValues[] will contain the file specification from the OVF file, whereas the
-        item in aConfigValues[] will contain a qualified path specification to where the hard disk image
-        should be copied; this target image will then be registered with VirtualBox.
+        arbitrary number of these items, one for each virtual disk image that accompanies the OVF.
+
+        The array item in aOvfValues[] will contain the file specification from the OVF file,
+        whereas the item in aVboxValues[] will contain a qualified path specification to where
+        VirtualBox uses the hard disk image. This means that on import the image will be copied
+        and converted from the "ovf" location to the "vbox" location; on export, this will be
+        handled the other way round. On import, the target image will also be registered with VirtualBox.
+
         The matching item in the aExtraConfigValues[] array must contain a string of the following
         format: "controller=&lt;index&gt;;channel=&lt;c&gt;"
         In this string, &lt;index&gt; must be an integer specifying the hard disk controller to connect
@@ -3168,7 +3172,7 @@
         a configuration.
       </li>
       <li>
-        "NetworkAdapter": a network adapter. The array item in aConfigValues[] will specify the hardware
+        "NetworkAdapter": a network adapter. The array item in aVboxValues[] will specify the hardware
         for the network adapter, whereas the array item in aExtraConfigValues[] will have a string
         of the "network=&lt;nw&gt;" format, where &lt;nw&gt; must be one of the networks as specified with the
         LogicalNetwork type.
@@ -3191,11 +3195,11 @@
         <desc></desc>
       </param>
 
-      <param name="aOrigValues" type="wstring" dir="out" safearray="yes">
+      <param name="aOvfValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aConfigValues" type="wstring" dir="out" safearray="yes">
+      <param name="aVboxValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
@@ -3217,8 +3221,8 @@
         HardDiskControllerSCSI, HardDiskImage, CDROM, Floppy, NetworkAdapter, USBController
         and SoundCard.
 
-        For the configuration and "extra" configuration values, if you pass in the same arrays
-        as returned in the aConfigValues and aExtraConfigValues arrays from getDescription(),
+        For the "vbox" and "extra configuration" values, if you pass in the same arrays
+        as returned in the aVboxValues and aExtraConfigValues arrays from getDescription(),
         the configuration remains unchanged. Please see the documentation for getDescription()
         for valid configuration values for the individual array item types. If the
         corresponding item in the aEnabled array is false, the configuration value is ignored.
@@ -3228,7 +3232,7 @@
         <desc></desc>
       </param>
 
-      <param name="aConfigValues" type="wstring" dir="in" safearray="yes">
+      <param name="aVboxValues" type="wstring" dir="in" safearray="yes">
         <desc></desc>
       </param>
 

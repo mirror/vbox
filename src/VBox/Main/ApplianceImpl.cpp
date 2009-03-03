@@ -1799,7 +1799,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
             if (vsdeOS.size() < 1)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Missing guest OS type"));
-            const Utf8Str &strOsTypeVBox = vsdeOS.front()->strConfig;
+            const Utf8Str &strOsTypeVBox = vsdeOS.front()->strVbox;
 
             /* Now that we know the base system get our internal defaults based on that. */
             ComPtr<IGuestOSType> osType;
@@ -1812,7 +1812,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
             if (vsdeName.size() < 1)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Missing VM name"));
-            const Utf8Str &strNameVBox = vsdeName.front()->strConfig;
+            const Utf8Str &strNameVBox = vsdeName.front()->strVbox;
             rc = pVirtualBox->CreateMachine(Bstr(strNameVBox), Bstr(strOsTypeVBox),
                                                  Bstr(), Guid(),
                                                  pNewMachine.asOutParam());
@@ -1827,7 +1827,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
             /* RAM */
             std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->findByType(VirtualSystemDescriptionType_Memory);
             ComAssertMsgThrow(vsdeRAM.size() == 1, ("RAM size missing"), E_FAIL);
-            const Utf8Str &memoryVBox = vsdeRAM.front()->strConfig;
+            const Utf8Str &memoryVBox = vsdeRAM.front()->strVbox;
             ULONG tt = (ULONG)RTStrToUInt64(memoryVBox.c_str());
             rc = pNewMachine->COMSETTER(MemorySize)(tt);
             if (FAILED(rc)) throw rc;
@@ -1850,7 +1850,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
             /* @todo: we support one audio adapter only */
             if (vsdeAudioAdapter.size() > 0)
             {
-                const Utf8Str& audioAdapterVBox = vsdeAudioAdapter.front()->strConfig;
+                const Utf8Str& audioAdapterVBox = vsdeAudioAdapter.front()->strVbox;
                 if (RTStrICmp(audioAdapterVBox, "null") != 0)
                 {
                     uint32_t audio = RTStrToUInt32(audioAdapterVBox.c_str());
@@ -1902,7 +1902,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                      (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
                      ++nwIt, ++a)
                 {
-                    const Utf8Str &nwTypeVBox = (*nwIt)->strConfig;
+                    const Utf8Str &nwTypeVBox = (*nwIt)->strVbox;
                     uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
                     ComPtr<INetworkAdapter> nwVBox;
                     rc = pNewMachine->GetNetworkAdapter((ULONG)a, nwVBox.asOutParam());
@@ -1944,7 +1944,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                 rc = pNewMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                const char *pcszIDEType = vsdeHDCIDE.front()->strConfig.c_str();
+                const char *pcszIDEType = vsdeHDCIDE.front()->strVbox.c_str();
                 if (!strcmp(pcszIDEType, "PIIX3"))
                     rc = biosSettings->COMSETTER(IDEControllerType)(IDEControllerType_PIIX3);
                 else if (!strcmp(pcszIDEType, "PIIX4"))
@@ -1963,7 +1963,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
             /* @todo: we support one SATA controller only */
             if (vsdeHDCSATA.size() > 0)
             {
-                const Utf8Str &hdcVBox = vsdeHDCIDE.front()->strConfig;
+                const Utf8Str &hdcVBox = vsdeHDCIDE.front()->strVbox;
                 if (hdcVBox == "AHCI")
                 {
                     /* For now we have just to enable the AHCI controller. */
@@ -2033,7 +2033,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                     {
                         VirtualSystemDescriptionEntry *vsdeHD = *itHD;
 
-                        const char *pcszDstFilePath = vsdeHD->strConfig.c_str();
+                        const char *pcszDstFilePath = vsdeHD->strVbox.c_str();
                         /* Check if the destination file exists already or the
                          * destination path is empty. */
                         if (    !(*pcszDstFilePath)
@@ -2412,13 +2412,13 @@ STDMETHODIMP VirtualSystemDescription::COMGETTER(Count)(ULONG *aCount)
 STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
                                                       ComSafeArrayOut(BSTR, aRefs),
                                                       ComSafeArrayOut(BSTR, aOrigValues),
-                                                      ComSafeArrayOut(BSTR, aConfigValues),
+                                                      ComSafeArrayOut(BSTR, aVboxValues),
                                                       ComSafeArrayOut(BSTR, aExtraConfigValues))
 {
     if (ComSafeArrayOutIsNull(aTypes) ||
         ComSafeArrayOutIsNull(aRefs) ||
         ComSafeArrayOutIsNull(aOrigValues) ||
-        ComSafeArrayOutIsNull(aConfigValues) ||
+        ComSafeArrayOutIsNull(aVboxValues) ||
         ComSafeArrayOutIsNull(aExtraConfigValues))
         return E_POINTER;
 
@@ -2431,7 +2431,7 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
     com::SafeArray<VirtualSystemDescriptionType_T> sfaTypes(c);
     com::SafeArray<BSTR> sfaRefs(c);
     com::SafeArray<BSTR> sfaOrigValues(c);
-    com::SafeArray<BSTR> sfaConfigValues(c);
+    com::SafeArray<BSTR> sfaVboxValues(c);
     com::SafeArray<BSTR> sfaExtraConfigValues(c);
 
     list<VirtualSystemDescriptionEntry>::const_iterator it;
@@ -2447,11 +2447,11 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
         Bstr bstr = vsde.strRef;
         bstr.cloneTo(&sfaRefs[i]);
 
-        bstr = vsde.strOrig;
+        bstr = vsde.strOvf;
         bstr.cloneTo(&sfaOrigValues[i]);
 
-        bstr = vsde.strConfig;
-        bstr.cloneTo(&sfaConfigValues[i]);
+        bstr = vsde.strVbox;
+        bstr.cloneTo(&sfaVboxValues[i]);
 
         bstr = vsde.strExtraConfig;
         bstr.cloneTo(&sfaExtraConfigValues[i]);
@@ -2460,7 +2460,7 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
     sfaTypes.detachTo(ComSafeArrayOutArg(aTypes));
     sfaRefs.detachTo(ComSafeArrayOutArg(aRefs));
     sfaOrigValues.detachTo(ComSafeArrayOutArg(aOrigValues));
-    sfaConfigValues.detachTo(ComSafeArrayOutArg(aConfigValues));
+    sfaVboxValues.detachTo(ComSafeArrayOutArg(aVboxValues));
     sfaExtraConfigValues.detachTo(ComSafeArrayOutArg(aExtraConfigValues));
 
     return S_OK;
@@ -2471,10 +2471,10 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
  * @return
  */
 STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnabled),
-                                                      ComSafeArrayIn(IN_BSTR, argConfigValues),
+                                                      ComSafeArrayIn(IN_BSTR, argVboxValues),
                                                       ComSafeArrayIn(IN_BSTR, argExtraConfigValues))
 {
-    CheckComArgSafeArrayNotNull(argConfigValues);
+    CheckComArgSafeArrayNotNull(argVboxValues);
     CheckComArgSafeArrayNotNull(argExtraConfigValues);
 
     AutoCaller autoCaller(this);
@@ -2482,10 +2482,10 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
 
     AutoWriteLock alock(this);
 
-    com::SafeArray<IN_BSTR> aConfigValues(ComSafeArrayInArg(argConfigValues));
+    com::SafeArray<IN_BSTR> aVboxValues(ComSafeArrayInArg(argVboxValues));
     com::SafeArray<IN_BSTR> aExtraConfigValues(ComSafeArrayInArg(argExtraConfigValues));
 
-    if (    (aConfigValues.size() != m->descriptions.size())
+    if (    (aVboxValues.size() != m->descriptions.size())
          || (aExtraConfigValues.size() != m->descriptions.size())
        )
         return E_INVALIDARG;
@@ -2500,7 +2500,7 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
 
         if (aEnabled[i])
         {
-            vsde.strConfig = aConfigValues[i];
+            vsde.strVbox = aVboxValues[i];
             vsde.strExtraConfig = aExtraConfigValues[i];
         }
         else
@@ -2559,8 +2559,8 @@ void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
     vsde.ulIndex = (uint32_t)m->descriptions.size();      // each entry gets an index so the client side can reference them
     vsde.type = aType;
     vsde.strRef = strRef;
-    vsde.strOrig = aOrigValue;
-    vsde.strConfig = aAutoValue;
+    vsde.strOvf = aOrigValue;
+    vsde.strVbox = aAutoValue;
     vsde.strExtraConfig = strExtraConfig;
 
     m->descriptions.push_back(vsde);
@@ -2743,21 +2743,21 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 //     <const name="HardDiskControllerIDE" value="6" />
         ComPtr<IBIOSSettings> pBiosSettings;
         pBiosSettings = mBIOSSettings;
-        Utf8Str strConfig;
+        Utf8Str strVbox;
         IDEControllerType_T ctlr;
         rc = pBiosSettings->COMGETTER(IDEControllerType)(&ctlr);
         if (FAILED(rc)) throw rc;
         switch(ctlr)
         {
-            case IDEControllerType_PIIX3: strConfig = "PIIX3"; break;
-            case IDEControllerType_PIIX4: strConfig = "PIIX4"; break;
-            case IDEControllerType_ICH6: strConfig = "ICH6"; break;
+            case IDEControllerType_PIIX3: strVbox = "PIIX3"; break;
+            case IDEControllerType_PIIX4: strVbox = "PIIX4"; break;
+            case IDEControllerType_ICH6: strVbox = "ICH6"; break;
         }
 
-        if (strConfig.length())
+        if (strVbox.length())
         {
             strIdeControllerID = Utf8StrFmt("%RI32", uControllerId++);
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE, strIdeControllerID, strConfig, "");
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE, strIdeControllerID, strVbox, "");
         }
 
 #ifdef VBOX_WITH_AHCI
@@ -2770,7 +2770,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         if (fSataEnabled)
         {
             strSataControllerID = Utf8StrFmt("%RI32", uControllerId++);
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, strSataControllerID, strConfig, "");
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, strSataControllerID, strVbox, "");
         }
 #endif // VBOX_WITH_AHCI
 
@@ -2805,8 +2805,11 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
             rc = pHDA->COMGETTER(Device)(&lDevice);
             if (FAILED(rc)) throw rc;
 
+            Bstr bstrName;
+            rc = pHardDisk->COMGETTER(Name)(bstrName.asOutParam());
+
             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                               "", // hd.strDiskId,
+                               Utf8Str(bstrName), // hd.strDiskId,
                                "", // di.strHref,
                                "",
                                ""); // strExtraConfig

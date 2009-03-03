@@ -206,14 +206,14 @@ int handleImportAppliance(HandlerArg *a)
             {
                 com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
                 com::SafeArray<BSTR> aRefs;
-                com::SafeArray<BSTR> aOrigValues;
-                com::SafeArray<BSTR> aConfigValues;
+                com::SafeArray<BSTR> aOvfValues;
+                com::SafeArray<BSTR> aVboxValues;
                 com::SafeArray<BSTR> aExtraConfigValues;
                 CHECK_ERROR_BREAK(aVirtualSystemDescriptions[i],
                                   GetDescription(ComSafeArrayAsOutParam(retTypes),
                                                  ComSafeArrayAsOutParam(aRefs),
-                                                 ComSafeArrayAsOutParam(aOrigValues),
-                                                 ComSafeArrayAsOutParam(aConfigValues),
+                                                 ComSafeArrayAsOutParam(aOvfValues),
+                                                 ComSafeArrayAsOutParam(aVboxValues),
                                                  ComSafeArrayAsOutParam(aExtraConfigValues)));
 
                 RTPrintf("Virtual system %i:\n", i);
@@ -234,7 +234,7 @@ int handleImportAppliance(HandlerArg *a)
 
                     Utf8Str strOverride;
 
-                    Bstr bstrFinalValue = aConfigValues[a];
+                    Bstr bstrFinalValue = aVboxValues[a];
 
                     bool fIgnoreThis = mapIgnoresMapsPerVsys[i][a];
 
@@ -270,7 +270,7 @@ int handleImportAppliance(HandlerArg *a)
 
                         case VirtualSystemDescriptionType_CPU:
                             RTPrintf("%2d: Number of CPUs (ignored): %ls\n",
-                                     a, aConfigValues[a]);
+                                     a, aVboxValues[a]);
                         break;
 
                         case VirtualSystemDescriptionType_Memory:
@@ -299,14 +299,14 @@ int handleImportAppliance(HandlerArg *a)
                             {
                                 RTPrintf("%2d: IDE controller, type %ls -- disabled\n",
                                          a,
-                                         aConfigValues[a]);
+                                         aVboxValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
                                 RTPrintf("%2d: IDE controller, type %ls"
                                          "\n    (disable with \"-vsys %d -ignore %d\")\n",
                                          a,
-                                         aConfigValues[a],
+                                         aVboxValues[a],
                                          i, a);
                         break;
 
@@ -315,14 +315,14 @@ int handleImportAppliance(HandlerArg *a)
                             {
                                 RTPrintf("%2d: SATA controller, type %ls -- disabled\n",
                                          a,
-                                         aConfigValues[a]);
+                                         aVboxValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
                                 RTPrintf("%2d: SATA controller, type %ls"
                                         "\n    (disable with \"-vsys %d -ignore %d\")\n",
                                         a,
-                                        aConfigValues[a],
+                                        aVboxValues[a],
                                         i, a);
                         break;
 
@@ -331,7 +331,7 @@ int handleImportAppliance(HandlerArg *a)
                             {
                                 RTPrintf("%2d: SCSI controller, type %ls -- disabled\n",
                                          a,
-                                         aConfigValues[a]);
+                                         aVboxValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
@@ -350,7 +350,7 @@ int handleImportAppliance(HandlerArg *a)
                                             "\n    (change with \"-vsys %d -type%d {BusLogic|LsiLogic}\";"
                                             "\n    disable with \"-vsys %d -ignore %d\")\n",
                                             a,
-                                            aConfigValues[a],
+                                            aVboxValues[a],
                                             i, a, i, a);
                             }
                         break;
@@ -360,7 +360,7 @@ int handleImportAppliance(HandlerArg *a)
                             {
                                 RTPrintf("%2d: Hard disk image: source image=%ls -- disabled\n",
                                          a,
-                                         aOrigValues[a]);
+                                         aOvfValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
@@ -375,8 +375,8 @@ int handleImportAppliance(HandlerArg *a)
                                     bstrExtraConfigValue.detachTo(&aExtraConfigValues[a]);
                                     RTPrintf("%2d: Hard disk image: source image=%ls, target path=%ls, %ls\n",
                                             a,
-                                            aOrigValues[a],
-                                            aConfigValues[a],
+                                            aOvfValues[a],
+                                            aVboxValues[a],
                                             aExtraConfigValues[a]);
                                 }
                                 else
@@ -384,8 +384,8 @@ int handleImportAppliance(HandlerArg *a)
                                             "\n    (change controller with \"-vsys %d -controller%d <id>\";"
                                             "\n    disable with \"-vsys %d -ignore %d\")\n",
                                             a,
-                                            aOrigValues[a],
-                                            aConfigValues[a],
+                                            aOvfValues[a],
+                                            aVboxValues[a],
                                             aExtraConfigValues[a],
                                             i, a, i, a);
                             }
@@ -420,8 +420,8 @@ int handleImportAppliance(HandlerArg *a)
                         case VirtualSystemDescriptionType_NetworkAdapter:
                             RTPrintf("%2d: Network adapter: orig %ls, config %ls, extra %ls\n",   // @todo implement once we have a plan for the back-end
                                      a,
-                                     aOrigValues[a],
-                                     aConfigValues[a],
+                                     aOvfValues[a],
+                                     aVboxValues[a],
                                      aExtraConfigValues[a]);
                         break;
 
@@ -443,14 +443,14 @@ int handleImportAppliance(HandlerArg *a)
                             {
                                 RTPrintf("%2d: Sound card \"%ls\" -- disabled\n",
                                          a,
-                                         aOrigValues[a]);
+                                         aOvfValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
                                 RTPrintf("%2d: Sound card (appliance expects \"%ls\", can change on import)"
                                         "\n    (disable with \"-vsys %d -ignore %d\")\n",
                                         a,
-                                        aOrigValues[a],
+                                        aOvfValues[a],
                                         i,
                                         a);
                         break;
