@@ -26,6 +26,8 @@
 
 #include "VirtualBoxBase.h"
 #include "Collection.h"
+#include "HostNetworkInterfaceIpConfigImpl.h"
+
 #ifdef VBOX_WITH_HOSTNETIF_API
 /* class HostNetworkInterface; */
 /* #include "netif.h" */
@@ -63,14 +65,12 @@ public:
 #ifdef VBOX_WITH_HOSTNETIF_API
     HRESULT init (Bstr aInterfaceName, HostNetworkInterfaceType_T ifType, struct NETIFINFO *pIfs);
 #endif
+    void uninit();
 
     // IHostNetworkInterface properties
     STDMETHOD(COMGETTER(Name)) (BSTR *aInterfaceName);
     STDMETHOD(COMGETTER(Id)) (OUT_GUID aGuid);
-    STDMETHOD(COMGETTER(IPAddress)) (ULONG *aIPAddress);
-    STDMETHOD(COMGETTER(NetworkMask)) (ULONG *aNetworkMask);
-    STDMETHOD(COMGETTER(IPV6Address)) (BSTR *aIPV6Address);
-    STDMETHOD(COMGETTER(IPV6NetworkMask)) (BSTR *aIPV6Mask);
+    STDMETHOD(COMGETTER(IpConfig)) (IHostNetworkInterfaceIpConfig **aIpConfig);
     STDMETHOD(COMGETTER(HardwareAddress)) (BSTR *aHardwareAddress);
     STDMETHOD(COMGETTER(MediumType)) (HostNetworkInterfaceMediumType_T *aType);
     STDMETHOD(COMGETTER(Status)) (HostNetworkInterfaceStatus_T *aStatus);
@@ -86,14 +86,10 @@ private:
 
     struct Data
     {
-        Data() : IPAddress (0), networkMask (0),
-            mediumType (HostNetworkInterfaceMediumType_Unknown),
+        Data() : mediumType (HostNetworkInterfaceMediumType_Unknown),
             status(HostNetworkInterfaceStatus_Down){}
 
-        ULONG IPAddress;
-        ULONG networkMask;
-        Bstr IPV6Address;
-        Bstr IPV6NetworkMask;
+        ComObjPtr <HostNetworkInterfaceIpConfig> ipConfig;
         Bstr hardwareAddress;
         HostNetworkInterfaceMediumType_T mediumType;
         HostNetworkInterfaceStatus_T status;

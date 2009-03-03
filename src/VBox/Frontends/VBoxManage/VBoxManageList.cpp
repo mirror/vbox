@@ -302,25 +302,27 @@ int handleList(HandlerArg *a)
                 Guid interfaceGuid;
                 networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
                 RTPrintf("GUID:            %lS\n", Bstr(interfaceGuid.toString()).raw());
+                ComPtr<IHostNetworkInterfaceIpConfig> ipConfig;
+                networkInterface->COMGETTER(IpConfig)(ipConfig.asOutParam());
                 ULONG IPAddress;
-                networkInterface->COMGETTER(IPAddress)(&IPAddress);
+                ipConfig->COMGETTER(IPAddress)(&IPAddress);
                 RTPrintf("IPAddress:       %d.%d.%d.%d\n",
                         ((uint8_t*)&IPAddress)[0],
                         ((uint8_t*)&IPAddress)[1],
                         ((uint8_t*)&IPAddress)[2],
                         ((uint8_t*)&IPAddress)[3]);
                 ULONG NetworkMask;
-                networkInterface->COMGETTER(NetworkMask)(&NetworkMask);
+                ipConfig->COMGETTER(NetworkMask)(&NetworkMask);
                 RTPrintf("NetworkMask:     %d.%d.%d.%d\n",
                         ((uint8_t*)&NetworkMask)[0],
                         ((uint8_t*)&NetworkMask)[1],
                         ((uint8_t*)&NetworkMask)[2],
                         ((uint8_t*)&NetworkMask)[3]);
                 Bstr IPV6Address;
-                networkInterface->COMGETTER(IPV6Address)(IPV6Address.asOutParam());
+                ipConfig->COMGETTER(IPV6Address)(IPV6Address.asOutParam());
                 RTPrintf("IPV6Address:     %lS\n", IPV6Address.raw());
                 Bstr IPV6NetworkMask;
-                networkInterface->COMGETTER(IPV6NetworkMask)(IPV6NetworkMask.asOutParam());
+                ipConfig->COMGETTER(IPV6NetworkMask)(IPV6NetworkMask.asOutParam());
                 RTPrintf("IPV6NetworkMask: %lS\n", IPV6NetworkMask.raw());
                 Bstr HardwareAddress;
                 networkInterface->COMGETTER(HardwareAddress)(HardwareAddress.asOutParam());

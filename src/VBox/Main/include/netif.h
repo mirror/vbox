@@ -58,6 +58,7 @@ typedef struct NETIFINFO
     NETIFINFO     *pNext;
     RTNETADDRIPV4  IPAddress;
     RTNETADDRIPV4  IPNetMask;
+    RTNETADDRIPV4  IPDefaultGateway;
     RTNETADDRIPV6  IPv6Address;
     RTNETADDRIPV6  IPv6NetMask;
     RTMAC          MACAddress;
