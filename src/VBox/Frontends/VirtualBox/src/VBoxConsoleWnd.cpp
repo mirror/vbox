@@ -911,16 +911,6 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 #endif
     }
 
-    /* initialize shared folders stuff */
-    CSharedFolderVector sfvec = cconsole.GetSharedFolders();
-    if (sfvec.size() == 0)
-    {
-        /* hide shared folders menu action & sf_separator & sf_status_icon */
-        mDevicesSFDialogAction->setVisible (false);
-        mDevicesSFMenuSeparator->setVisible (false);
-        sf_light->setHidden (true);
-    }
-
     /* start an idle timer that will update device lighths */
     connect (idle_timer, SIGNAL (timeout()), SLOT (updateDeviceLights()));
     idle_timer->start (50);
