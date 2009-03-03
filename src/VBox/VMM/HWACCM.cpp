@@ -1217,7 +1217,7 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     Assert(pVM->fHWACCMEnabled);
 
     if (    RT_UNLIKELY(pVCpu->hwaccm.s.EmulateIoBlock.fEnabled)
-        &&  pCtx->rsp < pVCpu->hwaccm.s.EmulateIoBlock.GCPtrFunctionEsp)
+        &&  pCtx->rsp <= pVCpu->hwaccm.s.EmulateIoBlock.GCPtrFunctionEsp)
         return false;
 
     pVCpu->hwaccm.s.EmulateIoBlock.fEnabled = false;
