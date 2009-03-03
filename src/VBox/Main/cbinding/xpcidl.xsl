@@ -114,8 +114,231 @@
  *  Generator : src/VBox/Main/idl/xpcidl.xsl
  */
 
+#ifndef ___VirtualBox_CXPCOM_h
+#define ___VirtualBox_CXPCOM_h
+
+#ifdef __cplusplus
+# include "VirtualBox_XPCOM.h"
+#else /* !__cplusplus */
+
+#include &lt;stddef.h&gt;
 #include "wchar.h"
-#include "prtypes.h"
+
+#if defined(WIN32)
+
+#define PR_EXPORT(__type) extern __declspec(dllexport) __type
+#define PR_EXPORT_DATA(__type) extern __declspec(dllexport) __type
+#define PR_IMPORT(__type) __declspec(dllimport) __type
+#define PR_IMPORT_DATA(__type) __declspec(dllimport) __type
+
+#define PR_EXTERN(__type) extern __declspec(dllexport) __type
+#define PR_IMPLEMENT(__type) __declspec(dllexport) __type
+#define PR_EXTERN_DATA(__type) extern __declspec(dllexport) __type
+#define PR_IMPLEMENT_DATA(__type) __declspec(dllexport) __type
+
+#define PR_CALLBACK
+#define PR_CALLBACK_DECL
+#define PR_STATIC_CALLBACK(__x) static __x
+
+#elif defined(XP_BEOS)
+
+#define PR_EXPORT(__type) extern __declspec(dllexport) __type
+#define PR_EXPORT_DATA(__type) extern __declspec(dllexport) __type
+#define PR_IMPORT(__type) extern __declspec(dllexport) __type
+#define PR_IMPORT_DATA(__type) extern __declspec(dllexport) __type
+
+#define PR_EXTERN(__type) extern __declspec(dllexport) __type
+#define PR_IMPLEMENT(__type) __declspec(dllexport) __type
+#define PR_EXTERN_DATA(__type) extern __declspec(dllexport) __type
+#define PR_IMPLEMENT_DATA(__type) __declspec(dllexport) __type
+
+#define PR_CALLBACK
+#define PR_CALLBACK_DECL
+#define PR_STATIC_CALLBACK(__x) static __x
+
+#elif defined(WIN16)
+
+#define PR_CALLBACK_DECL        __cdecl
+
+#if defined(_WINDLL)
+#define PR_EXPORT(__type) extern __type _cdecl _export _loadds
+#define PR_IMPORT(__type) extern __type _cdecl _export _loadds
+#define PR_EXPORT_DATA(__type) extern __type _export
+#define PR_IMPORT_DATA(__type) extern __type _export
+
+#define PR_EXTERN(__type) extern __type _cdecl _export _loadds
+#define PR_IMPLEMENT(__type) __type _cdecl _export _loadds
+#define PR_EXTERN_DATA(__type) extern __type _export
+#define PR_IMPLEMENT_DATA(__type) __type _export
+
+#define PR_CALLBACK             __cdecl __loadds
+#define PR_STATIC_CALLBACK(__x) static __x PR_CALLBACK
+
+#else /* this must be .EXE */
+#define PR_EXPORT(__type) extern __type _cdecl _export
+#define PR_IMPORT(__type) extern __type _cdecl _export
+#define PR_EXPORT_DATA(__type) extern __type _export
+#define PR_IMPORT_DATA(__type) extern __type _export
+
+#define PR_EXTERN(__type) extern __type _cdecl _export
+#define PR_IMPLEMENT(__type) __type _cdecl _export
+#define PR_EXTERN_DATA(__type) extern __type _export
+#define PR_IMPLEMENT_DATA(__type) __type _export
+
+#define PR_CALLBACK             __cdecl __loadds
+#define PR_STATIC_CALLBACK(__x) __x PR_CALLBACK
+#endif /* _WINDLL */
+
+#elif defined(XP_MAC)
+
+#define PR_EXPORT(__type) extern __declspec(export) __type
+#define PR_EXPORT_DATA(__type) extern __declspec(export) __type
+#define PR_IMPORT(__type) extern __declspec(export) __type
+#define PR_IMPORT_DATA(__type) extern __declspec(export) __type
+
+#define PR_EXTERN(__type) extern __declspec(export) __type
+#define PR_IMPLEMENT(__type) __declspec(export) __type
+#define PR_EXTERN_DATA(__type) extern __declspec(export) __type
+#define PR_IMPLEMENT_DATA(__type) __declspec(export) __type
+
+#define PR_CALLBACK
+#define PR_CALLBACK_DECL
+#define PR_STATIC_CALLBACK(__x) static __x
+
+#elif defined(XP_OS2) &amp;&amp; defined(__declspec)
+
+#define PR_EXPORT(__type) extern __declspec(dllexport) __type
+#define PR_EXPORT_DATA(__type) extern __declspec(dllexport) __type
+#define PR_IMPORT(__type) __declspec(dllimport) __type
+#define PR_IMPORT_DATA(__type) __declspec(dllimport) __type
+
+#define PR_EXTERN(__type) extern __declspec(dllexport) __type
+#define PR_IMPLEMENT(__type) __declspec(dllexport) __type
+#define PR_EXTERN_DATA(__type) extern __declspec(dllexport) __type
+#define PR_IMPLEMENT_DATA(__type) __declspec(dllexport) __type
+
+#define PR_CALLBACK
+#define PR_CALLBACK_DECL
+#define PR_STATIC_CALLBACK(__x) static __x
+
+#elif defined(XP_OS2_VACPP)
+
+#define PR_EXPORT(__type) extern __type
+#define PR_EXPORT_DATA(__type) extern __type
+#define PR_IMPORT(__type) extern __type
+#define PR_IMPORT_DATA(__type) extern __type
+
+#define PR_EXTERN(__type) extern __type
+#define PR_IMPLEMENT(__type) __type
+#define PR_EXTERN_DATA(__type) extern __type
+#define PR_IMPLEMENT_DATA(__type) __type
+#define PR_CALLBACK _Optlink
+#define PR_CALLBACK_DECL
+#define PR_STATIC_CALLBACK(__x) static __x PR_CALLBACK
+
+#else /* Unix */
+
+# ifdef VBOX_HAVE_VISIBILITY_HIDDEN
+#  define PR_EXPORT(__type) __attribute__((visibility("default"))) extern __type
+#  define PR_EXPORT_DATA(__type) __attribute__((visibility("default"))) extern __type
+#  define PR_IMPORT(__type) extern __type
+#  define PR_IMPORT_DATA(__type) extern __type
+#  define PR_EXTERN(__type) __attribute__((visibility("default"))) extern __type
+#  define PR_IMPLEMENT(__type) __attribute__((visibility("default"))) __type
+#  define PR_EXTERN_DATA(__type) __attribute__((visibility("default"))) extern __type
+#  define PR_IMPLEMENT_DATA(__type) __attribute__((visibility("default"))) __type
+#  define PR_CALLBACK
+#  define PR_CALLBACK_DECL
+#  define PR_STATIC_CALLBACK(__x) static __x
+# else
+#  define PR_EXPORT(__type) extern __type
+#  define PR_EXPORT_DATA(__type) extern __type
+#  define PR_IMPORT(__type) extern __type
+#  define PR_IMPORT_DATA(__type) extern __type
+#  define PR_EXTERN(__type) extern __type
+#  define PR_IMPLEMENT(__type) __type
+#  define PR_EXTERN_DATA(__type) extern __type
+#  define PR_IMPLEMENT_DATA(__type) __type
+#  define PR_CALLBACK
+#  define PR_CALLBACK_DECL
+#  define PR_STATIC_CALLBACK(__x) static __x
+# endif
+#endif
+
+#if defined(_NSPR_BUILD_)
+#define NSPR_API(__type) PR_EXPORT(__type)
+#define NSPR_DATA_API(__type) PR_EXPORT_DATA(__type)
+#else
+#define NSPR_API(__type) PR_IMPORT(__type)
+#define NSPR_DATA_API(__type) PR_IMPORT_DATA(__type)
+#endif
+
+typedef unsigned char PRUint8;
+#if (defined(HPUX) &amp;&amp; defined(__cplusplus) \
+        &amp;&amp; !defined(__GNUC__) &amp;&amp; __cplusplus &lt; 199707L) \
+    || (defined(SCO) &amp;&amp; defined(__cplusplus) \
+        &amp;&amp; !defined(__GNUC__) &amp;&amp; __cplusplus == 1L)
+typedef char PRInt8;
+#else
+typedef signed char PRInt8;
+#endif
+
+#define PR_INT8_MAX 127
+#define PR_INT8_MIN (-128)
+#define PR_UINT8_MAX 255U
+
+typedef unsigned short PRUint16;
+typedef short PRInt16;
+
+#define PR_INT16_MAX 32767
+#define PR_INT16_MIN (-32768)
+#define PR_UINT16_MAX 65535U
+
+typedef unsigned int PRUint32;
+typedef int PRInt32;
+#define PR_INT32(x)  x
+#define PR_UINT32(x) x ## U
+
+#define PR_INT32_MAX PR_INT32(2147483647)
+#define PR_INT32_MIN (-PR_INT32_MAX - 1)
+#define PR_UINT32_MAX PR_UINT32(4294967295)
+
+typedef long PRInt64;
+typedef unsigned long PRUint64;
+typedef int PRIntn;
+typedef unsigned int PRUintn;
+
+typedef double          PRFloat64;
+typedef size_t PRSize;
+
+typedef ptrdiff_t PRPtrdiff;
+
+typedef unsigned long PRUptrdiff;
+
+typedef PRIntn PRBool;
+
+#define PR_TRUE 1
+#define PR_FALSE 0
+
+typedef PRUint8 PRPackedBool;
+
+/*
+** Status code used by some routines that have a single point of failure or 
+** special status return.
+*/
+typedef enum { PR_FAILURE = -1, PR_SUCCESS = 0 } PRStatus;
+
+#ifndef __PRUNICHAR__
+#define __PRUNICHAR__
+#if defined(WIN32) || defined(XP_MAC)
+typedef wchar_t PRUnichar;
+#else
+typedef PRUint16 PRUnichar;
+#endif
+#endif
+
+typedef long PRWord;
+typedef unsigned long PRUword;
 
 #define nsnull 0
 typedef PRUint32 nsresult;
@@ -310,6 +533,88 @@ struct nsIStackFrame {
 
 </xsl:text>
  <xsl:apply-templates/>
+<xsl:text>
+#endif /* !__cplusplus */
+
+#ifdef IN_VBOXXPCOMC
+# define VBOXXPCOMC_DECL(type)  PR_EXPORT(type)
+#else
+# define VBOXXPCOMC_DECL(type)  PR_IMPORT(type)
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Initialize/Uninitialize XPCOM. */
+VBOXXPCOMC_DECL(void) VBoxComInitialize(IVirtualBox **virtualBox, ISession **session);
+VBOXXPCOMC_DECL(void) VBoxComUninitialize(void);
+
+/* Deallocation functions. */
+VBOXXPCOMC_DECL(void) VBoxComUnallocMem(void *ptr);
+VBOXXPCOMC_DECL(void) VBoxUtf16Free(PRUnichar *pwszString);
+VBOXXPCOMC_DECL(void) VBoxUtf8Free(char *pszString);
+
+/* Converting to and from UTF-8 and UTF-16. */
+VBOXXPCOMC_DECL(int) VBoxUtf16ToUtf8(const PRUnichar *pwszString, char **ppszString);
+VBOXXPCOMC_DECL(int) VBoxUtf8ToUtf16(const char *pszString, PRUnichar **ppwszString);
+
+/* Getting and setting the environment variables. */
+VBOXXPCOMC_DECL(const char *) VBoxGetEnv(const char *pszVar);
+VBOXXPCOMC_DECL(int) VBoxSetEnv(const char *pszVar, const char *pszValue);
+
+
+/**
+ * Function table for dynamic linking.
+ * Use VBoxGetFunctions() to obtain the pointer to it.
+ */
+typedef struct VBOXXPCOMC
+{
+    /** The size of the structure. */
+    unsigned cb;
+    /** The structure version. */
+    unsigned uVersion;
+    void  (*pfnComInitialize)(IVirtualBox **virtualBox, ISession **session);
+    void  (*pfnComUninitialize)(void);
+
+    void  (*pfnComUnallocMem)(void *pv);
+    void  (*pfnUtf16Free)(PRUnichar *pwszString);
+    void  (*pfnUtf8Free)(char *pszString);
+
+    int   (*pfnUtf16ToUtf8)(const PRUnichar *pwszString, char **ppszString);
+    int   (*pfnUtf8ToUtf16)(const char *pszString, PRUnichar **ppwszString);
+
+    const char * (*pfnGetEnv)(const char *pszVar);
+    int   (*pfnSetEnv)(const char *pszVar, const char *pszValue);
+    /** Tail version, same as uVersion. */
+    unsigned uEndVersion;
+} VBOXXPCOMC;
+/** Pointer to a const VBoxXPCOMC function table. */
+typedef VBOXXPCOMC const *PCVBOXXPCOM;
+
+/** The current interface version.
+ * For use with VBoxGetXPCOMCFunctions and to be found in
+ * VBOXXPCOMC::uVersion. */
+#define VBOX_XPCOMC_VERSION     0x00010000U
+
+VBOXXPCOMC_DECL(PCVBOXXPCOM) VBoxGetXPCOMCFunctions(unsigned uVersion);
+/** Typedef for VBoxGetXPCOMCFunctions. */
+typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
+
+/** The symbol name of VBoxGetXPCOMCFunctions. */
+#if defined(__APPLE__) || defined(__OS2__)
+# define VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME   "_VBoxGetXPCOMCFunctions"
+#else
+# define VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME   "VBoxGetXPCOMCFunctions"
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* !___VirtualBox_CXPCOM_h */
+</xsl:text>
 </xsl:template>
 
 <!--
@@ -773,7 +1078,7 @@ struct nsIStackFrame {
     <xsl:text>)(&#x0A;</xsl:text>
     <xsl:text>        </xsl:text>
     <xsl:value-of select="../@name" />
-    <xsl:text> *this_, &#x0A;</xsl:text>
+    <xsl:text> *this_,&#x0A;</xsl:text>
     <xsl:for-each select="param [position() != last()]">
       <xsl:text>        </xsl:text>
       <xsl:apply-templates select="."/>
