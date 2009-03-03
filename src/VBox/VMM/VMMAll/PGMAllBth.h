@@ -1828,10 +1828,9 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                     /*
                      * Make shadow PTE entry.
                      */
-                    const RTHCPHYS HCPhys = pPage->HCPhys; /** @todo PAGE FLAGS */
                     SHWPTE PteDst;
                     PteDst.u = (PdeSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
-                             | (HCPhys & X86_PTE_PAE_PG_MASK);
+                             | PGM_PAGE_GET_HCPHYS(pPage);
                     if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                     {
                         if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
@@ -1842,7 +1841,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                     const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
 # ifdef PGMPOOL_WITH_USER_TRACKING
                     if (PteDst.n.u1Present && !pPTDst->a[iPTDst].n.u1Present)
-                        PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pPage, iPTDst);
+                        PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPTDst);
 # endif
                     pPTDst->a[iPTDst] = PteDst;
 
@@ -2740,7 +2739,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                             PteDst.u = PGM_PAGE_GET_HCPHYS(pPage) | PteDstBase.u;
 # ifdef PGMPOOL_WITH_USER_TRACKING
                         if (PteDst.n.u1Present)
-                            PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, pPage->HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pPage, iPTDst); /** @todo PAGE FLAGS */
+                            PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPTDst);
 # endif
                         /* commit it */
                         pPTDst->a[iPTDst] = PteDst;
