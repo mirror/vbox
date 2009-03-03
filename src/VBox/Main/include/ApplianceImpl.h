@@ -109,8 +109,8 @@ struct VirtualSystemDescriptionEntry
     uint32_t ulIndex;                       // zero-based index of this entry within array
     VirtualSystemDescriptionType_T type;    // type of this entry
     Utf8Str strRef;                         // reference number (hard disk controllers only)
-    Utf8Str strOrig;                        // original OVF value (type-dependent)
-    Utf8Str strConfig;                      // configuration value (type-dependent)
+    Utf8Str strOvf;                         // original OVF value (type-dependent)
+    Utf8Str strVbox;                        // configuration value (type-dependent)
     Utf8Str strExtraConfig;                 // extra configuration key=value strings (type-dependent)
 };
 
@@ -153,12 +153,12 @@ public:
     /* IVirtualSystemDescription methods */
     STDMETHOD(GetDescription)(ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
                               ComSafeArrayOut(BSTR, aRefs),
-                              ComSafeArrayOut(BSTR, aOrigValues),
-                              ComSafeArrayOut(BSTR, aConfigValues),
+                              ComSafeArrayOut(BSTR, aOvfValues),
+                              ComSafeArrayOut(BSTR, aVboxValues),
                               ComSafeArrayOut(BSTR, aExtraConfigValues));
 
     STDMETHOD(SetFinalValues)(ComSafeArrayIn(BOOL, aEnabled),
-                              ComSafeArrayIn(IN_BSTR, aConfigValues),
+                              ComSafeArrayIn(IN_BSTR, aVboxValues),
                               ComSafeArrayIn(IN_BSTR, aExtraConfigValues));
 
     STDMETHOD(GetWarnings)(ComSafeArrayOut(BSTR, aWarnings));
