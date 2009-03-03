@@ -261,11 +261,6 @@ typedef struct VBOXNETFLTGLOBALS
     bool fIDCOpen;
     /** The SUPDRV IDC handle (opaque struct). */
     SUPDRVIDCHANDLE SupDrvIDC;
-
-#ifdef VBOXNETFLT_STATIC_CONFIG
-    /** Something we can block on while waiting for an instance to be unlinked. */
-    RTSEMEVENT hBlockEvent;
-#endif
 } VBOXNETFLTGLOBALS;
 
 
