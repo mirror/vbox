@@ -36,7 +36,7 @@ endif
 ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
  include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
 endif
-ifneq ($(wildcard $(PATH_SUB_CURRENT)/Installer),)
+ifneq ($(wildcard $(PATH_SUB_CURRENT)/Installer/Makefile.kmk),)
  include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
 endif
 
