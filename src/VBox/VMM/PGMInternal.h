@@ -544,6 +544,9 @@ typedef enum PGMPAGETYPE
     PGMPAGETYPE_RAM,
     /** MMIO2 page. (RWX) */
     PGMPAGETYPE_MMIO2,
+    /** MMIO2 page aliased over an MMIO page. (RWX)
+     * See PGMHandlerPhysicalPageAlias(). */
+    PGMPAGETYPE_MMIO2_ALIAS_MMIO,
     /** Shadowed ROM. (RWX) */
     PGMPAGETYPE_ROM_SHADOW,
     /** ROM page. (R-X) */
@@ -553,7 +556,7 @@ typedef enum PGMPAGETYPE
     /** End of valid entries. */
     PGMPAGETYPE_END
 } PGMPAGETYPE;
-AssertCompile(PGMPAGETYPE_END < 7);
+AssertCompile(PGMPAGETYPE_END <= 7);
 
 /** @name Page type predicates.
  * @{ */
@@ -577,8 +580,12 @@ AssertCompile(PGMPAGETYPE_END < 7);
 typedef struct PGMPAGE
 {
     /** The physical address and a whole lot of other stuff. All bits are used! */
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    RTHCPHYS    HCPhysX;
+#else
     RTHCPHYS    HCPhys;
 #define HCPhysX HCPhys /**< Temporary while in the process of eliminating direct access to PGMPAGE::HCPhys. */
+#endif
     /** The page state. */
     uint32_t    u2StateX : 2;
     /** Flag indicating that a write monitored page was written to when set. */

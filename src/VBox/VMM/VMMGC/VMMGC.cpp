@@ -26,6 +26,7 @@
 #define LOG_GROUP LOG_GROUP_VMM
 #include <VBox/vmm.h>
 #include <VBox/trpm.h>
+#include <VBox/pgm.h>
 #include "VMMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/sup.h>
@@ -88,6 +89,9 @@ VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
 
             int rc = RTRCInit(u64TS);
             Log(("VMMGCEntry: VMMGC_DO_VMMGC_INIT - uArg=%u (svn revision) u64TS=%RX64; rc=%Rrc\n", uArg, u64TS, rc));
+            AssertRCReturn(rc, rc);
+
+            rc = PGMRegisterStringFormatTypes();
             AssertRCReturn(rc, rc);
 
             return VINF_SUCCESS;
