@@ -5071,4 +5071,3 @@ void *memcpy(void *dst, const void *src, size_t size)
 void cpu_smm_update(CPUState *env)
 {
 }
-

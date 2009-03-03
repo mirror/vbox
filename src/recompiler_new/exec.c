@@ -1848,7 +1848,6 @@ DECLINLINE(void) tlb_flush_jmp_cache(CPUState *env, target_ulong addr)
 void tlb_flush(CPUState *env, int flush_global)
 {
     int i;
-
 #if defined(DEBUG_TLB)
     printf("tlb_flush:\n");
 #endif
@@ -1863,14 +1862,24 @@ void tlb_flush(CPUState *env, int flush_global)
         env->tlb_table[1][i].addr_read = -1;
         env->tlb_table[1][i].addr_write = -1;
         env->tlb_table[1][i].addr_code = -1;
+#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
+        env->phys_addends[0][i] = -1;
+        env->phys_addends[1][i] = -1;
+#endif
 #if (NB_MMU_MODES >= 3)
         env->tlb_table[2][i].addr_read = -1;
         env->tlb_table[2][i].addr_write = -1;
         env->tlb_table[2][i].addr_code = -1;
+#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
+        env->phys_addends[2][i] = -1;
+#endif
 #if (NB_MMU_MODES == 4)
         env->tlb_table[3][i].addr_read = -1;
         env->tlb_table[3][i].addr_write = -1;
         env->tlb_table[3][i].addr_code = -1;
+#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
+        env->phys_addends[3][i] = -1;
+#endif
 #endif
 #endif
     }
@@ -2057,10 +2066,10 @@ int cpu_physical_memory_get_dirty_tracking(void)
 }
 #endif
 
-#ifndef VBOX
-static inline void tlb_update_dirty(CPUTLBEntry *tlb_entry)
+#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
+DECLINLINE(void) tlb_update_dirty(CPUTLBEntry *tlb_entry, target_phys_addr_t phys_addend)
 #else
-DECLINLINE(void) tlb_update_dirty(CPUTLBEntry *tlb_entry)
+static inline void tlb_update_dirty(CPUTLBEntry *tlb_entry)
 #endif
 {
     ram_addr_t ram_addr;
@@ -2073,7 +2082,11 @@ DECLINLINE(void) tlb_update_dirty(CPUTLBEntry *tlb_entry)
         ram_addr = (tlb_entry->addr_write & TARGET_PAGE_MASK) +
             tlb_entry->addend - (unsigned long)phys_ram_base;
 #else
-        ram_addr = remR3HCVirt2GCPhys(first_cpu, (void*)((tlb_entry->addr_write & TARGET_PAGE_MASK) + tlb_entry->addend));
+        Assert(phys_addend != -1);
+        ram_addr = (tlb_entry->addr_write & TARGET_PAGE_MASK) + phys_addend;
+        
+        /** @todo: nike: will remove this assert along with remR3HCVirt2GCPhys() soon */
+        Assert(ram_addr == remR3HCVirt2GCPhys(first_cpu, (void*)((tlb_entry->addr_write & TARGET_PAGE_MASK) + tlb_entry->addend)));
 #endif
         if (!cpu_physical_memory_is_dirty(ram_addr)) {
             tlb_entry->addr_write |= TLB_NOTDIRTY;
@@ -2085,6 +2098,20 @@ DECLINLINE(void) tlb_update_dirty(CPUTLBEntry *tlb_entry)
 void cpu_tlb_update_dirty(CPUState *env)
 {
     int i;
+#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
+    for(i = 0; i < CPU_TLB_SIZE; i++)
+        tlb_update_dirty(&env->tlb_table[0][i], env->phys_addends[0][i]);
+    for(i = 0; i < CPU_TLB_SIZE; i++)
+        tlb_update_dirty(&env->tlb_table[1][i], env->phys_addends[1][i]);
+#if (NB_MMU_MODES >= 3)
+    for(i = 0; i < CPU_TLB_SIZE; i++)
+        tlb_update_dirty(&env->tlb_table[2][i], env->phys_addends[2][i]);
+#if (NB_MMU_MODES == 4)
+    for(i = 0; i < CPU_TLB_SIZE; i++)
+        tlb_update_dirty(&env->tlb_table[3][i], env->phys_addends[3][i]);
+#endif
+#endif
+#else /* VBOX */
     for(i = 0; i < CPU_TLB_SIZE; i++)
         tlb_update_dirty(&env->tlb_table[0][i]);
     for(i = 0; i < CPU_TLB_SIZE; i++)
@@ -2097,6 +2124,7 @@ void cpu_tlb_update_dirty(CPUState *env)
         tlb_update_dirty(&env->tlb_table[3][i]);
 #endif
 #endif
+#endif /* VBOX */
 }
 
 #ifndef VBOX
@@ -2277,6 +2305,8 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
         te->addr_code |= code_mods;
     if (prot & PAGE_WRITE)
         te->addr_write |= write_mods;
+
+    env->phys_addends[mmu_idx][index] = (pd & TARGET_PAGE_MASK)- vaddr;
 #endif
 
 #ifdef VBOX
