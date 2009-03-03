@@ -3243,17 +3243,6 @@
   /////////////////////////////////////////////////////////////////////////
   -->
 
-  <enumerator
-     name="IMachineEnumerator" type="IMachine"
-     uuid="1b554149-be0a-4465-9252-9ff8f420af55"
-     />
-
-  <collection
-     name="IMachineCollection" type="IMachine" enumerator="IMachineEnumerator"
-     uuid="FD443EC1-3007-4F5B-9282-D72760A66916"
-     readonly="yes"
-     />
-
   <interface
      name="IInternalMachineControl" extends="$unknown"
      uuid="4042ddf2-93d3-4749-8517-dde3f17ea630"
