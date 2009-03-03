@@ -710,7 +710,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   _HCPhys     The new host physical address.
  */
 #define PGM_PAGE_SET_HCPHYS(pPage, _HCPhys) \
-                                        do { (pPage)->HCPhysX = (((pPage)->HCPhys) & UINT64_C(0xffff000000000fff)) \
+                                        do { (pPage)->HCPhysX = (((pPage)->HCPhysX) & UINT64_C(0xffff000000000fff)) \
                                                               | ((_HCPhys) & UINT64_C(0x0000fffffffff000)); } while (0)
 
 /**
@@ -4638,7 +4638,7 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
     }
     else
         pgmPoolTrackPhysExtDerefGCPhys(pPool, pPoolPage, pPhysPage);
-    Log2(("pgmTrackDerefGCPhys: %x -> %x HCPhys=%RGp\n", uOrg, PGM_PAGE_GET_TRACKING(pPhysPage), PGM_PAGE_GET_HCPHYS(pPhysPage) ));
+    Log2(("pgmTrackDerefGCPhys: %x -> %x pPhysPage=%R[pgmpage]\n", uOrg, PGM_PAGE_GET_TRACKING(pPhysPage), pPhysPage ));
 }
 #endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
