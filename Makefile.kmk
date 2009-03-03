@@ -197,9 +197,9 @@ ifdef VBOX_WITH_QT4_SUN
  else
   qt4-bin_INST = $(INST_BIN)
   qt4-bin_SOURCES = \
-	$(VBOX_PATH_QT4_LIB)/libVBoxQtCore.so.4 \
-	$(VBOX_PATH_QT4_LIB)/libVBoxQtGui.so.4 \
-	$(VBOX_PATH_QT4_LIB)/libVBoxQtNetwork.so.4 \
+	$(VBOX_PATH_QT4_LIB)/libQtCoreVBox.so.4 \
+	$(VBOX_PATH_QT4_LIB)/libQtGuiVBox.so.4 \
+	$(VBOX_PATH_QT4_LIB)/libQtNetworkVBox.so.4 \
 	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(SUFF_DLL)=>accessible/libqtaccessiblewidgets$(SUFF_DLL)
  endif
 endif # VBOX_WITH_QT4_SUN
