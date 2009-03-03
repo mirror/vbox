@@ -1470,7 +1470,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
             /*
              * Make page table entry.
              */
-            const RTHCPHYS HCPhys = pPage->HCPhys; /** @todo FLAGS */
             SHWPTE PteDst;
             if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
             {
@@ -1486,12 +1485,12 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                     /* PteDst.n.u1Write = 0 && PteDst.n.u1Size = 0 */
 #else
                     PteDst.u = (PteSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT | X86_PTE_RW))
-                             | (HCPhys & X86_PTE_PAE_PG_MASK);
+                             | PGM_PAGE_GET_HCPHYS(pPage);
 #endif
                 }
                 else
                 {
-                    LogFlow(("SyncPageWorker: monitored page (%RHp) -> mark not present\n", HCPhys));
+                    LogFlow(("SyncPageWorker: monitored page (%RHp) -> mark not present\n", PGM_PAGE_GET_HCPHYS(pPage)));
                     PteDst.u = 0;
                 }
                 /** @todo count these two kinds. */
@@ -1518,7 +1517,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,DirtyPage));
                     PteDst.u = (PteSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT | X86_PTE_RW))
-                             | (HCPhys & X86_PTE_PAE_PG_MASK)
+                             | PGM_PAGE_GET_HCPHYS(pPage)
                              | PGM_PTFLAGS_TRACK_DIRTY;
                 }
                 else
@@ -1535,7 +1534,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                     /* PteDst.n.u1Size = 0 */
 #else
                     PteDst.u = (PteSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
-                             | (HCPhys & X86_PTE_PAE_PG_MASK);
+                             | PGM_PAGE_GET_HCPHYS(pPage);
 #endif
                 }
             }
@@ -1547,12 +1546,12 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
             if (PteDst.n.u1Present)
             {
                 if (!pPteDst->n.u1Present)
-                    PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pPage, iPTDst);
+                    PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPTDst);
                 else if ((pPteDst->u & SHW_PTE_PG_MASK) != (PteDst.u & SHW_PTE_PG_MASK))
                 {
                     Log2(("SyncPageWorker: deref! *pPteDst=%RX64 PteDst=%RX64\n", (uint64_t)pPteDst->u, (uint64_t)PteDst.u));
                     PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVM, pShwPage, pPteDst->u & SHW_PTE_PG_MASK);
-                    PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pPage, iPTDst);
+                    PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPTDst);
                 }
             }
             else if (pPteDst->n.u1Present)

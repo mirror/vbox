@@ -84,11 +84,6 @@ __BEGIN_DECLS
 
 /** Physical backing memory is allocated dynamically. Not set implies a one time static allocation. */
 #define MM_RAM_FLAGS_DYNAMIC_ALLOC      RT_BIT(11)
-
-/** The shift used to get the page pool idx. (Apply MM_RAM_FLAGS_IDX_MASK to the result when shifting down). */
-#define MM_RAM_FLAGS_IDX_SHIFT          48
-/** The mask applied to the the page pool idx after using MM_RAM_FLAGS_IDX_SHIFT to shift it down. */
-#define MM_RAM_FLAGS_IDX_MASK           0x3fff
 /** @} */
 
 /** @name MMR3PhysRegisterEx registration type
