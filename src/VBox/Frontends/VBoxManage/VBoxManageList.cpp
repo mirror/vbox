@@ -142,6 +142,10 @@ int handleList(HandlerArg *a)
                 command = c;
             break;
 
+            case VINF_GETOPT_NOT_OPTION:
+                return errorSyntax(USAGE_LIST, "Unknown subcommand \"%s\".", ValueUnion.psz);
+            break;
+
             default:
                 if (c > 0)
                     return errorSyntax(USAGE_LIST, "missing case: %c\n", c);
