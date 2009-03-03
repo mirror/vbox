@@ -6363,8 +6363,8 @@
   </interface>
 
   <enum
-    name="HostNetworkInterfaceType"
-    uuid="763754FA-3246-4539-9590-9E603EDBF706"
+    name="HostNetworkInterfaceMediumType"
+    uuid="1aa54aaf-2497-45a2-bfb1-8eb225e93d5b"
   >
     <desc>
       Type of encapsulation. Ethernet encapsulation includes both wired and
@@ -6420,9 +6420,20 @@
     </const>
   </enum>
 
+  <enum
+    name="HostNetworkInterfaceType"
+    uuid="4cd97025-b31b-430b-98dd-211e85cf389f"
+  >
+    <desc>
+      Network interface type.
+    </desc>
+    <const name="Bridged"               value="1"/>
+    <const name="HostOnly"              value="2"/>
+  </enum>
+
   <interface
      name="IHostNetworkInterface" extends="$unknown"
-     uuid="4fc2445f-fb73-4f55-b3b4-ecee47c7077b"
+     uuid="c312bf73-b353-4add-9db7-481b891ec08c"
      wsmap="managed"
      >
     <desc>
@@ -6459,7 +6470,7 @@
       <desc>Returns the hardware address. For Ethernet it is MAC address.</desc>
     </attribute>
 
-    <attribute name="type" type="HostNetworkInterfaceType" readonly="yes">
+    <attribute name="mediumType" type="HostNetworkInterfaceMediumType" readonly="yes">
       <desc>Type of protocol encapsulation used.</desc>
     </attribute>
 
@@ -6467,15 +6478,14 @@
       <desc>Status of the interface.</desc>
     </attribute>
 
-    <attribute name="real" type="boolean" readonly="yes">
-      <desc>True if this is a real interface false
-      if this is a Virtualbox Host Adapter interface.</desc>
+    <attribute name="interfaceType" type="HostNetworkInterfaceType" readonly="yes">
+      <desc>specifies the host interface type.</desc>
     </attribute>
   </interface>
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="234a43b3-66a5-4f15-a2a5-c46dbf4c4508"
+     uuid="96128709-69b5-43cc-9393-b3895f3b866a"
      wsmap="managed"
      >
     <desc>
@@ -6623,9 +6633,9 @@
     </attribute>
 
 <if target="midl">
-    <method name="createHostNetworkInterface">
+    <method name="createHostOnlyNetworkInterface">
       <desc>
-        Creates a new adapter for Host Interface Networking.
+        Creates a new adapter for Host Only Networking.
         <result name="E_INVALIDARG">
           Host network interface @a name already exists.
         </result>
@@ -6646,9 +6656,9 @@
         </desc>
       </param>
     </method>
-    <method name="removeHostNetworkInterface">
+    <method name="removeHostOnlyNetworkInterface">
       <desc>
-        Removes the given host network interface.
+        Removes the given Host Only Networking interface.
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           No host network interface matching @a id found.
         </result>
@@ -6829,6 +6839,17 @@
       </param>
       <param name="networkInterface" type="IHostNetworkInterface" dir="return">
         <desc>Found host network interface object.</desc>
+      </param>
+    </method>
+    <method name="findHostNetworkInterfacesOfType">
+      <desc>
+        Searches through all host network interfaces and returns a list of interfaces of the specified type
+      </desc>
+      <param name="type" type="HostNetworkInterfaceType" dir="in">
+        <desc>type of the host network interfaces to search for.</desc>
+      </param>
+      <param name="networkInterfaces" type="IHostNetworkInterface" safearray="yes" dir="return">
+        <desc>Found host network interface objects.</desc>
       </param>
     </method>
   </interface>
@@ -10289,7 +10310,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="NetworkAttachmentType"
-    uuid="64e770dc-dd1d-4879-9f12-5bd6bc879b78"
+    uuid="44bce1ee-99f7-4e8e-89fc-80597fd9eeaf"
   >
     <desc>
       Network attachment type.
@@ -10299,7 +10320,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Null value, also means "not attached".</desc>
     </const>
     <const name="NAT"                   value="1"/>
-    <const name="HostInterface"         value="2"/>
+    <const name="Bridged"               value="2"/>
     <const name="Internal"              value="3"/>
     <const name="HostOnly"              value="4"/>
   </enum>
@@ -10323,7 +10344,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="INetworkAdapter" extends="$unknown"
-     uuid="4a1ee64e-6c5f-47dd-acfa-f834d7cb74fb"
+     uuid="8eca30de-a883-40ee-b856-aac86f1ec383"
      wsmap="managed"
      >
     <attribute name="adapterType" type="NetworkAdapterType">
@@ -10411,9 +10432,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </method>
 
-    <method name="attachToHostInterface">
+    <method name="attachToBridgedNetwork">
       <desc>
-        Attach the network adapter to a host interface.
+        Attach the network adapter to a bridged host interface.
       </desc>
     </method>
 

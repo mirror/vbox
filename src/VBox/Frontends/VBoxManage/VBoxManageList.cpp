@@ -43,13 +43,13 @@
 using namespace com;
 
 #ifdef VBOX_WITH_HOSTNETIF_API
-static const char *getHostIfTypeText(HostNetworkInterfaceType_T enmType)
+static const char *getHostIfTypeText(HostNetworkInterfaceMediumType_T enmType)
 {
     switch (enmType)
     {
-        case HostNetworkInterfaceType_Ethernet: return "Ethernet";
-        case HostNetworkInterfaceType_PPP: return "PPP";
-        case HostNetworkInterfaceType_SLIP: return "SLIP";
+        case HostNetworkInterfaceMediumType_Ethernet: return "Ethernet";
+        case HostNetworkInterfaceMediumType_PPP: return "PPP";
+        case HostNetworkInterfaceMediumType_SLIP: return "SLIP";
     }
     return "Unknown";
 }
@@ -325,8 +325,8 @@ int handleList(HandlerArg *a)
                 Bstr HardwareAddress;
                 networkInterface->COMGETTER(HardwareAddress)(HardwareAddress.asOutParam());
                 RTPrintf("HardwareAddress: %lS\n", HardwareAddress.raw());
-                HostNetworkInterfaceType_T Type;
-                networkInterface->COMGETTER(Type)(&Type);
+                HostNetworkInterfaceMediumType_T Type;
+                networkInterface->COMGETTER(MediumType)(&Type);
                 RTPrintf("Type:            %s\n", getHostIfTypeText(Type));
                 HostNetworkInterfaceStatus_T Status;
                 networkInterface->COMGETTER(Status)(&Status);

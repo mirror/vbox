@@ -50,7 +50,7 @@ void HostNetworkInterface::FinalRelease()
  * @param   aInterfaceName name of the network interface
  * @param   aGuid GUID of the host network interface
  */
-HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid, BOOL aReal)
+HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid, HostNetworkInterfaceType_T ifType)
 {
     LogFlowThisFunc (("aInterfaceName={%ls}, aGuid={%s}\n",
                       aInterfaceName.raw(), aGuid.toString().raw()));
@@ -64,7 +64,7 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid, BOOL aReal)
 
     unconst (mInterfaceName) = aInterfaceName;
     unconst (mGuid) = aGuid;
-    mReal = aReal;
+    mIfType = ifType;
 
 
     /* Confirm a successful initialization */
@@ -111,7 +111,7 @@ static Bstr composeHardwareAddress(PRTMAC aMacPtr)
  * @param   aInterfaceName name of the network interface
  * @param   aGuid GUID of the host network interface
  */
-HRESULT HostNetworkInterface::init (Bstr aInterfaceName, BOOL aReal, PNETIFINFO pIf)
+HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceType_T ifType, PNETIFINFO pIf)
 {
 //    LogFlowThisFunc (("aInterfaceName={%ls}, aGuid={%s}\n",
 //                      aInterfaceName.raw(), aGuid.toString().raw()));
@@ -126,7 +126,7 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, BOOL aReal, PNETIFINFO 
 
     unconst (mInterfaceName) = aInterfaceName;
     unconst (mGuid) = pIf->Uuid;
-    mReal = aReal;
+    mIfType = ifType;
 
     m.IPAddress = pIf->IPAddress.u;
     m.networkMask = pIf->IPNetMask.u;
@@ -134,7 +134,7 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, BOOL aReal, PNETIFINFO 
     m.IPV6NetworkMask = composeIPv6Address(&pIf->IPv6NetMask);
     m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
 #ifdef RT_OS_WINDOWS
-    m.type = (HostNetworkInterfaceType)pIf->enmType;
+    m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
     m.status = (HostNetworkInterfaceStatus)pIf->enmStatus;
 #else /* !RT_OS_WINDOWS */
     m.type = pIf->enmType;
@@ -284,14 +284,14 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(HardwareAddress) (BSTR *aHardwareAd
  * @returns COM status code
  * @param   aType address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(Type) (HostNetworkInterfaceType_T *aType)
+STDMETHODIMP HostNetworkInterface::COMGETTER(MediumType) (HostNetworkInterfaceMediumType_T *aType)
 {
     CheckComArgOutPointerValid(aType);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    *aType = m.type;
+    *aType = m.mediumType;
 
     return S_OK;
 }
@@ -315,19 +315,19 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Status) (HostNetworkInterfaceStatus
 }
 
 /**
- * Returns true if this is a "real" adapter, false if this is  a Virtualbox Host Adapter
+ * Returns network interface type
  *
  * @returns COM status code
- * @param   aReal address of result pointer
+ * @param   aType address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(Real) (BOOL *aReal)
+STDMETHODIMP HostNetworkInterface::COMGETTER(InterfaceType) (HostNetworkInterfaceType_T *aType)
 {
-    CheckComArgOutPointerValid(aReal);
+    CheckComArgOutPointerValid(aType);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    *aReal = mReal;
+    *aType = mIfType;
 
     return S_OK;
 

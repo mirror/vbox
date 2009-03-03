@@ -1291,12 +1291,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             }
 
-            case NetworkAttachmentType_HostInterface:
+            case NetworkAttachmentType_Bridged:
             {
                 /*
                  * Perform the attachment if required (don't return on error!)
                  */
-                hrc = pConsole->attachToHostInterface(networkAdapter);
+                hrc = pConsole->attachToBridgedInterface(networkAdapter);
                 if (SUCCEEDED(hrc))
                 {
 #if !defined(VBOX_WITH_NETFLT) && defined(RT_OS_LINUX)
@@ -1332,7 +1332,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
                     if(FAILED(hrc))
                     {
-                        LogRel(("NetworkAttachmentType_HostInterface: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));
+                        LogRel(("NetworkAttachmentType_Bridged: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));
                         H();
                     }
 
@@ -1381,25 +1381,24 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     if (!SUCCEEDED(rc))
                     {
                         AssertBreakpoint();
-                        LogRel(("NetworkAttachmentType_HostInterface: FindByName failed, rc (0x%x)", rc));
+                        LogRel(("NetworkAttachmentType_Bridged: FindByName failed, rc (0x%x)", rc));
                         return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                           N_("Inexistent host networking interface, name '%ls'"),
                                           HifName.raw());
                     }
 
-                    BOOL real;
-                    hrc = hostInterface->COMGETTER(Real)(&real);
+                    HostNetworkInterfaceType_T ifType;
+                    hrc = hostInterface->COMGETTER(InterfaceType)(&ifType);
                     if(FAILED(hrc))
                     {
-                        LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Real) failed, hrc (0x%x)", hrc));
+                        LogRel(("NetworkAttachmentType_Bridged: COMGETTER(InterfaceType) failed, hrc (0x%x)", hrc));
                         H();
                     }
 
-                    if(!real)
+                    if(ifType != HostNetworkInterfaceType_Bridged)
                     {
-                        LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Real) failed, hrc (0x%x)", hrc));
                         return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                                              N_("Interface ('%ls') is a Host Adapter interface"),
+                                                              N_("Interface ('%ls') is not a Bridged Adapter interface"),
                                                               HifName.raw());
                     }
 
@@ -1407,7 +1406,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());
                     if(FAILED(hrc))
                     {
-                        LogRel(("NetworkAttachmentType_HostInterface: COMGETTER(Id) failed, hrc (0x%x)", hrc));
+                        LogRel(("NetworkAttachmentType_Bridged: COMGETTER(Id) failed, hrc (0x%x)", hrc));
                         H();
                     }
                     char szDriverGUID[RTUUID_STR_LENGTH];
@@ -1690,21 +1689,21 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                       HifName.raw());
                 }
 
-                BOOL real;
-                hrc = hostInterface->COMGETTER(Real)(&real);
+                HostNetworkInterfaceType_T ifType;
+                hrc = hostInterface->COMGETTER(InterfaceType)(&ifType);
                 if(FAILED(hrc))
                 {
-                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Real) failed, hrc (0x%x)", hrc));
+                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(InterfaceType) failed, hrc (0x%x)", hrc));
                     H();
                 }
 
-                if(real)
+                if(ifType != HostNetworkInterfaceType_HostOnly)
                 {
-                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Real) failed, hrc (0x%x)", hrc));
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                                          N_("Interface ('%ls') is not a Host Adapter interface"),
+                                                          N_("Interface ('%ls') is not a Host-Only Adapter interface"),
                                                           HifName.raw());
                 }
+
 
                 Guid hostIFGuid;
                 hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());

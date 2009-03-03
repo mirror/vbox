@@ -402,8 +402,8 @@ private:
 
     HRESULT callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapDevice,
                                     Bstr &tapSetupApplication);
-    HRESULT attachToHostInterface(INetworkAdapter *networkAdapter);
-    HRESULT detachFromHostInterface(INetworkAdapter *networkAdapter);
+    HRESULT attachToBridgedInterface(INetworkAdapter *networkAdapter);
+    HRESULT detachFromBridgedInterface(INetworkAdapter *networkAdapter);
     HRESULT powerDownHostInterfaces();
 
     HRESULT setMachineState (MachineState_T aMachineState, bool aUpdateServer = true);

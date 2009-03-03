@@ -271,8 +271,8 @@ int SVCHlpServer::run()
 
         switch (msgCode)
         {
-            case SVCHlpMsg::CreateHostNetworkInterface:
-            case SVCHlpMsg::RemoveHostNetworkInterface:
+            case SVCHlpMsg::CreateHostOnlyNetworkInterface:
+            case SVCHlpMsg::RemoveHostOnlyNetworkInterface:
             {
                 vrc = Host::networkInterfaceHelperServer (this, msgCode);
                 break;

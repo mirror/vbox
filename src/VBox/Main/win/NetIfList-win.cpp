@@ -360,6 +360,42 @@ static HRESULT VBoxNetCfgWinEnableStatic(IWbemServices * pSvc, IWbemClassObject 
     return hr;
 }
 
+static HRESULT VBoxNetCfgWinEnableDHCP(IWbemServices * pSvc, IWbemClassObject *pObj,  in_addr* aIp,  in_addr * aMask, UINT cIp)
+{
+    IWbemClassObject * pClass;
+    BSTR ClassName = SysAllocString(L"Win32_NetworkAdapterConfiguration");
+    HRESULT hr;
+    if(ClassName)
+    {
+        hr = pSvc->GetObject(ClassName, 0, NULL, &pClass, NULL);
+        if(SUCCEEDED(hr))
+        {
+            BSTR ObjPath;
+            hr = netIfAdapterConfigPath(pObj, &ObjPath);
+            if(SUCCEEDED(hr))
+            {
+                IWbemClassObject * pOutParams;
+
+                hr = netIfExecMethod(pSvc, pClass, ObjPath,
+                                bstr_t(L"EnableDHCP"), NULL, NULL, 0, &pOutParams);
+                if(SUCCEEDED(hr))
+                {
+                }
+                SysFreeString(ObjPath);
+            }
+            pClass->Release();
+        }
+        SysFreeString(ClassName);
+    }
+    else
+    {
+        DWORD dwError = GetLastError();
+        Assert(0);
+        hr = HRESULT_FROM_WIN32( dwError );
+    }
+
+    return hr;
+}
 
 static int collectNetIfInfo(Bstr &strName, PNETIFINFO pInfo)
 {
@@ -447,7 +483,7 @@ static int collectNetIfInfo(Bstr &strName, PNETIFINFO pInfo)
                         Log(("collectNetIfInfo: Unexpected physical address length: %u\n", pAdapter->PhysicalAddressLength));
                     else
                         memcpy(pInfo->MACAddress.au8, pAdapter->PhysicalAddress, sizeof(pInfo->MACAddress));
-                    pInfo->enmType = NETIF_T_ETHERNET;
+                    pInfo->enmMediumType = NETIF_T_ETHERNET;
                     pInfo->enmStatus = pAdapter->OperStatus == IfOperStatusUp ? NETIF_S_UP : NETIF_S_DOWN;
                     RTStrFree(pszUuid);
                     break;
@@ -463,7 +499,7 @@ static int collectNetIfInfo(Bstr &strName, PNETIFINFO pInfo)
 
 # define VBOX_APP_NAME L"VirtualBox"
 
-static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > * pPist, INetCfgComponent * pncc, bool bReal)
+static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > * pPist, INetCfgComponent * pncc, HostNetworkInterfaceType enmType)
 {
     LPWSTR              lpszName;
     GUID                IfGuid;
@@ -495,7 +531,7 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > 
             ComObjPtr <HostNetworkInterface> iface;
             iface.createObject();
             /* remove the curly bracket at the end */
-            if (SUCCEEDED (iface->init (name, bReal, &Info)))
+            if (SUCCEEDED (iface->init (name, enmType, &Info)))
             {
                 pPist->push_back (iface);
                 rc = VINF_SUCCESS;
@@ -623,7 +659,7 @@ static int NetIfListHostAdapters(std::list <ComObjPtr <HostNetworkInterface> > &
                         {
                             if(!_wcsnicmp(pId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
                             {
-                                vboxNetWinAddComponent(&list, pMpNcc, false);
+                                vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_HostOnly);
                             }
                             CoTaskMemFree(pId);
                         }
@@ -764,7 +800,7 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                         Log(("vboxNetWinAddComponent: collectNetIfInfo() -> %Vrc\n", rc));
                     }
 
-                    if (SUCCEEDED (iface->init (name, TRUE, &Info)))
+                    if (SUCCEEDED (iface->init (name, HostNetworkInterfaceType_Bridged, &Info)))
                         list.push_back (iface);
                 }
             }
@@ -840,7 +876,7 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                                     {
                                         if(uComponentStatus == 0)
                                         {
-                                            vboxNetWinAddComponent(&list, pMpNcc, true);
+                                            vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_Bridged);
                                         }
                                     }
                                     VBoxNetCfgWinReleaseRef( pMpNcc );

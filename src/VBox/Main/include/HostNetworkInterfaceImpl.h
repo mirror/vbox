@@ -59,9 +59,9 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Bstr interfaceName, Guid guid, BOOL aReal);
+    HRESULT init (Bstr interfaceName, Guid guid, HostNetworkInterfaceType_T ifType);
 #ifdef VBOX_WITH_HOSTNETIF_API
-    HRESULT init (Bstr aInterfaceName, BOOL aReal, struct NETIFINFO *pIfs);
+    HRESULT init (Bstr aInterfaceName, HostNetworkInterfaceType_T ifType, struct NETIFINFO *pIfs);
 #endif
 
     // IHostNetworkInterface properties
@@ -72,9 +72,9 @@ public:
     STDMETHOD(COMGETTER(IPV6Address)) (BSTR *aIPV6Address);
     STDMETHOD(COMGETTER(IPV6NetworkMask)) (BSTR *aIPV6Mask);
     STDMETHOD(COMGETTER(HardwareAddress)) (BSTR *aHardwareAddress);
-    STDMETHOD(COMGETTER(Type)) (HostNetworkInterfaceType_T *aType);
+    STDMETHOD(COMGETTER(MediumType)) (HostNetworkInterfaceMediumType_T *aType);
     STDMETHOD(COMGETTER(Status)) (HostNetworkInterfaceStatus_T *aStatus);
-    STDMETHOD(COMGETTER(Real)) (BOOL *aReal);
+    STDMETHOD(COMGETTER(InterfaceType)) (HostNetworkInterfaceType_T *aType);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HostNetworkInterface"; }
@@ -82,12 +82,12 @@ public:
 private:
     const Bstr mInterfaceName;
     const Guid mGuid;
-    BOOL mReal;
+    HostNetworkInterfaceType_T mIfType;
 
     struct Data
     {
         Data() : IPAddress (0), networkMask (0),
-            type (HostNetworkInterfaceType_Unknown),
+            mediumType (HostNetworkInterfaceMediumType_Unknown),
             status(HostNetworkInterfaceStatus_Down){}
 
         ULONG IPAddress;
@@ -95,7 +95,7 @@ private:
         Bstr IPV6Address;
         Bstr IPV6NetworkMask;
         Bstr hardwareAddress;
-        HostNetworkInterfaceType_T type;
+        HostNetworkInterfaceMediumType_T mediumType;
         HostNetworkInterfaceStatus_T status;
     } m;
 
