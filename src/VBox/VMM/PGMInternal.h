@@ -1973,17 +1973,6 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
 #define PGMPOOL_TD_GET_IDX(u16)         ( ((u16) >> PGMPOOL_TD_IDX_SHIFT)   & PGMPOOL_TD_IDX_MASK   )
 /** @} */
 
-#ifdef MM_RAM_FLAGS_IDX_SHIFT
-# if MM_RAM_FLAGS_IDX_SHIFT - 48 != PGMPOOL_TD_IDX_SHIFT
-#  error "MM_RAM_FLAGS_IDX_SHIFT - 48 != PGMPOOL_TD_IDX_SHIFT"
-# endif
-#endif
-#ifdef MM_RAM_FLAGS_IDX_MASK
-# if MM_RAM_FLAGS_IDX_MASK != PGMPOOL_TD_IDX_MASK
-#  error "MM_RAM_FLAGS_IDX_MASK != PGMPOOL_TD_IDX_MASK"
-# endif
-#endif
-
 
 /**
  * Trees are using self relative offsets as pointers.
