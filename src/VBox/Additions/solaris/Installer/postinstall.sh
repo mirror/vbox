@@ -230,7 +230,7 @@ fi
 # Move the appropriate module to kernel/fs & remove the unused module name from pkg and file from disk
 # 64-bit shared folder module
 if test -f "$vboxadditions64_path/$vboxvfsmod"; then
-    /usr/sbin/installf -c none $PKGINST "usr/kernel/fs/$solaris64dir/vboxvfs" f
+    /usr/sbin/installf -c none $PKGINST "/usr/kernel/fs/$solaris64dir/vboxvfs" f
     mv -f $vboxadditions64_path/$vboxvfsmod /usr/kernel/fs/$solaris64dir/vboxvfs
     /usr/sbin/removef $PKGINST $vboxadditions64_path/$vboxvfsmod 1>/dev/null
     /usr/sbin/removef $PKGINST $vboxadditions64_path/$vboxvfsunused 1>/dev/null
@@ -239,7 +239,7 @@ fi
 
 # 32-bit shared folder module
 if test -f "$vboxadditions_path/$vboxvfsmod"; then
-    /usr/sbin/installf -c none $PKGINST "usr/kernel/fs/vboxvfs" f
+    /usr/sbin/installf -c none $PKGINST "/usr/kernel/fs/vboxvfs" f
     mv -f $vboxadditions_path/$vboxvfsmod /usr/kernel/fs/vboxvfs
     /usr/sbin/removef $PKGINST $vboxadditions_path/$vboxvfsmod 1>/dev/null
     /usr/sbin/removef $PKGINST $vboxadditions_path/$vboxvfsunused 1>/dev/null
