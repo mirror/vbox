@@ -1,6 +1,6 @@
 /*
  *  Host code generation
- * 
+ *
  *  Copyright (c) 2003 Fabrice Bellard
  *
  * This library is free software; you can redistribute it and/or
@@ -86,7 +86,7 @@ void cpu_gen_init()
 }
 
 /* return non zero if the very first instruction is invalid so that
-   the virtual CPU can trigger an exception. 
+   the virtual CPU can trigger an exception.
 
    '*gen_code_size_ptr' contains the size of the generated code (host
    code).
@@ -133,7 +133,7 @@ int cpu_gen_code(CPUState *env, TranslationBlock *tb,
     s->tb_jmp_offset = NULL;
     s->tb_next = tb->tb_next;
 #endif
-    
+
 #ifdef CONFIG_PROFILER
     s->tb_count++;
     s->interm_time += profile_getclock() - ti;
@@ -151,7 +151,7 @@ int cpu_gen_code(CPUState *env, TranslationBlock *tb,
 #ifdef VBOX
     RAWEx_ProfileStop(env, STATS_QEMU_COMPILATION);
 #endif
-   
+
 #ifdef DEBUG_DISAS
     if (loglevel & CPU_LOG_TB_OUT_ASM) {
         fprintf(logfile, "OUT: [size=%d]\n", *gen_code_size_ptr);
@@ -163,9 +163,9 @@ int cpu_gen_code(CPUState *env, TranslationBlock *tb,
     return 0;
 }
 
-/* The cpu state corresponding to 'searched_pc' is restored. 
+/* The cpu state corresponding to 'searched_pc' is restored.
  */
-int cpu_restore_state(TranslationBlock *tb, 
+int cpu_restore_state(TranslationBlock *tb,
                       CPUState *env, unsigned long searched_pc,
                       void *puc)
 {
@@ -194,7 +194,7 @@ int cpu_restore_state(TranslationBlock *tb,
     tc_ptr = (unsigned long)tb->tc_ptr;
     if (searched_pc < tc_ptr)
         return -1;
-    
+
     s->tb_next_offset = tb->tb_next_offset;
 #ifdef USE_DIRECT_JUMP
     s->tb_jmp_offset = tb->tb_jmp_offset;
