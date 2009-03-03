@@ -1191,16 +1191,25 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
 /**
  * Force execution of the current IO code in the recompiler
  *
+ * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Partial VM execution context
  */
-VMMR3DECL(void) HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx)
+VMMR3DECL(int) HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     Assert(pVM->fHWACCMEnabled);
-    pVCpu->hwaccm.s.EmulateIoBlock.fEnabled         = true;
-    pVCpu->hwaccm.s.EmulateIoBlock.GCPtrFunctionEsp = pCtx->rsp;
+    Log(("HWACCMR3EmulateIoBlock\n"));
+    if (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
+    {
+        Log(("HWACCMR3EmulateIoBlock -> enabled\n"));
+        pVCpu->hwaccm.s.EmulateIoBlock.fEnabled         = true;
+        pVCpu->hwaccm.s.EmulateIoBlock.GCPtrFunctionEsp = pCtx->rsp;
+        pVCpu->hwaccm.s.EmulateIoBlock.cr0              = pCtx->cr0;
+        return VINF_EM_RESCHEDULE_REM;
+    }
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1217,7 +1226,8 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     Assert(pVM->fHWACCMEnabled);
 
     if (    RT_UNLIKELY(pVCpu->hwaccm.s.EmulateIoBlock.fEnabled)
-        &&  pCtx->rsp <= pVCpu->hwaccm.s.EmulateIoBlock.GCPtrFunctionEsp)
+        &&  pCtx->rsp <= pVCpu->hwaccm.s.EmulateIoBlock.GCPtrFunctionEsp
+        &&  pCtx->cr0 == pVCpu->hwaccm.s.EmulateIoBlock.cr0)
         return false;
 
     pVCpu->hwaccm.s.EmulateIoBlock.fEnabled = false;

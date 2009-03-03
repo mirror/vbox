@@ -2359,8 +2359,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          * (MM)IO intensive code block detected; fall back to the recompiler for better performance
          */
         case VINF_EM_RAW_EMULATE_IO_BLOCK:
-            HWACCMR3EmulateIoBlock(pVM, pCtx);
-            rc = VINF_EM_RESCHEDULE_REM;
+            rc =HWACCMR3EmulateIoBlock(pVM, pCtx);
             break;
 
         /*
