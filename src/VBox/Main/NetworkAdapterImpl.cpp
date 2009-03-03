@@ -712,7 +712,7 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::AttachToHostInterface()
+STDMETHODIMP NetworkAdapter::AttachToBridgedNetwork()
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -724,14 +724,14 @@ STDMETHODIMP NetworkAdapter::AttachToHostInterface()
     AutoWriteLock alock (this);
 
     /* don't do anything if we're already host interface attached */
-    if (mData->mAttachmentType != NetworkAttachmentType_HostInterface)
+    if (mData->mAttachmentType != NetworkAttachmentType_Bridged)
     {
         mData.backup();
 
         /* first detach the current attachment */
         detach();
 
-        mData->mAttachmentType = NetworkAttachmentType_HostInterface;
+        mData->mAttachmentType = NetworkAttachmentType_Bridged;
 
         /* leave the lock before informing callbacks */
         alock.unlock();
@@ -924,7 +924,7 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         rc = COMSETTER(HostInterface) (name);
         CheckComRCReturnRC (rc);
 
-        rc = AttachToHostInterface();
+        rc = AttachToBridgedNetwork();
         CheckComRCReturnRC (rc);
     }
     else
@@ -1033,7 +1033,7 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
                                                 mData->mNATNetwork);
             break;
         }
-        case NetworkAttachmentType_HostInterface:
+        case NetworkAttachmentType_Bridged:
         {
             Key attachmentNode = aAdapterNode.createKey ("HostInterface");
             Assert (!mData->mHostInterface.isNull());
@@ -1199,7 +1199,7 @@ void NetworkAdapter::detach()
         {
             break;
         }
-        case NetworkAttachmentType_HostInterface:
+        case NetworkAttachmentType_Bridged:
         {
             /* reset handle and device name */
             mData->mHostInterface = "";

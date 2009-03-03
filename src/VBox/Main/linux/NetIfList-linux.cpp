@@ -51,10 +51,10 @@ static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
         switch (Req.ifr_hwaddr.sa_family)
         {
             case ARPHRD_ETHER:
-                pInfo->enmType = NETIF_T_ETHERNET;
+                pInfo->enmMediumType = NETIF_T_ETHERNET;
                 break;
             default:
-                pInfo->enmType = NETIF_T_UNKNOWN;
+                pInfo->enmMediumType = NETIF_T_UNKNOWN;
                 break;
         }
         /* Generate UUID from name and MAC address. */
@@ -141,11 +141,11 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                 rc = getInterfaceInfo(sock, pszName, &Info);
                 if (RT_FAILURE(rc))
                     break;
-                if (Info.enmType == NETIF_T_ETHERNET)
+                if (Info.enmMediumType == NETIF_T_ETHERNET)
                 {
                     ComObjPtr<HostNetworkInterface> IfObj;
                     IfObj.createObject();
-                    if (SUCCEEDED(IfObj->init(Bstr(pszName), TRUE, &Info)))
+                    if (SUCCEEDED(IfObj->init(Bstr(pszName), HostNetworkInterfaceType_Bridged, &Info)))
                         list.push_back(IfObj);
                 }
 

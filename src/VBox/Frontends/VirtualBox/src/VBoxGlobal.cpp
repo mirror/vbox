@@ -2398,7 +2398,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                     /* don't use the adapter type string for types that have
                      * an additional symbolic network/interface name field, use
                      * this name instead */
-                    if (type == KNetworkAttachmentType_HostInterface)
+                    if (type == KNetworkAttachmentType_Bridged)
                         attType = attType.arg (tr ("host interface, %1",
                             "details report (network)").arg (adapter.GetHostInterface()));
                     else if (type == KNetworkAttachmentType_Internal)
@@ -3417,8 +3417,8 @@ void VBoxGlobal::retranslateUi()
         tr ("Not attached", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_NAT] =
         tr ("NAT", "NetworkAttachmentType");
-    mNetworkAttachmentTypes [KNetworkAttachmentType_HostInterface] =
-        tr ("Host Interface", "NetworkAttachmentType");
+    mNetworkAttachmentTypes [KNetworkAttachmentType_Bridged] =
+        tr ("Bridged Interface", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_Internal] =
         tr ("Internal Network", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_HostOnly] =

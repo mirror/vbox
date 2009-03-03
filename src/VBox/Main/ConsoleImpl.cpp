@@ -4238,7 +4238,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
         adapter->COMGETTER(AttachmentType)(&netattach);
         switch (netattach)
         {
-            case NetworkAttachmentType_HostInterface:
+            case NetworkAttachmentType_Bridged:
             {
 #ifdef RT_OS_WINDOWS
                 /* a valid host interface must have been set */
@@ -5656,7 +5656,7 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
  *
  *  @note The caller must lock this object for writing.
  */
-HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
+HRESULT Console::attachToBridgedInterface(INetworkAdapter *networkAdapter)
 {
 #if !defined(RT_OS_LINUX) || defined(VBOX_WITH_NETFLT)
     /*
@@ -5678,7 +5678,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
     /* paranoia */
     NetworkAttachmentType_T attachment;
     networkAdapter->COMGETTER(AttachmentType)(&attachment);
-    Assert(attachment == NetworkAttachmentType_HostInterface);
+    Assert(attachment == NetworkAttachmentType_Bridged);
 # endif /* VBOX_STRICT */
 
     HRESULT rc = S_OK;
@@ -5734,7 +5734,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
              */
             if (fcntl(maTapFD[slot], F_SETFL, O_NONBLOCK) != -1)
             {
-                Log(("attachToHostInterface: %RTfile %ls\n", maTapFD[slot], tapDeviceName.raw()));
+                Log(("attachToBridgedInterface: %RTfile %ls\n", maTapFD[slot], tapDeviceName.raw()));
                 /*
                  * Here is the right place to communicate the TAP file descriptor and
                  * the host interface name to the server if/when it becomes really
@@ -5787,7 +5787,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
  *
  *  @note The caller must lock this object for writing.
  */
-HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
+HRESULT Console::detachFromBridgedInterface(INetworkAdapter *networkAdapter)
 {
 #if !defined(RT_OS_LINUX) || defined(VBOX_WITH_NETFLT)
     /*
@@ -5807,7 +5807,7 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
     /* paranoia */
     NetworkAttachmentType_T attachment;
     networkAdapter->COMGETTER(AttachmentType)(&attachment);
-    Assert(attachment == NetworkAttachmentType_HostInterface);
+    Assert(attachment == NetworkAttachmentType_Bridged);
 # endif /* VBOX_STRICT */
 
     ULONG slot = 0;
@@ -5879,9 +5879,9 @@ HRESULT Console::powerDownHostInterfaces()
 
         NetworkAttachmentType_T attachment;
         networkAdapter->COMGETTER(AttachmentType)(&attachment);
-        if (attachment == NetworkAttachmentType_HostInterface)
+        if (attachment == NetworkAttachmentType_Bridged)
         {
-            HRESULT rc2 = detachFromHostInterface(networkAdapter);
+            HRESULT rc2 = detachFromBridgedInterface(networkAdapter);
             if (FAILED(rc2) && SUCCEEDED(rc))
                 rc = rc2;
         }

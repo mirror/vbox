@@ -682,7 +682,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                             strAttachment = "NAT";
                         break;
                     }
-                    case NetworkAttachmentType_HostInterface:
+                    case NetworkAttachmentType_Bridged:
                     {
                         Bstr strHostIfDev;
                         nic->COMGETTER(HostInterface)(strHostIfDev.asOutParam());

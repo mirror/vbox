@@ -185,11 +185,11 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     Uuid.Gen.au8Node[4] = Info.MACAddress.au8[4];
     Uuid.Gen.au8Node[5] = Info.MACAddress.au8[5];
     Info.Uuid = Uuid;
-    Info.enmType = NETIF_T_ETHERNET;
+    Info.enmMediumType = NETIF_T_ETHERNET;
 
     ComObjPtr<HostNetworkInterface> IfObj;
     IfObj.createObject();
-    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), TRUE, &Info)))
+    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), HostNetworkInterfaceType_Bridged, &Info)))
         pList->push_back(IfObj);
 }
 

@@ -609,7 +609,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, 
 
     ComObjPtr<HostNetworkInterface> IfObj;
     IfObj.createObject();
-    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), Guid(Uuid), true)))
+    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), Guid(Uuid), HostNetworkInterfaceType_Bridged)))
         pList->push_back(IfObj);
 }
 
@@ -724,7 +724,7 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > 
             ComObjPtr <HostNetworkInterface> iface;
             iface.createObject();
             /* remove the curly bracket at the end */
-            if (SUCCEEDED (iface->init (name, Guid (IfGuid), true)))
+            if (SUCCEEDED (iface->init (name, Guid (IfGuid), HostNetworkInterfaceType_Bridged)))
             {
                 pPist->push_back (iface);
                 rc = VINF_SUCCESS;
@@ -770,7 +770,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut (IHostNetworkIn
     {
         ComObjPtr<HostNetworkInterface> IfObj;
         IfObj.createObject();
-        if (SUCCEEDED(IfObj->init(Bstr(pEtherNICs->szName), Guid(pEtherNICs->Uuid), true)))
+        if (SUCCEEDED(IfObj->init(Bstr(pEtherNICs->szName), Guid(pEtherNICs->Uuid), HostNetworkInterfaceType_Bridged)))
             list.push_back(IfObj);
 
         /* next, free current */
@@ -925,7 +925,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut (IHostNetworkIn
                     iface.createObject();
                     /* remove the curly bracket at the end */
                     szNetworkGUID [strlen(szNetworkGUID) - 1] = '\0';
-                    if (SUCCEEDED (iface->init (name, Guid (szNetworkGUID + 1), true)))
+                    if (SUCCEEDED (iface->init (name, Guid (szNetworkGUID + 1), HostNetworkInterfaceType_Bridged)))
                         list.push_back (iface);
                 }
             }
@@ -1051,7 +1051,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut (IHostNetworkIn
 
                         ComObjPtr<HostNetworkInterface> IfObj;
                         IfObj.createObject();
-                        if (SUCCEEDED(IfObj->init(Bstr(pReq->ifr_name), Guid(uuid), true)))
+                        if (SUCCEEDED(IfObj->init(Bstr(pReq->ifr_name), Guid(uuid), HostNetworkInterfaceType_Bridged)))
                             list.push_back(IfObj);
                     }
                 }
@@ -1358,15 +1358,15 @@ static BOOL IsUACEnabled()
 struct NetworkInterfaceHelperClientData
 {
     SVCHlpMsg::Code msgCode;
-    /* for SVCHlpMsg::CreateHostNetworkInterface */
+    /* for SVCHlpMsg::CreateHostOnlyNetworkInterface */
     Bstr name;
     ComObjPtr <HostNetworkInterface> iface;
-    /* for SVCHlpMsg::RemoveHostNetworkInterface */
+    /* for SVCHlpMsg::RemoveHostOnlyNetworkInterface */
     Guid guid;
 };
 
 STDMETHODIMP
-Host::CreateHostNetworkInterface (IN_BSTR aName,
+Host::CreateHostOnlyNetworkInterface (IN_BSTR aName,
                                   IHostNetworkInterface **aHostNetworkInterface,
                                   IProgress **aProgress)
 {
@@ -1406,7 +1406,7 @@ Host::CreateHostNetworkInterface (IN_BSTR aName,
         d (new NetworkInterfaceHelperClientData());
     AssertReturn (d.get(), E_OUTOFMEMORY);
 
-    d->msgCode = SVCHlpMsg::CreateHostNetworkInterface;
+    d->msgCode = SVCHlpMsg::CreateHostOnlyNetworkInterface;
     d->name = aName;
     d->iface = iface;
 
@@ -1426,7 +1426,7 @@ Host::CreateHostNetworkInterface (IN_BSTR aName,
 }
 
 STDMETHODIMP
-Host::RemoveHostNetworkInterface (IN_GUID aId,
+Host::RemoveHostOnlyNetworkInterface (IN_GUID aId,
                                   IHostNetworkInterface **aHostNetworkInterface,
                                   IProgress **aProgress)
 {
@@ -1464,7 +1464,7 @@ Host::RemoveHostNetworkInterface (IN_GUID aId,
         d (new NetworkInterfaceHelperClientData());
     AssertReturn (d.get(), E_OUTOFMEMORY);
 
-    d->msgCode = SVCHlpMsg::RemoveHostNetworkInterface;
+    d->msgCode = SVCHlpMsg::RemoveHostOnlyNetworkInterface;
     d->guid = aId;
 
     rc = mParent->startSVCHelperClient (
@@ -3004,9 +3004,9 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
 
     switch (d->msgCode)
     {
-        case SVCHlpMsg::CreateHostNetworkInterface:
+        case SVCHlpMsg::CreateHostOnlyNetworkInterface:
         {
-            LogFlowFunc (("CreateHostNetworkInterface:\n"));
+            LogFlowFunc (("CreateHostOnlyNetworkInterface:\n"));
             LogFlowFunc (("Network connection name = '%ls'\n", d->name.raw()));
 
             /* write message and parameters */
@@ -3026,7 +3026,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
 
                 switch (reply)
                 {
-                    case SVCHlpMsg::CreateHostNetworkInterface_OK:
+                    case SVCHlpMsg::CreateHostOnlyNetworkInterface_OK:
                     {
                         /* read the GUID */
                         Guid guid;
@@ -3036,8 +3036,8 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
                         LogFlowFunc (("Network connection GUID = {%RTuuid}\n", guid.raw()));
 
                         /* initialize the object returned to the caller by
-                         * CreateHostNetworkInterface() */
-                        rc = d->iface->init (d->name, guid, false);
+                         * CreateHostOnlyNetworkInterface() */
+                        rc = d->iface->init (d->name, guid, HostNetworkInterfaceType_HostOnly);
                         endLoop = true;
                         break;
                     }
@@ -3065,9 +3065,9 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
 
             break;
         }
-        case SVCHlpMsg::RemoveHostNetworkInterface:
+        case SVCHlpMsg::RemoveHostOnlyNetworkInterface:
         {
-            LogFlowFunc (("RemoveHostNetworkInterface:\n"));
+            LogFlowFunc (("RemoveHostOnlyNetworkInterface:\n"));
             LogFlowFunc (("Network connection GUID = {%RTuuid}\n", d->guid.raw()));
 
             /* write message and parameters */
@@ -3146,9 +3146,9 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
 
     switch (aMsgCode)
     {
-        case SVCHlpMsg::CreateHostNetworkInterface:
+        case SVCHlpMsg::CreateHostOnlyNetworkInterface:
         {
-            LogFlowFunc (("CreateHostNetworkInterface:\n"));
+            LogFlowFunc (("CreateHostOnlyNetworkInterface:\n"));
 
             Utf8Str name;
             vrc = aClient->read (name);
@@ -3161,7 +3161,7 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
             if (RT_SUCCESS (vrc))
             {
                 /* write success followed by GUID */
-                vrc = aClient->write (SVCHlpMsg::CreateHostNetworkInterface_OK);
+                vrc = aClient->write (SVCHlpMsg::CreateHostOnlyNetworkInterface_OK);
                 if (RT_FAILURE (vrc)) break;
                 vrc = aClient->write (guid);
                 if (RT_FAILURE (vrc)) break;
@@ -3179,9 +3179,9 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
 
             break;
         }
-        case SVCHlpMsg::RemoveHostNetworkInterface:
+        case SVCHlpMsg::RemoveHostOnlyNetworkInterface:
         {
-            LogFlowFunc (("RemoveHostNetworkInterface:\n"));
+            LogFlowFunc (("RemoveHostOnlyNetworkInterface:\n"));
 
             Guid guid;
             vrc = aClient->read (guid);
@@ -3457,5 +3457,39 @@ STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_GUID id, IHostNetworkInterfac
     return found.queryInterfaceTo (networkInterface);
 #endif
 }
+
+STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType type, ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces))
+{
+    com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
+    HRESULT hr = COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces));
+    if(FAILED(hr))
+    {
+        return hr;
+    }
+
+    std::list <ComObjPtr <IHostNetworkInterface> > list;
+
+    for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
+    {
+        IHostNetworkInterface * networkInterface = hostNetworkInterfaces[i];
+        HostNetworkInterfaceType t;
+        hr = networkInterface->COMGETTER(InterfaceType)(&t);
+        if(FAILED(hr))
+        {
+            return hr;
+        }
+
+        if(t == type)
+        {
+            list.push_back (networkInterface);
+        }
+    }
+
+    SafeIfaceArray <IHostNetworkInterface> filteredNetworkInterfaces (list);
+    filteredNetworkInterfaces.detachTo (ComSafeArrayOutArg (aNetworkInterfaces));
+
+    return S_OK;
+}
+
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

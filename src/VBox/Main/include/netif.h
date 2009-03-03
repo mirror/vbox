@@ -61,7 +61,7 @@ typedef struct NETIFINFO
     RTNETADDRIPV6  IPv6Address;
     RTNETADDRIPV6  IPv6NetMask;
     RTMAC          MACAddress;
-    NETIFTYPE      enmType;
+    NETIFTYPE      enmMediumType;
     NETIFSTATUS    enmStatus;
     RTUUID         Uuid;
     char           szShortName[50];

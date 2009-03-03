@@ -37,9 +37,9 @@ struct SVCHlpMsg
         OK, /* no parameters */
         Error, /* Utf8Str string (may be null but must present) */
 
-        CreateHostNetworkInterface = 100, /* see usage in code */
-        CreateHostNetworkInterface_OK, /* see usage in code */
-        RemoveHostNetworkInterface, /* see usage in code */
+        CreateHostOnlyNetworkInterface = 100, /* see usage in code */
+        CreateHostOnlyNetworkInterface_OK, /* see usage in code */
+        RemoveHostOnlyNetworkInterface, /* see usage in code */
     };
 };
 

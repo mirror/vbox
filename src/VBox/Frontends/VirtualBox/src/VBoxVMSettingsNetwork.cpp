@@ -129,8 +129,8 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
         case KNetworkAttachmentType_NAT:
             mAdapter.AttachToNAT();
             break;
-        case KNetworkAttachmentType_HostInterface:
-            mAdapter.AttachToHostInterface();
+        case KNetworkAttachmentType_Bridged:
+            mAdapter.AttachToBridgedNetwork();
             break;
         case KNetworkAttachmentType_Internal:
             mAdapter.AttachToInternalNetwork();
@@ -147,7 +147,7 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
 
     mAdapter.SetCableConnected (mCbCable->isChecked());
 
-    if (type == KNetworkAttachmentType_HostInterface
+    if (type == KNetworkAttachmentType_Bridged
 #if defined (Q_WS_WIN) && defined (VBOX_WITH_NETFLT)
             || type == KNetworkAttachmentType_HostOnly
 #endif
@@ -256,7 +256,7 @@ void VBoxVMSettingsNetwork::naTypeChanged (const QString &aString)
     mCbNetwork->setEnabled (enableIntNet);
 #if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
     bool enableHostIf = vboxGlobal().toNetworkAttachmentType (aString) ==
-                        KNetworkAttachmentType_HostInterface;
+                        KNetworkAttachmentType_Bridged;
     setTapEnabled (enableHostIf);
 #endif
     if (mValidator)
@@ -311,7 +311,7 @@ void VBoxVMSettingsNetwork::prepareComboboxes()
     mCbNAType->setItemData (1,
         mCbNAType->itemText(1), Qt::ToolTipRole);
     mCbNAType->insertItem (2,
-        vboxGlobal().toString (KNetworkAttachmentType_HostInterface));
+        vboxGlobal().toString (KNetworkAttachmentType_Bridged));
     mCbNAType->setItemData (2,
         mCbNAType->itemText(2), Qt::ToolTipRole);
     mCbNAType->insertItem (3,
@@ -554,7 +554,7 @@ void VBoxNIList::addHostInterface()
     /* Create interface */
     CHost host = vboxGlobal().virtualBox().GetHost();
     CHostNetworkInterface iFace;
-    CProgress progress = host.CreateHostNetworkInterface (iName, iFace);
+    CProgress progress = host.CreateHostOnlyNetworkInterface (iName, iFace);
     if (host.isOk())
     {
         vboxProblem().showModalProgressDialog (progress, iName, this);
@@ -613,7 +613,7 @@ void VBoxNIList::delHostInterface()
     if (!iFace.isNull())
     {
         /* Delete interface */
-        CProgress progress = host.RemoveHostNetworkInterface (iFace.GetId(), iFace);
+        CProgress progress = host.RemoveHostOnlyNetworkInterface (iFace.GetId(), iFace);
         if (host.isOk())
         {
             vboxProblem().showModalProgressDialog (progress, iName, this);
@@ -672,7 +672,8 @@ void VBoxNIList::populateInterfacesList()
     {
 #if defined(Q_WS_WIN) && defined(VBOX_WITH_NETFLT)
         /* display real for not host-only and viceversa */
-        if((enmAttachmentType == KNetworkAttachmentType_HostOnly) != it->GetReal())
+        if((enmAttachmentType == KNetworkAttachmentType_HostOnly)
+                == (it->GetInterfaceType() == KHostNetworkInterfaceType_HostOnly))
 #endif
             itemsList << new VBoxNIListItem (it->GetName());
     }
@@ -806,7 +807,7 @@ bool VBoxVMSettingsNetworkPage::revalidate (QString &aWarning,
             vboxGlobal().toNetworkAttachmentType (page->mCbNAType->currentText());
 
 #if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
-        if ((type == KNetworkAttachmentType_HostInterface
+        if ((type == KNetworkAttachmentType_Bridged
 #if defined (Q_WS_WIN) && defined (VBOX_WITH_NETFLT)
                 || type == KNetworkAttachmentType_HostOnly
 #endif
@@ -884,7 +885,7 @@ void VBoxVMSettingsNetworkPage::updateInterfaceList()
         static_cast <VBoxVMSettingsNetwork*> (mTwAdapters->currentWidget());
     KNetworkAttachmentType enmType = vboxGlobal().toNetworkAttachmentType (page->mCbNAType->currentText());
 
-    bool isHostInterfaceAttached = enmType == KNetworkAttachmentType_HostInterface;
+    bool isHostInterfaceAttached = enmType == KNetworkAttachmentType_Bridged;
 
     mNIList->setEnabled (isHostInterfaceAttached);
 # ifdef Q_WS_WIN
