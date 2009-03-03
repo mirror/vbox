@@ -309,14 +309,32 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 {
                     /* Mark the page as locked; disallow flushing. */
                     pgmPoolLockPage(pVM->pgm.s.CTX_SUFF(pPool), pPoolPagePd);
+
+                    if (pShwPaePd->a[iPDE].n.u1Present)
+                    {
+                        Assert(!(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
+                        pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iNewPDE);
+                    }
                 }
-#endif
+# ifdef VBOX_STRICT
+                else
+                {
+                    if (pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING)
+                    {
+                        Assert(PGMGetGuestMode(pVM) >= PGMMODE_PAE);
+                        AssertFatalMsg((pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT0, ("%RX64 vs %RX64\n", pShwPaePd->a[iPDE+1].u & X86_PDE_PG_MASK, pMap->aPTs[i].HCPhysPaePT0));
+                        Assert(pShwPaePd->a[iPDE+1].u & PGM_PDFLAGS_MAPPING);
+                        AssertFatalMsg((pShwPaePd->a[iPDE+1].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT1, ("%RX64 vs %RX64\n", pShwPaePd->a[iPDE+1].u & X86_PDE_PG_MASK, pMap->aPTs[i].HCPhysPaePT1));
+                    }
+                }
+# endif
+#else
                 if (pShwPaePd->a[iPDE].n.u1Present)
                 {
                     Assert(!(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
                     pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iNewPDE);
                 }
-
+#endif
                 X86PDEPAE PdePae0;
                 PdePae0.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0;
                 pShwPaePd->a[iPDE] = PdePae0;
@@ -325,12 +343,17 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 iPDE++;
                 AssertFatal(iPDE < 512);
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+                if (    pShwPaePd->a[iPDE].n.u1Present
+                    &&  !(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING))
+                {
+#else
                 if (pShwPaePd->a[iPDE].n.u1Present)
                 {
                     Assert(!(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
+#endif
                     pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iNewPDE);
                 }
-
                 X86PDEPAE PdePae1;
                 PdePae1.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1;
                 pShwPaePd->a[iPDE] = PdePae1;
@@ -364,6 +387,17 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pShwPageCR3);
+# ifdef IN_RC
+    Assert(pShwPageCR3 != pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+# endif
+
+    PX86PDPT pCurrentShwPdpt = NULL;
+
+    if (    PGMGetGuestMode(pVM) >= PGMMODE_PAE
+        &&  pShwPageCR3 != pVM->pgm.s.CTX_SUFF(pShwPageCR3))
+    {
+        pCurrentShwPdpt = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
+    }
 #endif
 
     unsigned i = pMap->cPTs;
@@ -395,14 +429,21 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                 PX86PDPT  pShwPdpt = NULL;
                 PX86PDPAE pShwPaePd = NULL;
 
-                const unsigned iPD = iOldPDE / 256;         /* iOldPDE * 2 / 512; iOldPDE is in 4 MB pages */
+                const unsigned iPdpt = iOldPDE / 256;         /* iOldPDE * 2 / 512; iOldPDE is in 4 MB pages */
                 unsigned iPDE = iOldPDE * 2 % 512;
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 pShwPdpt  = (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
-                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pShwPdpt, (iPD << X86_PDPT_SHIFT));
+                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pShwPdpt, (iPdpt << X86_PDPT_SHIFT));
+
+                if (pCurrentShwPdpt)
+                {
+                    /* If the page directory of the old CR3 is reused in the new one, then don't clear the hypervisor mappings. */
+                    if ((pCurrentShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK) == (pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK))
+                        break;
+                }
 #else
                 pShwPdpt  = pgmShwGetPaePDPTPtr(&pVM->pgm.s); 
-                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPD << X86_PDPT_SHIFT)); 
+                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPdpt << X86_PDPT_SHIFT)); 
 #endif
                 AssertFatal(pShwPaePd);
 
@@ -413,10 +454,10 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 
                 pShwPaePd->a[iPDE].u = 0;
                 /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entry. (legacy PAE guest mode) */
-                pShwPdpt->a[iPD].u &= ~PGM_PLXFLAGS_MAPPING;
+                pShwPdpt->a[iPdpt].u &= ~PGM_PLXFLAGS_MAPPING;
 
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-                PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPageByHCPhys(pVM, pShwPdpt->a[iPD].u & X86_PDPE_PG_MASK);
+                PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPageByHCPhys(pVM, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
                 AssertFatal(pPoolPagePd);
 
                 if (pgmPoolIsPageLocked(&pVM->pgm.s, pPoolPagePd))
