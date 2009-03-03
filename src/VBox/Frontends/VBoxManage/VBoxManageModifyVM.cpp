@@ -1393,8 +1393,9 @@ int handleModifyVM(HandlerArg *a)
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
                 else if (strcmp(nics[n], "hostonly") == 0)
                 {
+
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
-                    CHECK_ERROR_RET(nic, AttachToHostOnlyInterface(), 1);
+                    CHECK_ERROR_RET(nic, AttachToHostOnlyNetwork(), 1);
                 }
 #endif /* defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) */
                 else
