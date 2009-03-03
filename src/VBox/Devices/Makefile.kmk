@@ -651,6 +651,13 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/tftp.c \
 	Network/slirp/udp.c
 
+ifdef VBOX_WITH_SLIRP_DNS_PROXY
+VBOX_SLIRP_SOURCES += \
+	Network/slirp/dnsproxy/hash.c \
+	Network/slirp/dnsproxy/dnsproxy.c	\
+	Network/slirp/dnsproxy/internal.c
+endif
+
 # some day will be deleted
 VBOX_WITH_SIMPLIFIED_SLIRP_SYNC=1
 VBOX_WITH_MULTI_DNS=1
@@ -662,6 +669,7 @@ define def_vbox_slirp_cflags
       $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),RTMEM_WRAP_TO_EF_APIS,) \
       $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
       $(if $(VBOX_WITH_MULTI_DNS),VBOX_WITH_MULTI_DNS,)	\
+      $(if $(VBOX_WITH_SLIRP_DNS_PROXY),VBOX_WITH_SLIRP_DNS_PROXY,)	\
       $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
  ifeq ($(KBUILD_TARGET),win)
   $(file)_CFLAGS = -wd4018
