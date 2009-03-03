@@ -87,6 +87,8 @@ void VBoxDownloaderWgt::acknowledgeProcess (const QHttpResponseHeader & /* aResp
  * abort download progress if error is present */
 void VBoxDownloaderWgt::acknowledgeFinished (bool aError)
 {
+    NOREF(aError);
+
     AssertMsg (aError, ("Error must be 'true' due to aborting.\n"));
 
     mHttp->disconnect (this);
