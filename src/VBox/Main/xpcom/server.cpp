@@ -194,6 +194,9 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostFloppyDrive, IHostFloppyDrive)
 NS_DECL_CLASSINFO(HostNetworkInterface)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostNetworkInterface, IHostNetworkInterface)
 
+NS_DECL_CLASSINFO(HostNetworkInterfaceIpConfig)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostNetworkInterfaceIpConfig, IHostNetworkInterfaceIpConfig)
+
 NS_DECL_CLASSINFO(GuestOSType)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestOSType, IGuestOSType)
 
