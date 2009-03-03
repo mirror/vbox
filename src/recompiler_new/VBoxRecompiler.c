@@ -1042,9 +1042,7 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
         Ctx.gdtr.pGdt      = env->gdt.base;
 
         Ctx.rsp            = env->regs[R_ESP];
-#ifdef LOG_ENABLED
         Ctx.rip            = env->eip;
-#endif
 
         Ctx.eflags.u32     = env->eflags;
 
