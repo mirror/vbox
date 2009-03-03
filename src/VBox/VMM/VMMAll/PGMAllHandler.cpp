@@ -951,7 +951,13 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
              *        have to require that the current page is the zero page... Require
              *        GCPhysPageRemap to be a MMIO2 page might help matters because those
              *        pages aren't managed dynamically (at least not yet).
-             *        VBOX_WITH_NEW_PHYS_CODE TODO!  */
+             *        VBOX_WITH_NEW_PHYS_CODE TODO!
+             *
+             * A solution to this would be to temporarily change the page into a MMIO2 one
+             * and record that we've changed it. Only the physical page address would
+             * need to be copied over. The aliased page would have to be MMIO2 ofc, since
+             * RAM or ROM pages would require write sharing which is something we don't
+             * intend to implement just yet... */
 
             PPGMPAGE pPageRemap;
             int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPageRemap, &pPageRemap);
@@ -972,7 +978,8 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             PGM_PAGE_SET_TRACKING(pPage, 0);
 #endif
 
-            LogFlow(("PGMHandlerPhysicalPageAlias %RGp -> %RGp - %RHp\n", GCPhysPage, GCPhysPageRemap, pPageRemap->HCPhys));
+            LogFlow(("PGMHandlerPhysicalPageAlias %RGp alias for %RGp (%R[pgmpage]) -> %R[pgmpage]\n",
+                     GCPhysPage, GCPhysPageRemap, pPageRemap, pPage));
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
 #ifndef IN_RC
             HWACCMInvalidatePhysPage(pVM, GCPhysPage);
@@ -1450,8 +1457,8 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
 
         if (PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < uState)
         {
-            AssertMsgFailed(("virt handler state mismatch. HCPhys=%RHp GCPhysGst=%RGp iPage=%#x %RGv state=%d expected>=%d %s\n",
-                             pPage->HCPhys, GCPhysGst, iPage, GCPtr, PGM_PAGE_GET_HNDL_VIRT_STATE(pPage), uState, R3STRING(pVirt->pszDesc)));
+            AssertMsgFailed(("virt handler state mismatch. pPage=%R[pgmpage] GCPhysGst=%RGp iPage=%#x %RGv state=%d expected>=%d %s\n",
+                             pPage, GCPhysGst, iPage, GCPtr, PGM_PAGE_GET_HNDL_VIRT_STATE(pPage), uState, R3STRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;
         }

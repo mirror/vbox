@@ -2356,31 +2356,54 @@ static DECLCALLBACK(size_t) pgmFormatTypeHandlerPage(PFNRTSTROUTPUT pfnOutput, v
     PCPGMPAGE pPage = (PCPGMPAGE)pvValue;
     if (VALID_PTR(pPage))
     {
-        char szTmp[80];
-        switch (PGM_PAGE_GET_TYPE(pPage))
+        char szTmp[64+80];
+
+        cch = 0;
+
+        /* The single char state stuff. */
+        static const char s_achPageStates[4]    = { 'Z', 'A', 'W', 'S' };
+        szTmp[cch++] = s_achPageStates[PGM_PAGE_GET_STATE(pPage)];
+
+#define IS_PART_INCLUDED(lvl) ( !(fFlags & RTSTR_F_PRECISION) || cchPrecision == (lvl) || cchPrecision >= (lvl)+10 )
+        if (IS_PART_INCLUDED(5))
         {
-            case PGMPAGETYPE_RAM:
-                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-RAM", PGM_PAGE_GET_HCPHYS(pPage));
-                break;
-            case PGMPAGETYPE_MMIO2:
-                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-MMIO2", PGM_PAGE_GET_HCPHYS(pPage));
-                break;
-            case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
-                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-M2ALI", PGM_PAGE_GET_HCPHYS(pPage));
-                break;
-            case PGMPAGETYPE_ROM_SHADOW:
-                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-ROMSH", PGM_PAGE_GET_HCPHYS(pPage));
-                break;
-            case PGMPAGETYPE_ROM:
-                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-ROM", PGM_PAGE_GET_HCPHYS(pPage));
-                break;
-            case PGMPAGETYPE_MMIO:
-                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-MMIO", PGM_PAGE_GET_HCPHYS(pPage));
-                break;
-            default:
-                cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RHp-%d", PGM_PAGE_GET_HCPHYS(pPage), PGM_PAGE_GET_TYPE(pPage));
-                break;
+            static const char s_achHandlerStates[4] = { '-', 't', 'w', 'a' };
+            szTmp[cch++] = s_achHandlerStates[PGM_PAGE_GET_HNDL_PHYS_STATE(pPage)];
+            szTmp[cch++] = s_achHandlerStates[PGM_PAGE_GET_HNDL_VIRT_STATE(pPage)];
         }
+
+        /* The type. */
+        if (IS_PART_INCLUDED(4))
+        {
+            szTmp[cch++] = ':';
+            static const char s_achPageTypes[8][4]  = { "RAM", "MI2", "M2A", "SHA", "ROM", "MIO", "BAD" };
+            szTmp[cch++] = s_achPageTypes[PGM_PAGE_GET_TYPE(pPage)][0];
+            szTmp[cch++] = s_achPageTypes[PGM_PAGE_GET_TYPE(pPage)][1];
+            szTmp[cch++] = s_achPageTypes[PGM_PAGE_GET_TYPE(pPage)][2];
+        }
+
+        /* The numbers. */
+        if (IS_PART_INCLUDED(3))
+        {
+            szTmp[cch++] = ':';
+            cch += RTStrFormatNumber(&szTmp[cch], PGM_PAGE_GET_HCPHYS(pPage), 16, 12, 0, RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+        }
+
+        if (IS_PART_INCLUDED(2))
+        {
+            szTmp[cch++] = ':';
+            cch += RTStrFormatNumber(&szTmp[cch], PGM_PAGE_GET_PAGEID(pPage), 16, 7, 0, RTSTR_F_ZEROPAD | RTSTR_F_32BIT);
+        }
+
+        if (IS_PART_INCLUDED(6))
+        {
+            szTmp[cch++] = ':';
+            static const char s_achRefs[4] = { '-', 'U', '!', 'L' };
+            szTmp[cch++] = s_achRefs[PGM_PAGE_GET_TD_CREFS(pPage)];
+            cch += RTStrFormatNumber(&szTmp[cch], PGM_PAGE_GET_TD_IDX(pPage), 16, 4, 0, RTSTR_F_ZEROPAD | RTSTR_F_16BIT);
+        }
+#undef IS_PART_INCLUDED
+
         cch = pfnOutput(pvArgOutput, szTmp, cch);
     }
     else

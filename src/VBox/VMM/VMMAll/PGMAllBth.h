@@ -439,7 +439,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
                             AssertMsg(   pCur->enmType != PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
                                       || (pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE && (uErr & X86_TRAP_PF_RW)),
-                                      ("Unexpected trap for physical handler: %08X (phys=%08x) HCPhys=%X uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
+                                      ("Unexpected trap for physical handler: %08X (phys=%08x) pPage=%R[pgmpage] uErr=%X, enum=%d\n", pvFault, GCPhys, pPage, uErr, pCur->enmType));
 
 # if defined(IN_RC) || defined(IN_RING0)
                             if (pCur->CTX_SUFF(pfnHandler))
@@ -499,7 +499,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                       || (     pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
                                            || !(uErr & X86_TRAP_PF_P)
                                            || (pCur->enmType == PGMVIRTHANDLERTYPE_WRITE && (uErr & X86_TRAP_PF_RW))),
-                                      ("Unexpected trap for virtual handler: %RGv (phys=%RGp) HCPhys=%HGp uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
+                                      ("Unexpected trap for virtual handler: %RGv (phys=%RGp) pPage=%R[pgmpage] uErr=%X, enum=%d\n", pvFault, GCPhys, pPage, uErr, pCur->enmType));
 
                             if (    pvFault - pCur->Core.Key < pCur->cb
                                 &&  (    uErr & X86_TRAP_PF_RW
@@ -580,10 +580,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                      *        It's writing to an unhandled part of the LDT page several million times.
                      */
                     rc = PGMInterpretInstruction(pVM, pRegFrame, pvFault);
-                    LogFlow(("PGM: PGMInterpretInstruction -> rc=%d HCPhys=%RHp%s%s\n",
-                             rc, pPage->HCPhys,
-                             PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage) ? " phys" : "",
-                             PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(pPage)  ? " virt" : ""));
+                    LogFlow(("PGM: PGMInterpretInstruction -> rc=%d pPage=%R[pgmpage]\n", rc, pPage));
                     STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
                     STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2HndUnhandled; });
                     return rc;
@@ -606,7 +603,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                   || (    pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
                                        || !(uErr & X86_TRAP_PF_P)
                                        || (pCur->enmType == PGMVIRTHANDLERTYPE_WRITE && (uErr & X86_TRAP_PF_RW))),
-                                  ("Unexpected trap for virtual handler: %08X (phys=%08x) HCPhys=%X uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
+                                  ("Unexpected trap for virtual handler: %08X (phys=%08x) %R[pgmpage] uErr=%X, enum=%d\n", pvFault, GCPhys, pPage, uErr, pCur->enmType));
 
                         if (    pvFault - pCur->Core.Key < pCur->cb
                             &&  (    uErr & X86_TRAP_PF_RW
@@ -4171,10 +4168,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
                                 }
                                 fIgnoreFlags |= X86_PTE_RW;
                             }
-                            else if (HCPhysShw != (PGM_PAGE_GET_HCPHYS(pPhysPage) & SHW_PTE_PG_MASK))
+                            else if (HCPhysShw != PGM_PAGE_GET_HCPHYS(pPhysPage))
                             {
-                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%RGp PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp pPhysPage:%R[pgmpage] GCPhysGst=%RGp PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                GCPtr + off, HCPhysShw, pPhysPage, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
                             }
@@ -4186,8 +4183,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
                                 {
                                     if (PteDst.n.u1Write)
                                     {
-                                        AssertMsgFailed(("WRITE access flagged at %RGv but the page is writable! HCPhys=%RHp PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                        GCPtr + off, pPhysPage->HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                        AssertMsgFailed(("WRITE access flagged at %RGv but the page is writable! pPhysPage=%R[pgmpage] PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, pPhysPage, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                         cErrors++;
                                         continue;
                                     }
@@ -4197,8 +4194,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
                                 {
                                     if (PteDst.n.u1Present)
                                     {
-                                        AssertMsgFailed(("ALL access flagged at %RGv but the page is present! HCPhys=%RHp PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                        GCPtr + off, pPhysPage->HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                        AssertMsgFailed(("ALL access flagged at %RGv but the page is present! pPhysPage=%R[pgmpage] PteSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, pPhysPage, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                         cErrors++;
                                         continue;
                                     }
@@ -4399,10 +4396,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
                                 }
                                 fIgnoreFlags |= X86_PTE_RW;
                             }
-                            else if (HCPhysShw != (pPhysPage->HCPhys & X86_PTE_PAE_PG_MASK))
+                            else if (HCPhysShw != PGM_PAGE_GET_HCPHYS(pPhysPage))
                             {
-                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%RGp PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                                GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp pPhysPage=%R[pgmpage] GCPhysGst=%RGp PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                GCPtr + off, HCPhysShw, pPhysPage, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
                             }
@@ -4416,8 +4413,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
                                     {
                                         if (PteDst.n.u1Write)
                                         {
-                                            AssertMsgFailed(("WRITE access flagged at %RGv but the page is writable! HCPhys=%RHp PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                                            GCPtr + off, pPhysPage->HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                            AssertMsgFailed(("WRITE access flagged at %RGv but the page is writable! pPhysPage=%R[pgmpage] PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                            GCPtr + off, pPhysPage, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                             cErrors++;
                                             continue;
                                         }
@@ -4428,8 +4425,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
                                 {
                                     if (PteDst.n.u1Present)
                                     {
-                                        AssertMsgFailed(("ALL access flagged at %RGv but the page is present! HCPhys=%RHp PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                                        GCPtr + off, pPhysPage->HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                        AssertMsgFailed(("ALL access flagged at %RGv but the page is present! pPhysPage=%R[pgmpage] PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                                        GCPtr + off, pPhysPage, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                         cErrors++;
                                         continue;
                                     }

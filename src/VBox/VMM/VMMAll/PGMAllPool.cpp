@@ -2797,7 +2797,7 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
  */
 static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t iShw, uint16_t cRefs)
 {
-    LogFlow(("pgmPoolTrackFlushGCPhysPT: HCPhys=%RHp iShw=%d cRefs=%d\n", pPhysPage->HCPhys, iShw, cRefs));
+    LogFlow(("pgmPoolTrackFlushGCPhysPT: pPhysPage=%R[pgmpage] iShw=%d cRefs=%d\n", pPhysPage, iShw, cRefs));
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     /*
@@ -2913,7 +2913,7 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
 void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, uint16_t iShw, uint16_t cRefs)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool); NOREF(pPool);
-    LogFlow(("pgmPoolTrackFlushGCPhysPT: HCPhys=%RHp iShw=%d cRefs=%d\n", pPhysPage->HCPhys, iShw, cRefs));
+    LogFlow(("pgmPoolTrackFlushGCPhysPT: pPhysPage=%R[pgmpage] iShw=%d cRefs=%d\n", pPhysPage, iShw, cRefs));
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPT, f);
     pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, iShw, cRefs);
     PGM_PAGE_SET_TRACKING(pPhysPage, 0);
@@ -2932,7 +2932,7 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPTs, f);
-    LogFlow(("pgmPoolTrackFlushGCPhysPTs: HCPhys=%RHp iPhysExt\n", pPhysPage->HCPhys, iPhysExt));
+    LogFlow(("pgmPoolTrackFlushGCPhysPTs: pPhysPage=%R[pgmpage] iPhysExt\n", pPhysPage, iPhysExt));
 
     const uint16_t  iPhysExtStart = iPhysExt;
     PPGMPOOLPHYSEXT pPhysExt;
@@ -2979,8 +2979,8 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPTsSlow, s);
-    LogFlow(("pgmPoolTrackFlushGCPhysPTsSlow: cUsedPages=%d cPresent=%d HCPhys=%RHp\n",
-             pPool->cUsedPages, pPool->cPresent, pPhysPage->HCPhys));
+    LogFlow(("pgmPoolTrackFlushGCPhysPTsSlow: cUsedPages=%d cPresent=%d pPhysPage=%R[pgmpage]\n",
+             pPool->cUsedPages, pPool->cPresent, pPhysPage));
 
 #if 1
     /*
@@ -3452,7 +3452,7 @@ uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
 void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE pPhysPage)
 {
     const unsigned cRefs = PGM_PAGE_GET_TD_CREFS(pPhysPage);
-    AssertFatalMsg(cRefs == PGMPOOL_TD_CREFS_PHYSEXT, ("cRefs=%d HCPhys=%RHp pPage=%p:{.idx=%d}\n", cRefs, pPhysPage->HCPhys, pPage, pPage->idx));
+    AssertFatalMsg(cRefs == PGMPOOL_TD_CREFS_PHYSEXT, ("cRefs=%d pPhysPage=%R[pgmpage] pPage=%p:{.idx=%d}\n", cRefs, pPhysPage, pPage, pPage->idx));
 
     uint16_t iPhysExt = PGM_PAGE_GET_TD_IDX(pPhysPage);
     if (iPhysExt != PGMPOOL_TD_IDX_OVERFLOWED)
@@ -3475,7 +3475,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                     for (i = 0; i < RT_ELEMENTS(paPhysExts[iPhysExt].aidx); i++)
                         if (paPhysExts[iPhysExt].aidx[i] != NIL_PGMPOOL_IDX)
                         {
-                            Log2(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64 idx=%d\n", pPhysPage->HCPhys, pPage->idx));
+                            Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage] idx=%d\n", pPhysPage, pPage->idx));
                             return;
                         }
 
@@ -3487,20 +3487,20 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                     {
                         /* lonely node */
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
-                        Log2(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64 idx=%d lonely\n", pPhysPage->HCPhys, pPage->idx));
+                        Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage] idx=%d lonely\n", pPhysPage, pPage->idx));
                         PGM_PAGE_SET_TRACKING(pPhysPage, 0);
                     }
                     else if (iPhysExtPrev == NIL_PGMPOOL_PHYSEXT_INDEX)
                     {
                         /* head */
-                        Log2(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64 idx=%d head\n", pPhysPage->HCPhys, pPage->idx));
+                        Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage] idx=%d head\n", pPhysPage, pPage->idx));
                         PGM_PAGE_SET_TRACKING(pPhysPage, PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExtNext));
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                     }
                     else
                     {
                         /* in list */
-                        Log2(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64 idx=%d\n", pPhysPage->HCPhys, pPage->idx));
+                        Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage] idx=%d\n", pPhysPage, pPage->idx));
                         paPhysExts[iPhysExtPrev].iNext = iPhysExtNext;
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                     }
@@ -3514,10 +3514,10 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
             iPhysExt = paPhysExts[iPhysExt].iNext;
         } while (iPhysExt != NIL_PGMPOOL_PHYSEXT_INDEX);
 
-        AssertFatalMsgFailed(("not-found! cRefs=%d HCPhys=%RHp pPage=%p:{.idx=%d}\n", cRefs, pPhysPage->HCPhys, pPage, pPage->idx));
+        AssertFatalMsgFailed(("not-found! cRefs=%d pPhysPage=%R[pgmpage] pPage=%p:{.idx=%d}\n", cRefs, pPhysPage, pPage, pPage->idx));
     }
     else /* nothing to do */
-        Log2(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64\n", pPhysPage->HCPhys));
+        Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage]\n", pPhysPage));
 }
 
 
