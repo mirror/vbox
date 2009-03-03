@@ -67,11 +67,6 @@ typedef enum VBOXNETFTLINSSTATE
     /** Disconnecting from the internal network and possibly the host network interface.
      * Partly for reasons of deadlock avoidance again. */
     kVBoxNetFltInsState_Disconnecting,
-#ifdef VBOXNETFLT_STATIC_CONFIG
-    /** Destroying the instance
-     * Partly for reasons of deadlock avoidance again. */
-    kVBoxNetFltInsState_Destroying,
-#endif
     /** The instance has been disconnected from both the host and the internal network. */
     kVBoxNetFltInsState_Destroyed,
 

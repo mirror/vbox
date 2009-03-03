@@ -645,11 +645,7 @@ static bool vboxNetFltDestroyInstance(PVBOXNETFLTINS pThis)
      * specific code do its part of the cleanup outside the mutex.
      */
     rc = RTSemFastMutexRequest(pGlobals->hFastMtx); AssertRC(rc);
-#ifdef VBOXNETFLT_STATIC_CONFIG
-    vboxNetFltSetState(pThis, kVBoxNetFltInsState_Destroying);
-#else
     vboxNetFltSetState(pThis, kVBoxNetFltInsState_Disconnecting);
-#endif
     RTSemFastMutexRelease(pGlobals->hFastMtx);
 
     vboxNetFltOsDeleteInstance(pThis);
