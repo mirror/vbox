@@ -1201,6 +1201,8 @@ VMMR3DECL(int) HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx)
 
     Assert(pVM->fHWACCMEnabled);
     Log(("HWACCMR3EmulateIoBlock\n"));
+
+    /* This is primarily intended to speed up Grub, so we don't care about paged protected mode. */
     if (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
     {
         Log(("HWACCMR3EmulateIoBlock -> enabled\n"));
@@ -1225,6 +1227,7 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     Assert(pVM->fHWACCMEnabled);
 
+    /* If we're still executing the IO code, then return false. */
     if (    RT_UNLIKELY(pVCpu->hwaccm.s.EmulateIoBlock.fEnabled)
         &&  pCtx->rsp <= pVCpu->hwaccm.s.EmulateIoBlock.GCPtrFunctionEsp
         &&  pCtx->cr0 == pVCpu->hwaccm.s.EmulateIoBlock.cr0)
