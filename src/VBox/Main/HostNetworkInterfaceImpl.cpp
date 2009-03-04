@@ -357,7 +357,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (ULONG aIPAddress, ULONG
     return E_NOTIMPL;
 }
 
-STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (BSTR aIPV6Address, BSTR aIPV6Mask)
+STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address, IN_BSTR aIPV6Mask)
 {
     return E_NOTIMPL;
 }
