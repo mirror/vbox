@@ -138,7 +138,6 @@ public:
 class VBOXXML_CLASS XmlError : public RuntimeError
 {
 public:
-
     XmlError(xmlErrorPtr aErr);
 
     static char *Format(xmlErrorPtr aErr);
@@ -150,17 +149,22 @@ public:
 class VBOXXML_CLASS ENotImplemented : public LogicError
 {
 public:
-
-    ENotImplemented (const char *aMsg = NULL) : LogicError (aMsg) {}
-    ENotImplemented (RT_SRC_POS_DECL) : LogicError (RT_SRC_POS_ARGS) {}
+    ENotImplemented(const char *aMsg = NULL) : LogicError(aMsg) {}
+    ENotImplemented(RT_SRC_POS_DECL) : LogicError(RT_SRC_POS_ARGS) {}
 };
 
 class VBOXXML_CLASS EInvalidArg : public LogicError
 {
 public:
+    EInvalidArg(const char *aMsg = NULL) : LogicError(aMsg) {}
+    EInvalidArg(RT_SRC_POS_DECL) : LogicError(RT_SRC_POS_ARGS) {}
+};
 
-    EInvalidArg (const char *aMsg = NULL) : LogicError (aMsg) {}
-    EInvalidArg (RT_SRC_POS_DECL) : LogicError (RT_SRC_POS_ARGS) {}
+class VBOXXML_CLASS EDocumentNotEmpty : public LogicError
+{
+public:
+    EDocumentNotEmpty(const char *aMsg = NULL) : LogicError(aMsg) {}
+    EDocumentNotEmpty(RT_SRC_POS_DECL) : LogicError(RT_SRC_POS_ARGS) {}
 };
 
 // Runtime errors
@@ -169,8 +173,7 @@ public:
 class VBOXXML_CLASS ENoMemory : public RuntimeError, public std::bad_alloc
 {
 public:
-
-    ENoMemory (const char *aMsg = NULL) : RuntimeError (aMsg) {}
+    ENoMemory(const char *aMsg = NULL) : RuntimeError (aMsg) {}
     virtual ~ENoMemory() throw() {}
 };
 
@@ -320,7 +323,7 @@ public:
     File (RTFILE aHandle, const char *aFileName = NULL);
 
     /**
-     * Destrroys the File object. If the object was created from a file name
+     * Destroys the File object. If the object was created from a file name
      * the corresponding file will be automatically closed. If the object was
      * created from a file handle, it will remain open.
      */
@@ -417,8 +420,21 @@ private:
 };
 
 /*
- * Node
+ * Node:
+ *  an XML node, which represents either an element or an attribute.
  *
+ *  For elements, getName() returns the element name, and getValue()
+ *  returns the text contents, if any.
+ *
+ *  For attributes, getName() returns the attribute name, and getValue()
+ *  returns the attribute value, if any.
+ *
+ *  Since the default constructor is private, one can create new nodes
+ *  only through factory methods provided by the XML classes. These are:
+ *
+ *  --  xml::Document::createRootElement()
+ *  --  xml::Node::createChild()
+ *  --  xml::Node::setAttribute()
  */
 
 class Node;
@@ -427,7 +443,6 @@ typedef std::list<const Node*> NodesList;
 class VBOXXML_CLASS Node
 {
 public:
-    Node();
     ~Node();
 
     const char* getName() const;
@@ -450,7 +465,13 @@ public:
     bool getAttributeValue(const char *pcszMatch, int64_t &i) const;
     bool getAttributeValue(const char *pcszMatch, uint64_t &i) const;
 
+    Node* createChild(const char *pcszElementName);
+    Node* setAttribute(const char *pcszName, const char *pcszValue);
+
 private:
+    // hide the default constructor so people use only our factory methods
+    Node();
+
     friend class Document;
     friend class XmlFileParser;
 
@@ -476,6 +497,7 @@ public:
     const Node* forAllNodes() const;
 
 private:
+    /* Obscure class data */
     struct Data;
     Data *m;
 };
@@ -490,13 +512,17 @@ class VBOXXML_CLASS Document
 public:
     Document();
     ~Document();
+
     Document(const Document &x);
     Document& operator=(const Document &x);
 
     const Node* getRootElement() const;
 
+    Node* createRootElement(const char *pcszRootElementName);
+
 private:
     friend class XmlFileParser;
+    friend class XmlFileWriter;
 
     void refreshInternals();
 
@@ -538,11 +564,30 @@ private:
     std::auto_ptr<Data> m;
 
     static int ReadCallback(void *aCtxt, char *aBuf, int aLen);
-
     static int CloseCallback (void *aCtxt);
 };
 
+/*
+ * XmlFileWriter
+ *
+ */
 
+class VBOXXML_CLASS XmlFileWriter
+{
+public:
+    XmlFileWriter(Document &doc);
+    ~XmlFileWriter();
+
+    void write(const char *pcszFilename);
+
+    static int WriteCallback(void *aCtxt, const char *aBuf, int aLen);
+    static int CloseCallback (void *aCtxt);
+
+private:
+    /* Obscure class data */
+    struct Data;
+    Data *m;
+};
 
 #if defined(_MSC_VER)
 #pragma warning (default:4251)

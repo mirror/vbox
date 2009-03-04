@@ -114,7 +114,7 @@ struct VirtualSystem;
 // opaque private instance data of Appliance class
 struct Appliance::Data
 {
-    Bstr bstrPath;
+    Utf8Str                 strPath;            // file name last given to either read() or write()
 
     DiskImagesMap           mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
 
@@ -937,7 +937,8 @@ STDMETHODIMP Appliance::COMGETTER(Path)(BSTR *aPath)
 
     AutoReadLock alock(this);
 
-    m->bstrPath.cloneTo(aPath);
+    Bstr bstrPath(m->strPath);
+    bstrPath.cloneTo(aPath);
 
     return S_OK;
 }
@@ -1225,11 +1226,10 @@ STDMETHODIMP Appliance::Read(IN_BSTR path)
     CheckComRCReturnRC(autoCaller.rc());
 
     AutoWriteLock alock(this);
-    m->bstrPath = path;
 
     // see if we can handle this file; for now we insist it has an ".ovf" extension
-    Utf8Str utf8Path(path);
-    const char *pcszLastDot = strrchr(utf8Path, '.');
+    m->strPath = path;
+    const char *pcszLastDot = strrchr(m->strPath, '.');
     if (    (!pcszLastDot)
          || (    strcmp(pcszLastDot, ".ovf")
               && strcmp(pcszLastDot, ".OVF")
@@ -1242,7 +1242,7 @@ STDMETHODIMP Appliance::Read(IN_BSTR path)
     {
         xml::XmlFileParser parser;
         xml::Document doc;
-        parser.read(utf8Path.raw(),
+        parser.read(m->strPath.raw(),
                     doc);
 
         const xml::Node *pRootElem = doc.getRootElement();
@@ -1266,7 +1266,7 @@ STDMETHODIMP Appliance::Read(IN_BSTR path)
             pReferencesElem->getChildElements(listFileElements, "File");
 
         // now go though the sections
-        if (!(SUCCEEDED(rc = LoopThruSections(utf8Path.raw(), pReferencesElem, pRootElem))))
+        if (!(SUCCEEDED(rc = LoopThruSections(m->strPath.raw(), pReferencesElem, pRootElem))))
             return rc;
     }
     catch(xml::Error &x)
@@ -1653,8 +1653,8 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
     try
     {
         uint32_t opCount = calcMaxProgress();
-        Bstr progressDesc = BstrFmt(tr("Import appliance '%ls'"),
-                                    m->bstrPath.raw());
+        Bstr progressDesc = BstrFmt(tr("Import appliance '%s'"),
+                                    m->strPath.raw());
         /* Create the progress object */
         progress.createObject();
         rc = progress->init(mVirtualBox, static_cast<IAppliance*>(this),
@@ -1694,14 +1694,25 @@ STDMETHODIMP Appliance::Write(IN_BSTR path, IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(rc = autoCaller.rc())) return rc;
 
-    AutoReadLock(this);
+    AutoWriteLock(this);
+
+    // see if we can handle this file; for now we insist it has an ".ovf" extension
+    m->strPath = path;
+    const char *pcszLastDot = strrchr(m->strPath, '.');
+    if (    (!pcszLastDot)
+         || (    strcmp(pcszLastDot, ".ovf")
+              && strcmp(pcszLastDot, ".OVF")
+            )
+       )
+        return setError(VBOX_E_FILE_ERROR,
+                        tr("Appliance file must have .ovf extension"));
 
     ComObjPtr<Progress> progress;
     try
     {
         uint32_t opCount = calcMaxProgress();
-        Bstr progressDesc = BstrFmt(tr("Write appliance '%ls'"),
-                                    m->bstrPath.raw());
+        Bstr progressDesc = BstrFmt(tr("Write appliance '%s'"),
+                                    m->strPath.raw());
         /* Create the progress object */
         progress.createObject();
         rc = progress->init(mVirtualBox, static_cast<IAppliance*>(this),
@@ -2102,7 +2113,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
 
                     /* The disk image has to be on the same place as the OVF file. So
                      * strip the filename out of the full file path. */
-                    Utf8Str strSrcDir = stripFilename(Utf8Str(pAppliance->m->bstrPath).raw());
+                    Utf8Str strSrcDir = stripFilename(pAppliance->m->strPath);
 
                     /* Iterate over all given disk images */
                     list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
@@ -2442,6 +2453,11 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
 
     try
     {
+        xml::Document doc;
+        doc.createRootElement("Envelope");
+
+        xml::XmlFileWriter writer(doc);
+        writer.write(pAppliance->m->strPath.c_str());
     }
     catch(HRESULT aRC)
     {

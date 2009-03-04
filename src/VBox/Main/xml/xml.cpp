@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2007-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,6 +41,11 @@
 
 #include "VBox/xml.h"
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// globals
+//
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Global module initialization structure. This is to wrap non-reentrant bits
@@ -93,9 +98,11 @@ gGlobal;
 namespace xml
 {
 
-//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//
 // Exceptions
-//////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////
 
 LogicError::LogicError(RT_SRC_POS_DECL)
     : Error(NULL)
@@ -110,7 +117,7 @@ LogicError::LogicError(RT_SRC_POS_DECL)
 XmlError::XmlError(xmlErrorPtr aErr)
 {
     if (!aErr)
-        throw EInvalidArg (RT_SRC_POS);
+        throw EInvalidArg(RT_SRC_POS);
 
     char *msg = Format(aErr);
     setWhat(msg);
@@ -147,8 +154,10 @@ EIPRTFailure::EIPRTFailure(int aRC)
     RTStrFree(newMsg);
 }
 
-//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//
 // File Class
+//
 //////////////////////////////////////////////////////////////////////////////
 
 struct File::Data
@@ -282,8 +291,10 @@ void File::truncate()
     throw EIPRTFailure (vrc);
 }
 
-//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//
 // MemoryBuf Class
+//
 //////////////////////////////////////////////////////////////////////////////
 
 struct MemoryBuf::Data
@@ -348,11 +359,11 @@ int MemoryBuf::read (char *aBuf, int aLen)
     return len;
 }
 
-/*
- * GlobalLock
- *
- *
- */
+////////////////////////////////////////////////////////////////////////////////
+//
+// GlobalLock class
+//
+////////////////////////////////////////////////////////////////////////////////
 
 struct GlobalLock::Data
 {
@@ -391,18 +402,18 @@ xmlParserInput* GlobalLock::callDefaultLoader(const char *aURI,
     return gGlobal.sxml.defaultEntityLoader(aURI, aID, aCtxt);
 }
 
-/*
- * Node
- *
- *
- */
+////////////////////////////////////////////////////////////////////////////////
+//
+// Node class
+//
+////////////////////////////////////////////////////////////////////////////////
 
 struct Node::Data
 {
     xmlNode     *plibNode;          // != NULL if this is an element
-    xmlAttr     *plibAttr;          // != NULL if this is an element
+    xmlAttr     *plibAttr;          // != NULL if this is an attribute
 
-    Node     *pParent;       // NULL only for the root element
+    Node        *pParent;           // NULL only for the root element
     const char  *pcszName;          // points either into plibNode or plibAttr
 
     struct compare_const_char
@@ -789,20 +800,20 @@ const Node* NodesLoop::forAllNodes() const
     return pNode;
 }
 
-/*
- * Document
- *
- *
- */
+////////////////////////////////////////////////////////////////////////////////
+//
+// Document class
+//
+////////////////////////////////////////////////////////////////////////////////
 
 struct Document::Data
 {
-    xmlDocPtr   pDocument;
-    Node     *pRootElement;
+    xmlDocPtr   plibDocument;
+    Node        *pRootElement;
 
     Data()
     {
-        pDocument = NULL;
+        plibDocument = NULL;
         pRootElement = NULL;
     }
 
@@ -813,10 +824,10 @@ struct Document::Data
 
     void reset()
     {
-        if (pDocument)
+        if (plibDocument)
         {
-            xmlFreeDoc(pDocument);
-            pDocument = NULL;
+            xmlFreeDoc(plibDocument);
+            plibDocument = NULL;
         }
         if (pRootElement)
         {
@@ -827,10 +838,10 @@ struct Document::Data
 
     void copyFrom(const Document::Data *p)
     {
-        if (p->pDocument)
+        if (p->plibDocument)
         {
-            pDocument = xmlCopyDoc(p->pDocument,
-                                   1);      // recursive == copy all
+            plibDocument = xmlCopyDoc(p->plibDocument,
+                                      1);      // recursive == copy all
         }
     }
 };
@@ -866,22 +877,47 @@ Document::~Document()
 void Document::refreshInternals() // private
 {
     m->pRootElement = new Node();
-    m->pRootElement->m->plibNode = xmlDocGetRootElement(m->pDocument);
+    m->pRootElement->m->plibNode = xmlDocGetRootElement(m->plibDocument);
     m->pRootElement->m->pcszName = (const char*)m->pRootElement->m->plibNode->name;
 
     m->pRootElement->buildChildren();
 }
 
+/**
+ * Returns the root element of the document, or NULL if the document is empty.
+ * @return
+ */
 const Node* Document::getRootElement() const
 {
     return m->pRootElement;
 }
 
-/*
- * XmlParserBase
- *
- *
+/**
+ * Creates a new element node and sets it as the root element. This will
+ * only work if the document is empty; otherwise EDocumentNotEmpty is thrown.
  */
+Node* Document::createRootElement(const char *pcszRootElementName)
+{
+    if (m->pRootElement)
+        throw EDocumentNotEmpty(RT_SRC_POS);
+
+    m->plibDocument = xmlNewDoc((const xmlChar*)"1.0");
+    if (!(m->pRootElement = new Node()))
+        throw ENoMemory();
+    Node::Data *pNodeData = m->pRootElement->m;
+    if (!(pNodeData->plibNode = xmlNewNode(NULL,        // namespace
+                                           (const xmlChar*)pcszRootElementName)))
+        throw ENoMemory();
+    pNodeData->pcszName = (const char*)pNodeData->plibNode->name;
+
+    return m->pRootElement;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// XmlParserBase class
+//
+////////////////////////////////////////////////////////////////////////////////
 
 XmlParserBase::XmlParserBase()
 {
@@ -896,11 +932,11 @@ XmlParserBase::~XmlParserBase()
     m_ctxt = NULL;
 }
 
-/*
- * XmlFileParser
- *
- *
- */
+////////////////////////////////////////////////////////////////////////////////
+//
+// XmlFileParser class
+//
+////////////////////////////////////////////////////////////////////////////////
 
 struct XmlFileParser::Data
 {
@@ -930,13 +966,13 @@ XmlFileParser::~XmlFileParser()
 {
 }
 
-struct ReadContext
+struct ReadWriteContext
 {
     File file;
     com::Utf8Str error;
 
-    ReadContext(const char *pcszFilename)
-        : file(File::Mode_Read, pcszFilename)
+    ReadWriteContext(const char *pcszFilename)
+        : file(File::Mode_Read, pcszFilename)     // @todo must be write for writer
     {
     }
 
@@ -968,15 +1004,15 @@ void XmlFileParser::read(const char *pcszFilename,
 
     m->strXmlFilename = pcszFilename;
 
-    ReadContext context(pcszFilename);
+    ReadWriteContext context(pcszFilename);
     doc.m->reset();
-    if (!(doc.m->pDocument = xmlCtxtReadIO(m->ctxt,
-                                           ReadCallback,
-                                           CloseCallback,
-                                           &context,
-                                           pcszFilename,
-                                           NULL,       // encoding = auto
-                                           XML_PARSE_NOBLANKS)))
+    if (!(doc.m->plibDocument = xmlCtxtReadIO(m->ctxt,
+                                              ReadCallback,
+                                              CloseCallback,
+                                              &context,
+                                              pcszFilename,
+                                              NULL,       // encoding = auto
+                                              XML_PARSE_NOBLANKS)))
         throw XmlError(xmlCtxtGetLastError(m->ctxt));
 
     doc.refreshInternals();
@@ -985,7 +1021,7 @@ void XmlFileParser::read(const char *pcszFilename,
 // static
 int XmlFileParser::ReadCallback(void *aCtxt, char *aBuf, int aLen)
 {
-    ReadContext *pContext = static_cast<ReadContext*>(aCtxt);
+    ReadWriteContext *pContext = static_cast<ReadWriteContext*>(aCtxt);
 
     /* To prevent throwing exceptions while inside libxml2 code, we catch
      * them and forward to our level using a couple of variables. */
@@ -1007,6 +1043,87 @@ int XmlFileParser::CloseCallback(void *aCtxt)
     /// @todo to be written
 
     return -1;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// XmlFileWriter class
+//
+////////////////////////////////////////////////////////////////////////////////
+
+struct XmlFileWriter::Data
+{
+    Document *pDoc;
+};
+
+XmlFileWriter::XmlFileWriter(Document &doc)
+{
+    m = new Data();
+    m->pDoc = &doc;
+}
+
+XmlFileWriter::~XmlFileWriter()
+{
+    delete m;
+}
+
+int XmlFileWriter::WriteCallback(void *aCtxt, const char *aBuf, int aLen)
+{
+    ReadWriteContext *pContext = static_cast<ReadWriteContext*>(aCtxt);
+
+    /* To prevent throwing exceptions while inside libxml2 code, we catch
+     * them and forward to our level using a couple of variables. */
+    try
+    {
+        return pContext->file.write(aBuf, aLen);
+    }
+    catch (const xml::EIPRTFailure &err) { pContext->setError(err); }
+    catch (const xml::Error &err) { pContext->setError(err); }
+    catch (const std::exception &err) { pContext->setError(err); }
+    catch (...) { pContext->setError(xml::LogicError(RT_SRC_POS)); }
+
+    return -1 /* failure */;
+}
+
+int XmlFileWriter::CloseCallback(void *aCtxt)
+{
+    /// @todo to be written
+
+    return -1;
+}
+
+void XmlFileWriter::write(const char *pcszFilename)
+{
+    ReadWriteContext context(pcszFilename);
+
+    GlobalLock lock();
+
+    /* serialize to the stream */
+    xmlIndentTreeOutput = 1;
+    xmlTreeIndentString = "  ";
+    xmlSaveNoEmptyTags = 0;
+
+    xmlSaveCtxtPtr saveCtxt;
+    if (!(saveCtxt = xmlSaveToIO(WriteCallback,
+                                 CloseCallback,
+                                 &context,
+                                 NULL,
+                                 XML_SAVE_FORMAT)))
+        throw xml::LogicError(RT_SRC_POS);
+
+    long rc = xmlSaveDoc(saveCtxt, m->pDoc->m->plibDocument);
+    if (rc == -1)
+    {
+        /* look if there was a forwared exception from the lower level */
+//         if (m->trappedErr.get() != NULL)
+//             m->trappedErr->rethrow();
+
+        /* there must be an exception from the Output implementation,
+         * otherwise the save operation must always succeed. */
+        throw xml::LogicError(RT_SRC_POS);
+    }
+
+    xmlSaveClose(saveCtxt);
 }
 
 
