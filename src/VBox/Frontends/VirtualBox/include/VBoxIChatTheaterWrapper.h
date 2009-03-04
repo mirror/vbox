@@ -24,20 +24,12 @@
 
 #if defined (Q_WS_MAC) && defined (VBOX_WITH_ICHAT_THEATER)
 
-#ifdef QT_MAC_USE_COCOA
-/** @todo Carbon -> Cocoa */
-#else
-# include <Carbon/Carbon.h>
-#endif
+# include <ApplicationServices/ApplicationServices.h>
 
 __BEGIN_DECLS
 
 void initSharedAVManager();
-#ifdef QT_MAC_USE_COCOA
-/** @todo Carbon -> Cocoa */
-#else
 void setImageRef (CGImageRef aImage);
-#endif
 
 __END_DECLS
 

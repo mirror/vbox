@@ -25,41 +25,55 @@
 
 #include <iprt/assert.h>
 
-#import <AppKit/NSWindow.h>
-#import <AppKit/NSView.h>
 #import <AppKit/NSEvent.h>
-#import <AppKit/NSToolbar.h>
 #import <AppKit/NSColor.h>
-#import <AppKit/NSGraphicsContext.h>
-#import <AppKit/NSApplication.h>
-#import <AppKit/NSImageView.h>
 
 NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView)
 {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+    NativeWindowRef window = NULL;
     if (aView)
-        return [aView window];
-    return NULL;
+        window = [aView window];
+    
+    [pool release];
+    return window;
 }
 
 NativeViewRef darwinToNativeViewImpl (NativeWindowRef aWindow)
 {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+    NativeViewRef view = NULL;
     if (aWindow)
-        return [aWindow contentView];   
-    return NULL;
+        view = [aWindow contentView];   
+
+    [pool release];
+    return view;
 }
 
 void darwinSetShowsToolbarButtonImpl (NativeWindowRef aWindow, bool aEnabled)
 {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
     [aWindow setShowsToolbarButton:aEnabled];
+
+    [pool release];
 }
 
 void darwinSetShowsResizeIndicatorImpl (NativeWindowRef aWindow, bool aEnabled)
 {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
     [aWindow setShowsResizeIndicator:aEnabled];
+
+    [pool release];
 }
 
 void darwinSetHidesAllTitleButtonsImpl (NativeWindowRef aWindow)
 {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
     NSButton *closeButton = [aWindow standardWindowButton:NSWindowCloseButton];
     if (closeButton != Nil)
         [closeButton setHidden:YES];
@@ -72,10 +86,14 @@ void darwinSetHidesAllTitleButtonsImpl (NativeWindowRef aWindow)
     NSButton *iconButton = [aWindow standardWindowButton:NSWindowDocumentIconButton];
     if (iconButton != Nil)
         [iconButton setHidden:YES];
+
+    [pool release];
 }
 
 void darwinSetShowsWindowTransparentImpl (NativeWindowRef aWindow, bool aEnabled)
 {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
     if (aEnabled)
     {
         [aWindow setOpaque:NO];
@@ -88,6 +106,8 @@ void darwinSetShowsWindowTransparentImpl (NativeWindowRef aWindow, bool aEnabled
         [aWindow setBackgroundColor:[NSColor windowBackgroundColor]];
         [aWindow setHasShadow:YES];
     }
+
+    [pool release];
 }
 
 /**
@@ -97,11 +117,17 @@ void darwinSetShowsWindowTransparentImpl (NativeWindowRef aWindow, bool aEnabled
  */
 void darwinSetMouseCoalescingEnabled (bool aEnabled)
 {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
     [NSEvent setMouseCoalescingEnabled:aEnabled];
+
+    [pool release];
 }
 
 void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int width, int height)
 {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
     /* It seems that Qt doesn't return the height of the window with the
      * toolbar height included. So add this size manually. Could easily be that
      * the Trolls fix this in the final release. */
@@ -116,10 +142,16 @@ void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int w
     windowFrame.origin.y -= h1;
 
     [aWindow setFrame:windowFrame display:YES animate:YES];
+
+    [pool release];
 }
 
 void darwinWindowInvalidateShadowImpl (NativeWindowRef aWindow)
 {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
     [aWindow invalidateShadow];
+
+    [pool release];
 }
 

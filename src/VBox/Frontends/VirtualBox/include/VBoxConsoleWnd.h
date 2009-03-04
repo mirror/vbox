@@ -355,9 +355,7 @@ private:
 
 #ifdef Q_WS_MAC
     QRegion mCurrRegion;
-# ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa */
-# else
+# ifndef QT_MAC_USE_COCOA
     EventHandlerRef mDarwinRegionEventHandlerRef;
 # endif
 #endif
