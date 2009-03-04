@@ -379,9 +379,6 @@ static inline target_ulong get_phys_addr_code(CPUState *env, target_ulong addr)
 #else
 # ifdef VBOX
 target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, CPUTLBEntry *pTLBEntry, target_phys_addr_t ioTLBEntry);
-#  if !defined(REM_PHYS_ADDR_IN_TLB)
-target_ulong remR3HCVirt2GCPhys(CPUState *env1, void *addr);
-#  endif
 # endif
 /* NOTE: this function can trigger an exception */
 /* NOTE2: the returned address is not exactly the physical address: it
@@ -418,8 +415,6 @@ DECLINLINE(target_ulong) get_phys_addr_code(CPUState *env1, target_ulong addr)
     return addr + env1->tlb_table[mmu_idx][page_index].addend;
 # elif defined(VBOX)
     Assert(env1->phys_addends[mmu_idx][page_index] != -1);
-    /** @todo: nike: will remove this assert along with remR3HCVirt2GCPhys() soon */
-    Assert(remR3HCVirt2GCPhys(env1, (void *)(uintptr_t)(addr + env1->tlb_table[mmu_idx][page_index].addend)) == addr + env1->phys_addends[mmu_idx][page_index]);
     return addr + env1->phys_addends[mmu_idx][page_index];
 # else
     return addr + env1->tlb_table[mmu_idx][page_index].addend - (unsigned long)phys_ram_base;
