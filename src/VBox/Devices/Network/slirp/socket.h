@@ -80,6 +80,10 @@ struct socket
     int so_close; 
 # endif /* RT_OS_WINDOWS */
 #endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+    void (* so_timeout)(PNATState pData, struct socket *so, void *arg);
+    void *so_timeout_arg;
+#endif
 };
 
 #ifdef VBOX_WITH_SLIRP_MT

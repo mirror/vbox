@@ -864,6 +864,13 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
             {
                 if (so->so_expire <= curtime)
                 {
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+                    Log2(("NAT: %R[natsock] expired\n", so));
+                    if (so->so_timeout != NULL) 
+                    {
+                        so->so_timeout(pData, so, so->so_timeout_arg);
+                    } 
+#endif
 #ifdef VBOX_WITH_SLIRP_MT
                     /* we need so_next for continue our cycle*/
                     so_next = so->so_next;
