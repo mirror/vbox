@@ -194,7 +194,7 @@ static HRESULT netIfWinFindAdapterClassById(IWbemServices * pSvc, GUID * pGuid, 
     return hres;
 }
 
-static HRESULT netIfAdapterConfigPath(IWbemClassObject *pObj, BSTR * pStr)
+static HRESULT netIfWinAdapterConfigPath(IWbemClassObject *pObj, BSTR * pStr)
 {
     VARIANT index;
 
@@ -265,7 +265,7 @@ static HRESULT netIfExecMethod(IWbemServices * pSvc, IWbemClassObject *pClass, B
     return hres;
 }
 
-static HRESULT createIpArray(SAFEARRAY **ppArray, in_addr* aIp, UINT cIp)
+static HRESULT netIfWinCreateIpArray(SAFEARRAY **ppArray, in_addr* aIp, UINT cIp)
 {
     HRESULT hr;
     SAFEARRAY * pIpArray = SafeArrayCreateVector(VT_BSTR, 0, cIp);
@@ -301,52 +301,85 @@ static HRESULT createIpArray(SAFEARRAY **ppArray, in_addr* aIp, UINT cIp)
     return hr;
 }
 
-static HRESULT VBoxNetCfgWinEnableStatic(IWbemServices * pSvc, IWbemClassObject *pObj,  in_addr* aIp,  in_addr * aMask, UINT cIp)
+static HRESULT netIfWinCreateIpArrayV4V6(SAFEARRAY **ppArray, BSTR Ip)
 {
-    IWbemClassObject * pClass;
+    HRESULT hr;
+    SAFEARRAY * pIpArray = SafeArrayCreateVector(VT_BSTR, 0, 1);
+    if(pIpArray)
+    {
+        BSTR val = bstr_t(Ip, false).copy();
+        long aIndex[1];
+        aIndex[0] = 0;
+        hr = SafeArrayPutElement(pIpArray, aIndex, val);
+        if(FAILED(hr))
+        {
+            SysFreeString(val);
+            SafeArrayDestroy(pIpArray);
+        }
+
+        if(SUCCEEDED(hr))
+        {
+            *ppArray = pIpArray;
+        }
+    }
+    else
+    {
+        DWORD dwError = GetLastError();
+        Assert(0);
+        hr = HRESULT_FROM_WIN32( dwError );
+    }
+
+    return hr;
+}
+
+
+static HRESULT netIfWinCreateIpArrayVariantV4(VARIANT * pIpAddresses, in_addr* aIp, UINT cIp)
+{
+    HRESULT hr;
+    VariantInit(pIpAddresses);
+    pIpAddresses->vt = VT_ARRAY | VT_BSTR;
+    SAFEARRAY *pIpArray;
+    hr = netIfWinCreateIpArray(&pIpArray, aIp, cIp);
+    if(SUCCEEDED(hr))
+    {
+        pIpAddresses->parray = pIpArray;
+    }
+    return hr;
+}
+
+static HRESULT netIfWinCreateIpArrayVariantV4V6(VARIANT * pIpAddresses, BSTR Ip)
+{
+    HRESULT hr;
+    VariantInit(pIpAddresses);
+    pIpAddresses->vt = VT_ARRAY | VT_BSTR;
+    SAFEARRAY *pIpArray;
+    hr = netIfWinCreateIpArrayV4V6(&pIpArray, Ip);
+    if(SUCCEEDED(hr))
+    {
+        pIpAddresses->parray = pIpArray;
+    }
+    return hr;
+}
+
+static HRESULT netIfWinEnableStatic(IWbemServices * pSvc, BSTR ObjPath, VARIANT * pIp, VARIANT * pMask)
+{
+    ComPtr<IWbemClassObject> pClass;
     BSTR ClassName = SysAllocString(L"Win32_NetworkAdapterConfiguration");
     HRESULT hr;
     if(ClassName)
     {
-        hr = pSvc->GetObject(ClassName, 0, NULL, &pClass, NULL);
+        hr = pSvc->GetObject(ClassName, 0, NULL, pClass.asOutParam(), NULL);
         if(SUCCEEDED(hr))
         {
-            BSTR ObjPath;
-            hr = netIfAdapterConfigPath(pObj, &ObjPath);
+            LPWSTR argNames[] = {L"IPAddress", L"SubnetMask"};
+            LPVARIANT args[] = {pIp, pMask};
+            ComPtr<IWbemClassObject> pOutParams;
+
+            hr = netIfExecMethod(pSvc, pClass, ObjPath,
+                                bstr_t(L"EnableStatic"), argNames, args, 2, pOutParams.asOutParam());
             if(SUCCEEDED(hr))
             {
-                LPWSTR argNames[] = {L"IPAddress", L"SubnetMask"};
-                VARIANT ipAddresses;
-                VariantInit(&ipAddresses);
-                ipAddresses.vt = VT_ARRAY | VT_BSTR;
-                SAFEARRAY *pIpArray;
-                hr = createIpArray(&pIpArray, aIp, cIp);
-                if(SUCCEEDED(hr))
-                {
-                    ipAddresses.parray = pIpArray;
-                    VARIANT ipMasks;
-                    VariantInit(&ipMasks);
-                    ipMasks.vt = VT_ARRAY | VT_BSTR;
-                    SAFEARRAY *pMaskArray;
-                    hr = createIpArray(&pMaskArray, aMask, cIp);
-                    if(SUCCEEDED(hr))
-                    {
-                        ipMasks.parray = pMaskArray;
-                        LPVARIANT args[] = {&ipAddresses, &ipMasks};
-                        IWbemClassObject * pOutParams;
-
-                        hr = netIfExecMethod(pSvc, pClass, ObjPath,
-                                bstr_t(L"EnableStatic"), argNames, args, 2, &pOutParams);
-                        if(SUCCEEDED(hr))
-                        {
-                        }
-                        SafeArrayDestroy(pMaskArray);
-                    }
-                    SafeArrayDestroy(pIpArray);
-                }
-                SysFreeString(ObjPath);
             }
-            pClass->Release();
         }
         SysFreeString(ClassName);
     }
@@ -360,30 +393,119 @@ static HRESULT VBoxNetCfgWinEnableStatic(IWbemServices * pSvc, IWbemClassObject 
     return hr;
 }
 
-static HRESULT VBoxNetCfgWinEnableDHCP(IWbemServices * pSvc, IWbemClassObject *pObj,  in_addr* aIp,  in_addr * aMask, UINT cIp)
+
+static HRESULT netIfWinEnableStaticV4(IWbemServices * pSvc, BSTR ObjPath, in_addr* aIp, in_addr * aMask, UINT cIp)
 {
-    IWbemClassObject * pClass;
+    VARIANT ipAddresses;
+    HRESULT hr = netIfWinCreateIpArrayVariantV4(&ipAddresses, aIp, cIp);
+    if(SUCCEEDED(hr))
+    {
+        VARIANT ipMasks;
+        hr = netIfWinCreateIpArrayVariantV4(&ipMasks, aMask, cIp);
+        if(SUCCEEDED(hr))
+        {
+            netIfWinEnableStatic(pSvc, ObjPath, &ipAddresses, &ipMasks);
+            VariantClear(&ipMasks);
+        }
+        VariantClear(&ipAddresses);
+    }
+    return hr;
+}
+
+static HRESULT netIfWinEnableStaticV4V6(IWbemServices * pSvc, BSTR ObjPath, BSTR Ip, BSTR Mask)
+{
+    VARIANT ipAddresses;
+    HRESULT hr = netIfWinCreateIpArrayVariantV4V6(&ipAddresses, Ip);
+    if(SUCCEEDED(hr))
+    {
+        VARIANT ipMasks;
+        hr = netIfWinCreateIpArrayVariantV4V6(&ipMasks, Mask);
+        if(SUCCEEDED(hr))
+        {
+            netIfWinEnableStatic(pSvc, ObjPath, &ipAddresses, &ipMasks);
+            VariantClear(&ipMasks);
+        }
+        VariantClear(&ipAddresses);
+    }
+    return hr;
+}
+
+/* win API allows to set gw metrics as well, we are not setting them */
+static HRESULT netIfWinSetGateways(IWbemServices * pSvc, BSTR ObjPath, VARIANT * pGw)
+{
+    ComPtr<IWbemClassObject> pClass;
     BSTR ClassName = SysAllocString(L"Win32_NetworkAdapterConfiguration");
     HRESULT hr;
     if(ClassName)
     {
-        hr = pSvc->GetObject(ClassName, 0, NULL, &pClass, NULL);
+        hr = pSvc->GetObject(ClassName, 0, NULL, pClass.asOutParam(), NULL);
         if(SUCCEEDED(hr))
         {
-            BSTR ObjPath;
-            hr = netIfAdapterConfigPath(pObj, &ObjPath);
+            LPWSTR argNames[] = {L"DefaultIPGateway"};
+            LPVARIANT args[] = {pGw};
+            ComPtr<IWbemClassObject> pOutParams;
+
+            hr = netIfExecMethod(pSvc, pClass, ObjPath,
+                                bstr_t(L"SetGateways"), argNames, args, 1, pOutParams.asOutParam());
             if(SUCCEEDED(hr))
             {
-                IWbemClassObject * pOutParams;
-
-                hr = netIfExecMethod(pSvc, pClass, ObjPath,
-                                bstr_t(L"EnableDHCP"), NULL, NULL, 0, &pOutParams);
-                if(SUCCEEDED(hr))
-                {
-                }
-                SysFreeString(ObjPath);
             }
-            pClass->Release();
+        }
+        SysFreeString(ClassName);
+    }
+    else
+    {
+        DWORD dwError = GetLastError();
+        Assert(0);
+        hr = HRESULT_FROM_WIN32( dwError );
+    }
+
+    return hr;
+}
+
+/* win API allows to set gw metrics as well, we are not setting them */
+static HRESULT netIfWinSetGatewaysV4(IWbemServices * pSvc, BSTR ObjPath, in_addr* aGw, UINT cGw)
+{
+    VARIANT gwais;
+    HRESULT hr = netIfWinCreateIpArrayVariantV4(&gwais, aGw, cGw);
+    if(SUCCEEDED(hr))
+    {
+        netIfWinSetGateways(pSvc, ObjPath, &gwais);
+        VariantClear(&gwais);
+    }
+    return hr;
+}
+
+/* win API allows to set gw metrics as well, we are not setting them */
+static HRESULT netIfWinSetGatewaysV4V6(IWbemServices * pSvc, BSTR ObjPath, BSTR Gw)
+{
+    VARIANT vGw;
+    HRESULT hr = netIfWinCreateIpArrayVariantV4V6(&vGw, Gw);
+    if(SUCCEEDED(hr))
+    {
+        netIfWinSetGateways(pSvc, ObjPath, &vGw);
+        VariantClear(&vGw);
+    }
+    return hr;
+}
+
+static HRESULT netIfWinEnableDHCP(IWbemServices * pSvc, BSTR ObjPath)
+{
+    ComPtr<IWbemClassObject> pClass;
+    BSTR ClassName = SysAllocString(L"Win32_NetworkAdapterConfiguration");
+    HRESULT hr;
+    if(ClassName)
+    {
+        hr = pSvc->GetObject(ClassName, 0, NULL, pClass.asOutParam(), NULL);
+        if(SUCCEEDED(hr))
+        {
+            ComPtr<IWbemClassObject> pOutParams;
+
+            hr = netIfExecMethod(pSvc, pClass, ObjPath,
+                                bstr_t(L"EnableDHCP"), NULL, NULL, 0, pOutParams.asOutParam());
+            if(SUCCEEDED(hr))
+            {
+            }
         }
         SysFreeString(ClassName);
     }
@@ -495,6 +617,155 @@ static int collectNetIfInfo(Bstr &strName, PNETIFINFO pInfo)
     RTMemFree(pAddresses);
 
     return VINF_SUCCESS;
+}
+
+static HRESULT netIfWinUpdateConfig(HostNetworkInterface * pIf)
+{
+    NETIFINFO Info;
+    memset(&Info, 0, sizeof(Info));
+    GUID guid;
+    HRESULT hr = pIf->COMGETTER(Id) (&guid);
+    if(SUCCEEDED(hr))
+    {
+        Info.Uuid = (RTUUID)*(RTUUID*)&guid;
+        BSTR name;
+        hr = pIf->COMGETTER(Name) (&name);
+        Assert(hr == S_OK);
+        if(hr == S_OK)
+        {
+            int rc = collectNetIfInfo(Bstr(name), &Info);
+            if (RT_SUCCESS(rc))
+            {
+                hr = pIf->updateConfig(&Info);
+            }
+            else
+            {
+                Log(("netIfWinUpdateConfig: collectNetIfInfo() -> %Vrc\n", rc));
+                hr = E_FAIL;
+            }
+        }
+    }
+
+    return hr;
+}
+
+int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask, ULONG gw)
+{
+    HRESULT hr;
+    GUID guid;
+    hr = pIf->COMGETTER(Id) (&guid);
+    if(SUCCEEDED(hr))
+    {
+        ComPtr <IWbemServices> pSvc;
+        hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
+        if(SUCCEEDED(hr))
+        {
+            ComPtr <IWbemClassObject> pAdapterConfig;
+            hr = netIfWinFindAdapterClassById(pSvc, &guid, pAdapterConfig.asOutParam());
+            if(SUCCEEDED(hr))
+            {
+                in_addr aIp[1];
+                in_addr aMask[1];
+                aIp[0].S_un.S_addr = ip;
+                aMask[0].S_un.S_addr = mask;
+
+                BSTR ObjPath;
+                hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                if(SUCCEEDED(hr))
+                {
+                    hr = netIfWinEnableStaticV4(pSvc, ObjPath, aIp, aMask, 1);
+                    if(SUCCEEDED(hr))
+                    {
+                        in_addr aGw[1];
+                        aGw[0].S_un.S_addr = gw;
+                        hr = netIfWinSetGatewaysV4(pSvc, ObjPath, aGw, 1);
+                        if(SUCCEEDED(hr))
+                        {
+                            hr = netIfWinUpdateConfig(pIf);
+                        }
+                    }
+                    SysFreeString(ObjPath);
+                }
+            }
+        }
+    }
+
+    return SUCCEEDED(hr) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+}
+
+int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, IN_BSTR aIPV6Mask, IN_BSTR aIPV6DefaultGateway)
+{
+    HRESULT hr;
+    GUID guid;
+    hr = pIf->COMGETTER(Id) (&guid);
+    if(SUCCEEDED(hr))
+    {
+        ComPtr <IWbemServices> pSvc;
+        hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
+        if(SUCCEEDED(hr))
+        {
+            ComPtr <IWbemClassObject> pAdapterConfig;
+            hr = netIfWinFindAdapterClassById(pSvc, &guid, pAdapterConfig.asOutParam());
+            if(SUCCEEDED(hr))
+            {
+                BSTR ObjPath;
+                hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                if(SUCCEEDED(hr))
+                {
+                    hr = netIfWinEnableStaticV4V6(pSvc, ObjPath, aIPV6Address, aIPV6Mask);
+                    if(SUCCEEDED(hr))
+                    {
+                        hr = netIfWinSetGatewaysV4V6(pSvc, ObjPath, aIPV6DefaultGateway);
+                        if(SUCCEEDED(hr))
+                        {
+                            hr = netIfWinUpdateConfig(pIf);
+                        }
+                    }
+                    SysFreeString(ObjPath);
+                }
+            }
+        }
+    }
+
+    return SUCCEEDED(hr) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+}
+
+int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength, IN_BSTR aIPV6DefaultGateway)
+{
+    return VERR_GENERAL_FAILURE;
+}
+
+int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)
+{
+    HRESULT hr;
+    GUID guid;
+    hr = pIf->COMGETTER(Id) (&guid);
+    if(SUCCEEDED(hr))
+    {
+        ComPtr <IWbemServices> pSvc;
+        hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
+        if(SUCCEEDED(hr))
+        {
+            ComPtr <IWbemClassObject> pAdapterConfig;
+            hr = netIfWinFindAdapterClassById(pSvc, &guid, pAdapterConfig.asOutParam());
+            if(SUCCEEDED(hr))
+            {
+                BSTR ObjPath;
+                hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                if(SUCCEEDED(hr))
+                {
+                    hr = netIfWinEnableDHCP(pSvc, ObjPath);
+                    if(SUCCEEDED(hr))
+                    {
+                        hr = netIfWinUpdateConfig(pIf);
+                    }
+                    SysFreeString(ObjPath);
+                }
+            }
+        }
+    }
+
+    return SUCCEEDED(hr) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
 # define VBOX_APP_NAME L"VirtualBox"
@@ -685,57 +956,6 @@ static int NetIfListHostAdapters(std::list <ComObjPtr <HostNetworkInterface> > &
 #endif /* #  if defined VBOX_WITH_NETFLT */
     return VINF_SUCCESS;
 }
-
-//TODO: this is sample currently, hardcoded balues should be removed and exposed to the API
-#if 0
-static int NetIfEnableStatic()
-{
-    INetCfg *pnc;
-    LPWSTR lpszLockedBy = NULL;
-    int r = 1;
-    HRESULT hr;
-
-            hr = VBoxNetCfgWinQueryINetCfg(FALSE, VBOX_APP_NAME, &pnc, &lpszLockedBy);
-            if(hr == S_OK)
-            {
-                INetCfgComponent  *pComponent;
-                HRESULT hr = pnc->FindComponent(L"*msloop", &pComponent);
-                if(hr == S_OK)
-                {
-                    GUID guid;
-                    hr = pComponent->GetInstanceGuid(&guid);
-                    if(SUCCEEDED(hr))
-                    {
-                        IWbemServices * pSvc;
-                        hr = netIfWinCreateIWbemServices(&pSvc);
-                        if(SUCCEEDED(hr))
-                        {
-                            IWbemClassObject *pAdapterConfig;
-                            hr = netIfWinFindAdapterClassById(pSvc, &guid, &pAdapterConfig);
-                            if(SUCCEEDED(hr))
-                            {
-                                in_addr ip[1];
-                                in_addr mask[1];
-                                ip[0].S_un.S_addr = inet_addr("192.168.5.1");
-                                mask[0].S_un.S_addr = inet_addr("255.255.255.0");
-
-                                hr = VBoxNetCfgWinEnableStatic(pSvc, pAdapterConfig,  ip,  mask, 1);
-                                if(SUCCEEDED(hr))
-                                {
-                                    printf("succees!!!\n");
-                                    r = 0;
-                                }
-                            }
-                        }
-
-                    }
-                }
-            }
-
-
-    return r;
-}
-#endif
 
 int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 {

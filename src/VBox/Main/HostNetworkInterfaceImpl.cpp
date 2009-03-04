@@ -104,6 +104,26 @@ static Bstr composeHardwareAddress(PRTMAC aMacPtr)
     return Bstr(szTmp);
 }
 
+HRESULT HostNetworkInterface::updateConfig (struct NETIFINFO *pIf)
+{
+    m.IPAddress = pIf->IPAddress.u;
+    m.networkMask = pIf->IPNetMask.u;
+    m.defaultGateway = pIf->IPDefaultGateway.u;
+    m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
+    m.IPV6NetworkMask = composeIPv6Address(&pIf->IPv6NetMask);
+    m.IPV6DefaultGateway = composeIPv6Address(&pIf->IPV6DefaultGateway);
+    m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
+#ifdef RT_OS_WINDOWS
+    m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
+    m.status = (HostNetworkInterfaceStatus)pIf->enmStatus;
+#else /* !RT_OS_WINDOWS */
+    m.mediumType = pIf->enmMediumType;
+    m.status = pIf->enmStatus;
+#endif /* !RT_OS_WINDOWS */
+
+    return S_OK;
+}
+
 /**
  * Initializes the host object.
  *
@@ -128,19 +148,7 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceTyp
     unconst (mGuid) = pIf->Uuid;
     mIfType = ifType;
 
-    m.IPAddress = pIf->IPAddress.u;
-    m.networkMask = pIf->IPNetMask.u;
-    m.defaultGateway = pIf->IPDefaultGateway.u;
-    m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
-    m.IPV6NetworkMask = composeIPv6Address(&pIf->IPv6NetMask);
-    m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
-#ifdef RT_OS_WINDOWS
-    m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
-    m.status = (HostNetworkInterfaceStatus)pIf->enmStatus;
-#else /* !RT_OS_WINDOWS */
-    m.mediumType = pIf->enmMediumType;
-    m.status = pIf->enmStatus;
-#endif /* !RT_OS_WINDOWS */
+    updateConfig(pIf);
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -243,6 +251,15 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(DefaultGateway) (ULONG *aDefaultGat
     return S_OK;
 }
 
+STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Supported) (BOOL *aIPV6Supported)
+{
+    CheckComArgOutPointerValid(aIPV6Supported);
+
+    *aIPV6Supported = TRUE;
+
+    return S_OK;
+}
+
 /**
  * Returns the IP V6 address of the host network interface.
  *
@@ -275,6 +292,24 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6NetworkMask) (BSTR *aIPV6Mask)
     CheckComRCReturnRC (autoCaller.rc());
 
     m.IPV6NetworkMask.cloneTo (aIPV6Mask);
+
+    return S_OK;
+}
+
+/**
+ * Returns the IP V6 default gateway of the host network interface.
+ *
+ * @returns COM status code
+ * @param   aIPV6DefaultGateway address of result pointer
+ */
+STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6DefaultGateway) (BSTR *aIPV6DefaultGateway)
+{
+    CheckComArgOutPointerValid(aIPV6DefaultGateway);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    m.IPV6DefaultGateway.cloneTo (aIPV6DefaultGateway);
 
     return S_OK;
 }
@@ -354,17 +389,63 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(InterfaceType) (HostNetworkInterfac
 
 STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (ULONG aIPAddress, ULONG aNetworkMask, ULONG aDefaultGateway)
 {
+#ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
+#else
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    int rc = NetIfEnableStaticIpConfig(this, aIPAddress, aNetworkMask, aDefaultGateway);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
+        return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+    }
+    return S_OK;
+#endif
 }
 
-STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address, IN_BSTR aIPV6Mask)
+STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength, IN_BSTR aIPV6DefaultGateway)
 {
+#ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
+#else
+    if (!aIPV6Address)
+        return E_INVALIDARG;
+    if (!aIPV6DefaultGateway)
+        return E_INVALIDARG;
+    if (aIPV6MaskPrefixLength > 128)
+        return E_INVALIDARG;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    int rc = NetIfEnableStaticIpConfigV6(this, aIPV6Address, aIPV6MaskPrefixLength, aIPV6DefaultGateway);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
+        return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+    }
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP HostNetworkInterface::EnableDynamicIpConfig ()
 {
+#ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
+#else
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    int rc = NetIfEnableDynamicIpConfig(this);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
+        return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+    }
+    return S_OK;
+#endif
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

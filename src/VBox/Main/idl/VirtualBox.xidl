@@ -6437,7 +6437,7 @@
 
   <enum
     name="HostNetworkInterfaceType"
-    uuid="4cd97025-b31b-430b-98dd-211e85cf389f"
+    uuid="67431b00-9946-48a2-bc02-b25c5919f4f3"
   >
     <desc>
       Network interface type.
@@ -6477,6 +6477,10 @@
       <desc>Returns the network mask of the interface.</desc>
     </attribute>
 
+    <attribute name="IPV6Supported" type="boolean" readonly="yes">
+      <desc>Specifies whether the IP V6 is supported/enabled for the interface.</desc>
+    </attribute>
+    
     <attribute name="IPV6Address" type="wstring" readonly="yes">
       <desc>Returns the IP V6 address of the interface.</desc>
     </attribute>
@@ -6485,6 +6489,10 @@
       <desc>Returns the IP V6 network mask of the interface.</desc>
     </attribute>
 
+    <attribute name="IPV6DefaultGateway" type="wstring" readonly="yes">
+      <desc>Returns the IP V6 network mask of the interface.</desc>
+    </attribute>
+    
     <attribute name="hardwareAddress" type="wstring" readonly="yes">
       <desc>Returns the hardware address. For Ethernet it is MAC address.</desc>
     </attribute>
@@ -6527,7 +6535,12 @@
           IP address.
         </desc>
       </param>
-      <param name="IPV6NetworkMask" type="wstring" dir="in">
+      <param name="IPV6NetworkMaskPrefixLength" type="unsigned long" dir="in">
+        <desc>
+          network mask.
+        </desc>
+      </param>
+      <param name="IPV6DefaultGateway" type="wstring" dir="in">
         <desc>
           network mask.
         </desc>
