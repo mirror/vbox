@@ -437,7 +437,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     if (    !pVM->hwaccm.s.vmx.fSupported
         &&  !pVM->hwaccm.s.svm.fSupported)
     {
-        LogRel(("HWACCM: No VMX or SVM CPU extension found. Reason %Rrc\n", pVM->hwaccm.s.lLastError));
+        LogRel(("HWACCM: No VT-x or AMD-V CPU extension found. Reason %Rrc\n", pVM->hwaccm.s.lLastError));
         LogRel(("HWACCM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hwaccm.s.vmx.msr.feature_ctrl));
 #ifdef RT_OS_DARWIN
         if (VMMIsHwVirtExtForced(pVM))
@@ -906,9 +906,9 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 
             LogRel(("HWACMM: cpuid 0x80000001.u32AMDFeatureECX = %RX32\n", pVM->hwaccm.s.cpuid.u32AMDFeatureECX));
             LogRel(("HWACMM: cpuid 0x80000001.u32AMDFeatureEDX = %RX32\n", pVM->hwaccm.s.cpuid.u32AMDFeatureEDX));
-            LogRel(("HWACCM: SVM revision                      = %X\n", pVM->hwaccm.s.svm.u32Rev));
-            LogRel(("HWACCM: SVM max ASID                      = %d\n", pVM->hwaccm.s.uMaxASID));
-            LogRel(("HWACCM: SVM features                      = %X\n", pVM->hwaccm.s.svm.u32Features));
+            LogRel(("HWACCM: AMD-V revision                    = %X\n", pVM->hwaccm.s.svm.u32Rev));
+            LogRel(("HWACCM: AMD-V max ASID                    = %d\n", pVM->hwaccm.s.uMaxASID));
+            LogRel(("HWACCM: AMD-V features                    = %X\n", pVM->hwaccm.s.svm.u32Features));
 
             if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
                 LogRel(("HWACCM:    AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING\n"));
@@ -1236,7 +1236,7 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     pVCpu->hwaccm.s.EmulateIoBlock.fEnabled = false;
 
-    /* AMD SVM supports real & protected mode with or without paging. */
+    /* AMD-V supports real & protected mode with or without paging. */
     if (pVM->hwaccm.s.svm.fEnabled)
     {
         pVM->hwaccm.s.fActive = true;
