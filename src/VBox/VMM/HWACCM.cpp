@@ -1203,7 +1203,7 @@ VMMR3DECL(int) HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx)
     Log(("HWACCMR3EmulateIoBlock\n"));
 
     /* This is primarily intended to speed up Grub, so we don't care about paged protected mode. */
-    if (HWACCMCanEmulateIoBlock(pCtx))
+    if (HWACCMCanEmulateIoBlockEx(pCtx))
     {
         Log(("HWACCMR3EmulateIoBlock -> enabled\n"));
         pVCpu->hwaccm.s.EmulateIoBlock.fEnabled         = true;
