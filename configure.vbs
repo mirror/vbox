@@ -1875,8 +1875,8 @@ Sub Main
    strOptVCCommon = ""
    blnOptVCExpressEdition = False
    strOptW32API = ""
-   blnOptXml2 = ""
-   blnOptXslt = ""
+   strOptXml2 = ""
+   strOptXslt = ""
    blnOptDisableCOM = False
    for i = 1 to Wscript.Arguments.Count
       dim str, strArg, strPath
@@ -1972,8 +1972,14 @@ Sub Main
    CheckForDirectXSDK strOptDXSDK
    CheckForMingW strOptMingw, strOptW32API
    CheckForlibSDL strOptlibSDL
-   CheckForXml2 strOptXml2
-   CheckForXslt strOptXslt
+   ' Don't check for these libraries by default as they are part of OSE
+   ' Using external libs can add a dependency to iconv
+   if (strOptXml2 >> "") then
+      CheckForXml2 strOptXml2
+   end if
+   if (strOptXslt <> "") then
+      CheckForXslt strOptXslt
+   end if
    CheckForQt4 strOptQt4
    if g_blnInternalMode then
       EnvPrint "call " & g_strPathDev & "/env.cmd %1 %2 %3 %4 %5 %6 %7 %8 %9"
