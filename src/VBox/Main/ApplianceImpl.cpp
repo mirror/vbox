@@ -201,7 +201,7 @@ struct VirtualSystem
 struct Appliance::TaskImportMachines
 {
     TaskImportMachines(Appliance *aThat, Progress *aProgress)
-        : that(aThat)
+        : pAppliance(aThat)
         , progress(aProgress)
         , rc(S_OK)
     {}
@@ -209,7 +209,23 @@ struct Appliance::TaskImportMachines
 
     HRESULT startThread();
 
-    Appliance *that;
+    Appliance *pAppliance;
+    ComObjPtr<Progress> progress;
+    HRESULT rc;
+};
+
+struct Appliance::TaskExportOVF
+{
+    TaskExportOVF(Appliance *aThat, Progress *aProgress)
+        : pAppliance(aThat)
+        , progress(aProgress)
+        , rc(S_OK)
+    {}
+    ~TaskExportOVF() {}
+
+    HRESULT startThread();
+
+    Appliance *pAppliance;
     ComObjPtr<Progress> progress;
     HRESULT rc;
 };
@@ -268,7 +284,18 @@ HRESULT Appliance::TaskImportMachines::startThread()
                              0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
                              "Appliance::Task");
     ComAssertMsgRCRet(vrc,
-                      ("Could not create Appliance::Task thread (%Rrc)\n", vrc), E_FAIL);
+                      ("Could not create taskThreadImportMachines (%Rrc)\n", vrc), E_FAIL);
+
+    return S_OK;
+}
+
+HRESULT Appliance::TaskExportOVF::startThread()
+{
+    int vrc = RTThreadCreate(NULL, Appliance::taskThreadExportOVF, this,
+                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
+                             "Appliance::Task");
+    ComAssertMsgRCRet(vrc,
+                      ("Could not create taskThreadExportOVF (%Rrc)\n", vrc), E_FAIL);
 
     return S_OK;
 }
@@ -1625,38 +1652,24 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
     ComObjPtr<Progress> progress;
     try
     {
-        /* Figure out how many sub operation the import will need */
-        /* One for the appliance */
-        uint32_t opCount = 1;
-        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
-        for (it = m->virtualSystemDescriptions.begin();
-             it != m->virtualSystemDescriptions.end();
-             ++it)
-        {
-            /* One for every Virtual System */
-            ++opCount;
-            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-            /* One for every hard disk of the Virtual System */
-            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
-            opCount += (uint32_t)avsdeHDs.size();
-        }
+        uint32_t opCount = calcMaxProgress();
         Bstr progressDesc = BstrFmt(tr("Import appliance '%ls'"),
                                     m->bstrPath.raw());
         /* Create the progress object */
         progress.createObject();
-        rc = progress->init(mVirtualBox, static_cast<IAppliance *>(this),
+        rc = progress->init(mVirtualBox, static_cast<IAppliance*>(this),
                             progressDesc,
                             FALSE /* aCancelable */,
                             opCount,
                             progressDesc);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* Initialize our worker task */
         std::auto_ptr<TaskImportMachines> task(new TaskImportMachines(this, progress));
         //AssertComRCThrowRC (task->autoCaller.rc());
 
         rc = task->startThread();
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         task.release();
     }
@@ -1675,6 +1688,47 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
 STDMETHODIMP Appliance::Write(IN_BSTR path, IProgress **aProgress)
 {
     HRESULT rc = S_OK;
+
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(rc = autoCaller.rc())) return rc;
+
+    AutoReadLock(this);
+
+    ComObjPtr<Progress> progress;
+    try
+    {
+        uint32_t opCount = calcMaxProgress();
+        Bstr progressDesc = BstrFmt(tr("Write appliance '%ls'"),
+                                    m->bstrPath.raw());
+        /* Create the progress object */
+        progress.createObject();
+        rc = progress->init(mVirtualBox, static_cast<IAppliance*>(this),
+                            progressDesc,
+                            FALSE /* aCancelable */,
+                            opCount,
+                            progressDesc);
+        CheckComRCThrowRC(rc);
+
+        /* Initialize our worker task */
+        std::auto_ptr<TaskExportOVF> task(new TaskExportOVF(this, progress));
+        //AssertComRCThrowRC (task->autoCaller.rc());
+
+        rc = task->startThread();
+        CheckComRCThrowRC(rc);
+
+        task.release();
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    if (SUCCEEDED(rc))
+        /* Return progress to the caller */
+        progress.queryInterfaceTo(aProgress);
+
     return rc;
 }
 
@@ -1724,6 +1778,31 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
     return S_OK;
 }
 
+/**
+ * Calculates the maximum progress value for importMachines() and write().
+ * @return
+ */
+uint32_t Appliance::calcMaxProgress()
+{
+    /* Figure out how many sub operation the import will need */
+    /* One for the appliance */
+    uint32_t opCount = 1;
+    list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
+    for (it = m->virtualSystemDescriptions.begin();
+         it != m->virtualSystemDescriptions.end();
+         ++it)
+    {
+        /* One for every Virtual System */
+        ++opCount;
+        ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
+        /* One for every hard disk of the Virtual System */
+        std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+        opCount += (uint32_t)avsdeHDs.size();
+    }
+
+    return opCount;
+}
+
 struct MyHardDiskAttachment
 {
     Guid    uuid;
@@ -1744,19 +1823,19 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
     std::auto_ptr<TaskImportMachines> task(static_cast<TaskImportMachines*>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
 
-    Appliance *app = task->that;
+    Appliance *pAppliance = task->pAppliance;
 
     LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", app));
+    LogFlowFunc(("Appliance %p\n", pAppliance));
 
-    AutoCaller autoCaller(app);
+    AutoCaller autoCaller(pAppliance);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock appLock(app);
+    AutoWriteLock appLock(pAppliance);
 
     HRESULT rc = S_OK;
 
-    ComPtr<IVirtualBox> pVirtualBox(app->mVirtualBox);
+    ComPtr<IVirtualBox> pVirtualBox(pAppliance->mVirtualBox);
 
     // rollback for errors:
     // 1) a list of images that we created/imported
@@ -1773,9 +1852,9 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
     /* Iterate through all virtual systems of that appliance */
     size_t i = 0;
-    for (it = app->m->llVirtualSystems.begin(),
-            it1 = app->m->virtualSystemDescriptions.begin();
-         it != app->m->llVirtualSystems.end();
+    for (it = pAppliance->m->llVirtualSystems.begin(),
+            it1 = pAppliance->m->virtualSystemDescriptions.begin();
+         it != pAppliance->m->llVirtualSystems.end();
          ++it, ++it1, ++i)
     {
         const VirtualSystem &vsysThis = *it;
@@ -2023,7 +2102,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
 
                     /* The disk image has to be on the same place as the OVF file. So
                      * strip the filename out of the full file path. */
-                    Utf8Str strSrcDir = stripFilename(Utf8Str(app->m->bstrPath).raw());
+                    Utf8Str strSrcDir = stripFilename(Utf8Str(pAppliance->m->bstrPath).raw());
 
                     /* Iterate over all given disk images */
                     list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
@@ -2045,12 +2124,12 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                                               pcszDstFilePath));
 
                         /* Find the disk from the OVF's disk list */
-                        DiskImagesMap::const_iterator itDiskImage = app->m->mapDisks.find(vsdeHD->strRef);
+                        DiskImagesMap::const_iterator itDiskImage = pAppliance->m->mapDisks.find(vsdeHD->strRef);
                         /* vsdeHD->strRef contains the disk identifier (e.g. "vmdisk1"), which should exist
                            in the virtual system's disks map under that ID and also in the global images map. */
                         VirtualDisksMap::const_iterator itVirtualDisk = vsysThis.mapVirtualDisks.find(vsdeHD->strRef);
 
-                        if (    itDiskImage == app->m->mapDisks.end()
+                        if (    itDiskImage == pAppliance->m->mapDisks.end()
                              || itVirtualDisk == vsysThis.mapVirtualDisks.end()
                            )
                             throw setError(E_FAIL,
@@ -2269,7 +2348,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
         if (FAILED(rc))
             break;
 
-    } // for (it = app->m->llVirtualSystems.begin(),
+    } // for (it = pAppliance->m->llVirtualSystems.begin(),
 
     if (FAILED(rc))
     {
@@ -2336,6 +2415,51 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
     return VINF_SUCCESS;
 }
 
+/**
+ * Worker thread implementation for ImportMachines().
+ * @param aThread
+ * @param pvUser
+ */
+/* static */
+DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
+{
+    std::auto_ptr<TaskImportMachines> task(static_cast<TaskImportMachines*>(pvUser));
+    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
+
+    Appliance *pAppliance = task->pAppliance;
+
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", pAppliance));
+
+    AutoCaller autoCaller(pAppliance);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock appLock(pAppliance);
+
+    HRESULT rc = S_OK;
+
+    ComPtr<IVirtualBox> pVirtualBox(pAppliance->mVirtualBox);
+
+    try
+    {
+    }
+    catch(HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    task->rc = rc;
+
+    if (!task->progress.isNull())
+        task->progress->notifyComplete(rc);
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
+
+    return VINF_SUCCESS;
+}
+
+#
 ////////////////////////////////////////////////////////////////////////////////
 //
 // IVirtualSystemDescription constructor / destructor

@@ -84,9 +84,6 @@ private:
     /** weak VirtualBox parent */
     const ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
 
-    struct TaskImportMachines; /* Worker thread for import */
-    struct TaskExportOVF; /* Worker thread for import */
-
     struct Data;            // obscure, defined in AppliannceImpl.cpp
     Data *m;
 
@@ -97,8 +94,12 @@ private:
 
     HRESULT searchUniqueVMName(Utf8Str& aName) const;
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
+    uint32_t calcMaxProgress();
 
+    struct TaskImportMachines;  /* Worker thread for import */
     static DECLCALLBACK(int) taskThreadImportMachines(RTTHREAD thread, void *pvUser);
+
+    struct TaskExportOVF;       /* Worker thread for export */
     static DECLCALLBACK(int) taskThreadExportOVF(RTTHREAD thread, void *pvUser);
 
     friend class Machine;
