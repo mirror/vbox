@@ -2248,11 +2248,16 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
         if (pVM->pgm.s.aHCPhysDynPageMapCache[iCache] == HCPhys)
         {
             int iPage = au8Trans[pVM->pgm.s.iDynPageMapLast][iCache];
-            void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
-            *ppv = pv;
-            STAM_COUNTER_INC(&pVM->pgm.s.StatRCDynMapCacheHits);
-            Log4(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%p iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
-            return VINF_SUCCESS;
+
+            /* The cache can get out of sync with locked entries. (10 locked, 2 overwrites its cache position, last = 11, lookup 2 -> page 10 instead of 2) */
+            if ((pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u & X86_PTE_PG_MASK) == HCPhys)
+            {
+                void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
+                *ppv = pv;
+                STAM_COUNTER_INC(&pVM->pgm.s.StatRCDynMapCacheHits);
+                Log4(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%p iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
+                return VINF_SUCCESS;
+            }
         }
     }
     AssertCompile(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 8);
