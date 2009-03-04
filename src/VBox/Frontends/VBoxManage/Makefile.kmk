@@ -42,6 +42,9 @@ else # !VBOX_ONLY_DOCS
  	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS) \
  	$(if $(VBOX_WITH_HOSTNETIF_API), VBOX_WITH_HOSTNETIF_API)
  VBoxManage_DEFS.win   = _WIN32_WINNT=0x0500
+ifdef VBOX_WITH_NETFLT
+ VBoxManage_DEFS += VBOX_WITH_NETFLT
+endif 
  VBoxManage_SOURCES = \
  	VBoxManage.cpp \
  	VBoxManageHelp.cpp \

@@ -441,7 +441,9 @@ int handleModifyVM(HandlerArg *a)
             nics[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(a->argv[i], "-hostifdev", 10) == 0)
+        else if (  strncmp(a->argv[i], "-bridgeddev", 11) == 0
+                || strncmp(a->argv[i], "-hostonlydev", 12) == 0
+                || strncmp(a->argv[i], "-hostifdev", 10) == 0) /* backward compatibility */
         {
             unsigned n = parseNum(&a->argv[i][10], NetworkAdapterCount, "NIC");
             if (!n)
@@ -1380,7 +1382,8 @@ int handleModifyVM(HandlerArg *a)
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
                     CHECK_ERROR_RET(nic, AttachToNAT(), 1);
                 }
-                else if (strcmp(nics[n], "hostif") == 0)
+                else if (  strcmp(nics[n], "bridged") == 0
+                        || strcmp(nics[n], "hostif") == 0) /* backward compatibility */
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
                     CHECK_ERROR_RET(nic, AttachToBridgedNetwork(), 1);

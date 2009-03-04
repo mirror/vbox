@@ -684,15 +684,15 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     }
                     case NetworkAttachmentType_Bridged:
                     {
-                        Bstr strHostIfDev;
-                        nic->COMGETTER(HostInterface)(strHostIfDev.asOutParam());
+                        Bstr strBridgedDev;
+                        nic->COMGETTER(HostInterface)(strBridgedDev.asOutParam());
                         if (details == VMINFO_MACHINEREADABLE)
                         {
-                            RTPrintf("hostifdev%d=\"%lS\"\n", currentNIC + 1, strHostIfDev.raw());
-                            strAttachment = "hostif";
+                            RTPrintf("bridgeddev%d=\"%lS\"\n", currentNIC + 1, strBridgedDev.raw());
+                            strAttachment = "bridged";
                         }
                         else
-                            strAttachment = Utf8StrFmt("Host Interface '%lS'", strHostIfDev.raw());
+                            strAttachment = Utf8StrFmt("Bridged Interface '%lS'", strBridgedDev.raw());
                         break;
                     }
                     case NetworkAttachmentType_Internal:
