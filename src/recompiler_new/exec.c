@@ -2084,9 +2084,6 @@ static inline void tlb_update_dirty(CPUTLBEntry *tlb_entry)
 #else
         Assert(phys_addend != -1);
         ram_addr = (tlb_entry->addr_write & TARGET_PAGE_MASK) + phys_addend;
-        
-        /** @todo: nike: will remove this assert along with remR3HCVirt2GCPhys() soon */
-        Assert(ram_addr == remR3HCVirt2GCPhys(first_cpu, (void*)((tlb_entry->addr_write & TARGET_PAGE_MASK) + tlb_entry->addend)));
 #endif
         if (!cpu_physical_memory_is_dirty(ram_addr)) {
             tlb_entry->addr_write |= TLB_NOTDIRTY;

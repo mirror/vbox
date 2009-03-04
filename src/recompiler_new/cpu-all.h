@@ -271,7 +271,6 @@ void        remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val);
 
 #ifndef REM_PHYS_ADDR_IN_TLB
 void       *remR3TlbGCPhys2Ptr(CPUState *env1, target_ulong physAddr, int fWritable);
-target_ulong remR3HCVirt2GCPhys(CPUState *env1, void *addr);
 #endif
 
 #endif /* VBOX */
