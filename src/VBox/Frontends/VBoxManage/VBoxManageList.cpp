@@ -43,7 +43,7 @@
 using namespace com;
 
 #ifdef VBOX_WITH_HOSTNETIF_API
-static const char *getHostIfTypeText(HostNetworkInterfaceMediumType_T enmType)
+static const char *getHostIfMediumTypeText(HostNetworkInterfaceMediumType_T enmType)
 {
     switch (enmType)
     {
@@ -72,7 +72,10 @@ enum enOptionCodes
     LISTOSTYPES,
     LISTHOSTDVDS,
     LISTHOSTFLOPPIES,
-    LISTHOSTIFS,
+    LISTBRIDGEDIFS,
+#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+    LISTHOSTONLYIFS,
+#endif
     LISTHOSTINFO,
     LISTHDDBACKENDS,
     LISTHDDS,
@@ -91,7 +94,11 @@ static const RTGETOPTDEF g_aListOptions[]
         { "ostypes",            LISTOSTYPES, RTGETOPT_REQ_NOTHING },
         { "hostdvds",           LISTHOSTDVDS, RTGETOPT_REQ_NOTHING },
         { "hostfloppies",       LISTHOSTFLOPPIES, RTGETOPT_REQ_NOTHING },
-        { "hostifs",            LISTHOSTIFS, RTGETOPT_REQ_NOTHING },
+        { "hostifs",             LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING }, /* backward compatibility */
+        { "bridgedifs",          LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING },
+        #if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+        { "hostonlyifs",          LISTHOSTONLYIFS, RTGETOPT_REQ_NOTHING },
+#endif
         { "hostinfo",           LISTHOSTINFO, RTGETOPT_REQ_NOTHING },
         { "hddbackends",        LISTHDDBACKENDS, RTGETOPT_REQ_NOTHING },
         { "hdds",               LISTHDDS, RTGETOPT_REQ_NOTHING },
@@ -127,7 +134,10 @@ int handleList(HandlerArg *a)
             case LISTOSTYPES:
             case LISTHOSTDVDS:
             case LISTHOSTFLOPPIES:
-            case LISTHOSTIFS:
+            case LISTBRIDGEDIFS:
+#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+            case LISTHOSTONLYIFS:
+#endif
             case LISTHOSTINFO:
             case LISTHDDBACKENDS:
             case LISTHDDS:
@@ -282,13 +292,23 @@ int handleList(HandlerArg *a)
         }
         break;
 
-        case LISTHOSTIFS:
+        case LISTBRIDGEDIFS:
+#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+        case LISTHOSTONLYIFS:
+#endif
         {
             ComPtr<IHost> host;
             CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
             com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
+#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+            CHECK_ERROR(host,
+                    FindHostNetworkInterfacesOfType (
+                            command == LISTBRIDGEDIFS ? HostNetworkInterfaceType_Bridged : HostNetworkInterfaceType_HostOnly,
+                            ComSafeArrayAsOutParam (hostNetworkInterfaces)));
+#else
             CHECK_ERROR(host,
                         COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
+#endif
             for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
             {
                 ComPtr<IHostNetworkInterface> networkInterface = hostNetworkInterfaces[i];
@@ -333,7 +353,7 @@ int handleList(HandlerArg *a)
                 RTPrintf("HardwareAddress: %lS\n", HardwareAddress.raw());
                 HostNetworkInterfaceMediumType_T Type;
                 networkInterface->COMGETTER(MediumType)(&Type);
-                RTPrintf("Type:            %s\n", getHostIfTypeText(Type));
+                RTPrintf("MediumType:            %s\n", getHostIfMediumTypeText(Type));
                 HostNetworkInterfaceStatus_T Status;
                 networkInterface->COMGETTER(Status)(&Status);
                 RTPrintf("Status:          %s\n\n", getHostIfStatusText(Status));

@@ -75,7 +75,12 @@ void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_LIST)
     {
         RTPrintf("VBoxManage list [--long|-l] vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
-                 "                            hostifs|hostinfo|hddbackends|hdds|dvds|floppies|\n"
+#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+                "                            bridgedifs|hostonlyifs|hostinfo|hddbackends|hdds|dvds|floppies|\n"
+#else
+                "                            bridgedifs|hostinfo|hddbackends|hdds|dvds|floppies|\n"
+#endif
+
                  "                            usbhost|usbfilters|systemproperties\n"
                  "\n");
     }
@@ -156,10 +161,10 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-dvdpassthrough on|off]\n"
                  "                            [-floppy disabled|empty|<uuid>|\n"
                  "                                     <filename>|host:<drive>]\n"
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
-                 "                            [-nic<1-N> none|null|nat|hostif|intnet|hostonly]\n"
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+                 "                            [-nic<1-N> none|null|nat|bridged|intnet|hostonly]\n"
 #else /* !RT_OS_LINUX && !RT_OS_DARWIN */
-                 "                            [-nic<1-N> none|null|nat|hostif|intnet]\n"
+                 "                            [-nic<1-N> none|null|nat|bridged|intnet]\n"
 #endif /* !RT_OS_LINUX && !RT_OS_DARWIN  */
                  "                            [-nictype<1-N> Am79C970A|Am79C973"
 #ifdef VBOX_WITH_E1000
@@ -170,7 +175,10 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-nictrace<1-N> on|off]\n"
                  "                            [-nictracefile<1-N> <filename>]\n"
                  "                            [-nicspeed<1-N> <kbps>]\n"
-                 "                            [-hostifdev<1-N> none|<devicename>]\n"
+                 "                            [-bridgeddev<1-N> none|<devicename>]\n"
+#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+                 "                            [-hostonlydev<1-N> none|<devicename>]\n"
+#endif
                  "                            [-intnet<1-N> <network name>]\n"
                  "                            [-natnet<1-N> <network>|default]\n"
                  "                            [-macaddress<1-N> auto|<mac>]\n"
