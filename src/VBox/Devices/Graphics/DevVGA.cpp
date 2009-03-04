@@ -1382,27 +1382,37 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
         {
             static uint32_t aMask[5]  = {0x3ff, 0x1ff, 0x7f, 0x3f, 0x1f};
             static uint64_t aDelta[5]  = {10000000, 5000000, 2500000, 1250000, 625000};
-            uint64_t u64CurTime = RTTimeSystemNanoTS();
+            if (PDMDevHlpCanEmulateIoBlock(s->CTX_SUFF(pDevIns)))
+            {
+                uint64_t u64CurTime = RTTimeSystemNanoTS();
 
-            /* About 1000 (or more) accesses per 10 ms will trigger a reschedule
-             * to the recompiler
-             */
-            if (u64CurTime - s->u64LastLatchedAccess < aDelta[s->iMask])
+                /* About 1000 (or more) accesses per 10 ms will trigger a reschedule
+                * to the recompiler
+                */
+                if (u64CurTime - s->u64LastLatchedAccess < aDelta[s->iMask])
+                {
+                    s->u64LastLatchedAccess = 0;
+                    s->iMask                = RT_MIN(s->iMask + 1, RT_ELEMENTS(aMask) - 1);
+                    s->uMaskLatchAccess     = aMask[s->iMask];
+                    s->cLatchAccesses       = s->uMaskLatchAccess - 1;
+                    return VINF_EM_RAW_EMULATE_IO_BLOCK;
+                }
+                if (s->u64LastLatchedAccess)
+                {
+                    Log2(("Reset mask (was %d) delta %RX64 (limit %x)\n", s->iMask, u64CurTime - s->u64LastLatchedAccess, aDelta[s->iMask]));
+                    if (s->iMask) 
+                        s->iMask--;
+                    s->uMaskLatchAccess     = aMask[s->iMask];
+                }
+                s->u64LastLatchedAccess = u64CurTime;
+            }
+            else
             {
                 s->u64LastLatchedAccess = 0;
-                s->iMask                = RT_MIN(s->iMask + 1, RT_ELEMENTS(aMask) - 1);
+                s->iMask                = 0;
                 s->uMaskLatchAccess     = aMask[s->iMask];
-                s->cLatchAccesses       = s->uMaskLatchAccess - 1;
-                return VINF_EM_RAW_EMULATE_IO_BLOCK;
+                s->cLatchAccesses       = 0;
             }
-            if (s->u64LastLatchedAccess)
-            {
-                Log2(("Reset mask (was %d) delta %RX64 (limit %x)\n", s->iMask, u64CurTime - s->u64LastLatchedAccess, aDelta[s->iMask]));
-                if (s->iMask) 
-                    s->iMask--;
-                s->uMaskLatchAccess     = aMask[s->iMask];
-            }
-            s->u64LastLatchedAccess = u64CurTime;
         }
 #endif
 
