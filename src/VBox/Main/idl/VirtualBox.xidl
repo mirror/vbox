@@ -10810,7 +10810,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IUSBController" extends="$unknown"
-     uuid="f4c2d3dc-f109-4da7-93b1-ec28973ac89f"
+     uuid="238540fa-4b73-435a-a38e-4e1d9eab5c17"
      wsmap="managed"
      >
     <attribute name="enabled" type="boolean">
@@ -10839,7 +10839,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="deviceFilters" type="IUSBDeviceFilterCollection" readonly="yes">
+    <attribute name="deviceFilters" type="IUSBDeviceFilter" readonly="yes" safearray="yes">
       <desc>
         List of USB device filters associated with the machine.
 
@@ -11099,18 +11099,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   // IUSBDeviceFilter
   /////////////////////////////////////////////////////////////////////////
   -->
-
-  <enumerator
-     name="IUSBDeviceFilterEnumerator" type="IUSBDeviceFilter"
-     uuid="d5109c61-93e7-4726-926b-0dee1020da56"
-     />
-
-  <collection
-     name="IUSBDeviceFilterCollection" type="IUSBDeviceFilter"
-     enumerator="IUSBDeviceFilterEnumerator"
-     uuid="4fa3fc99-ceb1-4bf5-a9cb-e962d825c1ef"
-     readonly="yes"
-     />
 
   <interface
      name="IUSBDeviceFilter" extends="$unknown"
