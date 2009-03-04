@@ -1140,12 +1140,15 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
     }
     Log(("vboxNetFltOsDeleteInstance: this=%p: Notifier removed.\n", pThis));
     unregister_netdevice_notifier(&pThis->u.s.Notifier);
+    module_put(THIS_MODULE);
 }
 
 
 int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
 {
     int err;
+    NOREF(pvContext);
+
     pThis->u.s.Notifier.notifier_call = vboxNetFltLinuxNotifierCallback;
     err = register_netdevice_notifier(&pThis->u.s.Notifier);
     if (err)
@@ -1158,8 +1161,13 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     }
 
     Log(("vboxNetFltOsInitInstance: this=%p: Notifier installed.\n", pThis));
-    NOREF(pvContext);
-    return pThis->fDisconnectedFromHost ? VERR_INTNET_FLT_IF_FAILED : VINF_SUCCESS;
+    if (!pThis->fDisconnectedFromHost)
+    {
+        __module_get(THIS_MODULE);
+        return VINF_SUCCESS;
+    }
+ 
+    return VERR_INTNET_FLT_IF_FAILED;
 }
 
 int  vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
