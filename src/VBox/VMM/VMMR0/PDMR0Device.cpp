@@ -30,6 +30,7 @@
 #include <VBox/mm.h>
 #include <VBox/vm.h>
 #include <VBox/patm.h>
+#include <VBox/hwaccm.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -67,6 +68,7 @@ static DECLCALLBACK(int)  pdmR0DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, bool
 static DECLCALLBACK(int)  pdmR0DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va);
 static DECLCALLBACK(int)  pdmR0DevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData);
 static DECLCALLBACK(PVM)  pdmR0DevHlp_GetVM(PPDMDEVINS pDevIns);
+static DECLCALLBACK(bool) pdmR0DevHlp_CanEmulateIoBlock(PPDMDEVINS pDevIns);
 /** @} */
 
 
@@ -134,6 +136,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_VMSetRuntimeErrorV,
     pdmR0DevHlp_PATMSetMMIOPatchInfo,
     pdmR0DevHlp_GetVM,
+    pdmR0DevHlp_CanEmulateIoBlock,
     PDM_DEVHLPR0_VERSION
 };
 
@@ -348,6 +351,13 @@ static DECLCALLBACK(PVM)  pdmR0DevHlp_GetVM(PPDMDEVINS pDevIns)
     return pDevIns->Internal.s.pVMR0;
 }
 
+/** @copydoc PDMDEVHLPR0::pfnCanEmulateIoBlock */
+static DECLCALLBACK(bool) pdmR0DevHlp_CanEmulateIoBlock(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_GetVM: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
+    return HWACCMCanEmulateIoBlock(pDevIns->Internal.s.pVMR0);
+}
 
 
 
