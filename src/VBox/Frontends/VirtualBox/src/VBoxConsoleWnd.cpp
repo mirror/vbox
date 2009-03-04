@@ -2660,7 +2660,11 @@ void VBoxConsoleWnd::vmTakeSnapshot()
             maxSnapShotIndex = regExp.cap (1).toInt() > maxSnapShotIndex ?
                                regExp.cap (1).toInt() : maxSnapShotIndex;
         /* Traversing to the next child */
-        index = index.GetChildren()[0];
+        CSnapshotVector c = index.GetChildren();
+        if (c.size() > 0)
+            index = c[0];
+        else
+            break;
     }
     dlg.mLeName->setText (snapShotName.arg (maxSnapShotIndex + 1));
 
