@@ -72,7 +72,8 @@ __BEGIN_DECLS
  * @returns boolean
  * @param   pCtx        CPU context
  */
-#define HWACCMCanEmulateIoBlock(pCtx)    (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
+#define HWACCMCanEmulateIoBlock(pVM)       (!CPUMIsGuestInPagedProtectedMode(pVM))
+#define HWACCMCanEmulateIoBlockEx(pCtx)    (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
 
 VMMDECL(int)    HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
 VMMDECL(bool)   HWACCMHasPendingIrq(PVM pVM);
