@@ -1256,7 +1256,7 @@ EOF
         INCQT4="$q/include $q/include/QtCore"
         FLGQT4="-DQT_SHARED"
         I_INCQT4=`prefix_I "$INCQT4"`
-        LIBQT4="-L$q/lib -lVBoxQtCore"
+        LIBQT4="-L$q/lib -lQtCoreVBox"
         if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
           foundqt4=2
           break;
