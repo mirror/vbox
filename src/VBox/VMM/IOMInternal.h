@@ -127,10 +127,6 @@ typedef struct IOMMMIOSTATS
     STAMPROFILEADV              ProfWriteRZ;
     /** Number of writes to this address from R0/RC which was serviced in R3. */
     STAMCOUNTER                 WriteRZToR3;
-
-    /** Number of failed IO block emulation attempts. */
-    STAMCOUNTER                 IOEmulateFailedR0;
-
 } IOMMMIOSTATS;
 /** Pointer to I/O port statistics. */
 typedef IOMMMIOSTATS *PIOMMMIOSTATS;

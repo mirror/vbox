@@ -457,13 +457,12 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
         if (RTAvloGCPhysInsert(&pVM->iom.s.pTreesR3->MMIOStatTree, &pStats->Core))
         {
             /* register the statistics counters. */
-            rc = STAMR3RegisterF(pVM, &pStats->ReadR3,              STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Read-R3", GCPhys); AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pStats->WriteR3,             STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Write-R3", GCPhys); AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pStats->ReadRZ,              STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Read-RZ", GCPhys); AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pStats->WriteRZ,             STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Write-RZ", GCPhys); AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pStats->ReadRZToR3,          STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Read-RZtoR3", GCPhys); AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pStats->WriteRZToR3,         STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Write-RZtoR3", GCPhys); AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pStats->IOEmulateFailedR0,   STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-IOEmuFailedR0", GCPhys); AssertRC(rc);
+            rc = STAMR3RegisterF(pVM, &pStats->ReadR3,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Read-R3", GCPhys); AssertRC(rc);
+            rc = STAMR3RegisterF(pVM, &pStats->WriteR3,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Write-R3", GCPhys); AssertRC(rc);
+            rc = STAMR3RegisterF(pVM, &pStats->ReadRZ,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Read-RZ", GCPhys); AssertRC(rc);
+            rc = STAMR3RegisterF(pVM, &pStats->WriteRZ,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Write-RZ", GCPhys); AssertRC(rc);
+            rc = STAMR3RegisterF(pVM, &pStats->ReadRZToR3,  STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Read-RZtoR3", GCPhys); AssertRC(rc);
+            rc = STAMR3RegisterF(pVM, &pStats->WriteRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Write-RZtoR3", GCPhys); AssertRC(rc);
 
             /* Profiling */
             rc = STAMR3RegisterF(pVM, &pStats->ProfReadR3,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, pszDesc, "/IOM/MMIO/%RGp-Read-R3/Prof", GCPhys); AssertRC(rc);
