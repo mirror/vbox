@@ -158,4 +158,17 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
     return rc;
 }
 
+int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask, ULONG gw)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
 
+int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength, IN_BSTR aIPV6DefaultGateway)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
