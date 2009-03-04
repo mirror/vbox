@@ -29,6 +29,10 @@
  */
 
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include <iprt/net.h>
 #include <iprt/getopt.h>
 #include <iprt/stream.h>
 #include <iprt/initterm.h>
@@ -82,6 +86,7 @@ int main()
         { "-startvm",           386, RTGETOPT_REQ_STRING },
         { "nodash",             387, RTGETOPT_REQ_NOTHING },
         { "nodashval",          388, RTGETOPT_REQ_STRING },
+        { "--gateway",          'g', RTGETOPT_REQ_IPV4ADDR },
     };
 
     char *argv2[] =
@@ -117,6 +122,8 @@ int main()
         "filename2",
 
         "-vqi999",
+
+        "-g192.168.1.1",
         NULL
     };
     int argc2 = (int)RT_ELEMENTS(argv2) - 1;
@@ -189,6 +196,10 @@ int main()
     CHECK_pDef(s_aOpts2, 3);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
     CHECK(Val.i32 == 999);
+
+    /* IPv4 */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'g', 1);
+    CHECK(Val.IPv4Addr.u == RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8(192,168,1,1))));
 
     /* the end */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 0, 0);
