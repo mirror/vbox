@@ -175,9 +175,9 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-nictrace<1-N> on|off]\n"
                  "                            [-nictracefile<1-N> <filename>]\n"
                  "                            [-nicspeed<1-N> <kbps>]\n"
-                 "                            [-bridgeddev<1-N> none|<devicename>]\n"
+                 "                            [-bridgeadapter<1-N> none|<devicename>]\n"
 #if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
-                 "                            [-hostonlydev<1-N> none|<devicename>]\n"
+                 "                            [-hostonlyadapter<1-N> none|<devicename>]\n"
 #endif
                  "                            [-intnet<1-N> <network name>]\n"
                  "                            [-natnet<1-N> <network>|default]\n"

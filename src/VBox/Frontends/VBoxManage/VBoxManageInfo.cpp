@@ -684,15 +684,15 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     }
                     case NetworkAttachmentType_Bridged:
                     {
-                        Bstr strBridgedDev;
-                        nic->COMGETTER(HostInterface)(strBridgedDev.asOutParam());
+                        Bstr strBridgeAdp;
+                        nic->COMGETTER(HostInterface)(strBridgeAdp.asOutParam());
                         if (details == VMINFO_MACHINEREADABLE)
                         {
-                            RTPrintf("bridgeddev%d=\"%lS\"\n", currentNIC + 1, strBridgedDev.raw());
+                            RTPrintf("bridgeadapter%d=\"%lS\"\n", currentNIC + 1, strBridgeAdp.raw());
                             strAttachment = "bridged";
                         }
                         else
-                            strAttachment = Utf8StrFmt("Bridged Interface '%lS'", strBridgedDev.raw());
+                            strAttachment = Utf8StrFmt("Bridged Interface '%lS'", strBridgeAdp.raw());
                         break;
                     }
                     case NetworkAttachmentType_Internal:
@@ -710,12 +710,23 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     }
                     case NetworkAttachmentType_HostOnly:
                     {
+#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+                        Bstr strHostonlyAdp;
+                        nic->COMGETTER(HostInterface)(strHostonlyAdp.asOutParam());
+#endif
                         if (details == VMINFO_MACHINEREADABLE)
                         {
+#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+                            RTPrintf("hostonlyadapter%d=\"%lS\"\n", currentNIC + 1, strHostonlyAdp.raw());
+#endif
                             strAttachment = "hostonly";
                         }
                         else
+#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+                            strAttachment = Utf8StrFmt("Host-only Interface '%lS'", strHostonlyAdp.raw());
+#else
                             strAttachment = "Host-only Network";
+#endif
                         break;
                     }
                     default:
