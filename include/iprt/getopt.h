@@ -69,6 +69,9 @@ __BEGIN_DECLS
 #define RTGETOPT_REQ_INT64                      8
 /** The value must be a valid unsigned 64-bit integer or an error will be returned. */
 #define RTGETOPT_REQ_UINT64                     9
+/** The value must be a valid IPv4 address.
+ * (Not a name, but 4 values in the 0..255 range with dots separating them). */
+#define RTGETOPT_REQ_IPV4ADDR                   10
 /** The mask of the valid required types. */
 #define RTGETOPT_REQ_MASK                       15
 /** Treat the value as hexadecimal - only applicable with the RTGETOPT_REQ_*INT*. */
@@ -116,29 +119,33 @@ typedef union RTGETOPTUNION
     /** Pointer to the definition on failure or when the option doesn't take an argument.
      * This can be NULL for some errors. */
     PCRTGETOPTDEF   pDef;
-    /** A RTGETOPT_ARG_FORMAT_STRING option argument. */
+    /** A RTGETOPT_REQ_STRING option argument. */
     const char     *psz;
 
 #if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)
 # error "PORTME: big-endian systems will need to fix the layout here to get the next two fields working right"
 #endif
 
-    /** A RTGETOPT_ARG_FORMAT_INT8 option argument. */
+    /** A RTGETOPT_REQ_INT8 option argument. */
     int8_t          i8;
-    /** A RTGETOPT_ARG_FORMAT_UINT8 option argument . */
+    /** A RTGETOPT_REQ_UINT8 option argument . */
     uint8_t         u8;
-    /** A RTGETOPT_ARG_FORMAT_INT16 option argument. */
+    /** A RTGETOPT_REQ_INT16 option argument. */
     int16_t         i16;
-    /** A RTGETOPT_ARG_FORMAT_UINT16 option argument . */
+    /** A RTGETOPT_REQ_UINT16 option argument . */
     uint16_t        u16;
-    /** A RTGETOPT_ARG_FORMAT_INT16 option argument. */
+    /** A RTGETOPT_REQ_INT16 option argument. */
     int32_t         i32;
-    /** A RTGETOPT_ARG_FORMAT_UINT32 option argument . */
+    /** A RTGETOPT_REQ_UINT32 option argument . */
     uint32_t        u32;
-    /** A RTGETOPT_ARG_FORMAT_INT64 option argument. */
+    /** A RTGETOPT_REQ_INT64 option argument. */
     int64_t         i64;
-    /** A RTGETOPT_ARG_FORMAT_UINT64 option argument. */
+    /** A RTGETOPT_REQ_UINT64 option argument. */
     uint64_t        u64;
+#ifdef ___iprt_net_h
+    /** A RTGETOPT_REQ_IPV4ADDR option argument. */
+    RTNETADDRIPV4   IPv4Addr;
+#endif
     /** A signed integer value. */
     int64_t         i;
     /** An unsigned integer value. */

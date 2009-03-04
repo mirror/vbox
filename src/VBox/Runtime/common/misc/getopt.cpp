@@ -31,6 +31,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/net.h>
 #include <iprt/getopt.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
@@ -63,6 +64,49 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
 
     /** @todo Add an flag for sorting the arguments so that all the options comes
      *        first. */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Converts an stringified IPv4 address into the RTNETADDRIPV4 representation.
+ *
+ * This should be move to some generic part of the runtime.
+ *
+ * @returns VINF_SUCCESS on success, VERR_GETOPT_INVALID_ARGUMENT_FORMAT on
+ *          failure.
+ *
+ * @param   pszValue        The value to convert.
+ * @param   pAddr           Where to store the result.
+ */
+static int rtgetoptConvertIPv4Addr(const char *pszValue, PRTNETADDRIPV4 pAddr)
+{
+    char *pszNext;
+    int rc = RTStrToUInt8Ex(RTStrStripL(pszValue), &pszNext, 10, &pAddr->au8[0]);
+    if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS)
+        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+    if (*pszNext++ != '.')
+        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+
+    rc = RTStrToUInt8Ex(pszNext, &pszNext, 10, &pAddr->au8[1]);
+    if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS)
+        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+    if (*pszNext++ != '.')
+        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+
+    rc = RTStrToUInt8Ex(pszNext, &pszNext, 10, &pAddr->au8[2]);
+    if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS)
+        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+    if (*pszNext++ != '.')
+        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+
+    rc = RTStrToUInt8Ex(pszNext, &pszNext, 10, &pAddr->au8[3]);
+    if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_SPACES)
+        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+    pszNext = RTStrStripL(pszNext);
+    if (*pszNext)
+        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+
     return VINF_SUCCESS;
 }
 
@@ -314,8 +358,18 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                 MY_BASE_INT_CASE(RTGETOPT_REQ_UINT16 | RTGETOPT_FLAG_OCT, uint16_t, u,   RTStrToUInt16Full, 8)
                 MY_BASE_INT_CASE(RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT, uint32_t, u,   RTStrToUInt32Full, 8)
                 MY_BASE_INT_CASE(RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_OCT, uint64_t, u,   RTStrToUInt64Full, 8)
+
 #undef MY_INT_CASE
 #undef MY_BASE_INT_CASE
+
+                case RTGETOPT_REQ_IPV4ADDR:
+                {
+                    RTNETADDRIPV4 Addr;
+                    if (rtgetoptConvertIPv4Addr(pszValue, &Addr) != VINF_SUCCESS)
+                        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+                    pValueUnion->IPv4Addr = Addr;
+                    break;
+                }
 
                 default:
                     AssertMsgFailed(("i=%d f=%#x\n", pOpt - &pState->paOptions[0], pOpt->fFlags));
