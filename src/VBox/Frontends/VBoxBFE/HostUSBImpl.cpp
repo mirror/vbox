@@ -230,7 +230,7 @@ STDMETHODIMP HostUSB::AttachUSBDevice (HostUSBDevice *hostDevice)
      * Get the address and the Uuid, and call the pfnCreateProxyDevice roothub method in EMT.
      */
     std::string Address;
-    STDMETHODIMP hrc = hostDevice->COMGETTER (Address) (&Address);
+    HRESULT hrc = hostDevice->COMGETTER (Address) (&Address);
     AssertComRC (hrc);
 
     RTUUID Uuid;
