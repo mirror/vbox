@@ -23,11 +23,16 @@
 
 #include "VBoxUtils-darwin.h"
 
+#include <iprt/assert.h>
+
 #import <AppKit/NSWindow.h>
 #import <AppKit/NSView.h>
 #import <AppKit/NSEvent.h>
 #import <AppKit/NSToolbar.h>
 #import <AppKit/NSColor.h>
+#import <AppKit/NSGraphicsContext.h>
+#import <AppKit/NSApplication.h>
+#import <AppKit/NSImageView.h>
 
 NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView)
 {

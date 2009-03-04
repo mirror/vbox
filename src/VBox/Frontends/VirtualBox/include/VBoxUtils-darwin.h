@@ -39,13 +39,16 @@ typedef NSWindow *NativeWindowRef;
 typedef NSView *NativeViewRef;
 #else
 # include <iprt/cdefs.h> /* for __BEGIN_DECLS/__END_DECLS & stuff */
+
 # include <qglobal.h> /* for QT_MAC_USE_COCOA */
+# include <QRect>
 
 # include <ApplicationServices/ApplicationServices.h>
+
 class QWidget;
 class QToolBar;
 class QPixmap;
-class QRect;
+class QImage;
 
 # ifdef QT_MAC_USE_COCOA
 /* Cast this to void, cause Cocoa classes aren't usable in the C++ context. */
@@ -87,7 +90,6 @@ void darwinSetMouseCoalescingEnabled (bool aEnabled);
 void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int width, int height);
 void darwinWindowInvalidateShapeImpl (NativeWindowRef aWindow);
 void darwinWindowInvalidateShadowImpl (NativeWindowRef aWindow);
-
 
 __END_DECLS
 
@@ -156,6 +158,36 @@ QString darwinSystemLanguage (void);
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
 
 
+/********************************************************************************
+ *
+ * Graphics stuff (Qt Wrapper)
+ *
+ ********************************************************************************/
+/**
+ * Returns a reference to the CGContext of the QWidget.
+ *
+ * @returns CGContextRef of the QWidget.
+ * @param   aWidget      Pointer to the QWidget
+ */
+CGContextRef darwinToCGContextRef (QWidget *aWidget);
+
+CGImageRef darwinToCGImageRef (const QImage *aImage);
+CGImageRef darwinToCGImageRef (const QPixmap *aPixmap);
+CGImageRef darwinToCGImageRef (const char *aSource);
+
+DECLINLINE(CGRect) darwinToCGRect (const QRect& aRect) { return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height()); }
+DECLINLINE(CGRect) darwinFlipCGRect (CGRect aRect, int aTargetHeight) { aRect.origin.y = aTargetHeight - aRect.origin.y - aRect.size.height; return aRect; }
+DECLINLINE(CGRect) darwinFlipCGRect (CGRect aRect, const CGRect &aTarget) { return darwinFlipCGRect (aRect, aTarget.size.height); }
+DECLINLINE(CGRect) darwinCenterRectTo (CGRect aRect, const CGRect& aToRect)
+{
+    aRect.origin.x = aToRect.origin.x + (aToRect.size.width  - aRect.size.width)  / 2.0;
+    aRect.origin.y = aToRect.origin.y + (aToRect.size.height - aRect.size.height) / 2.0;
+    return aRect;
+}
+
+
+
+
 
 /********************************************************************************
  *
@@ -164,26 +196,6 @@ QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
  ********************************************************************************/
 
 #include <QWidget>
-class QImage;
-
-/* Converting stuff */
-CGImageRef darwinToCGImageRef (const QImage *aImage);
-CGImageRef darwinToCGImageRef (const QPixmap *aPixmap);
-CGImageRef darwinToCGImageRef (const char *aSource);
-
-/**
- * Returns a reference to the CGContext of the QWidget.
- *
- * @returns CGContextRef of the QWidget.
- * @param   aWidget      Pointer to the QWidget
- */
-DECLINLINE(CGContextRef) darwinToCGContextRef (QWidget *aWidget)
-{
-    return static_cast<CGContext *> (aWidget->macCGHandle());
-}
-
-DECLINLINE(CGRect) darwinToCGRect (const QRect& aRect) { return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height()); }
-DECLINLINE(CGRect) darwinFlipCGRect (CGRect aRect, int aTargetHeight) { aRect.origin.y = aTargetHeight - aRect.origin.y - aRect.size.height; return aRect; }
 
 # ifndef QT_MAC_USE_COCOA
 

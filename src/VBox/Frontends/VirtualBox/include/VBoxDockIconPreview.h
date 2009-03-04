@@ -23,15 +23,20 @@
 #ifndef ___VBoxDockIconPreview_h___
 #define ___VBoxDockIconPreview_h___
 
-#include <QObject> /* drag in QT_MAC_USE_COCOA */
+#include "VBoxUtils-darwin.h"
 
-#ifdef QT_MAC_USE_COCOA
-# include <ApplicationServices/ApplicationServices.h>
-/** @todo include chocolatey headers... */
-#else
-# include <Carbon/Carbon.h>
-#endif
+__BEGIN_DECLS
+void darwinCreateVBoxDockIconTileView (void);
+void darwinDestroyVBoxDockIconTileView (void);
 
+CGContextRef darwinBeginCGContextForApplicationDockTile (void);
+void darwinEndCGContextForApplicationDockTile (CGContextRef aContext);
+
+void darwinOverlayApplicationDockTileImage (CGImageRef pImage);
+void darwinRestoreApplicationDockTileImage (void);
+__END_DECLS
+
+#ifndef __OBJC__
 class VBoxConsoleWnd;
 class VBoxFrameBuffer;
 
@@ -44,36 +49,24 @@ public:
     ~VBoxDockIconPreview();
 
     void updateDockOverlay();
-//#ifndef QT_MAC_USE_COCOA
     void updateDockPreview (CGImageRef aVMImage);
-//#endif
     void updateDockPreview (VBoxFrameBuffer *aFrameBuffer);
 
 private:
-//#ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa */
-//#else
     inline void initPreviewImages();
     inline void initOverlayData (int aBitmapByteCount);
     inline CGImageRef stateImage() const;
     void drawOverlayIcons (CGContextRef aContext);
 
     /* Flipping is necessary cause the drawing context in Carbon is flipped by 180 degree */
-    inline CGRect flipRect (CGRect aRect) const { aRect.origin.y = mDockIconRect.size.height - aRect.origin.y - aRect.size.height; return aRect; }
-    inline CGRect centerRect (CGRect aRect) const { return centerRectTo (aRect, mDockIconRect); }
-    inline CGRect centerRectTo (CGRect aRect, const CGRect& aToRect) const
-    {
-        aRect.origin.x = aToRect.origin.x + (aToRect.size.width  - aRect.size.width)  / 2.0;
-        aRect.origin.y = aToRect.origin.y + (aToRect.size.height - aRect.size.height) / 2.0;
-        return aRect;
-    }
-//#endif /* !QT_MAC_USE_COCOA */
+    inline CGRect flipRect (CGRect aRect) const { return ::darwinFlipCGRect (aRect, mDockIconRect); }
+    inline CGRect centerRect (CGRect aRect) const { return ::darwinCenterRectTo (aRect, mDockIconRect); }
+    inline CGRect centerRectTo (CGRect aRect, const CGRect& aToRect) const { return ::darwinCenterRectTo (aRect, aToRect); }
+
+    void updateDockPreviewImpl (CGContextRef aContext, CGImageRef aVMImage);
 
     /* Private member vars */
     VBoxConsoleWnd *mMainWnd;
-//#ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa */
-//#else
     const CGRect mDockIconRect;
 
     CGImageRef mOverlayImage;
@@ -88,8 +81,8 @@ private:
 
     CGRect mUpdateRect;
     CGRect mMonitorRect;
-//#endif
 };
+#endif /* !__OBJC__ */
 
 #endif /* !___VBoxDockIconPreview_h___ */
 

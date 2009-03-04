@@ -405,7 +405,8 @@ endif
 ifdef VBOX_WITH_COCOA_QT
  VirtualBox_SOURCES.darwin += \
 	src/darwin/VBoxCocoaApplication.m \
-	src/darwin/VBoxUtils-darwin-cocoa.m
+	src/darwin/VBoxUtils-darwin-cocoa.m \
+	src/darwin/VBoxDockIconPreview-cocoa.m
 else
  VirtualBox_SOURCES.darwin += \
 	src/darwin/VBoxUtils-darwin-carbon.cpp
