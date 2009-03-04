@@ -3066,6 +3066,14 @@ typedef struct PDMDEVHLPR0
      */
     DECLR0CALLBACKMEMBER(PVM, pfnGetVM,(PPDMDEVINS pDevIns));
 
+    /**
+     * Checks if our current CPU state allows for IO block emulation fallback to the recompiler
+     *
+     * @returns true = yes, false = no
+     * @param   pDevIns         Device instance.
+     */
+    DECLR0CALLBACKMEMBER(bool, pfnCanEmulateIoBlock,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDEVHLPR0;
@@ -3075,7 +3083,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION  0xfb010000
+#define PDM_DEVHLPR0_VERSION  0xfb020000
 
 
 
@@ -3660,6 +3668,16 @@ DECLINLINE(PVM) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
 {
     return pDevIns->CTX_SUFF(pDevHlp)->pfnGetVM(pDevIns);
 }
+
+#ifdef IN_RING0
+/**
+ * @copydoc PDMDEVHLPR0::pfnCanEmulateIoBlock
+ */
+DECLINLINE(bool) PDMDevHlpCanEmulateIoBlock(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pDevHlp)->pfnCanEmulateIoBlock(pDevIns);
+}
+#endif
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPCISetIrq
