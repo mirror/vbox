@@ -139,6 +139,10 @@ void darwinDisableIconsInMenus (void)
 #endif /* QT_VERSION >= 0x040400 */
 }
 
+CGContextRef darwinToCGContextRef (QWidget *aWidget)
+{
+    return static_cast<CGContext *> (aWidget->macCGHandle());
+}
 
 /* Proxy icon creation */
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText)

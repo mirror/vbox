@@ -4036,14 +4036,10 @@ void VBoxConsoleView::updateDockIcon()
     {
         if (!mPausedShot.isNull())
         {
-# ifdef QT_MAC_USE_COCOA
-            /** @todo Carbon -> Cocoa */
-# else
             CGImageRef pauseImg = ::darwinToCGImageRef (&mPausedShot);
             /* Use the pause image as background */
             mDockIconPreview->updateDockPreview (pauseImg);
             CGImageRelease (pauseImg);
-# endif
         }
         else
         {
@@ -4071,6 +4067,7 @@ void VBoxConsoleView::updateDockOverlay()
      * the overlay stuff only. */
     if (mDockIconEnabled &&
         (mLastState == KMachineState_Running ||
+         mLastState == KMachineState_Paused ||
          mLastState == KMachineState_Restoring ||
          mLastState == KMachineState_Saving))
         updateDockIcon();

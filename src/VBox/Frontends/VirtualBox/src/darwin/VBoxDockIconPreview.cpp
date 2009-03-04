@@ -27,9 +27,6 @@
 #include "iprt/assert.h"
 
 #include <QPixmap>
-#ifndef Q_WS_MAC
-# error "Q_WS_MAC isn't defined"
-#endif
 
 #ifndef QT_MAC_USE_COCOA
 /* Import private function to capture the window content of any given window. */
@@ -44,18 +41,13 @@ CG_EXTERN_C_END
 
 VBoxDockIconPreview::VBoxDockIconPreview (VBoxConsoleWnd *aMainWnd, const QPixmap& aOverlayImage)
     :  mMainWnd (aMainWnd)
-//#ifdef QT_MAC_USE_COCOA
-//#else
      , mDockIconRect (CGRectMake (0, 0, 128, 128))
      , mDockMonitor (NULL)
      , mDockMonitorGlossy (NULL)
      , mBitmapData (NULL)
      , mUpdateRect (CGRectMake (0, 0, 0, 0))
      , mMonitorRect (CGRectMake (0, 0, 0, 0))
-//#endif
 {
-#ifdef QT_MAC_USE_COCOA
-#else  /* !QT_MAC_USE_COCOA */
     mOverlayImage   = ::darwinToCGImageRef (&aOverlayImage);
     Assert (mOverlayImage);
 
@@ -65,13 +57,18 @@ VBoxDockIconPreview::VBoxDockIconPreview (VBoxConsoleWnd *aMainWnd, const QPixma
     Assert (mStateSaving);
     mStateRestoring = ::darwinToCGImageRef ("state_restoring_16px.png");
     Assert (mStateRestoring);
-#endif /* !QT_MAC_USE_COCOA */
+
+#ifdef QT_MAC_USE_COCOA
+    ::darwinCreateVBoxDockIconTileView();
+#endif /* QT_MAC_USE_COCOA */
 }
 
 VBoxDockIconPreview::~VBoxDockIconPreview()
 {
 #ifdef QT_MAC_USE_COCOA
-#else  /* !QT_MAC_USE_COCOA */
+    ::darwinDestroyVBoxDockIconTileView();
+#endif /* QT_MAC_USE_COCOA */
+
     CGImageRelease (mOverlayImage);
     if (mDockMonitor)
         CGImageRelease (mDockMonitor);
@@ -84,10 +81,7 @@ VBoxDockIconPreview::~VBoxDockIconPreview()
     CGImageRelease (mStatePaused);
     CGImageRelease (mStateSaving);
     CGImageRelease (mStateRestoring);
-#endif /* !QT_MAC_USE_COCOA */
 }
-
-//#ifndef QT_MAC_USE_COCOA
 
 void VBoxDockIconPreview::initPreviewImages()
 {
@@ -157,15 +151,14 @@ void VBoxDockIconPreview::drawOverlayIcons (CGContextRef aContext)
     }
 }
 
-//#endif /* !QT_MAC_USE_COCOA */
-
 void VBoxDockIconPreview::updateDockOverlay()
 {
-#ifdef QT_MAC_USE_COCOA
-#else  /* !QT_MAC_USE_COCOA */
-
     /* Remove all previously set tile images */
-    RestoreApplicationDockTileImage();
+#ifdef QT_MAC_USE_COCOA
+    ::darwinRestoreApplicationDockTileImage();
+#else /* QT_MAC_USE_COCOA */
+    ::RestoreApplicationDockTileImage();
+#endif /* QT_MAC_USE_COCOA */
 
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
     Assert (cs);
@@ -199,18 +192,41 @@ void VBoxDockIconPreview::updateDockOverlay()
     Assert (overlayImage);
 
     /* Update the dock overlay icon */
-    OverlayApplicationDockTileImage (overlayImage);
+#ifdef QT_MAC_USE_COCOA
+    ::darwinOverlayApplicationDockTileImage (overlayImage);
+#else /* QT_MAC_USE_COCOA */
+    ::OverlayApplicationDockTileImage (overlayImage);
+#endif /* QT_MAC_USE_COCOA */
 
     /* Release the temp image */
     CGImageRelease (overlayImage);
     CGColorSpaceRelease (cs);
-#endif /* !QT_MAC_USE_COCOA */
 }
 
 void VBoxDockIconPreview::updateDockPreview (CGImageRef aVMImage)
 {
-#ifndef QT_MAC_USE_COCOA
     Assert (aVMImage);
+
+#ifdef QT_MAC_USE_COCOA
+    /* Create the context to draw on */
+    CGContextRef context = ::darwinBeginCGContextForApplicationDockTile();
+    updateDockPreviewImpl (context, aVMImage);
+    /* This flush updates the dock icon */
+    CGContextFlush (context);
+    ::darwinEndCGContextForApplicationDockTile (context);
+#else /* QT_MAC_USE_COCOA */
+    /* Create the context to draw on */
+    CGContextRef context = BeginCGContextForApplicationDockTile ();
+    updateDockPreviewImpl (context, aVMImage);
+    /* This flush updates the dock icon */
+    CGContextFlush (context);
+    EndCGContextForApplicationDockTile (context);
+#endif /* QT_MAC_USE_COCOA */
+}
+
+void VBoxDockIconPreview::updateDockPreviewImpl (CGContextRef aContext, CGImageRef aVMImage)
+{
+    Assert (aContext);
 
     /* Init all dependend images in the case it wasn't done already */
     initPreviewImages();
@@ -218,16 +234,12 @@ void VBoxDockIconPreview::updateDockPreview (CGImageRef aVMImage)
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
     Assert (cs);
 
-    /* Create the context to draw on */
-    CGContextRef context = BeginCGContextForApplicationDockTile();
-    Assert (context);
-
     /* Clear the background to be transparent */
-    CGContextSetBlendMode (context, kCGBlendModeNormal);
-    CGContextClearRect (context, flipRect (mDockIconRect));
+    CGContextSetBlendMode (aContext, kCGBlendModeNormal);
+    CGContextClearRect (aContext, flipRect (mDockIconRect));
 
     /* Draw the monitor as the background */
-    CGContextDrawImage (context, flipRect (mMonitorRect), mDockMonitor);
+    CGContextDrawImage (aContext, flipRect (mMonitorRect), mDockMonitor);
 
     /* Calc the size of the dock icon image and fit it into 128x128 */
     int scaledWidth;
@@ -248,8 +260,9 @@ void VBoxDockIconPreview::updateDockPreview (CGImageRef aVMImage)
                                                 scaledWidth, scaledHeight),
                                     mUpdateRect);
     /* Draw the VM content */
-    CGContextDrawImage (context, flipRect (iconRect), aVMImage);
+    CGContextDrawImage (aContext, flipRect (iconRect), aVMImage);
 
+#ifndef QT_MAC_USE_COCOA
     /* Process the content of any external OpenGL window. */
     WindowRef w = darwinToNativeWindow (mMainWnd);
     WindowGroupRef g = GetWindowGroup (w);
@@ -257,7 +270,6 @@ void VBoxDockIconPreview::updateDockPreview (CGImageRef aVMImage)
     ItemCount c = CountWindowGroupContents (g, wgco);
     float a1 = iconRect.size.width / static_cast <float> (CGImageGetWidth (aVMImage));
     float a2 = iconRect.size.height / static_cast <float> (CGImageGetHeight (aVMImage));
-    HIViewRef mainView = HIViewGetRoot (w);
     Rect tmpR;
     GetWindowBounds (w, kWindowContentRgn, &tmpR);
     HIRect mainRect = CGRectMake (tmpR.left, tmpR.top, tmpR.right-tmpR.left, tmpR.bottom-tmpR.top);
@@ -288,30 +300,23 @@ void VBoxDockIconPreview::updateDockPreview (CGImageRef aVMImage)
                  * to capture the OpenGL content of a window without fiddling
                  * around with gPixelRead or something like that. */
                 CGSWindowID wid = GetNativeWindowFromWindowRef (wc);
-                CGContextCopyWindowCaptureContentsToRect(context, flipRect (rect), CGSMainConnectionID(), wid, 0);
+                CGContextCopyWindowCaptureContentsToRect(aContext, flipRect (rect), CGSMainConnectionID(), wid, 0);
             }
         }
     }
+#endif /* QT_MAC_USE_COCOA */
 
     /* Draw the glossy overlay */
-    CGContextDrawImage (context, flipRect (mMonitorRect), mDockMonitorGlossy);
+    CGContextDrawImage (aContext, flipRect (mMonitorRect), mDockMonitorGlossy);
 
     /* Draw the state image & the overlay image */
-    drawOverlayIcons (context);
-
-    /* This flush updates the dock icon */
-    CGContextFlush (context);
-    EndCGContextForApplicationDockTile (context);
+    drawOverlayIcons (aContext);
 
     CGColorSpaceRelease (cs);
-#endif /* QT_MAC_USE_COCOA */
 }
-//#endif /* !QT_MAC_USE_COCOA */
 
 void VBoxDockIconPreview::updateDockPreview (VBoxFrameBuffer *aFrameBuffer)
 {
-//#ifdef QT_MAC_USE_COCOA
-//#else  /* !QT_MAC_USE_COCOA */
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
     Assert (cs);
     /* Create the image copy of the framebuffer */
@@ -329,6 +334,5 @@ void VBoxDockIconPreview::updateDockPreview (VBoxFrameBuffer *aFrameBuffer)
     CGImageRelease (ir);
     CGDataProviderRelease (dp);
     CGColorSpaceRelease (cs);
-//#endif /* !QT_MAC_USE_COCOA */
 }
 
