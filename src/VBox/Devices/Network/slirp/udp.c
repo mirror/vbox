@@ -401,7 +401,7 @@ udp_attach(PNATState pData, struct socket *so, int service_port)
             so->so_hladdr.s_addr = ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
             SOCKET_LOCK_CREATE(so);
             QSOCKET_LOCK(udb);
-            insque(pData, so,&udb);
+            insque(pData, so, &udb);
             NSOCK_INC();
             QSOCKET_UNLOCK(udb);
         }
