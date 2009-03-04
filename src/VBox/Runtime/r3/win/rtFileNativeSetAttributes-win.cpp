@@ -62,6 +62,7 @@ int rtFileNativeSetAttributes(HANDLE hFile, ULONG fAttributes)
     memset(&Info, 0, sizeof(Info));
     Info.FileAttributes = fAttributes;
 
+    /** @todo resolve dynamically to avoid dragging in NtDll? */
     NTSTATUS Status = NtSetInformationFile(hFile,
                                            &IoStatusBlock,
                                            &Info,
