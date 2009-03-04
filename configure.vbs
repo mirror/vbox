@@ -1673,7 +1673,7 @@ function CheckForXml2Sub(strPathXml2)
       then
       str = LogFindFile(strPathXml2, "bin/libxml2.dll")
       if str <> "" then
-         if LogFindFile(strPathXml2, "lib/libxml2.lib") then
+         if LogFindFile(strPathXml2, "lib/libxml2.lib") <> "" then
             CheckForXml2Sub = True
          end if
       end if
@@ -1936,6 +1936,59 @@ end function
 
 
 ''
+' Checks for any Qt4 binaries.
+sub CheckForQt4(strOptQt4)
+   dim strPathQt4 
+
+   PrintHdr "Qt4"
+
+   '
+   ' Try to find the Qt4 installation (user specified path with --with-qt4)
+   '
+   strPathQt4 = ""
+
+   LogPrint "Checking for user specified path of Qt4 ... "
+   if (strPathQt4 = "") And (strOptQt4 <> "") then
+      strOptQt4 = UnixSlashes(strOptQt4)
+      if CheckForQt4Sub(strOptQt4) then strPathQt4 = strOptQt4
+   end if
+
+   if strPathQt4 = "" then
+      CfgPrint "VBOX_WITH_QT4GUI="
+      PrintResult "Qt4", "not found"
+   else
+      CfgPrint "PATH_SDK_QT4          := " & strPathQt4
+      CfgPrint "PATH_TOOL_QT4          = $(PATH_SDK_QT4)"
+      CfgPrint "VBOX_PATH_QT4          = $(PATH_SDK_QT4)"
+      PrintResult "Qt4 ", strPathQt4
+   end if
+end sub
+
+
+'
+'
+function CheckForQt4Sub(strPathQt4)
+
+   CheckForQt4Sub = False
+   LogPrint "trying: strPathQt4=" & strPathQt4
+
+   if   LogFileExists(strPathQt4, "bin/moc.exe") _
+    And LogFileExists(strPathQt4, "bin/uic.exe") _
+    And LogFileExists(strPathQt4, "include/Qt/qwidget.h") _
+    And LogFileExists(strPathQt4, "include/QtGui/QApplication") _
+    And LogFileExists(strPathQt4, "include/QtNetwork/QHostAddress") _
+    And (   LogFileExists(strPathQt4, "lib/QtCore4.lib") _
+         Or LogFileExists(strPathQt4, "lib/VBoxQtCore4.lib")) _
+    And (   LogFileExists(strPathQt4, "lib/QtNetwork4.lib") _
+         Or LogFileExists(strPathQt4, "lib/VBoxQtNetwork4.lib")) _
+      then
+         CheckForQt4Sub = True
+   end if
+
+end function
+
+
+''
 ' Show usage.
 sub usage
    Print "Usage: cscript configure.vbs [options]"
@@ -1954,13 +2007,14 @@ sub usage
    Print "  --with-kBuild=PATH    "
    Print "  --with-libSDL=PATH    "
    Print "  --with-MinGW=PATH     "
-   Print "  --with-Qt3=PATH       "
+   Print "  --with-Qt=PATH        "
+   Print "  --with-Qt4=PATH       "
    Print "  --with-SDK=PATH       "
    Print "  --with-VC=PATH        "
    Print "  --with-VC-Common=PATH "
    Print "  --with-VC-Express-Edition"
    Print "  --with-W32API=PATH    "
-   Print "  --with-libxml3=PATH   "
+   Print "  --with-libxml2=PATH   "
    Print "  --with-libxslt=PATH   "
 end sub
 
@@ -2023,6 +2077,8 @@ Sub Main
             strOptMingW = strPath
          case "--with-qt"
             strOptQt = strPath
+         case "--with-qt4"
+            strOptQt4 = strPath
          case "--with-sdk"
             strOptSDK = strPath
          case "--with-vc"
@@ -2092,6 +2148,7 @@ Sub Main
    CheckForXml2 strOptXml2
    CheckForXslt strOptXslt
    CheckForQt strOptQt
+   CheckForQt4 strOptQt4
    if g_blnInternalMode then
       EnvPrint "call " & g_strPathDev & "/env.cmd %1 %2 %3 %4 %5 %6 %7 %8 %9"
    end if
