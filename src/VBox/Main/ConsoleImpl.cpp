@@ -4220,7 +4220,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
     if (Global::IsOnlineOrTransient (mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
             tr ("Virtual machine is already running or busy "
-            "(machine state: %d)"), mMachineState);
+                "(machine state: %d)"), mMachineState);
 
     HRESULT rc = S_OK;
 
