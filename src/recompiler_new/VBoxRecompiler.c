@@ -1298,6 +1298,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
 
 
 #ifndef REM_PHYS_ADDR_IN_TLB
+/** Wrapper for PGMR3PhysTlbGCPhys2Ptr. */
 void *remR3TlbGCPhys2Ptr(CPUState *env1, target_ulong physAddr, int fWritable)
 {
     void *pv;
@@ -1317,18 +1318,8 @@ void *remR3TlbGCPhys2Ptr(CPUState *env1, target_ulong physAddr, int fWritable)
         return (void *)((uintptr_t)pv | 2);
     return pv;
 }
+#endif /* REM_PHYS_ADDR_IN_TLB */
 
-target_ulong remR3HCVirt2GCPhys(CPUState *env1, void *addr)
-{
-    RTGCPHYS rv = 0;
-    int rc;
-
-    rc = PGMR3DbgR3Ptr2GCPhys(env1->pVM, (RTR3PTR)addr, &rv);
-    Assert (RT_SUCCESS(rc));
-
-    return (target_ulong)rv;
-}
-#endif
 
 /**
  * Called from tlb_protect_code in order to write monitor a code page.
@@ -1348,6 +1339,7 @@ void remR3ProtectCode(CPUState *env, RTGCPTR GCPtr)
         CSAMR3MonitorPage(env->pVM, GCPtr, CSAM_TAG_REM);
 #endif
 }
+
 
 /**
  * Called from tlb_unprotect_code in order to clear write monitoring for a code page.
