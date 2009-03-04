@@ -669,6 +669,10 @@ static void int10_func(DI, SI, BP, SP, BX, DX, CX, AX, DS, ES, FLAGS)
    case 0x0E:
      // Ralf Brown Interrupt list is WRONG on bh(page)
      // We do output only on the current page !
+#ifdef DEBUG
+     printf("write_teletype %02x\n", GET_AL());
+#endif
+
      biosfn_write_teletype(GET_AL(),0xff,GET_BL(),NO_ATTR);
      break;
    case 0x10:

@@ -303,7 +303,8 @@ typedef struct VGAState {
     /* Keep track of ring 0 latched accesses to the VGA MMIO memory. */
     uint64_t                    u64LastLatchedAccess;
     uint32_t                    cLatchAccesses;
-    uint32_t                    Padding10;
+    uint16_t                    uMaskLatchAccess;
+    uint16_t                    iMask;
 
 #ifdef VBE_BYTEWISE_IO
     /** VBE read/write data/index flags */

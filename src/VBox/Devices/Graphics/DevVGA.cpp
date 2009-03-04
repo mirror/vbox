@@ -1378,16 +1378,31 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
         VERIFY_VRAM_WRITE_OFF_RETURN(s, addr * 4 + 3);
 
 #ifdef IN_RING0
-        if (((++s->cLatchAccesses) & 0x3ff) == 0x3ff)
+        if (((++s->cLatchAccesses) & s->uMaskLatchAccess) == s->uMaskLatchAccess)
         {
+            static uint32_t aMask[5]  = {0x3ff, 0x1ff, 0x7f, 0x3f, 0x1f};
+            static uint64_t aDelta[5]  = {10000000, 5000000, 2500000, 1250000, 625000};
             uint64_t u64CurTime = RTTimeSystemNanoTS();
+
             /* About 1000 (or more) accesses per 10 ms will trigger a reschedule
              * to the recompiler
              */
-            if (u64CurTime - s->u64LastLatchedAccess < 10000000)
+            if (u64CurTime - s->u64LastLatchedAccess < aDelta[s->iMask])
+            {
+                s->u64LastLatchedAccess = 0;
+                s->iMask                = RT_MIN(s->iMask + 1, RT_ELEMENTS(aMask) - 1);
+                s->uMaskLatchAccess     = aMask[s->iMask];
+                s->cLatchAccesses       = s->uMaskLatchAccess - 1;
                 return VINF_EM_RAW_EMULATE_IO_BLOCK;
-
-            s->u64LastLatchedAccess = u64CurTime;            
+            }
+            if (s->u64LastLatchedAccess)
+            {
+                Log2(("Reset mask (was %d) delta %RX64 (limit %x)\n", s->iMask, u64CurTime - s->u64LastLatchedAccess, aDelta[s->iMask]));
+                if (s->iMask) 
+                    s->iMask--;
+                s->uMaskLatchAccess     = aMask[s->iMask];
+            }
+            s->u64LastLatchedAccess = u64CurTime;
         }
 #endif
 
@@ -5260,6 +5275,12 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     /* notify port handler */
     if (pThis->pDrv)
         pThis->pDrv->pfnReset(pThis->pDrv);
+
+    /* Reset latched access mask. */
+    pThis->uMaskLatchAccess     = 0x3ff;
+    pThis->cLatchAccesses       = 0;
+    pThis->u64LastLatchedAccess = 0;
+
 }
 
 
@@ -6091,6 +6112,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     STAM_REG(pVM, &pThis->StatRZMemoryWrite,    STAMTYPE_PROFILE, "/Devices/VGA/RZ/MMIO-Write", STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryWrite() body.");
     STAM_REG(pVM, &pThis->StatR3MemoryWrite,    STAMTYPE_PROFILE, "/Devices/VGA/R3/MMIO-Write", STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryWrite() body.");
 
+    /* Init latched access mask. */
+    pThis->uMaskLatchAccess = 0x3ff;
     return rc;
 }
 
