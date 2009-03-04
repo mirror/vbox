@@ -53,7 +53,7 @@ QIArrowButton::QIArrowButton (const QString &aName, QWidget *aParent)
 
     /* Setup tool-button */
     mButton->setAutoRaise (true);
-    mButton->setFixedSize (14, 16);
+    mButton->setFixedSize (17, 16);
     mButton->setFocusPolicy (Qt::NoFocus);
     mButton->setStyleSheet ("QToolButton {border: 0px none black;}");
     connect (mButton, SIGNAL (clicked (bool)), this, SLOT (buttonClicked()));
@@ -61,11 +61,12 @@ QIArrowButton::QIArrowButton (const QString &aName, QWidget *aParent)
 
     /* Setup text-label */
     mLabel->setBuddy (mButton);
-    mLabel->setStyleSheet ("QLabel {padding: 0px 1px 0px 1px;}");
+    mLabel->setStyleSheet ("QLabel {padding: 2px 0px 2px 0px;}");
 
     /* Setup main-layout */
     QHBoxLayout *mainLayout = new QHBoxLayout (this);
     VBoxGlobal::setLayoutMargin (mainLayout, 0);
+    mainLayout->setSpacing (0);
     mainLayout->addWidget (mButton);
     mainLayout->addWidget (mLabel);
     mainLayout->addStretch();
@@ -530,9 +531,9 @@ QPushButton *QIMessageBox::createButton (int aButton)
  */
 void QIMessageBox::setDetailsText (const QString &aText)
 {
-    QStringList parts (aText.split ("<!--EOM-->"));
+    QStringList parts (aText.split ("<!--EOM-->", QString::SkipEmptyParts));
     mTextLabel->setText (mTextLabel->text() + parts [0]);
-    mDetailsText->setText (parts [1]);
+    if (parts.size() > 1) mDetailsText->setText (parts [1]);
 }
 
 /** @fn QIMessageBox::isDetailsShown() const
