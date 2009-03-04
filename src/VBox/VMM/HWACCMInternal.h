@@ -555,8 +555,8 @@ typedef struct HWACCMCPU
         bool                    fEnabled;
         uint8_t                 u8Align[7];
 
-        /** Esp at the start of the io code we wish to emulate in the recompiler. */
-        RTGCPTR                 GCPtrFunctionEsp;
+        /** RIP at the start of the io code we wish to emulate in the recompiler. */
+        RTGCPTR                 GCPtrFunctionEip;
 
         uint64_t                cr0;
     } EmulateIoBlock;
