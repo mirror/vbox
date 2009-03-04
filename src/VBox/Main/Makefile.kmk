@@ -280,7 +280,6 @@ VBoxSVC_SOURCES = \
 	HostDVDDriveImpl.cpp \
 	HostFloppyDriveImpl.cpp \
 	HostNetworkInterfaceImpl.cpp \
-	HostNetworkInterfaceIpConfigImpl.cpp \
 	GuestOSTypeImpl.cpp \
 	NetworkAdapterImpl.cpp \
 	SerialPortImpl.cpp \

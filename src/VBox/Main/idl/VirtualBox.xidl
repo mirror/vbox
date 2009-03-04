@@ -6447,16 +6447,23 @@
   </enum>
 
   <interface
-     name="IHostNetworkInterfaceIpConfig" extends="$unknown"
-     uuid="38f31587-1ad2-4593-ab0c-d16f6e36c0ee"
+     name="IHostNetworkInterface" extends="$unknown"
+     uuid="b4467af7-9b16-479a-a812-c132cbd886a3"
      wsmap="managed"
      >
     <desc>
-      Reprents IP settings for one of host's network interfaces. IP V6 address and network
+      Reprents one of host's network interfaces. IP V6 address and network
       mask are strings of 32 hexdecimal digits grouped by four. Groups are
       separated by colons.
       For example, fe80:0000:0000:0000:021e:c2ff:fed2:b030.
     </desc>
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>Returns the host network interface name.</desc>
+    </attribute>
+
+    <attribute name="id" type="uuid" readonly="yes">
+      <desc>Returns the interface UUID.</desc>
+    </attribute>
 
     <attribute name="IPAddress" type="unsigned long" readonly="yes">
       <desc>Returns the IP V4 address of the interface.</desc>
@@ -6477,30 +6484,6 @@
     <attribute name="IPV6NetworkMask" type="wstring" readonly="yes">
       <desc>Returns the IP V6 network mask of the interface.</desc>
     </attribute>
-  </interface>
-
-  <interface
-     name="IHostNetworkInterface" extends="$unknown"
-     uuid="3fd5d8d9-c503-4c1a-b88c-e78fb78f8559"
-     wsmap="managed"
-     >
-    <desc>
-      Reprents one of host's network interfaces. IP V6 address and network
-      mask are strings of 32 hexdecimal digits grouped by four. Groups are
-      separated by colons.
-      For example, fe80:0000:0000:0000:021e:c2ff:fed2:b030.
-    </desc>
-    <attribute name="name" type="wstring" readonly="yes">
-      <desc>Returns the host network interface name.</desc>
-    </attribute>
-
-    <attribute name="id" type="uuid" readonly="yes">
-      <desc>Returns the interface UUID.</desc>
-    </attribute>
-
-    <attribute name="ipConfig" type="IHostNetworkInterfaceIpConfig" readonly="yes">
-      <desc>Returns the adapter ip config information </desc>
-    </attribute>
 
     <attribute name="hardwareAddress" type="wstring" readonly="yes">
       <desc>Returns the hardware address. For Ethernet it is MAC address.</desc>
@@ -6517,6 +6500,44 @@
     <attribute name="interfaceType" type="HostNetworkInterfaceType" readonly="yes">
       <desc>specifies the host interface type.</desc>
     </attribute>
+    
+    <method name="enableStaticIpConfig">
+      <desc>sets and enables the static IP V4 configuration for the given interface.</desc>
+      <param name="IPAddress" type="unsigned long" dir="in">
+        <desc>
+          IP address.
+        </desc>
+      </param>
+      <param name="networkMask" type="unsigned long" dir="in">
+        <desc>
+          network mask.
+        </desc>
+      </param>
+      <param name="defaultGateway" type="unsigned long" dir="in">
+        <desc>
+          default gateway.
+        </desc>
+      </param>
+    </method>
+
+    <method name="enableStaticIpConfigV6">
+      <desc>sets and enables the static IP V6 configuration for the given interface.</desc>
+      <param name="IPV6Address" type="wstring" dir="in">
+        <desc>
+          IP address.
+        </desc>
+      </param>
+      <param name="IPV6NetworkMask" type="wstring" dir="in">
+        <desc>
+          network mask.
+        </desc>
+      </param>
+    </method>
+
+    <method name="enableDynamicIpConfig">
+      <desc>enables the dynamic IP configuration.</desc>
+    </method>
+
   </interface>
 
   <interface

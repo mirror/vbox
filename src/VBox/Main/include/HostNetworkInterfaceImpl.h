@@ -26,8 +26,6 @@
 
 #include "VirtualBoxBase.h"
 #include "Collection.h"
-#include "HostNetworkInterfaceIpConfigImpl.h"
-
 #ifdef VBOX_WITH_HOSTNETIF_API
 /* class HostNetworkInterface; */
 /* #include "netif.h" */
@@ -65,16 +63,23 @@ public:
 #ifdef VBOX_WITH_HOSTNETIF_API
     HRESULT init (Bstr aInterfaceName, HostNetworkInterfaceType_T ifType, struct NETIFINFO *pIfs);
 #endif
-    void uninit();
 
     // IHostNetworkInterface properties
     STDMETHOD(COMGETTER(Name)) (BSTR *aInterfaceName);
     STDMETHOD(COMGETTER(Id)) (OUT_GUID aGuid);
-    STDMETHOD(COMGETTER(IpConfig)) (IHostNetworkInterfaceIpConfig **aIpConfig);
+    STDMETHOD(COMGETTER(IPAddress)) (ULONG *aIPAddress);
+    STDMETHOD(COMGETTER(NetworkMask)) (ULONG *aNetworkMask);
+    STDMETHOD(COMGETTER(DefaultGateway)) (ULONG *aDefaultGateway);
+    STDMETHOD(COMGETTER(IPV6Address)) (BSTR *aIPV6Address);
+    STDMETHOD(COMGETTER(IPV6NetworkMask)) (BSTR *aIPV6Mask);
     STDMETHOD(COMGETTER(HardwareAddress)) (BSTR *aHardwareAddress);
     STDMETHOD(COMGETTER(MediumType)) (HostNetworkInterfaceMediumType_T *aType);
     STDMETHOD(COMGETTER(Status)) (HostNetworkInterfaceStatus_T *aStatus);
     STDMETHOD(COMGETTER(InterfaceType)) (HostNetworkInterfaceType_T *aType);
+
+    STDMETHOD(EnableStaticIpConfig) (ULONG aIPAddress, ULONG aNetworkMask, ULONG aDefaultGateway);
+    STDMETHOD(EnableStaticIpConfigV6) (BSTR aIPV6Address, BSTR aIPV6Mask);
+    STDMETHOD(EnableDynamicIpConfig) ();
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HostNetworkInterface"; }
@@ -86,10 +91,15 @@ private:
 
     struct Data
     {
-        Data() : mediumType (HostNetworkInterfaceMediumType_Unknown),
+        Data() : IPAddress (0), networkMask (0), defaultGateway(0),
+            mediumType (HostNetworkInterfaceMediumType_Unknown),
             status(HostNetworkInterfaceStatus_Down){}
 
-        ComObjPtr <HostNetworkInterfaceIpConfig> ipConfig;
+        ULONG IPAddress;
+        ULONG networkMask;
+        ULONG defaultGateway;
+        Bstr IPV6Address;
+        Bstr IPV6NetworkMask;
         Bstr hardwareAddress;
         HostNetworkInterfaceMediumType_T mediumType;
         HostNetworkInterfaceStatus_T status;
