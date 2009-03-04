@@ -8,11 +8,13 @@
 #include <iprt/err.h>
 #include <iprt/time.h>
 #include <iprt/stream.h>
+#include <iprt/path.h>
+#include <iprt/param.h>
 #include <iprt/getopt.h>
 
-#ifdef VBOX_WITH_HARDENING
-# include <VBox/sup.h>
-#endif
+#include <VBox/sup.h>
+#include <VBox/intnet.h>
+#include <VBox/vmm.h>
 #include <VBox/version.h>
 
 #include <vector>
@@ -189,6 +191,15 @@ protected:
 
     /** The current leases. */
     std::vector<VBoxNetDhcpLease> m_Leases;
+
+    /** @name The network interface
+     * @{ */
+    PSUPDRVSESSION      m_pSession;
+    uint32_t            m_cbSendBuf;
+    uint32_t            m_cbRecvBuf;
+    INTNETIFHANDLE      m_hIf;          /**< The handle to the network interface. */
+    PINTNETBUF          m_pIfBuf;       /**< Interface buffer. */
+    /** @} */
 };
 
 
@@ -215,6 +226,13 @@ VBoxNetDhcp::VBoxNetDhcp()
     m_MacAddress.au8[5]     = 0x42;
     m_IpAddress.u           = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  5)));
 
+    m_pSession              = NULL;
+    m_cbSendBuf             =  8192;
+    m_cbRecvBuf             = 51200; /** @todo tune to 64 KB with help from SrvIntR0 */
+    m_hIf                   = INTNET_HANDLE_INVALID;
+    m_pIfBuf                = NULL;
+
+
 #if 1 /* while hacking. */
     VBoxNetDhcpCfg DefCfg;
     DefCfg.m_LowerAddr.u    = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,100)));
@@ -240,6 +258,23 @@ VBoxNetDhcp::~VBoxNetDhcp()
     /*
      * Close the interface connection.
      */
+    if (m_hIf != INTNET_HANDLE_INVALID)
+    {
+        INTNETIFCLOSEREQ CloseReq;
+        CloseReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        CloseReq.Hdr.cbReq = sizeof(CloseReq);
+        CloseReq.pSession = m_pSession;
+        CloseReq.hIf = m_hIf;
+        m_hIf = INTNET_HANDLE_INVALID;
+        int rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_CLOSE, 0, &CloseReq.Hdr);
+        AssertRC(rc);
+    }
+
+    if (m_pSession)
+    {
+        SUPTerm(false /* not forced */);
+        m_pSession = NULL;
+    }
 }
 
 
@@ -405,17 +440,177 @@ AssertFailed();
  */
 int VBoxNetDhcp::tryGoOnline(void)
 {
-    return 0;
+    /*
+     * Open the session, load ring-0 and issue the request.
+     */
+    int rc = SUPR3Init(&m_pSession);
+    if (RT_FAILURE(rc))
+    {
+        m_pSession = NULL;
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3Init -> %Rrc\n", rc);
+        return 1;
+    }
+
+    char szPath[RTPATH_MAX];
+    rc = RTPathProgram(szPath, sizeof(szPath) - sizeof("/VMMR0.r0"));
+    if (RT_FAILURE(rc))
+    {
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: RTPathProgram -> %Rrc\n", rc);
+        return 1;
+    }
+
+    rc = SUPLoadVMM(strcat(szPath, "/VMMR0.r0"));
+    if (RT_FAILURE(rc))
+    {
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPLoadVMM(\"%s\") -> %Rrc\n", szPath, rc);
+        return 1;
+    }
+
+    /*
+     * Create the open request.
+     */
+    INTNETOPENREQ OpenReq;
+    OpenReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    OpenReq.Hdr.cbReq = sizeof(OpenReq);
+    OpenReq.pSession = m_pSession;
+    strncpy(OpenReq.szNetwork, m_Network.c_str(), sizeof(OpenReq.szNetwork));
+    OpenReq.szTrunk[0] = '\0';
+    OpenReq.enmTrunkType = kIntNetTrunkType_WhateverNone;
+    OpenReq.fFlags = 0; /** @todo check this */
+    OpenReq.cbSend = m_cbSendBuf;
+    OpenReq.cbRecv = m_cbRecvBuf;
+    OpenReq.hIf = INTNET_HANDLE_INVALID;
+
+    /*
+     * Issue the request.
+     */
+    if (m_cVerbosity >= 2)
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: attempting to open/create network \"%s\"...\n", OpenReq.szNetwork);
+    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_OPEN, 0, &OpenReq.Hdr);
+    if (RT_SUCCESS(rc))
+    {
+        m_hIf = OpenReq.hIf;
+        if (m_cVerbosity >= 1)
+            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: successfully opened/created \"%s\" - hIf=%#x\n",
+                         OpenReq.szNetwork, m_hIf);
+
+        /*
+         * Get the ring-3 address of the shared interface buffer.
+         */
+        INTNETIFGETRING3BUFFERREQ GetRing3BufferReq;
+        GetRing3BufferReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        GetRing3BufferReq.Hdr.cbReq = sizeof(GetRing3BufferReq);
+        GetRing3BufferReq.pSession = m_pSession;
+        GetRing3BufferReq.hIf = m_hIf;
+        GetRing3BufferReq.pRing3Buf = NULL;
+        rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, 0, &GetRing3BufferReq.Hdr);
+        if (RT_SUCCESS(rc))
+        {
+            PINTNETBUF pBuf = GetRing3BufferReq.pRing3Buf;
+            if (m_cVerbosity >= 1)
+                RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: pBuf=%p cbBuf=%d cbSend=%d cbRecv=%d\n",
+                             pBuf, pBuf->cbBuf, pBuf->cbSend, pBuf->cbRecv);
+            m_pIfBuf = pBuf;
+
+            /*
+             * Activate the interface.
+             */
+            INTNETIFSETACTIVEREQ ActiveReq;
+            ActiveReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+            ActiveReq.Hdr.cbReq = sizeof(ActiveReq);
+            ActiveReq.pSession = m_pSession;
+            ActiveReq.hIf = m_hIf;
+            ActiveReq.fActive = true;
+            rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_SET_ACTIVE, 0, &ActiveReq.Hdr);
+            if (RT_SUCCESS(rc))
+                return 0;
+
+            /* bail out */
+            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPCallVMMR0Ex(,VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE,) failed, rc=%Rrc\n", rc);
+        }
+        else
+            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPCallVMMR0Ex(,VMMR0_DO_INTNET_IF_GET_RING3_BUFFER,) failed, rc=%Rrc\n", rc);
+    }
+    else
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPCallVMMR0Ex(,VMMR0_DO_INTNET_OPEN,) failed, rc=%Rrc\n", rc);
+
+    return RT_SUCCESS(rc) ? 0 : 1;
 }
 
 
 /**
  * Runs the DHCP server.
  *
- * @returns 0 on success, exit code + error message to stderr on failure.
+ * @returns exit code + error message to stderr on failure, won't return on
+ *          success (you must kill this process).
  */
 int VBoxNetDhcp::run(void)
 {
+/** @todo The idea is that run() to use VBoxNetUDP here to mimic sockets and not
+ *        do all the parsing here...  */
+
+
+    /*
+     * The loop.
+     */
+    PINTNETRINGBUF  pRingBuf = &m_pIfBuf->Recv;
+    for (;;)
+    {
+        /*
+         * Wait for a packet to become available.
+         */
+        INTNETIFWAITREQ WaitReq;
+        WaitReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        WaitReq.Hdr.cbReq = sizeof(WaitReq);
+        WaitReq.pSession = m_pSession;
+        WaitReq.hIf = m_hIf;
+        WaitReq.cMillies = RT_INDEFINITE_WAIT;
+        int rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_WAIT, 0, &WaitReq.Hdr);
+        if (RT_FAILURE(rc))
+        {
+            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: VMMR0_DO_INTNET_IF_WAIT returned %Rrc\n", rc);
+            return 1;
+        }
+
+        /*
+         * Process the receive buffer.
+         */
+        while (INTNETRingGetReadable(pRingBuf) > 0)
+        {
+            PINTNETHDR pHdr = (PINTNETHDR)((uintptr_t)m_pIfBuf + pRingBuf->offRead);
+            if (pHdr->u16Type == INTNETHDR_TYPE_FRAME)
+            {
+                size_t      cbFrame = pHdr->cbFrame;
+                const void *pvFrame = INTNETHdrGetFramePtr(pHdr, m_pIfBuf);
+
+                PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pvFrame;
+                if (m_cVerbosity >= 2)
+                    RTStrmPrintf(g_pStdErr, "frame: cb=%04x dst=%.6Rhxs src=%.6Rhxs type=%04x%s\n",
+                                 cbFrame, &pEthHdr->DstMac, &pEthHdr->SrcMac, RT_BE2H_U16(pEthHdr->EtherType),
+                                 !memcmp(&pEthHdr->DstMac, &m_MacAddress, sizeof(m_MacAddress)) ? " Mine!" : "");
+
+                /* Look for the DHCP messages. */
+                if (    cbFrame > 64
+                    &&  RT_BE2H_U16(pEthHdr->EtherType) == 0x0800 /* EtherType == IP */)
+                {
+                    PCRTNETIPV4 pIpHdr = (PCRTNETIPV4)(pEthHdr + 1);
+                    PCRTNETUDP pUdpHdr = (PCRTNETUDP)((uint32_t *)pIpHdr + pIpHdr->ip_hl);
+                    if (    pIpHdr->ip_p == 0x11 /*UDP*/
+                        &&  RT_BE2H_U16(pUdpHdr->uh_dport) == 68 /* bootp */
+                        &&  RT_BE2H_U16(pUdpHdr->uh_sport) == 67 /* bootps */)
+                    {
+
+//                        PCRTNETDHCP pDhcpMsg = (PCRTNETDHCP)(pUdpHdr + 1);
+
+                    }
+                }
+            }
+
+            /* Advance to the next frame. */
+            INTNETRingSkipFrame(m_pIfBuf, pRingBuf);
+        }
+    }
+
     return 0;
 }
 
