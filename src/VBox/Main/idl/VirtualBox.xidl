@@ -8313,7 +8313,7 @@
 
   <interface
     name="IHardDisk" extends="IMedium"
-    uuid="244f89fe-1943-464d-baad-2efd73e5d532"
+    uuid="a4d391a5-e2b1-474d-824e-2ff668a92d58"
     wsmap="managed"
   >
     <desc>
@@ -8707,6 +8707,27 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           last known logical size. For <link to="MediaState_NotCreated"/> hard
           disks, the returned value is zero.
         </note>
+      </desc>
+    </attribute>
+
+    <attribute name="autoReset" type="boolean">
+      <desc>
+        Whether this differencing hard disk will be automatically reset each
+        time a virtual machine it is attached to is powered up.
+
+        See <link to="#reset()"/> for more information about resetting
+        differencing hard disks.
+
+        <note>
+          Reading this property on a base (non-differencing) hard disk will
+          always <tt>false</tt>. Changing the value of this property in this
+          case is not supported.
+        </note>
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          This is not a differencing hard disk (when changing the attribute
+          value).
+        </result>
       </desc>
     </attribute>
 
@@ -9117,6 +9138,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <!-- other methods -->
+
     <method name="compact">
       <desc>
         Starts compacting of this hard disk. This means that the disk is
@@ -9124,15 +9147,34 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         This potentially creates temporary images, which can require a
         substantial amount of additional disk space.
 
-        After the returned progress object reports that the operation is
-        successfully complete, the media state will be set back to the
-        current state.
+        This hard disk will be placed to <link to="MediaState_LockedWrite"/>
+        state and all its parent hard disks (if any) will be placed to
+        <link to="MediaState_LockedRead"/> state for the duration of this
+        operation.
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
 
-        <note>
-          This hard disk and all its parent hard disks will be placed to <link
-          to="MediaState_LockedRead"/> state for the duration of this
-          operation.
-        </note>
+    <method name="reset">
+      <desc>
+        Starts erasing the contents of this differencing hard disk.
+
+        This operation will reset the differencing hard disk to its initial
+        state when it does not contain any sector data and any read operation is
+        redirected to its parent hard disk.
+
+        This hard disk will be placed to <link to="MediaState_LockedWrite"/>
+        for the duration of this operation.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          This is not a differencing hard disk.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Hard disk is not in <link to="MediaState_Created"/> or
+          <link to="MediaState_Inaccessible"/> state.
+        </result>
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>

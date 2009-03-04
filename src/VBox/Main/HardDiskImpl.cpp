@@ -58,7 +58,7 @@
 struct HardDisk::Task : public com::SupportErrorInfoBase
 {
     enum Operation { CreateDynamic, CreateFixed, CreateDiff,
-                     Merge, Clone, Delete };
+                     Merge, Clone, Delete, Reset };
 
     HardDisk *that;
     VirtualBoxBaseProto::AutoCaller autoCaller;
@@ -508,8 +508,8 @@ void HardDisk::FinalRelease()
  * @param aVirtualBox   VirtualBox object.
  * @param aLocaiton     Storage unit location.
  */
-HRESULT HardDisk::init(VirtualBox *aVirtualBox, CBSTR aFormat,
-                       CBSTR aLocation)
+HRESULT HardDisk::init (VirtualBox *aVirtualBox, CBSTR aFormat,
+                        CBSTR aLocation)
 {
     AssertReturn (aVirtualBox != NULL, E_FAIL);
     AssertReturn (aFormat != NULL && *aFormat != '\0', E_FAIL);
@@ -643,13 +643,13 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox, CBSTR aLocation)
  * node.
  *
  * @param aVirtualBox   VirtualBox object.
- * @param aParent       Parent hard disk or NULL for a root hard disk.
+ * @param aParent       Parent hard disk or NULL for a root (base) hard disk.
  * @param aNode         <HardDisk> settings node.
  *
  * @note Locks VirtualBox lock for writing, treeLock() for writing.
  */
-HRESULT HardDisk::init(VirtualBox *aVirtualBox, HardDisk *aParent,
-                       const settings::Key &aNode)
+HRESULT HardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
+                        const settings::Key &aNode)
 {
     using namespace settings;
 
@@ -697,6 +697,12 @@ HRESULT HardDisk::init(VirtualBox *aVirtualBox, HardDisk *aParent,
     AssertReturn (!format.isNull(), E_FAIL);
     rc = setFormat (format);
     CheckComRCReturnRC (rc);
+
+    /* optional, only for diffs, default is false */
+    if (aParent != NULL)
+        mm.autoReset = aNode.value <bool> ("autoReset");
+    else
+        mm.autoReset = false;
 
     /* properties (after setting the format as it populates the map). Note that
      * if some properties are not supported but preseint in the settings file,
@@ -975,8 +981,7 @@ STDMETHODIMP HardDisk::COMGETTER(ReadOnly) (BOOL *aReadOnly)
 
 STDMETHODIMP HardDisk::COMGETTER(LogicalSize) (ULONG64 *aLogicalSize)
 {
-    if (aLogicalSize == NULL)
-        return E_POINTER;
+    CheckComArgOutPointerValid (aLogicalSize);
 
     {
         AutoCaller autoCaller (this);
@@ -1002,6 +1007,46 @@ STDMETHODIMP HardDisk::COMGETTER(LogicalSize) (ULONG64 *aLogicalSize)
     /* root() will do callers/locking */
 
     return root()->COMGETTER (LogicalSize) (aLogicalSize);
+}
+
+STDMETHODIMP HardDisk::COMGETTER(AutoReset) (BOOL *aAutoReset)
+{
+    CheckComArgOutPointerValid (aAutoReset);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    if (mParent.isNull())
+        *aAutoReset = FALSE;
+
+    *aAutoReset = mm.autoReset;
+
+    return S_OK;
+}
+
+STDMETHODIMP HardDisk::COMSETTER(AutoReset) (BOOL aAutoReset)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mVirtualBox, this);
+
+    if (mParent.isNull())
+        return setError (VBOX_E_NOT_SUPPORTED,
+            tr ("Hard disk '%ls' is not differencing"),
+            m.locationFull.raw());
+
+    if (mm.autoReset != aAutoReset)
+    {
+        mm.autoReset = aAutoReset;
+
+        return mVirtualBox->saveSettings();
+    }
+
+    return S_OK;
 }
 
 // IHardDisk methods
@@ -1393,6 +1438,61 @@ STDMETHODIMP HardDisk::Compact (IProgress **aProgress)
     ReturnComNotImplemented();
 }
 
+STDMETHODIMP HardDisk::Reset (IProgress **aProgress)
+{
+    CheckComArgOutPointerValid (aProgress);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    HRESULT rc = LockWrite (NULL);
+    CheckComRCReturnRC (rc);
+
+    ComObjPtr <Progress> progress;
+
+    try
+    {
+        progress.createObject();
+        rc = progress->init (mVirtualBox, static_cast <IHardDisk *> (this),
+            BstrFmt (tr ("Resettng differencing hard disk '%ls'"),
+                     m.locationFull.raw()),
+            FALSE /* aCancelable */);
+        CheckComRCThrowRC (rc);
+
+        /* setup task object and thread to carry out the operation
+         * asynchronously */
+
+        std::auto_ptr <Task> task (new Task (this, progress, Task::Reset));
+        AssertComRCThrowRC (task->autoCaller.rc());
+
+        rc = task->startThread();
+        CheckComRCThrowRC (rc);
+
+        /* task is now owned (or already deleted) by taskThread() so release it */
+        task.release();
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    if (FAILED (rc))
+    {
+        HRESULT rc2 = UnlockWrite (NULL);
+        AssertComRC (rc2);
+        /* Note: on success, taskThread() will unlock this */
+    }
+    else
+    {
+        /* return progress to the caller */
+        progress.queryInterfaceTo (aProgress);
+    }
+
+    return rc;
+}
+
 // public methods for internal purposes only
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1552,6 +1652,9 @@ HRESULT HardDisk::saveSettings (settings::Key &aParentNode)
     diskNode.setValue <Bstr> ("location", m.location);
     /* required */
     diskNode.setValue <Bstr> ("format", mm.format);
+    /* optional, only for diffs, default is false */
+    if (!mParent.isNull())
+        diskNode.setValueOr <bool> ("autoReset", !!mm.autoReset, false);
     /* optional */
     if (!m.description.isNull())
     {
@@ -4047,6 +4150,23 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
 
             /* Reset UUID to prevent Create* from reusing it again */
             unconst (that->m.id).clear();
+
+            break;
+        }
+
+        case Task::Reset:
+        {
+            /// @todo
+
+            if (isAsync)
+            {
+                /* unlock ourselves when done */
+                HRESULT rc2 = that->UnlockWrite (NULL);
+                AssertComRC (rc2);
+            }
+
+            /* Note that in sync mode, it's the caller's responsibility to
+             * unlock the hard disk */
 
             break;
         }

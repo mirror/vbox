@@ -262,7 +262,7 @@
 /////////////////////////////////////////////////////////////////////////
 -->
 
-<xsd:complexType name="TDiffHardDisk2">
+<xsd:complexType name="THardDiskBase">
   <xsd:sequence>
     <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
     <xsd:element name="Property" minOccurs="0" maxOccurs="unbounded">
@@ -271,16 +271,24 @@
         <xsd:attribute name="value" type="xsd:string" use="required"/>
       </xsd:complexType>
     </xsd:element>
-    <xsd:element name="HardDisk" type="TDiffHardDisk2" minOccurs="0" maxOccurs="unbounded"/>
+    <xsd:element name="HardDisk" type="TDiffHardDisk" minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
   <xsd:attribute name="uuid" type="TNonNullUUID" use="required"/>
   <xsd:attribute name="location" type="TLocalFile" use="required"/>
   <xsd:attribute name="format" type="TNonEmptyString" use="required"/>
 </xsd:complexType>
 
-<xsd:complexType name="THardDisk2">
+<xsd:complexType name="TDiffHardDisk">
   <xsd:complexContent>
-    <xsd:extension base="TDiffHardDisk2">
+    <xsd:extension base="THardDiskBase">
+      <xsd:attribute name="autoReset" type="xsd:boolean" default="false"/>
+    </xsd:extension>
+  </xsd:complexContent>
+</xsd:complexType>
+
+<xsd:complexType name="THardDisk">
+  <xsd:complexContent>
+    <xsd:extension base="THardDiskBase">
       <xsd:attribute name="type" use="required">
         <xsd:simpleType>
           <xsd:restriction base="xsd:string">
@@ -373,7 +381,7 @@
           <xsd:element name="HardDisks" minOccurs="0">
             <xsd:complexType>
               <xsd:sequence>
-                <xsd:element name="HardDisk" type="THardDisk2" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="HardDisk" type="THardDisk" minOccurs="0" maxOccurs="unbounded"/>
               </xsd:sequence>
             </xsd:complexType>
           </xsd:element>
