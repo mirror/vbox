@@ -160,7 +160,7 @@ RuntimeNoCrt_SOURCES = \
 #
 # RuntimeR3 - Static Runtime for Ring-3 executables.
 #
-RuntimeR3_TEMPLATE      = VBOXR3EXE
+RuntimeR3_TEMPLATE      = VBOXR3STATIC
 RuntimeR3_SDKS.win      = WINPSDK W2K3DDK
 RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
 ifdef IPRT_WITH_KSTUFF
