@@ -555,6 +555,9 @@ int handleExportAppliance(HandlerArg *a)
                     else
                         return errorSyntax(USAGE_LIST, "%Rrs", c);
             }
+
+            if (FAILED(rc))
+                break;
         }
 
         if (FAILED(rc))
