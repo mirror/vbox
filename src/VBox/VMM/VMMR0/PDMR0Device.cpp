@@ -351,6 +351,7 @@ static DECLCALLBACK(PVM)  pdmR0DevHlp_GetVM(PPDMDEVINS pDevIns)
     return pDevIns->Internal.s.pVMR0;
 }
 
+
 /** @copydoc PDMDEVHLPR0::pfnCanEmulateIoBlock */
 static DECLCALLBACK(bool) pdmR0DevHlp_CanEmulateIoBlock(PPDMDEVINS pDevIns)
 {
@@ -358,6 +359,7 @@ static DECLCALLBACK(bool) pdmR0DevHlp_CanEmulateIoBlock(PPDMDEVINS pDevIns)
     LogFlow(("pdmR0DevHlp_GetVM: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
     return HWACCMCanEmulateIoBlock(pDevIns->Internal.s.pVMR0);
 }
+
 
 
 
