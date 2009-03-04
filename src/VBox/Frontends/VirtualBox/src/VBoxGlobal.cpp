@@ -2516,17 +2516,16 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
 
                 if (ctl.GetEnabled())
                 {
-                    CUSBDeviceFilterCollection coll = ctl.GetDeviceFilters();
-                    CUSBDeviceFilterEnumerator en = coll.Enumerate();
+                    CUSBDeviceFilterVector coll = ctl.GetDeviceFilters();
                     uint active = 0;
-                    while (en.HasMore())
-                        if (en.GetNext().GetActive())
+                    for (int i = 0; i < coll.size(); ++i)
+                        if (coll[i].GetActive())
                             active ++;
 
                     item = QString (sSectionItemTpl2)
                         .arg (tr ("Device Filters", "details report (USB)"),
                               tr ("%1 (%2 active)", "details report (USB)")
-                                  .arg (coll.GetCount()).arg (active));
+                                  .arg (coll.size()).arg (active));
                 }
                 else
                     item = QString (sSectionItemTpl1)

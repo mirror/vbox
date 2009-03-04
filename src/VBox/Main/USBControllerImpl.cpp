@@ -361,21 +361,21 @@ COM_IMPL_READONLY_ENUM_AND_COLLECTION (USBDeviceFilter);
 #endif /* !VBOX_WITH_USB */
 
 
-STDMETHODIMP USBController::COMGETTER(DeviceFilters) (IUSBDeviceFilterCollection **aDevicesFilters)
+STDMETHODIMP USBController::COMGETTER(DeviceFilters) (ComSafeArrayOut(IUSBDeviceFilter *, aDevicesFilters))
 {
-    CheckComArgOutPointerValid(aDevicesFilters);
+    CheckComArgOutSafeArrayPointerValid(aDevicesFilters);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoReadLock alock (this);
 
-    ComObjPtr <USBDeviceFilterCollection> collection;
-    collection.createObject();
 #ifdef VBOX_WITH_USB
-    collection->init (*mDeviceFilters.data());
+    SafeIfaceArray <IUSBDeviceFilter> collection (*mDeviceFilters.data());
+#else
+    SafeIfaceArray <IUSBDeviceFilter> collection;
 #endif
-    collection.queryInterfaceTo (aDevicesFilters);
+    collection.detachTo (ComSafeArrayOutArg (aDevicesFilters));
 
     return S_OK;
 }

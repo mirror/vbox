@@ -98,7 +98,7 @@ public:
     STDMETHOD(COMGETTER(EnabledEhci)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(EnabledEhci)) (BOOL aEnabled);
     STDMETHOD(COMGETTER(USBStandard)) (USHORT *aUSBStandard);
-    STDMETHOD(COMGETTER(DeviceFilters)) (IUSBDeviceFilterCollection **aDevicesFilters);
+    STDMETHOD(COMGETTER(DeviceFilters)) (ComSafeArrayOut (IUSBDeviceFilter *, aDevicesFilters));
 
     // IUSBController methods
     STDMETHOD(CreateDeviceFilter) (IN_BSTR aName, IUSBDeviceFilter **aFilter);

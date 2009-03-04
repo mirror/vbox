@@ -183,9 +183,9 @@ void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine)
 
     if (!ctl.isNull())
     {
-        CUSBDeviceFilterEnumerator en = ctl.GetDeviceFilters().Enumerate();
-        while (en.HasMore())
-            addUSBFilter (en.GetNext(), false /* isNew */);
+        CUSBDeviceFilterVector filtvec = ctl.GetDeviceFilters();
+        for (int i = 0; i < filtvec.size(); ++i)
+            addUSBFilter (filtvec[i], false /* isNew */);
     }
 
     mTwFilters->setCurrentItem (mTwFilters->topLevelItem (0));
@@ -203,7 +203,7 @@ void VBoxVMSettingsUSB::putBackTo()
         if (mUSBFilterListModified)
         {
             /* First, remove all old filters */
-            for (ulong count = ctl.GetDeviceFilters().GetCount(); count; -- count)
+            for (ulong count = ctl.GetDeviceFilters().size(); count; -- count)
                 ctl.RemoveDeviceFilter (0);
 
             /* Then add all new filters */

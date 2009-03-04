@@ -498,11 +498,10 @@ int handleUSBFilter (HandlerArg *a)
             }
             else
             {
-                ComPtr <IUSBDeviceFilterCollection> coll;
-                CHECK_ERROR_BREAK (ctl, COMGETTER(DeviceFilters) (coll.asOutParam()));
+                SafeIfaceArray <IUSBDeviceFilter> coll;
+                CHECK_ERROR_BREAK (ctl, COMGETTER(DeviceFilters) (ComSafeArrayAsOutParam(coll)));
 
-                ComPtr <IUSBDeviceFilter> flt;
-                CHECK_ERROR_BREAK (coll, GetItemAt (cmd.mIndex, flt.asOutParam()));
+                ComPtr <IUSBDeviceFilter> flt = coll[cmd.mIndex];
 
                 if (!f.mName.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(Name) (f.mName.setNullIfEmpty()));
