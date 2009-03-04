@@ -64,8 +64,9 @@ int main(int argc, char *argv[])
         return errno;
     }
 
-    /* Go to interruptible sleep... */
-    sleep(1000000000U);
+    /* Go to interruptible sleep for ~15 years... */
+    /* avoid > 2^31 for Year 2038 32-bit overflow (Solaris 10) */
+    sleep(500000000U);
 
     close(hDevice);
 
