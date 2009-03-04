@@ -87,13 +87,13 @@ int main(int argc, char **argv)
         rc = VMR3Destroy(pVM);
         if (!RT_SUCCESS(rc))
         {
-            RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
+            RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%Rrc\n", rc);
             rcRet++;
         }
     }
     else
     {
-        RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%d\n", rc);
+        RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%Rrc\n", rc);
         rcRet++;
     }
 
