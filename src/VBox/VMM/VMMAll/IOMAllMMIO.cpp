@@ -1392,23 +1392,6 @@ VMMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
         if (rc != VINF_IOM_HC_MMIO_WRITE)
             STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
 #endif
-#ifdef IN_RING0
-        if (    rc == VINF_EM_RAW_EMULATE_IO_BLOCK
-            &&  !HWACCMCanEmulateIoBlock(pVM))
-        {
-            /* Failed io emulation block attempt; just retry (a switch to ring 3 would jump right back) */
-# ifdef VBOX_WITH_STATISTICS
-            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
-            STAM_COUNTER_INC(&pStats->IOEmulateFailedR0);
-# endif
-            int rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, &u32Value, (unsigned)cbValue);
-# ifdef VBOX_WITH_STATISTICS
-            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
-            if (rc != VINF_IOM_HC_MMIO_WRITE)
-                STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
-# endif
-        }
-#endif
         Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, u32Value, cbValue, rc));
         return rc;
     }
