@@ -78,7 +78,7 @@ public:
     STDMETHOD(COMGETTER(InterfaceType)) (HostNetworkInterfaceType_T *aType);
 
     STDMETHOD(EnableStaticIpConfig) (ULONG aIPAddress, ULONG aNetworkMask, ULONG aDefaultGateway);
-    STDMETHOD(EnableStaticIpConfigV6) (BSTR aIPV6Address, BSTR aIPV6Mask);
+    STDMETHOD(EnableStaticIpConfigV6) (IN_BSTR aIPV6Address, IN_BSTR aIPV6Mask);
     STDMETHOD(EnableDynamicIpConfig) ();
 
     // for VirtualBoxSupportErrorInfoImpl

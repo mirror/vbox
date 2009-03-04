@@ -686,9 +686,9 @@ static int NetIfListHostAdapters(std::list <ComObjPtr <HostNetworkInterface> > &
     return VINF_SUCCESS;
 }
 
-#if 0
 //TODO: this is sample currently, hardcoded balues should be removed and exposed to the API
-static int enableStatic()
+#if 0
+static int NetIfEnableStatic()
 {
     INetCfg *pnc;
     LPWSTR lpszLockedBy = NULL;
