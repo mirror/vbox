@@ -38,11 +38,7 @@
 #endif
 
 #if defined (Q_WS_MAC)
-# ifdef QT_MAC_USE_COCOA
-/** @todo include something chocolatety... */
-# else
-#  include <Carbon/Carbon.h>
-# endif
+# include <ApplicationServices/ApplicationServices.h>
 #endif
 
 class VBoxConsoleWnd;

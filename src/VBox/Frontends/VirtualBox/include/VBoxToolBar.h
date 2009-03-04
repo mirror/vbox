@@ -77,9 +77,7 @@ public:
         if (mMainWindow)
         {
             mMainWindow->setUnifiedTitleAndToolBarOnMac (true);
-# ifdef QT_MAC_USE_COCOA
-            /** @todo Carbon -> Cocoa */
-# else  /* !QT_MAC_USE_COCOA */
+# ifndef QT_MAC_USE_COCOA
             WindowRef window = ::darwinToNativeWindow (this);
             EventHandlerUPP eventHandler = ::NewEventHandlerUPP (VBoxToolBar::macEventFilter);
             EventTypeSpec eventTypes[2];
