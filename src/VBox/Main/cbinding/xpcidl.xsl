@@ -323,7 +323,7 @@ typedef PRIntn PRBool;
 typedef PRUint8 PRPackedBool;
 
 /*
-** Status code used by some routines that have a single point of failure or 
+** Status code used by some routines that have a single point of failure or
 ** special status return.
 */
 typedef enum { PR_FAILURE = -1, PR_SUCCESS = 0 } PRStatus;
