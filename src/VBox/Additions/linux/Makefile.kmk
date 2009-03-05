@@ -28,6 +28,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 include $(PATH_SUB_CURRENT)/module/Makefile.kmk
 include $(PATH_SUB_CURRENT)/daemon/Makefile.kmk
 include $(PATH_SUB_CURRENT)/sharedfolders/Makefile.kmk
+include $(PATH_SUB_CURRENT)/drm/Makefile.kmk
 
 #
 # Targets

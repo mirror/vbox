@@ -33,6 +33,7 @@
 PATH=$PATH:/bin:/sbin:/usr/sbin
 BUILDVBOXADD=`/bin/ls /usr/src/vboxadd*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
 BUILDVBOXVFS=`/bin/ls /usr/src/vboxvfs*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
+BUILDVBOXVIDEO=`/bin/ls /usr/src/vboxvideo*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
 LOG="/var/log/vboxadd-install.log"
 
 if [ -f /etc/arch-release ]; then
@@ -271,6 +272,13 @@ setup()
     fi
     if [ -n "$BUILDVBOXVFS" ]; then
         if ! $BUILDVBOXVFS \
+            --use-module-symvers /tmp/vboxadd-Module.symvers \
+            --no-print-directory install >> $LOG 2>&1; then
+            fail "Look at $LOG to find out what went wrong"
+        fi
+    fi
+    if [ -n "$BUILDVBOXVIDEO" ]; then
+        if ! $BUILDVBOXVIDEO \
             --use-module-symvers /tmp/vboxadd-Module.symvers \
             --no-print-directory install >> $LOG 2>&1; then
             fail "Look at $LOG to find out what went wrong"
