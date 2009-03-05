@@ -4684,12 +4684,13 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     AssertRCReturn(rc, rc);
     rc = VINF_SUCCESS;
 
+    /* Mark the page as locked; disallow flushing. */
+    pgmPoolLockPage(pPool, pNewShwPageCR3);
+
 #  ifdef IN_RC
     /** NOTE: We can't deal with jumps to ring 3 here as we're now in an inconsistent state! */
     VMMGCLogDisable(pVM);
 #  endif
-    /* Mark the page as locked; disallow flushing. */
-    pgmPoolLockPage(pPool, pNewShwPageCR3);
 
     pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
     pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
@@ -4717,7 +4718,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
      * make sure we check for conflicts in the new CR3 root.
      */
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-    Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL|VM_FF_PGM_SYNC_CR3));
+    Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
 #   endif
     rc = pgmMapActivateCR3(pVM, pNewShwPageCR3);
     AssertRCReturn(rc, rc);
