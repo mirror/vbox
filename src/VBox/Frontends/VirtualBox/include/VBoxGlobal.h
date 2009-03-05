@@ -34,6 +34,7 @@
 #include <QMenu>
 #include <QStyle>
 #include <QProcess>
+#include <QHash>
 
 class QAction;
 class QLabel;
