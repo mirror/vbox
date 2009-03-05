@@ -137,7 +137,7 @@ static ram_addr_t phys_ram_alloc_offset = 0;
 RTGCPHYS phys_ram_size;
 /* we have memory ranges (the high PC-BIOS mapping) which
    causes some pages to fall outside the dirty map here. */
-uint32_t phys_ram_dirty_size;
+RTGCPHYS phys_ram_dirty_size;
 #endif /* VBOX */
 #if !defined(VBOX)
 uint8_t *phys_ram_base;
@@ -467,9 +467,14 @@ static void tlb_unprotect_code_phys(CPUState *env, ram_addr_t ram_addr,
 #endif
 
 #ifdef VBOX
-/** @todo nike: isn't 32M too much ? */
-#endif
+/*
+ * We don't need such huge codegen buffer size, as execute most of the code
+ * in raw or hwacc mode
+ */
+#define DEFAULT_CODE_GEN_BUFFER_SIZE (8 * 1024 * 1024)
+#else
 #define DEFAULT_CODE_GEN_BUFFER_SIZE (32 * 1024 * 1024)
+#endif
 
 #if defined(CONFIG_USER_ONLY)
 /* Currently it is not recommanded to allocate big chunks of data in
@@ -491,6 +496,13 @@ static void code_gen_alloc(unsigned long tb_size)
     code_gen_buffer_size = DEFAULT_CODE_GEN_BUFFER_SIZE;
     map_exec(code_gen_buffer, code_gen_buffer_size);
 #else
+#ifdef VBOX
+    /* We cannot use phys_ram_size here, as it's 0 now,
+     * it only gets initialized once RAM registration callback
+     * (REMR3NotifyPhysRamRegister()) called.
+     */
+    code_gen_buffer_size = DEFAULT_CODE_GEN_BUFFER_SIZE;
+#else
     code_gen_buffer_size = tb_size;
     if (code_gen_buffer_size == 0) {
 #if defined(CONFIG_USER_ONLY)
@@ -500,9 +512,12 @@ static void code_gen_alloc(unsigned long tb_size)
         /* XXX: needs ajustments */
         code_gen_buffer_size = (unsigned long)(phys_ram_size / 4);
 #endif
+
     }
     if (code_gen_buffer_size < MIN_CODE_GEN_BUFFER_SIZE)
         code_gen_buffer_size = MIN_CODE_GEN_BUFFER_SIZE;
+#endif /* VBOX */
+
     /* The code gen buffer location may have constraints depending on
        the host cpu and OS */
 #ifdef VBOX
