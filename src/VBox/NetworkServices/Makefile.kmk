@@ -23,7 +23,7 @@ SUB_DEPTH = ../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
-include $(PATH_SUB_CURRENT)/VBoxNetDHCP/Makefile.kmk
+include $(PATH_SUB_CURRENT)/DHCP/Makefile.kmk
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
