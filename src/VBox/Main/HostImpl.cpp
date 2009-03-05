@@ -1093,10 +1093,10 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
 #endif
 }
 
-STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (IHostUSBDeviceFilterCollection **aUSBDeviceFilters)
+STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (ComSafeArrayOut (IHostUSBDeviceFilter *, aUSBDeviceFilters))
 {
 #ifdef VBOX_WITH_USB
-    CheckComArgOutPointerValid(aUSBDeviceFilters);
+    CheckComArgOutSafeArrayPointerValid(aUSBDeviceFilters);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -1104,10 +1104,8 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (IHostUSBDeviceFilterCollection *
     MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC (rc);
 
-    ComObjPtr <HostUSBDeviceFilterCollection> collection;
-    collection.createObject();
-    collection->init (mUSBDeviceFilters);
-    collection.queryInterfaceTo (aUSBDeviceFilters);
+    SafeIfaceArray <IHostUSBDeviceFilter> collection (mUSBDeviceFilters);
+    collection.detachTo (ComSafeArrayOutArg (aUSBDeviceFilters));
 
     return rc;
 #else
