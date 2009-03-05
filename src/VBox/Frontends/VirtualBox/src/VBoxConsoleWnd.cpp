@@ -706,6 +706,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 #endif
 
 #ifdef Q_WS_MAC
+    /* For the status bar on Cocoa */
+    setUnifiedTitleAndToolBarOnMac (true);
+
 # ifdef VBOX_WITH_ICHAT_THEATER
 //    int setAttr[] = { kHIWindowBitDoesNotShowBadgeInDock, 0 };
 //    HIWindowChangeAttributes (window, setAttr, NULL);
