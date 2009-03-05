@@ -1456,7 +1456,7 @@ STDMETHODIMP HardDisk::Reset (IProgress **aProgress)
     {
         progress.createObject();
         rc = progress->init (mVirtualBox, static_cast <IHardDisk *> (this),
-            BstrFmt (tr ("Resettng differencing hard disk '%ls'"),
+            BstrFmt (tr ("Resetting differencing hard disk '%ls'"),
                      m.locationFull.raw()),
             FALSE /* aCancelable */);
         CheckComRCThrowRC (rc);
