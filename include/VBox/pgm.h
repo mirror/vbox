@@ -396,7 +396,7 @@ VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock
 DECLINLINE(bool)    PGMPhysIsPageMappingLockValid(PVM pVM, PPGMPAGEMAPLOCK pLock)
 {
     /** @todo -> complete/change this  */
-#ifdef IN_RC
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     return !!(pLock->u32Dummy);
 #else
     return !!(pLock->pvPage);
