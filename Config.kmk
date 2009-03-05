@@ -1897,7 +1897,8 @@ if1of ($(KBUILD_TARGET), linux)
    VBOX_LINUX_INCS                  += $(kernelpath)/include/asm-i386/mach-default \
                                        $(kernelpath)/include/asm-x86/mach-default \
                                        $(kernelpath)/arch/x86/include \
-                                       $(kernelpath)/arch/x86/include/asm/mach-default
+                                       $(kernelpath)/arch/x86/include/asm/mach-default \
+                                       $(kernelpath)/include
   endif
  endif
 endif
