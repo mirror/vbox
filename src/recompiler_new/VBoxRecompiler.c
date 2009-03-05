@@ -2763,7 +2763,7 @@ void remR3GrowDynRange(unsigned long physaddr) /** @todo Needs fixing for MSC...
  */
 REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy, bool fShadow)
 {
-    Log(("REMR3NotifyPhysRomRegister: GCPhys=%RGp cb=%d pvCopy=%p fShadow=%RTbool\n", GCPhys, cb, pvCopy, fShadow));
+    Log(("REMR3NotifyPhysRomRegister: GCPhys=%RGp cb=%d fShadow=%RTbool\n", GCPhys, cb, fShadow));
     VM_ASSERT_EMT(pVM);
 
     /*
@@ -2772,8 +2772,6 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
-    Assert(pvCopy);
-    Assert(RT_ALIGN_P(pvCopy, PAGE_SIZE) == pvCopy);
 
     /*
      * Register the rom.
@@ -2782,8 +2780,6 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     pVM->rem.s.fIgnoreAll = true;
 
     cpu_register_physical_memory(GCPhys, cb, GCPhys | (fShadow ? 0 : IO_MEM_ROM));
-
-    Log2(("%.64Rhxd\n", (char *)pvCopy + cb - 64));
 
     Assert(pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = false;
