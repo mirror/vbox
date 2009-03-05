@@ -30,6 +30,10 @@
 
 #include "QIHotKeyEdit.h"
 
+#ifdef Q_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
+
 /* Qt includes */
 #include <QProgressDialog>
 #include <QProcess>
@@ -81,6 +85,11 @@ public:
         , mEnded (false)
     {
         setModal (true);
+#ifdef Q_WS_MAC
+        ::darwinSetHidesAllTitleButtons (this);
+        ::darwinSetShowsResizeIndicator (this, false);
+#endif /* Q_WS_MAC */
+
         if (mOpCount > 1)
             setLabelText (QString (sOpDescTpl)
                           .arg (mProgress.GetOperationDescription())
