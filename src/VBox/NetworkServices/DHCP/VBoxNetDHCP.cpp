@@ -1,4 +1,29 @@
+/* $Id$ */
+/** @file
+ * VBoxNetDHCP - DHCP Service for connecting to IntNet.
+ */
 
+/*
+ * Copyright (C) 2009 Sun Microsystems, Inc.
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * additional information or have any questions.
+ */
+
+/** @page pg_net_dhcp       VBoxNetDHCP
+ *
+ * Write a few words...
+ *
+ */
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -16,6 +41,8 @@
 #include <VBox/intnet.h>
 #include <VBox/vmm.h>
 #include <VBox/version.h>
+
+#include "../UDPLib/VBoxNetUDP.h"
 
 #include <vector>
 #include <string>
@@ -169,12 +196,18 @@ public:
     VBoxNetDhcp();
     virtual ~VBoxNetDhcp();
 
-    int parseArgs(int argc, char **argv);
-    int tryGoOnline(void);
-    int run(void);
+    int                 parseArgs(int argc, char **argv);
+    int                 tryGoOnline(void);
+    int                 run(void);
+
+    static const char  *dhcpMsgName(uint8_t MsgType);
 
 protected:
-    int addConfig(VBoxNetDhcpCfg *pCfg);
+    int             addConfig(VBoxNetDhcpCfg *pCfg);
+    bool            handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t cb);
+
+    inline void     debugPrint( int32_t iMinLevel, bool fMsg,  const char *pszFmt, ...) const;
+    void            debugPrintV(int32_t iMinLevel, bool fMsg,  const char *pszFmt, va_list va) const;
 
 protected:
     /** @name The server configuration data members.
@@ -199,6 +232,14 @@ protected:
     uint32_t            m_cbRecvBuf;
     INTNETIFHANDLE      m_hIf;          /**< The handle to the network interface. */
     PINTNETBUF          m_pIfBuf;       /**< Interface buffer. */
+    /** @} */
+
+    /** @name The current packet (for debugPrint)
+     * @{  */
+    uint8_t             m_uCurMsgType;
+    uint16_t            m_cbCurMsg;
+    PCRTNETBOOTP        m_pCurMsg;
+    VBOXNETUDPHDRS      m_CurHdrs;
     /** @} */
 };
 
@@ -231,6 +272,11 @@ VBoxNetDhcp::VBoxNetDhcp()
     m_cbRecvBuf             = 51200; /** @todo tune to 64 KB with help from SrvIntR0 */
     m_hIf                   = INTNET_HANDLE_INVALID;
     m_pIfBuf                = NULL;
+
+    m_uCurMsgType           = UINT8_MAX;
+    m_cbCurMsg              = 0;
+    m_pCurMsg               = NULL;
+    memset(&m_CurHdrs, '\0', sizeof(m_CurHdrs));
 
 
 #if 1 /* while hacking. */
@@ -546,10 +592,6 @@ int VBoxNetDhcp::tryGoOnline(void)
  */
 int VBoxNetDhcp::run(void)
 {
-/** @todo The idea is that run() to use VBoxNetUDP here to mimic sockets and not
- *        do all the parsing here...  */
-
-
     /*
      * The loop.
      */
@@ -577,33 +619,29 @@ int VBoxNetDhcp::run(void)
          */
         while (INTNETRingGetReadable(pRingBuf) > 0)
         {
-            PINTNETHDR pHdr = (PINTNETHDR)((uintptr_t)m_pIfBuf + pRingBuf->offRead);
-            if (pHdr->u16Type == INTNETHDR_TYPE_FRAME)
+            size_t          cb;
+            void           *pv = VBoxNetUDPMatch(m_pIfBuf, 67 /* bootps */, &m_MacAddress,
+                                                 VBOXNETUDP_MATCH_UNICAST | VBOXNETUDP_MATCH_BROADCAST | VBOXNETUDP_MATCH_CHECKSUM
+                                                 | (m_cVerbosity > 2 ? VBOXNETUDP_MATCH_PRINT_STDERR : 0),
+                                                 &m_CurHdrs, &cb);
+            if (pv && cb)
             {
-                size_t      cbFrame = pHdr->cbFrame;
-                const void *pvFrame = INTNETHdrGetFramePtr(pHdr, m_pIfBuf);
+                PCRTNETBOOTP pDhcpMsg = (PCRTNETBOOTP)pv;
+                m_pCurMsg  = pDhcpMsg;
+                m_cbCurMsg = cb;
 
-                PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pvFrame;
-                if (m_cVerbosity >= 2)
-                    RTStrmPrintf(g_pStdErr, "frame: cb=%04x dst=%.6Rhxs src=%.6Rhxs type=%04x%s\n",
-                                 cbFrame, &pEthHdr->DstMac, &pEthHdr->SrcMac, RT_BE2H_U16(pEthHdr->EtherType),
-                                 !memcmp(&pEthHdr->DstMac, &m_MacAddress, sizeof(m_MacAddress)) ? " Mine!" : "");
-
-                /* Look for the DHCP messages. */
-                if (    cbFrame > 64
-                    &&  RT_BE2H_U16(pEthHdr->EtherType) == 0x0800 /* EtherType == IP */)
+                uint8_t uMsgType;
+                if (RTNetIPv4IsDHCPValid(NULL /* why is this here? */, pDhcpMsg, cb, &uMsgType))
                 {
-                    PCRTNETIPV4 pIpHdr = (PCRTNETIPV4)(pEthHdr + 1);
-                    PCRTNETUDP pUdpHdr = (PCRTNETUDP)((uint32_t *)pIpHdr + pIpHdr->ip_hl);
-                    if (    pIpHdr->ip_p == 0x11 /*UDP*/
-                        &&  RT_BE2H_U16(pUdpHdr->uh_dport) == 68 /* bootp */
-                        &&  RT_BE2H_U16(pUdpHdr->uh_sport) == 67 /* bootps */)
-                    {
-
-//                        PCRTNETDHCP pDhcpMsg = (PCRTNETDHCP)(pUdpHdr + 1);
-
-                    }
+                    m_uCurMsgType = uMsgType;
+                    handleDhcpMsg(uMsgType, pDhcpMsg, cb);
+                    m_uCurMsgType = UINT8_MAX;
                 }
+                else if (m_cVerbosity >= 1)
+                    RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: Skipping invalid DHCP packet.\n");
+
+                m_pCurMsg = NULL;
+                m_cbCurMsg = 0;
             }
 
             /* Advance to the next frame. */
@@ -612,6 +650,75 @@ int VBoxNetDhcp::run(void)
     }
 
     return 0;
+}
+
+
+/**
+ * Handles a DHCP message.
+ *
+ * @returns true if handled, false if not.
+ * @param   uMsgType        The message type.
+ * @param   pDhcpMsg        The DHCP message.
+ * @param   cb              The size of the DHCP message.
+ */
+bool VBoxNetDhcp::handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t cb)
+{
+    return false;
+}
+
+
+/**
+ * Print debug message depending on the m_cVerbosity level.
+ *
+ * @param   iMinLevel       The minimum m_cVerbosity level for this message.
+ * @param   fMsg            Whether to dump parts for the current DHCP message.
+ * @param   pszFmt          The message format string.
+ * @param   ...             Optional arguments.
+ */
+inline void VBoxNetDhcp::debugPrint(int32_t iMinLevel, bool fMsg, const char *pszFmt, ...) const
+{
+    if (iMinLevel >= m_cVerbosity)
+    {
+        va_list va;
+        va_start(va, pszFmt);
+        debugPrintV(iMinLevel, fMsg, pszFmt, va);
+        va_end(va);
+    }
+}
+
+
+/**
+ * Print debug message depending on the m_cVerbosity level.
+ *
+ * @param   iMinLevel       The minimum m_cVerbosity level for this message.
+ * @param   fMsg            Whether to dump parts for the current DHCP message.
+ * @param   pszFmt          The message format string.
+ * @param   va              Optional arguments.
+ */
+void VBoxNetDhcp::debugPrintV(int iMinLevel, bool fMsg, const char *pszFmt, va_list va) const
+{
+    if (iMinLevel >= m_cVerbosity)
+    {
+        va_list vaCopy;                 /* This dude is *very* special, thus the copy. */
+        va_copy(vaCopy, va);
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: %s: %N\n", iMinLevel >= 2 ? "debug" : "info", pszFmt, &vaCopy);
+        va_end(vaCopy);
+
+        if (    fMsg
+            &&  m_cVerbosity >= 2
+            &&  m_pCurMsg)
+        {
+            if (m_uCurMsgType != UINT8_MAX)
+            {
+//                const char *pszMsg = dhcpMsgName(m_uCurMsgType);
+//                RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: debug: \n",
+//                                //m_pCurMsg->bp_chaddr
+            }
+            else
+            {
+            }
+        }
+    }
 }
 
 
