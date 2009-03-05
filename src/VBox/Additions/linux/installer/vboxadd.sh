@@ -209,8 +209,8 @@ start()
             modprobe vboxvfs > /dev/null 2>&1 || {
                 if dmesg | grep "vboxConnect failed" > /dev/null 2>&1; then
                     fail_msg
-                    echo "You may be trying to run Guest Additions from binary release of VirtualBox"
-                    echo "in the Open Source Edition."
+                    echo "Unable to start shared folders support.  Make sure that your VirtualBox build"
+                    echo "supports this feature."
                     exit 1
                 fi
                 fail "modprobe vboxvfs failed"
