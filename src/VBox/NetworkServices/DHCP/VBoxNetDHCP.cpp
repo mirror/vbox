@@ -200,14 +200,13 @@ public:
     int                 tryGoOnline(void);
     int                 run(void);
 
-    static const char  *dhcpMsgName(uint8_t MsgType);
-
 protected:
-    int             addConfig(VBoxNetDhcpCfg *pCfg);
-    bool            handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t cb);
+    int                 addConfig(VBoxNetDhcpCfg *pCfg);
+    bool                handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t cb);
 
-    inline void     debugPrint( int32_t iMinLevel, bool fMsg,  const char *pszFmt, ...) const;
-    void            debugPrintV(int32_t iMinLevel, bool fMsg,  const char *pszFmt, va_list va) const;
+    inline void         debugPrint( int32_t iMinLevel, bool fMsg,  const char *pszFmt, ...) const;
+    void                debugPrintV(int32_t iMinLevel, bool fMsg,  const char *pszFmt, va_list va) const;
+    static const char  *debugDhcpName(uint8_t uMsgType);
 
 protected:
     /** @name The server configuration data members.
@@ -216,7 +215,6 @@ protected:
     std::string         m_Network;
     RTMAC               m_MacAddress;
     RTNETADDRIPV4       m_IpAddress;
-    int32_t             m_cVerbosity;
     /** @} */
 
     /** The current configs. */
@@ -234,8 +232,9 @@ protected:
     PINTNETBUF          m_pIfBuf;       /**< Interface buffer. */
     /** @} */
 
-    /** @name The current packet (for debugPrint)
+    /** @name Debug stuff
      * @{  */
+    int32_t             m_cVerbosity;
     uint8_t             m_uCurMsgType;
     uint16_t            m_cbCurMsg;
     PCRTNETBOOTP        m_pCurMsg;
@@ -273,11 +272,11 @@ VBoxNetDhcp::VBoxNetDhcp()
     m_hIf                   = INTNET_HANDLE_INVALID;
     m_pIfBuf                = NULL;
 
+    m_cVerbosity            = 0;
     m_uCurMsgType           = UINT8_MAX;
     m_cbCurMsg              = 0;
     m_pCurMsg               = NULL;
     memset(&m_CurHdrs, '\0', sizeof(m_CurHdrs));
-
 
 #if 1 /* while hacking. */
     VBoxNetDhcpCfg DefCfg;
@@ -375,7 +374,7 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
 
     RTGETOPTSTATE State;
     int rc = RTGetOptInit(&State, argc, argv, &s_aOptionDefs[0], RT_ELEMENTS(s_aOptionDefs), 0, 0);
-    AssertReturn(rc, 49);
+    AssertRCReturn(rc, 49);
 
     VBoxNetDhcpCfg *pCurCfg = NULL;
     for (;;)
@@ -493,7 +492,7 @@ int VBoxNetDhcp::tryGoOnline(void)
     if (RT_FAILURE(rc))
     {
         m_pSession = NULL;
-        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3Init -> %Rrc\n", rc);
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3Init -> %Rrc", rc);
         return 1;
     }
 
@@ -501,14 +500,14 @@ int VBoxNetDhcp::tryGoOnline(void)
     rc = RTPathProgram(szPath, sizeof(szPath) - sizeof("/VMMR0.r0"));
     if (RT_FAILURE(rc))
     {
-        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: RTPathProgram -> %Rrc\n", rc);
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: RTPathProgram -> %Rrc", rc);
         return 1;
     }
 
     rc = SUPLoadVMM(strcat(szPath, "/VMMR0.r0"));
     if (RT_FAILURE(rc))
     {
-        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPLoadVMM(\"%s\") -> %Rrc\n", szPath, rc);
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPLoadVMM(\"%s\") -> %Rrc", szPath, rc);
         return 1;
     }
 
@@ -530,15 +529,12 @@ int VBoxNetDhcp::tryGoOnline(void)
     /*
      * Issue the request.
      */
-    if (m_cVerbosity >= 2)
-        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: attempting to open/create network \"%s\"...\n", OpenReq.szNetwork);
+    debugPrint(2, false, "attempting to open/create network \"%s\"...", OpenReq.szNetwork);
     rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_OPEN, 0, &OpenReq.Hdr);
     if (RT_SUCCESS(rc))
     {
         m_hIf = OpenReq.hIf;
-        if (m_cVerbosity >= 1)
-            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: successfully opened/created \"%s\" - hIf=%#x\n",
-                         OpenReq.szNetwork, m_hIf);
+        debugPrint(1, false, "successfully opened/created \"%s\" - hIf=%#x", OpenReq.szNetwork, m_hIf);
 
         /*
          * Get the ring-3 address of the shared interface buffer.
@@ -553,9 +549,8 @@ int VBoxNetDhcp::tryGoOnline(void)
         if (RT_SUCCESS(rc))
         {
             PINTNETBUF pBuf = GetRing3BufferReq.pRing3Buf;
-            if (m_cVerbosity >= 1)
-                RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: pBuf=%p cbBuf=%d cbSend=%d cbRecv=%d\n",
-                             pBuf, pBuf->cbBuf, pBuf->cbSend, pBuf->cbRecv);
+            debugPrint(1, false, "pBuf=%p cbBuf=%d cbSend=%d cbRecv=%d",
+                       pBuf, pBuf->cbBuf, pBuf->cbSend, pBuf->cbRecv);
             m_pIfBuf = pBuf;
 
             /*
@@ -606,10 +601,12 @@ int VBoxNetDhcp::run(void)
         WaitReq.Hdr.cbReq = sizeof(WaitReq);
         WaitReq.pSession = m_pSession;
         WaitReq.hIf = m_hIf;
-        WaitReq.cMillies = RT_INDEFINITE_WAIT;
+        WaitReq.cMillies = 2000; /* 2 secs - the sleep is for some reason uninterruptible... */  /** @todo fix interruptability in SrvIntNet! */
         int rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_WAIT, 0, &WaitReq.Hdr);
         if (RT_FAILURE(rc))
         {
+            if (rc == VERR_TIMEOUT)
+                continue;
             RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: VMMR0_DO_INTNET_IF_WAIT returned %Rrc\n", rc);
             return 1;
         }
@@ -619,11 +616,11 @@ int VBoxNetDhcp::run(void)
          */
         while (INTNETRingGetReadable(pRingBuf) > 0)
         {
-            size_t          cb;
-            void           *pv = VBoxNetUDPMatch(m_pIfBuf, 67 /* bootps */, &m_MacAddress,
-                                                 VBOXNETUDP_MATCH_UNICAST | VBOXNETUDP_MATCH_BROADCAST | VBOXNETUDP_MATCH_CHECKSUM
-                                                 | (m_cVerbosity > 2 ? VBOXNETUDP_MATCH_PRINT_STDERR : 0),
-                                                 &m_CurHdrs, &cb);
+            size_t  cb;
+            void   *pv = VBoxNetUDPMatch(m_pIfBuf, 67 /* bootps */, &m_MacAddress,
+                                         VBOXNETUDP_MATCH_UNICAST | VBOXNETUDP_MATCH_BROADCAST | VBOXNETUDP_MATCH_CHECKSUM
+                                         | (m_cVerbosity > 2 ? VBOXNETUDP_MATCH_PRINT_STDERR : 0),
+                                         &m_CurHdrs, &cb);
             if (pv && cb)
             {
                 PCRTNETBOOTP pDhcpMsg = (PCRTNETBOOTP)pv;
@@ -637,8 +634,8 @@ int VBoxNetDhcp::run(void)
                     handleDhcpMsg(uMsgType, pDhcpMsg, cb);
                     m_uCurMsgType = UINT8_MAX;
                 }
-                else if (m_cVerbosity >= 1)
-                    RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: Skipping invalid DHCP packet.\n");
+                else
+                    debugPrint(1, true, "VBoxNetDHCP: Skipping invalid DHCP packet.\n");
 
                 m_pCurMsg = NULL;
                 m_cbCurMsg = 0;
@@ -663,6 +660,7 @@ int VBoxNetDhcp::run(void)
  */
 bool VBoxNetDhcp::handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
+    debugPrint(0, true, "todo");
     return false;
 }
 
@@ -677,7 +675,7 @@ bool VBoxNetDhcp::handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t 
  */
 inline void VBoxNetDhcp::debugPrint(int32_t iMinLevel, bool fMsg, const char *pszFmt, ...) const
 {
-    if (iMinLevel >= m_cVerbosity)
+    if (iMinLevel <= m_cVerbosity)
     {
         va_list va;
         va_start(va, pszFmt);
@@ -697,7 +695,7 @@ inline void VBoxNetDhcp::debugPrint(int32_t iMinLevel, bool fMsg, const char *ps
  */
 void VBoxNetDhcp::debugPrintV(int iMinLevel, bool fMsg, const char *pszFmt, va_list va) const
 {
-    if (iMinLevel >= m_cVerbosity)
+    if (iMinLevel <= m_cVerbosity)
     {
         va_list vaCopy;                 /* This dude is *very* special, thus the copy. */
         va_copy(vaCopy, va);
@@ -708,16 +706,50 @@ void VBoxNetDhcp::debugPrintV(int iMinLevel, bool fMsg, const char *pszFmt, va_l
             &&  m_cVerbosity >= 2
             &&  m_pCurMsg)
         {
-            if (m_uCurMsgType != UINT8_MAX)
-            {
-//                const char *pszMsg = dhcpMsgName(m_uCurMsgType);
-//                RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: debug: \n",
-//                                //m_pCurMsg->bp_chaddr
-            }
-            else
-            {
-            }
+            const char *pszMsg = m_uCurMsgType != UINT8_MAX ? debugDhcpName(m_uCurMsgType) : "";
+            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: debug: %8s chaddr=%.6Rhxs ciaddr=%d.%d.%d.%d yiaddr=%d.%d.%d.%d siaddr=%d.%d.%d.%d\n",
+                         pszMsg,
+                         &m_pCurMsg->bp_chaddr,
+                         m_pCurMsg->bp_ciaddr.au8[0], m_pCurMsg->bp_ciaddr.au8[1], m_pCurMsg->bp_ciaddr.au8[2], m_pCurMsg->bp_ciaddr.au8[3],
+                         m_pCurMsg->bp_yiaddr.au8[0], m_pCurMsg->bp_yiaddr.au8[1], m_pCurMsg->bp_yiaddr.au8[2], m_pCurMsg->bp_yiaddr.au8[3],
+                         m_pCurMsg->bp_siaddr.au8[0], m_pCurMsg->bp_siaddr.au8[1], m_pCurMsg->bp_siaddr.au8[2], m_pCurMsg->bp_siaddr.au8[3]);
         }
+    }
+}
+
+
+/**
+ * Gets the name of given DHCP message type.
+ *
+ * @returns Readonly name.
+ * @param   uMsgType        The message number.
+ */
+/* static */ const char *VBoxNetDhcp::debugDhcpName(uint8_t uMsgType)
+{
+    switch (uMsgType)
+    {
+        case 0:                         return "MT_00";
+        case RTNET_DHCP_MT_DISCOVER:    return "DISCOVER";
+        case RTNET_DHCP_MT_OFFER:       return "OFFER";
+        case RTNET_DHCP_MT_REQUEST:     return "REQUEST";
+        case RTNET_DHCP_MT_DECLINE:     return "DECLINE";
+        case RTNET_DHCP_MT_ACK:         return "ACK";
+        case RTNET_DHCP_MT_NAC:         return "NAC";
+        case RTNET_DHCP_MT_RELEASE:     return "RELEASE";
+        case RTNET_DHCP_MT_INFORM:      return "INFORM";
+        case 9:                         return "MT_09";
+        case 10:                        return "MT_0a";
+        case 11:                        return "MT_0b";
+        case 12:                        return "MT_0c";
+        case 13:                        return "MT_0d";
+        case 14:                        return "MT_0e";
+        case 15:                        return "MT_0f";
+        case 16:                        return "MT_10";
+        case 17:                        return "MT_11";
+        case 18:                        return "MT_12";
+        case 19:                        return "MT_13";
+        case UINT8_MAX:                 return "MT_ff";
+        default:                        return "UNKNOWN";
     }
 }
 
