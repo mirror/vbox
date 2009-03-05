@@ -343,7 +343,12 @@ SerializeParam(ipcMessageWriter &writer, const nsXPTType &t, const nsXPTCMiniVar
       break;
 
     case nsXPTType::T_IID:
-      writer.PutBytes(v.val.p, sizeof(nsID));
+      {
+        if (v.val.p)
+          writer.PutBytes(v.val.p, sizeof(nsID));
+        else
+          return NS_ERROR_INVALID_POINTER;
+      }
       break;
 
     case nsXPTType::T_CHAR_STR:
@@ -2407,13 +2412,21 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
         rv = SerializeParam(writer, type, aParams[i]);
 
       if (NS_FAILED(rv))
-        return rv;
+        break;
     }
     else if ((paramInfo.IsOut() || paramInfo.IsRetval()) && !aParams[i].val.p)
     {
       // report error early if NULL pointer is passed as an output parameter
-      return NS_ERROR_NULL_POINTER;
+      rv = NS_ERROR_NULL_POINTER;
+      break;
     }
+  }
+
+  if (NS_FAILED(rv))
+  {
+    // INVOKE message wasn't sent; clean up wrappers
+    dConnect->ReleaseWrappers(wrappers);
+    return rv;
   }
 
   // serialize input array parameters after everything else since the
@@ -2430,7 +2443,11 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
                                *aInfo, aParams, PR_FALSE, paramInfo,
                                aParams[i].val.p, wrappers);
       if (NS_FAILED(rv))
+      {
+        // INVOKE message wasn't sent; clean up wrappers
+        dConnect->ReleaseWrappers(wrappers);
         return rv;
+      }
     }
   }
 
