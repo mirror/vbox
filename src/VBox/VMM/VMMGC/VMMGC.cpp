@@ -186,7 +186,6 @@ VMMRCDECL(int) vmmGCLoggerFlush(PRTLOGGERRC pLogger)
  */
 VMMRCDECL(void) VMMGCLogFlushIfFull(PVM pVM)
 {
-
     if (    pVM->vmm.s.pRCLoggerRC
         &&  pVM->vmm.s.pRCLoggerRC->offScratch >= (sizeof(pVM->vmm.s.pRCLoggerRC->achScratch)*3/4))
     {
