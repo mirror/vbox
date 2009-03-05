@@ -313,7 +313,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                     if (pShwPaePd->a[iPDE].n.u1Present)
                     {
                         Assert(!(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
-                        pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iNewPDE);
+                        pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iPDE);
                     }
                 }
 # ifdef VBOX_STRICT
@@ -347,13 +347,15 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 if (    pShwPaePd->a[iPDE].n.u1Present
                     &&  !(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING))
                 {
+                    pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iPDE);
+                }
 #else
                 if (pShwPaePd->a[iPDE].n.u1Present)
                 {
                     Assert(!(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
-#endif
                     pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iNewPDE);
                 }
+#endif
                 X86PDEPAE PdePae1;
                 PdePae1.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1;
                 pShwPaePd->a[iPDE] = PdePae1;
