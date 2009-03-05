@@ -42,7 +42,7 @@ public:
     CMachine machine() const { return mMachine; }
 
     QString name() const { return mName; }
-    QIcon osIcon() const { return mAccessible ? vboxGlobal().vmGuestOSTypeIcon (mOSTypeId) :QPixmap (":/os_unknown.png"); }
+    QIcon osIcon() const { return mAccessible ? vboxGlobal().vmGuestOSTypeIcon (mOSTypeId) : QPixmap (":/os_other.png"); }
     QUuid id() const { return mId; }
 
     QString sessionStateName() const;
