@@ -284,10 +284,12 @@ static int handleStartVM(HandlerArg *a)
             {
                 sessionType = "gui";
             }
+#ifdef VBOX_WITH_VRDP
             else if (strcmp(a->argv[2], "vrdp") == 0)
             {
                 sessionType = "vrdp";
             }
+#endif
             else if (strcmp(a->argv[2], "capture") == 0)
             {
                 sessionType = "capture";
