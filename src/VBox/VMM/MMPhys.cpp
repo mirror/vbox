@@ -40,20 +40,6 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
-
-/**
- * Get the size of the base RAM.
- * This usually means the size of the first contigous block of physical memory.
- *
- * @returns The guest base RAM size.
- * @param   pVM         The VM handle.
- * @thread  Any.
- */
-VMMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM)
-{
-    return pVM->mm.s.cbRamBase;
-}
-
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 
 /**

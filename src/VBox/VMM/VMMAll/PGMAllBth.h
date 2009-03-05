@@ -2696,20 +2696,22 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                         PPGMPAGE    pPage = &pRam->aPages[iHCPage];
                         SHWPTE      PteDst;
 
+# ifndef VBOX_WITH_NEW_PHYS_CODE
                         /* Make sure the RAM has already been allocated. */
                         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)  /** @todo PAGE FLAGS */
                         {
                             if (RT_UNLIKELY(!PGM_PAGE_GET_HCPHYS(pPage)))
                             {
-# ifdef IN_RING3
+#  ifdef IN_RING3
                                 int rc = pgmr3PhysGrowRange(pVM, GCPhys);
-# else
+#  else
                                 int rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
-# endif
+#  endif
                                 if (rc != VINF_SUCCESS)
                                     return rc;
                             }
                         }
+# endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
                         if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                         {
@@ -2733,6 +2735,15 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
 # endif
                         else
                             PteDst.u = PGM_PAGE_GET_HCPHYS(pPage) | PteDstBase.u;
+
+# ifdef VBOX_WITH_NEW_PHYS_CODE
+                        /* Only map writable pages writable. */
+                        if (    PteDst.n.u1Write
+                            &&  PteDst.n.u1Present
+                            &&  !PGMPAGETYPE_IS_WRITEABLE(PGM_PAGE_GET_TYPE(pPage)))
+                            PteDst.n.u1Write = 0;
+# endif
+
 # ifdef PGMPOOL_WITH_USER_TRACKING
                         if (PteDst.n.u1Present)
                             PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPTDst);
@@ -4489,9 +4500,22 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     /*
      * Map the page CR3 points at.
      */
-    RTHCPHYS    HCPhysGuestCR3;
     RTHCPTR     HCPtrGuestCR3;
+    RTHCPHYS    HCPhysGuestCR3;
+# ifdef VBOX_WITH_NEW_PHYS_CODE
+    /** @todo this needs some reworking. current code is just a big hack. */
+#  if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+    AssertFailedReturn(VERR_INTERNAL_ERROR);
+    int rc = VERR_INTERNAL_ERROR;
+#  else
+    PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysCR3);
+    AssertReturn(pPage, VERR_INTERNAL_ERROR);
+    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhysCR3 & GST_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3);
+    HCPhysGuestCR3 = PGM_PAGE_GET_HCPHYS(pPage);
+#  endif
+# else  /* !VBOX_WITH_NEW_PHYS_CODE */
     int rc = pgmRamGCPhys2HCPtrAndHCPhys(&pVM->pgm.s, GCPhysCR3 & GST_CR3_PAGE_MASK, &HCPtrGuestCR3, &HCPhysGuestCR3);
+# endif /* !VBOX_WITH_NEW_PHYS_CODE */
     if (RT_SUCCESS(rc))
     {
         rc = PGMMap(pVM, (RTGCPTR)pVM->pgm.s.GCPtrCR3Mapping, HCPhysGuestCR3, PAGE_SIZE, 0);
@@ -4528,7 +4552,19 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                     RTHCPTR     HCPtr;
                     RTHCPHYS    HCPhys;
                     RTGCPHYS    GCPhys = pGuestPDPT->a[i].u & X86_PDPE_PG_MASK;
+#  ifdef VBOX_WITH_NEW_PHYS_CODE
+#   if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+                    AssertFailedReturn(VERR_INTERNAL_ERROR);
+                    int rc2 = VERR_INTERNAL_ERROR;
+#   else
+                    PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+                    AssertReturn(pPage, VERR_INTERNAL_ERROR);
+                    int rc2 = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, (void **)&HCPtr);
+                    HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+#   endif
+#  else  /* !VBOX_WITH_NEW_PHYS_CODE */
                     int rc2 = pgmRamGCPhys2HCPtrAndHCPhys(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
+#  endif /* !VBOX_WITH_NEW_PHYS_CODE */
                     if (RT_SUCCESS(rc2))
                     {
                         rc = PGMMap(pVM, GCPtr, HCPhys, PAGE_SIZE, 0);
