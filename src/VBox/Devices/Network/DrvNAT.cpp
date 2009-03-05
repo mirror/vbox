@@ -560,7 +560,11 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
     if (cDroppedPackets < 64)
     {
         cDroppedPackets++;
-        LogRel(("NAT: Dropping package (couldn't allocate queue item)\n"));
+    }
+    else 
+    {
+        LogRel(("NAT: %d messages suppressed about dropping package (couldn't allocate queue item)\n", cDroppedPackets));
+        cDroppedPackets = 0;
     }
     RTMemFree((void *)pu8Buf);
 #endif
