@@ -1211,17 +1211,17 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 inq = outq = 0;
                 status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
                 if (status != 0) 
-                    LogRel(("NAT: can't get error status from %R[natsock]\n", so));
+                    Log(("NAT: can't get error status from %R[natsock]\n", so));
 #ifndef RT_OS_SOLARIS
                 status = ioctl(so->s, FIONREAD, &inq); /* tcp(7) recommends SIOCINQ which is Linux specific */
                 if (status != 0 || status != EINVAL)
                 {
                     /* EINVAL returned if socket in listen state tcp(7)*/
-                    LogRel(("NAT: can't get depth of IN queue status from %R[natsock]\n", so));
+                    Log(("NAT: can't get depth of IN queue status from %R[natsock]\n", so));
                 }
                 status = ioctl(so->s, TIOCOUTQ, &outq); /* SIOCOUTQ see previous comment */
                 if (status != 0) 
-                    LogRel(("NAT: can't get depth of OUT queue from %R[natsock]\n", so));
+                    Log(("NAT: can't get depth of OUT queue from %R[natsock]\n", so));
 #else
                 /*
                  * Solaris has bit different ioctl commands and its handlings
@@ -1242,7 +1242,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                          * in case it happens we'll able to detect it. 
                          * Give TCP/IP stack wait or expire the socket. 
                          */
-                        LogRel(("NAT: %R[natsock] err(%d:%s) s(in:%d,out:%d)happens on read I/O, "
+                        Log(("NAT: %R[natsock] err(%d:%s) s(in:%d,out:%d)happens on read I/O, "
                             "other side close connection \n", so, err, strerror(err), inq, outq));
                         CONTINUE(tcp);
                     }
@@ -1252,11 +1252,11 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                     && !UNIX_CHECK_FD_SET(so, NetworkEvents, writefds)
                     && !UNIX_CHECK_FD_SET(so, NetworkEvents, xfds)) 
                 {
-                    LogRel(("NAT: system expires the socket %R[natsock] err(%d:%s) s(in:%d,out:%d) happens on non-I/O. ",
+                    Log(("NAT: system expires the socket %R[natsock] err(%d:%s) s(in:%d,out:%d) happens on non-I/O. ",
                             so, err, strerror(err), inq, outq));
                     goto tcp_input_close;
                 }
-                LogRel(("NAT: %R[natsock] we've met(%d:%s) s(in:%d, out:%d) unhandled combination hup (%d) "
+                Log(("NAT: %R[natsock] we've met(%d:%s) s(in:%d, out:%d) unhandled combination hup (%d) "
                     "rederr(%d) on (r:%d, w:%d, x:%d)\n", 
                         so, err, strerror(err),
                         inq, outq,
