@@ -1575,7 +1575,7 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
         do
         {
             PPGMPOOLPAGE pPage = &pPool->aPages[i];
-            Log3(("pgmPoolCacheAlloc: slot %d found page %RGp\n", i, pPage->GCPhys));
+            Log4(("pgmPoolCacheAlloc: slot %d found page %RGp\n", i, pPage->GCPhys));
             if (pPage->GCPhys == GCPhys)
             {
                 if ((PGMPOOLKIND)pPage->enmKind == enmKind)
@@ -3575,6 +3575,8 @@ Log2(("pgmPoolTracDerefGCPhys %RHp vs %RHp\n", HCPhysPage, HCPhys));
  */
 static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCPhys, RTGCPHYS GCPhysHint)
 {
+    Log4(("pgmPoolTracDerefGCPhysHint %RHp %RGp\n", HCPhys, GCPhysHint));
+
     /*
      * Walk range list.
      */
@@ -3657,7 +3659,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage,
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPT->a); i++)
         if (pShwPT->a[i].n.u1Present)
         {
-            Log4(("pgmPoolTrackDerefPTPae32Bit: i=%d pte=%RX32 hint=%RX32\n",
+            Log4(("pgmPoolTrackDerefPTPae32Bit: i=%d pte=%RX64 hint=%RX32\n",
                   i, pShwPT->a[i].u & X86_PTE_PAE_PG_MASK, pGstPT->a[i].u & X86_PTE_PG_MASK));
             pgmPoolTracDerefGCPhysHint(pPool, pPage, pShwPT->a[i].u & X86_PTE_PAE_PG_MASK, pGstPT->a[i].u & X86_PTE_PG_MASK);
         }
