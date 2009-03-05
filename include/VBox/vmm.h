@@ -155,6 +155,7 @@ VMMR3DECL(int)      VMMR3RawRunGC(PVM pVM);
 VMMR3DECL(int)      VMMR3HwAccRunGC(PVM pVM, RTCPUID idCpu);
 VMMR3DECL(int)      VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...);
 VMMR3DECL(int)      VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list args);
+VMMR3DECL(int)      VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
 VMMR3DECL(int)      VMMR3ResumeHyper(PVM pVM);
 VMMR3DECL(void)     VMMR3FatalDump(PVM pVM, int rcErr);
 VMMR3DECL(int)      VMMR3Lock(PVM pVM);

@@ -1253,6 +1253,48 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
 
 
 /**
+ * Wrapper for SUPCallVMMR0Ex which will deal with
+ * VINF_VMM_CALL_HOST returns.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   uOperation  Operation to execute.
+ * @param   u64Arg      Constant argument.
+ * @param   pReqHdr     Pointer to a request header. See SUPCallVMMR0Ex for
+ *                      details.
+ */
+VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr)
+{
+    /*
+     * Call Ring-0 entry with init code.
+     */
+    int rc;
+    for (;;)
+    {
+#ifdef NO_SUPCALLR0VMM
+        rc = VERR_GENERAL_FAILURE;
+#else
+        rc = SUPCallVMMR0Ex(pVM->pVMR0, uOperation, u64Arg, pReqHdr);
+#endif
+        if (    pVM->vmm.s.pR0LoggerR3
+            &&  pVM->vmm.s.pR0LoggerR3->Logger.offScratch > 0)
+            RTLogFlushToLogger(&pVM->vmm.s.pR0LoggerR3->Logger, NULL);
+        if (rc != VINF_VMM_CALL_HOST)
+            break;
+        rc = vmmR3ServiceCallHostRequest(pVM);
+        if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+            break;
+        /* Resume R0 */
+    }
+
+    AssertLogRelMsgReturn(rc == VINF_SUCCESS || VBOX_FAILURE(rc),
+                          ("uOperation=%u rc=%Rrc\n", uOperation, rc),
+                          VERR_INTERNAL_ERROR);
+    return rc;
+}
+
+
+/**
  * Resumes executing hypervisor code when interrupted by a queue flush or a
  * debug event.
  *
@@ -1435,8 +1477,8 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
             LogRel((pVM->vmm.s.szRing0AssertMsg2));
             return VERR_VMM_RING0_ASSERTION;
 
-        /* 
-         * A forced switch to ring 0 for preemption purposes. 
+        /*
+         * A forced switch to ring 0 for preemption purposes.
          */
         case VMMCALLHOST_VM_R0_PREEMPT:
             pVM->vmm.s.rcCallHost = VINF_SUCCESS;
