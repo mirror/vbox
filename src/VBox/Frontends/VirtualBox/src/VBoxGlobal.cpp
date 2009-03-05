@@ -48,6 +48,7 @@
 #include <QThread>
 #include <QPainter>
 #include <QTimer>
+#include <QDesktopServices>
 
 #include <math.h>
 
@@ -61,14 +62,9 @@
 #include <QX11Info>
 #endif
 
-#if defined (Q_WS_MAC)
-# include "VBoxUtils.h"
-# ifdef QT_MAC_USE_COCOA
-/** @todo Carbon -> Cocoa */
-# else
-#  include <Carbon/Carbon.h> // for HIToolbox/InternetConfig
-# endif
-#endif
+#ifdef Q_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif /* Q_WS_MAC */
 
 #if defined (Q_WS_WIN)
 #include "shlobj.h"
@@ -644,24 +640,6 @@ public:
     /** Whether this is the last event for the given enumeration or not */
     const bool mLast;
 };
-
-#if defined (Q_WS_WIN)
-class VBoxShellExecuteEvent : public QEvent
-{
-public:
-
-    /** Constructs a regular enum event */
-    VBoxShellExecuteEvent (QThread *aThread, const QString &aURL,
-                           bool aOk)
-        : QEvent ((QEvent::Type) VBoxDefs::ShellExecuteEventType)
-        , mThread (aThread), mURL (aURL), mOk (aOk)
-        {}
-
-    QThread *mThread;
-    QString mURL;
-    bool mOk;
-};
-#endif
 
 // VirtualBox callback class
 /////////////////////////////////////////////////////////////////////////////
@@ -5121,93 +5099,10 @@ QList <QPair <QString, QString> > VBoxGlobal::HDDBackends()
  */
 bool VBoxGlobal::openURL (const QString &aURL)
 {
-#if defined (Q_WS_WIN)
-    /* We cannot use ShellExecute() on the main UI thread because we've
-     * initialized COM with CoInitializeEx(COINIT_MULTITHREADED). See
-     * http://support.microsoft.com/default.aspx?scid=kb;en-us;287087
-     * for more details. */
-    class Thread : public QThread
-    {
-    public:
-
-        Thread (const QString &aURL, QObject *aObject)
-            : mObject (aObject), mURL (aURL) {}
-
-        void run()
-        {
-            int rc = (int) ShellExecute (NULL, NULL, mURL.isNull() ? 0 : mURL.utf16(),
-                                         NULL, NULL, SW_SHOW);
-            bool ok = rc > 32;
-            QApplication::postEvent
-                (mObject,
-                 new VBoxShellExecuteEvent (this, mURL, ok));
-        }
-
-        QString mURL;
-        QObject *mObject;
-    };
-
-    Thread *thread = new Thread (aURL, this);
-    thread->start();
-    /* thread will be deleted in the VBoxShellExecuteEvent handler */
-
-    return true;
-
-#elif defined (Q_WS_X11)
-
-    static const char * const commands[] =
-        { "kfmclient:exec", "gnome-open", "x-www-browser", "firefox", "konqueror" };
-
-    for (size_t i = 0; i < RT_ELEMENTS (commands); ++ i)
-    {
-        QStringList args = QString(commands [i]).split (':');
-        args += aURL;
-        QString command = args.takeFirst();
-        if (QProcess::startDetached (command, args))
-            return true;
-    }
-
-#elif defined (Q_WS_MAC)
-# ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa */
-# else /* !QT_MAC_USE_COCOA */
-
-    /* The code below is taken from Psi 0.10 sources
-     * (http://www.psi-im.org) */
-
-    /* Use Internet Config to hand the URL to the appropriate application, as
-     * set by the user in the Internet Preferences pane.
-     * NOTE: ICStart could be called once at Psi startup, saving the
-     *       ICInstance in a global variable, as a minor optimization.
-     *       ICStop should then be called at Psi shutdown if ICStart
-     *       succeeded. */
-    ICInstance icInstance;
-    OSType psiSignature = 'psi ';
-    OSStatus error = ::ICStart (&icInstance, psiSignature);
-    if (error == noErr)
-    {
-        ConstStr255Param hint (0x0);
-        QByteArray cs = aURL.toLocal8Bit();
-        const char* data = cs.data();
-        long length = cs.length();
-        long start (0);
-        long end (length);
-        /* Don't bother testing return value (error); launched application
-         * will report problems. */
-        ::ICLaunchURL (icInstance, hint, data, length, &start, &end);
-        ICStop (icInstance);
+    if (QDesktopServices::openUrl (aURL))
         return true;
-    }
-# endif /* !QT_MAC_USE_COCOA */
 
-#else
-    vboxProblem().message
-        (NULL, VBoxProblemReporter::Error,
-         tr ("Opening URLs is not implemented yet."));
-    return false;
-#endif
-
-    /* if we go here it means we couldn't open the URL */
+    /* If we go here it means we couldn't open the URL */
     vboxProblem().cannotOpenURL (aURL);
 
     return false;
