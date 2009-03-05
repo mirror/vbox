@@ -24,14 +24,14 @@
 #define __VBoxAboutDlg_h__
 
 #include "QIWithRetranslateUI.h"
+#include "QIDialog.h"
 
 /* Qt includes */
-#include <QDialog>
 #include <QPixmap>
 
 class QEvent;
 
-class VBoxAboutDlg: public QIWithRetranslateUI2<QDialog>
+class VBoxAboutDlg: public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 

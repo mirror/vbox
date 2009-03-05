@@ -27,8 +27,8 @@
 #include <QEvent>
 
 VBoxAboutDlg::VBoxAboutDlg (QWidget* aParent, const QString &aVersion)
-    : QIWithRetranslateUI2 <QDialog> (aParent, Qt::CustomizeWindowHint |
-                                      Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
+    : QIWithRetranslateUI2 <QIDialog> (aParent, Qt::CustomizeWindowHint |
+                                       Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
     mVersion (aVersion),
     mBgImage (":/about.png")
 {
@@ -39,7 +39,7 @@ bool VBoxAboutDlg::event (QEvent *aEvent)
 {
     if (aEvent->type() == QEvent::Polish)
         setFixedSize (mBgImage.size());
-    return QDialog::event (aEvent);
+    return QIDialog::event (aEvent);
 }
 
 void VBoxAboutDlg::retranslateUi()
