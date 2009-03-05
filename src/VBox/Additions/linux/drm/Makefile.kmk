@@ -25,9 +25,9 @@ include	$(KBUILD_PATH)/subheader.kmk
 INSTALLS += vboxvideo_drm-mod vboxvideo_drm-sh
 ifdef VBOX_WITH_ADDITION_DRIVERS
 # Only do a test build on kernels as of 2.6.27
- SYSMODS += $(if $(foreach inc,$(VBOX_LINUX_INCS),\
-                 $(if $(wildcard $(inc)/linux/drmP.h),\
-                      yes,)),vboxvideo_drm,)
+ SYSMODS += $(if $(strip $(foreach inc,$(VBOX_LINUX_INCS),\
+                 $(if $(wildcard $(inc)/drm/drmP.h),\
+                      yes,))),vboxvideo_drm,)
 endif
 
 #
