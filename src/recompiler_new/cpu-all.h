@@ -1185,7 +1185,7 @@ extern int phys_ram_size;
 #else /* VBOX */
 extern RTGCPHYS phys_ram_size;
 /** This is required for bounds checking the phys_ram_dirty accesses. */
-extern uint32_t phys_ram_dirty_size;
+extern RTGCPHYS phys_ram_dirty_size;
 #endif /* VBOX */
 #if !defined(VBOX)
 extern uint8_t *phys_ram_base;
