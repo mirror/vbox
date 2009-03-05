@@ -167,6 +167,13 @@ public:
     EDocumentNotEmpty(RT_SRC_POS_DECL) : LogicError(RT_SRC_POS_ARGS) {}
 };
 
+class VBOXXML_CLASS ENodeIsNotElement : public LogicError
+{
+public:
+    ENodeIsNotElement(const char *aMsg = NULL) : LogicError(aMsg) {}
+    ENodeIsNotElement(RT_SRC_POS_DECL) : LogicError(RT_SRC_POS_ARGS) {}
+};
+
 // Runtime errors
 //////////////////////////////////////////////////////////////////////////////
 
@@ -419,9 +426,10 @@ private:
     std::auto_ptr<Data> m;
 };
 
-/*
+/**
  * Node:
- *  an XML node, which represents either an element or an attribute.
+ *  an XML node, which represents either an element or text content
+ *  or an attribute.
  *
  *  For elements, getName() returns the element name, and getValue()
  *  returns the text contents, if any.
@@ -434,6 +442,7 @@ private:
  *
  *  --  xml::Document::createRootElement()
  *  --  xml::Node::createChild()
+ *  --  xml::Node::addContent()
  *  --  xml::Node::setAttribute()
  */
 
@@ -466,6 +475,7 @@ public:
     bool getAttributeValue(const char *pcszMatch, uint64_t &i) const;
 
     Node* createChild(const char *pcszElementName);
+    Node* addContent(const char *pcszContent);
     Node* setAttribute(const char *pcszName, const char *pcszValue);
 
 private:
