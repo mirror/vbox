@@ -1,0 +1,97 @@
+# $Id$
+## @file
+# Sub-Makefile for the vboxvideo DRM module (linux kernel OpenGL module).
+#
+
+#
+# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+SUB_DEPTH = ../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+INSTALLS += vboxvideo_drm-mod vboxvideo_drm-sh
+ifdef VBOX_WITH_ADDITION_DRIVERS
+# Only do a test build on kernels as of 2.6.27
+ SYSMODS += $(if $(foreach inc,$(VBOX_LINUX_INCS),\
+                 $(if $(wildcard $(inc)/linux/drmP.h),\
+                      yes,)),vboxvideo_drm,)
+endif
+
+#
+# Populate FILES_VBOXVIDEO_DRM_NOBIN
+#
+include $(PATH_SUB_CURRENT)/files_vboxvideo_drm
+
+vboxvideo_drm-mod_INST        = $(INST_ADDITIONS)src/vboxvideo_drm/
+vboxvideo_drm-mod_MODE        = a+r,u+w
+vboxvideo_drm-mod_SOURCES     = $(subst ",,$(FILES_VBOXVIDEO_DRM_NOBIN))
+vboxvideo_drm-mod_SOURCES    += $(if $(VBOX_OSE),,\
+			    $(PATH_vboxvideo_drm-mod)/dkms.conf)
+vboxvideo_drm-mod_CLEAN      += $(PATH_vboxvideo_drm-mod)/dkms.conf
+
+vboxvideo_drm-sh_INST        = $(INST_ADDITIONS)src/vboxvideo_drm/
+vboxvideo_drm-sh_MODE        = a+rx,u+w
+vboxvideo_drm-sh_SOURCES     = $(subst ",,$(FILES_VBOXVIDEO_DRM_BIN))
+vboxvideo_drm-sh_SOURCES    += \
+	$(PATH_vboxvideo_drm-sh)/build_in_tmp \
+	$(if $(VBOX_OSE),,\
+	  $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
+vboxvideo_drm-sh_CLEAN      += $(PATH_vboxvideo_drm-sh)/build_in_tmp
+
+
+#
+# The module (for syntax checking).
+#
+vboxvideo_drm_TEMPLATE        = VBOXGUESTR0
+vboxvideo_drm_NOINST          = 1
+vboxvideo_drm_CFLAGS          = -fshort-wchar
+vboxvideo_drm_DEFS            = \
+	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
+	KBUILD_MODNAME=KBUILD_STR\(vboxvideo\) \
+        KBUILD_BASENAME=KBUILD_STR\(vboxvideo\)
+vboxvideo_drm_SOURCES         = vboxvideo_drm.c
+
+# detect fc6 2.6.18
+vboxvideo_drm_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
+                            $(if $(wildcard $(inc)/linux/utsrelease.h),\
+                              $(if $(shell if grep -q '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h;\
+                                then echo yes; fi),KERNEL_FC6,),))
+# detect rhel5 2.6.18
+vboxvideo_drm_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
+                            $(if $(wildcard $(inc)/linux/utsrelease.h),\
+                              $(if $(shell if grep -q '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h;\
+                                then echo yes; fi),KERNEL_FC6,),))
+
+
+## Scripts needed for building kernel modules
+
+$$(PATH_vboxvideo_drm-sh)/build_in_tmp: \
+		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
+		$(VBOX_VERSION_STAMP) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxvideo;g" < $< > $@
+	$(QUIET)chmod 0755 $@
+
+$$(PATH_vboxvideo_drm-mod)/dkms.conf: \
+		$(PATH_SUB_CURRENT)/dkms.conf \
+		$(VBOX_VERSION_STAMP) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
