@@ -24,6 +24,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
+/* Qt includes */
 #include <QDir>
 
 void VBoxMedium::init()

@@ -42,13 +42,13 @@
 #include <QToolTip>
 #include <QTranslator>
 #include <QDesktopWidget>
+#include <QDesktopServices>
 #include <QMutex>
 #include <QToolButton>
 #include <QProcess>
 #include <QThread>
 #include <QPainter>
 #include <QTimer>
-#include <QDesktopServices>
 
 #include <math.h>
 

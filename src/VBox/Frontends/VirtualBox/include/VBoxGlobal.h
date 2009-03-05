@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,18 +26,14 @@
 #include "COMDefs.h"
 
 #include "VBoxGlobalSettings.h"
+#include "VBoxMedium.h"
 
 /* Qt includes */
 #include <QApplication>
 #include <QLayout>
-#include <QHash>
-#include <QPixmap>
 #include <QMenu>
 #include <QStyle>
 #include <QProcess>
-#include <QLinkedList>
-
-#include "VBoxMedium.h"
 
 class QAction;
 class QLabel;

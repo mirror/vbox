@@ -25,7 +25,9 @@
 
 #include "COMDefs.h"
 
+/* Qt includes */
 #include <QPixmap>
+#include <QLinkedList>
 
 /**
  * Media descriptor for the GUI.
