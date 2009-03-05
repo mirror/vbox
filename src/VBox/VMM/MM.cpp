@@ -886,3 +886,19 @@ VMMR3DECL(int) MMR3WriteGCVirt(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
     return PGMPhysSimpleWriteGCPtr(pVM, GCPtrDst, pvSrc, cb);
 }
 
+
+/**
+ * Get the size of the base RAM.
+ * This usually means the size of the first contigous block of physical memory.
+ *
+ * @returns The guest base RAM size.
+ * @param   pVM         The VM handle.
+ * @thread  Any.
+ *
+ * @deprecated
+ */
+VMMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM)
+{
+    return pVM->mm.s.cbRamBase;
+}
+

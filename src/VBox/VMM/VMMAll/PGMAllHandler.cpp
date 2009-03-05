@@ -211,18 +211,20 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
     RTUINT          i = (pCur->Core.Key - pRam->GCPhys) >> PAGE_SHIFT;
     for (;;)
     {
+#ifndef VBOX_WITH_NEW_PHYS_CODE
         /* Physical chunk in dynamically allocated range not present? */
         if (RT_UNLIKELY(!PGM_PAGE_GET_HCPHYS(&pRam->aPages[i])))
         {
             RTGCPHYS GCPhys = pRam->GCPhys + (i << PAGE_SHIFT);
-#ifdef IN_RING3
+# ifdef IN_RING3
             int rc2 = pgmr3PhysGrowRange(pVM, GCPhys);
-#else
+# else
             int rc2 = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
-#endif
+# endif
             if (rc2 != VINF_SUCCESS)
                 return rc2;
         }
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
         /* Only do upgrades. */
         PPGMPAGE pPage = &pRam->aPages[i];
@@ -1543,8 +1545,13 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
 #ifdef IN_RING3
                         /* validate that REM is handling it. */
                         if (    !REMR3IsPageAccessHandled(pVM, State.GCPhys)
-                                /* ignore shadowed ROM for the time being. */ /// @todo PAGE FLAGS
-                            &&  (pPage->HCPhys & (MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2)) != (MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2))
+                                /* ignore shadowed ROM for the time being. */
+# ifdef VBOX_WITH_NEW_PHYS_CODE
+                            &&  PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_ROM_SHADOW
+# else
+                            &&  (pPage->HCPhys & (MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2)) != (MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2)
+# endif
+                           )
                         {
                             AssertMsgFailed(("ram range vs phys handler REM mismatch. GCPhys=%RGp state=%d %s\n",
                                              State.GCPhys, PGM_PAGE_GET_HNDL_PHYS_STATE(pPage), pPhys->pszDesc));

@@ -174,8 +174,13 @@ VMMDECL(bool) PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys)
 VMMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys)
 {
     PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    return pPage
+        && PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM;
+#else
     return pPage
         && !(pPage->HCPhys & (MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO2));
+#endif
 }
 
 
@@ -384,7 +389,6 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         return rc;
     }
     AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%d %RGp\n", PGM_PAGE_GET_STATE(pPage), GCPhys));
-    Assert(!PGM_PAGE_IS_RESERVED(pPage));
     Assert(!PGM_PAGE_IS_MMIO(pPage));
 
     uint32_t iHandyPage = --pVM->pgm.s.cHandyPages;
@@ -466,8 +470,7 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
          * shared page replacement.
          */
         case PGM_PAGE_STATE_ZERO:
-            if (    PGM_PAGE_IS_MMIO(pPage)
-                ||  PGM_PAGE_IS_RESERVED(pPage))
+            if (PGM_PAGE_IS_MMIO(pPage))
                 return VERR_PGM_PHYS_PAGE_RESERVED;
             /* fall thru */
         case PGM_PAGE_STATE_SHARED:
@@ -713,7 +716,7 @@ int pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv)
 {
     int rc;
-    Assert(pPage);
+    AssertReturn(pPage, VERR_INTERNAL_ERROR);
     Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect) || VM_IS_EMT(pVM));
 
     /*
@@ -762,7 +765,7 @@ int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *
 int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv)
 {
     int rc;
-    Assert(pPage);
+    AssertReturn(pPage, VERR_INTERNAL_ERROR);
     Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect) || VM_IS_EMT(pVM));
     Assert(PGM_PAGE_GET_HCPHYS(pPage) != 0);
 
@@ -811,19 +814,37 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
 # if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-/** @todo this needs to be fixed, it really ain't right. */
-    /* Until a physical TLB is implemented for GC or/and R0-darwin, let PGMDynMapGCPageEx handle it. */
-    return PGMDynMapGCPageOff(pVM, GCPhys, ppv);
 
+    /*
+     * Find the page and make sure it's writable.
+     */
+    PPGMPAGE pPage;
+    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+    if (RT_SUCCESS(rc))
+    {
+        if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
+            rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
+        if (RT_SUCCESS(rc))
+        {
+            *ppv = pgmDynMapHCPageOff(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK)); /** @todo add a read only flag? */
+#if 0
+            pLock->pvMap = 0;
+            pLock->pvPage = pPage;
 #else
+            pLock->u32Dummy = UINT32_MAX;
+#endif
+        }
+    }
+
+# else
     int rc = pgmLock(pVM);
-    AssertRCReturn(rc);
+    AssertRCReturn(rc, rc);
 
     /*
      * Query the Physical TLB entry for the page (may fail).
      */
-    PGMPHYSTLBE pTlbe;
-    int rc = pgmPhysPageQueryTlbe(&pVM->pgm.s, GCPhys, &pTlbe);
+    PPGMPAGEMAPTLBE pTlbe;
+    rc = pgmPhysPageQueryTlbe(&pVM->pgm.s, GCPhys, &pTlbe);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -834,7 +855,8 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
         if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
         {
             rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
-            /** @todo stuff is missing here! */
+            if (RT_SUCCESS(rc))
+                rc = pgmPhysPageQueryTlbeWithPage(&pVM->pgm.s, pPage, GCPhys, &pTlbe);
         }
         if (RT_SUCCESS(rc))
         {
@@ -843,13 +865,14 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
              */
             PPGMPAGEMAP pMap = pTlbe->pMap;
             pMap->cRefs++;
+#if 0 /** @Todo implement locking properly */
             if (RT_LIKELY(pPage->cLocks != PGM_PAGE_MAX_LOCKS))
                 if (RT_UNLIKELY(++pPage->cLocks == PGM_PAGE_MAX_LOCKS))
                 {
                     AssertMsgFailed(("%RGp is entering permanent locked state!\n", GCPhys));
                     pMap->cRefs++; /* Extra ref to prevent it from going away. */
                 }
-
+#endif
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
             pLock->pvPage = pPage;
             pLock->pvMap = pMap;
@@ -857,9 +880,8 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
     }
 
     pgmUnlock(pVM);
-    return rc;
-
 #endif /* IN_RING3 || IN_RING0 */
+    return rc;
 
 #else
     /*
@@ -987,24 +1009,34 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
 #ifdef VBOX_WITH_NEW_PHYS_CODE
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     /* currently nothing to do here. */
-/* --- postponed
-#elif defined(IN_RING0)
-*/
+    Assert(pLock->u32Dummy == UINT32_MAX);
+    pLock->u32Dummy = 0;
 
 #else   /* IN_RING3 */
-    pgmLock(pVM);
+    PPGMPAGEMAP pMap = (PPGMPAGEMAP)pLock->pvMap;
+    if (!pMap)
+    {
+        /* The ZERO page and MMIO2 ends up here. */
+        Assert(pLock->pvPage);
+        pLock->pvPage = NULL;
+    }
+    else
+    {
+        pgmLock(pVM);
 
-    PPGMPAGE pPage = (PPGMPAGE)pLock->pvPage;
-    Assert(pPage->cLocks >= 1);
-    if (pPage->cLocks != PGM_PAGE_MAX_LOCKS)
-        pPage->cLocks--;
+# if 0 /** @todo implement page locking */
+        PPGMPAGE pPage = (PPGMPAGE)pLock->pvPage;
+        Assert(pPage->cLocks >= 1);
+        if (pPage->cLocks != PGM_PAGE_MAX_LOCKS)
+            pPage->cLocks--;
+# endif
 
-    PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)pLock->pvChunk;
-    Assert(pChunk->cRefs >= 1);
-    pChunk->cRefs--;
-    pChunk->iAge = 0;
+        Assert(pMap->cRefs >= 1);
+        pMap->cRefs--;
+        pMap->iAge = 0;
 
-    pgmUnlock(pVM);
+        pgmUnlock(pVM);
+    }
 #endif /* IN_RING3 */
 #else
     NOREF(pVM);
@@ -1033,7 +1065,26 @@ VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
-#endif
+
+    LogAlways(("PGMPhysGCPhys2R3Ptr(,%RGp,%#x,): dont use this API!\n", GCPhys, cbRange)); /** @todo eliminate this API! */
+# if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+# else
+    PPGMRAMRANGE pRam;
+    PPGMPAGE pPage;
+    int rc = pgmPhysGetPageAndRangeEx(&pVM->pgm.s, GCPhys, &pPage, &pRam);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    void *pv;
+    rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pv);
+    if (RT_FAILURE(rc))
+        return rc;
+    *pR3Ptr = (RTR3PTR)pv;
+    return VINF_SUCCESS;
+# endif
+
+#else  /* !VBOX_WITH_NEW_PHYS_CODE */
 
     if ((GCPhys & PGM_DYNAMIC_CHUNK_BASE_MASK) != ((GCPhys+cbRange-1) & PGM_DYNAMIC_CHUNK_BASE_MASK))
     {
@@ -1075,6 +1126,7 @@ VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3
     else
         return VERR_PGM_PHYS_PAGE_RESERVED;
     return VINF_SUCCESS;
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 }
 
 

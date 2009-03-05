@@ -368,7 +368,7 @@ VMMDECL(void)       PGMPhysInvalidatePageR3MapTLB(PVM pVM);
 typedef struct PGMPAGEMAPLOCK
 {
     /** @todo see PGMPhysIsPageMappingLockValid for possibly incorrect assumptions */
-#ifdef IN_RC
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     /** Just a dummy for the time being. */
     uint32_t    u32Dummy;
 #else
