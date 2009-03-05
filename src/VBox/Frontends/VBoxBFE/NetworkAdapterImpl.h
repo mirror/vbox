@@ -106,7 +106,7 @@ public:
 
     // INetworkAdapter methods
     STDMETHOD(AttachToNAT)();
-    STDMETHOD(AttachToBridgedNetwork)();
+    STDMETHOD(AttachToBridgedInterface)();
     STDMETHOD(AttachToInternalNetwork)();
     STDMETHOD(Detach)();
 

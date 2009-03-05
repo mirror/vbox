@@ -130,13 +130,13 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
             mAdapter.AttachToNAT();
             break;
         case KNetworkAttachmentType_Bridged:
-            mAdapter.AttachToBridgedNetwork();
+            mAdapter.AttachToBridgedInterface();
             break;
         case KNetworkAttachmentType_Internal:
             mAdapter.AttachToInternalNetwork();
             break;
         case KNetworkAttachmentType_HostOnly:
-            mAdapter.AttachToHostOnlyNetwork();
+            mAdapter.AttachToHostOnlyInterface();
             break;
         default:
             AssertMsgFailed (("Invalid network attachment type: %d", type));

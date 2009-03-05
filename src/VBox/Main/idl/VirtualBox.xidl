@@ -10456,7 +10456,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="INetworkAdapter" extends="$unknown"
-     uuid="8eca30de-a883-40ee-b856-aac86f1ec383"
+     uuid="65607a27-2b73-4d43-b4cc-0ba2c817fbde"
      wsmap="managed"
      >
     <attribute name="adapterType" type="NetworkAdapterType">
@@ -10544,7 +10544,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </method>
 
-    <method name="attachToBridgedNetwork">
+    <method name="attachToBridgedInterface">
       <desc>
         Attach the network adapter to a bridged host interface.
       </desc>
@@ -10556,7 +10556,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </method>
 
-    <method name="attachToHostOnlyNetwork">
+    <method name="attachToHostOnlyInterface">
       <desc>
         Attach the network adapter to the host-only network.
       </desc>
