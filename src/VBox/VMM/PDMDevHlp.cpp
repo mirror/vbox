@@ -2137,7 +2137,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR
 /** @copydoc PDMDEVHLPR3::pfnPhysReserve */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc)
 {
-#ifndef VBOX_WITH_NEW_PHYS_CODE
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    AssertFailed();
+    return VERR_ACCESS_DENIED;
+#else
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_PhysReserve: caller='%s'/%d: GCPhys=%RGp cbRange=%#x pszDesc=%p:{%s}\n",
@@ -2148,9 +2151,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GC
     LogFlow(("pdmR3DevHlp_PhysReserve: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
     return rc;
-#else
-    AssertFailed();
-    return VERR_ACCESS_DENIED;
 #endif
 }
 

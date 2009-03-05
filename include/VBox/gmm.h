@@ -371,9 +371,9 @@ typedef struct GMMMAPUNMAPCHUNKREQ
 {
     /** The header. */
     SUPVMMR0REQHDR  Hdr;
-    /** The chunk to map, UINT32_MAX if unmap only. (IN) */
+    /** The chunk to map, NIL_GMM_CHUNKID if unmap only. (IN) */
     uint32_t        idChunkMap;
-    /** The chunk to unmap, UINT32_MAX if map only. (IN) */
+    /** The chunk to unmap, NIL_GMM_CHUNKID if map only. (IN) */
     uint32_t        idChunkUnmap;
     /** Where the mapping address is returned. (OUT) */
     RTR3PTR         pvR3;
