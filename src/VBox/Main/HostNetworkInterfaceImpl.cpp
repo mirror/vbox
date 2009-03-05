@@ -79,10 +79,8 @@ HRESULT HostNetworkInterface::updateConfig (struct NETIFINFO *pIf)
 {
     m.IPAddress = pIf->IPAddress.u;
     m.networkMask = pIf->IPNetMask.u;
-    m.defaultGateway = pIf->IPDefaultGateway.u;
     m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
     m.IPV6NetworkMask = composeIPv6Address(&pIf->IPv6NetMask);
-    m.IPV6DefaultGateway = composeIPv6Address(&pIf->IPV6DefaultGateway);
     m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
 #ifdef RT_OS_WINDOWS
     m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
@@ -204,24 +202,6 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask) (ULONG *aNetworkMask)
     return S_OK;
 }
 
-/**
- * Returns the default gateway of the host network interface.
- *
- * @returns COM status code
- * @param   aNetworkMask address of result pointer
- */
-STDMETHODIMP HostNetworkInterface::COMGETTER(DefaultGateway) (ULONG *aDefaultGateway)
-{
-    CheckComArgOutPointerValid(aDefaultGateway);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    *aDefaultGateway = m.defaultGateway;
-
-    return S_OK;
-}
-
 STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Supported) (BOOL *aIPV6Supported)
 {
     CheckComArgOutPointerValid(aIPV6Supported);
@@ -263,24 +243,6 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6NetworkMask) (BSTR *aIPV6Mask)
     CheckComRCReturnRC (autoCaller.rc());
 
     m.IPV6NetworkMask.cloneTo (aIPV6Mask);
-
-    return S_OK;
-}
-
-/**
- * Returns the IP V6 default gateway of the host network interface.
- *
- * @returns COM status code
- * @param   aIPV6DefaultGateway address of result pointer
- */
-STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6DefaultGateway) (BSTR *aIPV6DefaultGateway)
-{
-    CheckComArgOutPointerValid(aIPV6DefaultGateway);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    m.IPV6DefaultGateway.cloneTo (aIPV6DefaultGateway);
 
     return S_OK;
 }
@@ -358,7 +320,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(InterfaceType) (HostNetworkInterfac
 
 }
 
-STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (ULONG aIPAddress, ULONG aNetworkMask, ULONG aDefaultGateway)
+STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (ULONG aIPAddress, ULONG aNetworkMask)
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
@@ -366,7 +328,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (ULONG aIPAddress, ULONG
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    int rc = NetIfEnableStaticIpConfig(this, aIPAddress, aNetworkMask, aDefaultGateway);
+    int rc = NetIfEnableStaticIpConfig(this, aIPAddress, aNetworkMask);
     if (RT_FAILURE(rc))
     {
         LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
@@ -376,14 +338,12 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (ULONG aIPAddress, ULONG
 #endif
 }
 
-STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength, IN_BSTR aIPV6DefaultGateway)
+STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
 #else
     if (!aIPV6Address)
-        return E_INVALIDARG;
-    if (!aIPV6DefaultGateway)
         return E_INVALIDARG;
     if (aIPV6MaskPrefixLength > 128)
         return E_INVALIDARG;
@@ -391,7 +351,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    int rc = NetIfEnableStaticIpConfigV6(this, aIPV6Address, aIPV6MaskPrefixLength, aIPV6DefaultGateway);
+    int rc = NetIfEnableStaticIpConfigV6(this, aIPV6Address, aIPV6MaskPrefixLength);
     if (RT_FAILURE(rc))
     {
         LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
