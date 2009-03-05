@@ -838,10 +838,10 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
                 }
                 LogRel((pVM->hwaccm.s.fAllow64BitGuests
-                        ? "HWACCM: 32-bit and 64-bit guest supported.\n"
-                        : "HWACCM: 32-bit guest supported.\n"));
+                        ? "HWACCM: 32-bit and 64-bit guests supported.\n"
+                        : "HWACCM: 32-bit guests supported.\n"));
 #else
-                LogRel(("HWACCM: 32-bit guest supported.\n"));
+                LogRel(("HWACCM: 32-bit guests supported.\n"));
 #endif
                 LogRel(("HWACCM: VMX enabled!\n"));
                 if (pVM->hwaccm.s.fNestedPaging)
