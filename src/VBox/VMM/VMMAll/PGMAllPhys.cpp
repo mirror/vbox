@@ -514,7 +514,7 @@ int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv
     /*
      * Map it by HCPhys.
      */
-    return pgmR0DynMapHCPageInlined(pVM, HCPhys, ppv);
+    return pgmR0DynMapHCPageInlined(&pVM->pgm.s, HCPhys, ppv);
 
 #else
     /*
