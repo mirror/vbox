@@ -70,18 +70,16 @@ public:
     STDMETHOD(COMGETTER(Id)) (OUT_GUID aGuid);
     STDMETHOD(COMGETTER(IPAddress)) (ULONG *aIPAddress);
     STDMETHOD(COMGETTER(NetworkMask)) (ULONG *aNetworkMask);
-    STDMETHOD(COMGETTER(DefaultGateway)) (ULONG *aDefaultGateway);
     STDMETHOD(COMGETTER(IPV6Supported)) (BOOL *aIPV6Supported);
     STDMETHOD(COMGETTER(IPV6Address)) (BSTR *aIPV6Address);
     STDMETHOD(COMGETTER(IPV6NetworkMask)) (BSTR *aIPV6Mask);
-    STDMETHOD(COMGETTER(IPV6DefaultGateway)) (BSTR *aDefaultGateway);
     STDMETHOD(COMGETTER(HardwareAddress)) (BSTR *aHardwareAddress);
     STDMETHOD(COMGETTER(MediumType)) (HostNetworkInterfaceMediumType_T *aType);
     STDMETHOD(COMGETTER(Status)) (HostNetworkInterfaceStatus_T *aStatus);
     STDMETHOD(COMGETTER(InterfaceType)) (HostNetworkInterfaceType_T *aType);
 
-    STDMETHOD(EnableStaticIpConfig) (ULONG aIPAddress, ULONG aNetworkMask, ULONG aDefaultGateway);
-    STDMETHOD(EnableStaticIpConfigV6) (IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength, IN_BSTR aIPV6DefaultGateway);
+    STDMETHOD(EnableStaticIpConfig) (ULONG aIPAddress, ULONG aNetworkMask);
+    STDMETHOD(EnableStaticIpConfigV6) (IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength);
     STDMETHOD(EnableDynamicIpConfig) ();
 
     // for VirtualBoxSupportErrorInfoImpl
@@ -94,16 +92,14 @@ private:
 
     struct Data
     {
-        Data() : IPAddress (0), networkMask (0), defaultGateway(0),
+        Data() : IPAddress (0), networkMask (0),
             mediumType (HostNetworkInterfaceMediumType_Unknown),
             status(HostNetworkInterfaceStatus_Down){}
 
         ULONG IPAddress;
         ULONG networkMask;
-        ULONG defaultGateway;
         Bstr IPV6Address;
         Bstr IPV6NetworkMask;
-        Bstr IPV6DefaultGateway;
         Bstr hardwareAddress;
         HostNetworkInterfaceMediumType_T mediumType;
         HostNetworkInterfaceStatus_T status;

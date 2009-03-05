@@ -58,10 +58,8 @@ typedef struct NETIFINFO
     NETIFINFO     *pNext;
     RTNETADDRIPV4  IPAddress;
     RTNETADDRIPV4  IPNetMask;
-    RTNETADDRIPV4  IPDefaultGateway;
     RTNETADDRIPV6  IPv6Address;
     RTNETADDRIPV6  IPv6NetMask;
-    RTNETADDRIPV6  IPV6DefaultGateway;
     RTMAC          MACAddress;
     NETIFTYPE      enmMediumType;
     NETIFSTATUS    enmStatus;
@@ -77,8 +75,8 @@ typedef NETIFINFO const *PCNETIFINFO;
 #endif
 
 int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list);
-int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask, ULONG gw);
-int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength, IN_BSTR aIPV6DefaultGateway);
+int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask);
+int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength);
 int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf);
 
 DECLINLINE(Bstr) composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)

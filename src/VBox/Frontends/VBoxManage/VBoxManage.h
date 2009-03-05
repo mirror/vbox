@@ -187,6 +187,9 @@ int handleSnapshot(HandlerArg *a);
 /* VBoxManageUSB.cpp */
 int handleUSBFilter(HandlerArg *a);
 
+/* VBoxManageHostonly.cpp */
+int handleHostonlyIf(HandlerArg *a);
+
 #endif /* !VBOX_ONLY_DOCS */
 unsigned long VBoxSVNRev();
 

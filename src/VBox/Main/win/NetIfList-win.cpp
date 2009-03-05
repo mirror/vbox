@@ -649,7 +649,7 @@ static HRESULT netIfWinUpdateConfig(HostNetworkInterface * pIf)
     return hr;
 }
 
-int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask, ULONG gw)
+int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask)
 {
     HRESULT hr;
     GUID guid;
@@ -676,10 +676,12 @@ int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask, 
                     hr = netIfWinEnableStaticV4(pSvc, ObjPath, aIp, aMask, 1);
                     if(SUCCEEDED(hr))
                     {
+#if 0
                         in_addr aGw[1];
                         aGw[0].S_un.S_addr = gw;
                         hr = netIfWinSetGatewaysV4(pSvc, ObjPath, aGw, 1);
                         if(SUCCEEDED(hr))
+#endif
                         {
                             hr = netIfWinUpdateConfig(pIf);
                         }
@@ -715,7 +717,10 @@ int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address
                     hr = netIfWinEnableStaticV4V6(pSvc, ObjPath, aIPV6Address, aIPV6Mask);
                     if(SUCCEEDED(hr))
                     {
-                        hr = netIfWinSetGatewaysV4V6(pSvc, ObjPath, aIPV6DefaultGateway);
+                        if(aIPV6DefaultGateway)
+                        {
+                            hr = netIfWinSetGatewaysV4V6(pSvc, ObjPath, aIPV6DefaultGateway);
+                        }
                         if(SUCCEEDED(hr))
                         {
                             hr = netIfWinUpdateConfig(pIf);
@@ -730,14 +735,14 @@ int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address
     return SUCCEEDED(hr) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
-int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength, IN_BSTR aIPV6DefaultGateway)
+int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
     RTNETADDRIPV6 Mask;
     int rc = prefixLength2IPv6Address(aIPV6MaskPrefixLength, &Mask);
     if(RT_SUCCESS(rc))
     {
         Bstr maskStr = composeIPv6Address(&Mask);
-        rc = NetIfEnableStaticIpConfigV6(pIf, aIPV6Address, maskStr, aIPV6DefaultGateway);
+        rc = NetIfEnableStaticIpConfigV6(pIf, aIPV6Address, maskStr, NULL);
     }
     return rc;
 }

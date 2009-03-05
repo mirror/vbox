@@ -57,6 +57,7 @@ endif
  	VBoxManageSnapshot.cpp \
  	VBoxManageUSB.cpp \
  	VBoxInternalManage.cpp \
+ 	VBoxManageHostonly.cpp \
  	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
  	VBoxManageSVN.cpp
 endif # !VBOX_ONLY_DOCS

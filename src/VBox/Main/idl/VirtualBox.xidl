@@ -6448,7 +6448,7 @@
 
   <interface
      name="IHostNetworkInterface" extends="$unknown"
-     uuid="b4467af7-9b16-479a-a812-c132cbd886a3"
+     uuid="a82f7de2-695b-4bb9-ac13-f033e5fd75c2"
      wsmap="managed"
      >
     <desc>
@@ -6473,10 +6473,6 @@
       <desc>Returns the network mask of the interface.</desc>
     </attribute>
 
-    <attribute name="defaultGateway" type="unsigned long" readonly="yes">
-      <desc>Returns the network mask of the interface.</desc>
-    </attribute>
-
     <attribute name="IPV6Supported" type="boolean" readonly="yes">
       <desc>Specifies whether the IP V6 is supported/enabled for the interface.</desc>
     </attribute>
@@ -6486,10 +6482,6 @@
     </attribute>
 
     <attribute name="IPV6NetworkMask" type="wstring" readonly="yes">
-      <desc>Returns the IP V6 network mask of the interface.</desc>
-    </attribute>
-
-    <attribute name="IPV6DefaultGateway" type="wstring" readonly="yes">
       <desc>Returns the IP V6 network mask of the interface.</desc>
     </attribute>
     
@@ -6521,11 +6513,6 @@
           network mask.
         </desc>
       </param>
-      <param name="defaultGateway" type="unsigned long" dir="in">
-        <desc>
-          default gateway.
-        </desc>
-      </param>
     </method>
 
     <method name="enableStaticIpConfigV6">
@@ -6536,11 +6523,6 @@
         </desc>
       </param>
       <param name="IPV6NetworkMaskPrefixLength" type="unsigned long" dir="in">
-        <desc>
-          network mask.
-        </desc>
-      </param>
-      <param name="IPV6DefaultGateway" type="wstring" dir="in">
         <desc>
           network mask.
         </desc>

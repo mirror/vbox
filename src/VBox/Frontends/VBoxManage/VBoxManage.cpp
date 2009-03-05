@@ -1723,6 +1723,7 @@ int main(int argc, char *argv[])
         { "metrics",          handleMetrics },
         { "import",           handleImportAppliance },
         { "export",           handleExportAppliance },
+        { "hostonlyif",       handleHostonlyIf },
         { NULL,               NULL }
     };
 
