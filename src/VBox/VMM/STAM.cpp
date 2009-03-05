@@ -753,7 +753,7 @@ VMMR3DECL(int)  STAMR3ResetU(PUVM pUVM, const char *pszPat)
         GVMMReq.Hdr.cbReq = sizeof(GVMMReq);
         GVMMReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         GVMMReq.pSession = pVM->pSession;
-        rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GVMM_RESET_STATISTICS, 0, &GVMMReq.Hdr);
+        rc = VMMR3CallR0(pVM, VMMR0_DO_GVMM_RESET_STATISTICS, 0, &GVMMReq.Hdr);
     }
 
 //    if (fGMMMatched)
@@ -1765,7 +1765,7 @@ static void stamR3Ring0StatsUpdateMultiU(PUVM pUVM, const char * const *papszExp
         Req.Hdr.cbReq = sizeof(Req);
         Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         Req.pSession = pVM->pSession;
-        int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GVMM_QUERY_STATISTICS, 0, &Req.Hdr);
+        int rc = VMMR3CallR0(pVM, VMMR0_DO_GVMM_QUERY_STATISTICS, 0, &Req.Hdr);
         if (RT_SUCCESS(rc))
             pUVM->stam.s.GVMMStats = Req.Stats;
     }
