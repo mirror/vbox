@@ -1447,6 +1447,11 @@ STDMETHODIMP HardDisk::Reset (IProgress **aProgress)
 
     AutoWriteLock alock (this);
 
+    if (mParent.isNull())
+        return setError (VBOX_E_NOT_SUPPORTED,
+            tr ("Hard disk '%ls' is not differencing"),
+            m.locationFull.raw());
+
     HRESULT rc = LockWrite (NULL);
     CheckComRCReturnRC (rc);
 
@@ -3549,8 +3554,8 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                             targetLocation.raw(), that->vdError (vrc).raw());
                     }
 
-                    size = VDGetFileSize (hdd, 0);
-                    logicalSize = VDGetSize (hdd, 0) / _1M;
+                    size = VDGetFileSize (hdd, 1);
+                    logicalSize = VDGetSize (hdd, 1) / _1M;
                 }
                 catch (HRESULT aRC) { rc = aRC; }
 
@@ -4012,8 +4017,8 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                             targetLocation.raw(), that->vdError (vrc).raw());
                     }
 
-                    size = VDGetFileSize (hdd, 0);
-                    logicalSize = VDGetSize (hdd, 0) / _1M;
+                    size = VDGetFileSize (targetHdd, 0);
+                    logicalSize = VDGetSize (targetHdd, 0) / _1M;
 
                     VDDestroy (targetHdd);
                 }
@@ -4156,7 +4161,98 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
 
         case Task::Reset:
         {
-            /// @todo
+            /* The lock is also used as a signal from the task initiator (which
+             * releases it only after RTThreadCreate()) that we can start the job */
+            AutoWriteLock thatLock (that);
+
+            /// @todo Below we use a pair of delete/create operations to reset
+            /// the diff contents but the most efficient way will of course be
+            /// to add a VDResetDiff() API call
+
+            uint64_t size = 0, logicalSize = 0;
+
+            try
+            {
+                PVBOXHDD hdd;
+                int vrc = VDCreate (that->mm.vdDiskIfaces, &hdd);
+                ComAssertRCThrow (vrc, E_FAIL);
+
+                Guid id = that->m.id;
+                Utf8Str format (that->mm.format);
+                Utf8Str location (that->m.locationFull);
+
+                Guid parentId = that->mParent->m.id;
+                Utf8Str parentFormat (that->mParent->mm.format);
+                Utf8Str parentLocation (that->mParent->m.locationFull);
+
+                Assert (that->m.state == MediaState_LockedWrite);
+
+                /* unlock before the potentially lengthy operation */
+                thatLock.leave();
+
+                try
+                {
+                    /* first, delete the storage unit */
+                    vrc = VDOpen (hdd, format, location,
+                                  VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
+                                  that->mm.vdDiskIfaces);
+                    if (RT_SUCCESS (vrc))
+                        vrc = VDClose (hdd, true /* fDelete */);
+
+                    if (RT_FAILURE (vrc))
+                    {
+                        throw setError (E_FAIL,
+                            tr ("Could not delete the hard disk storage "
+                                "unit '%s'%s"),
+                            location.raw(), that->vdError (vrc).raw());
+                    }
+
+                    /* next, create it again */
+                    vrc = VDOpen (hdd, parentFormat, parentLocation,
+                                  VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
+                                  that->mm.vdDiskIfaces);
+                    if (RT_FAILURE (vrc))
+                    {
+                        throw setError (E_FAIL,
+                            tr ("Could not open the hard disk storage "
+                                "unit '%s'%s"),
+                            parentLocation.raw(), that->vdError (vrc).raw());
+                    }
+
+                    /* needed for vdProgressCallback */
+                    that->mm.vdProgress = task->progress;
+
+                    vrc = VDCreateDiff (hdd, format, location,
+                                        VD_IMAGE_FLAGS_NONE,
+                                        NULL, id.raw(),
+                                        parentId.raw(),
+                                        VD_OPEN_FLAGS_NORMAL,
+                                        that->mm.vdDiskIfaces,
+                                        that->mm.vdDiskIfaces);
+
+                    that->mm.vdProgress = NULL;
+
+                    if (RT_FAILURE (vrc))
+                    {
+                        throw setError (E_FAIL,
+                            tr ("Could not create the differencing hard disk "
+                                "storage unit '%s'%s"),
+                            location.raw(), that->vdError (vrc).raw());
+                    }
+
+                    size = VDGetFileSize (hdd, 1);
+                    logicalSize = VDGetSize (hdd, 1) / _1M;
+                }
+                catch (HRESULT aRC) { rc = aRC; }
+
+                VDDestroy (hdd);
+            }
+            catch (HRESULT aRC) { rc = aRC; }
+
+            thatLock.enter();
+
+            that->m.size = size;
+            that->mm.logicalSize = logicalSize;
 
             if (isAsync)
             {
