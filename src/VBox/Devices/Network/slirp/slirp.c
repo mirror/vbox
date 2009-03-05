@@ -519,6 +519,22 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
 }
 
 #endif
+#ifdef VBOX_WITH_MULTI_DNS
+int slirp_init_dns_list(PNATState pData)
+{
+    LIST_INIT(&pData->dns_list_head);
+    return get_dns_addr_domain(pData, true, NULL, &pData->pszDomain);
+}
+void slirp_release_dns_list(PNATState pData)
+{
+    struct dns_entry *de = NULL;
+    while(!LIST_EMPTY(&pData->dns_list_head)) {
+        de = LIST_FIRST(&pData->dns_list_head);
+        LIST_REMOVE(de, de_list);
+        RTMemFree(de);
+    }
+}
+#endif
 
 int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
 {
@@ -582,8 +598,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
 
     if (get_dns_addr_domain(pData, true, &dns_addr, &pData->pszDomain) < 0)
 #else
-    LIST_INIT(&pData->dns_list_head);
-    if (get_dns_addr_domain(pData, true, NULL, &pData->pszDomain) < 0)
+    if (slirp_init_dns_list(pData) < 0)
 #endif
         fNATfailed = 1;
 #ifdef VBOX_WITH_SLIRP_DNS_PROXY
@@ -653,9 +668,6 @@ void slirp_link_down(PNATState pData)
  */
 void slirp_term(PNATState pData)
 {
-#ifdef VBOX_WITH_MULTI_DNS
-    struct dns_entry *de = NULL;
-#endif
     if (pData->pszDomain)
         RTStrFree((char *)(void *)pData->pszDomain);
 
@@ -669,11 +681,7 @@ void slirp_term(PNATState pData)
 
     slirp_link_down(pData);
 #ifdef VBOX_WITH_MULTI_DNS
-    while(!LIST_EMPTY(&pData->dns_list_head)) {
-        de = LIST_FIRST(&pData->dns_list_head);
-        LIST_REMOVE(de, de_list);
-        RTMemFree(de);
-    }
+    slirp_release_dns_list(pData);
 #endif
 #ifdef RT_OS_WINDOWS
     WSACleanup();
