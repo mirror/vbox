@@ -732,7 +732,14 @@ int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address
 
 int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength, IN_BSTR aIPV6DefaultGateway)
 {
-    return VERR_GENERAL_FAILURE;
+    RTNETADDRIPV6 Mask;
+    int rc = prefixLength2IPv6Address(aIPV6MaskPrefixLength, &Mask);
+    if(RT_SUCCESS(rc))
+    {
+        Bstr maskStr = composeIPv6Address(&Mask);
+        rc = NetIfEnableStaticIpConfigV6(pIf, aIPV6Address, maskStr, aIPV6DefaultGateway);
+    }
+    return rc;
 }
 
 int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)

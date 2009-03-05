@@ -74,35 +74,6 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid, HostNetwork
 }
 
 #ifdef VBOX_WITH_HOSTNETIF_API
-static Bstr composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
-{
-    char szTmp[8*5];
-
-    RTStrPrintf(szTmp, sizeof(szTmp),
-                "%02x%02x:%02x%02x:%02x%02x:%02x%02x:"
-                "%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-                aAddrPtr->au8[0], aAddrPtr->au8[1],
-                aAddrPtr->au8[2], aAddrPtr->au8[3],
-                aAddrPtr->au8[4], aAddrPtr->au8[5],
-                aAddrPtr->au8[6], aAddrPtr->au8[7],
-                aAddrPtr->au8[8], aAddrPtr->au8[9],
-                aAddrPtr->au8[10], aAddrPtr->au8[11],
-                aAddrPtr->au8[12], aAddrPtr->au8[13],
-                aAddrPtr->au8[14], aAddrPtr->au8[15]);
-    return Bstr(szTmp);
-}
-
-static Bstr composeHardwareAddress(PRTMAC aMacPtr)
-{
-    char szTmp[6*3];
-
-    RTStrPrintf(szTmp, sizeof(szTmp),
-                "%02x:%02x:%02x:%02x:%02x:%02x",
-                aMacPtr->au8[0], aMacPtr->au8[1],
-                aMacPtr->au8[2], aMacPtr->au8[3],
-                aMacPtr->au8[4], aMacPtr->au8[5]);
-    return Bstr(szTmp);
-}
 
 HRESULT HostNetworkInterface::updateConfig (struct NETIFINFO *pIf)
 {
