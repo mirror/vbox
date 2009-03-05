@@ -194,25 +194,29 @@ VMMRCDECL(void) VMMGCLogFlushIfFull(PVM pVM)
 }
 
 /**
- * Disables the GC logger temporarily
+ * Disables the GC logger temporarily, restore with VMMGCLogRestore.
  *
  * @param   pVM             The VM handle.
  */
-VMMRCDECL(void) VMMGCLogDisable(PVM pVM)
+VMMRCDECL(bool) VMMGCLogDisable(PVM pVM)
 {
-    if (pVM->vmm.s.pRCLoggerRC)
+    bool fLog = pVM->vmm.s.pRCLoggerRC
+             && !(pVM->vmm.s.pRCLoggerRC->fFlags & RTLOGFLAGS_DISABLED);
+    if (fLog)
         pVM->vmm.s.pRCLoggerRC->fFlags |= RTLOGFLAGS_DISABLED;
+    return fLog;
 }
 
 
 /**
- * Enables the GC logger again
+ * Restores the GC logger after a call to VMMGCLogDisable.
  *
  * @param   pVM             The VM handle.
+ * @param   fLog            What VMMGCLogDisable returned.
  */
-VMMRCDECL(void) VMMGCLogEnable(PVM pVM)
+VMMRCDECL(void) VMMGCLogRestore(PVM pVM, bool fLog)
 {
-    if (pVM->vmm.s.pRCLoggerRC)
+    if (fLog && pVM->vmm.s.pRCLoggerRC)
         pVM->vmm.s.pRCLoggerRC->fFlags &= ~RTLOGFLAGS_DISABLED;
 }
 
