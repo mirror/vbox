@@ -50,7 +50,7 @@ GMMR3DECL(int)  GMMR3InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t c
     Req.cFixedPages = cFixedPages;
     Req.enmPolicy = enmPolicy;
     Req.enmPriority = enmPriority;
-    return SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_INITIAL_RESERVATION, 0, &Req.Hdr);
+    return VMMR3CallR0(pVM, VMMR0_DO_GMM_INITIAL_RESERVATION, 0, &Req.Hdr);
 }
 
 
@@ -65,7 +65,7 @@ GMMR3DECL(int)  GMMR3UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cS
     Req.cBasePages = cBasePages;
     Req.cShadowPages = cShadowPages;
     Req.cFixedPages = cFixedPages;
-    return SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_UPDATE_RESERVATION, 0, &Req.Hdr);
+    return VMMR3CallR0(pVM, VMMR0_DO_GMM_UPDATE_RESERVATION, 0, &Req.Hdr);
 }
 
 
@@ -90,6 +90,7 @@ GMMR3DECL(int) GMMR3AllocatePagesPrepare(PVM pVM, PGMMALLOCATEPAGESREQ *ppReq, u
     pReq->enmAccount = enmAccount;
     pReq->cPages = cPages;
     NOREF(pVM);
+    *ppReq = pReq;
     return VINF_SUCCESS;
 }
 
@@ -106,7 +107,7 @@ GMMR3DECL(int) GMMR3AllocatePagesPerform(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
 {
     for (unsigned i = 0; ; i++)
     {
-        int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_ALLOCATE_PAGES, 0, &pReq->Hdr);
+        int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_ALLOCATE_PAGES, 0, &pReq->Hdr);
         if (RT_SUCCESS(rc))
             return rc;
         if (rc != VERR_GMM_SEED_ME)
@@ -125,7 +126,7 @@ GMMR3DECL(int) GMMR3AllocatePagesPerform(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
                               N_("Out of memory (SUPPageAlloc) seeding a %u pages allocation request"),
                               pReq->cPages);
 
-        rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
+        rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
         if (RT_FAILURE(rc))
             return VMSetError(pVM, rc, RT_SRC_POS, N_("GMM seeding failed"));
     }
@@ -177,7 +178,7 @@ GMMR3DECL(int) GMMR3FreePagesPrepare(PVM pVM, PGMMFREEPAGESREQ *ppReq, uint32_t 
  */
 GMMR3DECL(int) GMMR3FreePagesPerform(PVM pVM, PGMMFREEPAGESREQ pReq)
 {
-    int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_FREE_PAGES, 0, &pReq->Hdr);
+    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_FREE_PAGES, 0, &pReq->Hdr);
     if (RT_SUCCESS(rc))
         return rc;
     AssertRC(rc);
@@ -222,7 +223,7 @@ GMMR3DECL(void) GMMR3FreeAllocatedPages(PVM pVM, GMMALLOCATEPAGESREQ const *pAll
         pReq->aPages[iPage].idPage = pAllocReq->aPages[iPage].idPage;
     }
 
-    int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_FREE_PAGES, 0, &pReq->Hdr);
+    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_FREE_PAGES, 0, &pReq->Hdr);
     AssertLogRelRC(rc);
 
     RTMemTmpFree(pReq);
@@ -236,7 +237,7 @@ GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t 
     Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
 
-    return SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_BALLOONED_PAGES, 0, &Req.Hdr);
+    return VMMR3CallR0(pVM, VMMR0_DO_GMM_BALLOONED_PAGES, 0, &Req.Hdr);
 }
 #endif
 
@@ -246,7 +247,7 @@ GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t 
  */
 GMMR3DECL(int)  GMMR3DeflatedBalloon(PVM pVM, uint32_t cPages)
 {
-    return SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_DEFLATED_BALLOON, cPages, NULL);
+    return VMMR3CallR0(pVM, VMMR0_DO_GMM_DEFLATED_BALLOON, cPages, NULL);
 }
 
 
@@ -261,7 +262,7 @@ GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChun
     Req.idChunkMap = idChunkMap;
     Req.idChunkUnmap = idChunkUnmap;
     Req.pvR3 = NULL;
-    int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
+    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
     if (RT_SUCCESS(rc) && ppvR3)
         *ppvR3 = Req.pvR3;
     return rc;
@@ -273,6 +274,6 @@ GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChun
  */
 GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3)
 {
-    return SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvR3, NULL);
+    return VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvR3, NULL);
 }
 
