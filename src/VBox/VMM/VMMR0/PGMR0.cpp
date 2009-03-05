@@ -59,11 +59,35 @@ __END_DECLS
  *
  * @param   pVM         The VM handle.
  *
- * @remarks Must be called from within the PGM critical section.
+ * @remarks Must be called from within the PGM critical section. The caller
+ *          must clear the new pages.
  */
 VMMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM)
 {
-    return VERR_NOT_IMPLEMENTED;
+    Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
+
+    uint32_t iFirst = pVM->pgm.s.cHandyPages;
+    AssertMsgReturn(iFirst <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), ("%d", iFirst), VERR_INTERNAL_ERROR);
+    uint32_t cPages = RT_ELEMENTS(pVM->pgm.s.aHandyPages) - iFirst;
+    if (!cPages)
+        return VINF_SUCCESS;
+
+    int rc = GMMR0AllocateHandyPages(pVM, cPages, cPages, &pVM->pgm.s.aHandyPages[iFirst]);
+    if (RT_SUCCESS(rc))
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
+        {
+            Assert(pVM->pgm.s.aHandyPages[i].idPage != NIL_GMM_PAGEID);
+            Assert(pVM->pgm.s.aHandyPages[i].idPage <= GMM_PAGEID_LAST);
+            Assert(pVM->pgm.s.aHandyPages[i].idSharedPage == NIL_GMM_PAGEID);
+            Assert(pVM->pgm.s.aHandyPages[i].HCPhysGCPhys != NIL_RTHCPHYS);
+            Assert(!(pVM->pgm.s.aHandyPages[i].HCPhysGCPhys & ~X86_PTE_PAE_PG_MASK));
+        }
+
+        pVM->pgm.s.cHandyPages = RT_ELEMENTS(pVM->pgm.s.aHandyPages);
+    }
+    LogFlow(("PGMR0PhysAllocateHandyPages: cPages=%d rc=%Rrc\n", cPages, rc));
+    return rc;
 }
 
 

@@ -1568,7 +1568,11 @@ static void gmmR0AllocatePage(PGMM pGMM, uint32_t hGVM, PGMMCHUNK pChunk, PGMMPA
  * Common worker for GMMR0AllocateHandyPages and GMMR0AllocatePages.
  *
  * @returns VBox status code:
- * @retval  xxx
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_GMM_SEED_ME if seeding via GMMR0SeedChunk is necessary.
+ * @retval  VERR_GMM_HIT_GLOBAL_LIMIT if we've exhausted the available pages.
+ * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
+ *          that is we're trying to allocate more than we've reserved.
  *
  * @param   pGMM                Pointer to the GMM instance data.
  * @param   pGVM                Pointer to the shared VM structure.
@@ -1719,9 +1723,22 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
  * Updates the previous allocations and allocates more pages.
  *
  * The handy pages are always taken from the 'base' memory account.
+ * The allocated pages are not cleared and will contains random garbage.
  *
  * @returns VBox status code:
- * @retval  xxx
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_OWNER if the caller is not an EMT.
+ * @retval  VERR_GMM_PAGE_NOT_FOUND if one of the pages to update wasn't found.
+ * @retval  VERR_GMM_PAGE_NOT_PRIVATE if one of the pages to update wasn't a
+ *          private page.
+ * @retval  VERR_GMM_PAGE_NOT_SHARED if one of the pages to update wasn't a
+ *          shared page.
+ * @retval  VERR_GMM_NOT_PAGE_OWNER if one of the pages to be updated wasn't
+ *          owned by the VM.
+ * @retval  VERR_GMM_SEED_ME if seeding via GMMR0SeedChunk is necessary.
+ * @retval  VERR_GMM_HIT_GLOBAL_LIMIT if we've exhausted the available pages.
+ * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
+ *          that is we're trying to allocate more than we've reserved.
  *
  * @param   pVM                 Pointer to the shared VM structure.
  * @param   cPagesToUpdate      The number of pages to update (starting from the head).
@@ -1887,9 +1904,15 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
  * Allocate one or more pages.
  *
  * This is typically used for ROMs and MMIO2 (VRAM) during VM creation.
+ * The allocated pages are not cleared and will contains random garbage.
  *
  * @returns VBox status code:
- * @retval  xxx
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_OWNER if the caller is not an EMT.
+ * @retval  VERR_GMM_SEED_ME if seeding via GMMR0SeedChunk is necessary.
+ * @retval  VERR_GMM_HIT_GLOBAL_LIMIT if we've exhausted the available pages.
+ * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
+ *          that is we're trying to allocate more than we've reserved.
  *
  * @param   pVM                 Pointer to the shared VM structure.
  * @param   cPages              The number of pages to allocate.
