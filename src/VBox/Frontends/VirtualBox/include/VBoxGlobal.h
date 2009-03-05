@@ -679,6 +679,8 @@ public:
 
     static QString highlight (const QString &aStr, bool aToolTip = false);
 
+    static QString emphasize (const QString &aStr);
+
     static QString systemLanguageId();
 
     static QString getExistingDirectory (const QString &aDir, QWidget *aParent,

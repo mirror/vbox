@@ -665,7 +665,7 @@ void VBoxProblemReporter::cannotLoadGlobalConfig (const CVirtualBox &vbox,
             "<p>The application will now terminate.</p>")
              .arg (vbox.GetSettingsFilePath()),
         !res.isOk() ? formatErrorInfo (res)
-                    : QString ("<p>%1</p>").arg (error));
+                    : QString ("<p>%1.</p>").arg (vboxGlobal().emphasize (error)));
 }
 
 void VBoxProblemReporter::cannotSaveGlobalConfig (const CVirtualBox &vbox)
@@ -2189,8 +2189,8 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     QString formatted;
 
     if (!errorMsg.isEmpty())
-        formatted += QString ("<p>%1</p><!--EOM-->")
-                              .arg (errorMsg);
+        formatted += QString ("<p>%1.</p><!--EOM-->")
+                              .arg (vboxGlobal().emphasize (errorMsg));
 
     if (!errorID.isEmpty())
         formatted += QString ("<table bgcolor=#EEEEEE border=0 cellspacing=0 "
@@ -2327,7 +2327,7 @@ QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
     QString formatted;
 
     if (!aInfo.text().isEmpty())
-        formatted += QString ("<p>%1</p><!--EOM-->").arg (aInfo.text());
+        formatted += QString ("<p>%1.</p><!--EOM-->").arg (vboxGlobal().emphasize (aInfo.text()));
 
     formatted += "<table bgcolor=#EEEEEE border=0 cellspacing=0 "
                  "cellpadding=0 width=100%>";
