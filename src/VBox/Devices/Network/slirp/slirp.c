@@ -520,12 +520,12 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
 
 #endif
 #ifdef VBOX_WITH_MULTI_DNS
-int slirp_init_dns_list(PNATState pData)
+static int slirp_init_dns_list(PNATState pData)
 {
     LIST_INIT(&pData->dns_list_head);
     return get_dns_addr_domain(pData, true, NULL, &pData->pszDomain);
 }
-void slirp_release_dns_list(PNATState pData)
+static void slirp_release_dns_list(PNATState pData)
 {
     struct dns_entry *de = NULL;
     while(!LIST_EMPTY(&pData->dns_list_head)) {
