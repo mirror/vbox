@@ -1,10 +1,12 @@
 # $Id$
 ## @file
-# Sub-Makefile for the external apps.
+# Sub-Makefile for VBoxAdpCtl
+#
+# VBoxAdpCtl is a tool for configuring vboxnetX adapters.
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -19,24 +21,12 @@
 # additional information or have any questions.
 #
 
-SUB_DEPTH = ../..
+SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifdef VBOX_WITH_KCHMVIEWER
- ifneq ($(wildcard $(PATH_SUB_CURRENT)/kchmviewer-4.3),)
-  include $(PATH_SUB_CURRENT)/kchmviewer-4.3/Makefile.kmk
- endif
-endif
-ifeq ($(KBUILD_TARGET),linux)
- ifneq ($(wildcard $(PATH_SUB_CURRENT)/tunctl),)
-  include $(PATH_SUB_CURRENT)/tunctl/Makefile.kmk
- endif
-endif
-ifeq ($(KBUILD_TARGET),darwin)
- ifneq ($(wildcard $(PATH_SUB_CURRENT)/adpctl),)
-  include $(PATH_SUB_CURRENT)/adpctl/Makefile.kmk
- endif
-endif
+PROGRAMS.darwin += VBoxNetAdpCtl
+VBoxNetAdpCtl_TEMPLATE = VBOXR3EXE
+VBoxNetAdpCtl_SOURCES  = VBoxNetAdpCtl.cpp
 
 include $(KBUILD_PATH)/subfooter.kmk
 
