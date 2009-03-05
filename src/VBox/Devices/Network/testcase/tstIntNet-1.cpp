@@ -860,7 +860,7 @@ int main(int argc, char **argv)
     OpenReq.pSession = pSession;
     strncpy(OpenReq.szNetwork, pszNetwork, sizeof(OpenReq.szNetwork));
     strncpy(OpenReq.szTrunk, pszIf, sizeof(OpenReq.szTrunk));
-    OpenReq.enmTrunkType = kIntNetTrunkType_NetFlt;
+    OpenReq.enmTrunkType = *pszIf ? kIntNetTrunkType_NetFlt : kIntNetTrunkType_WhateverNone;
     OpenReq.fFlags = fMacSharing ? INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE : 0;
     OpenReq.cbSend = cbSend;
     OpenReq.cbRecv = cbRecv;
