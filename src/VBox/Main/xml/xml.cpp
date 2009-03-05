@@ -966,13 +966,13 @@ XmlFileParser::~XmlFileParser()
 {
 }
 
-struct ReadWriteContext
+struct IOContext
 {
     File file;
     com::Utf8Str error;
 
-    ReadWriteContext(const char *pcszFilename)
-        : file(File::Mode_Read, pcszFilename)     // @todo must be write for writer
+    IOContext(const char *pcszFilename, File::Mode mode)
+        : file(mode, pcszFilename)
     {
     }
 
@@ -984,6 +984,22 @@ struct ReadWriteContext
     void setError(const std::exception &x)
     {
         error = x.what();
+    }
+};
+
+struct ReadContext : IOContext
+{
+    ReadContext(const char *pcszFilename)
+        : IOContext(pcszFilename, File::Mode_Read)
+    {
+    }
+};
+
+struct WriteContext : IOContext
+{
+    WriteContext(const char *pcszFilename)
+        : IOContext(pcszFilename, File::Mode_Write)
+    {
     }
 };
 
@@ -1004,7 +1020,7 @@ void XmlFileParser::read(const char *pcszFilename,
 
     m->strXmlFilename = pcszFilename;
 
-    ReadWriteContext context(pcszFilename);
+    ReadContext context(pcszFilename);
     doc.m->reset();
     if (!(doc.m->plibDocument = xmlCtxtReadIO(m->ctxt,
                                               ReadCallback,
@@ -1021,7 +1037,7 @@ void XmlFileParser::read(const char *pcszFilename,
 // static
 int XmlFileParser::ReadCallback(void *aCtxt, char *aBuf, int aLen)
 {
-    ReadWriteContext *pContext = static_cast<ReadWriteContext*>(aCtxt);
+    ReadContext *pContext = static_cast<ReadContext*>(aCtxt);
 
     /* To prevent throwing exceptions while inside libxml2 code, we catch
      * them and forward to our level using a couple of variables. */
@@ -1067,34 +1083,9 @@ XmlFileWriter::~XmlFileWriter()
     delete m;
 }
 
-int XmlFileWriter::WriteCallback(void *aCtxt, const char *aBuf, int aLen)
-{
-    ReadWriteContext *pContext = static_cast<ReadWriteContext*>(aCtxt);
-
-    /* To prevent throwing exceptions while inside libxml2 code, we catch
-     * them and forward to our level using a couple of variables. */
-    try
-    {
-        return pContext->file.write(aBuf, aLen);
-    }
-    catch (const xml::EIPRTFailure &err) { pContext->setError(err); }
-    catch (const xml::Error &err) { pContext->setError(err); }
-    catch (const std::exception &err) { pContext->setError(err); }
-    catch (...) { pContext->setError(xml::LogicError(RT_SRC_POS)); }
-
-    return -1 /* failure */;
-}
-
-int XmlFileWriter::CloseCallback(void *aCtxt)
-{
-    /// @todo to be written
-
-    return -1;
-}
-
 void XmlFileWriter::write(const char *pcszFilename)
 {
-    ReadWriteContext context(pcszFilename);
+    WriteContext context(pcszFilename);
 
     GlobalLock lock();
 
@@ -1124,6 +1115,31 @@ void XmlFileWriter::write(const char *pcszFilename)
     }
 
     xmlSaveClose(saveCtxt);
+}
+
+int XmlFileWriter::WriteCallback(void *aCtxt, const char *aBuf, int aLen)
+{
+    WriteContext *pContext = static_cast<WriteContext*>(aCtxt);
+
+    /* To prevent throwing exceptions while inside libxml2 code, we catch
+     * them and forward to our level using a couple of variables. */
+    try
+    {
+        return pContext->file.write(aBuf, aLen);
+    }
+    catch (const xml::EIPRTFailure &err) { pContext->setError(err); }
+    catch (const xml::Error &err) { pContext->setError(err); }
+    catch (const std::exception &err) { pContext->setError(err); }
+    catch (...) { pContext->setError(xml::LogicError(RT_SRC_POS)); }
+
+    return -1 /* failure */;
+}
+
+int XmlFileWriter::CloseCallback(void *aCtxt)
+{
+    /// @todo to be written
+
+    return -1;
 }
 
 

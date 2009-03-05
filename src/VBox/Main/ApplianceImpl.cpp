@@ -2459,6 +2459,11 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
         xml::XmlFileWriter writer(doc);
         writer.write(pAppliance->m->strPath.c_str());
     }
+    catch(xml::Error &x)
+    {
+        rc = setError(VBOX_E_FILE_ERROR,
+                      x.what());
+    }
     catch(HRESULT aRC)
     {
         rc = aRC;
