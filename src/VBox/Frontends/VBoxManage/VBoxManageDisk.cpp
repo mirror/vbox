@@ -225,6 +225,8 @@ int handleModifyHardDisk(HandlerArg *a)
     {
         filepath = a->argv[0];
         CHECK_ERROR(a->virtualBox, FindHardDisk(filepath, hardDisk.asOutParam()));
+        if (FAILED(rc))
+            return 1;
     }
 
     /* let's find out which command */
@@ -236,7 +238,7 @@ int handleModifyHardDisk(HandlerArg *a)
             char *type = NULL;
 
             if (a->argc <= 2)
-                return errorArgument("Missing argument to for settype");
+                return errorArgument("Missing argument for settype");
 
             type = a->argv[2];
 
@@ -266,6 +268,29 @@ int handleModifyHardDisk(HandlerArg *a)
         }
         else
             return errorArgument("Hard disk image not registered");
+    }
+    else if (strcmp(a->argv[1], "autoreset") == 0)
+    {
+        char *onOff = NULL;
+
+        if (a->argc <= 2)
+            return errorArgument("Missing argument for autoreset");
+
+        onOff = a->argv[2];
+
+        if (strcmp(onOff, "on") == 0)
+        {
+            CHECK_ERROR(hardDisk, COMSETTER(AutoReset)(TRUE));
+        }
+        else if (strcmp(onOff, "off") == 0)
+        {
+            CHECK_ERROR(hardDisk, COMSETTER(AutoReset)(FALSE));
+        }
+        else
+        {
+            return errorArgument("Invalid autoreset argument '%s' specified",
+                                 Utf8Str(onOff).raw());
+        }
     }
     else if (strcmp(a->argv[1], "compact") == 0)
     {

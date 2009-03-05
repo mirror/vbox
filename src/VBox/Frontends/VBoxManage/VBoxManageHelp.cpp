@@ -330,6 +330,7 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage modifyhd         <uuid>|<filename>\n"
                  "                            settype normal|writethrough|immutable |\n"
+                 "                            autoreset on|off |\n"
                  "                            compact\n"
                  "\n");
     }
