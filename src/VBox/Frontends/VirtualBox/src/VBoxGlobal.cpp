@@ -3852,22 +3852,66 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
     QRegExp rx = QRegExp ("((?:^|\\s)[(]?)'([^']*)'(?=[:.-!);]?(?:\\s|$))");
     rx.setMinimal (true);
     text.replace (rx,
-        QString ("\\1%1<nobr>'\\2'</nobr>%2")
-                 .arg (strFont). arg (endFont));
+        QString ("\\1%1<nobr>'\\2'</nobr>%2").arg (strFont).arg (endFont));
 
     /* mark UUIDs with color */
     text.replace (QRegExp (
         "((?:^|\\s)[(]?)"
         "(\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\})"
         "(?=[:.-!);]?(?:\\s|$))"),
-        QString ("\\1%1<nobr>\\2</nobr>%2")
-                 .arg (uuidFont). arg (endFont));
+        QString ("\\1%1<nobr>\\2</nobr>%2").arg (uuidFont).arg (endFont));
 
     /* split to paragraphs at \n chars */
     if (!aToolTip)
         text.replace ('\n', "</p><p>");
     else
         text.replace ('\n', "<br>");
+
+    return text;
+}
+
+/**
+ *  Reformats the input string @a aStr so that:
+ *  - strings in single quotes will be put inside <nobr> and marked
+ *    with bold style;
+ *  - UUIDs be put inside <nobr> and marked
+ *    with italic style;
+ *  - replaces new line chars with </p><p> constructs to form paragraphs
+ *    (note that <p> and </p> are not appended to the beginnign and to the
+ *     end of the string respectively, to allow the result be appended
+ *     or prepended to the existing paragraph).
+ */
+/* static */
+QString VBoxGlobal::emphasize (const QString &aStr)
+{
+    QString strEmphStart ("<b>");
+    QString strEmphEnd ("</b>");
+    QString uuidEmphStart ("<i>");
+    QString uuidEmphEnd ("</i>");
+
+    QString text = aStr;
+
+    /* replace special entities, '&' -- first! */
+    text.replace ('&', "&amp;");
+    text.replace ('<', "&lt;");
+    text.replace ('>', "&gt;");
+    text.replace ('\"', "&quot;");
+
+    /* mark strings in single quotes with bold style */
+    QRegExp rx = QRegExp ("((?:^|\\s)[(]?)'([^']*)'(?=[:.-!);]?(?:\\s|$))");
+    rx.setMinimal (true);
+    text.replace (rx,
+        QString ("\\1%1<nobr>'\\2'</nobr>%2").arg (strEmphStart).arg (strEmphEnd));
+
+    /* mark UUIDs with italic style */
+    text.replace (QRegExp (
+        "((?:^|\\s)[(]?)"
+        "(\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\})"
+        "(?=[:.-!);]?(?:\\s|$))"),
+        QString ("\\1%1<nobr>\\2</nobr>%2").arg (uuidEmphStart).arg (uuidEmphEnd));
+
+    /* split to paragraphs at \n chars */
+    text.replace ('\n', "</p><p>");
 
     return text;
 }
