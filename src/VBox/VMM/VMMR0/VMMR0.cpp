@@ -178,7 +178,10 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
      * Match the SVN revisions.
      */
     if (uSvnRev != VMMGetSvnRev())
+    {
+        LogRel(("VMMR0InitVM: Revision mismatch, r3=%d r0=%d\n", uSvnRev, VMMGetSvnRev()));
         return VERR_VERSION_MISMATCH;
+    }
     if (    !VALID_PTR(pVM)
         ||  pVM->pVMR0 != pVM)
         return VERR_INVALID_PARAMETER;
