@@ -305,7 +305,7 @@ NetworkAdapter::AttachToNAT()
   return 0;
 }
 STDMETHODIMP
-NetworkAdapter::AttachToBridgedNetwork()
+NetworkAdapter::AttachToBridgedInterface()
 {
   AssertMsg(0,("Not implemented yet\n"));
   return 0;

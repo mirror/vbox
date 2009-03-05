@@ -712,7 +712,7 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::AttachToBridgedNetwork()
+STDMETHODIMP NetworkAdapter::AttachToBridgedInterface()
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -780,7 +780,7 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::AttachToHostOnlyNetwork()
+STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -924,7 +924,7 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         rc = COMSETTER(HostInterface) (name);
         CheckComRCReturnRC (rc);
 
-        rc = AttachToBridgedNetwork();
+        rc = AttachToBridgedInterface();
         CheckComRCReturnRC (rc);
     }
     else
@@ -952,7 +952,7 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
 #endif
 
         /* Host Interface Networking */
-        rc = AttachToHostOnlyNetwork();
+        rc = AttachToHostOnlyInterface();
         CheckComRCReturnRC (rc);
     }
     else
