@@ -1159,6 +1159,8 @@ static const DBGCCMD    g_aCmds[] =
 VMMR3DECL(int) PGMR3Init(PVM pVM)
 {
     LogFlow(("PGMR3Init:\n"));
+    PCFGMNODE pCfgPGM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/PGM");
+    int rc;
 
     /*
      * Assert alignment and sizes.
@@ -1168,8 +1170,8 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     /*
      * Init the structure.
      */
-    pVM->pgm.s.offVM = RT_OFFSETOF(VM, pgm.s);
-    pVM->pgm.s.offVCpu = RT_OFFSETOF(VMCPU, pgm.s);
+    pVM->pgm.s.offVM            = RT_OFFSETOF(VM, pgm.s);
+    pVM->pgm.s.offVCpu          = RT_OFFSETOF(VMCPU, pgm.s);
     pVM->pgm.s.enmShadowMode    = PGMMODE_INVALID;
     pVM->pgm.s.enmGuestMode     = PGMMODE_INVALID;
     pVM->pgm.s.enmHostMode      = SUPPAGINGMODE_INVALID;
@@ -1195,16 +1197,23 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
     }
 
-#ifdef VBOX_STRICT
-    VMR3AtStateRegister(pVM, pgmR3ResetNoMorePhysWritesFlag, NULL);
+    rc = CFGMR3QueryBoolDef(pCfgPGM, "RamPreAlloc", &pVM->pgm.s.fRamPreAlloc, false);
+    AssertLogRelRCReturn(rc, rc);
+
+#if HC_ARCH_BITS == 64
+    rc = CFGMR3QueryU32Def(pCfgPGM, "MaxRing3Chunks", &pVM->pgm.s.ChunkR3Map.cMax, UINT32_MAX);
+#else
+    rc = CFGMR3QueryU32Def(pCfgPGM, "MaxRing3Chunks", &pVM->pgm.s.ChunkR3Map.cMax, _1G / GMM_CHUNK_SIZE);
 #endif
-    PGMRegisterStringFormatTypes();
+    AssertLogRelRCReturn(rc, rc);
+    for (uint32_t i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
+        pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].idChunk = NIL_GMM_CHUNKID;
 
     /*
      * Get the configured RAM size - to estimate saved state size.
      */
     uint64_t    cbRam;
-    int rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
+    rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cbRam = pVM->pgm.s.cbRamSize = 0;
     else if (RT_SUCCESS(rc))
@@ -1221,8 +1230,13 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     }
 
     /*
-     * Register saved state data unit.
+     * Register callbacks, string formatters and the saved state data unit.
      */
+#ifdef VBOX_STRICT
+    VMR3AtStateRegister(pVM, pgmR3ResetNoMorePhysWritesFlag, NULL);
+#endif
+    PGMRegisterStringFormatTypes();
+
     rc = SSMR3RegisterInternal(pVM, "pgm", 1, PGM_SAVED_STATE_VERSION, (size_t)cbRam + sizeof(PGM),
                                NULL, pgmR3Save, NULL,
                                NULL, pgmR3Load, NULL);

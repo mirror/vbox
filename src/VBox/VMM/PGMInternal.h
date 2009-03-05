@@ -810,7 +810,11 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_IS_MMIO(pPage)         ( !!((pPage)->HCPhysX & MM_RAM_FLAGS_MMIO) )
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+# define PGM_PAGE_IS_MMIO(pPage)        ( (pPage)->u3Type == PGMPAGETYPE_MMIO )
+#else
+# define PGM_PAGE_IS_MMIO(pPage)        ( !!((pPage)->HCPhysX & MM_RAM_FLAGS_MMIO) )
+#endif
 
 /**
  * Checks if the page is backed by the ZERO page.
@@ -2246,8 +2250,12 @@ typedef struct PGM
     RTINT                           offVM;
     /** Offset of the PGMCPU structure relative to VMCPU. */
     int32_t                         offVCpu;
+    /** @cfgm{PGM/RamPreAlloc, bool, false}
+     * Whether to preallocate all the guest RAM or not. */
+    bool                            fRamPreAlloc;
     /** Alignment padding. */
-    int32_t                         i32Alignment;
+    bool                            afAlignment0[3];
+
 
     /*
      * This will be redefined at least two more times before we're done, I'm sure.
@@ -3033,8 +3041,11 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
 
 void            pgmPhysFreePage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
+int             pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap, void **ppv);
+int             pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
+int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv);
 #ifdef IN_RING3
 int             pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk);
 int             pgmR3PhysRamReset(PVM pVM);
@@ -3546,11 +3557,11 @@ DECLINLINE(void *) pgmDynMapHCPageOff(PPGM pPGM, RTHCPHYS HCPhys)
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+ *
  * @param   pPGM        The PGM instance handle.
  * @param   GCPhys      The address of the guest page.
  * @param   ppTlbe      Where to store the pointer to the TLB entry.
  */
-
 DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLBE ppTlbe)
 {
     int rc;
@@ -3565,9 +3576,40 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
     *ppTlbe = pTlbe;
     return rc;
 }
+
+
+/**
+ * Queries the Physical TLB entry for a physical guest page,
+ * attemting to load the TLB entry if necessary.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success
+ * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+ *
+ * @param   pPGM        The PGM instance handle.
+ * @param   pPage       Pointer to the PGMPAGE structure corresponding to
+ *                      GCPhys.
+ * @param   GCPhys      The address of the guest page.
+ * @param   ppTlbe      Where to store the pointer to the TLB entry.
+ */
+DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAPTLBE ppTlbe)
+{
+    int rc;
+    PPGMPAGEMAPTLBE pTlbe = &pPGM->CTXSUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
+    if (pTlbe->GCPhys == (GCPhys & X86_PTE_PAE_PG_MASK))
+    {
+        STAM_COUNTER_INC(&pPGM->CTX_MID_Z(Stat,PageMapTlbHits));
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = pgmPhysPageLoadIntoTlbWithPage(pPGM, pPage, GCPhys);
+    *ppTlbe = pTlbe;
+    return rc;
+}
 #endif /* !IN_RC */
 
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 /**
  * Convert GC Phys to HC Virt and HC Phys.
  *
@@ -3614,6 +3656,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR
     *pHCPtr = 0;
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 }
+#endif /* VBOX_WITH_NEW_PHYS_CODE */
 
 
 /**

@@ -195,8 +195,8 @@ typedef union GMMPAGE
     /** The common view. */
     struct GMMPAGECOMMON
     {
-        uint32_t uStuff1 : 32;
-        uint32_t uStuff2 : 20;
+        uint32_t    uStuff1 : 32;
+        uint32_t    uStuff2 : 30;
         /** The page state. */
         uint32_t    u2State : 2;
     } Common;
@@ -345,12 +345,20 @@ typedef GMMPAGE *PGMMPAGE;
 # define GMM_PAGE_PFN_UNSHAREABLE   UINT32_C(0x00fffff1)
 #endif
 
-/** @def GMM_GCPHYS_END
- * The end of the valid guest physical address as it applies to GMM pages.
+/** @def GMM_GCPHYS_LAST
+ * The last of the valid guest physical address as it applies to GMM pages.
  *
  * This must reflect the constraints imposed by the RTGCPHYS type and
  * the guest page frame number used internally in GMMPAGE. */
-#define GMM_GCPHYS_END              UINT32_C(0xfffff000)
+#if 1
+# define GMM_GCPHYS_LAST            UINT32_C(0xfffff000)            /* 2^32 (4GB)  - 0x1000 */
+#else /** @todo enable this after changing NIL_RTHCPHYS to ~(RTHCPHYS)0! */
+#if HC_ARCH_BITS == 64
+# define GMM_GCPHYS_LAST            UINT64_C(0x00000fffffff0000)    /* 2^44 (16TB) - 0x10000 */
+#else
+# define GMM_GCPHYS_LAST            UINT64_C(0x0000000fffff0000)    /* 2^36 (64GB) - 0x10000 */
+#endif
+#endif
 
 
 /**
@@ -602,7 +610,7 @@ GMMR0DECL(int) GMMR0Init(void)
         /*
          * Check and see if RTR0MemObjAllocPhysNC works.
          */
-#if 0 /* later */
+#if 0 /* later, see #3170. */
         RTR0MEMOBJ MemObj;
         rc = RTR0MemObjAllocPhysNC(&MemObj, _64K, NIL_RTHCPHYS);
         if (RT_SUCCESS(rc))
@@ -617,6 +625,11 @@ GMMR0DECL(int) GMMR0Init(void)
 #else
         pGMM->fLegacyMode = true;
 #endif
+
+        /*
+         * Query system page count and guess a reasonable cMaxPages value.
+         */
+        pGMM->cMaxPages = UINT32_MAX; /** @todo IPRT function for query ram size and such. */
 
         g_pGMM = pGMM;
         LogFlow(("GMMInit: pGMM=%p fLegacy=%RTbool\n", pGMM, pGMM->fLegacyMode));
@@ -1313,6 +1326,7 @@ DECLINLINE(void) gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet)
 
     if (pChunk->cFree > 0)
     {
+        pChunk->pSet = pSet;
         pChunk->pFreePrev = NULL;
         unsigned iList = (pChunk->cFree - 1) >> GMM_CHUNK_FREE_SET_SHIFT;
         pChunk->pFreeNext = pSet->apLists[iList];
@@ -1425,6 +1439,7 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
         {
             pGMM->cChunks++;
             gmmR0LinkChunk(pChunk, pSet);
+            LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
             return VINF_SUCCESS;
         }
 
@@ -1526,6 +1541,7 @@ static void gmmR0AllocatePage(PGMM pGMM, uint32_t hGVM, PGMMCHUNK pChunk, PGMMPA
     const uint32_t iPage = pChunk->iFreeHead;
     AssertReleaseMsg(iPage < RT_ELEMENTS(pChunk->aPages), ("%d\n", iPage));
     PGMMPAGE pPage = &pChunk->aPages[iPage];
+    Log3(("pPage=%x iPage=%#x iFreeHead=%#x iNext=%#x u2State=%d\n", pPage, iPage, pChunk->iFreeHead, pPage->Free.iNext, pPage->Common.u2State));
     Assert(GMM_PAGE_IS_FREE(pPage));
     pChunk->iFreeHead = pPage->Free.iNext;
 
@@ -1533,9 +1549,9 @@ static void gmmR0AllocatePage(PGMM pGMM, uint32_t hGVM, PGMMCHUNK pChunk, PGMMPA
     pPage->u = 0;
     AssertCompile(GMM_PAGE_STATE_PRIVATE == 0);
     pPage->Private.hGVM = hGVM;
-    AssertCompile(NIL_RTHCPHYS >= GMM_GCPHYS_END);
-    AssertCompile(GMM_GCPHYS_UNSHAREABLE >= GMM_GCPHYS_END);
-    if (pPageDesc->HCPhysGCPhys < GMM_GCPHYS_END)
+    AssertCompile(NIL_RTHCPHYS >= GMM_GCPHYS_LAST);
+    AssertCompile(GMM_GCPHYS_UNSHAREABLE >= GMM_GCPHYS_LAST);
+    if (pPageDesc->HCPhysGCPhys <= GMM_GCPHYS_LAST)
         pPage->Private.pfn = pPageDesc->HCPhysGCPhys >> PAGE_SHIFT;
     else
         pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE; /* unshareable / unassigned - same thing. */
@@ -1644,7 +1660,7 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
             PGMMCHUNK pNext = pCur->pFreeNext;
 
             if (    pCur->hGVM == hGVM
-                &&  (   pCur->cFree < GMM_CHUNK_NUM_PAGES
+                &&  (   pCur->cFree <= GMM_CHUNK_NUM_PAGES
                      || pGMM->fLegacyMode))
             {
                 gmmR0UnlinkChunk(pCur);
@@ -1679,9 +1695,9 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
      */
     switch (enmAccount)
     {
-        case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   += iPage;
-        case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages += iPage;
-        case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  += iPage;
+        case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   += iPage; break;
+        case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages += iPage; break;
+        case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  += iPage; break;
         default:
             AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_INTERNAL_ERROR);
     }
@@ -1740,7 +1756,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
     unsigned iPage = 0;
     for (; iPage < cPagesToUpdate; iPage++)
     {
-        AssertMsgReturn(    (    paPages[iPage].HCPhysGCPhys < GMM_GCPHYS_END
+        AssertMsgReturn(    (    paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST
                              && !(paPages[iPage].HCPhysGCPhys & PAGE_OFFSET_MASK))
                         ||  paPages[iPage].HCPhysGCPhys == NIL_RTHCPHYS
                         ||  paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE,
@@ -1784,8 +1800,8 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
                     {
                         if (RT_LIKELY(pPage->Private.hGVM == pGVM->hSelf))
                         {
-                            AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_END && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_END);
-                            if (RT_LIKELY(paPages[iPage].HCPhysGCPhys < GMM_GCPHYS_END))
+                            AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_LAST && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_LAST);
+                            if (RT_LIKELY(paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST))
                                 pPage->Private.pfn = paPages[iPage].HCPhysGCPhys >> PAGE_SHIFT;
                             else if (paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE)
                                 pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE;
@@ -1824,7 +1840,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
                 {
                     if (RT_LIKELY(GMM_PAGE_IS_SHARED(pPage)))
                     {
-                        AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_END && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_END);
+                        AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_LAST && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_LAST);
                         Assert(pPage->Shared.cRefs);
                         Assert(pGVM->gmm.s.cSharedPages);
                         Assert(pGVM->gmm.s.Allocated.cBasePages);
@@ -1907,7 +1923,7 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPages
         AssertMsgReturn(    paPages[iPage].HCPhysGCPhys == NIL_RTHCPHYS
                         ||  paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE
                         ||  (    enmAccount == GMMACCOUNT_BASE
-                             &&  paPages[iPage].HCPhysGCPhys < GMM_GCPHYS_END
+                             &&  paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST
                              && !(paPages[iPage].HCPhysGCPhys & PAGE_OFFSET_MASK)),
                         ("#%#x: %RHp enmAccount=%d\n", iPage, paPages[iPage].HCPhysGCPhys, enmAccount),
                         VERR_INVALID_PARAMETER);
@@ -1927,7 +1943,7 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPages
         rc = VERR_WRONG_ORDER;
 
     RTSemFastMutexRelease(pGMM->Mtx);
-    LogFlow(("GMMR0UpdateReservation: returns %Rrc\n", rc));
+    LogFlow(("GMMR0AllocatePages: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2516,28 +2532,33 @@ GMMR0DECL(int) GMMR0DeflatedBalloon(PVM pVM, uint32_t cPages)
  */
 static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
 {
-    /*
-     * Find the mapping and try unmapping it.
-     */
-    for (uint32_t i = 0; i < pChunk->cMappings; i++)
+    if (!pGMM->fLegacyMode)
     {
-        Assert(pChunk->paMappings[i].pGVM && pChunk->paMappings[i].MapObj != NIL_RTR0MEMOBJ);
-        if (pChunk->paMappings[i].pGVM == pGVM)
+        /*
+         * Find the mapping and try unmapping it.
+         */
+        for (uint32_t i = 0; i < pChunk->cMappings; i++)
         {
-            /* unmap */
-            int rc = RTR0MemObjFree(pChunk->paMappings[i].MapObj, false /* fFreeMappings (NA) */);
-            if (RT_SUCCESS(rc))
+            Assert(pChunk->paMappings[i].pGVM && pChunk->paMappings[i].MapObj != NIL_RTR0MEMOBJ);
+            if (pChunk->paMappings[i].pGVM == pGVM)
             {
-                /* update the record. */
-                pChunk->cMappings--;
-                if (i < pChunk->cMappings)
-                    pChunk->paMappings[i] = pChunk->paMappings[pChunk->cMappings];
-                pChunk->paMappings[pChunk->cMappings].MapObj = NIL_RTR0MEMOBJ;
-                pChunk->paMappings[pChunk->cMappings].pGVM = NULL;
+                /* unmap */
+                int rc = RTR0MemObjFree(pChunk->paMappings[i].MapObj, false /* fFreeMappings (NA) */);
+                if (RT_SUCCESS(rc))
+                {
+                    /* update the record. */
+                    pChunk->cMappings--;
+                    if (i < pChunk->cMappings)
+                        pChunk->paMappings[i] = pChunk->paMappings[pChunk->cMappings];
+                    pChunk->paMappings[pChunk->cMappings].MapObj = NIL_RTR0MEMOBJ;
+                    pChunk->paMappings[pChunk->cMappings].pGVM = NULL;
+                }
+                return rc;
             }
-            return rc;
         }
     }
+    else if (pChunk->hGVM == pGVM->hSelf)
+        return VINF_SUCCESS;
 
     Log(("gmmR0MapChunk: Chunk %#x is not mapped into pGVM=%p/%#x\n", pChunk->Core.Key, pGVM, pGVM->hSelf));
     return VERR_GMM_CHUNK_NOT_MAPPED;
@@ -2557,6 +2578,21 @@ static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
  */
 static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
 {
+    /*
+     * If we're in legacy mode this is simple.
+     */
+    if (pGMM->fLegacyMode)
+    {
+        if (pChunk->hGVM != pGVM->hSelf)
+        {
+            Log(("gmmR0MapChunk: chunk %#x is already mapped at %p!\n", pChunk->Core.Key, *ppvR3));
+            return VERR_GMM_CHUNK_NOT_FOUND;
+        }
+
+        *ppvR3 = RTR0MemObjAddressR3(pChunk->MemObj);
+        return VINF_SUCCESS;
+    }
+
     /*
      * Check to see if the chunk is already mapped.
      */
@@ -2646,12 +2682,6 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunk
     {
         AssertPtrReturn(ppvR3, VERR_INVALID_POINTER);
         *ppvR3 = NIL_RTR3PTR;
-    }
-
-    if (pGMM->fLegacyMode)
-    {
-        Log(("GMMR0MapUnmapChunk: legacy mode!\n"));
-        return VERR_NOT_SUPPORTED;
     }
 
     /*
@@ -2774,6 +2804,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3)
             RTR0MemObjFree(MemObj, false /* fFreeMappings */);
     }
 
+    LogFlow(("GMMR0SeedChunk: rc=%d (pvR3=%p)\n", rc, pvR3));
     return rc;
 }
 

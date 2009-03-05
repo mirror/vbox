@@ -48,8 +48,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-/*static - shut up warning */
-DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
+static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 
 
 
@@ -289,9 +288,10 @@ int pgmR3PhysRamReset(PVM pVM)
      */
     for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
     {
-        uint32_t iPage = pRam->cb >> PAGE_SHIFT; Assert((RTGCPHYS)iPage << PAGE_SHIFT == pRam->cb);
+        uint32_t    iPage = pRam->cb >> PAGE_SHIFT; Assert((RTGCPHYS)iPage << PAGE_SHIFT == pRam->cb);
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-        if (!pVM->pgm.f.fRamPreAlloc)
+        int         rc;
+        if (!pVM->pgm.s.fRamPreAlloc)
         {
             /* Replace all RAM pages by ZERO pages. */
             while (iPage-- > 0)
@@ -1329,14 +1329,22 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 
 
             /*
+             * Before registering the handler, notify REM, it'll get
+             * confused about shadowed ROM otherwise.
+             */
+            REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL,
+                                       !!(fFlags & PGMPHYS_ROM_FLAG_SHADOWED));
+            /** @todo fix shadowing and REM. */
+
+            /*
              * Register the write access handler for the range (PGMROMPROT_READ_ROM_WRITE_IGNORE).
              */
-            rc = PGMR3HandlerPhysicalRegister(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhys, GCPhysLast,
-#if 0 /** @todo we actually need a ring-3 write handler here for shadowed ROMs, so hack REM! */
+            rc = PGMR3HandlerPhysicalRegister(pVM,
+                                              fFlags & PGMPHYS_ROM_FLAG_SHADOWED
+                                              ? PGMPHYSHANDLERTYPE_PHYSICAL_ALL
+                                              : PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
+                                              GCPhys, GCPhysLast,
                                               pgmR3PhysRomWriteHandler, pRomNew,
-#else
-                                              NULL, NULL,
-#endif
                                               NULL, "pgmPhysRomWriteHandler", MMHyperCCToR0(pVM, pRomNew),
                                               NULL, "pgmPhysRomWriteHandler", MMHyperCCToRC(pVM, pRomNew), pszDesc);
             if (RT_SUCCESS(rc))
@@ -1400,8 +1408,6 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                         pVM->pgm.s.pRomRangesRC = MMHyperCCToRC(pVM, pRomNew);
                     }
 
-                    REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, false); /** @todo fix shadowing and REM. */
-
                     GMMR3AllocatePagesCleanup(pReq);
                     pgmUnlock(pVM);
                     return VINF_SUCCESS;
@@ -1415,9 +1421,11 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                 pgmLock(pVM);
             }
 
-            pgmR3PhysUnlinkRamRange2(pVM, pRamNew, pRamPrev);
-            if (pRamNew)
+            if (!fRamExists)
+            {
+                pgmR3PhysUnlinkRamRange2(pVM, pRamNew, pRamPrev);
                 MMHyperFree(pVM, pRamNew);
+            }
         }
         MMHyperFree(pVM, pRomNew);
     }
@@ -1443,8 +1451,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-/*static - shut up warning */
- DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     PPGMROMRANGE    pRom = (PPGMROMRANGE)pvUser;
     const uint32_t  iPage = GCPhys - pRom->GCPhys;
@@ -2018,7 +2025,6 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
         rc = SUPPageAlloc(cPages, &pvRam);
         if (RT_SUCCESS(rc))
         {
-
             rc = MMR3PhysRegisterEx(pVM, pvRam, GCPhys, PGM_DYNAMIC_CHUNK_SIZE, 0, MM_PHYS_TYPE_DYNALLOC_CHUNK, "Main Memory");
             if (RT_SUCCESS(rc))
                 return rc;
@@ -2050,7 +2056,6 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
     }
 }
 
-#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
 /**
  * Interface MMR3RomRegister() and MMR3PhysReserve calls to update the
@@ -2104,6 +2109,7 @@ VMMR3DECL(int) PGMR3PhysSetFlags(PVM pVM, RTGCPHYS GCPhys, size_t cb, unsigned f
     return VINF_SUCCESS;
 }
 
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
 /**
  * Sets the Address Gate 20 state.
@@ -2313,10 +2319,10 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     Req.Hdr.cbReq = sizeof(Req);
     Req.pvR3 = NULL;
     Req.idChunkMap = idChunk;
-    Req.idChunkUnmap = INT32_MAX;
+    Req.idChunkUnmap = NIL_GMM_CHUNKID;
     if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
         Req.idChunkUnmap = pgmR3PhysChunkFindUnmapCandidate(pVM);
-    rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
+    rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -2333,7 +2339,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
         AssertRelease(fRc);
 
         /* remove the unmapped one. */
-        if (Req.idChunkUnmap != INT32_MAX)
+        if (Req.idChunkUnmap != NIL_GMM_CHUNKID)
         {
             PPGMCHUNKR3MAP pUnmappedChunk = (PPGMCHUNKR3MAP)RTAvlU32Remove(&pVM->pgm.s.ChunkR3Map.pTree, Req.idChunkUnmap);
             AssertRelease(pUnmappedChunk);
@@ -2406,13 +2412,13 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
 VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
 {
     pgmLock(pVM);
-    int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
+    int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
     if (rc == VERR_GMM_SEED_ME)
     {
         void *pvChunk;
         rc = SUPPageAlloc(GMM_CHUNK_SIZE >> PAGE_SHIFT, &pvChunk);
         if (RT_SUCCESS(rc))
-            rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
+            rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
         if (RT_FAILURE(rc))
         {
             LogRel(("PGM: GMM Seeding failed, rc=%Rrc\n", rc));
@@ -2431,7 +2437,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
- * @retval  VINF_PGM_PHYS_TLB_CATCH_WRITE and *pvPtr set if the page has a write
+ * @retval  VINF_PGM_PHYS_TLB_CATCH_WRITE and *ppv set if the page has a write
  *          access handler of some kind.
  * @retval  VERR_PGM_PHYS_TLB_CATCH_ALL if the page has a handler catching all
  *          accesses or is odd in any way.
@@ -2440,9 +2446,10 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
  * @param   pVM         The VM handle.
  * @param   GCPhys      The GC physical address to convert.
  * @param   fWritable   Whether write access is required.
- * @param   pR3Ptr      Where to store the R3 pointer on success.
+ * @param   ppv         Where to store the pointer corresponding to GCPhys on
+ *                      success.
  */
-VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, void **pvPtr)
+VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, void **ppv)
 {
     pgmLock(pVM);
 
@@ -2451,56 +2458,93 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
     int rc = pgmPhysGetPageAndRangeEx(&pVM->pgm.s, GCPhys, &pPage, &pRam);
     if (RT_SUCCESS(rc))
     {
-#if 0 /** @todo ifndef PGM_IGNORE_RAM_FLAGS_RESERVED */
-        if (RT_UNLIKELY(PGM_PAGE_IS_RESERVED(pPage)))
-            rc = VERR_PGM_PHYS_TLB_UNASSIGNED;
-#endif
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        if (!PGM_PAGE_HAS_ANY_HANDLERS(pPage))
+            rc = VINF_SUCCESS;
+        else
         {
-#if 0 /** @todo looks like the system ROM is registered incorrectly, 0xfe000 claims to be a zero page. */
-            if (fWritable && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
-                rc = VERR_PGM_PHYS_TLB_UNASSIGNED; /** @todo VBOX_WITH_NEW_PHYS_CODE: remap it to a writeable page. */
-#else
-            if (0)
-                /* nothing */;
-#endif
-            else if (PGM_PAGE_HAS_ANY_HANDLERS(pPage))
-            {
-                if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)) /* catches MMIO */
-                    rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
-                else if (fWritable && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                    rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
-                else
-                {
-                    /* Temporariliy disabled phycial handler(s), since the recompiler
-                       doesn't get notified when it's reset we'll have to pretend its
-                       operating normally. */
-                    if (pgmHandlerPhysicalIsAll(pVM, GCPhys))
-                        rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
-                    else
-                        rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
-                }
-            }
+            if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)) /* catches MMIO */
+                rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
+            else if (fWritable && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
             else
-                rc = VINF_SUCCESS;
-            if (RT_SUCCESS(rc))
             {
-                if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-                {
-                    AssertMsg(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, ("GCPhys=%RGp type=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pPage)));
-                    RTGCPHYS off = GCPhys - pRam->GCPhys;
-                    unsigned iChunk = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
-                    *pvPtr = (void *)(pRam->paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
-                }
-                else if (RT_LIKELY(pRam->pvR3))
-                {
-                    AssertMsg(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2, ("GCPhys=%RGp type=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pPage)));
-                    RTGCPHYS off = GCPhys - pRam->GCPhys;
-                    *pvPtr = (uint8_t *)pRam->pvR3 + off;
-                }
+                /* Temporariliy disabled phycial handler(s), since the recompiler
+                   doesn't get notified when it's reset we'll have to pretend its
+                   operating normally. */
+                if (pgmHandlerPhysicalIsAll(pVM, GCPhys))
+                    rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
                 else
-                    rc = VERR_PGM_PHYS_TLB_UNASSIGNED;
+                    rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
             }
         }
+        if (RT_SUCCESS(rc))
+        {
+            /* Make sure what we return is writable. */
+            if (fWritable && rc != VINF_PGM_PHYS_TLB_CATCH_WRITE)
+                switch (PGM_PAGE_GET_STATE(pPage))
+                {
+                    case PGM_PAGE_STATE_ALLOCATED:
+                    case PGM_PAGE_STATE_ZERO:
+                        break;
+                    case PGM_PAGE_STATE_SHARED:
+                    case PGM_PAGE_STATE_WRITE_MONITORED:
+                        rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
+                        AssertLogRelRCReturn(rc, rc);
+                        break;
+                }
+
+            /* Get a ring-3 mapping of the address. */
+            PPGMPAGER3MAPTLBE pTlbe;
+            int rc = pgmPhysPageQueryTlbe(&pVM->pgm.s, GCPhys, &pTlbe);
+            AssertLogRelRCReturn(rc, rc);
+            *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
+            /** @todo mapping/locking hell; this isn't horribly efficient since
+             *        pgmPhysPageLoadIntoTlb will repeate the lookup we've done here. */
+        }
+        /* else: handler catching all access, no pointer returned. */
+
+#else
+        if (0)
+            /* nothing */;
+        else if (PGM_PAGE_HAS_ANY_HANDLERS(pPage))
+        {
+            if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)) /* catches MMIO */
+                rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
+            else if (fWritable && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+            else
+            {
+                /* Temporariliy disabled phycial handler(s), since the recompiler
+                   doesn't get notified when it's reset we'll have to pretend its
+                   operating normally. */
+                if (pgmHandlerPhysicalIsAll(pVM, GCPhys))
+                    rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
+                else
+                    rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+            }
+        }
+        else
+            rc = VINF_SUCCESS;
+        if (RT_SUCCESS(rc))
+        {
+            if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
+            {
+                AssertMsg(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, ("GCPhys=%RGp type=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pPage)));
+                RTGCPHYS off = GCPhys - pRam->GCPhys;
+                unsigned iChunk = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
+                *ppv = (void *)(pRam->paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+            }
+            else if (RT_LIKELY(pRam->pvR3))
+            {
+                AssertMsg(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2, ("GCPhys=%RGp type=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pPage)));
+                RTGCPHYS off = GCPhys - pRam->GCPhys;
+                *ppv = (uint8_t *)pRam->pvR3 + off;
+            }
+            else
+                rc = VERR_PGM_PHYS_TLB_UNASSIGNED;
+        }
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
     }
     else
         rc = VERR_PGM_PHYS_TLB_UNASSIGNED;
