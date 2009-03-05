@@ -37,7 +37,10 @@
 
 using namespace std;
 
-// defines
+////////////////////////////////////////////////////////////////////////////////
+//
+// hardware definitions
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 struct DiskImage
@@ -111,20 +114,6 @@ typedef map<Utf8Str, Network> NetworksMap;
 
 struct VirtualSystem;
 
-// opaque private instance data of Appliance class
-struct Appliance::Data
-{
-    Utf8Str                 strPath;            // file name last given to either read() or write()
-
-    DiskImagesMap           mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
-
-    NetworksMap             mapNetworks;        // map of Network structs, sorted by Network.strNetworkName
-
-    list<VirtualSystem>     llVirtualSystems;
-
-    list< ComObjPtr<VirtualSystemDescription> > virtualSystemDescriptions;
-};
-
 typedef map<uint32_t, VirtualHardwareItem> HardwareItemsMap;
 
 struct HardDiskController
@@ -197,6 +186,38 @@ struct VirtualSystem
     {
     }
 };
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Appliance data definition
+//
+////////////////////////////////////////////////////////////////////////////////
+
+// opaque private instance data of Appliance class
+struct Appliance::Data
+{
+    Utf8Str                 strPath;            // file name last given to either read() or write()
+
+    DiskImagesMap           mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
+
+    NetworksMap             mapNetworks;        // map of Network structs, sorted by Network.strNetworkName
+
+    list<VirtualSystem>     llVirtualSystems;   // list of virtual systems, created by and valid after read()
+
+    list< ComObjPtr<VirtualSystemDescription> > virtualSystemDescriptions; //
+};
+
+struct VirtualSystemDescription::Data
+{
+    list<VirtualSystemDescriptionEntry> llDescriptions;
+    list<Utf8Str> llWarnings;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Threads
+//
+////////////////////////////////////////////////////////////////////////////////
 
 struct Appliance::TaskImportMachines
 {
@@ -2454,8 +2475,188 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
     try
     {
         xml::Document doc;
-        doc.createRootElement("Envelope");
+        xml::Node *pelmRoot = doc.createRootElement("Envelope");
 
+        pelmRoot->setAttribute("ovf:version", "1.0");
+        pelmRoot->setAttribute("xml:lang", "en-US");
+        pelmRoot->setAttribute("xmlns", "http://schemas.dmtf.org/ovf/envelope/1");
+        pelmRoot->setAttribute("xmlns:ovf", "http://schemas.dmtf.org/ovf/envelope/1");
+        pelmRoot->setAttribute("xmlns:ovfstr", "http://schema.dmtf.org/ovf/strings/1");
+        pelmRoot->setAttribute("xmlns:rasd", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData");
+        pelmRoot->setAttribute("xmlns:vssd", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData");
+        pelmRoot->setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+        pelmRoot->setAttribute("xsi:schemaLocation", "http://schemas.dmtf.org/ovf/envelope/1 ../ovf-envelope.xsd");
+
+
+        // <Envelope>/<References>
+        xml::Node *pelmReferences = pelmRoot->createChild("References");
+                // @ŧodo
+
+        /* <Envelope>/<DiskSection>:
+            <DiskSection>
+                <Info>List of the virtual disks used in the package</Info>
+                <Disk ovf:capacity="4294967296" ovf:diskId="lamp" ovf:format="http://www.vmware.com/specifications/vmdk.html#compressed" ovf:populatedSize="1924967692"/>
+            </DiskSection> */
+        xml::Node *pelmDiskSection = pelmRoot->createChild("DiskSection");
+        xml::Node *pelmDiskSectionInfo = pelmDiskSection->createChild("Info");
+        pelmDiskSectionInfo->addContent("List of the virtual disks used in the package");
+        // @todo for each disk:
+        // xml::Node *pelmDisk = pelmDiskSection->createChild("Disk");
+
+        /* <Envelope>/<NetworkSection>:
+            <NetworkSection>
+                <Info>Logical networks used in the package</Info>
+                <Network ovf:name="VM Network">
+                    <Description>The network that the LAMP Service will be available on</Description>
+                </Network>
+            </NetworkSection> */
+        xml::Node *pelmNetworkSection = pelmRoot->createChild("NetworkSection");
+        xml::Node *pelmNetworkSectionInfo = pelmNetworkSection->createChild("Info");
+        pelmNetworkSectionInfo->addContent("Logical networks used in the package");
+        // @todo for each network:
+        // xml::Node *pelmNetwork = pelmNetworkSection->createChild("Network");
+
+        // and here come the virtual systems:
+        xml::Node *pelmVirtualSystemCollection = pelmRoot->createChild("VirtualSystemCollection");
+        xml::Node *pattrVirtualSystemCollectionId = pelmVirtualSystemCollection->setAttribute("ovf:id", "ExportedVirtualBoxMachines");      // whatever
+
+        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
+        /* Iterate through all virtual systems of that appliance */
+        for (it = pAppliance->m->virtualSystemDescriptions.begin();
+             it != pAppliance->m->virtualSystemDescriptions.end();
+             ++it)
+        {
+            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
+
+            xml::Node *pelmVirtualSystem = pelmVirtualSystemCollection->createChild("VirtualSystem");
+            xml::Node *pelmVirtualSystemInfo = pelmVirtualSystem->createChild("Info");      // @todo put in description here after implementing an entry for it
+
+            std::list<VirtualSystemDescriptionEntry*> llName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
+
+            std::list<VirtualSystemDescriptionEntry*> llOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
+            /*  <OperatingSystemSection ovf:id="82">
+                    <Info>Guest Operating System</Info>
+                    <Description>Linux 2.6.x</Description>
+                </OperatingSystemSection> */
+            xml::Node *pelmOperatingSystemSection = pelmVirtualSystem->createChild("OperatingSystemSection");
+            pelmOperatingSystemSection->setAttribute("ovf:id", "82");
+                    // @todo convert vbox OS type into OVF ID
+            pelmOperatingSystemSection->createChild("Info")->addContent("blah");        // @ŧodo
+            pelmOperatingSystemSection->createChild("Description")->addContent("blah");        // @ŧodo
+
+            // <VirtualHardwareSection ovf:id="hw1" ovf:transport="iso">
+            xml::Node *pelmVirtualHardwareSection = pelmVirtualSystem->createChild("VirtualHardwareSection");
+
+            /*  <System>
+                    <vssd:Description>Description of the virtual hardware section.</vssd:Description>
+                    <vssd:ElementName>vmware</vssd:ElementName>
+                    <vssd:InstanceID>1</vssd:InstanceID>
+                    <vssd:VirtualSystemIdentifier>MyLampService</vssd:VirtualSystemIdentifier>
+                    <vssd:VirtualSystemType>vmx-4</vssd:VirtualSystemType>
+                </System> */
+            xml::Node *pelmSystem = pelmVirtualHardwareSection->createChild("System");
+
+            // <vssd:VirtualSystemType>vmx-4</vssd:VirtualSystemType>
+            xml::Node *pelmVirtualSystemType = pelmSystem->createChild("VirtualSystemType");
+            pelmVirtualSystemType->addContent("virtualbox-2.2");            // instead of vmx-7?
+
+            uint32_t ulInstanceID = 1;
+
+            list<VirtualSystemDescriptionEntry>::const_iterator itD;
+            for (itD = vsdescThis->m->llDescriptions.begin();
+                 itD != vsdescThis->m->llDescriptions.end();
+                 ++itD)
+            {
+                const VirtualSystemDescriptionEntry &desc = *itD;
+
+                OVFResourceType_T type = 0;     // if this becomes != 0 then we do stuff
+                Utf8Str strDescription;         // must also be set then
+                int32_t lVirtualQuantity = -1;
+                uint64_t uTemp;
+
+                switch (desc.type)
+                {
+                    case VirtualSystemDescriptionType_CPU:
+                        /*  <Item>
+                                <rasd:Caption>1 virtual CPU</rasd:Caption>
+                                <rasd:Description>Number of virtual CPUs</rasd:Description>
+                                <rasd:ElementName>virtual CPU</rasd:ElementName>
+                                <rasd:InstanceID>1</rasd:InstanceID>
+                                <rasd:ResourceType>3</rasd:ResourceType>
+                                <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
+                            </Item> */
+                        strDescription = "Number of virtual CPUs";
+                        type = OVFResourceType_Processor; // 3
+                        lVirtualQuantity = 1;
+                    break;
+
+                    case VirtualSystemDescriptionType_Memory:
+                        /*  <Item>
+                                <rasd:AllocationUnits>MegaBytes</rasd:AllocationUnits>
+                                <rasd:Caption>256 MB of memory</rasd:Caption>
+                                <rasd:Description>Memory Size</rasd:Description>
+                                <rasd:ElementName>Memory</rasd:ElementName>
+                                <rasd:InstanceID>2</rasd:InstanceID>
+                                <rasd:ResourceType>4</rasd:ResourceType>
+                                <rasd:VirtualQuantity>256</rasd:VirtualQuantity>
+                            </Item> */
+                        strDescription = "Memory Size";
+                        type = OVFResourceType_Memory; // 4
+                        desc.strVbox.toInt(uTemp);
+                        lVirtualQuantity = uTemp / _1M;
+                    break;
+
+                    case VirtualSystemDescriptionType_HardDiskControllerIDE:
+                    break;
+                    case VirtualSystemDescriptionType_HardDiskControllerSATA:
+                    break;
+                    case VirtualSystemDescriptionType_HardDiskControllerSCSI:
+                    break;
+
+                    case VirtualSystemDescriptionType_HardDiskImage:
+                    break;
+
+                    case VirtualSystemDescriptionType_Floppy:
+                    break;
+
+                    case VirtualSystemDescriptionType_CDROM:
+                    break;
+
+                    case VirtualSystemDescriptionType_LogicalNetwork:
+                    break;
+
+                    case VirtualSystemDescriptionType_NetworkAdapter:
+                    break;
+
+                    case VirtualSystemDescriptionType_USBController:
+                    break;
+
+                    case VirtualSystemDescriptionType_SoundCard:
+                    break;
+                }
+
+                if (type)
+                {
+                    xml::Node *pItem;
+                    pItem = pelmVirtualHardwareSection->createChild("Item");
+
+                    pItem->createChild("rasd:Description")->addContent(strDescription.c_str());
+
+                    // <rasd:InstanceID>1</rasd:InstanceID>
+                    pItem->createChild("rasd:InstanceID")->addContent(Utf8StrFmt("%d", ulInstanceID).c_str());
+
+                    // <rasd:ResourceType>3</rasd:ResourceType>
+                    pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type).c_str());
+
+                    // <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
+                    if (lVirtualQuantity != -1)
+                        pItem->createChild("rasd:VirtualQuantity")->addContent(Utf8StrFmt("%d", lVirtualQuantity).c_str());
+
+                }
+            }
+        }
+
+        // now go write the XML
         xml::XmlFileWriter writer(doc);
         writer.write(pAppliance->m->strPath.c_str());
     }
@@ -2480,7 +2681,6 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
     return VINF_SUCCESS;
 }
 
-#
 ////////////////////////////////////////////////////////////////////////////////
 //
 // IVirtualSystemDescription constructor / destructor
@@ -2489,12 +2689,6 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
 
 DEFINE_EMPTY_CTOR_DTOR(VirtualSystemDescription)
 struct shutup3 {};
-
-struct VirtualSystemDescription::Data
-{
-    list<VirtualSystemDescriptionEntry> descriptions;
-    list<Utf8Str> warnings;
-};
 
 /**
  * COM initializer.
@@ -2545,7 +2739,7 @@ STDMETHODIMP VirtualSystemDescription::COMGETTER(Count)(ULONG *aCount)
 
     AutoReadLock alock(this);
 
-    *aCount = (ULONG)m->descriptions.size();
+    *aCount = (ULONG)m->llDescriptions.size();
 
     return S_OK;
 }
@@ -2572,7 +2766,7 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
 
     AutoReadLock alock(this);
 
-    ULONG c = (ULONG)m->descriptions.size();
+    ULONG c = (ULONG)m->llDescriptions.size();
     com::SafeArray<VirtualSystemDescriptionType_T> sfaTypes(c);
     com::SafeArray<BSTR> sfaRefs(c);
     com::SafeArray<BSTR> sfaOrigValues(c);
@@ -2581,8 +2775,8 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
 
     list<VirtualSystemDescriptionEntry>::const_iterator it;
     size_t i = 0;
-    for (it = m->descriptions.begin();
-         it != m->descriptions.end();
+    for (it = m->llDescriptions.begin();
+         it != m->llDescriptions.end();
          ++it, ++i)
     {
         const VirtualSystemDescriptionEntry &vsde = (*it);
@@ -2630,15 +2824,15 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
     com::SafeArray<IN_BSTR> aVboxValues(ComSafeArrayInArg(argVboxValues));
     com::SafeArray<IN_BSTR> aExtraConfigValues(ComSafeArrayInArg(argExtraConfigValues));
 
-    if (    (aVboxValues.size() != m->descriptions.size())
-         || (aExtraConfigValues.size() != m->descriptions.size())
+    if (    (aVboxValues.size() != m->llDescriptions.size())
+         || (aExtraConfigValues.size() != m->llDescriptions.size())
        )
         return E_INVALIDARG;
 
     list<VirtualSystemDescriptionEntry>::iterator it;
     size_t i = 0;
-    for (it = m->descriptions.begin();
-         it != m->descriptions.end();
+    for (it = m->llDescriptions.begin();
+         it != m->llDescriptions.end();
          ++it, ++i)
     {
         VirtualSystemDescriptionEntry& vsde = *it;
@@ -2669,12 +2863,12 @@ STDMETHODIMP VirtualSystemDescription::GetWarnings(ComSafeArrayOut(BSTR, aWarnin
 
     AutoReadLock alock(this);
 
-    com::SafeArray<BSTR> sfaWarnings(m->warnings.size());
+    com::SafeArray<BSTR> sfaWarnings(m->llWarnings.size());
 
     list<Utf8Str>::const_iterator it;
     size_t i = 0;
-    for (it = m->warnings.begin();
-         it != m->warnings.end();
+    for (it = m->llWarnings.begin();
+         it != m->llWarnings.end();
          ++it, ++i)
     {
         Bstr bstr = *it;
@@ -2701,14 +2895,14 @@ void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
                                         const Utf8Str &strExtraConfig /*= ""*/)
 {
     VirtualSystemDescriptionEntry vsde;
-    vsde.ulIndex = (uint32_t)m->descriptions.size();      // each entry gets an index so the client side can reference them
+    vsde.ulIndex = (uint32_t)m->llDescriptions.size();      // each entry gets an index so the client side can reference them
     vsde.type = aType;
     vsde.strRef = strRef;
     vsde.strOvf = aOrigValue;
     vsde.strVbox = aAutoValue;
     vsde.strExtraConfig = strExtraConfig;
 
-    m->descriptions.push_back(vsde);
+    m->llDescriptions.push_back(vsde);
 }
 
 void VirtualSystemDescription::addWarning(const char* aWarning, ...)
@@ -2717,7 +2911,7 @@ void VirtualSystemDescription::addWarning(const char* aWarning, ...)
     va_start(args, aWarning);
     Utf8StrFmtVA str(aWarning, args);
     va_end(args);
-    m->warnings.push_back(str);
+    m->llWarnings.push_back(str);
 }
 
 /**
@@ -2731,8 +2925,8 @@ std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::findByType(V
     std::list<VirtualSystemDescriptionEntry*> vsd;
 
     list<VirtualSystemDescriptionEntry>::iterator it;
-    for (it = m->descriptions.begin();
-         it != m->descriptions.end();
+    for (it = m->llDescriptions.begin();
+         it != m->llDescriptions.end();
          ++it)
     {
         if (it->type == aType)
@@ -2753,8 +2947,8 @@ const VirtualSystemDescriptionEntry* VirtualSystemDescription::findControllerFro
 {
     Utf8Str strRef = Utf8StrFmt("%RI32", id);
     list<VirtualSystemDescriptionEntry>::const_iterator it;
-    for (it = m->descriptions.begin();
-         it != m->descriptions.end();
+    for (it = m->llDescriptions.begin();
+         it != m->llDescriptions.end();
          ++it)
     {
         switch (it->type)
@@ -2876,7 +3070,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
         /* Memory */
         Utf8Str strMemory = Utf8StrFmt("%RI32", (uint64_t)ulMemSizeMB * _1M);
-        pNewDesc->addEntry(VirtualSystemDescriptionType_CPU,
+        pNewDesc->addEntry(VirtualSystemDescriptionType_Memory,
                            "",
                            strMemory,
                            strMemory);

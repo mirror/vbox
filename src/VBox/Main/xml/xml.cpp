@@ -410,11 +410,12 @@ xmlParserInput* GlobalLock::callDefaultLoader(const char *aURI,
 
 struct Node::Data
 {
-    xmlNode     *plibNode;          // != NULL if this is an element
-    xmlAttr     *plibAttr;          // != NULL if this is an attribute
+    xmlNode     *plibNode;          // != NULL if this is an element or content node
+    xmlAttr     *plibAttr;          // != NULL if this is an attribute node
 
     Node        *pParent;           // NULL only for the root element
-    const char  *pcszName;          // points either into plibNode or plibAttr
+    const char  *pcszName;          // element or attribute name, points either into plibNode or plibAttr;
+                                    // NULL if this is a content node
 
     struct compare_const_char
     {
@@ -748,6 +749,113 @@ bool Node::getAttributeValue(const char *pcszMatch, uint64_t &i) const
     return false;
 }
 
+/**
+ * Creates a new child element node and appends it to the list
+ * of children in "this".
+ *
+ * @param pcszElementName
+ * @return
+ */
+Node* Node::createChild(const char *pcszElementName)
+{
+    // we must be an element, not an attribute
+    if (!m->plibNode)
+        throw ENodeIsNotElement(RT_SRC_POS);
+
+    // libxml side: create new node
+    xmlNode *plibNode;
+    if (!(plibNode = xmlNewNode(NULL,        // namespace
+                                (const xmlChar*)pcszElementName)))
+        throw ENoMemory();
+    xmlAddChild(m->plibNode, plibNode);
+
+    // now wrap this in C++
+    Node *p = new Node;
+    boost::shared_ptr<Node> pNew(p);
+    pNew->m->plibNode = plibNode;
+    pNew->m->pcszName = (const char*)plibNode->name;
+
+    m->children.push_back(pNew);
+
+    return p;
+}
+
+
+/**
+ * Creates a content node and appends it to the list of children
+ * in "this".
+ *
+ * @param pcszElementName
+ * @return
+ */
+Node* Node::addContent(const char *pcszContent)
+{
+    // we must be an element, not an attribute
+    if (!m->plibNode)
+        throw ENodeIsNotElement(RT_SRC_POS);
+
+    // libxml side: create new node
+    xmlNode *plibNode;
+    if (!(plibNode = xmlNewText((const xmlChar*)pcszContent)))
+        throw ENoMemory();
+    xmlAddChild(m->plibNode, plibNode);
+
+    // now wrap this in C++
+    Node *p = new Node;
+    boost::shared_ptr<Node> pNew(p);
+    pNew->m->plibNode = plibNode;
+    pNew->m->pcszName = NULL;
+
+    m->children.push_back(pNew);
+
+}
+
+/**
+ * Sets the given attribute. Assumes that "this" is an element node,
+ * otherwise ENodeIsNotElement is thrown.
+ *
+ * If an attribute with the given name exists, it is overwritten,
+ * otherwise a new attribute is created. Returns the attribute node
+ * that was either created or changed.
+ *
+ * @param pcszName
+ * @param pcszValue
+ * @return
+ */
+Node* Node::setAttribute(const char *pcszName, const char *pcszValue)
+{
+    // we must be an element, not an attribute
+    if (!m->plibNode)
+        throw ENodeIsNotElement(RT_SRC_POS);
+
+    Data::AttributesMap::const_iterator it;
+
+    it = m->attribs.find(pcszName);
+    if (it == m->attribs.end())
+    {
+        // libxml side: xmlNewProp creates an attribute
+        xmlAttr *plibAttr = xmlNewProp(m->plibNode, (xmlChar*)pcszName, (xmlChar*)pcszValue);
+        const char *pcszAttribName = (const char*)plibAttr->name;
+
+        // C++ side: create an attribute node around it
+        boost::shared_ptr<Node> pNew(new Node);
+        pNew->m->plibAttr = plibAttr;
+        pNew->m->pcszName = (const char*)plibAttr->name;
+        pNew->m->pParent = this;
+        // store
+        m->attribs[pcszAttribName] = pNew;
+    }
+    else
+    {
+        // @todo
+        throw LogicError("Attribute exists");
+    }
+
+    return NULL;
+
+}
+
+
 /*
  * NodesLoop
  *
@@ -898,17 +1006,21 @@ const Node* Document::getRootElement() const
  */
 Node* Document::createRootElement(const char *pcszRootElementName)
 {
-    if (m->pRootElement)
+    if (m->pRootElement || m->plibDocument)
         throw EDocumentNotEmpty(RT_SRC_POS);
 
+    // libxml side: create document, create root node
     m->plibDocument = xmlNewDoc((const xmlChar*)"1.0");
-    if (!(m->pRootElement = new Node()))
+    xmlNode *plibRootNode;
+    if (!(plibRootNode = xmlNewNode(NULL,        // namespace
+                                    (const xmlChar*)pcszRootElementName)))
         throw ENoMemory();
-    Node::Data *pNodeData = m->pRootElement->m;
-    if (!(pNodeData->plibNode = xmlNewNode(NULL,        // namespace
-                                           (const xmlChar*)pcszRootElementName)))
-        throw ENoMemory();
-    pNodeData->pcszName = (const char*)pNodeData->plibNode->name;
+    xmlDocSetRootElement(m->plibDocument, plibRootNode);
+
+    // now wrap this in C++
+    m->pRootElement = new Node();
+    m->pRootElement->m->plibNode = plibRootNode;
+    m->pRootElement->m->pcszName = (const char*)plibRootNode->name;
 
     return m->pRootElement;
 }
