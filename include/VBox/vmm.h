@@ -317,6 +317,7 @@ VMMRCDECL(void)     VMMGCGuestToHost(PVM pVM, int rc);
 VMMRCDECL(int)      VMMGCCallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
 VMMRCDECL(void)     VMMGCLogDisable(PVM pVM);
 VMMRCDECL(void)     VMMGCLogEnable(PVM pVM);
+VMMRCDECL(void)     VMMGCLoggerFlushFullLog(PVM pVM);
 /** @} */
 #endif /* IN_RC */
 
