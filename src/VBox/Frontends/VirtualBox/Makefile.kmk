@@ -364,6 +364,7 @@ VirtualBox_SOURCES = \
 	src/VBoxSettingsDialogSpecific.cpp \
 	src/VBoxSettingsSelector.cpp \
 	src/VBoxMediaManagerDlg.cpp \
+	src/VBoxMedium.cpp \
 	src/VBoxImportApplianceWgt.cpp \
 	src/VBoxImportApplianceWzd.cpp
 
