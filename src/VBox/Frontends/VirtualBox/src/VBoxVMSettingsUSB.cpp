@@ -134,11 +134,11 @@ void VBoxVMSettingsUSB::getFrom (const CSystemProperties &, const VBoxGlobalSett
 {
     mGbUSB->setVisible (false);
 
-    CHostUSBDeviceFilterEnumerator en = vboxGlobal().virtualBox().GetHost()
-                                        .GetUSBDeviceFilters().Enumerate();
-    while (en.HasMore())
+    CHostUSBDeviceFilterVector filtvec = vboxGlobal().virtualBox().GetHost()
+                                        .GetUSBDeviceFilters();
+    for (int i = 0; i < filtvec.size(); ++i)
     {
-        CHostUSBDeviceFilter hostFilter = en.GetNext();
+        CHostUSBDeviceFilter hostFilter = filtvec[i];
         CUSBDeviceFilter filter (hostFilter);
         addUSBFilter (filter, false /* isNew */);
     }
@@ -154,7 +154,7 @@ void VBoxVMSettingsUSB::putBackTo (CSystemProperties &, VBoxGlobalSettings &)
     if (mUSBFilterListModified)
     {
         /* First, remove all old filters */
-        for (ulong count = host.GetUSBDeviceFilters().GetCount(); count; -- count)
+        for (ulong count = host.GetUSBDeviceFilters().size(); count; -- count)
             host.RemoveUSBDeviceFilter (0);
 
         /* Then add all new filters */
@@ -164,7 +164,7 @@ void VBoxVMSettingsUSB::putBackTo (CSystemProperties &, VBoxGlobalSettings &)
             filter.SetActive (mTwFilters->topLevelItem (i)->
                 checkState (0) == Qt::Checked);
             CHostUSBDeviceFilter insertedFilter (filter);
-            host.InsertUSBDeviceFilter (host.GetUSBDeviceFilters().GetCount(),
+            host.InsertUSBDeviceFilter (host.GetUSBDeviceFilters().size(),
                                         insertedFilter);
         }
     }

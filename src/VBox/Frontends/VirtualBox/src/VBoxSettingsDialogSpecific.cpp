@@ -186,17 +186,16 @@ QString VBoxGLSettingsDlg::dialogTitle() const
 void VBoxGLSettingsDlg::updateAvailability()
 {
     CHost host = vboxGlobal().virtualBox().GetHost();
-    CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
 
     /* Show an error message (if there is any).
      * This message box may be suppressed if the user wishes so. */
     if (!host.isReallyOk())
         vboxProblem().cannotAccessUSB (host);
 
-    if (coll.isNull())
-    {
+    CHostUSBDeviceFilterVector coll = host.GetUSBDeviceFilters();
+    if (host.lastRC() == E_NOTIMPL) {
         /* Disable the USB controller category if the USB controller is
-         * not available (i.e. in VirtualBox OSE) */
+         * not available (i.e. in VirtualBox OSE). */
         mSelector->setVisibleById (USBId, false);
     }
 }

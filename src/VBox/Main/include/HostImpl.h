@@ -83,7 +83,7 @@ public:
     STDMETHOD(COMGETTER(DVDDrives))(ComSafeArrayOut (IHostDVDDrive*, drives));
     STDMETHOD(COMGETTER(FloppyDrives))(ComSafeArrayOut (IHostFloppyDrive*, drives));
     STDMETHOD(COMGETTER(USBDevices))(IHostUSBDeviceCollection **aUSBDevices);
-    STDMETHOD(COMGETTER(USBDeviceFilters))(IHostUSBDeviceFilterCollection ** aUSBDeviceFilters);
+    STDMETHOD(COMGETTER(USBDeviceFilters))(ComSafeArrayOut (IHostUSBDeviceFilter *, aUSBDeviceFilters));
     STDMETHOD(COMGETTER(NetworkInterfaces))(ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces));
     STDMETHOD(COMGETTER(ProcessorCount))(ULONG *count);
     STDMETHOD(COMGETTER(ProcessorOnlineCount))(ULONG *count);

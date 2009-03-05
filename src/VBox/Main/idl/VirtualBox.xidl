@@ -6555,7 +6555,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="96128709-69b5-43cc-9393-b3895f3b866a"
+     uuid="378cf146-6cd6-4dbc-bc60-cbd2004d99c5"
      wsmap="managed"
      >
     <desc>
@@ -6594,7 +6594,7 @@
       </desc>
     </attribute>
 
-    <attribute name="USBDeviceFilters" type="IHostUSBDeviceFilterCollection" readonly="yes">
+    <attribute name="USBDeviceFilters" type="IHostUSBDeviceFilter" readonly="yes" safearray="yes">
       <desc>
         List of USB device filters in action.
         When a new device is physically attached to the host computer,
@@ -11502,18 +11502,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Hold the matched USB device.</desc>
     </const>
   </enum>
-
-  <enumerator
-     name="IHostUSBDeviceFilterEnumerator" type="IHostUSBDeviceFilter"
-     uuid="ff735211-903e-4642-9c37-189eb44579fe"
-     />
-
-  <collection
-     name="IHostUSBDeviceFilterCollection" type="IHostUSBDeviceFilter"
-     enumerator="IHostUSBDeviceFilterEnumerator"
-     uuid="1a80458b-87f1-4a74-995d-04e2330119e0"
-     readonly="yes"
-     />
 
   <interface
      name="IHostUSBDeviceFilter" extends="IUSBDeviceFilter"

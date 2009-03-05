@@ -682,75 +682,59 @@ int handleList(HandlerArg *a)
             ComPtr <IHost> host;
             CHECK_ERROR_RET (a->virtualBox, COMGETTER(Host) (host.asOutParam()), 1);
 
-            ComPtr<IHostUSBDeviceFilterCollection> coll;
-            CHECK_ERROR_RET (host, COMGETTER (USBDeviceFilters)(coll.asOutParam()), 1);
+            SafeIfaceArray <IHostUSBDeviceFilter> coll;
+            CHECK_ERROR_RET (host, COMGETTER (USBDeviceFilters)(ComSafeArrayAsOutParam(coll)), 1);
 
-            ComPtr<IHostUSBDeviceFilterEnumerator> en;
-            CHECK_ERROR_RET (coll, Enumerate(en.asOutParam()), 1);
-
-            ULONG index = 0;
-            BOOL more = FALSE;
-            ASSERT(SUCCEEDED(rc = en->HasMore (&more)));
-            if (FAILED(rc))
-                return rc;
-
-            if (!more)
+            if (coll.size() == 0)
             {
                 RTPrintf("<none>\n\n");
             }
             else
-            while (more)
             {
-                ComPtr<IHostUSBDeviceFilter> flt;
-                ASSERT(SUCCEEDED(rc = en->GetNext (flt.asOutParam())));
-                if (FAILED(rc))
-                    return rc;
-
-                /* Query info. */
-
-                RTPrintf("Index:            %lu\n", index);
-
-                BOOL active = FALSE;
-                CHECK_ERROR_RET (flt, COMGETTER (Active) (&active), 1);
-                RTPrintf("Active:           %s\n", active ? "yes" : "no");
-
-                USBDeviceFilterAction_T action;
-                CHECK_ERROR_RET (flt, COMGETTER (Action) (&action), 1);
-                const char *pszAction = "<invalid>";
-                switch (action)
+                for (size_t index = 0; index < coll.size(); ++index)
                 {
-                    case USBDeviceFilterAction_Ignore:
-                        pszAction = "Ignore";
-                        break;
-                    case USBDeviceFilterAction_Hold:
-                        pszAction = "Hold";
-                        break;
-                    default:
-                        break;
+                    ComPtr<IHostUSBDeviceFilter> flt = coll[index];
+
+                    /* Query info. */
+
+                    RTPrintf("Index:            %zu\n", index);
+
+                    BOOL active = FALSE;
+                    CHECK_ERROR_RET (flt, COMGETTER (Active) (&active), 1);
+                    RTPrintf("Active:           %s\n", active ? "yes" : "no");
+
+                    USBDeviceFilterAction_T action;
+                    CHECK_ERROR_RET (flt, COMGETTER (Action) (&action), 1);
+                    const char *pszAction = "<invalid>";
+                    switch (action)
+                    {
+                        case USBDeviceFilterAction_Ignore:
+                            pszAction = "Ignore";
+                            break;
+                        case USBDeviceFilterAction_Hold:
+                            pszAction = "Hold";
+                            break;
+                        default:
+                            break;
+                    }
+                    RTPrintf("Action:           %s\n", pszAction);
+
+                    Bstr bstr;
+                    CHECK_ERROR_RET (flt, COMGETTER (Name) (bstr.asOutParam()), 1);
+                    RTPrintf("Name:             %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (flt, COMGETTER (VendorId) (bstr.asOutParam()), 1);
+                    RTPrintf("VendorId:         %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (flt, COMGETTER (ProductId) (bstr.asOutParam()), 1);
+                    RTPrintf("ProductId:        %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (flt, COMGETTER (Revision) (bstr.asOutParam()), 1);
+                    RTPrintf("Revision:         %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (flt, COMGETTER (Manufacturer) (bstr.asOutParam()), 1);
+                    RTPrintf("Manufacturer:     %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (flt, COMGETTER (Product) (bstr.asOutParam()), 1);
+                    RTPrintf("Product:          %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (flt, COMGETTER (SerialNumber) (bstr.asOutParam()), 1);
+                    RTPrintf("Serial Number:    %lS\n\n", bstr.raw());
                 }
-                RTPrintf("Action:           %s\n", pszAction);
-
-                Bstr bstr;
-                CHECK_ERROR_RET (flt, COMGETTER (Name) (bstr.asOutParam()), 1);
-                RTPrintf("Name:             %lS\n", bstr.raw());
-                CHECK_ERROR_RET (flt, COMGETTER (VendorId) (bstr.asOutParam()), 1);
-                RTPrintf("VendorId:         %lS\n", bstr.raw());
-                CHECK_ERROR_RET (flt, COMGETTER (ProductId) (bstr.asOutParam()), 1);
-                RTPrintf("ProductId:        %lS\n", bstr.raw());
-                CHECK_ERROR_RET (flt, COMGETTER (Revision) (bstr.asOutParam()), 1);
-                RTPrintf("Revision:         %lS\n", bstr.raw());
-                CHECK_ERROR_RET (flt, COMGETTER (Manufacturer) (bstr.asOutParam()), 1);
-                RTPrintf("Manufacturer:     %lS\n", bstr.raw());
-                CHECK_ERROR_RET (flt, COMGETTER (Product) (bstr.asOutParam()), 1);
-                RTPrintf("Product:          %lS\n", bstr.raw());
-                CHECK_ERROR_RET (flt, COMGETTER (SerialNumber) (bstr.asOutParam()), 1);
-                RTPrintf("Serial Number:    %lS\n\n", bstr.raw());
-
-                ASSERT(SUCCEEDED(rc = en->HasMore (&more)));
-                if (FAILED(rc))
-                    return rc;
-
-                index ++;
             }
         }
         break;
