@@ -184,9 +184,6 @@
 #define PGM_PTFLAGS_CSAM_VALIDATED      RT_BIT_64(11)
 #endif
 
-/** Mark a dynamic map entry (PGMDynMapHCPage) as locked. */
-#define PGM_PTFLAGS_DYN_LOCKED          RT_BIT(9)
-
 /** @} */
 
 /** @name Defines used to indicate the shadow and guest paging in the templates.
@@ -2632,6 +2629,7 @@ typedef struct PGM
     /** Cache containing the last entries in the dynamic page mapping area.
      * The cache size is covering half of the mapping area. */
     RTHCPHYS                        aHCPhysDynPageMapCache[MM_HYPER_DYNAMIC_SIZE >> (PAGE_SHIFT + 1)];
+    uint32_t                        aLockedDynPageMapCache[MM_HYPER_DYNAMIC_SIZE >> (PAGE_SHIFT + 1)];
 
     /** The address of the ring-0 mapping cache if we're making use of it.  */
     RTR0PTR                         pvR0DynMapUsed;
