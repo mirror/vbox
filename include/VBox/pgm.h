@@ -406,7 +406,6 @@ DECLINLINE(bool)    PGMPhysIsPageMappingLockValid(PVM pVM, PPGMPAGEMAPLOCK pLock
 VMMDECL(int)        PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3PTR pR3Ptr);
 VMMDECL(RTR3PTR)    PGMPhysGCPhys2R3PtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
 VMMDECL(int)        PGMPhysGCPtr2R3Ptr(PVM pVM, RTGCPTR GCPtr, PRTR3PTR pR3Ptr);
-VMMDECL(int)        PGMPhysGCPtr2R3PtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, unsigned fFlags, PRTR3PTR pR3Ptr);
 VMMDECL(void)       PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
 VMMDECL(void)       PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
 VMMDECL(int)        PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb);

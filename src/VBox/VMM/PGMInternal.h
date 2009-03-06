@@ -1054,10 +1054,12 @@ typedef struct PGMRAMRANGE
 /** Pointer to Ram range for GC Phys to HC Phys conversion. */
 typedef PGMRAMRANGE *PPGMRAMRANGE;
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 /** Return hc ptr corresponding to the ram range and physical offset */
 #define PGMRAMRANGE_GETHCPTR(pRam, off) \
     (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC) ? (RTHCPTR)((pRam)->paChunkR3Ptrs[(off) >> PGM_DYNAMIC_CHUNK_SHIFT] + ((off) & PGM_DYNAMIC_CHUNK_OFFSET_MASK)) \
                                                 : (RTHCPTR)((RTR3UINTPTR)(pRam)->pvR3 + (off));
+#endif
 
 /**
  * Per page tracking structure for ROM image.
@@ -3039,7 +3041,6 @@ void            pgmHandlerVirtualDumpPhysPages(PVM pVM);
 DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
-void            pgmPhysFreePage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);

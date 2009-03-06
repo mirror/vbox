@@ -4508,10 +4508,12 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     AssertFailedReturn(VERR_INTERNAL_ERROR);
     int rc = VERR_INTERNAL_ERROR;
 #  else
+    pgmLock(pVM);
     PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysCR3);
     AssertReturn(pPage, VERR_INTERNAL_ERROR);
     int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhysCR3 & GST_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3);
     HCPhysGuestCR3 = PGM_PAGE_GET_HCPHYS(pPage);
+    pgmUnlock(pVM);
 #  endif
 # else  /* !VBOX_WITH_NEW_PHYS_CODE */
     int rc = pgmRamGCPhys2HCPtrAndHCPhys(&pVM->pgm.s, GCPhysCR3 & GST_CR3_PAGE_MASK, &HCPtrGuestCR3, &HCPhysGuestCR3);
@@ -4557,10 +4559,12 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                     AssertFailedReturn(VERR_INTERNAL_ERROR);
                     int rc2 = VERR_INTERNAL_ERROR;
 #   else
+                    pgmLock(pVM);
                     PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
                     AssertReturn(pPage, VERR_INTERNAL_ERROR);
                     int rc2 = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, (void **)&HCPtr);
                     HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+                    pgmUnlock(pVM);
 #   endif
 #  else  /* !VBOX_WITH_NEW_PHYS_CODE */
                     int rc2 = pgmRamGCPhys2HCPtrAndHCPhys(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);

@@ -2461,7 +2461,7 @@ static const struct
  */
 VMMDECL(int) PGMRegisterStringFormatTypes(void)
 {
-#ifdef LOG_ENABLED
+#if !defined(IN_R0) || defined(LOG_ENABLED)
     int         rc = VINF_SUCCESS;
     unsigned    i;
     for (i = 0; RT_SUCCESS(rc) && i < RT_ELEMENTS(g_aPgmFormatTypes); i++)
@@ -2495,7 +2495,7 @@ VMMDECL(int) PGMRegisterStringFormatTypes(void)
  */
 VMMDECL(void) PGMDeregisterStringFormatTypes(void)
 {
-#ifdef LOG_ENABLED
+#if !defined(IN_R0) || defined(LOG_ENABLED)
     for (unsigned i = 0; i < RT_ELEMENTS(g_aPgmFormatTypes); i++)
         RTStrFormatTypeDeregister(g_aPgmFormatTypes[i].szType);
 #endif
