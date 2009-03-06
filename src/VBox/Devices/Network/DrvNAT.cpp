@@ -85,6 +85,8 @@ typedef struct DRVNAT
     char                    *pszTFTPPrefix;
     /** Boot file name to provide in the DHCP server response. */
     char                    *pszBootFile;
+    /** tftp server name to provide in the DHCP server response. */
+    char                    *pszNextServer;
 #ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     /* polling thread */
     PPDMTHREAD              pThread;
@@ -798,7 +800,11 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0"))
+#ifndef VBOX_WITH_SLIRP_DNS_PROXY
+    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0NextServer\0"))
+#else
+    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0NextServer\0DNSProxy\0"))
+#endif
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, N_("Unknown NAT configuration option, only supports PassDomain, TFTPPrefix, BootFile and Network"));
 
     /*
@@ -808,6 +814,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     pThis->pNATState                    = NULL;
     pThis->pszTFTPPrefix                = NULL;
     pThis->pszBootFile                  = NULL;
+    pThis->pszNextServer                = NULL;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvNATQueryInterface;
     /* INetwork */
@@ -831,6 +838,15 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "BootFile", &pThis->pszBootFile);
     if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"BootFile\" string failed"), pDrvIns->iInstance);
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "NextServer", &pThis->pszNextServer);
+    if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"NextServer\" string failed"), pDrvIns->iInstance);
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+    bool fDNSProxy;
+    rc = CFGMR3QueryBool(pCfgHandle, "DNSProxy", &fDNSProxy);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        fDNSProxy = false;
+#endif
 
     /*
      * Query the network port interface.
@@ -871,9 +887,16 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Initialize slirp.
      */
-    rc = slirp_init(&pThis->pNATState, &szNetAddr[0], Netmask, fPassDomain, pThis->pszTFTPPrefix, pThis->pszBootFile, pThis);
+    rc = slirp_init(&pThis->pNATState, &szNetAddr[0], Netmask, fPassDomain, pThis);
     if (RT_SUCCESS(rc))
     {
+        slirp_set_dhcp_TFTP_prefix(pThis->pNATState, pThis->pszTFTPPrefix);
+        slirp_set_dhcp_TFTP_bootfile(pThis->pNATState, pThis->pszBootFile);
+        slirp_set_dhcp_next_server(pThis->pNATState, pThis->pszNextServer);
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+        slirp_set_dhcp_dns_proxy(pThis->pNATState, fDNSProxy);
+#endif
+
         slirp_register_timers(pThis->pNATState, pDrvIns);
         int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfgHandle, Network);
         if (RT_SUCCESS(rc2))
@@ -945,6 +968,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         PDMDRV_SET_ERROR(pDrvIns, rc, N_("Unknown error during NAT networking setup: "));
         AssertMsgFailed(("Add error message for rc=%d (%Rrc)\n", rc, rc));
     }
+
 
 #ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     RTCritSectDelete(&pThis->CritSect);
