@@ -130,7 +130,7 @@ DECLINLINE(void *) PGMPOOL_PAGE_2_LOCKED_PTR(PVM pVM, PPGMPOOLPAGE pPage)
 DECLINLINE(void) PGMPOOL_UNLOCK_PTR(PVM pVM, void *pvPage)
 {
     if (pvPage)
-        PGMDynLockHCPage(pVM, (uint8_t *)pvPage);
+        PGMDynUnlockHCPage(pVM, (uint8_t *)pvPage);
 }
 #else
 # define PGMPOOL_UNLOCK_PTR(pPGM, pPage)  do {} while (0)
