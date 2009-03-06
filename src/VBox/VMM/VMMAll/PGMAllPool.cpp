@@ -112,7 +112,7 @@ DECLINLINE(void *) PGMPOOL_PAGE_2_LOCKED_PTR(PVM pVM, PPGMPOOLPAGE pPage)
     return pv;
 }
 #else
-# define PGMPOOL_PAGE_2_LOCKED_PTR(pPGM, pPage)  PGMPOOL_PAGE_2_PTR(pVM, pPage)
+# define PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage)  PGMPOOL_PAGE_2_PTR(pVM, pPage)
 #endif
 
 /** @def PGMPOOL_UNLOCK_PTR
