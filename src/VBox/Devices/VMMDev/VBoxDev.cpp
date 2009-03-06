@@ -311,7 +311,7 @@ static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTI
         {
             pThis->szMsg[pThis->iMsg] = '\0';
             if (pThis->iMsg)
-                LogRel(("Guest Log: %s\n", pThis->szMsg));
+                LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("Guest Log: %s\n", pThis->szMsg));
             pThis->iMsg = 0;
         }
         else
