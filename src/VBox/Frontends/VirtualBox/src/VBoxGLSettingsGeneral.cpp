@@ -40,7 +40,7 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
     mPsHardDisk->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsMach->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsVRDP->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
-    mPsVRDP->setMode (VBoxFilePathSelectorWidget::Mode_File);
+    mPsVRDP->setMode (VBoxFilePathSelectorWidget::Mode_File_Open);
 
     /* Applying language settings */
     retranslateUi();

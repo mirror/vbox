@@ -40,7 +40,8 @@ public:
     enum Mode
     {
         Mode_Folder = 0,
-        Mode_File
+        Mode_File_Open,
+        Mode_File_Save
     };
 
     VBoxFilePathSelectorWidget (QWidget *aParent);

@@ -71,7 +71,7 @@ VBoxExportApplianceWzd::VBoxExportApplianceWzd (QWidget *aParent /* = NULL */, c
     mWValVMSelector->revalidate();
 
     /* Configure the file selector */
-    mFileSelector->setMode (VBoxFilePathSelectorWidget::Mode_File);
+    mFileSelector->setMode (VBoxFilePathSelectorWidget::Mode_File_Save);
     mFileSelector->setResetEnabled (false);
     mFileSelector->setFileDialogTitle (tr ("Select a file to export into"));
     mFileSelector->setFileFilters (tr ("Open Virtualization Format (%1)").arg ("*.ovf"));
@@ -131,10 +131,8 @@ void VBoxExportApplianceWzd::accept()
 {
     /* Check if the file exists already, if yes get confirmation for
      * overwriting from the user. */
-    QFileInfo fi (mFileSelector->path());
-    if (fi.exists())
-        if (!vboxProblem().askForOverridingAppliance (mFileSelector->path(), this))
-            return;
+    if (!vboxProblem().askForOverridingFileIfExists (mFileSelector->path(), this))
+        return;
     /* Export the VMs, on success we are finished */
     if (exportVMs())
         QIAbstractWizard::accept();

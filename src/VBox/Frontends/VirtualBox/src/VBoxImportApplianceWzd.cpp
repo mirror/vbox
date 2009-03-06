@@ -40,7 +40,7 @@ VBoxImportApplianceWzd::VBoxImportApplianceWzd (QWidget *aParent /* = NULL */)
     initializeWizardHdr();
 
     /* Configure the file selector */
-    mFileSelector->setMode (VBoxFilePathSelectorWidget::Mode_File);
+    mFileSelector->setMode (VBoxFilePathSelectorWidget::Mode_File_Open);
     mFileSelector->setResetEnabled (false);
     mFileSelector->setFileDialogTitle (tr ("Select an appliance to import"));
     mFileSelector->setFileFilters (tr ("Open Virtualization Format (%1)").arg ("*.ovf"));

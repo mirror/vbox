@@ -547,7 +547,19 @@ QWidget *VBoxProblemReporter::mainWindowShown() const
     return 0;
 }
 
-// Problem handlers
+// Generic Problem handlers
+/////////////////////////////////////////////////////////////////////////////
+
+bool VBoxProblemReporter::askForOverridingFileIfExists (const QString& aPath, QWidget *aParent /* = NULL */) const
+{
+    QFileInfo fi (aPath);
+    if (fi.exists())
+        return messageYesNo (aParent, Question, tr ("A file named <b>%1</b> already exists. Are you sure you want to replace it?<br /><br />The file already exists in \"%2\". Replacing it will overwrite its contents.").arg (fi.fileName()). arg (fi.absolutePath()));
+    else
+        return true;
+}
+
+// Special Problem handlers
 /////////////////////////////////////////////////////////////////////////////
 
 #ifdef Q_WS_X11
@@ -2141,11 +2153,6 @@ void VBoxProblemReporter::cannotImportAppliance (const CProgress &aProgress, CAp
              Error,
              tr ("Failed to import appliance <b>%1</b>.").arg (aAppliance->GetPath()),
              formatErrorInfo (aProgress.GetErrorInfo()));
-}
-
-bool VBoxProblemReporter::askForOverridingAppliance (const QString& aPath, QWidget *aParent /* = NULL */) const
-{
-    return messageYesNo (aParent, Question, tr ("The file <b>%1</b> exists already. Are you sure you want override it?").arg (aPath), NULL);
 }
 
 void VBoxProblemReporter::cannotExportAppliance (CAppliance *aAppliance, QWidget *aParent /* = NULL */) const
