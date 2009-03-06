@@ -203,7 +203,7 @@ void VBoxExportApplianceWzd::addListViewVMItems (const QString& aSelectName)
         QListWidgetItem *item = new VMListWidgetItems (icon, name, mVMListWidget);
         item->setData (Qt::UserRole, uuid);
         if (!enabled)
-            item->setFlags (Qt::NoItemFlags);
+            item->setFlags (0);
         mVMListWidget->addItem (item);
     }
     mVMListWidget->sortItems();
