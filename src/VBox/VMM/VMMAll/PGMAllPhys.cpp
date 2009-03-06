@@ -1173,7 +1173,7 @@ VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageAndRangeEx(&pVM->pgm.s, GCPhys, &pPage, &pRam);
     if (RT_SUCCESS(rc))
-        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, (void **)&pR3Ptr);
+        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, (void **)pR3Ptr);
 
     pgmUnlock(pVM);
     Assert(rc <= VINF_SUCCESS);
@@ -1935,19 +1935,23 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
                 PPGMPHYS2VIRTHANDLER pVirtPhys;
                 pVirtPhys = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGetBestFit(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers,
                                                                           GCPhys, true /* fAbove */);
-                if (pVirtPhys)
+                if (    pVirtPhys
+                    &&  (pVirtPhys->Core.Key >> PAGE_SHIFT) == (GCPhys >> PAGE_SHIFT))
                 {
                     /* ASSUME that pVirtPhys only covers one page. */
                     Assert((pVirtPhys->Core.Key >> PAGE_SHIFT) == (pVirtPhys->Core.KeyLast >> PAGE_SHIFT));
-                    pVirt = (PPGMVIRTHANDLER)((uintptr_t)pVirtPhys + pVirtPhys->offVirtHandler);
-                    iVirtPage = pVirtPhys - &pVirt->aPhysToVirt[0]; Assert(iVirtPage == 0);
-                    offVirtLast = pVirtPhys->Core.KeyLast & PAGE_OFFSET_MASK - (GCPhys & PAGE_OFFSET_MASK);
+                    Assert(pVirtPhys->Core.Key > GCPhys);
+
+                    pVirt       = (PPGMVIRTHANDLER)((uintptr_t)pVirtPhys + pVirtPhys->offVirtHandler);
+                    iVirtPage   = pVirtPhys - &pVirt->aPhysToVirt[0]; Assert(iVirtPage == 0);
+                    offVirt     = (pVirtPhys->Core.Key     & PAGE_OFFSET_MASK) - (GCPhys & PAGE_OFFSET_MASK);
+                    offVirtLast = (pVirtPhys->Core.KeyLast & PAGE_OFFSET_MASK) - (GCPhys & PAGE_OFFSET_MASK);
                 }
                 else
                 {
-                    pVirt     = NULL;
-                    fMoreVirt = false;
-                    offVirt   = offVirtLast = PAGE_SIZE;
+                    pVirt       = NULL;
+                    fMoreVirt   = false;
+                    offVirt     = offVirtLast = PAGE_SIZE;
                 }
             }
         }
