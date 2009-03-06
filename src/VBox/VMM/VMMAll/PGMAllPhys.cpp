@@ -1898,7 +1898,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
     for (;;)
     {
         /*
-         * Find the closest handler above GCPhys.
+         * Find the closest handler at or above GCPhys.
          */
         if (fMoreVirt && !pVirt)
         {
