@@ -163,13 +163,13 @@ KFLAGS   += -DDEBUG
 endif
 
 # override is required by the Debian guys
-override MODULE = $(if $(foreach inc,$(INCL),\
-                 $(if $(wildcard $(inc)/linux/drmP.h),\
-                      yes,)),vboxvideo,)
+override MODULE = \
+	$(if $(strip $(foreach inc,$(patsubst -I%,%,$(INCL)),\
+					$(wildcard $(inc)/drm/drmP.h))),vboxvideo,)
+
 OBJS   = \
-	$(if $(foreach inc,$(INCL),\
-                 $(if $(wildcard $(inc)/linux/drmP.h),\
-                      yes,)),vboxvideo_drm.o,)
+	$(if $(strip $(foreach inc,$(patsubst -I%,%,$(INCL)),\
+					$(wildcard $(inc)/drm/drmP.h))),vboxvideo_drm.o,)
 
 ifeq ($(KERN_VERSION), 24)
 #
