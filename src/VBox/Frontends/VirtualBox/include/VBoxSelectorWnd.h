@@ -68,6 +68,7 @@ public slots:
 
     void fileMediaMgr();
     void fileImportAppliance();
+    void fileExportAppliance();
     void fileSettings();
     void fileExit();
 
@@ -150,6 +151,7 @@ private:
     /* Actions */
     QAction *mFileMediaMgrAction;
     QAction *mFileApplianceImportAction;
+    QAction *mFileApplianceExportAction;
     QAction *mFileSettingsAction;
     QAction *mFileExitAction;
     QAction *mVmNewAction;

@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>VBoxImportApplianceWzd</class>
- <widget class="QDialog" name="VBoxImportApplianceWzd">
+ <class>VBoxExportApplianceWzd</class>
+ <widget class="QWidget" name="VBoxExportApplianceWzd">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>550</width>
-    <height>380</height>
+    <width>559</width>
+    <height>399</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Appliance Import Wizard</string>
+   <string>Appliance Export Wizard</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="margin">
@@ -22,7 +22,7 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="mFileSelectPage">
+     <widget class="QWidget" name="mVMSelectPage">
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <widget class="QLabel" name="mPageWelcomeHdr">
@@ -35,7 +35,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Welcome to the Appliance Import Wizard!</string>
+          <string>Welcome to the Appliance Export Wizard!</string>
          </property>
         </widget>
        </item>
@@ -89,30 +89,17 @@
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will you guide to the process of importing an Appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will you guide to the process of exporting an Appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an Appliance you have to select a file describing the Appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to export an Appliance you have to select the virtual machines which should be included. You can select more than one. Please note that these VMs have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
-          <spacer name="spacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>408</width>
-             <height>258</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
          <item row="1" column="1">
-          <widget class="VBoxFilePathSelectorWidget" name="mFileSelector"/>
+          <widget class="QListWidget" name="mVMListWidget"/>
          </item>
         </layout>
        </item>
@@ -124,7 +111,7 @@ p, li { white-space: pre-wrap; }
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout">
+        <layout class="QHBoxLayout" name="_2">
          <item>
           <spacer>
            <property name="orientation">
@@ -182,7 +169,7 @@ p, li { white-space: pre-wrap; }
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="mSettingsPage">
+     <widget class="QWidget" name="mFileSelectPage">
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QLabel" name="mPageSettingsHdr">
@@ -195,7 +182,7 @@ p, li { white-space: pre-wrap; }
           </font>
          </property>
          <property name="text">
-          <string>Appliance Import Settings</string>
+          <string>Appliance Export Settings</string>
          </property>
         </widget>
        </item>
@@ -208,7 +195,7 @@ p, li { white-space: pre-wrap; }
        </item>
        <item>
         <layout class="QGridLayout" name="gridLayout_2">
-         <item row="0" column="0" rowspan="2">
+         <item row="0" column="0" rowspan="3">
           <widget class="QLabel" name="mLogoSettings">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
@@ -245,7 +232,7 @@ p, li { white-space: pre-wrap; }
             </size>
            </property>
            <property name="text">
-            <string>These are the Virtual Machines as described in the Appliance. VirtualBox has done some initial mapping of the various values. You can change most of the shown properties by double clicking on the items. To disable some of them use the check box near the values.</string>
+            <string>You have to select a filename as target for the export. Currently VirtualBox supports the Open Virtualization Format (OVF).</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>
@@ -253,29 +240,20 @@ p, li { white-space: pre-wrap; }
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="VBoxImportApplianceWgt" name="mImportSettingsWgt" native="true">
-           <property name="enabled">
-            <bool>true</bool>
+          <widget class="VBoxFilePathSelectorWidget" name="mFileSelector"/>
+         </item>
+         <item row="2" column="1">
+          <spacer name="spacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
            </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
+           <property name="sizeHint" stdset="0">
             <size>
-             <width>0</width>
-             <height>0</height>
+             <width>418</width>
+             <height>208</height>
             </size>
            </property>
-           <property name="baseSize">
-            <size>
-             <width>0</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
+          </spacer>
          </item>
         </layout>
        </item>
@@ -288,13 +266,6 @@ p, li { white-space: pre-wrap; }
        </item>
        <item>
         <layout class="QHBoxLayout" name="_3">
-         <item>
-          <widget class="QPushButton" name="mBtnRestore">
-           <property name="text">
-            <string>Restore Defaults</string>
-           </property>
-          </widget>
-         </item>
          <item>
           <spacer>
            <property name="orientation">
@@ -318,7 +289,7 @@ p, li { white-space: pre-wrap; }
          <item>
           <widget class="QPushButton" name="mBtnFinish">
            <property name="text">
-            <string>&amp;Import &gt;</string>
+            <string>&amp;Export &gt;</string>
            </property>
           </widget>
          </item>
@@ -360,12 +331,6 @@ p, li { white-space: pre-wrap; }
    <header>QILabel.h</header>
   </customwidget>
   <customwidget>
-   <class>VBoxImportApplianceWgt</class>
-   <extends>QWidget</extends>
-   <header>VBoxImportApplianceWgt.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>VBoxFilePathSelectorWidget</class>
    <extends>QComboBox</extends>
    <header>VBoxFilePathSelectorWidget.h</header>
@@ -373,7 +338,7 @@ p, li { white-space: pre-wrap; }
  </customwidgets>
  <resources>
   <include location="../VirtualBox.qrc"/>
-  <include location="../VirtualBox.qrc"/>
+  <include location="../../VirtualBox.qrc"/>
  </resources>
  <connections/>
 </ui>
