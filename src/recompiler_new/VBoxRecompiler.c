@@ -2694,6 +2694,89 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     pVM->rem.s.fIgnoreAll = false;
 }
 
+#if 0
+/** Prototype code for > 4G RAM physical memory registration */
+typedef struct {
+    RTGCPHYS GCBase;
+    RTGCPHYS cbSize;
+    uint32_t fFlags;
+} PhysRamRegion;
+
+static PhysRamRegion g_aRegions[4];
+static uint32_t      g_iLastRegion = 0;
+
+/**
+ * Notification about a successful MMR3PhysRegister() call.
+ *
+ * @param   pVM         VM handle.
+ * @param   GCPhys      The physical address the RAM.
+ * @param   cb          Size of the memory.
+ * @param   fFlags      Flags of the MM_RAM_FLAGS_* defines.
+ */
+REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, unsigned fFlags)
+{
+    uint32_t cbBitmap;
+    int rc;
+    Log(("REMR3NotifyPhysRamRegister: GCPhys=%RGp cb=%d fFlags=%d\n", GCPhys, cb, fFlags));
+    VM_ASSERT_EMT(pVM);
+
+    /*
+     * Validate input - we trust the caller.
+     */
+    Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
+    Assert(cb);
+    Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
+
+
+    AssertReleaseMsg(g_iLastRegion < RT_ELEMENTS(g_aRegions), "registering too many physical memory regions\n");
+    g_aRegions[g_iLastRegion].GCBase = GCBase;
+    g_aRegions[g_iLastRegion].cbSize = cb;
+    /** @todo: Flag names are just wildly invented for purposes of cleanness */
+    g_aRegions[g_iLastRegion].fFlags = fFlags & ~(MM_RAM_FLAGS_LAST_CHUNK);
+    g_iLastRegion++;
+
+    if (fFlags & MM_RAM_FLAGS_LAST_CHUNK)
+    {
+        int i;
+        for (i = 0; i < g_iLastRegion; i++)
+        {
+            if ((g_aRegions[i].fFlags & MM_RAM_FLAGS_MMIO) == 0)
+            {
+                phys_ram_size += g_aRegions[i].cbSize;
+                RTGCPHYS GCRegionEnd = g_aRegions[i].GCBase + g_aRegions[i].cbSize;
+                if (phys_ram_dirty_size < (GCRegionEnd >> PAGE_SHIFT))
+                    phys_ram_dirty_size = (GCRegionEnd >> PAGE_SHIFT);
+            }
+        }
+        phys_ram_dirty_size = cb >> PAGE_SHIFT;
+        phys_ram_dirty = MMR3HeapAlloc(pVM, MM_TAG_REM, phys_ram_dirty_size);
+        AssertReleaseMsg(phys_ram_dirty, ("failed to allocate %d bytes of dirty bytes\n", phys_ram_dirty_size));
+        memset(phys_ram_dirty, 0xff, phys_ram_dirty_size);
+    }
+
+    /*
+     * Register the ram.
+     */
+    Assert(!pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = true;
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    cpu_register_physical_memory(GCPhys, cb, GCPhys);
+#else
+    /** @todo: most likely wrong */
+    if (fFlags & MM_RAM_FLAGS_BASE_RAM)
+        cpu_register_physical_memory(GCPhys, cb, GCPhys | IO_MEM_RAM_MISSING);
+    else if (fFlags & MM_RAM_FLAGS_RESERVED)
+        cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
+    else
+        cpu_register_physical_memory(GCPhys, cb, GCPhys);
+#endif
+    Assert(pVM->rem.s.fIgnoreAll);
+    pVM->rem.s.fIgnoreAll = false;
+}
+#endif /* 0 */
+
+
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 
 /**
