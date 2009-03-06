@@ -384,6 +384,8 @@ typedef union VBOXIDTE
 #pragma pack()
 /** Pointer to IDT Entry. */
 typedef VBOXIDTE *PVBOXIDTE;
+/** Pointer to IDT Entry. */
+typedef VBOXIDTE const *PCVBOXIDTE;
 
 #pragma pack(1)
 /** IDTR */
