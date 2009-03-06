@@ -4206,6 +4206,9 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         pPage->iAgeNext  = NIL_PGMPOOL_IDX;
         pPage->iAgePrev  = NIL_PGMPOOL_IDX;
 #endif
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+        pPage->fLocked   = false;
+#endif
     }
     pPool->aPages[pPool->cCurPages - 1].iNext = NIL_PGMPOOL_IDX;
     pPool->iFreeHead = PGMPOOL_IDX_FIRST;
