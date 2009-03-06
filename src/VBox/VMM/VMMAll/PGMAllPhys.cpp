@@ -288,7 +288,7 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
      * actual VM RAM committment, that's too much work for now.
      */
     Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
-    Assert(pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages));
+    AssertMsg(pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), ("%d\n", pVM->pgm.s.cHandyPages));
     if (    !pVM->pgm.s.cHandyPages
 #ifdef IN_RING3
         ||   pVM->pgm.s.cHandyPages - 1 <= RT_ELEMENTS(pVM->pgm.s.aHandyPages) / 2 /* 50% */
@@ -318,7 +318,10 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
             VM_FF_SET(pVM, VM_FF_TO_R3);
 #endif
         }
-        Assert(pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages));
+        AssertMsgReturn(    pVM->pgm.s.cHandyPages > 0
+                        &&  pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages),
+                        ("%u\n", pVM->pgm.s.cHandyPages),
+                        VERR_INTERNAL_ERROR);
     }
     else if (pVM->pgm.s.cHandyPages - 1 <= (RT_ELEMENTS(pVM->pgm.s.aHandyPages) / 4) * 3) /* 75% */
     {
@@ -377,7 +380,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     Assert(!PGM_PAGE_IS_MMIO(pPage));
 
     uint32_t iHandyPage = --pVM->pgm.s.cHandyPages;
-    Assert(iHandyPage < RT_ELEMENTS(pVM->pgm.s.aHandyPages));
+    AssertMsg(iHandyPage < RT_ELEMENTS(pVM->pgm.s.aHandyPages), ("%d\n", iHandyPage));
     Assert(pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys != NIL_RTHCPHYS);
     Assert(!(pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys & ~X86_PTE_PAE_PG_MASK));
     Assert(pVM->pgm.s.aHandyPages[iHandyPage].idPage != NIL_GMM_PAGEID);
@@ -1459,8 +1462,11 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                     if (RT_SUCCESS(rc))
                         memcpy(pvBuf, pvSrc, cb);
                     else
+                    {
                         AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternalReadOnly failed on %RGp / %R[pgmpage] -> %Rrc\n",
                                                pRam->GCPhys + off, pPage, rc));
+                        memset(pvBuf, 0xff, cb);
+                    }
                 }
 
                 /* next page */
@@ -1806,6 +1812,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
                 cbRange = cbWrite;
 
 #ifdef IN_RING3
+            Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] phys %s\n", GCPhys, cbRange, pPage, R3STRING(pCur->pszDesc) ));
             if (!PGM_PAGE_IS_MMIO(pPage))
                 rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst);
             else
@@ -1854,6 +1861,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
                 cbRange = cbWrite;
 
 #ifdef IN_RING3
+            Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] virt %s\n", GCPhys, cbRange, pPage, R3STRING(pCur->pszDesc) ));
             rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst);
             if (RT_SUCCESS(rc))
             {
@@ -1994,6 +2002,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
                 cbRange = offPhys;
             if (cbRange > offVirt)
                 cbRange = offVirt;
+            Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] miss\n", GCPhys, cbRange, pPage));
         }
         /*
          * Physical handler.
@@ -2005,6 +2014,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
             if (cbRange > offVirt)
                 cbRange = offVirt;
 #ifdef IN_RING3
+            Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] phys %s\n", GCPhys, cbRange, pPage, R3STRING(pPhys->pszDesc) ));
             STAM_PROFILE_START(&pPhys->Stat, h);
             rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pPhys->CTX_SUFF(pvUser));
             STAM_PROFILE_STOP(&pPhys->Stat, h);
@@ -2024,6 +2034,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
             if (cbRange > offPhys)
                 cbRange = offPhys;
 #ifdef IN_RING3
+            Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] phys %s\n", GCPhys, cbRange, pPage, R3STRING(pVirt->pszDesc) ));
             if (pVirt->pfnHandlerR3)
             {
                 RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pVirt->Core.Key & PAGE_BASE_GC_MASK)
@@ -2053,6 +2064,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
 #ifdef IN_RING3
             if (pVirt->pfnHandlerR3)
                 Log(("pgmPhysWriteHandler: overlapping phys and virt handlers at %RGp %R[pgmpage]; cbRange=%#x\n", GCPhys, pPage, cbRange));
+            Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] phys/virt %s/%s\n", GCPhys, cbRange, pPage, R3STRING(pPhys->pszDesc), R3STRING(pVirt->pszDesc) ));
 
             STAM_PROFILE_START(&pPhys->Stat, h);
             rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pPhys->CTX_SUFF(pvUser));
