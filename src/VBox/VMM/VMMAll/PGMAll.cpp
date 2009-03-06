@@ -2298,29 +2298,26 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 /**
  * Temporarily lock a dynamic page to prevent it from being reused.
  *
- * @returns VINF_SUCCESS, will bail out to ring-3 on failure.
  * @param   pVM         VM handle.
  * @param   GCPage      GC address of page
  */
-VMMDECL(int) PGMDynLockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
+VMMDECL(void) PGMDynLockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
 {
     unsigned iPage;
 
     Assert(GCPage >= pVM->pgm.s.pbDynPageMapBaseGC && GCPage < (pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE));
     iPage = ((uintptr_t)(GCPage - pVM->pgm.s.pbDynPageMapBaseGC)) >> PAGE_SHIFT;
     ASMAtomicIncU32(&pVM->pgm.s.aLockedDynPageMapCache[iPage]);
-    return VINF_SUCCESS;
 }
 
 
 /**
  * Unlock a dynamic page
  *
- * @returns VINF_SUCCESS, will bail out to ring-3 on failure.
  * @param   pVM         VM handle.
  * @param   GCPage      GC address of page
  */
-VMMDECL(int) PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
+VMMDECL(void) PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
 {
     unsigned iPage;
 
@@ -2330,7 +2327,6 @@ VMMDECL(int) PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
     iPage = ((uintptr_t)(GCPage - pVM->pgm.s.pbDynPageMapBaseGC)) >> PAGE_SHIFT;
     Assert(pVM->pgm.s.aLockedDynPageMapCache[iPage]);
     ASMAtomicDecU32(&pVM->pgm.s.aLockedDynPageMapCache[iPage]);
-    return VINF_SUCCESS;
 }
 
 

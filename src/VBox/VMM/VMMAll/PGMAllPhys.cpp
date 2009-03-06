@@ -857,7 +857,6 @@ int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *
  */
 int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv)
 {
-    int rc;
     AssertReturn(pPage, VERR_INTERNAL_ERROR);
     Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect) || VM_IS_EMT(pVM));
     Assert(PGM_PAGE_GET_HCPHYS(pPage) != 0);
@@ -869,7 +868,7 @@ int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
     *ppv = pgmDynMapHCPageOff(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK)); /** @todo add a read only flag? */
 #else
     PPGMPAGEMAPTLBE pTlbe;
-    rc = pgmPhysPageQueryTlbeWithPage(&pVM->pgm.s, pPage, GCPhys, &pTlbe);
+    int rc = pgmPhysPageQueryTlbeWithPage(&pVM->pgm.s, pPage, GCPhys, &pTlbe);
     if (RT_FAILURE(rc))
         return rc;
     *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));

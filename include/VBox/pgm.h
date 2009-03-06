@@ -431,8 +431,8 @@ VMMDECL(int)        PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 VMMDECL(int)        PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 # ifdef IN_RC
 VMMDECL(int)        PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
-VMMDECL(int)        PGMDynLockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage);
-VMMDECL(int)        PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage);
+VMMDECL(void)       PGMDynLockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage);
+VMMDECL(void)       PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage);
 #  ifdef VBOX_STRICT
 VMMDECL(void)       PGMDynCheckLocks(PVM pVM);
 #  endif
