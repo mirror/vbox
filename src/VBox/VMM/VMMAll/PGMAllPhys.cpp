@@ -1132,10 +1132,13 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
  * @param   GCPhys      The GC physical address to convert.
  * @param   cbRange     Physical range
  * @param   pR3Ptr      Where to store the R3 pointer on success.
+ *
+ * @deprecated  Avoid when possible!
  */
 VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3PTR pR3Ptr)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
+/** @todo this is kind of hacky and needs some more work. */
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
 
     LogAlways(("PGMPhysGCPhys2R3Ptr(,%RGp,%#x,): dont use this API!\n", GCPhys, cbRange)); /** @todo eliminate this API! */
@@ -1201,6 +1204,7 @@ VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3
 }
 
 
+#ifdef VBOX_STRICT
 /**
  * PGMPhysGCPhys2R3Ptr convenience for use with assertions.
  *
@@ -1208,6 +1212,8 @@ VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3
  * @param   pVM         The VM handle.
  * @param   GCPhys      The GC Physical addresss.
  * @param   cbRange     Physical range.
+ *
+ * @deprecated  Avoid when possible.
  */
 VMMDECL(RTR3PTR) PGMPhysGCPhys2R3PtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
 {
@@ -1217,6 +1223,7 @@ VMMDECL(RTR3PTR) PGMPhysGCPhys2R3PtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRa
         return R3Ptr;
     return NIL_RTR3PTR;
 }
+#endif /* VBOX_STRICT */
 
 
 /**
@@ -1268,7 +1275,7 @@ VMMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
  * @param   GCPtr       The guest pointer to convert.
  * @param   pR3Ptr      Where to store the R3 virtual address.
  *
- * @deprecated
+ * @deprecated Don't use this.
  */
 VMMDECL(int) PGMPhysGCPtr2R3Ptr(PVM pVM, RTGCPTR GCPtr, PRTR3PTR pR3Ptr)
 {
@@ -1754,6 +1761,7 @@ l_End:
 static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void const *pvBuf, size_t cbWrite)
 {
     void *pvDst = NULL;
+    int rc;
 
     /*
      * Give priority to physical handlers (like #PF does).
@@ -1762,7 +1770,8 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
      * write area. This should be a pretty frequent case with MMIO and
      * the heavy usage of full page handlers in the page pool.
      */
-    if (!PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage))
+    if (    !PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage)
+        ||  PGM_PAGE_IS_MMIO(pPage) /* screw virtual handlers on MMIO pages */)
     {
         PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
         if (pCur)
@@ -1775,7 +1784,10 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
                 cbRange = cbWrite;
 
 #ifdef IN_RING3
-            int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst);
+            if (!PGM_PAGE_IS_MMIO(pPage))
+                rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst);
+            else
+                rc = VINF_SUCCESS;
             if (RT_SUCCESS(rc))
             {
                 STAM_PROFILE_START(&pCur->Stat, h);
@@ -1784,11 +1796,11 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
                 if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     memcpy(pvDst, pvBuf, cbRange);
                 else
-                    AssertLogRelMsg(rc == VINF_SUCCESS, ("rc=%Rrc GCPhys=%RGp %s\n", rc, GCPhys, pCur->pszDesc));
+                    AssertLogRelMsg(rc == VINF_SUCCESS, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pCur->pszDesc));
             }
             else
-                AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
-                                       GCPhys, pPage, rc));
+                AssertLogRelMsgFailedReturnVoid(("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
+                                                 GCPhys, pPage, rc));
 #else
             AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cbRange=%#x\n", GCPhys, cbRange));
 #endif
@@ -1796,11 +1808,13 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
                 return;
 
             /* more fun to be had below */
-            GCPhys  += cbRange;
             cbWrite -= cbRange;
+            GCPhys  += cbRange;
             pvBuf    = (uint8_t *)pvBuf + cbRange;
+            pvDst    = (uint8_t *)pvDst + cbRange;
         }
         /* else: the handler is somewhere else in the page, deal with it below. */
+        Assert(!PGM_PAGE_IS_MMIO(pPage)); /* MMIO handlers are all PAGE_SIZEed! */
     }
     /*
      * A virtual handler without any interfering physical handlers.
@@ -1810,7 +1824,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
     {
         unsigned        iPage;
         PPGMVIRTHANDLER pCur;
-        int rc = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys, &pCur, &iPage);
+        rc = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys, &pCur, &iPage);
         if (RT_SUCCESS(rc))
         {
             size_t cbRange = (PAGE_OFFSET_MASK & pCur->Core.KeyLast) - (PAGE_OFFSET_MASK & GCPhys) + 1;
@@ -1818,7 +1832,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
                 cbRange = cbWrite;
 
 #ifdef IN_RING3
-            int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst);
+            rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst);
             if (RT_SUCCESS(rc))
             {
                 rc = VINF_PGM_HANDLER_DO_DEFAULT;
@@ -1835,11 +1849,11 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
                 if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     memcpy(pvDst, pvBuf, cbRange);
                 else
-                    AssertLogRelMsg(rc == VINF_SUCCESS, ("rc=%Rrc GCPhys=%RGp %s\n", rc, GCPhys, pCur->pszDesc));
+                    AssertLogRelMsg(rc == VINF_SUCCESS, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pCur->pszDesc));
             }
             else
-                AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
-                                       GCPhys, pPage, rc));
+                AssertLogRelMsgFailedReturnVoid(("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
+                                                 GCPhys, pPage, rc));
 #else
             AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cb=%#x\n", GCPhys, cbRange));
 #endif
@@ -1847,9 +1861,10 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
                 return;
 
             /* more fun to be had below */
-            GCPhys  += cbRange;
             cbWrite -= cbRange;
+            GCPhys  += cbRange;
             pvBuf    = (uint8_t *)pvBuf + cbRange;
+            pvDst    = (uint8_t *)pvDst + cbRange;
         }
         /* else: the handler is somewhere else in the page, deal with it below. */
     }
@@ -1857,9 +1872,203 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
     /*
      * Deal with all the odd ends.
      */
-    while (cbWrite > 0)
+
+    /* We need a writable destination page. */
+    if (!pvDst)
     {
-        AssertReleaseMsgFailed(("%RGp %#x %R[pgmpage]\n", GCPhys, cbWrite, pPage));
+        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst);
+        AssertLogRelMsgReturnVoid(RT_SUCCESS(rc),
+                                  ("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
+                                   GCPhys, pPage, rc));
+    }
+
+    /* The loop state (big + ugly). */
+    unsigned        iVirtPage   = 0;
+    PPGMVIRTHANDLER pVirt       = NULL;
+    uint32_t        offVirt     = PAGE_SIZE;
+    uint32_t        offVirtLast = PAGE_SIZE;
+    bool            fMoreVirt   = PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage);
+
+    PPGMPHYSHANDLER pPhys       = NULL;
+    uint32_t        offPhys     = PAGE_SIZE;
+    uint32_t        offPhysLast = PAGE_SIZE;
+    bool            fMorePhys   = PGM_PAGE_HAS_ACTIVE_PHYSICAL_HANDLERS(pPage);
+
+    /* The loop. */
+    for (;;)
+    {
+        /*
+         * Find the closest handler above GCPhys.
+         */
+        if (fMoreVirt && !pVirt)
+        {
+            int rc = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys, &pVirt, &iVirtPage);
+            if (RT_SUCCESS(rc))
+            {
+                offVirt = 0;
+                offVirtLast = (pVirt->aPhysToVirt[iVirtPage].Core.KeyLast & PAGE_OFFSET_MASK) - (GCPhys & PAGE_OFFSET_MASK);
+            }
+            else
+            {
+                PPGMPHYS2VIRTHANDLER pVirtPhys;
+                pVirtPhys = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGetBestFit(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers,
+                                                                          GCPhys, true /* fAbove */);
+                if (pVirtPhys)
+                {
+                    /* ASSUME that pVirtPhys only covers one page. */
+                    Assert((pVirtPhys->Core.Key >> PAGE_SHIFT) == (pVirtPhys->Core.KeyLast >> PAGE_SHIFT));
+                    pVirt = (PPGMVIRTHANDLER)((uintptr_t)pVirtPhys + pVirtPhys->offVirtHandler);
+                    iVirtPage = pVirtPhys - &pVirt->aPhysToVirt[0]; Assert(iVirtPage == 0);
+                    offVirtLast = pVirtPhys->Core.KeyLast & PAGE_OFFSET_MASK - (GCPhys & PAGE_OFFSET_MASK);
+                }
+                else
+                {
+                    pVirt     = NULL;
+                    fMoreVirt = false;
+                    offVirt   = offVirtLast = PAGE_SIZE;
+                }
+            }
+        }
+
+        if (fMorePhys && !pPhys)
+        {
+            pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+            if (pPhys)
+            {
+                offPhys = 0;
+                offPhysLast = pPhys->Core.KeyLast - GCPhys; /* ASSUMES < 4GB handlers... */
+            }
+            else
+            {
+                pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysGetBestFit(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers,
+                                                                 GCPhys, true /* fAbove */);
+                if (    pPhys
+                    &&  pPhys->Core.Key <= GCPhys + (cbWrite - 1))
+                {
+                    offPhys     = pPhys->Core.Key     - GCPhys;
+                    offPhysLast = pPhys->Core.KeyLast - GCPhys; /* ASSUMES < 4GB handlers... */
+                }
+                else
+                {
+                    pPhys     = NULL;
+                    fMorePhys = false;
+                    offPhys   = offPhysLast = PAGE_SIZE;
+                }
+            }
+        }
+
+        /*
+         * Handle access to space without handlers (that's easy).
+         */
+        rc = VINF_PGM_HANDLER_DO_DEFAULT;
+        size_t cbRange = cbWrite;
+        if (offPhys && offVirt)
+        {
+            if (cbRange > offPhys)
+                cbRange = offPhys;
+            if (cbRange > offVirt)
+                cbRange = offVirt;
+        }
+        /*
+         * Physical handler.
+         */
+        else if (!offPhys && offVirt)
+        {
+            if (cbRange > offPhysLast + 1)
+                cbRange = offPhysLast + 1;
+            if (cbRange > offVirt)
+                cbRange = offVirt;
+#ifdef IN_RING3
+            STAM_PROFILE_START(&pPhys->Stat, h);
+            rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pPhys->CTX_SUFF(pvUser));
+            STAM_PROFILE_STOP(&pPhys->Stat, h);
+            AssertLogRelMsg(rc != VINF_SUCCESS && rc != VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pPhys->pszDesc));
+#else
+            AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cbRange=%#x\n", GCPhys, cbRange));
+#endif
+            pPhys = NULL;
+        }
+        /*
+         * Virtual handler.
+         */
+        else if (offPhys && !offVirt)
+        {
+            if (cbRange > offVirtLast + 1)
+                cbRange = offVirtLast + 1;
+            if (cbRange > offPhys)
+                cbRange = offPhys;
+#ifdef IN_RING3
+            if (pVirt->pfnHandlerR3)
+            {
+                RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pVirt->Core.Key & PAGE_BASE_GC_MASK)
+                                  + (iVirtPage << PAGE_SHIFT)
+                                  + (GCPhys & PAGE_OFFSET_MASK);
+                STAM_PROFILE_START(&pVirt->Stat, h);
+                rc = pVirt->CTX_SUFF(pfnHandler)(pVM, GCPtr, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, /*pCur->CTX_SUFF(pvUser)*/ NULL);
+                STAM_PROFILE_STOP(&pVirt->Stat, h);
+                AssertLogRelMsg(rc != VINF_SUCCESS && rc != VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pVirt->pszDesc));
+            }
+#else
+            AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cb=%#x\n", GCPhys, cbRange));
+#endif
+            pVirt = NULL;
+        }
+        /*
+         * Both... give the physical one priority.
+         */
+        else
+        {
+            Assert(!offPhys && !offVirt);
+            if (cbRange > offVirtLast + 1)
+                cbRange = offVirtLast + 1;
+            if (cbRange > offPhysLast + 1)
+                cbRange = offPhysLast + 1;
+
+#ifdef IN_RING3
+            if (pVirt->pfnHandlerR3)
+                Log(("pgmPhysWriteHandler: overlapping phys and virt handlers at %RGp %R[pgmpage]; cbRange=%#x\n", GCPhys, pPage, cbRange));
+
+            STAM_PROFILE_START(&pPhys->Stat, h);
+            rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pPhys->CTX_SUFF(pvUser));
+            STAM_PROFILE_STOP(&pPhys->Stat, h);
+            AssertLogRelMsg(rc != VINF_SUCCESS && rc != VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pPhys->pszDesc));
+            if (pVirt->pfnHandlerR3)
+            {
+
+                RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pVirt->Core.Key & PAGE_BASE_GC_MASK)
+                                  + (iVirtPage << PAGE_SHIFT)
+                                  + (GCPhys & PAGE_OFFSET_MASK);
+                STAM_PROFILE_START(&pVirt->Stat, h);
+                int rc2 = pVirt->CTX_SUFF(pfnHandler)(pVM, GCPtr, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, /*pCur->CTX_SUFF(pvUser)*/ NULL);
+                STAM_PROFILE_STOP(&pVirt->Stat, h);
+                AssertLogRelMsg(rc2 != VINF_SUCCESS && rc2 != VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pVirt->pszDesc));
+                if (rc2 == VINF_SUCCESS && rc == VINF_PGM_HANDLER_DO_DEFAULT)
+                    rc = VINF_SUCCESS;
+            }
+#else
+            AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cbRange=%#x\n", GCPhys, cbRange));
+#endif
+            pPhys = NULL;
+            pVirt = NULL;
+        }
+        if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
+            memcpy(pvDst, pvBuf, cbRange);
+
+        /*
+         * Advance if we've got more stuff to do.
+         */
+        if (cbRange >= cbWrite)
+            return;
+
+        cbWrite         -= cbRange;
+        GCPhys          += cbRange;
+        pvBuf            = (uint8_t *)pvBuf + cbRange;
+        pvDst            = (uint8_t *)pvDst + cbRange;
+
+        offPhys         -= cbRange;
+        offPhysLast     -= cbRange;
+        offVirt         -= cbRange;
+        offVirtLast     -= cbRange;
     }
 }
 
