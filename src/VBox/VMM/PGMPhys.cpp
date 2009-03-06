@@ -2471,12 +2471,12 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
 {
     pgmLock(pVM);
 
-
     /*
      * Allocate more pages, noting down the index of the first new page.
      */
     uint32_t iClear = pVM->pgm.s.cHandyPages;
     AssertMsgReturn(iClear <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), ("%d", iClear), VERR_INTERNAL_ERROR);
+    Log(("PGMR3PhysAllocateHandyPages: %d -> %d\n", iClear, RT_ELEMENTS(pVM->pgm.s.aHandyPages)));
     int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
     if (rc == VERR_GMM_SEED_ME)
     {
@@ -2484,11 +2484,8 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
         rc = SUPPageAlloc(GMM_CHUNK_SIZE >> PAGE_SHIFT, &pvChunk);
         if (RT_SUCCESS(rc))
             rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("PGM: GMM Seeding failed, rc=%Rrc\n", rc));
-            rc = VINF_EM_NO_MEMORY;
-        }
+        if (RT_SUCCESS(rc))
+            rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
     }
 
     /*
@@ -2505,11 +2502,23 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
             ASMMemZeroPage(pv);
             iClear++;
         }
+
+        VM_FF_CLEAR(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
+    }
+    else
+    {
+        LogRel(("PGM: Failed to procure handy pages, rc=%Rrc cHandyPages=%u\n",
+                rc, pVM->pgm.s.cHandyPages));
+        rc = VERR_EM_NO_MEMORY;
+        //rc = VINF_EM_NO_MEMORY;
+        //VM_FF_SET(pVM, VM_FF_PGM_WE_ARE_SCREWED?);
     }
 
 /** @todo Do proper VERR_EM_NO_MEMORY reporting. */
+    AssertMsg(   pVM->pgm.s.cHandyPages == RT_ELEMENTS(pVM->pgm.s.aHandyPages)
+              || rc != VINF_SUCCESS, ("%d rc=%Rrc\n", pVM->pgm.s.cHandyPages, rc));
     pgmUnlock(pVM);
-    Assert(rc == VINF_SUCCESS || rc == VINF_EM_NO_MEMORY);
+    Assert(rc == VINF_SUCCESS || rc == VINF_EM_NO_MEMORY || rc == VERR_EM_NO_MEMORY);
     return rc;
 }
 
@@ -2635,8 +2644,13 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
         {
             if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)) /* catches MMIO */
                 rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
-            else if (fWritable && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+            else if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+            {
+                /** @todo Handle TLB loads of virtual handlers so ./test.sh can be made to work
+                 *        in -norawr0 mode. */
+                if (fWritable)
+                    rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+            }
             else
             {
                 /* Temporariliy disabled phycial handler(s), since the recompiler
