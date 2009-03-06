@@ -4083,6 +4083,7 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
      * These special pages are all mapped into the indexes 1..PGMPOOL_IDX_FIRST.
      */
     Assert(NIL_PGMPOOL_IDX == 0);
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     for (unsigned i = 1; i < PGMPOOL_IDX_FIRST; i++)
     {
         /*
@@ -4100,7 +4101,6 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
          */
         switch (pPage->enmKind)
         {
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
             case PGMPOOLKIND_ROOT_32BIT_PD:
                 u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 for (unsigned iPage = 0; iPage < X86_PG_ENTRIES; iPage++)
@@ -4124,8 +4124,8 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
                 ASMMemZero32(u.pau64, PAGE_SIZE);
                 break;
         }
-#endif
     }
+#endif
 
     /*
      * Paranoia (to be removed), flag a global CR3 sync.
