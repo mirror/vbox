@@ -550,6 +550,12 @@ static const REMPARMDESC g_aArgsDBGFR3DisasInstrEx[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL }
 };
+static const REMPARMDESC g_aArgsDBGFR3DisasInstrCurrentLogInternal[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL }
+};
+
 static const REMPARMDESC g_aArgsDBGFR3Info[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
@@ -1082,6 +1088,7 @@ static REMFNDESC g_aVMMImports[] =
     { "DBGCRegisterCommands",                   (void *)(uintptr_t)&DBGCRegisterCommands,           &g_aArgsDBGCRegisterCommands[0],            RT_ELEMENTS(g_aArgsDBGCRegisterCommands),              REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
 #endif
     { "DBGFR3DisasInstrEx",                     (void *)(uintptr_t)&DBGFR3DisasInstrEx,             &g_aArgsDBGFR3DisasInstrEx[0],              RT_ELEMENTS(g_aArgsDBGFR3DisasInstrEx),                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "DBGFR3DisasInstrCurrentLogInternal",     (void *)(uintptr_t)&DBGFR3DisasInstrCurrentLogInternal, &g_aArgsDBGFR3DisasInstrCurrentLogInternal[0],  RT_ELEMENTS(g_aArgsDBGFR3DisasInstrCurrentLogInternal),REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "DBGFR3Info",                             (void *)(uintptr_t)&DBGFR3Info,                     &g_aArgsDBGFR3Info[0],                      RT_ELEMENTS(g_aArgsDBGFR3Info),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "DBGFR3InfoLogRelHlp",                    (void *)(uintptr_t)&DBGFR3InfoLogRelHlp,            NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
     { "DBGFR3SymbolByAddr",                     (void *)(uintptr_t)&DBGFR3SymbolByAddr,             &g_aArgsDBGFR3SymbolByAddr[0],              RT_ELEMENTS(g_aArgsDBGFR3SymbolByAddr),                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
