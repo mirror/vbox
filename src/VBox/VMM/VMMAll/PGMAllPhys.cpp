@@ -465,6 +465,29 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 
 
 /**
+ * Wrapper for pgmPhysPageMakeWritable which enters the critsect.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
+ *
+ * @param   pVM         The VM address.
+ * @param   pPage       The physical page tracking structure.
+ * @param   GCPhys      The address of the page.
+ */
+int pgmPhysPageMakeWritableUnlocked(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
+{
+    int rc = pgmLock(pVM);
+    if (RT_SUCCESS(rc))
+    {
+        rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
+        pgmUnlock(pVM);
+    }
+    return rc;
+}
+
+
+/**
  * Internal usage: Map the page specified by its GMM ID.
  *
  * This is similar to pgmPhysPageMap

@@ -627,10 +627,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
             }
             else
             {
-                /* When the guest accesses invalid physical memory (e.g. probing of RAM or accessing a remapped MMIO range), then we'll fall
+                /*
+                 * When the guest accesses invalid physical memory (e.g. probing
+                 * of RAM or accessing a remapped MMIO range), then we'll fall
                  * back to the recompiler to emulate the instruction.
                  */
-                LogFlow(("pgmPhysGetPageEx %RGp failed with %Rrc\n", GCPhys, rc));
+                LogFlow(("PGM #PF: pgmPhysGetPageEx(%RGp) failed with %Rrc\n", GCPhys, rc));
                 STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersInvalid);
                 STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
                 return VINF_EM_RAW_EMULATE_INSTR;
@@ -640,8 +642,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
 #  ifdef PGM_OUT_OF_SYNC_IN_GC
             /*
-             * We are here only if page is present in Guest page tables and trap is not handled
-             * by our handlers.
+             * We are here only if page is present in Guest page tables and
+             * trap is not handled by our handlers.
+             *
              * Check it for page out-of-sync situation.
              */
             STAM_PROFILE_START(&pVM->pgm.s.StatRZTrap0eTimeOutOfSync, c);
@@ -753,6 +756,18 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
             }
             else
             {
+#   ifdef VBOX_WITH_NEW_PHYS_CODE
+                /*
+                 * Need to deal with these buggers somewhere...
+                 */
+                if (    PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
+                    &&  (uErr & X86_TRAP_PF_RW))
+                {
+                    Log(("PGM #PF: %RGp %R[pgmpage] uErr=%#x\n", GCPhys, pPage, uErr));
+                    AssertMsgFailed(("PGM #PF: %RGp %R[pgmpage] uErr=%#x\n", GCPhys, pPage, uErr));
+                }
+#   endif /* VBOX_WITH_NEW_PHYS_CODE */
+
                 /*
                  * A side effect of not flushing global PDEs are out of sync pages due
                  * to physical monitored regions, that are no longer valid.
@@ -1463,6 +1478,17 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
         int rc = pgmPhysGetPageEx(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK, &pPage);
         if (RT_SUCCESS(rc))
         {
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+            /* Try make the page writable if necessary. */
+            if (    PteSrc.n.u1Write
+                &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
+                &&  PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
+            {
+                rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, PteSrc.u & GST_PTE_PG_MASK);
+                AssertRC(rc);
+            }
+#endif
+
             /** @todo investiage PWT, PCD and PAT. */
             /*
              * Make page table entry.
@@ -1535,6 +1561,16 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
 #endif
                 }
             }
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+            /*
+             * Make sure only allocated pages are mapped writable.
+             */
+            if (    PteDst.n.u1Write
+                &&  PteDst.n.u1Present
+                &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+                PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet. */
+#endif
 
 #ifdef PGMPOOL_WITH_USER_TRACKING
             /*
@@ -1821,6 +1857,17 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                 int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
                 if (RT_SUCCESS(rc))
                 {
+# ifdef VBOX_WITH_NEW_PHYS_CODE
+                    /* Try make the page writable if necessary. */
+                    if (    PdeSrc.n.u1Write
+                        &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
+                        &&  PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
+                    {
+                        rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, GCPhys);
+                        AssertRC(rc);
+                    }
+# endif
+
                     /*
                      * Make shadow PTE entry.
                      */
@@ -1839,6 +1886,14 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                     if (PteDst.n.u1Present && !pPTDst->a[iPTDst].n.u1Present)
                         PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPTDst);
 # endif
+# ifdef VBOX_WITH_NEW_PHYS_CODE
+                    /* Make sure only allocated pages are mapped writable. */
+                    if (    PteDst.n.u1Write
+                        &&  PteDst.n.u1Present
+                        &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+                        PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet... */
+# endif
+
                     pPTDst->a[iPTDst] = PteDst;
 
 
@@ -2696,7 +2751,16 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                         PPGMPAGE    pPage = &pRam->aPages[iHCPage];
                         SHWPTE      PteDst;
 
-# ifndef VBOX_WITH_NEW_PHYS_CODE
+# ifdef VBOX_WITH_NEW_PHYS_CODE
+                        /* Try make the page writable if necessary. */
+                        if (    PteDstBase.n.u1Write
+                            &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
+                            &&  PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
+                        {
+                            rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, GCPhys);
+                            AssertRCReturn(rc, rc);
+                        }
+# else  /* !VBOX_WITH_NEW_PHYS_CODE */
                         /* Make sure the RAM has already been allocated. */
                         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)  /** @todo PAGE FLAGS */
                         {
