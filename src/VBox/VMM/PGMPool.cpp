@@ -308,7 +308,11 @@ int pgmR3PoolInit(PVM pVM)
     /* The Nested Paging CR3. */
     pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].GCPhys    = NIL_RTGCPHYS;
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].pvPageR3  = 0;
+#else
     pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].pvPageR3  = pVM->pgm.s.pShwNestedRootR3;
+#endif
     pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].enmKind   = PGMPOOLKIND_ROOT_NESTED;
     pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].idx       = PGMPOOL_IDX_NESTED_ROOT;
 

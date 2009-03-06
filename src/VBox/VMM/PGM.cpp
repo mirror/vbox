@@ -1491,15 +1491,13 @@ static int pgmR3InitPaging(PVM pVM)
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->pgm.s.pShwPaePdptR0 = (uintptr_t)pVM->pgm.s.pShwPaePdptR3;
 # endif
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
     pVM->pgm.s.pShwNestedRootR3 = MMR3PageAllocLow(pVM);
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->pgm.s.pShwNestedRootR0 = (uintptr_t)pVM->pgm.s.pShwNestedRootR3;
-#endif
+# endif
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (!pVM->pgm.s.pShwNestedRootR3)
-#else
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     if (    !pVM->pgm.s.pShw32BitPdR3
         ||  !pVM->pgm.s.apShwPaePDsR3[0]
         ||  !pVM->pgm.s.apShwPaePDsR3[1]
@@ -1522,8 +1520,8 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[2]);
     pVM->pgm.s.aHCPhysPaePDs[3] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[3]);
     pVM->pgm.s.HCPhysShwPaePdpt = MMPage2Phys(pVM, pVM->pgm.s.pShwPaePdptR3);
-#endif
     pVM->pgm.s.HCPhysShwNestedRoot = MMPage2Phys(pVM, pVM->pgm.s.pShwNestedRootR3);
+#endif
 
     /*
      * Initialize the pages, setting up the PML4 and PDPT for action below 4GB.
@@ -1531,9 +1529,8 @@ static int pgmR3InitPaging(PVM pVM)
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     ASMMemZero32(pVM->pgm.s.pShw32BitPdR3, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pShwPaePdptR3, PAGE_SIZE);
-#endif
     ASMMemZero32(pVM->pgm.s.pShwNestedRootR3, PAGE_SIZE);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apShwPaePDsR3); i++)
     {
         ASMMemZero32(pVM->pgm.s.apShwPaePDsR3[i], PAGE_SIZE);
@@ -2017,9 +2014,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     pVM->pgm.s.GCPtrCR3Mapping += offDelta;
     /** @todo move this into shadow and guest specific relocation functions. */
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    AssertMsg(pVM->pgm.s.pShwNestedRootR3, ("Init order, no relocation before paging is initialized!\n"));
-#else
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     AssertMsg(pVM->pgm.s.pShw32BitPdR3, ("Init order, no relocation before paging is initialized!\n"));
     pVM->pgm.s.pShw32BitPdRC += offDelta;
 #endif
