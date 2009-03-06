@@ -358,7 +358,7 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
     {
         { "--name",           'N',   RTGETOPT_REQ_STRING },
         { "--network",        'n',   RTGETOPT_REQ_STRING },
-/// @todo        { "--mac-address",    'a',   RTGETOPT_REQ_MACADDR },
+        { "--mac-address",    'a',   RTGETOPT_REQ_MACADDR },
         { "--ip-address",     'i',   RTGETOPT_REQ_IPV4ADDR },
         { "--verbose",        'v',   RTGETOPT_REQ_NOTHING },
 
@@ -392,8 +392,7 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                 m_Network = Val.psz;
                 break;
             case 'a':
-AssertFailed();
-//                m_MacAddress = Val.Mac;
+                m_MacAddress = Val.MacAddr;
                 break;
             case 'i':
                 m_IpAddress = Val.IPv4Addr;
