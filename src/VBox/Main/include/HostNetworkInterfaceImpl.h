@@ -26,6 +26,8 @@
 
 #include "VirtualBoxBase.h"
 #include "Collection.h"
+#include "VirtualBoxImpl.h"
+
 #ifdef VBOX_WITH_HOSTNETIF_API
 /* class HostNetworkInterface; */
 /* #include "netif.h" */
