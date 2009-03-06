@@ -30,14 +30,34 @@ BLDDIRS += \
 
 DLLS += VBoxOGL VBoxOGLarrayspu VBoxOGLpassthroughspu VBoxOGLpackspu VBoxOGLfeedbackspu
 
+ifeq ($(KBUILD_TARGET),linux)
+ VBoxOGL_DRI = 1
+ VBOX_PATH_MESA_SOURCE = /usr/share/mesa-source
+endif
+
 #
 # VBoxOGL
 #
 VBoxOGL_TEMPLATE       = VBOXCROGLR3GUESTDLL
 VBoxOGL_INCS           = .
+ifdef VBoxOGL_DRI
+ VBoxOGL_DEFS          += VBOXOGL_DRI IN_DRI_DRIVER
+ VBoxOGL_INCS          += \
+    $(VBOX_PATH_MESA_SOURCE) \
+    $(VBOX_PATH_MESA_SOURCE)/include \
+    $(VBOX_PATH_MESA_SOURCE)/src/mesa/ \
+    $(VBOX_PATH_MESA_SOURCE)/src/mesa/glapi \
+    $(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
+    $(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.5
+endif
 ifeq ($(KBUILD_TARGET),win)
 #fixme?, INTERMEDIATES.win ain't working
  VBoxOGL_INTERMEDIATES += $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h
+endif
+ifdef VBoxOGL_DRI
+ VBoxOGL_INTERMEDIATES += \
+    $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h \
+    $(VBOX_PATH_CROGL_GENFILES)/DD_gl.h
 endif
 VBoxOGL_SOURCES        = \
 	load.c \
@@ -50,6 +70,11 @@ VBoxOGL_SOURCES.linux  = \
 	glx.c \
 	xfont.c \
 	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
+ifdef VBoxOGL_DRI
+ VBoxOGL_SOURCES.linux += \
+	$(VBOX_PATH_CROGL_GENFILES)/DD_gl.c \
+	dri_drv.c
+endif
 VBoxOGL_SOURCES.win    = \
 	wgl.c \
 	icd_drv.c \
@@ -65,6 +90,12 @@ VBoxOGL_CLEAN.linux    = \
 VBoxOGL_CLEAN.win      = \
 	$(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm \
 	$(VBOX_PATH_CROGL_GENFILES)/cropengl.def
+ifdef VBoxOGL_DRI
+VBoxOGL_CLEAN.linux   += \
+    $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h \
+    $(VBOX_PATH_CROGL_GENFILES)/DD_gl.h \
+    $(VBOX_PATH_CROGL_GENFILES)/DD_gl.c
+endif
 VBoxOGL_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
@@ -96,6 +127,7 @@ $(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm: \
 		| $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 else ifeq ($(KBUILD_TARGET),linux)
+ifndef VBoxOGL_DRI
 $(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 $(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm: \
@@ -103,6 +135,21 @@ $(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm: \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+else
+$(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress_dri.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+$(VBOX_PATH_CROGL_GENFILES)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+  $(VBOX_PATH_CROGL_GENFILES)/DD_gl.h: $(PATH_SUB_CURRENT)/DD_glh.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+  $(VBOX_PATH_CROGL_GENFILES)/DD_gl.c: $(PATH_SUB_CURRENT)/DD_glc.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+  $(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm: \
+		$(PATH_SUB_CURRENT)/Linux_i386_exports_dri.py \
+		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
+		| $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+endif
 endif
 
 #
