@@ -4247,7 +4247,7 @@ QString VBoxGlobal::getSaveFileName (const QString &aStartWith,
     if (aParent)
         aParent->setWindowModality (Qt::NonModal);
 
-    return QStringList() << loopObject.result();
+    return loopObject.result();
 
 #elif defined (Q_WS_X11) && (QT_VERSION < 0x040400)
 
