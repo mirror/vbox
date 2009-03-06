@@ -183,31 +183,40 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
  */
 PGM_SHW_DECL(int, Enter)(PVM pVM)
 {
-# if PGM_SHW_TYPE == PGM_TYPE_NESTED
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+# if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
+    RTGCPHYS     GCPhysCR3 = RT_BIT_64(63);
+    PPGMPOOLPAGE pNewShwPageCR3;
+    PPGMPOOL     pPool     = pVM->pgm.s.CTX_SUFF(pPool);
+
     Assert(HWACCMIsNestedPagingActive(pVM));
 
-    Log(("Enter nested shadow paging mode: root %RHv phys %RHp\n", pVM->pgm.s.pShwNestedRootR3, pVM->pgm.s.HCPhysShwNestedRoot));
-    /* In non-nested mode we allocate the PML4 page on-demand; in nested mode we just use our fixed nested paging root. */
-# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    int rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_ROOT_NESTED, PGMPOOL_IDX_NESTED_ROOT, GCPhysCR3 >> PAGE_SHIFT, &pNewShwPageCR3);
+    AssertFatal(rc == VINF_SUCCESS);
+
+    /* Mark the page as locked; disallow flushing. */
+    pgmPoolLockPage(pPool, pNewShwPageCR3);
 
     pVM->pgm.s.iShwUser      = PGMPOOL_IDX_NESTED_ROOT;
-    pVM->pgm.s.iShwUserTable = 0;
-    pVM->pgm.s.pShwPageCR3R3 = &pPool->aPages[PGMPOOL_IDX_NESTED_ROOT];
-    pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
+    pVM->pgm.s.pShwPageCR3R3 = pNewShwPageCR3;
 
-    /* Mark the page as locked; disallow flushing (shouldn't be necessary as it's a special root) */
-    pgmPoolLockPage(pPool, pVM->pgm.s.pShwPageCR3R3);
+    pVM->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVM->pgm.s.pShwPageCR3R3);
+    pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.pShwPageCR3R3);
+
+    Log(("Enter nested shadow paging mode: root %RHv phys %RHp\n", pVM->pgm.s.pShwPageCR3R3, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key));
 # else
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#  if PGM_SHW_TYPE == PGM_TYPE_NESTED
+#   ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->pgm.s.pShwRootR0 = (R0PTRTYPE(void *))pVM->pgm.s.pShwNestedRootR0;
-#  else
+#   else
     pVM->pgm.s.pShwRootR3 = (R3PTRTYPE(void *))pVM->pgm.s.pShwNestedRootR3;
-#  endif
+#   endif
     pVM->pgm.s.HCPhysShwCR3 = pVM->pgm.s.HCPhysShwNestedRoot;
-# endif
+#  endif
 
     CPUMSetHyperCR3(pVM, PGMGetHyperCR3(pVM));
+# endif
 #endif
 
     return VINF_SUCCESS;

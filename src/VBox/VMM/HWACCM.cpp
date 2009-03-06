@@ -847,7 +847,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 if (pVM->hwaccm.s.fNestedPaging)
                 {
                     LogRel(("HWACCM: Enabled nested paging\n"));
-                    LogRel(("HWACCM: EPT root page                 = %RHp\n", PGMGetEPTCR3(pVM)));
+                    LogRel(("HWACCM: EPT root page                 = %RHp\n", PGMGetHyperCR3(pVM)));
                 }
                 if (pVM->hwaccm.s.vmx.fVPID)
                     LogRel(("HWACCM: Enabled VPID\n"));

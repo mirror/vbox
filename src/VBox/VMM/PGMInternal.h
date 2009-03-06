@@ -2419,7 +2419,6 @@ typedef struct PGM
 # if HC_ARCH_BITS == 64
     RTRCPTR                         alignment5; /**< structure size alignment. */
 # endif
-#endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
     /** @name Nested Shadow Paging
      * @{ */
     /** Root table; format depends on the host paging mode (AMD-V) or EPT - R3 pointer. */
@@ -2431,6 +2430,7 @@ typedef struct PGM
     /** The Physical Address (HC) of the nested paging root. */
     RTHCPHYS                        HCPhysShwNestedRoot;
     /** @}  */
+#endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
     /** @name Function pointers for Shadow paging.
      * @{
