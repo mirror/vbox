@@ -2373,7 +2373,7 @@ static DECLCALLBACK(size_t) pgmFormatTypeHandlerPage(PFNRTSTROUTPUT pfnOutput, v
         if (IS_PART_INCLUDED(4))
         {
             szTmp[cch++] = ':';
-            static const char s_achPageTypes[8][4]  = { "RAM", "MI2", "M2A", "SHA", "ROM", "MIO", "BAD" };
+            static const char s_achPageTypes[8][4]  = { "INV", "RAM", "MI2", "M2A", "SHA", "ROM", "MIO", "BAD" };
             szTmp[cch++] = s_achPageTypes[PGM_PAGE_GET_TYPE(pPage)][0];
             szTmp[cch++] = s_achPageTypes[PGM_PAGE_GET_TYPE(pPage)][1];
             szTmp[cch++] = s_achPageTypes[PGM_PAGE_GET_TYPE(pPage)][2];
