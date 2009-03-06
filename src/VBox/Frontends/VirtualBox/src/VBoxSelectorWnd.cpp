@@ -30,6 +30,7 @@
 #include "VBoxNewVMWzd.h"
 #include "VBoxMediaManagerDlg.h"
 #include "VBoxImportApplianceWzd.h"
+#include "VBoxExportApplianceWzd.h"
 #include "VBoxSettingsDialogSpecific.h"
 #include "VBoxVMLogViewer.h"
 #include "VBoxGlobal.h"
@@ -408,6 +409,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mFileApplianceImportAction = new QAction (this);
     mFileApplianceImportAction->setIcon (VBoxGlobal::iconSet (":/import_16px.png"));
 
+    mFileApplianceExportAction = new QAction (this);
+    mFileApplianceExportAction->setIcon (VBoxGlobal::iconSet (":/import_16px.png"));
+
     mFileSettingsAction = new QAction(this);
     mFileSettingsAction->setMenuRole (QAction::PreferencesRole);
     mFileSettingsAction->setIcon (VBoxGlobal::iconSet (":/global_settings_16px.png"));
@@ -545,6 +549,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mFileMenu = menuBar()->addMenu (QString::null);
     mFileMenu->addAction (mFileMediaMgrAction);
     mFileMenu->addAction (mFileApplianceImportAction);
+    mFileMenu->addAction (mFileApplianceExportAction);
 #ifndef Q_WS_MAC
     mFileMenu->addSeparator();
 #endif /* Q_WS_MAC */
@@ -650,6 +655,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     /* signals and slots connections */
     connect (mFileMediaMgrAction, SIGNAL (triggered()), this, SLOT (fileMediaMgr()));
     connect (mFileApplianceImportAction, SIGNAL (triggered()), this, SLOT (fileImportAppliance()));
+    connect (mFileApplianceExportAction, SIGNAL (triggered()), this, SLOT (fileExportAppliance()));
     connect (mFileSettingsAction, SIGNAL (triggered()), this, SLOT (fileSettings()));
     connect (mFileExitAction, SIGNAL (triggered()), this, SLOT (fileExit()));
     connect (mVmNewAction, SIGNAL (triggered()), this, SLOT (vmNew()));
@@ -750,6 +756,19 @@ void VBoxSelectorWnd::fileMediaMgr()
 void VBoxSelectorWnd::fileImportAppliance()
 {
     VBoxImportApplianceWzd wzd (this);
+
+    wzd.exec();
+}
+
+void VBoxSelectorWnd::fileExportAppliance()
+{
+    QString name;
+
+    VBoxVMItem *item = mVMListView->selectedItem();
+    if (item)
+        name = item->name();
+
+    VBoxExportApplianceWzd wzd (this, name);
 
     wzd.exec();
 }
@@ -1271,6 +1290,10 @@ void VBoxSelectorWnd::retranslateUi()
     mFileApplianceImportAction->setText (tr ("&Import Appliance..."));
     mFileApplianceImportAction->setShortcut (QKeySequence ("Ctrl+K"));
     mFileApplianceImportAction->setStatusTip (tr ("Import an appliance into VirtualBox"));
+
+    mFileApplianceExportAction->setText (tr ("&Export Appliance..."));
+    mFileApplianceExportAction->setShortcut (QKeySequence ("Ctrl+J"));
+    mFileApplianceExportAction->setStatusTip (tr ("Export an appliance out of VM's from VirtualBox"));
 
 #ifdef Q_WS_MAC
     /*

@@ -82,7 +82,7 @@ void VBoxImportApplianceWzd::revalidate (QIWidgetValidator *aWval)
     bool valid = aWval->isOtherValid();
 
     if (aWval == mWValFileSelector)
-        valid = mFileSelector->path().endsWith (".ovf") &&
+        valid = mFileSelector->path().toLower().endsWith (".ovf") &&
                 QFileInfo (mFileSelector->path()).exists();
 
     aWval->setOtherValid (valid);

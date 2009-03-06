@@ -56,7 +56,8 @@ FORMS = \
     ui/VBoxGLSettingsUpdate.ui \
     ui/VBoxGLSettingsLanguage.ui \
     ui/VBoxImportApplianceWgt.ui \
-    ui/VBoxImportApplianceWzd.ui
+    ui/VBoxImportApplianceWzd.ui \
+    ui/VBoxExportApplianceWzd.ui
 
 TRANSLATIONS = \
 	nls/VirtualBox_el.ts \

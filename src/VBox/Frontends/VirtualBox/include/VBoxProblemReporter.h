@@ -87,7 +87,7 @@ struct VBoxHelpActions
  */
 class VBoxProblemReporter : public QObject
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
 
@@ -108,7 +108,7 @@ public:
 
     static VBoxProblemReporter &instance();
 
-    bool isValid();
+    bool isValid() const;
 
     // helpers
 
@@ -118,14 +118,14 @@ public:
                  int aButton1 = 0, int aButton2 = 0, int aButton3 = 0,
                  const QString &aText1 = QString::null,
                  const QString &aText2 = QString::null,
-                 const QString &aText3 = QString::null);
+                 const QString &aText3 = QString::null) const;
 
     int message (QWidget *aParent, Type aType, const QString &aMessage,
                  const char *aAutoConfirmId,
                  int aButton1 = 0, int aButton2 = 0, int aButton3 = 0,
                  const QString &aText1 = QString::null,
                  const QString &aText2 = QString::null,
-                 const QString &aText3 = QString::null)
+                 const QString &aText3 = QString::null) const
     {
         return message (aParent, aType, aMessage, QString::null, aAutoConfirmId,
                         aButton1, aButton2, aButton3, aText1, aText2, aText3);
@@ -135,7 +135,7 @@ public:
                        const QString &aDetails = QString::null,
                        const char *aAutoConfirmId = 0,
                        const QString &aYesText = QString::null,
-                       const QString &aNoText = QString::null)
+                       const QString &aNoText = QString::null) const
     {
         return (message (aParent, aType, aMessage, aDetails, aAutoConfirmId,
                          QIMessageBox::Yes | QIMessageBox::Default,
@@ -148,7 +148,7 @@ public:
     bool messageYesNo (QWidget *aParent, Type aType, const QString &aMessage,
                        const char *aAutoConfirmId,
                        const QString &aYesText = QString::null,
-                       const QString &aNoText = QString::null)
+                       const QString &aNoText = QString::null) const
     {
         return messageYesNo (aParent, aType, aMessage, QString::null,
                              aAutoConfirmId, aYesText, aNoText);
@@ -158,7 +158,7 @@ public:
                           const QString &aDetails = QString::null,
                           const char *aAutoConfirmId = 0,
                           const QString &aOkText = QString::null,
-                          const QString &aCancelText = QString::null)
+                          const QString &aCancelText = QString::null) const
     {
         return (message (aParent, aType, aMessage, aDetails, aAutoConfirmId,
                          QIMessageBox::Ok | QIMessageBox::Default,
@@ -171,7 +171,7 @@ public:
     bool messageOkCancel (QWidget *aParent, Type aType, const QString &aMessage,
                           const char *aAutoConfirmId,
                           const QString &aOkText = QString::null,
-                          const QString &aCancelText = QString::null)
+                          const QString &aCancelText = QString::null) const
     {
         return messageOkCancel (aParent, aType, aMessage, QString::null,
                                 aAutoConfirmId, aOkText, aCancelText);
@@ -180,7 +180,7 @@ public:
     bool showModalProgressDialog (CProgress &aProgress, const QString &aTitle,
                                   QWidget *aParent, int aMinDuration = 2000);
 
-    QWidget *mainWindowShown();
+    QWidget *mainWindowShown() const;
 
     // problem handlers
 
@@ -371,12 +371,17 @@ public:
 
     void cannotRunInSelectorMode();
 
-    void cannotImportAppliance (CAppliance *aAppliance, QWidget *aParent = NULL);
-    void cannotImportAppliance (const CProgress &aProgress, CAppliance *aAppliance, QWidget *aParent = NULL);
+    void cannotImportAppliance (CAppliance *aAppliance, QWidget *aParent = NULL) const;
+    void cannotImportAppliance (const CProgress &aProgress, CAppliance *aAppliance, QWidget *aParent = NULL) const;
+
+
+    bool askForOverridingAppliance (const QString& path, QWidget *aParent = NULL) const;
+    void cannotExportAppliance (CAppliance *aAppliance, QWidget *aParent = NULL) const;
+    void cannotExportAppliance (const CProgress &aProgress, CAppliance *aAppliance, QWidget *aParent = NULL) const;
 
     void showRuntimeError (const CConsole &console, bool fatal,
                            const QString &errorID,
-                           const QString &errorMsg);
+                           const QString &errorMsg) const;
 
     static QString toAccusative (VBoxDefs::MediaType aType);
 

@@ -313,7 +313,7 @@ VBoxProblemReporter &VBoxProblemReporter::instance()
     return vboxProblem_instance;
 }
 
-bool VBoxProblemReporter::isValid()
+bool VBoxProblemReporter::isValid() const
 {
     return qApp != 0;
 }
@@ -376,7 +376,7 @@ int VBoxProblemReporter::message (QWidget *aParent, Type aType, const QString &a
                                   int aButton3 /* = 0 */,
                                   const QString &aText1 /* = QString::null */,
                                   const QString &aText2 /* = QString::null */,
-                                  const QString &aText3 /* = QString::null */)
+                                  const QString &aText3 /* = QString::null */) const
 {
     if (aButton1 == 0 && aButton2 == 0 && aButton3 == 0)
         aButton1 = QIMessageBox::Ok | QIMessageBox::Default;
@@ -519,7 +519,7 @@ bool VBoxProblemReporter::showModalProgressDialog (
  *  Returns what main window (selector or console) is now shown, or
  *  zero if none of them. The selector window takes precedence.
  */
-QWidget *VBoxProblemReporter::mainWindowShown()
+QWidget *VBoxProblemReporter::mainWindowShown() const
 {
     /* It may happen that this method is called during VBoxGlobal
      * initialization or even after it failed (for example, to show some
@@ -2114,7 +2114,7 @@ void VBoxProblemReporter::cannotRunInSelectorMode()
             "<p>The application will now terminate.</p>"));
 }
 
-void VBoxProblemReporter::cannotImportAppliance (CAppliance *aAppliance, QWidget *aParent /* = NULL */)
+void VBoxProblemReporter::cannotImportAppliance (CAppliance *aAppliance, QWidget *aParent /* = NULL */) const
 {
     if (aAppliance->isNull())
     {
@@ -2133,7 +2133,7 @@ void VBoxProblemReporter::cannotImportAppliance (CAppliance *aAppliance, QWidget
     }
 }
 
-void VBoxProblemReporter::cannotImportAppliance (const CProgress &aProgress, CAppliance* aAppliance, QWidget *aParent /* = NULL */)
+void VBoxProblemReporter::cannotImportAppliance (const CProgress &aProgress, CAppliance* aAppliance, QWidget *aParent /* = NULL */) const
 {
     AssertWrapperOk (aProgress);
 
@@ -2143,9 +2143,43 @@ void VBoxProblemReporter::cannotImportAppliance (const CProgress &aProgress, CAp
              formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
+bool VBoxProblemReporter::askForOverridingAppliance (const QString& aPath, QWidget *aParent /* = NULL */) const
+{
+    return messageYesNo (aParent, Question, tr ("The file <b>%1</b> exists already. Are you sure you want override it?").arg (aPath), NULL);
+}
+
+void VBoxProblemReporter::cannotExportAppliance (CAppliance *aAppliance, QWidget *aParent /* = NULL */) const
+{
+    if (aAppliance->isNull())
+    {
+        message (aParent ? aParent : mainWindowShown(),
+                 Error,
+                 tr ("Failed to create an appliance."));
+    }else
+    {
+        /* Preserve the current error info before calling the object again */
+        COMResult res (*aAppliance);
+
+        message (aParent ? aParent : mainWindowShown(),
+                 Error,
+                 tr ("Failed to prepare the export of the appliance <b>%1</b>.").arg (aAppliance->GetPath()),
+                 formatErrorInfo (res));
+    }
+}
+
+void VBoxProblemReporter::cannotExportAppliance (const CProgress &aProgress, CAppliance* aAppliance, QWidget *aParent /* = NULL */) const
+{
+    AssertWrapperOk (aProgress);
+
+    message (aParent ? aParent : mainWindowShown(),
+             Error,
+             tr ("Failed to export appliance <b>%1</b>.").arg (aAppliance->GetPath()),
+             formatErrorInfo (aProgress.GetErrorInfo()));
+}
+
 void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal,
                                             const QString &errorID,
-                                            const QString &errorMsg)
+                                            const QString &errorMsg) const
 {
     /// @todo (r=dmik) it's just a preliminary box. We need to:
     //  - for fatal errors and non-fatal with-retry errors, listen for a
