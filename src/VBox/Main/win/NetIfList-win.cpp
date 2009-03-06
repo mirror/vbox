@@ -145,15 +145,14 @@ static HRESULT netIfWinCreateIWbemServices(IWbemServices ** ppSvc)
     return hres;
 }
 
-static HRESULT netIfWinFindAdapterClassById(IWbemServices * pSvc, GUID * pGuid, IWbemClassObject **pAdapterConfig)
+static HRESULT netIfWinFindAdapterClassById(IWbemServices * pSvc, const Guid &guid, IWbemClassObject **pAdapterConfig)
 {
     HRESULT hres;
     WCHAR aQueryString[256];
-    char uuidStr[RTUUID_STR_LENGTH];
-    int rc = RTUuidToStr((PCRTUUID)pGuid, uuidStr, sizeof(uuidStr));
-    if(RT_SUCCESS(rc))
+//    char uuidStr[RTUUID_STR_LENGTH];
+//    int rc = RTUuidToStr(guid.toString().raw(), uuidStr, sizeof(uuidStr));
     {
-        swprintf(aQueryString, L"SELECT * FROM Win32_NetworkAdapterConfiguration WHERE SettingID = \"{%S}\"", uuidStr);
+        swprintf(aQueryString, L"SELECT * FROM Win32_NetworkAdapterConfiguration WHERE SettingID = \"{%S}\"", guid.toString().raw());
         // Step 6: --------------------------------------------------
         // Use the IWbemServices pointer to make requests of WMI ----
 
@@ -199,10 +198,6 @@ static HRESULT netIfWinFindAdapterClassById(IWbemServices * pSvc, GUID * pGuid, 
         {
             Log(("Query for operating system name failed. Error code = 0x%x\n", hres));
         }
-    }
-    else
-    {
-        hres = -1;
     }
 
     return hres;
@@ -663,19 +658,15 @@ static int collectNetIfInfo(Bstr &strName, PNETIFINFO pInfo)
 //    return hr;
 //}
 
-int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask)
+static int netIfEnableStaticIpConfig(const Guid &guid, ULONG ip, ULONG mask)
 {
     HRESULT hr;
-    GUID guid;
-    hr = pIf->COMGETTER(Id) (&guid);
-    if(SUCCEEDED(hr))
-    {
         ComPtr <IWbemServices> pSvc;
         hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
         if(SUCCEEDED(hr))
         {
             ComPtr <IWbemClassObject> pAdapterConfig;
-            hr = netIfWinFindAdapterClassById(pSvc, &guid, pAdapterConfig.asOutParam());
+            hr = netIfWinFindAdapterClassById(pSvc, guid, pAdapterConfig.asOutParam());
             if(SUCCEEDED(hr))
             {
                 in_addr aIp[1];
@@ -704,24 +695,19 @@ int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask)
                 }
             }
         }
-    }
 
     return SUCCEEDED(hr) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
-int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, IN_BSTR aIPV6Mask, IN_BSTR aIPV6DefaultGateway)
+static int netIfEnableStaticIpConfigV6(const Guid & guid, IN_BSTR aIPV6Address, IN_BSTR aIPV6Mask, IN_BSTR aIPV6DefaultGateway)
 {
     HRESULT hr;
-    GUID guid;
-    hr = pIf->COMGETTER(Id) (&guid);
-    if(SUCCEEDED(hr))
-    {
         ComPtr <IWbemServices> pSvc;
         hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
         if(SUCCEEDED(hr))
         {
             ComPtr <IWbemClassObject> pAdapterConfig;
-            hr = netIfWinFindAdapterClassById(pSvc, &guid, pAdapterConfig.asOutParam());
+            hr = netIfWinFindAdapterClassById(pSvc, guid, pAdapterConfig.asOutParam());
             if(SUCCEEDED(hr))
             {
                 BSTR ObjPath;
@@ -744,36 +730,31 @@ int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address
                 }
             }
         }
-    }
 
     return SUCCEEDED(hr) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
-int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
+static int netIfEnableStaticIpConfigV6(const Guid &guid, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
     RTNETADDRIPV6 Mask;
     int rc = prefixLength2IPv6Address(aIPV6MaskPrefixLength, &Mask);
     if(RT_SUCCESS(rc))
     {
         Bstr maskStr = composeIPv6Address(&Mask);
-        rc = NetIfEnableStaticIpConfigV6(pIf, aIPV6Address, maskStr, NULL);
+        rc = netIfEnableStaticIpConfigV6(guid, aIPV6Address, maskStr, NULL);
     }
     return rc;
 }
 
-int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)
+static HRESULT netIfEnableDynamicIpConfig(const Guid &guid)
 {
     HRESULT hr;
-    GUID guid;
-    hr = pIf->COMGETTER(Id) (&guid);
-    if(SUCCEEDED(hr))
-    {
         ComPtr <IWbemServices> pSvc;
         hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
         if(SUCCEEDED(hr))
         {
             ComPtr <IWbemClassObject> pAdapterConfig;
-            hr = netIfWinFindAdapterClassById(pSvc, &guid, pAdapterConfig.asOutParam());
+            hr = netIfWinFindAdapterClassById(pSvc, guid, pAdapterConfig.asOutParam());
             if(SUCCEEDED(hr))
             {
                 BSTR ObjPath;
@@ -789,9 +770,9 @@ int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)
                 }
             }
         }
-    }
 
-    return SUCCEEDED(hr) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+
+    return hr;
 }
 
 /* svc helper func */
@@ -975,7 +956,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
             if (RT_FAILURE (vrc)) break;
-            vrc = aClient->write (Utf8Str (d->name));
+            vrc = aClient->write (d->guid);
             if (RT_FAILURE (vrc)) break;
 
             /* wait for a reply */
@@ -1028,7 +1009,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
             if (RT_FAILURE (vrc)) break;
-            vrc = aClient->write (Utf8Str (d->name));
+            vrc = aClient->write (d->guid);
             if (RT_FAILURE (vrc)) break;
             vrc = aClient->write (d->u.StaticIP.IPAddress);
             if (RT_FAILURE (vrc)) break;
@@ -1085,7 +1066,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
             if (RT_FAILURE (vrc)) break;
-            vrc = aClient->write (Utf8Str (d->name));
+            vrc = aClient->write (d->guid);
             if (RT_FAILURE (vrc)) break;
             vrc = aClient->write (Utf8Str(d->u.StaticIPV6.IPV6Address));
             if (RT_FAILURE (vrc)) break;
@@ -1844,6 +1825,107 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
 
             break;
         }
+        case SVCHlpMsg::EnableStaticIpConfigV6:
+        {
+            LogFlowFunc (("EnableStaticIpConfigV6:\n"));
+
+            Guid guid;
+            Utf8Str ipV6;
+            ULONG maskLengthV6;
+            vrc = aClient->read (guid);
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->read (ipV6);
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->read (maskLengthV6);
+            if (RT_FAILURE (vrc)) break;
+
+            Utf8Str errMsg;
+            vrc = netIfEnableStaticIpConfigV6 (guid, Bstr(ipV6), maskLengthV6);
+
+            if (RT_SUCCESS (vrc))
+            {
+                /* write success followed by GUID */
+                vrc = aClient->write (SVCHlpMsg::OK);
+                if (RT_FAILURE (vrc)) break;
+            }
+            else
+            {
+                /* write failure followed by error message */
+                if (errMsg.isEmpty())
+                    errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
+                vrc = aClient->write (SVCHlpMsg::Error);
+                if (RT_FAILURE (vrc)) break;
+                vrc = aClient->write (errMsg);
+                if (RT_FAILURE (vrc)) break;
+            }
+
+            break;
+        }
+        case SVCHlpMsg::EnableStaticIpConfig:
+        {
+            LogFlowFunc (("EnableStaticIpConfig:\n"));
+
+            Guid guid;
+            ULONG ip, mask;
+            vrc = aClient->read (guid);
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->read (ip);
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->read (mask);
+            if (RT_FAILURE (vrc)) break;
+
+            Utf8Str errMsg;
+            vrc = netIfEnableStaticIpConfig (guid, ip, mask);
+
+            if (RT_SUCCESS (vrc))
+            {
+                /* write success followed by GUID */
+                vrc = aClient->write (SVCHlpMsg::OK);
+                if (RT_FAILURE (vrc)) break;
+            }
+            else
+            {
+                /* write failure followed by error message */
+                if (errMsg.isEmpty())
+                    errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
+                vrc = aClient->write (SVCHlpMsg::Error);
+                if (RT_FAILURE (vrc)) break;
+                vrc = aClient->write (errMsg);
+                if (RT_FAILURE (vrc)) break;
+            }
+
+            break;
+        }
+        case SVCHlpMsg::EnableDynamicIpConfig:
+        {
+            LogFlowFunc (("EnableDynamicIpConfig:\n"));
+
+            Guid guid;
+            vrc = aClient->read (guid);
+            if (RT_FAILURE (vrc)) break;
+
+            Utf8Str errMsg;
+            vrc = netIfEnableDynamicIpConfig (guid);
+
+            if (RT_SUCCESS (vrc))
+            {
+                /* write success followed by GUID */
+                vrc = aClient->write (SVCHlpMsg::OK);
+                if (RT_FAILURE (vrc)) break;
+            }
+            else
+            {
+                /* write failure followed by error message */
+                if (errMsg.isEmpty())
+                    errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
+                vrc = aClient->write (SVCHlpMsg::Error);
+                if (RT_FAILURE (vrc)) break;
+                vrc = aClient->write (errMsg);
+                if (RT_FAILURE (vrc)) break;
+            }
+
+            break;
+        }
         default:
             AssertMsgFailedBreakStmt (
                 ("Invalid message code %d (%08lX)\n", aMsgCode, aMsgCode),
@@ -1905,6 +1987,136 @@ static BOOL IsUACEnabled()
 }
 
 /* end */
+
+# define VBOX_APP_NAME L"VirtualBox"
+
+static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > * pPist, INetCfgComponent * pncc, HostNetworkInterfaceType enmType)
+{
+    LPWSTR              lpszName;
+    GUID                IfGuid;
+    HRESULT hr;
+    int rc = VERR_GENERAL_FAILURE;
+
+    hr = pncc->GetDisplayName( &lpszName );
+    Assert(hr == S_OK);
+    if(hr == S_OK)
+    {
+        size_t cUnicodeName = wcslen(lpszName) + 1;
+        size_t uniLen = (cUnicodeName * 2 + sizeof (OLECHAR) - 1) / sizeof (OLECHAR);
+        Bstr name (uniLen + 1 /* extra zero */);
+        wcscpy((wchar_t *) name.mutableRaw(), lpszName);
+
+        hr = pncc->GetInstanceGuid(&IfGuid);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            NETIFINFO Info;
+            memset(&Info, 0, sizeof(Info));
+            Info.Uuid = *(Guid(IfGuid).raw());
+            rc = collectNetIfInfo(name, &Info);
+            if (RT_FAILURE(rc))
+            {
+                Log(("vboxNetWinAddComponent: collectNetIfInfo() -> %Vrc\n", rc));
+            }
+            /* create a new object and add it to the list */
+            ComObjPtr <HostNetworkInterface> iface;
+            iface.createObject();
+            /* remove the curly bracket at the end */
+            if (SUCCEEDED (iface->init (name, enmType, &Info)))
+            {
+                pPist->push_back (iface);
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                Assert(0);
+            }
+        }
+        CoTaskMemFree(lpszName);
+    }
+
+    return rc;
+}
+
+#endif /* #ifndef VBOX_WITH_NETFLT */
+
+
+static int netIfListHostAdapters(std::list <ComObjPtr <HostNetworkInterface> > &list)
+{
+#ifndef VBOX_WITH_NETFLT
+    /* VBoxNetAdp is available only when VBOX_WITH_NETFLT is enabled */
+    return VERR_NOT_IMPLEMENTED;
+#else /* #  if defined VBOX_WITH_NETFLT */
+    INetCfg              *pNc;
+    INetCfgComponent     *pMpNcc;
+    LPWSTR               lpszApp = NULL;
+    HRESULT              hr;
+    IEnumNetCfgComponent  *pEnumComponent;
+
+    /* we are using the INetCfg API for getting the list of miniports */
+    hr = VBoxNetCfgWinQueryINetCfg( FALSE,
+                       VBOX_APP_NAME,
+                       &pNc,
+                       &lpszApp );
+    Assert(hr == S_OK);
+    if(hr == S_OK)
+    {
+        hr = VBoxNetCfgWinGetComponentEnum(pNc, &GUID_DEVCLASS_NET, &pEnumComponent);
+        if(hr == S_OK)
+        {
+            while((hr = VBoxNetCfgWinGetNextComponent(pEnumComponent, &pMpNcc)) == S_OK)
+            {
+                ULONG uComponentStatus;
+                hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
+//#ifndef DEBUG_bird
+//                Assert(hr == S_OK);
+//#endif
+                if(hr == S_OK)
+                {
+                    if(uComponentStatus == 0)
+                    {
+                        LPWSTR pId;
+                        hr = pMpNcc->GetId(&pId);
+                        Assert(hr == S_OK);
+                        if(hr == S_OK)
+                        {
+                            if(!_wcsnicmp(pId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
+                            {
+                                vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_HostOnly);
+                            }
+                            CoTaskMemFree(pId);
+                        }
+                    }
+                }
+                VBoxNetCfgWinReleaseRef(pMpNcc);
+            }
+            Assert(hr == S_OK || hr == S_FALSE);
+
+            VBoxNetCfgWinReleaseRef(pEnumComponent);
+        }
+        else
+        {
+            LogRel(("failed to get the sun_VBoxNetFlt component, error (0x%x)", hr));
+        }
+
+        VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
+    }
+    else if(lpszApp)
+    {
+        CoTaskMemFree(lpszApp);
+    }
+#endif /* #  if defined VBOX_WITH_NETFLT */
+    return VINF_SUCCESS;
+}
+
+int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *)
+{
+#ifndef VBOX_WITH_NETFLT
+    return VERR_NOT_IMPLEMENTED;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
 
 int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IN_BSTR aName,
                                   IHostNetworkInterface **aHostNetworkInterface,
@@ -2001,270 +2213,176 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
-# define VBOX_APP_NAME L"VirtualBox"
-
-static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > * pPist, INetCfgComponent * pncc, HostNetworkInterfaceType enmType)
+int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask)
 {
-    LPWSTR              lpszName;
-    GUID                IfGuid;
-    HRESULT hr;
-    int rc = VERR_GENERAL_FAILURE;
-
-    hr = pncc->GetDisplayName( &lpszName );
-    Assert(hr == S_OK);
-    if(hr == S_OK)
+    HRESULT rc;
+    GUID guid;
+    rc = pIf->COMGETTER(Id) (&guid);
+    if(SUCCEEDED(rc))
     {
-        size_t cUnicodeName = wcslen(lpszName) + 1;
-        size_t uniLen = (cUnicodeName * 2 + sizeof (OLECHAR) - 1) / sizeof (OLECHAR);
-        Bstr name (uniLen + 1 /* extra zero */);
-        wcscpy((wchar_t *) name.mutableRaw(), lpszName);
-
-        hr = pncc->GetInstanceGuid(&IfGuid);
-        Assert(hr == S_OK);
-        if (hr == S_OK)
+        ComPtr<VirtualBox> vBox;
+        rc = pIf->getVirtualBox (vBox.asOutParam());
+        if(SUCCEEDED(rc))
         {
-            NETIFINFO Info;
-            memset(&Info, 0, sizeof(Info));
-            Info.Uuid = *(Guid(IfGuid).raw());
-            rc = collectNetIfInfo(name, &Info);
-            if (RT_FAILURE(rc))
+            /* create a progress object */
+            ComObjPtr <Progress> progress;
+            progress.createObject();
+            ComPtr<IHost> host;
+            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
+            if(SUCCEEDED(rc))
             {
-                Log(("vboxNetWinAddComponent: collectNetIfInfo() -> %Vrc\n", rc));
-            }
-            /* create a new object and add it to the list */
-            ComObjPtr <HostNetworkInterface> iface;
-            iface.createObject();
-            /* remove the curly bracket at the end */
-            if (SUCCEEDED (iface->init (name, enmType, &Info)))
-            {
-                pPist->push_back (iface);
-                rc = VINF_SUCCESS;
-            }
-            else
-            {
-                Assert(0);
-            }
-        }
-        CoTaskMemFree(lpszName);
-    }
-
-    return rc;
-}
-
-#else /* #ifndef VBOX_WITH_NETFLT */
-/**
- * Windows helper function for NetIfList().
- *
- * @returns true / false.
- *
- * @param   guid        The GUID.
- */
-static bool IsTAPDevice(const char *guid)
-{
-    HKEY hNetcard;
-    LONG status;
-    DWORD len;
-    int i = 0;
-    bool ret = false;
-
-    status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}", 0, KEY_READ, &hNetcard);
-    if (status != ERROR_SUCCESS)
-        return false;
-
-    for (;;)
-    {
-        char szEnumName[256];
-        char szNetCfgInstanceId[256];
-        DWORD dwKeyType;
-        HKEY  hNetCardGUID;
-
-        len = sizeof(szEnumName);
-        status = RegEnumKeyExA(hNetcard, i, szEnumName, &len, NULL, NULL, NULL, NULL);
-        if (status != ERROR_SUCCESS)
-            break;
-
-        status = RegOpenKeyExA(hNetcard, szEnumName, 0, KEY_READ, &hNetCardGUID);
-        if (status == ERROR_SUCCESS)
-        {
-            len = sizeof(szNetCfgInstanceId);
-            status = RegQueryValueExA(hNetCardGUID, "NetCfgInstanceId", NULL, &dwKeyType, (LPBYTE)szNetCfgInstanceId, &len);
-            if (status == ERROR_SUCCESS && dwKeyType == REG_SZ)
-            {
-                char szNetProductName[256];
-                char szNetProviderName[256];
-
-                szNetProductName[0] = 0;
-                len = sizeof(szNetProductName);
-                status = RegQueryValueExA(hNetCardGUID, "ProductName", NULL, &dwKeyType, (LPBYTE)szNetProductName, &len);
-
-                szNetProviderName[0] = 0;
-                len = sizeof(szNetProviderName);
-                status = RegQueryValueExA(hNetCardGUID, "ProviderName", NULL, &dwKeyType, (LPBYTE)szNetProviderName, &len);
-
-                if (   !strcmp(szNetCfgInstanceId, guid)
-                    && !strcmp(szNetProductName, "VirtualBox TAP Adapter")
-                    && (   (!strcmp(szNetProviderName, "innotek GmbH"))
-                        || (!strcmp(szNetProviderName, "Sun Microsystems, Inc."))))
+                rc = progress->init (vBox, host,
+                                    Bstr ("Enabling Dynamic Ip Configuration"),
+                                    FALSE /* aCancelable */);
+                if(SUCCEEDED(rc))
                 {
-                    ret = true;
-                    RegCloseKey(hNetCardGUID);
-                    break;
-                }
-            }
-            RegCloseKey(hNetCardGUID);
-        }
-        ++i;
-    }
+                    CheckComRCReturnRC (rc);
+//                    progress.queryInterfaceTo (aProgress);
 
-    RegCloseKey(hNetcard);
-    return ret;
-}
-#endif /* #ifndef VBOX_WITH_NETFLT */
+                    /* create the networkInterfaceHelperClient() argument */
+                    std::auto_ptr <NetworkInterfaceHelperClientData>
+                        d (new NetworkInterfaceHelperClientData());
+                    AssertReturn (d.get(), E_OUTOFMEMORY);
 
-int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *)
-{
-    return VERR_NOT_IMPLEMENTED;
-}
+                    d->msgCode = SVCHlpMsg::EnableStaticIpConfig;
+                    d->guid = guid;
+                    d->iface = pIf;
+                    d->u.StaticIP.IPAddress = ip;
+                    d->u.StaticIP.IPNetMask = mask;
 
-static int NetIfListHostAdapters(std::list <ComObjPtr <HostNetworkInterface> > &list)
-{
-#ifndef VBOX_WITH_NETFLT
-    /* VBoxNetAdp is available only when VBOX_WITH_NETFLT is enabled */
-    return VERR_NOT_IMPLEMENTED;
-#else /* #  if defined VBOX_WITH_NETFLT */
-    INetCfg              *pNc;
-    INetCfgComponent     *pMpNcc;
-    LPWSTR               lpszApp = NULL;
-    HRESULT              hr;
-    IEnumNetCfgComponent  *pEnumComponent;
+                    rc = vBox->startSVCHelperClient (
+                        IsUACEnabled() == TRUE /* aPrivileged */,
+                        netIfNetworkInterfaceHelperClient,
+                        static_cast <void *> (d.get()),
+                        progress);
 
-    /* we are using the INetCfg API for getting the list of miniports */
-    hr = VBoxNetCfgWinQueryINetCfg( FALSE,
-                       VBOX_APP_NAME,
-                       &pNc,
-                       &lpszApp );
-    Assert(hr == S_OK);
-    if(hr == S_OK)
-    {
-        hr = VBoxNetCfgWinGetComponentEnum(pNc, &GUID_DEVCLASS_NET, &pEnumComponent);
-        if(hr == S_OK)
-        {
-            while((hr = VBoxNetCfgWinGetNextComponent(pEnumComponent, &pMpNcc)) == S_OK)
-            {
-                ULONG uComponentStatus;
-                hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
-//#ifndef DEBUG_bird
-//                Assert(hr == S_OK);
-//#endif
-                if(hr == S_OK)
-                {
-                    if(uComponentStatus == 0)
+                    if (SUCCEEDED (rc))
                     {
-                        LPWSTR pId;
-                        hr = pMpNcc->GetId(&pId);
-                        Assert(hr == S_OK);
-                        if(hr == S_OK)
-                        {
-                            if(!_wcsnicmp(pId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
-                            {
-                                vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_HostOnly);
-                            }
-                            CoTaskMemFree(pId);
-                        }
+                        /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
+                        d.release();
                     }
                 }
-                VBoxNetCfgWinReleaseRef(pMpNcc);
             }
-            Assert(hr == S_OK || hr == S_FALSE);
-
-            VBoxNetCfgWinReleaseRef(pEnumComponent);
         }
-        else
-        {
-            LogRel(("failed to get the sun_VBoxNetFlt component, error (0x%x)", hr));
-        }
-
-        VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
     }
-    else if(lpszApp)
+
+    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+}
+
+int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
+{
+    HRESULT rc;
+    GUID guid;
+    rc = pIf->COMGETTER(Id) (&guid);
+    if(SUCCEEDED(rc))
     {
-        CoTaskMemFree(lpszApp);
+        ComPtr<VirtualBox> vBox;
+        rc = pIf->getVirtualBox (vBox.asOutParam());
+        if(SUCCEEDED(rc))
+        {
+            /* create a progress object */
+            ComObjPtr <Progress> progress;
+            progress.createObject();
+            ComPtr<IHost> host;
+            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
+            if(SUCCEEDED(rc))
+            {
+                rc = progress->init (vBox, host,
+                                    Bstr ("Enabling Dynamic Ip Configuration"),
+                                    FALSE /* aCancelable */);
+                if(SUCCEEDED(rc))
+                {
+                    CheckComRCReturnRC (rc);
+//                    progress.queryInterfaceTo (aProgress);
+
+                    /* create the networkInterfaceHelperClient() argument */
+                    std::auto_ptr <NetworkInterfaceHelperClientData>
+                        d (new NetworkInterfaceHelperClientData());
+                    AssertReturn (d.get(), E_OUTOFMEMORY);
+
+                    d->msgCode = SVCHlpMsg::EnableStaticIpConfigV6;
+                    d->guid = guid;
+                    d->iface = pIf;
+                    d->u.StaticIPV6.IPV6Address = aIPV6Address;
+                    d->u.StaticIPV6.IPV6NetMaskLength = aIPV6MaskPrefixLength;
+
+                    rc = vBox->startSVCHelperClient (
+                        IsUACEnabled() == TRUE /* aPrivileged */,
+                        netIfNetworkInterfaceHelperClient,
+                        static_cast <void *> (d.get()),
+                        progress);
+
+                    if (SUCCEEDED (rc))
+                    {
+                        /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
+                        d.release();
+                    }
+                }
+            }
+        }
     }
-#endif /* #  if defined VBOX_WITH_NETFLT */
-    return VINF_SUCCESS;
+
+    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+}
+
+int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)
+{
+    HRESULT rc;
+    GUID guid;
+    rc = pIf->COMGETTER(Id) (&guid);
+    if(SUCCEEDED(rc))
+    {
+        ComPtr<VirtualBox> vBox;
+        rc = pIf->getVirtualBox (vBox.asOutParam());
+        if(SUCCEEDED(rc))
+        {
+            /* create a progress object */
+            ComObjPtr <Progress> progress;
+            progress.createObject();
+            ComPtr<IHost> host;
+            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
+            if(SUCCEEDED(rc))
+            {
+                rc = progress->init (vBox, host,
+                                    Bstr ("Enabling Dynamic Ip Configuration"),
+                                    FALSE /* aCancelable */);
+                if(SUCCEEDED(rc))
+                {
+                    CheckComRCReturnRC (rc);
+//                    progress.queryInterfaceTo (aProgress);
+
+                    /* create the networkInterfaceHelperClient() argument */
+                    std::auto_ptr <NetworkInterfaceHelperClientData>
+                        d (new NetworkInterfaceHelperClientData());
+                    AssertReturn (d.get(), E_OUTOFMEMORY);
+
+                    d->msgCode = SVCHlpMsg::EnableDynamicIpConfig;
+                    d->guid = guid;
+                    d->iface = pIf;
+
+                    rc = vBox->startSVCHelperClient (
+                        IsUACEnabled() == TRUE /* aPrivileged */,
+                        netIfNetworkInterfaceHelperClient,
+                        static_cast <void *> (d.get()),
+                        progress);
+
+                    if (SUCCEEDED (rc))
+                    {
+                        /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
+                        d.release();
+                    }
+                }
+            }
+        }
+    }
+
+    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
 int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 {
 #ifndef VBOX_WITH_NETFLT
-    static const char *NetworkKey = "SYSTEM\\CurrentControlSet\\Control\\Network\\"
-                                    "{4D36E972-E325-11CE-BFC1-08002BE10318}";
-    HKEY hCtrlNet;
-    LONG status;
-    DWORD len;
-    status = RegOpenKeyExA (HKEY_LOCAL_MACHINE, NetworkKey, 0, KEY_READ, &hCtrlNet);
-    if (status != ERROR_SUCCESS)
-    {
-        Log(("NetIfList: Could not open registry key \"%s\"", NetworkKey));
-        return E_FAIL;
-    }
-
-    for (int i = 0;; ++ i)
-    {
-        char szNetworkGUID [256];
-        HKEY hConnection;
-        char szNetworkConnection [256];
-
-        len = sizeof (szNetworkGUID);
-        status = RegEnumKeyExA (hCtrlNet, i, szNetworkGUID, &len, NULL, NULL, NULL, NULL);
-        if (status != ERROR_SUCCESS)
-            break;
-
-        if (!IsTAPDevice(szNetworkGUID))
-            continue;
-
-        RTStrPrintf (szNetworkConnection, sizeof (szNetworkConnection),
-                     "%s\\Connection", szNetworkGUID);
-        status = RegOpenKeyExA (hCtrlNet, szNetworkConnection, 0, KEY_READ,  &hConnection);
-        if (status == ERROR_SUCCESS)
-        {
-            DWORD dwKeyType;
-            status = RegQueryValueExW (hConnection, TEXT("Name"), NULL,
-                                       &dwKeyType, NULL, &len);
-            if (status == ERROR_SUCCESS && dwKeyType == REG_SZ)
-            {
-                size_t uniLen = (len + sizeof (OLECHAR) - 1) / sizeof (OLECHAR);
-                Bstr name (uniLen + 1 /* extra zero */);
-                status = RegQueryValueExW (hConnection, TEXT("Name"), NULL,
-                                           &dwKeyType, (LPBYTE) name.mutableRaw(), &len);
-                if (status == ERROR_SUCCESS)
-                {
-                    LogFunc(("Connection name %ls\n", name.mutableRaw()));
-                    /* put a trailing zero, just in case (see MSDN) */
-                    name.mutableRaw() [uniLen] = 0;
-                    /* create a new object and add it to the list */
-                    ComObjPtr <HostNetworkInterface> iface;
-                    iface.createObject();
-                    /* remove the curly bracket at the end */
-                    szNetworkGUID [strlen(szNetworkGUID) - 1] = '\0';
-
-                    NETIFINFO Info;
-                    memset(&Info, 0, sizeof(Info));
-                    Info.Uuid = *(Guid(szNetworkGUID + 1).raw());
-                    int rc = collectNetIfInfo(name, &Info);
-                    if (RT_FAILURE(rc))
-                    {
-                        Log(("vboxNetWinAddComponent: collectNetIfInfo() -> %Vrc\n", rc));
-                    }
-
-                    if (SUCCEEDED (iface->init (name, HostNetworkInterfaceType_Bridged, &Info)))
-                        list.push_back (iface);
-                }
-            }
-            RegCloseKey (hConnection);
-        }
-    }
-    RegCloseKey (hCtrlNet);
+    return VERR_NOT_IMPLEMENTED;
 #else /* #  if defined VBOX_WITH_NETFLT */
     INetCfg              *pNc;
     INetCfgComponent     *pMpNcc;
@@ -2361,7 +2479,8 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
     }
 
-    NetIfListHostAdapters(list);
-#endif /* #  if defined VBOX_WITH_NETFLT */
+    netIfListHostAdapters(list);
+
     return VINF_SUCCESS;
+#endif /* #  if defined VBOX_WITH_NETFLT */
 }
