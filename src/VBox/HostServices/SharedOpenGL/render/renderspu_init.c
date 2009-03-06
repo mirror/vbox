@@ -70,7 +70,7 @@ static DWORD WINAPI renderSPUWindowThreadProc(void* unused)
     (void) unused;
 
     /* Force system to create the message queue. 
-     * Else, there's a chance than render spu will issue PostThreadMessage
+     * Else, there's a chance that render spu will issue PostThreadMessage
      * before this thread calls GetMessage for first time.
      */
     PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
