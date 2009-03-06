@@ -122,7 +122,7 @@ vboxmouse_drv_15_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_15_INCS := \
 	$(VBOX_PATH_X11_XORG_1_5) \
 	$(VBOX_PATH_X11_XORG_1_5)/X11 \
-	$(VBOX_PATH_X11_XORG_1_5)/xorg \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.5.3 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_15_SOURCES = \
 	vboxmouse_15.c
@@ -137,7 +137,8 @@ vboxmouse_drv_16_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_16_INCS := \
 	$(VBOX_PATH_X11_XORG_1_6) \
 	$(VBOX_PATH_X11_XORG_1_6)/X11 \
-	$(VBOX_PATH_X11_XORG_1_6)/xorg \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_16_SOURCES = \
 	vboxmouse_15.c
