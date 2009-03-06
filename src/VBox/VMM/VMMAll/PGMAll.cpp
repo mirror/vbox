@@ -2273,7 +2273,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     for (i=0;i<(MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT);i++)
     {
         pVM->pgm.s.iDynPageMapLast = iPage = (iPage + 1) & ((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) - 1);
-        if (!(pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u & PGM_PTFLAGS_DYN_LOCKED))
+        if (!pVM->pgm.s.aLockedDynPageMapCache[iPage])
             break;
         iPage++;
     }
@@ -2285,6 +2285,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     pVM->pgm.s.aHCPhysDynPageMapCache[iPage & (RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) - 1)] = HCPhys;
     pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u = (uint32_t)HCPhys | X86_PTE_P | X86_PTE_A | X86_PTE_D;
     pVM->pgm.s.paDynPageMapPaePTEsGC[iPage].u   =           HCPhys | X86_PTE_P | X86_PTE_A | X86_PTE_D;
+    pVM->pgm.s.aLockedDynPageMapCache[iPage]    = 0;
 
     void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
     *ppv = pv;
@@ -2307,8 +2308,8 @@ VMMDECL(int) PGMDynLockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
 
     Assert(GCPage >= pVM->pgm.s.pbDynPageMapBaseGC && GCPage < (pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE));
     iPage = ((uintptr_t)(GCPage - pVM->pgm.s.pbDynPageMapBaseGC)) >> PAGE_SHIFT;
-    Assert(!(pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u & PGM_PTFLAGS_DYN_LOCKED));
-    pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u |= PGM_PTFLAGS_DYN_LOCKED;
+    Assert(!pVM->pgm.s.aLockedDynPageMapCache[iPage]);
+    ASMAtomicIncU32(&pVM->pgm.s.aLockedDynPageMapCache[iPage]);
     return VINF_SUCCESS;
 }
 
@@ -2324,10 +2325,12 @@ VMMDECL(int) PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
 {
     unsigned iPage;
 
+    AssertCompile(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == RT_ELEMENTS(pVM->pgm.s.aLockedDynPageMapCache));
+
     Assert(GCPage >= pVM->pgm.s.pbDynPageMapBaseGC && GCPage < (pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE));
     iPage = ((uintptr_t)(GCPage - pVM->pgm.s.pbDynPageMapBaseGC)) >> PAGE_SHIFT;
-    Assert(pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u & PGM_PTFLAGS_DYN_LOCKED);
-    pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u &= ~PGM_PTFLAGS_DYN_LOCKED;
+    Assert(pVM->pgm.s.aLockedDynPageMapCache[iPage]);
+    ASMAtomicDecU32(&pVM->pgm.s.aLockedDynPageMapCache[iPage]);
     return VINF_SUCCESS;
 }
 
@@ -2340,8 +2343,8 @@ VMMDECL(int) PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
  */
 VMMDECL(void) PGMDynCheckLocks(PVM pVM)
 {
-    for (unsigned i=0;i<(MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT);i++)
-        Assert(!(pVM->pgm.s.paDynPageMap32BitPTEsGC[i].u & PGM_PTFLAGS_DYN_LOCKED));
+    for (unsigned i=0;i<RT_ELEMENTS(pVM->pgm.s.aLockedDynPageMapCache);i++)
+        Assert(!pVM->pgm.s.aLockedDynPageMapCache[i]);
 }
 #  endif /* VBOX_STRICT */
 
