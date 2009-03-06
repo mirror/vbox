@@ -211,7 +211,7 @@ void VBoxExportApplianceWzd::addListViewVMItems (const QString& aSelectName)
     /* Make sure aSelectName is initial selected in the list */
     QList<QListWidgetItem *> list = mVMListWidget->findItems (aSelectName, Qt::MatchExactly);
     if (list.size() > 0)
-        mVMListWidget->setCurrentItem (list.first(), QItemSelectionModel::SelectCurrent);
+        mVMListWidget->setCurrentItem (list.first());
 }
 
 bool VBoxExportApplianceWzd::exportVMs()
