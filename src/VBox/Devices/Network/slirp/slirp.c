@@ -1662,7 +1662,7 @@ uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport)
 
 void slirp_set_dhcp_TFTP_prefix(PNATState pData, const char *tftpPrefix)
 {
-    Log2(("tftp_prefix:%s\n", tftp_prefix));
+    Log2(("tftp_prefix:%s\n", tftpPrefix));
     tftp_prefix = tftpPrefix;
 }
 
