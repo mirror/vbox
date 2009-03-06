@@ -66,6 +66,7 @@ static NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS VBoxGuestSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS VBoxGuestShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS VBoxGuestNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static VOID     VBoxGuestBugCheckCallback(PVOID pszBuffer, ULONG ulLength);
 static VOID     vboxWorkerThread(PVOID context);
 static VOID     reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt);
 static VOID     vboxIdleThread(PVOID context);
@@ -240,7 +241,26 @@ static NTSTATUS VBoxGuestAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevOb
     }
 #endif
 
-    // driver is ready now
+    /* 
+     * Setup bugcheck callback routine ASAP.
+     */
+    RtlZeroMemory (pDevExt->szDriverName, sizeof(pDevExt->szDriverName));
+    KeInitializeCallbackRecord(&pDevExt->bugcheckRecord);
+
+    if (FALSE == KeRegisterBugCheckCallback(&pDevExt->bugcheckRecord,
+                                            &VBoxGuestBugCheckCallback,
+                                            pDevExt->pcBugcheckBuffer,
+                                            sizeof(&pDevExt->szDriverName),
+                                            pDevExt->szDriverName))
+    {
+        dprintf(("VBoxGuest::VBoxGuestAddDevice: Could not register bugcheck callback routine!\n"));
+    }
+    else
+    {
+        dprintf(("VBoxGuest::VBoxGuestAddDevice: Bugcheck callback registered.\n"));
+    }
+
+    /* Driver is ready now. */
     deviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
 
     dprintf(("VBoxGuest::VBoxGuestAddDevice: returning with rc = 0x%x\n", rc));
@@ -282,6 +302,10 @@ void VBoxGuestUnload(PDRIVER_OBJECT pDrvObj)
 
     VBoxCleanupMemBalloon(pDevExt);
 
+    /* Unregister bugcheck callback. */
+    if (FALSE == KeDeregisterBugCheckCallback(&pDevExt->bugcheckRecord))
+        dprintf(("VBoxGuest::VBoxGuestUnload: Unregistering bugcheck callback routine failed!\n"));
+
     /*
      * I don't think it's possible to unload a driver which processes have
      * opened, at least we'll blindly assume that here.
@@ -294,9 +318,9 @@ void VBoxGuestUnload(PDRIVER_OBJECT pDrvObj)
     if (pDevExt->SessionSpinlock != NIL_RTSPINLOCK)
         RTSpinlockDestroy(pDevExt->SessionSpinlock);
 #endif
-
     IoDeleteDevice(pDrvObj->DeviceObject);
 #endif
+
     dprintf(("VBoxGuest::VBoxGuestUnload: returning\n"));
 }
 
@@ -1507,6 +1531,18 @@ BOOLEAN VBoxGuestIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext)
     }
 
     return fIRQTaken;
+}
+
+VOID VBoxGuestBugCheckCallback(PVOID pszBuffer, ULONG ulLength)
+{
+    LogRelBackdoor(("Windows bluescreen detected! "));
+    if (pszBuffer)
+    {
+        LogRelBackdoor(("Additional information: %s\n", (char*)pszBuffer));
+    }
+    else LogRelBackdoor(("No additional information given.\n"));
+
+    /* @todo Notify the host somehow over DevVMM. */
 }
 
 /**

@@ -155,7 +155,8 @@ typedef struct VBOXGUESTDEVEXT
     PKINTERRUPT interruptObject;
 /////
 
-
+    // the driver name
+    UCHAR szDriverName[32];
     // our functional driver object
     PDEVICE_OBJECT deviceObject;
     // the top of the stack
@@ -213,6 +214,10 @@ typedef struct VBOXGUESTDEVEXT
 
     /* Preallocated generic request for shutdown. */
     VMMDevPowerStateRequest *powerStateRequest;
+
+    /* Record for bugcheck callback routine. */
+    KBUGCHECK_CALLBACK_RECORD bugcheckRecord;
+    CHAR* pcBugcheckBuffer;
 
 } VBOXGUESTDEVEXT, *PVBOXGUESTDEVEXT;
 
