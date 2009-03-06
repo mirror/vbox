@@ -654,8 +654,7 @@ VBOX_SLIRP_SOURCES = \
 ifdef VBOX_WITH_SLIRP_DNS_PROXY
 VBOX_SLIRP_SOURCES += \
 	Network/slirp/dnsproxy/hash.c \
-	Network/slirp/dnsproxy/dnsproxy.c	\
-	Network/slirp/dnsproxy/internal.c
+	Network/slirp/dnsproxy/dnsproxy.c
 endif
 
 # some day will be deleted
