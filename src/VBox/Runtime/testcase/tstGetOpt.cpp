@@ -87,6 +87,7 @@ int main()
         { "nodash",             387, RTGETOPT_REQ_NOTHING },
         { "nodashval",          388, RTGETOPT_REQ_STRING },
         { "--gateway",          'g', RTGETOPT_REQ_IPV4ADDR },
+        { "--mac",              'm', RTGETOPT_REQ_MACADDR },
     };
 
     char *argv2[] =
@@ -124,6 +125,10 @@ int main()
         "-vqi999",
 
         "-g192.168.1.1",
+
+        "-m08:0:27:00:ab:f3",
+        "--mac:1:::::c",
+
         NULL
     };
     int argc2 = (int)RT_ELEMENTS(argv2) - 1;
@@ -200,6 +205,22 @@ int main()
     /* IPv4 */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'g', 1);
     CHECK(Val.IPv4Addr.u == RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8(192,168,1,1))));
+
+    /* Ethernet MAC address. */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'm', 1);
+    CHECK(   Val.MacAddr.au8[0] == 0x08
+          && Val.MacAddr.au8[1] == 0x00
+          && Val.MacAddr.au8[2] == 0x27
+          && Val.MacAddr.au8[3] == 0x00
+          && Val.MacAddr.au8[4] == 0xab
+          && Val.MacAddr.au8[5] == 0xf3);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'm', 1);
+    CHECK(   Val.MacAddr.au8[0] == 0x01
+          && Val.MacAddr.au8[1] == 0x00
+          && Val.MacAddr.au8[2] == 0x00
+          && Val.MacAddr.au8[3] == 0x00
+          && Val.MacAddr.au8[4] == 0x00
+          && Val.MacAddr.au8[5] == 0x0c);
 
     /* the end */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 0, 0);
