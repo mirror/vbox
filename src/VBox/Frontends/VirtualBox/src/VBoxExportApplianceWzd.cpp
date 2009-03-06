@@ -28,6 +28,19 @@
 /* Qt includes */
 #include <QDir>
 
+class VMListWidgetItems: public QListWidgetItem
+{
+public:
+    VMListWidgetItems (QPixmap &aIcon, QString &aText, QListWidget *aParent)
+      : QListWidgetItem (aIcon, aText, aParent) {}
+
+    /* Sort like in the VM selector of the main window */
+    bool operator< (const QListWidgetItem &aOther) const
+    {
+        return text().toLower() < aOther.text().toLower();
+    }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxExportApplianceWzd
 
@@ -187,7 +200,7 @@ void VBoxExportApplianceWzd::addListViewVMItems (const QString& aSelectName)
             icon = QPixmap (":/os_other.png").scaled (16, 16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
             enabled = false;
         }
-        QListWidgetItem *item = new QListWidgetItem (icon, name, mVMListWidget);
+        QListWidgetItem *item = new VMListWidgetItems (icon, name, mVMListWidget);
         item->setData (Qt::UserRole, uuid);
         if (!enabled)
             item->setFlags (Qt::NoItemFlags);
