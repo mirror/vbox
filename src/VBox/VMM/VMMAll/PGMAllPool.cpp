@@ -133,7 +133,7 @@ DECLINLINE(void) PGMPOOL_UNLOCK_PTR(PVM pVM, void *pvPage)
         PGMDynUnlockHCPage(pVM, (uint8_t *)pvPage);
 }
 #else
-# define PGMPOOL_UNLOCK_PTR(pPGM, pPage)  do {} while (0)
+# define PGMPOOL_UNLOCK_PTR(pVM, pPage)  do {} while (0)
 #endif
 
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
