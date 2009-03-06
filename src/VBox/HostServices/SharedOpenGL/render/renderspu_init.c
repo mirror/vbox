@@ -69,6 +69,12 @@ static DWORD WINAPI renderSPUWindowThreadProc(void* unused)
 
     (void) unused;
 
+    /* Force system to create the message queue. 
+     * Else, there's a chance than render spu will issue PostThreadMessage
+     * before this thread calls GetMessage for first time.
+     */
+    PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
+
     crDebug("RenderSPU: Window thread started (%x)", crThreadID());
     SetEvent(render_spu.hWinThreadReadyEvent);
 

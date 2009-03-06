@@ -46,8 +46,15 @@ void renderspu_SystemDestroyWindow( WindowInfo *window )
 
     vrdw.hWnd = window->hWnd;
 
-    PostThreadMessage(render_spu.dwWinThreadId, WM_VBOX_RENDERSPU_DESTROY_WINDOW, 0, (LPARAM) &vrdw);
-    WaitForSingleObject(render_spu.hWinThreadReadyEvent, INFINITE);
+    if (render_spu.dwWinThreadId)
+    {
+        PostThreadMessage(render_spu.dwWinThreadId, WM_VBOX_RENDERSPU_DESTROY_WINDOW, 0, (LPARAM) &vrdw);
+        WaitForSingleObject(render_spu.hWinThreadReadyEvent, INFINITE);
+    }
+    else
+    {
+        crError("Render SPU: window thread is not running");
+    }
 
     window->hWnd = NULL;
     window->visual = NULL;
@@ -673,10 +680,38 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
         cs.hMenu        = NULL;
         cs.hInstance    = hinstance;
 
-        PostThreadMessage(render_spu.dwWinThreadId, WM_VBOX_RENDERSPU_CREATE_WINDOW, 0, (LPARAM) &cs);
-        WaitForSingleObject(render_spu.hWinThreadReadyEvent, INFINITE);
+        if (render_spu.dwWinThreadId)
+        {
+            DWORD res;
+            int cnt=0;
+
+            if (!PostThreadMessage(render_spu.dwWinThreadId, WM_VBOX_RENDERSPU_CREATE_WINDOW, 0, (LPARAM) &cs))
+            {
+                crError("Render SPU: PostThreadMessage failed with %i", GetLastError());
+                return GL_FALSE;
+            }
+
+            do
+            {
+                res = WaitForSingleObject(render_spu.hWinThreadReadyEvent, 1000);
+                cnt++;
+            }
+            while ((res!=WAIT_OBJECT_0) && (cnt<10));
+
+            crDebug("Render SPU: window thread waited %i secs", cnt);
+
+            if (res!=WAIT_OBJECT_0)
+            {
+                crError("Render SPU: window thread not responded after %i tries", cnt);
+                return GL_FALSE;
+            }
+        }
+        else
+        {
+            crError("Render SPU: window thread is not running");
+            return GL_FALSE;
+        }
     }
-    
 
     if ( !window->hWnd )
     {
