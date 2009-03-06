@@ -4728,30 +4728,26 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 /**
  * Locks a page to prevent flushing (important for cr3 root pages or shadow pae pd pages).
  *
- * @returns VBox status code.
  * @param   pVM         VM Handle.
  * @param   pPage       PGM pool page
  */
-DECLINLINE(int) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
+DECLINLINE(void) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
     Assert(!pPage->fLocked);
     pPage->fLocked = true;
-    return VINF_SUCCESS;
 }
 
 
 /**
  * Unlocks a page to allow flushing again
  *
- * @returns VBox status code.
  * @param   pVM         VM Handle.
  * @param   pPage       PGM pool page
  */
-DECLINLINE(int) pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
+DECLINLINE(void) pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
     Assert(pPage->fLocked);
     pPage->fLocked = false;
-    return VINF_SUCCESS;
 }
 
 
