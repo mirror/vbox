@@ -4118,13 +4118,13 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
             case PGMPOOLKIND_ROOT_PDPT:
                 /* Not root of shadowed pages currently, ignore it. */
                 break;
-#endif
 
             case PGMPOOLKIND_ROOT_NESTED:
                 u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 ASMMemZero32(u.pau64, PAGE_SIZE);
                 break;
         }
+#endif
     }
 
     /*
