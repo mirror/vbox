@@ -4906,6 +4906,7 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
         pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
         pVM->pgm.s.pShwPageCR3R3 = 0;
         pVM->pgm.s.pShwPageCR3R0 = 0;
+        pVM->pgm.s.pShwPageCR3RC = 0;
         pVM->pgm.s.iShwUser      = 0;
         pVM->pgm.s.iShwUserTable = 0;
     }
