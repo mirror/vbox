@@ -205,15 +205,15 @@ PGM_SHW_DECL(int, Enter)(PVM pVM)
     pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.pShwPageCR3R3);
 
     Log(("Enter nested shadow paging mode: root %RHv phys %RHp\n", pVM->pgm.s.pShwPageCR3R3, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key));
-# else
-#  if PGM_SHW_TYPE == PGM_TYPE_NESTED
+# endif
+#else
+# if PGM_SHW_TYPE == PGM_TYPE_NESTED
 #   ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->pgm.s.pShwRootR0 = (R0PTRTYPE(void *))pVM->pgm.s.pShwNestedRootR0;
 #   else
     pVM->pgm.s.pShwRootR3 = (R3PTRTYPE(void *))pVM->pgm.s.pShwNestedRootR3;
 #   endif
     pVM->pgm.s.HCPhysShwCR3 = pVM->pgm.s.HCPhysShwNestedRoot;
-#  endif
 
     CPUMSetHyperCR3(pVM, PGMGetHyperCR3(pVM));
 # endif
