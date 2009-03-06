@@ -1899,7 +1899,7 @@ typedef struct PGMPOOL
 # define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageStrict(pPage)
 DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
 {
-    Assert(pPage->pvPageR3);
+    Assert(pPage && pPage->pvPageR3);
     return pPage->pvPageR3;
 }
 #else
