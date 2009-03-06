@@ -75,22 +75,28 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid, HostNetwork
 
 #ifdef VBOX_WITH_HOSTNETIF_API
 
-HRESULT HostNetworkInterface::updateConfig (struct NETIFINFO *pIf)
+HRESULT HostNetworkInterface::updateConfig ()
 {
-    m.IPAddress = pIf->IPAddress.u;
-    m.networkMask = pIf->IPNetMask.u;
-    m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
-    m.IPV6NetworkMask = composeIPv6Address(&pIf->IPv6NetMask);
-    m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
+    NETIFINFO info;
+    int rc = NetIfGetConfig(this, &info);
+    if(RT_SUCCESS(rc))
+    {
+        m.IPAddress = info.IPAddress.u;
+        m.networkMask = info.IPNetMask.u;
+        m.IPV6Address = composeIPv6Address(&info.IPv6Address);
+        m.IPV6NetworkMask = composeIPv6Address(&info.IPv6NetMask);
+        m.hardwareAddress = composeHardwareAddress(&info.MACAddress);
 #ifdef RT_OS_WINDOWS
-    m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
-    m.status = (HostNetworkInterfaceStatus)pIf->enmStatus;
+        m.mediumType = (HostNetworkInterfaceMediumType)info.enmMediumType;
+        m.status = (HostNetworkInterfaceStatus)info.enmStatus;
 #else /* !RT_OS_WINDOWS */
-    m.mediumType = pIf->enmMediumType;
-    m.status = pIf->enmStatus;
-#endif /* !RT_OS_WINDOWS */
+        m.mediumType = info.enmMediumType;
+        m.status = info.enmStatus;
 
-    return S_OK;
+#endif /* !RT_OS_WINDOWS */
+        return S_OK;
+    }
+    return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
 }
 
 /**
@@ -117,7 +123,18 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceTyp
     unconst (mGuid) = pIf->Uuid;
     mIfType = ifType;
 
-    updateConfig(pIf);
+    m.IPAddress = pIf->IPAddress.u;
+    m.networkMask = pIf->IPNetMask.u;
+    m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
+    m.IPV6NetworkMask = composeIPv6Address(&pIf->IPv6NetMask);
+    m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
+#ifdef RT_OS_WINDOWS
+    m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
+    m.status = (HostNetworkInterfaceStatus)pIf->enmStatus;
+#else /* !RT_OS_WINDOWS */
+    m.mediumType = pIf->enmMediumType;
+    m.status = pIf->enmStatus;
+#endif /* !RT_OS_WINDOWS */
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -377,6 +394,27 @@ STDMETHODIMP HostNetworkInterface::EnableDynamicIpConfig ()
     }
     return S_OK;
 #endif
+}
+
+HRESULT HostNetworkInterface::setVirtualBox(VirtualBox *pVBox)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+    mVBox = pVBox;
+
+    return S_OK;
+}
+
+HRESULT HostNetworkInterface::getVirtualBox(VirtualBox **ppVBox)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    if (!ppVBox)
+        return E_INVALIDARG;
+
+    *ppVBox = mVBox;
+    return S_OK;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
