@@ -247,9 +247,9 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 PX86PD pShw32BitPd = pgmShwGet32BitPDPtr(&pVM->pgm.s);
                 AssertFatal(pShw32BitPd);
 
-                if (pShw32BitPd->a[iNewPDE].n.u1Present)
+                if (    pShw32BitPd->a[iNewPDE].n.u1Present
+                    &&  !(pShw32BitPd->a[iNewPDE].u & PGM_PDFLAGS_MAPPING))
                 {
-                    Assert(!(pShw32BitPd->a[iNewPDE].u & PGM_PDFLAGS_MAPPING));
                     pgmPoolFree(pVM, pShw32BitPd->a[iNewPDE].u & X86_PDE_PG_MASK, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iNewPDE);
                 }
 
@@ -309,25 +309,24 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 {
                     /* Mark the page as locked; disallow flushing. */
                     pgmPoolLockPage(pVM->pgm.s.CTX_SUFF(pPool), pPoolPagePd);
-
-                    if (pShwPaePd->a[iPDE].n.u1Present)
-                    {
-                        Assert(!(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
-                        pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iPDE);
-                    }
                 }
 # ifdef VBOX_STRICT
-                else
+                else 
+                if (pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING)
                 {
-                    if (pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING)
-                    {
-                        Assert(PGMGetGuestMode(pVM) >= PGMMODE_PAE);
-                        AssertFatalMsg((pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT0, ("%RX64 vs %RX64\n", pShwPaePd->a[iPDE+1].u & X86_PDE_PG_MASK, pMap->aPTs[i].HCPhysPaePT0));
-                        Assert(pShwPaePd->a[iPDE+1].u & PGM_PDFLAGS_MAPPING);
-                        AssertFatalMsg((pShwPaePd->a[iPDE+1].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT1, ("%RX64 vs %RX64\n", pShwPaePd->a[iPDE+1].u & X86_PDE_PG_MASK, pMap->aPTs[i].HCPhysPaePT1));
-                    }
+                    Assert(PGMGetGuestMode(pVM) >= PGMMODE_PAE);
+                    AssertFatalMsg((pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT0, ("%RX64 vs %RX64\n", pShwPaePd->a[iPDE+1].u & X86_PDE_PG_MASK, pMap->aPTs[i].HCPhysPaePT0));
+                    Assert(pShwPaePd->a[iPDE+1].u & PGM_PDFLAGS_MAPPING);
+                    AssertFatalMsg((pShwPaePd->a[iPDE+1].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT1, ("%RX64 vs %RX64\n", pShwPaePd->a[iPDE+1].u & X86_PDE_PG_MASK, pMap->aPTs[i].HCPhysPaePT1));
                 }
 # endif
+                if (    pShwPaePd->a[iPDE].n.u1Present
+                    &&  !(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING))
+                {
+                    Assert(!(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
+                    pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iPDE);
+                }
+
 #else
                 if (pShwPaePd->a[iPDE].n.u1Present)
                 {
