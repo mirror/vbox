@@ -717,14 +717,6 @@ static const REMPARMDESC g_aArgsPGMPhysGCPhys2R3Ptr[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PRTR3PTR), NULL }
 };
-static const REMPARMDESC g_aArgsPGMPhysGCPtr2R3PtrByGstCR3[] =
-{
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTR3PTR), NULL }
-};
 static const REMPARMDESC g_aArgsPGM3PhysGrowRange[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
@@ -1112,7 +1104,6 @@ static REMFNDESC g_aVMMImports[] =
     { "PGMGstGetPage",                          (void *)(uintptr_t)&PGMGstGetPage,                  &g_aArgsPGMGstGetPage[0],                   RT_ELEMENTS(g_aArgsPGMGstGetPage),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMInvalidatePage",                      (void *)(uintptr_t)&PGMInvalidatePage,              &g_aArgsPGMInvalidatePage[0],               RT_ELEMENTS(g_aArgsPGMInvalidatePage),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMPhysGCPhys2R3Ptr",                    (void *)(uintptr_t)&PGMPhysGCPhys2R3Ptr,            &g_aArgsPGMPhysGCPhys2R3Ptr[0],             RT_ELEMENTS(g_aArgsPGMPhysGCPhys2R3Ptr),               REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-    { "PGMPhysGCPtr2R3PtrByGstCR3",             (void *)(uintptr_t)&PGMPhysGCPtr2R3PtrByGstCR3,     &g_aArgsPGMPhysGCPtr2R3PtrByGstCR3[0],      RT_ELEMENTS(g_aArgsPGMPhysGCPtr2R3PtrByGstCR3),        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
 #ifndef VBOX_WITH_NEW_PHYS_CODE
     { "PGM3PhysGrowRange",                      (void *)(uintptr_t)&PGM3PhysGrowRange,              &g_aArgsPGM3PhysGrowRange[0],               RT_ELEMENTS(g_aArgsPGM3PhysGrowRange),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
 #endif
