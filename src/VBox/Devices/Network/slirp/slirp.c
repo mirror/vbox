@@ -542,8 +542,7 @@ int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
 }
 
 int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
-               bool fPassDomain, const char *pszTFTPPrefix,
-               const char *pszBootFile, void *pvUser)
+               bool fPassDomain, void *pvUser)
 {
     int fNATfailed = 0;
     int rc;
@@ -556,8 +555,6 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
         return VERR_INVALID_PARAMETER;
     pData->fPassDomain = fPassDomain;
     pData->pvUser = pvUser;
-    tftp_prefix = pszTFTPPrefix;
-    bootp_filename = pszBootFile;
     pData->netmask = u32Netmask;
 
 #ifdef RT_OS_WINDOWS
@@ -589,7 +586,6 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     inet_aton(pszNetAddr, &special_addr);
     alias_addr.s_addr = special_addr.s_addr | htonl(CTL_ALIAS);
     /* @todo: add ability to configure this staff */
-    pData->tftp_server.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_TFTP);
 
     /* set default addresses */
     inet_aton("127.0.0.1", &loopback_addr);
@@ -1663,3 +1659,30 @@ uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport)
     Log2(("service : %d\n", service));
     return htons(service);
 }
+
+void slirp_set_dhcp_TFTP_prefix(PNATState pData, const char *tftpPrefix)
+{
+    Log2(("tftp_prefix:%s\n", tftp_prefix));
+    tftp_prefix = tftpPrefix;
+}
+
+void slirp_set_dhcp_TFTP_bootfile(PNATState pData, const char *bootFile)
+{
+    Log2(("bootFile:%s\n", bootFile));
+    bootp_filename = bootFile;
+}
+
+void slirp_set_dhcp_next_server(PNATState pData, const char *next_server)
+{
+    Log2(("next_server:%s\n", next_server));
+    if (next_server == NULL)
+        pData->tftp_server.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_TFTP);
+    else
+        inet_aton(next_server, &pData->tftp_server);
+}
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
+{
+    pData->use_dns_proxy = fDNSProxy;
+}
+#endif
