@@ -1505,11 +1505,11 @@ static int pgmR3InitPaging(PVM pVM)
         ||  !pVM->pgm.s.apShwPaePDsR3[3]
         ||  !pVM->pgm.s.pShwPaePdptR3
         ||  !pVM->pgm.s.pShwNestedRootR3)
-#endif
     {
         AssertMsgFailed(("Failed to allocate pages for the intermediate context!\n"));
         return VERR_NO_PAGE_MEMORY;
     }
+#endif
 
     /* get physical addresses. */
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
