@@ -40,6 +40,9 @@ struct SVCHlpMsg
         CreateHostOnlyNetworkInterface = 100, /* see usage in code */
         CreateHostOnlyNetworkInterface_OK, /* see usage in code */
         RemoveHostOnlyNetworkInterface, /* see usage in code */
+        EnableDynamicIpConfig, /* see usage in code */
+        EnableStaticIpConfig, /* see usage in code */
+        EnableStaticIpConfigV6, /* see usage in code */
     };
 };
 
