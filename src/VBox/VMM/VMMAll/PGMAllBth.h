@@ -1571,7 +1571,10 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
             if (    PteDst.n.u1Write
                 &&  PteDst.n.u1Present
                 &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+            {
                 PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet. */
+                Log3(("SyncPageWorker: write-protecting pPage=%R[pgmpage]at iPTDst=%d\n", pPage, iPTDst));
+            }
 #endif
 
 #ifdef PGMPOOL_WITH_USER_TRACKING
@@ -1893,7 +1896,10 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                     if (    PteDst.n.u1Write
                         &&  PteDst.n.u1Present
                         &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+                    {
                         PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet... */
+                        Log3(("SyncPage: write-protecting pPage=%R[pgmpage] at %RGv\n", pPage, GCPtrPage));
+                    }
 # endif
 
                     pPTDst->a[iPTDst] = PteDst;
@@ -2806,8 +2812,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                         /* Only map writable pages writable. */
                         if (    PteDst.n.u1Write
                             &&  PteDst.n.u1Present
-                            &&  !PGMPAGETYPE_IS_WRITEABLE(PGM_PAGE_GET_TYPE(pPage)))
-                            PteDst.n.u1Write = 0;
+                            &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+                        {
+                            PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet... */
+                            Log3(("SyncPT: write-protecting pPage=%R[pgmpage] at %RGv\n", pPage, (RTGCPTR)(GCPtr | (iPTDst << SHW_PT_SHIFT))));
+                        }
 # endif
 
 # ifdef PGMPOOL_WITH_USER_TRACKING
@@ -4571,7 +4580,12 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 # ifdef VBOX_WITH_NEW_PHYS_CODE
     /** @todo this needs some reworking. current code is just a big hack. */
 #  if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#   if 1 /* temp hack */
+    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+    return VINF_PGM_SYNC_CR3;
+#   else
     AssertFailedReturn(VERR_INTERNAL_ERROR);
+#   endif
     int rc = VERR_INTERNAL_ERROR;
 #  else
     pgmLock(pVM);

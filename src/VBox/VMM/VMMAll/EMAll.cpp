@@ -2014,11 +2014,11 @@ static int emInterpretClts(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
  * @param   val         New CRx value
  *
  */
-static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint64_t val)
+static int emUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint64_t val)
 {
     uint64_t oldval;
     uint64_t msrEFER;
-    int      rc;
+    int      rc, rc2;
 
     /** @todo Clean up this mess. */
     LogFlow(("EMInterpretCRxWrite at %RGv CR%d <- %RX64\n", (RTGCPTR)pRegFrame->rip, DestRegCrx, val));
@@ -2032,6 +2032,7 @@ static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
             !=  (oldval & (X86_CR0_WP | X86_CR0_AM)))
             return VERR_EM_INTERPRETER;
 #endif
+        rc = VINF_SUCCESS;
         CPUMSetGuestCR0(pVM, val);
         val = CPUMGetGuestCR0(pVM);
         if (    (oldval & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
@@ -2073,7 +2074,8 @@ static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
             }
             CPUMSetGuestEFER(pVM, msrEFER);
         }
-        return PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
+        rc2 = PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
+        return rc2 == VINF_SUCCESS ? rc : rc2;
 
     case USE_REG_CR2:
         rc = CPUMSetGuestCR2(pVM, val); AssertRC(rc);
@@ -2088,7 +2090,7 @@ static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
             rc = PGMFlushTLB(pVM, val, !(CPUMGetGuestCR4(pVM) & X86_CR4_PGE));
             AssertRCReturn(rc, rc);
         }
-        return VINF_SUCCESS;
+        return rc;
 
     case USE_REG_CR4:
         oldval = CPUMGetGuestCR4(pVM);
@@ -2104,6 +2106,7 @@ static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
             return VERR_EM_INTERPRETER; /** @todo generate #GP(0) */
         }
 
+        rc = VINF_SUCCESS;
         if (    (oldval & (X86_CR4_PGE|X86_CR4_PAE|X86_CR4_PSE))
             !=  (val    & (X86_CR4_PGE|X86_CR4_PAE|X86_CR4_PSE)))
         {
@@ -2124,7 +2127,8 @@ static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
         if ((val ^ oldval) & X86_CR4_VME)
             VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
 
-        return PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
+        rc2 = PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
+        return rc2 == VINF_SUCCESS ? rc : rc2;
 
     case USE_REG_CR8:
         return PDMApicSetTPR(pVM, val);
@@ -2164,7 +2168,7 @@ VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestR
     }
 
     if (RT_SUCCESS(rc))
-        return EMUpdateCRx(pVM, pRegFrame, DestRegCrx, val);
+        return emUpdateCRx(pVM, pRegFrame, DestRegCrx, val);
 
     return VERR_EM_INTERPRETER;
 }
@@ -2186,7 +2190,7 @@ VMMDECL(int) EMInterpretLMSW(PVM pVM, PCPUMCTXCORE pRegFrame, uint16_t u16Data)
     uint64_t NewCr0 = ( OldCr0 & ~(             X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
                     | (u16Data &  (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS));
 
-    return EMUpdateCRx(pVM, pRegFrame, USE_REG_CR0, NewCr0);
+    return emUpdateCRx(pVM, pRegFrame, USE_REG_CR0, NewCr0);
 }
 
 /**
@@ -3085,6 +3089,9 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 #endif
     switch (pCpu->pCurInstr->opcode)
     {
+        /*
+         * Macros for generating the right case statements.
+         */
 # define INTERPRET_CASE_EX_LOCK_PARAM3(opcode, Instr, InstrFn, pfnEmulate, pfnEmulateLock) \
         case opcode:\
             if (pCpu->prefix & PREFIX_LOCK) \
@@ -3131,6 +3138,9 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 #define INTERPRET_STAT_CASE(opcode, Instr) \
         case opcode: STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); return VERR_EM_INTERPRETER;
 
+        /*
+         * The actual case statements.
+         */
         INTERPRET_CASE(OP_XCHG,Xchg);
         INTERPRET_CASE_EX_PARAM2(OP_DEC,Dec, IncDec, EMEmulateDec);
         INTERPRET_CASE_EX_PARAM2(OP_INC,Inc, IncDec, EMEmulateInc);
@@ -3177,20 +3187,22 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_IRET,Iret);
         INTERPRET_CASE(OP_WBINVD,WbInvd);
 #ifdef VBOX_WITH_STATISTICS
-#ifndef IN_RC
+# ifndef IN_RC
         INTERPRET_STAT_CASE(OP_XADD, XAdd);
-#endif
+# endif
         INTERPRET_STAT_CASE(OP_MOVNTPS,MovNTPS);
 #endif
+
         default:
             Log3(("emInterpretInstructionCPU: opcode=%d\n", pCpu->pCurInstr->opcode));
             STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedMisc));
             return VERR_EM_INTERPRETER;
+
 #undef INTERPRET_CASE_EX_PARAM2
 #undef INTERPRET_STAT_CASE
 #undef INTERPRET_CASE_EX
 #undef INTERPRET_CASE
-    }
+    } /* switch (opcode) */
     AssertFailed();
     return VERR_INTERNAL_ERROR;
 }
