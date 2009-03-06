@@ -798,14 +798,14 @@ int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)
 
 struct StaticIpConfig
 {
-    RTNETADDRIPV4  IPAddress;
-    RTNETADDRIPV4  IPNetMask;
+    ULONG  IPAddress;
+    ULONG  IPNetMask;
 };
 
 struct StaticIpV6Config
 {
-    RTNETADDRIPV6  IPV6Address;
-    RTNETADDRIPV6  IPV6NetMaskLength;
+    BSTR           IPV6Address;
+    ULONG          IPV6NetMaskLength;
 };
 
 struct NetworkInterfaceHelperClientData
@@ -940,6 +940,173 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                     {
                         /* no parameters */
                         rc = S_OK;
+                        endLoop = true;
+                        break;
+                    }
+                    case SVCHlpMsg::Error:
+                    {
+                        /* read the error message */
+                        Utf8Str errMsg;
+                        vrc = aClient->read (errMsg);
+                        if (RT_FAILURE (vrc)) break;
+
+                        rc = E_FAIL; // TODO: setError (E_FAIL, errMsg);
+                        endLoop = true;
+                        break;
+                    }
+                    default:
+                    {
+                        endLoop = true;
+                        rc = E_FAIL; // TODO: ComAssertMsgFailedBreak ((
+                            //"Invalid message code %d (%08lX)\n",
+                            //reply, reply),
+                            //rc = E_FAIL);
+                    }
+                }
+            }
+
+            break;
+        }
+        case SVCHlpMsg::EnableDynamicIpConfig: /* see usage in code */
+        {
+            LogFlowFunc (("EnableDynamicIpConfig:\n"));
+            LogFlowFunc (("Network connection name = '%ls'\n", d->name.raw()));
+
+            /* write message and parameters */
+            vrc = aClient->write (d->msgCode);
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->write (Utf8Str (d->name));
+            if (RT_FAILURE (vrc)) break;
+
+            /* wait for a reply */
+            bool endLoop = false;
+            while (!endLoop)
+            {
+                SVCHlpMsg::Code reply = SVCHlpMsg::Null;
+
+                vrc = aClient->read (reply);
+                if (RT_FAILURE (vrc)) break;
+
+                switch (reply)
+                {
+                    case SVCHlpMsg::OK:
+                    {
+                        /* no parameters */
+                        rc = d->iface->updateConfig();
+                        endLoop = true;
+                        break;
+                    }
+                    case SVCHlpMsg::Error:
+                    {
+                        /* read the error message */
+                        Utf8Str errMsg;
+                        vrc = aClient->read (errMsg);
+                        if (RT_FAILURE (vrc)) break;
+
+                        rc = E_FAIL; // TODO: setError (E_FAIL, errMsg);
+                        endLoop = true;
+                        break;
+                    }
+                    default:
+                    {
+                        endLoop = true;
+                        rc = E_FAIL; // TODO: ComAssertMsgFailedBreak ((
+                            //"Invalid message code %d (%08lX)\n",
+                            //reply, reply),
+                            //rc = E_FAIL);
+                    }
+                }
+            }
+
+            break;
+        }
+        case SVCHlpMsg::EnableStaticIpConfig: /* see usage in code */
+        {
+            LogFlowFunc (("EnableStaticIpConfig:\n"));
+            LogFlowFunc (("Network connection name = '%ls'\n", d->name.raw()));
+
+            /* write message and parameters */
+            vrc = aClient->write (d->msgCode);
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->write (Utf8Str (d->name));
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->write (d->u.StaticIP.IPAddress);
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->write (d->u.StaticIP.IPNetMask);
+            if (RT_FAILURE (vrc)) break;
+
+            /* wait for a reply */
+            bool endLoop = false;
+            while (!endLoop)
+            {
+                SVCHlpMsg::Code reply = SVCHlpMsg::Null;
+
+                vrc = aClient->read (reply);
+                if (RT_FAILURE (vrc)) break;
+
+                switch (reply)
+                {
+                    case SVCHlpMsg::OK:
+                    {
+                        /* no parameters */
+                        rc = d->iface->updateConfig();
+                        endLoop = true;
+                        break;
+                    }
+                    case SVCHlpMsg::Error:
+                    {
+                        /* read the error message */
+                        Utf8Str errMsg;
+                        vrc = aClient->read (errMsg);
+                        if (RT_FAILURE (vrc)) break;
+
+                        rc = E_FAIL; // TODO: setError (E_FAIL, errMsg);
+                        endLoop = true;
+                        break;
+                    }
+                    default:
+                    {
+                        endLoop = true;
+                        rc = E_FAIL; // TODO: ComAssertMsgFailedBreak ((
+                            //"Invalid message code %d (%08lX)\n",
+                            //reply, reply),
+                            //rc = E_FAIL);
+                    }
+                }
+            }
+
+            break;
+        }
+        case SVCHlpMsg::EnableStaticIpConfigV6: /* see usage in code */
+        {
+            LogFlowFunc (("EnableStaticIpConfigV6:\n"));
+            LogFlowFunc (("Network connection name = '%ls'\n", d->name.raw()));
+
+            /* write message and parameters */
+            vrc = aClient->write (d->msgCode);
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->write (Utf8Str (d->name));
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->write (Utf8Str(d->u.StaticIPV6.IPV6Address));
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->write (d->u.StaticIPV6.IPV6NetMaskLength);
+            if (RT_FAILURE (vrc)) break;
+
+            /* wait for a reply */
+            bool endLoop = false;
+            while (!endLoop)
+            {
+                SVCHlpMsg::Code reply = SVCHlpMsg::Null;
+
+                vrc = aClient->read (reply);
+                if (RT_FAILURE (vrc)) break;
+
+                switch (reply)
+                {
+                    case SVCHlpMsg::OK:
+                    {
+                        /* no parameters */
+                        rc = d->iface->updateConfig();
                         endLoop = true;
                         break;
                     }
