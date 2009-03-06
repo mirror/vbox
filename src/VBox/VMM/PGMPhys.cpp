@@ -1373,24 +1373,38 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 
 
             /*
-             * Before registering the handler, notify REM, it'll get
-             * confused about shadowed ROM otherwise.
+             * !HACK ALERT!  REM + (Shadowed) ROM ==> mess.
+             *
+             * If it's shadowed we'll register the handler after the ROM notification
+             * so we get the access handler callbacks that we should. If it isn't
+             * shadowed we'll do it the other way around to make REM use the built-in
+             * ROM behavior and not the handler behavior (which is to route all access
+             * to PGM atm).
              */
-            REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL,
-                                       !!(fFlags & PGMPHYS_ROM_FLAG_SHADOWED));
-            /** @todo fix shadowing and REM. */
-
-            /*
-             * Register the write access handler for the range (PGMROMPROT_READ_ROM_WRITE_IGNORE).
-             */
-            rc = PGMR3HandlerPhysicalRegister(pVM,
-                                              fFlags & PGMPHYS_ROM_FLAG_SHADOWED
-                                              ? PGMPHYSHANDLERTYPE_PHYSICAL_ALL
-                                              : PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
-                                              GCPhys, GCPhysLast,
-                                              pgmR3PhysRomWriteHandler, pRomNew,
-                                              NULL, "pgmPhysRomWriteHandler", MMHyperCCToR0(pVM, pRomNew),
-                                              NULL, "pgmPhysRomWriteHandler", MMHyperCCToRC(pVM, pRomNew), pszDesc);
+            if (fFlags & PGMPHYS_ROM_FLAG_SHADOWED)
+            {
+                REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, true /* fShadowed */);
+                rc = PGMR3HandlerPhysicalRegister(pVM,
+                                                  fFlags & PGMPHYS_ROM_FLAG_SHADOWED
+                                                  ? PGMPHYSHANDLERTYPE_PHYSICAL_ALL
+                                                  : PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
+                                                  GCPhys, GCPhysLast,
+                                                  pgmR3PhysRomWriteHandler, pRomNew,
+                                                  NULL, "pgmPhysRomWriteHandler", MMHyperCCToR0(pVM, pRomNew),
+                                                  NULL, "pgmPhysRomWriteHandler", MMHyperCCToRC(pVM, pRomNew), pszDesc);
+            }
+            else
+            {
+                rc = PGMR3HandlerPhysicalRegister(pVM,
+                                                  fFlags & PGMPHYS_ROM_FLAG_SHADOWED
+                                                  ? PGMPHYSHANDLERTYPE_PHYSICAL_ALL
+                                                  : PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
+                                                  GCPhys, GCPhysLast,
+                                                  pgmR3PhysRomWriteHandler, pRomNew,
+                                                  NULL, "pgmPhysRomWriteHandler", MMHyperCCToR0(pVM, pRomNew),
+                                                  NULL, "pgmPhysRomWriteHandler", MMHyperCCToRC(pVM, pRomNew), pszDesc);
+                REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, false /* fShadowed */);
+            }
             if (RT_SUCCESS(rc))
             {
                 pgmLock(pVM);
@@ -2457,10 +2471,12 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
 {
     pgmLock(pVM);
 
+
     /*
      * Allocate more pages, noting down the index of the first new page.
      */
     uint32_t iClear = pVM->pgm.s.cHandyPages;
+    AssertMsgReturn(iClear <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), ("%d", iClear), VERR_INTERNAL_ERROR);
     int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
     if (rc == VERR_GMM_SEED_ME)
     {
