@@ -4103,6 +4103,188 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
 }
 
 /**
+ *  Reimplementation of QFileDialog::getSaveFileName() that removes some
+ *  oddities and limitations.
+ *
+ *  On Win32, this function makes sure a file filter is applied automatically
+ *  right after it is selected from the drop-down list, to conform to common
+ *  experience in other applications. Note that currently, @a selectedFilter
+ *  is always set to null on return.
+ *
+ *  On all other platforms, this function is equivalent to
+ *  QFileDialog::getSaveFileName().
+ */
+/* static */
+QString VBoxGlobal::getSaveFileName (const QString &aStartWith,
+                                     const QString &aFilters,
+                                     QWidget       *aParent,
+                                     const QString &aCaption,
+                                     QString       *aSelectedFilter /* = NULL */,
+                                     bool           aResolveSymlinks /* = true */)
+{
+#if defined Q_WS_WIN
+
+    /**
+     *  QEvent class reimplementation to carry Win32 API native dialog's
+     *  result folder information
+     */
+    class GetOpenFileNameEvent : public OpenNativeDialogEvent
+    {
+    public:
+
+        enum { TypeId = QEvent::User + 301 };
+
+        GetOpenFileNameEvent (const QString &aResult)
+            : OpenNativeDialogEvent (aResult, (QEvent::Type) TypeId) {}
+    };
+
+    /**
+     *  QThread class reimplementation to open Win32 API native file dialog
+     */
+    class Thread : public QThread
+    {
+    public:
+
+        Thread (QWidget *aParent, QObject *aTarget,
+                const QString &aStartWith, const QString &aFilters,
+                const QString &aCaption) :
+                mParent (aParent), mTarget (aTarget),
+                mStartWith (aStartWith), mFilters (aFilters),
+                mCaption (aCaption) {}
+
+        virtual void run()
+        {
+            QString result;
+
+            QString workDir;
+            QString initSel;
+            QFileInfo fi (mStartWith);
+
+            if (fi.isDir())
+                workDir = mStartWith;
+            else
+            {
+                workDir = fi.absolutePath();
+                initSel = fi.fileName();
+            }
+
+            workDir = QDir::toNativeSeparators (workDir);
+            if (!workDir.endsWith ("\\"))
+                workDir += "\\";
+
+            QString title = mCaption.isNull() ? tr ("Select a file") : mCaption;
+
+            QWidget *topParent = mParent ? mParent->window() : vboxGlobal().mainWindow();
+            QString winFilters = winFilter (mFilters);
+            AssertCompile (sizeof (TCHAR) == sizeof (QChar));
+            TCHAR buf [1024];
+            if (initSel.length() > 0 && initSel.length() < sizeof (buf))
+                memcpy (buf, initSel.isNull() ? 0 : initSel.utf16(),
+                        (initSel.length() + 1) * sizeof (TCHAR));
+            else
+                buf [0] = 0;
+
+            OPENFILENAME ofn;
+            memset (&ofn, 0, sizeof (OPENFILENAME));
+
+            ofn.lStructSize = sizeof (OPENFILENAME);
+            ofn.hwndOwner = topParent ? topParent->winId() : 0;
+            ofn.lpstrFilter = (TCHAR *) winFilters.isNull() ? 0 : winFilters.utf16();
+            ofn.lpstrFile = buf;
+            ofn.nMaxFile = sizeof (buf) - 1;
+            ofn.lpstrInitialDir = (TCHAR *) workDir.isNull() ? 0 : workDir.utf16();
+            ofn.lpstrTitle = (TCHAR *) title.isNull() ? 0 : title.utf16();
+            ofn.Flags = (OFN_NOCHANGEDIR | OFN_HIDEREADONLY |
+                         OFN_EXPLORER | OFN_ENABLEHOOK |
+                         OFN_NOTESTFILECREATE);
+            ofn.lpfnHook = OFNHookProc;
+
+            if (GetSaveFileName (&ofn))
+            {
+                result = QString::fromUtf16 ((ushort *) ofn.lpstrFile);
+            }
+
+            // qt_win_eatMouseMove();
+            MSG msg = {0, 0, 0, 0, 0, 0, 0};
+            while (PeekMessage (&msg, 0, WM_MOUSEMOVE, WM_MOUSEMOVE, PM_REMOVE));
+            if (msg.message == WM_MOUSEMOVE)
+                PostMessage (msg.hwnd, msg.message, 0, msg.lParam);
+
+            result = result.isEmpty() ? result : QFileInfo (result).absoluteFilePath();
+
+            QApplication::postEvent (mTarget, new GetOpenFileNameEvent (result));
+        }
+
+    private:
+
+        QWidget *mParent;
+        QObject *mTarget;
+        QString mStartWith;
+        QString mFilters;
+        QString mCaption;
+    };
+
+    if (aSelectedFilter)
+        *aSelectedFilter = QString::null;
+
+    /* Local event loop to run while waiting for the result from another
+     * thread */
+    QEventLoop loop;
+
+    QString startWith = QDir::toNativeSeparators (aStartWith);
+    LoopObject loopObject ((QEvent::Type) GetOpenFileNameEvent::TypeId, loop);
+
+//#warning check me!
+    if (aParent)
+        aParent->setWindowModality (Qt::WindowModal);
+
+    Thread openDirThread (aParent, &loopObject, startWith, aFilters, aCaption);
+    openDirThread.start();
+    loop.exec();
+    openDirThread.wait();
+
+//#warning check me!
+    if (aParent)
+        aParent->setWindowModality (Qt::NonModal);
+
+    return QStringList() << loopObject.result();
+
+#elif defined (Q_WS_X11) && (QT_VERSION < 0x040400)
+
+    /* Here is workaround for Qt4.3 bug with QFileDialog which crushes when
+     * gets initial path as hidden directory if no hidden files are shown.
+     * See http://trolltech.com/developer/task-tracker/index_html?method=entry&id=193483
+     * for details */
+    QFileDialog dlg (aParent);
+    dlg.setWindowTitle (aCaption);
+    dlg.setDirectory (aStartWith);
+    dlg.setFilter (aFilters);
+    dlg.setFileMode (QFileDialog::QFileDialog::AnyFile);
+    dlg.setAcceptMode (QFileDialog::AcceptSave);
+    if (aSelectedFilter)
+        dlg.selectFilter (*aSelectedFilter);
+    dlg.setResolveSymlinks (aResolveSymlinks);
+    dlg.setConfirmOverwrite (false);
+    QAction *hidden = dlg.findChild <QAction*> ("qt_show_hidden_action");
+    if (hidden)
+    {
+        hidden->trigger();
+        hidden->setVisible (false);
+    }
+    return dlg.exec() == QDialog::Accepted ? dlg.selectedFiles().value (0, "") : QString::null;
+
+#else
+
+    QFileDialog::Options o;
+    if (!aResolveSymlinks)
+        o |= QFileDialog::DontResolveSymlinks;
+    o |= QFileDialog::DontConfirmOverwrite;
+    return QFileDialog::getSaveFileName (aParent, aCaption, aStartWith,
+                                         aFilters, aSelectedFilter, o);
+#endif
+}
+
+/**
  *  Reimplementation of QFileDialog::getOpenFileName() that removes some
  *  oddities and limitations.
  *

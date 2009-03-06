@@ -688,6 +688,10 @@ public:
                                          bool aDirOnly = TRUE,
                                          bool resolveSymlinks = TRUE);
 
+    static QString getSaveFileName (const QString &aStartWith, const QString &aFilters, QWidget *aParent,
+                                    const QString &aCaption, QString *aSelectedFilter = NULL,
+                                    bool aResolveSymLinks = true);
+
     static QString getOpenFileName (const QString &aStartWith, const QString &aFilters, QWidget *aParent,
                                     const QString &aCaption, QString *aSelectedFilter = NULL,
                                     bool aResolveSymLinks = true);

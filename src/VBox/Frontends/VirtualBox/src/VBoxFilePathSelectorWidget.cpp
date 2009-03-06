@@ -300,7 +300,8 @@ void VBoxFilePathSelectorWidget::retranslateUi()
                          tr ("Resets the folder path to the default value."),
                          Qt::ToolTipRole);
             break;
-        case Mode_File:
+        case Mode_File_Open:
+        case Mode_File_Save:
             setItemData (SelectId,
                          tr ("Opens a dialog to select a different file."),
                          Qt::ToolTipRole);
@@ -369,10 +370,17 @@ void VBoxFilePathSelectorWidget::selectPath()
     if (initDir.isNull())
         initDir = mHomeDir;
 
-    /* Open existing file or directory. */
-    QString path = mMode == Mode_File ?
-        VBoxGlobal::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle) :
-        VBoxGlobal::getExistingDirectory (initDir, parentWidget(), mFileDialogTitle);
+    QString path;
+    switch (mMode)
+    {
+        case Mode_File_Open:
+            path = VBoxGlobal::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); break;
+        case Mode_File_Save:
+            path = VBoxGlobal::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); break;
+        case Mode_Folder:
+            path = VBoxGlobal::getExistingDirectory (initDir, parentWidget(), mFileDialogTitle); break;
+    }
+
     if (path.isNull())
         return;
 
@@ -400,7 +408,8 @@ QString VBoxFilePathSelectorWidget::fullPath (bool aAbsolute /* = true */) const
             result = aAbsolute ? QDir (mPath).absolutePath() :
                                  QDir (mPath).path();
             break;
-        case Mode_File:
+        case Mode_File_Open:
+        case Mode_File_Save:
             result = aAbsolute ? QFileInfo (mPath).absoluteFilePath() :
                                  QFileInfo (mPath).filePath();
             break;

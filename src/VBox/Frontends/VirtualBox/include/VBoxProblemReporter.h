@@ -182,8 +182,10 @@ public:
 
     QWidget *mainWindowShown() const;
 
-    // problem handlers
+    /* Generic problem handlers */
+    bool askForOverridingFileIfExists (const QString& path, QWidget *aParent = NULL) const;
 
+    /* Special problem handlers */
 #ifdef Q_WS_X11
     void cannotFindLicenseFiles (const QString &aPath);
     void cannotOpenLicenseFile (QWidget *aParent, const QString &aPath);
@@ -374,8 +376,6 @@ public:
     void cannotImportAppliance (CAppliance *aAppliance, QWidget *aParent = NULL) const;
     void cannotImportAppliance (const CProgress &aProgress, CAppliance *aAppliance, QWidget *aParent = NULL) const;
 
-
-    bool askForOverridingAppliance (const QString& path, QWidget *aParent = NULL) const;
     void cannotExportAppliance (CAppliance *aAppliance, QWidget *aParent = NULL) const;
     void cannotExportAppliance (const CProgress &aProgress, CAppliance *aAppliance, QWidget *aParent = NULL) const;
 
