@@ -1427,15 +1427,8 @@ VMMDECL(X86PDPE) PGMGstGetPaePDPtr(PVM pVM, unsigned iPdpt)
 VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
 {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    PGMMODE enmShadowMode = pVM->pgm.s.enmShadowMode;
-    switch (enmShadowMode)
-    {
-        case PGMMODE_EPT:
-            return pVM->pgm.s.HCPhysShwNestedRoot;
-
-        default:
-            return pVM->pgm.s.HCPhysShwCR3;
-    }
+    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    return pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
 #else
     PGMMODE enmShadowMode = pVM->pgm.s.enmShadowMode;
     switch (enmShadowMode)
@@ -1473,7 +1466,8 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
 VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
 {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    return pVM->pgm.s.HCPhysShwCR3;
+    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    return pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
 #else
     switch (enmShadowMode)
     {
@@ -1515,7 +1509,8 @@ VMMDECL(RTHCPHYS) PGMGetEPTCR3(PVM pVM)
 VMMDECL(RTHCPHYS) PGMGetHyper32BitCR3(PVM pVM)
 {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    return pVM->pgm.s.HCPhysShwCR3;
+    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    return pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
 #else
     return pVM->pgm.s.HCPhysShw32BitPD;
 #endif
@@ -1530,7 +1525,8 @@ VMMDECL(RTHCPHYS) PGMGetHyper32BitCR3(PVM pVM)
 VMMDECL(RTHCPHYS) PGMGetHyperPaeCR3(PVM pVM)
 {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    return pVM->pgm.s.HCPhysShwCR3;
+    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    return pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
 #else
     return pVM->pgm.s.HCPhysShwPaePdpt;
 #endif
@@ -1544,7 +1540,12 @@ VMMDECL(RTHCPHYS) PGMGetHyperPaeCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperAmd64CR3(PVM pVM)
 {
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    return pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
+#else
     return pVM->pgm.s.HCPhysShwCR3;
+#endif
 }
 
 

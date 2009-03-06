@@ -972,7 +972,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
 
 # else /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
     /* PML4 */
+#  ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     AssertReturn(pVM->pgm.s.pShwRootR3, VERR_INTERNAL_ERROR);
+#  endif
 
     const unsigned  iPml4     = (GCPtrPage >> X86_PML4_SHIFT) & X86_PML4_MASK;
     const unsigned  iPdpt     = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -4773,12 +4775,6 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
     pVM->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 #  endif
-    pVM->pgm.s.pShwRootR3    = (R3PTRTYPE(void *))pVM->pgm.s.CTX_SUFF(pShwPageCR3)->pvPageR3;
-    Assert(pVM->pgm.s.pShwRootR3);
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVM->pgm.s.pShwRootR0    = (R0PTRTYPE(void *))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-#  endif
-    pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
 
 #  ifndef PGM_WITHOUT_MAPPINGS
     /* Apply all hypervisor mappings to the new CR3.
@@ -4898,14 +4894,11 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
         pgmMapDeactivateCR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 # endif
 
-    pVM->pgm.s.pShwRootR3 = 0;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVM->pgm.s.pShwRootR0 = 0;
-#  endif
-    pVM->pgm.s.HCPhysShwCR3 = 0;
     if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+
+        Assert(pVM->pgm.s.iShwUser != PGMPOOL_IDX_NESTED_ROOT);
 
         /* Mark the page as unlocked; allow flushing again. */
         pgmPoolUnlockPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3));

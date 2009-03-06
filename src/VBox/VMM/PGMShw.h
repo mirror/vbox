@@ -183,19 +183,30 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
  */
 PGM_SHW_DECL(int, Enter)(PVM pVM)
 {
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED
+# if PGM_SHW_TYPE == PGM_TYPE_NESTED
     Assert(HWACCMIsNestedPagingActive(pVM));
 
     Log(("Enter nested shadow paging mode: root %RHv phys %RHp\n", pVM->pgm.s.pShwNestedRootR3, pVM->pgm.s.HCPhysShwNestedRoot));
     /* In non-nested mode we allocate the PML4 page on-demand; in nested mode we just use our fixed nested paging root. */
-    pVM->pgm.s.pShwRootR3 = (R3PTRTYPE(void *))pVM->pgm.s.pShwNestedRootR3;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVM->pgm.s.pShwRootR0 = (R0PTRTYPE(void *))pVM->pgm.s.pShwNestedRootR0;
-# endif
-    pVM->pgm.s.HCPhysShwCR3 = pVM->pgm.s.HCPhysShwNestedRoot;
-#endif
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    pVM->pgm.s.iShwUser      = PGMPOOL_IDX_NESTED_ROOT;
+    pVM->pgm.s.iShwUserTable = 0;
+    pVM->pgm.s.pShwPageCR3R3 = &pPool->aPages[PGMPOOL_IDX_NESTED_ROOT];
+    pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+
+    /* Mark the page as locked; disallow flushing (shouldn't be necessary as it's a special root) */
+    pgmPoolLockPage(pPool, pVM->pgm.s.pShwPageCR3R3);
+# else
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pShwRootR0 = (R0PTRTYPE(void *))pVM->pgm.s.pShwNestedRootR0;
+#  else
+    pVM->pgm.s.pShwRootR3 = (R3PTRTYPE(void *))pVM->pgm.s.pShwNestedRootR3;
+#  endif
+    pVM->pgm.s.HCPhysShwCR3 = pVM->pgm.s.HCPhysShwNestedRoot;
+# endif
+
     CPUMSetHyperCR3(pVM, PGMGetHyperCR3(pVM));
 #endif
 
@@ -225,16 +236,21 @@ PGM_SHW_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta)
  */
 PGM_SHW_DECL(int, Exit)(PVM pVM)
 {
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#else
+# if PGM_SHW_TYPE == PGM_TYPE_NESTED
     Assert(HWACCMIsNestedPagingActive(pVM));
     pVM->pgm.s.pShwRootR3 = 0;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->pgm.s.pShwRootR0 = 0;
-# endif
+#  endif
     pVM->pgm.s.HCPhysShwCR3 = 0;
-    Log(("Leave nested shadow paging mode\n"));
+# endif
 #endif
 
+#if PGM_SHW_TYPE == PGM_TYPE_NESTED
+    Log(("Leave nested shadow paging mode\n"));
+#endif
     return VINF_SUCCESS;
 }
 
