@@ -303,7 +303,7 @@ typedef GMMPAGE *PGMMPAGE;
 
 /** @def GMM_PAGE_IS_PRIVATE
  *
- * @returns true if free, false if not.
+ * @returns true if private, false if not.
  * @param   pPage       The GMM page.
  */
 #if HC_ARCH_BITS == 64
@@ -312,9 +312,9 @@ typedef GMMPAGE *PGMMPAGE;
 # define GMM_PAGE_IS_PRIVATE(pPage) ( (pPage)->Private.fZero == 0 )
 #endif
 
-/** @def GMM_PAGE_IS_FREE
+/** @def GMM_PAGE_IS_SHARED
  *
- * @returns true if free, false if not.
+ * @returns true if shared, false if not.
  * @param   pPage       The GMM page.
  */
 #define GMM_PAGE_IS_SHARED(pPage)   ( (pPage)->Common.u2State == GMM_PAGE_STATE_SHARED )
@@ -1520,7 +1520,7 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGMMCHUNKFREESET pSet, uint32_t cP
 
 
 /**
- * Allocates one page.
+ * Allocates one private page.
  *
  * Worker for gmmR0AllocatePages.
  *
@@ -1536,6 +1536,7 @@ static void gmmR0AllocatePage(PGMM pGMM, uint32_t hGVM, PGMMCHUNK pChunk, PGMMPA
         pChunk->hGVM = hGVM;
     Assert(pChunk->cFree);
     pChunk->cFree--;
+    pChunk->cPrivate++;
 
     /* unlink the first free page. */
     const uint32_t iPage = pChunk->iFreeHead;
@@ -2259,9 +2260,9 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
      */
     switch (enmAccount)
     {
-        case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   -= iPage;
-        case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages -= iPage;
-        case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  -= iPage;
+        case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   -= iPage; break;
+        case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages -= iPage; break;
+        case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  -= iPage; break;
         default:
             AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_INTERNAL_ERROR);
     }
