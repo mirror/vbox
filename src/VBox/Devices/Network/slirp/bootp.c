@@ -283,6 +283,14 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         dns_addr_dhcp.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
         FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &dns_addr_dhcp.s_addr);
 #else
+# ifdef VBOX_WITH_SLIRP_DNS_PROXY
+        if (pData->use_dns_proxy) 
+        {
+            uint32_t addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
+            FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &addr);
+        }
+        else
+# endif
         LIST_FOREACH(de, &pData->dns_list_head, de_list)
         {
             FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &de->de_addr.s_addr);

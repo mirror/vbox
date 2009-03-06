@@ -208,6 +208,8 @@ typedef struct NATState
     #define HASHSIZE 10
     #define HASH(id) (id & ((1 << HASHSIZE) - 1))
     struct request *request_hash[1 << HASHSIZE];
+    /* this field control behaviour of DHCP server */
+    bool use_dns_proxy;
 #endif
     STAMPROFILE StatFill;
     STAMPROFILE StatPoll;

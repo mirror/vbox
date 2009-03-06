@@ -27,7 +27,7 @@ typedef struct NATState *PNATState;
 extern "C" {
 #endif
 
-int slirp_init(PNATState *, const char *, uint32_t, bool, const char *, const char *, void *);
+int slirp_init(PNATState *, const char *, uint32_t, bool, void *);
 void slirp_register_timers(PNATState pData, PPDMDRVINS pDrvIns);
 void slirp_term(PNATState);
 void slirp_link_up(PNATState);
@@ -67,6 +67,12 @@ int slirp_redir(PNATState pData, int is_udp, int host_port,
 int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,
                    int guest_port);
 
+void slirp_set_dhcp_TFTP_prefix(PNATState pData, const char *tftpPrefix);
+void slirp_set_dhcp_TFTP_bootfile(PNATState pData, const char *bootFile);
+void slirp_set_dhcp_next_server(PNATState pData, const char *nextServer);
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy);
+#endif
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 
 
