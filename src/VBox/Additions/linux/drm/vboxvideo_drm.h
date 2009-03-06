@@ -67,7 +67,7 @@
 #define DRIVER_PATCHLEVEL	0
 
 #define vboxvideo_PCI_IDS \
-	{0x80ee, 0xcafe, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0}, \
+	{0x80ee, 0xbeef, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0}, \
 	{0, 0, 0}
 
 #endif
