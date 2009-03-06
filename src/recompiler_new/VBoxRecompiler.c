@@ -3464,94 +3464,6 @@ static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP
 
 
 /**
- * Disassembles n instructions and prints them to the log.
- *
- * @returns Success indicator.
- * @param   env         Pointer to the recompiler CPU structure.
- * @param   f32BitCode  Indicates that whether or not the code should
- *                      be disassembled as 16 or 32 bit. If -1 the CS
- *                      selector will be inspected.
- * @param   nrInstructions  Nr of instructions to disassemble
- * @param   pszPrefix
- * @remark  not currently used for anything but ad-hoc debugging.
- */
-bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *pszPrefix)
-{
-    int           i, rc;
-    RTGCPTR       GCPtrPC;
-    uint8_t       *pvPC;
-    RTINTPTR      off;
-    DISCPUSTATE   Cpu;
-
-    /*
-     * Determin 16/32 bit mode.
-     */
-    if (f32BitCode == -1)
-        f32BitCode = !!(env->segs[R_CS].flags & X86_DESC_DB); /** @todo is this right?!!?!?!?!? */
-
-    /*
-     * Convert cs:eip to host context address.
-     * We don't care to much about cross page correctness presently.
-     */
-    GCPtrPC = env->segs[R_CS].base + env->eip;
-    if (f32BitCode && (env->cr[0] & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG))
-    {
-        Assert(PGMGetGuestMode(env->pVM) < PGMMODE_AMD64);
-
-        /* convert eip to physical address. */
-        rc = PGMPhysGCPtr2R3PtrByGstCR3(env->pVM,
-                                        GCPtrPC,
-                                        env->cr[3],
-                                        env->cr[4] & (X86_CR4_PSE | X86_CR4_PAE), /** @todo add longmode flag */
-                                        (void**)&pvPC);
-        if (RT_FAILURE(rc))
-        {
-            if (!PATMIsPatchGCAddr(env->pVM, GCPtrPC))
-                return false;
-            pvPC = (uint8_t *)PATMR3QueryPatchMemHC(env->pVM, NULL)
-                + (GCPtrPC - PATMR3QueryPatchMemGC(env->pVM, NULL));
-        }
-    }
-    else
-    {
-        /* physical address */
-        rc = PGMPhysGCPhys2R3Ptr(env->pVM, (RTGCPHYS)GCPtrPC, nrInstructions * 16,
-                                 (void**)&pvPC);
-        if (RT_FAILURE(rc))
-            return false;
-    }
-
-    /*
-     * Disassemble.
-     */
-    off = env->eip - (RTGCUINTPTR)(uintptr_t)pvPC;
-    Cpu.mode = f32BitCode ? CPUMODE_32BIT : CPUMODE_16BIT;
-    Cpu.pfnReadBytes = NULL;            /** @todo make cs:eip reader for the disassembler. */
-    //Cpu.dwUserData[0] = (uintptr_t)pVM;
-    //Cpu.dwUserData[1] = (uintptr_t)pvPC;
-    //Cpu.dwUserData[2] = GCPtrPC;
-
-    for (i=0;i<nrInstructions;i++)
-    {
-        char szOutput[256];
-        uint32_t    cbOp;
-        if (RT_FAILURE(DISInstr(&Cpu, (uintptr_t)pvPC, off, &cbOp, &szOutput[0])))
-            return false;
-        if (pszPrefix)
-            Log(("%s: %s", pszPrefix, szOutput));
-        else
-            Log(("%s", szOutput));
-
-        pvPC += cbOp;
-    }
-    return true;
-}
-
-
-/** @todo need to test the new code, using the old code in the mean while. */
-#define USE_OLD_DUMP_AND_DISASSEMBLY
-
-/**
  * Disassembles one instruction and prints it to the log.
  *
  * @returns Success indicator.
@@ -3563,94 +3475,6 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
  */
 bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
 {
-#ifdef USE_OLD_DUMP_AND_DISASSEMBLY
-    PVM         pVM =   env->pVM;
-    RTGCPTR     GCPtrPC;
-    uint8_t     *pvPC;
-    char        szOutput[256];
-    uint32_t    cbOp;
-    RTINTPTR    off;
-    DISCPUSTATE Cpu;
-
-
-    /* Doesn't work in long mode. */
-    if (env->hflags & HF_LMA_MASK)
-        return false;
-
-    /*
-     * Determin 16/32 bit mode.
-     */
-    if (f32BitCode == -1)
-        f32BitCode = !!(env->segs[R_CS].flags & X86_DESC_DB); /** @todo is this right?!!?!?!?!? */
-
-    /*
-     * Log registers
-     */
-    if (LogIs2Enabled())
-    {
-        remR3StateUpdate(pVM);
-        DBGFR3InfoLog(pVM, "cpumguest", pszPrefix);
-    }
-
-    /*
-     * Convert cs:eip to host context address.
-     * We don't care to much about cross page correctness presently.
-     */
-    GCPtrPC = env->segs[R_CS].base + env->eip;
-    if ((env->cr[0] & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG))
-    {
-        /* convert eip to physical address. */
-        int rc = PGMPhysGCPtr2R3PtrByGstCR3(pVM,
-                                            GCPtrPC,
-                                            env->cr[3],
-                                            env->cr[4] & (X86_CR4_PSE | X86_CR4_PAE),
-                                            (void**)&pvPC);
-        if (RT_FAILURE(rc))
-        {
-            if (!PATMIsPatchGCAddr(pVM, GCPtrPC))
-                return false;
-            pvPC = (uint8_t *)PATMR3QueryPatchMemHC(pVM, NULL)
-                + (GCPtrPC - PATMR3QueryPatchMemGC(pVM, NULL));
-        }
-    }
-    else
-    {
-
-        /* physical address */
-        int rc = PGMPhysGCPhys2R3Ptr(pVM, (RTGCPHYS)GCPtrPC, 16, (void**)&pvPC);
-        if (RT_FAILURE(rc))
-            return false;
-    }
-
-    /*
-     * Disassemble.
-     */
-    off = env->eip - (RTGCUINTPTR)(uintptr_t)pvPC;
-    Cpu.mode = f32BitCode ? CPUMODE_32BIT : CPUMODE_16BIT;
-    Cpu.pfnReadBytes = NULL;            /** @todo make cs:eip reader for the disassembler. */
-    //Cpu.dwUserData[0] = (uintptr_t)pVM;
-    //Cpu.dwUserData[1] = (uintptr_t)pvPC;
-    //Cpu.dwUserData[2] = GCPtrPC;
-    if (RT_FAILURE(DISInstr(&Cpu, (uintptr_t)pvPC, off, &cbOp, &szOutput[0])))
-        return false;
-
-    if (!f32BitCode)
-    {
-        if (pszPrefix)
-            Log(("%s: %04X:%s", pszPrefix, env->segs[R_CS].selector, szOutput));
-        else
-            Log(("%04X:%s", env->segs[R_CS].selector, szOutput));
-    }
-    else
-    {
-        if (pszPrefix)
-            Log(("%s: %s", pszPrefix, szOutput));
-        else
-            Log(("%s", szOutput));
-    }
-    return true;
-
-#else /* !USE_OLD_DUMP_AND_DISASSEMBLY */
     PVM pVM = env->pVM;
     const bool fLog = LogIsEnabled();
     const bool fLog2 = LogIs2Enabled();
@@ -3680,7 +3504,6 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
         rc = DBGFR3DisasInstrCurrentLogInternal(pVM, pszPrefix);
 
     return RT_SUCCESS(rc);
-#endif
 }
 
 
