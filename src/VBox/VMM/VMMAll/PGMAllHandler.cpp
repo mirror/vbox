@@ -73,7 +73,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur);
  * @param   pvUserR3        User argument to the R3 handler.
  * @param   pfnHandlerR0    The R0 handler.
  * @param   pvUserR0        User argument to the R0 handler.
- * @param   pfnHandlerGC    The RC handler.
+ * @param   pfnHandlerRC    The RC handler.
  * @param   pvUserRC        User argument to the RC handler. This can be a value
  *                          less that 0x10000 or a (non-null) pointer that is
  *                          automatically relocatated.
@@ -94,9 +94,13 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
     AssertMsgReturn(GCPhys < GCPhysLast, ("GCPhys >= GCPhysLast (%#x >= %#x)\n", GCPhys, GCPhysLast), VERR_INVALID_PARAMETER);
     switch (enmType)
     {
-        case PGMPHYSHANDLERTYPE_MMIO:
         case PGMPHYSHANDLERTYPE_PHYSICAL_WRITE:
+            break;
+        case PGMPHYSHANDLERTYPE_MMIO:
         case PGMPHYSHANDLERTYPE_PHYSICAL_ALL:
+            /* Simplification in PGMPhysRead among other places. */
+            AssertMsgReturn(!(GCPhys & PAGE_OFFSET_MASK), ("%RGp\n", GCPhys), VERR_INVALID_PARAMETER);
+            AssertMsgReturn((GCPhysLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK, ("%RGp\n", GCPhysLast), VERR_INVALID_PARAMETER);
             break;
         default:
             AssertMsgFailed(("Invalid input enmType=%d!\n", enmType));
@@ -106,7 +110,17 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
                     ||  MMHyperR3ToRC(pVM, MMHyperRCToR3(pVM, pvUserRC)) == pvUserRC,
                     ("Not RC pointer! pvUserRC=%RRv\n", pvUserRC),
                     VERR_INVALID_PARAMETER);
+    AssertMsgReturn(    (RTR0UINTPTR)pvUserR0 < 0x10000
+                    ||  MMHyperR3ToR0(pVM, MMHyperR0ToR3(pVM, pvUserR0)) == pvUserR0,
+                    ("Not R0 pointer! pvUserR0=%RHv\n", pvUserR0),
+                    VERR_INVALID_PARAMETER);
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    AssertPtrReturn(pfnHandlerR3, VERR_INVALID_POINTER);
+    AssertReturn(pfnHandlerR0, VERR_INVALID_PARAMETER);
+    AssertReturn(pfnHandlerRC, VERR_INVALID_PARAMETER);
+#else
     AssertReturn(pfnHandlerR3 || pfnHandlerR0 || pfnHandlerRC, VERR_INVALID_PARAMETER);
+#endif
 
     /*
      * We require the range to be within registered ram.

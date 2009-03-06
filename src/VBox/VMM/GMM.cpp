@@ -159,12 +159,34 @@ GMMR3DECL(int) GMMR3FreePagesPrepare(PVM pVM, PGMMFREEPAGESREQ *ppReq, uint32_t 
     if (!pReq)
         return VERR_NO_TMP_MEMORY;
 
-    pReq->Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    pReq->Hdr.cbReq = cb;
-    pReq->enmAccount = enmAccount;
-    pReq->cPages = cPages;
+    pReq->Hdr.u32Magic  = SUPVMMR0REQHDR_MAGIC;
+    pReq->Hdr.cbReq     = cb;
+    pReq->enmAccount    = enmAccount;
+    pReq->cPages        = cPages;
     NOREF(pVM);
+    *ppReq = pReq;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Re-prepares a GMMR0FreePages request.
+ *
+ * @returns VINF_SUCCESS or VERR_NO_TMP_MEMORY.
+ * @param       pVM         Pointer to the shared VM structure.
+ * @param       pReq        A request buffer previously returned by
+ *                          GMMR3FreePagesPrepare().
+ * @param       cPages      The number of pages originally passed to
+ *                          GMMR3FreePagesPrepare().
+ * @param       enmAccount  The account to charge.
+ */
+GMMR3DECL(void) GMMR3FreePagesRePrep(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t cPages, GMMACCOUNT enmAccount)
+{
+    Assert(pReq->Hdr.u32Magic == SUPVMMR0REQHDR_MAGIC);
+    pReq->Hdr.cbReq     = RT_OFFSETOF(GMMFREEPAGESREQ, aPages[cPages]);
+    pReq->enmAccount    = enmAccount;
+    pReq->cPages        = cPages;
+    NOREF(pVM);
 }
 
 
@@ -173,11 +195,27 @@ GMMR3DECL(int) GMMR3FreePagesPrepare(PVM pVM, PGMMFREEPAGESREQ *ppReq, uint32_t 
  * This will call VMSetError on failure.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the shared VM structure.
- * @param   pReq        Pointer to the request (returned by GMMR3FreePagesPrepare).
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pReq            Pointer to the request (returned by GMMR3FreePagesPrepare).
+ * @param   cActualPages    The number of pages actually freed.
  */
-GMMR3DECL(int) GMMR3FreePagesPerform(PVM pVM, PGMMFREEPAGESREQ pReq)
+GMMR3DECL(int) GMMR3FreePagesPerform(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t cActualPages)
 {
+    /*
+     * Adjust the request if we ended up with fewer pages than anticipated.
+     */
+    if (cActualPages != pReq->cPages)
+    {
+        AssertReturn(cActualPages < pReq->cPages, VERR_INTERNAL_ERROR);
+        if (!cActualPages)
+            return VINF_SUCCESS;
+        pReq->cPages = cActualPages;
+        pReq->Hdr.cbReq = RT_OFFSETOF(GMMFREEPAGESREQ, aPages[cActualPages]);
+    }
+
+    /*
+     * Do the job.
+     */
     int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_FREE_PAGES, 0, &pReq->Hdr);
     if (RT_SUCCESS(rc))
         return rc;

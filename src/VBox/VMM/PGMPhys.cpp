@@ -46,10 +46,17 @@
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** The number of pages to free in one batch. */
+#define PGMPHYS_FREE_PAGE_BATCH_SIZE    128
+
+
+/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
-
+static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys);
 
 
 /*
@@ -283,6 +290,16 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
  */
 int pgmR3PhysRamReset(PVM pVM)
 {
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    /*
+     * We batch up pages before freeing them.
+     */
+    uint32_t            cPendingPages = 0;
+    PGMMFREEPAGESREQ    pReq;
+    int rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+    AssertLogRelRCReturn(rc, rc);
+#endif
+
     /*
      * Walk the ram ranges.
      */
@@ -290,7 +307,6 @@ int pgmR3PhysRamReset(PVM pVM)
     {
         uint32_t    iPage = pRam->cb >> PAGE_SHIFT; Assert((RTGCPHYS)iPage << PAGE_SHIFT == pRam->cb);
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-        int         rc;
         if (!pVM->pgm.s.fRamPreAlloc)
         {
             /* Replace all RAM pages by ZERO pages. */
@@ -301,7 +317,10 @@ int pgmR3PhysRamReset(PVM pVM)
                 {
                     case PGMPAGETYPE_RAM:
                         if (!PGM_PAGE_IS_ZERO(pPage))
-                            pgmPhysFreePage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                        {
+                            rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                            AssertLogRelRCReturn(rc, rc);
+                        }
                         break;
 
                     case PGMPAGETYPE_MMIO2:
@@ -377,6 +396,19 @@ int pgmR3PhysRamReset(PVM pVM)
         }
 
     }
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    /*
+     * Finish off any pages pending freeing.
+     */
+    if (cPendingPages)
+    {
+        rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
+        AssertLogRelRCReturn(rc, rc);
+    }
+    GMMR3FreePagesCleanup(pReq);
+#endif
+
 
     return VINF_SUCCESS;
 }
@@ -909,13 +941,19 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
 
     if (fRamExists)
     {
+        uint32_t            cPendingPages = 0;
+        PGMMFREEPAGESREQ    pReq;
+        int rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+        AssertLogRelRCReturn(rc, rc);
+
         /* replace the pages, freeing all present RAM pages. */
         PPGMPAGE pPageSrc = &pCur->RamRange.aPages[0];
         PPGMPAGE pPageDst = &pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
         uint32_t cPagesLeft = pCur->RamRange.cb >> PAGE_SHIFT;
         while (cPagesLeft-- > 0)
         {
-            pgmPhysFreePage(pVM, pPageDst, GCPhys);
+            rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPageDst, GCPhys);
+            AssertLogRelRCReturn(rc, rc); /* We're done for if this goes wrong. */
 
             RTHCPHYS const HCPhys = PGM_PAGE_GET_HCPHYS(pPageSrc);
             PGM_PAGE_SET_HCPHYS(pPageDst, HCPhys);
@@ -926,6 +964,13 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
             pPageSrc++;
             pPageDst++;
         }
+
+        if (cPendingPages)
+        {
+            rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
+            AssertLogRelRCReturn(rc, rc);
+        }
+        GMMR3FreePagesCleanup(pReq);
     }
     else
     {
@@ -980,17 +1025,16 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
         while (pRam->GCPhys > pCur->RamRange.GCPhysLast)
             pRam = pRam->pNextR3;
 
-#ifdef RT_STRICT
         RTHCPHYS const HCPhysZeroPg = pVM->pgm.s.HCPhysZeroPg;
-#endif
         Assert(HCPhysZeroPg != 0 && HCPhysZeroPg != NIL_RTHCPHYS);
         PPGMPAGE pPageDst = &pRam->aPages[(pCur->RamRange.GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
         uint32_t cPagesLeft = pCur->RamRange.cb >> PAGE_SHIFT;
         while (cPagesLeft-- > 0)
         {
-            PGM_PAGE_SET_HCPHYS(pPageDst, pVM->pgm.s.HCPhysZeroPg);
+            PGM_PAGE_SET_HCPHYS(pPageDst, HCPhysZeroPg);
             PGM_PAGE_SET_TYPE(pPageDst, PGMPAGETYPE_RAM);
             PGM_PAGE_SET_STATE(pPageDst, PGM_PAGE_STATE_ZERO);
+            PGM_PAGE_SET_PAGEID(pPageDst, NIL_GMM_PAGEID);
 
             pPageDst++;
         }
@@ -1453,8 +1497,8 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  */
 static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
-    PPGMROMRANGE    pRom = (PPGMROMRANGE)pvUser;
-    const uint32_t  iPage = GCPhys - pRom->GCPhys;
+    PPGMROMRANGE    pRom     = (PPGMROMRANGE)pvUser;
+    const uint32_t  iPage    = (GCPhys - pRom->GCPhys) >> PAGE_SHIFT;
     Assert(iPage < (pRom->cb >> PAGE_SHIFT));
     PPGMROMPAGE     pRomPage = &pRom->aPages[iPage];
     switch (pRomPage->enmProt)
@@ -1565,7 +1609,7 @@ int pgmR3PhysRomReset(PVM pVM)
                             iReqPage++;
                         }
 
-                    rc = GMMR3FreePagesPerform(pVM, pReq);
+                    rc = GMMR3FreePagesPerform(pVM, pReq, cDirty);
                     GMMR3FreePagesCleanup(pReq);
                     AssertRCReturn(rc, rc);
 
@@ -2455,6 +2499,93 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
 
 
 /**
+ * Frees the specified RAM page and replaces it with the ZERO page.
+ *
+ * This is used by ballooning, remapping MMIO2 and RAM reset.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pReq        Pointer to the request.
+ * @param   pPage       Pointer to the page structure.
+ * @param   GCPhys      The guest physical address of the page, if applicable.
+ *
+ * @remarks The caller must own the PGM lock.
+ */
+static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys)
+{
+    /*
+     * Assert sanity.
+     */
+    Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
+    if (RT_UNLIKELY(PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_RAM))
+    {
+        AssertMsgFailed(("GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
+        return VMSetError(pVM, VERR_PGM_PHYS_NOT_RAM, RT_SRC_POS, "GCPhys=%RGp type=%d", GCPhys, PGM_PAGE_GET_TYPE(pPage));
+    }
+
+    if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ZERO)
+        return VINF_SUCCESS;
+
+    const uint32_t idPage = PGM_PAGE_GET_PAGEID(pPage);
+    if (RT_UNLIKELY(    idPage == NIL_GMM_PAGEID
+                    ||  idPage > GMM_PAGEID_LAST
+                    ||  PGM_PAGE_GET_CHUNKID(pPage) == NIL_GMM_CHUNKID))
+    {
+        AssertMsgFailed(("GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
+        return VMSetError(pVM, VERR_PGM_PHYS_INVALID_PAGE_ID, RT_SRC_POS, "GCPhys=%RGp idPage=%#x", GCPhys, pPage);
+    }
+
+    /*
+     * pPage = ZERO page.
+     */
+    PGM_PAGE_SET_HCPHYS(pPage, pVM->pgm.s.HCPhysZeroPg);
+    PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ZERO);
+    PGM_PAGE_SET_PAGEID(pPage, NIL_GMM_PAGEID);
+
+    /*
+     * Make sure it's not in the handy page array.
+     */
+    uint32_t i = pVM->pgm.s.cHandyPages;
+    while (i < RT_ELEMENTS(pVM->pgm.s.aHandyPages))
+    {
+        if (pVM->pgm.s.aHandyPages[i].idPage == idPage)
+        {
+            pVM->pgm.s.aHandyPages[i].idPage = NIL_GMM_PAGEID;
+            break;
+        }
+        if (pVM->pgm.s.aHandyPages[i].idSharedPage == idPage)
+        {
+            pVM->pgm.s.aHandyPages[i].idSharedPage = NIL_GMM_PAGEID;
+            break;
+        }
+        i++;
+    }
+
+    /*
+     * Push it onto the page array.
+     */
+    uint32_t iPage = *pcPendingPages;
+    Assert(iPage < PGMPHYS_FREE_PAGE_BATCH_SIZE);
+    *pcPendingPages += 1;
+
+    pReq->aPages[iPage].idPage = idPage;
+
+    if (iPage + 1 < PGMPHYS_FREE_PAGE_BATCH_SIZE)
+        return VINF_SUCCESS;
+
+    /*
+     * Flush the pages.
+     */
+    int rc = GMMR3FreePagesPerform(pVM, pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE);
+    if (RT_SUCCESS(rc))
+    {
+        GMMR3FreePagesRePrep(pVM, pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+        *pcPendingPages = 0;
+    }
+    return rc;
+}
+
+
+/**
  * Converts a GC physical address to a HC ring-3 pointer, with some
  * additional checks.
  *
@@ -2508,8 +2639,8 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
                 switch (PGM_PAGE_GET_STATE(pPage))
                 {
                     case PGM_PAGE_STATE_ALLOCATED:
-                    case PGM_PAGE_STATE_ZERO:
                         break;
+                    case PGM_PAGE_STATE_ZERO:
                     case PGM_PAGE_STATE_SHARED:
                     case PGM_PAGE_STATE_WRITE_MONITORED:
                         rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
@@ -2524,7 +2655,12 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
             /** @todo mapping/locking hell; this isn't horribly efficient since
              *        pgmPhysPageLoadIntoTlb will repeate the lookup we've done here. */
+
+            Log6(("PGMR3PhysTlbGCPhys2Ptr: GCPhys=%RGp rc=%Rrc pPage=%R[pgmpage] *ppv=%p\n", GCPhys, rc, pPage, *ppv));
         }
+        else
+            Log6(("PGMR3PhysTlbGCPhys2Ptr: GCPhys=%RGp rc=%Rrc pPage=%R[pgmpage]\n", GCPhys, rc, pPage));
+
         /* else: handler catching all access, no pointer returned. */
 
 #else
