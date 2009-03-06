@@ -53,7 +53,6 @@ VBoxOGL_SOURCES.linux  = \
 VBoxOGL_SOURCES.win    = \
 	wgl.c \
 	icd_drv.c \
-	ogl_hgcm.c \
 	VBoxCROGL.rc \
 	$(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm \
 	$(VBOX_PATH_CROGL_GENFILES)/cropengl.def
