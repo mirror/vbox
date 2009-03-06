@@ -245,22 +245,17 @@ PGM_SHW_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta)
  */
 PGM_SHW_DECL(int, Exit)(PVM pVM)
 {
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED
-   Assert(HWACCMIsNestedPagingActive(pVM));
-# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pVM->pgm.s.pShwPageCR3R3 = 0;
-    pVM->pgm.s.pShwPageCR3R0 = 0;
-    pVM->pgm.s.iShwUser      = 0;
-    pVM->pgm.s.iShwUserTable = 0;
-# else
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+# if PGM_SHW_TYPE == PGM_TYPE_NESTED
+    Assert(HWACCMIsNestedPagingActive(pVM));
     pVM->pgm.s.pShwRootR3 = 0;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->pgm.s.pShwRootR0 = 0;
 #  endif
     pVM->pgm.s.HCPhysShwCR3 = 0;
-# endif
 
     Log(("Leave nested shadow paging mode\n"));
+# endif
 #endif
     return VINF_SUCCESS;
 }
