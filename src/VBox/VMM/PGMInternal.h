@@ -3525,7 +3525,7 @@ DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
         return pv;
     }
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    AssertFatalMsg(("pgmPoolMapPageInlined invalid page index %x\n", pPage->idx));
+    AssertFatalMsgFailed(("pgmPoolMapPageInlined invalid page index %x\n", pPage->idx));
 #else
     return pgmPoolMapPageFallback(pPGM, pPage);
 #endif
