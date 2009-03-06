@@ -24,6 +24,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/net.h>
+#include <iprt/asm.h>
 
 //#include "VBox/com/ptr.h"
 //#include <list>
