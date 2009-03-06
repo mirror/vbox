@@ -21,7 +21,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #else
-#include "ogl_hgcm.h"
 #include "cr_netserver.h"
 #endif
 #ifdef CHROMIUM_THREADSAFE
