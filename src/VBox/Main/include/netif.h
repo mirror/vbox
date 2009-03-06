@@ -104,18 +104,9 @@ DECLINLINE(int) prefixLength2IPv6Address(ULONG cPrefix, PRTNETADDRIPV6 aAddrPtr)
     if(!aAddrPtr)
         return VERR_INVALID_PARAMETER;
 
-    ULONG index    = cPrefix >> 3;
-    ULONG subindex = cPrefix & 0x7;
-    ULONG i;
+    memset(aAddrPtr, 0, sizeof(RTNETADDRIPV6));
 
-    for(i = 0; i < index; i++)
-        aAddrPtr->au8[i] = ~0;
-
-    for(i = index + 1; i < 16; i++)
-        aAddrPtr->au8[i] = 0;
-
-    if(subindex)
-        aAddrPtr->au32[index] = (~0) >> (8 - subindex);
+    ASMBitSetRange(aAddrPtr, 0, cPrefix);
 
     return VINF_SUCCESS;
 }
