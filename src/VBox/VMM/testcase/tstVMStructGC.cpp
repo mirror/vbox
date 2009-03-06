@@ -451,11 +451,13 @@ int main()
     GEN_CHECK_OFF(PGM, pShwPaePdptRC);
     GEN_CHECK_OFF(PGM, HCPhysShwPaePdpt);
 #endif
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     GEN_CHECK_OFF(PGM, pShwRootR3);
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGM, pShwRootR0);
-#endif
+# endif
     GEN_CHECK_OFF(PGM, HCPhysShwCR3);
+#endif
     GEN_CHECK_OFF(PGM, pShwPageCR3R3);
     GEN_CHECK_OFF(PGM, pShwPageCR3R0);
     GEN_CHECK_OFF(PGM, pShwPageCR3RC);

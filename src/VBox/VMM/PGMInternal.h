@@ -2343,21 +2343,23 @@ typedef struct PGM
 #endif
     /** @} */
 
+# ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /** @name Shadow paging
      * @{ */
     /** The root page table - R3 Ptr. */
     R3PTRTYPE(void *)               pShwRootR3;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     /** The root page table - R0 Ptr. */
     R0PTRTYPE(void *)               pShwRootR0;
-# endif
+#  endif
     /** The root page table - RC Ptr. */
     RCPTRTYPE(void *)               pShwRootRC;
-# if HC_ARCH_BITS == 64
+#  if HC_ARCH_BITS == 64
     uint32_t                        u32Padding1; /**< alignment padding. */
-# endif
+#  endif
     /** The Physical Address (HC) of the current active shadow CR3. */
     RTHCPHYS                        HCPhysShwCR3;
+# endif
     /** Pointer to the page of the current active CR3 - R3 Ptr. */
     R3PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R3;
     /** Pointer to the page of the current active CR3 - R0 Ptr. */
@@ -3063,7 +3065,7 @@ void            pgmR3PoolReset(PVM pVM);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 int             pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv);
 #endif
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if !defined(VBOX_WITH_PGMPOOL_PAGING_ONLY) && (defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0))
 void           *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage);
 #endif
 int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage);
@@ -3522,7 +3524,11 @@ DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
 # endif
         return pv;
     }
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    AssertFatalMsg(("pgmPoolMapPageInlined invalid page index %x\n", pPage->idx));
+#else
     return pgmPoolMapPageFallback(pPGM, pPage);
+#endif
 }
 
 /**

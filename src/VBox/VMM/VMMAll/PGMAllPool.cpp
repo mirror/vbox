@@ -136,7 +136,7 @@ DECLINLINE(void) PGMPOOL_UNLOCK_PTR(PVM pVM, void *pvPage)
 # define PGMPOOL_UNLOCK_PTR(pVM, pPage)  do {} while (0)
 #endif
 
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if !defined(VBOX_WITH_PGMPOOL_PAGING_ONLY) && (defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0))
 /**
  * Maps a pool page into the current context.
  *
@@ -155,12 +155,6 @@ void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
 # ifdef IN_RC
     switch (pPage->idx)
     {
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        case PGMPOOL_IDX_PD:
-        case PGMPOOL_IDX_PDPT:
-        case PGMPOOL_IDX_AMD64_CR3:
-            return pPGM->pShwRootRC;
-#  else
         case PGMPOOL_IDX_PD:
             return pPGM->pShw32BitPdRC;
         case PGMPOOL_IDX_PAE_PD:
@@ -174,7 +168,6 @@ void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
             return pPGM->apShwPaePDsRC[3];
         case PGMPOOL_IDX_PDPT:
             return pPGM->pShwPaePdptRC;
-#  endif
         default:
             AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));
             return NULL;
@@ -184,17 +177,6 @@ void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
     RTHCPHYS HCPhys;
     switch (pPage->idx)
     {
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        case PGMPOOL_IDX_PD:
-        case PGMPOOL_IDX_PDPT:
-        case PGMPOOL_IDX_AMD64_CR3:
-            HCPhys = pPGM->HCPhysShwCR3;
-            break;
-
-        case PGMPOOL_IDX_NESTED_ROOT:
-            HCPhys = pPGM->HCPhysShwNestedRoot;
-            break;
-#  else
         case PGMPOOL_IDX_PD:
             HCPhys = pPGM->HCPhysShw32BitPD;
             break;
@@ -219,7 +201,6 @@ void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
         case PGMPOOL_IDX_PAE_PD:
             AssertReleaseMsgFailed(("PGMPOOL_IDX_PAE_PD is not usable in VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 context\n"));
             return NULL;
-#  endif
         default:
             AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));
             return NULL;
