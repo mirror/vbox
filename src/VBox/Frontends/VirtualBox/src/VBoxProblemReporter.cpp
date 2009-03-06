@@ -2457,10 +2457,10 @@ void VBoxProblemReporter::showHelpHelpDialog()
 {
 #ifndef VBOX_OSE
     QString manual = vboxGlobal().helpFile();
-#if defined (Q_WS_WIN32)
+# if defined (Q_WS_WIN32)
     HtmlHelp (GetDesktopWindow(), manual.utf16(),
               HH_DISPLAY_TOPIC, NULL);
-#elif defined (Q_WS_X11)
+# elif defined (Q_WS_X11)
     char szViewerPath[RTPATH_MAX];
     int rc;
 
@@ -2469,10 +2469,9 @@ void VBoxProblemReporter::showHelpHelpDialog()
 
     QProcess::startDetached (QString(szViewerPath) + "/kchmviewer",
                              QStringList (manual));
-#elif defined (Q_WS_MAC)
-    QProcess::startDetached ("/usr/bin/open",
-                             QStringList (manual));
-#endif
+# elif defined (Q_WS_MAC)
+    vboxGlobal().openURL ("file://" + manual);
+# endif
 #endif /* VBOX_OSE */
 }
 
