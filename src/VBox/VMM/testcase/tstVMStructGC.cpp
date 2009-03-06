@@ -82,6 +82,7 @@ AssertCompileSize(RTHCPHYS, 8);
 #include <VBox/vm.h>
 #include <VBox/param.h>
 #include <VBox/x86.h>
+#include <iprt/assert.h>
 
 /* we don't use iprt here because we're pretending to be in GC! */
 #include <stdio.h>
