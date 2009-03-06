@@ -149,6 +149,7 @@ do { \
 #define VBOX_NAME		      "VBoxVideo"
 #define VBOX_DRIVER_NAME	  "vboxvideo"
 
+#ifdef VBOX_DRI
 /* DRI support */
 #define _XF86DRI_SERVER_
 /* Hack to work around a libdrm header which is broken on Solaris */
@@ -157,17 +158,20 @@ do { \
 enum drm_bo_type { DRM_BO_TYPE };
 #include "dri.h"
 #undef u_int64_t
+#include "sarea.h"
 #include "GL/glxint.h"
 #include "GL/glxtokens.h"
 
 /* For some reason this is not in the header files. */
 extern void GlxSetVisualConfigs(int nconfigs, __GLXvisualConfig *configs,
                                 void **configprivs);
+#endif
+
 #define VBOX_VIDEO_MAJOR  1
 #define VBOX_VIDEO_MINOR  0
-#define VBOX_DRM_DRIVER_NAME  "tdfx"    /* For now, as this driver is basically a stub. */
-#define VBOX_DRI_DRIVER_NAME  "swrast"  /* For starters. */
-#define VBOX_MAX_DRAWABLES    256       /* At random. */
+#define VBOX_DRM_DRIVER_NAME  "vboxvideo"  /* For now, as this driver is basically a stub. */
+#define VBOX_DRI_DRIVER_NAME  "vboxvideo"  /* For starters. */
+#define VBOX_MAX_DRAWABLES    256          /* At random. */
 
 #define VBOXPTR(p) ((VBOXPtr)((p)->driverPrivate))
 
@@ -216,11 +220,13 @@ typedef struct _VBOXRec
     int viewportX, viewportY;
     VMMDevMemory *pVMMDevMemory;
     VBVAMEMORY *pVbvaMemory;
+#ifdef VBOX_DRI
     Bool useDRI;
     int cVisualConfigs;
     __GLXvisualConfig *pVisualConfigs;
     DRIInfoRec *pDRIInfo;
     int drmFD;
+#endif
 } VBOXRec, *VBOXPtr;
 
 extern Bool vbox_init(int scrnIndex, VBOXPtr pVBox);
@@ -249,3 +255,4 @@ extern Bool VBOXDRIFinishScreenInit(ScreenPtr pScreen);
 extern void VBOXDRICloseScreen(ScreenPtr pScreen, VBOXPtr pVBox);
 
 #endif /* _VBOXVIDEO_H_ */
+
