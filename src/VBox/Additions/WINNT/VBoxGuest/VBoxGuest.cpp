@@ -241,10 +241,15 @@ static NTSTATUS VBoxGuestAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevOb
     }
 #endif
 
-    /* 
+    /*
      * Setup bugcheck callback routine ASAP.
      */
-    RtlZeroMemory (pDevExt->szDriverName, sizeof(pDevExt->szDriverName));
+#if 0 /** @todo r=bird: The 3rd and 4th parameters aren't according to spec and
+       * pcBugcheckBuffer isn't initialized anywhere. (Figuring out what it's
+       * good for is also nice.) Either explain why the spec is wrong in the
+       * comment above or fix it. Also pc should be pch if you wish to keep it
+       * a char pointer. */
+    RtlZeroMemory(pDevExt->szDriverName, sizeof(pDevExt->szDriverName));
     KeInitializeCallbackRecord(&pDevExt->bugcheckRecord);
 
     if (FALSE == KeRegisterBugCheckCallback(&pDevExt->bugcheckRecord,
@@ -259,6 +264,7 @@ static NTSTATUS VBoxGuestAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevOb
     {
         dprintf(("VBoxGuest::VBoxGuestAddDevice: Bugcheck callback registered.\n"));
     }
+#endif
 
     /* Driver is ready now. */
     deviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
@@ -302,9 +308,12 @@ void VBoxGuestUnload(PDRIVER_OBJECT pDrvObj)
 
     VBoxCleanupMemBalloon(pDevExt);
 
+#if 0 /** @todo r=bird: code temporarily disabled. Btw. it would be a good idea not to
+       * try deregister it if we didn't successfully register it in the first place... */
     /* Unregister bugcheck callback. */
     if (FALSE == KeDeregisterBugCheckCallback(&pDevExt->bugcheckRecord))
         dprintf(("VBoxGuest::VBoxGuestUnload: Unregistering bugcheck callback routine failed!\n"));
+#endif
 
     /*
      * I don't think it's possible to unload a driver which processes have
@@ -404,7 +413,7 @@ NTSTATUS VBoxGuestClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             dprintf(("VBoxGuestClose: no FsContext!\n"));
         }
         else
-        {   
+        {
             for (unsigned i = 0; i < RT_ELEMENTS(pSession->aHGCMClientIds); i++)
                 if (pSession->aHGCMClientIds[i])
                 {
@@ -1058,7 +1067,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                             break;
                         }
                     RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock, &Tmp);
-                    
+
                     if (i >= RT_ELEMENTS(pSession->aHGCMClientIds))
                     {
                         static unsigned s_cErrors = 0;
@@ -1122,7 +1131,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
                 u32ClientId = ptr->u32ClientID;
                 pSession = (PVBOXGUESTSESSION)pStack->FileObject->FsContext;
-            
+
                 RTSpinlockAcquireNoInts(pDevExt->SessionSpinlock, &Tmp);
                 for (i = 0; i < RT_ELEMENTS(pSession->aHGCMClientIds); i++)
                     if (pSession->aHGCMClientIds[i] == u32ClientId)
@@ -1535,6 +1544,9 @@ BOOLEAN VBoxGuestIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext)
 
 VOID VBoxGuestBugCheckCallback(PVOID pszBuffer, ULONG ulLength)
 {
+/** @todo r=bird: The buffer is the 3rd argument of the registration call
+ *        according to the spec and ulLength is the 4th... so either the spec
+ *        is wrong of this code dosn't make sense... */
     LogRelBackdoor(("Windows bluescreen detected! "));
     if (pszBuffer)
     {
