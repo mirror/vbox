@@ -302,6 +302,7 @@ VMMR3DECL(int)      MMR3HyperInitFinalize(PVM pVM);
 VMMR3DECL(int)      MMR3Term(PVM pVM);
 VMMR3DECL(void)     MMR3TermUVM(PUVM pUVM);
 VMMR3DECL(void)     MMR3Reset(PVM pVM);
+VMMR3DECL(int)      MMR3ReserveHandyPages(PVM pVM, uint32_t cHandyPages);
 VMMR3DECL(int)      MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages);
 VMMR3DECL(int)      MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc);
 VMMR3DECL(int)      MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages);
