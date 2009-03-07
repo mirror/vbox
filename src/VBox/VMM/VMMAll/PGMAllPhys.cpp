@@ -2053,7 +2053,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
             STAM_PROFILE_START(&pPhys->Stat, h);
             rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pPhys->CTX_SUFF(pvUser));
             STAM_PROFILE_STOP(&pPhys->Stat, h);
-            AssertLogRelMsg(rc != VINF_SUCCESS && rc != VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pPhys->pszDesc));
+            AssertLogRelMsg(rc == VINF_SUCCESS || rc == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pPhys->pszDesc));
 #else
             AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cbRange=%#x\n", GCPhys, cbRange));
 #endif
@@ -2078,7 +2078,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
                 STAM_PROFILE_START(&pVirt->Stat, h);
                 rc = pVirt->CTX_SUFF(pfnHandler)(pVM, GCPtr, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, /*pCur->CTX_SUFF(pvUser)*/ NULL);
                 STAM_PROFILE_STOP(&pVirt->Stat, h);
-                AssertLogRelMsg(rc != VINF_SUCCESS && rc != VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pVirt->pszDesc));
+                AssertLogRelMsg(rc == VINF_SUCCESS || rc == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pVirt->pszDesc));
             }
 #else
             AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cb=%#x\n", GCPhys, cbRange));
@@ -2104,7 +2104,7 @@ static void pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void c
             STAM_PROFILE_START(&pPhys->Stat, h);
             rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pPhys->CTX_SUFF(pvUser));
             STAM_PROFILE_STOP(&pPhys->Stat, h);
-            AssertLogRelMsg(rc != VINF_SUCCESS && rc != VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pPhys->pszDesc));
+            AssertLogRelMsg(rc == VINF_SUCCESS || rc == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pPhys->pszDesc));
             if (pVirt->pfnHandlerR3)
             {
 
