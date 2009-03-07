@@ -806,12 +806,13 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
     if (    RT_FAILURE(rc)
         &&  !fRamExists)
     {
+        pVM->pgm.s.cZeroPages -= cb >> PAGE_SHIFT;
+        pVM->pgm.s.cAllPages  -= cb >> PAGE_SHIFT;
+
         /* remove the ad-hoc range. */
         pgmR3PhysUnlinkRamRange2(pVM, pNew, pRamPrev);
         pNew->cb = pNew->GCPhys = pNew->GCPhysLast = NIL_RTGCPHYS;
         MMHyperFree(pVM, pRam);
-        pVM->pgm.s.cZeroPages -= cb >> PAGE_SHIFT;
-        pVM->pgm.s.cAllPages  -= cb >> PAGE_SHIFT;
     }
 
     return rc;
@@ -854,9 +855,10 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                 /*
                  * See if all the pages are dead MMIO pages.
                  */
-                bool fAllMMIO = true;
-                PPGMPAGE pPage = &pRam->aPages[0];
-                uint32_t cLeft = cb >> PAGE_SHIFT;
+                bool            fAllMMIO = true;
+                PPGMPAGE        pPage    = &pRam->aPages[0];
+                uint32_t const  cPages   = cb >> PAGE_SHIFT;
+                uint32_t        cLeft    = cPages;
                 while (cLeft-- > 0)
                 {
                     if (    PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO
@@ -878,11 +880,12 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                     Log(("PGMR3PhysMMIODeregister: Freeing ad-hoc MMIO range for %RGp-%RGp %s\n",
                          GCPhys, GCPhysLast, pRam->pszDesc));
 
+                    pVM->pgm.s.cAllPages  -= cPages;
+                    pVM->pgm.s.cZeroPages -= cPages;
+
                     pgmR3PhysUnlinkRamRange2(pVM, pRam, pRamPrev);
                     pRam->cb = pRam->GCPhys = pRam->GCPhysLast = NIL_RTGCPHYS;
                     MMHyperFree(pVM, pRam);
-                    pVM->pgm.s.cAllPages -= pRam->cb >> PAGE_SHIFT;
-                    pVM->pgm.s.cZeroPages -= pRam->cb >> PAGE_SHIFT;
                 }
                 break;
             }
