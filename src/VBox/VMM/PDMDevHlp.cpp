@@ -46,12 +46,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Allow physical read and writes from any thread.
- * (pdmR3DevHlp_PhysRead and pdmR3DevHlp_PhysWrite.)
- */
-#define PDM_PHYS_READWRITE_FROM_ANY_THREAD
-
-
 /** @name R3 DevHlp
  * @{
  */
@@ -2032,32 +2026,19 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACRE
 static DECLCALLBACK(void) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
     LogFlow(("pdmR3DevHlp_PhysRead: caller='%s'/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
 
-    /*
-     * For the convenience of the device we put no thread restriction on this interface.
-     * That means we'll have to check which thread we're in and choose our path.
-     */
-#ifdef PDM_PHYS_READWRITE_FROM_ANY_THREAD
-    PGMPhysRead(pDevIns->Internal.s.pVMR3, GCPhys, pvBuf, cbRead);
-#else
-    if (VM_IS_EMT(pDevIns->Internal.s.pVMR3) || VMMR3LockIsOwner(pDevIns->Internal.s.pVMR3))
-        PGMPhysRead(pDevIns->Internal.s.pVMR3, GCPhys, pvBuf, cbRead);
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    if (!VM_IS_EMT(pVM))
+        rc = PGMR3PhysReadExternal(pVM, GCPhys, pvBuf, cbRead);
     else
-    {
-        Log(("pdmR3DevHlp_PhysRead: caller='%s'/%d: Requesting call in EMT...\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-        PVMREQ pReq;
-        AssertCompileSize(RTGCPHYS, 4);
-        int rc = VMR3ReqCallVoid(pDevIns->Internal.s.pVMR3, &pReq, RT_INDEFINITE_WAIT,
-                                 (PFNRT)PGMPhysRead, 4, pDevIns->Internal.s.pVMR3, GCPhys, pvBuf, cbRead);
-        while (rc == VERR_TIMEOUT)
-            rc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
-        VMR3ReqFree(pReq);
-    }
 #endif
-    Log(("pdmR3DevHlp_PhysRead: caller='%s'/%d: returns void\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+        PGMPhysRead(pVM, GCPhys, pvBuf, cbRead);
+    Log(("pdmR3DevHlp_PhysRead: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    /** @todo return rc; */ NOREF(rc);
 }
 
 
@@ -2065,32 +2046,19 @@ static DECLCALLBACK(void) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPh
 static DECLCALLBACK(void) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
     LogFlow(("pdmR3DevHlp_PhysWrite: caller='%s'/%d: GCPhys=%RGp pvBuf=%p cbWrite=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, pvBuf, cbWrite));
 
-    /*
-     * For the convenience of the device we put no thread restriction on this interface.
-     * That means we'll have to check which thread we're in and choose our path.
-     */
-#ifdef PDM_PHYS_READWRITE_FROM_ANY_THREAD
-    PGMPhysWrite(pDevIns->Internal.s.pVMR3, GCPhys, pvBuf, cbWrite);
-#else
-    if (VM_IS_EMT(pDevIns->Internal.s.pVMR3) || VMMR3LockIsOwner(pDevIns->Internal.s.pVMR3))
-        PGMPhysWrite(pDevIns->Internal.s.pVMR3, GCPhys, pvBuf, cbWrite);
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    if (!VM_IS_EMT(pVM))
+        rc = PGMR3PhysWriteExternal(pVM, GCPhys, pvBuf, cbWrite);
     else
-    {
-        Log(("pdmR3DevHlp_PhysWrite: caller='%s'/%d: Requesting call in EMT...\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-        PVMREQ pReq;
-        AssertCompileSize(RTGCPHYS, 4);
-        int rc = VMR3ReqCallVoid(pDevIns->Internal.s.pVMR3, &pReq, RT_INDEFINITE_WAIT,
-                                 (PFNRT)PGMPhysWrite, 4, pDevIns->Internal.s.pVMR3, GCPhys, pvBuf, cbWrite);
-        while (rc == VERR_TIMEOUT)
-            rc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
-        VMR3ReqFree(pReq);
-    }
 #endif
-    Log(("pdmR3DevHlp_PhysWrite: caller='%s'/%d: returns void\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+        PGMPhysWrite(pVM, GCPhys, pvBuf, cbWrite);
+    Log(("pdmR3DevHlp_PhysWrite: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    /** @todo return rc; */ NOREF(rc);
 }
 
 

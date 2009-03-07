@@ -88,6 +88,263 @@ static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPa
 #include "PGMPhysRWTmpl.h"
 
 
+/**
+ * EMT worker for PGMR3PhysReadExternal.
+ */
+static DECLCALLBACK(int) pgmR3PhysReadExternalEMT(PVM pVM, PRTGCPHYS pGCPhys, void *pvBuf, size_t cbRead)
+{
+    PGMPhysRead(pVM, *pGCPhys, pvBuf, cbRead);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Write to physical memory, external users.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS.
+ *
+ * @param   pVM             VM Handle.
+ * @param   GCPhys          Physical address to write to.
+ * @param   pvBuf           What to write.
+ * @param   cbWrite         How many bytes to write.
+ *
+ * @thread  Any but EMTs.
+ */
+VMMR3DECL(int) PGMR3PhysReadExternal(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    VM_ASSERT_OTHER_THREAD(pVM);
+
+    AssertMsgReturn(cbRead > 0, ("don't even think about reading zero bytes!\n"), VINF_SUCCESS);
+    LogFlow(("PGMR3PhysReadExternal: %RGp %d\n", GCPhys, cbRead));
+
+    pgmLock(pVM);
+
+    /*
+     * Copy loop on ram ranges.
+     */
+    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+    for (;;)
+    {
+        /* Find range. */
+        while (pRam && GCPhys > pRam->GCPhysLast)
+            pRam = pRam->CTX_SUFF(pNext);
+        /* Inside range or not? */
+        if (pRam && GCPhys >= pRam->GCPhys)
+        {
+            /*
+             * Must work our way thru this page by page.
+             */
+            RTGCPHYS off = GCPhys - pRam->GCPhys;
+            while (off < pRam->cb)
+            {
+                unsigned iPage = off >> PAGE_SHIFT;
+                PPGMPAGE pPage = &pRam->aPages[iPage];
+
+                /*
+                 * If the page has an ALL access handler, we'll have to
+                 * delegate the job to EMT.
+                 */
+                if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
+                {
+                    pgmUnlock(pVM);
+
+                    PVMREQ pReq = NULL;
+                    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
+                                         (PFNRT)pgmR3PhysReadExternalEMT, 4, pVM, &GCPhys, pvBuf, cbRead);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = pReq->iStatus;
+                        VMR3ReqFree(pReq);
+                    }
+                    return rc;
+                }
+                Assert(!PGM_PAGE_IS_MMIO(pPage));
+
+                /*
+                 * Simple stuff, go ahead.
+                 */
+                size_t   cb    = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
+                if (cb > cbRead)
+                    cb = cbRead;
+                const void *pvSrc;
+                int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, pRam->GCPhys + off, &pvSrc);
+                if (RT_SUCCESS(rc))
+                    memcpy(pvBuf, pvSrc, cb);
+                else
+                {
+                    AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternalReadOnly failed on %RGp / %R[pgmpage] -> %Rrc\n",
+                                           pRam->GCPhys + off, pPage, rc));
+                    memset(pvBuf, 0xff, cb);
+                }
+
+                /* next page */
+                if (cb >= cbRead)
+                {
+                    pgmUnlock(pVM);
+                    return VINF_SUCCESS;
+                }
+                cbRead -= cb;
+                off    += cb;
+                GCPhys += cb;
+                pvBuf   = (char *)pvBuf + cb;
+            } /* walk pages in ram range. */
+        }
+        else
+        {
+            LogFlow(("PGMPhysRead: Unassigned %RGp size=%u\n", GCPhys, cbRead));
+
+            /*
+             * Unassigned address space.
+             */
+            if (!pRam)
+                break;
+            size_t cb = pRam->GCPhys - GCPhys;
+            if (cb >= cbRead)
+            {
+                memset(pvBuf, 0xff, cbRead);
+                break;
+            }
+            memset(pvBuf, 0xff, cb);
+
+            cbRead -= cb;
+            pvBuf   = (char *)pvBuf + cb;
+            GCPhys += cb;
+        }
+    } /* Ram range walk */
+
+    pgmUnlock(pVM);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * EMT worker for PGMR3PhysWriteExternal.
+ */
+static DECLCALLBACK(int) pgmR3PhysWriteExternalEMT(PVM pVM, PRTGCPHYS pGCPhys, const void *pvBuf, size_t cbWrite)
+{
+    /** @todo VERR_EM_NO_MEMORY */
+    PGMPhysWrite(pVM, *pGCPhys, pvBuf, cbWrite);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Write to physical memory, external users.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS.
+ * @retval  VERR_EM_NO_MEMORY.
+ *
+ * @param   pVM             VM Handle.
+ * @param   GCPhys          Physical address to write to.
+ * @param   pvBuf           What to write.
+ * @param   cbWrite         How many bytes to write.
+ *
+ * @thread  Any but EMTs.
+ */
+VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    VM_ASSERT_OTHER_THREAD(pVM);
+
+    AssertMsg(!pVM->pgm.s.fNoMorePhysWrites, ("Calling PGMR3PhysWriteExternal after pgmR3Save()!\n"));
+    AssertMsgReturn(cbWrite > 0, ("don't even think about writing zero bytes!\n"), VINF_SUCCESS);
+    LogFlow(("PGMR3PhysWriteExternal: %RGp %d\n", GCPhys, cbWrite));
+
+    pgmLock(pVM);
+
+    /*
+     * Copy loop on ram ranges, stop when we hit something difficult.
+     */
+    PPGMRAMRANGE    pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+    for (;;)
+    {
+        /* Find range. */
+        while (pRam && GCPhys > pRam->GCPhysLast)
+            pRam = pRam->CTX_SUFF(pNext);
+        /* Inside range or not? */
+        if (pRam && GCPhys >= pRam->GCPhys)
+        {
+            /*
+             * Must work our way thru this page by page.
+             */
+            RTGCPTR off = GCPhys - pRam->GCPhys;
+            while (off < pRam->cb)
+            {
+                RTGCPTR     iPage = off >> PAGE_SHIFT;
+                PPGMPAGE    pPage = &pRam->aPages[iPage];
+
+                /*
+                 * It the page is in any way problematic, we have to
+                 * do the work on the EMT. Anything that needs to be made
+                 * writable or involves access handlers is problematic.
+                 */
+                if (    PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
+                    ||  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+                {
+                    pgmUnlock(pVM);
+
+                    PVMREQ pReq = NULL;
+                    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
+                                         (PFNRT)pgmR3PhysWriteExternalEMT, 4, pVM, &GCPhys, pvBuf, cbWrite);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = pReq->iStatus;
+                        VMR3ReqFree(pReq);
+                    }
+                    return rc;
+                }
+                Assert(!PGM_PAGE_IS_MMIO(pPage));
+
+                /*
+                 * Simple stuff, go ahead.
+                 */
+                size_t      cb    = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
+                if (cb > cbWrite)
+                    cb = cbWrite;
+                void *pvDst;
+                int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pRam->GCPhys + off, &pvDst);
+                if (RT_SUCCESS(rc))
+                    memcpy(pvDst, pvBuf, cb);
+                else
+                    AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
+                                           pRam->GCPhys + off, pPage, rc));
+
+                /* next page */
+                if (cb >= cbWrite)
+                {
+                    pgmUnlock(pVM);
+                    return VINF_SUCCESS;
+                }
+
+                cbWrite -= cb;
+                off     += cb;
+                GCPhys  += cb;
+                pvBuf    = (const char *)pvBuf + cb;
+            } /* walk pages in ram range */
+        }
+        else
+        {
+            /*
+             * Unassigned address space, skip it.
+             */
+            if (!pRam)
+                break;
+            size_t cb = pRam->GCPhys - GCPhys;
+            if (cb >= cbWrite)
+                break;
+            cbWrite -= cb;
+            pvBuf   = (const char *)pvBuf + cb;
+            GCPhys += cb;
+        }
+    } /* Ram range walk */
+
+    pgmUnlock(pVM);
+    return VINF_SUCCESS;
+}
+
+
 
 /**
  * Links a new RAM range into the list.

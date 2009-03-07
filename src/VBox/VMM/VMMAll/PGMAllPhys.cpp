@@ -1537,19 +1537,11 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
             size_t cb = pRam->GCPhys - GCPhys;
             if (cb >= cbRead)
             {
-#if 0 /** @todo enable this later. */
                 memset(pvBuf, 0xff, cbRead);
-#else
-                memset(pvBuf, 0, cbRead);
-#endif
                 break;
             }
 
-#if 0 /** @todo enable this later. */
             memset(pvBuf, 0xff, cb);
-#else
-            memset(pvBuf, 0, cb);
-#endif
             cbRead -= cb;
             pvBuf   = (char *)pvBuf + cb;
             GCPhys += cb;
@@ -2582,6 +2574,7 @@ l_End:
 
 #endif /* Old PGMPhysWrite */
 
+
 /**
  * Read from guest physical memory by GC physical address, bypassing
  * MMIO and access handlers.
@@ -3256,6 +3249,400 @@ VMMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
     return TRPMRaiseXcptErrCR2(pVM, pCtxCore, X86_XCPT_PF, uErr, GCPtrSrc);
 }
 
-/// @todo VMMDECL(int) PGMPhysInterpretedWrite(PVM pVM, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
+
+/**
+ * Performs a read of guest virtual memory for instruction emulation.
+ *
+ * This will check permissions, raise exceptions and update the access bits.
+ *
+ * The current implementation will bypass all access handlers. It may later be
+ * changed to at least respect MMIO.
+ *
+ *
+ * @returns VBox status code suitable to scheduling.
+ * @retval  VINF_SUCCESS if the read was performed successfully.
+ * @retval  VINF_EM_RAW_GUEST_TRAP if an exception was raised but not dispatched yet.
+ * @retval  VINF_TRPM_XCPT_DISPATCHED if an exception was raised and dispatched.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pCtxCore    The context core.
+ * @param   pvDst       Where to put the bytes we've read.
+ * @param   GCPtrSrc    The source address.
+ * @param   cb          The number of bytes to read. Not more than a page.
+ * @param   fRaiseTrap  If set the trap will be raised on as per spec, if clear
+ *                      an appropriate error status will be returned (no
+ *                      informational at all).
+ *
+ *
+ * @remarks Takes the PGM lock.
+ * @remarks A page fault on the 2nd page of the access will be raised without
+ *          writing the bits on the first page since we're ASSUMING that the
+ *          caller is emulating an instruction access.
+ * @remarks This function will dynamically map physical pages in GC. This may
+ *          unmap mappings done by the caller. Be careful!
+ */
+VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCUINTPTR GCPtrSrc, size_t cb, bool fRaiseTrap)
+{
+    Assert(cb <= PAGE_SIZE);
+
+    /*
+     * 1. Translate virtual to physical. This may fault.
+     * 2. Map the physical address.
+     * 3. Do the read operation.
+     * 4. Set access bits if required.
+     */
+    int rc;
+    unsigned cb1 = PAGE_SIZE - (GCPtrSrc & PAGE_OFFSET_MASK);
+    if (cb <= cb1)
+    {
+        /*
+         * Not crossing pages.
+         */
+        RTGCPHYS    GCPhys;
+        uint64_t    fFlags;
+        rc = PGM_GST_PFN(GetPage,pVM)(pVM, GCPtrSrc, &fFlags, &GCPhys);
+        if (RT_SUCCESS(rc))
+        {
+            if (1) /** @todo we should check reserved bits ... */
+            {
+                const void *pvSrc;
+                PGMPAGEMAPLOCK Lock;
+                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, &pvSrc, &Lock);
+                switch (rc)
+                {
+                    case VINF_SUCCESS:
+                        Log(("PGMPhysInterpretedReadNoHandlers: pvDst=%p pvSrc=%p (%RGv) cb=%d\n",
+                               pvDst, (const uint8_t *)pvSrc + (GCPtrSrc & PAGE_OFFSET_MASK), GCPtrSrc, cb));
+                        memcpy(pvDst, (const uint8_t *)pvSrc + (GCPtrSrc & PAGE_OFFSET_MASK), cb);
+                        break;
+                    case VERR_PGM_PHYS_PAGE_RESERVED:
+                    case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
+                        memset(pvDst, 0xff, cb);
+                        break;
+                    default:
+                        AssertMsgFailed(("%Rrc\n", rc));
+                        AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                        return rc;
+                }
+                PGMPhysReleasePageMappingLock(pVM, &Lock);
+
+                if (!(fFlags & X86_PTE_A))
+                {
+                    /** @todo access bit emulation isn't 100% correct. */
+                    rc = PGM_GST_PFN(ModifyPage,pVM)(pVM, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                    AssertRC(rc);
+                }
+                return VINF_SUCCESS;
+            }
+        }
+    }
+    else
+    {
+        /*
+         * Crosses pages.
+         */
+        size_t      cb2 = cb - cb1;
+        uint64_t    fFlags1;
+        RTGCPHYS    GCPhys1;
+        uint64_t    fFlags2;
+        RTGCPHYS    GCPhys2;
+        rc = PGM_GST_PFN(GetPage,pVM)(pVM, GCPtrSrc, &fFlags1, &GCPhys1);
+        if (RT_SUCCESS(rc))
+        {
+            rc = PGM_GST_PFN(GetPage,pVM)(pVM, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
+            if (RT_SUCCESS(rc))
+            {
+                if (1) /** @todo we should check reserved bits ... */
+                {
+                    const void *pvSrc;
+                    PGMPAGEMAPLOCK Lock;
+                    rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys1, &pvSrc, &Lock);
+                    switch (rc)
+                    {
+                        case VINF_SUCCESS:
+                            Log(("PGMPhysInterpretedReadNoHandlers: pvDst=%p pvSrc=%p (%RGv) cb=%d [2]\n",
+                                   pvDst, (const uint8_t *)pvSrc + (GCPtrSrc & PAGE_OFFSET_MASK), GCPtrSrc, cb1));
+                            memcpy(pvDst, (const uint8_t *)pvSrc + (GCPtrSrc & PAGE_OFFSET_MASK), cb1);
+                            PGMPhysReleasePageMappingLock(pVM, &Lock);
+                            break;
+                        case VERR_PGM_PHYS_PAGE_RESERVED:
+                        case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
+                            memset(pvDst, 0xff, cb1);
+                            break;
+                        default:
+                            AssertMsgFailed(("%Rrc\n", rc));
+                            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                            return rc;
+                    }
+
+                    rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys2, &pvSrc, &Lock);
+                    switch (rc)
+                    {
+                        case VINF_SUCCESS:
+                            memcpy((uint8_t *)pvDst + cb1, pvSrc, cb2);
+                            PGMPhysReleasePageMappingLock(pVM, &Lock);
+                            break;
+                        case VERR_PGM_PHYS_PAGE_RESERVED:
+                        case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
+                            memset((uint8_t *)pvDst + cb1, 0xff, cb2);
+                            break;
+                        default:
+                            AssertMsgFailed(("%Rrc\n", rc));
+                            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                            return rc;
+                    }
+
+                    if (!(fFlags1 & X86_PTE_A))
+                    {
+                        rc = PGM_GST_PFN(ModifyPage,pVM)(pVM, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                        AssertRC(rc);
+                    }
+                    if (!(fFlags2 & X86_PTE_A))
+                    {
+                        rc = PGM_GST_PFN(ModifyPage,pVM)(pVM, GCPtrSrc + cb1, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                        AssertRC(rc);
+                    }
+                    return VINF_SUCCESS;
+                }
+                /* sort out which page */
+            }
+            else
+                GCPtrSrc += cb1; /* fault on 2nd page */
+        }
+    }
+
+    /*
+     * Raise a #PF if we're allowed to do that.
+     */
+    /* Calc the error bits. */
+    uint32_t cpl = CPUMGetGuestCPL(pVM, pCtxCore);
+    uint32_t uErr;
+    switch (rc)
+    {
+        case VINF_SUCCESS:
+            uErr = (cpl >= 2) ? X86_TRAP_PF_RSVD | X86_TRAP_PF_US : X86_TRAP_PF_RSVD;
+            rc = VERR_ACCESS_DENIED;
+            break;
+
+        case VERR_PAGE_NOT_PRESENT:
+        case VERR_PAGE_TABLE_NOT_PRESENT:
+            uErr = (cpl >= 2) ? X86_TRAP_PF_US : 0;
+            break;
+
+        default:
+            AssertMsgFailed(("rc=%Rrc GCPtrSrc=%RGv cb=%#x\n", rc, GCPtrSrc, cb));
+            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+            return rc;
+    }
+    if (fRaiseTrap)
+    {
+        Log(("PGMPhysInterpretedReadNoHandlers: GCPtrSrc=%RGv cb=%#x -> Raised #PF(%#x)\n", GCPtrSrc, cb, uErr));
+        return TRPMRaiseXcptErrCR2(pVM, pCtxCore, X86_XCPT_PF, uErr, GCPtrSrc);
+    }
+    Log(("PGMPhysInterpretedReadNoHandlers: GCPtrSrc=%RGv cb=%#x -> #PF(%#x) [!raised]\n", GCPtrSrc, cb, uErr));
+    return rc;
+}
+
+
+/**
+ * Performs a write to guest virtual memory for instruction emulation.
+ *
+ * This will check permissions, raise exceptions and update the dirty and access
+ * bits.
+ *
+ * @returns VBox status code suitable to scheduling.
+ * @retval  VINF_SUCCESS if the read was performed successfully.
+ * @retval  VINF_EM_RAW_GUEST_TRAP if an exception was raised but not dispatched yet.
+ * @retval  VINF_TRPM_XCPT_DISPATCHED if an exception was raised and dispatched.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pCtxCore    The context core.
+ * @param   GCPtrDst    The destination address.
+ * @param   pvSrc       What to write.
+ * @param   cb          The number of bytes to write. Not more than a page.
+ * @param   fRaiseTrap  If set the trap will be raised on as per spec, if clear
+ *                      an appropriate error status will be returned (no
+ *                      informational at all).
+ *
+ * @remarks Takes the PGM lock.
+ * @remarks A page fault on the 2nd page of the access will be raised without
+ *          writing the bits on the first page since we're ASSUMING that the
+ *          caller is emulating an instruction access.
+ * @remarks This function will dynamically map physical pages in GC. This may
+ *          unmap mappings done by the caller. Be careful!
+ */
+VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVM pVM, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb, bool fRaiseTrap)
+{
+    Assert(cb <= PAGE_SIZE);
+
+    /*
+     * 1. Translate virtual to physical. This may fault.
+     * 2. Map the physical address.
+     * 3. Do the write operation.
+     * 4. Set access bits if required.
+     */
+    int rc;
+    unsigned cb1 = PAGE_SIZE - (GCPtrDst & PAGE_OFFSET_MASK);
+    if (cb <= cb1)
+    {
+        /*
+         * Not crossing pages.
+         */
+        RTGCPHYS    GCPhys;
+        uint64_t    fFlags;
+        rc = PGM_GST_PFN(GetPage,pVM)(pVM, GCPtrDst, &fFlags, &GCPhys);
+        if (RT_SUCCESS(rc))
+        {
+            if (    (fFlags & X86_PTE_RW)                   /** @todo Also check reserved bits. */
+                ||  (   !(CPUMGetGuestCR0(pVM) & X86_CR0_WP)
+                     &&   CPUMGetGuestCPL(pVM, pCtxCore) <= 2) ) /** @todo it's 2, right? Check cpl check below as well. */
+            {
+                void *pvDst;
+                PGMPAGEMAPLOCK Lock;
+                rc = PGMPhysGCPhys2CCPtr(pVM, GCPhys, &pvDst, &Lock);
+                switch (rc)
+                {
+                    case VINF_SUCCESS:
+                        Log(("PGMPhysInterpretedWriteNoHandlers: pvDst=%p (%RGv) pvSrc=%p cb=%d\n",
+                               (uint8_t *)pvDst + (GCPtrDst & PAGE_OFFSET_MASK), GCPtrDst, pvSrc,  cb));
+                        memcpy((uint8_t *)pvDst + (GCPtrDst & PAGE_OFFSET_MASK), pvSrc, cb);
+                        PGMPhysReleasePageMappingLock(pVM, &Lock);
+                        break;
+                    case VERR_PGM_PHYS_PAGE_RESERVED:
+                    case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
+                        /* bit bucket */
+                        break;
+                    default:
+                        AssertMsgFailed(("%Rrc\n", rc));
+                        AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                        return rc;
+                }
+
+                if (!(fFlags & (X86_PTE_A | X86_PTE_D)))
+                {
+                    /** @todo dirty & access bit emulation isn't 100% correct. */
+                    rc = PGM_GST_PFN(ModifyPage,pVM)(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
+                    AssertRC(rc);
+                }
+                return VINF_SUCCESS;
+            }
+            rc = VERR_ACCESS_DENIED;
+        }
+    }
+    else
+    {
+        /*
+         * Crosses pages.
+         */
+        size_t      cb2 = cb - cb1;
+        uint64_t    fFlags1;
+        RTGCPHYS    GCPhys1;
+        uint64_t    fFlags2;
+        RTGCPHYS    GCPhys2;
+        rc = PGM_GST_PFN(GetPage,pVM)(pVM, GCPtrDst, &fFlags1, &GCPhys1);
+        if (RT_SUCCESS(rc))
+        {
+            rc = PGM_GST_PFN(GetPage,pVM)(pVM, GCPtrDst + cb1, &fFlags2, &GCPhys2);
+            if (RT_SUCCESS(rc))
+            {
+                if (    (   (fFlags1 & X86_PTE_RW)  /** @todo Also check reserved bits. */
+                         && (fFlags2 & X86_PTE_RW))
+                    ||  (   !(CPUMGetGuestCR0(pVM) & X86_CR0_WP)
+                         &&   CPUMGetGuestCPL(pVM, pCtxCore) <= 2) )
+                {
+                    void *pvDst;
+                    PGMPAGEMAPLOCK Lock;
+                    rc = PGMPhysGCPhys2CCPtr(pVM, GCPhys1, &pvDst, &Lock);
+                    switch (rc)
+                    {
+                        case VINF_SUCCESS:
+                            Log(("PGMPhysInterpretedWriteNoHandlers: pvDst=%p (%RGv) pvSrc=%p cb=%d\n",
+                                   (uint8_t *)pvDst + (GCPtrDst & PAGE_OFFSET_MASK), GCPtrDst, pvSrc, cb1));
+                            memcpy((uint8_t *)pvDst + (GCPtrDst & PAGE_OFFSET_MASK), pvSrc, cb1);
+                            PGMPhysReleasePageMappingLock(pVM, &Lock);
+                            break;
+                        case VERR_PGM_PHYS_PAGE_RESERVED:
+                        case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
+                            /* bit bucket */
+                            break;
+                        default:
+                            AssertMsgFailed(("%Rrc\n", rc));
+                            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                            return rc;
+                    }
+
+                    rc = PGMPhysGCPhys2CCPtr(pVM, GCPhys2, &pvDst, &Lock);
+                    switch (rc)
+                    {
+                        case VINF_SUCCESS:
+                            memcpy(pvDst, (const uint8_t *)pvSrc + cb1, cb2);
+                            PGMPhysReleasePageMappingLock(pVM, &Lock);
+                            break;
+                        case VERR_PGM_PHYS_PAGE_RESERVED:
+                        case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
+                            /* bit bucket */
+                            break;
+                        default:
+                            AssertMsgFailed(("%Rrc\n", rc));
+                            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                            return rc;
+                    }
+
+                    if (!(fFlags1 & (X86_PTE_A | X86_PTE_RW)))
+                    {
+                        rc = PGM_GST_PFN(ModifyPage,pVM)(pVM, GCPtrDst, 1, (X86_PTE_A | X86_PTE_RW), ~(uint64_t)(X86_PTE_A | X86_PTE_RW));
+                        AssertRC(rc);
+                    }
+                    if (!(fFlags2 & (X86_PTE_A | X86_PTE_RW)))
+                    {
+                        rc = PGM_GST_PFN(ModifyPage,pVM)(pVM, GCPtrDst + cb1, 1, (X86_PTE_A | X86_PTE_RW), ~(uint64_t)(X86_PTE_A | X86_PTE_RW));
+                        AssertRC(rc);
+                    }
+                    return VINF_SUCCESS;
+                }
+                if ((fFlags1 & (X86_PTE_RW)) == X86_PTE_RW)
+                    GCPtrDst += cb1; /* fault on the 2nd page. */
+                rc = VERR_ACCESS_DENIED;
+            }
+            else
+                GCPtrDst += cb1; /* fault on the 2nd page. */
+        }
+    }
+
+    /*
+     * Raise a #PF if we're allowed to do that.
+     */
+    /* Calc the error bits. */
+    uint32_t uErr;
+    uint32_t cpl = CPUMGetGuestCPL(pVM, pCtxCore);
+    switch (rc)
+    {
+        case VINF_SUCCESS:
+            uErr = (cpl >= 2) ? X86_TRAP_PF_RSVD | X86_TRAP_PF_US : X86_TRAP_PF_RSVD;
+            rc = VERR_ACCESS_DENIED;
+            break;
+
+        case VERR_ACCESS_DENIED:
+            uErr = (cpl >= 2) ? X86_TRAP_PF_RW | X86_TRAP_PF_US : X86_TRAP_PF_RW;
+            break;
+
+        case VERR_PAGE_NOT_PRESENT:
+        case VERR_PAGE_TABLE_NOT_PRESENT:
+            uErr = (cpl >= 2) ? X86_TRAP_PF_US : 0;
+            break;
+
+        default:
+            AssertMsgFailed(("rc=%Rrc GCPtrDst=%RGv cb=%#x\n", rc, GCPtrDst, cb));
+            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+            return rc;
+    }
+    if (fRaiseTrap)
+    {
+        Log(("PGMPhysInterpretedWriteNoHandlers: GCPtrDst=%RGv cb=%#x -> Raised #PF(%#x)\n", GCPtrDst, cb, uErr));
+        return TRPMRaiseXcptErrCR2(pVM, pCtxCore, X86_XCPT_PF, uErr, GCPtrDst);
+    }
+    Log(("PGMPhysInterpretedWriteNoHandlers: GCPtrDst=%RGv cb=%#x -> #PF(%#x) [!raised]\n", GCPtrDst, cb, uErr));
+    return rc;
+}
 
 
