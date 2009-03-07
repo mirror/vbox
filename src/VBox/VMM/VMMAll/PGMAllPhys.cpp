@@ -1408,43 +1408,92 @@ static void pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *p
 {
     /*
      * The most frequent access here is MMIO and shadowed ROM.
-     *
-     * The current code ASSUMES all these access handlers are page sized
-     * and that we do NOT use any virtual ones.
+     * The current code ASSUMES all these access handlers covers full pages!
      */
-    if (    PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_ALL
-        &&  PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) != PGM_PAGE_HNDL_VIRT_STATE_ALL)
+
+    /*
+     * Whatever we do we need the source page, map it first.
+     */
+    const void *pvSrc = NULL;
+    int         rc    = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvSrc);
+    if (RT_FAILURE(rc))
+    {
+        AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternalReadOnly failed on %RGp / %R[pgmpage] -> %Rrc\n",
+                               GCPhys, pPage, rc));
+        memset(pvBuf, 0xff, cb);
+        return;
+    }
+    rc = VINF_PGM_HANDLER_DO_DEFAULT;
+
+    /*
+     * Deal with any physical handlers.
+     */
+    PPGMPHYSHANDLER pPhys = NULL;
+    if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_ALL)
     {
 #ifdef IN_RING3
-        PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
-        AssertReleaseMsg(pCur, ("GCPhys=%RGp cb=%#x\n", GCPhys, cb));
-        Assert(GCPhys >= pCur->Core.Key && GCPhys <= pCur->Core.KeyLast);
-        Assert(pCur->CTX_SUFF(pfnHandler));
+        PPGMPHYSHANDLER pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+        AssertReleaseMsg(pPhys, ("GCPhys=%RGp cb=%#x\n", GCPhys, cb));
+        Assert(GCPhys >= pPhys->Core.Key && GCPhys <= pPhys->Core.KeyLast);
+        Assert((pPhys->Core.Key     & PAGE_OFFSET_MASK) == 0);
+        Assert((pPhys->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
+        Assert(pPhys->CTX_SUFF(pfnHandler));
 
-        const void *pvSrc;
-        int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvSrc);
-        if (RT_SUCCESS(rc))
-        {
-            STAM_PROFILE_START(&pCur->Stat, h);
-            int rc = pCur->CTX_SUFF(pfnHandler)(pVM, GCPhys, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, pCur->CTX_SUFF(pvUser));
-            STAM_PROFILE_STOP(&pCur->Stat, h);
-            if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
-                memcpy(pvBuf, pvSrc, cb);
-            else
-                AssertLogRelMsg(rc == VINF_SUCCESS, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys));
-        }
-        else
-        {
-            AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternalReadOnly failed on %RGp / %R[pgmpage] -> %Rrc\n",
-                                   GCPhys, pPage, rc));
-            memset(pvBuf, 0xff, cb);
-        }
+        Log5(("pgmPhysReadHandler: GCPhys=%RGp cb=%#x pPage=%R[pgmpage] phys %s\n", GCPhys, cb, pPage, R3STRING(pPhys->pszDesc) ));
+        STAM_PROFILE_START(&pPhys->Stat, h);
+        rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, pPhys->CTX_SUFF(pvUser));
+        STAM_PROFILE_STOP(&pPhys->Stat, h);
+        AssertLogRelMsg(rc == VINF_SUCCESS || rc == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys));
 #else
         AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cb=%#x\n", GCPhys, cb));
 #endif
     }
-    else
-        AssertReleaseMsgFailed(("ALL access virtual handlers are not implemented here\n"));
+
+    /*
+     * Deal with any virtual handlers.
+     */
+    if (PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) == PGM_PAGE_HNDL_VIRT_STATE_ALL)
+    {
+        unsigned        iPage;
+        PPGMVIRTHANDLER pVirt;
+
+        int rc2 = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys, &pVirt, &iPage);
+        AssertReleaseMsg(RT_SUCCESS(rc2), ("GCPhys=%RGp cb=%#x rc2=%Rrc\n", GCPhys, cb, rc2));
+        Assert((pVirt->Core.Key     & PAGE_OFFSET_MASK) == 0);
+        Assert((pVirt->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
+        Assert(GCPhys >= pVirt->aPhysToVirt[iPage].Core.Key && GCPhys <= pVirt->aPhysToVirt[iPage].Core.KeyLast);
+
+#ifdef IN_RING3
+        rc = VINF_PGM_HANDLER_DO_DEFAULT;
+        if (pVirt->pfnHandlerR3)
+        {
+            if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) != PGM_PAGE_HNDL_PHYS_STATE_ALL)
+                Log5(("pgmPhysWriteHandler: GCPhys=%RGp cb=%#x pPage=%R[pgmpage] virt %s\n", GCPhys, cb, pPage, R3STRING(pVirt->pszDesc) ));
+            else
+                Log(("pgmPhysWriteHandler: GCPhys=%RGp cb=%#x pPage=%R[pgmpage] phys/virt %s/%s\n", GCPhys, cb, pPage, R3STRING(pVirt->pszDesc), R3STRING(pPhys->pszDesc) ));
+            RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pVirt->Core.Key & PAGE_BASE_GC_MASK)
+                              + (iPage << PAGE_SHIFT)
+                              + (GCPhys & PAGE_OFFSET_MASK);
+
+            STAM_PROFILE_START(&pVirt->Stat, h);
+            rc2 = pVirt->CTX_SUFF(pfnHandler)(pVM, GCPtr, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, /*pVirt->CTX_SUFF(pvUser)*/ NULL);
+            STAM_PROFILE_STOP(&pVirt->Stat, h);
+            if (rc2 == VINF_SUCCESS)
+                rc = VINF_SUCCESS;
+            AssertLogRelMsg(rc == VINF_SUCCESS || rc == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pVirt->pszDesc));
+        }
+        else
+            Log5(("pgmPhysWriteHandler: GCPhys=%RGp cb=%#x pPage=%R[pgmpage] virt %s [no handler]\n", GCPhys, cb, pPage, R3STRING(pVirt->pszDesc) ));
+#else
+        AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cb=%#x\n", GCPhys, cb));
+#endif
+    }
+
+    /*
+     * Take the default action.
+     */
+    if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
+        memcpy(pvBuf, pvSrc, cb);
 }
 
 

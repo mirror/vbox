@@ -297,7 +297,10 @@ VMMDECL(int) PGMR3HandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
     switch (enmType)
     {
         case PGMVIRTHANDLERTYPE_ALL:
-            AssertReleaseMsgFailedReturn(("PGMVIRTHANDLERTYPE_ALL: not implemented\n"), VERR_NOT_IMPLEMENTED);
+            AssertReleaseMsgReturn(   (GCPtr     & PAGE_OFFSET_MASK) == 0
+                                   && (GCPtrLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK,
+                                   ("PGMVIRTHANDLERTYPE_ALL: GCPtr=%RGv GCPtrLast=%RGv\n", GCPtr, GCPtrLast),
+                                   VERR_NOT_IMPLEMENTED);
             break;
         case PGMVIRTHANDLERTYPE_WRITE:
             if (!pfnHandlerR3)
