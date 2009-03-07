@@ -2109,12 +2109,18 @@ static int netIfListHostAdapters(std::list <ComObjPtr <HostNetworkInterface> > &
     return VINF_SUCCESS;
 }
 
-int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *)
+int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *pInfo)
 {
 #ifndef VBOX_WITH_NETFLT
     return VERR_NOT_IMPLEMENTED;
 #else
-    return VERR_NOT_IMPLEMENTED;
+    Bstr name;
+    HRESULT hr = pIf->COMGETTER(Name)(name.asOutParam());
+    if(SUCCEEDED(hr))
+    {
+        return collectNetIfInfo(name, pInfo);
+    }
+    return VERR_GENERAL_FAILURE;
 #endif
 }
 
