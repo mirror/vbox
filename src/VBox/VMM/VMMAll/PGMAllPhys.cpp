@@ -1464,7 +1464,6 @@ static void pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *p
         Assert(GCPhys >= pVirt->aPhysToVirt[iPage].Core.Key && GCPhys <= pVirt->aPhysToVirt[iPage].Core.KeyLast);
 
 #ifdef IN_RING3
-        rc = VINF_PGM_HANDLER_DO_DEFAULT;
         if (pVirt->pfnHandlerR3)
         {
             if (!pPhys)
