@@ -2089,7 +2089,7 @@ int pgmLock(PVM pVM)
     if (rc == VERR_SEM_BUSY)
         rc = VMMR0CallHost(pVM, VMMCALLHOST_PGM_LOCK, 0);
 #endif
-    AssertRC(rc);
+    AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
     return rc;
 }
 

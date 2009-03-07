@@ -2993,6 +2993,95 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
 #endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
 /**
+ * Flushes all shadow page table mappings of the given guest page.
+ *
+ * This is typically called when the host page backing the guest one has been
+ * replaced or when the page protection was changed due to an access handler.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if all references has been successfully cleared.
+ * @retval  VINF_PGM_GCPHYS_ALIASED if we're better off with a CR3 sync and
+ *          a page pool cleaning.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pPhysPage   The guest page in question.
+ * @param   pfFlushTLBs This is set to @a true if the shadow TLBs should be
+ *                      flushed, it is NOT touched if this isn't necessary.
+ *                      The caller MUST initialized this to @a false.
+ */
+int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
+{
+    int rc = VINF_SUCCESS;
+#ifdef PGMPOOL_WITH_GCPHYS_TRACKING
+    const uint16_t u16 = PGM_PAGE_GET_TRACKING(pPhysPage);
+    if (u16)
+    {
+# ifdef VBOX_WITH_NEW_PHYS_CODE
+        /*
+         * The zero page is currently screwing up the tracking and we'll
+         * have to flush the whole shebang. Unless VBOX_WITH_NEW_LAZY_PAGE_ALLOC
+         * is defined, zero pages won't normally be mapped. Some kind of solution
+         * will be needed for this problem of course, but it will have to wait...
+         */
+        if (PGM_PAGE_IS_ZERO(pPhysPage))
+            rc = VINF_PGM_GCPHYS_ALIASED;
+        else
+# endif
+        {
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+            /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow and
+               pgmPoolTrackFlushGCPhysPTs will/may kill the pool otherwise. */
+            PVMCPU pVCpu = VMMGetCpu(pVM);
+            uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+# endif
+
+            if (PGMPOOL_TD_GET_CREFS(u16) != PGMPOOL_TD_CREFS_PHYSEXT)
+                pgmPoolTrackFlushGCPhysPT(pVM,
+                                          pPhysPage,
+                                          PGMPOOL_TD_GET_IDX(u16),
+                                          PGMPOOL_TD_GET_CREFS(u16));
+            else if (u16 != PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED))
+                pgmPoolTrackFlushGCPhysPTs(pVM, pPhysPage, PGMPOOL_TD_GET_IDX(u16));
+            else
+                rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPhysPage);
+            *pfFlushTLBs = true;
+
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+            PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+# endif
+        }
+    }
+
+#elif defined(PGMPOOL_WITH_CACHE)
+# ifdef VBOX_WITH_NEW_PHYS_CODE
+    if (PGM_PAGE_IS_ZERO(pPhysPage))
+        rc = VINF_PGM_GCPHYS_ALIASED;
+    else
+# endif
+    {
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow kill the pool otherwise. */
+        PVMCPU pVCpu = VMMGetCpu(pVM);
+        uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+# endif
+        rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPhysPage);
+        if (rc == VINF_SUCCESS)
+            *pfFlushTLBs = true;
+    }
+
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+# endif
+
+#else
+    rc = VINF_PGM_GCPHYS_ALIASED;
+#endif
+
+    return rc;
+}
+
+
+/**
  * Scans all shadow page tables for mappings of a physical page.
  *
  * This may be slow, but it's most likely more efficient than cleaning

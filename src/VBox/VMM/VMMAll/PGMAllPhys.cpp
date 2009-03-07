@@ -344,6 +344,7 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
  *
  * @returns The following VBox status codes.
  * @retval  VINF_SUCCESS on success, pPage is modified.
+ * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
  * @retval  VERR_EM_NO_MEMORY if we're totally out of memory.
  *
  * @todo    Propagate VERR_EM_NO_MEMORY up the call tree.
@@ -367,16 +368,47 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     LogFlow(("pgmPhysAllocPage: %R[pgmpage] %RGp\n", pPage, GCPhys));
 
     /*
+     * Prereqs.
+     */
+    Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
+    AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%R[pgmpage] %RGp\n", pPage, GCPhys));
+    Assert(!PGM_PAGE_IS_MMIO(pPage));
+
+
+    /*
+     * Flush any shadow page table mappings of the page.
+     * When VBOX_WITH_NEW_LAZY_PAGE_ALLOC isn't defined, there shouldn't be any.
+     */
+    bool fFlushTLBs = false;
+    int rc = pgmPoolTrackFlushGCPhys(pVM, pPage, &fFlushTLBs);
+    if (rc == VINF_SUCCESS)
+        /* nothing */;
+    else if (rc == VINF_PGM_GCPHYS_ALIASED)
+    {
+        pVM->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
+        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        rc = VINF_PGM_SYNC_CR3;
+    }
+    else
+    {
+        AssertRCReturn(rc, rc);
+        AssertMsgFailedReturn(("%Rrc\n", rc), VERR_INTERNAL_ERROR);
+    }
+
+    /*
      * Ensure that we've got a page handy, take it and use it.
      */
-    int rc = pgmPhysEnsureHandyPage(pVM);
-    if (RT_FAILURE(rc))
+    int rc2 = pgmPhysEnsureHandyPage(pVM);
+    if (RT_FAILURE(rc2))
     {
-        Assert(rc == VERR_EM_NO_MEMORY);
-        return rc;
+        if (fFlushTLBs)
+            PGM_INVL_GUEST_TLBS();
+        Assert(rc2 == VERR_EM_NO_MEMORY);
+        return rc2;
     }
+    /* re-assert preconditions since pgmPhysEnsureHandyPage may do a context switch. */
     Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
-    AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%d %RGp\n", PGM_PAGE_GET_STATE(pPage), GCPhys));
+    AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%R[pgmpage] %RGp\n", pPage, GCPhys));
     Assert(!PGM_PAGE_IS_MMIO(pPage));
 
     uint32_t iHandyPage = --pVM->pgm.s.cHandyPages;
@@ -423,7 +455,10 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     PGM_PAGE_SET_PAGEID(pPage, pVM->pgm.s.aHandyPages[iHandyPage].idPage);
     PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
 
-    return VINF_SUCCESS;
+    if (    fFlushTLBs
+        &&  rc != VINF_PGM_GCPHYS_ALIASED)
+        PGM_INVL_GUEST_TLBS();
+    return rc;
 }
 
 
@@ -432,6 +467,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
+ * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
  * @param   pVM         The VM address.
@@ -472,6 +508,7 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
+ * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
  * @param   pVM         The VM address.
@@ -823,6 +860,7 @@ int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *
         rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
         if (RT_FAILURE(rc))
             return rc;
+        AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 /* not returned */, ("%Rrc\n", rc));
     }
     Assert(PGM_PAGE_GET_HCPHYS(pPage) != 0);
 
@@ -928,6 +966,8 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
 #else
             pLock->u32Dummy = UINT32_MAX;
 #endif
+            AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 /* not returned */, ("%Rrc\n", rc));
+            rc = VINF_SUCCESS;
         }
     }
 
@@ -951,7 +991,10 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
         {
             rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
             if (RT_SUCCESS(rc))
+            {
+                AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 /* not returned */, ("%Rrc\n", rc));
                 rc = pgmPhysPageQueryTlbeWithPage(&pVM->pgm.s, pPage, GCPhys, &pTlbe);
+            }
         }
         if (RT_SUCCESS(rc))
         {
