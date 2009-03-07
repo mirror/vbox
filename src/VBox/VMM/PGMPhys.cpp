@@ -519,6 +519,10 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     while (iPage-- > 0)
         PGM_PAGE_INIT_ZERO(&pNew->aPages[iPage], pVM, PGMPAGETYPE_RAM);
 
+    /* Update the page count stats. */
+    pVM->pgm.s.cZeroPages += cPages;
+    pVM->pgm.s.cAllPages  += cPages;
+
     /*
      * Insert the new RAM range.
      */
@@ -784,6 +788,10 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
             PGM_PAGE_INIT_ZERO_REAL(&pNew->aPages[iPage], pVM, PGMPAGETYPE_MMIO);
         Assert(PGM_PAGE_GET_TYPE(&pNew->aPages[0]) == PGMPAGETYPE_MMIO);
 
+        /* update the page count stats. */
+        pVM->pgm.s.cZeroPages += cPages;
+        pVM->pgm.s.cAllPages  += cPages;
+
         /* link it */
         pgmR3PhysLinkRamRange(pVM, pNew, pRamPrev);
     }
@@ -802,6 +810,8 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
         pgmR3PhysUnlinkRamRange2(pVM, pNew, pRamPrev);
         pNew->cb = pNew->GCPhys = pNew->GCPhysLast = NIL_RTGCPHYS;
         MMHyperFree(pVM, pRam);
+        pVM->pgm.s.cZeroPages -= cb >> PAGE_SHIFT;
+        pVM->pgm.s.cAllPages  -= cb >> PAGE_SHIFT;
     }
 
     return rc;
@@ -853,8 +863,10 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                         /*|| not-out-of-action later */)
                     {
                         fAllMMIO = false;
+                        Assert(PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO2_ALIAS_MMIO);
                         break;
                     }
+                    Assert(PGM_PAGE_IS_ZERO(pPage));
                     pPage++;
                 }
 
@@ -869,6 +881,8 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                     pgmR3PhysUnlinkRamRange2(pVM, pRam, pRamPrev);
                     pRam->cb = pRam->GCPhys = pRam->GCPhysLast = NIL_RTGCPHYS;
                     MMHyperFree(pVM, pRam);
+                    pVM->pgm.s.cAllPages -= pRam->cb >> PAGE_SHIFT;
+                    pVM->pgm.s.cZeroPages -= pRam->cb >> PAGE_SHIFT;
                 }
                 break;
             }
@@ -1002,6 +1016,10 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
                               PGMPAGETYPE_MMIO2, PGM_PAGE_STATE_ALLOCATED);
             }
 
+            /* update page count stats */
+            pVM->pgm.s.cAllPages     += cPages;
+            pVM->pgm.s.cPrivatePages += cPages;
+
             /*
              * Link it into the list.
              * Since there is no particular order, just push it.
@@ -1083,7 +1101,8 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
 
-            rc2 = MMR3AdjustFixedReservation(pVM, -(int32_t)(pCur->RamRange.cb >> PAGE_SHIFT), pCur->RamRange.pszDesc);
+            uint32_t const cPages = pCur->RamRange.cb >> PAGE_SHIFT;
+            rc2 = MMR3AdjustFixedReservation(pVM, -(int32_t)cPages, pCur->RamRange.pszDesc);
             AssertRC(rc2);
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
@@ -1095,6 +1114,11 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
                    || VMR3GetState(pVM) == VMSTATE_CREATING);
             /*rc = MMHyperFree(pVM, pCur);
             AssertRCReturn(rc, rc); - not safe, see the alloc call. */
+
+
+            /* update page count stats */
+            pVM->pgm.s.cAllPages     -= cPages;
+            pVM->pgm.s.cPrivatePages -= cPages;
 
             /* next */
             pCur = pNext;
@@ -1217,6 +1241,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
             PGM_PAGE_SET_TYPE(pPageDst, PGMPAGETYPE_MMIO2);
             PGM_PAGE_SET_STATE(pPageDst, PGM_PAGE_STATE_ALLOCATED);
 
+            pVM->pgm.s.cZeroPages--;
             GCPhys += PAGE_SIZE;
             pPageSrc++;
             pPageDst++;
@@ -1293,6 +1318,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
             PGM_PAGE_SET_STATE(pPageDst, PGM_PAGE_STATE_ZERO);
             PGM_PAGE_SET_PAGEID(pPageDst, NIL_GMM_PAGEID);
 
+            pVM->pgm.s.cZeroPages++;
             pPageDst++;
         }
     }
@@ -1609,6 +1635,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                     pRomPage->Virgin = *pPage;
                 }
 
+                pVM->pgm.s.cAllPages += cPages;
                 pgmR3PhysLinkRamRange(pVM, pRamNew, pRamPrev);
             }
             else
@@ -1625,7 +1652,11 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                 }
 
                 pRamNew = pRam;
+
+                pVM->pgm.s.cZeroPages -= cPages;
             }
+            pVM->pgm.s.cPrivatePages += cPages;
+
             pgmUnlock(pVM);
 
 
@@ -1702,6 +1733,10 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                         pPage->enmProt = PGMROMPROT_READ_ROM_WRITE_IGNORE;
                         PGM_PAGE_INIT_ZERO_REAL(&pPage->Shadow, pVM, PGMPAGETYPE_ROM_SHADOW);
                     }
+
+                    /* update the page count stats */
+                    pVM->pgm.s.cZeroPages += cPages;
+                    pVM->pgm.s.cAllPages  += cPages;
 
                     /*
                      * Insert the ROM range, tell REM and return successfully.
@@ -1860,7 +1895,7 @@ int pgmR3PhysRomReset(PVM pVM)
              * preallocation option. If not enabled, we'll just throw
              * out all the dirty pages and replace them by the zero page.
              */
-            if (1)///@todo !pVM->pgm.f.fRamPreAlloc)
+            if (!pVM->pgm.s.fRamPreAlloc)
             {
                 /* Count dirty shadow pages. */
                 uint32_t cDirty = 0;
@@ -1879,6 +1914,7 @@ int pgmR3PhysRomReset(PVM pVM)
                     for (iPage = 0; iPage < cPages; iPage++)
                         if (PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO)
                         {
+                            Assert(PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) == PGM_PAGE_STATE_ALLOCATED);
                             pReq->aPages[iReqPage].idPage = PGM_PAGE_GET_PAGEID(&pRom->aPages[iPage].Shadow);
                             iReqPage++;
                         }
@@ -1891,6 +1927,10 @@ int pgmR3PhysRomReset(PVM pVM)
                     for (iPage = 0; iPage < cPages; iPage++)
                         if (PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO)
                             PGM_PAGE_INIT_ZERO_REAL(&pRom->aPages[iPage].Shadow, pVM, PGMPAGETYPE_ROM_SHADOW);
+
+                    /* update the page count stats. */
+                    pVM->pgm.s.cPrivatePages -= cDirty;
+                    pVM->pgm.s.cZeroPages    += cDirty;
                 }
             }
             else
@@ -1898,6 +1938,8 @@ int pgmR3PhysRomReset(PVM pVM)
                 /* clear all the pages. */
                 for (uint32_t iPage = 0; iPage < cPages; iPage++)
                 {
+                    Assert(PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO);
+
                     const RTGCPHYS GCPhys = pRom->GCPhys + (iPage << PAGE_SHIFT);
                     rc = pgmPhysPageMakeWritable(pVM, &pRom->aPages[iPage].Shadow, GCPhys);
                     if (RT_FAILURE(rc))
@@ -2818,6 +2860,13 @@ static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPa
         AssertMsgFailed(("GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
         return VMSetError(pVM, VERR_PGM_PHYS_INVALID_PAGE_ID, RT_SRC_POS, "GCPhys=%RGp idPage=%#x", GCPhys, pPage);
     }
+
+    /* update page count stats. */
+    if (PGM_PAGE_IS_SHARED(pPage))
+        pVM->pgm.s.cSharedPages--;
+    else
+        pVM->pgm.s.cPrivatePages--;
+    pVM->pgm.s.cZeroPages++;
 
     /*
      * pPage = ZERO page.

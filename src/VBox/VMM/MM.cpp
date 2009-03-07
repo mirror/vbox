@@ -321,19 +321,19 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
      * Specifies the policy to use when reserving memory for this VM. The recognized
      * value is 'no overcommitment' (default). See GMMPOLICY.
      */
-    GMMOCPOLICY enmPolicy;
+    GMMOCPOLICY enmOcPolicy;
     char sz[64];
     rc = CFGMR3QueryString(CFGMR3GetRoot(pVM), "Policy", sz, sizeof(sz));
     if (RT_SUCCESS(rc))
     {
         if (    !RTStrICmp(sz, "no_oc")
             ||  !RTStrICmp(sz, "no overcommitment"))
-            enmPolicy = GMMOCPOLICY_NO_OC;
+            enmOcPolicy = GMMOCPOLICY_NO_OC;
         else
             return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "Unknown \"MM/Policy\" value \"%s\"", sz);
     }
     else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        enmPolicy = GMMOCPOLICY_NO_OC;
+        enmOcPolicy = GMMOCPOLICY_NO_OC;
     else
         AssertMsgRCReturn(rc, ("Configuration error: Failed to query string \"MM/Policy\", rc=%Rrc.\n", rc), rc);
 
@@ -363,15 +363,21 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     /*
      * Make the initial memory reservation with GMM.
      */
-    rc = GMMR3InitialReservation(pVM, cbRam >> PAGE_SHIFT, 1, 1, enmPolicy, enmPriority);
+    uint64_t cBasePages = (cbRam >> PAGE_SHIFT) + pVM->mm.s.cBasePages;
+    rc = GMMR3InitialReservation(pVM,
+                                 RT_MAX(cBasePages + pVM->mm.s.cHandyPages, 1),
+                                 RT_MAX(pVM->mm.s.cShadowPages, 1),
+                                 RT_MAX(pVM->mm.s.cFixedPages, 1),
+                                 enmOcPolicy,
+                                 enmPriority);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_GMM_MEMORY_RESERVATION_DECLINED)
             return VMSetError(pVM, rc, RT_SRC_POS,
-                              N_("Insufficient free memory to start the VM (cbRam=%#RX64 enmPolicy=%d enmPriority=%d)"),
-                              cbRam, enmPolicy, enmPriority);
+                              N_("Insufficient free memory to start the VM (cbRam=%#RX64 enmOcPolicy=%d enmPriority=%d)"),
+                              cbRam, enmOcPolicy, enmPriority);
         return VMSetError(pVM, rc, RT_SRC_POS, "GMMR3InitialReservation(,%#RX64,0,0,%d,%d)",
-                          cbRam >> PAGE_SHIFT, enmPolicy, enmPriority);
+                          cbRam >> PAGE_SHIFT, enmOcPolicy, enmPriority);
     }
 
     /*
@@ -408,6 +414,15 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
                  GCPhys += PGM_DYNAMIC_CHUNK_SIZE)
                 rc = PGM3PhysGrowRange(pVM, &GCPhys);
     }
+#endif
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    /*
+     * Enabled mmR3UpdateReservation here since we don't want the
+     * PGMR3PhysRegisterRam calls above mess things up.
+     */
+    pVM->mm.s.fDoneMMR3InitPaging = true;
+    AssertMsg(pVM->mm.s.cBasePages == cBasePages, ("%RX64 != %RX64\n", pVM->mm.s.cBasePages, cBasePages));
 #endif
 
     LogFlow(("MMR3InitPaging: returns %Rrc\n", rc));
@@ -602,7 +617,7 @@ int mmR3UpdateReservation(PVM pVM)
     VM_ASSERT_EMT(pVM);
     if (pVM->mm.s.fDoneMMR3InitPaging)
         return GMMR3UpdateReservation(pVM,
-                                      RT_MAX(pVM->mm.s.cBasePages, 1),
+                                      RT_MAX(pVM->mm.s.cBasePages + pVM->mm.s.cHandyPages, 1),
                                       RT_MAX(pVM->mm.s.cShadowPages, 1),
                                       RT_MAX(pVM->mm.s.cFixedPages, 1));
     return VINF_SUCCESS;
@@ -626,8 +641,36 @@ VMMR3DECL(int) MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages)
     int rc = mmR3UpdateReservation(pVM);
     if (RT_FAILURE(rc))
     {
-        VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to reserved physical memory for the RAM (%#RX64 -> %#RX64)"), cOld, pVM->mm.s.cBasePages);
+        VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to reserved physical memory for the RAM (%#RX64 -> %#RX64 + %#RX32)"),
+                   cOld, pVM->mm.s.cBasePages, pVM->mm.s.cHandyPages);
         pVM->mm.s.cBasePages = cOld;
+    }
+    return rc;
+}
+
+
+/**
+ * Interface for PGM to make reservations for handy pages in addition to the
+ * base memory.
+ *
+ * This can be called before MMR3InitPaging.
+ *
+ * @returns VBox status code. Will set VM error on failure.
+ * @param   pVM             The shared VM structure.
+ * @param   cHandyPages     The number of handy pages.
+ */
+VMMR3DECL(int) MMR3ReserveHandyPages(PVM pVM, uint32_t cHandyPages)
+{
+    AssertReturn(!pVM->mm.s.cHandyPages, VERR_WRONG_ORDER);
+
+    pVM->mm.s.cHandyPages = cHandyPages;
+    LogFlow(("MMR3ReserveHandyPages: %RU32 (base %RU64)\n", pVM->mm.s.cHandyPages, pVM->mm.s.cBasePages));
+    int rc = mmR3UpdateReservation(pVM);
+    if (RT_FAILURE(rc))
+    {
+        VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to reserved physical memory for the RAM (%#RX64 + %#RX32)"),
+                   pVM->mm.s.cBasePages, pVM->mm.s.cHandyPages);
+        pVM->mm.s.cHandyPages = 0;
     }
     return rc;
 }

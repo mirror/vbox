@@ -1254,6 +1254,15 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     PGMPhysInvalidatePageR0MapTLB(pVM);
     PGMPhysInvalidatePageGCMapTLB(pVM);
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    /*
+     * For the time being we sport a full set of handy pages in addition to the base
+     * memory to simplify things.
+     */
+    rc = MMR3ReserveHandyPages(pVM, RT_ELEMENTS(pVM->pgm.s.aHandyPages));
+    AssertRCReturn(rc, rc);
+#endif
+
     /*
      * Trees
      */
@@ -1621,6 +1630,7 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->cPrivatePages,                     STAMTYPE_U32,     "/PGM/Page/cPrivatePages",            STAMUNIT_OCCURENCES,     "The number of private pages.");
     STAM_REG(pVM, &pPGM->cSharedPages,                      STAMTYPE_U32,     "/PGM/Page/cSharedPages",             STAMUNIT_OCCURENCES,     "The number of shared pages.");
     STAM_REG(pVM, &pPGM->cZeroPages,                        STAMTYPE_U32,     "/PGM/Page/cZeroPages",               STAMUNIT_OCCURENCES,     "The number of zero backed pages.");
+    STAM_REG(pVM, &pPGM->cHandyPages,                       STAMTYPE_U32,     "/PGM/Page/cHandyPages",              STAMUNIT_OCCURENCES,     "The number of handy pages (not included in cAllPages).");
     STAM_REG(pVM, &pPGM->ChunkR3Map.c,                      STAMTYPE_U32,     "/PGM/ChunkR3Map/c",                      STAMUNIT_OCCURENCES, "Number of mapped chunks.");
     STAM_REG(pVM, &pPGM->ChunkR3Map.cMax,                   STAMTYPE_U32,     "/PGM/ChunkR3Map/cMax",                   STAMUNIT_OCCURENCES, "Maximum number of mapped chunks.");
 
@@ -1645,8 +1655,10 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatR3ResolveConflict,             STAMTYPE_PROFILE, "/PGM/R3/ResolveConflict",            STAMUNIT_TICKS_PER_CALL, "pgmR3SyncPTResolveConflict() profiling (includes the entire relocation).");
     STAM_REG(pVM, &pPGM->StatR3GuestPDWrite,                STAMTYPE_COUNTER, "/PGM/R3/PDWrite",                    STAMUNIT_OCCURENCES,     "The total number of times pgmHCGuestPDWriteHandler() was called.");
     STAM_REG(pVM, &pPGM->StatR3GuestPDWriteConflict,        STAMTYPE_COUNTER, "/PGM/R3/PDWriteConflict",            STAMUNIT_OCCURENCES,     "The number of times pgmHCGuestPDWriteHandler() detected a conflict.");
+#ifndef VBOX_WITH_NEW_PHYS_CODE
     STAM_REG(pVM, &pPGM->StatR3DynRamTotal,                 STAMTYPE_COUNTER, "/PGM/DynAlloc/TotalAlloc",           STAMUNIT_MEGABYTES,      "Allocated MBs of guest ram.");
     STAM_REG(pVM, &pPGM->StatR3DynRamGrow,                  STAMTYPE_COUNTER, "/PGM/DynAlloc/Grow",                 STAMUNIT_OCCURENCES,     "Nr of pgmr3PhysGrowRange calls.");
+#endif
 
     /* R0 only: */
     STAM_REG(pVM, &pPGM->StatR0DynMapMigrateInvlPg,         STAMTYPE_COUNTER, "/PGM/R0/DynMapMigrateInvlPg",        STAMUNIT_OCCURENCES,     "invlpg count in PGMDynMapMigrateAutoSet.");
