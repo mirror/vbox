@@ -421,6 +421,7 @@ size_t rtstrFormatType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
     char const *pszTypeEnd;
     char const *pszType;
     char        ch;
+    void       *pvValue = va_arg(*pArgs, void *);
 
     /*
      * Parse out the type.
@@ -453,16 +454,20 @@ size_t rtstrFormatType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
         PFNRTSTRFORMATTYPE pfnHandler = g_aTypes[i].pfnHandler;
 #endif
         void *pvUser = ASMAtomicReadPtr(&g_aTypes[i].pvUser);
-        void *pvValue = va_arg(*pArgs, void *);
+
+        rtstrFormatTypeReadUnlock();
 
         cch = pfnHandler(pfnOutput, pvArgOutput, g_aTypes[i].szType, pvValue, cchWidth, cchPrecision, fFlags, pvUser);
     }
     else
-        cch = 0;
+    {
+        rtstrFormatTypeReadUnlock();
 
-    rtstrFormatTypeReadUnlock();
+        cch  = pfnOutput(pvArgOutput, "<missing:%R[", sizeof("<missing:%R[") - 1);
+        cch += pfnOutput(pvArgOutput, pszType, pszTypeEnd - pszType);
+        cch += pfnOutput(pvArgOutput, "]>", sizeof("]>") - 1);
+    }
 
-    Assert(i >= 0);
     return cch;
 }
 
