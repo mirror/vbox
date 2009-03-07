@@ -355,7 +355,7 @@ DECLINLINE(int) emRamWrite(PVM pVM, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, con
         &&  (CPUMGetGuestCR0(pVM) & X86_CR0_WP))
         return VERR_ACCESS_DENIED;
 
-    PGMPhysWrite(pVM, GCPhys + ((RTGCUINTPTR)GCDest & PAGE_OFFSET_MASK), pSrc, cb);
+    PGMPhysWrite(pVM, GCPhys + ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK), pvSrc, cb);
     return VINF_SUCCESS;
 # else
     return PGMPhysWriteGCPtr(pVM, GCPtrDst, pvSrc, cb);
