@@ -398,7 +398,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
             PPGMPAGE pPage;
             rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(rc)) /** just handle the failure immediate (it returns) and make things easier to read. */
             {
                 if (   PGM_PAGE_HAS_ACTIVE_PHYSICAL_HANDLERS(pPage)
                     || PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage))
@@ -640,7 +640,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
             STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
 
-#  ifdef PGM_OUT_OF_SYNC_IN_GC
+#  ifdef PGM_OUT_OF_SYNC_IN_GC /** @todo remove this bugger. */
             /*
              * We are here only if page is present in Guest page tables and
              * trap is not handled by our handlers.
@@ -754,35 +754,41 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                     return VINF_SUCCESS;
                 }
             }
-            else
+            else /* uErr & X86_TRAP_PF_P: */
             {
-#   ifdef VBOX_WITH_NEW_PHYS_CODE
                 /*
-                 * Need to deal with these buggers somewhere...
-                 */
-                if (    PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
-                    &&  (uErr & X86_TRAP_PF_RW))
-                {
-                    Log(("PGM #PF: %RGp %R[pgmpage] uErr=%#x\n", GCPhys, pPage, uErr));
-                    AssertMsgFailed(("PGM #PF: %RGp %R[pgmpage] uErr=%#x\n", GCPhys, pPage, uErr));
-                }
-#   endif /* VBOX_WITH_NEW_PHYS_CODE */
-
-                /*
-                 * A side effect of not flushing global PDEs are out of sync pages due
+                 * Write protected pages is make writable when the guest makes the first
+                 * write to it. This happens for pages that are shared, write monitored
+                 * and not yet allocated.
+                 *
+                 * Also, a side effect of not flushing global PDEs are out of sync pages due
                  * to physical monitored regions, that are no longer valid.
-                 * Assume for now it only applies to the read/write flag
+                 * Assume for now it only applies to the read/write flag.
                  */
                 if (RT_SUCCESS(rc) && (uErr & X86_TRAP_PF_RW))
                 {
+#   ifdef VBOX_WITH_NEW_PHYS_CODE
+                    if (PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+                    {
+                        Log(("PGM #PF: Make writable: %RGp %R[pgmpage] pvFault=%RGp uErr=%#x\n",
+                             GCPhys, pPage, pvFault, uErr));
+                        rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, GCPhys);
+                        if (rc != VINF_SUCCESS)
+                        {
+                            AssertMsg(rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("%Rrc\n", rc));
+                            return rc;
+                        }
+                    }
+                    /// @todo count the above case; else
+#   endif /* VBOX_WITH_NEW_PHYS_CODE */
                     if (uErr & X86_TRAP_PF_US)
                         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncUser));
                     else /* supervisor */
                         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncSupervisor));
 
-
                     /*
-                     * Note: Do NOT use PGM_SYNC_NR_PAGES here. That only works if the page is not present, which is not true in this case.
+                     * Note: Do NOT use PGM_SYNC_NR_PAGES here. That only works if the
+                     *       page is not present, which is not true in this case.
                      */
                     rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, pvFault, 1, uErr);
                     if (RT_SUCCESS(rc))
@@ -861,7 +867,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
             STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeOutOfSync, c);
 #  endif /* PGM_OUT_OF_SYNC_IN_GC */
         }
-        else
+        else /* GCPhys == NIL_RTGCPHYS */
         {
             /*
              * Page not present in Guest OS or invalid page table address.
@@ -879,6 +885,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
              */
         }
     }
+    /* else: !present (guest) */
 
 
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
@@ -1481,6 +1488,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
+# ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
             /* Try make the page writable if necessary. */
             if (    PteSrc.n.u1Write
                 &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
@@ -1489,6 +1497,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                 rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, PteSrc.u & GST_PTE_PG_MASK);
                 AssertRC(rc);
             }
+# endif
 #endif
 
             /** @todo investiage PWT, PCD and PAT. */
@@ -1573,7 +1582,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                 &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
             {
                 PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet. */
-                Log3(("SyncPageWorker: write-protecting pPage=%R[pgmpage]at iPTDst=%d\n", pPage, iPTDst));
+                Log3(("SyncPageWorker: write-protecting %RGp pPage=%R[pgmpage]at iPTDst=%d\n", (RTGCPHYS)(PteSrc.u & X86_PTE_PAE_PG_MASK), pPage, iPTDst));
             }
 #endif
 
@@ -1863,6 +1872,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                 if (RT_SUCCESS(rc))
                 {
 # ifdef VBOX_WITH_NEW_PHYS_CODE
+#  ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
                     /* Try make the page writable if necessary. */
                     if (    PdeSrc.n.u1Write
                         &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
@@ -1871,6 +1881,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                         rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, GCPhys);
                         AssertRC(rc);
                     }
+#  endif
 # endif
 
                     /*
@@ -1898,7 +1909,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                         &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
                     {
                         PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet... */
-                        Log3(("SyncPage: write-protecting pPage=%R[pgmpage] at %RGv\n", pPage, GCPtrPage));
+                        Log3(("SyncPage: write-protecting %RGp pPage=%R[pgmpage] at %RGv\n", GCPhys, pPage, GCPtrPage));
                     }
 # endif
 
@@ -2760,6 +2771,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                         SHWPTE      PteDst;
 
 # ifdef VBOX_WITH_NEW_PHYS_CODE
+#  ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
                         /* Try make the page writable if necessary. */
                         if (    PteDstBase.n.u1Write
                             &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
@@ -2768,6 +2780,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                             rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, GCPhys);
                             AssertRCReturn(rc, rc);
                         }
+#  endif
 # else  /* !VBOX_WITH_NEW_PHYS_CODE */
                         /* Make sure the RAM has already been allocated. */
                         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)  /** @todo PAGE FLAGS */
@@ -2815,7 +2828,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                             &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
                         {
                             PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet... */
-                            Log3(("SyncPT: write-protecting pPage=%R[pgmpage] at %RGv\n", pPage, (RTGCPTR)(GCPtr | (iPTDst << SHW_PT_SHIFT))));
+                            Log3(("SyncPT: write-protecting %RGp pPage=%R[pgmpage] at %RGv\n", GCPhys, pPage, (RTGCPTR)(GCPtr | (iPTDst << SHW_PT_SHIFT))));
                         }
 # endif
 

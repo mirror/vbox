@@ -1551,13 +1551,16 @@ static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void
                     pgmUnlock(pVM);
                     return rc;
                 }
+                AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 /* returned */, ("%Rrc\n", rc));
             }
 
             void *pvDstPage;
             PPGMPAGEMAP pMapIgnored;
-            rc = pgmPhysPageMap(pVM, &pRomPage->Shadow, GCPhys & X86_PTE_PG_MASK, &pMapIgnored, &pvDstPage);
-            if (RT_SUCCESS(rc))
+            int rc2 = pgmPhysPageMap(pVM, &pRomPage->Shadow, GCPhys & X86_PTE_PG_MASK, &pMapIgnored, &pvDstPage);
+            if (RT_SUCCESS(rc2))
                 memcpy((uint8_t *)pvDstPage + (GCPhys & PAGE_OFFSET_MASK), pvBuf, cbBuf);
+            else
+                rc = rc2;
 
             pgmUnlock(pVM);
             return rc;
@@ -2664,6 +2667,8 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
         }
         if (RT_SUCCESS(rc))
         {
+            int rc2;
+
             /* Make sure what we return is writable. */
             if (fWritable && rc != VINF_PGM_PHYS_TLB_CATCH_WRITE)
                 switch (PGM_PAGE_GET_STATE(pPage))
@@ -2673,15 +2678,15 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
                     case PGM_PAGE_STATE_ZERO:
                     case PGM_PAGE_STATE_SHARED:
                     case PGM_PAGE_STATE_WRITE_MONITORED:
-                        rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
-                        AssertLogRelRCReturn(rc, rc);
+                        rc2 = pgmPhysPageMakeWritable(pVM, pPage, GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
+                        AssertLogRelRCReturn(rc2, rc2);
                         break;
                 }
 
             /* Get a ring-3 mapping of the address. */
             PPGMPAGER3MAPTLBE pTlbe;
-            int rc = pgmPhysPageQueryTlbe(&pVM->pgm.s, GCPhys, &pTlbe);
-            AssertLogRelRCReturn(rc, rc);
+            rc2 = pgmPhysPageQueryTlbe(&pVM->pgm.s, GCPhys, &pTlbe);
+            AssertLogRelRCReturn(rc2, rc2);
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
             /** @todo mapping/locking hell; this isn't horribly efficient since
              *        pgmPhysPageLoadIntoTlb will repeate the lookup we've done here. */

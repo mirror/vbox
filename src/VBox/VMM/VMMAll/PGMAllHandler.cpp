@@ -215,11 +215,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
      * mapping the page.
      */
     bool            fFlushTLBs = false;
-#if defined(PGMPOOL_WITH_GCPHYS_TRACKING) || defined(PGMPOOL_WITH_CACHE)
     int             rc = VINF_SUCCESS;
-#else
-    const int       rc = VINF_PGM_GCPHYS_ALIASED;
-#endif
     const unsigned  uState = pgmHandlerPhysicalCalcState(pCur);
     RTUINT          cPages = pCur->cPages;
     RTUINT          i = (pCur->Core.Key - pRam->GCPhys) >> PAGE_SHIFT;
@@ -247,46 +243,9 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState);
             Assert(PGM_PAGE_GET_HCPHYS(pPage));
 
-#ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-            const uint16_t u16 = PGM_PAGE_GET_TRACKING(&pRam->aPages[i]);
-            if (u16)
-            {
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-                /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow and pgmPoolTrackFlushGCPhysPTs
-                   will/may kill the pool otherwise. */
-                PVMCPU pVCpu = VMMGetCpu(pVM);
-                uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
-# endif
-                if (PGMPOOL_TD_GET_CREFS(u16) != PGMPOOL_TD_CREFS_PHYSEXT)
-                    pgmPoolTrackFlushGCPhysPT(pVM,
-                                              pPage,
-                                              PGMPOOL_TD_GET_IDX(u16),
-                                              PGMPOOL_TD_GET_CREFS(u16));
-                else if (u16 != PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED))
-                    pgmPoolTrackFlushGCPhysPTs(pVM, pPage, PGMPOOL_TD_GET_IDX(u16));
-                else
-                    rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPage);
-                fFlushTLBs = true;
-
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-                PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
-#endif
-            }
-
-#elif defined(PGMPOOL_WITH_CACHE)
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow kill the pool otherwise. */
-            PVMCPU pVCpu = VMMGetCpu(pVM);
-            uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
-# endif
-
-            rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPage);
-            fFlushTLBs = true;
-
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
-# endif
-#endif
+            int rc2 = pgmPoolTrackFlushGCPhys(pVM, pPage, &fFlushTLBs);
+            if (rc2 != VINF_SUCCESS && rc == VINF_SUCCESS)
+                rc = rc2;
         }
 
         /* next */
@@ -973,7 +932,15 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
              * and record that we've changed it. Only the physical page address would
              * need to be copied over. The aliased page would have to be MMIO2 ofc, since
              * RAM or ROM pages would require write sharing which is something we don't
-             * intend to implement just yet... */
+             * intend to implement just yet...
+             */
+
+            /*
+             * Note! This trick does only work reliably if the two pages are never ever
+             *       mapped in the same page table. If they are the page pool code will
+             *       be confused should either of them be flushed. See the special case
+             *       of zero page aliasing mentioned in #3170.
+             */
 
             PPGMPAGE pPageRemap;
             int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPageRemap, &pPageRemap);
