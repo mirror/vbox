@@ -1467,7 +1467,7 @@ static void pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *p
         rc = VINF_PGM_HANDLER_DO_DEFAULT;
         if (pVirt->pfnHandlerR3)
         {
-            if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) != PGM_PAGE_HNDL_PHYS_STATE_ALL)
+            if (!pPhys)
                 Log5(("pgmPhysWriteHandler: GCPhys=%RGp cb=%#x pPage=%R[pgmpage] virt %s\n", GCPhys, cb, pPage, R3STRING(pVirt->pszDesc) ));
             else
                 Log(("pgmPhysWriteHandler: GCPhys=%RGp cb=%#x pPage=%R[pgmpage] phys/virt %s/%s\n", GCPhys, cb, pPage, R3STRING(pVirt->pszDesc), R3STRING(pPhys->pszDesc) ));
