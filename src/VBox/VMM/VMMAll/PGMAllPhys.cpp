@@ -71,12 +71,12 @@
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument. Pointer to the ROM range structure.
  */
-VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
-    int rc;
+    int             rc;
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-    PPGMROMRANGE pRom = (PPGMROMRANGE)pvUser;
-    uint32_t iPage = GCPhysFault - pRom->GCPhys;
+    PPGMROMRANGE    pRom = (PPGMROMRANGE)pvUser;
+    uint32_t        iPage = (GCPhysFault - pRom->GCPhys) >> PAGE_SHIFT;
     Assert(iPage < (pRom->cb >> PAGE_SHIFT));
     switch (pRom->aPages[iPage].enmProt)
     {
@@ -1540,8 +1540,8 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                 memset(pvBuf, 0xff, cbRead);
                 break;
             }
-
             memset(pvBuf, 0xff, cb);
+
             cbRead -= cb;
             pvBuf   = (char *)pvBuf + cb;
             GCPhys += cb;
