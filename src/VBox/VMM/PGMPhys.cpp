@@ -2791,7 +2791,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
         {
             rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
             if (RT_FAILURE(rc))
-                SUPPageFreepvChunk, GMM_CHUNK_SIZE >> PAGE_SHIFT);
+                SUPPageFree(pvChunk, GMM_CHUNK_SIZE >> PAGE_SHIFT);
         }
         if (RT_SUCCESS(rc))
             rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
