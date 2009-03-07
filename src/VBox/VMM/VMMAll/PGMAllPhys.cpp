@@ -1479,7 +1479,7 @@ static void pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *p
             STAM_PROFILE_STOP(&pVirt->Stat, h);
             if (rc2 == VINF_SUCCESS)
                 rc = VINF_SUCCESS;
-            AssertLogRelMsg(rc == VINF_SUCCESS || rc == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pVirt->pszDesc));
+            AssertLogRelMsg(rc2 == VINF_SUCCESS || rc2 == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc2, GCPhys, pPage, pVirt->pszDesc));
         }
         else
             Log5(("pgmPhysWriteHandler: GCPhys=%RGp cb=%#x pPage=%R[pgmpage] virt %s [no handler]\n", GCPhys, cb, pPage, R3STRING(pVirt->pszDesc) ));
