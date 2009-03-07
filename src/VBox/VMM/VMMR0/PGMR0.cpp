@@ -67,7 +67,12 @@ VMMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM)
     Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
 
     uint32_t iFirst = pVM->pgm.s.cHandyPages;
-    AssertMsgReturn(iFirst <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), ("%d", iFirst), VERR_INTERNAL_ERROR);
+    if (iFirst > RT_ELEMENTS(pVM->pgm.s.aHandyPages))
+    {
+//        LogRel(("%d", iFirst));
+        return VERR_INTERNAL_ERROR;
+    }
+
     uint32_t cPages = RT_ELEMENTS(pVM->pgm.s.aHandyPages) - iFirst;
     if (!cPages)
         return VINF_SUCCESS;
@@ -86,6 +91,8 @@ VMMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM)
 
         pVM->pgm.s.cHandyPages = RT_ELEMENTS(pVM->pgm.s.aHandyPages);
     }
+//    else
+//        LogRel(("PGMR0PhysAllocateHandyPages: rc=%Rrc iFirst=%d cPages=%d\n", rc, iFirst, cPages));
     LogFlow(("PGMR0PhysAllocateHandyPages: cPages=%d rc=%Rrc\n", cPages, rc));
     return rc;
 }
