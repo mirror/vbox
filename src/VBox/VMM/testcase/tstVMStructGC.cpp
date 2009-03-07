@@ -224,6 +224,7 @@ int main()
     GEN_CHECK_OFF(MM, HCPhysDummyPage);
     GEN_CHECK_OFF(MM, cbRamBase);
     GEN_CHECK_OFF(MM, cBasePages);
+    GEN_CHECK_OFF(MM, cHandyPages);
     GEN_CHECK_OFF(MM, cShadowPages);
     GEN_CHECK_OFF(MM, cFixedPages);
     GEN_CHECK_SIZE(MMHYPERSTAT);
