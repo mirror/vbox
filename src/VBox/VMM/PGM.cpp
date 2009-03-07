@@ -2309,7 +2309,7 @@ VMMR3DECL(int) PGMR3TermCPU(PVM pVM)
 static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-    AssertReleaseFailed(); /** @todo */
+    AssertReleaseFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo */
 #else
     PPGM pPGM = &pVM->pgm.s;
 
@@ -2406,7 +2406,7 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-    AssertReleaseFailed(); /** @todo */
+    AssertReleaseFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo */
 #else
     /*
      * Validate version.
