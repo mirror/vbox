@@ -655,8 +655,8 @@ static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR 
     AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
     if (pVM->mm.s.offHyperNextStatic + cbAligned >= pVM->mm.s.cbHyperArea) /* don't use the last page, it's a fence. */
     {
-        AssertMsgFailed(("Out of static mapping space in the HMA! offHyperAreaGC=%x cbAligned=%x\n",
-                         pVM->mm.s.offHyperNextStatic, cbAligned));
+        AssertMsgFailed(("Out of static mapping space in the HMA! offHyperAreaGC=%x cbAligned=%x cbHyperArea=%x\n",
+                         pVM->mm.s.offHyperNextStatic, cbAligned, pVM->mm.s.cbHyperArea));
         return VERR_NO_MEMORY;
     }
 
