@@ -25,9 +25,6 @@ include	$(KBUILD_PATH)/subheader.kmk
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/Miniport/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Display/Makefile.kmk
-ifdef VBOX_WITH_CROGL
-include $(PATH_SUB_CURRENT)/crOpenGL/Makefile.kmk
-endif
 
 #
 # Install the inf & cat.

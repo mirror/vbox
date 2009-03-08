@@ -28,11 +28,25 @@ include	$(KBUILD_PATH)/subheader.kmk
 BLDDIRS += \
 	$(VBOX_PATH_CROGL_GENFILES)/
 
-DLLS += VBoxOGL VBoxOGLarrayspu VBoxOGLpassthroughspu VBoxOGLpackspu VBoxOGLfeedbackspu
+DLLS.win += \
+    VBoxOGL \
+    VBoxOGLarrayspu \
+    VBoxOGLpassthroughspu \
+    VBoxOGLpackspu \
+    VBoxOGLfeedbackspu
+
+ifndef VBOX_OSE  ## @todo Solaris too?
+DLLS.linux += \
+    VBoxOGL \
+    VBoxOGLarrayspu \
+    VBoxOGLpassthroughspu \
+    VBoxOGLpackspu \
+    VBoxOGLfeedbackspu
+endif
 
 ifeq ($(KBUILD_TARGET),linux)
  VBoxOGL_DRI = 1
- VBOX_PATH_MESA_SOURCE = /usr/share/mesa-source
+ VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
 endif
 
 #
