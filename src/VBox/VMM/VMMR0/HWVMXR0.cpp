@@ -622,6 +622,8 @@ static int VMXR0InjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t intIn
         /* Injecting events doesn't work right with real mode emulation.
          * (#GP if we try to inject external hardware interrupts)
          * Inject the interrupt or trap directly instead.
+         *
+         * ASSUMES no access handlers for the bits we read or write below (should be safe).
          */
         Log(("Manual interrupt/trap '%x' inject (real mode)\n", iGate));
 
@@ -654,8 +656,13 @@ static int VMXR0InjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t intIn
 
         /* Read the selector:offset pair of the interrupt handler. */
         GCPhysHandler = (RTGCPHYS)pCtx->idtr.pIdt + iGate * 4;
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        rc = PGMPhysSimpleReadGCPhys(pVM, &offset, GCPhysHandler,     sizeof(offset)); AssertRC(rc);
+        rc = PGMPhysSimpleReadGCPhys(pVM, &sel,    GCPhysHandler + 2, sizeof(sel));    AssertRC(rc);
+#else
         PGMPhysRead(pVM, GCPhysHandler,     &offset, sizeof(offset));
         PGMPhysRead(pVM, GCPhysHandler + 2, &sel,    sizeof(sel));
+#endif
 
         LogFlow(("IDT handler %04X:%04X\n", sel, offset));
 
@@ -663,13 +670,25 @@ static int VMXR0InjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t intIn
         /** @todo should check stack limit. */
         pCtx->sp -= 2;
         LogFlow(("ss:sp %04X:%04X eflags=%x\n", pCtx->ss, pCtx->sp, pCtx->eflags.u));
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        rc = PGMPhysSimpleWriteGCPhys(pVM, pCtx->ssHid.u64Base + pCtx->sp, &pCtx->eflags, sizeof(uint16_t)); AssertRC(rc);
+#else
         PGMPhysWrite(pVM, pCtx->ssHid.u64Base + pCtx->sp, &pCtx->eflags, sizeof(uint16_t));
+#endif
         pCtx->sp -= 2;
         LogFlow(("ss:sp %04X:%04X cs=%x\n", pCtx->ss, pCtx->sp, pCtx->cs));
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        rc = PGMPhysSimpleWriteGCPhys(pVM, pCtx->ssHid.u64Base + pCtx->sp, &pCtx->cs, sizeof(uint16_t)); AssertRC(rc);
+#else
         PGMPhysWrite(pVM, pCtx->ssHid.u64Base + pCtx->sp, &pCtx->cs, sizeof(uint16_t));
+#endif
         pCtx->sp -= 2;
         LogFlow(("ss:sp %04X:%04X ip=%x\n", pCtx->ss, pCtx->sp, ip));
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        rc = PGMPhysSimpleWriteGCPhys(pVM, pCtx->ssHid.u64Base + pCtx->sp, &ip, sizeof(ip)); AssertRC(rc);
+#else
         PGMPhysWrite(pVM, pCtx->ssHid.u64Base + pCtx->sp, &ip, sizeof(ip));
+#endif
 
         /* Update the CPU state for executing the handler. */
         pCtx->rip           = offset;
