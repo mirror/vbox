@@ -89,8 +89,8 @@
          0x58 - 0x5f
     Number of CPUs:
          0x60
-    RAM above 4G (in 64M units):
-         0x61 - 0x63
+    RAM above 4G (in 64KB units):
+         0x61 - 0x65
 @endverbatim
  *
  * @todo Mark which bits are compatible with which BIOSes and
@@ -525,51 +525,6 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /*
      * Memory sizes.
      */
-#ifdef VBOX_WITH_MORE_THAN_4GB
-    uint64_t cKBRam = pThis->cbRam / _1K;
-    uint64_t cKBAbove4GB = 0;
-    uint32_t cKBBelow4GB = cKBRam;
-    AssertRelease(cKBBelow4GB == cKBRam);
-    if (cKBRam > UINT32_C(0xe0000000)) /** @todo this limit must be picked up from CFGM and coordinated with MM/PGM! */
-    {
-        cKBAbove4GB = cKBRam - UINT32_C(0xe0000000);
-        cKBBelow4GB = UINT32_C(0xe0000000);
-    }
-    else
-    {
-        cKBAbove4GB = 0;
-        cKBBelow4GB = cKBRam;
-    }
-
-    /* base memory. */
-    u32 = cKBBelow4GB > 640 ? 640 : cKBBelow4GB;
-    pcbiosCmosWrite(pDevIns, 0x15, u32 & 0xff);                                 /* 15h - Base Memory in K, Low Byte */
-    pcbiosCmosWrite(pDevIns, 0x16, u32 >> 8);                                   /* 16h - Base Memory in K, High Byte */
-
-    /* Extended memory, up to 65MB */
-    u32 = cKBBelow4GB >= 65 * _1K ? 0xffff : (cKBBelow4GB - _1K);
-    pcbiosCmosWrite(pDevIns, 0x17, u32 & 0xff);                                 /* 17h - Extended Memory in K, Low Byte */
-    pcbiosCmosWrite(pDevIns, 0x18, u32 >> 8);                                   /* 18h - Extended Memory in K, High Byte */
-    pcbiosCmosWrite(pDevIns, 0x30, u32 & 0xff);                                 /* 30h - Extended Memory in K, Low Byte */
-    pcbiosCmosWrite(pDevIns, 0x31, u32 >> 8);                                   /* 31h - Extended Memory in K, High Byte */
-
-    /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB */
-    if (cKBBelow4GB > 16 * _1K)
-    {
-        u32 = (uint32_t)( (cKBBelow4GB - 16 * _1K) / 64 );
-        u32 = RT_MIN(u32, 0xffff);
-    }
-    else
-        u32 = 0;
-    pcbiosCmosWrite(pDevIns, 0x34, u32 & 0xff);
-    pcbiosCmosWrite(pDevIns, 0x35, u32 >> 8);
-
-    /* RAM above 4G, in 64MB units (needs discussing, see comments and @todos elsewhere). */
-    pcbiosCmosWrite(pDevIns, 0x61, cKBAbove4GB >> 16);
-    pcbiosCmosWrite(pDevIns, 0x62, cKBAbove4GB >> 24);
-    pcbiosCmosWrite(pDevIns, 0x63, cKBAbove4GB >> 32);
-
-#else  /* old code. */
     /* base memory. */
     u32 = pThis->cbRam > 640 ? 640 : (uint32_t)pThis->cbRam / _1K; /* <-- this test is wrong, but it doesn't matter since we never assign less than 1MB */
     pcbiosCmosWrite(pDevIns, 0x15, u32 & 0xff);                                 /* 15h - Base Memory in K, Low Byte */
@@ -583,35 +538,37 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     pcbiosCmosWrite(pDevIns, 0x31, u32 >> 8);                                   /* 31h - Extended Memory in K, High Byte */
 
     /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB
-       and below 4GB (as it can only hold 4GB+16M). */
+       and below 4GB (as it can only hold 4GB+16M). For 0E820h to work right,
+       this has to indicate less than 0xfffc0000 bytes or it'll conflict with
+       the high BIOS area. */
     uint64_t const offRamHole = _4G - pThis->cbRamHole;
     if (pThis->cbRam > 16 * _1M)
     {
         u32 = (uint32_t)( (RT_MIN(pThis->cbRam, offRamHole) - 16 * _1M) / _64K );
-        u32 = RT_MIN(u32, 0xffff);
+        u32 = RT_MIN(u32, 0xfefc);
     }
     else
         u32 = 0;
     pcbiosCmosWrite(pDevIns, 0x34, u32 & 0xff);
     pcbiosCmosWrite(pDevIns, 0x35, u32 >> 8);
 
-# if 0    /** @todo Report the amount above 4GB and make sure the BIOS is only using 34/35 for the bits below 4GB. */
-    /* Suggestion: MBs above 4GB, reserve 4 CMOS entries (need 3 now), means a
-                   total around 2**52 bytes or 4EB if you like. The max of what
-                   AMD64 is currently specified for IIRC.  */
+    /* Bochs/VBox BIOS specific way of specifying memory above 4GB in 64KB units.
+       Bochs got these in a different location which we've already used for SATA,
+       it also lacks the last two. */
+    uint64_t c64KBAbove4GB;
     if (pThis->cbRam <= offRamHole)
-        u32 = 0;
+        c64KBAbove4GB = 0;
     else
     {
-        u32 = (pThis->cbRam - offRamHole) / _1M;
-        AssertMsg((uint64_t)u32 * _1M + offRamHole == pThis->cbRam, ("%RX64 %RX64\n", pThis->cbRam, offRamHole));
+        c64KBAbove4GB = (pThis->cbRam - offRamHole) / _64K;
+        /* Make sure it doesn't hit the limits of the current BIOS code.   */
+        AssertLogRelMsgReturn((c64KBAbove4GB >> (3 * 8)) < 255, ("%#RX64\n", c64KBAbove4GB), VERR_OUT_OF_RANGE);
     }
-    pcbiosCmosWrite(pDevIns, 0xY0,  u32        & 0xff);
-    pcbiosCmosWrite(pDevIns, 0xY1, (u32 >>  8) & 0xff);
-    pcbiosCmosWrite(pDevIns, 0xY2, (u32 >> 16) & 0xff);
-    pcbiosCmosWrite(pDevIns, 0xY3,  u32 >> 24);
-# endif
-#endif /* old code */
+    pcbiosCmosWrite(pDevIns, 0x61,  c64KBAbove4GB        & 0xff);
+    pcbiosCmosWrite(pDevIns, 0x62, (c64KBAbove4GB >>  8) & 0xff);
+    pcbiosCmosWrite(pDevIns, 0x63, (c64KBAbove4GB >> 16) & 0xff);
+    pcbiosCmosWrite(pDevIns, 0x64, (c64KBAbove4GB >> 24) & 0xff);
+    pcbiosCmosWrite(pDevIns, 0x65, (c64KBAbove4GB >> 32) & 0xff);
 
     /*
      * Number of CPUs.

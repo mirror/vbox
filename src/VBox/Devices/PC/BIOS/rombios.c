@@ -2268,7 +2268,9 @@ debugger_off()
 #define ATA_TYPE_UNKNOWN  0x01
 #define ATA_TYPE_ATA      0x02
 #define ATA_TYPE_ATAPI    0x03
+#ifdef VBOX
 #define ATA_TYPE_SCSI     0x04 // SCSI disk
+#endif
 
 #define ATA_DEVICE_NONE  0x00
 #define ATA_DEVICE_HD    0xFF
@@ -4224,7 +4226,7 @@ protmode_switch:
 ASM_END
 
       break;
-#endif
+#endif /* VBOX */
 
     case 0x90:
       /* Device busy interrupt.  Called by Int 16h when no key available */
@@ -4596,7 +4598,6 @@ void set_e820_range(ES, DI, start, end, extra_start, extra_end, type)
 {
     write_word(ES, DI, start);
     write_word(ES, DI+2, start >> 16);
-    write_word(ES, DI+4, 0x00); /** @todo r=bird: why write it twice? */
     write_word(ES, DI+4, extra_start);
     write_word(ES, DI+6, 0x00);
 
@@ -4604,15 +4605,7 @@ void set_e820_range(ES, DI, start, end, extra_start, extra_end, type)
     extra_end -= extra_start;
     write_word(ES, DI+8, end);
     write_word(ES, DI+10, end >> 16);
-#ifdef VBOX
-    if (end == 0)
-        write_word(ES, DI+12, 0x0001);
-    else
-        /** @todo XXX: nike - is it really correct? see QEMU BIOS patch */
-        write_word(ES, DI+12, extra_end);
-#else /* !VBOX */
-    write_word(ES, DI+12, 0x0000);
-#endif /* !VBOX */
+    write_word(ES, DI+12, extra_end);
     write_word(ES, DI+14, 0x0000);
 
     write_word(ES, DI+16, type);
@@ -4625,13 +4618,9 @@ int15_function32(regs, ES, DS, FLAGS)
   Bit16u ES, DS, FLAGS;
 {
   Bit32u  extended_memory_size=0; // 64bits long
-#ifdef VBOX_WITH_MORE_THAN_4GB
   Bit32u  extra_lowbits_memory_size=0;
-#endif
   Bit16u  CX,DX;
-#ifdef VBOX_WITH_MORE_THAN_4GB
   Bit8u   extra_highbits_memory_size=0;
-#endif
 
 BX_DEBUG_INT15("int15 AX=%04x\n",regs.u.r16.ax);
 
@@ -4691,10 +4680,12 @@ ASM_END
                 extended_memory_size <<= 8;
                 extended_memory_size |= inb_cmos(0x34);
                 extended_memory_size *= 64;
+#ifndef VBOX /* The following excludes 0xf0000000 thru 0xffffffff. Trust DevPcBios.cpp to get this right. */
                 // greater than EFF00000???
                 if(extended_memory_size > 0x3bc000) {
                     extended_memory_size = 0x3bc000; // everything after this is reserved memory until we get to 0x100000000
                 }
+#endif /* !VBOX */
                 extended_memory_size *= 1024;
                 extended_memory_size += (16L * 1024 * 1024);
 
@@ -4703,36 +4694,45 @@ ASM_END
                     extended_memory_size <<= 8;
                     extended_memory_size |= inb_cmos(0x30);
                     extended_memory_size *= 1024;
+                    extended_memory_size += (1L * 1024 * 1024);
                 }
 
-#ifdef VBOX_WITH_MORE_THAN_4GB /* bird: later (btw. this ain't making sense complixity wise, unless its a AMI/AWARD/PHOENIX interface) */
-                extra_lowbits_memory_size = inb_cmos(0x61);
+#ifdef VBOX     /* We've already used the CMOS entries for SATA.
+                   BTW. This is the amount of memory above 4GB measured in 64KB units. */
+                extra_lowbits_memory_size = inb_cmos(0x62);
                 extra_lowbits_memory_size <<= 8;
-                extra_lowbits_memory_size |= inb_cmos(0x62);
+                extra_lowbits_memory_size |= inb_cmos(0x61);
+                extra_lowbits_memory_size <<= 16;
+                extra_highbits_memory_size = inb_cmos(0x63);
+                /* 0x64 and 0x65 can be used if we need to dig 1 TB or more at a later point. */
+#else
+                extra_lowbits_memory_size = inb_cmos(0x5c);
+                extra_lowbits_memory_size <<= 8;
+                extra_lowbits_memory_size |= inb_cmos(0x5b);
                 extra_lowbits_memory_size *= 64;
                 extra_lowbits_memory_size *= 1024;
-                extra_highbits_memory_size = inb_cmos(0x63);
-#endif
+                extra_highbits_memory_size = inb_cmos(0x5d);
+#endif /* !VBOX */
 
                 switch(regs.u.r16.bx)
                 {
                     case 0:
                         set_e820_range(ES, regs.u.r16.di,
+#ifndef VBOX /** @todo Upstream sugggests the following, needs checking. (see next as well) */
+                                       0x0000000L, 0x0009f000L, 0, 0, 1);
+#else
                                        0x0000000L, 0x0009fc00L, 0, 0, 1);
+#endif
                         regs.u.r32.ebx = 1;
-                        regs.u.r32.eax = 0x534D4150;
-                        regs.u.r32.ecx = 0x14;
-                        CLEAR_CF();
-                        return;
                         break;
                     case 1:
                         set_e820_range(ES, regs.u.r16.di,
+#ifndef VBOX /** @todo Upstream sugggests the following, needs checking. (see next as well) */
+                                       0x0009f000L, 0x000a0000L, 0, 0, 2);
+#else
                                        0x0009fc00L, 0x000a0000L, 0, 0, 2);
+#endif
                         regs.u.r32.ebx = 2;
-                        regs.u.r32.eax = 0x534D4150;
-                        regs.u.r32.ecx = 0x14;
-                        CLEAR_CF();
-                        return;
                         break;
                     case 2:
 #ifdef VBOX
@@ -4751,61 +4751,68 @@ ASM_END
                                        0x000e8000L, 0x00100000L, 0, 0, 2);
 #endif /* !VBOX */
                         regs.u.r32.ebx = 3;
-                        regs.u.r32.eax = 0x534D4150;
-                        regs.u.r32.ecx = 0x14;
-                        CLEAR_CF();
-                        return;
                         break;
                     case 3:
+#if BX_ROMBIOS32 || defined(VBOX)
                         set_e820_range(ES, regs.u.r16.di,
                                        0x00100000L,
                                        extended_memory_size - ACPI_DATA_SIZE, 0, 0, 1);
                         regs.u.r32.ebx = 4;
-                        regs.u.r32.eax = 0x534D4150;
-                        regs.u.r32.ecx = 0x14;
-                        CLEAR_CF();
-                        return;
+#else
+                        set_e820_range(ES, regs.u.r16.di,
+                                       0x00100000L,
+                                       extended_memory_size, 1);
+                        regs.u.r32.ebx = 5;
+#endif
                         break;
                     case 4:
                         set_e820_range(ES, regs.u.r16.di,
                                        extended_memory_size - ACPI_DATA_SIZE,
                                        extended_memory_size, 0, 0, 3); // ACPI RAM
                         regs.u.r32.ebx = 5;
-                        regs.u.r32.eax = 0x534D4150;
-                        regs.u.r32.ecx = 0x14;
-                        CLEAR_CF();
-                        return;
                         break;
                     case 5:
                         /* 256KB BIOS area at the end of 4 GB */
+#ifdef VBOX
+                        /* We don't set the end to 1GB here and rely on the 32-bit
+                           unsigned wrap around effect (0-0xfffc0000L). */
+#endif
                         set_e820_range(ES, regs.u.r16.di,
                                        0xfffc0000L, 0x00000000L, 0, 0, 2);
-#ifdef VBOX_WITH_MORE_THAN_4GB
                         if (extra_highbits_memory_size || extra_lowbits_memory_size)
                             regs.u.r32.ebx = 6;
                         else
-#endif
                             regs.u.r32.ebx = 0;
-                        regs.u.r32.eax = 0x534D4150;
-                        regs.u.r32.ecx = 0x14;
-                        CLEAR_CF();
-                        return;
-#ifdef VBOX_WITH_MORE_THAN_4GB
+                        break;
                     case 6:
-                        /* Mapping of memory above 4 GB */
-                        set_e820_range(ES, regs.u.r16.di,
-                                       0x00000000L, extra_lowbits_memory_size,
-                                       1, extra_highbits_memory_size + 1, 1);
+#ifdef VBOX /* Don't succeeded if no memory above 4 GB.  */
+                        /* Mapping of memory above 4 GB if present.
+                           Note: set_e820_range needs do no borrowing in the
+                                 subtraction because of the nice numbers. */
+                        if (extra_highbits_memory_size || extra_lowbits_memory_size)
+                        {
+                            set_e820_range(ES, regs.u.r16.di,
+                                           0x00000000L, extra_lowbits_memory_size,
+                                           1 /*GB*/, extra_highbits_memory_size + 1 /*GB*/, 1);
+                            regs.u.r32.ebx = 0;
+                            break;
+                        }
+                        /* fall thru */
+#else  /* !VBOX */
+                        /* Maping of memory above 4 GB */
+                        set_e820_range(ES, regs.u.r16.di, 0x00000000L,
+                        extra_lowbits_memory_size, 1, extra_highbits_memory_size
+                                       + 1, 1);
                         regs.u.r32.ebx = 0;
-                        regs.u.r32.eax = 0x534D4150;
-                        regs.u.r32.ecx = 0x14;
-                        CLEAR_CF();
-                        return;
-#endif
+                        break;
+#endif /* !VBOX */
                     default:  /* AX=E820, DX=534D4150, BX unrecognized */
                         goto int15_unimplemented;
                         break;
                 }
+                regs.u.r32.eax = 0x534D4150;
+                regs.u.r32.ecx = 0x14;
+                CLEAR_CF();
 	    } else {
 	      // if DX != 0x534D4150)
 	      goto int15_unimplemented;
