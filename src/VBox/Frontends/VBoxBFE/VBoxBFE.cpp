@@ -1385,6 +1385,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
     rc = CFGMR3InsertString(pRoot,  "Name",           "Default VM");                UPDATE_RC();
     rc = CFGMR3InsertInteger(pRoot, "RamSize",        g_u32MemorySizeMB * _1M);     UPDATE_RC();
+    rc = CFGMR3InsertInteger(pRoot, "RamHoleSize",    512U * _1M);                  UPDATE_RC();
     if (g_fPreAllocRam)
     {
         rc = CFGMR3InsertInteger(pRoot, "RamPreAlloc",    1);                       UPDATE_RC();
@@ -1436,6 +1437,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
     rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
     rc = CFGMR3InsertInteger(pCfg,  "RamSize",        g_u32MemorySizeMB * _1M);     UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",    512U * _1M);                  UPDATE_RC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice0",    g_pszBootDevice);             UPDATE_RC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice1",    "NONE");                      UPDATE_RC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice2",    "NONE");                      UPDATE_RC();
@@ -1457,6 +1459,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
         rc = CFGMR3InsertInteger(pInst, "Trusted",        1);       /* boolean */   UPDATE_RC();
         rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                   UPDATE_RC();
         rc = CFGMR3InsertInteger(pCfg,  "RamSize",        g_u32MemorySizeMB * _1M); UPDATE_RC();
+        rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",    512U * _1M);              UPDATE_RC();
         rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",         g_fIOAPIC);               UPDATE_RC();
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",    7);                       UPDATE_RC();
         rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  0);                       UPDATE_RC();

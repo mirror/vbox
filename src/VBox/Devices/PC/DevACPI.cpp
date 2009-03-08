@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_ACPI
 #include <VBox/pdmdev.h>
 #include <VBox/log.h>
+#include <VBox/param.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #ifdef IN_RING3
@@ -566,7 +567,7 @@ __END_DECLS
 #ifdef IN_RING3
 
 /* Simple acpiChecksum: all the bytes must add up to 0. */
-static uint8_t acpiChecksum (const uint8_t * const data, uint32_t len)
+static uint8_t acpiChecksum (const uint8_t * const data, size_t len)
 {
     uint8_t sum = 0;
     for (size_t i = 0; i < len; ++i)
@@ -705,7 +706,7 @@ static int acpiSetupRSDT (ACPIState *s, RTGCPHYS32 addr, unsigned int nb_entries
     if (!rsdt)
         return PDMDEV_SET_ERROR(s->pDevIns, VERR_NO_TMP_MEMORY, N_("Cannot allocate RSDT"));
 
-    acpiPrepareHeader (&rsdt->header, "RSDT", size, 1);
+    acpiPrepareHeader (&rsdt->header, "RSDT", (uint32_t)size, 1);
     for (unsigned int i = 0; i < nb_entries; ++i)
     {
         rsdt->u32Entry[i] = RT_H2LE_U32(addrs[i]);
@@ -727,7 +728,7 @@ static int acpiSetupXSDT (ACPIState *s, RTGCPHYS32 addr, unsigned int nb_entries
     if (!xsdt)
         return VERR_NO_TMP_MEMORY;
 
-    acpiPrepareHeader (&xsdt->header, "XSDT", size, 1 /* according to ACPI 3.0 specs */);
+    acpiPrepareHeader (&xsdt->header, "XSDT", (uint32_t)size, 1 /* according to ACPI 3.0 specs */);
     for (unsigned int i = 0; i < nb_entries; ++i)
     {
         xsdt->u64Entry[i] = RT_H2LE_U64((uint64_t)addrs[i]);
@@ -1722,7 +1723,14 @@ static int acpiPlantTables (ACPIState *s)
                                 N_("Configuration error: Querying "
                                    "\"RamSize\" as integer failed"));
 
-#if 1 /** @todo 4GB: This needs fixing! (disable to test lots of memory) */
+    uint32_t cbRamHole;
+    rc = CFGMR3QueryU32Def (s->pDevIns->pCfgHandle, "RamHoleSize", &cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
+    if (RT_FAILURE (rc))
+        return PDMDEV_SET_ERROR (s->pDevIns, rc,
+                                 N_ ("Configuration error: Querying \"RamHoleSize\" as integer failed"));
+    const uint64_t offRamHole = _4G - cbRamHole;
+
+#if 0 /** @todo 4GB: This needs adjusting fixing! I've disabled it to test big mem configs. */
     if (s->u64RamSize > (0xffffffff - 0x10000))
         return PDMDEV_SET_ERROR(s->pDevIns, VERR_OUT_OF_RANGE,
                                 N_("Configuration error: Invalid \"RamSize\", maximum allowed "
@@ -1757,7 +1765,11 @@ static int acpiPlantTables (ACPIState *s)
                                 N_("Error: ACPI tables > 64KB"));
 
     Log(("RSDP 0x%08X\n", find_rsdp_space()));
+#if 1 /** @todo 4GB: Quick hack, may need revising. */
+    addend = (uint32_t) RT_MIN (s->u64RamSize, offRamHole) - 0x10000;
+#else
     addend = (uint32_t) s->u64RamSize - 0x10000;
+#endif
     Log(("RSDT 0x%08X XSDT 0x%08X\n", rsdt_addr + addend, xsdt_addr + addend));
     Log(("FACS 0x%08X FADT 0x%08X\n", facs_addr + addend, fadt_addr + addend));
     Log(("DSDT 0x%08X\n", dsdt_addr + addend));
@@ -1804,6 +1816,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* Validate and read the configuration. */
     if (!CFGMR3AreValuesValid (pCfgHandle,
                                "RamSize\0"
+                               "RamHoleSize\0"
                                "IOAPIC\0"
                                "NumCPUs\0"
                                "GCEnabled\0"
