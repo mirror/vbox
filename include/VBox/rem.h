@@ -61,6 +61,7 @@ VMMDECL(void) REMFlushTBs(PVM pVM);
  * @{
  */
 REMR3DECL(int)  REMR3Init(PVM pVM);
+REMR3DECL(int)  REMR3InitFinalize(PVM pVM);
 REMR3DECL(int)  REMR3Term(PVM pVM);
 REMR3DECL(void) REMR3Reset(PVM pVM);
 REMR3DECL(int)  REMR3Run(PVM pVM);
@@ -76,7 +77,7 @@ REMR3DECL(int)  REMR3DisasEnableStepping(PVM pVM, bool fEnable);
 REMR3DECL(void) REMR3ReplayInvalidatedPages(PVM pVM);
 REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM);
 REMR3DECL(int)  REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage);
-REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, unsigned fFlags);
+REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, unsigned fFlags);
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, RTHCUINTPTR pvRam, unsigned fFlags);
 #endif

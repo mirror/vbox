@@ -748,6 +748,8 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                     if (RT_SUCCESS(rc))
                                                                         rc = VMMR3InitFinalize(pVM);
                                                                     if (RT_SUCCESS(rc))
+                                                                        rc = REMR3InitFinalize(pVM);
+                                                                    if (RT_SUCCESS(rc))
                                                                         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
                                                                     if (RT_SUCCESS(rc))
                                                                     {

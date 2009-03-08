@@ -745,9 +745,6 @@ int main()
     GEN_CHECK_OFF(REM, aGCPtrInvalidatedPages);
     GEN_CHECK_OFF(REM, cHandlerNotifications);
     GEN_CHECK_OFF(REM, aHandlerNotifications);
-    GEN_CHECK_OFF(REM, paHCVirtToGCPhys);
-    GEN_CHECK_OFF(REM, cPhysRegistrations);
-    GEN_CHECK_OFF(REM, aPhysReg);
     GEN_CHECK_OFF(REM, rc);
     GEN_CHECK_OFF(REM, StatsInQEMU);
     GEN_CHECK_OFF(REM, Env);

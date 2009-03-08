@@ -109,36 +109,6 @@ typedef struct REMHANDLERNOTIFICATION
 } REMHANDLERNOTIFICATION, *PREMHANDLERNOTIFICATION;
 
 /**
- * Dynamically allocated guest RAM chunk information
- * HC virt to GC Phys
- *
- * A RAM chunk can spawn two chunk regions as we don't align them on chunk boundaries.
- */
-typedef struct REMCHUNKINFO
-{
-    RTHCUINTPTR pChunk1;
-    RTHCUINTPTR pChunk2;
-    RTGCPHYS    GCPhys1;
-    RTGCPHYS    GCPhys2;
-} REMCHUNKINFO, *PREMCHUNKINFO;
-
-/** Maximum number of external guest RAM/ROM registrations. */
-#define REM_MAX_PHYS_REGISTRATIONS              16
-
-/**
- * Registration record for external guest RAM & ROM
- */
-typedef struct REMPHYSREGISTRATION
-{
-    RTGCPHYS        GCPhys;
-    RTHCUINTPTR     HCVirt;
-    RTUINT          cb;
-#if HC_ARCH_BITS == 64
-    uint32_t        u32Padding;
-#endif
-} REMPHYSREGISTRATION, *PREMPHYSREGISTRATION;
-
-/**
  * Converts a REM pointer into a VM pointer.
  * @returns Pointer to the VM structure the REM is part of.
  * @param   pREM    Pointer to REM instance data.
@@ -181,17 +151,17 @@ typedef struct REM
 
     /** Number of times REMR3CanExecuteRaw has been called.
      * It is used to prevent rescheduling on the first call. */
-    RTUINT                  cCanExecuteRaw;
+    uint32_t                cCanExecuteRaw;
 
     /** Pending interrupt (~0 -> nothing). */
-    RTUINT                  u32PendingInterrupt;
+    uint32_t                u32PendingInterrupt;
 
 #if HC_ARCH_BITS == 64
     /** Alignment padding. */
     uint32_t                u32Padding;
 #endif
     /** Number of recorded invlpg instructions. */
-    RTUINT                  cInvalidatedPages;
+    uint32_t                cInvalidatedPages;
     /** Array of recorded invlpg instruction.
      * These instructions are replayed when entering REM. */
     RTGCPTR                 aGCPtrInvalidatedPages[48];
@@ -202,34 +172,31 @@ typedef struct REM
      * These are replayed when entering REM. */
     REMHANDLERNOTIFICATION  aHandlerNotifications[32];
 
-    /** Pointer to an array of hc virt to gc phys records. */
-    R3PTRTYPE(PREMCHUNKINFO) paHCVirtToGCPhys;
-    /** Pointer to a GC Phys to HC Virt lookup table. */
-    R3PTRTYPE(PRTHCUINTPTR) paGCPhysToHCVirt;
-
-    /** Array of external RAM and ROM registrations (excluding guest RAM). */
-    REMPHYSREGISTRATION     aPhysReg[REM_MAX_PHYS_REGISTRATIONS];
-    /** Number of external RAM and ROM registrations (excluding guest RAM). */
-    RTUINT                  cPhysRegistrations;
-
     /** MMIO memory type.
      * This is used to register MMIO physical access handlers. */
-    RTINT                   iMMIOMemType;
+    int32_t                 iMMIOMemType;
     /** Handler memory type.
      * This is used to register non-MMIO physical access handlers which are executed in HC. */
-    RTINT                   iHandlerMemType;
+    int32_t                 iHandlerMemType;
 
     /** Pending exception */
     uint32_t                uPendingException;
-    /** Pending exception's EIP */
-    uint32_t                uPendingExcptEIP;
-    /** Pending exception's CR2 */
-    uint32_t                uPendingExcptCR2;
     /** Nr of pending exceptions */
     uint32_t                cPendingExceptions;
+    /** Pending exception's EIP */
+    uint32_t                uPendingExcptEIP;
+    uint32_t                reserved_for_future_uPendingExcptRIP;
+    /** Pending exception's CR2 */
+    uint32_t                uPendingExcptCR2;
+    uint32_t                reserved_for_future_64bit_uPendingExcptCR2;
+
+    /** The highest known RAM address. */
+    RTGCPHYS                GCPhysLastRam;
+    /** Whether GCPhysLastRam has been fixed (see REMR3Init()). */
+    bool                    fGCPhysLastRamFixed;
 
     /** Pending rc. */
-    RTINT                   rc;
+    int32_t                 rc;
 
     /** Time spent in QEMU. */
     STAMPROFILEADV          StatsInQEMU;
@@ -240,10 +207,8 @@ typedef struct REM
     /** Time spent switching state back. */
     STAMPROFILE             StatsStateBack;
 
-#if HC_ARCH_BITS != 32
     /** Padding the CPUX86State structure to 32 byte. */
-    uint32_t                abPadding[HC_ARCH_BITS == 32 ? 0 : 4];
-#endif
+    uint32_t                abPadding[HC_ARCH_BITS == 32 ? 6 : 4];
 
 #ifdef VBOX_WITH_NEW_RECOMPILER
 #if GC_ARCH_BITS == 32
