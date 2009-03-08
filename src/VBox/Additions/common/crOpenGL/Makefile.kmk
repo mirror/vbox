@@ -19,7 +19,7 @@
 # additional information or have any questions.
 #
 
-SUB_DEPTH = ../../../../../..
+SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
