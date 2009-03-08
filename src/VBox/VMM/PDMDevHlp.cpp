@@ -2030,13 +2030,16 @@ static DECLCALLBACK(void) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPh
     LogFlow(("pdmR3DevHlp_PhysRead: caller='%s'/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
 
-    int rc = VINF_SUCCESS;
+    int rc;
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     if (!VM_IS_EMT(pVM))
         rc = PGMR3PhysReadExternal(pVM, GCPhys, pvBuf, cbRead);
     else
+        rc = PGMPhysRead(pVM, GCPhys, pvBuf, cbRead);
+#else
+    PGMPhysRead(pVM, GCPhys, pvBuf, cbRead);
+    rc = VINF_SUCCESS;
 #endif
-        PGMPhysRead(pVM, GCPhys, pvBuf, cbRead);
     Log(("pdmR3DevHlp_PhysRead: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     /** @todo return rc; */ NOREF(rc);
 }
@@ -2050,13 +2053,16 @@ static DECLCALLBACK(void) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCP
     LogFlow(("pdmR3DevHlp_PhysWrite: caller='%s'/%d: GCPhys=%RGp pvBuf=%p cbWrite=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, pvBuf, cbWrite));
 
-    int rc = VINF_SUCCESS;
+    int rc;
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     if (!VM_IS_EMT(pVM))
         rc = PGMR3PhysWriteExternal(pVM, GCPhys, pvBuf, cbWrite);
     else
+        rc = PGMPhysWrite(pVM, GCPhys, pvBuf, cbWrite);
+#else
+    PGMPhysWrite(pVM, GCPhys, pvBuf, cbWrite);
+    rc = VINF_SUCCESS;
 #endif
-        PGMPhysWrite(pVM, GCPhys, pvBuf, cbWrite);
     Log(("pdmR3DevHlp_PhysWrite: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     /** @todo return rc; */ NOREF(rc);
 }

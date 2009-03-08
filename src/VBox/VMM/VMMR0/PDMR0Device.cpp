@@ -256,7 +256,12 @@ static DECLCALLBACK(void) pdmR0DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPh
     LogFlow(("pdmR0DevHlp_PhysRead: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
              pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    int rc = PGMPhysRead(pDevIns->Internal.s.pVMR0, GCPhys, pvBuf, cbRead);
+    AssertRC(rc); /** @todo track down the users for this bugger. */
+#else
     PGMPhysRead(pDevIns->Internal.s.pVMR0, GCPhys, pvBuf, cbRead);
+#endif
 
     Log(("pdmR0DevHlp_PhysRead: caller=%p/%d: returns void\n", pDevIns, pDevIns->iInstance));
 }
@@ -269,7 +274,12 @@ static DECLCALLBACK(void) pdmR0DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCP
     LogFlow(("pdmR0DevHlp_PhysWrite: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbWrite=%#x\n",
              pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbWrite));
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    int rc = PGMPhysWrite(pDevIns->Internal.s.pVMR0, GCPhys, pvBuf, cbWrite);
+    AssertRC(rc); /** @todo track down the users for this bugger. */
+#else
     PGMPhysWrite(pDevIns->Internal.s.pVMR0, GCPhys, pvBuf, cbWrite);
+#endif
 
     Log(("pdmR0DevHlp_PhysWrite: caller=%p/%d: returns void\n", pDevIns, pDevIns->iInstance));
 }
