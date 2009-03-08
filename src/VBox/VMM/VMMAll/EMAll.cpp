@@ -1341,7 +1341,11 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
     {
         LogFlow(("emInterpretStosWD dest=%04X:%RGv (%RGv) cbSize=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize));
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        rc = emRamWrite(pVM, pRegFrame, GCDest, &pRegFrame->rax, cbSize);
+#else
         rc = PGMPhysWriteGCPtr(pVM, GCDest, &pRegFrame->rax, cbSize);
+#endif
         if (RT_FAILURE(rc))
             return VERR_EM_INTERPRETER;
         Assert(rc == VINF_SUCCESS);
@@ -1369,8 +1373,12 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
         if (!cTransfers)
             return VINF_SUCCESS;
 
-        /* Do *not* try emulate cross page stuff here, this also fends off big copies which
-           would kill PGMR0DynMap. */
+        /*
+         * Do *not* try emulate cross page stuff here because we don't know what might
+         * be waiting for us on the subsequent pages. The caller has only asked us to
+         * ignore access handlers fro the current page.
+         * This also fends off big stores which would quickly kill PGMR0DynMap.
+         */
         if (    cbSize > PAGE_SIZE
             ||  cTransfers > PAGE_SIZE
             ||  (GCDest >> PAGE_SHIFT) != ((GCDest + offIncrement * cTransfers) >> PAGE_SHIFT))
@@ -1394,7 +1402,11 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
         /* REP case */
         while (cTransfers)
         {
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+            rc = emRamWrite(pVM, pRegFrame, GCDest, &pRegFrame->rax, cbSize);
+#else
             rc = PGMPhysWriteGCPtr(pVM, GCDest, &pRegFrame->rax, cbSize);
+#endif
             if (RT_FAILURE(rc))
             {
                 rc = VERR_EM_INTERPRETER;
