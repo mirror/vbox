@@ -2782,11 +2782,11 @@ REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage)
  * @param   pVM         VM handle.
  * @param   GCPhys      The physical address the RAM.
  * @param   cb          Size of the memory.
- * @param   fFlags      Flags of the MM_RAM_FLAGS_* defines.
+ * @param   fFlags      Flags of the REM_NOTIFY_PHYS_RAM_FLAGS_* defines.
  */
 REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, unsigned fFlags)
 {
-    Log(("REMR3NotifyPhysRamRegister: GCPhys=%RGp cb=%RGp fFlags=%d\n", GCPhys, cb, fFlags));
+    Log(("REMR3NotifyPhysRamRegister: GCPhys=%RGp cb=%RGp fFlags=%#x\n", GCPhys, cb, fFlags));
     VM_ASSERT_EMT(pVM);
 
     /*
@@ -2795,11 +2795,18 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    AssertMsg(fFlags == REM_NOTIFY_PHYS_RAM_FLAGS_RAM || fFlags == REM_NOTIFY_PHYS_RAM_FLAGS_MMIO2, ("#x\n", fFlags));
+#endif
 
     /*
-     * Base ram?
+     * Base ram? Update GCPhysLastRam.
      */
-    if (!GCPhys) /** @todo add a flag for identifying MMIO2 memory here (new phys code)*/
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    if (fFlags & REM_NOTIFY_PHYS_RAM_FLAGS_RAM)
+#else
+    if (!GCPhys)
+#endif
     {
         if (GCPhys + (cb - 1) > pVM->rem.s.GCPhysLastRam)
         {

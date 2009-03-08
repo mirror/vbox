@@ -532,7 +532,7 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
      * Notify REM.
      */
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-    REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, 0);
+    REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, REM_NOTIFY_PHYS_RAM_FLAGS_RAM);
 #else
     REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, MM_RAM_FLAGS_DYNAMIC_ALLOC);
 #endif
@@ -1261,7 +1261,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
     {
         /* link in the ram range */
         pgmR3PhysLinkRamRange(pVM, &pCur->RamRange, pRamPrev);
-        REMR3NotifyPhysRamRegister(pVM, GCPhys, pCur->RamRange.cb, 0);
+        REMR3NotifyPhysRamRegister(pVM, GCPhys, pCur->RamRange.cb, REM_NOTIFY_PHYS_RAM_FLAGS_MMIO2);
     }
 
     pgmUnlock(pVM);
