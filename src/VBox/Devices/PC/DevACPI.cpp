@@ -1346,7 +1346,7 @@ IO_READ_PROTO (acpiSysInfoDataRead)
                 case SYSTEM_INFO_INDEX_CPU2_STATUS:
                 case SYSTEM_INFO_INDEX_CPU3_STATUS:
 #ifdef VBOX_WITH_SMP_GUESTS
-                    *pu32 = (s->fShowCpu && 
+                    *pu32 = (s->fShowCpu &&
                              s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < cCpus)
                             ? (  STA_DEVICE_PRESENT_MASK
                                            | STA_DEVICE_ENABLED_MASK
@@ -1722,10 +1722,13 @@ static int acpiPlantTables (ACPIState *s)
                                 N_("Configuration error: Querying "
                                    "\"RamSize\" as integer failed"));
 
+#if 1 /** @todo 4GB: This needs fixing! (disable to test lots of memory) */
     if (s->u64RamSize > (0xffffffff - 0x10000))
         return PDMDEV_SET_ERROR(s->pDevIns, VERR_OUT_OF_RANGE,
                                 N_("Configuration error: Invalid \"RamSize\", maximum allowed "
                                    "value is 4095MB"));
+#endif
+
     rsdt_addr = 0;
     xsdt_addr = RT_ALIGN_32 (rsdt_addr + rsdt_tbl_len, 16);
     fadt_addr = RT_ALIGN_32 (xsdt_addr + xsdt_tbl_len, 16);
