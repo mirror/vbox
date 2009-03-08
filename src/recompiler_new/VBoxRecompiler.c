@@ -89,6 +89,7 @@ unsigned long get_phys_page_offset(target_ulong addr);
 static DECLCALLBACK(int) remR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static void     remR3StateUpdate(PVM pVM);
+static int      remR3InitPhysRamSizeAndDirtyMap(PVM pVM, bool fGuarded);
 
 static uint32_t remR3MMIOReadU8(void *pvVM, target_phys_addr_t GCPhys);
 static uint32_t remR3MMIOReadU16(void *pvVM, target_phys_addr_t GCPhys);
@@ -257,6 +258,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 #if defined(DEBUG) && !defined(RT_OS_SOLARIS) /// @todo fix the solaris math stuff.
     Assert(!testmath());
 #endif
+
     /*
      * Init some internal data members.
      */
@@ -395,6 +397,91 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 # endif
 #endif
 
+    return rc;
+}
+
+
+/**
+ * Finalizes the REM initialization.
+ *
+ * This is called after all components, devices and drivers has
+ * been initialized. Its main purpose it to finish the RAM related
+ * initialization.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM handle.
+ */
+REMR3DECL(int) REMR3InitFinalize(PVM pVM)
+{
+    int rc;
+
+    /*
+     * Ram size & dirty bit map.
+     */
+    Assert(!pVM->rem.s.fGCPhysLastRamFixed);
+    pVM->rem.s.fGCPhysLastRamFixed = true;
+#ifdef RT_STRICT
+    rc = remR3InitPhysRamSizeAndDirtyMap(pVM, true /* fGuarded */);
+#else
+    rc = remR3InitPhysRamSizeAndDirtyMap(pVM, false /* fGuarded */);
+#endif
+    return rc;
+}
+
+
+/**
+ * Initializes phys_ram_size, phys_ram_dirty and phys_ram_dirty_size.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   fGuarded    Whether to guard the map.
+ */
+static int remR3InitPhysRamSizeAndDirtyMap(PVM pVM, bool fGuarded)
+{
+    int      rc = VINF_SUCCESS;
+    RTGCPHYS cb;
+
+    cb = pVM->rem.s.GCPhysLastRam + 1;
+    AssertLogRelMsgReturn(cb > pVM->rem.s.GCPhysLastRam,
+                          ("GCPhysLastRam=%RGp - out of range\n", pVM->rem.s.GCPhysLastRam),
+                          VERR_OUT_OF_RANGE);
+    phys_ram_size = cb;
+    phys_ram_dirty_size = cb >> PAGE_SHIFT;
+    AssertMsg(((RTGCPHYS)phys_ram_dirty_size << PAGE_SHIFT) == cb, ("%RGp\n", cb));
+
+    if (!fGuarded)
+    {
+        phys_ram_dirty = MMR3HeapAlloc(pVM, MM_TAG_REM, phys_ram_dirty_size);
+        AssertLogRelMsgReturn(phys_ram_dirty, ("Failed to allocate %u bytes of dirty page map bytes\n", phys_ram_dirty_size), VERR_NO_MEMORY);
+    }
+    else
+    {
+        /*
+         * Fill it up the nearest 4GB RAM and leave at least _64KB of guard after it.
+         */
+        uint32_t cbBitmapAligned = RT_ALIGN_32(phys_ram_dirty_size, PAGE_SIZE);
+        uint32_t cbBitmapFull    = RT_ALIGN_32(phys_ram_dirty_size, (_4G >> PAGE_SHIFT));
+        if (cbBitmapFull == cbBitmapAligned)
+            cbBitmapFull += _4G >> PAGE_SHIFT;
+        else if (cbBitmapFull - cbBitmapAligned < _64K)
+            cbBitmapFull += _64K;
+
+        phys_ram_dirty = RTMemPageAlloc(cbBitmapFull);
+        AssertLogRelMsgReturn(phys_ram_dirty, ("Failed to allocate %u bytes of dirty page map bytes\n", cbBitmapFull), VERR_NO_MEMORY);
+
+        rc = RTMemProtect(phys_ram_dirty + cbBitmapAligned, cbBitmapFull - cbBitmapAligned, RTMEM_PROT_NONE);
+        if (RT_FAILURE(rc))
+        {
+            RTMemPageFree(phys_ram_dirty);
+            AssertLogRelRCReturn(rc, rc);
+        }
+
+        phys_ram_dirty += cbBitmapAligned - phys_ram_dirty_size;
+    }
+
+    /* initialize it. */
+    memset(phys_ram_dirty, 0xff, phys_ram_dirty_size);
     return rc;
 }
 
@@ -1572,7 +1659,6 @@ void remR3RecordCall(CPUState *env)
  * @returns VBox status code.
  *
  * @param   pVM         VM Handle.
- * @param   fFlushTBs   Flush all translation blocks before executing code
  *
  * @remark  The caller has to check for important FFs before calling REMR3Run. REMR3State will
  *          no do this since the majority of the callers don't want any unnecessary of events
@@ -1711,7 +1797,6 @@ REMR3DECL(int)  REMR3State(PVM pVM)
     else
         pVM->rem.s.Env.hflags &= ~(HF_LMA_MASK | HF_CS64_MASK);
 #endif
-
 
     /*
      * Registers which are rarely changed and require special handling / order when changed.
@@ -2636,11 +2721,9 @@ REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage)
  * @param   cb          Size of the memory.
  * @param   fFlags      Flags of the MM_RAM_FLAGS_* defines.
  */
-REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, unsigned fFlags)
+REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, unsigned fFlags)
 {
-    uint32_t cbBitmap;
-    int rc;
-    Log(("REMR3NotifyPhysRamRegister: GCPhys=%RGp cb=%d fFlags=%d\n", GCPhys, cb, fFlags));
+    Log(("REMR3NotifyPhysRamRegister: GCPhys=%RGp cb=%RGp fFlags=%d\n", GCPhys, cb, fFlags));
     VM_ASSERT_EMT(pVM);
 
     /*
@@ -2651,24 +2734,15 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
 
     /*
-     * Base ram?
+     * Base ram? Update GCPhysLastRam.
      */
-    if (!GCPhys)
+    if (!GCPhys) /** @todo add a flag for identifying MMIO2 memory here (new phys code)*/
     {
-        phys_ram_size = cb;
-        phys_ram_dirty_size = cb >> PAGE_SHIFT;
-#ifndef VBOX_STRICT
-        phys_ram_dirty = MMR3HeapAlloc(pVM, MM_TAG_REM, phys_ram_dirty_size);
-        AssertReleaseMsg(phys_ram_dirty, ("failed to allocate %d bytes of dirty bytes\n", phys_ram_dirty_size));
-#else /* VBOX_STRICT: allocate a full map and make the out of bounds pages invalid. */
-        phys_ram_dirty = RTMemPageAlloc(_4G >> PAGE_SHIFT);
-        AssertReleaseMsg(phys_ram_dirty, ("failed to allocate %d bytes of dirty bytes\n", _4G >> PAGE_SHIFT));
-        cbBitmap = RT_ALIGN_32(phys_ram_dirty_size, PAGE_SIZE);
-        rc = RTMemProtect(phys_ram_dirty + cbBitmap, (_4G >> PAGE_SHIFT) - cbBitmap, RTMEM_PROT_NONE);
-        AssertRC(rc);
-        phys_ram_dirty += cbBitmap - phys_ram_dirty_size;
-#endif
-        memset(phys_ram_dirty, 0xff, phys_ram_dirty_size);
+        if (GCPhys + (cb - 1) > pVM->rem.s.GCPhysLastRam)
+        {
+            AssertReleaseMsg(!pVM->rem.s.fGCPhysLastRamFixed, ("GCPhys=%RGp cb=%RGp\n", GCPhys, cb));
+            pVM->rem.s.GCPhysLastRam = GCPhys + (cb - 1);
+        }
     }
 
     /*

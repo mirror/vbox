@@ -23,6 +23,7 @@ LIBRARY VBoxREM.dll
 
 EXPORTS
     REMR3Init
+    REMR3InitFinalize
     REMR3Term
     REMR3Reset
     REMR3Step

@@ -174,6 +174,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.CallHostR0JmpBuf, 8);
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.StatRunRC, 8);
     CHECK_MEMBER_ALIGNMENT(VM, StatTotalQemuToGC, 8);
+    CHECK_MEMBER_ALIGNMENT(VM, rem.s.uPendingExcptCR2, 8);
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.StatsInQEMU, 8);
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.Env, 32);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus, 64);

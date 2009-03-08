@@ -332,6 +332,7 @@ static void    *g_pvREM2;
  * These are references from the assembly wrapper code.
  * @{ */
 static DECLCALLBACKPTR(int, pfnREMR3Init)(PVM);
+static DECLCALLBACKPTR(int, pfnREMR3InitFinalize)(PVM);
 static DECLCALLBACKPTR(int, pfnREMR3Term)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3Reset)(PVM);
 static DECLCALLBACKPTR(int, pfnREMR3Step)(PVM);
@@ -345,7 +346,7 @@ static DECLCALLBACKPTR(void, pfnREMR3StateUpdate)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3A20Set)(PVM, bool);
 static DECLCALLBACKPTR(void, pfnREMR3ReplayInvalidatedPages)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3ReplayHandlerNotifications)(PVM pVM);
-static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamRegister)(PVM, RTGCPHYS, RTUINT, unsigned);
+static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamRegister)(PVM, RTGCPHYS, RTGCPHYS, unsigned);
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamChunkRegister)(PVM, RTGCPHYS, RTUINT, RTHCUINTPTR, unsigned);
 #endif
@@ -399,7 +400,7 @@ static const REMPARMDESC g_aArgsNotifyPhysRamRegister[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT), NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL }
 };
@@ -412,6 +413,12 @@ static const REMPARMDESC g_aArgsNotifyPhysRamChunkRegister[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL }
 };
 static const REMPARMDESC g_aArgsNotifyPhysReserve[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT), NULL }
+};
+static const REMPARMDESC g_aArgsNotifyPhysRamDeregister[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
@@ -551,6 +558,11 @@ static const REMPARMDESC g_aArgsDBGFR3DisasInstrEx[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL }
+};
+static const REMPARMDESC g_aArgsDBGFR3DisasInstrCurrentLogInternal[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL }
 };
 static const REMPARMDESC g_aArgsDBGFR3Info[] =
 {
@@ -999,8 +1011,9 @@ static const REMPARMDESC g_aArgsmemset[] =
  * Descriptors for the exported functions.
  */
 static const REMFNDESC g_aExports[] =
-{  /* pszName,                                  (void *)pv,                                         pParams,                                    cParams,                                            fFlags,                     cb,             pvWrapper. */
+{  /* pszName,                                  (void *)pv,                                         pParams,                                    cParams,                                               fFlags,                     cb,             pvWrapper. */
     { "REMR3Init",                              (void *)&pfnREMR3Init,                              &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),    NULL },
+    { "REMR3InitFinalize",                      (void *)&pfnREMR3InitFinalize,                      &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),    NULL },
     { "REMR3Term",                              (void *)&pfnREMR3Term,                              &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),    NULL },
     { "REMR3Reset",                             (void *)&pfnREMR3Reset,                             &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3Step",                              (void *)&pfnREMR3Step,                              &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),    NULL },
@@ -1068,6 +1081,7 @@ static REMFNDESC g_aVMMImports[] =
     { "DBGCRegisterCommands",                   (void *)(uintptr_t)&DBGCRegisterCommands,           &g_aArgsDBGCRegisterCommands[0],            RT_ELEMENTS(g_aArgsDBGCRegisterCommands),              REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
 #endif
     { "DBGFR3DisasInstrEx",                     (void *)(uintptr_t)&DBGFR3DisasInstrEx,             &g_aArgsDBGFR3DisasInstrEx[0],              RT_ELEMENTS(g_aArgsDBGFR3DisasInstrEx),                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "DBGFR3DisasInstrCurrentLogInternal",     (void *)(uintptr_t)&DBGFR3DisasInstrCurrentLogInternal, &g_aArgsDBGFR3DisasInstrCurrentLogInternal[0],  RT_ELEMENTS(g_aArgsDBGFR3DisasInstrCurrentLogInternal),REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "DBGFR3Info",                             (void *)(uintptr_t)&DBGFR3Info,                     &g_aArgsDBGFR3Info[0],                      RT_ELEMENTS(g_aArgsDBGFR3Info),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "DBGFR3InfoLogRelHlp",                    (void *)(uintptr_t)&DBGFR3InfoLogRelHlp,            NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
     { "DBGFR3SymbolByAddr",                     (void *)(uintptr_t)&DBGFR3SymbolByAddr,             &g_aArgsDBGFR3SymbolByAddr[0],              RT_ELEMENTS(g_aArgsDBGFR3SymbolByAddr),                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
@@ -1991,6 +2005,14 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 #endif
 }
 
+REMR3DECL(int) REMR3InitFinalize(PVM pVM)
+{
+#ifndef USE_REM_STUBS
+    Assert(VALID_PTR(pfnREMR3InitFinalize));
+    return pfnREMR3InitFinalize(pVM);
+#endif
+}
+
 REMR3DECL(int) REMR3Term(PVM pVM)
 {
 #ifdef USE_REM_STUBS
@@ -2132,7 +2154,7 @@ REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage)
 #endif
 }
 
-REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, unsigned fFlags)
+REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, unsigned fFlags)
 {
 #ifndef USE_REM_STUBS
     Assert(VALID_PTR(pfnREMR3NotifyPhysRamRegister));
