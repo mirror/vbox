@@ -302,7 +302,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     else
         AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamPreAlloc\", rc=%Rrc.\n", rc), rc);
 
-    /** @cfgm{RamSize, uint64_t, 0, 0, UINT64_MAX}
+    /** @cfgm{RamSize, uint64_t, 0, 16TB, 0}
      * Specifies the size of the base RAM that is to be set up during
      * VM initialization.
      */
@@ -312,10 +312,28 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
         cbRam = 0;
     else
         AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamSize\", rc=%Rrc.\n", rc), rc);
-
+    AssertLogRelMsg(!(cbRam & ~X86_PTE_PAE_PG_MASK), ("%RGp\n", cbRam));
     cbRam &= X86_PTE_PAE_PG_MASK;
-    pVM->mm.s.cbRamBase = cbRam;            /* Warning: don't move this code to MMR3Init without fixing REMR3Init.  */
-    Log(("MM: %RU64 bytes of RAM%s\n", cbRam, fPreAlloc ? " (PreAlloc)" : ""));
+    pVM->mm.s.cbRamBase = cbRam;
+
+    /** @cfgm{RamHoleSize, uint32_t, 0, 4032MB, 512MB}
+     * Specifies the size of the memory hole. The memory hole is used
+     * to avoid mapping RAM to the range normally used for PCI memory regions.
+     * Must be aligned on a 4MB boundrary. */
+    uint32_t cbRamHole;
+    rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "RamHoleSize", &cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
+    AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamHoleSize\", rc=%Rrc.\n", rc), rc);
+    AssertLogRelMsgReturn(cbRamHole <= 4032U * _1M,
+                          ("Configuration error: \"RamHoleSize\"=%#RX32 is too large.\n", cbRamHole), VERR_OUT_OF_RANGE);
+    AssertLogRelMsgReturn(cbRamHole > 16 * _1M,
+                          ("Configuration error: \"RamHoleSize\"=%#RX32 is too large.\n", cbRamHole), VERR_OUT_OF_RANGE);
+    AssertLogRelMsgReturn(!(cbRamHole & (_4M - 1)),
+                          ("Configuration error: \"RamHoleSize\"=%#RX32 is misaligned.\n", cbRamHole), VERR_OUT_OF_RANGE);
+    uint64_t const offRamHole = _4G - cbRamHole;
+    if (cbRam < offRamHole)
+        Log(("MM: %RU64 bytes of RAM%s\n", cbRam, fPreAlloc ? " (PreAlloc)" : ""));
+    else
+        Log(("MM: %RU64 bytes of RAM%s with a hole at %RU64 up to 4GB.\n", cbRam, fPreAlloc ? " (PreAlloc)" : "", offRamHole));
 
     /** @cfgm{MM/Policy, string, no overcommitment}
      * Specifies the policy to use when reserving memory for this VM. The recognized
@@ -392,14 +410,23 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     /*
      * Setup the base ram (PGM).
      */
-    rc = PGMR3PhysRegisterRam(pVM, 0, cbRam, "Base RAM");
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-    if (RT_SUCCESS(rc) && fPreAlloc)
+    if (cbRam > offRamHole)
+    {
+        rc = PGMR3PhysRegisterRam(pVM, 0, offRamHole, "Base RAM");
+        if (RT_SUCCESS(rc))
+            rc = PGMR3PhysRegisterRam(pVM, _4G, cbRam - offRamHole, "Above 4GB Base RAM");
+    }
+    else
+        rc = PGMR3PhysRegisterRam(pVM, 0, RT_MIN(cbRam, offRamHole), "Base RAM");
+    if (    RT_SUCCESS(rc)
+        &&  fPreAlloc)
     {
         /** @todo RamPreAlloc should be handled at the very end of the VM creation. (lazy bird) */
         return VM_SET_ERROR(pVM, VERR_NOT_IMPLEMENTED, "TODO: RamPreAlloc");
     }
 #else
+    rc = PGMR3PhysRegisterRam(pVM, 0, cbRam, "Base RAM");
     if (RT_SUCCESS(rc))
     {
         /*
@@ -422,7 +449,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
      * PGMR3PhysRegisterRam calls above mess things up.
      */
     pVM->mm.s.fDoneMMR3InitPaging = true;
-    AssertMsg(pVM->mm.s.cBasePages == cBasePages, ("%RX64 != %RX64\n", pVM->mm.s.cBasePages, cBasePages));
+    AssertMsg(pVM->mm.s.cBasePages == cBasePages || RT_FAILURE(rc), ("%RX64 != %RX64\n", pVM->mm.s.cBasePages, cBasePages));
 #endif
 
     LogFlow(("MMR3InitPaging: returns %Rrc\n", rc));

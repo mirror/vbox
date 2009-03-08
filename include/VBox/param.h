@@ -59,6 +59,9 @@
  */
 #define MM_HYPER_DYNAMIC_SIZE       (16 * PAGE_SIZE)
 
+/** The default size of the below 4GB RAM hole. */
+#define MM_RAM_HOLE_SIZE_DEFAULT    (512U * _1M)
+
 /** @} */
 
 
