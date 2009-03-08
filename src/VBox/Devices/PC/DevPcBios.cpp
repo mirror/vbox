@@ -136,8 +136,10 @@ typedef struct DEVPCBIOS
 
     /** Boot devices (ordered). */
     DEVPCBIOSBOOT   aenmBootDevice[4];
-    /** Ram Size (in bytes). */
+    /** RAM size (in bytes). */
     uint64_t        cbRam;
+    /** RAM hole size (in bytes). */
+    uint32_t        cbRamHole;
     /** Bochs shutdown index. */
     uint32_t        iShutdown;
     /** Floppy device. */
@@ -580,16 +582,35 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     pcbiosCmosWrite(pDevIns, 0x30, u32 & 0xff);                                 /* 30h - Extended Memory in K, Low Byte */
     pcbiosCmosWrite(pDevIns, 0x31, u32 >> 8);                                   /* 31h - Extended Memory in K, High Byte */
 
-    /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB */
+    /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB
+       and below 4GB (as it can only hold 4GB+16M). */
+    uint64_t const offRamHole = _4G - pThis->cbRamHole;
     if (pThis->cbRam > 16 * _1M)
     {
-        u32 = (uint32_t)( (pThis->cbRam - 16 * _1M) / _64K );
+        u32 = (uint32_t)( (RT_MIN(pThis->cbRam, offRamHole) - 16 * _1M) / _64K );
         u32 = RT_MIN(u32, 0xffff);
     }
     else
         u32 = 0;
     pcbiosCmosWrite(pDevIns, 0x34, u32 & 0xff);
     pcbiosCmosWrite(pDevIns, 0x35, u32 >> 8);
+
+# if 0    /** @todo Report the amount above 4GB and make sure the BIOS is only using 34/35 for the bits below 4GB. */
+    /* Suggestion: MBs above 4GB, reserve 4 CMOS entries (need 3 now), means a
+                   total around 2**52 bytes or 4EB if you like. The max of what
+                   AMD64 is currently specified for IIRC.  */
+    if (pThis->cbRam <= offRamHole)
+        u32 = 0;
+    else
+    {
+        u32 = (pThis->cbRam - offRamHole) / _1M;
+        AssertMsg((uint64_t)u32 * _1M + offRamHole == pThis->cbRam, ("%RX64 %RX64\n", pThis->cbRam, offRamHole));
+    }
+    pcbiosCmosWrite(pDevIns, 0xY0,  u32        & 0xff);
+    pcbiosCmosWrite(pDevIns, 0xY1, (u32 >>  8) & 0xff);
+    pcbiosCmosWrite(pDevIns, 0xY2, (u32 >> 16) & 0xff);
+    pcbiosCmosWrite(pDevIns, 0xY3,  u32 >> 24);
+# endif
 #endif /* old code */
 
     /*
@@ -1359,6 +1380,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "BootDevice2\0"
                               "BootDevice3\0"
                               "RamSize\0"
+                              "RamHoleSize\0"
                               "HardDiskDevice\0"
                               "SataHardDiskDevice\0"
                               "SataPrimaryMasterLUN\0"
@@ -1397,15 +1419,20 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"RamSize\" as integer failed"));
 
+    rc = CFGMR3QueryU32Def(pCfgHandle, "RamHoleSize", &pThis->cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"RamHoleSize\" as integer failed"));
+
     rc = CFGMR3QueryU16Def(pCfgHandle, "NumCPUs", &pThis->cCpus, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
 
 #ifdef VBOX_WITH_SMP_GUESTS
-    LogRel(("[SMP] BIOS with %d CPUs\n", pThis->cCpus));
+    LogRel(("[SMP] BIOS with %u CPUs\n", pThis->cCpus));
 #else
-    /* @todo: move this check up in configuration chain */
+    /** @todo: move this check up in configuration chain */
     if (pThis->cCpus != 1)
     {
         LogRel(("WARNING: guest SMP not supported in this build, going UP\n"));

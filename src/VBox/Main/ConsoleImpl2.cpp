@@ -79,10 +79,13 @@
 # include <devguid.h>
 #endif
 
+#include <VBox/param.h>
+
+
 /**
  * Translate IDEControllerType_T to string representation.
  */
-const char* controllerString(IDEControllerType_T enmType)
+const char *controllerString(IDEControllerType_T enmType)
 {
     switch (enmType)
     {
@@ -96,6 +99,7 @@ const char* controllerString(IDEControllerType_T enmType)
             return "Unknown";
     }
 }
+
 /*
  * VC++ 8 / amd64 has some serious trouble with this function.
  * As a temporary measure, we'll drop global optimizations.
@@ -183,6 +187,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     cRamMBs = 8 * 1024;
 #endif
     uint64_t const cbRam = cRamMBs * (uint64_t)_1M;
+    uint32_t const cbRamHole = MM_RAM_HOLE_SIZE_DEFAULT;
 
     ULONG cCpus = 1;
 #ifdef VBOX_WITH_SMP_GUESTS
@@ -205,6 +210,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     STR_FREE();
     rc = CFGMR3InsertBytes(pRoot,   "UUID", pUuid, sizeof(*pUuid));                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              cbRam);                 RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "RamHoleSize",          cbRamHole);             RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cCpus);                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */   RC_CHECK();
@@ -366,6 +372,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
         rc = CFGMR3InsertNode(pInst,    "Config", &pBiosCfg);                           RC_CHECK();
         rc = CFGMR3InsertInteger(pBiosCfg,  "RamSize",              cbRam);             RC_CHECK();
+        rc = CFGMR3InsertInteger(pBiosCfg,  "RamHoleSize",          cbRamHole);         RC_CHECK();
         rc = CFGMR3InsertInteger(pBiosCfg,  "NumCPUs",              cCpus);             RC_CHECK();
         rc = CFGMR3InsertString(pBiosCfg,   "HardDiskDevice",       "piix3ide");        RC_CHECK();
         rc = CFGMR3InsertString(pBiosCfg,   "FloppyDevice",         "i82078");          RC_CHECK();
@@ -630,6 +637,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
         rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cbRam);                 RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);             RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                 RC_CHECK();
 
         rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
