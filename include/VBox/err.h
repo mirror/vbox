@@ -436,6 +436,8 @@
 #define VERR_PGM_PHYS_NOT_RAM                   (-1637)
 /** Trying to free a page with an invalid Page ID. */
 #define VERR_PGM_PHYS_INVALID_PAGE_ID           (-1638)
+/** PGMPhysWrite/Read hit a handler in Ring-0 or raw-mode context. */
+#define VERR_PGM_PHYS_WR_HIT_HANDLER            (-1639)
 /** @} */
 
 
