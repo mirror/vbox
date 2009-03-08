@@ -52,7 +52,7 @@
 #define MM_HYPER_AREA_ADDRESS       UINT32_C(0xa0000000)
 
 /** The max size of the hypervisor memory area. */
-#define MM_HYPER_AREA_MAX_SIZE      (20 * _1M)
+#define MM_HYPER_AREA_MAX_SIZE      (40 * _1M) /**< @todo Readjust when floating RAMRANGEs have been implemented. Used to be 20 * _1MB */
 
 /** Maximum number of bytes we can dynamically map into the hypervisor region.
  * This must be a power of 2 number of pages!
