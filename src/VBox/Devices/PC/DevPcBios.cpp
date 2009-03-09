@@ -538,15 +538,13 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     pcbiosCmosWrite(pDevIns, 0x31, u32 >> 8);                                   /* 31h - Extended Memory in K, High Byte */
 
     /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB
-       and below 4GB (as it can only hold 4GB+16M). For 0E820h to work right,
-       this has to indicate less than 0xfffc0000 bytes or it'll conflict with
-       the high BIOS area. */
+       and below 4GB (as it can only hold 4GB+16M). We have to chop off the
+       top 2MB or it conflict with what the ACPI tables return. (Should these
+       be adjusted, we still have to chop it at 0xfffc0000 or it'll conflict
+       with the high BIOS mapping.) */
     uint64_t const offRamHole = _4G - pThis->cbRamHole;
     if (pThis->cbRam > 16 * _1M)
-    {
-        u32 = (uint32_t)( (RT_MIN(pThis->cbRam, offRamHole) - 16 * _1M) / _64K );
-        u32 = RT_MIN(u32, 0xfefc);
-    }
+        u32 = (uint32_t)( (RT_MIN(RT_MIN(pThis->cbRam, offRamHole), UINT32_C(0xffe00000)) - 16U * _1M) / _64K );
     else
         u32 = 0;
     pcbiosCmosWrite(pDevIns, 0x34, u32 & 0xff);
