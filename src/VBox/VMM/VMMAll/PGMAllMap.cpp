@@ -361,7 +361,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
  */
 void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE)
 {
-    Log(("pgmMapClearShadowPDEs old pde %x (mappings enabled %d)\n", iOldPDE, pgmMapAreMappingsEnabled(&pVM->pgm.s)));
+    Log(("pgmMapClearShadowPDEs old pde %x (cPTs=%x) (mappings enabled %d)\n", iOldPDE, pMap->cPTs, pgmMapAreMappingsEnabled(&pVM->pgm.s)));
 
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
@@ -781,7 +781,7 @@ VMMDECL(int) PGMMapResolveConflicts(PVM pVM)
                     Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping %s (PAE)\n"
                          "                        PDE=%016RX64.\n",
                         GCPtr, pCur->pszDesc, Pde.u));
-                    int rc = pgmR3SyncPTResolveConflictPAE(pVM, pCur, GCPtr);
+                    int rc = pgmR3SyncPTResolveConflictPAE(pVM, pCur, pCur->GCPtr);
                     AssertRCReturn(rc, rc);
 
                     /*
