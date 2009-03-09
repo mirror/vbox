@@ -180,10 +180,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     /* Did we mark the PDPT as not present in SyncCR3? */
     unsigned        iPdpt  = (pvFault >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
     PX86PDPT        pPdptDst = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
-#    ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     if (!pPdptDst->a[iPdpt].n.u1Present)
         pPdptDst->a[iPdpt].n.u1Present = 1;
-#    endif
 #   endif
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_AMD64
