@@ -426,7 +426,7 @@ struct Node::Data
     };
 
     // attributes, if this is an element; can be empty
-    typedef std::map<const char*, boost::shared_ptr<Node>, compare_const_char > AttributesMap;
+    typedef std::map<const char*, boost::shared_ptr<AttributeNode>, compare_const_char > AttributesMap;
     AttributesMap attribs;
 
     // child elements, if this is an element; can be empty
@@ -434,8 +434,9 @@ struct Node::Data
     InternalNodesList children;
 };
 
-Node::Node()
-    : m(new Data)
+Node::Node(EnumType type)
+    : mType(type),
+      m(new Data)
 {
     m->plibNode = NULL;
     m->plibAttr = NULL;
@@ -454,7 +455,7 @@ void Node::buildChildren()       // private
     while (plibAttr)
     {
         const char *pcszAttribName = (const char*)plibAttr->name;
-        boost::shared_ptr<Node> pNew(new Node);
+        boost::shared_ptr<AttributeNode> pNew(new AttributeNode);
         pNew->m->plibAttr = plibAttr;
         pNew->m->pcszName = (const char*)plibAttr->name;
         pNew->m->pParent = this;
@@ -468,8 +469,13 @@ void Node::buildChildren()       // private
     xmlNodePtr plibNode = m->plibNode->children;
     while (plibNode)
     {
-        // create a new Node for this child element
-        boost::shared_ptr<Node> pNew(new Node);
+        boost::shared_ptr<Node> pNew;
+
+        if (plibNode->name)
+            pNew = boost::shared_ptr<Node>(new ElementNode);
+        else
+            pNew = boost::shared_ptr<Node>(new ContentNode);
+
         pNew->m->plibNode = plibNode;
         pNew->m->pcszName = (const char*)plibNode->name;
         pNew->m->pParent = this;
@@ -592,6 +598,11 @@ int Node::getLineNumber() const
     return m->plibNode->line;
 }
 
+ElementNode::ElementNode()
+    : Node(IsElement)
+{
+}
+
 /**
  * Builds a list of direct child elements of the current element that
  * match the given string; if pcszMatch is NULL, all direct child
@@ -600,8 +611,8 @@ int Node::getLineNumber() const
  * @param pcszMatch in: match string, or NULL to return all children.
  * @return Number of items appended to the list (0 if none).
  */
-int Node::getChildElements(NodesList &children,
-                              const char *pcszMatch /*= NULL*/)
+int ElementNode::getChildElements(ElementNodesList &children,
+                                  const char *pcszMatch /*= NULL*/)
     const
 {
     int i = 0;
@@ -617,7 +628,9 @@ int Node::getChildElements(NodesList &children,
              || (!strcmp(pcszMatch, (**it).getName())) // the element name matches
            )
         {
-            children.push_back((*it).get());
+            Node *pNode = (*it).get();
+            if (pNode->isElement())
+                children.push_back(static_cast<ElementNode*>(pNode));
             ++i;
         }
     }
@@ -629,7 +642,7 @@ int Node::getChildElements(NodesList &children,
  * @param pcszMatch
  * @return
  */
-const Node* Node::findChildElement(const char *pcszMatch)
+const ElementNode* ElementNode::findChildElement(const char *pcszMatch)
     const
 {
     Data::InternalNodesList::const_iterator
@@ -639,8 +652,12 @@ const Node* Node::findChildElement(const char *pcszMatch)
          it != last;
          ++it)
     {
-        if (!strcmp(pcszMatch, (**it).getName())) // the element name matches
-            return (*it).get();
+        if ((**it).isElement())
+        {
+            ElementNode *pelm = static_cast<ElementNode*>((*it).get());
+            if (!strcmp(pcszMatch, pelm->getName())) // the element name matches
+                return pelm;
+        }
     }
 
     return NULL;
@@ -651,7 +668,7 @@ const Node* Node::findChildElement(const char *pcszMatch)
  * @param pcszId identifier to look for.
  * @return child element or NULL if not found.
  */
-const Node* Node::findChildElementFromId(const char *pcszId) const
+const ElementNode* ElementNode::findChildElementFromId(const char *pcszId) const
 {
     Data::InternalNodesList::const_iterator
         it,
@@ -660,12 +677,15 @@ const Node* Node::findChildElementFromId(const char *pcszId) const
          it != last;
          ++it)
     {
-        const Node *pElem = (*it).get();
-        const Node *pAttr;
-        if (    ((pAttr = pElem->findAttribute("id")))
-             && (!strcmp(pAttr->getValue(), pcszId))
-           )
-            return pElem;
+        if ((**it).isElement())
+        {
+            ElementNode *pelm = static_cast<ElementNode*>((*it).get());
+            const AttributeNode *pAttr;
+            if (    ((pAttr = pelm->findAttribute("id")))
+                 && (!strcmp(pAttr->getValue(), pcszId))
+               )
+                return pelm;
+        }
     }
 
     return NULL;
@@ -676,7 +696,7 @@ const Node* Node::findChildElementFromId(const char *pcszId) const
  * @param pcszMatch
  * @return
  */
-const Node* Node::findAttribute(const char *pcszMatch) const
+const AttributeNode* ElementNode::findAttribute(const char *pcszMatch) const
 {
     Data::AttributesMap::const_iterator it;
 
@@ -695,7 +715,7 @@ const Node* Node::findAttribute(const char *pcszMatch) const
  * @param str out: attribute value
  * @return TRUE if attribute was found and str was thus updated.
  */
-bool Node::getAttributeValue(const char *pcszMatch, com::Utf8Str &str) const
+bool ElementNode::getAttributeValue(const char *pcszMatch, com::Utf8Str &str) const
 {
     const Node* pAttr;
     if ((pAttr = findAttribute(pcszMatch)))
@@ -717,7 +737,7 @@ bool Node::getAttributeValue(const char *pcszMatch, com::Utf8Str &str) const
  * @param i out: attribute value
  * @return TRUE if attribute was found and str was thus updated.
  */
-bool Node::getAttributeValue(const char *pcszMatch, int64_t &i) const
+bool ElementNode::getAttributeValue(const char *pcszMatch, int64_t &i) const
 {
     com::Utf8Str str;
     if (    (getAttributeValue(pcszMatch, str))
@@ -738,7 +758,7 @@ bool Node::getAttributeValue(const char *pcszMatch, int64_t &i) const
  * @param i out: attribute value
  * @return TRUE if attribute was found and str was thus updated.
  */
-bool Node::getAttributeValue(const char *pcszMatch, uint64_t &i) const
+bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t &i) const
 {
     com::Utf8Str str;
     if (    (getAttributeValue(pcszMatch, str))
@@ -756,7 +776,7 @@ bool Node::getAttributeValue(const char *pcszMatch, uint64_t &i) const
  * @param pcszElementName
  * @return
  */
-Node* Node::createChild(const char *pcszElementName)
+ElementNode* ElementNode::createChild(const char *pcszElementName)
 {
     // we must be an element, not an attribute
     if (!m->plibNode)
@@ -770,8 +790,8 @@ Node* Node::createChild(const char *pcszElementName)
     xmlAddChild(m->plibNode, plibNode);
 
     // now wrap this in C++
-    Node *p = new Node;
-    boost::shared_ptr<Node> pNew(p);
+    ElementNode *p = new ElementNode;
+    boost::shared_ptr<ElementNode> pNew(p);
     pNew->m->plibNode = plibNode;
     pNew->m->pcszName = (const char*)plibNode->name;
 
@@ -788,12 +808,8 @@ Node* Node::createChild(const char *pcszElementName)
  * @param pcszElementName
  * @return
  */
-Node* Node::addContent(const char *pcszContent)
+ContentNode* ElementNode::addContent(const char *pcszContent)
 {
-    // we must be an element, not an attribute
-    if (!m->plibNode)
-        throw ENodeIsNotElement(RT_SRC_POS);
-
     // libxml side: create new node
     xmlNode *plibNode;
     if (!(plibNode = xmlNewText((const xmlChar*)pcszContent)))
@@ -801,8 +817,8 @@ Node* Node::addContent(const char *pcszContent)
     xmlAddChild(m->plibNode, plibNode);
 
     // now wrap this in C++
-    Node *p = new Node;
-    boost::shared_ptr<Node> pNew(p);
+    ContentNode *p = new ContentNode;
+    boost::shared_ptr<ContentNode> pNew(p);
     pNew->m->plibNode = plibNode;
     pNew->m->pcszName = NULL;
 
@@ -812,8 +828,7 @@ Node* Node::addContent(const char *pcszContent)
 }
 
 /**
- * Sets the given attribute. Assumes that "this" is an element node,
- * otherwise ENodeIsNotElement is thrown.
+ * Sets the given attribute.
  *
  * If an attribute with the given name exists, it is overwritten,
  * otherwise a new attribute is created. Returns the attribute node
@@ -823,12 +838,8 @@ Node* Node::addContent(const char *pcszContent)
  * @param pcszValue
  * @return
  */
-Node* Node::setAttribute(const char *pcszName, const char *pcszValue)
+AttributeNode* ElementNode::setAttribute(const char *pcszName, const char *pcszValue)
 {
-    // we must be an element, not an attribute
-    if (!m->plibNode)
-        throw ENodeIsNotElement(RT_SRC_POS);
-
     Data::AttributesMap::const_iterator it;
 
     it = m->attribs.find(pcszName);
@@ -839,7 +850,7 @@ Node* Node::setAttribute(const char *pcszName, const char *pcszValue)
         const char *pcszAttribName = (const char*)plibAttr->name;
 
         // C++ side: create an attribute node around it
-        boost::shared_ptr<Node> pNew(new Node);
+        boost::shared_ptr<AttributeNode> pNew(new AttributeNode);
         pNew->m->plibAttr = plibAttr;
         pNew->m->pcszName = (const char*)plibAttr->name;
         pNew->m->pParent = this;
@@ -857,6 +868,16 @@ Node* Node::setAttribute(const char *pcszName, const char *pcszValue)
 }
 
 
+AttributeNode::AttributeNode()
+    : Node(IsAttribute)
+{
+}
+
+ContentNode::ContentNode()
+    : Node(IsContent)
+{
+}
+
 /*
  * NodesLoop
  *
@@ -864,11 +885,11 @@ Node* Node::setAttribute(const char *pcszName, const char *pcszValue)
 
 struct NodesLoop::Data
 {
-    NodesList listElements;
-    NodesList::const_iterator it;
+    ElementNodesList listElements;
+    ElementNodesList::const_iterator it;
 };
 
-NodesLoop::NodesLoop(const Node &node, const char *pcszMatch /* = NULL */)
+NodesLoop::NodesLoop(const ElementNode &node, const char *pcszMatch /* = NULL */)
 {
     m = new Data;
     node.getChildElements(m->listElements, pcszMatch);
@@ -896,9 +917,9 @@ NodesLoop::~NodesLoop()
  * @param pcszMatch
  * @return
  */
-const Node* NodesLoop::forAllNodes() const
+const ElementNode* NodesLoop::forAllNodes() const
 {
-    const Node *pNode = NULL;
+    const ElementNode *pNode = NULL;
 
     if (m->it != m->listElements.end())
     {
@@ -918,7 +939,7 @@ const Node* NodesLoop::forAllNodes() const
 struct Document::Data
 {
     xmlDocPtr   plibDocument;
-    Node        *pRootElement;
+    ElementNode *pRootElement;
 
     Data()
     {
@@ -985,7 +1006,7 @@ Document::~Document()
  */
 void Document::refreshInternals() // private
 {
-    m->pRootElement = new Node();
+    m->pRootElement = new ElementNode();
     m->pRootElement->m->plibNode = xmlDocGetRootElement(m->plibDocument);
     m->pRootElement->m->pcszName = (const char*)m->pRootElement->m->plibNode->name;
 
@@ -996,7 +1017,7 @@ void Document::refreshInternals() // private
  * Returns the root element of the document, or NULL if the document is empty.
  * @return
  */
-const Node* Document::getRootElement() const
+const ElementNode* Document::getRootElement() const
 {
     return m->pRootElement;
 }
@@ -1005,7 +1026,7 @@ const Node* Document::getRootElement() const
  * Creates a new element node and sets it as the root element. This will
  * only work if the document is empty; otherwise EDocumentNotEmpty is thrown.
  */
-Node* Document::createRootElement(const char *pcszRootElementName)
+ElementNode* Document::createRootElement(const char *pcszRootElementName)
 {
     if (m->pRootElement || m->plibDocument)
         throw EDocumentNotEmpty(RT_SRC_POS);
@@ -1019,7 +1040,7 @@ Node* Document::createRootElement(const char *pcszRootElementName)
     xmlDocSetRootElement(m->plibDocument, plibRootNode);
 
     // now wrap this in C++
-    m->pRootElement = new Node();
+    m->pRootElement = new ElementNode();
     m->pRootElement->m->plibNode = plibRootNode;
     m->pRootElement->m->pcszName = (const char*)plibRootNode->name;
 

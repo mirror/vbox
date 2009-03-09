@@ -446,8 +446,12 @@ private:
  *  --  xml::Node::setAttribute()
  */
 
-class Node;
-typedef std::list<const Node*> NodesList;
+class ElementNode;
+typedef std::list<const ElementNode*> ElementNodesList;
+
+class AttributeNode;
+
+class ContentNode;
 
 class VBOXXML_CLASS Node
 {
@@ -463,28 +467,17 @@ public:
 
     int getLineNumber() const;
 
-    int getChildElements(NodesList &children,
-                         const char *pcszMatch = NULL) const;
+    int isElement()
+    {
+        return mType == IsElement;
+    }
 
-    const Node* findChildElement(const char *pcszMatch) const;
-    const Node* findChildElementFromId(const char *pcszId) const;
+protected:
+    typedef enum {IsElement, IsAttribute, IsContent} EnumType;
+    EnumType mType;
 
-    const Node* findAttribute(const char *pcszMatch) const;
-    bool getAttributeValue(const char *pcszMatch, com::Utf8Str &str) const;
-    bool getAttributeValue(const char *pcszMatch, int64_t &i) const;
-    bool getAttributeValue(const char *pcszMatch, uint64_t &i) const;
-
-    Node* createChild(const char *pcszElementName);
-    Node* addContent(const char *pcszContent);
-    Node* setAttribute(const char *pcszName, const char *pcszValue);
-
-private:
     // hide the default constructor so people use only our factory methods
-    Node();
-
-    friend class Document;
-    friend class XmlFileParser;
-
+    Node(EnumType type);
     Node(const Node &x);      // no copying
 
     void buildChildren();
@@ -492,6 +485,60 @@ private:
     /* Obscure class data */
     struct Data;
     Data *m;
+};
+
+class VBOXXML_CLASS ElementNode : public Node
+{
+public:
+    int getChildElements(ElementNodesList &children,
+                         const char *pcszMatch = NULL) const;
+
+    const ElementNode* findChildElement(const char *pcszMatch) const;
+    const ElementNode* findChildElementFromId(const char *pcszId) const;
+
+    const AttributeNode* findAttribute(const char *pcszMatch) const;
+    bool getAttributeValue(const char *pcszMatch, com::Utf8Str &str) const;
+    bool getAttributeValue(const char *pcszMatch, int64_t &i) const;
+    bool getAttributeValue(const char *pcszMatch, uint64_t &i) const;
+
+    ElementNode* createChild(const char *pcszElementName);
+    ContentNode* addContent(const char *pcszContent);
+    AttributeNode* setAttribute(const char *pcszName, const char *pcszValue);
+
+protected:
+    // hide the default constructor so people use only our factory methods
+    ElementNode();
+    ElementNode(const ElementNode &x);      // no copying
+
+    friend class Node;
+    friend class Document;
+    friend class XmlFileParser;
+};
+
+class VBOXXML_CLASS ContentNode : public Node
+{
+public:
+
+protected:
+    // hide the default constructor so people use only our factory methods
+    ContentNode();
+    ContentNode(const ContentNode &x);      // no copying
+
+    friend class Node;
+    friend class ElementNode;
+};
+
+class VBOXXML_CLASS AttributeNode : public Node
+{
+public:
+
+protected:
+    // hide the default constructor so people use only our factory methods
+    AttributeNode();
+    AttributeNode(const AttributeNode &x);      // no copying
+
+    friend class Node;
+    friend class ElementNode;
 };
 
 /*
@@ -502,9 +549,9 @@ private:
 class VBOXXML_CLASS NodesLoop
 {
 public:
-    NodesLoop(const Node &node, const char *pcszMatch = NULL);
+    NodesLoop(const ElementNode &node, const char *pcszMatch = NULL);
     ~NodesLoop();
-    const Node* forAllNodes() const;
+    const ElementNode* forAllNodes() const;
 
 private:
     /* Obscure class data */
@@ -526,9 +573,9 @@ public:
     Document(const Document &x);
     Document& operator=(const Document &x);
 
-    const Node* getRootElement() const;
+    const ElementNode* getRootElement() const;
 
-    Node* createRootElement(const char *pcszRootElementName);
+    ElementNode* createRootElement(const char *pcszRootElementName);
 
 private:
     friend class XmlFileParser;
