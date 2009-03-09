@@ -54,11 +54,13 @@ ifndef VBOX_ONLY_SDK
  #
  # The C utility DLL
  #
- DLLS.linux += VBoxXPCOMC
+ ifdef VBOX_WITH_XPCOM
+ DLLS += VBoxXPCOMC
  VBoxXPCOMC_TEMPLATE = VBOXMAINDLL
  VBoxXPCOMC_DEFS = IN_VBOXXPCOMC
  VBoxXPCOMC_SOURCES = \
  	VBoxXPCOMC.cpp
+ endif
 
  #
  # The C glue library.
