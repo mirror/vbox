@@ -602,7 +602,7 @@ VBOXXPCOMC_DECL(PCVBOXXPCOM) VBoxGetXPCOMCFunctions(unsigned uVersion);
 typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 
 /** The symbol name of VBoxGetXPCOMCFunctions. */
-#if defined(__APPLE__) || defined(__OS2__)
+#if defined(__OS2__)
 # define VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME   "_VBoxGetXPCOMCFunctions"
 #else
 # define VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME   "VBoxGetXPCOMCFunctions"

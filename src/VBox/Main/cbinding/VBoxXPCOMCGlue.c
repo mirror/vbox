@@ -121,6 +121,9 @@ static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
         else
             sprintf(g_szVBoxErrMsg, "dlsym(%.80s/%.32s): %128s",
                     pszBuf, VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME, dlerror());
+        if (rc != 0)
+            dlclose(g_hVBoxXPCOMC);
+        g_hVBoxXPCOMC = NULL;
     }
     else
         sprintf(g_szVBoxErrMsg, "dlopen(%.80s): %128s", pszBuf, dlerror());
@@ -146,7 +149,6 @@ int VBoxCGlueInit(const char *pszMsgPrefix)
     /*
      * If the user specifies the location, try only that.
      */
-
     const char *pszHome = getenv("VBOX_APP_HOME");
     if (pszHome)
         return tryLoadOne(pszHome, pszMsgPrefix);
@@ -154,7 +156,6 @@ int VBoxCGlueInit(const char *pszMsgPrefix)
     /*
      * Try the known standard locations.
      */
-
 #if defined(__gnu__linux__) || defined(__linux__)
     if (tryLoadOne("/opt/VirtualBox", pszMsgPrefix) == 0)
         return 0;
@@ -175,7 +176,6 @@ int VBoxCGlueInit(const char *pszMsgPrefix)
     /*
      * Finally try the dynamic linker search path.
      */
-
     if (tryLoadOne(NULL, pszMsgPrefix) == 0)
         return 0;
 
@@ -191,6 +191,11 @@ int VBoxCGlueInit(const char *pszMsgPrefix)
  */
 void VBoxCGlueTerm(void)
 {
-    /* later */
+    if (g_hVBoxXPCOMC)
+    {
+        dlclose(g_hVBoxXPCOMC);
+        g_hVBoxXPCOMC = NULL;
+    }
+    g_pVBoxFuncs = NULL;
 }
 
