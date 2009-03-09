@@ -2563,10 +2563,14 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                 OVFResourceType_T type = (OVFResourceType_T)0;      // if this becomes != 0 then we do stuff
                 Utf8Str strDescription;                             // results in <rasd:Description>...</rasd:Description> block
                 Utf8Str strCaption;                                 // results in <rasd:Caption>...</rasd:Caption> block
+
                 int32_t lVirtualQuantity = -1;
-                uint64_t uTemp;
+                Utf8Str strAllocationUnits;
+
                 bool fAutomaticAllocation = false;
                 Utf8Str strConnection;                              // results in <rasd:Connection>...</rasd:Connection> block
+
+                uint64_t uTemp;
 
                 switch (desc.type)
                 {
@@ -2598,6 +2602,7 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                         type = OVFResourceType_Memory; // 4
                         desc.strVbox.toInt(uTemp);
                         lVirtualQuantity = (int32_t)(uTemp / _1M);
+                        strAllocationUnits = "MegaBytes";
                     break;
 
 //                     case VirtualSystemDescriptionType_HardDiskControllerIDE:
@@ -2679,27 +2684,30 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                     xml::ElementNode *pItem;
                     pItem = pelmVirtualHardwareSection->createChild("Item");
 
+                    if (!strAllocationUnits.isEmpty())
+                        pItem->createChild("rasd:AllocationUnits")->addContent(strAllocationUnits);
+
                     if (fAutomaticAllocation)
                         pItem->createChild("rasd:AutomaticAllocation")->addContent("true");
 
-                    if (strDescription.length())
-                        pItem->createChild("rasd:Description")->addContent(strDescription.c_str());
-                    if (strCaption.length())
-                        pItem->createChild("rasd:Caption")->addContent(strCaption.c_str());
+                    if (!strDescription.isEmpty())
+                        pItem->createChild("rasd:Description")->addContent(strDescription);
+                    if (!strCaption.isEmpty())
+                        pItem->createChild("rasd:Caption")->addContent(strCaption);
 
-                    if (strConnection.length())
-                        pItem->createChild("rasd:Connection")->addContent(strConnection.c_str());
+                    if (!strConnection.isEmpty())
+                        pItem->createChild("rasd:Connection")->addContent(strConnection);
 
                     // <rasd:InstanceID>1</rasd:InstanceID>
-                    pItem->createChild("rasd:InstanceID")->addContent(Utf8StrFmt("%d", ulInstanceID).c_str());
+                    pItem->createChild("rasd:InstanceID")->addContent(Utf8StrFmt("%d", ulInstanceID));
                     ++ulInstanceID;
 
                     // <rasd:ResourceType>3</rasd:ResourceType>
-                    pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type).c_str());
+                    pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type));
 
                     // <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
                     if (lVirtualQuantity != -1)
-                        pItem->createChild("rasd:VirtualQuantity")->addContent(Utf8StrFmt("%d", lVirtualQuantity).c_str());
+                        pItem->createChild("rasd:VirtualQuantity")->addContent(Utf8StrFmt("%d", lVirtualQuantity));
 
                 }
             }
