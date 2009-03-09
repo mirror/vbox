@@ -913,7 +913,7 @@ int pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppP
 
             if (CPUMGetGuestCR4(pVM) & X86_CR4_PAE)
             {
-                Assert(pGstPdpe->n.u1Present);
+                AssertMsg(pGstPdpe->n.u1Present, ("GstPdpe=%RX64\n", pGstPdpe->u));
                 GCPdPt  = pGstPdpe->u & X86_PDPE_PG_MASK;
                 enmKind = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
             }
@@ -2105,6 +2105,8 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
                 Log4(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%p iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
                 return VINF_SUCCESS;
             }
+            else
+                LogFlow(("Out of sync entry %d\n", iPage));
         }
     }
     AssertCompile(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 8);
@@ -2151,6 +2153,7 @@ VMMDECL(void) PGMDynLockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
     Assert(GCPage >= pVM->pgm.s.pbDynPageMapBaseGC && GCPage < (pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE));
     iPage = ((uintptr_t)(GCPage - pVM->pgm.s.pbDynPageMapBaseGC)) >> PAGE_SHIFT;
     ASMAtomicIncU32(&pVM->pgm.s.aLockedDynPageMapCache[iPage]);
+    Log4(("PGMDynLockHCPage %RRv iPage=%d\n", GCPage, iPage));
 }
 
 
@@ -2170,6 +2173,7 @@ VMMDECL(void) PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
     iPage = ((uintptr_t)(GCPage - pVM->pgm.s.pbDynPageMapBaseGC)) >> PAGE_SHIFT;
     Assert(pVM->pgm.s.aLockedDynPageMapCache[iPage]);
     ASMAtomicDecU32(&pVM->pgm.s.aLockedDynPageMapCache[iPage]);
+    Log4(("PGMDynUnlockHCPage %RRv iPage=%d\n", GCPage, iPage));
 }
 
 
