@@ -28,7 +28,7 @@
 #include <iprt/assert.h>
 
 /* static */
-const Global::OSType Global::sOSTypes [SchemaDefs::OSTypeId_COUNT] =
+const Global::OSType Global::sOSTypes[SchemaDefs::OSTypeId_COUNT] =
 {
     /* NOTE1: we assume that unknown is always the first entry!
      * NOTE2: please use powers of 2 when specifying the size of harddisks since

@@ -245,7 +245,7 @@ struct Appliance::TaskExportOVF
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// globals
+// internal helpers
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -254,6 +254,115 @@ static Utf8Str stripFilename(const Utf8Str &strFile)
     Utf8Str str2(strFile);
     RTPathStripFilename(str2.mutableRaw());
     return str2;
+}
+
+static const struct
+{
+    CIMOSType_T     cim;
+    const char      *pcszVbox;
+}
+    g_osTypes[] =
+    {
+        { CIMOSType_CIMOS_Unknown, SchemaDefs_OSTypeId_Other },
+        { CIMOSType_CIMOS_OS2, SchemaDefs_OSTypeId_OS2 },
+        { CIMOSType_CIMOS_MSDOS, SchemaDefs_OSTypeId_DOS },
+        { CIMOSType_CIMOS_WIN3x, SchemaDefs_OSTypeId_Windows31 },
+        { CIMOSType_CIMOS_WIN95, SchemaDefs_OSTypeId_Windows95 },
+        { CIMOSType_CIMOS_WIN98, SchemaDefs_OSTypeId_Windows98 },
+        { CIMOSType_CIMOS_WINNT, SchemaDefs_OSTypeId_WindowsNT4 },
+        { CIMOSType_CIMOS_NetWare, SchemaDefs_OSTypeId_Netware },
+        { CIMOSType_CIMOS_NovellOES, SchemaDefs_OSTypeId_Netware },
+        { CIMOSType_CIMOS_Solaris, SchemaDefs_OSTypeId_Solaris },
+        { CIMOSType_CIMOS_SunOS, SchemaDefs_OSTypeId_Solaris },
+        { CIMOSType_CIMOS_FreeBSD, SchemaDefs_OSTypeId_FreeBSD },
+        { CIMOSType_CIMOS_NetBSD, SchemaDefs_OSTypeId_NetBSD },
+        { CIMOSType_CIMOS_QNX, SchemaDefs_OSTypeId_QNX },
+        { CIMOSType_CIMOS_Windows2000, SchemaDefs_OSTypeId_Windows2000 },
+        { CIMOSType_CIMOS_WindowsMe, SchemaDefs_OSTypeId_WindowsMe },
+        { CIMOSType_CIMOS_OpenBSD, SchemaDefs_OSTypeId_OpenBSD },
+        { CIMOSType_CIMOS_WindowsXP, SchemaDefs_OSTypeId_WindowsXP },
+        { CIMOSType_CIMOS_WindowsXPEmbedded, SchemaDefs_OSTypeId_WindowsXP },
+        { CIMOSType_CIMOS_WindowsEmbeddedforPointofService, SchemaDefs_OSTypeId_WindowsXP },
+        { CIMOSType_CIMOS_MicrosoftWindowsServer2003, SchemaDefs_OSTypeId_Windows2003 },
+        { CIMOSType_CIMOS_MicrosoftWindowsServer2003_64, SchemaDefs_OSTypeId_Windows2003_64 },
+        { CIMOSType_CIMOS_WindowsXP_64, SchemaDefs_OSTypeId_WindowsXP_64 },
+        { CIMOSType_CIMOS_WindowsVista, SchemaDefs_OSTypeId_WindowsVista },
+        { CIMOSType_CIMOS_WindowsVista_64, SchemaDefs_OSTypeId_WindowsVista_64 },
+        { CIMOSType_CIMOS_MicrosoftWindowsServer2008, SchemaDefs_OSTypeId_Windows2008 },
+        { CIMOSType_CIMOS_MicrosoftWindowsServer2008_64, SchemaDefs_OSTypeId_Windows2008_64 },
+        { CIMOSType_CIMOS_FreeBSD_64, SchemaDefs_OSTypeId_FreeBSD_64 },
+        { CIMOSType_CIMOS_RedHatEnterpriseLinux, SchemaDefs_OSTypeId_RedHat },
+        { CIMOSType_CIMOS_RedHatEnterpriseLinux_64, SchemaDefs_OSTypeId_RedHat_64 },
+        { CIMOSType_CIMOS_Solaris_64, SchemaDefs_OSTypeId_Solaris_64 },
+        { CIMOSType_CIMOS_SUSE, SchemaDefs_OSTypeId_OpenSUSE },
+        { CIMOSType_CIMOS_SLES, SchemaDefs_OSTypeId_OpenSUSE },
+        { CIMOSType_CIMOS_NovellLinuxDesktop, SchemaDefs_OSTypeId_OpenSUSE },
+        { CIMOSType_CIMOS_SUSE_64, SchemaDefs_OSTypeId_OpenSUSE_64 },
+        { CIMOSType_CIMOS_SLES_64, SchemaDefs_OSTypeId_OpenSUSE_64 },
+        { CIMOSType_CIMOS_LINUX, SchemaDefs_OSTypeId_Linux },
+        { CIMOSType_CIMOS_SunJavaDesktopSystem, SchemaDefs_OSTypeId_Linux },
+        { CIMOSType_CIMOS_TurboLinux, SchemaDefs_OSTypeId_Linux},
+
+            //                { CIMOSType_CIMOS_TurboLinux_64, },
+            //                { CIMOSType_CIMOS_Linux_64, },
+            //                    osTypeVBox = VBOXOSTYPE_Linux_x64;
+            //                    break;
+
+        { CIMOSType_CIMOS_Mandriva, SchemaDefs_OSTypeId_Mandriva },
+        { CIMOSType_CIMOS_Mandriva_64, SchemaDefs_OSTypeId_Mandriva_64 },
+        { CIMOSType_CIMOS_Ubuntu, SchemaDefs_OSTypeId_Ubuntu },
+        { CIMOSType_CIMOS_Ubuntu_64, SchemaDefs_OSTypeId_Ubuntu_64 },
+        { CIMOSType_CIMOS_Debian, SchemaDefs_OSTypeId_Debian },
+        { CIMOSType_CIMOS_Debian_64, SchemaDefs_OSTypeId_Debian_64 },
+        { CIMOSType_CIMOS_Linux_2_4_x, SchemaDefs_OSTypeId_Linux24 },
+        { CIMOSType_CIMOS_Linux_2_4_x_64, SchemaDefs_OSTypeId_Linux24_64 },
+        { CIMOSType_CIMOS_Linux_2_6_x, SchemaDefs_OSTypeId_Linux26 },
+        { CIMOSType_CIMOS_Linux_2_6_x_64, SchemaDefs_OSTypeId_Linux26_64 }
+};
+
+/**
+ * Private helper func that suggests a VirtualBox guest OS type
+ * for the given OVF operating system type.
+ * @param osTypeVBox
+ * @param c
+ */
+static void convertCIMOSType2VBoxOSType(Utf8Str &strType, CIMOSType_T c)
+{
+    const char *osTypeVBox = "";
+
+    for (size_t i = 0;
+         i < RT_ELEMENTS(g_osTypes);
+         ++i)
+    {
+        if (c == g_osTypes[i].cim)
+        {
+            strType = g_osTypes[i].pcszVbox;
+            return;
+        }
+    }
+
+    strType = SchemaDefs_OSTypeId_Other;
+}
+
+/**
+ * Private helper func that suggests a VirtualBox guest OS type
+ * for the given OVF operating system type.
+ * @param osTypeVBox
+ * @param c
+ */
+static CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox)
+{
+    const char *osTypeVBox = "";
+
+    for (size_t i = 0;
+         i < RT_ELEMENTS(g_osTypes);
+         ++i)
+    {
+        if (!RTStrICmp(pcszVbox, g_osTypes[i].pcszVbox))
+            return g_osTypes[i].cim;
+    }
+
+    return CIMOSType_CIMOS_Other;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1022,198 +1131,6 @@ STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVi
     sfaVSD.detachTo(ComSafeArrayOutArg(aVirtualSystemDescriptions));
 
     return S_OK;
-}
-
-/**
- * Private helper func that suggests a VirtualBox guest OS type
- * for the given OVF operating system type.
- * @param osTypeVBox
- * @param c
- */
-static void convertCIMOSType2VBoxOSType(Utf8Str &osTypeVBox, CIMOSType_T c)
-{
-    switch (c)
-    {
-        case CIMOSType_CIMOS_Unknown: // 0 - Unknown
-            osTypeVBox = SchemaDefs_OSTypeId_Other;
-            break;
-
-        case CIMOSType_CIMOS_OS2: // 12 - OS/2
-            osTypeVBox = SchemaDefs_OSTypeId_OS2;
-            break;
-
-        case CIMOSType_CIMOS_MSDOS: // 14 - MSDOS
-            osTypeVBox = SchemaDefs_OSTypeId_DOS;
-            break;
-
-        case CIMOSType_CIMOS_WIN3x: // 15 - WIN3x
-            osTypeVBox = SchemaDefs_OSTypeId_Windows31;
-            break;
-
-        case CIMOSType_CIMOS_WIN95: // 16 - WIN95
-            osTypeVBox = SchemaDefs_OSTypeId_Windows95;
-            break;
-
-        case CIMOSType_CIMOS_WIN98: // 17 - WIN98
-            osTypeVBox = SchemaDefs_OSTypeId_Windows98;
-            break;
-
-        case CIMOSType_CIMOS_WINNT: // 18 - WINNT
-            osTypeVBox = SchemaDefs_OSTypeId_WindowsNT4;
-            break;
-
-        case CIMOSType_CIMOS_NetWare: // 21 - NetWare
-        case CIMOSType_CIMOS_NovellOES: // 86 - Novell OES
-            osTypeVBox = SchemaDefs_OSTypeId_Netware;
-            break;
-
-        case CIMOSType_CIMOS_Solaris: // 29 - Solaris
-        case CIMOSType_CIMOS_SunOS: // 30 - SunOS
-            osTypeVBox = SchemaDefs_OSTypeId_Solaris;
-            break;
-
-        case CIMOSType_CIMOS_FreeBSD: // 42 - FreeBSD
-            osTypeVBox = SchemaDefs_OSTypeId_FreeBSD;
-            break;
-
-        case CIMOSType_CIMOS_NetBSD: // 43 - NetBSD
-            osTypeVBox = SchemaDefs_OSTypeId_NetBSD;
-            break;
-
-        case CIMOSType_CIMOS_QNX: // 48 - QNX
-            osTypeVBox = SchemaDefs_OSTypeId_QNX;
-            break;
-
-        case CIMOSType_CIMOS_Windows2000: // 58 - Windows 2000
-            osTypeVBox = SchemaDefs_OSTypeId_Windows2000;
-            break;
-
-        case CIMOSType_CIMOS_WindowsMe: // 63 - Windows (R) Me
-            osTypeVBox = SchemaDefs_OSTypeId_WindowsMe;
-            break;
-
-        case CIMOSType_CIMOS_OpenBSD: // 65 - OpenBSD
-            osTypeVBox = SchemaDefs_OSTypeId_OpenBSD;
-            break;
-
-        case CIMOSType_CIMOS_WindowsXP: // 67 - Windows XP
-        case CIMOSType_CIMOS_WindowsXPEmbedded: // 72 - Windows XP Embedded
-        case CIMOSType_CIMOS_WindowsEmbeddedforPointofService: // 75 - Windows Embedded for Point of Service
-            osTypeVBox = SchemaDefs_OSTypeId_WindowsXP;
-            break;
-
-        case CIMOSType_CIMOS_MicrosoftWindowsServer2003: // 69 - Microsoft Windows Server 2003
-            osTypeVBox = SchemaDefs_OSTypeId_Windows2003;
-            break;
-
-        case CIMOSType_CIMOS_MicrosoftWindowsServer2003_64: // 70 - Microsoft Windows Server 2003 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_Windows2003_64;
-            break;
-
-        case CIMOSType_CIMOS_WindowsXP_64: // 71 - Windows XP 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_WindowsXP_64;
-            break;
-
-        case CIMOSType_CIMOS_WindowsVista: // 73 - Windows Vista
-            osTypeVBox = SchemaDefs_OSTypeId_WindowsVista;
-            break;
-
-        case CIMOSType_CIMOS_WindowsVista_64: // 74 - Windows Vista 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_WindowsVista_64;
-            break;
-
-        case CIMOSType_CIMOS_MicrosoftWindowsServer2008: // 76 - Microsoft Windows Server 2008
-            osTypeVBox = SchemaDefs_OSTypeId_Windows2008;
-            break;
-
-        case CIMOSType_CIMOS_MicrosoftWindowsServer2008_64: // 77 - Microsoft Windows Server 2008 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_Windows2008_64;
-            break;
-
-        case CIMOSType_CIMOS_FreeBSD_64: // 78 - FreeBSD 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_FreeBSD_64;
-            break;
-
-        case CIMOSType_CIMOS_RedHatEnterpriseLinux: // 79 - RedHat Enterprise Linux
-            osTypeVBox = SchemaDefs_OSTypeId_RedHat;
-            break;
-
-        case CIMOSType_CIMOS_RedHatEnterpriseLinux_64: // 80 - RedHat Enterprise Linux 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_RedHat_64;
-            break;
-
-        case CIMOSType_CIMOS_Solaris_64: // 81 - Solaris 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_Solaris_64;
-            break;
-
-        case CIMOSType_CIMOS_SUSE: // 82 - SUSE
-        case CIMOSType_CIMOS_SLES: // 84 - SLES
-        case CIMOSType_CIMOS_NovellLinuxDesktop: // 87 - Novell Linux Desktop
-            osTypeVBox = SchemaDefs_OSTypeId_OpenSUSE;
-            break;
-
-        case CIMOSType_CIMOS_SUSE_64: // 83 - SUSE 64-Bit
-        case CIMOSType_CIMOS_SLES_64: // 85 - SLES 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_OpenSUSE_64;
-            break;
-
-        case CIMOSType_CIMOS_LINUX: // 36 - LINUX
-        case CIMOSType_CIMOS_SunJavaDesktopSystem: // 88 - Sun Java Desktop System
-        case CIMOSType_CIMOS_TurboLinux: // 91 - TurboLinux
-            osTypeVBox = SchemaDefs_OSTypeId_Linux;
-            break;
-
-            //                case CIMOSType_CIMOS_TurboLinux_64: // 92 - TurboLinux 64-Bit
-            //                case CIMOSType_CIMOS_Linux_64: // 101 - Linux 64-Bit
-            //                    osTypeVBox = VBOXOSTYPE_Linux_x64;
-            //                    break;
-
-        case CIMOSType_CIMOS_Mandriva: // 89 - Mandriva
-            osTypeVBox = SchemaDefs_OSTypeId_Mandriva;
-            break;
-
-        case CIMOSType_CIMOS_Mandriva_64: // 90 - Mandriva 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_Mandriva_64;
-            break;
-
-        case CIMOSType_CIMOS_Ubuntu: // 93 - Ubuntu
-            osTypeVBox = SchemaDefs_OSTypeId_Ubuntu;
-            break;
-
-        case CIMOSType_CIMOS_Ubuntu_64: // 94 - Ubuntu 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_Ubuntu_64;
-            break;
-
-        case CIMOSType_CIMOS_Debian: // 95 - Debian
-            osTypeVBox = SchemaDefs_OSTypeId_Debian;
-            break;
-
-        case CIMOSType_CIMOS_Debian_64: // 96 - Debian 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_Debian_64;
-            break;
-
-        case CIMOSType_CIMOS_Linux_2_4_x: // 97 - Linux 2.4.x
-            osTypeVBox = SchemaDefs_OSTypeId_Linux24;
-            break;
-
-        case CIMOSType_CIMOS_Linux_2_4_x_64: // 98 - Linux 2.4.x 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_Linux24_64;
-            break;
-
-        case CIMOSType_CIMOS_Linux_2_6_x: // 99 - Linux 2.6.x
-            osTypeVBox = SchemaDefs_OSTypeId_Linux26;
-            break;
-
-        case CIMOSType_CIMOS_Linux_2_6_x_64: // 100 - Linux 2.6.x 64-Bit
-            osTypeVBox = SchemaDefs_OSTypeId_Linux26_64;
-            break;
-        default:
-            {
-                /* If we are here we have no clue what OS this should be. Set
-                   to other type as default. */
-                osTypeVBox = SchemaDefs_OSTypeId_Other;
-            }
-    }
 }
 
 /**
@@ -2525,12 +2442,15 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
             std::list<VirtualSystemDescriptionEntry*> llName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
 
             std::list<VirtualSystemDescriptionEntry*> llOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
+            if (llOS.size() != 1)
+                throw setError(VBOX_E_NOT_SUPPORTED,
+                               tr("Missing OS type"));
             /*  <OperatingSystemSection ovf:id="82">
                     <Info>Guest Operating System</Info>
                     <Description>Linux 2.6.x</Description>
                 </OperatingSystemSection> */
             xml::ElementNode *pelmOperatingSystemSection = pelmVirtualSystem->createChild("OperatingSystemSection");
-            pelmOperatingSystemSection->setAttribute("ovf:id", "82");
+            pelmOperatingSystemSection->setAttribute("ovf:id", llOS.front()->strOvf);
                     // @todo convert vbox OS type into OVF ID
             pelmOperatingSystemSection->createChild("Info")->addContent("blah");        // @ŧodo
             pelmOperatingSystemSection->createChild("Description")->addContent("blah");        // @ŧodo
@@ -3117,11 +3037,11 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         CheckComRCThrowRC(rc);
 
         /* Guest OS type */
-        Utf8Str strOsTypeVBox(bstrGuestOSType),
-                strCIMOSType = "Linux"; // @todo convert back
+        Utf8Str strOsTypeVBox(bstrGuestOSType);
+        CIMOSType_T cim = convertVBoxOSType2CIMOSType(strOsTypeVBox.c_str());
         pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
                            "",
-                           strCIMOSType,
+                           Utf8StrFmt("%RI32", cim),
                            strOsTypeVBox);
 
         /* VM name */
