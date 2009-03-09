@@ -1105,9 +1105,11 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
      * Check that the jump buffer is armed.
      */
 #ifdef RT_ARCH_X86
-    if (!pVM->vmm.s.CallHostR0JmpBuf.eip)
+    if (    !pVM->vmm.s.CallHostR0JmpBuf.eip
+        ||  pVM->vmm.s.CallHostR0JmpBuf.fInRing3Call)
 #else
-    if (!pVM->vmm.s.CallHostR0JmpBuf.rip)
+    if (    !pVM->vmm.s.CallHostR0JmpBuf.rip
+        ||  pVM->vmm.s.CallHostR0JmpBuf.fInRing3Call)
 #endif
     {
 #ifdef DEBUG
@@ -1159,9 +1161,11 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
     if (pVM)
     {
 #ifdef RT_ARCH_X86
-        if (pVM->vmm.s.CallHostR0JmpBuf.eip)
+        if (    pVM->vmm.s.CallHostR0JmpBuf.eip
+            &&  !pVM->vmm.s.CallHostR0JmpBuf.fInRing3Call)
 #else
-        if (pVM->vmm.s.CallHostR0JmpBuf.rip)
+        if (    pVM->vmm.s.CallHostR0JmpBuf.rip
+            &&  !pVM->vmm.s.CallHostR0JmpBuf.fInRing3Call)
 #endif
         {
             int rc = VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_ASSERTION, 0);
