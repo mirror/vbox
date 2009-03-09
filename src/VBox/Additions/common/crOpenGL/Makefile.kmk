@@ -54,6 +54,9 @@ endif
 #
 VBoxOGL_TEMPLATE       = VBOXCROGLR3GUESTDLL
 VBoxOGL_INCS           = .
+VBoxOGL_INCS.linux     = \
+    $(VBOX_PATH_X11_ROOT)/libXdamage-1.1 \
+    $(VBOX_PATH_X11_ROOT)/libXcomposite-0.4.0
 ifdef VBoxOGL_DRI
  VBoxOGL_DEFS          += VBOXOGL_DRI IN_DRI_DRIVER
  VBoxOGL_INCS          += \
