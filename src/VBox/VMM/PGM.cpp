@@ -1176,9 +1176,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.enmGuestMode     = PGMMODE_INVALID;
     pVM->pgm.s.enmHostMode      = SUPPAGINGMODE_INVALID;
     pVM->pgm.s.GCPhysCR3        = NIL_RTGCPHYS;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pVM->pgm.s.GCPhysGstCR3Monitored = NIL_RTGCPHYS;
-#endif
     pVM->pgm.s.fA20Enabled      = true;
     pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1; /* default; checked later */
     pVM->pgm.s.pGstPaePdptR3    = NULL;
@@ -1297,10 +1294,9 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
          */
         rc = pgmR3PoolInit(pVM);
     }
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     if (RT_SUCCESS(rc))
         rc = PGMR3ChangeMode(pVM, PGMMODE_REAL);
-#endif
+
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1472,83 +1468,6 @@ static int pgmR3InitPaging(PVM pVM)
                                          | HCPhysInterPaePDPT64;
 
     /*
-     * Allocate pages for the three possible guest contexts (AMD64, PAE and plain 32-Bit).
-     * We allocate pages for all three posibilities in order to simplify mappings and
-     * avoid resource failure during mode switches. So, we need to cover all levels of the
-     * of the first 4GB down to PD level.
-     * As with the intermediate context, AMD64 uses the PAE PDPT and PDs.
-     */
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pVM->pgm.s.pShw32BitPdR3    = (PX86PD)MMR3PageAllocLow(pVM);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVM->pgm.s.pShw32BitPdR0    = (uintptr_t)pVM->pgm.s.pShw32BitPdR3;
-# endif
-    pVM->pgm.s.apShwPaePDsR3[0] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    pVM->pgm.s.apShwPaePDsR3[1] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    AssertRelease((uintptr_t)pVM->pgm.s.apShwPaePDsR3[0] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apShwPaePDsR3[1]);
-    pVM->pgm.s.apShwPaePDsR3[2] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    AssertRelease((uintptr_t)pVM->pgm.s.apShwPaePDsR3[1] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apShwPaePDsR3[2]);
-    pVM->pgm.s.apShwPaePDsR3[3] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    AssertRelease((uintptr_t)pVM->pgm.s.apShwPaePDsR3[2] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apShwPaePDsR3[3]);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVM->pgm.s.apShwPaePDsR0[0] = (uintptr_t)pVM->pgm.s.apShwPaePDsR3[0];
-    pVM->pgm.s.apShwPaePDsR0[1] = (uintptr_t)pVM->pgm.s.apShwPaePDsR3[1];
-    pVM->pgm.s.apShwPaePDsR0[2] = (uintptr_t)pVM->pgm.s.apShwPaePDsR3[2];
-    pVM->pgm.s.apShwPaePDsR0[3] = (uintptr_t)pVM->pgm.s.apShwPaePDsR3[3];
-# endif
-    pVM->pgm.s.pShwPaePdptR3 = (PX86PDPT)MMR3PageAllocLow(pVM);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVM->pgm.s.pShwPaePdptR0 = (uintptr_t)pVM->pgm.s.pShwPaePdptR3;
-# endif
-    pVM->pgm.s.pShwNestedRootR3 = MMR3PageAllocLow(pVM);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVM->pgm.s.pShwNestedRootR0 = (uintptr_t)pVM->pgm.s.pShwNestedRootR3;
-# endif
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
-
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (    !pVM->pgm.s.pShw32BitPdR3
-        ||  !pVM->pgm.s.apShwPaePDsR3[0]
-        ||  !pVM->pgm.s.apShwPaePDsR3[1]
-        ||  !pVM->pgm.s.apShwPaePDsR3[2]
-        ||  !pVM->pgm.s.apShwPaePDsR3[3]
-        ||  !pVM->pgm.s.pShwPaePdptR3
-        ||  !pVM->pgm.s.pShwNestedRootR3)
-    {
-        AssertMsgFailed(("Failed to allocate pages for the intermediate context!\n"));
-        return VERR_NO_PAGE_MEMORY;
-    }
-#endif
-
-    /* get physical addresses. */
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pVM->pgm.s.HCPhysShw32BitPD = MMPage2Phys(pVM, pVM->pgm.s.pShw32BitPdR3);
-    Assert(MMPagePhys2Page(pVM, pVM->pgm.s.HCPhysShw32BitPD) == pVM->pgm.s.pShw32BitPdR3);
-    pVM->pgm.s.aHCPhysPaePDs[0] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[0]);
-    pVM->pgm.s.aHCPhysPaePDs[1] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[1]);
-    pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[2]);
-    pVM->pgm.s.aHCPhysPaePDs[3] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[3]);
-    pVM->pgm.s.HCPhysShwPaePdpt = MMPage2Phys(pVM, pVM->pgm.s.pShwPaePdptR3);
-    pVM->pgm.s.HCPhysShwNestedRoot = MMPage2Phys(pVM, pVM->pgm.s.pShwNestedRootR3);
-#endif
-
-    /*
-     * Initialize the pages, setting up the PML4 and PDPT for action below 4GB.
-     */
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    ASMMemZero32(pVM->pgm.s.pShw32BitPdR3, PAGE_SIZE);
-    ASMMemZero32(pVM->pgm.s.pShwPaePdptR3, PAGE_SIZE);
-    ASMMemZero32(pVM->pgm.s.pShwNestedRootR3, PAGE_SIZE);
-
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apShwPaePDsR3); i++)
-    {
-        ASMMemZero32(pVM->pgm.s.apShwPaePDsR3[i], PAGE_SIZE);
-        pVM->pgm.s.pShwPaePdptR3->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.aHCPhysPaePDs[i];
-        /* The flags will be corrected when entering and leaving long mode. */
-    }
-#endif
-
-    /*
      * Initialize paging workers and mode from current host mode
      * and the guest running in real mode.
      */
@@ -1581,20 +1500,10 @@ static int pgmR3InitPaging(PVM pVM)
             return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
     }
     rc = pgmR3ModeDataInit(pVM, false /* don't resolve GC and R0 syms yet */);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (RT_SUCCESS(rc))
-        rc = PGMR3ChangeMode(pVM, PGMMODE_REAL);
-#endif
     if (RT_SUCCESS(rc))
     {
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
 #if HC_ARCH_BITS == 64
-# ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        LogRel(("Debug: HCPhysShw32BitPD=%RHp aHCPhysPaePDs={%RHp,%RHp,%RHp,%RHp} HCPhysShwPaePdpt=%RHp\n",
-                pVM->pgm.s.HCPhysShw32BitPD,
-                pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3],
-                pVM->pgm.s.HCPhysShwPaePdpt));
-# endif
         LogRel(("Debug: HCPhysInterPD=%RHp HCPhysInterPaePDPT=%RHp HCPhysInterPaePML4=%RHp\n",
                 pVM->pgm.s.HCPhysInterPD, pVM->pgm.s.HCPhysInterPaePDPT, pVM->pgm.s.HCPhysInterPaePML4));
         LogRel(("Debug: apInterPTs={%RHp,%RHp} apInterPaePTs={%RHp,%RHp} apInterPaePDs={%RHp,%RHp,%RHp,%RHp} pInterPaePDPT64=%RHp\n",
@@ -1890,16 +1799,6 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
     RTGCPTR GCPtr;
     int     rc;
 
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    /*
-     * Reserve space for mapping the paging pages into guest context.
-     */
-    rc = MMR3HyperReserve(pVM, PAGE_SIZE * (2 + RT_ELEMENTS(pVM->pgm.s.apShwPaePDsR3) + 1 + 2 + 2), "Paging", &GCPtr);
-    AssertRCReturn(rc, rc);
-    pVM->pgm.s.pShw32BitPdRC = GCPtr;
-    MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
-#endif
-
     /*
      * Reserve space for the dynamic mappings.
      */
@@ -1932,39 +1831,6 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
 VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
 {
     int rc;
-
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    /*
-     * Map the paging pages into the guest context.
-     */
-    RTGCPTR GCPtr = pVM->pgm.s.pShw32BitPdRC;
-    AssertReleaseReturn(GCPtr, VERR_INTERNAL_ERROR);
-
-    rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhysShw32BitPD, PAGE_SIZE, 0);
-    AssertRCReturn(rc, rc);
-    pVM->pgm.s.pShw32BitPdRC = GCPtr;
-    GCPtr += PAGE_SIZE;
-    GCPtr += PAGE_SIZE; /* reserved page */
-
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apShwPaePDsR3); i++)
-    {
-        rc = PGMMap(pVM, GCPtr, pVM->pgm.s.aHCPhysPaePDs[i], PAGE_SIZE, 0);
-        AssertRCReturn(rc, rc);
-        pVM->pgm.s.apShwPaePDsRC[i] = GCPtr;
-        GCPtr += PAGE_SIZE;
-    }
-    /* A bit of paranoia is justified. */
-    AssertRelease(pVM->pgm.s.apShwPaePDsRC[0] + PAGE_SIZE == pVM->pgm.s.apShwPaePDsRC[1]);
-    AssertRelease(pVM->pgm.s.apShwPaePDsRC[1] + PAGE_SIZE == pVM->pgm.s.apShwPaePDsRC[2]);
-    AssertRelease(pVM->pgm.s.apShwPaePDsRC[2] + PAGE_SIZE == pVM->pgm.s.apShwPaePDsRC[3]);
-    GCPtr += PAGE_SIZE; /* reserved page */
-
-    rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhysShwPaePdpt, PAGE_SIZE, 0);
-    AssertRCReturn(rc, rc);
-    pVM->pgm.s.pShwPaePdptRC = GCPtr;
-    GCPtr += PAGE_SIZE;
-    GCPtr += PAGE_SIZE; /* reserved page */
-#endif
 
     /*
      * Reserve space for the dynamic mappings.
@@ -2026,27 +1892,14 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     pVM->pgm.s.GCPtrCR3Mapping += offDelta;
     /** @todo move this into shadow and guest specific relocation functions. */
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    AssertMsg(pVM->pgm.s.pShw32BitPdR3, ("Init order, no relocation before paging is initialized!\n"));
-    pVM->pgm.s.pShw32BitPdRC += offDelta;
-#endif
     pVM->pgm.s.pGst32BitPdRC += offDelta;
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apGstPaePDsRC); i++)
     {
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        AssertCompile(RT_ELEMENTS(pVM->pgm.s.apShwPaePDsRC) == RT_ELEMENTS(pVM->pgm.s.apGstPaePDsRC));
-        pVM->pgm.s.apShwPaePDsRC[i] += offDelta;
-#endif
         pVM->pgm.s.apGstPaePDsRC[i] += offDelta;
     }
     pVM->pgm.s.pGstPaePdptRC += offDelta;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pVM->pgm.s.pShwPaePdptRC += offDelta;
-#endif
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pVM->pgm.s.pShwPageCR3RC += offDelta;
-#endif
 
     pgmR3ModeDataInit(pVM, true /* resolve GC/R0 symbols */);
     pgmR3ModeDataSwitch(pVM, pVM->pgm.s.enmShadowMode, pVM->pgm.s.enmGuestMode);
@@ -3115,38 +2968,12 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
     Assert(pVM->pgm.s.pfnR3GstGetPage);
     pVM->pgm.s.pfnR3GstModifyPage           = pModeData->pfnR3GstModifyPage;
     pVM->pgm.s.pfnR3GstGetPDE               = pModeData->pfnR3GstGetPDE;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pVM->pgm.s.pfnR3GstMonitorCR3           = pModeData->pfnR3GstMonitorCR3;
-    pVM->pgm.s.pfnR3GstUnmonitorCR3         = pModeData->pfnR3GstUnmonitorCR3;
-#endif
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pVM->pgm.s.pfnR3GstWriteHandlerCR3      = pModeData->pfnR3GstWriteHandlerCR3;
-    pVM->pgm.s.pszR3GstWriteHandlerCR3      = pModeData->pszR3GstWriteHandlerCR3;
-    pVM->pgm.s.pfnR3GstPAEWriteHandlerCR3   = pModeData->pfnR3GstPAEWriteHandlerCR3;
-    pVM->pgm.s.pszR3GstPAEWriteHandlerCR3   = pModeData->pszR3GstPAEWriteHandlerCR3;
-#endif
     pVM->pgm.s.pfnRCGstGetPage              = pModeData->pfnRCGstGetPage;
     pVM->pgm.s.pfnRCGstModifyPage           = pModeData->pfnRCGstModifyPage;
     pVM->pgm.s.pfnRCGstGetPDE               = pModeData->pfnRCGstGetPDE;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pVM->pgm.s.pfnRCGstMonitorCR3           = pModeData->pfnRCGstMonitorCR3;
-    pVM->pgm.s.pfnRCGstUnmonitorCR3         = pModeData->pfnRCGstUnmonitorCR3;
-#endif
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pVM->pgm.s.pfnRCGstWriteHandlerCR3      = pModeData->pfnRCGstWriteHandlerCR3;
-    pVM->pgm.s.pfnRCGstPAEWriteHandlerCR3   = pModeData->pfnRCGstPAEWriteHandlerCR3;
-#endif
     pVM->pgm.s.pfnR0GstGetPage              = pModeData->pfnR0GstGetPage;
     pVM->pgm.s.pfnR0GstModifyPage           = pModeData->pfnR0GstModifyPage;
     pVM->pgm.s.pfnR0GstGetPDE               = pModeData->pfnR0GstGetPDE;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pVM->pgm.s.pfnR0GstMonitorCR3           = pModeData->pfnR0GstMonitorCR3;
-    pVM->pgm.s.pfnR0GstUnmonitorCR3         = pModeData->pfnR0GstUnmonitorCR3;
-#endif
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    pVM->pgm.s.pfnR0GstWriteHandlerCR3      = pModeData->pfnR0GstWriteHandlerCR3;
-    pVM->pgm.s.pfnR0GstPAEWriteHandlerCR3   = pModeData->pfnR0GstPAEWriteHandlerCR3;
-#endif
 
     /* both */
     pVM->pgm.s.pfnR3BthRelocate             = pModeData->pfnR3BthRelocate;
@@ -3485,25 +3312,6 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
             return rc;
         }
     }
-
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    /** @todo This is a bug!
-     *
-     * We must flush the PGM pool cache if the guest mode changes; we don't always
-     * switch shadow paging mode (e.g. protected->32-bit) and shouldn't reuse
-     * the shadow page tables.
-     *
-     * That only applies when switching between paging and non-paging modes.
-     */
-   /** @todo A20 setting */
-    if (   pVM->pgm.s.CTX_SUFF(pPool)
-        && !HWACCMIsNestedPagingActive(pVM)
-        && PGMMODE_WITH_PAGING(pVM->pgm.s.enmGuestMode) != PGMMODE_WITH_PAGING(enmGuestMode))
-    {
-        Log(("PGMR3ChangeMode: changing guest paging mode -> flush pgm pool cache!\n"));
-        pgmPoolFlushAll(pVM);
-    }
-#endif
 
     /*
      * Enter the new guest and shadow+guest modes.

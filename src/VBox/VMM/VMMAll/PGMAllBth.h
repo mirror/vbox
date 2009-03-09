@@ -81,7 +81,7 @@ __END_DECLS
  */
 PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY) && defined(VBOX_STRICT)
+# if defined(IN_RC) && defined(VBOX_STRICT)
     PGMDynCheckLocks(pVM);
 # endif
 
@@ -114,12 +114,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
 #    if PGM_GST_TYPE == PGM_TYPE_PAE
     unsigned        iPDSrc;
-#     ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     X86PDPE         PdpeSrc;
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, pvFault, &iPDSrc, &PdpeSrc);
-#     else
-    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, pvFault, &iPDSrc, NULL);
-#     endif
 
 #    elif PGM_GST_TYPE == PGM_TYPE_AMD64
     unsigned        iPDSrc;
@@ -158,7 +154,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #  elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPDDst = (pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK;   /* pPDDst index, not used with the pool. */
 
-#   ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     PX86PDPAE       pPDDst;
 #    if PGM_GST_TYPE != PGM_TYPE_PAE
     X86PDPE         PdpeSrc;
@@ -173,16 +168,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         return rc;
     }
     Assert(pPDDst);
-
-#   else
-    PX86PDPAE       pPDDst = pgmShwGetPaePDPtr(&pVM->pgm.s, pvFault);
-
-    /* Did we mark the PDPT as not present in SyncCR3? */
-    unsigned        iPdpt  = (pvFault >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
-    PX86PDPT        pPdptDst = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
-    if (!pPdptDst->a[iPdpt].n.u1Present)
-        pPdptDst->a[iPdpt].n.u1Present = 1;
-#   endif
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst = ((pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -942,11 +927,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
     const unsigned  iPDDst    = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PX86PDE         pPdeDst   = pgmShwGet32BitPDEPtr(&pVM->pgm.s, GCPtrPage);
 
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE    pShwPde = pVM->pgm.s.CTX_SUFF(pShwPageCR3);
     Assert(pShwPde);
-#  endif
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPdpt     = (GCPtrPage >> X86_PDPT_SHIFT);
@@ -960,7 +943,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
         return VINF_SUCCESS;
     }
 
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PPGMPOOLPAGE    pShwPde;
     PX86PDPAE       pPDDst;
@@ -972,17 +954,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
 
     pPDDst             = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPde);
     PX86PDEPAE pPdeDst = &pPDDst->a[iPDDst];
-#  else
-    const unsigned  iPDDst    = (GCPtrPage >> SHW_PD_SHIFT) /*& SHW_PD_MASK - pool index only atm! */;
-    PX86PDEPAE      pPdeDst   = pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtrPage);
-#  endif
 
 # else /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
     /* PML4 */
-#  ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    AssertReturn(pVM->pgm.s.pShwRootR3, VERR_INTERNAL_ERROR);
-#  endif
-
     const unsigned  iPml4     = (GCPtrPage >> X86_PML4_SHIFT) & X86_PML4_MASK;
     const unsigned  iPdpt     = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     const unsigned  iPDDst    = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
@@ -1165,37 +1139,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
     }
 # endif /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 
-# if PGM_GST_TYPE == PGM_TYPE_PAE && !defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
-    /*
-     * Update the shadow PDPE and free all the shadow PD entries if the PDPE is marked not present.
-     * Note: This shouldn't actually be necessary as we monitor the PDPT page for changes.
-     */
-    if (!pPDSrc)
-    {
-        /* Guest PDPE not present */
-        PX86PDPAE  pPDDst = pgmShwGetPaePDPtr(&pVM->pgm.s, GCPtrPage);
-        PPGMPOOL   pPool  = pVM->pgm.s.CTX_SUFF(pPool);
-
-        Assert(!PdpeSrc.n.u1Present);
-        LogFlow(("InvalidatePage: guest PDPE %d not present; clear shw pdpe\n", iPdpt));
-
-        /* for each page directory entry */
-     	for (unsigned iPD = 0; iPD < X86_PG_PAE_ENTRIES; iPD++)
-     	{
-     	    if (   pPDDst->a[iPD].n.u1Present
-     	        && !(pPDDst->a[iPD].u & PGM_PDFLAGS_MAPPING))
-     	    {
-                pgmPoolFree(pVM, pPDDst->a[iPD].u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPdpt * X86_PG_PAE_ENTRIES + iPD);
-                pPDDst->a[iPD].u = 0;
-     	    }
-    	}
-        if (!(pPdptDst->a[iPdpt].u & PGM_PLXFLAGS_MAPPING))
-            pPdptDst->a[iPdpt].n.u1Present = 0;
-        PGM_INVL_GUEST_TLBS();
-    }
-    AssertMsg(pVM->pgm.s.fMappingsFixed || (PdpeSrc.u & X86_PDPE_PG_MASK) == pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpt], ("%RGp vs %RGp (mon)\n", (PdpeSrc.u & X86_PDPE_PG_MASK), pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpt]));
-# endif
-
 
     /*
      * Deal with the Guest PDE.
@@ -1220,11 +1163,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
              */
             LogFlow(("InvalidatePage: Out-of-sync at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-# if PGM_GST_TYPE == PGM_TYPE_AMD64 || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-# else
-            pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPDDst);
-# endif
             pPdeDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
             PGM_INVL_GUEST_TLBS();
@@ -1236,11 +1175,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
              */
             LogFlow(("InvalidatePage: Out-of-sync (A) at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-# if PGM_GST_TYPE == PGM_TYPE_AMD64 || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-# else
-            pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPDDst);
-# endif
             pPdeDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
             PGM_INVL_GUEST_TLBS();
@@ -1284,11 +1219,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
                  */
                 LogFlow(("InvalidatePage: Out-of-sync at %RGp PdeSrc=%RX64 PdeDst=%RX64 ShwGCPhys=%RGp iPDDst=%#x\n",
                          GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u, pShwPage->GCPhys, iPDDst));
-# if PGM_GST_TYPE == PGM_TYPE_AMD64 || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
                 pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-# else
-                pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPDDst);
-# endif
                 pPdeDst->u = 0;
                 STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
                 PGM_INVL_GUEST_TLBS();
@@ -1330,11 +1261,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
              */
             LogFlow(("InvalidatePage: Out-of-sync PD at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-# if PGM_GST_TYPE == PGM_TYPE_AMD64 || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-# else
-            pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPDDst);
-# endif
             pPdeDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePage4MBPages));
             PGM_INVL_BIG_PG(GCPtrPage);
@@ -1347,11 +1274,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
          */
         if (!(PdeDst.u & PGM_PDFLAGS_MAPPING))
         {
-# if PGM_GST_TYPE == PGM_TYPE_AMD64 || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-# else
-            pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPDDst);
-# endif
             pPdeDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
             PGM_INVL_PG(GCPtrPage);
@@ -1682,15 +1605,11 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
     const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PX86PDE         pPdeDst  = pgmShwGet32BitPDEPtr(&pVM->pgm.s, GCPtrPage);
 
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE    pShwPde = pVM->pgm.s.CTX_SUFF(pShwPageCR3);
     Assert(pShwPde);
-#  endif
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PPGMPOOLPAGE    pShwPde;
     PX86PDPAE       pPDDst;
@@ -1702,13 +1621,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
 
     pPDDst             = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPde);
     PX86PDEPAE pPdeDst = &pPDDst->a[iPDDst];
-#  else
-    const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) /*& SHW_PD_MASK - only pool index atm! */;
-    const unsigned  iPdpt    = (GCPtrPage >> X86_PDPT_SHIFT);
-    PX86PDPT        pPdptDst = pgmShwGetPaePDPTPtr(&pVM->pgm.s); NOREF(pPdptDst);
-    PX86PDEPAE      pPdeDst  = pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtrPage);
-    AssertReturn(pPdeDst, VERR_INTERNAL_ERROR);
-#  endif
+
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     const unsigned  iPdpt    = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -1962,11 +1875,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
      * Yea, I'm lazy.
      */
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-# if PGM_GST_TYPE == PGM_TYPE_AMD64 || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
     pgmPoolFreeByPage(pPool, pShwPage, pShwPde->idx, iPDDst);
-# else
-    pgmPoolFreeByPage(pPool, pShwPage, SHW_POOL_ROOT_IDX, iPDDst);
-# endif
 
     pPdeDst->u = 0;
     PGM_INVL_GUEST_TLBS();
@@ -2440,14 +2349,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
     const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;
     PSHWPDE         pPdeDst  = pgmShwGet32BitPDEPtr(&pVM->pgm.s, GCPtrPage);
 
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE    pShwPde  = pVM->pgm.s.CTX_SUFF(pShwPageCR3);
     Assert(pShwPde);
-#  endif
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PPGMPOOLPAGE    pShwPde;
     PX86PDPAE       pPDDst;
@@ -2460,12 +2366,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
 
     pPDDst  = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPde);
     pPdeDst = &pPDDst->a[iPDDst];
-#  else
-    const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) /*& SHW_PD_MASK - only pool index atm! */;
-    const unsigned  iPdpt    = (GCPtrPage >> X86_PDPT_SHIFT); NOREF(iPdpt);
-    PX86PDPT        pPdptDst = pgmShwGetPaePDPTPtr(&pVM->pgm.s); NOREF(pPdptDst);
-    PSHWPDE         pPdeDst  = pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtrPage);
-#  endif
+
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPdpt    = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
@@ -2520,7 +2421,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
 # endif /* PGM_WITHOUT_MAPPINGS */
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+# if defined(IN_RC)
     /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
     PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
@@ -2549,11 +2450,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
             GCPhys |= (iPDDst & 1) * (PAGE_SIZE / 2);
 # endif
-# if PGM_GST_TYPE == PGM_TYPE_AMD64 || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
             rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx,      iPDDst, &pShwPage);
-# else
-            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
-# endif
         }
         else
         {
@@ -2562,11 +2459,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
             /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
             GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
 # endif
-# if PGM_GST_TYPE == PGM_TYPE_AMD64 || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
             rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, pShwPde->idx,      iPDDst, &pShwPage);
-# else
-            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
-# endif
         }
         if (rc == VINF_SUCCESS)
             pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
@@ -2591,7 +2484,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                 }
             }
             *pPdeDst = PdeDst;
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+# if defined(IN_RC)
             PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
             return VINF_SUCCESS;
@@ -2599,7 +2492,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
         else if (rc == VERR_PGM_POOL_FLUSHED)
         {
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+# if defined(IN_RC)
             PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
             return VINF_PGM_SYNC_CR3;
@@ -2632,7 +2525,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                 PdeDst.u = (PdeDst.u & (SHW_PDE_PG_MASK | X86_PDE_AVL_MASK))
                          | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
                 *pPdeDst = PdeDst;
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+# if defined(IN_RC)
                 PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
 
@@ -2738,7 +2631,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                 PdeDst.b.u1Write = 0;
             }
             *pPdeDst = PdeDst;
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+# if defined(IN_RC)
             PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
 
@@ -2890,14 +2783,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
     const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PSHWPDE         pPdeDst = pgmShwGet32BitPDEPtr(&pVM->pgm.s, GCPtrPage);
 
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE    pShwPde = pVM->pgm.s.CTX_SUFF(pShwPageCR3);
     Assert(pShwPde);
-#  endif
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PPGMPOOLPAGE    pShwPde;
     PX86PDPAE       pPDDst;
@@ -2910,10 +2800,6 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
 
     pPDDst  = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPde);
     pPdeDst = &pPDDst->a[iPDDst];
-#  else
-    const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) /*& SHW_PD_MASK - only pool index atm!*/;
-    PX86PDEPAE      pPdeDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtrPage);
-#  endif
 
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPdpt   = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -2969,11 +2855,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
 
     /* Virtual address = physical address */
     GCPhys = GCPtrPage & X86_PAGE_4K_BASE_MASK;
-# if PGM_SHW_TYPE == PGM_TYPE_AMD64 || PGM_SHW_TYPE == PGM_TYPE_EPT || defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
     rc = pgmPoolAlloc(pVM, GCPhys & ~(RT_BIT_64(SHW_PD_SHIFT) - 1), BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx, iPDDst, &pShwPage);
-# else
-    rc = pgmPoolAlloc(pVM, GCPhys & ~(RT_BIT_64(SHW_PD_SHIFT) - 1), BTH_PGMPOOLKIND_PT_FOR_PT, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
-# endif
 
     if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_CACHED_PAGE)
@@ -3031,12 +2913,8 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCPTR GCPtrPage)
     PGSTPD          pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
     unsigned        iPDSrc;
-#   ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     X86PDPE         PdpeSrc;
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc, &PdpeSrc);
-#   else
-    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc, NULL);
-#   endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
     if (!pPDSrc)
         return VINF_SUCCESS; /* not present */
 #  elif PGM_GST_TYPE == PGM_TYPE_AMD64
@@ -3065,7 +2943,6 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCPTR GCPtrPage)
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
         const X86PDE    PdeDst = pgmShwGet32BitPDE(&pVM->pgm.s, GCPtrPage);
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
         PX86PDPAE       pPDDst;
         X86PDEPAE       PdeDst;
@@ -3083,9 +2960,6 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCPTR GCPtrPage)
         }
         Assert(pPDDst);
         PdeDst = pPDDst->a[iPDDst];
-#  else
-        const X86PDEPAE PdeDst = pgmShwGetPaePDE(&pVM->pgm.s, GCPtrPage);
-#  endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
         const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -3176,12 +3050,8 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCPTR GCPtrPage, unsigned fPa
     PGSTPD          pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
     unsigned        iPDSrc;
-#   ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     X86PDPE         PdpeSrc;
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc, &PdpeSrc);
-#   else
-    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc, NULL);
-#   endif
 
     if (pPDSrc)
     {
@@ -3212,7 +3082,6 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCPTR GCPtrPage, unsigned fPa
     PX86PDE         pPdeDst = pgmShwGet32BitPDEPtr(&pVM->pgm.s, GCPtrPage);
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     PX86PDEPAE      pPdeDst;
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PX86PDPAE       pPDDst;
 #   if PGM_GST_TYPE != PGM_TYPE_PAE
@@ -3229,9 +3098,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCPTR GCPtrPage, unsigned fPa
     }
     Assert(pPDDst);
     pPdeDst = &pPDDst->a[iPDDst];
-#  else
-    pPdeDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtrPage);
-#  endif
+
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PX86PDPAE       pPDDst;
@@ -3408,7 +3275,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 
 #else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
 
-# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
 #  ifdef PGM_WITHOUT_MAPPINGS
     Assert(pVM->pgm.s.fMappingsFixed);
     return VINF_SUCCESS;
@@ -3426,361 +3292,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     }
 #  endif
     return VINF_SUCCESS;
-# else
-    /*
-     * PAE and 32-bit legacy mode (shadow).
-     * (Guest PAE, 32-bit legacy, protected and real modes.)
-     */
-    Assert(fGlobal || (cr4 & X86_CR4_PGE));
-    MY_STAM_COUNTER_INC(fGlobal ? &pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3Global) : &pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3NotGlobal));
-
-# if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
-    bool const fBigPagesSupported = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
-
-    /*
-     * Get page directory addresses.
-     */
-#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
-    PX86PDE     pPDEDst = pgmShwGet32BitPDEPtr(&pVM->pgm.s, 0);
-#  else /* PGM_SHW_TYPE == PGM_TYPE_PAE */
-#   if PGM_GST_TYPE == PGM_TYPE_32BIT
-    PX86PDEPAE  pPDEDst = NULL;
-#   endif
-#  endif
-
-#  if PGM_GST_TYPE == PGM_TYPE_32BIT
-    PGSTPD      pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
-    Assert(pPDSrc);
-#   if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-    Assert(PGMPhysGCPhys2R3PtrAssert(pVM, (RTGCPHYS)(cr3 & GST_CR3_PAGE_MASK), sizeof(*pPDSrc)) == (RTR3PTR)pPDSrc);
-#   endif
-#  endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
-
-    /*
-     * Iterate the the CR3 page.
-     */
-    PPGMMAPPING pMapping;
-    unsigned    iPdNoMapping;
-    const bool  fRawR0Enabled = EMIsRawRing0Enabled(pVM);
-    PPGMPOOL    pPool         = pVM->pgm.s.CTX_SUFF(pPool);
-
-    /* Only check mappings if they are supposed to be put into the shadow page table. */
-    if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
-    {
-        pMapping      = pVM->pgm.s.CTX_SUFF(pMappings);
-        iPdNoMapping  = (pMapping) ? (pMapping->GCPtr >> GST_PD_SHIFT) : ~0U;
-    }
-    else
-    {
-        pMapping      = 0;
-        iPdNoMapping  = ~0U;
-    }
-
-#  if PGM_GST_TYPE == PGM_TYPE_PAE
-    for (uint64_t iPdpt = 0; iPdpt < GST_PDPE_ENTRIES; iPdpt++)
-    {
-        unsigned        iPDSrc;
-        X86PDPE         PdpeSrc;
-        PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, iPdpt << X86_PDPT_SHIFT, &iPDSrc, &PdpeSrc);
-        PX86PDEPAE      pPDEDst   = pgmShwGetPaePDEPtr(&pVM->pgm.s, iPdpt << X86_PDPT_SHIFT);
-        PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
-
-        if (pPDSrc == NULL)
-        {
-            /* PDPE not present */
-            if (pPdptDst->a[iPdpt].n.u1Present)
-            {
-                LogFlow(("SyncCR3: guest PDPE %lld not present; clear shw pdpe\n", iPdpt));
-                /* for each page directory entry */
-                for (unsigned iPD = 0; iPD < RT_ELEMENTS(pPDSrc->a); iPD++)
-                {
-                    if (   pPDEDst[iPD].n.u1Present
-                        && !(pPDEDst[iPD].u & PGM_PDFLAGS_MAPPING))
-                    {
-                        pgmPoolFree(pVM, pPDEDst[iPD].u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPdpt * X86_PG_PAE_ENTRIES + iPD);
-                        pPDEDst[iPD].u = 0;
-                    }
-                }
-            }
-            if (!(pPdptDst->a[iPdpt].u & PGM_PLXFLAGS_MAPPING))
-                pPdptDst->a[iPdpt].n.u1Present = 0;
-            continue;
-        }
-#  else  /* PGM_GST_TYPE != PGM_TYPE_PAE */
-    {
-#  endif /* PGM_GST_TYPE != PGM_TYPE_PAE */
-        for (unsigned iPD = 0; iPD < RT_ELEMENTS(pPDSrc->a); iPD++)
-        {
-#  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-            if ((iPD & 255) == 0) /* Start of new PD. */
-                pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)iPD << GST_PD_SHIFT);
-#  endif
-#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
-            Assert(pgmShwGet32BitPDEPtr(&pVM->pgm.s, (uint32_t)iPD << SHW_PD_SHIFT) == pPDEDst);
-#  elif PGM_SHW_TYPE == PGM_TYPE_PAE
-#   if defined(VBOX_STRICT) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* Unfortuantely not reliable with PGMR0DynMap and multiple VMs. */
-            RTGCPTR GCPtrStrict = (uint32_t)iPD << GST_PD_SHIFT;
-#    if PGM_GST_TYPE == PGM_TYPE_PAE
-            GCPtrStrict |= iPdpt << X86_PDPT_SHIFT;
-#    endif
-            AssertMsg(pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtrStrict) == pPDEDst, ("%p vs %p (%RGv)\n", pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtrStrict), pPDEDst, GCPtrStrict));
-#   endif /* VBOX_STRICT */
-#  endif
-            GSTPDE PdeSrc = pPDSrc->a[iPD];
-            if (    PdeSrc.n.u1Present
-                &&  (PdeSrc.n.u1User || fRawR0Enabled))
-            {
-#  if    (   PGM_GST_TYPE == PGM_TYPE_32BIT \
-          || PGM_GST_TYPE == PGM_TYPE_PAE) \
-      && !defined(PGM_WITHOUT_MAPPINGS)
-
-                /*
-                 * Check for conflicts with GC mappings.
-                 */
-#   if PGM_GST_TYPE == PGM_TYPE_PAE
-                if (iPD + iPdpt * X86_PG_PAE_ENTRIES == iPdNoMapping)
-#   else
-                if (iPD == iPdNoMapping)
-#   endif
-                {
-                    if (pVM->pgm.s.fMappingsFixed)
-                    {
-                        /* It's fixed, just skip the mapping. */
-                        const unsigned cPTs = pMapping->cb >> GST_PD_SHIFT;
-                        Assert(PGM_GST_TYPE == PGM_TYPE_32BIT || (iPD + cPTs - 1) / X86_PG_PAE_ENTRIES == iPD / X86_PG_PAE_ENTRIES);
-                        iPD += cPTs - 1;
-#   if PGM_SHW_TYPE != PGM_GST_TYPE /* SHW==PAE && GST==32BIT */
-                        pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)(iPD + 1) << GST_PD_SHIFT);
-#   else
-                        pPDEDst += cPTs;
-#   endif
-                        pMapping = pMapping->CTX_SUFF(pNext);
-                        iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
-                        continue;
-                    }
-#   ifdef IN_RING3
-#    if PGM_GST_TYPE == PGM_TYPE_32BIT
-                    int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPD << GST_PD_SHIFT);
-#    elif PGM_GST_TYPE == PGM_TYPE_PAE
-                    int rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, (iPdpt << GST_PDPT_SHIFT) + (iPD << GST_PD_SHIFT));
-#    endif
-                    if (RT_FAILURE(rc))
-                        return rc;
-
-                    /*
-                     * Update iPdNoMapping and pMapping.
-                     */
-                    pMapping = pVM->pgm.s.pMappingsR3;
-                    while (pMapping && pMapping->GCPtr < (iPD << GST_PD_SHIFT))
-                        pMapping = pMapping->pNextR3;
-                    iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
-#   else  /* !IN_RING3 */
-                    LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
-                    return VINF_PGM_SYNC_CR3;
-#   endif /* !IN_RING3 */
-                }
-#  else  /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
-                Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
-#  endif /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
-
-                /*
-                 * Sync page directory entry.
-                 *
-                 * The current approach is to allocated the page table but to set
-                 * the entry to not-present and postpone the page table synching till
-                 * it's actually used.
-                 */
-#   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
-#   elif PGM_GST_TYPE == PGM_TYPE_PAE
-                const unsigned iPdShw = iPD + iPdpt * X86_PG_PAE_ENTRIES; NOREF(iPdShw);
-#   else
-                const unsigned iPdShw = iPD; NOREF(iPdShw);
-#   endif
-                {
-                    SHWPDE PdeDst = *pPDEDst;
-                    if (PdeDst.n.u1Present)
-                    {
-                        PPGMPOOLPAGE pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
-                        RTGCPHYS     GCPhys;
-                        if (    !PdeSrc.b.u1Size
-                            ||  !fBigPagesSupported)
-                        {
-                            GCPhys = PdeSrc.u & GST_PDE_PG_MASK;
-#   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                            /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
-                            GCPhys |= i * (PAGE_SIZE / 2);
-#   endif
-                        }
-                        else
-                        {
-                            GCPhys = GST_GET_PDE_BIG_PG_GCPHYS(PdeSrc);
-#   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                            /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
-                            GCPhys |= i * X86_PAGE_2M_SIZE;
-#   endif
-                        }
-
-                        if (    pShwPage->GCPhys == GCPhys
-                            &&  pShwPage->enmKind == PGM_BTH_NAME(CalcPageKind)(&PdeSrc, cr4)
-                            &&  (   pShwPage->fCached
-                                || (   !fGlobal
-                                    && (   false
-#   ifdef PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
-                                        || (   (PdeSrc.u & (X86_PDE4M_PS | X86_PDE4M_G)) == (X86_PDE4M_PS | X86_PDE4M_G)
-                                            && (cr4 & (X86_CR4_PGE | X86_CR4_PSE)) == (X86_CR4_PGE | X86_CR4_PSE)) /* global 2/4MB page. */
-                                        || (  !pShwPage->fSeenNonGlobal
-                                            && (cr4 & X86_CR4_PGE))
-#   endif
-                                        )
-                                    )
-                                )
-                            &&  (   (PdeSrc.u & (X86_PDE_US | X86_PDE_RW)) == (PdeDst.u & (X86_PDE_US | X86_PDE_RW))
-                                || (   fBigPagesSupported
-                                    &&     ((PdeSrc.u & (X86_PDE_US | X86_PDE4M_PS | X86_PDE4M_D)) | PGM_PDFLAGS_TRACK_DIRTY)
-                                        ==  ((PdeDst.u & (X86_PDE_US | X86_PDE_RW | PGM_PDFLAGS_TRACK_DIRTY)) | X86_PDE4M_PS))
-                                )
-                        )
-                        {
-#   ifdef VBOX_WITH_STATISTICS
-                            if (   !fGlobal
-                                && (PdeSrc.u & (X86_PDE4M_PS | X86_PDE4M_G)) == (X86_PDE4M_PS | X86_PDE4M_G)
-                                && (cr4 & (X86_CR4_PGE | X86_CR4_PSE)) == (X86_CR4_PGE | X86_CR4_PSE))
-                                MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstSkippedGlobalPD));
-                            else if (!fGlobal && !pShwPage->fSeenNonGlobal && (cr4 & X86_CR4_PGE))
-                                MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstSkippedGlobalPT));
-                            else
-                                MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstCacheHit));
-#   endif /* VBOX_WITH_STATISTICS */
-    /** @todo a replacement strategy isn't really needed unless we're using a very small pool < 512 pages.
-    * The whole ageing stuff should be put in yet another set of #ifdefs. For now, let's just skip it. */
-    //#  ifdef PGMPOOL_WITH_CACHE
-    //                        pgmPoolCacheUsed(pPool, pShwPage);
-    //#  endif
-                        }
-                        else
-                        {
-                            pgmPoolFreeByPage(pPool, pShwPage, SHW_POOL_ROOT_IDX, iPdShw);
-                            pPDEDst->u = 0;
-                            MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstFreed));
-                        }
-                    }
-                    else
-                        MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstNotPresent));
-
-                    /* advance */
-                    pPDEDst++;
-                } /* foreach 2MB PAE PDE in 4MB guest PDE */
-            }
-#  if PGM_GST_TYPE == PGM_TYPE_PAE
-            else if (iPD + iPdpt * X86_PG_PAE_ENTRIES != iPdNoMapping)
-#  else
-            else if (iPD != iPdNoMapping)
-#  endif
-            {
-                /*
-                 * Check if there is any page directory to mark not present here.
-                 */
-#   if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
-#   elif PGM_GST_TYPE == PGM_TYPE_PAE
-                const unsigned iPdShw = iPD + iPdpt * X86_PG_PAE_ENTRIES;
-#   else
-                const unsigned iPdShw = iPD;
-#   endif
-                {
-                    if (pPDEDst->n.u1Present)
-                    {
-                        pgmPoolFree(pVM, pPDEDst->u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPdShw);
-                        pPDEDst->u = 0;
-                        MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstFreedSrcNP));
-                    }
-                    pPDEDst++;
-                }
-            }
-            else
-            {
-#  if    (   PGM_GST_TYPE == PGM_TYPE_32BIT \
-          || PGM_GST_TYPE == PGM_TYPE_PAE)  \
-      && !defined(PGM_WITHOUT_MAPPINGS)
-
-                const unsigned cPTs = pMapping->cb >> GST_PD_SHIFT;
-
-                Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-                if (pVM->pgm.s.fMappingsFixed)
-                {
-                    /* It's fixed, just skip the mapping. */
-                    pMapping = pMapping->CTX_SUFF(pNext);
-                    iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
-                }
-                else
-                {
-                    /*
-                     * Check for conflicts for subsequent pagetables
-                     * and advance to the next mapping.
-                     */
-                    iPdNoMapping = ~0U;
-                    unsigned iPT = cPTs;
-                    while (iPT-- > 1)
-                    {
-                        if (    pPDSrc->a[iPD + iPT].n.u1Present
-                            &&  (pPDSrc->a[iPD + iPT].n.u1User || fRawR0Enabled))
-                        {
-#   ifdef IN_RING3
-#    if PGM_GST_TYPE == PGM_TYPE_32BIT
-                            int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPD << GST_PD_SHIFT);
-#    elif PGM_GST_TYPE == PGM_TYPE_PAE
-                            int rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, (iPdpt << GST_PDPT_SHIFT) + (iPD << GST_PD_SHIFT));
-#    endif
-                            if (RT_FAILURE(rc))
-                                return rc;
-
-                            /*
-                             * Update iPdNoMapping and pMapping.
-                             */
-                            pMapping = pVM->pgm.s.CTX_SUFF(pMappings);
-                            while (pMapping && pMapping->GCPtr < (iPD << GST_PD_SHIFT))
-                                pMapping = pMapping->CTX_SUFF(pNext);
-                            iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
-                            break;
-#   else
-                            LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
-                            return VINF_PGM_SYNC_CR3;
-#   endif
-                        }
-                    }
-                    if (iPdNoMapping == ~0U && pMapping)
-                    {
-                        pMapping = pMapping->CTX_SUFF(pNext);
-                        if (pMapping)
-                            iPdNoMapping = pMapping->GCPtr >> GST_PD_SHIFT;
-                    }
-                }
-
-                /* advance. */
-                Assert(PGM_GST_TYPE == PGM_TYPE_32BIT || (iPD + cPTs - 1) / X86_PG_PAE_ENTRIES == iPD / X86_PG_PAE_ENTRIES);
-                iPD += cPTs - 1;
-#   if PGM_SHW_TYPE != PGM_GST_TYPE /* SHW==PAE && GST==32BIT */
-                pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)(iPD + 1) << GST_PD_SHIFT);
-#   else
-                pPDEDst += cPTs;
-#   endif
-#   if PGM_GST_TYPE != PGM_SHW_TYPE
-                AssertCompile(PGM_GST_TYPE == PGM_TYPE_32BIT && PGM_SHW_TYPE == PGM_TYPE_PAE);
-#   endif
-#  else  /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
-                Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
-#  endif /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
-            }
-
-        } /* for iPD */
-    } /* for each PDPTE (PAE) */
-    return VINF_SUCCESS;
-
-# else /* guest real and protected mode */
-    return VINF_SUCCESS;
-# endif
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 #endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
 }
 
@@ -4693,52 +4204,6 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pVM->pgm.s.pGstAmd64Pml4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
 #  endif
-#  ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-            if (!HWACCMIsNestedPagingActive(pVM))
-            {
-                /*
-                 * Update the shadow root page as well since that's not fixed.
-                 */
-                /** @todo Move this into PGMAllBth.h. */
-                PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-                if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
-                {
-                    /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
-                    /** @todo Coordinate this better with the pool. */
-                    if (pVM->pgm.s.CTX_SUFF(pShwPageCR3)->enmKind != PGMPOOLKIND_FREE)
-                        pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->GCPhys >> PAGE_SHIFT);
-                    pVM->pgm.s.pShwPageCR3R3 = 0;
-                    pVM->pgm.s.pShwPageCR3R0 = 0;
-                    pVM->pgm.s.pShwRootR3    = 0;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-                    pVM->pgm.s.pShwRootR0    = 0;
-#  endif
-                    pVM->pgm.s.HCPhysShwCR3  = 0;
-                }
-
-                Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
-                rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_64BIT_PML4, PGMPOOL_IDX_AMD64_CR3, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-                if (rc == VERR_PGM_POOL_FLUSHED)
-                {
-                    Log(("MapCR3: PGM pool flushed -> signal sync cr3\n"));
-                    Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
-                    return VINF_PGM_SYNC_CR3;
-                }
-                AssertRCReturn(rc, rc);
-#  ifdef IN_RING0
-                pVM->pgm.s.pShwPageCR3R3 = MMHyperCCToR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-#  else
-                pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-#  endif
-                pVM->pgm.s.pShwRootR3    = (R3PTRTYPE(void *))pVM->pgm.s.CTX_SUFF(pShwPageCR3)->pvPageR3;
-                Assert(pVM->pgm.s.pShwRootR3);
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-                pVM->pgm.s.pShwRootR0    = (R0PTRTYPE(void *))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-#  endif
-                pVM->pgm.s.HCPhysShwCR3  = pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
-                rc = VINF_SUCCESS; /* clear it - pgmPoolAlloc returns hints. */
-            }
-#  endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
 # endif
         }
         else
@@ -4751,7 +4216,6 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     int rc = VINF_SUCCESS;
 #endif
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /* Update shadow paging info for guest modes with paging (32, pae, 64). */
 # if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT \
            || PGM_SHW_TYPE == PGM_TYPE_PAE    \
@@ -4837,7 +4301,6 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     }
 
 # endif
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
     return rc;
 }
@@ -4883,29 +4346,12 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->pgm.s.pGstAmd64Pml4R0 = 0;
 # endif
-# ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    if (!HWACCMIsNestedPagingActive(pVM))
-    {
-        pVM->pgm.s.pShwRootR3 = 0;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-        pVM->pgm.s.pShwRootR0 = 0;
-#  endif
-        pVM->pgm.s.HCPhysShwCR3 = 0;
-        if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
-        {
-            PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-            pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->GCPhys >> PAGE_SHIFT);
-            pVM->pgm.s.pShwPageCR3R3 = 0;
-            pVM->pgm.s.pShwPageCR3R0 = 0;
-        }
-    }
-# endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 #else /* prot/real mode stub */
     /* nothing to do */
 #endif
 
-#if defined(VBOX_WITH_PGMPOOL_PAGING_ONLY) && !defined(IN_RC) /* In RC we rely on MapCR3 to do the shadow part for us at a safe time */
+#if !defined(IN_RC) /* In RC we rely on MapCR3 to do the shadow part for us at a safe time */
     /* Update shadow paging info. */
 # if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT  \
            || PGM_SHW_TYPE == PGM_TYPE_PAE    \
@@ -4938,7 +4384,7 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
         pVM->pgm.s.iShwUserTable = 0;
     }
 # endif
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY && !IN_RC*/
+#endif /* !IN_RC*/
 
     return rc;
 }

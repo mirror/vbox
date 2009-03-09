@@ -415,9 +415,6 @@ int main()
     GEN_CHECK_OFF(PGM, enmGuestMode);
     GEN_CHECK_OFF(PGM, GCPhysCR3);
     GEN_CHECK_OFF(PGM, GCPtrCR3Mapping);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    GEN_CHECK_OFF(PGM, GCPhysGstCR3Monitored);
-#endif
     GEN_CHECK_OFF(PGM, pGst32BitPdR3);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGM, pGst32BitPdR0);
@@ -435,31 +432,6 @@ int main()
     GEN_CHECK_OFF(PGM, apGstPaePDsRC);
     GEN_CHECK_OFF(PGM, aGCPhysGstPaePDs);
     GEN_CHECK_OFF(PGM, aGCPhysGstPaePDsMonitored);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    GEN_CHECK_OFF(PGM, pShw32BitPdR3);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    GEN_CHECK_OFF(PGM, pShw32BitPdR0);
-# endif
-    GEN_CHECK_OFF(PGM, pShw32BitPdRC);
-    GEN_CHECK_OFF(PGM, HCPhysShw32BitPD);
-    GEN_CHECK_OFF(PGM, apShwPaePDsR3);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    GEN_CHECK_OFF(PGM, apShwPaePDsR0);
-# endif
-    GEN_CHECK_OFF(PGM, apShwPaePDsRC);
-    GEN_CHECK_OFF(PGM, aHCPhysPaePDs);
-    GEN_CHECK_OFF(PGM, pShwPaePdptR3);
-    GEN_CHECK_OFF(PGM, pShwPaePdptR0);
-    GEN_CHECK_OFF(PGM, pShwPaePdptRC);
-    GEN_CHECK_OFF(PGM, HCPhysShwPaePdpt);
-#endif
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    GEN_CHECK_OFF(PGM, pShwRootR3);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    GEN_CHECK_OFF(PGM, pShwRootR0);
-# endif
-    GEN_CHECK_OFF(PGM, HCPhysShwCR3);
-#endif
     GEN_CHECK_OFF(PGM, pShwPageCR3R3);
     GEN_CHECK_OFF(PGM, pShwPageCR3R0);
     GEN_CHECK_OFF(PGM, pShwPageCR3RC);
@@ -471,10 +443,6 @@ int main()
     GEN_CHECK_OFF(PGM, pfnRCShwModifyPage);
     GEN_CHECK_OFF(PGM, pfnR3GstRelocate);
     GEN_CHECK_OFF(PGM, pfnR3GstExit);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    GEN_CHECK_OFF(PGM, pfnR3GstMonitorCR3);
-    GEN_CHECK_OFF(PGM, pfnR3GstUnmonitorCR3);
-#endif
     GEN_CHECK_OFF(PGM, pfnR3BthMapCR3);
     GEN_CHECK_OFF(PGM, pfnR3BthUnmapCR3);
     GEN_CHECK_OFF(PGM, pfnR3GstGetPage);
@@ -688,9 +656,6 @@ int main()
     GEN_CHECK_OFF(PGMPOOLPAGE, fMonitored);
     GEN_CHECK_OFF(PGMPOOLPAGE, fCached);
     GEN_CHECK_OFF(PGMPOOLPAGE, fReusedFlushPending);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    GEN_CHECK_OFF(PGMPOOLPAGE, fCR3Mix);
-#endif
     GEN_CHECK_SIZE(PGMPOOL);
     GEN_CHECK_OFF(PGMPOOL, pVMR3);
     GEN_CHECK_OFF(PGMPOOL, pVMR0);

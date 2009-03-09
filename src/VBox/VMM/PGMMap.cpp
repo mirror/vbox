@@ -620,14 +620,6 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
         pCur = pCur->pNextR3;
     }
 
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    /*
-     * Turn off CR3 updating monitoring.
-     */
-    int rc2 = PGM_GST_PFN(UnmonitorCR3, pVM)(pVM);
-    AssertRC(rc2);
-#endif
-
     /*
      * Mark the mappings as fixed and return.
      */
@@ -685,26 +677,6 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
     pVM->pgm.s.fMappingsFixed    = false;
     pVM->pgm.s.GCPtrMappingFixed = 0;
     pVM->pgm.s.cbMappingFixed    = 0;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-
-    /*
-     * Re-enable the CR3 monitoring.
-     *
-     * Paranoia: We flush the page pool before doing that because Windows
-     * is using the CR3 page both as a PD and a PT, e.g. the pool may
-     * be monitoring it.
-     */
-# ifdef PGMPOOL_WITH_MONITORING
-    pgmPoolFlushAll(pVM);
-# endif
-    /* Remap CR3 as we have just flushed the CR3 shadow PML4 in case we're in long mode. */
-    int rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
-    AssertRCSuccess(rc);
-
-    rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
-    AssertRCSuccess(rc);
-#endif
     return VINF_SUCCESS;
 }
 
@@ -927,9 +899,7 @@ static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
 {
     unsigned i = pMap->cPTs;
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pgmMapClearShadowPDEs(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pMap, iOldPDE);
-#endif
 
     iOldPDE += i;
     while (i-- > 0)
@@ -940,27 +910,15 @@ static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
          * 32-bit.
          */
         pVM->pgm.s.pInterPD->a[iOldPDE].u        = 0;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        pVM->pgm.s.pShw32BitPdR3->a[iOldPDE].u   = 0;
-#endif
         /*
          * PAE.
          */
         const unsigned iPD = iOldPDE / 256;         /* iOldPDE * 2 / 512; iOldPDE is in 4 MB pages */
         unsigned iPDE = iOldPDE * 2 % 512;
         pVM->pgm.s.apInterPaePDs[iPD]->a[iPDE].u = 0;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        pVM->pgm.s.apShwPaePDsR3[iPD]->a[iPDE].u = 0;
-#endif
         iPDE++;
         AssertFatal(iPDE < 512);
         pVM->pgm.s.apInterPaePDs[iPD]->a[iPDE].u = 0;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        pVM->pgm.s.apShwPaePDsR3[iPD]->a[iPDE].u = 0;
-
-        /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entry. (legacy PAE guest mode) */
-        pVM->pgm.s.pShwPaePdptR3->a[iPD].u &= ~PGM_PLXFLAGS_MAPPING;
-#endif
     }
 }
 
@@ -977,9 +935,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 
     Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s) || PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pgmMapSetShadowPDEs(pVM, pMap, iNewPDE);
-#endif
 
     /*
      * Init the page tables and insert them into the page directories.
@@ -993,67 +949,23 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
         /*
          * 32-bit.
          */
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        Assert(!pPGM->pShw32BitPdR3->a[iNewPDE].n.u1Present || pgmMapAreMappingsEnabled(&pVM->pgm.s));
-        if (    pgmMapAreMappingsEnabled(&pVM->pgm.s)
-            &&  pPGM->pShw32BitPdR3->a[iNewPDE].n.u1Present)
-        {
-            Assert(!(pPGM->pShw32BitPdR3->a[iNewPDE].u & PGM_PDFLAGS_MAPPING));
-            pgmPoolFree(pVM, pPGM->pShw32BitPdR3->a[iNewPDE].u & X86_PDE_PG_MASK, PGMPOOL_IDX_PD, iNewPDE);
-        }
-#endif
         X86PDE Pde;
         /* Default mapping page directory flags are read/write and supervisor; individual page attributes determine the final flags */
         Pde.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT;
         pPGM->pInterPD->a[iNewPDE]        = Pde;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
-            pPGM->pShw32BitPdR3->a[iNewPDE]   = Pde;
-#endif
         /*
          * PAE.
          */
         const unsigned iPD = iNewPDE / 256;
         unsigned iPDE = iNewPDE * 2 % 512;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        Assert(!pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present || pgmMapAreMappingsEnabled(&pVM->pgm.s));
-        if (   pgmMapAreMappingsEnabled(&pVM->pgm.s)
-            && pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
-        {
-            Assert(!(pPGM->apShwPaePDsR3[iPD]->a[iPDE].u & PGM_PDFLAGS_MAPPING));
-            pgmPoolFree(pVM, pPGM->apShwPaePDsR3[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2);
-        }
-#endif
         X86PDEPAE PdePae0;
         PdePae0.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae0;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
-            pPGM->apShwPaePDsR3[iPD]->a[iPDE] = PdePae0;
-#endif
         iPDE++;
         AssertFatal(iPDE < 512);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        Assert(!pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present || pgmMapAreMappingsEnabled(&pVM->pgm.s));
-        if (   pgmMapAreMappingsEnabled(&pVM->pgm.s)
-            && pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
-        {
-            Assert(!(pPGM->apShwPaePDsR3[iPD]->a[iPDE].u & PGM_PDFLAGS_MAPPING));
-            pgmPoolFree(pVM, pPGM->apShwPaePDsR3[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2 + 1);
-        }
-#endif
         X86PDEPAE PdePae1;
         PdePae1.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae1;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
-        {
-            pPGM->apShwPaePDsR3[iPD]->a[iPDE] = PdePae1;
-
-            /* Set the PGM_PDFLAGS_MAPPING flag in the page directory pointer entry. (legacy PAE guest mode) */
-            pPGM->pShwPaePdptR3->a[iPD].u |= PGM_PLXFLAGS_MAPPING;
-        }
-#endif
     }
 }
 
