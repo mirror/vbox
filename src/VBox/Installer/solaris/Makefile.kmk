@@ -144,6 +144,7 @@ SOLARIS_STRIP_BINS = \
 	VBoxDDU.so \
 	VBoxVMM.so \
 	VBoxXPCOM.so \
+	VBoxXPCOMC.so \
 	$(if $(VBOX_WITH_SHARED_FOLDERS),VBoxSharedFolders.so,) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD),VBoxSharedClipboard.so,) \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so,) \
