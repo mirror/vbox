@@ -808,6 +808,7 @@ Node* Node::addContent(const char *pcszContent)
 
     m->children.push_back(pNew);
 
+    return p;
 }
 
 /**
