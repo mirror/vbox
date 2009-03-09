@@ -23,7 +23,7 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 
-if "$(KBUILD_TARGET)" == "linux" || defined(VBOX_ONLY_SDK)
+if defined(VBOX_WITH_XPCOM) || defined(VBOX_ONLY_SDK)
 #
 # The samples
 #
@@ -48,8 +48,8 @@ $$(XpComCHeaders_0_OUTDIR)/VirtualBox_CXPCOM.h: \
 		| $$(dir $$@)
 	$(VBOX_XSLTPROC) -o $@ $^
 
-endif # linux || SDK
-ifndef VBOX_ONLY_SDK
+endif # VBOX_WITH_XPCOM || SDK
+if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
 
  #
  # The C utility DLL
@@ -60,12 +60,14 @@ ifndef VBOX_ONLY_SDK
  VBoxXPCOMC_DEFS = IN_VBOXXPCOMC
  VBoxXPCOMC_SOURCES = \
  	VBoxXPCOMC.cpp
+ VBoxXPCOMC_INTERMEDIATES = \
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_CXPCOM.h
  endif
 
  #
  # The C glue library.
  #
- LIBRARIES.linux += VBoxXPCOMCGlue
+ LIBRARIES += VBoxXPCOMCGlue
  VBoxXPCOMCGlue_TEMPLATE = VBOXMAINEXE
  VBoxXPCOMCGlue_DEFS = IN_VBOXXPCOMC
  VBoxXPCOMCGlue_SOURCES = \
@@ -73,12 +75,12 @@ ifndef VBOX_ONLY_SDK
  VBoxXPCOMCGlue_INTERMEDIATES = \
  	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_CXPCOM.h
 
- ifdef VBOX_WITH_TESTCASES
+ if defined(VBOX_WITH_TESTCASES) && "$(KBUILD_TARGET)" != "darwin"
   #
   # The testcase (also in samples).
   #
-  PROGRAMS.linux += tstXPCOMC
-  tstXPCOMC_TEMPLATE = VBOXR3
+  PROGRAMS += tstXPCOMC
+  tstXPCOMC_TEMPLATE = VBOXR3EXE
   tstXPCOMC_INCS = \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub
@@ -92,8 +94,8 @@ ifndef VBOX_ONLY_SDK
   #
   # C testcase using the dynamic glue.
   #
-  PROGRAMS.linux += tstXPCOMCGlue
-  tstXPCOMCGlue_TEMPLATE = VBOXR3
+  PROGRAMS += tstXPCOMCGlue
+  tstXPCOMCGlue_TEMPLATE = VBOXR3EXE
   tstXPCOMCGlue_INCS = \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub
@@ -107,8 +109,8 @@ ifndef VBOX_ONLY_SDK
   #
   # The testcase (also in samples).
   #
-  PROGRAMS.linux += tstXPCOMCDynLink
-  tstXPCOMCDynLink_TEMPLATE = VBOXR3
+  PROGRAMS += tstXPCOMCDynLink
+  tstXPCOMCDynLink_TEMPLATE = VBOXR3EXE
   tstXPCOMCDynLink_INCS = \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub
