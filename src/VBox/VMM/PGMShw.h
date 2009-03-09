@@ -190,6 +190,7 @@ PGM_SHW_DECL(int, Enter)(PVM pVM)
     PPGMPOOL     pPool     = pVM->pgm.s.CTX_SUFF(pPool);
 
     Assert(HWACCMIsNestedPagingActive(pVM));
+    Assert(!pVM->pgm.s.pShwPageCR3R3);
 
     int rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_ROOT_NESTED, PGMPOOL_IDX_NESTED_ROOT, GCPhysCR3 >> PAGE_SHIFT, &pNewShwPageCR3);
     AssertFatal(rc == VINF_SUCCESS);
@@ -245,7 +246,24 @@ PGM_SHW_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta)
  */
 PGM_SHW_DECL(int, Exit)(PVM pVM)
 {
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
+    {
+        PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+
+        Assert(pVM->pgm.s.iShwUser == PGMPOOL_IDX_NESTED_ROOT);
+
+        /* Mark the page as unlocked; allow flushing again. */
+        pgmPoolUnlockPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+
+        pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
+        pVM->pgm.s.pShwPageCR3R3 = 0;
+        pVM->pgm.s.pShwPageCR3R0 = 0;
+        pVM->pgm.s.pShwPageCR3RC = 0;
+        pVM->pgm.s.iShwUser      = 0;
+        pVM->pgm.s.iShwUserTable = 0;
+    }
+#else
 # if PGM_SHW_TYPE == PGM_TYPE_NESTED
     Assert(HWACCMIsNestedPagingActive(pVM));
     pVM->pgm.s.pShwRootR3 = 0;
