@@ -2033,6 +2033,7 @@ check_gcc
 # TODO check for mesa-common-dev (GL/glx.h)
 # TODO check for libglu1-mesa-dev (GL/glu.h)
 # TODO check for xcomposite-dev (X11/extensions/Xcomposite.h)
+# TODO check for libxdamange-dev (X11/extensions/Xdamage.h)
 [ $WITH_X11    -eq 1 ] && check_xcursor
 [ $WITH_QT4    -eq 1 ] && check_qt4
 [ $WITH_PYTHON -eq 1 -a "$OS" != "darwin" ] && check_python
