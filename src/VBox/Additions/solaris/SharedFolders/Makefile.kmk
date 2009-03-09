@@ -27,50 +27,50 @@ $(error "The Solaris guest additions can only be built on Solaris!")
 endif
 
 #
-# vboxvfs - The Shared Folder Driver
+# vboxfs - The Shared Folder Driver
 #
-SYSMODS.solaris      += vboxvfs
-vboxvfs_TEMPLATE      = VBOXGUESTR0
-vboxvfs_DEFS          = VBOX_WITH_HGCM
-vboxvfs_INCS         := \
+SYSMODS.solaris      += vboxfs
+vboxfs_TEMPLATE      = VBOXGUESTR0
+vboxfs_DEFS          = VBOX_WITH_HGCM
+vboxfs_INCS         := \
 	.
-vboxvfs_SOURCES       = \
+vboxfs_SOURCES       = \
 	vboxfs_vfs.c \
 	vboxfs_vnode.c \
 	vboxfs_prov.c
-vboxvfs_LIBS          = \
+vboxfs_LIBS          = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
-vboxvfs_LDFLAGS      += -N drv/vboxguest
+vboxfs_LDFLAGS      += -N drv/vboxguest
 
 
 ifndef VBOX_OSE
 #
-# vboxvfs_s10 - The Shared Folder Driver for Solaris 10
+# vboxfs_s10 - The Shared Folder Driver for Solaris 10
 #
-SYSMODS.solaris      += vboxvfs_s10
-vboxvfs_s10_TEMPLATE      = VBOXGUESTR0
-vboxvfs_s10_DEFS          = VBOX_WITH_HGCM VBOX_VFS_SOLARIS_10U6
-vboxvfs_s10_INCS         := \
+SYSMODS.solaris      += vboxfs_s10
+vboxfs_s10_TEMPLATE      = VBOXGUESTR0
+vboxfs_s10_DEFS          = VBOX_WITH_HGCM VBOX_VFS_SOLARIS_10U6
+vboxfs_s10_INCS         := \
 	solaris10/ \
 	.
-vboxvfs_s10_SOURCES       = \
+vboxfs_s10_SOURCES       = \
 	vboxfs_vfs.c \
 	vboxfs_vnode.c \
 	vboxfs_prov.c
-vboxvfs_s10_LIBS          = \
+vboxfs_s10_LIBS          = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
-vboxvfs_s10_LDFLAGS      += -N drv/vboxguest
+vboxfs_s10_LDFLAGS      += -N drv/vboxguest
 endif # VBOX_OSE
 
 
 #
-# mount - Userland mount wrapper for vboxvfs
+# mount - Userland mount wrapper for vboxfs
 #
-PROGRAMS                += vboxvfsmount
-vboxvfsmount_TEMPLATE    = VBOXGUESTR3EXE
-vboxvfsmount_SOURCES     = vboxvfs_mount.c
+PROGRAMS                += vboxfsmount
+vboxfsmount_TEMPLATE    = VBOXGUESTR3EXE
+vboxfsmount_SOURCES     = vboxfs_mount.c
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

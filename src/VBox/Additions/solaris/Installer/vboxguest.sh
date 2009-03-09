@@ -19,7 +19,7 @@
 
 SILENTUNLOAD=""
 MODNAME="vboxguest"
-VFSMODNAME="vboxvfs"
+VFSMODNAME="vboxfs"
 MODDIR32="/usr/kernel/drv"
 MODDIR64=$MODDIR32/amd64
 VFSDIR32="/usr/kernel/fs"
@@ -68,7 +68,7 @@ vboxguest_loaded()
     return $?
 }
 
-vboxvfs_loaded()
+vboxfs_loaded()
 {
     module_loaded $VFSMODNAME
     return $?
@@ -108,13 +108,13 @@ stop_module()
     fi
 }
 
-start_vboxvfs()
+start_vboxfs()
 {
-    if vboxvfs_loaded; then
+    if vboxfs_loaded; then
         info "VirtualBox FileSystem kernel module already loaded."
     else
         /usr/sbin/modload -p fs/$VFSMODNAME || abort "Failed to load VirtualBox FileSystem kernel module."
-        if test ! vboxvfs_loaded; then
+        if test ! vboxfs_loaded; then
             abort "Failed to load VirtualBox FileSystem kernel module."
         else
             info "VirtualBox FileSystem kernel module loaded."
@@ -122,12 +122,12 @@ start_vboxvfs()
     fi
 }
 
-stop_vboxvfs()
+stop_vboxfs()
 {
-    if vboxvfs_loaded; then
-        vboxvfs_mod_id=`/usr/sbin/modinfo | grep $VFSMODNAME | cut -f 1 -d ' ' `
-        if test -n "$vboxvfs_mod_id"; then
-            /usr/sbin/modunload -i $vboxvfs_mod_id || abort "Failed to unload VirtualBox FileSystem module."
+    if vboxfs_loaded; then
+        vboxfs_mod_id=`/usr/sbin/modinfo | grep $VFSMODNAME | cut -f 1 -d ' ' `
+        if test -n "$vboxfs_mod_id"; then
+            /usr/sbin/modunload -i $vboxfs_mod_id || abort "Failed to unload VirtualBox FileSystem module."
             info "VirtualBox FileSystem kernel module unloaded."
         fi
     elif test -z "$SILENTUNLOAD"; then
@@ -162,7 +162,7 @@ status_module()
 
 stop_all()
 {
-    stop_vboxvfs
+    stop_vboxfs
     stop_module
     return 0
 }
@@ -194,10 +194,10 @@ status)
     status_module
     ;;
 vfsstart)
-    start_vboxvfs
+    start_vboxfs
     ;;
 vfsstop)
-    stop_vboxvfs
+    stop_vboxfs
     ;;
 *)
     echo "Usage: $0 {start|stop|restart|status}"

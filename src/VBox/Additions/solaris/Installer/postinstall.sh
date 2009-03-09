@@ -220,30 +220,30 @@ fi
 
 # Shared Folder kernel module (different for S10 & Nevada)
 osverstr=`uname -r`
-vboxvfsmod="vboxvfs"
-vboxvfsunused="vboxvfs_s10"
+vboxfsmod="vboxfs"
+vboxfsunused="vboxfs_s10"
 if test "$osverstr" = "5.10"; then
-    vboxvfsmod="vboxvfs_s10"
-    vboxvfsunused="vboxvfs"
+    vboxfsmod="vboxfs_s10"
+    vboxfsunused="vboxfs"
 fi
 
 # Move the appropriate module to kernel/fs & remove the unused module name from pkg and file from disk
 # 64-bit shared folder module
-if test -f "$vboxadditions64_path/$vboxvfsmod"; then
-    /usr/sbin/installf -c none $PKGINST "/usr/kernel/fs/$solaris64dir/vboxvfs" f
-    mv -f $vboxadditions64_path/$vboxvfsmod /usr/kernel/fs/$solaris64dir/vboxvfs
-    /usr/sbin/removef $PKGINST $vboxadditions64_path/$vboxvfsmod 1>/dev/null
-    /usr/sbin/removef $PKGINST $vboxadditions64_path/$vboxvfsunused 1>/dev/null
-    rm -f $vboxadditions64_path/$vboxvfsunused
+if test -f "$vboxadditions64_path/$vboxfsmod"; then
+    /usr/sbin/installf -c none $PKGINST "/usr/kernel/fs/$solaris64dir/vboxfs" f
+    mv -f $vboxadditions64_path/$vboxfsmod /usr/kernel/fs/$solaris64dir/vboxfs
+    /usr/sbin/removef $PKGINST $vboxadditions64_path/$vboxfsmod 1>/dev/null
+    /usr/sbin/removef $PKGINST $vboxadditions64_path/$vboxfsunused 1>/dev/null
+    rm -f $vboxadditions64_path/$vboxfsunused
 fi
 
 # 32-bit shared folder module
-if test -f "$vboxadditions_path/$vboxvfsmod"; then
-    /usr/sbin/installf -c none $PKGINST "/usr/kernel/fs/vboxvfs" f
-    mv -f $vboxadditions_path/$vboxvfsmod /usr/kernel/fs/vboxvfs
-    /usr/sbin/removef $PKGINST $vboxadditions_path/$vboxvfsmod 1>/dev/null
-    /usr/sbin/removef $PKGINST $vboxadditions_path/$vboxvfsunused 1>/dev/null
-    rm -f $vboxadditions_path/$vboxvfsunused
+if test -f "$vboxadditions_path/$vboxfsmod"; then
+    /usr/sbin/installf -c none $PKGINST "/usr/kernel/fs/vboxfs" f
+    mv -f $vboxadditions_path/$vboxfsmod /usr/kernel/fs/vboxfs
+    /usr/sbin/removef $PKGINST $vboxadditions_path/$vboxfsmod 1>/dev/null
+    /usr/sbin/removef $PKGINST $vboxadditions_path/$vboxfsunused 1>/dev/null
+    rm -f $vboxadditions_path/$vboxfsunused
 fi
 
 
