@@ -282,10 +282,8 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                     {
                         PX86PDPE pGstPdpe;
                         pGstPdpe = pgmGstGetPaePDPEPtr(&pVM->pgm.s, (iPdPt << X86_PDPT_SHIFT));
-                        if (pGstPdpe)
-                            GstPdpe = *pGstPdpe;
-                        else
-                            GstPdpe.u = X86_PDPE_P;   /* rw/us are reserved for PAE pdpte's; accessed bit causes invalid VT-x guest state errors */
+                        AssertFatal(pGstPdpe);
+                        GstPdpe = *pGstPdpe;
                     }
                     int rc = pgmShwSyncPaePDPtr(pVM, (iPdPt << X86_PDPT_SHIFT), &GstPdpe, &pShwPaePd);
                     AssertFatal(RT_SUCCESS(rc));
