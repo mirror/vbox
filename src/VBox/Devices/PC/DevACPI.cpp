@@ -1764,7 +1764,7 @@ static int acpiPlantTables(ACPIState *s)
     uint64_t cbRamLow = offRamHole < s->u64RamSize ? offRamHole : s->u64RamSize;
     if (cbRamLow > UINT32_C(0xffe00000)) /* See MEM3. */
     {
-        /** @todo Do this in the E820 table/CMOS as well or things won't work right. */
+        /* Note: This is also enforced by DevPcBios.cpp. */
         LogRel(("DevACPI: Clipping cbRamLow=%#RX64 down to 0xffe00000.\n", cbRamLow));
         cbRamLow = UINT32_C(0xffe00000);
     }
