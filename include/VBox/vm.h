@@ -596,7 +596,7 @@ typedef struct VM
 #ifdef ___VMMInternal_h
         struct VMM  s;
 #endif
-        char        padding[1536];       /* multiple of 32 */
+        char        padding[1600];       /* multiple of 32 */
     } vmm;
 
     /** PGM part. */
