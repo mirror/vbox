@@ -326,15 +326,17 @@ typedef GMMPAGE *PGMMPAGE;
  */
 #define GMM_PAGE_IS_FREE(pPage)     ( (pPage)->Common.u2State == GMM_PAGE_STATE_FREE )
 
-/** @def GMM_PAGE_PFN_END
- * The end of the valid guest pfn range, {0..GMM_PAGE_PFN_END-1}.
- * @remark Some of the values outside the range has special meaning, see related \#defines.
+/** @def GMM_PAGE_PFN_LAST
+ * The last valid guest pfn range.
+ * @remark Some of the values outside the range has special meaning,
+ *         see GMM_PAGE_PFN_UNSHAREABLE.
  */
 #if HC_ARCH_BITS == 64
-# define GMM_PAGE_PFN_END           UINT32_C(0xfffffff0)
+# define GMM_PAGE_PFN_LAST           UINT32_C(0xfffffff0)
 #else
-# define GMM_PAGE_PFN_END           UINT32_C(0x00fffff0)
+# define GMM_PAGE_PFN_LAST           UINT32_C(0x00fffff0)
 #endif
+AssertCompile(GMM_PAGE_PFN_LAST        == (GMM_GCPHYS_LAST >> PAGE_SHIFT));
 
 /** @def GMM_PAGE_PFN_UNSHAREABLE
  * Indicates that this page isn't used for normal guest memory and thus isn't shareable.
@@ -344,21 +346,7 @@ typedef GMMPAGE *PGMMPAGE;
 #else
 # define GMM_PAGE_PFN_UNSHAREABLE   UINT32_C(0x00fffff1)
 #endif
-
-/** @def GMM_GCPHYS_LAST
- * The last of the valid guest physical address as it applies to GMM pages.
- *
- * This must reflect the constraints imposed by the RTGCPHYS type and
- * the guest page frame number used internally in GMMPAGE. */
-#if 1
-# define GMM_GCPHYS_LAST            UINT32_C(0xfffff000)            /* 2^32 (4GB)  - 0x1000 */
-#else /** @todo enable this after changing NIL_RTHCPHYS to ~(RTHCPHYS)0! */
-#if HC_ARCH_BITS == 64
-# define GMM_GCPHYS_LAST            UINT64_C(0x00000fffffff0000)    /* 2^44 (16TB) - 0x10000 */
-#else
-# define GMM_GCPHYS_LAST            UINT64_C(0x0000000fffff0000)    /* 2^36 (64GB) - 0x10000 */
-#endif
-#endif
+AssertCompile(GMM_PAGE_PFN_UNSHAREABLE == (GMM_GCPHYS_UNSHAREABLE >> PAGE_SHIFT));
 
 
 /**

@@ -107,6 +107,19 @@ __BEGIN_DECLS
 #endif
 
 
+/** @def GMM_GCPHYS_LAST
+ * The last of the valid guest physical address as it applies to GMM pages.
+ *
+ * This must reflect the constraints imposed by the RTGCPHYS type and
+ * the guest page frame number used internally in GMMPAGE.
+ *
+ * @note    Note this corresponds to GMM_PAGE_PFN_LAST. */
+#if HC_ARCH_BITS == 64
+# define GMM_GCPHYS_LAST            UINT64_C(0x00000fffffff0000)    /* 2^44 (16TB) - 0x10000 */
+#else
+# define GMM_GCPHYS_LAST            UINT64_C(0x0000000fffff0000)    /* 2^36 (64GB) - 0x10000 */
+#endif
+
 /**
  * Over-commitment policy.
  */
@@ -240,8 +253,13 @@ AssertCompileSize(GMMPAGEDESC, 16);
 /** Pointer to a page allocation. */
 typedef GMMPAGEDESC *PGMMPAGEDESC;
 
-/** GMMPAGEDESC::HCPhysGCPhys value that indicates that the page is shared. */
-#define GMM_GCPHYS_UNSHAREABLE  (RTHCPHYS)(0xfffffff0)
+/** GMMPAGEDESC::HCPhysGCPhys value that indicates that the page is unsharable.
+ * @note    This corresponds to GMM_PAGE_PFN_UNSHAREABLE. */
+#if HC_ARCH_BITS == 64
+# define GMM_GCPHYS_UNSHAREABLE     UINT64_C(0x00000fffffff1000)
+#else
+# define GMM_GCPHYS_UNSHAREABLE     UINT64_C(0x0000000fffff1000)
+#endif
 
 GMMR0DECL(int)  GMMR0Init(void);
 GMMR0DECL(void) GMMR0Term(void);
