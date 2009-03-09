@@ -246,7 +246,8 @@ PGM_SHW_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta)
  */
 PGM_SHW_DECL(int, Exit)(PVM pVM)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+#if PGM_SHW_TYPE == PGM_TYPE_NESTED
+# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -263,8 +264,7 @@ PGM_SHW_DECL(int, Exit)(PVM pVM)
         pVM->pgm.s.iShwUser      = 0;
         pVM->pgm.s.iShwUserTable = 0;
     }
-#else
-# if PGM_SHW_TYPE == PGM_TYPE_NESTED
+# else
     Assert(HWACCMIsNestedPagingActive(pVM));
     pVM->pgm.s.pShwRootR3 = 0;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
