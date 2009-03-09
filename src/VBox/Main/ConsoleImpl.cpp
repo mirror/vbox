@@ -1264,19 +1264,17 @@ STDMETHODIMP Console::COMGETTER(Debugger) (IMachineDebugger **aDebugger)
     return S_OK;
 }
 
-STDMETHODIMP Console::COMGETTER(USBDevices) (IUSBDeviceCollection **aUSBDevices)
+STDMETHODIMP Console::COMGETTER(USBDevices) (ComSafeArrayOut (IUSBDevice *, aUSBDevices))
 {
-    CheckComArgOutPointerValid(aUSBDevices);
+    CheckComArgOutSafeArrayPointerValid(aUSBDevices);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoReadLock alock (this);
 
-    ComObjPtr <OUSBDeviceCollection> collection;
-    collection.createObject();
-    collection->init (mUSBDevices);
-    collection.queryInterfaceTo (aUSBDevices);
+    SafeIfaceArray <IUSBDevice> collection (mUSBDevices);
+    collection.detachTo (ComSafeArrayOutArg(aUSBDevices));
 
     return S_OK;
 }
@@ -1332,8 +1330,10 @@ Console::COMGETTER(SharedFolders) (ComSafeArrayOut (ISharedFolder *, aSharedFold
     return S_OK;
 }
 
+
 // IConsole methods
 /////////////////////////////////////////////////////////////////////////////
+
 
 STDMETHODIMP Console::PowerUp (IProgress **aProgress)
 {
@@ -2072,6 +2072,76 @@ STDMETHODIMP Console::DetachUSBDevice (IN_GUID aId, IUSBDevice **aDevice)
 #else   /* !VBOX_WITH_USB */
     return setError (VBOX_E_PDM_ERROR,
         tr ("The virtual machine does not have a USB controller"));
+#endif  /* !VBOX_WITH_USB */
+}
+
+STDMETHODIMP Console::FindUSBDeviceByAddress(IN_BSTR aAddress, IUSBDevice **aDevice)
+{
+#ifdef VBOX_WITH_USB
+    CheckComArgNotNull(aAddress);
+    CheckComArgOutPointerValid(aDevice);
+
+    *aDevice = NULL;
+
+    SafeIfaceArray <IUSBDevice> devsvec;
+    HRESULT rc = COMGETTER(USBDevices) (ComSafeArrayAsOutParam(devsvec));
+    CheckComRCReturnRC (rc);
+
+    for (size_t i = 0; i < devsvec.size(); ++i)
+    {
+        Bstr address;
+        rc = devsvec[i]->COMGETTER(Address) (address.asOutParam());
+        CheckComRCReturnRC (rc);
+        if (address == aAddress)
+        {
+            ComObjPtr<OUSBDevice> found;
+            found.createObject();
+            found->init (devsvec[i]);
+            return found.queryInterfaceTo (aDevice);
+        }
+    }
+
+    return setErrorNoLog (VBOX_E_OBJECT_NOT_FOUND, tr (
+        "Could not find a USB device with address '%ls'"),
+        aAddress);
+
+#else   /* !VBOX_WITH_USB */
+    return E_NOTIMPL;
+#endif  /* !VBOX_WITH_USB */
+}
+
+STDMETHODIMP Console::FindUSBDeviceById(IN_GUID aId, IUSBDevice **aDevice)
+{
+#ifdef VBOX_WITH_USB
+    CheckComArgExpr(aId, Guid (aId).isEmpty() == false);
+    CheckComArgOutPointerValid(aDevice);
+
+    *aDevice = NULL;
+
+    SafeIfaceArray <IUSBDevice> devsvec;
+    HRESULT rc = COMGETTER(USBDevices) (ComSafeArrayAsOutParam(devsvec));
+    CheckComRCReturnRC (rc);
+
+    for (size_t i = 0; i < devsvec.size(); ++i)
+    {
+        Guid id;
+        rc = devsvec[i]->COMGETTER(Id) (id.asOutParam());
+        CheckComRCReturnRC (rc);
+        if (id == aId)
+        {
+            ComObjPtr<OUSBDevice> found;
+            found.createObject();
+            found->init(devsvec[i]);
+            return found.queryInterfaceTo (aDevice);
+        }
+    }
+
+    return setErrorNoLog (VBOX_E_OBJECT_NOT_FOUND, tr (
+        "Could not find a USB device with uuid {%RTuuid}"),
+        Guid (aId).raw());
+
+#else   /* !VBOX_WITH_USB */
+    return E_NOTIMPL;
 #endif  /* !VBOX_WITH_USB */
 }
 

@@ -114,7 +114,7 @@ public:
     STDMETHOD(COMGETTER(Mouse)) (IMouse **aMouse);
     STDMETHOD(COMGETTER(Display)) (IDisplay **aDisplay);
     STDMETHOD(COMGETTER(Debugger)) (IMachineDebugger **aDebugger);
-    STDMETHOD(COMGETTER(USBDevices)) (IUSBDeviceCollection **aUSBDevices);
+    STDMETHOD(COMGETTER(USBDevices)) (ComSafeArrayOut (IUSBDevice *, aUSBDevices));
     STDMETHOD(COMGETTER(RemoteUSBDevices)) (IHostUSBDeviceCollection **aRemoteUSBDevices);
     STDMETHOD(COMGETTER(RemoteDisplayInfo)) (IRemoteDisplayInfo **aRemoteDisplayInfo);
     STDMETHOD(COMGETTER(SharedFolders)) (ComSafeArrayOut (ISharedFolder *, aSharedFolders));
@@ -138,6 +138,8 @@ public:
                                  DeviceActivity_T *aDeviceActivity);
     STDMETHOD(AttachUSBDevice) (IN_GUID aId);
     STDMETHOD(DetachUSBDevice) (IN_GUID aId, IUSBDevice **aDevice);
+    STDMETHOD(FindUSBDeviceByAddress) (IN_BSTR aAddress, IUSBDevice **aDevice);
+    STDMETHOD(FindUSBDeviceById) (IN_GUID aId, IUSBDevice **aDevice);
     STDMETHOD(CreateSharedFolder) (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable);
     STDMETHOD(RemoveSharedFolder) (IN_BSTR aName);
     STDMETHOD(TakeSnapshot) (IN_BSTR aName, IN_BSTR aDescription,

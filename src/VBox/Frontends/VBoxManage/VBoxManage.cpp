@@ -590,10 +590,11 @@ static int handleControlVM(HandlerArg *a)
                 }
                 else
                 {
-                    ComPtr <IUSBDeviceCollection> coll;
-                    CHECK_ERROR_BREAK (console, COMGETTER(USBDevices)(coll.asOutParam()));
+                    SafeIfaceArray <IUSBDevice> coll;
+                    CHECK_ERROR_BREAK (console, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)));
                     ComPtr <IUSBDevice> dev;
-                    CHECK_ERROR_BREAK (coll, FindByAddress (Bstr (a->argv [2]), dev.asOutParam()));
+                    CHECK_ERROR_BREAK (console, FindUSBDeviceByAddress (Bstr (a->argv [2]),
+                                                       dev.asOutParam()));
                     CHECK_ERROR_BREAK (dev, COMGETTER(Id) (usbId.asOutParam()));
                 }
             }

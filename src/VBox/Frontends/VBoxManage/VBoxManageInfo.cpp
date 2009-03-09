@@ -1312,102 +1312,87 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 if (details != VMINFO_MACHINEREADABLE)
                     RTPrintf ("Currently Attached USB Devices:\n\n");
 
-                ComPtr <IUSBDeviceCollection> coll;
-                CHECK_ERROR_RET (console, COMGETTER(USBDevices) (coll.asOutParam()), rc);
+                SafeIfaceArray <IUSBDevice> coll;
+                CHECK_ERROR_RET (console, COMGETTER(USBDevices) (ComSafeArrayAsOutParam(coll)), rc);
 
-                ComPtr <IUSBDeviceEnumerator> en;
-                CHECK_ERROR_RET (coll, Enumerate (en.asOutParam()), rc);
-
-                BOOL more = FALSE;
-                ASSERT(SUCCEEDED(rc = en->HasMore (&more)));
-                if (FAILED(rc))
-                    return rc;
-
-                if (!more)
+                if (coll.size() == 0)
                 {
                     if (details != VMINFO_MACHINEREADABLE)
                         RTPrintf("<none>\n\n");
                 }
                 else
-                while (more)
                 {
-                    ComPtr <IUSBDevice> dev;
-                    ASSERT(SUCCEEDED(rc = en->GetNext (dev.asOutParam())));
-                    if (FAILED(rc))
-                        return rc;
-
-                    /* Query info. */
-                    Guid id;
-                    CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), rc);
-                    USHORT usVendorId;
-                    CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), rc);
-                    USHORT usProductId;
-                    CHECK_ERROR_RET (dev, COMGETTER(ProductId)(&usProductId), rc);
-                    USHORT bcdRevision;
-                    CHECK_ERROR_RET (dev, COMGETTER(Revision)(&bcdRevision), rc);
-
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("USBAttachedUUID%d=\"%S\"\n"
-                                 "USBAttachedVendorId%d=\"%#06x\"\n"
-                                 "USBAttachedProductId%d=\"%#06x\"\n"
-                                 "USBAttachedRevision%d=\"%#04x%02x\"\n",
-                                 index + 1, id.toString().raw(),
-                                 index + 1, usVendorId,
-                                 index + 1, usProductId,
-                                 index + 1, bcdRevision >> 8, bcdRevision & 0xff);
-                    else
-                        RTPrintf("UUID:               %S\n"
-                                 "VendorId:           0x%04x (%04X)\n"
-                                 "ProductId:          0x%04x (%04X)\n"
-                                 "Revision:           %u.%u (%02u%02u)\n",
-                                 id.toString().raw(),
-                                 usVendorId, usVendorId, usProductId, usProductId,
-                                 bcdRevision >> 8, bcdRevision & 0xff,
-                                 bcdRevision >> 8, bcdRevision & 0xff);
-
-                    /* optional stuff. */
-                    Bstr bstr;
-                    CHECK_ERROR_RET (dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
-                    if (!bstr.isEmpty())
+                    for (index = 0; index < coll.size(); ++index)
                     {
-                        if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBAttachedManufacturer%d=\"%lS\"\n", index + 1, bstr.raw());
-                        else
-                            RTPrintf("Manufacturer:       %lS\n", bstr.raw());
-                    }
-                    CHECK_ERROR_RET (dev, COMGETTER(Product)(bstr.asOutParam()), rc);
-                    if (!bstr.isEmpty())
-                    {
-                        if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBAttachedProduct%d=\"%lS\"\n", index + 1, bstr.raw());
-                        else
-                            RTPrintf("Product:            %lS\n", bstr.raw());
-                    }
-                    CHECK_ERROR_RET (dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
-                    if (!bstr.isEmpty())
-                    {
-                        if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBAttachedSerialNumber%d=\"%lS\"\n", index + 1, bstr.raw());
-                        else
-                            RTPrintf("SerialNumber:       %lS\n", bstr.raw());
-                    }
-                    CHECK_ERROR_RET (dev, COMGETTER(Address)(bstr.asOutParam()), rc);
-                    if (!bstr.isEmpty())
-                    {
-                        if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBAttachedAddress%d=\"%lS\"\n", index + 1, bstr.raw());
-                        else
-                            RTPrintf("Address:            %lS\n", bstr.raw());
-                    }
+                        ComPtr <IUSBDevice> dev = coll[index];
 
-                    if (details != VMINFO_MACHINEREADABLE)
-                        RTPrintf("\n");
+                        /* Query info. */
+                        Guid id;
+                        CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), rc);
+                        USHORT usVendorId;
+                        CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), rc);
+                        USHORT usProductId;
+                        CHECK_ERROR_RET (dev, COMGETTER(ProductId)(&usProductId), rc);
+                        USHORT bcdRevision;
+                        CHECK_ERROR_RET (dev, COMGETTER(Revision)(&bcdRevision), rc);
 
-                    ASSERT(SUCCEEDED(rc = en->HasMore (&more)));
-                    if (FAILED(rc))
-                        return rc;
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("USBAttachedUUID%zu=\"%S\"\n"
+                                     "USBAttachedVendorId%zu=\"%#06x\"\n"
+                                     "USBAttachedProductId%zu=\"%#06x\"\n"
+                                     "USBAttachedRevision%zu=\"%#04x%02x\"\n",
+                                     index + 1, id.toString().raw(),
+                                     index + 1, usVendorId,
+                                     index + 1, usProductId,
+                                     index + 1, bcdRevision >> 8, bcdRevision & 0xff);
+                        else
+                            RTPrintf("UUID:               %S\n"
+                                     "VendorId:           0x%04x (%04X)\n"
+                                     "ProductId:          0x%04x (%04X)\n"
+                                     "Revision:           %u.%u (%02u%02u)\n",
+                                     id.toString().raw(),
+                                     usVendorId, usVendorId, usProductId, usProductId,
+                                     bcdRevision >> 8, bcdRevision & 0xff,
+                                     bcdRevision >> 8, bcdRevision & 0xff);
 
-                    index ++;
+                        /* optional stuff. */
+                        Bstr bstr;
+                        CHECK_ERROR_RET (dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
+                        if (!bstr.isEmpty())
+                        {
+                            if (details == VMINFO_MACHINEREADABLE)
+                                RTPrintf("USBAttachedManufacturer%zu=\"%lS\"\n", index + 1, bstr.raw());
+                            else
+                                RTPrintf("Manufacturer:       %lS\n", bstr.raw());
+                        }
+                        CHECK_ERROR_RET (dev, COMGETTER(Product)(bstr.asOutParam()), rc);
+                        if (!bstr.isEmpty())
+                        {
+                            if (details == VMINFO_MACHINEREADABLE)
+                                RTPrintf("USBAttachedProduct%zu=\"%lS\"\n", index + 1, bstr.raw());
+                            else
+                                RTPrintf("Product:            %lS\n", bstr.raw());
+                        }
+                        CHECK_ERROR_RET (dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
+                        if (!bstr.isEmpty())
+                        {
+                            if (details == VMINFO_MACHINEREADABLE)
+                                RTPrintf("USBAttachedSerialNumber%zu=\"%lS\"\n", index + 1, bstr.raw());
+                            else
+                                RTPrintf("SerialNumber:       %lS\n", bstr.raw());
+                        }
+                        CHECK_ERROR_RET (dev, COMGETTER(Address)(bstr.asOutParam()), rc);
+                        if (!bstr.isEmpty())
+                        {
+                            if (details == VMINFO_MACHINEREADABLE)
+                                RTPrintf("USBAttachedAddress%zu=\"%lS\"\n", index + 1, bstr.raw());
+                            else
+                                RTPrintf("Address:            %lS\n", bstr.raw());
+                        }
+
+                        if (details != VMINFO_MACHINEREADABLE)
+                            RTPrintf("\n");
+                    }
                 }
             }
         }

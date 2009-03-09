@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -82,7 +82,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS2_CI(Session, ISession, IInternalSessionControl)
 NS_DECL_CLASSINFO(Console)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Console, IConsole)
 
-COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX(ComObjPtr <OUSBDevice>, IUSBDevice, OUSBDevice)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX(ComObjPtr <RemoteUSBDevice>, IHostUSBDevice, RemoteUSBDevice)
 
 /**
@@ -162,4 +161,4 @@ static const nsModuleComponentInfo components[] =
 };
 
 NS_IMPL_NSGETMODULE (VirtualBox_Client_Module, components)
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */
