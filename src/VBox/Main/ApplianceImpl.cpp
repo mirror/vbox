@@ -1342,7 +1342,7 @@ STDMETHODIMP Appliance::Interpret()
             /* If the there isn't any name specified create a default one out of
              * the OS type */
             Utf8Str nameVBox = vsysThis.strName;
-            if (nameVBox == "")
+            if (nameVBox.isEmpty())
                 nameVBox = strOsTypeVBox;
             searchUniqueVMName(nameVBox);
             pNewDesc->addEntry(VirtualSystemDescriptionType_Name,
