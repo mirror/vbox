@@ -5543,7 +5543,7 @@ void VBoxUSBMenu::processAboutToShow()
             if (!mConsole.isNull())
             {
                 CUSBDevice attachedUSB =
-                    mConsole.GetUSBDevices().FindById (usb.GetId());
+                    mConsole.FindUSBDeviceById (usb.GetId());
                 action->setChecked (!attachedUSB.isNull());
                 action->setEnabled (dev.GetState() !=
                                     KUSBDeviceState_Unavailable);

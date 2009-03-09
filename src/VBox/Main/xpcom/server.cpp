@@ -245,10 +245,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(BIOSSettings, IBIOSSettings)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostUSBDevice)
 #endif
 
-#ifdef VBOX_WITH_USB
-COM_IMPL_READONLY_ENUM_AND_COLLECTION_AS(IfaceUSBDevice, IUSBDevice)
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 
 enum

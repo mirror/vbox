@@ -1975,10 +1975,10 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             {
                 mDevicesUSBMenu->setEnabled (isRunningOrPaused);
 
-                CUSBDeviceEnumerator en = cconsole.GetUSBDevices().Enumerate();
-                while (en.HasMore())
+                CUSBDeviceVector devsvec = cconsole.GetUSBDevices();
+                for (int i = 0; i < devsvec.size(); ++i)
                 {
-                    CUSBDevice usb = en.GetNext();
+                    CUSBDevice usb = devsvec[i];
                     info += QString ("<br><b><nobr>%1</nobr></b>")
                                      .arg (vboxGlobal().details (usb));
                 }
