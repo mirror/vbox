@@ -4155,6 +4155,8 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
 #endif /* PGMPOOL_WITH_USER_TRACKING */
 
+
+#ifdef IN_RING3
 /**
  * Flushes all the special root pages as part of a pgmPoolFlushAllInt operation.
  *
@@ -4255,6 +4257,10 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /* Unmap the old CR3 value before flushing everything. */
     int rc = PGM_BTH_PFN(UnmapCR3, pVM)(pVM);
+    AssertRC(rc);
+
+    /* Exit the current shadow paging mode as well; nested paging and EPT use a root CR3 which will get flushed here. */
+    rc = PGM_SHW_PFN(Exit, pVM)(pVM);
     AssertRC(rc);
 #endif
 
@@ -4402,6 +4408,15 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 #endif
     }
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    /* Force a shadow mode reinit (necessary for nested paging and ept). */
+    pVM->pgm.s.enmShadowMode = PGMMODE_INVALID;
+
+    /* Reinit the current shadow paging mode as well; nested paging and EPT use a root CR3 which will get flushed here. */
+    rc = PGMR3ChangeMode(pVM, PGMGetGuestMode(pVM));
+    AssertRC(rc);
+#endif
+
     /*
      * Finally, assert the FF.
      */
@@ -4409,7 +4424,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 
     STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
 }
-
+#endif /* IN_RING3 */
 
 /**
  * Flushes a pool page.
@@ -4780,7 +4795,7 @@ PPGMPOOLPAGE pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys)
     return pPage;
 }
 
-
+#ifdef IN_RING3
 /**
  * Flushes the entire cache.
  *
@@ -4794,6 +4809,7 @@ void pgmPoolFlushAll(PVM pVM)
     LogFlow(("pgmPoolFlushAll:\n"));
     pgmPoolFlushAllInt(pVM->pgm.s.CTX_SUFF(pPool));
 }
+#endif
 
 #ifdef LOG_ENABLED
 static const char *pgmPoolPoolKindToStr(uint8_t enmKind)
