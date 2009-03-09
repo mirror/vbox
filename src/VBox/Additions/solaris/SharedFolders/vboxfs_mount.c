@@ -30,7 +30,7 @@
 #include <sys/vfs.h>
 #include <sys/mount.h>
 
-#include "vboxvfs.h"
+#include "vboxfs.h"
 
 /*******************************************************************************
 *   Global Variables                                                           *

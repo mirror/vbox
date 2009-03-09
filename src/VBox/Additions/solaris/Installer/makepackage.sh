@@ -80,12 +80,6 @@ filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxguest=amd64/v
 # vboxguest module config file
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxguest.conf"'    '$3 = "usr/kernel/drv/vboxguest.conf=vboxguest.conf"'
 
-# 32-bit vboxvfs
-#filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxvfs=vboxvfs"'                  '$3 = "usr/kernel/fs/vboxvfs=vboxvfs"; $6="sys"'
-
-# 64-bit vboxvfs
-#filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxvfs=amd64/vboxvfs"'      '$3 = "usr/kernel/fs/amd64/vboxvfs=amd64/vboxvfs"; $6="sys"'
-
 # vboxvfsmount binary (always 32-bit on combined package)
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxvfsmount=vboxvfsmount"'         '$3 = "etc/fs/vboxvfs/mount=vboxvfsmount"; $6="sys"'
 

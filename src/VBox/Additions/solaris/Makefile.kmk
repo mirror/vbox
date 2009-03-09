@@ -60,8 +60,8 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
  SOLARIS_ADD_INST_DIR_32    := $(SOLARIS_ADD_INST_DIR)
  VBOX_SOLPACKFILES = \
 	$(SOLARIS_ADD_BIN_64)/vboxguest \
-	$(SOLARIS_ADD_BIN_64)/vboxvfs \
-	$(if $(VBOX_OSE),,$(SOLARIS_ADD_BIN_64)/vboxvfs_s10) \
+	$(SOLARIS_ADD_BIN_64)/vboxfs \
+	$(if $(VBOX_OSE),,$(SOLARIS_ADD_BIN_64)/vboxfs_s10) \
 	$(SOLARIS_ADD_BIN_64)/VBoxClient \
 	$(SOLARIS_ADD_BIN_64)/VBoxService \
 	$(SOLARIS_ADD_BIN_64)/VBoxControl \
@@ -75,9 +75,9 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(SOLARIS_ADD_BIN_64)/vboxmouse_drv_70.so \
 	$(SOLARIS_ADD_BIN_64)/vboxmouse_drv_71.so \
 	$(SOLARIS_ADD_BIN_32)/vboxguest \
-	$(SOLARIS_ADD_BIN_32)/vboxvfs \
-	$(if $(VBOX_OSE),,$(SOLARIS_ADD_BIN_32)/vboxvfs_s10) \
-	$(SOLARIS_ADD_BIN_32)/vboxvfsmount \
+	$(SOLARIS_ADD_BIN_32)/vboxfs \
+	$(if $(VBOX_OSE),,$(SOLARIS_ADD_BIN_32)/vboxfs_s10) \
+	$(SOLARIS_ADD_BIN_32)/vboxfsmount \
 	$(SOLARIS_ADD_BIN_32)/VBoxClient \
 	$(SOLARIS_ADD_BIN_32)/VBoxService \
 	$(SOLARIS_ADD_BIN_32)/VBoxControl \
@@ -99,9 +99,9 @@ else
  endif
  VBOX_SOLPACKFILES = \
 	$(SOLARIS_ADD_BIN)/vboxguest \
-	$(SOLARIS_ADD_BIN)/vboxvfs \
-	$(if $(VBOX_OSE),,$(SOLARIS_ADD_BIN)/vboxvfs_s10) \
-	$(SOLARIS_ADD_BIN)/vboxvfsmount \
+	$(SOLARIS_ADD_BIN)/vboxfs \
+	$(if $(VBOX_OSE),,$(SOLARIS_ADD_BIN)/vboxfs_s10) \
+	$(SOLARIS_ADD_BIN)/vboxfsmount \
 	$(SOLARIS_ADD_BIN)/VBoxClient \
 	$(SOLARIS_ADD_BIN)/VBoxService \
 	$(SOLARIS_ADD_BIN)/VBoxControl \
@@ -167,8 +167,8 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf  $(SOLARIS_ADD_INST_DIR)/vboxguest.conf
 ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxguest                                          $(SOLARIS_ADD_INST_DIR_64)/vboxguest
-	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxvfs                                            $(SOLARIS_ADD_INST_DIR_64)/vboxvfs
-	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxvfs_s10                      $(SOLARIS_ADD_INST_DIR_64)/vboxvfs_s10)
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxfs                                            $(SOLARIS_ADD_INST_DIR_64)/vboxfs
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxfs_s10                      $(SOLARIS_ADD_INST_DIR_64)/vboxfs_s10)
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxClient                                      $(SOLARIS_ADD_INST_DIR_64)/VBoxClient
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxService                                     $(SOLARIS_ADD_INST_DIR_64)/VBoxService
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxControl                                     $(SOLARIS_ADD_INST_DIR_64)/VBoxControl
@@ -184,9 +184,9 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxmouse_drv_70.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxmouse_drv_71.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxmouse_drv_71.so
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxguest                                          $(SOLARIS_ADD_INST_DIR_32)/vboxguest
-	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxvfs                                            $(SOLARIS_ADD_INST_DIR_32)/vboxvfs
-	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxvfs_s10                      $(SOLARIS_ADD_INST_DIR_32)/vboxvfs_s10)
-	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_ADD_BIN_32)/vboxvfsmount                                       $(SOLARIS_ADD_INST_DIR_32)/vboxvfsmount
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxfs                                            $(SOLARIS_ADD_INST_DIR_32)/vboxfs
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxfs_s10                      $(SOLARIS_ADD_INST_DIR_32)/vboxfs_s10)
+	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_ADD_BIN_32)/vboxfsmount                                       $(SOLARIS_ADD_INST_DIR_32)/vboxfsmount
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxClient                                      $(SOLARIS_ADD_INST_DIR_32)/VBoxClient
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxService                                     $(SOLARIS_ADD_INST_DIR_32)/VBoxService
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxControl                                     $(SOLARIS_ADD_INST_DIR_32)/VBoxControl
@@ -234,9 +234,9 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
  endif # VBOX_COMPRESS
 else  # !VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN)/vboxguest                                             $(SOLARIS_ADD_INST_DIR_ISA)/vboxguest
-	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN)/vboxvfs                                               $(SOLARIS_ADD_INST_DIR_ISA)/vboxvfs
-	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN)/vboxvfs_s10                                           $(SOLARIS_ADD_INST_DIR_ISA)/vboxvfs_s10
-	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_ADD_BIN)/vboxvfsmount                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxvfsmount
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN)/vboxfs                                               $(SOLARIS_ADD_INST_DIR_ISA)/vboxfs
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN)/vboxfs_s10                                           $(SOLARIS_ADD_INST_DIR_ISA)/vboxfs_s10
+	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_ADD_BIN)/vboxfsmount                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxfsmount
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxClient                                         $(SOLARIS_ADD_INST_DIR_ISA)/VBoxClient
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxService                                        $(SOLARIS_ADD_INST_DIR_ISA)/VBoxService
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxControl                                        $(SOLARIS_ADD_INST_DIR_ISA)/VBoxControl
