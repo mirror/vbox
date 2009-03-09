@@ -53,11 +53,6 @@
  * @{
  */
 
-/*
- * Enable to use the PGM pool for all levels in the paging chain in all paging modes.
- */
-#define VBOX_WITH_PGMPOOL_PAGING_ONLY
-
 /**
  * Solve page is out of sync issues inside Guest Context (in PGMGC.cpp).
  * Comment it if it will break something.
@@ -1459,7 +1454,6 @@ typedef PGMMAPSET *PPGMMAPSET;
 #define NIL_PGMPOOL_IDX                 0
 /** The first normal index. */
 #define PGMPOOL_IDX_FIRST_SPECIAL       1
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
 /** Page directory (32-bit root). */
 #define PGMPOOL_IDX_PD                  1
 /** Page Directory Pointer Table (PAE root). */
@@ -1470,28 +1464,6 @@ typedef PGMMAPSET *PPGMMAPSET;
 #define PGMPOOL_IDX_NESTED_ROOT         4
 /** The first normal index. */
 #define PGMPOOL_IDX_FIRST               5
-#else
-/** Page directory (32-bit root). */
-#define PGMPOOL_IDX_PD                  1
-/** The extended PAE page directory (2048 entries, works as root currently). */
-#define PGMPOOL_IDX_PAE_PD              2
-/** PAE Page Directory Table 0. */
-#define PGMPOOL_IDX_PAE_PD_0            3
-/** PAE Page Directory Table 1. */
-#define PGMPOOL_IDX_PAE_PD_1            4
-/** PAE Page Directory Table 2. */
-#define PGMPOOL_IDX_PAE_PD_2            5
-/** PAE Page Directory Table 3. */
-#define PGMPOOL_IDX_PAE_PD_3            6
-/** Page Directory Pointer Table (PAE root, not currently used). */
-#define PGMPOOL_IDX_PDPT                7
-/** AMD64 CR3 level index.*/
-#define PGMPOOL_IDX_AMD64_CR3           8
-/** Nested paging root.*/
-#define PGMPOOL_IDX_NESTED_ROOT         9
-/** The first normal index. */
-#define PGMPOOL_IDX_FIRST               10
-#endif
 /** The last valid index. (inclusive, 14 bits) */
 #define PGMPOOL_IDX_LAST                0x3fff
 /** @} */
@@ -1605,14 +1577,6 @@ typedef enum PGMPOOLKIND
     /** Shw: EPT page table;                        Gst: no paging  */
     PGMPOOLKIND_EPT_PT_FOR_PHYS,
 
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    /** Shw: Root 32-bit page directory. */
-    PGMPOOLKIND_ROOT_32BIT_PD,
-    /** Shw: Root PAE page directory */
-    PGMPOOLKIND_ROOT_PAE_PD,
-    /** Shw: Root PAE page directory pointer table (legacy, 4 entries). */
-    PGMPOOLKIND_ROOT_PDPT,
-#endif
     /** Shw: Root Nested paging table. */
     PGMPOOLKIND_ROOT_NESTED,
 
@@ -1685,18 +1649,8 @@ typedef struct PGMPOOLPAGE
     /** This is used by the R3 access handlers when invoked by an async thread.
      * It's a hack required because of REMR3NotifyHandlerPhysicalDeregister. */
     bool volatile       fReusedFlushPending;
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages). */
     bool                fLocked;
-#else
-    /** Used to indicate that the guest is mapping the page is also used as a CR3.
-     * In these cases the access handler acts differently and will check
-     * for mapping conflicts like the normal CR3 handler.
-     * @todo When we change the CR3 shadowing to use pool pages, this flag can be
-     *       replaced by a list of pages which share access handler.
-     */
-    bool                fCR3Mix;
-#endif
 } PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
 
 
@@ -2161,38 +2115,12 @@ typedef struct PGMMODEDATA
     DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstUnmonitorCR3,(PVM pVM));
-#endif
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstWriteHandlerCR3;
-    R3PTRTYPE(const char *)         pszR3GstWriteHandlerCR3;
-    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstPAEWriteHandlerCR3;
-    R3PTRTYPE(const char *)         pszR3GstPAEWriteHandlerCR3;
-#endif
     DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstUnmonitorCR3,(PVM pVM));
-#endif
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstWriteHandlerCR3;
-    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstPAEWriteHandlerCR3;
-#endif
     DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstUnmonitorCR3,(PVM pVM));
-#endif
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstWriteHandlerCR3;
-    R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstPAEWriteHandlerCR3;
-#endif
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.
@@ -2292,11 +2220,6 @@ typedef struct PGM
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     uint32_t                        u32Alignment;
 #endif
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    /** The physical address of the currently monitored guest CR3 page.
-     * When this value is NIL_RTGCPHYS no page is being monitored. */
-    RTGCPHYS                        GCPhysGstCR3Monitored;
-#endif
     /** @name 32-bit Guest Paging.
      * @{ */
     /** The guest's page directory, R3 pointer. */
@@ -2349,23 +2272,6 @@ typedef struct PGM
 #endif
     /** @} */
 
-# ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    /** @name Shadow paging
-     * @{ */
-    /** The root page table - R3 Ptr. */
-    R3PTRTYPE(void *)               pShwRootR3;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    /** The root page table - R0 Ptr. */
-    R0PTRTYPE(void *)               pShwRootR0;
-#  endif
-    /** The root page table - RC Ptr. */
-    RCPTRTYPE(void *)               pShwRootRC;
-#  if HC_ARCH_BITS == 64
-    uint32_t                        u32Padding1; /**< alignment padding. */
-#  endif
-    /** The Physical Address (HC) of the current active shadow CR3. */
-    RTHCPHYS                        HCPhysShwCR3;
-# endif
     /** Pointer to the page of the current active CR3 - R3 Ptr. */
     R3PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R3;
     /** Pointer to the page of the current active CR3 - R0 Ptr. */
@@ -2380,63 +2286,6 @@ typedef struct PGM
     RTRCPTR                         alignment6; /**< structure size alignment. */
 # endif
     /** @} */
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    /** @name 32-bit Shadow Paging
-     * @{ */
-    /** The 32-Bit PD - R3 Ptr. */
-    R3PTRTYPE(PX86PD)               pShw32BitPdR3;
-    /** The 32-Bit PD - R0 Ptr. */
-    R0PTRTYPE(PX86PD)               pShw32BitPdR0;
-    /** The 32-Bit PD - RC Ptr. */
-    RCPTRTYPE(PX86PD)               pShw32BitPdRC;
-# if HC_ARCH_BITS == 64
-    uint32_t                        u32Padding10; /**< alignment padding. */
-# endif
-    /** The Physical Address (HC) of the 32-Bit PD. */
-    RTHCPHYS                        HCPhysShw32BitPD;
-    /** @} */
-
-    /** @name PAE Shadow Paging
-     * @{ */
-    /** The four PDs for the low 4GB - R3 Ptr.
-     * Even though these are 4 pointers, what they point at is a single table.
-     * Thus, it's possible to walk the 2048 entries starting where apHCPaePDs[0] points. */
-    R3PTRTYPE(PX86PDPAE)            apShwPaePDsR3[4];
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    /** The four PDs for the low 4GB - R0 Ptr.
-     * Same kind of mapping as apHCPaePDs. */
-    R0PTRTYPE(PX86PDPAE)            apShwPaePDsR0[4];
-# endif
-    /** The four PDs for the low 4GB - RC Ptr.
-     * Same kind of mapping as apHCPaePDs. */
-    RCPTRTYPE(PX86PDPAE)            apShwPaePDsRC[4];
-    /** The Physical Address (HC) of the four PDs for the low 4GB.
-     * These are *NOT* 4 contiguous pages. */
-    RTHCPHYS                        aHCPhysPaePDs[4];
-    /** The Physical Address (HC) of the PAE PDPT. */
-    RTHCPHYS                        HCPhysShwPaePdpt;
-    /** The PAE PDPT - R3 Ptr. */
-    R3PTRTYPE(PX86PDPT)             pShwPaePdptR3;
-    /** The PAE PDPT - R0 Ptr. */
-    R0PTRTYPE(PX86PDPT)             pShwPaePdptR0;
-    /** The PAE PDPT - RC Ptr. */
-    RCPTRTYPE(PX86PDPT)             pShwPaePdptRC;
-    /** @} */
-# if HC_ARCH_BITS == 64
-    RTRCPTR                         alignment5; /**< structure size alignment. */
-# endif
-    /** @name Nested Shadow Paging
-     * @{ */
-    /** Root table; format depends on the host paging mode (AMD-V) or EPT - R3 pointer. */
-    RTR3PTR                         pShwNestedRootR3;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    /** Root table; format depends on the host paging mode (AMD-V) or EPT - R0 pointer. */
-    RTR0PTR                         pShwNestedRootR0;
-# endif
-    /** The Physical Address (HC) of the nested paging root. */
-    RTHCPHYS                        HCPhysShwNestedRoot;
-    /** @}  */
-#endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
     /** @name Function pointers for Shadow paging.
      * @{
@@ -2462,27 +2311,9 @@ typedef struct PGM
     DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstUnmonitorCR3,(PVM pVM));
-#endif
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstWriteHandlerCR3;
-    R3PTRTYPE(const char *)         pszR3GstWriteHandlerCR3;
-    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstPAEWriteHandlerCR3;
-    R3PTRTYPE(const char *)         pszR3GstPAEWriteHandlerCR3;
-#endif
     DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstUnmonitorCR3,(PVM pVM));
-#endif
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstWriteHandlerCR3;
-    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstPAEWriteHandlerCR3;
-#endif
 #if HC_ARCH_BITS == 64
     RTRCPTR                         alignment3; /**< structure size alignment. */
 #endif
@@ -2490,14 +2321,6 @@ typedef struct PGM
     DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstUnmonitorCR3,(PVM pVM));
-#endif
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstWriteHandlerCR3;
-    R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstPAEWriteHandlerCR3;
-#endif
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.
@@ -3071,9 +2894,6 @@ void            pgmR3PoolReset(PVM pVM);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 int             pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv);
 #endif
-#if !defined(VBOX_WITH_PGMPOOL_PAGING_ONLY) && (defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0))
-void           *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage);
-#endif
 int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage);
 PPGMPOOLPAGE    pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys);
 void            pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable);
@@ -3100,11 +2920,9 @@ int             pgmPoolMonitorMonitorCR3(PPGMPOOL pPool, uint16_t idxRoot, RTGCP
 int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
 #endif
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
 void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE);
 void            pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
 int             pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
-#endif
 int             pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 int             pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 
@@ -3531,11 +3349,7 @@ DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
 # endif
         return pv;
     }
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     AssertFatalMsgFailed(("pgmPoolMapPageInlined invalid page index %x\n", pPage->idx));
-#else
-    return pgmPoolMapPageFallback(pPGM, pPage);
-#endif
 }
 
 /**
@@ -4211,19 +4025,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
  */
 DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PPGM pPGM)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     return (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
-#else
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PX86PD          pShwPd;
-    Assert(pPGM->HCPhysShw32BitPD != 0 && pPGM->HCPhysShw32BitPD != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR_BY_PGM(pPGM, pPGM->HCPhysShw32BitPD, &pShwPd);
-    AssertRCReturn(rc, NULL);
-    return pShwPd;
-# else
-    return pPGM->CTX_SUFF(pShw32BitPd);
-# endif
-#endif
 }
 
 
@@ -4274,19 +4076,7 @@ DECLINLINE(PX86PDE) pgmShwGet32BitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
  */
 DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGM pPGM)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     return (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
-#else
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PX86PDPT pShwPdpt;
-    Assert(pPGM->HCPhysShwPaePdpt != 0 && pPGM->HCPhysShwPaePdpt != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR_BY_PGM(pPGM, pPGM->HCPhysShwPaePdpt, &pShwPdpt);
-    AssertRCReturn(rc, 0);
-    return pShwPdpt;
-# else
-    return pPGM->CTX_SUFF(pShwPaePdpt);
-# endif
-#endif
 }
 
 
@@ -4299,7 +4089,6 @@ DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGM pPGM)
  */
 DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pPGM);
 
@@ -4311,19 +4100,6 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
     AssertReturn(pShwPde, NULL);
 
     return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pShwPde);
-#else
-    const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PX86PDPAE       pPD;
-    int rc = PGM_HCPHYS_2_PTR_BY_PGM(pPGM, pPGM->aHCPhysPaePDs[iPdpt], &pPD);
-    AssertRCReturn(rc, 0);
-    return pPD;
-# else
-    PX86PDPAE       pPD = pPGM->CTX_SUFF(apShwPaePDs)[iPdpt];
-    Assert(pPD);
-    return pPD;
-# endif
-#endif
 }
 
 
@@ -4336,7 +4112,6 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
  */
 DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, PX86PDPT pPdpt, RTGCPTR GCPtr)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
 
     if (!pPdpt->a[iPdpt].n.u1Present)
@@ -4347,10 +4122,6 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, PX86PDPT pPdpt, RTGCPTR GCPtr
     AssertReturn(pShwPde, NULL);
 
     return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pShwPde);
-#else
-    AssertFailed();
-    return NULL;
-#endif
 }
 
 
@@ -4401,20 +4172,7 @@ DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
  */
 DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGM pPGM)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     return (PX86PML4)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
-#else
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PX86PML4 pShwPml4;
-    Assert(pPGM->HCPhysShwCR3 != 0 && pPGM->HCPhysShwCR3 != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR_BY_PGM(pPGM, pPGM->HCPhysShwCR3, &pShwPml4);
-    AssertRCReturn(rc, 0);
-    return pShwPml4;
-# else
-    Assert(pPGM->CTX_SUFF(pShwRoot));
-    return (PX86PML4)pPGM->CTX_SUFF(pShwRoot);
-# endif
-#endif
 }
 
 
@@ -4734,8 +4492,6 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 }
 #endif /* PGMPOOL_WITH_CACHE */
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-
 /**
  * Locks a page to prevent flushing (important for cr3 root pages or shadow pae pd pages).
  *
@@ -4779,8 +4535,6 @@ DECLINLINE(bool) pgmPoolIsPageLocked(PPGM pPGM, PPGMPOOLPAGE pPage)
     }
     return false;
 }
-
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 /**
  * Tells if mappings are to be put into the shadow page table or not

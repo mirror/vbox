@@ -715,9 +715,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                     &pVM->cpum,
                     GCPtrGDT,
                     PGMGetInter32BitCR3(pVM), PGMGetInterPaeCR3(pVM), PGMGetInterAmd64CR3(pVM),
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                     /* @todo No need for three GetHyper calls; one and the same base is used */
-#endif
                     PGMGetHyper32BitCR3(pVM), PGMGetHyperPaeCR3(pVM), PGMGetHyperAmd64CR3(pVM),
                     SelCS, SelDS, SelCS64, SelTSS);
 

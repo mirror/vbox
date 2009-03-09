@@ -223,10 +223,8 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     if (!pVM->pgm.s.CTX_SUFF(pShwPageCR3))
         return;    /* too early */
-#endif
 
     PGMMODE enmShadowMode = PGMGetShadowMode(pVM);
     Assert(enmShadowMode <= PGMMODE_PAE_NX);
@@ -271,7 +269,6 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 pShwPdpt  = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
                 Assert(pShwPdpt);
                 pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPdPt << X86_PDPT_SHIFT));
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 if (!pShwPaePd)
                 {
                     X86PDPE GstPdpe;
@@ -298,13 +295,11 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                         AssertFatalMsg(rc == VINF_SUCCESS, ("rc = %Rrc\n", rc));
                     }
                 }
-#endif
                 AssertFatal(pShwPaePd);
 
                 PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPageByHCPhys(pVM, pShwPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
                 AssertFatal(pPoolPagePd);
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 if (!pgmPoolIsPageLocked(&pVM->pgm.s, pPoolPagePd))
                 {
                     /* Mark the page as locked; disallow flushing. */
@@ -327,13 +322,6 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                     pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iPDE);
                 }
 
-#else
-                if (pShwPaePd->a[iPDE].n.u1Present)
-                {
-                    Assert(!(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
-                    pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iNewPDE);
-                }
-#endif
                 X86PDEPAE PdePae0;
                 PdePae0.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0;
                 pShwPaePd->a[iPDE] = PdePae0;
@@ -342,19 +330,11 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 iPDE++;
                 AssertFatal(iPDE < 512);
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 if (    pShwPaePd->a[iPDE].n.u1Present
                     &&  !(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING))
                 {
                     pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iPDE);
                 }
-#else
-                if (pShwPaePd->a[iPDE].n.u1Present)
-                {
-                    Assert(!(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
-                    pgmPoolFree(pVM, pShwPaePd->a[iPDE].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iNewPDE);
-                }
-#endif
                 X86PDEPAE PdePae1;
                 PdePae1.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1;
                 pShwPaePd->a[iPDE] = PdePae1;
@@ -386,7 +366,6 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pShwPageCR3);
 # ifdef IN_RC
     Assert(pShwPageCR3 != pVM->pgm.s.CTX_SUFF(pShwPageCR3));
@@ -399,7 +378,6 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
     {
         pCurrentShwPdpt = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
     }
-#endif
 
     unsigned i = pMap->cPTs;
     PGMMODE  enmShadowMode = PGMGetShadowMode(pVM);
@@ -413,11 +391,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
         {
             case PGMMODE_32_BIT:
             {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 PX86PD pShw32BitPd = (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
-#else
-                PX86PD pShw32BitPd = pgmShwGet32BitPDPtr(&pVM->pgm.s);
-#endif
                 AssertFatal(pShw32BitPd);
 
                 Assert(!pShw32BitPd->a[iOldPDE].n.u1Present || (pShw32BitPd->a[iOldPDE].u & PGM_PDFLAGS_MAPPING));
@@ -433,7 +407,6 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 
                 const unsigned iPdpt = iOldPDE / 256;         /* iOldPDE * 2 / 512; iOldPDE is in 4 MB pages */
                 unsigned iPDE = iOldPDE * 2 % 512;
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 pShwPdpt  = (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
                 pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pShwPdpt, (iPdpt << X86_PDPT_SHIFT));
 
@@ -443,10 +416,6 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                     if ((pCurrentShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK) == (pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK))
                         break;
                 }
-#else
-                pShwPdpt  = pgmShwGetPaePDPTPtr(&pVM->pgm.s); 
-                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPdpt << X86_PDPT_SHIFT)); 
-#endif
                 AssertFatal(pShwPaePd);
 
                 Assert(!pShwPaePd->a[iPDE].n.u1Present || (pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
@@ -460,7 +429,6 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                 /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entry. (legacy PAE guest mode) */
                 pShwPdpt->a[iPdpt].u &= ~PGM_PLXFLAGS_MAPPING;
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPageByHCPhys(pVM, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
                 AssertFatal(pPoolPagePd);
 
@@ -469,8 +437,6 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                     /* Mark the page as unlocked; allow flushing again. */
                     pgmPoolUnlockPage(pVM->pgm.s.CTX_SUFF(pPool), pPoolPagePd);
                 }
-#endif
-
                 break;
             }
 
@@ -493,9 +459,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
  */
 void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iPDE)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pShwPageCR3);
-#endif
 
     unsigned i = pMap->cPTs;
     PGMMODE  enmShadowMode = PGMGetShadowMode(pVM);
@@ -509,11 +473,7 @@ void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
         {
             case PGMMODE_32_BIT:
             {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 PX86PD pShw32BitPd = (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
-#else
-                PX86PD pShw32BitPd = pgmShwGet32BitPDPtr(&pVM->pgm.s);
-#endif
                 AssertFatal(pShw32BitPd);
 
                 AssertMsg(pShw32BitPd->a[iPDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT),
@@ -529,13 +489,8 @@ void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 
                 const unsigned iPD = iPDE / 256;         /* iPDE * 2 / 512; iPDE is in 4 MB pages */
                 unsigned iPaePDE = iPDE * 2 % 512;
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
                 pPdpt     = (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
                 pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pPdpt, (iPD << X86_PDPT_SHIFT));
-#else
-                pPdpt     = pgmShwGetPaePDPTPtr(&pVM->pgm.s); 
-                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPD << X86_PDPT_SHIFT)); 
-#endif
                 AssertFatal(pShwPaePd);
 
                 AssertMsg(pShwPaePd->a[iPaePDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0),
@@ -565,16 +520,13 @@ void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
  */
 VMMDECL(void) PGMMapCheck(PVM pVM)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /*
      * Can skip this if mappings are disabled.
      */
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-#  endif
 
     /*
      * Iterate mappings.
@@ -585,7 +537,6 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
 
         pgmMapCheckShadowPDEs(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pCur, iPDE);
     }
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 }
 #endif /* defined(VBOX_STRICT) && !defined(IN_RING0) */
 
@@ -599,25 +550,16 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
  */
 int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /*
      * Can skip this if mappings are disabled.
      */
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
-#else
-    /*
-     * Can skip this if mappings are safely fixed.
-     */
-    if (pVM->pgm.s.fMappingsFixed)
-#endif
         return VINF_SUCCESS;
 
     /* @note A log flush (in RC) can cause problems when called from MapCR3 (inconsistent state will trigger assertions). */
     Log4(("PGMMapActivateAll fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
 
-# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pShwPageCR3 && pShwPageCR3 == pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-# endif
 
     /*
      * Iterate mappings.
@@ -641,22 +583,13 @@ int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
  */
 int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /*
      * Can skip this if mappings are disabled.
      */
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
-#else
-    /*
-     * Can skip this if mappings are safely fixed.
-     */
-    if (pVM->pgm.s.fMappingsFixed)
-#endif
         return VINF_SUCCESS;
 
-# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pShwPageCR3);
-# endif
 
     /*
      * Iterate mappings.
@@ -761,7 +694,6 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
     return false;
 }
 
-# ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
 /**
  * Checks and resolves (ring 3 only) guest conflicts with VMM GC mappings.
  *
@@ -877,7 +809,6 @@ VMMDECL(int) PGMMapResolveConflicts(PVM pVM)
 
     return VINF_SUCCESS;
 }
-# endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 #endif /* IN_RING0 */
 

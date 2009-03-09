@@ -70,9 +70,7 @@ typedef struct PGMHVUSTATE
 *******************************************************************************/
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
 DECLINLINE(int) pgmShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
 DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGM pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
-#endif
 
 /*
  * Shadow - 32-bit mode
@@ -737,10 +735,6 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
     {
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
         Assert(!pVM->pgm.s.fMappingsFixed);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        Assert(pVM->pgm.s.GCPhysCR3 == pVM->pgm.s.GCPhysGstCR3Monitored);
-        rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
-#endif
     }
 
     /*
@@ -867,14 +861,13 @@ DECLINLINE(int) pgmShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86
     if (!pPdpe->n.u1Present)
         return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
 
+    Assert(pPdpe->u & X86_PDPE_PG_MASK);
     pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;
 }
-
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
 
 /**
  * Gets the shadow page directory for the specified address, PAE.
@@ -903,7 +896,7 @@ int pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppP
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
 
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+# if defined(IN_RC)
         /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
         PGMDynLockHCPage(pVM, (uint8_t *)pPdpe);
 # endif
@@ -951,7 +944,7 @@ int pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppP
             Log(("pgmShwSyncPaePDPtr: PGM pool flushed -> signal sync cr3\n"));
             Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+# if defined(IN_RC)
             PGMDynUnlockHCPage(pVM, (uint8_t *)pPdpe);
 # endif
             return VINF_PGM_SYNC_CR3;
@@ -962,7 +955,7 @@ int pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppP
         pPdpe->u |= pShwPage->Core.Key
                  | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
-# if defined(IN_RC) && defined(VBOX_WITH_PGMPOOL_PAGING_ONLY)
+# if defined(IN_RC)
         /* In 32 bits PAE mode we *must* invalidate the TLB when changing a PDPT entry; the CPU fetches them only during cr3 load, so any
          * non-present PDPT will continue to cause page faults.
          */
@@ -1009,7 +1002,6 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGM pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE *p
     return VINF_SUCCESS;
 }
 
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 #ifndef IN_RC
 
 /**
@@ -1034,9 +1026,7 @@ int pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86P
     const unsigned iPml4         = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PX86PML4E      pPml4e        = pgmShwGetLongModePML4EPtr(pPGM, iPml4);
     bool           fNestedPaging = HWACCMIsNestedPagingActive(pVM);
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     bool           fPaging      = !!(CPUMGetGuestCR0(pVM) & X86_CR0_PG);
-#endif
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
@@ -1044,7 +1034,6 @@ int pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86P
     if (    !pPml4e->n.u1Present
         &&  !(pPml4e->u & X86_PML4E_PG_MASK))
     {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         RTGCPTR64   GCPml4;
         PGMPOOLKIND enmKind;
 
@@ -1066,23 +1055,6 @@ int pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86P
 
         /* Create a reference back to the PDPT by using the index in its shadow page. */
         rc = pgmPoolAlloc(pVM, GCPml4, enmKind, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, &pShwPage);
-#else
-        if (!fNestedPaging)
-        {
-            Assert(pGstPml4e && pGstPdpe);
-            Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-
-            rc = pgmPoolAlloc(pVM, pGstPml4e->u & X86_PML4E_PG_MASK,
-                              PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, &pShwPage);
-        }
-        else
-        {
-            /* AMD-V nested paging. (Intel EPT never comes here) */
-            RTGCPTR64 GCPml4 = (RTGCPTR64)iPml4 << EPT_PML4_SHIFT;
-            rc = pgmPoolAlloc(pVM, GCPml4 + RT_BIT_64(63) /* hack: make the address unique */,
-                              PGMPOOLKIND_64BIT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4, &pShwPage);
-        }
-#endif
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Log(("PGMShwSyncLongModePDPtr: PGM pool flushed (1) -> signal sync cr3\n"));
@@ -1109,7 +1081,6 @@ int pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86P
     if (    !pPdpe->n.u1Present
         &&  !(pPdpe->u & X86_PDPE_PG_MASK))
     {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
 
@@ -1129,22 +1100,6 @@ int pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86P
 
         /* Create a reference back to the PDPT by using the index in its shadow page. */
         rc = pgmPoolAlloc(pVM, GCPdPt, enmKind, pShwPage->idx, iPdPt, &pShwPage);
-#else
-        if (!fNestedPaging)
-        {
-            Assert(pGstPml4e && pGstPdpe);
-            Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
-            /* Create a reference back to the PDPT by using the index in its shadow page. */
-            rc = pgmPoolAlloc(pVM, pGstPdpe->u & X86_PDPE_PG_MASK, PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD, pShwPage->idx, iPdPt, &pShwPage);
-        }
-        else
-        {
-            /* AMD-V nested paging. (Intel EPT never comes here) */
-            RTGCPTR64 GCPdPt = (RTGCPTR64)iPdPt << EPT_PDPT_SHIFT;
-
-            rc = pgmPoolAlloc(pVM, GCPdPt + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_64BIT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
-        }
-#endif
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Log(("PGMShwSyncLongModePDPtr: PGM pool flushed (2) -> signal sync cr3\n"));
@@ -1227,16 +1182,7 @@ int pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
 
     Assert(HWACCMIsNestedPagingActive(pVM));
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     pPml4 = (PEPTPML4)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
-#else
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysShwNestedRoot, &pPml4);
-    AssertRCReturn(rc, rc);
-# else
-    pPml4 = (PEPTPML4)pPGM->CTX_SUFF(pShwNestedRoot);
-# endif
-#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
     Assert(pPml4);
 
     /* Allocate page directory pointer table if not present. */
@@ -1247,11 +1193,7 @@ int pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
         Assert(!(pPml4e->u & EPT_PML4E_PG_MASK));
         RTGCPTR64 GCPml4 = (RTGCPTR64)iPml4 << EPT_PML4_SHIFT;
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         rc = pgmPoolAlloc(pVM, GCPml4, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4, &pShwPage);
-#else
-        rc = pgmPoolAlloc(pVM, GCPml4 + RT_BIT_64(63) /* hack: make the address unique */, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4, &pShwPage);
-#endif
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Log(("PGMShwSyncEPTPDPtr: PGM pool flushed (1) -> signal sync cr3\n"));
@@ -1285,11 +1227,7 @@ int pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
     {
         RTGCPTR64 GCPdPt = (RTGCPTR64)iPdPt << EPT_PDPT_SHIFT;
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         rc = pgmPoolAlloc(pVM, GCPdPt, PGMPOOLKIND_64BIT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
-#else
-        rc = pgmPoolAlloc(pVM, GCPdPt + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_64BIT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
-#endif
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Log(("PGMShwSyncEPTPDPtr: PGM pool flushed (2) -> signal sync cr3\n"));
@@ -1430,35 +1368,8 @@ VMMDECL(X86PDPE) PGMGstGetPaePDPtr(PVM pVM, unsigned iPdpt)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
     return pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
-#else
-    PGMMODE enmShadowMode = pVM->pgm.s.enmShadowMode;
-    switch (enmShadowMode)
-    {
-        case PGMMODE_32_BIT:
-            return pVM->pgm.s.HCPhysShw32BitPD;
-
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-            return pVM->pgm.s.HCPhysShwPaePdpt;
-
-        case PGMMODE_AMD64:
-        case PGMMODE_AMD64_NX:
-            return pVM->pgm.s.HCPhysShwCR3;
-
-        case PGMMODE_EPT:
-            return pVM->pgm.s.HCPhysShwNestedRoot;
-
-        case PGMMODE_NESTED:
-            return PGMGetNestedCR3(pVM, PGMGetHostMode(pVM));
-
-        default:
-            AssertMsgFailed(("enmShadowMode=%d\n", enmShadowMode));
-            return ~0;
-    }
-#endif
 }
 
 
@@ -1469,28 +1380,8 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
     return pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
-#else
-    switch (enmShadowMode)
-    {
-        case PGMMODE_32_BIT:
-            return pVM->pgm.s.HCPhysShw32BitPD;
-
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-            return pVM->pgm.s.HCPhysShwPaePdpt;
-
-        case PGMMODE_AMD64:
-        case PGMMODE_AMD64_NX:
-            return pVM->pgm.s.HCPhysShwCR3;
-
-        default:
-            AssertMsgFailed(("enmShadowMode=%d\n", enmShadowMode));
-            return ~0;
-    }
-#endif
 }
 
 
@@ -1501,12 +1392,8 @@ VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
  */
 VMMDECL(RTHCPHYS) PGMGetHyper32BitCR3(PVM pVM)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
     return pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
-#else
-    return pVM->pgm.s.HCPhysShw32BitPD;
-#endif
 }
 
 
@@ -1517,12 +1404,8 @@ VMMDECL(RTHCPHYS) PGMGetHyper32BitCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperPaeCR3(PVM pVM)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
     return pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
-#else
-    return pVM->pgm.s.HCPhysShwPaePdpt;
-#endif
 }
 
 
@@ -1533,12 +1416,8 @@ VMMDECL(RTHCPHYS) PGMGetHyperPaeCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperAmd64CR3(PVM pVM)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
     return pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
-#else
-    return pVM->pgm.s.HCPhysShwCR3;
-#endif
 }
 
 
@@ -1693,9 +1572,6 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
             if (!pVM->pgm.s.fMappingsFixed)
             {
                 pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-                rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, GCPhysCR3);
-#endif
             }
         }
         else
@@ -1722,9 +1598,6 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
         {
             pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
             Assert(!pVM->pgm.s.fMappingsFixed);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-            rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, GCPhysCR3);
-#endif
         }
         if (fGlobal)
             STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,FlushTLBSameCR3Global));
@@ -1867,16 +1740,11 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool 
             break;
         }
 
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
         if (pVM->pgm.s.GCPhysCR3 != GCPhysCR3)
         {
             pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
             rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
         }
-#else
-        pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
-        rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
-#endif
 #ifdef IN_RING3
         if (rc == VINF_PGM_SYNC_CR3)
             rc = pgmPoolSyncCR3(pVM);
@@ -1913,10 +1781,6 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool 
         {
             pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
             Assert(!pVM->pgm.s.fMappingsFixed);
-#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-            Assert(pVM->pgm.s.GCPhysCR3 == pVM->pgm.s.GCPhysGstCR3Monitored);
-            rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
-#endif
         }
     }
 
@@ -2262,7 +2126,6 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
      * Update the page tables.
      */
     register unsigned iPage = pVM->pgm.s.iDynPageMapLast;
-#  ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     unsigned i;
     for (i=0;i<(MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT);i++)
     {
@@ -2272,9 +2135,6 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
         iPage++;
     }
     AssertRelease(i != (MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT));
-#  else
-    pVM->pgm.s.iDynPageMapLast = iPage = (iPage + 1) & ((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) - 1);
-#  endif
 
     pVM->pgm.s.aHCPhysDynPageMapCache[iPage & (RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) - 1)] = HCPhys;
     pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u = (uint32_t)HCPhys | X86_PTE_P | X86_PTE_A | X86_PTE_D;

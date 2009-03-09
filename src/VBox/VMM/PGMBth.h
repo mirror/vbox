@@ -129,15 +129,14 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
  */
 PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
 {
-#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /* Here we deal with allocation of the root shadow page table for real and protected mode during mode switches;
      * Other modes rely on MapCR3/UnmapCR3 to setup the shadow root page tables. 
      */
-# if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT \
-           || PGM_SHW_TYPE == PGM_TYPE_PAE    \
-           || PGM_SHW_TYPE == PGM_TYPE_AMD64) \
-       && (   PGM_GST_TYPE == PGM_TYPE_REAL   \
-           || PGM_GST_TYPE == PGM_TYPE_PROT))
+#if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT \
+          || PGM_SHW_TYPE == PGM_TYPE_PAE    \
+          || PGM_SHW_TYPE == PGM_TYPE_AMD64) \
+      && (   PGM_GST_TYPE == PGM_TYPE_REAL   \
+          || PGM_GST_TYPE == PGM_TYPE_PROT))
 
     Assert(!HWACCMIsNestedPagingActive(pVM));
     /* Note: we only really need shadow paging in real and protected mode for VT-x and AMD-V (excluding nested paging/EPT modes),
@@ -187,9 +186,6 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
 
     /* Apply all hypervisor mappings to the new CR3. */
     return pgmMapActivateCR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-# endif
-#else
-    /* nothing special to do here - InitData does the job. */
 #endif
     return VINF_SUCCESS;
 }
