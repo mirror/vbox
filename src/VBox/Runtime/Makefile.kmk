@@ -992,6 +992,7 @@ endif
 
 RuntimeR0Drv_SOURCES    = \
 	common/alloc/alloc.cpp \
+	common/alloc/heapsimple.cpp \
 	common/misc/RTAssertMsg2.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
@@ -1035,7 +1036,6 @@ RuntimeR0Drv_SOURCES    = \
 ##
 ## bird: Why don't we just extern "C" {} that file then?
 RuntimeR0Drv_SOURCES.linux = \
-	common/alloc/heapsimple.cpp \
 	common/string/strpbrk.cpp \
 	common/err/RTErrConvertToErrno.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
@@ -1066,7 +1066,6 @@ RuntimeR0Drv_SOURCES.linux = \
 ## @todo thread2-r0drv-linux.c and assert-r0drv-linux.c
 
 RuntimeR0Drv_SOURCES.win = \
-	common/alloc/heapsimple.cpp \
 	common/misc/thread.cpp \
 	common/string/memcmp.asm \
 	common/string/memchr.asm \
