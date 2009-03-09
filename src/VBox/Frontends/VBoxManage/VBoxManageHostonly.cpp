@@ -54,7 +54,7 @@ using namespace com;
 static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
 {
     if (a->argc - iStart < 1)
-        return errorSyntax(USAGE_MODIFYVM, "Not enough parameters");
+        return errorSyntax(USAGE_HOSTONLYIFS, "Not enough parameters");
 
     int index = iStart;
     HRESULT rc;
@@ -93,7 +93,7 @@ static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
 static int handleRemove(HandlerArg *a, int iStart, int *pcProcessed)
 {
     if (a->argc - iStart < 1)
-        return errorSyntax(USAGE_MODIFYVM, "Not enough parameters");
+        return errorSyntax(USAGE_HOSTONLYIFS, "Not enough parameters");
 
     int index = iStart;
     HRESULT rc;
@@ -156,7 +156,7 @@ static const RTGETOPTDEF g_aListOptions[]
 static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
 {
     if (a->argc - iStart < 2)
-        return errorSyntax(USAGE_MODIFYVM, "Not enough parameters");
+        return errorSyntax(USAGE_HOSTONLYIFS, "Not enough parameters");
 
     int index = iStart;
     HRESULT rc;
@@ -189,19 +189,19 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
         {
             case DHCP:   // -dhcp
                 if (bDhcp)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can only specify -dhcp once.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify -dhcp once.");
                 else if(bNetmasklengthv6 || pIpv6 || bIp || bNetmask)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
                 else
                     bDhcp = true;
             break;
             case IP:
                 if(bIp)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can only specify -ip once.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify -ip once.");
                 else if (bDhcp)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
                 else if(bNetmasklengthv6 || pIpv6)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
                 else
                 {
                     bIp = true;
@@ -210,11 +210,11 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
             break;
             case NETMASK:
                 if(bNetmask)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can only specify -netmask once.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify -netmask once.");
                 else if (bDhcp)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
                 else if(bNetmasklengthv6 || pIpv6)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
                 else
                 {
                     bNetmask = true;
@@ -223,21 +223,21 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
             break;
             case IPV6:
                 if(pIpv6)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can only specify -ipv6 once.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify -ipv6 once.");
                 else if (bDhcp)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
                 else if(bIp || bNetmask)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
                 else
                     pIpv6 = ValueUnion.psz;
             break;
             case NETMASKLENGTHV6:
                 if(bNetmasklengthv6)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can only specify -netmasklengthv6 once.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify -netmasklengthv6 once.");
                 else if (bDhcp)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
                 else if(bIp || bNetmask)
-                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
                 else
                 {
                     bNetmasklengthv6 = true;
@@ -246,11 +246,11 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
             break;
             default:
                 if (c > 0)
-                    return errorSyntax(USAGE_LIST, "missing case: %c\n", c);
+                    return errorSyntax(USAGE_HOSTONLYIFS, "missing case: %c\n", c);
                 else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_LIST, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                    return errorSyntax(USAGE_HOSTONLYIFS, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_LIST, "%Rrs", c);
+                    return errorSyntax(USAGE_HOSTONLYIFS, "%Rrs", c);
         }
     }
 
@@ -280,7 +280,7 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
     }
     else
     {
-        return errorSyntax(USAGE_LIST, "neither -dhcp nor -ip nor -ipv6 was spcfified");
+        return errorSyntax(USAGE_HOSTONLYIFS, "neither -dhcp nor -ip nor -ipv6 was spcfified");
     }
 
     return 0;
@@ -291,7 +291,7 @@ int handleHostonlyIf(HandlerArg *a)
 {
     int result = 0;
     if (a->argc < 1)
-        return errorSyntax(USAGE_MODIFYVM, "Not enough parameters");
+        return errorSyntax(USAGE_HOSTONLYIFS, "Not enough parameters");
 
     for (int i = 0; i < a->argc; i++)
     {
@@ -327,7 +327,7 @@ int handleHostonlyIf(HandlerArg *a)
 #endif
         else
         {
-            result = errorSyntax(USAGE_MODIFYVM, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
+            result = errorSyntax(USAGE_HOSTONLYIFS, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
             break;
         }
     }
