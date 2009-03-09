@@ -23,6 +23,10 @@
 #include <VBox/types.h>
 #include <iprt/assert.h>
 
+#ifdef VBOX_WITH_HGSMI
+#include <VBox/HGSMI/HGSMI.h>
+#endif /* VBOX_WITH_HGSMI */
+
 __BEGIN_DECLS
 #include "dderror.h"
 #include "devioctl.h"
@@ -42,9 +46,17 @@ __END_DECLS
 #define VBE_DISPI_INDEX_VIRT_WIDTH      0x6
 #define VBE_DISPI_INDEX_VIRT_HEIGHT     0x7
 #define VBE_DISPI_INDEX_VBOX_VIDEO      0xa
+#ifdef VBOX_WITH_HGSMI
+#define VBE_DISPI_INDEX_VBVA_HOST       0xb
+#define VBE_DISPI_INDEX_VBVA_GUEST      0xc
+#endif /* VBOX_WITH_HGSMI */
+
 #define VBE_DISPI_ID2                   0xB0C2
 /* The VBOX interface id. Indicates support for VBE_DISPI_INDEX_VBOX_VIDEO. */
 #define VBE_DISPI_ID_VBOX_VIDEO         0xBE00
+#ifdef VBOX_WITH_HGSMI
+#define VBE_DISPI_ID_HGSMI              0xBE01
+#endif /* VBOX_WITH_HGSMI */
 #define VBE_DISPI_DISABLED              0x00
 #define VBE_DISPI_ENABLED               0x01
 #define VBE_DISPI_LFB_ENABLED           0x40
@@ -108,6 +120,13 @@ typedef struct _DEVICE_EXTENSION
                                                 * ulFrameBufferOffset + ulMaxFrameBufferSize.
                                                 */
            
+#ifdef VBOX_WITH_HGSMI
+           BOOLEAN bHGSMI;                     /* Whether HGSMI is enabled. */
+
+           HGSMIAREA areaHostHeap;             /* Host heap VRAM area. */
+
+           HGSMIHEAP hgsmiAdapterHeap;
+#endif /* VBOX_WITH_HGSMI */
        } primary;
    
        /* Secondary device information. */
@@ -115,6 +134,10 @@ typedef struct _DEVICE_EXTENSION
            BOOLEAN bEnabled;                   /* Device enabled flag */
        } secondary;
    } u;
+
+#ifdef VBOX_WITH_HGSMI
+   HGSMIAREA areaDisplay;                      /* Entire VRAM chunk for this display device. */
+#endif /* VBOX_WITH_HGSMI */
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
 extern "C"
@@ -200,6 +223,23 @@ VP_STATUS VBoxVideoGetChildDescriptor(
    PULONG pUId,
    PULONG pUnused);
 
+int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension,
+                          void **ppv,
+                          ULONG ulOffset,
+                          ULONG ulSize);
+
+void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension,
+                             void **ppv);
+                             
+void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
+
+#ifdef VBOX_WITH_HGSMI
+BOOLEAN VBoxHGSMIIsSupported (void);
+
+VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
+                             PVIDEO_PORT_CONFIG_INFO pConfigInfo,
+                             ULONG AdapterMemorySize);
+#endif /* VBOX_WITH_HGSMI */
 } /* extern "C" */
 
 #endif /* VBOXVIDEO_H */

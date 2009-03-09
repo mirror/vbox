@@ -24,6 +24,10 @@
 
 #include <VBox/VBoxGuest.h>
 
+#ifdef VBOX_WITH_HGSMI
+#include <VBox/HGSMI/HGSMI.h>
+#endif /* VBOX_WITH_HGSMI */
+
 #define IOCTL_VIDEO_INTERPRET_DISPLAY_MEMORY \
     CTL_CODE(FILE_DEVICE_VIDEO, 0x420, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
@@ -39,6 +43,11 @@
  */
 #define IOCTL_VIDEO_VBVA_ENABLE \
     CTL_CODE(FILE_DEVICE_VIDEO, 0x400, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#ifdef VBOX_WITH_HGSMI
+#define IOCTL_VIDEO_QUERY_HGSMI_INFO \
+    CTL_CODE(FILE_DEVICE_VIDEO, 0x430, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#endif /* VBOX_WITH_HGSMI */
 
 #pragma pack(1)
 /**
@@ -76,6 +85,25 @@ typedef struct _QUERYDISPLAYINFORESULT
     /* Size of the display information area. */
     uint32_t u32DisplayInfoSize;
 } QUERYDISPLAYINFORESULT;
+
+#ifdef VBOX_WITH_HGSMI
+/**
+ * Data returned by IOCTL_VIDEO_QUERY_HGSMI_INFO.
+ *
+ */
+typedef struct _QUERYHGSMIRESULT
+{
+    /* Device index (0 for primary) */
+    ULONG iDevice;
+
+    /* Flags. Currently none are defined and the field must be initialized to 0. */
+    ULONG ulFlags;
+
+    /* Describes VRAM chunk for this display device. */
+    HGSMIAREA areaDisplay;
+
+} QUERYHGSMIRESULT;
+#endif /* VBOX_WITH_HGSMI */
 #pragma pack()
 
 #endif /* __VBOXIOCTL__H */
