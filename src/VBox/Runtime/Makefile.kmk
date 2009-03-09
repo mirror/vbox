@@ -1066,6 +1066,7 @@ RuntimeR0Drv_SOURCES.linux = \
 ## @todo thread2-r0drv-linux.c and assert-r0drv-linux.c
 
 RuntimeR0Drv_SOURCES.win = \
+	common/alloc/heapsimple.cpp \
 	common/misc/thread.cpp \
 	common/string/memcmp.asm \
 	common/string/memchr.asm \
@@ -1328,8 +1329,7 @@ endif # !VBOX_WITH_SOLARIS_VBI
 RuntimeGuestR0_TEMPLATE  := VBOXGUESTR0LIB
 RuntimeGuestR0_SOURCES   := $(filter-out generic/RTLogWriteUser-generic.cpp, $(RuntimeR0Drv_SOURCES))
 RuntimeGuestR0_SOURCES   += \
-	VBox/logbackdoor.cpp \
-	common/alloc/heapsimple.cpp
+	VBox/logbackdoor.cpp
 RuntimeGuestR0_EXTENDS    = RuntimeR0Drv
 
 # HACK: no vbi for the solaris guest additions - yet.
