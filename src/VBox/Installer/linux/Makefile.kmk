@@ -48,6 +48,7 @@ endif
 OTHER_CLEAN   += \
 	$(addprefix $(VBOX_LNX_INST_STAGE_DIR)/,\
 		install.sh \
+		uninstall.sh \
 		deffiles \
 		routines.sh \
 		vboxdrv.sh \
@@ -229,6 +230,7 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/install.sh \
+		$(VBOX_PATH_LNX_INST_SRC)/uninstall.sh \
 		$(wildcard $(PATH_BIN)/src/*) \
 		$(wildcard $(PATH_BIN)/src/*/*) \
 		$(wildcard $(PATH_BIN)/src/*/*/*) \
@@ -240,6 +242,7 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)    $(VBOX_LNX_INST_STAGE_DIR)/LICENSE)
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/install.sh            $(VBOX_LNX_INST_STAGE_DIR)/
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/uninstall.sh         $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(VBOX_MAKESELF) --follow --nocomp $(VBOX_LNX_INST_STAGE_DIR) $@ \
 		"VirtualBox for Linux installation" ./install.sh "\$$0 1> /dev/null"
