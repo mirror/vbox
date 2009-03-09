@@ -3070,10 +3070,9 @@
     <const name="HardDiskImage" value="9" />
     <const name="Floppy" value="10" />
     <const name="CDROM" value="11" />
-    <const name="LogicalNetwork" value="12" />
-    <const name="NetworkAdapter" value="13" />
-    <const name="USBController" value="14" />
-    <const name="SoundCard" value="15" />
+    <const name="NetworkAdapter" value="12" />
+    <const name="USBController" value="13" />
+    <const name="SoundCard" value="14" />
 
   </enum>
 
@@ -3165,17 +3164,9 @@
         SCSI conrollers, the channel can range from 0-29.
       </li>
       <li>
-        "LogicalNetwork": a logical network to which virtual machines can connect. This is taken from
-        the Network section in the OVF that is shared between several virtual systems. OVF has no
-        formal description of how the network shall be set up (e.g. whether to use NAT or host interface
-        networking), but OVFs typically name the logical networks "nat" or "bridged" to suggest such
-        a configuration.
-      </li>
-      <li>
         "NetworkAdapter": a network adapter. The array item in aVboxValues[] will specify the hardware
         for the network adapter, whereas the array item in aExtraConfigValues[] will have a string
-        of the "network=&lt;nw&gt;" format, where &lt;nw&gt; must be one of the networks as specified with the
-        LogicalNetwork type.
+        of the "type=&lt;X&gt;" format, where &lt;X&gt; must be either "NAT" or "Bridged".
       </li>
       <li>
         "SoundCard": a sound card. There can be at most one such item. If and only if such an item is
@@ -6515,7 +6506,7 @@
     <attribute name="IPV6Supported" type="boolean" readonly="yes">
       <desc>Specifies whether the IP V6 is supported/enabled for the interface.</desc>
     </attribute>
-    
+
     <attribute name="IPV6Address" type="wstring" readonly="yes">
       <desc>Returns the IP V6 address of the interface.</desc>
     </attribute>
@@ -6523,7 +6514,7 @@
     <attribute name="IPV6NetworkMask" type="wstring" readonly="yes">
       <desc>Returns the IP V6 network mask of the interface.</desc>
     </attribute>
-    
+
     <attribute name="hardwareAddress" type="wstring" readonly="yes">
       <desc>Returns the hardware address. For Ethernet it is MAC address.</desc>
     </attribute>
@@ -6539,7 +6530,7 @@
     <attribute name="interfaceType" type="HostNetworkInterfaceType" readonly="yes">
       <desc>specifies the host interface type.</desc>
     </attribute>
-    
+
     <method name="enableStaticIpConfig">
       <desc>sets and enables the static IP V4 configuration for the given interface.</desc>
       <param name="IPAddress" type="unsigned long" dir="in">
@@ -10480,6 +10471,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      uuid="65607a27-2b73-4d43-b4cc-0ba2c817fbde"
      wsmap="managed"
      >
+    <desc>
+        Represents a virtual network adapter that is attached to a virtual machine.
+        Each virtual machine has a fixed number of network adapter slots with one
+        instance of this attached to each of them. Call
+        <link to="IMachine::getNetworkAdapter" /> to get the network adapter that
+        is attached to a given slot in a given machine.
+
+        Each network adapter can be in one of five attachment modes, which are
+        represented by the <link to="NetworkAttachmentType" /> enumeration;
+        see the <link to="#attachmentType" /> attribute.
+    </desc>
+
     <attribute name="adapterType" type="NetworkAdapterType">
       <desc>
         Type of the virtual network adapter. Depending on this value,

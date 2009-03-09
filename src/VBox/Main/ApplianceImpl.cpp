@@ -62,12 +62,6 @@ struct DiskImage
     Utf8Str strCompression;         // value from /References/File/@compression (optional, can be "gzip" according to spec)
 };
 
-struct Network
-{
-    Utf8Str strNetworkName;         // value from NetworkSection/Network/@name
-            // unfortunately the OVF spec is unspecific about how networks should be specified further
-};
-
 struct VirtualHardwareItem
 {
     Utf8Str strDescription;
@@ -88,7 +82,8 @@ struct VirtualHardwareItem
     bool fAutomaticDeallocation;
     Utf8Str strConnection;              // "All Ethernet adapters that specify the same abstract network connection name within an OVF
                                         // package shall be deployed on the same network. The abstract network connection name shall be
-                                        // listed in the NetworkSection at the outermost envelope level."
+                                        // listed in the NetworkSection at the outermost envelope level." We ignore this and only set up
+                                        // a network adapter depending on the network name.
     Utf8Str strAddress;                 // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
     Utf8Str strAddressOnParent;         // "For a device, this specifies its location on the controller."
     Utf8Str strAllocationUnits;         // "Specifies the units of allocation used. For example, “byte * 2^20”."
@@ -110,7 +105,6 @@ struct VirtualHardwareItem
 };
 
 typedef map<Utf8Str, DiskImage> DiskImagesMap;
-typedef map<Utf8Str, Network> NetworksMap;
 
 struct VirtualSystem;
 
@@ -199,8 +193,6 @@ struct Appliance::Data
     Utf8Str                 strPath;            // file name last given to either read() or write()
 
     DiskImagesMap           mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
-
-    NetworksMap             mapNetworks;        // map of Network structs, sorted by Network.strNetworkName
 
     list<VirtualSystem>     llVirtualSystems;   // list of virtual systems, created by and valid after read()
 
@@ -404,7 +396,7 @@ HRESULT Appliance::LoopThruSections(const char *pcszPath,
             if (!(SUCCEEDED((rc = HandleDiskSection(pcszPath, pReferencesElem, pElem)))))
                 return rc;
         }
-        else if (    (!strcmp(pcszElemName, "NetworkSection"))
+       else if (    (!strcmp(pcszElemName, "NetworkSection"))            // we ignore NetworkSections for now
                   || (    (!strcmp(pcszElemName, "Section"))
                        && (!strcmp(pcszTypeAttr, "ovf:NetworkSection_Type"))
                      )
@@ -546,20 +538,21 @@ HRESULT Appliance::HandleDiskSection(const char *pcszPath,
 HRESULT Appliance::HandleNetworkSection(const char *pcszPath,
                                         const xml::Node *pSectionElem)
 {
-    // contains "Disk" child elements
-    xml::NodesLoop loopNetworks(*pSectionElem, "Network");
-    const xml::Node *pelmNetwork;
-    while ((pelmNetwork = loopNetworks.forAllNodes()))
-    {
-        Network n;
-        if (!(pelmNetwork->getAttributeValue("name", n.strNetworkName)))
-            return setError(VBOX_E_FILE_ERROR,
-                            tr("Error reading \"%s\": missing 'name' attribute in 'Network', line %d"),
-                            pcszPath,
-                            pelmNetwork->getLineNumber());
+    // we ignore network sections for now
 
-        m->mapNetworks[n.strNetworkName] = n;
-    }
+//     xml::NodesLoop loopNetworks(*pSectionElem, "Network");
+//     const xml::Node *pelmNetwork;
+//     while ((pelmNetwork = loopNetworks.forAllNodes()))
+//     {
+//         Network n;
+//         if (!(pelmNetwork->getAttributeValue("name", n.strNetworkName)))
+//             return setError(VBOX_E_FILE_ERROR,
+//                             tr("Error reading \"%s\": missing 'name' attribute in 'Network', line %d"),
+//                             pcszPath,
+//                             pelmNetwork->getLineNumber());
+//
+//         m->mapNetworks[n.strNetworkName] = n;
+//     }
 
     return S_OK;
 }
@@ -801,15 +794,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                             network. The abstract network connection name shall be listed in the NetworkSection
                             at the outermost envelope level." */
 
-                        // make sure we have a matching NetworkSection/Network
-                        NetworksMap::iterator it = m->mapNetworks.find(i.strConnection);
-                        if (it == m->mapNetworks.end())
-                            return setError(VBOX_E_FILE_ERROR,
-                                            tr("Error reading \"%s\": Invalid connection \"%s\"; cannot find matching NetworkSection/Network element, line %d"),
-                                            pcszPath,
-                                            i.strConnection.c_str(),
-                                            i.ulLineNumber);
-
+                        // only store the name
                         vsys.llNetworkNames.push_back(i.strConnection);
                     }
                     break;
@@ -1426,18 +1411,6 @@ STDMETHODIMP Appliance::Interpret()
                 pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
 #endif /* VBOX_WITH_USB */
 
-            NetworksMap::const_iterator itN;
-            for (itN = m->mapNetworks.begin();
-                 itN != m->mapNetworks.end();
-                 ++itN)
-            {
-                const Network &nw = itN->second;
-                pNewDesc->addEntry(VirtualSystemDescriptionType_LogicalNetwork,
-                                   "",
-                                   nw.strNetworkName,
-                                   nw.strNetworkName);
-            }
-
             /* Network Controller */
             // @todo: there is no hardware specification in the OVF file; supposedly the
             // hardware will then be determined by the VirtualSystemType element (e.g. "vmx-07")
@@ -1463,11 +1436,19 @@ STDMETHODIMP Appliance::Interpret()
                      ++nwIt, ++a)
                 {
                     Utf8Str strNetwork = *nwIt; // logical network to connect to
+                    // make sure it's one of these two
+                    if (    (strNetwork.compareIgnoreCase("Null"))
+                         && (strNetwork.compareIgnoreCase("Bridged"))
+                         && (strNetwork.compareIgnoreCase("Internal"))
+                         && (strNetwork.compareIgnoreCase("HostOnly"))
+                       )
+                        strNetwork = "NAT";
+
                     pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
                                        "",      // ref
                                        strNetwork,      // orig
                                        Utf8StrFmt("%RI32", (uint32_t)nwAdapterVBox),   // conf
-                                       Utf8StrFmt("network=%s", strNetwork.c_str()));       // extra conf
+                                       Utf8StrFmt("type=%s", strNetwork.c_str()));       // extra conf
                 }
             }
 
@@ -2013,17 +1994,25 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                      (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
                      ++nwIt, ++a)
                 {
-                    const Utf8Str &nwTypeVBox = (*nwIt)->strVbox;
+                    const VirtualSystemDescriptionEntry* pvsys = *nwIt;
+
+                    const Utf8Str &nwTypeVBox = pvsys->strVbox;
                     uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
-                    ComPtr<INetworkAdapter> nwVBox;
-                    rc = pNewMachine->GetNetworkAdapter((ULONG)a, nwVBox.asOutParam());
+                    ComPtr<INetworkAdapter> pNetworkAdapter;
+                    rc = pNewMachine->GetNetworkAdapter((ULONG)a, pNetworkAdapter.asOutParam());
                     if (FAILED(rc)) throw rc;
                     /* Enable the network card & set the adapter type */
-                    /* NAT is set as default */
-                    rc = nwVBox->COMSETTER(Enabled)(true);
+                    rc = pNetworkAdapter->COMSETTER(Enabled)(true);
                     if (FAILED(rc)) throw rc;
-                    rc = nwVBox->COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1));
+                    rc = pNetworkAdapter->COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1));
                     if (FAILED(rc)) throw rc;
+
+                    // default is NAT; change to "bridged" if extra conf says so
+                    if (!pvsys->strExtraConfig.compareIgnoreCase("type=Bridged"))
+                    {
+                        rc = pNetworkAdapter->AttachToBridgedInterface();
+                        if (FAILED(rc)) throw rc;
+                    }
                 }
             }
 
@@ -2513,8 +2502,10 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
         xml::Node *pelmNetworkSection = pelmRoot->createChild("NetworkSection");
         xml::Node *pelmNetworkSectionInfo = pelmNetworkSection->createChild("Info");
         pelmNetworkSectionInfo->addContent("Logical networks used in the package");
-        // @todo for each network:
-        // xml::Node *pelmNetwork = pelmNetworkSection->createChild("Network");
+        // for now, set up a map so we have a list of unique network names (to make
+        // sure the same network name is only added once)
+        map<Utf8Str, bool> mapNetworks;
+                // we fill this later below when we iterate over the networks
 
         // and here come the virtual systems:
         xml::Node *pelmVirtualSystemCollection = pelmRoot->createChild("VirtualSystemCollection");
@@ -2569,10 +2560,13 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
             {
                 const VirtualSystemDescriptionEntry &desc = *itD;
 
-                OVFResourceType_T type = (OVFResourceType_T)0;     // if this becomes != 0 then we do stuff
-                Utf8Str strDescription;         // must also be set then
+                OVFResourceType_T type = (OVFResourceType_T)0;      // if this becomes != 0 then we do stuff
+                Utf8Str strDescription;                             // results in <rasd:Description>...</rasd:Description> block
+                Utf8Str strCaption;                                 // results in <rasd:Caption>...</rasd:Caption> block
                 int32_t lVirtualQuantity = -1;
                 uint64_t uTemp;
+                bool fAutomaticAllocation = false;
+                Utf8Str strConnection;                              // results in <rasd:Connection>...</rasd:Connection> block
 
                 switch (desc.type)
                 {
@@ -2606,33 +2600,78 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                         lVirtualQuantity = (int32_t)(uTemp / _1M);
                     break;
 
-                    case VirtualSystemDescriptionType_HardDiskControllerIDE:
-                    break;
-                    case VirtualSystemDescriptionType_HardDiskControllerSATA:
-                    break;
-                    case VirtualSystemDescriptionType_HardDiskControllerSCSI:
-                    break;
+//                     case VirtualSystemDescriptionType_HardDiskControllerIDE:
+//                         strDescription = "Memory Size";
+//                         type = OVFResourceType_Memory; // 4
+//                         desc.strVbox.toInt(uTemp);
+//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
+//                     break;
 
-                    case VirtualSystemDescriptionType_HardDiskImage:
-                    break;
+//                     case VirtualSystemDescriptionType_HardDiskControllerSATA:
+//                         strDescription = "Memory Size";
+//                         type = OVFResourceType_Memory; // 4
+//                         desc.strVbox.toInt(uTemp);
+//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
+//                     break;
 
-                    case VirtualSystemDescriptionType_Floppy:
-                    break;
+//                     case VirtualSystemDescriptionType_HardDiskControllerSCSI:
+//                         strDescription = "Memory Size";
+//                         type = OVFResourceType_Memory; // 4
+//                         desc.strVbox.toInt(uTemp);
+//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
+//                     break;
 
-                    case VirtualSystemDescriptionType_CDROM:
-                    break;
+//                     case VirtualSystemDescriptionType_HardDiskImage:
+//                         strDescription = "Memory Size";
+//                         type = OVFResourceType_Memory; // 4
+//                         desc.strVbox.toInt(uTemp);
+//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
+//                     break;
 
-                    case VirtualSystemDescriptionType_LogicalNetwork:
-                    break;
+//                     case VirtualSystemDescriptionType_Floppy:
+//                         strDescription = "Memory Size";
+//                         type = OVFResourceType_Memory; // 4
+//                         desc.strVbox.toInt(uTemp);
+//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
+//                     break;
+
+//                     case VirtualSystemDescriptionType_CDROM:
+//                         strDescription = "Memory Size";
+//                         type = OVFResourceType_Memory; // 4
+//                         desc.strVbox.toInt(uTemp);
+//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
+//                     break;
 
                     case VirtualSystemDescriptionType_NetworkAdapter:
+                        /* <Item>
+                                <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
+                                <rasd:Caption>Ethernet adapter on 'VM Network'</rasd:Caption>
+                                <rasd:Connection>VM Network</rasd:Connection>
+                                <rasd:ElementName>VM network</rasd:ElementName>
+                                <rasd:InstanceID>3</rasd:InstanceID>
+                                <rasd:ResourceType>10</rasd:ResourceType>
+                            </Item> */
+                        fAutomaticAllocation = true;
+                        strCaption = Utf8StrFmt("Ethernet adapter on '%s'", desc.strOvf.c_str());
+                        type = OVFResourceType_EthernetAdapter; // 10
+                        strConnection = desc.strOvf;
+
+                        mapNetworks[desc.strOvf] = true;
                     break;
 
-                    case VirtualSystemDescriptionType_USBController:
-                    break;
+//                     case VirtualSystemDescriptionType_USBController:
+//                         strDescription = "Memory Size";
+//                         type = OVFResourceType_Memory; // 4
+//                         desc.strVbox.toInt(uTemp);
+//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
+//                     break;
 
-                    case VirtualSystemDescriptionType_SoundCard:
-                    break;
+/*                    case VirtualSystemDescriptionType_SoundCard:
+                        strDescription = "Memory Size";
+                        type = OVFResourceType_Memory; // 4
+                        desc.strVbox.toInt(uTemp);
+                        lVirtualQuantity = (int32_t)(uTemp / _1M);
+                    break;*/
                 }
 
                 if (type)
@@ -2640,10 +2679,20 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                     xml::Node *pItem;
                     pItem = pelmVirtualHardwareSection->createChild("Item");
 
-                    pItem->createChild("rasd:Description")->addContent(strDescription.c_str());
+                    if (fAutomaticAllocation)
+                        pItem->createChild("rasd:AutomaticAllocation")->addContent("true");
+
+                    if (strDescription.length())
+                        pItem->createChild("rasd:Description")->addContent(strDescription.c_str());
+                    if (strCaption.length())
+                        pItem->createChild("rasd:Caption")->addContent(strCaption.c_str());
+
+                    if (strConnection.length())
+                        pItem->createChild("rasd:Connection")->addContent(strConnection.c_str());
 
                     // <rasd:InstanceID>1</rasd:InstanceID>
                     pItem->createChild("rasd:InstanceID")->addContent(Utf8StrFmt("%d", ulInstanceID).c_str());
+                    ++ulInstanceID;
 
                     // <rasd:ResourceType>3</rasd:ResourceType>
                     pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type).c_str());
@@ -2654,6 +2703,19 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
 
                 }
             }
+        }
+
+        // finally, fill in the network section we set up empty above according
+        // to the networks we found with the hardware items
+        map<Utf8Str, bool>::const_iterator itN;
+        for (itN = mapNetworks.begin();
+             itN != mapNetworks.end();
+             ++itN)
+        {
+            const Utf8Str &strNetwork = itN->first;
+            xml::Node *pelmNetwork = pelmNetworkSection->createChild("Network");
+            pelmNetwork->setAttribute("ovf:name", strNetwork.c_str());
+            pelmNetwork->createChild("<Description>")->addContent("Logical network used by this appliance.");
         }
 
         // now go write the XML
@@ -3207,6 +3269,62 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 //     <const name="LogicalNetwork" value="12" />
 
 //     <const name="NetworkAdapter" value="13" />
+        size_t a;
+        for (a = 0;
+             a < SchemaDefs::NetworkAdapterCount;
+             ++a)
+        {
+            ComPtr<INetworkAdapter> pNetworkAdapter;
+            BOOL fEnabled;
+            NetworkAdapterType_T adapterType;
+            NetworkAttachmentType_T attachmentType;
+
+            rc = GetNetworkAdapter((ULONG)a, pNetworkAdapter.asOutParam());
+            if (FAILED(rc)) throw rc;
+            /* Enable the network card & set the adapter type */
+            rc = pNetworkAdapter->COMGETTER(Enabled)(&fEnabled);
+            if (FAILED(rc)) throw rc;
+
+            if (fEnabled)
+            {
+                Utf8Str strAttachmentType;
+
+                rc = pNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
+                if (FAILED(rc)) throw rc;
+
+                rc = pNetworkAdapter->COMGETTER(AttachmentType)(&attachmentType);
+                if (FAILED(rc)) throw rc;
+
+                switch (attachmentType)
+                {
+                    case NetworkAttachmentType_Null:
+                        strAttachmentType = "Null";
+                    break;
+
+                    case NetworkAttachmentType_NAT:
+                        strAttachmentType = "NAT";
+                    break;
+
+                    case NetworkAttachmentType_Bridged:
+                        strAttachmentType = "Bridged";
+                    break;
+
+                    case NetworkAttachmentType_Internal:
+                        strAttachmentType = "Internal";
+                    break;
+
+                    case NetworkAttachmentType_HostOnly:
+                        strAttachmentType = "HostOnly";
+                    break;
+                }
+
+                pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
+                                   "",      // ref
+                                   strAttachmentType,      // orig
+                                   Utf8StrFmt("%RI32", (uint32_t)adapterType),   // conf
+                                   Utf8StrFmt("type=%s", strAttachmentType.c_str()));       // extra conf
+            }
+        }
 
 //     <const name="USBController" value="14" />
 

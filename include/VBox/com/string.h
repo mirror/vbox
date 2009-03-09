@@ -427,6 +427,11 @@ public:
     bool operator < (const Utf8Str &that) const { return compare (that.str) < 0; }
     bool operator < (const char *that) const { return compare (that) < 0; }
 
+    int compareIgnoreCase(const char *pcsz) const
+    {
+        return ::RTStrICmp(str, pcsz);
+    }
+
     bool isNull() const { return str == NULL; }
     operator bool() const { return !isNull(); }
 
