@@ -109,6 +109,7 @@ VBOX_LNX_STRIP_BIN = \
 	VBoxDDU.so \
 	VBoxVMM.so \
 	VBoxXPCOM.so \
+	VBoxXPCOMC.so \
 	VBoxXPCOMIPCD \
 	$(if $(VBOX_WITH_CROGL),\
 	  VBoxOGLhostcrutil.so \
