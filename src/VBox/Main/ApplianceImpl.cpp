@@ -372,18 +372,18 @@ void Appliance::uninit()
  * @return
  */
 HRESULT Appliance::LoopThruSections(const char *pcszPath,
-                                    const xml::Node *pReferencesElem,
-                                    const xml::Node *pCurElem)
+                                    const xml::ElementNode *pReferencesElem,
+                                    const xml::ElementNode *pCurElem)
 {
     HRESULT rc;
 
     xml::NodesLoop loopChildren(*pCurElem);
-    const xml::Node *pElem;
+    const xml::ElementNode *pElem;
     while ((pElem = loopChildren.forAllNodes()))
     {
         const char *pcszElemName = pElem->getName();
         const char *pcszTypeAttr = "";
-        const xml::Node *pTypeAttr;
+        const xml::AttributeNode *pTypeAttr;
         if ((pTypeAttr = pElem->findAttribute("type")))
             pcszTypeAttr = pTypeAttr->getValue();
 
@@ -457,12 +457,12 @@ HRESULT Appliance::LoopThruSections(const char *pcszPath,
  * @return
  */
 HRESULT Appliance::HandleDiskSection(const char *pcszPath,
-                                     const xml::Node *pReferencesElem,
-                                     const xml::Node *pSectionElem)
+                                     const xml::ElementNode *pReferencesElem,
+                                     const xml::ElementNode *pSectionElem)
 {
     // contains "Disk" child elements
     xml::NodesLoop loopDisks(*pSectionElem, "Disk");
-    const xml::Node *pelmDisk;
+    const xml::ElementNode *pelmDisk;
     while ((pelmDisk = loopDisks.forAllNodes()))
     {
         DiskImage d;
@@ -483,7 +483,7 @@ HRESULT Appliance::HandleDiskSection(const char *pcszPath,
             if (pelmDisk->getAttributeValue("fileRef", strFileRef)) // optional
             {
                 // look up corresponding /References/File nodes (list built above)
-                const xml::Node *pFileElem;
+                const xml::ElementNode *pFileElem;
                 if (    pReferencesElem
                      && ((pFileElem = pReferencesElem->findChildElementFromId(strFileRef.c_str())))
                    )
@@ -536,7 +536,7 @@ HRESULT Appliance::HandleDiskSection(const char *pcszPath,
  * @return
  */
 HRESULT Appliance::HandleNetworkSection(const char *pcszPath,
-                                        const xml::Node *pSectionElem)
+                                        const xml::ElementNode *pSectionElem)
 {
     // we ignore network sections for now
 
@@ -566,20 +566,20 @@ HRESULT Appliance::HandleNetworkSection(const char *pcszPath,
  * @return
  */
 HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
-                                              const xml::Node *pelmVirtualSystem)
+                                              const xml::ElementNode *pelmVirtualSystem)
 {
     VirtualSystem vsys;
 
-    const xml::Node *pIdAttr = pelmVirtualSystem->findAttribute("id");
+    const xml::AttributeNode *pIdAttr = pelmVirtualSystem->findAttribute("id");
     if (pIdAttr)
         vsys.strName = pIdAttr->getValue();
 
     xml::NodesLoop loop(*pelmVirtualSystem);      // all child elements
-    const xml::Node *pelmThis;
+    const xml::ElementNode *pelmThis;
     while ((pelmThis = loop.forAllNodes()))
     {
         const char *pcszElemName = pelmThis->getName();
-        const xml::Node *pTypeAttr = pelmThis->findAttribute("type");
+        const xml::AttributeNode *pTypeAttr = pelmThis->findAttribute("type");
         const char *pcszTypeAttr = (pTypeAttr) ? pTypeAttr->getValue() : "";
 
         if (!strcmp(pcszElemName, "EulaSection"))
@@ -589,7 +589,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                 <License ovf:msgid="1">License terms can go in here.</License>
             </EulaSection> */
 
-            const xml::Node *pelmInfo, *pelmLicense;
+            const xml::ElementNode *pelmInfo, *pelmLicense;
             if (    ((pelmInfo = pelmThis->findChildElement("Info")))
                  && ((pelmLicense = pelmThis->findChildElement("License")))
                )
@@ -602,7 +602,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                   || (!strcmp(pcszTypeAttr, "ovf:VirtualHardwareSection_Type"))
                 )
         {
-            const xml::Node *pelmSystem, *pelmVirtualSystemType;
+            const xml::ElementNode *pelmSystem, *pelmVirtualSystemType;
             if ((pelmSystem = pelmThis->findChildElement("System")))
             {
              /* <System>
@@ -617,7 +617,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
             }
 
             xml::NodesLoop loopVirtualHardwareItems(*pelmThis, "Item");      // all "Item" child elements
-            const xml::Node *pelmItem;
+            const xml::ElementNode *pelmItem;
             while ((pelmItem = loopVirtualHardwareItems.forAllNodes()))
             {
                 VirtualHardwareItem i;
@@ -625,7 +625,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                 i.ulLineNumber = pelmItem->getLineNumber();
 
                 xml::NodesLoop loopItemChildren(*pelmItem);      // all child elements
-                const xml::Node *pelmItemChild;
+                const xml::ElementNode *pelmItemChild;
                 while ((pelmItemChild = loopItemChildren.forAllNodes()))
                 {
                     const char *pcszItemChildName = pelmItemChild->getName();
@@ -1251,7 +1251,7 @@ STDMETHODIMP Appliance::Read(IN_BSTR path)
         parser.read(m->strPath.raw(),
                     doc);
 
-        const xml::Node *pRootElem = doc.getRootElement();
+        const xml::ElementNode *pRootElem = doc.getRootElement();
         if (strcmp(pRootElem->getName(), "Envelope"))
             return setError(VBOX_E_FILE_ERROR,
                             tr("Root element in OVF file must be \"Envelope\"."));
@@ -1266,8 +1266,8 @@ STDMETHODIMP Appliance::Read(IN_BSTR path)
 
         // get all "File" child elements of "References" section so we can look up files easily;
         // first find the "References" sections so we can look up files
-        xml::NodesList listFileElements;      // receives all /Envelope/References/File nodes
-        const xml::Node *pReferencesElem;
+        xml::ElementNodesList listFileElements;      // receives all /Envelope/References/File nodes
+        const xml::ElementNode *pReferencesElem;
         if ((pReferencesElem = pRootElem->findChildElement("References")))
             pReferencesElem->getChildElements(listFileElements, "File");
 
@@ -2464,7 +2464,7 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
     try
     {
         xml::Document doc;
-        xml::Node *pelmRoot = doc.createRootElement("Envelope");
+        xml::ElementNode *pelmRoot = doc.createRootElement("Envelope");
 
         pelmRoot->setAttribute("ovf:version", "1.0");
         pelmRoot->setAttribute("xml:lang", "en-US");
@@ -2478,7 +2478,7 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
 
 
         // <Envelope>/<References>
-        xml::Node *pelmReferences = pelmRoot->createChild("References");
+        xml::ElementNode *pelmReferences = pelmRoot->createChild("References");
                 // @ŧodo
 
         /* <Envelope>/<DiskSection>:
@@ -2486,11 +2486,11 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                 <Info>List of the virtual disks used in the package</Info>
                 <Disk ovf:capacity="4294967296" ovf:diskId="lamp" ovf:format="http://www.vmware.com/specifications/vmdk.html#compressed" ovf:populatedSize="1924967692"/>
             </DiskSection> */
-        xml::Node *pelmDiskSection = pelmRoot->createChild("DiskSection");
-        xml::Node *pelmDiskSectionInfo = pelmDiskSection->createChild("Info");
+        xml::ElementNode *pelmDiskSection = pelmRoot->createChild("DiskSection");
+        xml::ElementNode *pelmDiskSectionInfo = pelmDiskSection->createChild("Info");
         pelmDiskSectionInfo->addContent("List of the virtual disks used in the package");
         // @todo for each disk:
-        // xml::Node *pelmDisk = pelmDiskSection->createChild("Disk");
+        // xml::ElementNode *pelmDisk = pelmDiskSection->createChild("Disk");
 
         /* <Envelope>/<NetworkSection>:
             <NetworkSection>
@@ -2499,8 +2499,8 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                     <Description>The network that the LAMP Service will be available on</Description>
                 </Network>
             </NetworkSection> */
-        xml::Node *pelmNetworkSection = pelmRoot->createChild("NetworkSection");
-        xml::Node *pelmNetworkSectionInfo = pelmNetworkSection->createChild("Info");
+        xml::ElementNode *pelmNetworkSection = pelmRoot->createChild("NetworkSection");
+        xml::ElementNode *pelmNetworkSectionInfo = pelmNetworkSection->createChild("Info");
         pelmNetworkSectionInfo->addContent("Logical networks used in the package");
         // for now, set up a map so we have a list of unique network names (to make
         // sure the same network name is only added once)
@@ -2508,8 +2508,8 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                 // we fill this later below when we iterate over the networks
 
         // and here come the virtual systems:
-        xml::Node *pelmVirtualSystemCollection = pelmRoot->createChild("VirtualSystemCollection");
-        xml::Node *pattrVirtualSystemCollectionId = pelmVirtualSystemCollection->setAttribute("ovf:id", "ExportedVirtualBoxMachines");      // whatever
+        xml::ElementNode *pelmVirtualSystemCollection = pelmRoot->createChild("VirtualSystemCollection");
+        xml::AttributeNode *pattrVirtualSystemCollectionId = pelmVirtualSystemCollection->setAttribute("ovf:id", "ExportedVirtualBoxMachines");      // whatever
 
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
         /* Iterate through all virtual systems of that appliance */
@@ -2519,8 +2519,8 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
         {
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
 
-            xml::Node *pelmVirtualSystem = pelmVirtualSystemCollection->createChild("VirtualSystem");
-            xml::Node *pelmVirtualSystemInfo = pelmVirtualSystem->createChild("Info");      // @todo put in description here after implementing an entry for it
+            xml::ElementNode *pelmVirtualSystem = pelmVirtualSystemCollection->createChild("VirtualSystem");
+            xml::ElementNode *pelmVirtualSystemInfo = pelmVirtualSystem->createChild("Info");      // @todo put in description here after implementing an entry for it
 
             std::list<VirtualSystemDescriptionEntry*> llName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
 
@@ -2529,14 +2529,14 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                     <Info>Guest Operating System</Info>
                     <Description>Linux 2.6.x</Description>
                 </OperatingSystemSection> */
-            xml::Node *pelmOperatingSystemSection = pelmVirtualSystem->createChild("OperatingSystemSection");
+            xml::ElementNode *pelmOperatingSystemSection = pelmVirtualSystem->createChild("OperatingSystemSection");
             pelmOperatingSystemSection->setAttribute("ovf:id", "82");
                     // @todo convert vbox OS type into OVF ID
             pelmOperatingSystemSection->createChild("Info")->addContent("blah");        // @ŧodo
             pelmOperatingSystemSection->createChild("Description")->addContent("blah");        // @ŧodo
 
             // <VirtualHardwareSection ovf:id="hw1" ovf:transport="iso">
-            xml::Node *pelmVirtualHardwareSection = pelmVirtualSystem->createChild("VirtualHardwareSection");
+            xml::ElementNode *pelmVirtualHardwareSection = pelmVirtualSystem->createChild("VirtualHardwareSection");
 
             /*  <System>
                     <vssd:Description>Description of the virtual hardware section.</vssd:Description>
@@ -2545,10 +2545,10 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                     <vssd:VirtualSystemIdentifier>MyLampService</vssd:VirtualSystemIdentifier>
                     <vssd:VirtualSystemType>vmx-4</vssd:VirtualSystemType>
                 </System> */
-            xml::Node *pelmSystem = pelmVirtualHardwareSection->createChild("System");
+            xml::ElementNode *pelmSystem = pelmVirtualHardwareSection->createChild("System");
 
             // <vssd:VirtualSystemType>vmx-4</vssd:VirtualSystemType>
-            xml::Node *pelmVirtualSystemType = pelmSystem->createChild("VirtualSystemType");
+            xml::ElementNode *pelmVirtualSystemType = pelmSystem->createChild("VirtualSystemType");
             pelmVirtualSystemType->addContent("virtualbox-2.2");            // instead of vmx-7?
 
             uint32_t ulInstanceID = 1;
@@ -2676,7 +2676,7 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
 
                 if (type)
                 {
-                    xml::Node *pItem;
+                    xml::ElementNode *pItem;
                     pItem = pelmVirtualHardwareSection->createChild("Item");
 
                     if (fAutomaticAllocation)
@@ -2713,9 +2713,9 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
              ++itN)
         {
             const Utf8Str &strNetwork = itN->first;
-            xml::Node *pelmNetwork = pelmNetworkSection->createChild("Network");
+            xml::ElementNode *pelmNetwork = pelmNetworkSection->createChild("Network");
             pelmNetwork->setAttribute("ovf:name", strNetwork.c_str());
-            pelmNetwork->createChild("<Description>")->addContent("Logical network used by this appliance.");
+            pelmNetwork->createChild("Description")->addContent("Logical network used by this appliance.");
         }
 
         // now go write the XML
