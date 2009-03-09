@@ -393,8 +393,6 @@ VBOX_WITH_SOLARIS_VBI = 1
 VBOX_WITH_64_BITS_GUESTS = 1
 # Enable SMP support in guests
 ##VBOX_WITH_SMP_GUESTS = 1
-# Allow more than 4G in guests
-##VBOX_WITH_MORE_THAN_4GB = 1
 # Enable the host/guest information service (aka guest properties).
 VBOX_WITH_GUEST_PROPS = 1
 # Enable performance API.
@@ -1073,9 +1071,6 @@ ifdef VBOX_WITH_64_BITS_GUESTS
 endif
 ifdef VBOX_WITH_SMP_GUESTS
  DEFS += VBOX_WITH_SMP_GUESTS
-endif
-ifdef VBOX_WITH_MORE_THAN_4GB
- DEFS += VBOX_WITH_MORE_THAN_4GB
 endif
 ifdef VBOX_WITH_HARDENING
  DEFS += VBOX_WITH_HARDENING
