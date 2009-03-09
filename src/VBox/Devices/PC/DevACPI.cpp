@@ -129,7 +129,7 @@ enum
 
 enum
 {
-    SYSTEM_INFO_INDEX_MEMORY_LENGTH     = 0,
+    SYSTEM_INFO_INDEX_LOW_MEMORY_LENGTH = 0,
     SYSTEM_INFO_INDEX_USE_IOAPIC        = 1,
     SYSTEM_INFO_INDEX_HPET_STATUS       = 2,
     SYSTEM_INFO_INDEX_SMC_STATUS        = 3,
@@ -138,7 +138,8 @@ enum
     SYSTEM_INFO_INDEX_CPU1_STATUS       = 6,
     SYSTEM_INFO_INDEX_CPU2_STATUS       = 7,
     SYSTEM_INFO_INDEX_CPU3_STATUS       = 8,
-    SYSTEM_INFO_INDEX_LAST              = 9,
+    SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9,
+    SYSTEM_INFO_INDEX_END               = 10,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -183,6 +184,10 @@ typedef struct ACPIState
 
     unsigned int        uSystemInfoIndex;
     uint64_t            u64RamSize;
+    /** The number of bytes above 4GB. */
+    uint64_t            cbRamHigh;
+    /** The number of bytes below 4GB. */
+    uint32_t            cbRamLow;
 
     /** Current ACPI S* state. We support S0 and S5 */
     uint32_t            uSleepState;
@@ -208,7 +213,7 @@ typedef struct ACPIState
     /** If ACPI CPU device should be shown */
     bool                fShowCpu;
     /** Aligning IBase. */
-    bool                afAlignment[2];
+    bool                afAlignment[6];
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -1291,14 +1296,14 @@ PDMBOTHCBDECL(int) acpiSysInfoIndexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 /* see comment at the declaration of u8IndexShift */
                 if (s->u8IndexShift == 0)
                 {
-                    if (((u32 >> 2) < SYSTEM_INFO_INDEX_LAST) && ((u32 & 0x3)) == 0)
+                    if (((u32 >> 2) < SYSTEM_INFO_INDEX_END) && ((u32 & 0x3)) == 0)
                     {
                         s->u8IndexShift = 2;
                     }
                 }
 
                 u32 >>= s->u8IndexShift;
-                Assert(u32 < SYSTEM_INFO_INDEX_LAST);
+                Assert(u32 < SYSTEM_INFO_INDEX_END);
                 s->uSystemInfoIndex = u32;
             }
             break;
@@ -1319,8 +1324,12 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
         case 4:
             switch (s->uSystemInfoIndex)
             {
-                case SYSTEM_INFO_INDEX_MEMORY_LENGTH:
-                    *pu32 = s->u64RamSize;
+                case SYSTEM_INFO_INDEX_LOW_MEMORY_LENGTH:
+                    *pu32 = s->cbRamLow;
+                    break;
+
+                case SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH:
+                    *pu32 = s->cbRamHigh;
                     break;
 
                 case SYSTEM_INFO_INDEX_USE_IOAPIC:
@@ -1746,14 +1755,20 @@ static int acpiPlantTables(ACPIState *s)
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(s->pDevIns, rc,
                                 N_("Configuration error: Querying \"RamHoleSize\" as integer failed"));
-    const uint64_t offRamHole = _4G - cbRamHole;
 
-#if 0 /** @todo 4GB: This needs adjusting fixing! I've disabled it to test big mem configs. */
-    if (s->u64RamSize > UINT32_C(0xffffffff) - UINT32_C(0x10000))
-        return PDMDEV_SET_ERROR(s->pDevIns, VERR_OUT_OF_RANGE,
-                                N_("Configuration error: Invalid \"RamSize\", maximum allowed "
-                                   "value is 4095MB"));
-#endif
+    /*
+     * Calc the sizes for the high and low regions.
+     */
+    const uint64_t offRamHole = _4G - cbRamHole;
+    s->cbRamHigh = offRamHole < s->u64RamSize ? s->u64RamSize - offRamHole : 0;
+    uint64_t cbRamLow = offRamHole < s->u64RamSize ? offRamHole : s->u64RamSize;
+    if (cbRamLow > UINT32_C(0xffe00000)) /* See MEM3. */
+    {
+        /** @todo Do this in the E820 table/CMOS as well or things won't work right. */
+        LogRel(("DevACPI: Clipping cbRamLow=%#RX64 down to 0xffe00000.\n", cbRamLow));
+        cbRamLow = UINT32_C(0xffe00000);
+    }
+    s->cbRamLow = (uint32_t)cbRamLow;
 
     rsdt_addr = 0;
     xsdt_addr = RT_ALIGN_32(rsdt_addr + rsdt_tbl_len, 16);
@@ -1783,11 +1798,7 @@ static int acpiPlantTables(ACPIState *s)
                                 N_("Error: ACPI tables > 64KB"));
 
     Log(("RSDP 0x%08X\n", find_rsdp_space()));
-#if 1 /** @todo 4GB: Quick hack, may need revising. */
-    addend = (uint32_t)RT_MIN(s->u64RamSize, offRamHole) - 0x10000;
-#else
-    addend = (uint32_t)s->u64RamSize - 0x10000;
-#endif
+    addend = s->cbRamLow - 0x10000;
     Log(("RSDT 0x%08X XSDT 0x%08X\n", rsdt_addr + addend, xsdt_addr + addend));
     Log(("FACS 0x%08X FADT 0x%08X\n", facs_addr + addend, fadt_addr + addend));
     Log(("DSDT 0x%08X\n", dsdt_addr + addend));

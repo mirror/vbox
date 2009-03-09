@@ -129,33 +129,33 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
     {
        Processor (CPU0, /* Name */
                    0x00, /* Id */
-                   0x0,  /* Processor IO ports range start */ 
-                   0x0   /* Processor IO ports range length */ 
-                   ) 
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
         {
            Method (_STA) { Return(\_SB.UCP0) }
         }
         Processor (CPU1, /* Name */
                    0x01, /* Id */
-                   0x0,  /* Processor IO ports range start */ 
-                   0x0   /* Processor IO ports range length */ 
-                   ) 
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
         {
            Method (_STA) { Return(\_SB.UCP1) }
         }
         Processor (CPU2, /* Name */
                    0x02, /* Id */
-                   0x0,  /* Processor IO ports range start */ 
-                   0x0   /* Processor IO ports range length */ 
-                   ) 
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
         {
            Method (_STA) { Return(\_SB.UCP2) }
         }
         Processor (CPU3, /* Name */
                    0x03, /* Id */
-                   0x0,  /* Processor IO ports range start */ 
-                   0x0   /* Processor IO ports range length */ 
-                   ) 
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
         {
            Method (_STA) { Return(\_SB.UCP3) }
         }
@@ -182,6 +182,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             UCP1,  32,
             UCP2,  32,
             UCP3,  32,
+            MEMH,  32,
             Offset (0x80),
             ININ, 32,
             Offset (0x200),
@@ -203,6 +204,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             HEX4 (UFDC)
             DBG ("UCP0: ")
             HEX4 (UCP0)
+            DBG ("MEMH: ")
+            HEX4 (MEMH)
         }
 
         // PCI PIC IRQ Routing table
@@ -861,7 +864,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                      )
 
                 DwordMemory( // Consumed-and-produced resource
-                             // (all of memory space)
+                             // (all of low memory space)
                      ResourceProducer,        // bit 0 of general flags is 0
                      PosDecode,               // positive Decode
                      MinFixed,                // Range is fixed
@@ -871,7 +874,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                      0x00000000,              // Granularity
                      0x00000000,              // Min (calculated dynamically)
 
-                     0xffdfffff,              //  Max = 4GB - 2MB
+                     0xffdfffff,              // Max = 4GB - 2MB
                      0x00000000,              // Translation
                      0xdfdfffff,              // Range Length (calculated
                                               // dynamically)
@@ -882,12 +885,48 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                      )
             })
 
+            Name (TOM, ResourceTemplate ()      // Memory above 4GB (aka high), appended when needed.
+            {
+                QWORDMemory(
+                    ResourceProducer,           // bit 0 of general flags is 0
+                    PosDecode,                  // positive Decode
+                    MinFixed,                   // Range is fixed
+                    MaxFixed,                   // Range is fixed
+                    Cacheable,
+                    ReadWrite,
+                    0x0000000000000000,         // _GRA: Granularity.
+                    0x0000000100000000,         // _LEN: Min address, 4GB.
+                    0x00000fffffffffff,         // _MAX: Max possible address, 16TB.
+                    0x0000000000000000,         // _TRA: Translation
+                    0x0000000000000000,         // _LEN: Range length (calculated dynamically)
+                    ,                           // ResourceSourceIndex: Optional field left blank
+                    ,                           // ResourceSource:      Optional field left blank
+                    MEM4                        // Name declaration for this descriptor.
+                    )
+            })
+
             Method (_CRS, 0, NotSerialized)
             {
                 CreateDwordField (CRS, \_SB.PCI0.MEM3._MIN, RAMT)
                 CreateDwordField (CRS, \_SB.PCI0.MEM3._LEN, RAMR)
+                CreateDwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4L)
+
                 Store (MEML, RAMT)
                 Subtract (0xffe00000, RAMT, RAMR)
+
+				If (LNotEqual (MEMH, 0x00000000))
+                {
+                    //
+                    // Update the TOM resource template and append it to CRS.
+                    // This way old < 4GB guest doesn't see anything different.
+                    // (MEMH is the memory above 4GB specified in 64KB units.)
+                    //
+                    ShiftLeft (MEMH, 16, Local0)
+                    Store (Local0, TM4L)
+                    ConcatenateResTemplate (CRS, TOM, Local1)
+                    Return (Local1)
+                }
+
                 Return (CRS)
             }
         }
@@ -914,7 +953,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 )
             })
         }
- 
+
        // System Management Controller
        Device (SMC)
        {
@@ -933,7 +972,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     0x01,               // Alignment
                     0x20,               // Length
                     )
-                // This line seriously confuses Windows ACPI driver, so not even try to 
+                // This line seriously confuses Windows ACPI driver, so not even try to
                 // enable SMC for Windows guests
                 IRQNoFlags () {8}
             })
