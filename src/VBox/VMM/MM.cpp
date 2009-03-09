@@ -312,7 +312,8 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
         cbRam = 0;
     else
         AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamSize\", rc=%Rrc.\n", rc), rc);
-    AssertLogRelMsg(!(cbRam & ~X86_PTE_PAE_PG_MASK), ("%RGp\n", cbRam));
+    AssertLogRelMsg(!(cbRam & ~X86_PTE_PAE_PG_MASK), ("%RGp X86_PTE_PAE_PG_MASK=%RX64\n", cbRam, X86_PTE_PAE_PG_MASK));
+    AssertLogRelMsgReturn(cbRam <= GMM_GCPHYS_LAST, ("cbRam=%RGp GMM_GCPHYS_LAST=%RX64\n", cbRam, GMM_GCPHYS_LAST), VERR_OUT_OF_RANGE);
     cbRam &= X86_PTE_PAE_PG_MASK;
     pVM->mm.s.cbRamBase = cbRam;
 
