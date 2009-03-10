@@ -203,6 +203,11 @@ public:
 protected:
     int                 addConfig(VBoxNetDhcpCfg *pCfg);
     bool                handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t cb);
+    bool                handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb);
+    bool                handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb);
+    bool                handleDhcpReqDecline(PCRTNETBOOTP pDhcpMsg, size_t cb);
+    bool                handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb);
+    void                handleDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRTNETBOOTP pDhcpMsg, size_t cb);
 
     inline void         debugPrint( int32_t iMinLevel, bool fMsg,  const char *pszFmt, ...) const;
     void                debugPrintV(int32_t iMinLevel, bool fMsg,  const char *pszFmt, va_list va) const;
@@ -634,7 +639,7 @@ int VBoxNetDhcp::run(void)
                     m_uCurMsgType = UINT8_MAX;
                 }
                 else
-                    debugPrint(1, true, "VBoxNetDHCP: Skipping invalid DHCP packet.\n");
+                    debugPrint(1, true, "VBoxNetDHCP: Skipping invalid DHCP packet.\n"); /** @todo handle pure bootp clients too? */
 
                 m_pCurMsg = NULL;
                 m_cbCurMsg = 0;
@@ -659,9 +664,149 @@ int VBoxNetDhcp::run(void)
  */
 bool VBoxNetDhcp::handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
-    debugPrint(0, true, "todo");
+    if (pDhcpMsg->bp_op == RTNETBOOTP_OP_REQUEST)
+    {
+        switch (uMsgType)
+        {
+            case RTNET_DHCP_MT_DISCOVER:
+                return handleDhcpReqDiscover(pDhcpMsg, cb);
+
+            case RTNET_DHCP_MT_REQUEST:
+                return handleDhcpReqRequest(pDhcpMsg, cb);
+
+            case RTNET_DHCP_MT_DECLINE:
+                return handleDhcpReqDecline(pDhcpMsg, cb);
+
+            case RTNET_DHCP_MT_RELEASE:
+                return handleDhcpReqRelease(pDhcpMsg, cb);
+
+            case RTNET_DHCP_MT_INFORM:
+                debugPrint(0, true, "Should we handle this?");
+                break;
+
+            default:
+                debugPrint(0, true, "Unexpected.");
+                break;
+        }
+    }
     return false;
 }
+
+
+/**
+ * The client is requesting an offer.
+ *
+ * @returns true.
+ *
+ * @param   pDhcpMsg    The message.
+ * @param   cb          The message size.
+ */
+bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
+{
+    /*
+     * First, see if there is already a lease for this client. It may have rebooted,
+     * crashed or whatever that have caused it to forget its existing lease.
+     * If none was found, create a new lease for it and then construct a reply.
+     */
+
+    /** @todo this code IS required. */
+    return true;
+}
+
+
+/**
+ * The client is requesting an offer.
+ *
+ * @returns true.
+ *
+ * @param   pDhcpMsg    The message.
+ * @param   cb          The message size.
+ */
+bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
+{
+    /*
+     * Windows will reissue these requests when rejoining a network if it thinks it
+     * already has an address on the network. If we cannot find a valid lease,
+     * make a new one.
+     */
+    /** @todo check how windows treats bp_xid here, it should match I think. If
+     *        it doesn't we've no way of filtering out broadcast replies to other
+     *        DHCP servers. */
+
+    /** @todo this code IS required. */
+    return true;
+}
+
+
+/**
+ * The client is declining an offer we've made.
+ *
+ * @returns true.
+ *
+ * @param   pDhcpMsg    The message.
+ * @param   cb          The message size.
+ */
+bool VBoxNetDhcp::handleDhcpReqDecline(PCRTNETBOOTP pDhcpMsg, size_t cb)
+{
+    /*
+     * The client is supposed to pass us option 50, requested address,
+     * from the offer. We also match the lease state. Apparently the
+     * MAC address is not supposed to be checked here.
+     */
+
+    /** @todo this is not required in the initial implementation, do it later. */
+    return true;
+}
+
+
+/**
+ * The client is releasing its lease - good boy.
+ *
+ * @returns true.
+ *
+ * @param   pDhcpMsg    The message.
+ * @param   cb          The message size.
+ */
+bool VBoxNetDhcp::handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb)
+{
+    /*
+     * The client may pass us option 61, client identifier, which we should
+     * use to find the lease by.
+     *
+     * We're matching MAC address and lease state as well.
+     */
+
+    /*
+     * If no client identifier or if we couldn't find a lease by using it,
+     * we will try look it up by the client IP address.
+     */
+
+
+    /*
+     * If found, release it.
+     */
+
+
+    /** @todo this is not required in the initial implementation, do it later. */
+    return true;
+}
+
+
+/**
+ * Constructs and sends a reply to a client.
+ *
+ * @returns
+ * @param   uMsgType        The DHCP message type.
+ * @param   pLease          The lease. This can be NULL for some replies.
+ * @param   pDhcpMsg        The client message. We will dig out the MAC address,
+ *                          transaction ID, and requested options from this.
+ * @param   cb              The size of the client message.
+ */
+void VBoxNetDhcp::handleDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRTNETBOOTP pDhcpMsg, size_t cb)
+{
+    /** @todo this is required. :-) */
+}
+
 
 
 /**
