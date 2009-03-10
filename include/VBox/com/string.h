@@ -507,6 +507,12 @@ public:
     static const size_t npos;
 
     /**
+     * Looks for pcszFind in "this" starting at "pos" and returns its position,
+     * counting from the beginning of "this" at 0. Returns npos if not found.
+     */
+    size_t find(const char *pcszFind, size_t pos = 0) const;
+
+    /**
      * Returns a substring of "this" as a new Utf8Str. Works exactly like
      * its equivalent in std::string except that this interprets pos and n
      * as UTF-8 codepoints instead of bytes. With the default parameters "0"

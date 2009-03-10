@@ -182,6 +182,8 @@ public:
 private:
     struct Data;
     Data *m;
+
+    friend class Machine;
 };
 
 #endif // ____H_APPLIANCEIMPL

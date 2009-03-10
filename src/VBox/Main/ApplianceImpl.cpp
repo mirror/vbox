@@ -884,6 +884,10 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                     }
                     break;
 
+//                     case OVFResourceType_ParallelScsiHba:        /@todo which is the SATA controller?
+//                     {
+//                     }
+
                     case OVFResourceType_EthernetAdapter: // 10
                     {
                         /*  <Item>
@@ -2470,166 +2474,328 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
             xml::ElementNode *pelmVirtualSystemType = pelmSystem->createChild("VirtualSystemType");
             pelmVirtualSystemType->addContent("virtualbox-2.2");            // instead of vmx-7?
 
+            // loop thru all description entries twice; once to write out all
+            // devices _except_ disk images, and a second time to assign the
+            // disk images; this is because disk images need to reference
+            // IDE controllers, and we can't know their instance IDs without
+            // assigning them first
+
+            uint32_t idIDEController = 0;
+            int32_t lIDEControllerIndex = 0;
+            uint32_t idSATAController = 0;
+            int32_t lSATAControllerIndex = 0;
+            uint32_t idSCSIController = 0;
+            int32_t lSCSIControllerIndex = 0;
+
             uint32_t ulInstanceID = 1;
+            uint32_t cDisks = 0;
 
-            list<VirtualSystemDescriptionEntry>::const_iterator itD;
-            for (itD = vsdescThis->m->llDescriptions.begin();
-                 itD != vsdescThis->m->llDescriptions.end();
-                 ++itD)
+            for (size_t uLoop = 1;
+                 uLoop <= 2;
+                 ++uLoop)
             {
-                const VirtualSystemDescriptionEntry &desc = *itD;
-
-                OVFResourceType_T type = (OVFResourceType_T)0;      // if this becomes != 0 then we do stuff
-                Utf8Str strDescription;                             // results in <rasd:Description>...</rasd:Description> block
-                Utf8Str strCaption;                                 // results in <rasd:Caption>...</rasd:Caption> block
-
-                int32_t lVirtualQuantity = -1;
-                Utf8Str strAllocationUnits;
-
-                bool fAutomaticAllocation = false;
-                Utf8Str strConnection;                              // results in <rasd:Connection>...</rasd:Connection> block
-
-                uint64_t uTemp;
-
-                switch (desc.type)
+                int32_t lIndexThis = 0;
+                list<VirtualSystemDescriptionEntry>::const_iterator itD;
+                for (itD = vsdescThis->m->llDescriptions.begin();
+                    itD != vsdescThis->m->llDescriptions.end();
+                    ++itD, ++lIndexThis)
                 {
-                    case VirtualSystemDescriptionType_CPU:
-                        /*  <Item>
-                                <rasd:Caption>1 virtual CPU</rasd:Caption>
-                                <rasd:Description>Number of virtual CPUs</rasd:Description>
-                                <rasd:ElementName>virtual CPU</rasd:ElementName>
-                                <rasd:InstanceID>1</rasd:InstanceID>
-                                <rasd:ResourceType>3</rasd:ResourceType>
-                                <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
+                    const VirtualSystemDescriptionEntry &desc = *itD;
+
+                    OVFResourceType_T type = (OVFResourceType_T)0;      // if this becomes != 0 then we do stuff
+                    Utf8Str strResourceSubType;
+
+                    Utf8Str strDescription;                             // results in <rasd:Description>...</rasd:Description> block
+                    Utf8Str strCaption;                                 // results in <rasd:Caption>...</rasd:Caption> block
+
+                    uint32_t ulParent = 0;
+
+                    int32_t lVirtualQuantity = -1;
+                    Utf8Str strAllocationUnits;
+
+                    int32_t lAddress = -1;
+                    int32_t lBusNumber = -1;
+                    int32_t lAddressOnParent = -1;
+
+                    int32_t lAutomaticAllocation = -1;                  // 0 means "false", 1 means "true"
+                    Utf8Str strConnection;                              // results in <rasd:Connection>...</rasd:Connection> block
+                    Utf8Str strHostResource;
+
+                    uint64_t uTemp;
+
+                    switch (desc.type)
+                    {
+                        case VirtualSystemDescriptionType_CPU:
+                            /*  <Item>
+                                    <rasd:Caption>1 virtual CPU</rasd:Caption>
+                                    <rasd:Description>Number of virtual CPUs</rasd:Description>
+                                    <rasd:ElementName>virtual CPU</rasd:ElementName>
+                                    <rasd:InstanceID>1</rasd:InstanceID>
+                                    <rasd:ResourceType>3</rasd:ResourceType>
+                                    <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
+                                </Item> */
+                            if (uLoop == 1)
+                            {
+                                strDescription = "Number of virtual CPUs";
+                                type = OVFResourceType_Processor; // 3
+                                lVirtualQuantity = 1;
+                            }
+                        break;
+
+                        case VirtualSystemDescriptionType_Memory:
+                            /*  <Item>
+                                    <rasd:AllocationUnits>MegaBytes</rasd:AllocationUnits>
+                                    <rasd:Caption>256 MB of memory</rasd:Caption>
+                                    <rasd:Description>Memory Size</rasd:Description>
+                                    <rasd:ElementName>Memory</rasd:ElementName>
+                                    <rasd:InstanceID>2</rasd:InstanceID>
+                                    <rasd:ResourceType>4</rasd:ResourceType>
+                                    <rasd:VirtualQuantity>256</rasd:VirtualQuantity>
+                                </Item> */
+                            if (uLoop == 1)
+                            {
+                                strDescription = "Memory Size";
+                                type = OVFResourceType_Memory; // 4
+                                desc.strVbox.toInt(uTemp);
+                                lVirtualQuantity = (int32_t)(uTemp / _1M);
+                                strAllocationUnits = "MegaBytes";
+                            }
+                        break;
+
+                        case VirtualSystemDescriptionType_HardDiskControllerIDE:
+                            /* <Item>
+                                    <rasd:Caption>ideController1</rasd:Caption>
+                                    <rasd:Description>IDE Controller</rasd:Description>
+                                    <rasd:InstanceId>5</rasd:InstanceId>
+                                    <rasd:ResourceType>5</rasd:ResourceType>
+                                    <rasd:Address>1</rasd:Address>
+                                    <rasd:BusNumber>1</rasd:BusNumber>
+                                </Item> */
+                            if (uLoop == 1)
+                            {
+                                strDescription = "IDE Controller";
+                                type = OVFResourceType_IdeController; // 5
+                                // it seems that OVFTool always writes these two, and since we can only
+                                // have one IDE controller, we'll use this as well
+                                lAddress = 1;
+                                lBusNumber = 1;
+
+                                // remember this ID
+                                idIDEController = ulInstanceID;
+                                lIDEControllerIndex = lIndexThis;
+                            }
+                        break;
+
+//                         case VirtualSystemDescriptionType_HardDiskControllerSATA:       // @todo
+//                         break;
+
+                        case VirtualSystemDescriptionType_HardDiskControllerSCSI:
+                            /*  <Item>
+                                    <rasd:Caption>scsiController0</rasd:Caption>
+                                    <rasd:Description>SCSI Controller</rasd:Description>
+                                    <rasd:InstanceId>4</rasd:InstanceId>
+                                    <rasd:ResourceType>6</rasd:ResourceType>
+                                    <rasd:ResourceSubType>buslogic</rasd:ResourceSubType>
+                                    <rasd:Address>0</rasd:Address>
+                                    <rasd:BusNumber>0</rasd:BusNumber>
+                                </Item>
+                            */
+                            if (uLoop == 1)
+                            {
+                                strDescription = "SCSI Controller";
+                                strCaption = "scsiController0";
+                                type = OVFResourceType_ParallelScsiHba; // 6
+                                // it seems that OVFTool always writes these two, and since we can only
+                                // have one SATA controller, we'll use this as well
+                                lAddress = 0;
+                                lBusNumber = 0;
+
+                                if (!desc.strVbox.compareIgnoreCase("buslogic"))
+                                    strResourceSubType = "buslogic";
+                                else if (!desc.strVbox.compareIgnoreCase("lsilogic"))
+                                    strResourceSubType = "lsilogic";
+                                else
+                                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                                   tr("Invalid config string \"%s\" in SCSI controller"), desc.strVbox.c_str());
+
+                                // remember this ID
+                                idSCSIController = ulInstanceID;
+                                lSCSIControllerIndex = lIndexThis;
+                            }
+                        break;
+
+                        case VirtualSystemDescriptionType_HardDiskImage:
+                            /*  <Item>
+                                    <rasd:Caption>disk1</rasd:Caption>
+                                    <rasd:InstanceId>8</rasd:InstanceId>
+                                    <rasd:ResourceType>17</rasd:ResourceType>
+                                    <rasd:HostResource>/disk/vmdisk1</rasd:HostResource>
+                                    <rasd:Parent>4</rasd:Parent>
+                                    <rasd:AddressOnParent>0</rasd:AddressOnParent>
+                                </Item> */
+                            if (uLoop == 2)
+                            {
+                                strDescription = "Disk Image";
+                                strCaption = Utf8StrFmt("disk%d", ++cDisks);
+                                type = OVFResourceType_HardDisk; // 17
+                                strHostResource = desc.strOvf;
+                                // “controller=<index>;channel=<c>“
+                                size_t pos1 = desc.strExtraConfig.find("controller=");
+                                size_t pos2 = desc.strExtraConfig.find("channel=");
+                                if (pos1 != Utf8Str::npos)
+                                {
+                                    int32_t lControllerIndex = -1;
+                                    RTStrToInt32Ex(desc.strExtraConfig.c_str() + pos1 + 11, NULL, 0, &lControllerIndex);
+                                    if (lControllerIndex == lIDEControllerIndex)
+                                        ulParent = idIDEController;
+                                    else if (lControllerIndex == lSCSIControllerIndex)
+                                        ulParent = idSCSIController;
+                                    else if (lControllerIndex == lSATAControllerIndex)
+                                        ulParent = idSATAController;
+                                }
+                                if (pos2 != Utf8Str::npos)
+                                    RTStrToInt32Ex(desc.strExtraConfig.c_str() + pos2 + 8, NULL, 0, &lAddressOnParent);
+
+                                if (    !ulParent
+                                     || lAddressOnParent == -1
+                                   )
+                                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                                   tr("Missing or bad extra config string in hard disk image: \"%s\""), desc.strExtraConfig.c_str());
+                            }
+                        break;
+
+                        case VirtualSystemDescriptionType_Floppy:
+                            if (uLoop == 1)
+                            {
+                                strDescription = "Floppy Drive";
+                                strCaption = "floppy0";         // this is what OVFTool writes
+                                type = OVFResourceType_FloppyDrive; // 14
+                                lAutomaticAllocation = 0;
+                                lAddressOnParent = 0;           // this is what OVFTool writes
+                            }
+                        break;
+
+                        case VirtualSystemDescriptionType_CDROM:
+                            if (uLoop == 2)
+                            {
+                                // we can't have a CD without an IDE controller
+                                if (!idIDEController)
+                                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                                   tr("Can't have CD-ROM without IDE controller"));
+
+                                strDescription = "CD-ROM Drive";
+                                strCaption = "cdrom1";          // this is what OVFTool writes
+                                type = OVFResourceType_CdDrive; // 15
+                                lAutomaticAllocation = 1;
+                                ulParent = idIDEController;
+                                lAddressOnParent = 0;           // this is what OVFTool writes
+                            }
+                        break;
+
+                        case VirtualSystemDescriptionType_NetworkAdapter:
+                            /* <Item>
+                                    <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
+                                    <rasd:Caption>Ethernet adapter on 'VM Network'</rasd:Caption>
+                                    <rasd:Connection>VM Network</rasd:Connection>
+                                    <rasd:ElementName>VM network</rasd:ElementName>
+                                    <rasd:InstanceID>3</rasd:InstanceID>
+                                    <rasd:ResourceType>10</rasd:ResourceType>
+                                </Item> */
+                            if (uLoop == 1)
+                            {
+                                lAutomaticAllocation = 1;
+                                strCaption = Utf8StrFmt("Ethernet adapter on '%s'", desc.strOvf.c_str());
+                                type = OVFResourceType_EthernetAdapter; // 10
+                                strConnection = desc.strOvf;
+
+                                mapNetworks[desc.strOvf] = true;
+                            }
+                        break;
+
+                        case VirtualSystemDescriptionType_USBController:
+                            /*  <Item ovf:required="false">
+                                    <rasd:Caption>usb</rasd:Caption>
+                                    <rasd:Description>USB Controller</rasd:Description>
+                                    <rasd:InstanceId>3</rasd:InstanceId>
+                                    <rasd:ResourceType>23</rasd:ResourceType>
+                                    <rasd:Address>0</rasd:Address>
+                                    <rasd:BusNumber>0</rasd:BusNumber>
+                                </Item> */
+                            strDescription = "USB Controller";
+                            strCaption = "usb";
+                            type = OVFResourceType_UsbController; // 23
+                            lAddress = 0;                   // this is what OVFTool writes
+                            lBusNumber = 0;                 // this is what OVFTool writes
+                        break;
+
+                       case VirtualSystemDescriptionType_SoundCard:
+                        /*  <Item ovf:required="false">
+                                <rasd:Caption>sound</rasd:Caption>
+                                <rasd:Description>Sound Card</rasd:Description>
+                                <rasd:InstanceId>10</rasd:InstanceId>
+                                <rasd:ResourceType>35</rasd:ResourceType>
+                                <rasd:ResourceSubType>ensoniq1371</rasd:ResourceSubType>
+                                <rasd:AutomaticAllocation>false</rasd:AutomaticAllocation>
+                                <rasd:AddressOnParent>3</rasd:AddressOnParent>
                             </Item> */
-                        strDescription = "Number of virtual CPUs";
-                        type = OVFResourceType_Processor; // 3
-                        lVirtualQuantity = 1;
-                    break;
+                            strDescription = "Sound Card";
+                            strCaption = "sound";
+                            type = OVFResourceType_SoundCard; // 35
+                            strResourceSubType = desc.strOvf;       // e.g. ensoniq1371
+                            lAutomaticAllocation = 0;
+                            lAddressOnParent = 3;               // what gives? this is what OVFTool writes
+                        break;
+                    }
 
-                    case VirtualSystemDescriptionType_Memory:
-                        /*  <Item>
-                                <rasd:AllocationUnits>MegaBytes</rasd:AllocationUnits>
-                                <rasd:Caption>256 MB of memory</rasd:Caption>
-                                <rasd:Description>Memory Size</rasd:Description>
-                                <rasd:ElementName>Memory</rasd:ElementName>
-                                <rasd:InstanceID>2</rasd:InstanceID>
-                                <rasd:ResourceType>4</rasd:ResourceType>
-                                <rasd:VirtualQuantity>256</rasd:VirtualQuantity>
-                            </Item> */
-                        strDescription = "Memory Size";
-                        type = OVFResourceType_Memory; // 4
-                        desc.strVbox.toInt(uTemp);
-                        lVirtualQuantity = (int32_t)(uTemp / _1M);
-                        strAllocationUnits = "MegaBytes";
-                    break;
+                    if (type)
+                    {
+                        xml::ElementNode *pItem;
 
-//                     case VirtualSystemDescriptionType_HardDiskControllerIDE:
-//                         strDescription = "Memory Size";
-//                         type = OVFResourceType_Memory; // 4
-//                         desc.strVbox.toInt(uTemp);
-//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
-//                     break;
+                        pItem = pelmVirtualHardwareSection->createChild("Item");
 
-//                     case VirtualSystemDescriptionType_HardDiskControllerSATA:
-//                         strDescription = "Memory Size";
-//                         type = OVFResourceType_Memory; // 4
-//                         desc.strVbox.toInt(uTemp);
-//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
-//                     break;
+                        if (!strDescription.isEmpty())
+                            pItem->createChild("rasd:Description")->addContent(strDescription);
+                        if (!strCaption.isEmpty())
+                            pItem->createChild("rasd:Caption")->addContent(strCaption);
 
-//                     case VirtualSystemDescriptionType_HardDiskControllerSCSI:
-//                         strDescription = "Memory Size";
-//                         type = OVFResourceType_Memory; // 4
-//                         desc.strVbox.toInt(uTemp);
-//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
-//                     break;
+                        if (!strAllocationUnits.isEmpty())
+                            pItem->createChild("rasd:AllocationUnits")->addContent(strAllocationUnits);
 
-//                     case VirtualSystemDescriptionType_HardDiskImage:
-//                         strDescription = "Memory Size";
-//                         type = OVFResourceType_Memory; // 4
-//                         desc.strVbox.toInt(uTemp);
-//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
-//                     break;
+                        if (lAutomaticAllocation != -1)
+                            pItem->createChild("rasd:AutomaticAllocation")->addContent( (lAutomaticAllocation) ? "true" : "false" );
 
-//                     case VirtualSystemDescriptionType_Floppy:
-//                         strDescription = "Memory Size";
-//                         type = OVFResourceType_Memory; // 4
-//                         desc.strVbox.toInt(uTemp);
-//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
-//                     break;
+                        if (!strConnection.isEmpty())
+                            pItem->createChild("rasd:Connection")->addContent(strConnection);
 
-//                     case VirtualSystemDescriptionType_CDROM:
-//                         strDescription = "Memory Size";
-//                         type = OVFResourceType_Memory; // 4
-//                         desc.strVbox.toInt(uTemp);
-//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
-//                     break;
+                        // <rasd:InstanceID>1</rasd:InstanceID>
+                        pItem->createChild("rasd:InstanceID")->addContent(Utf8StrFmt("%d", ulInstanceID));
+                        ++ulInstanceID;
 
-                    case VirtualSystemDescriptionType_NetworkAdapter:
-                        /* <Item>
-                                <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
-                                <rasd:Caption>Ethernet adapter on 'VM Network'</rasd:Caption>
-                                <rasd:Connection>VM Network</rasd:Connection>
-                                <rasd:ElementName>VM network</rasd:ElementName>
-                                <rasd:InstanceID>3</rasd:InstanceID>
-                                <rasd:ResourceType>10</rasd:ResourceType>
-                            </Item> */
-                        fAutomaticAllocation = true;
-                        strCaption = Utf8StrFmt("Ethernet adapter on '%s'", desc.strOvf.c_str());
-                        type = OVFResourceType_EthernetAdapter; // 10
-                        strConnection = desc.strOvf;
+                        // <rasd:ResourceType>3</rasd:ResourceType>
+                        pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type));
+                        if (!strResourceSubType.isEmpty())
+                            pItem->createChild("rasd:ResourceSubType")->addContent(strResourceSubType);
 
-                        mapNetworks[desc.strOvf] = true;
-                    break;
+                        // <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
+                        if (lVirtualQuantity != -1)
+                            pItem->createChild("rasd:VirtualQuantity")->addContent(Utf8StrFmt("%d", lVirtualQuantity));
 
-//                     case VirtualSystemDescriptionType_USBController:
-//                         strDescription = "Memory Size";
-//                         type = OVFResourceType_Memory; // 4
-//                         desc.strVbox.toInt(uTemp);
-//                         lVirtualQuantity = (int32_t)(uTemp / _1M);
-//                     break;
+                        if (lAddress != -1)
+                            pItem->createChild("rasd:Address")->addContent(Utf8StrFmt("%d", lAddress));
 
-/*                    case VirtualSystemDescriptionType_SoundCard:
-                        strDescription = "Memory Size";
-                        type = OVFResourceType_Memory; // 4
-                        desc.strVbox.toInt(uTemp);
-                        lVirtualQuantity = (int32_t)(uTemp / _1M);
-                    break;*/
+                        if (lBusNumber != -1)
+                            pItem->createChild("rasd:BusNumber")->addContent(Utf8StrFmt("%d", lBusNumber));
+
+                        if (ulParent)
+                            pItem->createChild("rasd:Parent")->addContent(Utf8StrFmt("%d", ulParent));
+                        if (lAddressOnParent != -1)
+                            pItem->createChild("rasd:AddressOnParent")->addContent(Utf8StrFmt("%d", lAddressOnParent));
+
+                        if (!strHostResource.isEmpty())
+                            pItem->createChild("rasd:HostResource")->addContent(strHostResource);
+                    }
                 }
-
-                if (type)
-                {
-                    xml::ElementNode *pItem;
-                    pItem = pelmVirtualHardwareSection->createChild("Item");
-
-                    if (!strAllocationUnits.isEmpty())
-                        pItem->createChild("rasd:AllocationUnits")->addContent(strAllocationUnits);
-
-                    if (fAutomaticAllocation)
-                        pItem->createChild("rasd:AutomaticAllocation")->addContent("true");
-
-                    if (!strDescription.isEmpty())
-                        pItem->createChild("rasd:Description")->addContent(strDescription);
-                    if (!strCaption.isEmpty())
-                        pItem->createChild("rasd:Caption")->addContent(strCaption);
-
-                    if (!strConnection.isEmpty())
-                        pItem->createChild("rasd:Connection")->addContent(strConnection);
-
-                    // <rasd:InstanceID>1</rasd:InstanceID>
-                    pItem->createChild("rasd:InstanceID")->addContent(Utf8StrFmt("%d", ulInstanceID));
-                    ++ulInstanceID;
-
-                    // <rasd:ResourceType>3</rasd:ResourceType>
-                    pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type));
-
-                    // <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
-                    if (lVirtualQuantity != -1)
-                        pItem->createChild("rasd:VirtualQuantity")->addContent(Utf8StrFmt("%d", lVirtualQuantity));
-
-                }
-            }
+            } // for (size_t uLoop = 0; ...
         }
 
         // finally, fill in the network section we set up empty above according
@@ -2992,6 +3158,10 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         uint32_t ulMemSizeMB;
         BOOL fDVDEnabled;
         BOOL fFloppyEnabled;
+        BOOL fUSBEnabled;
+        BOOL fAudioEnabled;
+        AudioControllerType_T audioController;
+
         ComPtr<IUSBController> pUsbController;
         ComPtr<IAudioAdapter> pAudioAdapter;
 
@@ -3026,8 +3196,13 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         // this is more tricky so use the COM method
         rc = COMGETTER(USBController)(pUsbController.asOutParam());
         if (FAILED(rc)) throw rc;
+        rc = pUsbController->COMGETTER(Enabled)(&fUSBEnabled);
 
         pAudioAdapter = mAudioAdapter;
+        rc = pAudioAdapter->COMGETTER(Enabled)(&fAudioEnabled);
+        if (FAILED(rc)) throw rc;
+        rc = pAudioAdapter->COMGETTER(AudioController)(&audioController);
+        if (FAILED(rc)) throw rc;
 
         // create a new virtual system
         rc = pNewDesc.createObject();
@@ -3064,9 +3239,8 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
                            strMemory,
                            strMemory);
 
-        uint32_t uControllerId = 1;
-        uint32_t uidIdeController;
-        uint32_t uidSataController;
+        int32_t lIDEControllerIndex = 0;
+        int32_t lSATAControllerIndex = 0;
 
 //     <const name="HardDiskControllerIDE" value="6" />
         ComPtr<IBIOSSettings> pBiosSettings;
@@ -3084,8 +3258,8 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
         if (strVbox.length())
         {
-            uidIdeController = uControllerId++;
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE, Utf8StrFmt("%d", uidIdeController), strVbox, "");
+            lIDEControllerIndex = pNewDesc->m->llDescriptions.size();
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE, Utf8StrFmt("%d", lIDEControllerIndex), strVbox, "");
         }
 
 #ifdef VBOX_WITH_AHCI
@@ -3097,8 +3271,8 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         if (FAILED(rc)) throw rc;
         if (fSataEnabled)
         {
-            uidSataController = uControllerId++;
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, Utf8StrFmt("%d", uidSataController), strVbox, "");
+            lSATAControllerIndex = pNewDesc->m->llDescriptions.size();
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, Utf8StrFmt("%d", lSATAControllerIndex), strVbox, "");
         }
 #endif // VBOX_WITH_AHCI
 
@@ -3106,8 +3280,6 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         // @todo
 
 //     <const name="HardDiskImage" value="9" />
-        // hardDiskAttachments
-//         mHDData->mAttachments @todo
         HDData::AttachmentList::iterator itA;
         for (itA = mHDData->mAttachments.begin();
              itA != mHDData->mAttachments.end();
@@ -3120,9 +3292,6 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
             StorageBus_T storageBus;
             LONG lChannel;
             LONG lDevice;
-
-            // and how this translates to the virtual system
-            LONG lChannelVsys;
 
             rc = pHDA->COMGETTER(HardDisk)(pHardDisk.asOutParam());
             if (FAILED(rc)) throw rc;
@@ -3141,11 +3310,13 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
             Bstr bstrName;
             rc = pHardDisk->COMGETTER(Name)(bstrName.asOutParam());
 
-            uint32_t uidControllerVsys;
+            // and how this translates to the virtual system
+            int32_t lControllerVsys = 0;
+            LONG lChannelVsys;
 
             switch (storageBus)
             {
-                case HardDiskController::IDE:
+                case StorageBus::IDE:
                     // this is the exact reverse to what we're doing in Appliance::taskThreadImportMachines,
                     // and it must be updated when that is changed!
 
@@ -3158,31 +3329,33 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
                     else
                         throw setError(VBOX_E_NOT_SUPPORTED,
                                        tr("Cannot handle hard disk attachment: channel is %d, device is %d"), lChannel, lDevice);
-                        break;
 
-                    uidControllerVsys = uidIdeController;
+                    lControllerVsys = lIDEControllerIndex;
                 break;
 
-                case HardDiskController::SATA:
+                case StorageBus::SATA:
                     lChannelVsys = lChannel;        // should be between 0 and 29
-                    uidControllerVsys = uidSataController;
+                    lControllerVsys = lSATAControllerIndex;
                 break;
 
-                case HardDiskController::SCSI:
-                        // mhda.busType = StorageBus_SCSI;
+//                 case StorageBus::SCSI:
+//                         // mhda.busType = StorageBus_SCSI;
+//                     throw setError(VBOX_E_NOT_SUPPORTED,
+//                                 tr("SCSI controller support is not available yet in VirtualBox"));
+//                         // @todo
+//                 break;
+
+                default:
                     throw setError(VBOX_E_NOT_SUPPORTED,
-                                tr("SCSI controller support is not available yet in VirtualBox"));
-                        // @todo
+                                  tr("Cannot handle hard disk attachment: storageBus is %d, channel is %d, device is %d"), storageBus, lChannel, lDevice);
                 break;
-
-                default: break;
             }
 
             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
                                Utf8Str(bstrName), // disk ID: let's use the name
                                "",                // OVF value: unknown as of now
                                Utf8Str(bstrLocation), // vbox value: media path
-                               Utf8StrFmt("controller=%d;channel=%d", uidControllerVsys, lChannelVsys));
+                               Utf8StrFmt("controller=%RI32;channel=%RI32", lControllerVsys, lChannelVsys));
         }
 
         /* Floppy Drive */
@@ -3193,9 +3366,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         if (fDVDEnabled)
             pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");
 
-//     <const name="LogicalNetwork" value="12" />
-
-//     <const name="NetworkAdapter" value="13" />
+//     <const name="NetworkAdapter" />
         size_t a;
         for (a = 0;
              a < SchemaDefs::NetworkAdapterCount;
@@ -3253,9 +3424,20 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
             }
         }
 
-//     <const name="USBController" value="14" />
+//     <const name="USBController"  />
+#ifdef VBOX_WITH_USB
+        if (fUSBEnabled)
+            pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
+#endif /* VBOX_WITH_USB */
 
-//     <const name="SoundCard" value="15" />
+//     <const name="SoundCard"  />
+        if (fAudioEnabled)
+        {
+            pNewDesc->addEntry(VirtualSystemDescriptionType_SoundCard,
+                               "",
+                               "ensoniq1371",       // this is what OVFTool writes and VMware supports
+                               Utf8StrFmt("%RI32", audioController));
+        }
 
         // finally, add the virtual system to the appliance
         Appliance *pAppliance = static_cast<Appliance*>(appliance);

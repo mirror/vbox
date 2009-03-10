@@ -3169,10 +3169,14 @@
         of the "type=&lt;X&gt;" format, where &lt;X&gt; must be either "NAT" or "Bridged".
       </li>
       <li>
-        "SoundCard": a sound card. There can be at most one such item. If and only if such an item is
-        present, sound support will be enabled for the new virtual machine. Note that the virtual
-        machine in VirtualBox will always be presented with the standard VirtualBox soundcard, which
-        may be different from the virtual soundcard expected by the appliance.
+          "USBController": a USB controller. There can be at most one such item. If and only if such an
+          item ispresent, USB support will be enabled for the new virtual machine.
+      </li>
+      <li>
+          "SoundCard": a sound card. There can be at most one such item. If and only if such an item is
+          present, sound support will be enabled for the new virtual machine. Note that the virtual
+          machine in VirtualBox will always be presented with the standard VirtualBox soundcard, which
+          may be different from the virtual soundcard expected by the appliance.
       </li>
       </ul>
 
