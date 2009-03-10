@@ -623,6 +623,11 @@
         <xsd:attribute name="name" type="xsd:string" use="optional"/>
       </xsd:complexType>
     </xsd:element>
+    <xsd:element name="HostOnlyInterface">
+      <xsd:complexType>
+        <xsd:attribute name="name" type="xsd:string" use="optional"/>
+      </xsd:complexType>
+    </xsd:element>
   </xsd:choice>
   <xsd:attribute name="type" type="TNetworkAdapterType" default="Am79C970A"/>
   <xsd:attribute name="slot" use="required">
