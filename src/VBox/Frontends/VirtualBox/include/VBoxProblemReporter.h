@@ -298,16 +298,17 @@ public:
     void cannotGetMediaAccessibility (const VBoxMedium &aMedium);
 
 #if defined Q_WS_WIN
-    void cannotCreateHostInterface (const CHost &host, const QString &name,
-                                    QWidget *parent = 0);
-    void cannotCreateHostInterface (const CProgress &progress, const QString &name,
-                                    QWidget *parent = 0);
-    void cannotRemoveHostInterface (const CHost &host,
-                                    const CHostNetworkInterface &iface,
-                                    QWidget *parent = 0);
-    void cannotRemoveHostInterface (const CProgress &progress,
-                                    const CHostNetworkInterface &iface,
-                                    QWidget *parent = 0);
+    int confirmDeletingHostInterface (const QString &aName, QWidget *aParent = 0);
+    void cannotCreateHostInterface (const CHost &aHost, const QString &aName,
+                                    QWidget *aParent = 0);
+    void cannotCreateHostInterface (const CProgress &aProgress, const QString &aName,
+                                    QWidget *aParent = 0);
+    void cannotRemoveHostInterface (const CHost &aHost,
+                                    const CHostNetworkInterface &aIface,
+                                    QWidget *aParent = 0);
+    void cannotRemoveHostInterface (const CProgress &aProgress,
+                                    const CHostNetworkInterface &aIface,
+                                    QWidget *aParent = 0);
 #endif
 
     void cannotAttachUSBDevice (const CConsole &console, const QString &device);
