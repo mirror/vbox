@@ -42,6 +42,7 @@ static void vboxHwBufferFlush (PPDEV ppdev);
 static void vboxHwBufferPlaceDataAt (PPDEV ppdev, void *p, uint32_t cb, uint32_t offset);
 static BOOL vboxHwBufferWrite (PPDEV ppdev, const void *p, uint32_t cb);
 
+#ifndef VBOX_WITH_HGSMI
 /*
  * Public hardware buffer methods.
  */
@@ -335,3 +336,312 @@ void VBoxProcessDisplayInfo(PPDEV ppdev)
                        0,
                        &returnedDataLength);
 }
+
+#else /* VBOX_WITH_HGSMI */
+
+/*
+ * Public hardware buffer methods.
+ */
+BOOL vboxVbvaEnable (PPDEV ppdev)
+{
+    BOOL bRc = FALSE;
+
+    DISPDBG((1, "VBoxDisp::vboxVbvaEnable called\n"));
+    
+    if (ppdev->bHGSMISupported)
+    {
+        VBVABUFFER *pVBVA = (VBVABUFFER *)((uint8_t *)ppdev->pjScreen + ppdev->layout.offVBVABuffer);
+        
+        pVBVA->u32HostEvents = 0;
+        pVBVA->u32SupportedOrders = 0;
+        pVBVA->off32Data;
+        pVBVA->off32Free;
+        RtlZeroMemory (pVBVA->aRecords, sizeof (pVBVA->aRecords));
+        pVBVA->indexRecordFirst;
+        pVBVA->indexRecordFree;
+        pVBVA->cbPartialWriteThreshold;
+        pVBVA->cbData      = ppdev->layout.cbVBVABuffer - sizeof (VBVABUFFER) + sizeof (pVBVA->au8Data);
+
+        ppdev->fHwBufferOverflow = FALSE;
+        ppdev->pRecord           = NULL;
+        ppdev->pVBVA             = pVBVA;
+        
+#if 0
+        /* @todo inform host that VBVA mode has been entered. */
+        bRC = vboxVBVAInformHost (ppdev);
+#else
+        /* All have been initialized. */
+        bRc = TRUE;
+#endif
+    }
+
+    if (!bRc)
+    {
+        vboxVbvaDisable (ppdev);
+    }
+
+    return bRc;
+}
+
+void vboxVbvaDisable (PPDEV ppdev)
+{
+    DISPDBG((1, "VBoxDisp::vbvaDisable called.\n"));
+
+    ppdev->fHwBufferOverflow = FALSE;
+    ppdev->pRecord           = NULL;
+    ppdev->pVBVA             = NULL;
+
+    return;
+}
+
+BOOL vboxHwBufferBeginUpdate (PPDEV ppdev)
+{
+    BOOL bRc = FALSE;
+
+    DISPDBG((1, "VBoxDisp::vboxHwBufferBeginUpdate called flags = 0x%08X\n",
+             ppdev->pVBVA? ppdev->pVBVA->u32HostEvents: -1));
+
+    if (   ppdev->pVBVA
+        && (ppdev->pVBVA->u32HostEvents & VBVA_F_MODE_ENABLED))
+    {
+        uint32_t indexRecordNext;
+
+        VBVA_ASSERT (!ppdev->fHwBufferOverflow);
+        VBVA_ASSERT (ppdev->pRecord == NULL);
+
+        indexRecordNext = (ppdev->pVBVA->indexRecordFree + 1) % VBVA_MAX_RECORDS;
+
+        if (indexRecordNext == ppdev->pVBVA->indexRecordFirst)
+        {
+            /* All slots in the records queue are used. */
+            vboxHwBufferFlush (ppdev);
+        }
+
+        if (indexRecordNext == ppdev->pVBVA->indexRecordFirst)
+        {
+            /* Even after flush there is no place. Fail the request. */
+            DISPDBG((1, "VBoxDisp::vboxHwBufferBeginUpdate no space in the queue of records!!! first %d, last %d\n",
+                     ppdev->pVBVA->indexRecordFirst, ppdev->pVBVA->indexRecordFree));
+        }
+        else
+        {
+            /* Initialize the record. */
+            VBVARECORD *pRecord = &ppdev->pVBVA->aRecords[ppdev->pVBVA->indexRecordFree];
+
+            pRecord->cbRecord = VBVA_F_RECORD_PARTIAL;
+
+            ppdev->pVBVA->indexRecordFree = indexRecordNext;
+
+            DISPDBG((1, "VBoxDisp::vboxHwBufferBeginUpdate indexRecordNext = %d\n", indexRecordNext));
+
+            /* Remember which record we are using. */
+            ppdev->pRecord = pRecord;
+
+            bRc = TRUE;
+        }
+    }
+
+    return bRc;
+}
+
+void vboxHwBufferEndUpdate (PPDEV ppdev)
+{
+    VBVARECORD *pRecord;
+
+    DISPDBG((1, "VBoxDisp::vboxHwBufferEndUpdate called\n"));
+
+    VBVA_ASSERT(ppdev->pVBVA);
+
+    pRecord = ppdev->pRecord;
+    VBVA_ASSERT (pRecord && (pRecord->cbRecord & VBVA_F_RECORD_PARTIAL));
+
+    /* Mark the record completed. */
+    pRecord->cbRecord &= ~VBVA_F_RECORD_PARTIAL;
+
+    ppdev->fHwBufferOverflow = FALSE;
+    ppdev->pRecord = NULL;
+
+    return;
+}
+
+/*
+ * Private operations.
+ */
+static uint32_t vboxHwBufferAvail (const VBVABUFFER *pVBVA)
+{
+    int32_t i32Diff = pVBVA->off32Data - pVBVA->off32Free;
+
+    return i32Diff > 0? i32Diff: pVBVA->cbData + i32Diff;
+}
+
+static void vboxHwBufferFlush (PPDEV ppdev)
+{
+    VBVA_ASSERT (ppdev->pVBVA);
+
+#if 0
+    /* @todo issue the flush command */
+    void *p = HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
+                              sizeof (VBVA_FLUSH),
+                              HGSMI_CH_VBVA,
+                              HGSMI_CC_VBVA_FLUSH);
+........
+    if (!p)
+    {
+        DISPDBG((0, "VBoxDISP::vboxInitVBoxVideo: HGSMIHeapAlloc failed\n"));
+        rc = VERR_NO_MEMORY;
+    }
+    else
+    {
+        HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&ppdev->hgsmiDisplayHeap,
+                                                       p);
+
+        ((HGSMI_BUFFER_LOCATION *)p)->offLocation = ppdev->layout.offDisplayInformation;
+        ((HGSMI_BUFFER_LOCATION *)p)->cbLocation = sizeof (HGSMIHOSTFLAGS);
+
+        /* Submit the buffer to the host. */
+        ASMOutU16 (VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBVA_GUEST);
+        ASMOutU32 (VBE_DISPI_IOPORT_DATA, offBuffer);
+
+        HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, p);
+    }
+#endif
+
+    return;
+}
+
+static void vboxHwBufferPlaceDataAt (PPDEV ppdev, const void *p, uint32_t cb, uint32_t offset)
+{
+    VBVABUFFER *pVBVA = ppdev->pVBVA;
+    uint32_t u32BytesTillBoundary = pVBVA->cbData - offset;
+    uint8_t  *dst                 = &pVBVA->au8Data[offset];
+    int32_t i32Diff               = cb - u32BytesTillBoundary;
+
+    if (i32Diff <= 0)
+    {
+        /* Chunk will not cross buffer boundary. */
+        memcpy (dst, p, cb);
+    }
+    else
+    {
+        /* Chunk crosses buffer boundary. */
+        memcpy (dst, p, u32BytesTillBoundary);
+        memcpy (&pVBVA->au8Data[0], (uint8_t *)p + u32BytesTillBoundary, i32Diff);
+    }
+
+    return;
+}
+
+static BOOL vboxHwBufferWrite (PPDEV ppdev, const void *p, uint32_t cb)
+{
+    VBVARECORD *pRecord;
+    uint32_t cbHwBufferAvail;
+
+    uint32_t cbWritten = 0;
+
+    VBVABUFFER *pVBVA = ppdev->pVBVA;
+    VBVA_ASSERT(pVBVA);
+
+    if (!pVBVA || ppdev->fHwBufferOverflow)
+    {
+        return FALSE;
+    }
+
+    VBVA_ASSERT (pVBVA->indexRecordFirst != pVBVA->indexRecordFree);
+
+    pRecord = ppdev->pRecord;
+    VBVA_ASSERT (pRecord && (pRecord->cbRecord & VBVA_F_RECORD_PARTIAL));
+
+    DISPDBG((1, "VW %d\n", cb));
+
+    cbHwBufferAvail = vboxHwBufferAvail (pVBVA);
+
+    while (cb > 0)
+    {
+        uint32_t cbChunk = cb;
+
+        DISPDBG((1, "VBoxDisp::vboxHwBufferWrite pVBVA->off32Free %d, pRecord->cbRecord 0x%08X, cbHwBufferAvail %d, cb %d, cbWritten %d\n",
+                    pVBVA->off32Free, pRecord->cbRecord, cbHwBufferAvail, cb, cbWritten));
+
+        if (cbChunk >= cbHwBufferAvail)
+        {
+            DISPDBG((1, "VBoxDisp::vboxHwBufferWrite 1) avail %d, chunk %d\n", cbHwBufferAvail, cbChunk));
+
+            vboxHwBufferFlush (ppdev);
+
+            cbHwBufferAvail = vboxHwBufferAvail (pVBVA);
+
+            if (cbChunk >= cbHwBufferAvail)
+            {
+                DISPDBG((1, "VBoxDisp::vboxHwBufferWrite: no place for %d bytes. Only %d bytes available after flush. Going to partial writes.\n",
+                            cb, cbHwBufferAvail));
+
+                if (cbHwBufferAvail <= pVBVA->cbPartialWriteThreshold)
+                {
+                    DISPDBG((1, "VBoxDisp::vboxHwBufferWrite: Buffer overflow!!!\n"));
+                    ppdev->fHwBufferOverflow = TRUE;
+                    VBVA_ASSERT(FALSE);
+                    return FALSE;
+                }
+
+                cbChunk = cbHwBufferAvail - pVBVA->cbPartialWriteThreshold;
+            }
+        }
+
+        VBVA_ASSERT(cbChunk <= cb);
+        VBVA_ASSERT(cbChunk <= vboxHwBufferAvail (pVBVA));
+
+        vboxHwBufferPlaceDataAt (ppdev, (uint8_t *)p + cbWritten, cbChunk, pVBVA->off32Free);
+
+        pVBVA->off32Free   = (pVBVA->off32Free + cbChunk) % pVBVA->cbData;
+        pRecord->cbRecord += cbChunk;
+        cbHwBufferAvail -= cbChunk;
+
+        cb        -= cbChunk;
+        cbWritten += cbChunk;
+    }
+
+    return TRUE;
+}
+
+/*
+ * Public writer to the hardware buffer.
+ */
+BOOL vboxWrite (PPDEV ppdev, const void *pv, uint32_t cb)
+{
+    return vboxHwBufferWrite (ppdev, pv, cb);
+}
+
+BOOL vboxOrderSupported (PPDEV ppdev, unsigned code)
+{
+    VBVABUFFER *pVBVA = ppdev->pVBVA;
+
+    if (!pVBVA)
+    {
+        return FALSE;
+    }
+
+    if (pVBVA->u32SupportedOrders & (1 << code))
+    {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+void VBoxProcessDisplayInfo(PPDEV ppdev)
+{
+#if 0
+    DWORD returnedDataLength;
+
+    DISPDBG((1, "Process: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
+
+    EngDeviceIoControl(ppdev->hDriver,
+                       IOCTL_VIDEO_INTERPRET_DISPLAY_MEMORY,
+                       NULL,
+                       0,
+                       NULL,
+                       0,
+                       &returnedDataLength);
+#endif
+}
+#endif /* VBOX_WITH_HGSMI */

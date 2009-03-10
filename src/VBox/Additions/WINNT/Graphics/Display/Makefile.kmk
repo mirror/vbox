@@ -55,5 +55,10 @@ VBoxDisp_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/win32k.lib \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 
+ifdef VBOX_WITH_HGSMI
+VBoxDisp_LIBS         += \
+	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
+endif
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
