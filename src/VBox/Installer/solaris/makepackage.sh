@@ -137,14 +137,14 @@ filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxdrv=amd64/vboxdrv"'   
 filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxflt=i386/vboxflt"'                             '$3 = "platform/i86pc/kernel/drv/vboxflt=i386/vboxflt"; $6 = "sys"'
 filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxflt=amd64/vboxflt"'                           '$3 = "platform/i86pc/kernel/drv/amd64/vboxflt=amd64/vboxflt"; $6 = "sys"'
 
-# USB vboxusb
-filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxusb=i386/vboxusb"'                             '$3 = "platform/i86pc/kernel/drv/vboxusb=i386/vboxusb"; $6 = "sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxusb=amd64/vboxusb"'                           '$3 = "platform/i86pc/kernel/drv/amd64/vboxusb=amd64/vboxusb"; $6 = "sys"'
+# USB vboxusbmon
+filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxusbmon=i386/vboxusbmon"'                       '$3 = "platform/i86pc/kernel/drv/vboxusbmon=i386/vboxusbmon"; $6 = "sys"'
+filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxusbmon=amd64/vboxusbmon"'                     '$3 = "platform/i86pc/kernel/drv/amd64/vboxusbmon=amd64/vboxusbmon"; $6 = "sys"'
 
 # All the driver conf files
 filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv.conf=vboxdrv.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxdrv.conf=vboxdrv.conf"'
 filelist_fixup prototype '$3 == "opt/VirtualBox/vboxflt.conf=vboxflt.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxflt.conf=vboxflt.conf"'
-filelist_fixup prototype '$3 == "opt/VirtualBox/vboxusb.conf=vboxusb.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxusb.conf=vboxusb.conf"'
+filelist_fixup prototype '$3 == "opt/VirtualBox/vboxusbmon.conf=vboxusbmon.conf"'                       '$3 = "platform/i86pc/kernel/drv/vboxusbmon.conf=vboxusbmon.conf"'
 
 # hardening requires some executables to be marked setuid.
 if test -n "$HARDENED"; then

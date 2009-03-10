@@ -46,17 +46,17 @@ if test "$currentzone" = "global"; then
 /name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
     mv -f /etc/devlink.vbox /etc/devlink.tab
 
-    # remove devlink.tab entry for vboxusb
+    # remove devlink.tab entry for vboxusbmon
     sed -e '
-/name=vboxusb/d' /etc/devlink.tab > /etc/devlink.vbox
+/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
     mv -f /etc/devlink.vbox /etc/devlink.tab
 
     # remove the devlinks
     if test -h "/dev/vboxdrv" || test -f "/dev/vboxdrv"; then
         rm -f /dev/vboxdrv
     fi
-    if test -h "/dev/vboxusb" || test -f "/dev/vboxusb"; then
-        rm -f /dev/vboxusb
+    if test -h "/dev/vboxusbmon" || test -f "/dev/vboxusbmon"; then
+        rm -f /dev/vboxusbmon
     fi
 fi
 

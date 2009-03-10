@@ -24,7 +24,7 @@ ALWAYSREMDRV=""
 MODNAME="vboxdrv"
 VBIMODNAME="vbi"
 FLTMODNAME="vboxflt"
-USBMODNAME="vboxusb"
+USBMODNAME="vboxusbmon"
 MODDIR32="/platform/i86pc/kernel/drv"
 MODDIR64=$MODDIR32/amd64
 
@@ -122,13 +122,13 @@ vboxflt_added()
     return $?
 }
 
-vboxusb_added()
+vboxusbmon_added()
 {
     module_added $USBMODNAME
     return $?
 }
 
-vboxusb_loaded()
+vboxusbmon_loaded()
 {
     module_loaded $USBMODNAME
     return $?
@@ -252,14 +252,14 @@ stop_vboxflt()
 }
 
 
-start_vboxusb()
+start_vboxusbmon()
 {
-    if vboxusb_loaded; then
-        info "VirtualBox USB kernel module already loaded."
+    if vboxusbmon_loaded; then
+        info "VirtualBox USB Monitor kernel module already loaded."
     else
-        /usr/sbin/add_drv -m'* 0600 root sys' $USBMODNAME || abort "Failed to add VirtualBox USB Kernel module."
+        /usr/sbin/add_drv -m'* 0600 root sys' $USBMODNAME || abort "Failed to add VirtualBox USB Monitor Kernel module."
         /usr/sbin/modload -p drv/$USBMODNAME
-        if test ! vboxusb_loaded; then
+        if test ! vboxusbmon_loaded; then
             abort "Failed to load VirtualBox USB kernel module."
         else
             info "VirtualBox USB kernel module loaded."
@@ -267,28 +267,28 @@ start_vboxusb()
     fi
 }
 
-stop_vboxusb()
+stop_vboxusbmon()
 {
-    if vboxusb_loaded; then
-        vboxusb_mod_id=`/usr/sbin/modinfo | grep $USBMODNAME | cut -f 1 -d ' '`
-        if test -n "$vboxusb_mod_id"; then
-            /usr/sbin/modunload -i $vboxusb_mod_id
+    if vboxusbmon_loaded; then
+        vboxusbmon_mod_id=`/usr/sbin/modinfo | grep $USBMODNAME | cut -f 1 -d ' '`
+        if test -n "$vboxusbmon_mod_id"; then
+            /usr/sbin/modunload -i $vboxusbmon_mod_id
 
             # see stop_vboxdrv() for why we have "alwaysremdrv".
             if test -n "$ALWAYSREMDRV"; then
                 /usr/sbin/rem_drv $USBMODNAME
             else
                 if test "$?" -eq 0; then
-                    /usr/sbin/rem_drv $USBMODNAME || abort "Unloaded VirtualBox USB kernel module, but failed to remove it!"
+                    /usr/sbin/rem_drv $USBMODNAME || abort "Unloaded VirtualBox USB Monitor kernel module, but failed to remove it!"
                 else
-                    abort "Failed to unload VirtualBox USB kernel module. Old one still active!!"
+                    abort "Failed to unload VirtualBox USB Monitor kernel module. Old one still active!!"
                 fi
             fi
 
             info "VirtualBox USB kernel module unloaded."
         fi
-    elif vboxusb_added; then
-        /usr/sbin/rem_drv $USBMODNAME || abort "Unloaded VirtualBox USB kernel module, but failed to remove it!"
+    elif vboxusbmon_added; then
+        /usr/sbin/rem_drv $USBMODNAME || abort "Unloaded VirtualBox USB Monitor kernel module, but failed to remove it!"
         info "VirtualBox USB kernel module unloaded."
     elif test -z "$SILENTUNLOAD"; then
         info "VirtualBox USB kernel module not loaded."
@@ -308,7 +308,7 @@ status_vboxdrv()
 
 stop_all_modules()
 {
-    stop_vboxusb
+    stop_vboxusbmon
     stop_vboxflt
     stop_module
 }
@@ -317,7 +317,7 @@ start_all_modules()
 {
     start_module
     start_vboxflt
-    start_vboxusb
+    start_vboxusbmon
 }
 
 check_root
@@ -358,10 +358,10 @@ fltstop)
     stop_vboxflt
     ;;
 usbstart)
-    start_vboxusb
+    start_vboxusbmon
     ;;
 usbstop)
-    stop_vboxusb
+    stop_vboxusbmon
     ;;
 *)
     echo "Usage: $0 {start|stop|status|fltstart|fltstop|usbstart|usbstop|stopall|startall}"
