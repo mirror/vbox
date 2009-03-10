@@ -531,9 +531,9 @@ QPushButton *QIMessageBox::createButton (int aButton)
  */
 void QIMessageBox::setDetailsText (const QString &aText)
 {
-    QStringList parts (aText.split ("<!--EOM-->", QString::SkipEmptyParts));
-    mTextLabel->setText (mTextLabel->text() + parts [0]);
-    if (parts.size() > 1) mDetailsText->setText (parts [1]);
+    QStringList parts (aText.split ("<!--EOM-->", QString::KeepEmptyParts));
+    if (!parts [0].isEmpty()) mTextLabel->setText (mTextLabel->text() + parts [0]);
+    if (parts.size() > 1 && !parts [1].isEmpty()) mDetailsText->setText (parts [1]);
 }
 
 /** @fn QIMessageBox::isDetailsShown() const

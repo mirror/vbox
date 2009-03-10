@@ -1978,7 +1978,7 @@ int VBoxProblemReporter::warnAboutAutoConvertedSettings (const QString &aFormatV
             .arg (aAfterRefresh ? QString::null :
                   tr ("<li><b>Exit</b> to terminate VirtualBox without saving "
                       "the results of the conversion to disk.</li>")),
-        aFileList,
+        QString ("<!--EOM-->%1").arg (aFileList),
         NULL /* aAutoConfirmId */,
         QIMessageBox::Yes,
         aAfterRefresh ? (QIMessageBox::No | QIMessageBox::Default | QIMessageBox::Escape) :
