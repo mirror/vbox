@@ -227,14 +227,14 @@ struct Appliance::TaskImportMachines
     HRESULT rc;
 };
 
-struct Appliance::TaskExportOVF
+struct Appliance::TaskWriteOVF
 {
-    TaskExportOVF(Appliance *aThat, Progress *aProgress)
+    TaskWriteOVF(Appliance *aThat, Progress *aProgress)
         : pAppliance(aThat)
         , progress(aProgress)
         , rc(S_OK)
     {}
-    ~TaskExportOVF() {}
+    ~TaskWriteOVF() {}
 
     HRESULT startThread();
 
@@ -411,9 +411,9 @@ HRESULT Appliance::TaskImportMachines::startThread()
     return S_OK;
 }
 
-HRESULT Appliance::TaskExportOVF::startThread()
+HRESULT Appliance::TaskWriteOVF::startThread()
 {
-    int vrc = RTThreadCreate(NULL, Appliance::taskThreadExportOVF, this,
+    int vrc = RTThreadCreate(NULL, Appliance::taskThreadWriteOVF, this,
                              0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
                              "Appliance::Task");
     ComAssertMsgRCRet(vrc,
@@ -1646,7 +1646,7 @@ STDMETHODIMP Appliance::Write(IN_BSTR path, IProgress **aProgress)
         CheckComRCThrowRC(rc);
 
         /* Initialize our worker task */
-        std::auto_ptr<TaskExportOVF> task(new TaskExportOVF(this, progress));
+        std::auto_ptr<TaskWriteOVF> task(new TaskWriteOVF(this, progress));
         //AssertComRCThrowRC (task->autoCaller.rc());
 
         rc = task->startThread();
@@ -2357,14 +2357,14 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
 }
 
 /**
- * Worker thread implementation for ImportMachines().
+ * Worker thread implementation for Write() (ovf writer).
  * @param aThread
  * @param pvUser
  */
 /* static */
-DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
+DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
 {
-    std::auto_ptr<TaskImportMachines> task(static_cast<TaskImportMachines*>(pvUser));
+    std::auto_ptr<TaskWriteOVF> task(static_cast<TaskWriteOVF*>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
 
     Appliance *pAppliance = task->pAppliance;
@@ -2411,6 +2411,9 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
         pelmDiskSectionInfo->addContent("List of the virtual disks used in the package");
         // @todo for each disk:
         // xml::ElementNode *pelmDisk = pelmDiskSection->createChild("Disk");
+        // for now, set up a map so we have a list of unique disk names (to make
+        // sure the same disk name is only added once)
+        map<Utf8Str, const VirtualSystemDescriptionEntry*> mapDisks;
 
         /* <Envelope>/<NetworkSection>:
             <NetworkSection>
@@ -2635,10 +2638,15 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                                 </Item> */
                             if (uLoop == 2)
                             {
+                                Utf8Str strDiskID = Utf8StrFmt("vmdisk%RI32", ++cDisks);
+
                                 strDescription = "Disk Image";
-                                strCaption = Utf8StrFmt("disk%d", ++cDisks);
+                                strCaption = Utf8StrFmt("disk%RI32", cDisks);        // this is not used for anything else
                                 type = OVFResourceType_HardDisk; // 17
-                                strHostResource = desc.strOvf;
+
+                                // the following references the "<Disks>" XML block
+                                strHostResource = Utf8StrFmt("/disk/%s", strDiskID.c_str());
+
                                 // “controller=<index>;channel=<c>“
                                 size_t pos1 = desc.strExtraConfig.find("controller=");
                                 size_t pos2 = desc.strExtraConfig.find("channel=");
@@ -2661,6 +2669,8 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
                                    )
                                     throw setError(VBOX_E_NOT_SUPPORTED,
                                                    tr("Missing or bad extra config string in hard disk image: \"%s\""), desc.strExtraConfig.c_str());
+
+                                mapDisks[strDiskID] = &desc;
                             }
                         break;
 
@@ -2809,6 +2819,108 @@ DECLCALLBACK(int) Appliance::taskThreadExportOVF(RTTHREAD aThread, void *pvUser)
             xml::ElementNode *pelmNetwork = pelmNetworkSection->createChild("Network");
             pelmNetwork->setAttribute("ovf:name", strNetwork.c_str());
             pelmNetwork->createChild("Description")->addContent("Logical network used by this appliance.");
+        }
+
+        map<Utf8Str, const VirtualSystemDescriptionEntry*>::const_iterator itS;
+        uint32_t ulFile = 1;
+        for (itS = mapDisks.begin();
+             itS != mapDisks.end();
+             ++itS)
+        {
+            const Utf8Str &strDiskID = itS->first;
+            const VirtualSystemDescriptionEntry *pDiskEntry = itS->second;
+
+            // source path: where the VBox image is
+            const Utf8Str &strSrcFilePath = pDiskEntry->strVbox;
+            const Bstr bstrSrcFilePath(strSrcFilePath);
+            if (!RTPathExists(strSrcFilePath.c_str()))
+                /* This isn't allowed */
+                throw setError(VBOX_E_FILE_ERROR,
+                                tr("Source virtual disk image file '%s' doesn't exist"),
+                                    strSrcFilePath.c_str());
+
+            // output filename
+            const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
+            // target path needs to be composed from where the output OVF is
+            Utf8Str strTargetFilePath = stripFilename(pAppliance->m->strPath);
+            strTargetFilePath.append("/");
+            strTargetFilePath.append(strTargetFileNameOnly);
+
+            // clone the disk:
+            ComPtr<IHardDisk> pSourceDisk;
+            ComPtr<IHardDisk> pTargetDisk;
+            ComPtr<IProgress> pProgress2;
+
+            Log(("Finding source disk \"%ls\"\n", bstrSrcFilePath.raw()));
+            rc = pVirtualBox->FindHardDisk(bstrSrcFilePath, pSourceDisk.asOutParam());
+            if (FAILED(rc)) throw rc;
+
+            /* We need the format description of the source disk image */
+            Bstr bstrSrcFormat;
+            rc = pSourceDisk->COMGETTER(Format)(bstrSrcFormat.asOutParam());
+            if (FAILED(rc)) throw rc;
+            /* Create a new hard disk interface for the destination disk image */
+            Log(("Creating target disk \"%s\"\n", strTargetFilePath.raw()));
+            rc = pVirtualBox->CreateHardDisk(bstrSrcFormat, Bstr(strTargetFilePath), pTargetDisk.asOutParam());
+            if (FAILED(rc)) throw rc;
+            /* Clone the source disk image */
+            rc = pSourceDisk->CloneTo(pTargetDisk, pProgress2.asOutParam());
+            if (FAILED(rc)) throw rc;
+
+            /* Advance to the next operation */
+            if (!task->progress.isNull())
+                task->progress->advanceOperation(BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()));
+
+            // now loop until the asynchronous operation completes and then
+            // report its result
+            BOOL fCompleted;
+            LONG currentPercent;
+            while (SUCCEEDED(pProgress2->COMGETTER(Completed(&fCompleted))))
+            {
+                rc = pProgress2->COMGETTER(Percent(&currentPercent));
+                if (FAILED(rc)) throw rc;
+                if (!task->progress.isNull())
+                    task->progress->notifyProgress(currentPercent);
+                if (fCompleted)
+                    break;
+                /* Make sure the loop is not too tight */
+                rc = pProgress2->WaitForCompletion(100);
+                if (FAILED(rc)) throw rc;
+            }
+            // report result of asynchronous operation
+            HRESULT vrc;
+            rc = pProgress2->COMGETTER(ResultCode)(&vrc);
+            if (FAILED(rc)) throw rc;
+
+            // if the thread of the progress object has an error, then
+            // retrieve the error info from there, or it'll be lost
+            if (FAILED(vrc))
+            {
+                com::ErrorInfo info(pProgress2);
+                const char *pcsz = Utf8Str(info.getText()).c_str();
+                HRESULT rc2 = setError(vrc, pcsz);
+                throw rc2;
+            }
+
+            // we need the capacity and actual file size for the XML
+            uint64_t cbFile = 12345678; // @todo
+            uint64_t cbCapacity = 2345678; // @todo
+
+            // now handle the XML for the disk:
+            Utf8StrFmt strFileRef("file%RI32", ulFile++);
+            // <File ovf:href="WindowsXpProfessional-disk1.vmdk" ovf:id="file1" ovf:size="1710381056"/>
+            xml::ElementNode *pelmFile = pelmReferences->createChild("File");
+            pelmFile->setAttribute("ovf:href", strTargetFileNameOnly);
+            pelmFile->setAttribute("ovf:id", strFileRef);
+            pelmFile->setAttribute("ovf:size", Utf8StrFmt("%RI64", cbFile).c_str()); // @todo
+
+            // add disk to XML Disks section
+            // <Disk ovf:capacity="8589934592" ovf:diskId="vmdisk1" ovf:fileRef="file1" ovf:format="http://www.vmware.com/specifications/vmdk.html#sparse"/>
+            xml::ElementNode *pelmDisk = pelmDiskSection->createChild("Disk");
+            pelmDisk->setAttribute("ovf:capacity", Utf8StrFmt("%RI64", cbCapacity).c_str()); // @todo
+            pelmDisk->setAttribute("ovf:diskId", strDiskID);
+            pelmDisk->setAttribute("ovf:fileRef", strFileRef);
+            pelmDisk->setAttribute("ovf:format", "http://www.vmware.com/specifications/vmdk.html#sparse");
         }
 
         // now go write the XML
@@ -3351,9 +3463,13 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
                 break;
             }
 
+            Utf8Str strTargetVmdkName(bstrName);
+            RTPathStripExt(strTargetVmdkName.mutableRaw());
+            strTargetVmdkName.append(".vmdk");
+
             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                               Utf8Str(bstrName), // disk ID: let's use the name
-                               "",                // OVF value: unknown as of now
+                               strTargetVmdkName,   // disk ID: let's use the name
+                               strTargetVmdkName,   // OVF value:
                                Utf8Str(bstrLocation), // vbox value: media path
                                Utf8StrFmt("controller=%RI32;channel=%RI32", lControllerVsys, lChannelVsys));
         }
