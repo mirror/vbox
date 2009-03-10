@@ -1069,6 +1069,22 @@ void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping, RT
     pMapping->pfnRelocate(pVM, iPDOld << X86_PD_SHIFT, iPDNew << X86_PD_SHIFT, PGMRELOCATECALL_RELOCATE, pMapping->pvUser);
 }
 
+/**
+ * Checks if a new mapping address wasn't previously used and caused a clash with guest mappings.
+ *
+ * @returns VBox status code.
+ * @param   pMapping            The mapping which conflicts.
+ * @param   GCPtr               New mapping address to try
+ */
+bool pgmR3MapIsKnownConflictAddress(PPGMMAPPING pMapping, RTGCPTR GCPtr)
+{
+    for (int i=0;i<RT_ELEMENTS(pMapping->GCPtrConflict);i++)
+    {
+        if (GCPtr == pMapping->GCPtrConflict[i])
+            return true;
+    }
+    return false;
+}
 
 /**
  * Resolves a conflict between a page table based GC mapping and
@@ -1085,6 +1101,9 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTG
     STAM_REL_COUNTER_INC(&pVM->pgm.s.cRelocations);
     STAM_PROFILE_START(&pVM->pgm.s.StatR3ResolveConflict, a);
 
+    pMapping->GCPtrConflict[pMapping->cConflicts & (PGMMAPPING_CONFLICT_MAX-1)] = GCPtrOldMapping;
+    pMapping->cConflicts++;
+
     /*
      * Scan for free page directory entries.
      *
@@ -1097,6 +1116,10 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTG
     {
         if (pPDSrc->a[iPDNew].n.u1Present)
             continue;
+
+        if (pgmR3MapIsKnownConflictAddress(pMapping, iPDNew << X86_PD_SHIFT))
+            continue;
+
         if (cPTs > 1)
         {
             bool fOk = true;
@@ -1151,6 +1174,9 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
     STAM_REL_COUNTER_INC(&pVM->pgm.s.cRelocations);
     STAM_PROFILE_START(&pVM->pgm.s.StatR3ResolveConflict, a);
 
+    pMapping->GCPtrConflict[pMapping->cConflicts & (PGMMAPPING_CONFLICT_MAX-1)] = GCPtrOldMapping;
+    pMapping->cConflicts++;
+
     for (int iPDPTE = X86_PG_PAE_PDPE_ENTRIES - 1; iPDPTE >= 0; iPDPTE--)
     {
         unsigned  iPDSrc;
@@ -1170,6 +1196,9 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
         {
             /* Ugly assumption that mappings start on a 4 MB boundary. */
             if (iPDNew & 1)
+                continue;
+
+            if (pgmR3MapIsKnownConflictAddress(pMapping, ((RTGCPTR32)iPDPTE << X86_PDPT_SHIFT) + (iPDNew << X86_PD_PAE_SHIFT)))
                 continue;
 
             if (pPDSrc)
