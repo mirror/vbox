@@ -1329,7 +1329,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                     break;
 
                 case SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH:
-                    *pu32 = s->cbRamHigh >> 16; /* 64KB unit */
+                    *pu32 = s->cbRamHigh >> 16; /* 64KB units */
                     Assert(((uint64_t)*pu32 << 16) == s->cbRamHigh);
                     break;
 
