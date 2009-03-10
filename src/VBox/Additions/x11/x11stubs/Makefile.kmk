@@ -24,7 +24,6 @@ include $(KBUILD_PATH)/subheader.kmk
 DLLS   += libXcomposite
 
 libXcomposite_TEMPLATE   = VBOXR3
-libXcomposite_LDTOOL    := $(subst GXX,GCC,$(TEMPLATE_VBOXR3_LDTOOL))
 # This may need fixing later.
 libXcomposite_SONAME     = libXcomposite.so.1
 libXcomposite_SOURCES    = libXcomposite-1.0.0/libXcomposite.c
