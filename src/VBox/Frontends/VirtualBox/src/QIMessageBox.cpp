@@ -554,6 +554,9 @@ void QIMessageBox::setDetailsText (const QString &aText)
  */
 void QIMessageBox::setDetailsShown (bool aShown)
 {
+    if (aShown && mDetailsText->isEmpty())
+        return;
+
     if (aShown)
     {
         mFlagCB_Details->setVisible (mFlagCB_Main->isVisible());
