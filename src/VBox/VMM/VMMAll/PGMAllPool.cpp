@@ -3498,6 +3498,30 @@ DECLINLINE(void) pgmPoolTrackDerefPDPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86
     }
 }
 
+/**
+ * Clear references to shadowed pages in a PAE page directory pointer table.
+ *
+ * @param   pPool       The pool.
+ * @param   pPage       The page.
+ * @param   pShwPDPT   The shadow page directory pointer table (mapping of the page).
+ */
+DECLINLINE(void) pgmPoolTrackDerefPDPTPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PDPT pShwPDPT)
+{
+    for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
+    {
+        if (    pShwPDPT->a[i].n.u1Present
+            &&  !(pShwPDPT->a[i].u & PGM_PLXFLAGS_MAPPING)
+           )
+        {
+            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPDPT->a[i].u & X86_PDPE_PG_MASK);
+            if (pSubPage)
+                pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
+            else
+                AssertFatalMsgFailed(("%RX64\n", pShwPDPT->a[i].u & X86_PDPE_PG_MASK));
+        }
+    }
+}
+
 
 /**
  * Clear references to shadowed pages in a 64-bit page directory pointer table.
@@ -3510,9 +3534,8 @@ DECLINLINE(void) pgmPoolTrackDerefPDPT64Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPDPT->a); i++)
     {
-        if (    pShwPDPT->a[i].n.u1Present
-            &&  !(pShwPDPT->a[i].u & PGM_PLXFLAGS_MAPPING)
-           )
+        Assert(!(pShwPDPT->a[i].u & PGM_PLXFLAGS_MAPPING));
+        if (pShwPDPT->a[i].n.u1Present)
         {
             PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPDPT->a[i].u & X86_PDPE_PG_MASK);
             if (pSubPage)
@@ -3714,6 +3737,9 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
         case PGMPOOLKIND_PAE_PDPT:
         case PGMPOOLKIND_PAE_PDPT_PHYS:
+            pgmPoolTrackDerefPDPTPae(pPool, pPage, (PX86PDPT)pvShw);
+            break;
+
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
             pgmPoolTrackDerefPDPT64Bit(pPool, pPage, (PX86PDPT)pvShw);
