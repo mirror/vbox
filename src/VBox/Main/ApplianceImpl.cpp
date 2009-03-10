@@ -2832,7 +2832,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
 
             // source path: where the VBox image is
             const Utf8Str &strSrcFilePath = pDiskEntry->strVbox;
-            const Bstr bstrSrcFilePath(strSrcFilePath);
+            Bstr bstrSrcFilePath(strSrcFilePath);
             if (!RTPathExists(strSrcFilePath.c_str()))
                 /* This isn't allowed */
                 throw setError(VBOX_E_FILE_ERROR,
