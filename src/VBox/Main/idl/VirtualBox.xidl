@@ -3147,11 +3147,12 @@
         "HardDiskImage": a virtual hard disk, most probably as a reference to an image file. There can be an
         arbitrary number of these items, one for each virtual disk image that accompanies the OVF.
 
-        The array item in aOvfValues[] will contain the file specification from the OVF file,
-        whereas the item in aVboxValues[] will contain a qualified path specification to where
-        VirtualBox uses the hard disk image. This means that on import the image will be copied
-        and converted from the "ovf" location to the "vbox" location; on export, this will be
-        handled the other way round. On import, the target image will also be registered with VirtualBox.
+        The array item in aOvfValues[] will contain the file specification from the OVF file (without
+        a path since the image file should be in the same location as the OVF file itself), whereas the
+        item in aVboxValues[] will contain a qualified path specification to where VirtualBox uses the
+        hard disk image. This means that on import the image will be copied and converted from the
+        "ovf" location to the "vbox" location; on export, this will be handled the other way round.
+        On import, the target image will also be registered with VirtualBox.
 
         The matching item in the aExtraConfigValues[] array must contain a string of the following
         format: "controller=&lt;index&gt;;channel=&lt;c&gt;"
