@@ -89,24 +89,24 @@ public:
     enum InstanceType { IsMachine, IsSessionMachine, IsSnapshotMachine };
 
     /**
-     *  Internal machine data.
+     * Internal machine data.
      *
-     *  Only one instance of this data exists per every machine --
-     *  it is shared by the Machine, SessionMachine and all SnapshotMachine
-     *  instances associated with the given machine using the util::Shareable
-     *  template through the mData variable.
+     * Only one instance of this data exists per every machine -- it is shared
+     * by the Machine, SessionMachine and all SnapshotMachine instances
+     * associated with the given machine using the util::Shareable template
+     * through the mData variable.
      *
-     *  @note |const| members are persistent during lifetime so can be
-     *  accessed without locking.
+     * @note |const| members are persistent during lifetime so can be
+     * accessed without locking.
      *
-     *  @note There is no need to lock anything inside init() or uninit()
-     *  methods, because they are always serialized (see AutoCaller).
+     * @note There is no need to lock anything inside init() or uninit()
+     * methods, because they are always serialized (see AutoCaller).
      */
     struct Data
     {
         /**
-         *  Data structure to hold information about sessions opened for the
-         *  given machine.
+         * Data structure to hold information about sessions opened for the
+         * given machine.
          */
         struct Session
         {
@@ -122,9 +122,9 @@ public:
             ComObjPtr <Progress> mProgress;
 
             /**
-             *  PID of the session object that must be passed to openSession()
-             *  to finalize the openRemoteSession() request
-             *  (i.e., PID of the process created by openRemoteSession())
+             * PID of the session object that must be passed to openSession() to
+             * finalize the openRemoteSession() request (i.e., PID of the
+             * process created by openRemoteSession())
              */
             RTPROCESS mPid;
 
@@ -136,6 +136,14 @@ public:
 
             /** Session machine object */
             ComObjPtr <SessionMachine> mMachine;
+
+            /**
+             * Successfully locked media list. The 2nd value in the pair is true
+             * if the medium is locked for writing and false if locked for
+             * reading.
+             */
+            typedef std::list <std::pair <ComPtr <IMedium>, bool > > LockedMedia;
+            LockedMedia mLockedMedia;
         };
 
         Data();
@@ -903,6 +911,7 @@ public:
               ComSafeArrayIn(ULONG64, aTimestamps), ComSafeArrayIn(IN_BSTR, aFlags));
     STDMETHOD(PushGuestProperty) (IN_BSTR aName, IN_BSTR aValue,
                                   ULONG64 aTimestamp, IN_BSTR aFlags);
+    STDMETHOD(LockMedia)() { return lockMedia(); }
 
     // public methods only for internal purposes
 
@@ -966,6 +975,9 @@ private:
     void takeSnapshotHandler (TakeSnapshotTask &aTask);
     void discardSnapshotHandler (DiscardSnapshotTask &aTask);
     void discardCurrentStateHandler (DiscardCurrentStateTask &aTask);
+
+    HRESULT lockMedia();
+    void unlockMedia();
 
     HRESULT setMachineState (MachineState_T aMachineState);
     HRESULT updateMachineStateOnClient();
