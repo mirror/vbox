@@ -4281,6 +4281,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 
     /* Set the current hypervisor CR3. */
     CPUMSetHyperCR3(pVM, PGMGetHyperCR3(pVM));
+    SELMShadowCR3Changed(pVM);
 
 #  ifdef IN_RC
     VMMGCLogRestore(pVM, fLog);

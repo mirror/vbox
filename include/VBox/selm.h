@@ -55,6 +55,7 @@ VMMDECL(RTRCPTR)    SELMGetHyperGDT(PVM pVM);
 VMMDECL(int)        SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap);
 VMMDECL(RTGCPTR)    SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr);
 VMMDECL(RTGCPTR)    SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
+VMMDECL(void)       SELMShadowCR3Changed(PVM pVM);
 
 /** Flags for SELMToFlatEx().
  * @{ */
@@ -134,7 +135,6 @@ VMMDECL(int)        SELMSelInfoValidateCS(PCSELMSELINFO pSelInfo, RTSEL SelCPL);
 VMMR3DECL(int)      SELMR3Init(PVM pVM);
 VMMR3DECL(int)      SELMR3InitFinalize(PVM pVM);
 VMMR3DECL(void)     SELMR3Relocate(PVM pVM);
-VMMR3DECL(void)     SELMR3PagingModeChanged(PVM pVM);
 VMMR3DECL(int)      SELMR3Term(PVM pVM);
 VMMR3DECL(void)     SELMR3Reset(PVM pVM);
 VMMR3DECL(int)      SELMR3UpdateFromCPUM(PVM pVM);
