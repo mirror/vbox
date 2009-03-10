@@ -1452,7 +1452,10 @@ STDMETHODIMP HardDisk::Reset (IProgress **aProgress)
             tr ("Hard disk '%ls' is not differencing"),
             m.locationFull.raw());
 
-    HRESULT rc = LockWrite (NULL);
+    HRESULT rc = canClose();
+    CheckComRCReturnRC (rc);
+
+    rc = LockWrite (NULL);
     CheckComRCReturnRC (rc);
 
     ComObjPtr <Progress> progress;
@@ -3109,6 +3112,8 @@ HRESULT HardDisk::queryInfo()
 /**
  * @note Called from this object's AutoMayUninitSpan and from under mVirtualBox
  *       write lock.
+ *
+ * @note Also reused by HardDisk::Reset().
  *
  * @note Locks treeLock() for reading.
  */
