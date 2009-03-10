@@ -618,11 +618,6 @@
         <xsd:attribute name="name" type="xsd:string" use="required"/>
       </xsd:complexType>
     </xsd:element>
-    <xsd:element name="HostOnlyNetwork">
-      <xsd:complexType>
-        <xsd:attribute name="name" type="xsd:string" use="optional"/>
-      </xsd:complexType>
-    </xsd:element>
     <xsd:element name="HostOnlyInterface">
       <xsd:complexType>
         <xsd:attribute name="name" type="xsd:string" use="optional"/>
