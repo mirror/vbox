@@ -244,7 +244,9 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
             {
                 PX86PD pShw32BitPd = pgmShwGet32BitPDPtr(&pVM->pgm.s);
                 AssertFatal(pShw32BitPd);
-
+#ifdef IN_RC    /* Lock mapping to prevent it from being reused during pgmPoolFree. */
+                PGMDynLockHCPage(pVM, (uint8_t *)pShw32BitPd);
+#endif
                 if (    pShw32BitPd->a[iNewPDE].n.u1Present
                     &&  !(pShw32BitPd->a[iNewPDE].u & PGM_PDFLAGS_MAPPING))
                 {
@@ -255,6 +257,10 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 /* Default mapping page directory flags are read/write and supervisor; individual page attributes determine the final flags */
                 Pde.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT;
                 pShw32BitPd->a[iNewPDE]   = Pde;
+#ifdef IN_RC
+                /* Unlock dynamic mappings again. */
+                PGMDynUnlockHCPage(pVM, (uint8_t *)pShw32BitPd);
+#endif
                 break;
             }
 
@@ -268,6 +274,9 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 
                 pShwPdpt  = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
                 Assert(pShwPdpt);
+#ifdef IN_RC    /* Lock mapping to prevent it from being reused during pgmShwSyncPaePDPtr. */
+                PGMDynLockHCPage(pVM, (uint8_t *)pShwPdpt);
+#endif
                 pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPdPt << X86_PDPT_SHIFT));
                 if (!pShwPaePd)
                 {
@@ -296,7 +305,9 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                     }
                 }
                 Assert(pShwPaePd);
-
+#ifdef IN_RC    /* Lock mapping to prevent it from being reused during pgmPoolFree. */
+                PGMDynLockHCPage(pVM, (uint8_t *)pShwPaePd);
+#endif
                 PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPageByHCPhys(pVM, pShwPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
                 AssertFatal(pPoolPagePd);
 
@@ -341,6 +352,12 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 
                 /* Set the PGM_PDFLAGS_MAPPING flag in the page directory pointer entry. (legacy PAE guest mode) */
                 pShwPdpt->a[iPdPt].u |= PGM_PLXFLAGS_MAPPING;
+
+#ifdef IN_RC
+                /* Unlock dynamic mappings again. */
+                PGMDynUnlockHCPage(pVM, (uint8_t *)pShwPaePd);
+                PGMDynUnlockHCPage(pVM, (uint8_t *)pShwPdpt);
+#endif
                 break;
             }
 
