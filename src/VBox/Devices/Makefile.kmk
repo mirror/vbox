@@ -363,6 +363,7 @@ DevicesR3_SOURCES       += EFI/DevEFI.cpp
 VBoxDD_LIBS             += $(PATH_LIB)/EfiThunk$(VBOX_SUFF_LIB)
 EFI/DevEFI.cpp_INCS		+= EFI/tools/include 
 EFI/DevEFI.cpp_INCS.x86	+= EFI/tools/include/Ia32 
+EFI/DevEFI.cpp_INCS.amd64	+= EFI/tools/include/X64 
 endif
 
 ifdef VBOX_WITH_USB
