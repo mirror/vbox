@@ -101,6 +101,11 @@ DECLINLINE(Bstr) composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
     return Bstr(szTmp);
 }
 
+DECLINLINE(ULONG) composeIPv6PrefixLenghFromAddress(PRTNETADDRIPV6 aAddrPtr)
+{
+    return ASMBitFirstClear(aAddrPtr, sizeof(RTNETADDRIPV6));
+}
+
 DECLINLINE(int) prefixLength2IPv6Address(ULONG cPrefix, PRTNETADDRIPV6 aAddrPtr)
 {
     if(cPrefix > 128)

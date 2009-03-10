@@ -6478,7 +6478,7 @@
 
   <interface
      name="IHostNetworkInterface" extends="$unknown"
-     uuid="a82f7de2-695b-4bb9-ac13-f033e5fd75c2"
+     uuid="92ae8e7a-a213-4f9d-be10-b296bbc8b662"
      wsmap="managed"
      >
     <desc>
@@ -6511,8 +6511,8 @@
       <desc>Returns the IP V6 address of the interface.</desc>
     </attribute>
 
-    <attribute name="IPV6NetworkMask" type="wstring" readonly="yes">
-      <desc>Returns the IP V6 network mask of the interface.</desc>
+    <attribute name="IPV6NetworkMaskPrefixLength" type="unsigned long" readonly="yes">
+      <desc>Returns the length IP V6 network mask prefix of the interface.</desc>
     </attribute>
 
     <attribute name="hardwareAddress" type="wstring" readonly="yes">
