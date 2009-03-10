@@ -3014,7 +3014,7 @@ ifdef VBOX_WITH_QTGUI
  TEMPLATE_VBOXQT4GUIEXE_LRCTOOL = QT4
  TEMPLATE_VBOXQT4GUIEXE_SDKS = QT4
  ifdef VBOX_WITH_QT4_SUN
-  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 darwin.x86 linux.amd64 linux.x86)
+  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 darwin.x86 linux.amd64 linux.x86 solaris.amd64 solaris.x86)
    TEMPLATE_VBOXQT4GUIEXE_QT_INFIX = VBox
   else ifneq ($(KBUILD_TARGET),darwin) ## @todo convert all builds to 'VBox' lib infix!
    TEMPLATE_VBOXQT4GUIEXE_QT_PREFIX = VBox
