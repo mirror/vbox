@@ -30,6 +30,16 @@
 
 #include "driver.h"
 
+#ifdef VBOX_WITH_HGSMI
+#include <iprt/asm.h>
+#include <VBox/HGSMI/HGSMI.h>
+#include <VBox/HGSMI/HGSMIChSetup.h>
+
+#define VBE_DISPI_IOPORT_INDEX          0x01CE
+#define VBE_DISPI_IOPORT_DATA           0x01CF
+#define VBE_DISPI_INDEX_VBVA_GUEST      0xc
+#endif
+
 #define SYSTM_LOGFONT {16,7,0,0,700,0,0,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,VARIABLE_PITCH | FF_DONTCARE,L"System"}
 #define HELVE_LOGFONT {12,9,0,0,400,0,0,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_STROKE_PRECIS,PROOF_QUALITY,VARIABLE_PITCH | FF_DONTCARE,L"MS Sans Serif"}
 #define COURI_LOGFONT {12,9,0,0,400,0,0,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_STROKE_PRECIS,PROOF_QUALITY,FIXED_PITCH | FF_DONTCARE, L"Courier"}
@@ -60,6 +70,10 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
 
     DWORD returnedDataLength;
 
+    ULONG iDevice;
+    uint32_t u32DisplayInfoSize;
+
+#ifndef VBOX_WITH_HGSMI
     QUERYDISPLAYINFORESULT DispInfo;
     RtlZeroMemory(&DispInfo, sizeof (DispInfo));
 
@@ -70,10 +84,37 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
                                                      &DispInfo,
                                                      sizeof(DispInfo),
                                                      &returnedDataLength);
-
     if (ppdev->bVBoxVideoSupported)
     {
-        ppdev->iDevice = DispInfo.iDevice;
+        iDevice = DispInfo.iDevice;
+        u32DisplayInfoSize = DispInfo.u32DisplayInfoSize;
+    }
+#else
+    QUERYHGSMIRESULT info;
+    RtlZeroMemory(&info, sizeof (info));
+
+    ppdev->bHGSMISupported = !EngDeviceIoControl(ppdev->hDriver,
+                                                 IOCTL_VIDEO_QUERY_HGSMI_INFO,
+                                                 NULL,
+                                                 0,
+                                                 &info,
+                                                 sizeof(info),
+                                                 &returnedDataLength);
+    if (ppdev->bHGSMISupported)
+    {
+        iDevice = info.iDevice;
+        u32DisplayInfoSize = 4096; /* In HGSMI mode the display driver decides about the size. */
+    }
+#endif /* VBOX_WITH_HGSMI */
+
+#ifndef VBOX_WITH_HGSMI
+    if (ppdev->bVBoxVideoSupported)
+    {
+#else
+    if (ppdev->bHGSMISupported)
+    {
+#endif /* VBOX_WITH_HGSMI */
+        ppdev->iDevice = iDevice;
     
         ppdev->layout.cbVRAM = pMemoryInformation->VideoRamLength;
     
@@ -82,14 +123,18 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
     
         cbAvailable = ppdev->layout.cbVRAM - ppdev->layout.cbFrameBuffer;
         
-        if (cbAvailable <= DispInfo.u32DisplayInfoSize)
+        if (cbAvailable <= u32DisplayInfoSize)
         {
+#ifndef VBOX_WITH_HGSMI
             ppdev->bVBoxVideoSupported = FALSE;
+#else
+            ppdev->bHGSMISupported = FALSE;
+#endif /* VBOX_WITH_HGSMI */
         }
         else
         {
-            ppdev->layout.offDisplayInformation = ppdev->layout.cbVRAM - DispInfo.u32DisplayInfoSize;
-            ppdev->layout.cbDisplayInformation  = DispInfo.u32DisplayInfoSize;
+            ppdev->layout.offDisplayInformation = ppdev->layout.cbVRAM - u32DisplayInfoSize;
+            ppdev->layout.cbDisplayInformation  = u32DisplayInfoSize;
             
             cbAvailable -= ppdev->layout.cbDisplayInformation;
             
@@ -106,7 +151,11 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
             
             if (ppdev->layout.cbVBVABuffer >= cbAvailable)
             {
+#ifndef VBOX_WITH_HGSMI
                 ppdev->bVBoxVideoSupported = FALSE;
+#else
+                ppdev->bHGSMISupported = FALSE;
+#endif /* VBOX_WITH_HGSMI */
             }
             else
             {
@@ -121,7 +170,11 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         }
     }
     
+#ifndef VBOX_WITH_HGSMI
     if (!ppdev->bVBoxVideoSupported)
+#else
+    if (!ppdev->bHGSMISupported)
+#endif /* VBOX_WITH_HGSMI */
     {
         ppdev->iDevice = 0;
 
@@ -140,6 +193,54 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         ppdev->layout.offDisplayInformation = ppdev->layout.offVBVABuffer + ppdev->layout.cbVBVABuffer;
         ppdev->layout.cbDisplayInformation  = 0;
     }
+#ifdef VBOX_WITH_HGSMI
+    else
+    {
+        /* Setup HGSMI heap in the display information area. The area has some space reserved for
+         * HGSMI event flags in the beginning.
+         */
+        int rc = HGSMIHeapSetup (&ppdev->hgsmiDisplayHeap,
+                                 (uint8_t *)ppdev->pjScreen + ppdev->layout.offDisplayInformation + sizeof (HGSMIHOSTFLAGS),
+                                 ppdev->layout.cbDisplayInformation - sizeof (HGSMIHOSTFLAGS),
+                                 ppdev->layout.offDisplayInformation + sizeof (HGSMIHOSTFLAGS));
+
+        if (RT_FAILURE (rc))
+        {
+            DISPDBG((0, "VBoxDISP::vboxInitVBoxVideo: HGSMIHeapSetup failed rc = %d\n",
+                     rc));
+
+            ppdev->bHGSMISupported = FALSE;
+        }
+        else
+        {
+            /* Inform the host about the HGSMIHOSTEVENTS location. */
+            void *p = HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
+                                      sizeof (HGSMI_BUFFER_LOCATION),
+                                      HGSMI_CH_HGSMI,
+                                      HGSMI_CC_HOST_FLAGS_LOCATION);
+
+            if (!p)
+            {
+                DISPDBG((0, "VBoxDISP::vboxInitVBoxVideo: HGSMIHeapAlloc failed\n"));
+                rc = VERR_NO_MEMORY;
+            }
+            else
+            {
+                HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&ppdev->hgsmiDisplayHeap,
+                                                               p);
+
+                ((HGSMI_BUFFER_LOCATION *)p)->offLocation = ppdev->layout.offDisplayInformation;
+                ((HGSMI_BUFFER_LOCATION *)p)->cbLocation = sizeof (HGSMIHOSTFLAGS);
+
+                /* Submit the buffer to the host. */
+                ASMOutU16 (VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBVA_GUEST);
+                ASMOutU32 (VBE_DISPI_IOPORT_DATA, offBuffer);
+
+                HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, p);
+            }
+        }
+    }
+#endif /* VBOX_WITH_HGSMI */
 
     DISPDBG((0, "vboxInitVBoxVideo:\n"
                 "    cbVRAM = 0x%X\n"
@@ -163,6 +264,8 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
                 ));
 }
 
+
+#ifndef VBOX_WITH_HGSMI
 /* Setup display information after remapping. */
 static void vboxSetupDisplayInfo (PPDEV ppdev, VIDEO_MEMORY_INFORMATION *pMemoryInformation)
 {
@@ -218,6 +321,17 @@ static void vboxUpdateDisplayInfo (PPDEV ppdev)
         VBoxProcessDisplayInfo(ppdev);
     }
 }
+#else
+static void vboxUpdateDisplayInfo (PPDEV ppdev)
+{
+    if (ppdev->bHGSMISupported)
+    {
+        /* Inform the host about this display layout. */
+        DISPDBG((1, "Update: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
+        VBoxProcessDisplayInfo(ppdev);
+    }
+}
+#endif /* VBOX_WITH_HGSMI */
 
 
 /******************************Public*Routine******************************\
@@ -345,11 +459,13 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
         
         vboxInitVBoxVideo (ppdev, &videoMemoryInformation);
 
+#ifndef VBOX_WITH_HGSMI
         if (ppdev->bVBoxVideoSupported)
         {
             /* Setup the display information. */
             vboxSetupDisplayInfo (ppdev, &videoMemoryInformation);
         }
+#endif /* !VBOX_WITH_HGSMI */
     }
 
         
@@ -359,11 +475,19 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
         || ppdev->ulBitCount == 24
         || ppdev->ulBitCount == 32)
     {
+#ifndef VBOX_WITH_HGSMI
         if (ppdev->pInfo) /* Do not use VBVA on old hosts. */
         {
             /* Enable VBVA for this video mode. */
             vboxVbvaEnable (ppdev);
         }
+#else
+        if (ppdev->bHGSMISupported)
+        {
+            /* Enable VBVA for this video mode. */
+            vboxVbvaEnable (ppdev);
+        }
+#endif /* VBOX_WITH_HGSMI */
     }
 
     DISPDBG((1, "DISP bInitSURF success\n"));

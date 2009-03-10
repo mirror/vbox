@@ -128,8 +128,10 @@ struct  _PDEV
     BOOL    bSupportDCI;                // Does the miniport support DCI?
     FLONG   flHooks;
     
+#ifndef VBOX_WITH_HGSMI
     VBVAENABLERESULT vbva;
     uint32_t         u32VRDPResetFlag;
+#endif /* !VBOX_WITH_HGSMI */
     BOOL             fHwBufferOverflow;
     VBVARECORD       *pRecord;
     VRDPBC           cache;
@@ -137,8 +139,10 @@ struct  _PDEV
     ULONG cSSB;                 // Number of active saved screen bits records in the following array.
     SSB aSSB[4];                // LIFO type stack for saved screen areas.
 
+#ifndef VBOX_WITH_HGSMI
     VBOXDISPLAYINFO *pInfo;
     BOOLEAN bVBoxVideoSupported;
+#endif /* !VBOX_WITH_HGSMI */
     ULONG iDevice;
     VRAMLAYOUT layout;
 
@@ -154,6 +158,12 @@ struct  _PDEV
         RECTL rArea;
     } ddLock;
 #endif /* VBOX_WITH_DDRAW */
+
+#ifdef VBOX_WITH_HGSMI
+    BOOLEAN bHGSMISupported;
+    HGSMIHEAP hgsmiDisplayHeap;
+    VBVABUFFER *pVBVA; /* Pointer to the pjScreen + layout->offVBVABuffer. NULL if VBVA is not enabled. */
+#endif /* VBOX_WITH_HGSMI */
 };
 
 #ifdef VBOX_WITH_OPENGL 
@@ -165,8 +175,10 @@ typedef struct
 } OPENGL_INFO, *POPENGL_INFO; 
 #endif 
 
+#ifndef VBOX_WITH_HGSMI
 /* The global semaphore handle for all driver instances. */
 extern HSEMAPHORE ghsemHwBuffer;
+#endif /* !VBOX_WITH_HGSMI */
 
 extern BOOL  g_bOnNT40;
 
