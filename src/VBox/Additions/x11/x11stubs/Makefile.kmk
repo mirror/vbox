@@ -1,9 +1,10 @@
 # $Id: Makefile.kmk 43187 2009-02-23 09:24:17Z michael $
 ## @file
-# Sub-Makefile for the X11 linker stub libraries.
+# Sub-Makefile for the X11 linker stub (import) libraries.
 #
 
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+#
+# Copyright (C) 2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
