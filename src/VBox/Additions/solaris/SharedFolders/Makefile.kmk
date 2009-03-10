@@ -31,7 +31,8 @@ endif
 #
 SYSMODS.solaris      += vboxfs
 vboxfs_TEMPLATE      = VBOXGUESTR0
-vboxfs_DEFS          = VBOX_WITH_HGCM
+vboxfs_DEFS          = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV)
+vboxfs_DEPS         += $(VBOX_SVN_REV_KMK)
 vboxfs_INCS         := \
 	.
 vboxfs_SOURCES       = \
@@ -50,7 +51,8 @@ ifndef VBOX_OSE
 #
 SYSMODS.solaris      += vboxfs_s10
 vboxfs_s10_TEMPLATE      = VBOXGUESTR0
-vboxfs_s10_DEFS          = VBOX_WITH_HGCM VBOX_VFS_SOLARIS_10U6
+vboxfs_s10_DEFS          = VBOX_WITH_HGCM VBOX_VFS_SOLARIS_10U6 VBOX_SVN_REV=$(VBOX_SVN_REV)
+vboxfs_s10_DEPS         += $(VBOX_SVN_REV_KMK)
 vboxfs_s10_INCS         := \
 	solaris10/ \
 	.
