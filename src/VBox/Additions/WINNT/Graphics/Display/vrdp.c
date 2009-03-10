@@ -1570,6 +1570,24 @@ void vrdpStrokePath(
     return;
 }
 
+void vrdpStrokeAndFillPath(
+    SURFOBJ   *pso,
+    PATHOBJ   *ppo,
+    CLIPOBJ   *pco,
+    XFORMOBJ  *pxo,
+    BRUSHOBJ  *pboStroke,
+    LINEATTRS *plineattrs,
+    BRUSHOBJ  *pboFill,
+    POINTL    *pptlBrushOrg,
+    MIX        mixFill,
+    FLONG      flOptions
+    )
+{
+    PPDEV ppdev = (PPDEV)pso->dhpdev;
+
+    vrdpReportDirtyPath (ppdev, pco, ppo);
+}
+
 BOOL vrdpRealizeBrush(
     BRUSHOBJ *pbo,
     SURFOBJ  *psoTarget,

@@ -118,6 +118,19 @@ VBVA_DECL_OP(StrokePath, (             \
     MIX        mix                     \
     ));
 
+VBVA_DECL_OP(StrokeAndFillPath, (      \
+    SURFOBJ   *pso,                    \
+    PATHOBJ   *ppo,                    \
+    CLIPOBJ   *pco,                    \
+    XFORMOBJ  *pxo,                    \
+    BRUSHOBJ  *pboStroke,              \
+    LINEATTRS *plineattrs,             \
+    BRUSHOBJ  *pboFill,                \
+    POINTL    *pptlBrushOrg,           \
+    MIX        mixFill,                \
+    FLONG      flOptions               \
+    ))
+
 VBVA_DECL_OP(SaveScreenBits, (         \
     SURFOBJ  *pso,                     \
     ULONG    iMode,                    \
