@@ -3260,7 +3260,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="4042ddf2-93d3-4749-8517-dde3f17ea630"
+     uuid="2c88b969-7a74-4ef3-b95f-8a209a1535f3"
      internal="yes"
      wsmap="suppress"
      >
@@ -3611,6 +3611,18 @@
           The flags of the property.
         </desc>
       </param>
+    </method>
+
+    <method name="lockMedia">
+      <desc>
+        Locks all media attached to the machine for writing and parents of
+        attahced different hard disks (if any) for reading. This operation is
+        atomic so that if it fails no media is actually locked.
+
+        This method is intended to be called when the machine is in Starting or
+        Restoring state. The locked media will be automatically unlocked when
+        the machine is powered off or crashed.
+      </desc>
     </method>
   </interface>
 

@@ -10367,6 +10367,211 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
 }
 
 /**
+ * Locks the attached media.
+ *
+ * All attached hard disks and DVD/floppy are locked for writing. Parents of
+ * attached hard disks (if any) are locked for reading.
+ *
+ * This method also performs accessibility check of all media it locks: if some
+ * media is inaccessible, the method will return a failure and a bunch of
+ * extended error info objects per each inaccessible medium.
+ *
+ * Note that this method is atomic: if it returns a success, all media are
+ * locked as described above; on failure no media is locked at all (all
+ * succeeded individual locks will be undone).
+ *
+ * This method is intended to be called when the machine is in Starting or
+ * Restoring state and asserts otherwise.
+ *
+ * The locks made by this method must be undone by calling #unlockMedia() when
+ * no more needed.
+ */
+HRESULT SessionMachine::lockMedia()
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    AssertReturn (mData->mMachineState == MachineState_Starting ||
+                  mData->mMachineState == MachineState_Restoring, E_FAIL);
+
+    typedef std::list <ComPtr <IMedium> > MediaList;
+    MediaList mediaToCheck;
+    MediaState_T mediaState;
+
+    try
+    {
+        HRESULT rc = S_OK;
+
+        /* lock hard disks */
+        for (HDData::AttachmentList::const_iterator it =
+                 mHDData->mAttachments.begin();
+             it != mHDData->mAttachments.end(); ++ it)
+        {
+            ComObjPtr<HardDisk> hd = (*it)->hardDisk();
+
+            bool first = true;
+
+            while (!hd.isNull())
+            {
+                if (first)
+                {
+                    rc = hd->LockWrite (&mediaState);
+                    CheckComRCThrowRC (rc);
+
+                    mData->mSession.mLockedMedia.push_back (
+                        Data::Session::LockedMedia::value_type (
+                            ComPtr <IHardDisk> (hd), true));
+
+                    first = false;
+                }
+                else
+                {
+                    rc = hd->LockRead (&mediaState);
+                    CheckComRCThrowRC (rc);
+
+                    mData->mSession.mLockedMedia.push_back (
+                        Data::Session::LockedMedia::value_type (
+                            ComPtr <IHardDisk> (hd), false));
+                }
+
+                if (mediaState == MediaState_Inaccessible)
+                    mediaToCheck.push_back (ComPtr <IHardDisk> (hd));
+
+                /* no locks or callers here since there should be no way to
+                 * change the hard disk parent at this point (as it is still
+                 * attached to the machine) */
+                hd = hd->parent();
+            }
+        }
+
+        /* lock the DVD image for reading if mounted */
+        {
+            AutoReadLock driveLock (mDVDDrive);
+            if (mDVDDrive->data()->state == DriveState_ImageMounted)
+            {
+                ComObjPtr <DVDImage> image = mDVDDrive->data()->image;
+
+                rc = image->LockRead (&mediaState);
+                CheckComRCThrowRC (rc);
+
+                mData->mSession.mLockedMedia.push_back (
+                    Data::Session::LockedMedia::value_type (
+                        ComPtr <IDVDImage> (image), false));
+
+                if (mediaState == MediaState_Inaccessible)
+                    mediaToCheck.push_back (ComPtr <IDVDImage> (image));
+            }
+        }
+
+        /* lock the floppy image for reading if mounted */
+        {
+            AutoReadLock driveLock (mFloppyDrive);
+            if (mFloppyDrive->data()->state == DriveState_ImageMounted)
+            {
+                ComObjPtr <FloppyImage> image = mFloppyDrive->data()->image;
+
+                rc = image->LockRead (&mediaState);
+                CheckComRCThrowRC (rc);
+
+                mData->mSession.mLockedMedia.push_back (
+                    Data::Session::LockedMedia::value_type (
+                        ComPtr <IFloppyImage> (image), false));
+
+                if (mediaState == MediaState_Inaccessible)
+                    mediaToCheck.push_back (ComPtr <IFloppyImage> (image));
+            }
+        }
+
+        /* SUCCEEDED locking all media, now check accessibility */
+
+        ErrorInfoKeeper eik (true /* aIsNull */);
+        MultiResult mrc (S_OK);
+
+        /* perform a check of inaccessible media deferred above */
+        for (MediaList::const_iterator
+             it = mediaToCheck.begin();
+             it != mediaToCheck.end(); ++ it)
+        {
+            MediaState_T mediaState;
+            rc = (*it)->COMGETTER(State) (&mediaState);
+            CheckComRCThrowRC (rc);
+
+            Assert (mediaState == MediaState_LockedRead ||
+                    mediaState == MediaState_LockedWrite);
+
+            /* Note that we locked the medium already, so use the error
+             * value to see if there was an accessibility failure */
+
+            Bstr error;
+            rc = (*it)->COMGETTER(LastAccessError) (error.asOutParam());
+            CheckComRCThrowRC (rc);
+
+            if (!error.isNull())
+            {
+                Bstr loc;
+                rc = (*it)->COMGETTER(Location) (loc.asOutParam());
+                CheckComRCThrowRC (rc);
+
+                /* collect multiple errors */
+                eik.restore();
+
+                /* be in sync with MediumBase::setStateError() */
+                Assert (!error.isEmpty());
+                mrc = setError (E_FAIL,
+                    tr ("Medium '%ls' is not accessible. %ls"),
+                    loc.raw(), error.raw());
+
+                eik.fetch();
+            }
+        }
+
+        eik.restore();
+        CheckComRCThrowRC ((HRESULT) mrc);
+    }
+    catch (HRESULT aRC)
+    {
+        /* Unlock all locked media on failure */
+        unlockMedia();
+        return aRC;
+    }
+
+    return S_OK;
+}
+
+/**
+ * Undoes the locks made by by #lockMedia().
+ */
+void SessionMachine::unlockMedia()
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    /* we may be holding important error info on the current thread;
+     * preserve it */
+    ErrorInfoKeeper eik;
+
+    HRESULT rc = S_OK;
+
+    for (Data::Session::LockedMedia::const_iterator
+         it = mData->mSession.mLockedMedia.begin();
+         it != mData->mSession.mLockedMedia.end(); ++ it)
+    {
+        if (it->second)
+            rc = it->first->UnlockWrite (NULL);
+        else
+            rc = it->first->UnlockRead (NULL);
+
+        AssertComRC (rc);
+    }
+
+    mData->mSession.mLockedMedia.clear();
+}
+
+/**
  * Helper to change the machine state (reimplementation).
  *
  * @note Locks this object for writing.
@@ -10416,55 +10621,12 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
         (mSnapshotData.mSnapshot.isNull() ||
          mSnapshotData.mLastState >= MachineState_Running))
     {
-        /* The EMT thread has just stopped, unlock attached media. Note that
-         * opposed to locking, we do unlocking here because the VM process may
-         * have just aborted before properly unlocking all media it locked. */
+        /* The EMT thread has just stopped, unlock attached media. Note that as
+         * opposed to locking that is done from Console, we do unlocking here
+         * because the VM process may have aborted before having a chance to
+         * properly unlock all media it locked. */
 
-        for (HDData::AttachmentList::const_iterator it =
-                 mHDData->mAttachments.begin();
-             it != mHDData->mAttachments.end(); ++ it)
-        {
-            ComObjPtr<HardDisk> hd = (*it)->hardDisk();
-
-            bool first = true;
-
-            while (!hd.isNull())
-            {
-                if (first)
-                {
-                    rc = hd->UnlockWrite (NULL);
-                    AssertComRC (rc);
-
-                    first = false;
-                }
-                else
-                {
-                    rc = hd->UnlockRead (NULL);
-                    AssertComRC (rc);
-                }
-
-                /* no locks or callers here since there should be no way to
-                 * change the hard disk parent at this point (as it is still
-                 * attached to the machine) */
-                hd = hd->parent();
-            }
-        }
-        {
-            AutoReadLock driveLock (mDVDDrive);
-            if (mDVDDrive->data()->state == DriveState_ImageMounted)
-            {
-                rc = mDVDDrive->data()->image->UnlockRead (NULL);
-                AssertComRC (rc);
-            }
-        }
-        {
-            AutoReadLock driveLock (mFloppyDrive);
-            if (mFloppyDrive->data()->state == DriveState_ImageMounted)
-            {
-                rc = mFloppyDrive->data()->image->UnlockRead (NULL);
-                AssertComRC (rc);
-            }
-        }
+        unlockMedia();
     }
 
     if (oldMachineState == MachineState_Restoring)

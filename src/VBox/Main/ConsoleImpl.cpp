@@ -188,43 +188,18 @@ struct VMPowerUpTask : public VMProgressTask
         : VMProgressTask (aConsole, aProgress, false /* aUsesVMPtr */)
         , mSetVMErrorCallback (NULL), mConfigConstructor (NULL), mStartPaused (false) {}
 
-    ~VMPowerUpTask()
-    {
-        /* No null output parameters in IPC*/
-        MediaState_T dummy;
-
-        /* we may be holding important error info on the current thread;
-         * preserve it */
-        ErrorInfoKeeper eik;
-
-        /* if the locked media list is not empty, treat as a failure and
-         * unlock all */
-        for (LockedMedia::const_iterator it = lockedMedia.begin();
-             it != lockedMedia.end(); ++ it)
-        {
-            if (it->second)
-                it->first->UnlockWrite (&dummy);
-            else
-                it->first->UnlockRead (&dummy);
-        }
-    }
-
     PFNVMATERROR mSetVMErrorCallback;
     PFNCFGMCONSTRUCTOR mConfigConstructor;
     Utf8Str mSavedStateFile;
     Console::SharedFolderDataMap mSharedFolders;
     bool mStartPaused;
 
-    /**
-     * Successfully locked media list. The 2nd value in the pair is true if the
-     * medium is locked for writing and false if locked for reading.
-     */
-    typedef std::list <std::pair <ComPtr <IMedium>, bool > > LockedMedia;
-    LockedMedia lockedMedia;
+    typedef std::list <ComPtr <IHardDisk> > HardDiskList;
+    HardDiskList hardDisks;
 
-    /** Media that need an accessibility check */
-    typedef std::list <ComPtr <IMedium> > Media;
-    Media mediaToCheck;
+    /* array of progress objects for hard disk reset operations */
+    typedef std::list <ComPtr <IProgress> > ProgressList;
+    ProgressList hardDiskProgresses;
 };
 
 struct VMSaveTask : public VMProgressTask
@@ -4381,26 +4356,22 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
                     savedStateFile.raw(), vrc);
     }
 
-    /* create an IProgress object to track progress of this operation */
-    ComObjPtr <Progress> progress;
-    progress.createObject();
+    /* create a progress object to track progress of this operation */
+    ComObjPtr <Progress> powerupProgress;
+    powerupProgress.createObject();
     Bstr progressDesc;
     if (mMachineState == MachineState_Saved)
         progressDesc = tr ("Restoring virtual machine");
     else
         progressDesc = tr ("Starting virtual machine");
-    rc = progress->init (static_cast <IConsole *> (this),
-                         progressDesc, FALSE /* aCancelable */);
+    rc = powerupProgress->init (static_cast <IConsole *> (this),
+                                progressDesc, FALSE /* aCancelable */);
     CheckComRCReturnRC (rc);
-
-    /* pass reference to caller if requested */
-    if (aProgress)
-        progress.queryInterfaceTo (aProgress);
 
     /* setup task object and thread to carry out the operation
      * asynchronously */
 
-    std::auto_ptr <VMPowerUpTask> task (new VMPowerUpTask (this, progress));
+    std::auto_ptr <VMPowerUpTask> task (new VMPowerUpTask (this, powerupProgress));
     ComAssertComRCRetRC (task->rc());
 
     task->mSetVMErrorCallback = setVMErrorCallback;
@@ -4410,17 +4381,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
     if (mMachineState == MachineState_Saved)
         task->mSavedStateFile = savedStateFile;
 
-    /* Lock all attached media in necessary mode. Note that until
-     * setMachineState() is called below, it is OUR responsibility to unlock
-     * media on failure (and VMPowerUpTask::lockedMedia is used for that). After
-     * the setMachineState() call, VBoxSVC (SessionMachine::setMachineState())
-     * will unlock all the media upon the appropriate state change. Note that
-     * media accessibility checks are performed on the powerup thread because
-     * they may block. */
-
-    MediaState_T mediaState;
-
-    /* lock all hard disks for writing and their parents for reading */
+    /* Reset differencing hard disks for which autoReset is true */
     {
         com::SafeIfaceArray <IHardDiskAttachment> atts;
         rc = mMachine->
@@ -4433,94 +4394,52 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
             rc = atts [i]->COMGETTER(HardDisk) (hardDisk.asOutParam());
             CheckComRCReturnRC (rc);
 
-            bool first = true;
+            /* save for later use on the powerup thread */
+            task->hardDisks.push_back (hardDisk);
 
-            while (!hardDisk.isNull())
+            /* needs autoreset? */
+            BOOL autoReset = FALSE;
+            rc = hardDisk->COMGETTER(AutoReset)(&autoReset);
+            CheckComRCReturnRC (rc);
+
+            if (autoReset)
             {
-                if (first)
-                {
-                    rc = hardDisk->LockWrite (&mediaState);
-                    CheckComRCReturnRC (rc);
-
-                    task->lockedMedia.push_back (VMPowerUpTask::LockedMedia::
-                                                 value_type (hardDisk, true));
-                    first = false;
-                }
-                else
-                {
-                    rc = hardDisk->LockRead (&mediaState);
-                    CheckComRCReturnRC (rc);
-
-                    task->lockedMedia.push_back (VMPowerUpTask::LockedMedia::
-                                                 value_type (hardDisk, false));
-                }
-
-                if (mediaState == MediaState_Inaccessible)
-                    task->mediaToCheck.push_back (hardDisk);
-
-                ComPtr <IHardDisk> parent;
-                rc = hardDisk->COMGETTER(Parent) (parent.asOutParam());
+                ComPtr <IProgress> resetProgress;
+                rc = hardDisk->Reset (resetProgress.asOutParam());
                 CheckComRCReturnRC (rc);
-                hardDisk = parent;
+
+                /* save for later use on the powerup thread */
+                task->hardDiskProgresses.push_back (resetProgress);
             }
         }
     }
-    /* lock the DVD image for reading if mounted */
-    {
-        ComPtr <IDVDDrive> drive;
-        rc = mMachine->COMGETTER(DVDDrive) (drive.asOutParam());
-        CheckComRCReturnRC (rc);
-
-        DriveState_T driveState;
-        rc = drive->COMGETTER(State) (&driveState);
-        CheckComRCReturnRC (rc);
-
-        if (driveState == DriveState_ImageMounted)
-        {
-            ComPtr <IDVDImage> image;
-            rc = drive->GetImage (image.asOutParam());
-            CheckComRCReturnRC (rc);
-
-            rc = image->LockRead (&mediaState);
-            CheckComRCReturnRC (rc);
-
-            task->lockedMedia.push_back (VMPowerUpTask::LockedMedia::
-                                         value_type (image, false));
-
-            if (mediaState == MediaState_Inaccessible)
-                task->mediaToCheck.push_back (image);
-        }
-    }
-    /* lock the floppy image for reading if mounted */
-    {
-        ComPtr <IFloppyDrive> drive;
-        rc = mMachine->COMGETTER(FloppyDrive) (drive.asOutParam());
-        CheckComRCReturnRC (rc);
-
-        DriveState_T driveState;
-        rc = drive->COMGETTER(State) (&driveState);
-        CheckComRCReturnRC (rc);
-
-        if (driveState == DriveState_ImageMounted)
-        {
-            ComPtr<IFloppyImage> image;
-            rc = drive->GetImage (image.asOutParam());
-            CheckComRCReturnRC (rc);
-
-            rc = image->LockRead (&mediaState);
-            CheckComRCReturnRC (rc);
-
-            task->lockedMedia.push_back (VMPowerUpTask::LockedMedia::
-                                         value_type (image, false));
-
-            if (mediaState == MediaState_Inaccessible)
-                task->mediaToCheck.push_back (image);
-        }
-    }
-    /* SUCCEEDED locking all media */
 
     rc = consoleInitReleaseLog (mMachine);
     CheckComRCReturnRC (rc);
+
+    /* pass the progress object to the caller if requested */
+    if (aProgress)
+    {
+        if (task->hardDiskProgresses.size() == 0)
+        {
+            /* there are no other operations to track, return the powerup
+             * progress only */
+            powerupProgress.queryInterfaceTo (aProgress);
+        }
+        else
+        {
+            /* create a combined progress object */
+            ComObjPtr <CombinedProgress> progress;
+            progress.createObject();
+            VMPowerUpTask::ProgressList progresses (task->hardDiskProgresses);
+            progresses.push_back (ComPtr <IProgress> (powerupProgress));
+            rc = progress->init (static_cast <IConsole *> (this),
+                                 progressDesc, progresses.begin(),
+                                 progresses.end());
+            AssertComRCReturnRC (rc);
+            progress.queryInterfaceTo (aProgress);
+        }
+    }
 
     int vrc = RTThreadCreate (NULL, Console::powerUpThread, (void *) task.get(),
                               0, RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
@@ -4528,14 +4447,12 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
     ComAssertMsgRCRet (vrc, ("Could not create VMPowerUp thread (%Rrc)", vrc),
                        E_FAIL);
 
-    /* clear the locked media list to prevent unlocking on task destruction as
-     * we are not going to fail after this point */
-    task->lockedMedia.clear();
-
     /* task is now owned by powerUpThread(), so release it */
     task.release();
 
-    /* finally, set the state: no right to fail in this method afterwards! */
+    /* finally, set the state: no right to fail in this method afterwards
+     * since we've already started the thread and it is now responsible for
+     * any error reporting and appropriate state change! */
 
     if (mMachineState == MachineState_Saved)
         setMachineState (MachineState_Restoring);
@@ -6333,51 +6250,21 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
     try
     {
+        /* wait for auto reset ops to complete so that we can successfully lock
+         * the attached hard disks by calling LockMedia() below */
+        for (VMPowerUpTask::ProgressList::const_iterator
+             it = task->hardDiskProgresses.begin();
+             it != task->hardDiskProgresses.end(); ++ it)
         {
-            ErrorInfoKeeper eik (true /* aIsNull */);
-            MultiResult mrc (S_OK);
-
-            /* perform a check of inaccessible media deferred in PowerUp() */
-            for (VMPowerUpTask::Media::const_iterator
-                 it = task->mediaToCheck.begin();
-                 it != task->mediaToCheck.end(); ++ it)
-            {
-                MediaState_T mediaState;
-                rc = (*it)->COMGETTER(State) (&mediaState);
-                CheckComRCThrowRC (rc);
-
-                Assert (mediaState == MediaState_LockedRead ||
-                        mediaState == MediaState_LockedWrite);
-
-                /* Note that we locked the medium already, so use the error
-                 * value to see if there was an accessibility failure */
-
-                Bstr error;
-                rc = (*it)->COMGETTER(LastAccessError) (error.asOutParam());
-                CheckComRCThrowRC (rc);
-
-                if (!error.isNull())
-                {
-                    Bstr loc;
-                    rc = (*it)->COMGETTER(Location) (loc.asOutParam());
-                    CheckComRCThrowRC (rc);
-
-                    /* collect multiple errors */
-                    eik.restore();
-
-                    /* be in sync with MediumBase::setStateError() */
-                    Assert (!error.isEmpty());
-                    mrc = setError (E_FAIL,
-                        tr ("Medium '%ls' is not accessible. %ls"),
-                        loc.raw(), error.raw());
-
-                    eik.fetch();
-                }
-            }
-
-            eik.restore();
-            CheckComRCThrowRC ((HRESULT) mrc);
+            HRESULT rc2 = (*it)->WaitForCompletion (-1);
+            AssertComRC (rc2);
         }
+
+        /* lock attached media. This method will also check their
+         * accessibility. Note that the media will be unlocked automatically
+         * by SessionMachine::setMachineState() when the VM is powered down. */
+        rc = console->mControl->LockMedia();
+        CheckComRCThrowRC (rc);
 
 #ifdef VBOX_WITH_VRDP
 
