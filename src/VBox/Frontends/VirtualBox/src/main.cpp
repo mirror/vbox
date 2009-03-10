@@ -518,7 +518,7 @@ extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWha
         msgText,                /* text */
         QMessageBox::Abort,     /* button0 */
         0);                     /* button1 */
-    qFatal (msgText.toAscii().constData());
+    qFatal ("%s", msgText.toAscii().constData());
 }
 
 #endif /* VBOX_WITH_HARDENING */
