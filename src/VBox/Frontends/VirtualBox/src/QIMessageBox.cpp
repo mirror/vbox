@@ -554,7 +554,7 @@ void QIMessageBox::setDetailsText (const QString &aText)
  */
 void QIMessageBox::setDetailsShown (bool aShown)
 {
-    if (aShown && mDetailsText->isEmpty())
+    if (aShown && mDetailsText->toPlainText().isEmpty())
         return;
 
     if (aShown)
