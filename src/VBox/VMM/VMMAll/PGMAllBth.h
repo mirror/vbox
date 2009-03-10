@@ -987,6 +987,11 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
 
 # endif /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
 
+# if defined(IN_RC)
+    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+    PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
+
     const SHWPDE PdeDst = *pPdeDst;
     if (!PdeDst.n.u1Present)
     {
@@ -1249,6 +1254,10 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
                 {
                     LogFlow(("Skipping flush for big page containing %RGv (PD=%X .u=%RX64)-> nothing has changed!\n", GCPtrPage, iPDSrc, PdeSrc.u));
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePage4MBPagesSkip));
+# if defined(IN_RC)
+                    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+                    PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
                     return VINF_SUCCESS;
                 }
             }
@@ -1285,7 +1294,10 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
             STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDMappings));
         }
     }
-
+# if defined(IN_RC)
+    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+    PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
     return rc;
 
 #else /* guest real and protected mode */
@@ -1644,6 +1656,11 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
     Assert(pShwPde);
 # endif
 
+# if defined(IN_RC)
+    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+    PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
+
     /*
      * Check that the page is present and that the shadow PDE isn't out of sync.
      */
@@ -1859,6 +1876,10 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                 else
                     LogFlow(("PGM_GCPHYS_2_PTR %RGp (big) failed with %Rrc\n", GCPhys, rc));
             }
+# if defined(IN_RC)
+            /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+            PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
             return VINF_SUCCESS;
         }
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncPagePDNAs));
@@ -1878,6 +1899,11 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
     pgmPoolFreeByPage(pPool, pShwPage, pShwPde->idx, iPDDst);
 
     pPdeDst->u = 0;
+
+# if defined(IN_RC)
+    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+    PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
     PGM_INVL_GUEST_TLBS();
     return VINF_PGM_SYNCPAGE_MODIFIED_PDE;
 
@@ -3125,9 +3151,18 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCPTR GCPtrPage, unsigned fPa
     Assert(pPDDst);
     pPdeDst = &pPDDst->a[iPDDst];
 # endif
+
     if (!pPdeDst->n.u1Present)
     {
+# if defined(IN_RC)
+        /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+        PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
         rc = PGM_BTH_NAME(SyncPT)(pVM, iPDSrc, pPDSrc, GCPtrPage);
+# if defined(IN_RC)
+        /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+        PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
         AssertRC(rc);
         if (rc != VINF_SUCCESS)
             return rc;
