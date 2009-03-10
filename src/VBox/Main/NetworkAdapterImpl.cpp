@@ -941,8 +941,7 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         CheckComRCReturnRC (rc);
     }
     else
-    if (!(attachmentNode = aAdapterNode.findKey ("HostOnlyNetwork")).isNull()
-            || !(attachmentNode = aAdapterNode.findKey ("HostOnlyInterface")).isNull())
+    if (!(attachmentNode = aAdapterNode.findKey ("HostOnlyInterface")).isNull())
     {
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
         Bstr name = attachmentNode.stringValue ("name");
