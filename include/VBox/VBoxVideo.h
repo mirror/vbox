@@ -240,4 +240,124 @@ typedef struct _VBOXVIDEOINFOQUERYCONF32
 } VBOXVIDEOINFOQUERYCONF32;
 #pragma pack()
 
+#ifdef VBOX_WITH_HGSMI
+
+/* All structures are without alignment. */
+#pragma pack(1)
+
+typedef struct _VBVABUFFER
+{
+    uint32_t u32HostEvents;
+    uint32_t u32SupportedOrders;
+
+    /* The offset where the data start in the buffer. */
+    uint32_t off32Data;
+    /* The offset where next data must be placed in the buffer. */
+    uint32_t off32Free;
+
+    /* The queue of record descriptions. */
+    VBVARECORD aRecords[VBVA_MAX_RECORDS];
+    uint32_t indexRecordFirst;
+    uint32_t indexRecordFree;
+
+    /* Space to leave free in the buffer when large partial records are transferred. */
+    uint32_t cbPartialWriteThreshold;
+
+    uint32_t cbData;
+    uint8_t  au8Data[1]; /* variable size for the rest of the VBVABUFFER area in VRAM. */
+} VBVABUFFER;
+
+
+#define VBVA_QUERY_CONF32 1
+#define VBVA_SET_CONF32   2
+#define VBVA_INFO_VIEW    3
+#define VBVA_INFO_HEAP    4
+#define VBVA_FLUSH        5
+#define VBVA_INFO_SCREEN  6
+#define VBVA_ENABLE       7
+
+/* VBVACONF32::u32Index */
+#define VBOX_VBVA_CONF32_MONITOR_COUNT  0
+#define VBOX_VBVA_CONF32_HOST_HEAP_SIZE 1
+
+typedef struct _VBVACONF32
+{
+    uint32_t u32Index;
+    uint32_t u32Value;
+} VBVACONF32;
+
+typedef struct _VBVAINFOVIEW
+{
+    /* Index of the screen, assigned by the guest. */
+    uint32_t u32ViewIndex;
+
+    /* The screen offset in VRAM, the framebuffer starts here. */
+    uint32_t u32ViewOffset;
+
+    /* The size of the VRAM memory that can be used for the screen. */
+    uint32_t u32ViewSize;
+
+} VBVAINFOVIEW;
+
+typedef struct _VBVAINFOHEAP
+{
+    /* Absolute offset in VRAM of the start of the heap. */
+    uint32_t u32HeapOffset;
+
+    /* The size of the heap. */
+    uint32_t u32HeapSize;
+
+} VBVAINFOHEAP;
+
+typedef struct _VBVAFLUSH
+{
+    uint32_t u32Reserved;
+
+} VBVAFLUSH;
+
+/* VBVAINFOSCREEN::u8Flags */
+#define VBVA_SCREEN_F_NONE   0x0000
+#define VBVA_SCREEN_F_ACTIVE 0x0001
+
+typedef struct _VBVAINFOSCREEN
+{
+    /* Physical X origin relative to the primary screen. */
+    int32_t i32OriginX;
+
+    /* Physical Y origin relative to the primary screen. */
+    int32_t i32OriginY;
+
+    /* The scan line size in bytes. */
+    uint32_t u32LineSize;
+
+    /* Width of the screen. */
+    uint32_t u32Width;
+
+    /* Height of the screen. */
+    uint32_t u32Height;
+
+    /* Color depth. */
+    uint16_t u16BitsPerPixel;
+
+    /* VBVA_SCREEN_F_* */
+    uint16_t u16Flags;
+} VBVAINFOSCREEN;
+
+
+/* VBVAENABLE::u32Flags */
+#define VBVA_F_NONE    0x00000000
+#define VBVA_F_ENABLE  0x00000001
+#define VBVA_F_DISABLE 0x00000002
+
+typedef struct _VBVAENABLE
+{
+    uint32_t u32Flags;
+    uint32_t u32Reserved;
+
+} VBVAENABLE;
+
+#pragma pack()
+
+#endif /* VBOX_WITH_HGSMI */
+
 #endif
