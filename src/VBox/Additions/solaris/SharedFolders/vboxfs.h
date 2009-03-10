@@ -30,7 +30,7 @@ extern "C" {
 #define MAX_NLS_NAME    32
 
 /** The module name. */
-#define DEVICE_NAME              "vboxvfs"
+#define DEVICE_NAME              "vboxfs"
 /** The module description as seen in 'modinfo'. */
 #define DEVICE_DESC              "filesystem for VirtualBox Shared Folders"
 

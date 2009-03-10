@@ -80,11 +80,11 @@ filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxguest=amd64/v
 # vboxguest module config file
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxguest.conf"'    '$3 = "usr/kernel/drv/vboxguest.conf=vboxguest.conf"'
 
-# vboxvfsmount binary (always 32-bit on combined package)
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxvfsmount=vboxvfsmount"'         '$3 = "etc/fs/vboxvfs/mount=vboxvfsmount"; $6="sys"'
+# vboxfsmount binary (always 32-bit on combined package)
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxfsmount=vboxfsmount"'         '$3 = "etc/fs/vboxfs/mount=vboxfsmount"; $6="sys"'
 
 # this is required for amd64-specific package where we do not build 32-bit binaries
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxvfsmount=vboxvfsmount"'   '$3 = "etc/fs/vboxvfs/mount=amd64/vboxvfsmount"; $6="sys"'
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxfsmount=vboxfsmount"'   '$3 = "etc/fs/vboxfs/mount=amd64/vboxfsmount"; $6="sys"'
 
 
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxservice.xml=vboxservice.xml"'  '$3 = "var/svc/manifest/system/virtualbox/vboxservice.xml=vboxservice.xml"'
