@@ -1885,7 +1885,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
  */
 VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
-    LogFlow(("PGMR3Relocate\n"));
+    LogFlow(("PGMR3Relocate %RGv to %RGv\n", pVM->pgm.s.GCPtrCR3Mapping, pVM->pgm.s.GCPtrCR3Mapping + offDelta));
 
     /*
      * Paging stuff.
@@ -3312,6 +3312,11 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
             return rc;
         }
     }
+
+    /*
+     * Always flag the necessary updates
+     */
+    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
 
     /*
      * Enter the new guest and shadow+guest modes.
