@@ -1190,21 +1190,16 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
       /* Setup the Device Extension and if possible secondary displays. */
       VBoxSetupDisplays((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo, AdapterMemorySize);
 #else
+      /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported. Old 
+       * code will be ifdef'ed and later removed.
+       * The host will however support both old and new interface to keep compatibility
+       * with old guest additions.
+       */
       if (VBoxHGSMIIsSupported ())
       {
           LogRel(("VBoxVideo: using HGSMI\n"));
 
           VBoxSetupDisplaysHGSMI((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo, AdapterMemorySize);
-      }
-      else
-      {
-          /* Initialize VBoxGuest library */
-          rc = VbglInit ();
-
-          dprintf(("VBoxVideo::VBoxVideoFindAdapter: VbglInit returned 0x%x\n", rc));
-
-          /* Setup the Device Extension and if possible secondary displays. */
-          VBoxSetupDisplays((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo, AdapterMemorySize);
       }
 #endif /* VBOX_WITH_HGSMI */
 
