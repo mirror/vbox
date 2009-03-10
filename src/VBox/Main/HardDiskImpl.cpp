@@ -3583,10 +3583,15 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                 that->addDependentChild (target);
                 target->mVirtualBox->removeDependentChild (target);
 
+                /* diffs for immutable hard disks are auto-reset by default */
+                target->mm.autoReset =
+                    that->root()->mm.type == HardDiskType_Immutable ?
+                    TRUE : FALSE;
+
                 /* register with mVirtualBox as the last step and move to
                  * Created state only on success (leaving an orphan file is
                  * better than breaking media registry consistency) */
-                rc = that->mVirtualBox->registerHardDisk(target);
+                rc = that->mVirtualBox->registerHardDisk (target);
 
                 if (FAILED (rc))
                 {
@@ -3610,6 +3615,8 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
             {
                 /* back to NotCreated on failiure */
                 target->m.state = MediaState_NotCreated;
+
+                target->mm.autoReset = FALSE;
 
                 /* reset UUID to prevent it from being reused next time */
                 if (generateUuid)
