@@ -42,14 +42,14 @@ if test "$currentzone" = "global"; then
                 rc=$?
             fi
 
-            if test -f /platform/i86pc/kernel/drv/vboxusb.conf && test "$osversion" != "5.10"; then
+            if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$osversion" != "5.10"; then
                 /opt/VirtualBox/vboxdrv.sh usbstart
                 rc=$?
                 if test "$rc" -eq 0; then
-                    # add vboxusb to the devlink.tab
+                    # add vboxusbmon to the devlink.tab
                     sed -e '
-                    /name=vboxusb/d' /etc/devlink.tab > /etc/devlink.vbox
-                    echo "type=ddi_pseudo;name=vboxusb	\D" >> /etc/devlink.vbox
+                    /name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
+                    echo "type=ddi_pseudo;name=vboxusbmon	\D" >> /etc/devlink.vbox
                     mv -f /etc/devlink.vbox /etc/devlink.tab
                 fi
             fi
@@ -111,8 +111,8 @@ if test "$currentzone" = "global"; then
     /usr/sbin/devfsadm -i vboxdrv
 
     # don't create link for Solaris 10
-    if test -f /platform/i86pc/kernel/drv/vboxusb.conf && test "$osversion" != "5.10"; then
-        /usr/sbin/devfsadm -i vboxusb
+    if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$osversion" != "5.10"; then
+        /usr/sbin/devfsadm -i vboxusbmon
     fi
     sync
 
