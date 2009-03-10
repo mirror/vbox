@@ -499,6 +499,24 @@ void vbvaStrokePath(
     vbvaReportDirtyPath (ppdev, ppo);
 }
 
+void vbvaStrokeAndFillPath(
+    SURFOBJ   *pso,
+    PATHOBJ   *ppo,
+    CLIPOBJ   *pco,
+    XFORMOBJ  *pxo,
+    BRUSHOBJ  *pboStroke,
+    LINEATTRS *plineattrs,
+    BRUSHOBJ  *pboFill,
+    POINTL    *pptlBrushOrg,
+    MIX        mixFill,
+    FLONG      flOptions
+    )
+{
+    PPDEV ppdev = (PPDEV)pso->dhpdev;
+
+    vbvaReportDirtyPath (ppdev, ppo);
+}
+
 void vbvaSaveScreenBits(
     SURFOBJ  *pso,
     ULONG    iMode,

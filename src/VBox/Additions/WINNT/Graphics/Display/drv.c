@@ -471,6 +471,34 @@ BOOL APIENTRY DrvStrokePath(
     return bRc;
 }
 
+BOOL APIENTRY DrvStrokeAndFillPath(
+    SURFOBJ   *pso,
+    PATHOBJ   *ppo,
+    CLIPOBJ   *pco,
+    XFORMOBJ  *pxo,
+    BRUSHOBJ  *pboStroke,
+    LINEATTRS *plineattrs,
+    BRUSHOBJ  *pboFill,
+    POINTL    *pptlBrushOrg,
+    MIX        mixFill,
+    FLONG      flOptions
+    )
+{
+    BOOL bRc;
+
+    DISPDBG((1, "%s\n", __FUNCTION__));
+
+    STATDRVENTRY(StrokeAndFillPath, pso);
+
+    bRc = EngStrokeAndFillPath(CONV_SURF(pso), ppo, pco, pxo, pboStroke, plineattrs, pboFill, pptlBrushOrg, mixFill, flOptions);
+
+    VBVA_OPERATION(pso,
+                   StrokeAndFillPath,
+                   (pso, ppo, pco, pxo, pboStroke, plineattrs, pboFill, pptlBrushOrg, mixFill, flOptions));
+
+    return bRc;
+}
+
 static void ssbDiscardTopSlot (PPDEV ppdev)
 {
     SSB *pSSB = &ppdev->aSSB[--ppdev->cSSB];
