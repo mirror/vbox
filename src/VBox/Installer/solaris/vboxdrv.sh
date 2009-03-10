@@ -257,7 +257,7 @@ start_vboxusbmon()
     if vboxusbmon_loaded; then
         info "VirtualBox USB Monitor kernel module already loaded."
     else
-        /usr/sbin/add_drv -m'* 0600 root sys' $USBMODNAME || abort "Failed to add VirtualBox USB Monitor Kernel module."
+        /usr/sbin/add_drv -m'* 0666 root sys' $USBMODNAME || abort "Failed to add VirtualBox USB Monitor Kernel module."
         /usr/sbin/modload -p drv/$USBMODNAME
         if test ! vboxusbmon_loaded; then
             abort "Failed to load VirtualBox USB kernel module."
