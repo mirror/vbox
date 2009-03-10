@@ -333,7 +333,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             QMessageBox::critical (
                 0, QApplication::tr ("Incompatible Qt Library Error"),
                 msg, QMessageBox::Abort, 0);
-            qFatal (msg.toAscii().constData());
+            qFatal ("%s", msg.toAscii().constData());
         }
 #endif
 
