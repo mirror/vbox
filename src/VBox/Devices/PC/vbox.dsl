@@ -885,60 +885,60 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                      )
             })
 
-            Name (TOM, ResourceTemplate ()      // Memory above 4GB (aka high), appended when needed.
-            {
-                QWORDMemory(
-                    ResourceProducer,           // bit 0 of general flags is 0
-                    PosDecode,                  // positive Decode
-                    MinFixed,                   // Range is fixed
-                    MaxFixed,                   // Range is fixed
-                    Cacheable,
-                    ReadWrite,
-                    0x0000000000000000,         // _GRA: Granularity.
-                    0 /*0x0000000100000000*/,   // _MIN: Min address, 4GB.
-                    0 /*0x00000fffffffffff*/,   // _MAX: Max possible address, 16TB.
-                    0x0000000000000000,         // _TRA: Translation
-                    0x0000000000000000,         // _LEN: Range length (calculated dynamically)
-                    ,                           // ResourceSourceIndex: Optional field left blank
-                    ,                           // ResourceSource:      Optional field left blank
-                    MEM4                        // Name declaration for this descriptor.
-                    )
-            })
+//            Name (TOM, ResourceTemplate ()      // Memory above 4GB (aka high), appended when needed.
+//            {
+//                QWORDMemory(
+//                    ResourceProducer,           // bit 0 of general flags is 0
+//                    PosDecode,                  // positive Decode
+//                    MinFixed,                   // Range is fixed
+//                    MaxFixed,                   // Range is fixed
+//                    Cacheable,
+//                    ReadWrite,
+//                    0x0000000000000000,         // _GRA: Granularity.
+//                    0 /*0x0000000100000000*/,   // _MIN: Min address, 4GB.
+//                    0 /*0x00000fffffffffff*/,   // _MAX: Max possible address, 16TB.
+//                    0x0000000000000000,         // _TRA: Translation
+//                    0x0000000000000000,         // _LEN: Range length (calculated dynamically)
+//                    ,                           // ResourceSourceIndex: Optional field left blank
+//                    ,                           // ResourceSource:      Optional field left blank
+//                    MEM4                        // Name declaration for this descriptor.
+//                    )
+//            })
 
             Method (_CRS, 0, NotSerialized)
             {
                 CreateDwordField (CRS, \_SB.PCI0.MEM3._MIN, RAMT)
                 CreateDwordField (CRS, \_SB.PCI0.MEM3._LEN, RAMR)
-                CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4L)
-                CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4N)
-                CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4X)
+//                CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4L)
+//                CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4N)
+//                CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4X)
 
                 Store (MEML, RAMT)
                 Subtract (0xffe00000, RAMT, RAMR)
 
-				If (LNotEqual (MEMH, 0x00000000))
-                {
-                    //
-                    // Update the TOM resource template and append it to CRS.
-                    // This way old < 4GB guest doesn't see anything different.
-                    // (MEMH is the memory above 4GB specified in 64KB units.)
-                    //
-                    // Note: ACPI v2 doesn't do 32-bit integers. IASL may fail on
-                    //       seeing 64-bit constants and the code probably wont work.
-                    //
-                    Store (1, TM4N)
-                    ShiftLeft (TM4N, 32, TM4N)
-
-                    Store (0x00000fff, TM4X)
-                    ShiftLeft (TM4X, 32, TM4X)
-                    Or (TM4X, 0xffffffff, TM4X)
-
-                    Store (MEMH, TM4L)
-                    ShiftLeft (TM4L, 16, TM4L)
-
-                    ConcatenateResTemplate (CRS, TOM, Local2)
-                    Return (Local2)
-                }
+//                If (LNotEqual (MEMH, 0x00000000))
+//                {
+//                    //
+//                    // Update the TOM resource template and append it to CRS.
+//                    // This way old < 4GB guest doesn't see anything different.
+//                    // (MEMH is the memory above 4GB specified in 64KB units.)
+//                    //
+//                    // Note: ACPI v2 doesn't do 32-bit integers. IASL may fail on
+//                    //       seeing 64-bit constants and the code probably wont work.
+//                    //
+//                    Store (1, TM4N)
+//                    ShiftLeft (TM4N, 32, TM4N)
+//
+//                    Store (0x00000fff, TM4X)
+//                    ShiftLeft (TM4X, 32, TM4X)
+//                    Or (TM4X, 0xffffffff, TM4X)
+//
+//                    Store (MEMH, TM4L)
+//                    ShiftLeft (TM4L, 16, TM4L)
+//
+//                    ConcatenateResTemplate (CRS, TOM, Local2)
+//                    Return (Local2)
+//                }
 
                 Return (CRS)
             }
