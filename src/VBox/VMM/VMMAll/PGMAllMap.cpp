@@ -295,7 +295,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                         AssertFatalMsg(rc == VINF_SUCCESS, ("rc = %Rrc\n", rc));
                     }
                 }
-                AssertFatal(pShwPaePd);
+                Assert(pShwPaePd);
 
                 PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPageByHCPhys(pVM, pShwPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
                 AssertFatal(pPoolPagePd);
@@ -410,11 +410,17 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                 pShwPdpt  = (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
                 pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pShwPdpt, (iPdpt << X86_PDPT_SHIFT));
 
+                /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entry. (legacy PAE guest mode) */
+                pShwPdpt->a[iPdpt].u &= ~PGM_PLXFLAGS_MAPPING;
+
                 if (pCurrentShwPdpt)
                 {
                     /* If the page directory of the old CR3 is reused in the new one, then don't clear the hypervisor mappings. */
                     if ((pCurrentShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK) == (pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK))
+                    {
+                        LogFlow(("pgmMapClearShadowPDEs: Pdpe %d reused -> don't clear hypervisor mappings!\n", iPdpt));
                         break;
+                    }
                 }
                 AssertFatal(pShwPaePd);
 
@@ -426,8 +432,6 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 
                 Assert(!pShwPaePd->a[iPDE].n.u1Present || (pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING));
                 pShwPaePd->a[iPDE].u = 0;
-                /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entry. (legacy PAE guest mode) */
-                pShwPdpt->a[iPdpt].u &= ~PGM_PLXFLAGS_MAPPING;
 
                 PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPageByHCPhys(pVM, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
                 AssertFatal(pPoolPagePd);
