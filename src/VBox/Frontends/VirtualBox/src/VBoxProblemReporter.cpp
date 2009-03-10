@@ -1421,6 +1421,22 @@ void VBoxProblemReporter::cannotGetMediaAccessibility (const VBoxMedium &aMedium
 
 #if defined Q_WS_WIN
 
+int VBoxProblemReporter::confirmDeletingHostInterface (const QString &aName,
+                                                       QWidget *aParent)
+{
+    return vboxProblem().message (aParent, VBoxProblemReporter::Question,
+        tr ("<p>Do you want to remove the selected host network interface "
+            "<nobr><b>%1</b>?</nobr></p>"
+            "<p><b>Note:</b> This interface may be in use by one or more "
+            "network adapters of this or another VM. After it is removed, these "
+            "adapters will no longer work until you correct their settings by "
+            "either choosing a different interface name or a different adapter "
+            "attachment type.</p>").arg (aName),
+        0, /* autoConfirmId */
+        QIMessageBox::Ok | QIMessageBox::Default,
+        QIMessageBox::Cancel | QIMessageBox::Escape);
+}
+
 void VBoxProblemReporter::cannotCreateHostInterface (
     const CHost &host, const QString &name, QWidget *parent)
 {
