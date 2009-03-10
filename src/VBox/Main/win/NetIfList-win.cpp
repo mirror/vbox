@@ -1776,8 +1776,6 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
 
     AssertReturn (aClient, VERR_INVALID_POINTER);
 
-    __asm {int 3};
-
     int vrc = VINF_SUCCESS;
 
     switch (aMsgCode)
