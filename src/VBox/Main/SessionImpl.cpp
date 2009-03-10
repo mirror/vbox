@@ -1004,6 +1004,9 @@ void Session::releaseIPCSemaphore()
         /* wait for the thread to finish */
         ::WaitForSingleObject (mIPCThreadSem, INFINITE);
         ::CloseHandle (mIPCThreadSem);
+
+        mIPCThreadSem = NULL;
+        mIPCSem = NULL;
     }
 
 #elif defined(RT_OS_OS2)
@@ -1035,6 +1038,8 @@ void Session::releaseIPCSemaphore()
     {
         ::sembuf sop = { 0, 1, SEM_UNDO };
         ::semop (mIPCSem, &sop, 1);
+
+        mIPCSem = -1;
     }
 
 #else
