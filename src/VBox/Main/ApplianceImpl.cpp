@@ -3258,7 +3258,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
         if (strVbox.length())
         {
-            lIDEControllerIndex = pNewDesc->m->llDescriptions.size();
+            lIDEControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE, Utf8StrFmt("%d", lIDEControllerIndex), strVbox, "");
         }
 
@@ -3271,7 +3271,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         if (FAILED(rc)) throw rc;
         if (fSataEnabled)
         {
-            lSATAControllerIndex = pNewDesc->m->llDescriptions.size();
+            lSATAControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, Utf8StrFmt("%d", lSATAControllerIndex), strVbox, "");
         }
 #endif // VBOX_WITH_AHCI
@@ -3316,7 +3316,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
             switch (storageBus)
             {
-                case StorageBus::IDE:
+                case StorageBus_IDE:
                     // this is the exact reverse to what we're doing in Appliance::taskThreadImportMachines,
                     // and it must be updated when that is changed!
 
@@ -3333,7 +3333,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
                     lControllerVsys = lIDEControllerIndex;
                 break;
 
-                case StorageBus::SATA:
+                case StorageBus_SATA:
                     lChannelVsys = lChannel;        // should be between 0 and 29
                     lControllerVsys = lSATAControllerIndex;
                 break;
