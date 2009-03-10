@@ -84,7 +84,7 @@ HRESULT HostNetworkInterface::updateConfig ()
         m.IPAddress = info.IPAddress.u;
         m.networkMask = info.IPNetMask.u;
         m.IPV6Address = composeIPv6Address(&info.IPv6Address);
-        m.IPV6NetworkMask = composeIPv6Address(&info.IPv6NetMask);
+        m.IPV6NetworkMaskPrefixLength = composeIPv6PrefixLenghFromAddress(&info.IPv6NetMask);
         m.hardwareAddress = composeHardwareAddress(&info.MACAddress);
 #ifdef RT_OS_WINDOWS
         m.mediumType = (HostNetworkInterfaceMediumType)info.enmMediumType;
@@ -126,7 +126,7 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceTyp
     m.IPAddress = pIf->IPAddress.u;
     m.networkMask = pIf->IPNetMask.u;
     m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
-    m.IPV6NetworkMask = composeIPv6Address(&pIf->IPv6NetMask);
+    m.IPV6NetworkMaskPrefixLength = composeIPv6PrefixLenghFromAddress(&pIf->IPv6NetMask);
     m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
 #ifdef RT_OS_WINDOWS
     m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
@@ -252,14 +252,14 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Address) (BSTR *aIPV6Address)
  * @returns COM status code
  * @param   aIPV6Mask address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6NetworkMask) (BSTR *aIPV6Mask)
+STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6NetworkMaskPrefixLength) (ULONG *aIPV6NetworkMaskPrefixLength)
 {
-    CheckComArgOutPointerValid(aIPV6Mask);
+    CheckComArgOutPointerValid(aIPV6NetworkMaskPrefixLength);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    m.IPV6NetworkMask.cloneTo (aIPV6Mask);
+    *aIPV6NetworkMaskPrefixLength = m.IPV6NetworkMaskPrefixLength;
 
     return S_OK;
 }

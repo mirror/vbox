@@ -74,7 +74,7 @@ public:
     STDMETHOD(COMGETTER(NetworkMask)) (ULONG *aNetworkMask);
     STDMETHOD(COMGETTER(IPV6Supported)) (BOOL *aIPV6Supported);
     STDMETHOD(COMGETTER(IPV6Address)) (BSTR *aIPV6Address);
-    STDMETHOD(COMGETTER(IPV6NetworkMask)) (BSTR *aIPV6Mask);
+    STDMETHOD(COMGETTER(IPV6NetworkMaskPrefixLength)) (ULONG *aIPV6NetworkMaskPrefixLength);
     STDMETHOD(COMGETTER(HardwareAddress)) (BSTR *aHardwareAddress);
     STDMETHOD(COMGETTER(MediumType)) (HostNetworkInterfaceMediumType_T *aType);
     STDMETHOD(COMGETTER(Status)) (HostNetworkInterfaceStatus_T *aStatus);
@@ -105,7 +105,7 @@ private:
         ULONG IPAddress;
         ULONG networkMask;
         Bstr IPV6Address;
-        Bstr IPV6NetworkMask;
+        ULONG IPV6NetworkMaskPrefixLength;
         Bstr hardwareAddress;
         HostNetworkInterfaceMediumType_T mediumType;
         HostNetworkInterfaceStatus_T status;
