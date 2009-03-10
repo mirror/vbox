@@ -363,6 +363,8 @@
 # define PGM_INVL_GUEST_TLBS()          HWACCMFlushTLB(pVM)
 #endif
 
+/** Size of the GCPtrConflict array in PGMMAPPING. */
+#define PGMMAPPING_CONFLICT_MAX         8
 
 /**
  * Structure for tracking GC Mappings.
@@ -391,11 +393,13 @@ typedef struct PGMMAPPING
     R3PTRTYPE(void *)                   pvUser;
     /** Mapping description / name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
+    /** Last 8 addresses that caused conflicts. */
+    RTGCPTR                             GCPtrConflict[PGMMAPPING_CONFLICT_MAX];
+    /** Number of conflicts for this hypervisor mapping. */
+    uint32_t                            cConflicts;
     /** Number of page tables. */
     uint32_t                            cPTs;
-#if HC_ARCH_BITS != GC_ARCH_BITS || GC_ARCH_BITS == 64
-    uint32_t                            uPadding1; /**< Alignment padding. */
-#endif
+
     /** Array of page table mapping data. Each entry
      * describes one page table. The array can be longer
      * than the declared length.
