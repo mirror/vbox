@@ -339,6 +339,46 @@ void VBoxProcessDisplayInfo(PPDEV ppdev)
 
 #else /* VBOX_WITH_HGSMI */
 
+static void vboxHGSMIBufferSubmit (PPDEV ppdev, void *p)
+{
+    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&ppdev->hgsmiDisplayHeap, p);
+
+    ASMOutU16 (VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBVA_GUEST);
+    ASMOutU32 (VBE_DISPI_IOPORT_DATA, offBuffer);
+}
+
+static BOOL vboxVBVAInformHost (PPDEV ppdev, BOOL bEnable)
+{
+    BOOL bRc = FALSE;
+
+    if (ppdev->bHGSMISupported)
+    {
+        void *p = HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
+                                  sizeof (VBVAENABLE),
+                                  HGSMI_CH_VBVA,
+                                  VBVA_ENABLE);
+        if (!p)
+        {
+            DISPDBG((0, "VBoxDISP::vboxVBVAInformHost: HGSMIHeapAlloc failed\n"));
+        }
+        else
+        {
+            VBVAENABLE *pEnable = (VBVAENABLE *)p;
+
+            pEnable->u32Flags    = bEnable? VBVA_F_ENABLE: VBVA_F_DISABLE;
+            pEnable->u32Reserved = 0;
+
+            vboxHGSMIBufferSubmit (ppdev, p);
+
+            HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, p);
+
+            bRc = TRUE;
+        }
+    }
+
+    return bRc;
+}
+
 /*
  * Public hardware buffer methods.
  */
@@ -352,27 +392,21 @@ BOOL vboxVbvaEnable (PPDEV ppdev)
     {
         VBVABUFFER *pVBVA = (VBVABUFFER *)((uint8_t *)ppdev->pjScreen + ppdev->layout.offVBVABuffer);
         
-        pVBVA->u32HostEvents = 0;
+        pVBVA->u32HostEvents      = 0;
         pVBVA->u32SupportedOrders = 0;
-        pVBVA->off32Data;
-        pVBVA->off32Free;
+        pVBVA->off32Data          = 0;
+        pVBVA->off32Free          = 0;
         RtlZeroMemory (pVBVA->aRecords, sizeof (pVBVA->aRecords));
-        pVBVA->indexRecordFirst;
-        pVBVA->indexRecordFree;
-        pVBVA->cbPartialWriteThreshold;
-        pVBVA->cbData      = ppdev->layout.cbVBVABuffer - sizeof (VBVABUFFER) + sizeof (pVBVA->au8Data);
+        pVBVA->indexRecordFirst   = 0;
+        pVBVA->indexRecordFree    = 0;
+        pVBVA->cbPartialWriteThreshold = 256;
+        pVBVA->cbData             = ppdev->layout.cbVBVABuffer - sizeof (VBVABUFFER) + sizeof (pVBVA->au8Data);
 
         ppdev->fHwBufferOverflow = FALSE;
         ppdev->pRecord           = NULL;
         ppdev->pVBVA             = pVBVA;
         
-#if 0
-        /* @todo inform host that VBVA mode has been entered. */
-        bRC = vboxVBVAInformHost (ppdev);
-#else
-        /* All have been initialized. */
-        bRc = TRUE;
-#endif
+        bRc = vboxVBVAInformHost (ppdev, TRUE);
     }
 
     if (!bRc)
@@ -390,6 +424,8 @@ void vboxVbvaDisable (PPDEV ppdev)
     ppdev->fHwBufferOverflow = FALSE;
     ppdev->pRecord           = NULL;
     ppdev->pVBVA             = NULL;
+
+    vboxVBVAInformHost (ppdev, FALSE);
 
     return;
 }
@@ -476,35 +512,25 @@ static uint32_t vboxHwBufferAvail (const VBVABUFFER *pVBVA)
 
 static void vboxHwBufferFlush (PPDEV ppdev)
 {
-    VBVA_ASSERT (ppdev->pVBVA);
-
-#if 0
-    /* @todo issue the flush command */
+    /* Issue the flush command. */
     void *p = HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
                               sizeof (VBVA_FLUSH),
                               HGSMI_CH_VBVA,
-                              HGSMI_CC_VBVA_FLUSH);
-........
+                              VBVA_FLUSH);
     if (!p)
     {
-        DISPDBG((0, "VBoxDISP::vboxInitVBoxVideo: HGSMIHeapAlloc failed\n"));
-        rc = VERR_NO_MEMORY;
+        DISPDBG((0, "VBoxDISP::vboxHwBufferFlush: HGSMIHeapAlloc failed\n"));
     }
     else
     {
-        HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&ppdev->hgsmiDisplayHeap,
-                                                       p);
+        VBVAFLUSH *pFlush = (VBVAFLUSH *)p;
 
-        ((HGSMI_BUFFER_LOCATION *)p)->offLocation = ppdev->layout.offDisplayInformation;
-        ((HGSMI_BUFFER_LOCATION *)p)->cbLocation = sizeof (HGSMIHOSTFLAGS);
+        pFlush->u32Reserved = 0;
 
-        /* Submit the buffer to the host. */
-        ASMOutU16 (VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBVA_GUEST);
-        ASMOutU32 (VBE_DISPI_IOPORT_DATA, offBuffer);
+        vboxHGSMIBufferSubmit (ppdev, p);
 
         HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, p);
     }
-#endif
 
     return;
 }
@@ -628,20 +654,37 @@ BOOL vboxOrderSupported (PPDEV ppdev, unsigned code)
     return FALSE;
 }
 
-void VBoxProcessDisplayInfo(PPDEV ppdev)
+void VBoxProcessDisplayInfo (PPDEV ppdev)
 {
-#if 0
-    DWORD returnedDataLength;
+    if (ppdev->bHGSMISupported)
+    {
+        /* Issue the screen info command. */
+        void *p = HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
+                                  sizeof (VBVAINFOSCREEN),
+                                  HGSMI_CH_VBVA,
+                                  VBVA_INFO_SCREEN);
+        if (!p)
+        {
+            DISPDBG((0, "VBoxDISP::vboxHwBufferFlush: HGSMIHeapAlloc failed\n"));
+        }
+        else
+        {
+            VBVAINFOSCREEN *pScreen = (VBVAINFOSCREEN *)p;
 
-    DISPDBG((1, "Process: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
+            pScreen->i32OriginX      = ppdev->ptlDevOrg.x;
+            pScreen->i32OriginY      = ppdev->ptlDevOrg.y;
+            pScreen->u32LineSize     = ppdev->lDeltaScreen > 0?ppdev->lDeltaScreen: -ppdev->lDeltaScreen;
+            pScreen->u32Width        = ppdev->cxScreen;
+            pScreen->u32Height       = ppdev->cyScreen;
+            pScreen->u16BitsPerPixel = (uint16_t)ppdev->ulBitCount;
+            pScreen->u16Flags        = VBVA_SCREEN_F_ACTIVE;
 
-    EngDeviceIoControl(ppdev->hDriver,
-                       IOCTL_VIDEO_INTERPRET_DISPLAY_MEMORY,
-                       NULL,
-                       0,
-                       NULL,
-                       0,
-                       &returnedDataLength);
-#endif
+            vboxHGSMIBufferSubmit (ppdev, p);
+
+            HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, p);
+        }
+    }
+
+    return;
 }
 #endif /* VBOX_WITH_HGSMI */

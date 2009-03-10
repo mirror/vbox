@@ -34,10 +34,6 @@
 #include <iprt/asm.h>
 #include <VBox/HGSMI/HGSMI.h>
 #include <VBox/HGSMI/HGSMIChSetup.h>
-
-#define VBE_DISPI_IOPORT_INDEX          0x01CE
-#define VBE_DISPI_IOPORT_DATA           0x01CF
-#define VBE_DISPI_INDEX_VBVA_GUEST      0xc
 #endif
 
 #define SYSTM_LOGFONT {16,7,0,0,700,0,0,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,VARIABLE_PITCH | FF_DONTCARE,L"System"}
@@ -321,17 +317,7 @@ static void vboxUpdateDisplayInfo (PPDEV ppdev)
         VBoxProcessDisplayInfo(ppdev);
     }
 }
-#else
-static void vboxUpdateDisplayInfo (PPDEV ppdev)
-{
-    if (ppdev->bHGSMISupported)
-    {
-        /* Inform the host about this display layout. */
-        DISPDBG((1, "Update: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
-        VBoxProcessDisplayInfo(ppdev);
-    }
-}
-#endif /* VBOX_WITH_HGSMI */
+#endif /* !VBOX_WITH_HGSMI */
 
 
 /******************************Public*Routine******************************\
@@ -492,8 +478,14 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
 
     DISPDBG((1, "DISP bInitSURF success\n"));
 
+#ifndef VBOX_WITH_HGSMI
     /* Update the display information. */
     vboxUpdateDisplayInfo (ppdev);
+#else
+    /* Inform the host about this screen layout. */
+    DISPDBG((1, "bInitSURF: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
+    VBoxProcessDisplayInfo (ppdev);
+#endif /* VBOX_WITH_HGSMI */
     
     return(TRUE);
 }

@@ -180,6 +180,13 @@ typedef struct
 extern HSEMAPHORE ghsemHwBuffer;
 #endif /* !VBOX_WITH_HGSMI */
 
+
+#ifdef VBOX_WITH_HGSMI
+#define VBE_DISPI_IOPORT_INDEX          0x01CE
+#define VBE_DISPI_IOPORT_DATA           0x01CF
+#define VBE_DISPI_INDEX_VBVA_GUEST      0xc
+#endif /* VBOX_WITH_HGSMI */
+
 extern BOOL  g_bOnNT40;
 
 DWORD getAvailableModes(HANDLE, PVIDEO_MODE_INFORMATION *, DWORD *);

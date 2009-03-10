@@ -1159,10 +1159,7 @@ PVOID pvData)
 #else
             DISPDBG((3, "DN_DEVICE_ORIGIN: %d, %d (PSO = %p)\n", ppdev->ptlDevOrg.x, 
                      ppdev->ptlDevOrg.y, pso));
-            if (ppdev->bHGSMISupported)
-            {
-                VBoxProcessDisplayInfo(ppdev);
-            }
+            VBoxProcessDisplayInfo(ppdev);
 #endif /* VBOX_WITH_HGSMI */
             break;
         case DN_DRAWING_BEGIN:
