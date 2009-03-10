@@ -2897,7 +2897,7 @@
           </li>
 
           <li>If desired, call <link to="IVirtualSystemDescription::setFinalValues" /> for each
-              virtual system to override the suggestions made by VirtualBox.
+              virtual system to override the suggestions made by the interpret() routine.
           </li>
 
           <li>Finally, call <link to="#importMachines" /> to  create virtual machines in
@@ -2916,6 +2916,10 @@
             <li>For each machine you would like to export, call <link to="IMachine::export" />
                 with the IAppliance object you just created. This creates an instance of
                 <link to="IVirtualSystemDescription" /> inside the appliance.
+            </li>
+
+            <li>If desired, call <link to="IVirtualSystemDescription::setFinalValues" /> for each
+                virtual system to override the suggestions made by the export() routine.
             </li>
 
             <li>Finally, call <link to="#write" /> with a path specification to have the OVF

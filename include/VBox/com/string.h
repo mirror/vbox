@@ -417,7 +417,7 @@ public:
         {
             size_t cbBoth = cbThis + cbThat + 1;
 
-            // @todo optimize
+            // @todo optimize with realloc() once the memory management is fixed
             char *pszTemp;
 #if !defined (VBOX_WITH_XPCOM)
             pszTemp = (char*)::RTMemTmpAlloc(cbBoth);
