@@ -125,7 +125,7 @@ VBoxOGL_LIBS = \
 	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET),linux solaris)
  VBoxOGL_LIBS += \
-	Xcomposite
+	$(PATH_BIN)/libXcomposite.so
 endif
 
 #

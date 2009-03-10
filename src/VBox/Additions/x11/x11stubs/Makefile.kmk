@@ -1,6 +1,6 @@
-# $Id$
+# $Id: Makefile.kmk 43187 2009-02-23 09:24:17Z michael $
 ## @file
-# Sub-Makefile for the X11 Guest Additions.
+# Sub-Makefile for the X11 linker stub libraries.
 #
 
 # Copyright (C) 2006-2007 Sun Microsystems, Inc.
@@ -18,16 +18,16 @@
 # additional information or have any questions.
 #
 
-SUB_DEPTH = ../../../..
+SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-# Include sub-makefiles.
-if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
- include $(PATH_SUB_CURRENT)/VBoxClient/Makefile.kmk
- include $(PATH_SUB_CURRENT)/vboxvideo/Makefile.kmk
- include $(PATH_SUB_CURRENT)/vboxmouse/Makefile.kmk
- include $(PATH_SUB_CURRENT)/x11stubs/Makefile.kmk
-endif
+DLLS   += libXcomposite
+
+libXcomposite_TEMPLATE   = VBOXR3
+libXcomposite_LDTOOL    := $(subst GXX,GCC,$(TEMPLATE_VBOXR3_LDTOOL))
+# This may need fixing later.
+libXcomposite_SONAME     = libXcomposite.so.1
+libXcomposite_SOURCES    = libXcomposite-1.0.0/libXcomposite.c
 
 include $(KBUILD_PATH)/subfooter.kmk
 
