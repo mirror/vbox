@@ -21,9 +21,13 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-DLLS   += libXcomposite
 
+#
+# libXcomposite import library.
+#
+IMPORT_LIBS += libXcomposite
 libXcomposite_TEMPLATE   = VBOXR3
+libXcomposite_INST       = $(INST_LIB)
 # This may need fixing later.
 libXcomposite_SONAME     = libXcomposite.so.1
 libXcomposite_SOURCES    = libXcomposite-1.0.0/libXcomposite.c
