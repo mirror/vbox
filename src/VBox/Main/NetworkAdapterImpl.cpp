@@ -913,7 +913,8 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         CheckComRCReturnRC (rc);
     }
     else
-    if (!(attachmentNode = aAdapterNode.findKey ("HostInterface")).isNull())
+    if (!(attachmentNode = aAdapterNode.findKey ("HostInterface")).isNull() /* backwards compatibility */
+            || !(attachmentNode = aAdapterNode.findKey ("BridgedInterface")).isNull())
     {
         /* Host Interface Networking */
 
@@ -1035,7 +1036,7 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
         }
         case NetworkAttachmentType_Bridged:
         {
-            Key attachmentNode = aAdapterNode.createKey ("HostInterface");
+            Key attachmentNode = aAdapterNode.createKey ("BridgedInterface");
             Assert (!mData->mHostInterface.isNull());
             attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
             break;
