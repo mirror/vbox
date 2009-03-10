@@ -987,17 +987,17 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
 
 # endif /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
 
-# if defined(IN_RC)
-    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-    PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
-
     const SHWPDE PdeDst = *pPdeDst;
     if (!PdeDst.n.u1Present)
     {
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePageSkipped));
         return VINF_SUCCESS;
     }
+
+# if defined(IN_RC)
+    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+    PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
 
     /*
      * Get the guest PD entry and calc big page.
