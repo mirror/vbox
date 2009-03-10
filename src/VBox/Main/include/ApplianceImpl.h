@@ -100,8 +100,8 @@ private:
     struct TaskImportMachines;  /* Worker thread for import */
     static DECLCALLBACK(int) taskThreadImportMachines(RTTHREAD thread, void *pvUser);
 
-    struct TaskExportOVF;       /* Worker thread for export */
-    static DECLCALLBACK(int) taskThreadExportOVF(RTTHREAD thread, void *pvUser);
+    struct TaskWriteOVF;       /* Worker thread for export */
+    static DECLCALLBACK(int) taskThreadWriteOVF(RTTHREAD thread, void *pvUser);
 
     friend class Machine;
 };

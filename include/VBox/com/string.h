@@ -408,6 +408,35 @@ public:
         return *this;
     }
 
+    void append(const Utf8Str &that)
+    {
+        size_t cbThis = length();
+        size_t cbThat = that.length();
+
+        if (cbThat)
+        {
+            size_t cbBoth = cbThis + cbThat + 1;
+
+            // @todo optimize
+            char *pszTemp;
+#if !defined (VBOX_WITH_XPCOM)
+            pszTemp = (char*)::RTMemTmpAlloc(cbBoth);
+#else
+            pszTemp = (char*)nsMemory::Alloc(cbBoth);
+#endif
+            if (str)
+            {
+                memcpy(pszTemp, str, cbThis);
+                setNull();
+            }
+            if (that.str)
+                memcpy(pszTemp + cbThis, that.str, cbThat);
+            pszTemp[cbThis + cbThat] = '\0';
+
+            str = pszTemp;
+        }
+    }
+
     int compare (const char *s) const
     {
         if (str == s)
