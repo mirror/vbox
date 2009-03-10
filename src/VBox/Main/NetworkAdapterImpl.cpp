@@ -941,7 +941,8 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         CheckComRCReturnRC (rc);
     }
     else
-    if (!(attachmentNode = aAdapterNode.findKey ("HostOnlyNetwork")).isNull())
+    if (!(attachmentNode = aAdapterNode.findKey ("HostOnlyNetwork")).isNull()
+            || !(attachmentNode = aAdapterNode.findKey ("HostOnlyInterface")).isNull())
     {
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
         Bstr name = attachmentNode.stringValue ("name");
@@ -1050,7 +1051,7 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
         }
         case NetworkAttachmentType_HostOnly:
         {
-            Key attachmentNode = aAdapterNode.createKey ("HostOnlyNetwork");
+            Key attachmentNode = aAdapterNode.createKey ("HostOnlyInterface");
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
             Assert (!mData->mHostInterface.isNull());
             attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
