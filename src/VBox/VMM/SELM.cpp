@@ -499,20 +499,6 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
 
 
 /**
- * Notification callback which is called whenever there is a chance that a CR3
- * value might have changed.
- * This is called by PGM.
- *
- * @param   pVM       The VM handle
- */
-VMMR3DECL(void) SELMR3PagingModeChanged(PVM pVM)
-{
-    pVM->selm.s.Tss.cr3       = PGMGetHyperCR3(pVM);
-    pVM->selm.s.TssTrap08.cr3 = PGMGetInterRCCR3(pVM);
-}
-
-
-/**
  * Terminates the SELM.
  *
  * Termination means cleaning up and freeing all resources,

@@ -1204,3 +1204,17 @@ VMMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss
     return VINF_SUCCESS;
 }
 
+
+
+/**
+ * Notification callback which is called whenever there is a chance that a CR3
+ * value might have changed.
+ * This is called by PGM.
+ *
+ * @param   pVM       The VM handle
+ */
+VMMDECL(void) SELMShadowCR3Changed(PVM pVM)
+{
+    pVM->selm.s.Tss.cr3 = PGMGetHyperCR3(pVM);
+    Assert(pVM->selm.s.TssTrap08.cr3 == PGMGetInterRCCR3(pVM));
+}

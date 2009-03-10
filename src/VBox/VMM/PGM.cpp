@@ -3477,11 +3477,6 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
             rc = VINF_SUCCESS;
     }
 
-    /*
-     * Notify SELM so it can update the TSSes with correct CR3s.
-     */
-    SELMR3PagingModeChanged(pVM);
-
     /* Notify HWACCM as well. */
     HWACCMR3PagingModeChanged(pVM, pVM->pgm.s.enmShadowMode, pVM->pgm.s.enmGuestMode);
     return rc;
