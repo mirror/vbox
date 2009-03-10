@@ -193,8 +193,7 @@ ifdef VBOX_WITH_QT4_SUN
 	$(VBOX_PATH_QT4_LIB)/VBoxQtGui4.dll \
 	$(VBOX_PATH_QT4_LIB)/VBoxQtNetwork4.dll \
 	$(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4.dll=>accessible/qtaccessiblewidgets4.dll
-
- else ifeq ($(KBUILD_TARGET),linux)
+ else if1of ($(KBUILD_TARGET),linux solaris)
   qt4-bin_INST = $(INST_BIN)
   qt4-bin_SOURCES = \
 	$(VBOX_PATH_QT4_LIB)/libQtCoreVBox.so.4 \

@@ -63,6 +63,11 @@ else
 endif
 SOL_OBJCOPY            := /usr/sfw/bin/gobjcopy --strip-unneeded -R .comment
 
+
+# Figure out the paths to the two platform specific Qt4 directories
+SOLARIS_PATH_QT_32 = $(subst solaris.$(KBUILD_TARGET_ARCH),solaris.x86,$(VBOX_PATH_QT4))
+SOLARIS_PATH_QT_64 = $(subst solaris.$(KBUILD_TARGET_ARCH),solaris.amd64,$(VBOX_PATH_QT4))
+
 # Base package
 PKGINFO_ARCH     = $(shell uname -p)
 PKGINFO_REVSTAMP = $(date %Y.%m.%d.%H.%M)
@@ -150,8 +155,9 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so,) \
 	$(if $(VBOX_WITH_QTGUI),\
 	  VBoxKeyboard.so \
-	  libVBoxQtCore.so.4 \
-	  libVBoxQtGui.so.4 \
+	  libQtCoreVBox.so.4 \
+	  libQtGuiVBox.so.4 \
+	  libQtNetworkVBox.so.4 \
 	  accessible/libqtaccessiblewidgets.so,) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,) \
 	$(if $(VBOX_WITH_CROGL),\
@@ -220,10 +226,10 @@ SOLARIS_EXTRAS = \
 
 # These extra Qt libs are purely for running VBoxQtconfig
 ifdef VBOX_WITH_QTGUI
- SOLARIS_QTLIBS = libVBoxQtNetwork.so.4 \
-	libVBoxQtXml.so.4 \
-	libVBoxQtSql.so.4 \
-	libVBoxQt3Support.so.4
+ SOLARIS_QTLIBS = \
+	libQtXmlVBox.so.4 \
+	libQtSqlVBox.so.4 \
+	libQt3SupportVBox.so.4
 endif
 
 
@@ -413,8 +419,8 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR_64)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN_32)/VBoxPython.so    $(SOLARIS_INST_DIR_32)/VBoxPython.so,)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN_64)/VBoxPython.so    $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR_64)/VBoxPython.so,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS)/solaris.x86/qt/v4.3.3-r1/bin/qtconfig            $(SOLARIS_INST_DIR_32)/VBoxQtconfig,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS)/solaris.amd64/qt/v4.3.3-r1/bin/qtconfig          $(SOLARIS_INST_DIR_64)/VBoxQtconfig,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(SOLARIS_PATH_QT_32)/bin/qtconfig                                $(SOLARIS_INST_DIR_32)/VBoxQtconfig,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(SOLARIS_PATH_QT_64)/bin/qtconfig                                $(SOLARIS_INST_DIR_64)/VBoxQtconfig,)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN_32)/VBoxISAExec                                                         $(SOLARIS_INST_DIR)/VBoxISAExec
 else
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2    $(SOLARIS_INST_DIR_ISA)/libSDL-1.2.so.0,)
@@ -423,7 +429,7 @@ else
 	$(QUIET)$(if $(SOL64_PKG),$(MKDIR) -p $(SOLARIS_INST_DIR_64)/$(VBOX_SOL_PYTHON_DIR_64),)
 	$(QUIET)$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(SOLARIS_OUT_BIN)/VBoxPython.so       $(SOLARIS_INST_DIR_ISA)/$(if $(SOL64_PKG),$(VBOX_SOL_PYTHON_DIR_64)/,)VBoxPython.so
  endif
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/bin/qtconfig                    $(SOLARIS_INST_DIR_ISA)/VBoxQtconfig,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(VBOX_PATH_QT4)/bin/qtconfig                                     $(SOLARIS_INST_DIR_ISA)/VBoxQtconfig,)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN)/VBoxISAExec                                                            $(SOLARIS_INST_DIR)/VBoxISAExec
 endif
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                                       $(SOLARIS_INST_DIR)/virtualbox-zoneaccess.xml
@@ -490,7 +496,7 @@ $(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_NO_STRIP)): \
 	$(INSTALL) -m 0644 $< $@
 
 $(addprefix $(SOLARIS_INST_DIR_32)/,$(SOLARIS_QTLIBS)): \
-		$(SOLARIS_INST_DIR_32)/% : $(PATH_DEVTOOLS)/solaris.x86/qt/v4.3.3-r1/lib/% | $$(dir $$@)
+		$(SOLARIS_INST_DIR_32)/% : $(SOLARIS_PATH_QT_32)/lib/% | $$(dir $$@)
 	$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s,) $< $@
 
 #
@@ -517,7 +523,7 @@ $(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_NO_STRIP)): \
 	$(INSTALL) -m 0644 $< $@
 
 $(addprefix $(SOLARIS_INST_DIR_64)/,$(SOLARIS_QTLIBS)): \
-		$(SOLARIS_INST_DIR_64)/% : $(PATH_DEVTOOLS)/solaris.amd64/qt/v4.3.3-r1/lib/% | $$(dir $$@)
+		$(SOLARIS_INST_DIR_64)/% : $(SOLARIS_PATH_QT_64)/lib/% | $$(dir $$@)
 	$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s,) $< $@
 
 
