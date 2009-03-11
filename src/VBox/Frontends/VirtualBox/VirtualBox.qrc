@@ -54,6 +54,7 @@
     <file alias="os_qnx.png">images/os_qnx.png</file>
     <file alias="os_redhat.png">images/os_redhat.png</file>
     <file alias="os_redhat_64.png">images/os_redhat_64.png</file>
+    <file alias="os_turbolinux.png">images/os_turbolinux.png</file>
     <file alias="os_solaris.png">images/os_solaris.png</file>
     <file alias="os_solaris_64.png">images/os_solaris_64.png</file>
     <file alias="os_ubuntu.png">images/os_ubuntu.png</file>

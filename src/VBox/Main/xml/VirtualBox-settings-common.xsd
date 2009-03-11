@@ -179,6 +179,7 @@
     <xsd:enumeration value="Mandriva_64"/>
     <xsd:enumeration value="RedHat"/>
     <xsd:enumeration value="RedHat_64"/>
+    <xsd:enumeration value="Turbolinux"/>
     <xsd:enumeration value="Ubuntu"/>
     <xsd:enumeration value="Ubuntu_64"/>
     <xsd:enumeration value="Xandros"/>
