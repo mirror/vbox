@@ -126,6 +126,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/postinstall.sh \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/preremove.sh \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.pkginfo \
+		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.depend \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.sh \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient \
@@ -157,6 +158,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.sh                     $(SOLARIS_ADD_INST_DIR)/vboxguest.sh
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml                  $(SOLARIS_ADD_INST_DIR)/vboxservice.xml
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.space                  $(SOLARIS_ADD_INST_DIR)/vboxguest.space
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.depend                 $(SOLARIS_ADD_INST_DIR)/vboxguest.depend
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)                              $(SOLARIS_ADD_INST_DIR)/vboxguest.copyright)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop                   $(SOLARIS_ADD_INST_DIR)/vboxclient.desktop
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient                    $(SOLARIS_ADD_INST_DIR)/1099.vboxclient
