@@ -1215,6 +1215,6 @@ VMMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss
  */
 VMMDECL(void) SELMShadowCR3Changed(PVM pVM)
 {
-    pVM->selm.s.Tss.cr3 = PGMGetHyperCR3(pVM);
-    Assert(pVM->selm.s.TssTrap08.cr3 == PGMGetInterRCCR3(pVM));
+    pVM->selm.s.Tss.cr3       = PGMGetHyperCR3(pVM);
+    pVM->selm.s.TssTrap08.cr3 = PGMGetInterRCCR3(pVM);
 }
