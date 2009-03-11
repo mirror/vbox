@@ -24,6 +24,15 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+/*
+ * Deal with conflicts first.
+ * PVM - BSD mess, that FreeBSD has correct a long time ago.
+ * iprt/types.h before sys/param.h - prevents UINT32_C and friends.
+ */
+#include <iprt/types.h>
+#include <sys/param.h>
+#undef PVM
+
 #define LOG_GROUP LOG_GROUP_MAIN
 
 #include <iprt/err.h>
@@ -32,8 +41,12 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/sysctl.h>
 #include <netinet/in.h>
 #include <net/if.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/route.h>
 #include <ifaddrs.h>
 #include <errno.h>
 #include <unistd.h>
@@ -44,6 +57,7 @@
 #include "iokit.h"
 #include "Logging.h"
 
+#if 0
 int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 {
     int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
@@ -139,3 +153,184 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
     close(sock);
     return VINF_SUCCESS;
 }
+#else
+
+#define ROUNDUP(a) \
+	((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
+#define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
+
+void extractAddresses(int iAddrMask, caddr_t cp, caddr_t cplim, PNETIFINFO pInfo)
+{
+    struct sockaddr *sa;
+    struct sockaddr_in *pIPAddr, *pIPNetMask;
+    struct sockaddr_in6 *pIPv6Addr, *pIPv6NetMask;
+
+    for (int i = 0; i < RTAX_MAX && cp < cplim; i++) {
+        if (!(iAddrMask & (1 << i)))
+            continue;
+
+        sa = (struct sockaddr *)cp;
+
+        switch (i)
+        {
+            case RTAX_IFA:
+                switch (sa->sa_family)
+                {
+                    case AF_INET:
+                        pIPAddr = (struct sockaddr_in *)sa;
+                        Assert(sizeof(pInfo->IPAddress) == sizeof(pIPAddr->sin_addr));
+                        if (!pInfo->IPAddress.u)
+                            pInfo->IPAddress.u = pIPAddr->sin_addr.s_addr;
+                        break;
+                    case AF_INET6:
+                        pIPv6Addr = (struct sockaddr_in6 *)sa;
+                        Assert(sizeof(pInfo->IPv6Address) == sizeof(pIPv6Addr->sin6_addr));
+                        if (!(pInfo->IPv6Address.s.Lo || pInfo->IPv6Address.s.Hi))
+                            memcpy(pInfo->IPv6Address.au8,
+                                   pIPv6Addr->sin6_addr.__u6_addr.__u6_addr8,
+                                   sizeof(pInfo->IPv6Address));
+                        break;
+                    default:
+                        Log(("NetIfList: Unsupported address family: %u\n", sa->sa_family));
+                        break;
+                }
+                break;
+            case RTAX_NETMASK:
+                switch (sa->sa_family)
+                {
+                    case AF_INET:
+                        pIPAddr = (struct sockaddr_in *)sa;
+                        if (!pInfo->IPNetMask.u)
+                            pInfo->IPNetMask.u = pIPAddr->sin_addr.s_addr;
+                        break;
+                    case AF_INET6:
+                        pIPv6Addr = (struct sockaddr_in6 *)sa;
+                        if (!(pInfo->IPv6NetMask.s.Lo || pInfo->IPv6NetMask.s.Hi))
+                            memcpy(pInfo->IPv6NetMask.au8,
+                                   pIPv6Addr->sin6_addr.__u6_addr.__u6_addr8,
+                                   sizeof(pInfo->IPv6NetMask));
+                        break;
+                    default:
+                        Log(("NetIfList: Unsupported address family: %u\n", sa->sa_family));
+                        break;
+                }
+                break;
+        }
+        ADVANCE(cp, sa);
+    }
+}
+
+int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbNeeded;
+    char *pBuf, *pNext;
+    int aiMib[6];
+    
+    aiMib[0] = CTL_NET;
+    aiMib[1] = PF_ROUTE;
+    aiMib[2] = 0;
+    aiMib[3] = 0;	/* address family */
+    aiMib[4] = NET_RT_IFLIST;
+    aiMib[5] = 0;
+
+    if (sysctl(aiMib, 6, NULL, &cbNeeded, NULL, 0) < 0)
+    {
+        Log(("NetIfList: Failed to get estimate for list size (errno=%d).\n", errno));
+        return RTErrConvertFromErrno(errno);
+    }
+    if ((pBuf = (char*)malloc(cbNeeded)) == NULL)
+        return VERR_NO_MEMORY;
+    if (sysctl(aiMib, 6, pBuf, &cbNeeded, NULL, 0) < 0)
+    {
+        free(pBuf);
+        Log(("NetIfList: Failed to retrieve interface table (errno=%d).\n", errno));
+        return RTErrConvertFromErrno(errno);
+    }
+
+    int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock < 0)
+    {
+        free(pBuf);
+        Log(("NetIfList: socket() -> %d\n", errno));
+        return RTErrConvertFromErrno(errno);
+    }
+
+    char *pEnd = pBuf + cbNeeded;
+    for (pNext = pBuf; pNext < pEnd;)
+    {
+        struct if_msghdr *pIfMsg = (struct if_msghdr *)pNext;
+
+        if (pIfMsg->ifm_type != RTM_IFINFO)
+        {
+            Log(("NetIfList: Got message %u while expecting %u.\n",
+                 pIfMsg->ifm_type, RTM_IFINFO));
+            rc = VERR_INTERNAL_ERROR;
+            break;
+        }
+        struct sockaddr_dl *pSdl = (struct sockaddr_dl *)(pIfMsg + 1);
+
+        size_t cbNameLen = pSdl->sdl_nlen + 1;
+        PNETIFINFO pNew = (PNETIFINFO)RTMemAllocZ(RT_OFFSETOF(NETIFINFO, szName[cbNameLen]));
+        if (!pNew)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+        memcpy(pNew->MACAddress.au8, LLADDR(pSdl), sizeof(pNew->MACAddress.au8));
+        pNew->enmMediumType = NETIF_T_ETHERNET;
+        // @todo: pNew->Uuid = pEtherNICs->Uuid;
+        Assert(sizeof(pNew->szShortName) >= cbNameLen);
+        memcpy(pNew->szShortName, pSdl->sdl_data, cbNameLen);
+        memcpy(pNew->szName, pSdl->sdl_data, cbNameLen);
+
+        pNext += pIfMsg->ifm_msglen;
+        while (pNext < pEnd)
+        {
+            struct ifa_msghdr *pIfAddrMsg = (struct ifa_msghdr *)pNext;
+
+            if (pIfAddrMsg->ifam_type != RTM_NEWADDR)
+                break;
+            extractAddresses(pIfAddrMsg->ifam_addrs, (char *)(pIfAddrMsg + 1), pIfAddrMsg->ifam_msglen + (char *)pIfAddrMsg, pNew);
+            pNext += pIfAddrMsg->ifam_msglen;
+        }
+
+        if (pSdl->sdl_type == IFT_ETHER)
+        {
+            /* Generate UUID from name and MAC address. */
+            RTUUID uuid;
+            RTUuidClear(&uuid);
+            memcpy(&uuid, pNew->szShortName, RT_MIN(cbNameLen, sizeof(uuid)));
+            uuid.Gen.u8ClockSeqHiAndReserved = (uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
+            uuid.Gen.u16TimeHiAndVersion = (uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
+            memcpy(uuid.Gen.au8Node, pNew->MACAddress.au8, sizeof(uuid.Gen.au8Node));
+            pNew->Uuid = uuid;
+
+            struct ifreq IfReq;
+            strcpy(IfReq.ifr_name, pNew->szShortName);
+            if (ioctl(sock, SIOCGIFFLAGS, &IfReq) < 0)
+            {
+                Log(("NetIfList: ioctl(SIOCGIFFLAGS) -> %d\n", errno));
+                pNew->enmStatus = NETIF_S_UNKNOWN;
+            }
+            else
+                pNew->enmStatus = (IfReq.ifr_flags & IFF_UP) ? NETIF_S_UP : NETIF_S_DOWN;
+
+            HostNetworkInterfaceType_T enmType;
+            if (strncmp("vbox", pNew->szName, 4))
+                enmType = HostNetworkInterfaceType_Bridged;
+            else
+                enmType = HostNetworkInterfaceType_HostOnly;
+
+            ComObjPtr<HostNetworkInterface> IfObj;
+            IfObj.createObject();
+            if (SUCCEEDED(IfObj->init(Bstr(pNew->szName), enmType, pNew)))
+                list.push_back(IfObj);
+        }
+        RTMemFree(pNew);
+    }
+    close(sock);
+    free(pBuf);
+    return rc;
+}
+#endif

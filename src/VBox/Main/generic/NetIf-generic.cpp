@@ -19,12 +19,68 @@
  * additional information or have any questions.
  */
 
+#include <VBox/err.h>
+#include <VBox/log.h>
+#include <iprt/process.h>
+#include <iprt/env.h>
+#include <iprt/path.h>
+
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
 
+#define VBOXNETADPCTL_NAME "VBoxNetAdpCtl"
+
+static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszMask)
+{
+    const char *args[] = { NULL, NULL, pszAddr, NULL, NULL, NULL };
+    if (pszMask)
+    {
+        args[3] = "netmask";
+        args[4] = pszMask;
+    }
+    
+    char szAdpCtl[PATH_MAX];
+    int rc = RTPathProgram(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME));
+    if (RT_FAILURE(rc))
+        return rc;
+    strcat(szAdpCtl, "/" VBOXNETADPCTL_NAME);
+    args[0] = szAdpCtl;
+    Bstr interfaceName;
+    pIf->COMGETTER(Name)(interfaceName.asOutParam());
+    Utf8Str strName(interfaceName);
+    args[1] = strName;
+    if (!RTPathExists(szAdpCtl))
+    {
+        LogRel(("NetIf: path %s does not exist. Failed to run " VBOXNETADPCTL_NAME " helper.\n",
+                szAdpCtl));
+        return VERR_FILE_NOT_FOUND;
+    }
+    
+    RTPROCESS pid;
+    rc = RTProcCreate(VBOXNETADPCTL_NAME, args, RTENV_DEFAULT, 0, &pid);
+    if (RT_SUCCESS(rc))
+    {
+        RTPROCSTATUS Status;
+        rc = RTProcWait(pid, 0, &Status);
+        if (   RT_SUCCESS(rc)
+            && Status.iStatus == 0
+            && Status.enmReason == RTPROCEXITREASON_NORMAL)
+            return VINF_SUCCESS;
+    }
+    return rc;
+}
+
 int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask)
 {
-    return VERR_NOT_IMPLEMENTED;
+    char szAddress[16]; /* 4*3 + 3*1 + 1 */
+    char szNetMask[16]; /* 4*3 + 3*1 + 1 */
+    uint8_t *pu8Addr = (uint8_t *)&ip;
+    uint8_t *pu8Mask = (uint8_t *)&mask;
+    RTStrPrintf(szAddress, sizeof(szAddress), "%d.%d.%d.%d",
+                pu8Addr[0], pu8Addr[1], pu8Addr[2], pu8Addr[3]);
+    RTStrPrintf(szNetMask, sizeof(szNetMask), "%d.%d.%d.%d",
+                pu8Mask[0], pu8Mask[1], pu8Mask[2], pu8Mask[3]);
+    return NetIfAdpCtl(pIf, szAddress, szNetMask);
 }
 
 int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
