@@ -795,12 +795,12 @@ BOOL APIENTRY DrvRealizeBrush(
             && (ppdev->pVBVA->u32HostEvents & VBVA_F_MODE_ENABLED))
         {
             if (ppdev->pVBVA->u32HostEvents
-                & VBVA_F_MODE_VRDP_RESET)
+                & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)
             {
                 vrdpReset (ppdev);
 
                 ppdev->pVBVA->u32HostEvents &=
-                    ~VBVA_F_MODE_VRDP_RESET;
+                    ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
             }
 
             if (ppdev->pVBVA->u32HostEvents

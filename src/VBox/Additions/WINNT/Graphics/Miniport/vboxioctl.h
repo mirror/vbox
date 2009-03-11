@@ -102,6 +102,11 @@ typedef struct _QUERYHGSMIRESULT
     /* Describes VRAM chunk for this display device. */
     HGSMIAREA areaDisplay;
 
+    /* Size of the display information area. */
+    uint32_t u32DisplayInfoSize;
+
+    /* Minimum size of the VBAV buffer. */
+    uint32_t u32MinVBVABufferSize;
 } QUERYHGSMIRESULT;
 #endif /* VBOX_WITH_HGSMI */
 #pragma pack()

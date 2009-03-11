@@ -68,6 +68,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
 
     ULONG iDevice;
     uint32_t u32DisplayInfoSize;
+    uint32_t u32MinVBVABufferSize;
 
 #ifndef VBOX_WITH_HGSMI
     QUERYDISPLAYINFORESULT DispInfo;
@@ -84,6 +85,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
     {
         iDevice = DispInfo.iDevice;
         u32DisplayInfoSize = DispInfo.u32DisplayInfoSize;
+        u32MinVBVABufferSize = 0; /* In old mode the buffer is not used at all. */
     }
 #else
     QUERYHGSMIRESULT info;
@@ -98,9 +100,9 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
                                                  &returnedDataLength);
     if (ppdev->bHGSMISupported)
     {
-        /* In HGSMI mode the display driver decides about the size. */
         iDevice = info.iDevice;
-        u32DisplayInfoSize = VBVA_DISPLAY_INFORMATION_SIZE;
+        u32DisplayInfoSize = info.u32DisplayInfoSize;
+        u32MinVBVABufferSize = info.u32MinVBVABufferSize;
     }
 #endif /* VBOX_WITH_HGSMI */
 
@@ -137,7 +139,11 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
             
             /* Use minimum 64K and maximum the cbFrameBuffer for the VBVA buffer. */
             for (ppdev->layout.cbVBVABuffer = ppdev->layout.cbFrameBuffer;
+#ifndef VBOX_WITH_HGSMI
                  ppdev->layout.cbVBVABuffer >= 0x10000;
+#else
+                 ppdev->layout.cbVBVABuffer >= u32MinVBVABufferSize;
+#endif /* VBOX_WITH_HGSMI */
                  ppdev->layout.cbVBVABuffer /= 2)
             {
                 if (ppdev->layout.cbVBVABuffer < cbAvailable)
