@@ -1885,7 +1885,7 @@ STDMETHODIMP Machine::GetBootOrder (ULONG aPosition, DeviceType_T *aDevice)
 }
 
 STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
-                                     IN_BSTR aControllerName, LONG aPort,
+                                     IN_BSTR aControllerName, LONG aControllerPort,
                                      LONG aDevice)
 {
     LogFlowThisFunc(("aControllerName=\"%ls\" aPort=%ld aDevice=%ld\n",
@@ -1926,7 +1926,7 @@ STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
     rc = ctl->COMGETTER(MaxDevicesPerPortCount)(&devicesPerPort);
     CheckComRCReturnRC(rc);
 
-    if (   (aPort < 0) || (aPort >= portCount)
+    if (   (aControllerPort < 0) || (aControllerPort >= portCount)
         || (aDevice < 0) || (aDevice >= devicesPerPort))
         return setError (E_INVALIDARG,
             tr ("The port and/or count parameter are out of range [%lu:%lu]"),
@@ -1936,7 +1936,7 @@ STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
     HDData::AttachmentList::const_iterator it =
         std::find_if (mHDData->mAttachments.begin(),
                       mHDData->mAttachments.end(),
-                      HardDiskAttachment::EqualsTo (aControllerName, aPort, aDevice));
+                      HardDiskAttachment::EqualsTo (aControllerName, aControllerPort, aDevice));
 
     if (it != mHDData->mAttachments.end())
     {
@@ -1945,7 +1945,7 @@ STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
         return setError (VBOX_E_OBJECT_IN_USE,
             tr ("Hard disk '%ls' is already attached to device slot %d on "
                 "port %d of controller '%ls' of this virtual machine"),
-            hd->locationFull().raw(), aDevice, aPort, aControllerName);
+            hd->locationFull().raw(), aDevice, aControllerPort, aControllerName);
     }
 
     Guid id = aId;
@@ -1992,7 +1992,7 @@ STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
 
                 /* see if it's the same bus/channel/device */
                 if ((*it)->device() == aDevice &&
-                    (*it)->port() == aPort &&
+                    (*it)->port() == aControllerPort &&
                     (*it)->controller() == aControllerName)
                 {
                     /* the simplest case: restore the whole attachment
@@ -2050,7 +2050,7 @@ STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
                          * descendant of hd will be used
                          */
                         if ((*it)->device() == aDevice &&
-                            (*it)->port() == aPort &&
+                            (*it)->port() == aControllerPort &&
                             (*it)->controller() == aControllerName)
                         {
                             /* the simplest case: restore the whole attachment
@@ -2110,7 +2110,7 @@ STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
                          * descendant of hd will be used
                          */
                         if ((*it)->device() == aDevice &&
-                            (*it)->port() == aPort &&
+                            (*it)->port() == aControllerPort &&
                             (*it)->controller() == aControllerName)
                         {
                             foundIt = it;
@@ -2186,7 +2186,7 @@ STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
 
     ComObjPtr<HardDiskAttachment> attachment;
     attachment.createObject();
-    rc = attachment->init (hd, aControllerName, aPort, aDevice, indirect);
+    rc = attachment->init (hd, aControllerName, aControllerPort, aDevice, indirect);
     CheckComRCReturnRC (rc);
 
     if (associate)
@@ -2205,7 +2205,7 @@ STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
     return rc;
 }
 
-STDMETHODIMP Machine::GetHardDisk(IN_BSTR aControllerName, LONG aPort,
+STDMETHODIMP Machine::GetHardDisk(IN_BSTR aControllerName, LONG aControllerPort,
                                   LONG aDevice, IHardDisk **aHardDisk)
 {
     LogFlowThisFunc(("aControllerName=\"%ls\" aPort=%ld aDevice=%ld\n",
@@ -2224,19 +2224,19 @@ STDMETHODIMP Machine::GetHardDisk(IN_BSTR aControllerName, LONG aPort,
     HDData::AttachmentList::const_iterator it =
         std::find_if (mHDData->mAttachments.begin(),
                       mHDData->mAttachments.end(),
-                      HardDiskAttachment::EqualsTo (aControllerName, aPort, aDevice));
+                      HardDiskAttachment::EqualsTo (aControllerName, aControllerPort, aDevice));
 
     if (it == mHDData->mAttachments.end())
         return setError (VBOX_E_OBJECT_NOT_FOUND,
             tr ("No hard disk attached to device slot %d on port %d of controller '%ls'"),
-            aDevice, aPort, aControllerName);
+            aDevice, aControllerPort, aControllerName);
 
     (*it)->hardDisk().queryInterfaceTo (aHardDisk);
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::DetachHardDisk(IN_BSTR aControllerName, LONG aPort,
+STDMETHODIMP Machine::DetachHardDisk(IN_BSTR aControllerName, LONG aControllerPort,
                                      LONG aDevice)
 {
     CheckComArgNotNull (aControllerName);
@@ -2261,12 +2261,12 @@ STDMETHODIMP Machine::DetachHardDisk(IN_BSTR aControllerName, LONG aPort,
     HDData::AttachmentList::const_iterator it =
         std::find_if (mHDData->mAttachments.begin(),
                       mHDData->mAttachments.end(),
-                      HardDiskAttachment::EqualsTo (aControllerName, aPort, aDevice));
+                      HardDiskAttachment::EqualsTo (aControllerName, aControllerPort, aDevice));
 
     if (it == mHDData->mAttachments.end())
         return setError (VBOX_E_OBJECT_NOT_FOUND,
             tr ("No hard disk attached to device slot %d on port %d of controller '%ls'"),
-            aDevice, aPort, aControllerName);
+            aDevice, aControllerPort, aControllerName);
 
     ComObjPtr<HardDiskAttachment> hda = *it;
     ComObjPtr<HardDisk> hd = hda->hardDisk();
