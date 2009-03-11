@@ -3774,9 +3774,8 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 }
 
 #endif /* PGMPOOL_WITH_USER_TRACKING */
-
-
 #ifdef IN_RING3
+
 /**
  * Flushes all the special root pages as part of a pgmPoolFlushAllInt operation.
  *
@@ -3784,12 +3783,6 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
 {
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    /* Start a subset so we won't run out of mapping space. */
-    PVMCPU pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
-    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
-#endif
-
     /*
      * These special pages are all mapped into the indexes 1..PGMPOOL_IDX_FIRST.
      */
@@ -3799,11 +3792,6 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
      * Paranoia (to be removed), flag a global CR3 sync.
      */
     VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
-
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    /* Pop the subset. */
-    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
-#endif
 }
 
 
@@ -3995,6 +3983,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 
     STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
 }
+
 #endif /* IN_RING3 */
 
 /**
@@ -4373,7 +4362,7 @@ void pgmPoolFlushAll(PVM pVM)
     LogFlow(("pgmPoolFlushAll:\n"));
     pgmPoolFlushAllInt(pVM->pgm.s.CTX_SUFF(pPool));
 }
-#endif
+#endif /* IN_RING3 */
 
 #ifdef LOG_ENABLED
 static const char *pgmPoolPoolKindToStr(uint8_t enmKind)
@@ -4443,4 +4432,4 @@ static const char *pgmPoolPoolKindToStr(uint8_t enmKind)
     }
     return "Unknown kind!";
 }
-#endif
+#endif /* LOG_ENABLED*/
