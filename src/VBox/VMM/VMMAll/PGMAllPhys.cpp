@@ -143,7 +143,7 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
 VMMDECL(bool) PGMPhysIsA20Enabled(PVM pVM)
 {
     LogFlow(("PGMPhysIsA20Enabled %d\n", pVM->pgm.s.fA20Enabled));
-    return !!pVM->pgm.s.fA20Enabled ; /* stupid MS compiler doesn't trust me. */
+    return pVM->pgm.s.fA20Enabled;
 }
 
 

@@ -535,8 +535,11 @@ typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
 
 /**
  * Page type.
+ *
  * @remarks This enum has to fit in a 3-bit field (see PGMPAGE::u3Type).
- * @todo convert to \#defines.
+ * @remarks This is used in the saved state, so changes to it requires bumping
+ *          the saved state version.
+ * @todo    So, convert to \#defines!
  */
 typedef enum PGMPAGETYPE
 {

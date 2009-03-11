@@ -571,10 +571,6 @@
  * Breakdown of the changes involved?
  */
 
-
-/** Saved state data unit version. */
-#define PGM_SAVED_STATE_VERSION     6
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -608,6 +604,18 @@
 #include <VBox/param.h>
 #include <VBox/err.h>
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** Saved state data unit version. */
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+# define PGM_SAVED_STATE_VERSION                7
+#else
+# define PGM_SAVED_STATE_VERSION                6
+#endif
+/** Saved state data unit version. */
+#define PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE   6
 
 
 /*******************************************************************************
@@ -1197,7 +1205,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCfgPGM, "RamPreAlloc", &pVM->pgm.s.fRamPreAlloc, false);
     AssertLogRelRCReturn(rc, rc);
 
-#if HC_ARCH_BITS == 64
+#if HC_ARCH_BITS == 64 || 1 /** @todo 4GB/32-bit: remove || 1 later and adjust the limit. */
     rc = CFGMR3QueryU32Def(pCfgPGM, "MaxRing3Chunks", &pVM->pgm.s.ChunkR3Map.cMax, UINT32_MAX);
 #else
     rc = CFGMR3QueryU32Def(pCfgPGM, "MaxRing3Chunks", &pVM->pgm.s.ChunkR3Map.cMax, _1G / GMM_CHUNK_SIZE);
@@ -1218,7 +1226,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         if (cbRam < PAGE_SIZE)
             cbRam = 0;
         cbRam = RT_ALIGN_64(cbRam, PAGE_SIZE);
-        pVM->pgm.s.cbRamSize = (RTUINT)cbRam;
+        pVM->pgm.s.cbRamSize = (RTUINT)cbRam; /* pointless legacy, remove after enabling the new phys code. */
     }
     else
     {
@@ -1278,7 +1286,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     {
         pVM->pgm.s.pvZeroPgGC = MMHyperR3ToRC(pVM, pVM->pgm.s.pvZeroPgR3);
         pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
-        AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTHCPHYS);
         pVM->pgm.s.HCPhysZeroPg = MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvZeroPgR3);
         AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);
 
@@ -1330,12 +1337,12 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         /*
          * Debugger commands.
          */
-        static bool fRegisteredCmds = false;
-        if (!fRegisteredCmds)
+        static bool s_fRegisteredCmds = false;
+        if (!s_fRegisteredCmds)
         {
             int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
             if (RT_SUCCESS(rc))
-                fRegisteredCmds = true;
+                s_fRegisteredCmds = true;
         }
 #endif
         return VINF_SUCCESS;
@@ -2147,6 +2154,102 @@ VMMR3DECL(int) PGMR3TermCPU(PVM pVM)
     return 0;
 }
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+
+/**
+ * Find the ROM tracking structure for the given page.
+ *
+ * @returns Pointer to the ROM page structure. NULL if the caller didn't check
+ *          that it's a ROM page.
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The address of the ROM page.
+ */
+static PPGMROMPAGE pgmR3GetRomPage(PVM pVM, RTGCPHYS GCPhys)
+{
+    for (PPGMROMRANGE pRomRange = pVM->pgm.s.CTX_SUFF(pRomRanges);
+         pRomRange;
+         pRomRange = pRomRange->CTX_SUFF(pNext))
+    {
+        RTGCPHYS off = GCPhys - pRomRange->GCPhys;
+        if (GCPhys - pRomRange->GCPhys < pRomRange->cb)
+            return &pRomRange->aPages[off >> PAGE_SHIFT];
+    }
+    AssertLogRelMsgFailed(("GCPhys=%RGp\n", GCPhys));
+    return NULL;
+}
+
+
+/**
+ * Save zero indicator + bits for the specified page.
+ *
+ * @returns VBox status code, errors are logged/asserted before returning.
+ * @param   pVM         The VM handle.
+ * @param   pSSH        The saved state handle.
+ * @param   pPage       The page to save.
+ * @param   GCPhys      The address of the page.
+ * @param   pRam        The ram range (for error logging).
+ */
+static int pgmR3SavePage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
+{
+    int rc;
+    if (PGM_PAGE_IS_ZERO(pPage))
+        rc = SSMR3PutU8(pSSM, 0);
+    else
+    {
+        void const *pvPage;
+        rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvPage);
+        AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] GCPhys=%#x %s\n", pPage, GCPhys, pRam->pszDesc), rc);
+
+        SSMR3PutU8(pSSM, 1);
+        rc = SSMR3PutMem(pSSM, pvPage, PAGE_SIZE);
+    }
+    return rc;
+}
+
+
+/**
+ * Save a shadowed ROM page.
+ *
+ * Format: Type, protection, and two pages with zero indicators.
+ *
+ * @returns VBox status code, errors are logged/asserted before returning.
+ * @param   pVM         The VM handle.
+ * @param   pSSH        The saved state handle.
+ * @param   pPage       The page to save.
+ * @param   GCPhys      The address of the page.
+ * @param   pRam        The ram range (for error logging).
+ */
+static int pgmR3SaveShadowedRomPage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
+{
+    /* Need to save both pages and the current state. */
+    PPGMROMPAGE pRomPage = pgmR3GetRomPage(pVM, GCPhys);
+    AssertLogRelMsgReturn(pRomPage, ("GCPhys=%RGp %s\n", GCPhys, pRam->pszDesc), VERR_INTERNAL_ERROR);
+
+    SSMR3PutU8(pSSM, PGMPAGETYPE_ROM_SHADOW);
+    SSMR3PutU8(pSSM, pRomPage->enmProt);
+
+    int rc = pgmR3SavePage(pVM, pSSM, pPage, GCPhys, pRam);
+    if (RT_SUCCESS(rc))
+    {
+        PPGMPAGE pPagePassive = PGMROMPROT_IS_ROM(pRomPage->enmProt) ? &pRomPage->Shadow : &pRomPage->Virgin;
+        rc = pgmR3SavePage(pVM, pSSM, pPagePassive, GCPhys, pRam);
+    }
+    return rc;
+}
+
+/** PGM fields to save/load. */
+static SSMFIELD s_aPGMFields[] =
+{
+    SSMFIELD_ENTRY(         PGM, fMappingsFixed),
+    SSMFIELD_ENTRY_GCPTR(   PGM, GCPtrMappingFixed),
+    SSMFIELD_ENTRY(         PGM, cbMappingFixed),
+    SSMFIELD_ENTRY(         PGM, fA20Enabled),
+    SSMFIELD_ENTRY_GCPHYS(  PGM, GCPhysA20Mask),
+    SSMFIELD_ENTRY(         PGM, enmGuestMode),
+    SSMFIELD_ENTRY_TERM()
+};
+#endif /* VBOX_WITH_NEW_PHYS_CODE */
+
 
 /**
  * Execute state save operation.
@@ -2157,30 +2260,33 @@ VMMR3DECL(int) PGMR3TermCPU(PVM pVM)
  */
 static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-#ifdef VBOX_WITH_NEW_PHYS_CODE
-    AssertReleaseFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo */
-#else
-    PPGM pPGM = &pVM->pgm.s;
+    int     rc;
+    PPGM    pPGM = &pVM->pgm.s;
 
-    /* No more writes to physical memory after this point! */
+    /*
+     * Lock PGM and set the no-more-writes indicator.
+     */
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    pgmLock(pVM);
+#endif
     pVM->pgm.s.fNoMorePhysWrites = true;
 
     /*
      * Save basic data (required / unaffected by relocation).
      */
-#if 1
-    SSMR3PutBool(pSSM, pPGM->fMappingsFixed);
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    SSMR3PutStruct(pSSM, pPGM, &s_aPGMFields[0]);
 #else
-    SSMR3PutUInt(pSSM, pPGM->fMappingsFixed);
-#endif
-    SSMR3PutGCPtr(pSSM, pPGM->GCPtrMappingFixed);
-    SSMR3PutU32(pSSM, pPGM->cbMappingFixed);
-    SSMR3PutUInt(pSSM, pPGM->cbRamSize);
+    SSMR3PutBool(  pSSM, pPGM->fMappingsFixed);
+    SSMR3PutGCPtr( pSSM, pPGM->GCPtrMappingFixed);
+    SSMR3PutU32(   pSSM, pPGM->cbMappingFixed);
+    SSMR3PutUInt(  pSSM, pPGM->cbRamSize);
     SSMR3PutGCPhys(pSSM, pPGM->GCPhysA20Mask);
-    SSMR3PutUInt(pSSM, pPGM->fA20Enabled);
-    SSMR3PutUInt(pSSM, pPGM->fSyncFlags);
-    SSMR3PutUInt(pSSM, pPGM->enmGuestMode);
-    SSMR3PutU32(pSSM, ~0);      /* Separator. */
+    SSMR3PutUInt(  pSSM, pPGM->fA20Enabled);
+    SSMR3PutUInt(  pSSM, pPGM->fSyncFlags);
+    SSMR3PutUInt(  pSSM, pPGM->enmGuestMode);
+    SSMR3PutU32(   pSSM, ~0);      /* Separator. */
+#endif
 
     /*
      * The guest mappings.
@@ -2188,34 +2294,63 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
     uint32_t i = 0;
     for (PPGMMAPPING pMapping = pPGM->pMappingsR3; pMapping; pMapping = pMapping->pNextR3, i++)
     {
-        SSMR3PutU32(pSSM, i);
-        SSMR3PutStrZ(pSSM, pMapping->pszDesc); /* This is the best unique id we have... */
-        SSMR3PutGCPtr(pSSM, pMapping->GCPtr);
+        SSMR3PutU32(      pSSM, i);
+        SSMR3PutStrZ(     pSSM, pMapping->pszDesc); /* This is the best unique id we have... */
+        SSMR3PutGCPtr(    pSSM, pMapping->GCPtr);
         SSMR3PutGCUIntPtr(pSSM, pMapping->cPTs);
-        /* flags are done by the mapping owners! */
     }
-    SSMR3PutU32(pSSM, ~0); /* terminator. */
+    rc = SSMR3PutU32(pSSM, ~0); /* terminator. */
 
     /*
-     * Ram range flags and bits.
+     * Ram ranges and the memory they describe.
      */
     i = 0;
     for (PPGMRAMRANGE pRam = pPGM->pRamRangesR3; pRam; pRam = pRam->pNextR3, i++)
     {
-        /** @todo MMIO ranges may move (PCI reconfig), we currently assume they don't. */
+        /*
+         * Save the ram range details.
+         */
+        SSMR3PutU32(pSSM,       i);
+        SSMR3PutGCPhys(pSSM,    pRam->GCPhys);
+        SSMR3PutGCPhys(pSSM,    pRam->GCPhysLast);
+        SSMR3PutGCPhys(pSSM,    pRam->cb);
+        SSMR3PutU8(pSSM,        !!pRam->pvR3);      /* Boolean indicating memory or not. */
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        SSMR3PutStrZ(pSSM,      pRam->pszDesc);     /* This is the best unique id we have... */
 
-        SSMR3PutU32(pSSM, i);
-        SSMR3PutGCPhys(pSSM, pRam->GCPhys);
-        SSMR3PutGCPhys(pSSM, pRam->GCPhysLast);
-        SSMR3PutGCPhys(pSSM, pRam->cb);
-        SSMR3PutU8(pSSM, !!pRam->pvR3);             /* boolean indicating memory or not. */
+        /*
+         * Iterate the pages, only two special case.
+         */
+        uint32_t const cPages = pRam->cb >> PAGE_SHIFT;
+        for (uint32_t iPage = 0; iPage < cPages; iPage++)
+        {
+            RTGCPHYS GCPhysPage = pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+            PPGMPAGE pPage      = &pRam->aPages[iPage];
+            uint8_t  uType      = PGM_PAGE_GET_TYPE(pPage);
 
+            if (uType == PGMPAGETYPE_ROM_SHADOW)
+                rc = pgmR3SaveShadowedRomPage(pVM, pSSM, pPage, GCPhysPage, pRam);
+            else if (uType == PGMPAGETYPE_MMIO2_ALIAS_MMIO)
+            {
+                /* MMIO2 alias -> MMIO; the device will just have to deal with this. */
+                SSMR3PutU8(pSSM, PGMPAGETYPE_MMIO);
+                rc = SSMR3PutU8(pSSM, 0 /* ZERO */);
+            }
+            else
+                rc = pgmR3SavePage(pVM, pSSM, pPage, GCPhysPage, pRam);
+            if (RT_FAILURE(rc))
+                break;
+        }
+        if (RT_FAILURE(rc))
+            break;
+
+#else  /* !VBOX_WITH_NEW_PHYS_CODE */
         /* Flags. */
         const unsigned cPages = pRam->cb >> PAGE_SHIFT;
         for (unsigned iPage = 0; iPage < cPages; iPage++)
             SSMR3PutU16(pSSM, (uint16_t)(pRam->aPages[iPage].HCPhys & ~X86_PTE_PAE_PG_MASK)); /** @todo PAGE FLAGS */
 
-        /* any memory associated with the range. */
+        /* Any memory associated with the range. */
         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
         {
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
@@ -2231,82 +2366,239 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
         }
         else if (pRam->pvR3)
         {
-            int rc = SSMR3PutMem(pSSM, pRam->pvR3, pRam->cb);
+            rc = SSMR3PutMem(pSSM, pRam->pvR3, pRam->cb);
             if (RT_FAILURE(rc))
             {
                 Log(("pgmR3Save: SSMR3PutMem(, %p, %#x) -> %Rrc\n", pRam->pvR3, pRam->cb, rc));
                 return rc;
             }
         }
-    }
 #endif /* !VBOX_WITH_NEW_PHYS_CODE */
+    }
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    pgmUnlock(pVM);
+#endif
     return SSMR3PutU32(pSSM, ~0); /* terminator. */
 }
 
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+
 /**
- * Execute state load operation.
+ * Load an ignored page.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
- * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   pSSM            The saved state handle.
  */
-static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static int pgmR3LoadPageToDevNull(PSSMHANDLE pSSM)
 {
-#ifdef VBOX_WITH_NEW_PHYS_CODE
-    AssertReleaseFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo */
-#else
+    uint8_t abPage[PAGE_SIZE];
+    return SSMR3GetMem(pSSM, &abPage[0], sizeof(abPage));
+}
+
+
+/**
+ * Loads a page without any bits in the saved state, i.e. making sure it's
+ * really zero.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   uType           The page type or PGMPAGETYPE_INVALID (old saved
+ *                          state).
+ * @param   pPage           The guest page tracking structure.
+ * @param   GCPhys          The page address.
+ * @param   pRam            The ram range (logging).
+ */
+static int pgmR3LoadPageZero(PVM pVM, uint8_t uType, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
+{
+    if (    PGM_PAGE_GET_TYPE(pPage) != uType
+        &&  uType != PGMPAGETYPE_INVALID)
+        return VERR_SSM_UNEXPECTED_DATA;
+
+    /* I think this should be sufficient. */
+    if (!PGM_PAGE_IS_ZERO(pPage))
+        return VERR_SSM_UNEXPECTED_DATA;
+
+    NOREF(pVM);
+    NOREF(GCPhys);
+    NOREF(pRam);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Loads a page from the saved state.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   pSSM            The SSM handle.
+ * @param   uType           The page type or PGMPAGETYEP_INVALID (old saved
+ *                          state).
+ * @param   pPage           The guest page tracking structure.
+ * @param   GCPhys          The page address.
+ * @param   pRam            The ram range (logging).
+ */
+static int pgmR3LoadPageBits(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
+{
+    int rc;
+
     /*
-     * Validate version.
+     * Match up the type, dealing with MMIO2 aliases (dropped).
      */
-    if (u32Version != PGM_SAVED_STATE_VERSION)
+    if (    PGM_PAGE_GET_TYPE(pPage) != uType
+        &&  uType != PGMPAGETYPE_INVALID)
     {
-        AssertMsgFailed(("pgmR3Load: Invalid version u32Version=%d (current %d)!\n", u32Version, PGM_SAVED_STATE_VERSION));
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+        AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] GCPhys=%#x %s\n", pPage, GCPhys, pRam->pszDesc), rc);
+        return VERR_SSM_UNEXPECTED_DATA;
     }
 
     /*
-     * Call the reset function to make sure all the memory is cleared.
+     * Load the page.
      */
-    PGMR3Reset(pVM);
+    void *pvPage;
+    rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvPage);
+    if (RT_SUCCESS(rc))
+        rc = SSMR3GetMem(pSSM, pvPage, PAGE_SIZE);
+
+    return rc;
+}
+
+
+/**
+ * Loads a page (counter part to pgmR3SavePage).
+ *
+ * @returns VBox status code, fully bitched errors.
+ * @param   pVM             The VM handle.
+ * @param   pSSM            The SSM handle.
+ * @param   uType           The page type.
+ * @param   pPage           The page.
+ * @param   GCPhys          The page address.
+ * @param   pRam            The RAM range (for error messages).
+ */
+static int pgmR3LoadPage(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
+{
+    uint8_t         uState;
+    int rc = SSMR3GetU8(pSSM, &uState);
+    AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] GCPhys=%#x %s\n", pPage, GCPhys, pRam->pszDesc), rc);
+    if (uState == 0 /* zero */)
+        rc = pgmR3LoadPageZero(pVM, uType, pPage, GCPhys, pRam);
+    else if (uState == 1)
+        rc = pgmR3LoadPageBits(pVM, pSSM, uType, pPage, GCPhys, pRam);
+    else
+        rc = VERR_INTERNAL_ERROR;
+    AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] uState=%d uType=%d GCPhys=%#x %s\n",
+                                 pPage, uState, uType, GCPhys, pRam->pszDesc),
+                            rc);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Loads a shadowed ROM page.
+ *
+ * @returns VBox status code, errors are fully bitched.
+ * @param   pVM             The VM handle.
+ * @param   pSSM            The saved state handle.
+ * @param   pPage           The page.
+ * @param   GCPhys          The page address.
+ * @param   pRam            The RAM range (for error messages).
+ */
+static int pgmR3LoadShadowedRomPage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
+{
+    /*
+     * Load and set the protection first, then load the two pages, the first
+     * one is the active the other is the passive.
+     */
+    PPGMROMPAGE pRomPage = pgmR3GetRomPage(pVM, GCPhys);
+    AssertLogRelMsgReturn(pRomPage, ("GCPhys=%RGp %s\n", GCPhys, pRam->pszDesc), VERR_INTERNAL_ERROR);
+
+    uint8_t     uProt;
+    int rc = SSMR3GetU8(pSSM, &uProt);
+    AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] GCPhys=%#x %s\n", pPage, GCPhys, pRam->pszDesc), rc);
+    PGMROMPROT  enmProt = (PGMROMPROT)uProt;
+    AssertLogRelMsgReturn(    enmProt >= PGMROMPROT_INVALID
+                          &&  enmProt <  PGMROMPROT_END,
+                          ("enmProt=%d pPage=%R[pgmpage] GCPhys=%#x %s\n", enmProt, pPage, GCPhys, pRam->pszDesc),
+                          VERR_SSM_UNEXPECTED_DATA);
+
+    if (pRomPage->enmProt != enmProt)
+    {
+        rc = PGMR3PhysRomProtect(pVM, GCPhys, PAGE_SIZE, enmProt);
+        AssertLogRelRCReturn(rc, rc);
+        AssertLogRelReturn(pRomPage->enmProt == enmProt, VERR_INTERNAL_ERROR);
+    }
+
+    PPGMPAGE pPageActive  = PGMROMPROT_IS_ROM(enmProt) ? &pRomPage->Virgin : &pRomPage->Shadow;
+    PPGMPAGE pPagePassive = PGMROMPROT_IS_ROM(enmProt) ? &pRomPage->Shadow : &pRomPage->Virgin;
+
+    rc = pgmR3LoadPage(pVM, pSSM, PGMPAGETYPE_ROM_SHADOW, pPage, GCPhys, pRam);
+    if (RT_SUCCESS(rc))
+    {
+        *pPageActive = *pPage;
+        rc = pgmR3LoadPage(pVM, pSSM, PGMPAGETYPE_ROM_SHADOW, pPagePassive, GCPhys, pRam);
+    }
+    return rc;
+}
+
+#endif  /* VBOX_WITH_NEW_PHYS_CODE */
+
+/**
+ * Worker for pgmR3Load.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The SSM handle.
+ * @param   u32Version          The saved state version.
+ */
+static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    int         rc;
+    PPGM        pPGM = &pVM->pgm.s;
+    uint32_t    u32Sep;
 
     /*
      * Load basic data (required / unaffected by relocation).
      */
-    PPGM pPGM = &pVM->pgm.s;
-#if 1
-    SSMR3GetBool(pSSM,      &pPGM->fMappingsFixed);
-#else
-    uint32_t u;
-    SSMR3GetU32(pSSM,       &u);
-    pPGM->fMappingsFixed = u;
-#endif
-    SSMR3GetGCPtr(pSSM,     &pPGM->GCPtrMappingFixed);
-    SSMR3GetU32(pSSM,       &pPGM->cbMappingFixed);
-
-    RTUINT cbRamSize;
-    int rc = SSMR3GetU32(pSSM, &cbRamSize);
-    if (RT_FAILURE(rc))
-        return rc;
-    if (cbRamSize != pPGM->cbRamSize)
-        return VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH;
-    SSMR3GetGCPhys(pSSM,    &pPGM->GCPhysA20Mask);
-    SSMR3GetUInt(pSSM,      &pPGM->fA20Enabled);
-    SSMR3GetUInt(pSSM,      &pPGM->fSyncFlags);
-    RTUINT uGuestMode;
-    SSMR3GetUInt(pSSM,      &uGuestMode);
-    pPGM->enmGuestMode = (PGMMODE)uGuestMode;
-
-    /* check separator. */
-    uint32_t u32Sep;
-    SSMR3GetU32(pSSM, &u32Sep);
-    if (RT_FAILURE(rc))
-        return rc;
-    if (u32Sep != (uint32_t)~0)
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    if (u32Version >= PGM_SAVED_STATE_VERSION)
     {
-        AssertMsgFailed(("u32Sep=%#x (first)\n", u32Sep));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+        rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFields[0]);
+        AssertLogRelRCReturn(rc, rc);
+    }
+    else
+#endif
+    {
+        SSMR3GetBool(pSSM,      &pPGM->fMappingsFixed);
+        SSMR3GetGCPtr(pSSM,     &pPGM->GCPtrMappingFixed);
+        SSMR3GetU32(pSSM,       &pPGM->cbMappingFixed);
+
+        RTUINT cbRamSize;
+        rc = SSMR3GetU32(pSSM, &cbRamSize);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (cbRamSize != pPGM->cbRamSize)
+            return VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH;
+        SSMR3GetGCPhys(pSSM,    &pPGM->GCPhysA20Mask);
+
+        uint32_t u32 = 0;
+        SSMR3GetUInt(pSSM,      &u32);
+        pPGM->fA20Enabled = !!u32;
+        SSMR3GetUInt(pSSM,      &pPGM->fSyncFlags);
+        RTUINT uGuestMode;
+        SSMR3GetUInt(pSSM,      &uGuestMode);
+        pPGM->enmGuestMode = (PGMMODE)uGuestMode;
+
+        /* check separator. */
+        SSMR3GetU32(pSSM, &u32Sep);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (u32Sep != (uint32_t)~0)
+        {
+            AssertMsgFailed(("u32Sep=%#x (first)\n", u32Sep));
+            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+        }
     }
 
     /*
@@ -2334,7 +2626,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         if (RT_FAILURE(rc))
             return rc;
         RTGCPTR GCPtr;
-        SSMR3GetGCPtr(pSSM,     &GCPtr);
+        SSMR3GetGCPtr(pSSM, &GCPtr);
         RTGCPTR cPTs;
         rc = SSMR3GetGCUIntPtr(pSSM, &cPTs);
         if (RT_FAILURE(rc))
@@ -2346,13 +2638,9 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
             if (    pMapping->cPTs == cPTs
                 &&  !strcmp(pMapping->pszDesc, szDesc))
                 break;
-        if (!pMapping)
-        {
-            LogRel(("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%RGv)\n",
-                    cPTs, szDesc, GCPtr));
-            AssertFailed();
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        }
+        AssertLogRelMsgReturn(pMapping, ("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%RGv)\n",
+                                         cPTs, szDesc, GCPtr),
+                              VERR_SSM_LOAD_CONFIG_MISMATCH);
 
         /* relocate it. */
         if (pMapping->GCPtr != GCPtr)
@@ -2371,6 +2659,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     for (PPGMRAMRANGE pRam = pPGM->pRamRangesR3; pRam; pRam = pRam->pNextR3, i++)
     {
         /** @todo MMIO ranges may move (PCI reconfig), we currently assume they don't. */
+
         /* Check the seqence number / separator. */
         rc = SSMR3GetU32(pSSM, &u32Sep);
         if (RT_FAILURE(rc))
@@ -2399,37 +2688,200 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
             AssertMsgFailed(("u32Sep=%#x (last)\n", u32Sep));
             return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
         }
-
-        /* Match it up with the current range. */
-        if (    GCPhys != pRam->GCPhys
-            ||  GCPhysLast != pRam->GCPhysLast
-            ||  cb != pRam->cb
-            ||  fHaveBits != !!pRam->pvR3)
+        char szDesc[256];
+        szDesc[0] = '\0';
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        if (u32Version >= PGM_SAVED_STATE_VERSION)
         {
-            LogRel(("Ram range: %RGp-%RGp %RGp bytes %s\n"
-                    "State    : %RGp-%RGp %RGp bytes %s\n",
-                    pRam->GCPhys, pRam->GCPhysLast, pRam->cb, pRam->pvR3 ? "bits" : "nobits",
-                    GCPhys, GCPhysLast, cb, fHaveBits ? "bits" : "nobits"));
+            rc = SSMR3GetStrZ(pSSM, szDesc, sizeof(szDesc));
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+#endif
+
+        /*
+         * Match it up with the current range.
+         *
+         * Note there is a hack for dealing with the high BIOS mapping
+         * in the old saved state format, this means we might not have
+         * a 1:1 match on success.
+         */
+        if (    (   GCPhys     != pRam->GCPhys
+                 || GCPhysLast != pRam->GCPhysLast
+                 || cb         != pRam->cb
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+                 ||  (szDesc[0] && strcmp(szDesc, pRam->pszDesc))
+#else
+                 ||  fHaveBits  != !!pRam->pvR3
+#endif
+                 )
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+                /* Hack for PDMDevHlpPhysReserve(pDevIns, 0xfff80000, 0x80000, "High ROM Region"); */
+            &&  (   u32Version != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE
+                 || GCPhys     != UINT32_C(0xfff80000)
+                 || GCPhysLast != UINT32_C(0xfff80000)
+                 || pRam->GCPhysLast != GCPhysLast
+                 || pRam->GCPhys     <  GCPhys
+                 || !fHaveBits)
+#endif
+           )
+        {
+            LogRel(("Ram range: %RGp-%RGp %RGp bytes %s %s\n"
+                    "State    : %RGp-%RGp %RGp bytes %s %s\n",
+                    pRam->GCPhys, pRam->GCPhysLast, pRam->cb, pRam->pvR3 ? "bits" : "nobits", pRam->pszDesc,
+                    GCPhys, GCPhysLast, cb, fHaveBits ? "bits" : "nobits", szDesc));
             /*
              * If we're loading a state for debugging purpose, don't make a fuss if
-             * the MMIO[2] and ROM stuff isn't 100% right, just skip the mismatches.
+             * the MMIO and ROM stuff isn't 100% right, just skip the mismatches.
              */
             if (    SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT
                 ||  GCPhys < 8 * _1M)
                 AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
 
-            RTGCPHYS cPages = ((GCPhysLast - GCPhys) + 1) >> PAGE_SHIFT;
-            while (cPages-- > 0)
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+            if (u32Version > PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE)
+                AssertMsgFailed(("debug skipping not implemented, sorry\n"));
+            else
+#else
             {
-                uint16_t u16Ignore;
-                SSMR3GetU16(pSSM, &u16Ignore);
+                RTGCPHYS cPages = ((GCPhysLast - GCPhys) + 1) >> PAGE_SHIFT;
+                while (cPages-- > 0)
+                {
+                    uint16_t u16Ignore;
+                    SSMR3GetU16(pSSM, &u16Ignore);
+                }
             }
+#endif
             continue;
         }
 
+        uint32_t cPages = (GCPhysLast - GCPhys + 1) >> PAGE_SHIFT;
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        if (u32Version >= PGM_SAVED_STATE_VERSION)
+        {
+            /*
+             * Load the pages one by one.
+             */
+            for (uint32_t iPage = 0; iPage < cPages; iPage++)
+            {
+                RTGCPHYS const  GCPhysPage = ((RTGCPHYS)iPage << PAGE_SHIFT) + pRam->GCPhys;
+                PPGMPAGE        pPage      = &pRam->aPages[iPage];
+                uint8_t         uType;
+                rc = SSMR3GetU8(pSSM, &uType);
+                AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] iPage=%#x GCPhysPage=%#x %s\n", pPage, iPage, GCPhysPage, pRam->pszDesc), rc);
+                if (uType == PGMPAGETYPE_ROM_SHADOW)
+                    rc = pgmR3LoadShadowedRomPage(pVM, pSSM, pPage, GCPhys, pRam);
+                else
+                    rc = pgmR3LoadPage(pVM, pSSM, uType, pPage, GCPhysPage, pRam);
+            }
+        }
+        else
+        {
+            /*
+             * Old format.
+             */
+            AssertLogRelReturn(pVM->pgm.s.fRamPreAlloc, VERR_NOT_SUPPORTED); /* can't be detected. */
+
+            /* Of the page flags, pick up MMIO2 and ROM/RESERVED for the !fHaveBits case.
+               The rest is generally irrelevant and wrong since the stuff have to match registrations. */
+            uint32_t fFlags = 0;
+            for (uint32_t iPage = 0; iPage < cPages; iPage++)
+            {
+                uint16_t u16Flags;
+                rc = SSMR3GetU16(pSSM, &u16Flags);
+                AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhys=%#x %s\n", rc, iPage, pRam->GCPhys, pRam->pszDesc), rc);
+                fFlags |= u16Flags;
+            }
+
+            /* Load the bits */
+            if (!fHaveBits)
+            {
+                /*
+                 * Dynamic chunks.
+                 */
+                const uint32_t cPagesInChunk = (1*1024*1024) >> PAGE_SHIFT;;
+                AssertLogRelMsgReturn(cPages % cPagesInChunk == 0,
+                                      ("cPages=%#x cPagesInChunk=%#x\n", cPages, cPagesInChunk, pRam->GCPhys, pRam->pszDesc),
+                                      VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+                for (uint32_t iPage = 0; iPage < cPages; /* incremented by inner loop */ )
+                {
+                    uint8_t fPresent;
+                    rc = SSMR3GetU8(pSSM, &fPresent);
+                    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhys=%#x %s\n", rc, iPage, pRam->GCPhys, pRam->pszDesc), rc);
+                    AssertLogRelMsgReturn(fPresent == true || fPresent == false,
+                                          ("fPresent=%#x iPage=%#x GCPhys=%#x %s\n", fPresent, iPage, pRam->GCPhys, pRam->pszDesc),
+                                          VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+                    for (i = 0; i < cPagesInChunk; i++, iPage++)
+                    {
+                        RTGCPHYS const  GCPhysPage = ((RTGCPHYS)iPage << PAGE_SHIFT) + pRam->GCPhys;
+                        PPGMPAGE        pPage      = &pRam->aPages[iPage];
+                        if (fPresent)
+                            rc = pgmR3LoadPageBits(pVM, pSSM, PGMPAGETYPE_INVALID, pPage, GCPhysPage, pRam);
+                        else
+                            rc = pgmR3LoadPageZero(pVM, PGMPAGETYPE_INVALID, pPage, GCPhysPage, pRam);
+                        AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhys=%#x %s\n", rc, iPage, pRam->GCPhys, pRam->pszDesc), rc);
+                    }
+                }
+            }
+            else if (pRam->pvR3)
+            {
+                /*
+                 * MMIO2.
+                 */
+                AssertLogRelMsgReturn((fFlags & 0x03) == RT_BIT(3) /*MM_RAM_FLAGS_MMIO2*/,
+                                      ("fFlags=%#x GCPhys=%#x %s\n", fFlags, pRam->GCPhys, pRam->pszDesc),
+                                      VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+                AssertLogRelMsgReturn(pRam->pvR3,
+                                      ("GCPhys=%#x %s\n", pRam->GCPhys, pRam->pszDesc),
+                                      VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+                rc = SSMR3GetMem(pSSM, pRam->pvR3, pRam->cb);
+                AssertLogRelMsgRCReturn(rc, ("GCPhys=%#x %s\n", pRam->GCPhys, pRam->pszDesc), rc);
+            }
+            else
+            {
+                /*
+                 * Load the 0xfff80000..0xffffffff BIOS range.
+                 * It starts with X reserved pages that we have to skip over since
+                 * the RAMRANGE create by the new code won't include those.
+                 */
+                AssertLogRelMsgReturn(   !(fFlags & RT_BIT(3) /*MM_RAM_FLAGS_MMIO2*/)
+                                      && (fFlags  & RT_BIT(0) /*MM_RAM_FLAGS_RESERVED*/),
+                                      ("fFlags=%#x GCPhys=%#x %s\n", fFlags, pRam->GCPhys, pRam->pszDesc),
+                                      VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+                AssertLogRelMsgReturn(GCPhys == UINT32_C(0xfff80000),
+                                      ("GCPhys=%RGp pRamRange{GCPhys=%#x %s}\n", GCPhys, pRam->GCPhys, pRam->pszDesc),
+                                      VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+                /* Skip wasted reserved pages before the ROM. */
+                while (GCPhys < pRam->GCPhys)
+                {
+                    rc = pgmR3LoadPageToDevNull(pSSM);
+                    GCPhys += PAGE_SIZE;
+                }
+
+                /* Load the bios pages. */
+                cPages = pRam->cb >> PAGE_SHIFT;
+                for (uint32_t iPage = 0; iPage < cPages; iPage++)
+                {
+                    RTGCPHYS const  GCPhysPage = ((RTGCPHYS)iPage << PAGE_SHIFT) + pRam->GCPhys;
+                    PPGMPAGE        pPage      = &pRam->aPages[iPage];
+
+                    AssertLogRelMsgReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_ROM,
+                                          ("GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, GCPhys),
+                                          VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+                    rc = pgmR3LoadPageBits(pVM, pSSM, PGMPAGETYPE_ROM, pPage, GCPhysPage, pRam);
+                    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhys=%#x %s\n", rc, iPage, pRam->GCPhys, pRam->pszDesc), rc);
+                }
+            }
+        }
+
+#else  /* !VBOX_WITH_NEW_PHYS_CODE */
         /* Flags. */
-        const unsigned cPages = pRam->cb >> PAGE_SHIFT;
-        for (unsigned iPage = 0; iPage < cPages; iPage++)
+        for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {
             uint16_t    u16 = 0;
             SSMR3GetU16(pSSM, &u16);
@@ -2469,43 +2921,88 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         }
         else if (pRam->pvR3)
         {
-            int rc = SSMR3GetMem(pSSM, pRam->pvR3, pRam->cb);
+            rc = SSMR3GetMem(pSSM, pRam->pvR3, pRam->cb);
             if (RT_FAILURE(rc))
             {
                 Log(("pgmR3Save: SSMR3GetMem(, %p, %#x) -> %Rrc\n", pRam->pvR3, pRam->cb, rc));
                 return rc;
             }
         }
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
+    }
+
+    return rc;
+}
+
+
+/**
+ * Execute state load operation.
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   pSSM            SSM operation handle.
+ * @param   u32Version      Data layout version.
+ */
+static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    int     rc;
+    PPGM    pPGM = &pVM->pgm.s;
+
+    /*
+     * Validate version.
+     */
+    if (    u32Version != PGM_SAVED_STATE_VERSION
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        &&  u32Version != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE
+#endif
+       )
+    {
+        AssertMsgFailed(("pgmR3Load: Invalid version u32Version=%d (current %d)!\n", u32Version, PGM_SAVED_STATE_VERSION));
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
     /*
-     * We require a full resync now.
+     * Call the reset function to make sure all the memory is cleared.
      */
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-    pPGM->fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
-    pPGM->fPhysCacheFlushPending = true;
-    pgmR3HandlerPhysicalUpdateAll(pVM);
+    PGMR3Reset(pVM);
 
     /*
-     * Change the paging mode.
+     * Do the loading while owning the lock because a bunch of the functions
+     * we're using requires this.
      */
-    rc = PGMR3ChangeMode(pVM, pPGM->enmGuestMode);
+    pgmLock(pVM);
+    rc = pgmR3LoadLocked(pVM, pSSM, u32Version);
+    pgmUnlock(pVM);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * We require a full resync now.
+         */
+        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
+        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        pPGM->fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
+        pPGM->fPhysCacheFlushPending = true;
+        pgmR3HandlerPhysicalUpdateAll(pVM);
 
-    /* Restore pVM->pgm.s.GCPhysCR3. */
-    Assert(pVM->pgm.s.GCPhysCR3 == NIL_RTGCPHYS);
-    RTGCPHYS GCPhysCR3 = CPUMGetGuestCR3(pVM);
-    if (    pVM->pgm.s.enmGuestMode == PGMMODE_PAE
-        ||  pVM->pgm.s.enmGuestMode == PGMMODE_PAE_NX
-        ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64
-        ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64_NX)
-        GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAE_PAGE_MASK);
-    else
-        GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAGE_MASK);
-    pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
+        /*
+         * Change the paging mode.
+         */
+        rc = PGMR3ChangeMode(pVM, pPGM->enmGuestMode);
+
+        /* Restore pVM->pgm.s.GCPhysCR3. */
+        Assert(pVM->pgm.s.GCPhysCR3 == NIL_RTGCPHYS);
+        RTGCPHYS GCPhysCR3 = CPUMGetGuestCR3(pVM);
+        if (    pVM->pgm.s.enmGuestMode == PGMMODE_PAE
+            ||  pVM->pgm.s.enmGuestMode == PGMMODE_PAE_NX
+            ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64
+            ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64_NX)
+            GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAE_PAGE_MASK);
+        else
+            GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAGE_MASK);
+        pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
+    }
 
     return rc;
-#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 }
 
 
