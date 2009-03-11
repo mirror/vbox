@@ -539,10 +539,10 @@ public:
     STDMETHOD(SetBootOrder)(ULONG aPosition, DeviceType_T aDevice);
     STDMETHOD(GetBootOrder)(ULONG aPosition, DeviceType_T *aDevice);
     STDMETHOD(AttachHardDisk)(IN_GUID aId, IN_BSTR aControllerName,
-                              LONG aPort, LONG aDevice);
-    STDMETHOD(GetHardDisk)(IN_BSTR aControllerName, LONG aPort, LONG aDevice,
+                              LONG aControllerPort, LONG aDevice);
+    STDMETHOD(GetHardDisk)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice,
                            IHardDisk **aHardDisk);
-    STDMETHOD(DetachHardDisk)(IN_BSTR aControllerName, LONG aPort, LONG aDevice);
+    STDMETHOD(DetachHardDisk)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice);
     STDMETHOD(GetSerialPort) (ULONG slot, ISerialPort **port);
     STDMETHOD(GetParallelPort) (ULONG slot, IParallelPort **port);
     STDMETHOD(GetNetworkAdapter) (ULONG slot, INetworkAdapter **adapter);

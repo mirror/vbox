@@ -4322,7 +4322,7 @@
       <param name="name" type="wstring" dir="in">
         <desc>Name of the storage controller to attach the hard disk to.</desc>
       </param>
-      <param name="port" type="long" dir="in">
+      <param name="controllerPort" type="long" dir="in">
         <desc>Port to attach the hard disk to.</desc>
       </param>
       <param name="device" type="long" dir="in">
@@ -4351,7 +4351,7 @@
       <param name="name" type="wstring" dir="in">
         <desc>Name of the storage controller the hard disk is attached to.</desc>
       </param>
-      <param name="port" type="long" dir="in">
+      <param name="controllerPort" type="long" dir="in">
         <desc>Port to query.</desc>
       </param>
       <param name="device" type="long" dir="in">
@@ -4400,7 +4400,7 @@
       <param name="name" type="wstring" dir="in">
         <desc>name of the storage controller to detach the hard disk from.</desc>
       </param>
-      <param name="port" type="long" dir="in">
+      <param name="controllerPort" type="long" dir="in">
         <desc>Port number to detach the hard disk from.</desc>
       </param>
       <param name="device" type="long" dir="in">
