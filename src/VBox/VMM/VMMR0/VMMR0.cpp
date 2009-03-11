@@ -553,11 +553,13 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
                 int rc;
                 bool fVTxDisabled;
 
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
                 if (RT_UNLIKELY(!PGMGetHyperCR3(pVM)))
                 {
                     pVM->vmm.s.iLastGZRc = VERR_PGM_NO_CR3_SHADOW_ROOT;
                     return;
                 }
+#endif
 
                 /* We might need to disable VT-x if the active switcher turns off paging. */
                 rc = HWACCMR0EnterSwitcher(pVM, &fVTxDisabled);
@@ -797,8 +799,10 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
             if (RT_UNLIKELY(pVM->vmm.s.fSwitcherDisabled))
                 return VERR_NOT_SUPPORTED;
 
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
             if (RT_UNLIKELY(!PGMGetHyperCR3(pVM)))
                 return VERR_PGM_NO_CR3_SHADOW_ROOT;
+#endif
 
             RTCCUINTREG fFlags = ASMIntDisableFlags();
 
