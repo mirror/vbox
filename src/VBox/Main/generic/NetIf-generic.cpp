@@ -37,7 +37,7 @@ int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)
     return VERR_NOT_IMPLEMENTED;
 }
 
-int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVbox, IN_BSTR aName, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress)
+int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVbox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress)
 {
     return VERR_NOT_IMPLEMENTED;
 }
