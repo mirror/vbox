@@ -85,8 +85,18 @@
 #define VBOX_VIDEO_MAX_SCREENS 64
 
 /* The size of the information. */
+#ifndef VBOX_WITH_HGSMI
 #define VBOX_VIDEO_ADAPTER_INFORMATION_SIZE  4096
 #define VBOX_VIDEO_DISPLAY_INFORMATION_SIZE  4096
+#else
+/*
+ * The minimum HGSMI heap size is PAGE_SIZE (4096 bytes) and is a restriction of the
+ * runtime heapsimple API. Use minimum 2 pages here, because the info area also may
+ * contain other data (for example HGSMIHOSTFLAGS structure). 
+ */
+#define VBVA_ADAPTER_INFORMATION_SIZE  8*_1K
+#define VBVA_DISPLAY_INFORMATION_SIZE  8*_1K
+#endif /* VBOX_WITH_HGSMI */
 
 
 /* The value for port IO to let the adapter to interpret the adapter memory. */
@@ -352,7 +362,7 @@ typedef struct _VBVAINFOSCREEN
 typedef struct _VBVAENABLE
 {
     uint32_t u32Flags;
-    uint32_t u32Reserved;
+    uint32_t u32Offset;
 
 } VBVAENABLE;
 
