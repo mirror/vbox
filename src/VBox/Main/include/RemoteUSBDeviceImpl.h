@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,7 +26,6 @@
 #define ____H_REMOTEUSBDEVICEIMPL
 
 #include "VirtualBoxBase.h"
-#include "Collection.h"
 
 struct _VRDPUSBDEVICEDESC;
 typedef _VRDPUSBDEVICEDESC VRDPUSBDEVICEDESC;
@@ -136,66 +135,6 @@ private:
 
     Data mData;
 };
-
-COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComObjPtr <RemoteUSBDevice>, IHostUSBDevice, RemoteUSBDevice)
-
-    STDMETHOD(FindById) (IN_GUID aId, IHostUSBDevice **aDevice)
-    {
-        Guid idToFind = aId;
-        if (idToFind.isEmpty())
-            return E_INVALIDARG;
-        if (!aDevice)
-            return E_POINTER;
-
-        *aDevice = NULL;
-        Vector::value_type found;
-        Vector::iterator it = vec.begin();
-        while (!found && it != vec.end())
-        {
-            Guid id;
-            (*it)->COMGETTER(Id) (id.asOutParam());
-            if (id == idToFind)
-                found = *it;
-            ++ it;
-        }
-
-        if (!found)
-            return setError (E_INVALIDARG, RemoteUSBDeviceCollection::tr (
-                "Could not find a USB device with UUID {%s}"),
-                idToFind.toString().raw());
-
-        return found.queryInterfaceTo (aDevice);
-    }
-
-    STDMETHOD(FindByAddress) (IN_BSTR aAddress, IHostUSBDevice **aDevice)
-    {
-        if (!aAddress)
-            return E_INVALIDARG;
-        if (!aDevice)
-            return E_POINTER;
-
-        *aDevice = NULL;
-        Vector::value_type found;
-        Vector::iterator it = vec.begin();
-        while (!found && it != vec.end())
-        {
-            Bstr address;
-            (*it)->COMGETTER(Address) (address.asOutParam());
-            if (address == aAddress)
-                found = *it;
-            ++ it;
-        }
-
-        if (!found)
-            return setError (E_INVALIDARG, RemoteUSBDeviceCollection::tr (
-                "Could not find a USB device with address '%ls'"),
-                aAddress);
-
-        return found.queryInterfaceTo (aDevice);
-    }
-
-COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END (ComObjPtr <RemoteUSBDevice>, IHostUSBDevice, RemoteUSBDevice)
-
 
 #endif // ____H_REMOTEUSBDEVICEIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

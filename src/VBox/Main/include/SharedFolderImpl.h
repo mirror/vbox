@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,7 +23,6 @@
 #define ____H_SHAREDFOLDERIMPL
 
 #include "VirtualBoxBase.h"
-#include "Collection.h"
 #include <VBox/shflsvc.h>
 
 class Machine;

@@ -5548,7 +5548,7 @@ void VBoxUSBMenu::processAboutToShow()
 
     CHost host = vboxGlobal().virtualBox().GetHost();
 
-    bool isUSBEmpty = host.GetUSBDevices().GetCount() == 0;
+    bool isUSBEmpty = host.GetUSBDevices().size() == 0;
     if (isUSBEmpty)
     {
         QAction *action = addAction (tr ("<no available devices>", "USB devices"));
@@ -5558,10 +5558,10 @@ void VBoxUSBMenu::processAboutToShow()
     }
     else
     {
-        CHostUSBDeviceEnumerator en = host.GetUSBDevices().Enumerate();
-        while (en.HasMore())
+        CHostUSBDeviceVector devvec = host.GetUSBDevices();
+        for (int i = 0; i < devvec.size(); ++i)
         {
-            CHostUSBDevice dev = en.GetNext();
+            CHostUSBDevice dev = devvec[i];
             CUSBDevice usb (dev);
             QAction *action = addAction (vboxGlobal().details (usb));
             action->setCheckable (true);

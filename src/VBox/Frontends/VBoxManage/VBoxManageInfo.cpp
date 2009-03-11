@@ -1213,102 +1213,87 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 if (details != VMINFO_MACHINEREADABLE)
                     RTPrintf("Available remote USB devices:\n\n");
 
-                ComPtr<IHostUSBDeviceCollection> coll;
-                CHECK_ERROR_RET (console, COMGETTER(RemoteUSBDevices) (coll.asOutParam()), rc);
+                SafeIfaceArray <IHostUSBDevice> coll;
+                CHECK_ERROR_RET (console, COMGETTER(RemoteUSBDevices) (ComSafeArrayAsOutParam(coll)), rc);
 
-                ComPtr <IHostUSBDeviceEnumerator> en;
-                CHECK_ERROR_RET (coll, Enumerate (en.asOutParam()), rc);
-
-                BOOL more = FALSE;
-                ASSERT(SUCCEEDED(rc = en->HasMore(&more)));
-                if (FAILED(rc))
-                    return rc;
-
-                if (!more)
+                if (coll.size() == 0)
                 {
                     if (details != VMINFO_MACHINEREADABLE)
                         RTPrintf("<none>\n\n");
                 }
                 else
-                while (more)
                 {
-                    ComPtr <IHostUSBDevice> dev;
-                    ASSERT(SUCCEEDED(rc = en->GetNext (dev.asOutParam())));
-                    if (FAILED(rc))
-                        return rc;
-
-                    /* Query info. */
-                    Guid id;
-                    CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), rc);
-                    USHORT usVendorId;
-                    CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), rc);
-                    USHORT usProductId;
-                    CHECK_ERROR_RET (dev, COMGETTER(ProductId)(&usProductId), rc);
-                    USHORT bcdRevision;
-                    CHECK_ERROR_RET (dev, COMGETTER(Revision)(&bcdRevision), rc);
-
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("USBRemoteUUID%d=\"%S\"\n"
-                                 "USBRemoteVendorId%d=\"%#06x\"\n"
-                                 "USBRemoteProductId%d=\"%#06x\"\n"
-                                 "USBRemoteRevision%d=\"%#04x%02x\"\n",
-                                 index + 1, id.toString().raw(),
-                                 index + 1, usVendorId,
-                                 index + 1, usProductId,
-                                 index + 1, bcdRevision >> 8, bcdRevision & 0xff);
-                    else
-                        RTPrintf("UUID:               %S\n"
-                                 "VendorId:           0x%04x (%04X)\n"
-                                 "ProductId:          0x%04x (%04X)\n"
-                                 "Revision:           %u.%u (%02u%02u)\n",
-                                 id.toString().raw(),
-                                 usVendorId, usVendorId, usProductId, usProductId,
-                                 bcdRevision >> 8, bcdRevision & 0xff,
-                                 bcdRevision >> 8, bcdRevision & 0xff);
-
-                    /* optional stuff. */
-                    Bstr bstr;
-                    CHECK_ERROR_RET (dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
-                    if (!bstr.isEmpty())
+                    for (index = 0; index < coll.size(); ++index)
                     {
-                        if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBRemoteManufacturer%d=\"%lS\"\n", index + 1, bstr.raw());
-                        else
-                            RTPrintf("Manufacturer:       %lS\n", bstr.raw());
-                    }
-                    CHECK_ERROR_RET (dev, COMGETTER(Product)(bstr.asOutParam()), rc);
-                    if (!bstr.isEmpty())
-                    {
-                        if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBRemoteProduct%d=\"%lS\"\n", index + 1, bstr.raw());
-                        else
-                            RTPrintf("Product:            %lS\n", bstr.raw());
-                    }
-                    CHECK_ERROR_RET (dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
-                    if (!bstr.isEmpty())
-                    {
-                        if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBRemoteSerialNumber%d=\"%lS\"\n", index + 1, bstr.raw());
-                        else
-                            RTPrintf("SerialNumber:       %lS\n", bstr.raw());
-                    }
-                    CHECK_ERROR_RET (dev, COMGETTER(Address)(bstr.asOutParam()), rc);
-                    if (!bstr.isEmpty())
-                    {
-                        if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBRemoteAddress%d=\"%lS\"\n", index + 1, bstr.raw());
-                        else
-                            RTPrintf("Address:            %lS\n", bstr.raw());
-                    }
+                        ComPtr <IHostUSBDevice> dev = coll[index];
 
-                    if (details != VMINFO_MACHINEREADABLE)
-                        RTPrintf("\n");
+                        /* Query info. */
+                        Guid id;
+                        CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), rc);
+                        USHORT usVendorId;
+                        CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), rc);
+                        USHORT usProductId;
+                        CHECK_ERROR_RET (dev, COMGETTER(ProductId)(&usProductId), rc);
+                        USHORT bcdRevision;
+                        CHECK_ERROR_RET (dev, COMGETTER(Revision)(&bcdRevision), rc);
 
-                    ASSERT(SUCCEEDED(rc = en->HasMore (&more)));
-                    if (FAILED(rc))
-                        return rc;
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("USBRemoteUUID%zu=\"%S\"\n"
+                                     "USBRemoteVendorId%zu=\"%#06x\"\n"
+                                     "USBRemoteProductId%zu=\"%#06x\"\n"
+                                     "USBRemoteRevision%zu=\"%#04x%02x\"\n",
+                                     index + 1, id.toString().raw(),
+                                     index + 1, usVendorId,
+                                     index + 1, usProductId,
+                                     index + 1, bcdRevision >> 8, bcdRevision & 0xff);
+                        else
+                            RTPrintf("UUID:               %S\n"
+                                     "VendorId:           0x%04x (%04X)\n"
+                                     "ProductId:          0x%04x (%04X)\n"
+                                     "Revision:           %u.%u (%02u%02u)\n",
+                                     id.toString().raw(),
+                                     usVendorId, usVendorId, usProductId, usProductId,
+                                     bcdRevision >> 8, bcdRevision & 0xff,
+                                     bcdRevision >> 8, bcdRevision & 0xff);
 
-                    index ++;
+                        /* optional stuff. */
+                        Bstr bstr;
+                        CHECK_ERROR_RET (dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
+                        if (!bstr.isEmpty())
+                        {
+                            if (details == VMINFO_MACHINEREADABLE)
+                                RTPrintf("USBRemoteManufacturer%zu=\"%lS\"\n", index + 1, bstr.raw());
+                            else
+                                RTPrintf("Manufacturer:       %lS\n", bstr.raw());
+                        }
+                        CHECK_ERROR_RET (dev, COMGETTER(Product)(bstr.asOutParam()), rc);
+                        if (!bstr.isEmpty())
+                        {
+                            if (details == VMINFO_MACHINEREADABLE)
+                                RTPrintf("USBRemoteProduct%zu=\"%lS\"\n", index + 1, bstr.raw());
+                            else
+                                RTPrintf("Product:            %lS\n", bstr.raw());
+                        }
+                        CHECK_ERROR_RET (dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
+                        if (!bstr.isEmpty())
+                        {
+                            if (details == VMINFO_MACHINEREADABLE)
+                                RTPrintf("USBRemoteSerialNumber%zu=\"%lS\"\n", index + 1, bstr.raw());
+                            else
+                                RTPrintf("SerialNumber:       %lS\n", bstr.raw());
+                        }
+                        CHECK_ERROR_RET (dev, COMGETTER(Address)(bstr.asOutParam()), rc);
+                        if (!bstr.isEmpty())
+                        {
+                            if (details == VMINFO_MACHINEREADABLE)
+                                RTPrintf("USBRemoteAddress%zu=\"%lS\"\n", index + 1, bstr.raw());
+                            else
+                                RTPrintf("Address:            %lS\n", bstr.raw());
+                        }
+
+                        if (details != VMINFO_MACHINEREADABLE)
+                            RTPrintf("\n");
+                    }
                 }
             }
 
