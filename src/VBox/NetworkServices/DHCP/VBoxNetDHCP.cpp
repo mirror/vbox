@@ -47,6 +47,11 @@
 #include <vector>
 #include <string>
 
+/** @Todo move these:  */
+
+/** The requested address. */
+#define RTNET_DHCP_OPT_REQUESTED_ADDRESS    50
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -181,10 +186,35 @@ public:
 class VBoxNetDhcpLease
 {
 public:
+    typedef enum State
+    {
+        /** The lease is free / released. */
+        kState_Free = 0,
+        /** An offer has been made.
+         * Expire time indicates when the offer expires. */
+        kState_Offer,
+        /** The lease is active.
+         * Expire time indicates when the lease expires. */
+        kState_Active
+    } State;
+
+    void            offer(uint32_t xid);
+    void            activate(void);
+    void            release(void);
+
     /** The client MAC address. */
     RTMAC           m_MacAddress;
+    /** The IPv4 address. */
+    RTNETADDRIPV4   m_IPv4Address;
+
+    /** The current lease state. */
+    State           m_enmState;
     /** The lease expiration time. */
     RTTIMESPEC      m_ExpireTime;
+    /** Transaction ID. */
+    uint32_t        m_xid;
+    /** The configuration for this lease. */
+    VBoxNetDhcpCfg *m_pCfg;
 };
 
 /**
@@ -207,7 +237,15 @@ protected:
     bool                handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb);
     bool                handleDhcpReqDecline(PCRTNETBOOTP pDhcpMsg, size_t cb);
     bool                handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb);
-    void                handleDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRTNETBOOTP pDhcpMsg, size_t cb);
+    void                makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRTNETBOOTP pDhcpMsg, size_t cb);
+
+    VBoxNetDhcpLease   *findLeaseByMacAddress(PCRTMAC pMacAddress, bool fEnsureUpToDateConfig);
+    VBoxNetDhcpLease   *findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4Addr, PCRTMAC pMacAddress);
+    VBoxNetDhcpLease   *newLease(PCRTNETBOOTP pDhcpMsg, size_t cb);
+    void                updateLeaseConfig(VBoxNetDhcpLease *pLease);
+
+    static uint8_t     *findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, size_t *pcbMaxOpt);
+    static bool         findOptionIPv4Addr(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, PRTNETADDRIPV4 pIPv4Addr);
 
     inline void         debugPrint( int32_t iMinLevel, bool fMsg,  const char *pszFmt, ...) const;
     void                debugPrintV(int32_t iMinLevel, bool fMsg,  const char *pszFmt, va_list va) const;
@@ -271,7 +309,7 @@ VBoxNetDhcp::VBoxNetDhcp()
     m_MacAddress.au8[5]     = 0x42;
     m_IpAddress.u           = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  5)));
 
-    m_pSession              = NULL;
+    m_pSession              = NIL_RTR0PTR;
     m_cbSendBuf             =  8192;
     m_cbRecvBuf             = 51200; /** @todo tune to 64 KB with help from SrvIntR0 */
     m_hIf                   = INTNET_HANDLE_INVALID;
@@ -323,7 +361,7 @@ VBoxNetDhcp::~VBoxNetDhcp()
     if (m_pSession)
     {
         SUPTerm(false /* not forced */);
-        m_pSession = NULL;
+        m_pSession = NIL_RTR0PTR;
     }
 }
 
@@ -495,7 +533,7 @@ int VBoxNetDhcp::tryGoOnline(void)
     int rc = SUPR3Init(&m_pSession);
     if (RT_FAILURE(rc))
     {
-        m_pSession = NULL;
+        m_pSession = NIL_RTR0PTR;
         RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3Init -> %Rrc", rc);
         return 1;
     }
@@ -708,21 +746,18 @@ bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
      * crashed or whatever that have caused it to forget its existing lease.
      * If none was found, create a new lease for it and then construct a reply.
      */
-    VBoxNetDhcpLease *pLease = findLeaseByMacAddress(pDhcpMsg->bp_chaddr.Mac,
+    VBoxNetDhcpLease *pLease = findLeaseByMacAddress(&pDhcpMsg->bp_chaddr.Mac,
                                                      true /* fEnsureUpToDateConfig */);
     if (!pLease)
         pLease = newLease(pDhcpMsg, cb);
     if (!pLease)
         return false;
-    pLease->setState(pLease::kState_Discover);
+    pLease->offer(pDhcpMsg->bp_xid);
 
-    handleDhcpReply(RTNET_DHCP_MT_OFFER, pLease, pDhcpMsg, cb);
+    makeDhcpReply(RTNET_DHCP_MT_OFFER, pLease, pDhcpMsg, cb);
     return true;
 }
 
-
-/** The requested address. */
-#define RTNET_DHCP_OPT_REQUESTED_ADDRESS    50
 
 /**
  * The client is requesting an offer.
@@ -734,35 +769,67 @@ bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
  */
 bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
+    /** @todo Probably need to match the server IP here to work correctly with
+     *        other servers. */
+
     /*
      * Windows will reissue these requests when rejoining a network if it thinks it
      * already has an address on the network. If we cannot find a valid lease,
      * make a new one and return NAC.
      */
-    uint8_t             uReplyType  = RTNET_DHCP_MT_NAC;
-    VBoxNetDhcpLease   *pLease      = NULL;
     RTNETADDRIPV4       IPv4Addr;
-    if (findOptionIPv4Addr(RTNET_DHCP_OPT_REQUESTED_ADDRESS, pDhcpMsg, cb, &Ipv4Addr))
+    if (findOptionIPv4Addr(RTNET_DHCP_OPT_REQUESTED_ADDRESS, pDhcpMsg, cb, &IPv4Addr))
     {
-        pLease = findLeaseByIpv4AndMacAddresses(Ipv4Addr, pDhcpMsg->bp_chaddr);
+        VBoxNetDhcpLease *pLease = findLeaseByIpv4AndMacAddresses(IPv4Addr, &pDhcpMsg->bp_chaddr.Mac);
         if (pLease)
         {
-            /** @todo check how windows treats bp_xid here, it should match I think. If
-             *        it doesn't we've no way of filtering out broadcast replies to other
-             *        DHCP servers. */
-            if (pDhcpMsg->bp_xid == )
+            /* Check if the xid matches, if it doesn't it's not our call. */
+#if 0      /** @todo check how windows treats bp_xid here, it should match I think. If
+            *        it doesn't we've no way of filtering out broadcast replies to other
+            *        DHCP servers. Fix this later.
+            */
+            if (pDhcpMsg->bp_xid != pLease->m_xid)
             {
+                debugPrint(1, true, "bp_xid %#x != lease %#x", pDhcpMsg->bp_xid, pLease->m_xid);
+                return true;
             }
+#endif
+            /* Check if the config has changed since the offer was given? NAK it then? */
 
+            /*
+             * Ack it.
+             */
+            pLease->activate();
+            makeDhcpReply(RTNET_DHCP_MT_ACK, pLease, pDhcpMsg, cb);
+        }
+        else
+        {
+            /*
+             * Try make a new offer and see if we get the requested IP and config, that
+             * will make the (windows) client happy apparently...
+             */
+            pLease = newLease(pDhcpMsg, cb);
+            if (    pLease
+                &&  pLease->m_IPv4Address.u == IPv4Addr.u
+                /** @todo match requested config later */)
+            {
+                /* ACK it. */
+                pLease->activate();
+                makeDhcpReply(RTNET_DHCP_MT_ACK, pLease, pDhcpMsg, cb);
+            }
+            else
+            {
+                /* NAK it */
+                if (pLease)
+                    pLease->release();
+                pLease->activate();
+                makeDhcpReply(RTNET_DHCP_MT_NAC, NULL, pDhcpMsg, cb);
+            }
         }
     }
+    else
+        debugPrint(1, true, "No requested address option");
 
-    if (pLease)
-    {
-    }
-
-
-    /** @todo this code IS required. */
     return true;
 }
 
@@ -777,6 +844,9 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
  */
 bool VBoxNetDhcp::handleDhcpReqDecline(PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
+    /** @todo Probably need to match the server IP here to work correctly with
+     *        other servers. */
+
     /*
      * The client is supposed to pass us option 50, requested address,
      * from the offer. We also match the lease state. Apparently the
@@ -798,6 +868,9 @@ bool VBoxNetDhcp::handleDhcpReqDecline(PCRTNETBOOTP pDhcpMsg, size_t cb)
  */
 bool VBoxNetDhcp::handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
+    /** @todo Probably need to match the server IP here to work correctly with
+     *        other servers. */
+
     /*
      * The client may pass us option 61, client identifier, which we should
      * use to find the lease by.
@@ -831,11 +904,73 @@ bool VBoxNetDhcp::handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb)
  *                          transaction ID, and requested options from this.
  * @param   cb              The size of the client message.
  */
-void VBoxNetDhcp::handleDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRTNETBOOTP pDhcpMsg, size_t cb)
+void VBoxNetDhcp::makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
     /** @todo this is required. :-) */
 }
 
+
+
+VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByMacAddress(PCRTMAC pMacAddress, bool fEnsureUpToDateConfig)
+{
+    return NULL;
+}
+
+
+VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4Addr, PCRTMAC pMacAddress)
+{
+    return NULL;
+
+}
+
+VBoxNetDhcpLease *VBoxNetDhcp::newLease(PCRTNETBOOTP pDhcpMsg, size_t cb)
+{
+
+    return NULL;
+}
+
+
+/**
+ * Finds an option.
+ *
+ * @returns On success, a pointer to the option number within the DHCP message
+ *          and *pcbMaxOpt set to the maximum number of bytes the option may
+ *          contain.
+ *          If not found NULL is returned and *pcbMaxOpt is not changed.
+ *
+ * @param   uOption         The option to search for.
+ * @param   pDhcpMsg        The DHCP message.
+ * @param   cb              The size of the message.
+ * @param   pcbMaxOpt       Where to store the max option size. Optional.
+ */
+/* static */ uint8_t *
+VBoxNetDhcp::findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, size_t *pcbMaxOpt)
+{
+    return NULL;
+}
+
+
+/**
+ * Locates an option with an IPv4 address in the DHCP message.
+ *
+ * @returns true and *pIpv4Addr if found, false if not.
+ *
+ * @param   uOption         The option to find.
+ * @param   pDhcpMsg        The DHCP message.
+ * @param   cb              The size of the message.
+ * @param   pIPv4Addr       Where to put the address.
+ */
+/* static */ bool
+VBoxNetDhcp::findOptionIPv4Addr(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, PRTNETADDRIPV4 pIPv4Addr)
+{
+    size_t   cbMaxOpt;
+    uint8_t *pbOpt = findOption(uOption, pDhcpMsg, cb, &cbMaxOpt);
+    if (pbOpt)
+    {
+
+    }
+    return false;
+}
 
 
 /**
