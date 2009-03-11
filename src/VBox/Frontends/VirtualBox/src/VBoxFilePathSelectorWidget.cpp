@@ -388,7 +388,7 @@ void VBoxFilePathSelectorWidget::selectPath()
         case Mode_File_Save:
             {
                 path = VBoxGlobal::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); 
-                if (QFileInfo (path).suffix().isEmpty())
+                if (!path.isEmpty() && QFileInfo (path).suffix().isEmpty())
                     path = QString ("%1.%2").arg (path).arg (mDefaultSaveExt);
                 break;
             }
