@@ -1315,26 +1315,16 @@ STDMETHODIMP Host::COMGETTER(UTCTime)(LONG64 *aUTCTime)
 #ifdef RT_OS_WINDOWS
 
 STDMETHODIMP
-Host::CreateHostOnlyNetworkInterface (IN_BSTR aName,
-                                  IHostNetworkInterface **aHostNetworkInterface,
+Host::CreateHostOnlyNetworkInterface (IHostNetworkInterface **aHostNetworkInterface,
                                   IProgress **aProgress)
 {
-    CheckComArgNotNull(aName);
     CheckComArgOutPointerValid(aHostNetworkInterface);
     CheckComArgOutPointerValid(aProgress);
 
     AutoWriteLock alock (this);
     CHECK_READY();
 
-    /* first check whether an interface with the given name already exists */
-    {
-        ComPtr <IHostNetworkInterface> iface;
-        if (SUCCEEDED (FindHostNetworkInterfaceByName (aName, iface.asOutParam())))
-            return setError (E_INVALIDARG,
-                             tr ("Host network interface '%ls' already exists"), aName);
-    }
-
-    int r = NetIfCreateHostOnlyNetworkInterface (mParent, aName, aHostNetworkInterface, aProgress);
+    int r = NetIfCreateHostOnlyNetworkInterface (mParent, aHostNetworkInterface, aProgress);
     if(RT_SUCCESS(r))
     {
         return S_OK;

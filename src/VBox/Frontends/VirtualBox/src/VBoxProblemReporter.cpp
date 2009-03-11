@@ -1438,11 +1438,10 @@ int VBoxProblemReporter::confirmDeletingHostInterface (const QString &aName,
 }
 
 void VBoxProblemReporter::cannotCreateHostInterface (
-    const CHost &host, const QString &name, QWidget *parent)
+    const CHost &host, QWidget *parent)
 {
     message (parent ? parent : mainWindowShown(), Error,
-        tr ("Failed to create the host network interface <b>%1</b>.")
-            .arg (name),
+        tr ("Failed to create the host network interface ."),
         formatErrorInfo (host));
 }
 

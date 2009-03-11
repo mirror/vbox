@@ -53,13 +53,13 @@ using namespace com;
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
 static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
 {
-    if (a->argc - iStart < 1)
-        return errorSyntax(USAGE_HOSTONLYIFS, "Not enough parameters");
+//    if (a->argc - iStart < 1)
+//        return errorSyntax(USAGE_HOSTONLYIFS, "Not enough parameters");
 
     int index = iStart;
     HRESULT rc;
-    Bstr name(a->argv[iStart]);
-    index++;
+//    Bstr name(a->argv[iStart]);
+//    index++;
 
     ComPtr<IHost> host;
     CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
@@ -67,7 +67,7 @@ static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
     ComPtr<IHostNetworkInterface> hif;
     ComPtr<IProgress> progress;
 
-    CHECK_ERROR(host, CreateHostOnlyNetworkInterface (name, hif.asOutParam(), progress.asOutParam()));
+    CHECK_ERROR(host, CreateHostOnlyNetworkInterface (hif.asOutParam(), progress.asOutParam()));
 
     showProgress(progress);
 
@@ -86,6 +86,11 @@ static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
 
         return 1;
     }
+
+    Bstr name;
+    CHECK_ERROR(hif, COMGETTER(Name) (name.asOutParam()));
+
+    RTPrintf("Interface '%lS' was successfully created\n", name.raw());
 
     return 0;
 }

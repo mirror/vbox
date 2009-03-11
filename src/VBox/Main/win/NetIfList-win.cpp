@@ -63,6 +63,7 @@
 #include <shlobj.h>
 #include <cfgmgr32.h>
 
+#define VBOX_APP_NAME L"VirtualBox"
 
 static HRESULT netIfWinCreateIWbemServices(IWbemServices ** ppSvc)
 {
@@ -860,8 +861,8 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
             if (RT_FAILURE (vrc)) break;
-            vrc = aClient->write (Utf8Str (d->name));
-            if (RT_FAILURE (vrc)) break;
+//            vrc = aClient->write (Utf8Str (d->name));
+//            if (RT_FAILURE (vrc)) break;
 
             /* wait for a reply */
             bool endLoop = false;
@@ -878,6 +879,9 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                     {
                         /* read the GUID */
                         Guid guid;
+                        Utf8Str name;
+                        vrc = aClient->read (name);
+                        if (RT_FAILURE (vrc)) break;
                         vrc = aClient->read (guid);
                         if (RT_FAILURE (vrc)) break;
 
@@ -885,7 +889,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
 
                         /* initialize the object returned to the caller by
                          * CreateHostOnlyNetworkInterface() */
-                        rc = d->iface->init (d->name, guid, HostNetworkInterfaceType_HostOnly);
+                        rc = d->iface->init (Bstr(name), guid, HostNetworkInterfaceType_HostOnly);
                         endLoop = true;
                         break;
                     }
@@ -1272,14 +1276,14 @@ extern "C" HRESULT RenameConnection (PCWSTR GuidString, PCWSTR NewName)
 
 /* static */
 static int createNetworkInterface (SVCHlpClient *aClient,
-                                  const Utf8Str &aName,
+                                  BSTR * pName,
                                   Guid &aGUID, Utf8Str &aErrMsg)
 {
     LogFlowFuncEnter();
-    LogFlowFunc (("Network connection name = '%s'\n", aName.raw()));
+//    LogFlowFunc (("Network connection name = '%s'\n", aName.raw()));
 
     AssertReturn (aClient, VERR_INVALID_POINTER);
-    AssertReturn (!aName.isNull(), VERR_INVALID_PARAMETER);
+//    AssertReturn (!aName.isNull(), VERR_INVALID_PARAMETER);
 
     int vrc = VINF_SUCCESS;
 
@@ -1508,12 +1512,6 @@ static int createNetworkInterface (SVCHlpClient *aClient,
         ret = RegQueryValueEx (hkey, _T("NetCfgInstanceId"), NULL,
                                &dwValueType, (LPBYTE) pCfgGuidString, &cbSize);
         RegCloseKey (hkey);
-
-        ret = RenameConnection (pCfgGuidString, Bstr (aName));
-        if (FAILED (ret))
-            SetErrBreak (("Failed to set interface name (ret=0x%08X, "
-                          "pCfgGuidString='%ls', cbSize=%d)",
-                           ret, pCfgGuidString, cbSize));
     }
     while (0);
 
@@ -1547,6 +1545,43 @@ static int createNetworkInterface (SVCHlpClient *aClient,
         aGUID = Guid (Utf8Str (pCfgGuidString + 1));
         LogFlowFunc (("Network connection GUID = {%RTuuid}\n", aGUID.raw()));
         Assert (!aGUID.isEmpty());
+
+        INetCfg              *pNc;
+        INetCfgComponent     *pMpNcc;
+        LPWSTR               lpszApp;
+
+        HRESULT hr = VBoxNetCfgWinQueryINetCfg( FALSE,
+                           VBOX_APP_NAME,
+                           &pNc,
+                           &lpszApp );
+        if(hr == S_OK)
+        {
+            hr = VBoxNetCfgWinGetComponentByGuid(pNc,
+                                            &GUID_DEVCLASS_NET,
+                                            aGUID.asOutParam(),
+                                            &pMpNcc);
+            if(hr == S_OK)
+            {
+                LPWSTR name;
+                hr = pMpNcc->GetDisplayName(&name);
+                if(hr == S_OK)
+                {
+                    Bstr str(name);
+                    str.detachTo(pName);
+
+                    CoTaskMemFree (name);
+                }
+
+                VBoxNetCfgWinReleaseRef(pMpNcc);
+            }
+            VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
+        }
+
+        if(hr != S_OK)
+        {
+            vrc = VERR_GENERAL_FAILURE;
+        }
+
     }
 
     LogFlowFunc (("vrc=%Rrc\n", vrc));
@@ -1784,18 +1819,21 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
         {
             LogFlowFunc (("CreateHostOnlyNetworkInterface:\n"));
 
-            Utf8Str name;
-            vrc = aClient->read (name);
-            if (RT_FAILURE (vrc)) break;
+//            Utf8Str name;
+//            vrc = aClient->read (name);
+//            if (RT_FAILURE (vrc)) break;
 
             Guid guid;
             Utf8Str errMsg;
-            vrc = createNetworkInterface (aClient, name, guid, errMsg);
+            Bstr name;
+            vrc = createNetworkInterface (aClient, name.asOutParam(), guid, errMsg);
 
             if (RT_SUCCESS (vrc))
             {
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::CreateHostOnlyNetworkInterface_OK);
+                if (RT_FAILURE (vrc)) break;
+                vrc = aClient->write (Utf8Str (name));
                 if (RT_FAILURE (vrc)) break;
                 vrc = aClient->write (guid);
                 if (RT_FAILURE (vrc)) break;
@@ -2006,8 +2044,6 @@ static BOOL IsUACEnabled()
 
 /* end */
 
-# define VBOX_APP_NAME L"VirtualBox"
-
 static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > * pPist, INetCfgComponent * pncc, HostNetworkInterfaceType enmType)
 {
     LPWSTR              lpszName;
@@ -2142,7 +2178,7 @@ int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *pInfo)
 #endif
 }
 
-int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IN_BSTR aName,
+int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox,
                                   IHostNetworkInterface **aHostNetworkInterface,
                                   IProgress **aProgress)
 {
@@ -2173,7 +2209,7 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IN_BSTR aName,
             AssertReturn (d.get(), E_OUTOFMEMORY);
 
             d->msgCode = SVCHlpMsg::CreateHostOnlyNetworkInterface;
-            d->name = aName;
+//            d->name = aName;
             d->iface = iface;
 
             rc = pVBox->startSVCHelperClient (

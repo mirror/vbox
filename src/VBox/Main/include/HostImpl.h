@@ -95,8 +95,7 @@ public:
     // IHost methods
 #ifdef RT_OS_WINDOWS
 
-    STDMETHOD(CreateHostOnlyNetworkInterface) (IN_BSTR aName,
-                                           IHostNetworkInterface **aHostNetworkInterface,
+    STDMETHOD(CreateHostOnlyNetworkInterface) (IHostNetworkInterface **aHostNetworkInterface,
                                            IProgress **aProgress);
     STDMETHOD(RemoveHostOnlyNetworkInterface) (IN_GUID aId,
                                            IHostNetworkInterface **aHostNetworkInterface,

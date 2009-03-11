@@ -6608,7 +6608,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="378cf146-6cd6-4dbc-bc60-cbd2004d99c5"
+     uuid="651f04ec-b2a6-4008-b979-3a01c0fc72cc"
      wsmap="managed"
      >
     <desc>
@@ -6763,11 +6763,6 @@
           Host network interface @a name already exists.
         </result>
       </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>
-          Adapter name.
-        </desc>
-      </param>
       <param name="hostInterface" type="IHostNetworkInterface" dir="out">
         <desc>
           Created host interface object.

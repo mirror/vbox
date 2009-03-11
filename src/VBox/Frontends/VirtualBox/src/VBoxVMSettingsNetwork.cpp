@@ -545,18 +545,14 @@ void VBoxNIList::addHostInterface()
                           regExp.cap (1).toInt() : ifaceNumber;
     }
 
-    /* Creating add host interface dialog */
-    VBoxAddNIDialog dlg (this, ifaceName.arg (++ ifaceNumber));
-    if (dlg.exec() != QDialog::Accepted)
-        return;
-    QString iName = dlg.getName();
-
     /* Create interface */
     CHost host = vboxGlobal().virtualBox().GetHost();
     CHostNetworkInterface iFace;
-    CProgress progress = host.CreateHostOnlyNetworkInterface (iName, iFace);
+    CProgress progress = host.CreateHostOnlyNetworkInterface (iFace);
     if (host.isOk())
     {
+        QString iName = iFace.GetName();
+
         vboxProblem().showModalProgressDialog (progress, iName, this);
         /* Add&Select newly created interface */
         if (progress.GetResultCode() == 0)
@@ -565,7 +561,7 @@ void VBoxNIList::addHostInterface()
             vboxProblem().cannotCreateHostInterface (progress, iName, this);
     }
     else
-        vboxProblem().cannotCreateHostInterface (host, iName, this);
+        vboxProblem().cannotCreateHostInterface (host, this);
 
     emit listChanged();
 
