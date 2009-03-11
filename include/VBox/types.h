@@ -547,6 +547,8 @@ typedef PDMDATASEG const *PCPDMDATASEG;
 
 /**
  * The current ROM page protection.
+ *
+ * @remarks This is part of the saved state.
  */
 typedef enum PGMROMPROT
 {
