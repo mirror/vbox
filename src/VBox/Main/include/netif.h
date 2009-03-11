@@ -103,7 +103,7 @@ DECLINLINE(Bstr) composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
 
 DECLINLINE(ULONG) composeIPv6PrefixLenghFromAddress(PRTNETADDRIPV6 aAddrPtr)
 {
-    return ASMBitFirstClear(aAddrPtr, sizeof(RTNETADDRIPV6));
+    return ASMBitFirstClear(aAddrPtr, sizeof(RTNETADDRIPV6)*8);
 }
 
 DECLINLINE(int) prefixLength2IPv6Address(ULONG cPrefix, PRTNETADDRIPV6 aAddrPtr)
