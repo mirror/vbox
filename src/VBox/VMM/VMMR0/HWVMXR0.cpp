@@ -2578,10 +2578,12 @@ ResumeExecution:
                     {
                     case OP_CLI:
                         pCtx->eflags.Bits.u1IF = 0;
+                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCli);
                         break;
 
                     case OP_STI:
                         pCtx->eflags.Bits.u1IF = 1;
+                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitSti);
                         break;
 
                     case OP_POPF:
@@ -2617,6 +2619,8 @@ ResumeExecution:
                         pCtx->eflags.Bits.u1RF = 0;
                         pCtx->esp += cbParm;
                         pCtx->esp &= uMask;
+
+                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitPopf);
                         break;
                     }
 
@@ -2654,8 +2658,8 @@ ResumeExecution:
                         LogFlow(("PUSHF %x -> %RGv\n", eflags.u, GCPtrStack));
                         pCtx->esp -= cbParm;
                         pCtx->esp &= uMask;
+                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitPushf);
                         break;
-
                     }
 
                     case OP_IRET:
@@ -2694,6 +2698,7 @@ ResumeExecution:
 
                         LogFlow(("iret to %04x:%x\n", pCtx->cs, pCtx->ip));
                         fUpdateRIP = false;
+                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIret);
                         break;
                     }
 
@@ -2709,6 +2714,7 @@ ResumeExecution:
                         rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, intInfo, cbOp, 0);
                         AssertRC(rc);
                         fUpdateRIP = false;
+                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInt);
                         break;
                     }
 
@@ -2726,6 +2732,7 @@ ResumeExecution:
                             rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, intInfo, cbOp, 0);
                             AssertRC(rc);
                             fUpdateRIP = false;
+                            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInt);
                         }
                         break;
                     }
@@ -2742,6 +2749,7 @@ ResumeExecution:
                         rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, intInfo, cbOp, 0);
                         AssertRC(rc);
                         fUpdateRIP = false;
+                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInt);
                         break;
                     }
 
