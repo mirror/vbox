@@ -1149,7 +1149,7 @@ struct WriteContext : IOContext
 void XmlFileParser::read(const char *pcszFilename,
                          Document &doc)
 {
-    GlobalLock lock();
+    GlobalLock lock;
 //     global.setExternalEntityLoader(ExternalEntityLoader);
 
     m->strXmlFilename = pcszFilename;
@@ -1221,7 +1221,7 @@ void XmlFileWriter::write(const char *pcszFilename)
 {
     WriteContext context(pcszFilename);
 
-    GlobalLock lock();
+    GlobalLock lock;
 
     /* serialize to the stream */
     xmlIndentTreeOutput = 1;
