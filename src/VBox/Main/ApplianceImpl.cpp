@@ -2166,8 +2166,9 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                         // retrieve the error info from there, or it'll be lost
                         if (FAILED(vrc))
                         {
-                            com::ErrorInfo info(progress);
-                            const char *pcsz = Utf8Str(info.getText()).c_str();
+                            ProgressErrorInfo info(progress);
+                            Utf8Str str(info.getText());
+                            const char *pcsz = str.c_str();
                             HRESULT rc2 = setError(vrc,
                                                    pcsz);
                             throw rc2;
@@ -2899,8 +2900,9 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             // retrieve the error info from there, or it'll be lost
             if (FAILED(vrc))
             {
-                com::ErrorInfo info(pProgress2);
-                const char *pcsz = Utf8Str(info.getText()).c_str();
+                ProgressErrorInfo info(pProgress2);
+                Utf8Str str(info.getText());
+                const char *pcsz = str.c_str();
                 HRESULT rc2 = setError(vrc, pcsz);
                 throw rc2;
             }
