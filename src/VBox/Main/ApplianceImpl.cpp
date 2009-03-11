@@ -2444,6 +2444,10 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             xml::ElementNode *pelmVirtualSystemInfo = pelmVirtualSystem->createChild("Info");      // @todo put in description here after implementing an entry for it
 
             std::list<VirtualSystemDescriptionEntry*> llName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
+            if (llName.size() != 1)
+                throw setError(VBOX_E_NOT_SUPPORTED,
+                               tr("Missing VM name"));
+            pelmVirtualSystem->setAttribute("ovf:id", llName.front()->strVbox);
 
             std::list<VirtualSystemDescriptionEntry*> llOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
             if (llOS.size() != 1)
@@ -2867,11 +2871,11 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             Log(("Creating target disk \"%s\"\n", strTargetFilePath.raw()));
             rc = pVirtualBox->CreateHardDisk(bstrSrcFormat, Bstr(strTargetFilePath), pTargetDisk.asOutParam());
             if (FAILED(rc)) throw rc;
-            /* Clone the source disk image */
+            // clone the source disk image
             rc = pSourceDisk->CloneTo(pTargetDisk, pProgress2.asOutParam());
             if (FAILED(rc)) throw rc;
 
-            /* Advance to the next operation */
+            // advance to the next operation
             if (!task->progress.isNull())
                 task->progress->advanceOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()));
 
@@ -2887,7 +2891,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
                     task->progress->notifyProgress(currentPercent);
                 if (fCompleted)
                     break;
-                /* Make sure the loop is not too tight */
+                // make sure the loop is not too tight
                 rc = pProgress2->WaitForCompletion(100);
                 if (FAILED(rc)) throw rc;
             }
@@ -2908,7 +2912,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             }
 
             /* Make sure the target disk get detached */
-            rc = pTargetDisk->Close();
+            rc = pTargetDisk->Close();          // @todo  close this also if an error is thrown above
             if (FAILED(rc)) throw rc;
 
             // we need the capacity and actual file size for the XML
@@ -3289,7 +3293,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         // get name
         bstrName = mUserData->mName;
         // get description
-        bstrName = mUserData->mDescription;
+        bstrDescription = mUserData->mDescription;
         // get guest OS
         bstrGuestOSType = mUserData->mOSTypeId;
         // CPU count
@@ -3344,7 +3348,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         pNewDesc->addEntry(VirtualSystemDescriptionType_Name,
                            "",
                            strVMName,
-                           Utf8Str(bstrName));
+                           strVMName);
 
         /* CPU count*/
         Utf8Str strCpuCount = Utf8StrFmt("%RI32", cCPUs);
