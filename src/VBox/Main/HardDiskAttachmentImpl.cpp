@@ -48,7 +48,7 @@ void HardDiskAttachment::FinalRelease()
  * @param aDevice     Device number on the port.
  * @param aImplicit   Wether the attachment contains an implicitly created diff.
  */
-HRESULT HardDiskAttachment::init(HardDisk *aHD, IN_BSTR aController, LONG aPort,
+HRESULT HardDiskAttachment::init(HardDisk *aHD, CBSTR aController, LONG aPort,
                                  LONG aDevice, bool aImplicit /*= false*/)
 {
     AssertReturn (aHD, E_INVALIDARG);
