@@ -88,6 +88,13 @@ typedef enum SSMAFTER
 
 /**
  * A structure field description.
+ *
+ * @todo Add an type field here for recording what's a GCPtr, GCPhys or anything
+ *       else that may change and is expected to continue to work.
+ * @todo Later we need to add load transformations to this structure. I think a
+ *       callback with a number of default transformations in SIG_DEF style
+ *       would be good enough. The callback would take a user context from a new
+ *       SSMR3GetStruct parameter or something.
  */
 typedef struct SSMFIELD
 {
@@ -102,9 +109,13 @@ typedef SSMFIELD *PSSMFIELD;
 typedef const SSMFIELD *PCSSMFIELD;
 
 /** Emit a SSMFIELD array entry. */
-#define SSMFIELD_ENTRY(Type, Field) { RT_OFFSETOF(Type, Field), RT_SIZEOFMEMB(Type, Field) }
+#define SSMFIELD_ENTRY(Type, Field)         { RT_OFFSETOF(Type, Field), RT_SIZEOFMEMB(Type, Field) }
+/** Emit a SSMFIELD array entry for a RTGCPTR type. */
+#define SSMFIELD_ENTRY_GCPTR(Type, Field)   SSMFIELD_ENTRY(Type, Field)
+/** Emit a SSMFIELD array entry for a RTGCPHYS type. */
+#define SSMFIELD_ENTRY_GCPHYS(Type, Field)  SSMFIELD_ENTRY(Type, Field)
 /** Emit the terminating entry of a SSMFIELD array. */
-#define SSMFIELD_ENTRY_TERM()       { UINT32_MAX, UINT32_MAX }
+#define SSMFIELD_ENTRY_TERM()               { UINT32_MAX, UINT32_MAX }
 
 
 
