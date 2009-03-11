@@ -3269,7 +3269,7 @@ AddStorageController(IN_BSTR aName, StorageBus_T aConnectionType)
     CheckComArgStrNotEmptyOrNull(aName);
 
     if (   (aConnectionType <= StorageBus_Null)
-        || (aConnectionType >  StorageBus_LastValid))
+        || (aConnectionType >  StorageBus_SCSI))
         return setError (E_INVALIDARG,
             tr ("Invalid connection type: %d"),
                 aConnectionType);
