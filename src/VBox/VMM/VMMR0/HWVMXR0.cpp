@@ -1616,6 +1616,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVCpu->hwaccm.s.vmx.RealMode.eflags = eflags;
 
         eflags.Bits.u1VM   = 1;
+        eflags.Bits.u2IOPL = 3;
     }
 #endif /* HWACCM_VMX_EMULATE_REALMODE */
     rc   = VMXWriteVMCS(VMX_VMCS_GUEST_RFLAGS,           eflags.u32);
@@ -1795,6 +1796,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         /* Hide our emulation flags */
         pCtx->eflags.Bits.u1VM   = 0;
+        pCtx->eflags.Bits.u2IOPL = pVCpu->hwaccm.s.vmx.RealMode.eflags.Bits.u2IOPL;
 
         /* Force a TR resync every time in case we switch modes. */
         pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_TR;
