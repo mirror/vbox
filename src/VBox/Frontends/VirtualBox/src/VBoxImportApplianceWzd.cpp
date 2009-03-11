@@ -44,6 +44,7 @@ VBoxImportApplianceWzd::VBoxImportApplianceWzd (QWidget *aParent /* = NULL */)
     mFileSelector->setResetEnabled (false);
     mFileSelector->setFileDialogTitle (tr ("Select an appliance to import"));
     mFileSelector->setFileFilters (tr ("Open Virtualization Format (%1)").arg ("*.ovf"));
+    mFileSelector->setHomeDir (vboxGlobal().documentsPath());
 #ifdef Q_WS_MAC
     /* Editable boxes are uncommon on the Mac */
     mFileSelector->setEditable (false);

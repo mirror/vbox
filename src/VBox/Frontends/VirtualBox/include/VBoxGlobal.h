@@ -35,6 +35,8 @@
 #include <QStyle>
 #include <QProcess>
 #include <QHash>
+#include <QDesktopServices>
+#include <QDir>
 
 class QAction;
 class QLabel;
@@ -728,6 +730,17 @@ public:
         /* New since > 4.2 */
         aLayout->setContentsMargins (aMargin, aMargin, aMargin, aMargin);
 #endif
+    }
+
+    static inline QString documentsPath()
+    {
+        QString path;
+#if QT_VERSION < 0x040400
+        path = QDir::homePath();
+#else
+        path = QDesktopServices::storageLocation (QDesktopServices::DocumentsLocation);
+#endif
+        return QDir::cleanPath (path);
     }
 
 signals:
