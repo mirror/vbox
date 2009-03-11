@@ -2309,7 +2309,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                 rc2 = session->COMGETTER(Machine)(sMachine.asOutParam());
                 if (SUCCEEDED(rc2))
                 {
-                    rc2 = sMachine->DetachHardDisk(mhda.controllerType, mhda.lChannel, mhda.lDevice);
+                    rc2 = sMachine->DetachHardDisk(Bstr(mhda.controllerType), mhda.lChannel, mhda.lDevice);
                     rc2 = sMachine->SaveSettings();
                 }
                 session->Close();
