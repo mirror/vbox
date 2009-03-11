@@ -12312,7 +12312,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="IDE"       value="1"/>
     <const name="SATA"      value="2"/>
     <const name="SCSI"      value="3"/>
-    <const name="LastValid" value="3"/>
   </enum>
 
   <enum
@@ -12332,7 +12331,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="PIIX3"     value="4"/>
     <const name="PIIX4"     value="5"/>
     <const name="ICH6"      value="6"/>
-    <const name="LastValid" value="6"/>
   </enum>
 
   <interface
