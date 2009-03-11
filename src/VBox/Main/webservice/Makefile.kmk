@@ -326,6 +326,7 @@ ifdef VBOX_ONLY_SDK
  #
  VBOXWEB_GLUE_PYTHON           = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_wrappers.py
  VBOXWEB_WS_PYTHON             = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_service.py
+ VBOXWEB_WS_PERL               = $(VBOX_PATH_SDK)/bindings/webservice/perl/lib/vboxService.pm
  VBOXWEB_SAMPLES_AXIS_DIR      = $(VBOX_PATH_SDK)/bindings/webservice/java/axis/samples
  VBOXWEB_AXISSAMPLE            = $(VBOXWEB_SAMPLES_AXIS_DIR)/clienttest.java
  VBOXWEB_SAMPLES_JAXWS_DIR     = $(VBOX_PATH_SDK)/bindings/webservice/java/jax-ws/samples
@@ -370,6 +371,7 @@ ifdef VBOX_ONLY_SDK
  	$(VBOXWEB_GLUE_JAVA_TMP) \
  	$(VBOXWEB_GLUE_PYTHON)\
  	$(VBOXWEB_WS_PYTHON) \
+        $(VBOXWEB_WS_PERL)   \
  	$(VBOXWEB_PYTHONWSSAMPLE)\
  	$(VBOXWEB_SHELLCOMMON)\
  	$(VBOXWEB_AXISSAMPLE) \
@@ -441,6 +443,15 @@ $(VBOXWEB_WS_PYTHON): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
 	$(call MSG_GENERATE,,$@, WS Python bindings)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(REDIRECT) -C $(@D) -- wsdl2py  -b --file  $(VBOXWEBSERVICE_WSDL)
+	$(QUIET)$(APPEND) $@ ''
+
+$(VBOXWEB_WS_PERL): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
+	$(call MSG_GENERATE,,$@, WS Perl bindings)
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(REDIRECT) -C $(@D) -- stubmaker file://$(VBOXWEBSERVICE_WSDL)
+# Ugly, ugly, ugly, make me right once
+	$(QUIET)perl -ne "s#http://www.virtualbox.org/Service#http://www.virtualbox.org/#; print" < $(VBOXWEB_WS_PERL) > $(VBOXWEB_WS_PERL).tmp
+	$(QUIET)mv $(VBOXWEB_WS_PERL).tmp $(VBOXWEB_WS_PERL)
 	$(QUIET)$(APPEND) $@ ''
 
 endif # VBOX_ONLY_SDK
