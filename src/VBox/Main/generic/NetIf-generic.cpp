@@ -24,6 +24,7 @@
 #include <iprt/process.h>
 #include <iprt/env.h>
 #include <iprt/path.h>
+#include <iprt/param.h>
 
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
@@ -39,7 +40,7 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszMask)
         args[4] = pszMask;
     }
     
-    char szAdpCtl[PATH_MAX];
+    char szAdpCtl[RTPATH_MAX];
     int rc = RTPathProgram(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME));
     if (RT_FAILURE(rc))
         return rc;
