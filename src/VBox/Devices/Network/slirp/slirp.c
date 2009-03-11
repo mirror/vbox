@@ -1650,12 +1650,15 @@ uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport)
     hsport = ntohs(sport); 
     Log2(("proto: %d, dport: %d sport: %d\n", proto, hdport, hsport));
     service = 0;
+#if 0
+    /* Always return 0 here */
     switch (hdport) 
     {
         case 500:
                 /* service = sport; */
         break;
     } 
+#endif
     Log2(("service : %d\n", service));
     return htons(service);
 }
