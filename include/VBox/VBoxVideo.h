@@ -96,6 +96,7 @@
  */
 #define VBVA_ADAPTER_INFORMATION_SIZE  8*_1K
 #define VBVA_DISPLAY_INFORMATION_SIZE  8*_1K
+#define VBVA_MIN_BUFFER_SIZE           64*_1K
 #endif /* VBOX_WITH_HGSMI */
 
 
@@ -304,9 +305,11 @@ typedef struct _VBVAINFOVIEW
     /* The screen offset in VRAM, the framebuffer starts here. */
     uint32_t u32ViewOffset;
 
-    /* The size of the VRAM memory that can be used for the screen. */
+    /* The size of the VRAM memory that can be used for the view. */
     uint32_t u32ViewSize;
 
+    /* The recommended maximum size of the VRAM memory for the screen. */
+    uint32_t u32MaxScreenSize;
 } VBVAINFOVIEW;
 
 typedef struct _VBVAINFOHEAP
@@ -331,6 +334,9 @@ typedef struct _VBVAFLUSH
 
 typedef struct _VBVAINFOSCREEN
 {
+    /* Which view contains the screen. */
+    uint32_t u32ViewIndex;
+
     /* Physical X origin relative to the primary screen. */
     int32_t i32OriginX;
 
