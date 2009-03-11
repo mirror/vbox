@@ -5257,6 +5257,7 @@ void VBoxGlobal::init()
         {"Mandriva_64",     ":/os_mandriva_64.png"},
         {"RedHat",          ":/os_redhat.png"},
         {"RedHat_64",       ":/os_redhat_64.png"},
+        {"Turbolinux",      ":/os_turbolinux.png"},
         {"Ubuntu",          ":/os_ubuntu.png"},
         {"Ubuntu_64",       ":/os_ubuntu_64.png"},
         {"Xandros",         ":/os_xandros.png"},
