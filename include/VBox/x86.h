@@ -193,8 +193,8 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 #define X86_EFL_IOPL_SHIFT  12
 /** The the IOPL level from the flags. */
 #define X86_EFL_GET_IOPL(efl)   (((efl) >> X86_EFL_IOPL_SHIFT) & 3)
-/** Bits saved by pushf */
-#define X86_EFL_PUSHF_BITS      (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_AC | X86_EFL_ID)
+/** Bits restored by popf */
+#define X86_EFL_POPF_BITS       (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_AC | X86_EFL_ID)
 /** @} */
 
 
