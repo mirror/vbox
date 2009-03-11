@@ -232,14 +232,6 @@
   </xsd:restriction>
 </xsd:simpleType>
 
-<xsd:simpleType name="TIDEControllerType">
-  <xsd:restriction base="xsd:string">
-    <xsd:enumeration value="PIIX3"/>
-    <xsd:enumeration value="PIIX4"/>
-    <xsd:enumeration value="ICH6"/>
-  </xsd:restriction>
-</xsd:simpleType>
-
 <xsd:simpleType name="TClipboardMode">
   <xsd:restriction base="xsd:string">
     <xsd:enumeration value="Disabled"/>
@@ -530,31 +522,58 @@
           <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
       </xsd:complexType>
     </xsd:element>
-    <xsd:element name="IDEController" minOccurs="0">
-      <xsd:complexType>
-          <xsd:attribute name="type" use="required" type="TIDEControllerType"/>
-      </xsd:complexType>
-    </xsd:element>
   </xsd:all>
 </xsd:complexType>
 
-<xsd:complexType name="THardDiskAttachment">
-  <xsd:attribute name="hardDisk" type="TNonNullUUID" use="required"/>
-  <xsd:attribute name="bus" use="required">
+<xsd:complexType name="TStorageControllerDevice">
+  <xsd:choice minOccurs="0">
+    <xsd:element name="Image" type="TImageRef"/>
+    <xsd:element name="HostDrive" type="THostDrive"/>
+  </xsd:choice>
+  <xsd:attribute name="type" use="required">
     <xsd:simpleType>
       <xsd:restriction base="xsd:token">
-        <xsd:enumeration value="IDE"/>
-        <xsd:enumeration value="SATA"/>
+        <xsd:enumeration value="HardDisk"/>
+        <xsd:enumeration value="CD/DVD"/>
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
-  <xsd:attribute name="channel" type="xsd:unsignedInt" use="required"/>
+  <xsd:attribute name="port" type="xsd:unsignedInt" use="required"/>
   <xsd:attribute name="device" type="xsd:unsignedInt" default="0"/>
 </xsd:complexType>
 
-<xsd:complexType name="THardDiskAttachments">
+<xsd:complexType name="TStorageController">
   <xsd:sequence>
-    <xsd:element name="HardDiskAttachment" type="THardDiskAttachment"
+    <xsd:element name="AttachedDevice" type="TStorageControllerDevice"
+                 minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:sequence>
+  <xsd:attribute name="name" type="xsd:string" use="required"/>
+  <xsd:attribute name="type" use="required">
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:token">
+      <xsd:enumeration value="AHCI"/>
+      <xsd:enumeration value="LsiLogic"/>
+      <xsd:enumeration value="BusLogic"/>
+      <xsd:enumeration value="PIIX3"/>
+      <xsd:enumeration value="PIIX4"/>
+      <xsd:enumeration value="ICH6"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:attribute>
+  <xsd:attribute name="PortCount"   type="xsd:unsignedInt" use="required"/>
+  <xsd:attribute name="bootable"    type="xsd:boolean"     use="optional"/>
+  <xsd:attribute name="PCIBus"      type="xsd:unsignedInt" use="optional"/>
+  <xsd:attribute name="PCIDevice"   type="xsd:unsignedInt" use="optional"/>
+  <xsd:attribute name="PCIFunction" type="xsd:unsignedInt" use="optional"/>
+  <xsd:attribute name="IDE0MasterEmulationPort" type="xsd:unsignedInt" use="optional"/>
+  <xsd:attribute name="IDE0SlaveEmulationPort"  type="xsd:unsignedInt" use="optional"/>
+  <xsd:attribute name="IDE1MasterEmulationPort" type="xsd:unsignedInt" use="optional"/>
+  <xsd:attribute name="IDE1SlaveEmulationPort"  type="xsd:unsignedInt" use="optional"/>
+</xsd:complexType>
+
+<xsd:complexType name="TStorageControllers">
+  <xsd:sequence>
+    <xsd:element name="StorageController" type="TStorageController"
                  minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
 </xsd:complexType>
@@ -721,15 +740,6 @@
   <xsd:attribute name="statisticsUpdateInterval" type="xsd:unsignedInt" default="0"/>
 </xsd:complexType>
 
-<xsd:complexType name="TSATAController">
-  <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
-  <xsd:attribute name="IDE0MasterEmulationPort"    type="xsd:unsignedInt" default="0"/>
-  <xsd:attribute name="IDE0SlaveEmulationPort"     type="xsd:unsignedInt" default="1"/>
-  <xsd:attribute name="IDE1MasterEmulationPort"    type="xsd:unsignedInt" default="2"/>
-  <xsd:attribute name="IDE1SlaveEmulationPort"     type="xsd:unsignedInt" default="3"/>
-  <xsd:attribute name="PortCount"                  type="xsd:unsignedInt" default="30"/>
-</xsd:complexType>
-
 <xsd:complexType name="TGuestProperty">
   <xsd:attribute name="name"      type="xsd:string"       use="required"/>
   <xsd:attribute name="value"     type="xsd:string"       use="required"/>
@@ -760,7 +770,6 @@
     <xsd:element name="DVDDrive" type="TDVDDrive"/>
     <xsd:element name="FloppyDrive" type="TFloppyDrive"/>
     <xsd:element name="USBController" type="TUSBController"/>
-    <xsd:element name="SATAController" type="TSATAController"/>
     <xsd:element name="Network" type="TNetwork">
       <xsd:unique name="THardware-Network-Adapter">
         <xsd:selector xpath="vb:Adapter"/>
@@ -802,7 +811,7 @@
   <xsd:all>
     <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
     <xsd:element name="Hardware" type="THardware"/>
-    <xsd:element name="HardDiskAttachments" type="THardDiskAttachments"/>
+    <xsd:element name="StorageControllers" type="TStorageControllers"/>
     <xsd:element name="ExtraData" type="TExtraData" minOccurs="0"/>
     <xsd:element name="Snapshot" type="TSnapshot" minOccurs="0"/>
   </xsd:all>
@@ -822,7 +831,7 @@
   <xsd:all>
     <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
     <xsd:element name="Hardware" type="THardware"/>
-    <xsd:element name="HardDiskAttachments" type="THardDiskAttachments"/>
+    <xsd:element name="StorageControllers" type="TStorageControllers"/>
     <xsd:element name="Snapshots" minOccurs="0">
       <xsd:complexType>
         <xsd:sequence>

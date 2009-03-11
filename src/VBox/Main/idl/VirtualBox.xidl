@@ -715,20 +715,6 @@
   </enum>
 
   <enum
-    name="StorageBus"
-    uuid="715984a5-093c-43bb-aa42-a16ed16828dd"
-  >
-    <desc>Interface bus type for storage devices.</desc>
-
-    <const name="Null"              value="0">
-      <desc>Null value (never used by the API).</desc>
-    </const>
-
-    <const name="IDE"      value="1"/>
-    <const name="SATA"     value="2"/>
-  </enum>
-
-  <enum
     name="ClipboardMode"
     uuid="33364716-4008-4701-8f14-be0fa3d62950"
   >
@@ -865,22 +851,6 @@
     <const name="Disabled"        value="0"/>
     <const name="MenuOnly"        value="1"/>
     <const name="MessageAndMenu"  value="2"/>
-  </enum>
-
-  <enum
-    name="IDEControllerType"
-    uuid="445330e3-202a-4dab-854f-ce22e6cb9715"
-  >
-    <desc>
-      IDE controller type.
-    </desc>
-
-    <const name="Null"            value="0">
-      <desc>Null value (never used by the API).</desc>
-    </const>
-    <const name="PIIX3"           value="1"/>
-    <const name="PIIX4"           value="2"/>
-    <const name="ICH6"            value="3"/>
   </enum>
 
   <enum
@@ -3683,14 +3653,6 @@
       </desc>
     </attribute>
 
-    <attribute name="IDEControllerType" type="IDEControllerType">
-      <desc>
-        Type of the virtual IDE controller. Depending on this value,
-        VirtualBox will provide different virtual IDE hardware
-        devices to the guest.
-      </desc>
-    </attribute>
-
   </interface>
 
   <interface
@@ -4025,10 +3987,8 @@
       <desc>Associated audio adapter, always present.</desc>
     </attribute>
 
-    <attribute name="SATAController" type="ISATAController" readonly="yes">
-      <desc>
-        Associated SATA controller object.
-      </desc>
+    <attribute name="storageControllers" type="IStorageController" readonly="yes" safearray="yes">
+      <desc>Array of storage controllers attached to this machine.</desc>
     </attribute>
 
     <attribute name="settingsFilePath" type="wstring" readonly="yes">
@@ -4309,9 +4269,9 @@
         Attaches a virtual hard disk identified by the given UUID @a id
         to a device slot of the specified bus.
 
-        For the IDE bus, the @a channel parameter can be either @c 0 or @c 1, to
+        For the IDE bus, the @a port parameter can be either @c 0 or @c 1, to
         specify the primary or secondary IDE controller, respectively. The
-        SATA bus supports 30 channels, so this parameter can be a number
+        SATA bus supports 30 ports, so this parameter can be a number
         ranging from @c 0 to @c 29.
 
         For the primary controller of the IDE bus, the @a device number can be
@@ -4343,7 +4303,7 @@
         </note>
 
         <result name="E_INVALIDARG">
-          SATA device, SATA channel, IDE channel or IDE slot out of range.
+          SATA device, SATA port, IDE port or IDE slot out of range.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Attempt to attach hard disk to an unregistered virtual machine.
@@ -4359,15 +4319,15 @@
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the hard disk to attach.</desc>
       </param>
-      <param name="bus" type="StorageBus" dir="in">
-        <desc>Type of the storage bus to use (IDE or SATA).</desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the storage controller to attach the hard disk to.</desc>
       </param>
-      <param name="channel" type="long" dir="in">
-        <desc>Channel to attach the hard disk to.</desc>
+      <param name="port" type="long" dir="in">
+        <desc>Port to attach the hard disk to.</desc>
       </param>
       <param name="device" type="long" dir="in">
         <desc>
-          Device slot in the given channel to attach the hard disk to.
+          Device slot in the given port to attach the hard disk to.
         </desc>
       </param>
     </method>
@@ -4388,14 +4348,14 @@
         </result>
 
       </desc>
-      <param name="bus" type="StorageBus" dir="in">
-        <desc>Type of the storage bus to query (IDE or SATA).</desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the storage controller the hard disk is attached to.</desc>
       </param>
-      <param name="channel" type="long" dir="in">
-        <desc>Channel to query.</desc>
+      <param name="port" type="long" dir="in">
+        <desc>Port to query.</desc>
       </param>
       <param name="device" type="long" dir="in">
-        <desc>Device slot in the given channel to query.</desc>
+        <desc>Device slot in the given port to query.</desc>
       </param>
       <param name="hardDisk" type="IHardDisk" dir="return">
         <desc>Attached hard disk object.</desc>
@@ -4437,15 +4397,28 @@
         </result>
 
       </desc>
-      <param name="bus" type="StorageBus" dir="in">
-        <desc>Bus to detach the hard disk from.</desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>name of the storage controller to detach the hard disk from.</desc>
       </param>
-      <param name="channel" type="long" dir="in">
-        <desc>Channel number to detach the hard disk from.</desc>
+      <param name="port" type="long" dir="in">
+        <desc>Port number to detach the hard disk from.</desc>
       </param>
       <param name="device" type="long" dir="in">
         <desc>Device slot number to detach the hard disk from.</desc>
       </param>
+    </method>
+
+    <method name="getHardDiskAttachmentsOfController" const="yes">
+      <desc>
+        Returns an array of hard disk attachments which are attached to the
+        the controller with the given name.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          A storage controller with given name doesn't exist.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in"/>
+      <param name="hardDiskAttachments" type="IHardDiskAttachment" safearray="yes" dir="return"/>
     </method>
 
     <method name="getNetworkAdapter" const="yes">
@@ -4463,6 +4436,44 @@
       </desc>
       <param name="slot" type="unsigned long" dir="in"/>
       <param name="adapter" type="INetworkAdapter" dir="return"/>
+    </method>
+
+    <method name="addStorageController">
+      <desc>
+        Adds a new storage controller to the machine.
+
+        <result name="VBOX_E_OBJECT_IN_USE">
+          A storage controller with given name exists already.
+        </result>
+        <result name="E_INVALIDARG">
+          Invalid @a controllerType.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in"/>
+      <param name="connectionType" type="StorageBus" dir="in"/>
+    </method>
+
+    <method name="getStorageControllerByName" const="yes">
+      <desc>
+        Returns a storage controller with the given name.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          A storage controller with given name doesn't exist.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in"/>
+      <param name="storageController" type="IStorageController" dir="return"/>
+    </method>
+
+    <method name="removeStorageController">
+      <desc>
+        Removes a storage controller from the machine.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          A storage controller with given name doesn't exist.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in"/>
     </method>
 
     <method name="getSerialPort" const="yes">
@@ -5253,6 +5264,15 @@
       <param name="parallelPort" type="IParallelPort" dir="in">
         <desc>Parallel port that is subject to change.</desc>
       </param>
+    </method>
+
+    <method name="onStorageControllerChange">
+      <desc>
+        Notification when a property of one of the
+        virtual <link to="IMachine::getStorageControllers">storage controllers</link>
+        changes. Interested callees should use query the corresponding collections
+        to find out what has changed.
+      </desc>
     </method>
 
     <method name="onVRDPServerChange">
@@ -8330,12 +8350,12 @@
       <desc>Hard disk object associated with this attachment.</desc>
     </attribute>
 
-    <attribute name="bus" type="StorageBus" readonly="yes">
+    <attribute name="controller" type="wstring" readonly="yes">
       <desc>Interface bus of this attachment.</desc>
     </attribute>
 
-    <attribute name="channel" type="long" readonly="yes">
-      <desc>Channel number of this attachment.</desc>
+    <attribute name="port" type="long" readonly="yes">
+      <desc>Port number of this attachment.</desc>
     </attribute>
 
     <attribute name="device" type="long" readonly="yes">
@@ -11940,6 +11960,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="parallelPort" type="IParallelPort" dir="in"/>
     </method>
 
+    <method name="onStorageControllerChange">
+      <desc>
+        Triggered when settings of a storage controller of the
+        associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
+      </desc>
+    </method>
+
     <method name="onVRDPServerChange">
       <desc>
         Triggered when settings of the VRDP server object of the
@@ -12260,28 +12295,105 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <!--
-  // ISATAController
+  // IStorageController
   /////////////////////////////////////////////////////////////////////////
   -->
 
+  <enum
+    name="StorageBus"
+    uuid="f381fdca-5953-41d0-b2bd-0542b012698d"
+  >
+    <desc>
+      The connection type of the storage controller.
+    </desc>
+    <const name="Null"         value="0">
+      <desc><tt>null</tt> value. Never used by the API.</desc>
+    </const>
+    <const name="IDE"       value="1"/>
+    <const name="SATA"      value="2"/>
+    <const name="SCSI"      value="3"/>
+    <const name="LastValid" value="3"/>
+  </enum>
+
+  <enum
+    name="StorageControllerType"
+    uuid="685387db-a837-4320-a258-08f46a22f62a"
+  >
+    <desc>
+      Storage controller type.
+    </desc>
+
+    <const name="Null"         value="0">
+      <desc><tt>null</tt> value. Never used by the API.</desc>
+    </const>
+    <const name="LsiLogic"  value="1"/>
+    <const name="BusLogic"  value="2"/>
+    <const name="IntelAhci" value="3"/>
+    <const name="PIIX3"     value="4"/>
+    <const name="PIIX4"     value="5"/>
+    <const name="ICH6"      value="6"/>
+    <const name="LastValid" value="6"/>
+  </enum>
+
   <interface
-    name="ISATAController" extends="$unknown"
-    uuid="9a4b868b-1376-4533-8ef5-065b8e8cedff"
+    name="IStorageController" extends="$unknown"
+    uuid="6bf8335b-d14a-44a5-9b45-ddc49ce7d5b2"
     wsmap="managed"
   >
-    <attribute name="enabled" type="boolean">
+
+    <attribute name="name" type="wstring" readonly="yes">
+     <desc>
+        Name of the storage controller. Acts also as a unique
+        identifier.
+      </desc>
+    </attribute>
+
+    <attribute name="maxDevicesPerPortCount" type="unsigned long" readonly="yes">
       <desc>
-        Flag whether the SATA controller is present in the
-        guest system. If disabled, the virtual guest hardware will
-        not contain any SATA controller. Can only be changed when
-        the VM is powered off.
+        Maximum number of devices which can be attached to one port.
+      </desc>
+    </attribute>
+
+    <attribute name="minPortCount" type="unsigned long" readonly="yes">
+      <desc>
+        Minimum number of ports which can be set with
+        <link to="IStorageController::SetPortCount"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="maxPortCount" type="unsigned long" readonly="yes">
+      <desc>
+        Maximum number of ports which can be set with
+        <link to="IStorageController::SetPortCount"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="instance" type="unsigned long">
+      <desc>
+        The instance number of the device in the running VM.
       </desc>
     </attribute>
 
     <attribute name="portCount" type="unsigned long">
       <desc>
-        The number of usable ports on the SATA controller.
-        It ranges from 1 to 30.
+        The number of currently usable ports on the controller.
+        The minimum and maximum number of ports for one controller type can
+        be determined with <link to="IStorageController::GetMinPortCount"/>
+        and <link to="IStorageController::GetMaxPortCount"/>..
+      </desc>
+    </attribute>
+
+    <attribute name="bus" type="StorageBus" readonly="yes">
+      <desc>
+        The connection type of the storage controller.
+      </desc>
+    </attribute>
+
+    <attribute name="controllerType" type="StorageControllerType">
+      <desc>
+        Type of the virtual storage controller. Depending on this value,
+        VirtualBox will provide a different virtual storage controller hardware
+        to the guest.
       </desc>
     </attribute>
 
@@ -12291,6 +12403,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         <result name="E_INVALIDARG">
           The @a devicePosition is not in the range 0 to 3.
+        </result>
+        <result name="E_NOTIMPL">
+          The storage controller type is not SATAIntelAhci.
         </result>
 
       </desc>
@@ -12305,6 +12420,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <result name="E_INVALIDARG">
           The @a devicePosition is not in the range 0 to 3 or the
           @a portNumber is not in the range 0 to 29.
+        </result>
+        <result name="E_NOTIMPL">
+          The storage controller type is not SATAIntelAhci.
         </result>
 
       </desc>

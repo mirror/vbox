@@ -114,7 +114,7 @@
 # include <HostUSBDeviceImpl.h>
 # include <USBDeviceImpl.h>
 #endif
-#include <SATAControllerImpl.h>
+#include <StorageControllerImpl.h>
 #include <AudioAdapterImpl.h>
 #include <SystemPropertiesImpl.h>
 #include <Collection.h>
@@ -209,8 +209,8 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ParallelPort, IParallelPort)
 NS_DECL_CLASSINFO(USBController)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(USBController, IUSBController)
 
-NS_DECL_CLASSINFO(SATAController)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SATAController, ISATAController)
+NS_DECL_CLASSINFO(StorageController)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(StorageController, IStorageController)
 
 #ifdef VBOX_WITH_USB
 NS_DECL_CLASSINFO(USBDeviceFilter)

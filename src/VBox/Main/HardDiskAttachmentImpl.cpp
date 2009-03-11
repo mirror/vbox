@@ -43,12 +43,12 @@ void HardDiskAttachment::FinalRelease()
  * Initializes the hard disk attachment object.
  *
  * @param aHD       Hard disk object.
- * @param aBus      Bus type.
- * @param aChannel  Channel number.
- * @param aDevice   Device number on the channel.
- * @param aImplicit Wether the attachment contains an implicitly created diff.
+ * @param aController Controller the hard disk is attached to.
+ * @param aPort       Port number.
+ * @param aDevice     Device number on the port.
+ * @param aImplicit   Wether the attachment contains an implicitly created diff.
  */
-HRESULT HardDiskAttachment::init(HardDisk *aHD, StorageBus_T aBus, LONG aChannel,
+HRESULT HardDiskAttachment::init(HardDisk *aHD, IN_BSTR aController, LONG aPort,
                                  LONG aDevice, bool aImplicit /*= false*/)
 {
     AssertReturn (aHD, E_INVALIDARG);
@@ -58,8 +58,8 @@ HRESULT HardDiskAttachment::init(HardDisk *aHD, StorageBus_T aBus, LONG aChannel
     AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     m.hardDisk = aHD;
-    unconst (m.bus) = aBus;
-    unconst (m.channel) = aChannel;
+    unconst (m.controller) = aController;
+    unconst (m.port)   = aPort;
     unconst (m.device) = aDevice;
 
     m.implicit = aImplicit;
@@ -99,28 +99,28 @@ STDMETHODIMP HardDiskAttachment::COMGETTER(HardDisk) (IHardDisk **aHardDisk)
     return S_OK;
 }
 
-STDMETHODIMP HardDiskAttachment::COMGETTER(Bus) (StorageBus_T *aBus)
+STDMETHODIMP HardDiskAttachment::COMGETTER(Controller) (BSTR *aController)
 {
-    CheckComArgOutPointerValid(aBus);
+    CheckComArgOutPointerValid(aController);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* m.bus is constant during life time, no need to lock */
-    *aBus = m.bus;
+    /* m.controller is constant during life time, no need to lock */
+    m.controller.cloneTo(aController);
 
     return S_OK;
 }
 
-STDMETHODIMP HardDiskAttachment::COMGETTER(Channel) (LONG *aChannel)
+STDMETHODIMP HardDiskAttachment::COMGETTER(Port) (LONG *aPort)
 {
-    CheckComArgOutPointerValid(aChannel);
+    CheckComArgOutPointerValid(aPort);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* m.channel is constant during life time, no need to lock */
-    *aChannel = m.channel;
+    /* m.port is constant during life time, no need to lock */
+    *aPort = m.port;
 
     return S_OK;
 }

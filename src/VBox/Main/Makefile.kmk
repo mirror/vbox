@@ -285,7 +285,7 @@ VBoxSVC_SOURCES = \
 	SerialPortImpl.cpp \
 	ParallelPortImpl.cpp \
 	USBControllerImpl.cpp \
-	SATAControllerImpl.cpp \
+	StorageControllerImpl.cpp \
 	AudioAdapterImpl.cpp \
 	SharedFolderImpl.cpp \
 	SystemPropertiesImpl.cpp \

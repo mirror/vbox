@@ -236,8 +236,10 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     mCbClipboard->setCurrentIndex (aMachine.GetClipboardMode());
 
     /* IDE controller type */
+    const QString ideName = QString("IDE");
+    CStorageController ideCtl = aMachine.GetStorageControllerByName(ideName);
     mCbIDEController->setCurrentIndex (mCbIDEController->
-        findText (vboxGlobal().toString (biosSettings.GetIDEControllerType())));
+        findText (vboxGlobal().toString (ideCtl.GetControllerType())));
 
     /* Other features */
     QString saveRtimeImages = mMachine.GetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime);
@@ -333,7 +335,9 @@ void VBoxVMSettingsGeneral::putBackTo()
     mMachine.SetClipboardMode ((KClipboardMode) mCbClipboard->currentIndex());
 
     /* IDE controller type */
-    biosSettings.SetIDEControllerType (vboxGlobal().toIDEControllerType (mCbIDEController->currentText()));
+    const QString ideName = QString("IDE");
+    CStorageController ideCtl = mMachine.GetStorageControllerByName(ideName);
+    ideCtl.SetControllerType (vboxGlobal().toIDEControllerType (mCbIDEController->currentText()));
 
     /* Other features */
     mMachine.SetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime,
@@ -458,9 +462,9 @@ void VBoxVMSettingsGeneral::retranslateUi()
     mCbClipboard->setItemText (3, vboxGlobal().toString (KClipboardMode_Bidirectional));
 
     /* IDE Controller Type */
-    mCbIDEController->setItemText (0, vboxGlobal().toString (KIDEControllerType_PIIX3));
-    mCbIDEController->setItemText (1, vboxGlobal().toString (KIDEControllerType_PIIX4));
-    mCbIDEController->setItemText (2, vboxGlobal().toString (KIDEControllerType_ICH6));
+    mCbIDEController->setItemText (0, vboxGlobal().toString (KStorageControllerType_PIIX3));
+    mCbIDEController->setItemText (1, vboxGlobal().toString (KStorageControllerType_PIIX4));
+    mCbIDEController->setItemText (2, vboxGlobal().toString (KStorageControllerType_ICH6));
 
     /* Path selector */
     mPsSnapshot->setWhatsThis (tr ("Displays the path where snapshots of this "

@@ -77,7 +77,7 @@ int handleModifyVM(HandlerArg *a)
     char *biospxedebug = NULL;
     DeviceType_T bootDevice[4];
     int bootDeviceChanged[4] = { false };
-    char *hdds[34] = {0};
+    char *hdds[50] = {0};
     char *dvd = NULL;
     char *dvdpassthrough = NULL;
     char *idecontroller = NULL;
@@ -99,6 +99,7 @@ int handleModifyVM(HandlerArg *a)
     ULONG guestMemBalloonSize = (ULONG)-1;
     ULONG guestStatInterval = (ULONG)-1;
     int   fSataEnabled = -1;
+    int   fLsiLogicEnabled = -1;
     int   sataPortCount = -1;
     int   sataBootDevices[4] = {-1,-1,-1,-1};
 
@@ -714,6 +715,28 @@ int handleModifyVM(HandlerArg *a)
 
             sataBootDevices[bootDevicePos] = n-1;
         }
+        else if (strcmp(a->argv[i], "-lsilogic") == 0)
+        {
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            i++;
+            if (strcmp(a->argv[i], "on") == 0 || strcmp(a->argv[i], "enable") == 0)
+                fLsiLogicEnabled = 1;
+            else if (strcmp(a->argv[i], "off") == 0 || strcmp(a->argv[i], "disable") == 0)
+                fLsiLogicEnabled = 0;
+            else
+                return errorArgument("Invalid -lsilogic argument '%s'", a->argv[i]);
+        }
+        else if (strncmp(a->argv[i], "-lsilogicport", 13) == 0)
+        {
+            unsigned n = parseNum(&a->argv[i][13], 16, "LsiLogic");
+            if (!n)
+                return 1;
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            i++;
+            hdds[n-1+34] = a->argv[i];
+        }
         else
             return errorSyntax(USAGE_MODIFYVM, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
     }
@@ -982,7 +1005,7 @@ int handleModifyVM(HandlerArg *a)
         {
             if (strcmp(hdds[0], "none") == 0)
             {
-                machine->DetachHardDisk(StorageBus_IDE, 0, 0);
+                machine->DetachHardDisk(Bstr("IDE"), 0, 0);
             }
             else
             {
@@ -1003,7 +1026,7 @@ int handleModifyVM(HandlerArg *a)
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 0, 0));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("IDE"), 0, 0));
                 }
                 else
                     rc = E_FAIL;
@@ -1015,7 +1038,7 @@ int handleModifyVM(HandlerArg *a)
         {
             if (strcmp(hdds[1], "none") == 0)
             {
-                machine->DetachHardDisk(StorageBus_IDE, 0, 1);
+                machine->DetachHardDisk(Bstr("IDE"), 0, 1);
             }
             else
             {
@@ -1036,7 +1059,7 @@ int handleModifyVM(HandlerArg *a)
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 0, 1));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("IDE"), 0, 1));
                 }
                 else
                     rc = E_FAIL;
@@ -1048,7 +1071,7 @@ int handleModifyVM(HandlerArg *a)
         {
             if (strcmp(hdds[2], "none") == 0)
             {
-                machine->DetachHardDisk(StorageBus_IDE, 1, 1);
+                machine->DetachHardDisk(Bstr("IDE"), 1, 1);
             }
             else
             {
@@ -1069,7 +1092,7 @@ int handleModifyVM(HandlerArg *a)
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 1, 1));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("IDE"), 1, 1));
                 }
                 else
                     rc = E_FAIL;
@@ -1155,13 +1178,20 @@ int handleModifyVM(HandlerArg *a)
         }
         if (idecontroller)
         {
+            ComPtr<IStorageController> storageController;
+            CHECK_ERROR(machine, GetStorageControllerByName(Bstr("IDE"), storageController.asOutParam()));
+
             if (RTStrICmp(idecontroller, "PIIX3") == 0)
             {
-                CHECK_ERROR(biosSettings, COMSETTER(IDEControllerType)(IDEControllerType_PIIX3));
+                CHECK_ERROR(storageController, COMSETTER(ControllerType)(StorageControllerType_PIIX3));
             }
             else if (RTStrICmp(idecontroller, "PIIX4") == 0)
             {
-                CHECK_ERROR(biosSettings, COMSETTER(IDEControllerType)(IDEControllerType_PIIX4));
+                CHECK_ERROR(storageController, COMSETTER(ControllerType)(StorageControllerType_PIIX4));
+            }
+            else if (RTStrICmp(idecontroller, "ICH6") == 0)
+            {
+                CHECK_ERROR(storageController, COMSETTER(ControllerType)(StorageControllerType_ICH6));
             }
             else
             {
@@ -1738,12 +1768,15 @@ int handleModifyVM(HandlerArg *a)
          */
         if (fSataEnabled != -1)
         {
-            ComPtr<ISATAController> SataCtl;
-            CHECK_ERROR(machine, COMGETTER(SATAController)(SataCtl.asOutParam()));
-            if (SUCCEEDED(rc))
+            if (fSataEnabled)
             {
-                CHECK_ERROR(SataCtl, COMSETTER(Enabled)(!!fSataEnabled));
+                CHECK_ERROR(machine, AddStorageController(Bstr("SATA"), StorageBus_SATA));
+                ComPtr<IStorageController> ctl;
+                CHECK_ERROR(machine, GetStorageControllerByName(Bstr("SATA"), ctl.asOutParam()));
+                CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_IntelAhci));
             }
+            else
+                CHECK_ERROR(machine, RemoveStorageController(Bstr("SATA")));
         }
 
         for (uint32_t i = 4; i < 34; i++)
@@ -1752,7 +1785,7 @@ int handleModifyVM(HandlerArg *a)
             {
                 if (strcmp(hdds[i], "none") == 0)
                 {
-                    machine->DetachHardDisk(StorageBus_SATA, i-4, 0);
+                    machine->DetachHardDisk(Bstr("SATA"), i-4, 0);
                 }
                 else
                 {
@@ -1773,7 +1806,7 @@ int handleModifyVM(HandlerArg *a)
                     if (hardDisk)
                     {
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_SATA, i-4, 0));
+                        CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("SATA"), i-4, 0));
                     }
                     else
                         rc = E_FAIL;
@@ -1787,8 +1820,8 @@ int handleModifyVM(HandlerArg *a)
         {
             if (sataBootDevices[i] != -1)
             {
-                ComPtr<ISATAController> SataCtl;
-                CHECK_ERROR(machine, COMGETTER(SATAController)(SataCtl.asOutParam()));
+                ComPtr<IStorageController> SataCtl;
+                CHECK_ERROR(machine, GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam()));
                 if (SUCCEEDED(rc))
                 {
                     CHECK_ERROR(SataCtl, SetIDEEmulationPort(i, sataBootDevices[i]));
@@ -1798,11 +1831,64 @@ int handleModifyVM(HandlerArg *a)
 
         if (sataPortCount != -1)
         {
-            ComPtr<ISATAController> SataCtl;
-            CHECK_ERROR(machine, COMGETTER(SATAController)(SataCtl.asOutParam()));
+            ComPtr<IStorageController> SataCtl;
+            CHECK_ERROR(machine, GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam()));
             if (SUCCEEDED(rc))
             {
                 CHECK_ERROR(SataCtl, COMSETTER(PortCount)(sataPortCount));
+            }
+        }
+
+        /*
+         * LsiLogic controller enable/disable
+         */
+        if (fLsiLogicEnabled != -1)
+        {
+            if (fLsiLogicEnabled)
+            {
+                CHECK_ERROR(machine, AddStorageController(Bstr("LsiLogic"), StorageBus_SCSI));
+                ComPtr<IStorageController> ctl;
+                CHECK_ERROR(machine, GetStorageControllerByName(Bstr("LsiLogic"), ctl.asOutParam()));
+                CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_LsiLogic));
+            }
+            else
+                CHECK_ERROR(machine, RemoveStorageController(Bstr("LsiLogic")));
+        }
+
+        for (uint32_t i = 34; i < 50; i++)
+        {
+            if (hdds[i])
+            {
+                if (strcmp(hdds[i], "none") == 0)
+                {
+                    machine->DetachHardDisk(Bstr("LsiLogic"), i-34, 0);
+                }
+                else
+                {
+                    /* first guess is that it's a UUID */
+                    Guid uuid(hdds[i]);
+                    ComPtr<IHardDisk> hardDisk;
+                    rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+                    /* not successful? Then it must be a filename */
+                    if (!hardDisk)
+                    {
+                        CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(hdds[i]), hardDisk.asOutParam()));
+                        if (FAILED(rc))
+                        {
+                            /* open the new hard disk object */
+                            CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[i]), hardDisk.asOutParam()));
+                        }
+                    }
+                    if (hardDisk)
+                    {
+                        hardDisk->COMGETTER(Id)(uuid.asOutParam());
+                        CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("LsiLogic"), i-34, 0));
+                    }
+                    else
+                        rc = E_FAIL;
+                    if (FAILED(rc))
+                        break;
+                }
             }
         }
 

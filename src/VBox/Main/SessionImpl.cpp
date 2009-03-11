@@ -570,6 +570,20 @@ STDMETHODIMP Session::OnParallelPortChange(IParallelPort *parallelPort)
     return mConsole->onParallelPortChange(parallelPort);
 }
 
+STDMETHODIMP Session::OnStorageControllerChange()
+{
+    LogFlowThisFunc (("\n"));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoReadLock alock (this);
+    AssertReturn (mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
+    AssertReturn (mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->onStorageControllerChange();
+}
+
 STDMETHODIMP Session::OnVRDPServerChange()
 {
     LogFlowThisFunc (("\n"));

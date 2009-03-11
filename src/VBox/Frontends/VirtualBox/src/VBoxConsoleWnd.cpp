@@ -1906,9 +1906,12 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
              hda != vec.end(); ++ hda)
         {
             CHardDisk hd = hda->GetHardDisk();
+            const QString ctlName = hda->GetController();
+            CStorageController ctl = cmachine.GetStorageControllerByName(ctlName);
+
             data += QString ("<br><nobr><b>%1 %2</b>: %3</nobr>")
-                .arg (vboxGlobal().toString (hda->GetBus(), hda->GetChannel()))
-                .arg (vboxGlobal().toString (hda->GetBus(), hda->GetChannel(),
+                .arg (vboxGlobal().toString (ctl.GetBus(), hda->GetPort()))
+                .arg (vboxGlobal().toString (ctl.GetBus(), hda->GetPort(),
                                              hda->GetDevice()))
                 .arg (QDir::convertSeparators (hd.GetLocation()));
             hasDisks = true;

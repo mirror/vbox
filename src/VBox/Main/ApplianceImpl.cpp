@@ -1741,7 +1741,7 @@ struct MyHardDiskAttachment
 {
     Guid    uuid;
     ComPtr<IMachine> pMachine;
-    StorageBus_T busType;
+    Bstr    controllerType;
     int32_t lChannel;
     int32_t lDevice;
 };
@@ -1961,17 +1961,17 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
             if (vsdeHDCIDE.size() > 0)
             {
                 /* Set the appropriate IDE controller in the virtual BIOS of the VM */
-                ComPtr<IBIOSSettings> biosSettings;
-                rc = pNewMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
+                ComPtr<IStorageController> ctl;
+                rc = pNewMachine->GetStorageControllerByName(Bstr("IDE"), ctl.asOutParam());
                 if (FAILED(rc)) throw rc;
 
                 const char *pcszIDEType = vsdeHDCIDE.front()->strVbox.c_str();
                 if (!strcmp(pcszIDEType, "PIIX3"))
-                    rc = biosSettings->COMSETTER(IDEControllerType)(IDEControllerType_PIIX3);
+                    rc = ctl->COMSETTER(ControllerType)(StorageControllerType_PIIX3);
                 else if (!strcmp(pcszIDEType, "PIIX4"))
-                    rc = biosSettings->COMSETTER(IDEControllerType)(IDEControllerType_PIIX4);
+                    rc = ctl->COMSETTER(ControllerType)(StorageControllerType_PIIX4);
                 else if (!strcmp(pcszIDEType, "ICH6"))
-                    rc = biosSettings->COMSETTER(IDEControllerType)(IDEControllerType_ICH6);
+                    rc = ctl->COMSETTER(ControllerType)(StorageControllerType_ICH6);
                 else
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Invalid IDE controller type \"%s\""),
@@ -1988,10 +1988,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                 if (hdcVBox == "AHCI")
                 {
                     /* For now we have just to enable the AHCI controller. */
-                    ComPtr<ISATAController> hdcSATAVBox;
-                    rc = pNewMachine->COMGETTER(SATAController)(hdcSATAVBox.asOutParam());
-                    if (FAILED(rc)) throw rc;
-                    rc = hdcSATAVBox->COMSETTER(Enabled)(true);
+                    rc = pNewMachine->AddStorageController(Bstr("SATA"), StorageBus_SATA);
                     if (FAILED(rc)) throw rc;
                 }
                 else
@@ -2200,7 +2197,6 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                         MyHardDiskAttachment mhda;
                         mhda.uuid = newMachineId;
                         mhda.pMachine = pNewMachine;
-                        mhda.busType = StorageBus_IDE;
 
                         switch (hdc.system)
                         {
@@ -2210,6 +2206,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                                 // the device number can be either 0 or 1, to specify the master or the slave device,
                                 // respectively. For the secondary IDE controller, the device number is always 1 because
                                 // the master device is reserved for the CD-ROM drive.
+                                mhda.controllerType = Bstr("IDE");
                                 switch (vd.ulAddressOnParent)
                                 {
                                     case 0:     // interpret this as primary master
@@ -2235,7 +2232,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                             break;
 
                             case HardDiskController::SATA:
-                                mhda.busType = StorageBus_SATA;
+                                mhda.controllerType = Bstr("SATA");
                                 mhda.lChannel = (long)vd.ulAddressOnParent;
                                 mhda.lDevice = (long)0;
                             break;
@@ -2253,7 +2250,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                         Log(("Attaching disk %s to channel %d on device %d\n", pcszDstFilePath, mhda.lChannel, mhda.lDevice));
 
                         rc = sMachine->AttachHardDisk(hdId,
-                                                      mhda.busType,
+                                                      mhda.controllerType,
                                                       mhda.lChannel,
                                                       mhda.lDevice);
                         if (FAILED(rc)) throw rc;
@@ -2312,7 +2309,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                 rc2 = session->COMGETTER(Machine)(sMachine.asOutParam());
                 if (SUCCEEDED(rc2))
                 {
-                    rc2 = sMachine->DetachHardDisk(mhda.busType, mhda.lChannel, mhda.lDevice);
+                    rc2 = sMachine->DetachHardDisk(mhda.controllerType, mhda.lChannel, mhda.lDevice);
                     rc2 = sMachine->SaveSettings();
                 }
                 session->Close();
@@ -3355,17 +3352,18 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         int32_t lSATAControllerIndex = 0;
 
 //     <const name="HardDiskControllerIDE" value="6" />
-        ComPtr<IBIOSSettings> pBiosSettings;
-        pBiosSettings = mBIOSSettings;
+        ComPtr<IStorageController> ctl;
+        rc = GetStorageControllerByName(Bstr("IDE"), ctl.asOutParam());
+        if (FAILED(rc)) throw rc;
         Utf8Str strVbox;
-        IDEControllerType_T ctlr;
-        rc = pBiosSettings->COMGETTER(IDEControllerType)(&ctlr);
+        StorageControllerType_T ctlr;
+        rc = ctl->COMGETTER(ControllerType)(&ctlr);
         if (FAILED(rc)) throw rc;
         switch(ctlr)
         {
-            case IDEControllerType_PIIX3: strVbox = "PIIX3"; break;
-            case IDEControllerType_PIIX4: strVbox = "PIIX4"; break;
-            case IDEControllerType_ICH6: strVbox = "ICH6"; break;
+            case StorageControllerType_PIIX3: strVbox = "PIIX3"; break;
+            case StorageControllerType_PIIX4: strVbox = "PIIX4"; break;
+            case StorageControllerType_ICH6: strVbox = "ICH6"; break;
         }
 
         if (strVbox.length())
@@ -3376,12 +3374,8 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
 #ifdef VBOX_WITH_AHCI
 //     <const name="HardDiskControllerSATA" value="7" />
-        ComPtr<ISATAController> pSataController;
-        pSataController = mSATAController;
-        BOOL fSataEnabled;
-        rc = pSataController->COMGETTER(Enabled)(&fSataEnabled);
-        if (FAILED(rc)) throw rc;
-        if (fSataEnabled)
+        rc = GetStorageControllerByName(Bstr("IDE"), ctl.asOutParam());
+        if (SUCCEEDED(rc))
         {
             lSATAControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, Utf8StrFmt("%d", lSATAControllerIndex), strVbox, "");
@@ -3401,17 +3395,26 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
             // the attachment's data
             ComPtr<IHardDisk> pHardDisk;
+            ComPtr<IStorageController> ctl;
+            Bstr controllerName;
+
+            rc = pHDA->COMGETTER(Controller)(controllerName.asOutParam());
+            if (FAILED(rc)) throw rc;
+
+            rc = GetStorageControllerByName(controllerName, ctl.asOutParam());
+            if (FAILED(rc)) throw rc;
+
             StorageBus_T storageBus;
             LONG lChannel;
             LONG lDevice;
 
+            rc = ctl->COMGETTER(Bus)(&storageBus);
+            if (FAILED(rc)) throw rc;
+
             rc = pHDA->COMGETTER(HardDisk)(pHardDisk.asOutParam());
             if (FAILED(rc)) throw rc;
 
-            rc = pHDA->COMGETTER(Bus)(&storageBus);
-            if (FAILED(rc)) throw rc;
-
-            rc = pHDA->COMGETTER(Channel)(&lChannel);
+            rc = pHDA->COMGETTER(Port)(&lChannel);
             if (FAILED(rc)) throw rc;
 
             rc = pHDA->COMGETTER(Device)(&lDevice);

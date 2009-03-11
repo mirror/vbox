@@ -442,9 +442,9 @@ public:
                 case KVirtualSystemDescriptionType_HardDiskControllerIDE:
                 {
                     QComboBox *e = new QComboBox (aParent);
-                    e->addItem (vboxGlobal().toString (KIDEControllerType_PIIX3), "PIIX3");
-                    e->addItem (vboxGlobal().toString (KIDEControllerType_PIIX4), "PIIX4");
-                    e->addItem (vboxGlobal().toString (KIDEControllerType_ICH6),  "ICH6");
+                    e->addItem (vboxGlobal().toString (KStorageControllerType_PIIX3), "PIIX3");
+                    e->addItem (vboxGlobal().toString (KStorageControllerType_PIIX4), "PIIX4");
+                    e->addItem (vboxGlobal().toString (KStorageControllerType_ICH6),  "ICH6");
                     editor = e;
                     break;
                 }

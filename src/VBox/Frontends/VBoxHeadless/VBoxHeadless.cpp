@@ -226,6 +226,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnStorageControllerChange)()
+    {
+        return S_OK;
+    }
+
     STDMETHOD(OnUSBDeviceStateChange) (IUSBDevice *aDevice, BOOL aAttached,
                                       IVirtualBoxErrorInfo *aError)
     {

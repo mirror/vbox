@@ -1115,6 +1115,11 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
             channel = mStorageBusChannels [2].arg (aChannel);
             break;
         }
+        case KStorageBus_SCSI:
+        {
+            channel = mStorageBusChannels [2].arg (aChannel);
+            break;
+        }
         default:
             AssertFailedBreak();
     }
@@ -1144,6 +1149,7 @@ LONG VBoxGlobal::toStorageChannel (KStorageBus aBus, const QString &aChannel) co
             break;
         }
         case KStorageBus_SATA:
+        case KStorageBus_SCSI:
         {
             /// @todo use regexp to properly extract the %1 text
             QString tpl = mStorageBusChannels [2].arg ("");
@@ -1187,6 +1193,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
             AssertMsgFailedBreak (("Invalid device %d\n", aDevice));
         }
         case KStorageBus_SATA:
+        case KStorageBus_SCSI:
         {
             AssertMsgBreak (aDevice == 0, ("Invalid device %d\n", aDevice));
             /* always empty so far for SATA */
@@ -1226,6 +1233,7 @@ LONG VBoxGlobal::toStorageDevice (KStorageBus aBus, LONG aChannel,
             break;
         }
         case KStorageBus_SATA:
+        case KStorageBus_SCSI:
         {
             AssertMsgBreak(aDevice.isEmpty(), ("Invalid device {%s}\n", aDevice.toLatin1().constData()));
             /* always zero for SATA so far. */
@@ -1259,6 +1267,7 @@ QString VBoxGlobal::toFullString (KStorageBus aBus, LONG aChannel,
             break;
         }
         case KStorageBus_SATA:
+        case KStorageBus_SCSI:
         {
             /* we only have one SATA device so far which is always zero */
             device = QString ("%1 %2")
@@ -1652,11 +1661,16 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             /// in VBoxMedium::details().
             if (hda.isOk())
             {
-                KStorageBus bus = hda.GetBus();
-                LONG channel = hda.GetChannel();
+                const QString controller = hda.GetController();
+                KStorageBus bus;
+
+                CStorageController ctrl = aMachine.GetStorageControllerByName(controller);
+                bus = ctrl.GetBus();
+
+                LONG port   = hda.GetPort();
                 LONG device = hda.GetDevice();
                 hardDisks += QString (sSectionItemTpl2)
-                    .arg (toFullString (bus, channel, device))
+                    .arg (toFullString (bus, port, device))
                     .arg (details (hd, aIsNewVM));
                 ++ rows;
             }
@@ -2837,6 +2851,7 @@ void VBoxGlobal::retranslateUi()
 
     mStorageBuses [KStorageBus_IDE] =   tr ("IDE", "StorageBus");
     mStorageBuses [KStorageBus_SATA] =  tr ("SATA", "StorageBus");
+    mStorageBuses [KStorageBus_SCSI] =  tr ("SCSI", "StorageBus");
 
     mStorageBusChannels [0] =   tr ("Primary", "StorageBusChannel");
     mStorageBusChannels [1] =   tr ("Secondary", "StorageBusChannel");
@@ -2914,12 +2929,24 @@ void VBoxGlobal::retranslateUi()
     mClipboardTypes [KClipboardMode_Bidirectional] =
         tr ("Bidirectional", "ClipboardType");
 
-    mIDEControllerTypes [KIDEControllerType_PIIX3] =
-        tr ("PIIX3", "IDEControllerType");
-    mIDEControllerTypes [KIDEControllerType_PIIX4] =
-        tr ("PIIX4", "IDEControllerType");
-    mIDEControllerTypes [KIDEControllerType_ICH6] =
-        tr ("ICH6", "IDEControllerType");
+    mStorageControllerTypes [KStorageControllerType_PIIX3] =
+        tr ("PIIX3", "StorageControllerType");
+    mStorageControllerTypes [KStorageControllerType_PIIX4] =
+        tr ("PIIX4", "StorageControllerType");
+    mStorageControllerTypes [KStorageControllerType_ICH6] =
+        tr ("ICH6", "StorageControllerType");
+    /* Leave them out for now because this is used for the IDE controller
+     * setting in the general page and we do not want that the other controllers
+     * show up there.
+     */
+#if 0
+    mStorageControllerTypes [KStorageControllerType_IntelAhci] =
+        tr ("AHCI", "StorageControllerType");
+    mStorageControllerTypes [KStorageControllerType_LsiLogic] =
+        tr ("Lsilogic", "StorageControllerType");
+    mStorageControllerTypes [KStorageControllerType_BusLogic] =
+        tr ("BusLogic", "StorageControllerType");
+#endif
 
     mUSBDeviceStates [KUSBDeviceState_NotSupported] =
         tr ("Not supported", "USBDeviceState");

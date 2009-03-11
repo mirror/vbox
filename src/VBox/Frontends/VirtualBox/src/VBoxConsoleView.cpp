@@ -550,6 +550,14 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnStorageControllerChange) ()
+    {
+        /* @todo */
+        //QApplication::postEvent (mView,
+        //    new StorageControllerChangeEvent ());
+        return S_OK;
+    }
+
     STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort)
     {
         NOREF(aSerialPort);

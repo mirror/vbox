@@ -561,6 +561,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnStorageControllerChange) ()
+    {
+        return S_OK;
+    }
+
     STDMETHOD(OnRuntimeError)(BOOL fFatal, IN_BSTR id, IN_BSTR message)
     {
         MachineState_T machineState;
@@ -1674,8 +1679,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              */
             Guid uuid;
             hardDisk->COMGETTER(Id)(uuid.asOutParam());
-            gMachine->DetachHardDisk(StorageBus_IDE, 0, 0);
-            gMachine->AttachHardDisk(uuid, StorageBus_IDE, 0, 0);
+            gMachine->DetachHardDisk(Bstr("IDE"), 0, 0);
+            gMachine->AttachHardDisk(uuid, Bstr("IDE"), 0, 0);
             /// @todo why is this attachment saved?
         }
         else

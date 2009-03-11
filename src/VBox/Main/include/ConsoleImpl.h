@@ -178,6 +178,7 @@ public:
     HRESULT onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter);
     HRESULT onSerialPortChange (ISerialPort *aSerialPort);
     HRESULT onParallelPortChange (IParallelPort *aParallelPort);
+    HRESULT onStorageControllerChange ();
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange (BOOL aGlobal);

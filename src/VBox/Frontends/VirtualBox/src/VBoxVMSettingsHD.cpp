@@ -650,13 +650,11 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
     mMachine = aMachine;
     HDSettings::instance()->setMachine (mMachine);
 
-    CSATAController ctl = mMachine.GetSATAController();
-    /* Hide the SATA check box if the SATA controller is not available
-     * (i.e. in VirtualBox OSE) */
-    if (ctl.isNull())
-        mSATACheck->setHidden (true);
-    else
-        mSATACheck->setChecked (ctl.GetEnabled());
+    const QString sataName = QString("SATA");
+    CStorageController sataCtl = mMachine.GetStorageControllerByName(sataName);
+
+    mSATACheck->setChecked (!sataCtl.isNull());
+
     onSATACheckToggled (mSATACheck->checkState());
     onShowDiffsCheckToggled (mShowDiffsCheck->checkState());
 
@@ -665,7 +663,9 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
     for (int i = 0; i < vec.size(); ++ i)
     {
         CHardDiskAttachment hda = vec [i];
-        SlotValue slot (hda.GetBus(), hda.GetChannel(), hda.GetDevice());
+        CStorageController  ctl = mMachine.GetStorageControllerByName(hda.GetController());
+
+        SlotValue slot (ctl.GetBus(), hda.GetPort(), hda.GetDevice());
         DiskValue disk (hda.GetHardDisk().GetId());
         mModel->addItem (slot, disk);
     }
@@ -681,23 +681,48 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
 
 void VBoxVMSettingsHD::putBackTo()
 {
-    CSATAController ctl = mMachine.GetSATAController();
-    if (!ctl.isNull())
-        ctl.SetEnabled (mSATACheck->isChecked());
+    const QString sataName = QString("SATA");
+    const QString ideName = QString("IDE");
 
     /* Detach all attached Hard Disks */
     CHardDiskAttachmentVector vec = mMachine.GetHardDiskAttachments();
     for (int i = 0; i < vec.size(); ++ i)
     {
         CHardDiskAttachment hda = vec [i];
-        mMachine.DetachHardDisk(hda.GetBus(), hda.GetChannel(), hda.GetDevice());
+
+        mMachine.DetachHardDisk(hda.GetController(), hda.GetPort(), hda.GetDevice());
 
         /* [dsen] check this */
         if (!mMachine.isOk())
+        {
+            CStorageController ctl = mMachine.GetStorageControllerByName(hda.GetController());
             vboxProblem().cannotDetachHardDisk (this, mMachine,
                 vboxGlobal().getMedium (CMedium (hda.GetHardDisk())).location(),
-                hda.GetBus(), hda.GetChannel(), hda.GetDevice());
+                ctl.GetBus(), hda.GetPort(), hda.GetDevice());
+        }
     }
+
+    /* Check the SATA setting. */
+    CStorageController sataCtl = mMachine.GetStorageControllerByName(sataName);
+
+    if (mSATACheck->isChecked() && sataCtl.isNull())
+    {
+        /* The SATA controller is enabled and was disabled previously. */
+        mMachine.AddStorageController(sataName, KStorageBus_SATA);
+        sataCtl = mMachine.GetStorageControllerByName(sataName);
+        sataCtl.SetControllerType(KStorageControllerType_IntelAhci);
+    }
+    else if (!mSATACheck->isChecked() && !sataCtl.isNull())
+    {
+        /* The SATA controller is disabled now but was enabled previously. */
+        sataCtl = NULL;
+        mMachine.RemoveStorageController(sataName);
+    }
+
+    /* Set to the maximum because we get errors if there are more hard disks
+     * than currently activated ports. */
+    if (!sataCtl.isNull())
+        sataCtl.SetPortCount (30);
 
     /* Attach all listed Hard Disks */
     LONG maxSATAPort = 1;
@@ -705,10 +730,18 @@ void VBoxVMSettingsHD::putBackTo()
     for (int i = 0; i < list.size(); ++ i)
     {
         if (list [i].slot.bus == KStorageBus_SATA)
+        {
             maxSATAPort = maxSATAPort < (list [i].slot.channel + 1) ?
                           (list [i].slot.channel + 1) : maxSATAPort;
-        mMachine.AttachHardDisk(list [i].disk.id,
-            list [i].slot.bus, list [i].slot.channel, list [i].slot.device);
+
+            mMachine.AttachHardDisk(list [i].disk.id,
+                sataName, list [i].slot.channel, list [i].slot.device);
+        }
+        else if (list [i].slot.bus == KStorageBus_IDE)
+        {
+            mMachine.AttachHardDisk(list [i].disk.id,
+                ideName, list [i].slot.channel, list [i].slot.device);
+        }
 
         /* [dsen] check this */
         if (!mMachine.isOk())
@@ -718,8 +751,8 @@ void VBoxVMSettingsHD::putBackTo()
                 list [i].slot.bus, list [i].slot.channel, list [i].slot.device);
     }
 
-    if (!ctl.isNull())
-        ctl.SetPortCount (maxSATAPort);
+    if (!sataCtl.isNull())
+        sataCtl.SetPortCount (maxSATAPort);
 }
 
 void VBoxVMSettingsHD::setValidator (QIWidgetValidator *aVal)
