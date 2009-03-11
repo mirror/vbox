@@ -26,20 +26,14 @@ CC            = gcc
 CFLAGS        = -g -Wall
 
 .PHONY: all
-all: tstLinuxC tstdlOpen
+all: tstLinuxC
 
 .PHONY: clean
 clean:
-	rm -f tstLinuxC.o tstLinuxC tstdlOpen.o tstdlOpen
+	rm -f tstLinuxC.o tstLinuxC
 
 tstLinuxC: tstLinuxC.o
 	$(CC) -o $@ $^ -Xlinker -rpath -Xlinker $(PATH_BIN) $(PATH_BIN)/VBoxXPCOMC.so
 
 tstLinuxC.o: tstLinuxC.c
 	$(CC) $(CFLAGS) $(INCS_XPCOM) -o $@ -c $<
-
-tstdlOpen: tstdlOpen.o
-	$(CC) -o $@ $^ -ldl
-
-tstdlOpen.o: tstdlOpen.c
-	$(CC) $(CFLAGS) -DUSE_DYNAMIC_GLUE $(INCS_XPCOM) -o $@ -c $<
