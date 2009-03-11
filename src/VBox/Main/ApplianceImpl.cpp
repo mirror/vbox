@@ -2728,11 +2728,14 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
                                     <rasd:Address>0</rasd:Address>
                                     <rasd:BusNumber>0</rasd:BusNumber>
                                 </Item> */
-                            strDescription = "USB Controller";
-                            strCaption = "usb";
-                            type = OVFResourceType_UsbController; // 23
-                            lAddress = 0;                   // this is what OVFTool writes
-                            lBusNumber = 0;                 // this is what OVFTool writes
+                            if (uLoop == 1)
+                            {
+                                strDescription = "USB Controller";
+                                strCaption = "usb";
+                                type = OVFResourceType_UsbController; // 23
+                                lAddress = 0;                   // this is what OVFTool writes
+                                lBusNumber = 0;                 // this is what OVFTool writes
+                            }
                         break;
 
                        case VirtualSystemDescriptionType_SoundCard:
@@ -2745,12 +2748,15 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
                                 <rasd:AutomaticAllocation>false</rasd:AutomaticAllocation>
                                 <rasd:AddressOnParent>3</rasd:AddressOnParent>
                             </Item> */
-                            strDescription = "Sound Card";
-                            strCaption = "sound";
-                            type = OVFResourceType_SoundCard; // 35
-                            strResourceSubType = desc.strOvf;       // e.g. ensoniq1371
-                            lAutomaticAllocation = 0;
-                            lAddressOnParent = 3;               // what gives? this is what OVFTool writes
+                            if (uLoop == 1)
+                            {
+                                strDescription = "Sound Card";
+                                strCaption = "sound";
+                                type = OVFResourceType_SoundCard; // 35
+                                strResourceSubType = desc.strOvf;       // e.g. ensoniq1371
+                                lAutomaticAllocation = 0;
+                                lAddressOnParent = 3;               // what gives? this is what OVFTool writes
+                            }
                         break;
                     }
 
