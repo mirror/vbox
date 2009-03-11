@@ -33,7 +33,6 @@ XpComCSamples_INST = \
 	$(INST_SDK)bindings/xpcom/cbinding/samples/
 XpComCSamples_SOURCES = \
 	tstLinuxC.c \
-	tstdlOpen.c \
 	makefile.tstLinuxC=>Makefile
 
 INSTALLS += XpComCHeaders
@@ -106,18 +105,6 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
   tstXPCOMCGlue_LIBS = \
   	$(VBoxXPCOMCGlue_1_TARGET)
 
-  #
-  # The testcase (also in samples).
-  #
-  PROGRAMS += tstXPCOMCDynLink
-  tstXPCOMCDynLink_TEMPLATE = VBOXR3EXE
-  tstXPCOMCDynLink_INCS = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub
-  tstXPCOMCDynLink_INTERMEDIATES = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_CXPCOM.h
-  tstXPCOMCDynLink_SOURCES = \
-  	tstdlOpen.c
  endif
 
 endif # ! VBOX_ONLY_SDK
