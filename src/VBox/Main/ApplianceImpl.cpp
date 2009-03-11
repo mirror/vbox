@@ -2907,6 +2907,10 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
                 throw rc2;
             }
 
+            /* Make sure the target disk get detached */
+            rc = pTargetDisk->Close();
+            if (FAILED(rc)) throw rc;
+
             // we need the capacity and actual file size for the XML
             uint64_t cbFile = 12345678; // @todo
             uint64_t cbCapacity = 2345678; // @todo
