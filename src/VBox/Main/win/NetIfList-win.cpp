@@ -230,46 +230,46 @@ static HRESULT netIfExecMethod(IWbemServices * pSvc, IWbemClassObject *pClass, B
         IWbemClassObject** ppOutParams
         )
 {
-    HRESULT hres;
+    HRESULT hres = S_OK;
     // Step 6: --------------------------------------------------
     // Use the IWbemServices pointer to make requests of WMI ----
 
-    IWbemClassObject* pInParamsDefinition = NULL;
-    hres = pClass->GetMethod(MethodName, 0,
-        &pInParamsDefinition, NULL);
-    if(SUCCEEDED(hres))
-    {
-        IWbemClassObject* pClassInstance = NULL;
-        hres = pInParamsDefinition->SpawnInstance(0, &pClassInstance);
+    ComPtr<IWbemClassObject> pInParamsDefinition;
+    ComPtr<IWbemClassObject> pClassInstance;
 
+    if(cArgs)
+    {
+        hres = pClass->GetMethod(MethodName, 0,
+            pInParamsDefinition.asOutParam(), NULL);
         if(SUCCEEDED(hres))
         {
-            for(UINT i = 0; i < cArgs; i++)
-            {
-                // Store the value for the in parameters
-                hres = pClassInstance->Put(pArgNames[i], 0,
-                    pArgs[i], 0);
-                if(FAILED(hres))
-                {
-                    break;
-                }
-            }
+            hres = pInParamsDefinition->SpawnInstance(0, pClassInstance.asOutParam());
 
             if(SUCCEEDED(hres))
             {
-                IWbemClassObject* pOutParams = NULL;
-                hres = pSvc->ExecMethod(ObjPath, MethodName, 0,
-                        NULL, pClassInstance, &pOutParams, NULL);
-                if(SUCCEEDED(hres))
+                for(UINT i = 0; i < cArgs; i++)
                 {
-                    *ppOutParams = pOutParams;
+                    // Store the value for the in parameters
+                    hres = pClassInstance->Put(pArgNames[i], 0,
+                        pArgs[i], 0);
+                    if(FAILED(hres))
+                    {
+                        break;
+                    }
                 }
             }
-
-            pClassInstance->Release();
         }
+    }
 
-        pInParamsDefinition->Release();
+    if(SUCCEEDED(hres))
+    {
+        IWbemClassObject* pOutParams = NULL;
+        hres = pSvc->ExecMethod(ObjPath, MethodName, 0,
+                        NULL, pClassInstance, &pOutParams, NULL);
+        if(SUCCEEDED(hres))
+        {
+            *ppOutParams = pOutParams;
+        }
     }
 
     return hres;
@@ -395,7 +395,7 @@ static HRESULT netIfWinEnableStatic(IWbemServices * pSvc, BSTR ObjPath, VARIANT 
                 Assert(SUCCEEDED(hr));
                 if(SUCCEEDED(hr))
                 {
-                    Assert(varReturnValue.vt == VT_UINT);
+//                    Assert(varReturnValue.vt == VT_UINT);
                     int winEr = varReturnValue.uintVal;
                     switch(winEr)
                     {
@@ -2287,11 +2287,11 @@ int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask)
             /* create a progress object */
             ComObjPtr <Progress> progress;
             progress.createObject();
-            ComPtr<IHost> host;
-            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
-            if(SUCCEEDED(rc))
+//            ComPtr<IHost> host;
+//            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
+//            if(SUCCEEDED(rc))
             {
-                rc = progress->init (vBox, host,
+                rc = progress->init (vBox, (IHostNetworkInterface*)pIf,
                                     Bstr ("Enabling Dynamic Ip Configuration"),
                                     FALSE /* aCancelable */);
                 if(SUCCEEDED(rc))
@@ -2320,6 +2320,8 @@ int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask)
                     {
                         /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
                         d.release();
+
+                        progress->WaitForCompletion(-1);
                     }
                 }
             }
@@ -2343,11 +2345,11 @@ int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address
             /* create a progress object */
             ComObjPtr <Progress> progress;
             progress.createObject();
-            ComPtr<IHost> host;
-            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
-            if(SUCCEEDED(rc))
+//            ComPtr<IHost> host;
+//            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
+//            if(SUCCEEDED(rc))
             {
-                rc = progress->init (vBox, host,
+                rc = progress->init (vBox, (IHostNetworkInterface*)pIf,
                                     Bstr ("Enabling Dynamic Ip Configuration"),
                                     FALSE /* aCancelable */);
                 if(SUCCEEDED(rc))
@@ -2376,6 +2378,8 @@ int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address
                     {
                         /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
                         d.release();
+
+                        progress->WaitForCompletion(-1);
                     }
                 }
             }
@@ -2399,11 +2403,11 @@ int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)
             /* create a progress object */
             ComObjPtr <Progress> progress;
             progress.createObject();
-            ComPtr<IHost> host;
-            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
-            if(SUCCEEDED(rc))
+//            ComPtr<IHost> host;
+//            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
+//            if(SUCCEEDED(rc))
             {
-                rc = progress->init (vBox, host,
+                rc = progress->init (vBox, (IHostNetworkInterface*)pIf,
                                     Bstr ("Enabling Dynamic Ip Configuration"),
                                     FALSE /* aCancelable */);
                 if(SUCCEEDED(rc))
@@ -2430,6 +2434,8 @@ int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)
                     {
                         /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
                         d.release();
+
+                        progress->WaitForCompletion(-1);
                     }
                 }
             }
