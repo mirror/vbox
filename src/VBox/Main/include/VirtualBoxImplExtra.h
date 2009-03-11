@@ -38,3 +38,4 @@ public:
 };
 
 #endif // ____H_VIRTUALBOXIMPL EXTRA
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */
