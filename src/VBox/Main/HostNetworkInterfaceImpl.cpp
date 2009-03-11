@@ -182,6 +182,19 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Id) (OUT_GUID aGuid)
     return S_OK;
 }
 
+STDMETHODIMP HostNetworkInterface::COMGETTER(DhcpEnabled) (BOOL *aDhcpEnabled)
+{
+    CheckComArgOutPointerValid(aDhcpEnabled);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* return true + S_OK instead of E_NOTIMPL is done for UI testing purposes */
+    *aDhcpEnabled = FALSE;
+
+    return S_OK;
+}
+
 
 /**
  * Returns the IP address of the host network interface.
