@@ -6519,7 +6519,7 @@
 
   <interface
      name="IHostNetworkInterface" extends="$unknown"
-     uuid="92ae8e7a-a213-4f9d-be10-b296bbc8b662"
+     uuid="63d66df2-e40b-4289-acc2-7e260fe6e51e"
      wsmap="managed"
      >
     <desc>
@@ -6534,6 +6534,10 @@
 
     <attribute name="id" type="uuid" readonly="yes">
       <desc>Returns the interface UUID.</desc>
+    </attribute>
+    
+    <attribute name="dhcpEnabled" type="boolean" readonly="yes">
+      <desc>Specifies whether the DHCP is enabled for the interface.</desc>
     </attribute>
 
     <attribute name="IPAddress" type="unsigned long" readonly="yes">

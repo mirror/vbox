@@ -69,6 +69,7 @@ public:
     // IHostNetworkInterface properties
     STDMETHOD(COMGETTER(Name)) (BSTR *aInterfaceName);
     STDMETHOD(COMGETTER(Id)) (OUT_GUID aGuid);
+    STDMETHOD(COMGETTER(DhcpEnabled)) (BOOL *aDhcpEnabled);
     STDMETHOD(COMGETTER(IPAddress)) (ULONG *aIPAddress);
     STDMETHOD(COMGETTER(NetworkMask)) (ULONG *aNetworkMask);
     STDMETHOD(COMGETTER(IPV6Supported)) (BOOL *aIPV6Supported);
@@ -97,7 +98,7 @@ private:
 
     struct Data
     {
-        Data() : IPAddress (0), networkMask (0),
+        Data() : IPAddress (0), networkMask (0), dhcpEnabled(FALSE),
             mediumType (HostNetworkInterfaceMediumType_Unknown),
             status(HostNetworkInterfaceStatus_Down){}
 
@@ -105,6 +106,7 @@ private:
         ULONG networkMask;
         Bstr IPV6Address;
         ULONG IPV6NetworkMaskPrefixLength;
+        BOOL dhcpEnabled;
         Bstr hardwareAddress;
         HostNetworkInterfaceMediumType_T mediumType;
         HostNetworkInterfaceStatus_T status;
