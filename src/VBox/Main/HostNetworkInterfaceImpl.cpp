@@ -358,7 +358,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (ULONG aIPAddress, ULONG
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    int rc = NetIfEnableStaticIpConfig(this, aIPAddress, aNetworkMask);
+    int rc = NetIfEnableStaticIpConfig(mVBox, this, aIPAddress, aNetworkMask);
     if (RT_FAILURE(rc))
     {
         LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
@@ -381,7 +381,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    int rc = NetIfEnableStaticIpConfigV6(this, aIPV6Address, aIPV6MaskPrefixLength);
+    int rc = NetIfEnableStaticIpConfigV6(mVBox, this, aIPV6Address, aIPV6MaskPrefixLength);
     if (RT_FAILURE(rc))
     {
         LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
@@ -399,7 +399,7 @@ STDMETHODIMP HostNetworkInterface::EnableDynamicIpConfig ()
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    int rc = NetIfEnableDynamicIpConfig(this);
+    int rc = NetIfEnableDynamicIpConfig(mVBox, this);
     if (RT_FAILURE(rc))
     {
         LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
@@ -415,18 +415,6 @@ HRESULT HostNetworkInterface::setVirtualBox(VirtualBox *pVBox)
     CheckComRCReturnRC (autoCaller.rc());
     mVBox = pVBox;
 
-    return S_OK;
-}
-
-HRESULT HostNetworkInterface::getVirtualBox(VirtualBox **ppVBox)
-{
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    if (!ppVBox)
-        return E_INVALIDARG;
-
-    *ppVBox = mVBox;
     return S_OK;
 }
 
