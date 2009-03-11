@@ -58,6 +58,7 @@ echo 'i pkginfo=./vboxguest.pkginfo' > prototype
 echo 'i postinstall=./postinstall.sh' >> prototype
 echo 'i preremove=./preremove.sh' >> prototype
 echo 'i space=./vboxguest.space' >> prototype
+echo 'i depend=./vboxguest.depend' >> prototype
 if test -f "./vboxguest.copyright"; then
     echo 'i copyright=./vboxguest.copyright' >> prototype
 fi
