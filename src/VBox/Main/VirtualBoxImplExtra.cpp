@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -266,3 +266,5 @@ ToString <com::Guid> (const com::Guid &aValue, unsigned int aExtra)
 #endif // VBOX_MAIN_SETTINGS_ADDONS
 
 } /* namespace settings */
+
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */
