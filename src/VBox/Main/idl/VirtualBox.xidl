@@ -5599,7 +5599,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="3d458cf1-d8aa-4593-84db-41de9e7242d8"
+     uuid="9511bc54-15ee-4ddf-808e-472aba03809c"
      wsmap="managed"
      >
     <desc>
@@ -5691,7 +5691,7 @@
       </desc>
     </attribute>
 
-    <attribute name="remoteUSBDevices" type="IHostUSBDeviceCollection" readonly="yes">
+    <attribute name="remoteUSBDevices" type="IHostUSBDevice" readonly="yes" safearray="yes">
       <desc>
         List of USB devices currently attached to the remote VRDP client.
         Once a new device is physically attached to the remote host computer,
@@ -6608,7 +6608,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="651f04ec-b2a6-4008-b979-3a01c0fc72cc"
+     uuid="926469ca-9091-42ef-928e-582d78b66c70"
      wsmap="managed"
      >
     <desc>
@@ -6631,7 +6631,7 @@
       <desc>List of floppy drives available on the host.</desc>
     </attribute>
 
-    <attribute name="USBDevices" type="IHostUSBDeviceCollection" readonly="yes">
+    <attribute name="USBDevices" type="IHostUSBDevice" readonly="yes" safearray="yes">
       <desc>
         List of USB devices currently attached to the host.
         Once a new device is physically attached to the host computer,
@@ -6970,6 +6970,46 @@
         <desc>Found host network interface objects.</desc>
       </param>
     </method>
+
+    <method name="findUSBDeviceById">
+      <desc>
+        Searches for a USB device with the given UUID.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Given @id does not correspond to any USB device.
+        </result>
+
+        <see>IHostUSBDevice::id</see>
+      </desc>
+      <param name="id" type="uuid" dir="in">
+        <desc>UUID of the USB device to search for.</desc>
+      </param>
+      <param name="device" type="IHostUSBDevice" dir="return">
+        <desc>Found USB device object.</desc>
+      </param>
+    </method>
+
+    <method name="findUSBDeviceByAddress">
+      <desc>
+        Searches for a USB device with the given host address.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Given @c name does not correspond to any USB device.
+        </result>
+
+        <see>IHostUSBDevice::address</see>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>
+          Address of the USB device (as assigned by the host) to
+          search for.
+        </desc>
+      </param>
+      <param name="device" type="IHostUSBDevice" dir="return">
+        <desc>Found USB device object.</desc>
+      </param>
+    </method>
+
   </interface>
 
   <!--
@@ -11408,57 +11448,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
   </enum>
-
-  <enumerator
-     name="IHostUSBDeviceEnumerator" type="IHostUSBDevice"
-     uuid="a0c55136-939f-4d20-b9d3-4d406f08bfa5"
-     />
-
-  <collection
-     name="IHostUSBDeviceCollection" type="IHostUSBDevice"
-     enumerator="IHostUSBDeviceEnumerator"
-     uuid="f9d3f96d-b027-4994-b589-70bb9ee0d364"
-     readonly="yes"
-     >
-    <method name="findById">
-      <desc>
-        Searches this collection for a USB device with the given UUID.
-        <note>
-          The method returns an error if the given UUID does not
-          correspond to any USB device in the collection.
-        </note>
-        <see>IHostUSBDevice::id</see>
-      </desc>
-      <param name="id" type="uuid" dir="in">
-        <desc>UUID of the USB device to search for.</desc>
-      </param>
-      <param name="device" type="IHostUSBDevice" dir="return">
-        <desc>Found USB device object.</desc>
-      </param>
-    </method>
-
-    <method name="findByAddress">
-      <desc>
-        Searches this collection for a USB device with the given
-        host address.
-        <note>
-          The method returns an error if the given address does not
-          correspond to any USB device in the collection.
-        </note>
-        <see>IHostUSBDevice::address</see>
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>
-          Address of the USB device (as assigned by the host) to
-          search for.
-        </desc>
-      </param>
-      <param name="device" type="IHostUSBDevice" dir="return">
-        <desc>Found USB device object.</desc>
-      </param>
-    </method>
-
-  </collection>
 
   <interface
      name="IHostUSBDevice" extends="IUSBDevice"

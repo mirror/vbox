@@ -1254,19 +1254,17 @@ STDMETHODIMP Console::COMGETTER(USBDevices) (ComSafeArrayOut (IUSBDevice *, aUSB
     return S_OK;
 }
 
-STDMETHODIMP Console::COMGETTER(RemoteUSBDevices) (IHostUSBDeviceCollection **aRemoteUSBDevices)
+STDMETHODIMP Console::COMGETTER(RemoteUSBDevices) (ComSafeArrayOut (IHostUSBDevice *, aRemoteUSBDevices))
 {
-    CheckComArgOutPointerValid(aRemoteUSBDevices);
+    CheckComArgOutSafeArrayPointerValid(aRemoteUSBDevices);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoReadLock alock (this);
 
-    ComObjPtr <RemoteUSBDeviceCollection> collection;
-    collection.createObject();
-    collection->init (mRemoteUSBDevices);
-    collection.queryInterfaceTo (aRemoteUSBDevices);
+    SafeIfaceArray <IHostUSBDevice> collection (mRemoteUSBDevices);
+    collection.detachTo (ComSafeArrayOutArg(aRemoteUSBDevices));
 
     return S_OK;
 }

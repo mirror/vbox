@@ -1081,10 +1081,10 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut (IHostNetworkIn
 #endif
 }
 
-STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
+STDMETHODIMP Host::COMGETTER(USBDevices)(ComSafeArrayOut (IHostUSBDevice *, aUSBDevices))
 {
 #ifdef VBOX_WITH_USB
-    CheckComArgOutPointerValid(aUSBDevices);
+    CheckComArgOutSafeArrayPointerValid(aUSBDevices);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -1092,7 +1092,7 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
     MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC (rc);
 
-    return mUSBProxyService->getDeviceCollection (aUSBDevices);
+    return mUSBProxyService->getDeviceCollection (ComSafeArrayOutArg(aUSBDevices));
 
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
@@ -2499,6 +2499,70 @@ STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_T ty
     filteredNetworkInterfaces.detachTo (ComSafeArrayOutArg (aNetworkInterfaces));
 
     return S_OK;
+}
+
+STDMETHODIMP Host::FindUSBDeviceByAddress (IN_BSTR aAddress, IHostUSBDevice **aDevice)
+{
+#ifdef VBOX_WITH_USB
+    CheckComArgNotNull(aAddress);
+    CheckComArgOutPointerValid(aDevice);
+
+    *aDevice = NULL;
+
+    SafeIfaceArray <IHostUSBDevice> devsvec;
+    HRESULT rc = COMGETTER(USBDevices) (ComSafeArrayAsOutParam(devsvec));
+    CheckComRCReturnRC (rc);
+
+    for (size_t i = 0; i < devsvec.size(); ++i)
+    {
+        Bstr address;
+        rc = devsvec[i]->COMGETTER(Address) (address.asOutParam());
+        CheckComRCReturnRC (rc);
+        if (address == aAddress)
+        {
+            return ComObjPtr<IHostUSBDevice> (devsvec[i]).queryInterfaceTo (aDevice);
+        }
+    }
+
+    return setErrorNoLog (VBOX_E_OBJECT_NOT_FOUND, tr (
+        "Could not find a USB device with address '%ls'"),
+        aAddress);
+
+#else   /* !VBOX_WITH_USB */
+    return E_NOTIMPL;
+#endif  /* !VBOX_WITH_USB */
+}
+
+STDMETHODIMP Host::FindUSBDeviceById (IN_GUID aId, IHostUSBDevice **aDevice)
+{
+#ifdef VBOX_WITH_USB
+    CheckComArgExpr(aId, Guid (aId).isEmpty() == false);
+    CheckComArgOutPointerValid(aDevice);
+
+    *aDevice = NULL;
+
+    SafeIfaceArray <IHostUSBDevice> devsvec;
+    HRESULT rc = COMGETTER(USBDevices) (ComSafeArrayAsOutParam(devsvec));
+    CheckComRCReturnRC (rc);
+
+    for (size_t i = 0; i < devsvec.size(); ++i)
+    {
+        Guid id;
+        rc = devsvec[i]->COMGETTER(Id) (id.asOutParam());
+        CheckComRCReturnRC (rc);
+        if (id == aId)
+        {
+            return ComObjPtr<IHostUSBDevice> (devsvec[i]).queryInterfaceTo (aDevice);
+        }
+    }
+
+    return setErrorNoLog (VBOX_E_OBJECT_NOT_FOUND, tr (
+        "Could not find a USB device with uuid {%RTuuid}"),
+        Guid (aId).raw());
+
+#else   /* !VBOX_WITH_USB */
+    return E_NOTIMPL;
+#endif  /* !VBOX_WITH_USB */
 }
 
 

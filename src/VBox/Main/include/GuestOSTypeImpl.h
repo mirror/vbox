@@ -23,7 +23,6 @@
 #define ____H_GUESTOSTYPEIMPL
 
 #include "VirtualBoxBase.h"
-#include "Collection.h"
 #include "Global.h"
 
 #include <VBox/ostypes.h>

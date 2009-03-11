@@ -585,92 +585,79 @@ int handleList(HandlerArg *a)
             ComPtr<IHost> Host;
             CHECK_ERROR_RET (a->virtualBox, COMGETTER(Host)(Host.asOutParam()), 1);
 
-            ComPtr<IHostUSBDeviceCollection> CollPtr;
-            CHECK_ERROR_RET (Host, COMGETTER(USBDevices)(CollPtr.asOutParam()), 1);
-
-            ComPtr<IHostUSBDeviceEnumerator> EnumPtr;
-            CHECK_ERROR_RET (CollPtr, Enumerate(EnumPtr.asOutParam()), 1);
+            SafeIfaceArray <IHostUSBDevice> CollPtr;
+            CHECK_ERROR_RET (Host, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(CollPtr)), 1);
 
             RTPrintf("Host USB Devices:\n\n");
 
-            BOOL fMore = FALSE;
-            ASSERT(SUCCEEDED(rc = EnumPtr->HasMore (&fMore)));
-            if (FAILED(rc))
-                return rc;
-
-            if (!fMore)
+            if (CollPtr.size() == 0)
             {
                 RTPrintf("<none>\n\n");
             }
             else
-            while (fMore)
             {
-                ComPtr <IHostUSBDevice> dev;
-                ASSERT(SUCCEEDED(rc = EnumPtr->GetNext (dev.asOutParam())));
-                if (FAILED(rc))
-                    return rc;
-
-                /* Query info. */
-                Guid id;
-                CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), 1);
-                USHORT usVendorId;
-                CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), 1);
-                USHORT usProductId;
-                CHECK_ERROR_RET (dev, COMGETTER(ProductId)(&usProductId), 1);
-                USHORT bcdRevision;
-                CHECK_ERROR_RET (dev, COMGETTER(Revision)(&bcdRevision), 1);
-
-                RTPrintf("UUID:               %S\n"
-                        "VendorId:           0x%04x (%04X)\n"
-                        "ProductId:          0x%04x (%04X)\n"
-                        "Revision:           %u.%u (%02u%02u)\n",
-                        id.toString().raw(),
-                        usVendorId, usVendorId, usProductId, usProductId,
-                        bcdRevision >> 8, bcdRevision & 0xff,
-                        bcdRevision >> 8, bcdRevision & 0xff);
-
-                /* optional stuff. */
-                Bstr bstr;
-                CHECK_ERROR_RET (dev, COMGETTER(Manufacturer)(bstr.asOutParam()), 1);
-                if (!bstr.isEmpty())
-                    RTPrintf("Manufacturer:       %lS\n", bstr.raw());
-                CHECK_ERROR_RET (dev, COMGETTER(Product)(bstr.asOutParam()), 1);
-                if (!bstr.isEmpty())
-                    RTPrintf("Product:            %lS\n", bstr.raw());
-                CHECK_ERROR_RET (dev, COMGETTER(SerialNumber)(bstr.asOutParam()), 1);
-                if (!bstr.isEmpty())
-                    RTPrintf("SerialNumber:       %lS\n", bstr.raw());
-                CHECK_ERROR_RET (dev, COMGETTER(Address)(bstr.asOutParam()), 1);
-                if (!bstr.isEmpty())
-                    RTPrintf("Address:            %lS\n", bstr.raw());
-
-                /* current state  */
-                USBDeviceState_T state;
-                CHECK_ERROR_RET (dev, COMGETTER(State)(&state), 1);
-                const char *pszState = "?";
-                switch (state)
+                for (size_t i = 0; i < CollPtr.size(); ++i)
                 {
-                    case USBDeviceState_NotSupported:
-                        pszState = "Not supported"; break;
-                    case USBDeviceState_Unavailable:
-                        pszState = "Unavailable"; break;
-                    case USBDeviceState_Busy:
-                        pszState = "Busy"; break;
-                    case USBDeviceState_Available:
-                        pszState = "Available"; break;
-                    case USBDeviceState_Held:
-                        pszState = "Held"; break;
-                    case USBDeviceState_Captured:
-                        pszState = "Captured"; break;
-                    default:
-                        ASSERT (false);
-                        break;
-                }
-                RTPrintf("Current State:      %s\n\n", pszState);
+                    ComPtr <IHostUSBDevice> dev = CollPtr[i];
 
-                ASSERT(SUCCEEDED(rc = EnumPtr->HasMore (&fMore)));
-                if (FAILED(rc))
-                    return rc;
+                    /* Query info. */
+                    Guid id;
+                    CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), 1);
+                    USHORT usVendorId;
+                    CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), 1);
+                    USHORT usProductId;
+                    CHECK_ERROR_RET (dev, COMGETTER(ProductId)(&usProductId), 1);
+                    USHORT bcdRevision;
+                    CHECK_ERROR_RET (dev, COMGETTER(Revision)(&bcdRevision), 1);
+
+                    RTPrintf("UUID:               %S\n"
+                            "VendorId:           0x%04x (%04X)\n"
+                            "ProductId:          0x%04x (%04X)\n"
+                            "Revision:           %u.%u (%02u%02u)\n",
+                            id.toString().raw(),
+                            usVendorId, usVendorId, usProductId, usProductId,
+                            bcdRevision >> 8, bcdRevision & 0xff,
+                            bcdRevision >> 8, bcdRevision & 0xff);
+
+                    /* optional stuff. */
+                    Bstr bstr;
+                    CHECK_ERROR_RET (dev, COMGETTER(Manufacturer)(bstr.asOutParam()), 1);
+                    if (!bstr.isEmpty())
+                        RTPrintf("Manufacturer:       %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (dev, COMGETTER(Product)(bstr.asOutParam()), 1);
+                    if (!bstr.isEmpty())
+                        RTPrintf("Product:            %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (dev, COMGETTER(SerialNumber)(bstr.asOutParam()), 1);
+                    if (!bstr.isEmpty())
+                        RTPrintf("SerialNumber:       %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (dev, COMGETTER(Address)(bstr.asOutParam()), 1);
+                    if (!bstr.isEmpty())
+                        RTPrintf("Address:            %lS\n", bstr.raw());
+
+                    /* current state  */
+                    USBDeviceState_T state;
+                    CHECK_ERROR_RET (dev, COMGETTER(State)(&state), 1);
+                    const char *pszState = "?";
+                    switch (state)
+                    {
+                        case USBDeviceState_NotSupported:
+                            pszState = "Not supported"; break;
+                        case USBDeviceState_Unavailable:
+                            pszState = "Unavailable"; break;
+                        case USBDeviceState_Busy:
+                            pszState = "Busy"; break;
+                        case USBDeviceState_Available:
+                            pszState = "Available"; break;
+                        case USBDeviceState_Held:
+                            pszState = "Held"; break;
+                        case USBDeviceState_Captured:
+                            pszState = "Captured"; break;
+                        default:
+                            ASSERT (false);
+                            break;
+                    }
+                    RTPrintf("Current State:      %s\n\n", pszState);
+                }
             }
         }
         break;

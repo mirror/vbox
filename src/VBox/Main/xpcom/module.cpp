@@ -82,8 +82,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS2_CI(Session, ISession, IInternalSessionControl)
 NS_DECL_CLASSINFO(Console)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Console, IConsole)
 
-COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX(ComObjPtr <RemoteUSBDevice>, IHostUSBDevice, RemoteUSBDevice)
-
 /**
  *  Singleton class factory that holds a reference to the created instance
  *  (preventing it from being destroyed) until the module is explicitly
