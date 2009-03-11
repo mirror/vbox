@@ -4285,7 +4285,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     pgmPoolLockPage(pPool, pNewShwPageCR3);
 
 #  ifdef IN_RC
-    /** NOTE: We can't deal with jumps to ring 3 here as we're now in an inconsistent state! */
+    /* NOTE: We can't deal with jumps to ring 3 here as we're now in an inconsistent state! */
     bool fLog = VMMGCLogDisable(pVM);
 #  endif
 
