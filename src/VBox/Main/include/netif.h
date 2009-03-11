@@ -61,6 +61,7 @@ typedef struct NETIFINFO
     RTNETADDRIPV4  IPNetMask;
     RTNETADDRIPV6  IPv6Address;
     RTNETADDRIPV6  IPv6NetMask;
+    BOOL           bDhcpEnabled;
     RTMAC          MACAddress;
     NETIFTYPE      enmMediumType;
     NETIFSTATUS    enmStatus;

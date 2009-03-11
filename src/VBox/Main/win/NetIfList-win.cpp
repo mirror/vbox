@@ -477,8 +477,25 @@ static HRESULT netIfWinSetGateways(IWbemServices * pSvc, BSTR ObjPath, VARIANT *
                                 bstr_t(L"SetGateways"), argNames, args, 1, pOutParams.asOutParam());
             if(SUCCEEDED(hr))
             {
-            }
-        }
+                VARIANT varReturnValue;
+                hr = pOutParams->Get(bstr_t(L"ReturnValue"), 0,
+                    &varReturnValue, NULL, 0);
+                Assert(SUCCEEDED(hr));
+                if(SUCCEEDED(hr))
+                {
+//                    Assert(varReturnValue.vt == VT_UINT);
+                    int winEr = varReturnValue.uintVal;
+                    switch(winEr)
+                    {
+                    case 0:
+                        hr = S_OK;
+                        break;
+                    default:
+                        hr = HRESULT_FROM_WIN32( winEr );
+                        break;
+                    }
+                }
+            }        }
         SysFreeString(ClassName);
     }
     else
@@ -533,6 +550,24 @@ static HRESULT netIfWinEnableDHCP(IWbemServices * pSvc, BSTR ObjPath)
                                 bstr_t(L"EnableDHCP"), NULL, NULL, 0, pOutParams.asOutParam());
             if(SUCCEEDED(hr))
             {
+                VARIANT varReturnValue;
+                hr = pOutParams->Get(bstr_t(L"ReturnValue"), 0,
+                    &varReturnValue, NULL, 0);
+                Assert(SUCCEEDED(hr));
+                if(SUCCEEDED(hr))
+                {
+//                    Assert(varReturnValue.vt == VT_UINT);
+                    int winEr = varReturnValue.uintVal;
+                    switch(winEr)
+                    {
+                    case 0:
+                        hr = S_OK;
+                        break;
+                    default:
+                        hr = HRESULT_FROM_WIN32( winEr );
+                        break;
+                    }
+                }
             }
         }
         SysFreeString(ClassName);
@@ -547,9 +582,33 @@ static HRESULT netIfWinEnableDHCP(IWbemServices * pSvc, BSTR ObjPath)
     return hr;
 }
 
-static int collectNetIfInfo(Bstr &strName, PNETIFINFO pInfo)
+static int netIfWinIsDhcpEnabled(const Guid &guid, BOOL *pEnabled)
+{
+    HRESULT hr;
+        ComPtr <IWbemServices> pSvc;
+        hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
+        if(SUCCEEDED(hr))
+        {
+            ComPtr <IWbemClassObject> pAdapterConfig;
+            hr = netIfWinFindAdapterClassById(pSvc, guid, pAdapterConfig.asOutParam());
+            if(SUCCEEDED(hr))
+            {
+                VARIANT vtEnabled;
+                hr = pAdapterConfig->Get(L"DHCPEnabled", 0, &vtEnabled, 0, 0);
+                if(SUCCEEDED(hr))
+                {
+                    *pEnabled = vtEnabled.boolVal;
+                }
+            }
+        }
+
+    return SUCCEEDED(hr) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+}
+
+static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo)
 {
     DWORD dwRc;
+    int rc = VINF_SUCCESS;
     /*
      * Most of the hosts probably have less than 10 adapters,
      * so we'll mostly succeed from the first attempt.
@@ -641,41 +700,19 @@ static int collectNetIfInfo(Bstr &strName, PNETIFINFO pInfo)
             }
             RTStrFree(pszUuid);
         }
+
+        BOOL bEnabled;
+        rc  = netIfWinIsDhcpEnabled(guid, &bEnabled);
+        Assert(RT_SUCCESS(rc));
+        if(RT_SUCCESS(rc))
+        {
+            pInfo->bDhcpEnabled = bEnabled;
+        }
     }
     RTMemFree(pAddresses);
 
     return VINF_SUCCESS;
 }
-
-//static HRESULT netIfWinUpdateConfig(HostNetworkInterface * pIf)
-//{
-//    NETIFINFO Info;
-//    memset(&Info, 0, sizeof(Info));
-//    GUID guid;
-//    HRESULT hr = pIf->COMGETTER(Id) (&guid);
-//    if(SUCCEEDED(hr))
-//    {
-//        Info.Uuid = (RTUUID)*(RTUUID*)&guid;
-//        BSTR name;
-//        hr = pIf->COMGETTER(Name) (&name);
-//        Assert(hr == S_OK);
-//        if(hr == S_OK)
-//        {
-//            int rc = collectNetIfInfo(Bstr(name), &Info);
-//            if (RT_SUCCESS(rc))
-//            {
-//                hr = pIf->updateConfig(&Info);
-//            }
-//            else
-//            {
-//                Log(("netIfWinUpdateConfig: collectNetIfInfo() -> %Vrc\n", rc));
-//                hr = E_FAIL;
-//            }
-//        }
-//    }
-//
-//    return hr;
-//}
 
 static int netIfEnableStaticIpConfig(const Guid &guid, ULONG ip, ULONG mask)
 {
@@ -2067,7 +2104,7 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > 
             NETIFINFO Info;
             memset(&Info, 0, sizeof(Info));
             Info.Uuid = *(Guid(IfGuid).raw());
-            rc = collectNetIfInfo(name, &Info);
+            rc = collectNetIfInfo(name, Guid(IfGuid), &Info);
             if (RT_FAILURE(rc))
             {
                 Log(("vboxNetWinAddComponent: collectNetIfInfo() -> %Vrc\n", rc));
@@ -2170,9 +2207,15 @@ int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *pInfo)
 #else
     Bstr name;
     HRESULT hr = pIf->COMGETTER(Name)(name.asOutParam());
-    if(SUCCEEDED(hr))
+    if(hr == S_OK)
     {
-        return collectNetIfInfo(name, pInfo);
+        GUID                IfGuid;
+        hr = pIf->COMGETTER(Id)(&IfGuid);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            return collectNetIfInfo(name, Guid(IfGuid), pInfo);
+        }
     }
     return VERR_GENERAL_FAILURE;
 #endif

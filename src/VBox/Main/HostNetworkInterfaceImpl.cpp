@@ -83,6 +83,7 @@ HRESULT HostNetworkInterface::updateConfig ()
     {
         m.IPAddress = info.IPAddress.u;
         m.networkMask = info.IPNetMask.u;
+        m.dhcpEnabled = info.bDhcpEnabled;
         m.IPV6Address = composeIPv6Address(&info.IPv6Address);
         m.IPV6NetworkMaskPrefixLength = composeIPv6PrefixLenghFromAddress(&info.IPv6NetMask);
         m.hardwareAddress = composeHardwareAddress(&info.MACAddress);
@@ -127,6 +128,7 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceTyp
     m.networkMask = pIf->IPNetMask.u;
     m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
     m.IPV6NetworkMaskPrefixLength = composeIPv6PrefixLenghFromAddress(&pIf->IPv6NetMask);
+    m.dhcpEnabled = pIf->bDhcpEnabled;
     m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
 #ifdef RT_OS_WINDOWS
     m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
@@ -189,8 +191,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(DhcpEnabled) (BOOL *aDhcpEnabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* return true + S_OK instead of E_NOTIMPL is done for UI testing purposes */
-    *aDhcpEnabled = FALSE;
+    *aDhcpEnabled = m.dhcpEnabled;
 
     return S_OK;
 }

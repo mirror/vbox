@@ -326,6 +326,10 @@ int handleList(HandlerArg *a)
                 Guid interfaceGuid;
                 networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
                 RTPrintf("GUID:            %lS\n", Bstr(interfaceGuid.toString()).raw());
+                BOOL bDhcpEnabled;
+                networkInterface->COMGETTER(DhcpEnabled)(&bDhcpEnabled);
+                RTPrintf("Dhcp:            %s\n", bDhcpEnabled ? "Enabled" : "Disabled");
+
                 ULONG IPAddress;
                 networkInterface->COMGETTER(IPAddress)(&IPAddress);
                 RTPrintf("IPAddress:       %d.%d.%d.%d\n",
