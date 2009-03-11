@@ -25,9 +25,6 @@
 #include "QIWidgetValidator.h"
 #include "VBoxProblemReporter.h"
 
-/* Qt includes */
-#include <QDir>
-
 class VMListWidgetItems: public QListWidgetItem
 {
 public:
@@ -75,6 +72,7 @@ VBoxExportApplianceWzd::VBoxExportApplianceWzd (QWidget *aParent /* = NULL */, c
     mFileSelector->setResetEnabled (false);
     mFileSelector->setFileDialogTitle (tr ("Select a file to export into"));
     mFileSelector->setFileFilters (tr ("Open Virtualization Format (%1)").arg ("*.ovf"));
+    mFileSelector->setDefaultSaveExt ("ovf");
 #ifdef Q_WS_MAC
     /* Editable boxes are uncommon on the Mac */
     mFileSelector->setEditable (false);
@@ -150,7 +148,7 @@ void VBoxExportApplianceWzd::showNextPage()
             if (mVMListWidget->selectedItems().size() == 1)
                 name = mVMListWidget->selectedItems().first()->text();
 
-            mFileSelector->setPath (QDir::toNativeSeparators (QString ("%1/%2.ovf").arg (QDir::currentPath())
+            mFileSelector->setPath (QDir::toNativeSeparators (QString ("%1/%2.ovf").arg (vboxGlobal().documentsPath())
                                                                                    .arg (name)));
             mWValFileSelector->revalidate();
         }

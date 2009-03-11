@@ -62,6 +62,9 @@ public:
     void setFileFilters (const QString& aFilters);
     QString fileFilters() const;
 
+    void setDefaultSaveExt (const QString &aExt);
+    QString defaultSaveExt() const;
+
     void resetModified();
     bool isModified() const;
     bool isPathSelected() const;
@@ -106,6 +109,7 @@ private:
     QString mPath;
     QString mHomeDir;
     QString mFileFilters;
+    QString mDefaultSaveExt;
     QString mFileDialogTitle;
     QString mNoneStr;
     QString mNoneTip;

@@ -189,6 +189,16 @@ QString VBoxFilePathSelectorWidget::fileFilters() const
     return mFileFilters;
 }
 
+void VBoxFilePathSelectorWidget::setDefaultSaveExt (const QString &aExt)
+{
+    mDefaultSaveExt = aExt;
+}
+
+QString VBoxFilePathSelectorWidget::defaultSaveExt() const
+{
+    return mDefaultSaveExt;
+}
+
 /**
  * Returns @c true if the selected (active) combobox item is a path item.
  *
@@ -376,7 +386,12 @@ void VBoxFilePathSelectorWidget::selectPath()
         case Mode_File_Open:
             path = VBoxGlobal::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); break;
         case Mode_File_Save:
-            path = VBoxGlobal::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); break;
+            {
+                path = VBoxGlobal::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); 
+                if (QFileInfo (path).suffix().isEmpty())
+                    path = QString ("%1.%2").arg (path).arg (mDefaultSaveExt);
+                break;
+            }
         case Mode_Folder:
             path = VBoxGlobal::getExistingDirectory (initDir, parentWidget(), mFileDialogTitle); break;
     }
