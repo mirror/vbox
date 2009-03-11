@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     fprintf(pFileOut,
            "/*\n"
            " * This file was automatically generated\n"
-           " * from %s by\n"
+           " * from %s\n"
            " * by %s.\n"
            " */\n"
            "\n"
