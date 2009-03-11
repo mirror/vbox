@@ -4272,13 +4272,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 
     Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
     rc = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, &pNewShwPageCR3);
-    if (rc == VERR_PGM_POOL_FLUSHED)
-    {
-        Log(("MapCR3: PGM pool flushed -> signal sync cr3\n"));
-        Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
-        return VINF_PGM_SYNC_CR3;
-    }
-    AssertRCReturn(rc, rc);
+    AssertFatalRC(rc);
     rc = VINF_SUCCESS;
 
     /* Mark the page as locked; disallow flushing. */

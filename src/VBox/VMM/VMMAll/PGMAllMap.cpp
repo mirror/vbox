@@ -298,11 +298,6 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                     }
                     int rc = pgmShwSyncPaePDPtr(pVM, (iPdPt << X86_PDPT_SHIFT), &GstPdpe, &pShwPaePd);
                     AssertFatal(RT_SUCCESS(rc));
-                    if (rc != VINF_SUCCESS)
-                    {
-                        rc = pgmShwSyncPaePDPtr(pVM, (iPdPt << X86_PDPT_SHIFT), &GstPdpe, &pShwPaePd);
-                        AssertFatalMsg(rc == VINF_SUCCESS, ("rc = %Rrc\n", rc));
-                    }
                 }
                 Assert(pShwPaePd);
 #ifdef IN_RC    /* Lock mapping to prevent it from being reused during pgmPoolFree. */
