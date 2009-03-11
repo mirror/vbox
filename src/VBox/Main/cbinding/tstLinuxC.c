@@ -27,6 +27,8 @@
 #include <sys/stat.h>
 #include "VirtualBox_CXPCOM.h"
 
+PCVBOXXPCOM g_pVBoxFuncs = NULL;
+
 static char *nsIDToString(nsID *guid);
 static void listVMs(IVirtualBox *virtualBox, ISession *session);
 static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id);
@@ -113,11 +115,11 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
             char *machineName;
 
             machine->vtbl->GetName(machine, &machineNameUtf16);
-            VBoxUtf16ToUtf8(machineNameUtf16,&machineName);
+            g_pVBoxFuncs->pfnUtf16ToUtf8(machineNameUtf16,&machineName);
             printf("\tName:        %s\n", machineName);
 
-            VBoxUtf8Free(machineName);
-            VBoxComUnallocMem(machineNameUtf16);
+            g_pVBoxFuncs->pfnUtf8Free(machineName);
+            g_pVBoxFuncs->pfnComUnallocMem(machineNameUtf16);
         }
         else
         {
@@ -134,7 +136,7 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
             printf("\tUUID:        %s\n", uuidString);
 
             free(uuidString);
-            VBoxComUnallocMem(iid);
+            g_pVBoxFuncs->pfnComUnallocMem(iid);
         }
 
         if (isAccessible)
@@ -144,11 +146,11 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
                 char      *configFile1 = calloc((size_t)64, (size_t)1);
 
                 machine->vtbl->GetSettingsFilePath(machine, &configFile);
-                VBoxUtf16ToUtf8(configFile, &configFile1);
+                g_pVBoxFuncs->pfnUtf16ToUtf8(configFile, &configFile1);
                 printf("\tConfig file: %s\n", configFile1);
 
                 free(configFile1);
-                VBoxComUnallocMem(configFile);
+                g_pVBoxFuncs->pfnComUnallocMem(configFile);
             }
 
             {
@@ -167,13 +169,13 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
                 machine->vtbl->GetOSTypeId(machine, &typeId);
                 virtualBox->vtbl->GetGuestOSType(virtualBox, typeId, &osType);
                 osType->vtbl->GetDescription(osType, &osNameUtf16);
-                VBoxUtf16ToUtf8(osNameUtf16,&osName);
+                g_pVBoxFuncs->pfnUtf16ToUtf8(osNameUtf16,&osName);
                 printf("\tGuest OS:    %s\n\n", osName);
 
                 osType->vtbl->nsisupports.Release((void *)osType);
-                VBoxUtf8Free(osName);
-                VBoxComUnallocMem(osNameUtf16);
-                VBoxComUnallocMem(typeId);
+                g_pVBoxFuncs->pfnUtf8Free(osName);
+                g_pVBoxFuncs->pfnComUnallocMem(osNameUtf16);
+                g_pVBoxFuncs->pfnComUnallocMem(typeId);
             }
         }
     }
@@ -197,7 +199,7 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
             machine->vtbl->GetId(machine, &iid);
             startVM(virtualBox, session, iid);
 
-            VBoxComUnallocMem(iid);
+            g_pVBoxFuncs->pfnComUnallocMem(iid);
         }
     }
 
@@ -239,7 +241,7 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
         return;
     }
 
-    VBoxUtf8ToUtf16("gui", &sessionType);
+    g_pVBoxFuncs->pfnUtf8ToUtf16("gui", &sessionType);
 
     rc = virtualBox->vtbl->OpenRemoteSession(
         virtualBox,
@@ -250,7 +252,7 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
         &progress
     );
 
-    VBoxUtf16Free(sessionType);
+    g_pVBoxFuncs->pfnUtf16Free(sessionType);
 
     if (NS_FAILED(rc))
     {
@@ -279,11 +281,11 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
 
             progress->vtbl->GetErrorInfo(progress, &errorInfo);
             errorInfo->vtbl->GetText(errorInfo, &textUtf16);
-            VBoxUtf16ToUtf8(textUtf16, &text);
+            g_pVBoxFuncs->pfnUtf16ToUtf8(textUtf16, &text);
             printf("Error: %s\n", text);
 
-            VBoxComUnallocMem(textUtf16);
-            VBoxUtf8Free(text);
+            g_pVBoxFuncs->pfnComUnallocMem(textUtf16);
+            g_pVBoxFuncs->pfnUtf8Free(text);
         }
         else
         {
@@ -308,33 +310,33 @@ int main(int argc, char **argv)
     struct stat stIgnored;
     nsresult    rc;     /* Result code of various function (method) calls. */
 
-    /*
-     * Guess where VirtualBox is installed not mentioned in the environment.
-     * (This will be moved to VBoxComInitialize later.)
-     */
-
-    if (!VBoxGetEnv("VBOX_APP_HOME"))
+    if (!getenv("VBOX_APP_HOME"))
     {
         if (stat("/opt/VirtualBox/VBoxXPCOMC.so", &stIgnored) == 0)
         {
-            VBoxSetEnv("VBOX_APP_HOME","/opt/VirtualBox/");
+            setenv("VBOX_APP_HOME","/opt/VirtualBox/", 0 /* no need to overwrite */);
         }
         if (stat("/usr/lib/virtualbox/VBoxXPCOMC.so", &stIgnored) == 0)
         {
-            VBoxSetEnv("VBOX_APP_HOME","/usr/lib/virtualbox/");
+            setenv("VBOX_APP_HOME","/usr/lib/virtualbox/", 0 /* no need to overwrite */);
         }
     }
 
     printf("Starting Main\n");
 
     /*
-     * VBoxComInitialize does all the necessary startup action and
-     * provides us with pointers to vbox and session handles.
-     * It should be matched by a call to VBoxComUninitialize(vbox)
+     * VBoxGetXPCOMCFunctions() is the only function exported by
+     * VBoxXPCOMC.so. This functions gives you the pointer to the
+     * function table (g_pVBoxFuncs).
+     *
+     * g_pVBoxFuncs->pfnComInitialize does all the necessary startup
+     * action and provides us with pointers to vbox and session handles.
+     * It should be matched by a call to g_pVBoxFuncs->pfnComUninitialize()
      * when done.
      */
 
-    VBoxComInitialize(&vbox, &session);
+    g_pVBoxFuncs = VBoxGetXPCOMCFunctions(VBOX_XPCOMC_VERSION);
+    g_pVBoxFuncs->pfnComInitialize(&vbox, &session);
 
     if (vbox == NULL)
     {
@@ -374,10 +376,10 @@ int main(int argc, char **argv)
     if (NS_SUCCEEDED(rc))
     {
         char *version = NULL;
-        VBoxUtf16ToUtf8(versionUtf16, &version);
+        g_pVBoxFuncs->pfnUtf16ToUtf8(versionUtf16, &version);
         printf("\tVersion: %s\n", version);
-        VBoxUtf8Free(version);
-        VBoxComUnallocMem(versionUtf16);
+        g_pVBoxFuncs->pfnUtf8Free(version);
+        g_pVBoxFuncs->pfnComUnallocMem(versionUtf16);
     }
     else
     {
@@ -391,10 +393,10 @@ int main(int argc, char **argv)
     if (NS_SUCCEEDED(rc))
     {
         char *homefolder = NULL;
-        VBoxUtf16ToUtf8(homefolderUtf16, &homefolder);
+        g_pVBoxFuncs->pfnUtf16ToUtf8(homefolderUtf16, &homefolder);
         printf("\tHomeFolder: %s\n", homefolder);
-        VBoxUtf8Free(homefolder);
-        VBoxComUnallocMem(homefolderUtf16);
+        g_pVBoxFuncs->pfnUtf8Free(homefolder);
+        g_pVBoxFuncs->pfnComUnallocMem(homefolderUtf16);
     }
     else
     {
@@ -411,7 +413,7 @@ int main(int argc, char **argv)
      * Do as mom told us: always clean up after yourself.
      */
 
-    VBoxComUninitialize();
+    g_pVBoxFuncs->pfnComUninitialize();
     printf("Finished Main\n");
 
     return 0;

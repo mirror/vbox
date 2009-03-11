@@ -39,31 +39,33 @@ static IVirtualBox         *Ivirtualbox;
 static nsIServiceManager   *serviceManager;
 static nsIComponentManager *manager;
 
-VBOXXPCOMC_DECL(int)
+void VBoxComUninitialize(void);
+
+int
 VBoxUtf16ToUtf8(const PRUnichar *pwszString, char **ppszString)
 {
     return RTUtf16ToUtf8(pwszString, ppszString);
 }
 
-VBOXXPCOMC_DECL(int)
+int
 VBoxUtf8ToUtf16(const char *pszString, PRUnichar **ppwszString)
 {
     return RTStrToUtf16(pszString, ppwszString);
 }
 
-VBOXXPCOMC_DECL(void)
+void
 VBoxUtf16Free(PRUnichar *pwszString)
 {
     RTUtf16Free(pwszString);
 }
 
-VBOXXPCOMC_DECL(void)
+void
 VBoxUtf8Free(char *pszString)
 {
     RTStrFree(pszString);
 }
 
-VBOXXPCOMC_DECL(void)
+void
 VBoxComUnallocMem(void *ptr)
 {
     if (ptr)
@@ -72,19 +74,19 @@ VBoxComUnallocMem(void *ptr)
     }
 }
 
-VBOXXPCOMC_DECL(int)
+int
 VBoxSetEnv(const char *pszVar, const char *pszValue)
 {
     return RTEnvSet(pszVar, pszValue);
 }
 
-VBOXXPCOMC_DECL(const char *)
+const char *
 VBoxGetEnv(const char *pszVar)
 {
     return RTEnvGet(pszVar);
 }
 
-VBOXXPCOMC_DECL(void)
+void
 VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
 {
     nsresult rc;
@@ -138,7 +140,7 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
     Log(("Cbinding: ISession object created.\n"));
 }
 
-VBOXXPCOMC_DECL(void)
+void
 VBoxComUninitialize(void)
 {
     if (Session)

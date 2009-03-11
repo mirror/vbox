@@ -546,23 +546,6 @@ struct nsIStackFrame {
 extern "C" {
 #endif
 
-/* Initialize/Uninitialize XPCOM. */
-VBOXXPCOMC_DECL(void) VBoxComInitialize(IVirtualBox **virtualBox, ISession **session);
-VBOXXPCOMC_DECL(void) VBoxComUninitialize(void);
-
-/* Deallocation functions. */
-VBOXXPCOMC_DECL(void) VBoxComUnallocMem(void *ptr);
-VBOXXPCOMC_DECL(void) VBoxUtf16Free(PRUnichar *pwszString);
-VBOXXPCOMC_DECL(void) VBoxUtf8Free(char *pszString);
-
-/* Converting to and from UTF-8 and UTF-16. */
-VBOXXPCOMC_DECL(int) VBoxUtf16ToUtf8(const PRUnichar *pwszString, char **ppszString);
-VBOXXPCOMC_DECL(int) VBoxUtf8ToUtf16(const char *pszString, PRUnichar **ppwszString);
-
-/* Getting and setting the environment variables. */
-VBOXXPCOMC_DECL(const char *) VBoxGetEnv(const char *pszVar);
-VBOXXPCOMC_DECL(int) VBoxSetEnv(const char *pszVar, const char *pszValue);
-
 
 /**
  * Function table for dynamic linking.
