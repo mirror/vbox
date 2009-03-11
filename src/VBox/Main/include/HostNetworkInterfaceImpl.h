@@ -88,7 +88,6 @@ public:
     static const wchar_t *getComponentName() { return L"HostNetworkInterface"; }
 
     HRESULT setVirtualBox(VirtualBox *pVBox);
-    HRESULT getVirtualBox(VirtualBox **ppVBox);
 private:
     const Bstr mInterfaceName;
     const Guid mGuid;

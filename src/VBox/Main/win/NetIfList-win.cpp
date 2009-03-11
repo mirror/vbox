@@ -2273,16 +2273,16 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
-int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask)
+int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULONG ip, ULONG mask)
 {
     HRESULT rc;
     GUID guid;
     rc = pIf->COMGETTER(Id) (&guid);
     if(SUCCEEDED(rc))
     {
-        ComPtr<VirtualBox> vBox;
-        rc = pIf->getVirtualBox (vBox.asOutParam());
-        if(SUCCEEDED(rc))
+//        ComPtr<VirtualBox> vBox;
+//        rc = pIf->getVirtualBox (vBox.asOutParam());
+//        if(SUCCEEDED(rc))
         {
             /* create a progress object */
             ComObjPtr <Progress> progress;
@@ -2331,16 +2331,16 @@ int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask)
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
-int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
+int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
     HRESULT rc;
     GUID guid;
     rc = pIf->COMGETTER(Id) (&guid);
     if(SUCCEEDED(rc))
     {
-        ComPtr<VirtualBox> vBox;
-        rc = pIf->getVirtualBox (vBox.asOutParam());
-        if(SUCCEEDED(rc))
+//        ComPtr<VirtualBox> vBox;
+//        rc = pIf->getVirtualBox (vBox.asOutParam());
+//        if(SUCCEEDED(rc))
         {
             /* create a progress object */
             ComObjPtr <Progress> progress;
@@ -2389,16 +2389,16 @@ int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
-int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)
+int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
 {
     HRESULT rc;
     GUID guid;
     rc = pIf->COMGETTER(Id) (&guid);
     if(SUCCEEDED(rc))
     {
-        ComPtr<VirtualBox> vBox;
-        rc = pIf->getVirtualBox (vBox.asOutParam());
-        if(SUCCEEDED(rc))
+//        ComPtr<VirtualBox> vBox;
+//        rc = pIf->getVirtualBox (vBox.asOutParam());
+//        if(SUCCEEDED(rc))
         {
             /* create a progress object */
             ComObjPtr <Progress> progress;
