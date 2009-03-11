@@ -187,3 +187,4 @@ private:
 };
 
 #endif // ____H_APPLIANCEIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */
