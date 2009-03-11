@@ -98,8 +98,9 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
                                                  &returnedDataLength);
     if (ppdev->bHGSMISupported)
     {
+        /* In HGSMI mode the display driver decides about the size. */
         iDevice = info.iDevice;
-        u32DisplayInfoSize = 4096; /* In HGSMI mode the display driver decides about the size. */
+        u32DisplayInfoSize = VBVA_DISPLAY_INFORMATION_SIZE;
     }
 #endif /* VBOX_WITH_HGSMI */
 
