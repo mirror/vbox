@@ -52,6 +52,9 @@
 /** The requested address. */
 #define RTNET_DHCP_OPT_REQUESTED_ADDRESS    50
 
+/** The normal size of RTNETBOOTP::bp_vend::Dhcp::dhcp_opts.  */
+#define RTNET_DHCP_OPT_SIZE         (312 - 4)
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -244,7 +247,7 @@ protected:
     VBoxNetDhcpLease   *newLease(PCRTNETBOOTP pDhcpMsg, size_t cb);
     void                updateLeaseConfig(VBoxNetDhcpLease *pLease);
 
-    static uint8_t     *findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, size_t *pcbMaxOpt);
+    static uint8_t const *findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, size_t *pcbMaxOpt);
     static bool         findOptionIPv4Addr(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, PRTNETADDRIPV4 pIPv4Addr);
 
     inline void         debugPrint( int32_t iMinLevel, bool fMsg,  const char *pszFmt, ...) const;
@@ -291,6 +294,42 @@ protected:
 *******************************************************************************/
 /** Pointer to the DHCP server. */
 static VBoxNetDhcp *g_pDhcp;
+
+
+/**
+ * Offer this lease to a client.
+ *
+ * @param   xid             The transaction ID.
+ */
+void VBoxNetDhcpLease::offer(uint32_t xid)
+{
+    m_enmState = kState_Offer;
+    RTTimeNow(&m_ExpireTime);
+    RTTimeSpecAddSeconds(&m_ExpireTime, 60);
+}
+
+
+/**
+ * Activate this lease (i.e. a client is now using it).
+ */
+void VBoxNetDhcpLease::activate(void)
+{
+    m_enmState = kState_Active;
+    RTTimeNow(&m_ExpireTime);
+    RTTimeSpecAddSeconds(&m_ExpireTime, m_pCfg ? m_pCfg->m_cSecLease : 60); /* m_pCfg can be NULL right now... */
+}
+
+
+/**
+ * Release a lease either upon client request or because it didn't quite match a
+ * DHCP_REQUEST.
+ */
+void VBoxNetDhcpLease::release(void)
+{
+    m_enmState = kState_Free;
+    RTTimeNow(&m_ExpireTime);
+    RTTimeSpecAddSeconds(&m_ExpireTime, 5);
+}
 
 
 
@@ -911,18 +950,68 @@ void VBoxNetDhcp::makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRT
 
 
 
+/**
+ * Look up a lease by MAC address.
+ *
+ * @returns Pointer to the lease if found, NULL if not found.
+ * @param   pMacAddress             The mac address.
+ * @param   fEnsureUpToDateConfig   Whether to update the configuration.
+ */
 VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByMacAddress(PCRTMAC pMacAddress, bool fEnsureUpToDateConfig)
 {
+    size_t iLease = m_Leases.size();
+    while (iLease-- > 0)
+    {
+        VBoxNetDhcpLease *pLease = &m_Leases[iLease];
+        if (    pLease
+            &&  pLease->m_MacAddress.au16[0] == pMacAddress->au16[0]
+            &&  pLease->m_MacAddress.au16[1] == pMacAddress->au16[1]
+            &&  pLease->m_MacAddress.au16[2] == pMacAddress->au16[2])
+        {
+            if (fEnsureUpToDateConfig)
+                updateLeaseConfig(pLease);
+            return pLease;
+        }
+    }
+
     return NULL;
 }
 
 
+/**
+ * Look up a lease by IPv4 and MAC addresses.
+ *
+ * @returns Pointer to the lease if found, NULL if not found.
+ * @param   IPv4Addr                The IPv4 address.
+ * @param   pMacAddress             The mac address.
+ */
 VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4Addr, PCRTMAC pMacAddress)
 {
-    return NULL;
+    size_t iLease = m_Leases.size();
+    while (iLease-- > 0)
+    {
+        VBoxNetDhcpLease *pLease = &m_Leases[iLease];
+        if (    pLease
+            &&  pLease->m_IPv4Address.u      == IPv4Addr.u
+            &&  pLease->m_MacAddress.au16[0] == pMacAddress->au16[0]
+            &&  pLease->m_MacAddress.au16[1] == pMacAddress->au16[1]
+            &&  pLease->m_MacAddress.au16[2] == pMacAddress->au16[2])
+            return pLease;
+    }
 
+    return NULL;
 }
 
+
+/**
+ * Creates a new lease for the client specified in the DHCP message.
+ *
+ * The caller has already made sure it doesn't already have a lease.
+ *
+ * @returns Pointer to the lease if found, NULL+log if not found.
+ * @param   IPv4Addr                The IPv4 address.
+ * @param   pMacAddress             The MAC address.
+ */
 VBoxNetDhcpLease *VBoxNetDhcp::newLease(PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
 
@@ -933,19 +1022,67 @@ VBoxNetDhcpLease *VBoxNetDhcp::newLease(PCRTNETBOOTP pDhcpMsg, size_t cb)
 /**
  * Finds an option.
  *
- * @returns On success, a pointer to the option number within the DHCP message
- *          and *pcbMaxOpt set to the maximum number of bytes the option may
- *          contain.
- *          If not found NULL is returned and *pcbMaxOpt is not changed.
+ * @returns On success, a pointer to the first byte in the option data (no none
+ *          then it'll be the byte following the 0 size field) and *pcbOpt set
+ *          to the option length.
+ *          On failure, NULL is returned and *pcbOpt unchanged.
  *
  * @param   uOption         The option to search for.
  * @param   pDhcpMsg        The DHCP message.
  * @param   cb              The size of the message.
- * @param   pcbMaxOpt       Where to store the max option size. Optional.
+ * @param   pcbOpt          Where to store the option size size. Optional. Note
+ *                          that this is adjusted if the option length is larger
+ *                          than the message buffer.
  */
-/* static */ uint8_t *
-VBoxNetDhcp::findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, size_t *pcbMaxOpt)
+/* static */ const uint8_t *
+VBoxNetDhcp::findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, size_t *pcbOpt)
 {
+    Assert(uOption != RTNET_DHCP_OPT_PAD);
+
+    /*
+     * Validate the DHCP bits and figure the max size of the options in the vendor field.
+     */
+    if (cb <= RT_UOFFSETOF(RTNETBOOTP, bp_vend.Dhcp.dhcp_opts))
+        return NULL;
+    if (pDhcpMsg->bp_vend.Dhcp.dhcp_cookie != RTNET_DHCP_COOKIE)
+        return NULL;
+    size_t cbLeft = cb - RT_UOFFSETOF(RTNETBOOTP, bp_vend.Dhcp.dhcp_opts);
+    if (cbLeft > RTNET_DHCP_OPT_SIZE)
+        cbLeft = RTNET_DHCP_OPT_SIZE;
+
+    /*
+     * Search the vendor field.
+     */
+    bool            fExtended = false;
+    uint8_t const  *pb = &pDhcpMsg->bp_vend.Dhcp.dhcp_opts[0];
+    while (pb && cbLeft > 0)
+    {
+        uint8_t uCur  = *pb;
+        if (uCur == RTNET_DHCP_OPT_PAD)
+        {
+            cbLeft--;
+            pb++;
+        }
+        else if (cbLeft <= 1)
+            break;
+        else
+        {
+            size_t  cbCur = pb[1];
+            if (cbCur > cbLeft - 2)
+                cbCur = cbLeft - 2;
+            if (uCur == uOption)
+            {
+                if (pcbOpt)
+                    *pcbOpt = cbCur;
+                return pb+2;
+            }
+            pb     += cbCur + 2;
+            cbLeft -= cbCur - 2;
+        }
+    }
+
+    /** @todo search extended dhcp option field(s) when present */
+
     return NULL;
 }
 
@@ -963,11 +1100,15 @@ VBoxNetDhcp::findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, size_
 /* static */ bool
 VBoxNetDhcp::findOptionIPv4Addr(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, PRTNETADDRIPV4 pIPv4Addr)
 {
-    size_t   cbMaxOpt;
-    uint8_t *pbOpt = findOption(uOption, pDhcpMsg, cb, &cbMaxOpt);
+    size_t          cbOpt;
+    uint8_t const  *pbOpt = findOption(uOption, pDhcpMsg, cb, &cbOpt);
     if (pbOpt)
     {
-
+        if (cbOpt >= sizeof(RTNETADDRIPV4))
+        {
+            *pIPv4Addr = *(PCRTNETADDRIPV4)pbOpt;
+            return true;
+        }
     }
     return false;
 }
