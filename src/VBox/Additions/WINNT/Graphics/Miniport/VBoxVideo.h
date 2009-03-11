@@ -116,9 +116,11 @@ typedef struct _DEVICE_EXTENSION
            
            ULONG ulMaxFrameBufferSize;         /* The size of the VRAM allocated for the a single framebuffer. */
            
+#ifndef VBOX_WITH_HGSMI
            ULONG ulDisplayInformationSize;     /* The size of the Display information, which is at offset:
                                                 * ulFrameBufferOffset + ulMaxFrameBufferSize.
                                                 */
+#endif /* !VBOX_WITH_HGSMI */
            
 #ifdef VBOX_WITH_HGSMI
            BOOLEAN bHGSMI;                     /* Whether HGSMI is enabled. */

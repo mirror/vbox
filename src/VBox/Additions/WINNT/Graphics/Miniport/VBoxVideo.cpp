@@ -731,9 +731,15 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 /* Computes the size of a framebuffer. DualView has a few framebuffers of the computed size. */
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
 {
+#ifndef VBOX_WITH_HGSMI
     ULONG ulAvailable = PrimaryExtension->u.primary.cbVRAM
                         - PrimaryExtension->u.primary.cbMiniportHeap
                         - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
+#else
+    ULONG ulAvailable = PrimaryExtension->u.primary.cbVRAM
+                        - PrimaryExtension->u.primary.cbMiniportHeap
+                        - VBVA_ADAPTER_INFORMATION_SIZE;
+#endif /* VBOX_WITH_HGSMI */
 
     /* Size of a framebuffer. */
 
@@ -747,6 +753,7 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
              ulSize, ulSize * PrimaryExtension->u.primary.cDisplays,
              ulAvailable - ulSize * PrimaryExtension->u.primary.cDisplays));
 
+#ifndef VBOX_WITH_HGSMI
     if (ulSize > VBOX_VIDEO_DISPLAY_INFORMATION_SIZE)
     {
         /* Compute the size of the framebuffer. */
@@ -757,10 +764,13 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
         /* Should not really get here. But still do it safely. */
         ulSize = 0;
     }
+#endif /* !VBOX_WITH_HGSMI */
 
     /* Update the primary info. */
     PrimaryExtension->u.primary.ulMaxFrameBufferSize     = ulSize;
+#ifndef VBOX_WITH_HGSMI
     PrimaryExtension->u.primary.ulDisplayInformationSize = VBOX_VIDEO_DISPLAY_INFORMATION_SIZE;
+#endif /* !VBOX_WITH_HGSMI */
 
     /* Update the per extension info. */
     PDEVICE_EXTENSION Extension = PrimaryExtension;
@@ -774,8 +784,12 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
         dprintf(("VBoxVideo::VBoxComputeFrameBufferSizes: [%d] ulFrameBufferOffset 0x%08X\n",
                  Extension->iDevice, ulFrameBufferOffset));
 
+#ifndef VBOX_WITH_HGSMI
         ulFrameBufferOffset += PrimaryExtension->u.primary.ulMaxFrameBufferSize
                                + PrimaryExtension->u.primary.ulDisplayInformationSize;
+#else
+        ulFrameBufferOffset += PrimaryExtension->u.primary.ulMaxFrameBufferSize;
+#endif /* VBOX_WITH_HGSMI */
 
         Extension = Extension->pNext;
     }
@@ -824,6 +838,7 @@ void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv)
     *ppv = NULL;
 }
 
+#ifndef VBOX_WITH_HGSMI
 static void vboxQueryConf (PDEVICE_EXTENSION PrimaryExtension, uint32_t u32Index, ULONG *pulValue)
 {
     dprintf(("VBoxVideo::vboxQueryConf: u32Index = %d\n", u32Index));
@@ -1105,6 +1120,7 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
 
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
 }
+#endif /* VBOX_WITH_HGSMI */
 
 VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
                                IN PVOID HwContext, IN PWSTR ArgumentString,
@@ -1691,6 +1707,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             break;
         }
 
+#ifndef VBOX_WITH_HGSMI
         case IOCTL_VIDEO_QUERY_DISPLAY_INFO:
         {
             dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_QUERY_DISPLAY_INFO\n"));
@@ -1713,6 +1730,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 
             break;
         }
+#endif /* !VBOX_WITH_HGSMI */
 
         case IOCTL_VIDEO_VBVA_ENABLE:
         {
@@ -2048,8 +2066,12 @@ BOOLEAN FASTCALL VBoxVideoMapVideoMemory(PDEVICE_EXTENSION DeviceExtension,
     FrameBuffer.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS + DeviceExtension->ulFrameBufferOffset;
 
     MapInformation->VideoRamBase = RequestedAddress->RequestedVirtualAddress;
+#ifndef VBOX_WITH_HGSMI
     MapInformation->VideoRamLength = DeviceExtension->pPrimary->u.primary.ulMaxFrameBufferSize
                                      + DeviceExtension->pPrimary->u.primary.ulDisplayInformationSize;
+#else
+    MapInformation->VideoRamLength = DeviceExtension->pPrimary->u.primary.ulMaxFrameBufferSize;
+#endif /* VBOX_WITH_HGSMI */
 
     Status = VideoPortMapMemory(DeviceExtension, FrameBuffer,
        &MapInformation->VideoRamLength, &inIoSpace,

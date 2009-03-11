@@ -365,8 +365,8 @@ static BOOL vboxVBVAInformHost (PPDEV ppdev, BOOL bEnable)
         {
             VBVAENABLE *pEnable = (VBVAENABLE *)p;
 
-            pEnable->u32Flags    = bEnable? VBVA_F_ENABLE: VBVA_F_DISABLE;
-            pEnable->u32Reserved = 0;
+            pEnable->u32Flags  = bEnable? VBVA_F_ENABLE: VBVA_F_DISABLE;
+            pEnable->u32Offset = ppdev->layout.offVBVABuffer;
 
             vboxHGSMIBufferSubmit (ppdev, p);
 
