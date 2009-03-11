@@ -39,7 +39,7 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszMask)
         args[3] = "netmask";
         args[4] = pszMask;
     }
-    
+
     char szAdpCtl[RTPATH_MAX];
     int rc = RTPathProgram(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME));
     if (RT_FAILURE(rc))
@@ -56,7 +56,7 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszMask)
                 szAdpCtl));
         return VERR_FILE_NOT_FOUND;
     }
-    
+
     RTPROCESS pid;
     rc = RTProcCreate(VBOXNETADPCTL_NAME, args, RTENV_DEFAULT, 0, &pid);
     if (RT_SUCCESS(rc))
@@ -71,7 +71,7 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszMask)
     return rc;
 }
 
-int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask)
+int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULONG ip, ULONG mask)
 {
     char szAddress[16]; /* 4*3 + 3*1 + 1 */
     char szNetMask[16]; /* 4*3 + 3*1 + 1 */
@@ -84,12 +84,12 @@ int NetIfEnableStaticIpConfig(HostNetworkInterface * pIf, ULONG ip, ULONG mask)
     return NetIfAdpCtl(pIf, szAddress, szNetMask);
 }
 
-int NetIfEnableStaticIpConfigV6(HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
+int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
-int NetIfEnableDynamicIpConfig(HostNetworkInterface * pIf)
+int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
 {
     return VERR_NOT_IMPLEMENTED;
 }
