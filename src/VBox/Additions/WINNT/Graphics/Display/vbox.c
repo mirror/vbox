@@ -671,6 +671,7 @@ void VBoxProcessDisplayInfo (PPDEV ppdev)
         {
             VBVAINFOSCREEN *pScreen = (VBVAINFOSCREEN *)p;
 
+            pScreen->u32ViewIndex    = ppdev->iDevice;
             pScreen->i32OriginX      = ppdev->ptlDevOrg.x;
             pScreen->i32OriginY      = ppdev->ptlDevOrg.y;
             pScreen->u32LineSize     = ppdev->lDeltaScreen > 0?ppdev->lDeltaScreen: -ppdev->lDeltaScreen;

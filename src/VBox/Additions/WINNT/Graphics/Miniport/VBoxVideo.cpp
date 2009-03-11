@@ -1843,6 +1843,9 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             /* Describes VRAM chunk for this display device. */
             pInfo->areaDisplay = pDevExt->areaDisplay;
 
+            pInfo->u32DisplayInfoSize   = VBVA_DISPLAY_INFORMATION_SIZE;
+            pInfo->u32MinVBVABufferSize = VBVA_MIN_BUFFER_SIZE;
+
             RequestPacket->StatusBlock->Information = sizeof(QUERYHGSMIRESULT);
             Result = TRUE;
 
