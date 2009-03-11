@@ -408,6 +408,7 @@ static const char *emGetMnemonic(PDISCPUSTATE pCpu)
         case OP_SBB:        return "Sbb";
         case OP_RDTSC:      return "Rdtsc";
         case OP_STI:        return "Sti";
+        case OP_CLI:        return "Cli";
         case OP_XADD:       return "XAdd";
         case OP_HLT:        return "Hlt";
         case OP_IRET:       return "Iret";
@@ -2433,6 +2434,12 @@ static int emInterpretLLdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
         return VERR_EM_INTERPRETER;
     }
 
+#ifdef IN_RING0
+    /* Only for the VT-x real-mode emulation case. */
+    AssertReturn(CPUMIsGuestInRealMode(pVM), VERR_EM_INTERPRETER);
+    CPUMSetGuestLDTR(pVM, sel);
+    return VINF_SUCCESS;
+#else
     if (sel == 0)
     {
         if (CPUMGetHyperLDTR(pVM) == 0)
@@ -2443,6 +2450,7 @@ static int emInterpretLLdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
     }
     //still feeling lazy
     return VERR_EM_INTERPRETER;
+#endif
 }
 
 #ifdef IN_RING0
@@ -2458,8 +2466,7 @@ static int emInterpretLIGdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
     Log(("Emulate %s at %RGv\n", emGetMnemonic(pCpu), (RTGCPTR)pRegFrame->rip));
 
     /* Only for the VT-x real-mode emulation case. */
-    if (!CPUMIsGuestInRealMode(pVM))
-        return VERR_EM_INTERPRETER;
+    AssertReturn(CPUMIsGuestInRealMode(pVM), VERR_EM_INTERPRETER);
 
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
@@ -3181,11 +3188,11 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_CPUID,CpuId);
         INTERPRET_CASE(OP_MOV_CR,MovCRx);
         INTERPRET_CASE(OP_MOV_DR,MovDRx);
-        INTERPRET_CASE(OP_LLDT,LLdt);
 #ifdef IN_RING0
         INTERPRET_CASE_EX_DUAL_PARAM2(OP_LIDT, LIdt, LIGdt);
         INTERPRET_CASE_EX_DUAL_PARAM2(OP_LGDT, LGdt, LIGdt);
 #endif
+        INTERPRET_CASE(OP_LLDT,LLdt);
         INTERPRET_CASE(OP_LMSW,Lmsw);
 #ifdef EM_EMULATE_SMSW
         INTERPRET_CASE(OP_SMSW,Smsw);
