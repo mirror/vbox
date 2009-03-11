@@ -408,19 +408,19 @@ public:
         return KClipboardMode (it.key());
     }
 
-    QString toString (KIDEControllerType t) const
+    QString toString (KStorageControllerType t) const
     {
-        AssertMsg (!mIDEControllerTypes.value (t).isNull(), ("No text for %d", t));
-        return mIDEControllerTypes.value (t);
+        AssertMsg (!mStorageControllerTypes.value (t).isNull(), ("No text for %d", t));
+        return mStorageControllerTypes.value (t);
     }
 
-    KIDEControllerType toIDEControllerType (const QString &s) const
+    KStorageControllerType toIDEControllerType (const QString &s) const
     {
         QULongStringHash::const_iterator it =
-            qFind (mIDEControllerTypes.begin(), mIDEControllerTypes.end(), s);
-        AssertMsg (it != mIDEControllerTypes.end(), ("No value for {%s}",
-                                                     s.toLatin1().constData()));
-        return KIDEControllerType (it.key());
+            qFind (mStorageControllerTypes.begin(), mStorageControllerTypes.end(), s);
+        AssertMsg (it != mStorageControllerTypes.end(), ("No value for {%s}",
+                                                         s.toLatin1().constData()));
+        return KStorageControllerType (it.key());
     }
 
     KVRDPAuthType toVRDPAuthType (const QString &s) const
@@ -876,7 +876,7 @@ private:
     QULongStringHash mNetworkAdapterTypes;
     QULongStringHash mNetworkAttachmentTypes;
     QULongStringHash mClipboardTypes;
-    QULongStringHash mIDEControllerTypes;
+    QULongStringHash mStorageControllerTypes;
     QULongStringHash mUSBDeviceStates;
 
     QString mUserDefinedPortName;

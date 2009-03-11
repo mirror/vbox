@@ -38,17 +38,17 @@ public:
     struct EqualsTo
         : public std::unary_function <ComObjPtr<HardDiskAttachment>, bool>
     {
-        explicit EqualsTo (StorageBus_T aBus, LONG aChannel, LONG aDevice)
-            : bus (aBus), channel (aChannel), device (aDevice) {}
+        explicit EqualsTo (CBSTR aController, LONG aPort, LONG aDevice)
+            : controller(aController), port (aPort), device (aDevice) {}
 
         bool operator() (const argument_type &aThat) const
         {
-            return aThat->bus() == bus && aThat->channel() == channel &&
+            return aThat->controller() == controller && aThat->port() == port &&
                    aThat->device() == device;
         }
 
-        const StorageBus_T bus;
-        const LONG channel;
+        const Bstr controller;
+        const LONG port;
         const LONG device;
     };
 
@@ -81,14 +81,14 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(HardDisk *aHD, StorageBus_T aBus, LONG aChannel,
+    HRESULT init(HardDisk *aHD, IN_BSTR aController, LONG aPort,
                  LONG aDevice, bool aImplicit = false);
     void uninit();
 
     // IHardDiskAttachment properties
     STDMETHOD(COMGETTER(HardDisk))   (IHardDisk **aHardDisk);
-    STDMETHOD(COMGETTER(Bus))        (StorageBus_T *aBus);
-    STDMETHOD(COMGETTER(Channel))    (LONG *aChannel);
+    STDMETHOD(COMGETTER(Controller)) (BSTR *aController);
+    STDMETHOD(COMGETTER(Port))       (LONG *aPort);
     STDMETHOD(COMGETTER(Device))     (LONG *aDevice);
 
     // unsafe inline public methods for internal purposes only (ensure there is
@@ -98,8 +98,8 @@ public:
     void setImplicit (bool aImplicit) { m.implicit = aImplicit; }
 
     const ComObjPtr<HardDisk> &hardDisk() const { return m.hardDisk; }
-    StorageBus_T bus() const { return m.bus; }
-    LONG channel() const { return m.channel; }
+    Bstr controller() const { return m.controller; }
+    LONG port()   const { return m.port; }
     LONG device() const { return m.device; }
 
     /** Must be called from under this object's write lock.  */
@@ -116,14 +116,14 @@ private:
 
     struct Data
     {
-        Data() : bus (StorageBus_Null), channel (0), device (0)
+        Data() : port (0), device (0)
                , implicit (false) {}
 
         /// @todo NEWMEDIA shouldn't it be constant too? It'd be nice to get
         /// rid of locks at all in this simple readonly structure-like interface
         ComObjPtr<HardDisk> hardDisk;
-        const StorageBus_T bus;
-        const LONG channel;
+        const Bstr controller;
+        const LONG port;
         const LONG device;
 
         bool implicit : 1;

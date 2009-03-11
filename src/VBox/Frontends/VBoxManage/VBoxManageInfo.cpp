@@ -447,19 +447,17 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
      * Contributed by: James Lucas
      */
 #ifdef VBOX_WITH_AHCI
-    ComPtr<ISATAController> SATACtl;
-    BOOL fSataEnabled;
-    rc = machine->COMGETTER(SATAController)(SATACtl.asOutParam());
+    ComPtr<IStorageController> SataCtl;
+    bool                       fSataEnabled = false;
+
+    rc = machine->GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam());
     if (SUCCEEDED(rc))
-    {
-        rc = SATACtl->COMGETTER(Enabled)(&fSataEnabled);
-        if (FAILED(rc))
-            fSataEnabled = false;
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("sata=\"%s\"\n", fSataEnabled ? "on" : "off");
-        else
-            RTPrintf("SATA:            %s\n", fSataEnabled ? "enabled" : "disabled");
-    }
+        fSataEnabled = true;
+
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("sata=\"%s\"\n", fSataEnabled ? "on" : "off");
+    else
+        RTPrintf("SATA:            %s\n", fSataEnabled ? "enabled" : "disabled");
 
     /*
      * SATA Hard disks
@@ -470,10 +468,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         Bstr  filePath;
         ULONG cSataPorts;
 
-        SATACtl->COMGETTER(PortCount)(&cSataPorts);
+        SataCtl->COMGETTER(PortCount)(&cSataPorts);
         for (ULONG i = 0; i < cSataPorts; ++ i)
         {
-            rc = machine->GetHardDisk(StorageBus_SATA, i, 0, hardDisk.asOutParam());
+            rc = machine->GetHardDisk(Bstr("SATA"), i, 0, hardDisk.asOutParam());
             if (SUCCEEDED(rc) && hardDisk)
             {
                 hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -498,31 +496,39 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     /*
      * IDE Hard disks
      */
-    IDEControllerType_T ideController;
-    const char *pszIdeController = NULL;
-    biosSettings->COMGETTER(IDEControllerType)(&ideController);
-    switch (ideController)
+    ComPtr<IStorageController> ideController;
+
+    rc = machine->GetStorageControllerByName(Bstr("IDE"), ideController.asOutParam());
+    if (SUCCEEDED(rc) && ideController)
     {
-        case IDEControllerType_PIIX3:
-            pszIdeController = "PIIX3";
-            break;
-        case IDEControllerType_PIIX4:
-            pszIdeController = "PIIX4";
-            break;
-        case IDEControllerType_ICH6:
-            pszIdeController = "ICH6";
-            break;
-        default:
-            pszIdeController = "unknown";
+        StorageControllerType_T enmIdeController;
+        const char *pszIdeController = NULL;
+
+        rc = ideController->COMGETTER(ControllerType)(&enmIdeController);
+
+        switch (enmIdeController)
+        {
+            case StorageControllerType_PIIX3:
+                pszIdeController = "PIIX3";
+                break;
+            case StorageControllerType_PIIX4:
+                pszIdeController = "PIIX4";
+                break;
+            case StorageControllerType_ICH6:
+                pszIdeController = "ICH6";
+                break;
+            default:
+                pszIdeController = "unknown";
+        }
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("idecontroller=\"%s\"\n", pszIdeController);
+        else
+            RTPrintf("IDE Controller:  %s\n", pszIdeController);
     }
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("idecontroller=\"%s\"\n", pszIdeController);
-    else
-        RTPrintf("IDE Controller:  %s\n", pszIdeController);
 
     ComPtr<IHardDisk> hardDisk;
     Bstr filePath;
-    rc = machine->GetHardDisk(StorageBus_IDE, 0, 0, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(Bstr("IDE"), 0, 0, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -540,7 +546,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hda=\"none\"\n");
     }
-    rc = machine->GetHardDisk(StorageBus_IDE, 0, 1, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(Bstr("IDE"), 0, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -558,7 +564,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hdb=\"none\"\n");
     }
-    rc = machine->GetHardDisk(StorageBus_IDE, 1, 1, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(Bstr("IDE"), 1, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());

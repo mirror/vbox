@@ -37,7 +37,7 @@
 #include "SerialPortImpl.h"
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
-#include "SATAControllerImpl.h"
+#include "StorageControllerImpl.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 #include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
@@ -516,7 +516,6 @@ public:
     STDMETHOD(COMGETTER(FloppyDrive))(IFloppyDrive **floppyDrive);
     STDMETHOD(COMGETTER(AudioAdapter))(IAudioAdapter **audioAdapter);
     STDMETHOD(COMGETTER(USBController)) (IUSBController * *aUSBController);
-    STDMETHOD(COMGETTER(SATAController)) (ISATAController **aSATAController);
     STDMETHOD(COMGETTER(SettingsFilePath)) (BSTR *aFilePath);
     STDMETHOD(COMGETTER(SettingsFileVersion)) (BSTR *aSettingsFileVersion);
     STDMETHOD(COMGETTER(SettingsModified)) (BOOL *aModified);
@@ -535,15 +534,16 @@ public:
     STDMETHOD(COMSETTER(ClipboardMode)) (ClipboardMode_T aClipboardMode);
     STDMETHOD(COMGETTER(GuestPropertyNotificationPatterns)) (BSTR *aPattern);
     STDMETHOD(COMSETTER(GuestPropertyNotificationPatterns)) (IN_BSTR aPattern);
+    STDMETHOD(COMGETTER(StorageControllers)) (ComSafeArrayOut(IStorageController *, aStorageControllers));
 
     // IMachine methods
     STDMETHOD(SetBootOrder)(ULONG aPosition, DeviceType_T aDevice);
     STDMETHOD(GetBootOrder)(ULONG aPosition, DeviceType_T *aDevice);
-    STDMETHOD(AttachHardDisk)(IN_GUID aId, StorageBus_T aBus,
-                              LONG aChannel, LONG aDevice);
-    STDMETHOD(GetHardDisk)(StorageBus_T aBus, LONG aChannel, LONG aDevice,
+    STDMETHOD(AttachHardDisk)(IN_GUID aId, IN_BSTR aControllerName,
+                              LONG aPort, LONG aDevice);
+    STDMETHOD(GetHardDisk)(IN_BSTR aControllerName, LONG aPort, LONG aDevice,
                            IHardDisk **aHardDisk);
-    STDMETHOD(DetachHardDisk)(StorageBus_T aBus, LONG aChannel, LONG aDevice);
+    STDMETHOD(DetachHardDisk)(IN_BSTR aControllerName, LONG aPort, LONG aDevice);
     STDMETHOD(GetSerialPort) (ULONG slot, ISerialPort **port);
     STDMETHOD(GetParallelPort) (ULONG slot, IParallelPort **port);
     STDMETHOD(GetNetworkAdapter) (ULONG slot, INetworkAdapter **adapter);
@@ -568,6 +568,10 @@ public:
     STDMETHOD(SetGuestProperty) (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags);
     STDMETHOD(SetGuestPropertyValue) (IN_BSTR aName, IN_BSTR aValue);
     STDMETHOD(EnumerateGuestProperties) (IN_BSTR aPattern, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
+    STDMETHOD(GetHardDiskAttachmentsOfController)(IN_BSTR aName, ComSafeArrayOut (IHardDiskAttachment *, aAttachments));
+    STDMETHOD(AddStorageController) (IN_BSTR aName, StorageControllerType_T controllerType);
+    STDMETHOD(RemoveStorageController (IN_BSTR aName));
+    STDMETHOD(GetStorageControllerByName (IN_BSTR aName, IStorageController **storageController));
 
     // public methods only for internal purposes
 
@@ -635,7 +639,7 @@ public:
     virtual HRESULT onParallelPortChange(IParallelPort *ParallelPort) { return S_OK; }
     virtual HRESULT onVRDPServerChange() { return S_OK; }
     virtual HRESULT onUSBControllerChange() { return S_OK; }
-    virtual HRESULT onSATAControllerChange() { return S_OK; }
+    virtual HRESULT onStorageControllerChange() { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
 
     HRESULT saveRegistryEntry (settings::Key &aEntryNode);
@@ -732,8 +736,11 @@ protected:
     HRESULT loadSnapshot (const settings::Key &aNode, const Guid &aCurSnapshotId,
                           Snapshot *aParentSnapshot);
     HRESULT loadHardware (const settings::Key &aNode);
-    HRESULT loadHardDisks (const settings::Key &aNode, bool aRegistered,
+    HRESULT loadStorageControllers (const settings::Key &aNode, bool aRegistered,
                            const Guid *aSnapshotId = NULL);
+    HRESULT loadStorageDevices (ComObjPtr<StorageController> aStorageController,
+                                const settings::Key &aNode, bool aRegistered,
+                                const Guid *aSnapshotId = NULL);
 
     HRESULT findSnapshotNode (Snapshot *aSnapshot, settings::Key &aMachineNode,
                               settings::Key *aSnapshotsNode,
@@ -743,6 +750,13 @@ protected:
                           bool aSetError = false);
     HRESULT findSnapshot (IN_BSTR aName, ComObjPtr <Snapshot> &aSnapshot,
                           bool aSetError = false);
+
+    HRESULT getStorageControllerByName(CBSTR aName,
+                                       ComObjPtr <StorageController> &aStorageController,
+                                       bool aSetError = false);
+
+    HRESULT getHardDiskAttachmentsOfController(CBSTR aName,
+                                               HDData::AttachmentList &aAttachments);
 
     enum
     {
@@ -771,7 +785,9 @@ protected:
 
     HRESULT saveSnapshot (settings::Key &aNode, Snapshot *aSnapshot, bool aAttrsOnly);
     HRESULT saveHardware (settings::Key &aNode);
-    HRESULT saveHardDisks (settings::Key &aNode);
+    HRESULT saveStorageControllers (settings::Key &aNode);
+    HRESULT saveStorageDevices (ComObjPtr<StorageController> aStorageController,
+                                settings::Key &aNode);
 
     HRESULT saveStateSettings (int aFlags);
 
@@ -829,10 +845,12 @@ protected:
         mParallelPorts [SchemaDefs::ParallelPortCount];
     const ComObjPtr <AudioAdapter> mAudioAdapter;
     const ComObjPtr <USBController> mUSBController;
-    const ComObjPtr <SATAController> mSATAController;
     const ComObjPtr <BIOSSettings> mBIOSSettings;
     const ComObjPtr <NetworkAdapter>
         mNetworkAdapters [SchemaDefs::NetworkAdapterCount];
+
+    typedef std::list< ComObjPtr<StorageController> > StorageControllerList;
+    Backupable<StorageControllerList> mStorageControllers;
 
     friend class SessionMachine;
     friend class SnapshotMachine;
@@ -920,6 +938,7 @@ public:
     HRESULT onDVDDriveChange();
     HRESULT onFloppyDriveChange();
     HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter);
+    HRESULT onStorageControllerChange();
     HRESULT onSerialPortChange(ISerialPort *serialPort);
     HRESULT onParallelPortChange(IParallelPort *parallelPort);
     HRESULT onVRDPServerChange();

@@ -462,36 +462,38 @@ void VBoxVMInformationDlg::refreshStatistics()
     /* Hard Disk Statistics */
     {
         QString hdStat;
+        const QString ideCtl = QString("IDE");
+        const QString sataCtl = QString("SATA");
 
         result += hdrRow.arg (":/hd_16px.png").arg (tr ("Hard Disk Statistics"));
 
         /* IDE Hard Disk (Primary Master) */
-        if (!m.GetHardDisk(KStorageBus_IDE, 0, 0).isNull())
+        if (!m.GetHardDisk(ideCtl, 0, 0).isNull())
         {
-            hdStat += formatHardDisk (KStorageBus_IDE, 0, 0, "IDE00");
+            hdStat += formatHardDisk (ideCtl, 0, 0, "IDE00");
             hdStat += paragraph;
         }
 
         /* IDE Hard Disk (Primary Slave) */
-        if (!m.GetHardDisk(KStorageBus_IDE, 0, 1).isNull())
+        if (!m.GetHardDisk(ideCtl, 0, 1).isNull())
         {
-            hdStat += formatHardDisk (KStorageBus_IDE, 0, 1, "IDE01");
+            hdStat += formatHardDisk (ideCtl, 0, 1, "IDE01");
             hdStat += paragraph;
         }
 
         /* IDE Hard Disk (Secondary Slave) */
-        if (!m.GetHardDisk(KStorageBus_IDE, 1, 1).isNull())
+        if (!m.GetHardDisk(ideCtl, 1, 1).isNull())
         {
-            hdStat += formatHardDisk (KStorageBus_IDE, 1, 1, "IDE11");
+            hdStat += formatHardDisk (ideCtl, 1, 1, "IDE11");
             hdStat += paragraph;
         }
 
         /* SATA Hard Disks */
         for (int i = 0; i < 30; ++ i)
         {
-            if (!m.GetHardDisk(KStorageBus_SATA, i, 0).isNull())
+            if (!m.GetHardDisk(sataCtl, i, 0).isNull())
             {
-                hdStat += formatHardDisk (KStorageBus_SATA, i, 0,
+                hdStat += formatHardDisk (sataCtl, i, 0,
                                           QString ("SATA%1").arg (i));
                 hdStat += paragraph;
             }
@@ -508,7 +510,7 @@ void VBoxVMInformationDlg::refreshStatistics()
 
         /* CD/DVD-ROM (Secondary Master) */
         result += hdrRow.arg (":/cd_16px.png").arg (tr ("CD/DVD-ROM Statistics"));
-        result += formatHardDisk (KStorageBus_IDE, 1, 0, "IDE10");
+        result += formatHardDisk (ideCtl, 1, 0, "IDE10");
         result += paragraph;
     }
 
@@ -565,7 +567,7 @@ QString VBoxVMInformationDlg::formatValue (const QString &aValueName,
     return bdyRow.arg (aValueName).arg (aValue).arg (size);
 }
 
-QString VBoxVMInformationDlg::formatHardDisk (KStorageBus aBus,
+QString VBoxVMInformationDlg::formatHardDisk (const QString &ctlName,
                                               LONG aChannel,
                                               LONG aDevice,
                                               const QString &aBelongsTo)
@@ -573,9 +575,11 @@ QString VBoxVMInformationDlg::formatHardDisk (KStorageBus aBus,
     if (mSession.isNull())
         return QString::null;
 
-    CHardDisk hd = mSession.GetMachine().GetHardDisk(aBus, aChannel, aDevice);
+    CStorageController ctl = mSession.GetMachine().GetStorageControllerByName(ctlName);
+
+    CHardDisk hd = mSession.GetMachine().GetHardDisk(ctlName, aChannel, aDevice);
     QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
-    QString name = vboxGlobal().toFullString (aBus, aChannel, aDevice);
+    QString name = vboxGlobal().toFullString (ctl.GetBus(), aChannel, aDevice);
     QString result = hd.isNull() ? QString::null : header.arg (name);
     result += composeArticle (aBelongsTo);
     return result;

@@ -135,6 +135,13 @@ The source version is not supported.
   </xsl:copy>
 </xsl:template>
 
+<!-- 1.6 => 1.7 -->
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.6']">
+  <xsl:copy>
+    <xsl:attribute name="version"><xsl:value-of select="concat('1.7','-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()" mode="v1.7"/>
+  </xsl:copy>
+</xsl:template>
 
 <!--
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -799,6 +806,7 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 -->
 
+
 <!--
  *  all non-root elements that are not explicitly matched are copied as is
 -->
@@ -824,6 +832,114 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
   <!-- just remove the node -->
 </xsl:template>
 
+
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  1.6 => 1.7
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
+<!--
+ *  all non-root elements that are not explicitly matched are copied as is
+-->
+<xsl:template match="@*|node()[../..]" mode="v1.7">
+  <xsl:copy>
+    <xsl:apply-templates select="@*|node()[../..]" mode="v1.7"/>
+  </xsl:copy>
+</xsl:template>
+
+<!--
+ *  Global settings
+-->
+
+<!--
+ *  Machine settings
+-->
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine/vb:Snapshots"
+              mode="v1.7">
+  <xsl:for-each select="vb:Snapshot">
+    <xsl:apply-templates select="." mode="v1.7"/>
+  </xsl:for-each>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine/vb:HardDiskAttachments |
+                     vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine/vb:Snapshot/vb:HardDiskAttachments |
+                     vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine/vb:Snapshot/vb:Snapshots//vb:Snapshot/vb:HardDiskAttachments"
+              mode="v1.7">
+  <StorageControllers>
+    <StorageController name="IDE">
+      <xsl:attribute name="type"><xsl:value-of select="../vb:Hardware/vb:BIOS/vb:IDEController/@type"/></xsl:attribute>
+      <xsl:attribute name="PortCount">2</xsl:attribute>
+      <xsl:for-each select="./vb:HardDiskAttachment[@bus = 'IDE']">
+         <xsl:apply-templates select="." mode="v1.7-attached-device"/>
+      </xsl:for-each>
+    </StorageController>
+    <xsl:if test="../vb:Hardware/vb:SATAController/@enabled='true'">
+      <StorageController name="SATA">
+        <xsl:attribute name="type">AHCI</xsl:attribute>
+        <xsl:attribute name="PortCount">
+          <xsl:value-of select="../vb:Hardware/vb:SATAController/@PortCount"/>
+        </xsl:attribute>
+        <xsl:attribute name="IDE0MasterEmulationPort">
+          <xsl:value-of select="../vb:Hardware/vb:SATAController/@IDE0MasterEmulationPort"/>
+        </xsl:attribute>
+        <xsl:attribute name="IDE0SlaveEmulationPort">
+          <xsl:value-of select="../vb:Hardware/vb:SATAController/@IDE0SlaveEmulationPort"/>
+        </xsl:attribute>
+        <xsl:attribute name="IDE1MasterEmulationPort">
+          <xsl:value-of select="../vb:Hardware/vb:SATAController/@IDE1MasterEmulationPort"/>
+        </xsl:attribute>
+        <xsl:attribute name="IDE1SlaveEmulationPort">
+          <xsl:value-of select="../vb:Hardware/vb:SATAController/@IDE1SlaveEmulationPort"/>
+        </xsl:attribute>
+        <xsl:for-each select="./vb:HardDiskAttachment[@bus = 'SATA']">
+           <xsl:apply-templates select="." mode="v1.7-attached-device"/>
+        </xsl:for-each>
+      </StorageController>
+    </xsl:if>
+  </StorageControllers>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine/vb:HardDiskAttachments/vb:HardDiskAttachment |
+                     vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine/vb:Snapshot/vb:HardDiskAttachments/vb:HardDiskAttachment |
+                     vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine/vb:Snapshot/vb:Snapshots//vb:Snapshot/vb:HardDiskAttachments/
+                     vb:HardDiskAttachment"
+              mode="v1.7-attached-device">
+  <AttachedDevice>
+    <xsl:attribute name="type">HardDisk</xsl:attribute>
+    <xsl:attribute name="port"><xsl:value-of select="@channel"/></xsl:attribute>
+    <xsl:attribute name="device"><xsl:value-of select="@device"/></xsl:attribute>
+    <xsl:element name="Image">
+      <xsl:attribute name="uuid"><xsl:value-of select="@hardDisk"/></xsl:attribute>
+    </xsl:element>
+  </AttachedDevice>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine//vb:Hardware/vb:BIOS/vb:IDEController |
+                     vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine//vb:Snapshot/vb:Hardware/vb:BIOS/vb:IDEController |
+                     vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine/vb:Snapshot/vb:Snapshots//vb:Snapshot/vb:Hardware/vb:BIOS/vb:IDEController"
+              mode="v1.7">
+  <!-- just remove the node -->
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine/vb:Hardware/vb:SATAController |
+                     vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine/vb:Snapshot/vb:Hardware/vb:SATAController |
+                     vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Machine/vb:Snapshot/vb:Snapshots//vb:Snapshot/vb:Hardware/vb:SATAController"
+              mode="v1.7">
+  <!-- just remove the node -->
+</xsl:template>
 
 <!--
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

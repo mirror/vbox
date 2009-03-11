@@ -99,6 +99,7 @@ public:
     STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *networkAdapter);
     STDMETHOD(OnSerialPortChange)(ISerialPort *serialPort);
     STDMETHOD(OnParallelPortChange)(IParallelPort *parallelPort);
+    STDMETHOD(OnStorageControllerChange)();
     STDMETHOD(OnVRDPServerChange)();
     STDMETHOD(OnUSBControllerChange)();
     STDMETHOD(OnSharedFolderChange) (BOOL aGlobal);

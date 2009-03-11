@@ -140,6 +140,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnStorageControllerChange) ()
+    {
+        return S_OK;
+    }
+
     STDMETHOD(OnVRDPServerChange)()
     {
         return S_OK;

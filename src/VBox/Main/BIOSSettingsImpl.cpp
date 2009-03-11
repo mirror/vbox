@@ -411,51 +411,6 @@ STDMETHODIMP BIOSSettings::COMSETTER(PXEDebugEnabled)(BOOL enable)
     return S_OK;
 }
 
-STDMETHODIMP BIOSSettings::COMGETTER(IDEControllerType)(IDEControllerType_T *aControllerType)
-{
-    CheckComArgOutPointerValid(aControllerType);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReadLock alock (this);
-
-    *aControllerType = mData->mIDEControllerType;
-
-    return S_OK;
-}
-
-STDMETHODIMP BIOSSettings::COMSETTER(IDEControllerType)(IDEControllerType_T aControllerType)
-{
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
-
-    AutoWriteLock alock (this);
-
-    /* make sure the value is allowed */
-    switch (aControllerType)
-    {
-        case IDEControllerType_PIIX3:
-        case IDEControllerType_PIIX4:
-        case IDEControllerType_ICH6:
-            break;
-        default:
-            return setError (E_INVALIDARG,
-                tr("Invalid IDE controller type '%d'"),
-                aControllerType);
-    }
-
-    mData.backup();
-
-    mData->mIDEControllerType = aControllerType;
-
-    return S_OK;
-}
-
 STDMETHODIMP BIOSSettings::COMGETTER(TimeOffset)(LONG64 *offset)
 {
     if (!offset)
@@ -588,27 +543,6 @@ HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
             mData->mTimeOffset = timeOffsetNode.value <LONG64> ("value");
     }
 
-    /* IDE controller type (optional, for old machines that lack this node,
-     * defaults to PIIX3) */
-    {
-        mData->mIDEControllerType = IDEControllerType_PIIX3;
-
-        Key ideControllerNode = biosNode.findKey ("IDEController");
-        if (!ideControllerNode.isNull())
-        {
-            const char *typeStr = ideControllerNode.stringValue ("type");
-            if (strcmp (typeStr, "PIIX3") == 0)
-                mData->mIDEControllerType = IDEControllerType_PIIX3;
-            else if (strcmp (typeStr, "PIIX4") == 0)
-                mData->mIDEControllerType = IDEControllerType_PIIX4;
-            else if (strcmp (typeStr, "ICH6") == 0)
-                mData->mIDEControllerType = IDEControllerType_ICH6;
-            else
-                ComAssertMsgFailedRet (("Invalid boot menu mode '%s'", typeStr),
-                                       E_FAIL);
-        }
-    }
-
     return S_OK;
 }
 
@@ -686,29 +620,6 @@ HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
     {
         Key pxedebugNode = biosNode.createKey ("PXEDebug");
         pxedebugNode.setValue <bool> ("enabled", !!mData->mPXEDebugEnabled);
-    }
-
-    /* IDE controller type */
-    {
-        Key ideControllerNode = biosNode.createKey ("IDEController");
-        const char *ideControllerTypeStr = NULL;
-        switch (mData->mIDEControllerType)
-        {
-            case IDEControllerType_PIIX3:
-                ideControllerTypeStr = "PIIX3";
-                break;
-            case IDEControllerType_PIIX4:
-                ideControllerTypeStr = "PIIX4";
-                break;
-            case IDEControllerType_ICH6:
-                ideControllerTypeStr = "ICH6";
-                break;
-            default:
-                ComAssertMsgFailedRet (("Invalid IDE Controller type: %d",
-                                        mData->mIDEControllerType),
-                                       E_FAIL);
-        }
-        ideControllerNode.setStringValue ("type", ideControllerTypeStr);
     }
 
     return S_OK;

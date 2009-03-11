@@ -3309,6 +3309,44 @@ HRESULT Console::onParallelPortChange (IParallelPort *aParallelPort)
 }
 
 /**
+ *  Called by IInternalSessionControl::OnStorageControllerChange().
+ *
+ *  @note Locks this object for writing.
+ */
+HRESULT Console::onStorageControllerChange ()
+{
+    LogFlowThisFunc (("\n"));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    /* Don't do anything if the VM isn't running */
+    if (!mpVM)
+        return S_OK;
+
+    HRESULT rc = S_OK;
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller (this);
+    CheckComRCReturnRC (autoVMCaller.rc());
+
+    /* nothing to do so far */
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED (rc))
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnStorageControllerChange ();
+    }
+
+    LogFlowThisFunc (("Leaving rc=%#x\n", rc));
+    return rc;
+}
+
+/**
  *  Called by IInternalSessionControl::OnVRDPServerChange().
  *
  *  @note Locks this object for writing.
@@ -6543,12 +6581,16 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 /**
  *  Reconfigures a VDI.
  *
- *  @param   pVM     The VM handle.
- *  @param   hda     The harddisk attachment.
- *  @param   phrc    Where to store com error - only valid if we return VERR_GENERAL_FAILURE.
+ *  @param   pVM           The VM handle.
+ *  @param   lInstance     The instance of the controller.
+ *  @param   enmController The type of the controller.
+ *  @param   hda           The harddisk attachment.
+ *  @param   phrc          Where to store com error - only valid if we return VERR_GENERAL_FAILURE.
  *  @return  VBox status code.
  */
-static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDiskAttachment *hda,
+static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
+                                              StorageControllerType_T enmController,
+                                              IHardDiskAttachment *hda,
                                               HRESULT *phrc)
 {
     LogFlowFunc (("pVM=%p hda=%p phrc=%p\n", pVM, hda, phrc));
@@ -6565,23 +6607,24 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDiskAttachment *hda,
      */
     ComPtr<IHardDisk> hardDisk;
     hrc = hda->COMGETTER(HardDisk)(hardDisk.asOutParam());                      H();
-    StorageBus_T enmBus;
-    hrc = hda->COMGETTER(Bus)(&enmBus);                                         H();
     LONG lDev;
     hrc = hda->COMGETTER(Device)(&lDev);                                        H();
-    LONG lChannel;
-    hrc = hda->COMGETTER(Channel)(&lChannel);                                   H();
+    LONG lPort;
+    hrc = hda->COMGETTER(Port)(&lPort);                                         H();
 
     int         iLUN;
     const char *pcszDevice = NULL;
+    bool        fSCSI = false;
 
-    switch (enmBus)
+    switch (enmController)
     {
-        case StorageBus_IDE:
+        case StorageControllerType_PIIX3:
+        case StorageControllerType_PIIX4:
+        case StorageControllerType_ICH6:
         {
-            if (lChannel >= 2 || lChannel < 0)
+            if (lPort >= 2 || lPort < 0)
             {
-                AssertMsgFailed(("invalid controller channel number: %d\n", lChannel));
+                AssertMsgFailed(("invalid controller channel number: %d\n", lPort));
                 return VERR_GENERAL_FAILURE;
             }
 
@@ -6591,19 +6634,33 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDiskAttachment *hda,
                 return VERR_GENERAL_FAILURE;
             }
 
-            iLUN = 2*lChannel + lDev;
+            iLUN = 2*lPort + lDev;
             pcszDevice = "piix3ide";
             break;
         }
-        case StorageBus_SATA:
+        case StorageControllerType_IntelAhci:
         {
-            iLUN = lChannel;
+            iLUN = lPort;
             pcszDevice = "ahci";
+            break;
+        }
+        case StorageControllerType_BusLogic:
+        {
+            iLUN = lPort;
+            pcszDevice = "buslogic";
+            fSCSI = true;
+            break;
+        }
+        case StorageControllerType_LsiLogic:
+        {
+            iLUN = lPort;
+            pcszDevice = "lsilogicscsi";
+            fSCSI = true;
             break;
         }
         default:
         {
-            AssertMsgFailed(("invalid disk controller type: %d\n", enmBus));
+            AssertMsgFailed(("invalid disk controller type: %d\n", enmController));
             return VERR_GENERAL_FAILURE;
         }
     }
@@ -6619,15 +6676,28 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDiskAttachment *hda,
     PCFGMNODE pLunL1;
     PCFGMNODE pLunL2;
 
-    pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/0/LUN#%d/AttachedDriver/", pcszDevice, iLUN);
+    /* SCSI has an extra driver between the device and the block driver. */
+    if (fSCSI)
+        pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/LUN#%d/AttachedDriver/AttachedDriver/", pcszDevice, lInstance, iLUN);
+    else
+        pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/LUN#%d/AttachedDriver/", pcszDevice, lInstance, iLUN);
 
     if (!pLunL1)
     {
-        PCFGMNODE pInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/0/", pcszDevice);
+        PCFGMNODE pInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/", pcszDevice, lInstance);
         AssertReturn(pInst, VERR_INTERNAL_ERROR);
 
         PCFGMNODE pLunL0;
         rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%d", iLUN);                     RC_CHECK();
+
+        if (fSCSI)
+        {
+            rc = CFGMR3InsertString(pLunL0, "Driver",              "SCSI");             RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+
+            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL0);                 RC_CHECK();
+        }
+
         rc = CFGMR3InsertString(pLunL0, "Driver",              "Block");            RC_CHECK();
         rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
         rc = CFGMR3InsertString(pCfg,   "Type",                "HardDisk");         RC_CHECK();
@@ -6858,13 +6928,33 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
             for (size_t i = 0; i < atts.size(); ++ i)
             {
                 PVMREQ pReq;
+                ComPtr<IStorageController> controller;
+                BSTR controllerName;
+                ULONG lInstance;
+                StorageControllerType_T enmController;
+
+                /*
+                 * We can't pass a storage controller object directly
+                 * (g++ complains about not being able to pass non POD types through '...')
+                 * so we have to query needed values here and pass them.
+                 */
+                rc = atts[i]->COMGETTER(Controller)(&controllerName);
+                if (FAILED (rc))
+                    break;
+
+                rc = that->mMachine->GetStorageControllerByName(controllerName, controller.asOutParam());
+                if (FAILED (rc))
+                    break;
+
+                rc = controller->COMGETTER(ControllerType)(&enmController);
+                rc = controller->COMGETTER(Instance)(&lInstance);
                 /*
                  *  don't leave the lock since reconfigureHardDisks isn't going
                  *  to access Console.
                  */
                 int vrc = VMR3ReqCall (that->mpVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
-                                       (PFNRT)reconfigureHardDisks, 3, that->mpVM,
-                                       atts [i], &rc);
+                                       (PFNRT)reconfigureHardDisks, 5, that->mpVM, lInstance,
+                                       enmController, atts [i], &rc);
                 if (VBOX_SUCCESS (rc))
                     rc = pReq->iStatus;
                 VMR3ReqFree (pReq);
