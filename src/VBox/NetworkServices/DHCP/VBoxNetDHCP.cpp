@@ -708,11 +708,21 @@ bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
      * crashed or whatever that have caused it to forget its existing lease.
      * If none was found, create a new lease for it and then construct a reply.
      */
+    VBoxNetDhcpLease *pLease = findLeaseByMacAddress(pDhcpMsg->bp_chaddr.Mac,
+                                                     true /* fEnsureUpToDateConfig */);
+    if (!pLease)
+        pLease = newLease(pDhcpMsg, cb);
+    if (!pLease)
+        return false;
+    pLease->setState(pLease::kState_Discover);
 
-    /** @todo this code IS required. */
+    handleDhcpReply(RTNET_DHCP_MT_OFFER, pLease, pDhcpMsg, cb);
     return true;
 }
 
+
+/** The requested address. */
+#define RTNET_DHCP_OPT_REQUESTED_ADDRESS    50
 
 /**
  * The client is requesting an offer.
@@ -727,11 +737,30 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
     /*
      * Windows will reissue these requests when rejoining a network if it thinks it
      * already has an address on the network. If we cannot find a valid lease,
-     * make a new one.
+     * make a new one and return NAC.
      */
-    /** @todo check how windows treats bp_xid here, it should match I think. If
-     *        it doesn't we've no way of filtering out broadcast replies to other
-     *        DHCP servers. */
+    uint8_t             uReplyType  = RTNET_DHCP_MT_NAC;
+    VBoxNetDhcpLease   *pLease      = NULL;
+    RTNETADDRIPV4       IPv4Addr;
+    if (findOptionIPv4Addr(RTNET_DHCP_OPT_REQUESTED_ADDRESS, pDhcpMsg, cb, &Ipv4Addr))
+    {
+        pLease = findLeaseByIpv4AndMacAddresses(Ipv4Addr, pDhcpMsg->bp_chaddr);
+        if (pLease)
+        {
+            /** @todo check how windows treats bp_xid here, it should match I think. If
+             *        it doesn't we've no way of filtering out broadcast replies to other
+             *        DHCP servers. */
+            if (pDhcpMsg->bp_xid == )
+            {
+            }
+
+        }
+    }
+
+    if (pLease)
+    {
+    }
+
 
     /** @todo this code IS required. */
     return true;
