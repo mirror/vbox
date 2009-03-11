@@ -81,7 +81,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(HardDisk *aHD, IN_BSTR aController, LONG aPort,
+    HRESULT init(HardDisk *aHD, CBSTR aController, LONG aPort,
                  LONG aDevice, bool aImplicit = false);
     void uninit();
 
