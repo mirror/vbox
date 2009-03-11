@@ -939,16 +939,6 @@ int pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppP
 
         /* Create a reference back to the PDPT by using the index in its shadow page. */
         rc = pgmPoolAlloc(pVM, GCPdPt, enmKind, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPdPt, &pShwPage);
-        if (rc == VERR_PGM_POOL_FLUSHED)
-        {
-            Log(("pgmShwSyncPaePDPtr: PGM pool flushed -> signal sync cr3\n"));
-            Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-# if defined(IN_RC)
-            PGMDynUnlockHCPage(pVM, (uint8_t *)pPdpe);
-# endif
-            return VINF_PGM_SYNC_CR3;
-        }
         AssertRCReturn(rc, rc);
 
         /* The PD was cached or created; hook it up now. */
@@ -1056,13 +1046,6 @@ int pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86P
 
         /* Create a reference back to the PDPT by using the index in its shadow page. */
         rc = pgmPoolAlloc(pVM, GCPml4, enmKind, pVM->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, &pShwPage);
-        if (rc == VERR_PGM_POOL_FLUSHED)
-        {
-            Log(("PGMShwSyncLongModePDPtr: PGM pool flushed (1) -> signal sync cr3\n"));
-            Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-            return VINF_PGM_SYNC_CR3;
-        }
         AssertRCReturn(rc, rc);
     }
     else
@@ -1101,13 +1084,6 @@ int pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86P
 
         /* Create a reference back to the PDPT by using the index in its shadow page. */
         rc = pgmPoolAlloc(pVM, GCPdPt, enmKind, pShwPage->idx, iPdPt, &pShwPage);
-        if (rc == VERR_PGM_POOL_FLUSHED)
-        {
-            Log(("PGMShwSyncLongModePDPtr: PGM pool flushed (2) -> signal sync cr3\n"));
-            Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-            return VINF_PGM_SYNC_CR3;
-        }
         AssertRCReturn(rc, rc);
     }
     else
@@ -1195,13 +1171,6 @@ int pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
         RTGCPTR64 GCPml4 = (RTGCPTR64)iPml4 << EPT_PML4_SHIFT;
 
         rc = pgmPoolAlloc(pVM, GCPml4, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4, &pShwPage);
-        if (rc == VERR_PGM_POOL_FLUSHED)
-        {
-            Log(("PGMShwSyncEPTPDPtr: PGM pool flushed (1) -> signal sync cr3\n"));
-            Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-            return VINF_PGM_SYNC_CR3;
-        }
         AssertRCReturn(rc, rc);
     }
     else
@@ -1229,13 +1198,6 @@ int pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
         RTGCPTR64 GCPdPt = (RTGCPTR64)iPdPt << EPT_PDPT_SHIFT;
 
         rc = pgmPoolAlloc(pVM, GCPdPt, PGMPOOLKIND_64BIT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
-        if (rc == VERR_PGM_POOL_FLUSHED)
-        {
-            Log(("PGMShwSyncEPTPDPtr: PGM pool flushed (2) -> signal sync cr3\n"));
-            Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-            return VINF_PGM_SYNC_CR3;
-        }
         AssertRCReturn(rc, rc);
     }
     else
