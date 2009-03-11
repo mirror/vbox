@@ -61,6 +61,8 @@ void *g_hVBoxXPCOMC = NULL;
 char g_szVBoxErrMsg[256];
 /** Pointer to the VBoxXPCOMC function table.  */
 PCVBOXXPCOM g_pVBoxFuncs = NULL;
+/** Pointer to VBoxGetXPCOMCFunctions for the loaded VBoxXPCOMC so/dylib/dll. */
+PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions = NULL;
 
 
 /**
@@ -113,7 +115,10 @@ static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
         {
             g_pVBoxFuncs = pfnGetFunctions(VBOX_XPCOMC_VERSION);
             if (g_pVBoxFuncs)
+            {
+                g_pfnGetFunctions = pfnGetFunctions;
                 rc = 0;
+            }
             else
                 sprintf(g_szVBoxErrMsg, "%.80s: pfnGetFunctions(%#x) failed",
                         pszBuf, VBOX_XPCOMC_VERSION);
@@ -197,5 +202,6 @@ void VBoxCGlueTerm(void)
         g_hVBoxXPCOMC = NULL;
     }
     g_pVBoxFuncs = NULL;
+    g_pfnGetFunctions = NULL;
 }
 
