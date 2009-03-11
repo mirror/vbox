@@ -1369,8 +1369,9 @@ VMMDECL(X86PDPE) PGMGstGetPaePDPtr(PVM pVM, unsigned iPdpt)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
 {
-    Assert(pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-    return pVM->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
+    PPGMPOOLPAGE pPoolPage = pVM->pgm.s.CTX_SUFF(pShwPageCR3);
+    AssertPtrReturn(pPoolPage, 0);
+    return pPoolPage->Core.Key;
 }
 
 
