@@ -47,8 +47,7 @@ endif
 ifeq ($(KBUILD_TARGET),linux)
  #VBoxOGL_DRI = 1
  #VBoxOGL_FAKEDRI = 1
- #VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
- VBOX_PATH_MESA_SOURCE = /mnt/chost/Sun/Mesa-7.2
+ VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
 endif
 
 #
@@ -67,11 +66,13 @@ VBoxOGL_INCS.linux     = \
 ifdef VBoxOGL_DRI
  VBoxOGL_DEFS          += VBOXOGL_DRI IN_DRI_DRIVER
  VBoxOGL_INCS          += \
+    $(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.5
 	$(VBOX_PATH_MESA_SOURCE) \
 	$(VBOX_PATH_MESA_SOURCE)/include \
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/ \
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/glapi \
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
+	$(VBOX_PATH_MESA_SOURCE)/src/mesa/drivers/dri/common \
 	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.5
 else ifdef VBoxOGL_FAKEDRI
  VBoxOGL_DEFS          += VBOXOGL_FAKEDRI
@@ -81,6 +82,7 @@ else ifdef VBoxOGL_FAKEDRI
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/ \
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/glapi \
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
+	$(VBOX_PATH_MESA_SOURCE)/src/mesa/drivers/dri/common \
 	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.5
 endif
 ifeq ($(KBUILD_TARGET),win)
