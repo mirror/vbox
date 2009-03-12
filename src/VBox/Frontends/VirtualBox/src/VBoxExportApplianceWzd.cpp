@@ -25,6 +25,9 @@
 #include "QIWidgetValidator.h"
 #include "VBoxProblemReporter.h"
 
+/* Qt includes */
+#include <QDir>
+
 class VMListWidgetItems: public QListWidgetItem
 {
 public:

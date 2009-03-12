@@ -49,6 +49,7 @@
 #include <QThread>
 #include <QPainter>
 #include <QTimer>
+#include <QDir>
 
 #include <math.h>
 
@@ -4842,6 +4843,24 @@ QList <QPair <QString, QString> > VBoxGlobal::HDDBackends()
             backendPropList << QPair<QString, QString> (hardDiskFormats [i].GetName(), f.join(" "));
     }
     return backendPropList;
+}
+
+/* static */
+QString VBoxGlobal::documentsPath()
+{
+    QString path;
+#if QT_VERSION < 0x040400
+    path = QDir::homePath();
+#else
+    path = QDesktopServices::storageLocation (QDesktopServices::DocumentsLocation);
+#endif
+
+    /* Make sure the path exists */
+    QDir dir (path);
+    while (!dir.exists())
+        dir.cdUp();
+
+    return QDir::cleanPath (dir.canonicalPath());
 }
 
 // Public slots
