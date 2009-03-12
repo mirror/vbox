@@ -254,7 +254,7 @@ RTDECL(bool)     RTNetIPv4IsUDPValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, voi
 #pragma pack(1)
 typedef struct RTNETBOOTP
 {
-    /** 00 - The packet opcode. */
+    /** 00 - The packet opcode (RTNETBOOTP_OP_*). */
     uint8_t         bp_op;
     /** 01 - Hardware address type. Same as RTNETARPHDR::ar_htype.  */
     uint8_t         bp_htype;
@@ -266,7 +266,7 @@ typedef struct RTNETBOOTP
     uint32_t        bp_xid;
     /** 08 - Seconds since boot started. */
     uint16_t        bp_secs;
-    /** 0a - Unused (BOOTP) / Flags (DHCP). */
+    /** 0a - Unused (BOOTP) / Flags (DHCP) (RTNET_DHCP_FLAGS_*).  */
     uint16_t        bp_flags;
     /** 0c - Client IPv4 address. */
     RTNETADDRIPV4   bp_ciaddr;
@@ -313,6 +313,12 @@ typedef RTNETBOOTP const *PCRTNETBOOTP;
 /** Minimum DHCP packet length. For quick validation, no standard thing really. */
 #define RTNETBOOTP_DHCP_MIN_LEN     0xf1
 
+/** The normal size of the a DHCP packet (i.e. a RTNETBOOTP).
+ * Same as RTNET_DHCP_OPT_SIZE, just expressed differently.  */
+#define RTNET_DHCP_NORMAL_SIZE      (0xec + 4 + RTNET_DHCP_OPT_SIZE)
+/** The normal size of RTNETBOOTP::bp_vend::Dhcp::dhcp_opts.  */
+#define RTNET_DHCP_OPT_SIZE         (312 - 4)
+
 /** @name BOOTP packet opcode values
  * @{ */
 #define RTNETBOOTP_OP_REQUEST       1
@@ -347,11 +353,45 @@ typedef RTNETDHCPOPT const *PCRTNETDHCPOPT;
 /** @name DHCP options
  * @{ */
 /** 1 byte padding, this has no dhcp_len field. */
-#define RTNET_DHCP_OPT_PAD          0
+#define RTNET_DHCP_OPT_PAD                  0
+
+/** The subnet mask. */
+#define RTNET_DHCP_OPT_SUBNET_MASK          1
+/** The time offset. */
+#define RTNET_DHCP_OPT_TIME_OFFSET          2
+/** The routers for the subnet. */
+#define RTNET_DHCP_OPT_ROUTERS              3
+/** Domain Name Server. */
+#define RTNET_DHCP_OPT_DNS                  6
+/** Host name. */
+#define RTNET_DHCP_OPT_HOST_NAME            12
+/** Domain name. */
+#define RTNET_DHCP_OPT_DOMAIN_NAME          15
+
+/** The requested address. */
+#define RTNET_DHCP_OPT_REQ_ADDR             50
+/** The lease time in seconds. */
+#define RTNET_DHCP_OPT_LEASE_TIME           51
+/** Option overload.
+ *  Indicates that the bp_file and/or bp_sname holds contains DHCP options. */
+#define RTNET_DHCP_OPT_OPTION_OVERLOAD      52
 /** Have a 8-bit message type value as data, see RTNET_DHCP_MT_*. */
-#define RTNET_DHCP_OPT_MSG_TYPE     53
+#define RTNET_DHCP_OPT_MSG_TYPE             53
+/** Server ID. */
+#define RTNET_DHCP_OPT_SERVER_ID            54
+/** Parameter request list. */
+#define RTNET_DHCP_OPT_PARAM_REQ_LIST       55
+/** The maximum DHCP message size a client is willing to accept. */
+#define RTNET_DHCP_OPT_MAX_DHCP_MSG_SIZE    57
+/** Client ID. */
+#define RTNET_DHCP_OPT_CLIENT_ID            61
+/** TFTP server name. */
+#define RTNET_DHCP_OPT_TFTP_SERVER_NAME     66
+/** Bootfile name. */
+#define RTNET_DHCP_OPT_BOOTFILE_NAME        67
+
 /** Marks the end of the DHCP options, this has no dhcp_len field. */
-#define RTNET_DHCP_OPT_END          255
+#define RTNET_DHCP_OPT_END                  255
 /** @} */
 
 /** @name DHCP Message Types (option 53)
