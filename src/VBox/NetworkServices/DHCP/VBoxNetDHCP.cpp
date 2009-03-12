@@ -173,7 +173,63 @@ public:
                 RTStrmPrintf(g_pStdErr, " --netmask");
             return 2;
         }
+
+        if (RT_N2H_U32(m_UpperAddr.u) < RT_N2H_U32(m_LowerAddr.u))
+        {
+            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: The --upper-ip value is lower than the --lower-ip one!\n"
+                                    "             %d.%d.%d.%d < %d.%d.%d.%d\n",
+                         m_UpperAddr.au8[0], m_UpperAddr.au8[1], m_UpperAddr.au8[2], m_UpperAddr.au8[3],
+                         m_LowerAddr.au8[0], m_LowerAddr.au8[1], m_LowerAddr.au8[2], m_LowerAddr.au8[3]);
+            return 3;
+        }
+
+        /* the code goes insane if we have too many atm. lazy bird */
+        uint32_t cIPs = RT_N2H_U32(m_UpperAddr.u) - RT_N2H_U32(m_LowerAddr.u);
+        if (cIPs > 1024)
+        {
+            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: Too many IPs between --upper-ip and --lower-ip! %d (max 1024)\n"
+                                    "             %d.%d.%d.%d < %d.%d.%d.%d\n",
+                         cIPs,
+                         m_UpperAddr.au8[0], m_UpperAddr.au8[1], m_UpperAddr.au8[2], m_UpperAddr.au8[3],
+                         m_LowerAddr.au8[0], m_LowerAddr.au8[1], m_LowerAddr.au8[2], m_LowerAddr.au8[3]);
+            return 3;
+        }
         return 0;
+    }
+
+    /**
+     * Is this config for one specific client?
+     *
+     * @return  true / false.
+     */
+    bool            isOneSpecificClient(void) const
+    {
+        return m_LowerAddr.u == m_UpperAddr.u
+            && m_MacAddresses.size() > 0;
+    }
+
+    /**
+     * Checks if this config matches the specified MAC address.
+     *
+     * @returns true / false.
+     *
+     * @param   pMac    The MAC address to match.
+     */
+    bool            matchesMacAddress(PCRTMAC pMac) const
+    {
+        size_t i = m_MacAddresses.size();
+        if (RT_LIKELY(i < 1))
+            return true; /* no entries == ALL wildcard match */
+
+        while (i--)
+        {
+            PCRTMAC pCur = &m_MacAddresses[i];
+            if (    pCur->au16[0] == pMac->au16[0]
+                &&  pCur->au16[1] == pMac->au16[1]
+                &&  pCur->au16[2] == pMac->au16[2])
+                return true;
+        }
+        return false;
     }
 
 };
@@ -186,8 +242,10 @@ class VBoxNetDhcpLease
 public:
     typedef enum State
     {
+        /** Invalid. */
+        kState_Invalid = 0,
         /** The lease is free / released. */
-        kState_Free = 0,
+        kState_Free,
         /** An offer has been made.
          * Expire time indicates when the offer expires. */
         kState_Offer,
@@ -195,10 +253,6 @@ public:
          * Expire time indicates when the lease expires. */
         kState_Active
     } State;
-
-    void            offer(uint32_t xid);
-    void            activate(void);
-    void            release(void);
 
     /** The client MAC address. */
     RTMAC           m_MacAddress;
@@ -213,6 +267,91 @@ public:
     uint32_t        m_xid;
     /** The configuration for this lease. */
     VBoxNetDhcpCfg *m_pCfg;
+
+public:
+    /** Constructor taking an IPv4 address and a Config. */
+    VBoxNetDhcpLease(RTNETADDRIPV4 IPv4Addr, VBoxNetDhcpCfg *pCfg)
+    {
+        m_pCfg          = pCfg;
+        m_IPv4Address   = IPv4Addr;
+
+        m_MacAddress.au16[0] = m_MacAddress.au16[1] =  m_MacAddress.au16[2] = 0xff;
+        m_enmState      = kState_Free;
+        RTTimeSpecSetSeconds(&m_ExpireTime, 0);
+        m_xid           = UINT32_MAX;
+    }
+
+    /** Destructor.  */
+    ~VBoxNetDhcpLease()
+    {
+        m_IPv4Address.u = UINT32_MAX;
+        m_pCfg          = NULL;
+        m_MacAddress.au16[0] = m_MacAddress.au16[1] =  m_MacAddress.au16[2] = 0xff;
+        m_enmState      = kState_Free;
+        m_xid           = UINT32_MAX;
+    }
+
+    void            offer(uint32_t xid);
+    void            activate(void);
+    void            activate(uint32_t xid);
+    void            release(void);
+    bool            hasExpired(void) const;
+
+    /**
+     * Checks if the lease is in use or not.
+     *
+     * @returns true if active, false if free or expired.
+     *
+     * @param   pNow        The current time to use. Optional.
+     */
+    bool            isInUse(PCRTTIMESPEC pNow = NULL) const
+    {
+        if  (   m_enmState == kState_Offer
+             || m_enmState == kState_Active)
+        {
+            RTTIMESPEC Now;
+            if (!pNow)
+                pNow = RTTimeNow(&Now);
+            return RTTimeSpecGetSeconds(&m_ExpireTime) > RTTimeSpecGetSeconds(pNow);
+        }
+        return false;
+    }
+
+    /**
+     * Is this lease for one specific client?
+     *
+     * @return  true/false.
+     */
+    bool            isOneSpecificClient(void) const
+    {
+        return m_pCfg
+            && m_pCfg->isOneSpecificClient();
+    }
+
+    /**
+     * Is this lease currently being offered to a client.
+     *
+     * @returns true / false.
+     */
+    bool            isBeingOffered(void) const
+    {
+        return m_enmState == kState_Offer
+            && isInUse();
+    }
+
+    /**
+     * Is the lease in the current config or not.
+     *
+     * When updating the config we might leave active leases behind which aren't
+     * included in the new config. These will have m_pCfg set to NULL and should be
+     * freed up when they expired.
+     *
+     * @returns true / false.
+     */
+    bool            isInCurrentConfig(void) const
+    {
+        return m_pCfg != NULL;
+    }
 };
 
 /**
@@ -230,6 +369,8 @@ public:
 
 protected:
     int                 addConfig(VBoxNetDhcpCfg *pCfg);
+    void                explodeConfig(void);
+
     bool                handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t cb);
     bool                handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb);
     bool                handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb);
@@ -237,10 +378,9 @@ protected:
     bool                handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb);
     void                makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRTNETBOOTP pDhcpMsg, size_t cb);
 
-    VBoxNetDhcpLease   *findLeaseByMacAddress(PCRTMAC pMacAddress, bool fEnsureUpToDateConfig);
+    VBoxNetDhcpLease   *findLeaseByMacAddress(PCRTMAC pMacAddress);
     VBoxNetDhcpLease   *findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4Addr, PCRTMAC pMacAddress);
     VBoxNetDhcpLease   *newLease(PCRTNETBOOTP pDhcpMsg, size_t cb);
-    void                updateLeaseConfig(VBoxNetDhcpLease *pLease);
 
     static uint8_t const *findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, size_t *pcbMaxOpt);
     static bool         findOptionIPv4Addr(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, PRTNETADDRIPV4 pIPv4Addr);
@@ -259,7 +399,7 @@ protected:
     /** @} */
 
     /** The current configs. */
-    std::vector<VBoxNetDhcpCfg> m_Cfgs;
+    std::vector<VBoxNetDhcpCfg *> m_Cfgs;
 
     /** The current leases. */
     std::vector<VBoxNetDhcpLease> m_Leases;
@@ -316,6 +456,19 @@ void VBoxNetDhcpLease::activate(void)
 
 
 /**
+ * Activate this lease with a new transaction ID.
+ *
+ * @param   xid     The transaction ID.
+ * @todo    check if this is really necessary.
+ */
+void VBoxNetDhcpLease::activate(uint32_t xid)
+{
+    activate();
+    m_xid = xid;
+}
+
+
+/**
  * Release a lease either upon client request or because it didn't quite match a
  * DHCP_REQUEST.
  */
@@ -325,6 +478,24 @@ void VBoxNetDhcpLease::release(void)
     RTTimeNow(&m_ExpireTime);
     RTTimeSpecAddSeconds(&m_ExpireTime, 5);
 }
+
+
+/**
+ * Checks if the lease has expired or not.
+ *
+ * This just checks the expiration time not the state. This is so that this
+ * method will work for reusing RELEASEd leases when the client comes back after
+ * a reboot or ipconfig /renew. Callers not interested in info on released
+ * leases should check the state first.
+ *
+ * @returns true if expired, false if not.
+ */
+bool VBoxNetDhcpLease::hasExpired() const
+{
+    RTTIMESPEC Now;
+    return RTTimeSpecGetSeconds(&m_ExpireTime) > RTTimeSpecGetSeconds(RTTimeNow(&Now));
+}
+
 
 
 
@@ -356,18 +527,19 @@ VBoxNetDhcp::VBoxNetDhcp()
     memset(&m_CurHdrs, '\0', sizeof(m_CurHdrs));
 
 #if 1 /* while hacking. */
-    VBoxNetDhcpCfg DefCfg;
-    DefCfg.m_LowerAddr.u    = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,100)));
-    DefCfg.m_UpperAddr.u    = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,250)));
-    DefCfg.m_SubnetMask.u   = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8(255,255,255,  0)));
+    VBoxNetDhcpCfg *pDefCfg = new VBoxNetDhcpCfg();
+    pDefCfg->m_LowerAddr.u    = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,100)));
+    pDefCfg->m_UpperAddr.u    = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,250)));
+    pDefCfg->m_SubnetMask.u   = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8(255,255,255,  0)));
     RTNETADDRIPV4 Addr;
-    Addr.u                  = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  1)));
-    DefCfg.m_Routers.push_back(Addr);
-    Addr.u                  = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  2)));
-    DefCfg.m_DNSes.push_back(Addr);
-    DefCfg.m_DomainName     = "vboxnetdhcp.org";
-    DefCfg.m_cSecLease      = 60*60; /* 1 hour */
-    DefCfg.m_TftpServer     = "10.0.2.3"; //??
+    Addr.u                    = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  1)));
+    pDefCfg->m_Routers.push_back(Addr);
+    Addr.u                    = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  2)));
+    pDefCfg->m_DNSes.push_back(Addr);
+    pDefCfg->m_DomainName     = "vboxnetdhcp.org";
+    pDefCfg->m_cSecLease      = 60*60; /* 1 hour */
+    pDefCfg->m_TftpServer     = "10.0.2.3"; //??
+    this->addConfig(pDefCfg);
 #endif
 }
 
@@ -414,10 +586,84 @@ int VBoxNetDhcp::addConfig(VBoxNetDhcpCfg *pCfg)
     {
         rc = pCfg->validate();
         if (!rc)
-            m_Cfgs.push_back(*pCfg);
-        delete pCfg;
+            m_Cfgs.push_back(pCfg);
+        else
+            delete pCfg;
     }
     return rc;
+}
+
+
+/**
+ * Explodes the config into leases.
+ *
+ * @remarks     This code is brute force and not very fast nor memory efficient.
+ *              We will have to revisit this later.
+ *
+ * @remarks     If an IP has been reconfigured for a fixed mac address and it's
+ *              already leased to a client, we it won't be available until the
+ *              client releases its lease or it expires.
+ */
+void VBoxNetDhcp::explodeConfig(void)
+{
+    RTTIMESPEC  Now;
+    RTTimeNow(&Now);
+
+    /*
+     * Remove all non-active leases from the vector and zapping the
+     * config pointers of the once left behind.
+     */
+    std::vector<VBoxNetDhcpLease>::iterator Itr = m_Leases.begin();
+    while (Itr != m_Leases.end())
+    {
+        if (!Itr->isInUse(&Now))
+            Itr = m_Leases.erase(Itr);
+        else
+        {
+            Itr->m_pCfg = NULL;
+            Itr++;
+        }
+    }
+
+    /*
+     * Loop thru the configurations in reverse order, giving the last
+     * configs priority of the newer ones.
+     */
+    size_t iCfg = m_Cfgs.size();
+    while (iCfg-- > 0)
+    {
+        VBoxNetDhcpCfg *pCfg = m_Cfgs[iCfg];
+
+        /* Expand the IP lease range. */
+        uint32_t const uEnd = RT_N2H_U32(pCfg->m_UpperAddr.u);
+        for (uint32_t i = RT_N2H_U32(pCfg->m_LowerAddr.u); i < uEnd; i++)
+        {
+            RTNETADDRIPV4 IPv4Addr;
+            IPv4Addr.u = RT_H2N_U32(i);
+
+            /* Check if it exists and is configured. */
+            VBoxNetDhcpLease *pLease = NULL;
+            for (size_t i = 0; i < m_Leases.size(); i++)
+                if (m_Leases[i].m_IPv4Address.u == IPv4Addr.u)
+                {
+                    pLease = &m_Leases[i];
+                    break;
+                }
+            if (pLease)
+            {
+                if (!pLease->m_pCfg)
+                    pLease->m_pCfg = pCfg;
+            }
+            else
+            {
+                /* add it. */
+                VBoxNetDhcpLease NewLease(IPv4Addr, pCfg);
+                m_Leases.push_back(NewLease);
+                debugPrint(10, false, "exploseConfig: new lease %d.%d.%d.%d",
+                           IPv4Addr.au8[0], IPv4Addr.au8[1], IPv4Addr.au8[2], IPv4Addr.au8[3]);
+            }
+        }
+    }
 }
 
 
@@ -498,8 +744,7 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                     if (!pCurCfg)
                     {
                         RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: new VBoxDhcpCfg failed\n");
-                        rc = 1;
-                        break;
+                        return 1;
                     }
                 }
 
@@ -524,8 +769,7 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                     case 0: /* ignore */ break;
                     default:
                         AssertMsgFailed(("%d", rc));
-                        rc = 1;
-                        break;
+                        return 1;
                 }
                 break;
 
@@ -547,6 +791,12 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                 break;
         }
     }
+
+    /*
+     * Do the reconfig. (move this later)
+     */
+    if (!rc)
+        explodeConfig();
 
     return rc;
 }
@@ -778,12 +1028,19 @@ bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
      * crashed or whatever that have caused it to forget its existing lease.
      * If none was found, create a new lease for it and then construct a reply.
      */
-    VBoxNetDhcpLease *pLease = findLeaseByMacAddress(&pDhcpMsg->bp_chaddr.Mac,
-                                                     true /* fEnsureUpToDateConfig */);
-    if (!pLease)
+    VBoxNetDhcpLease *pLease = findLeaseByMacAddress(&pDhcpMsg->bp_chaddr.Mac);
+    if (    !pLease
+        ||  !pLease->isInCurrentConfig())
         pLease = newLease(pDhcpMsg, cb);
     if (!pLease)
         return false;
+    debugPrint(1, true, "Offering %d.%d.%d.%d to %.6Rhxs xid=%#x",
+               pLease->m_IPv4Address.au8[0],
+               pLease->m_IPv4Address.au8[1],
+               pLease->m_IPv4Address.au8[2],
+               pLease->m_IPv4Address.au8[3],
+               &pDhcpMsg->bp_chaddr.Mac,
+               pDhcpMsg->bp_xid);
     pLease->offer(pDhcpMsg->bp_xid);
 
     makeDhcpReply(RTNET_DHCP_MT_OFFER, pLease, pDhcpMsg, cb);
@@ -803,6 +1060,8 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
     /** @todo Probably need to match the server IP here to work correctly with
      *        other servers. */
+    /** @todo check this against the RFC and real code. the code is kind of
+     *        fishy... */
 
     /*
      * Windows will reissue these requests when rejoining a network if it thinks it
@@ -813,8 +1072,14 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
     if (findOptionIPv4Addr(RTNET_DHCP_OPT_REQ_ADDR, pDhcpMsg, cb, &IPv4Addr))
     {
         VBoxNetDhcpLease *pLease = findLeaseByIpv4AndMacAddresses(IPv4Addr, &pDhcpMsg->bp_chaddr.Mac);
-        if (pLease)
+        if (    pLease
+            &&  pLease->isInCurrentConfig())
         {
+            if (pLease->isBeingOffered())
+                debugPrint(2, true, "REQUEST for offered lease.");
+            else
+                debugPrint(1, true, "REQUEST for lease not on offer.");
+
             /* Check if the xid matches, if it doesn't it's not our call. */
 #if 0      /** @todo check how windows treats bp_xid here, it should match I think. If
             *        it doesn't we've no way of filtering out broadcast replies to other
@@ -831,7 +1096,7 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
             /*
              * Ack it.
              */
-            pLease->activate();
+            pLease->activate(pDhcpMsg->bp_xid);
             makeDhcpReply(RTNET_DHCP_MT_ACK, pLease, pDhcpMsg, cb);
         }
         else
@@ -846,12 +1111,14 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
                 /** @todo match requested config later */)
             {
                 /* ACK it. */
+                debugPrint(1, true, "REQUEST for lease not on offer, new lease matches.");
                 pLease->activate();
                 makeDhcpReply(RTNET_DHCP_MT_ACK, pLease, pDhcpMsg, cb);
             }
             else
             {
                 /* NAK it */
+                debugPrint(1, true, "REQUEST for lease not on offer, NACnig it.");
                 if (pLease)
                     pLease->release();
                 pLease->activate();
@@ -1207,7 +1474,7 @@ public:
      */
     bool optEnd(void)
     {
-        return hasOverflowed();
+        return !hasOverflowed();
     }
 };
 
@@ -1290,9 +1557,8 @@ void VBoxNetDhcp::makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRT
  *
  * @returns Pointer to the lease if found, NULL if not found.
  * @param   pMacAddress             The mac address.
- * @param   fEnsureUpToDateConfig   Whether to update the configuration.
  */
-VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByMacAddress(PCRTMAC pMacAddress, bool fEnsureUpToDateConfig)
+VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByMacAddress(PCRTMAC pMacAddress)
 {
     size_t iLease = m_Leases.size();
     while (iLease-- > 0)
@@ -1302,11 +1568,7 @@ VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByMacAddress(PCRTMAC pMacAddress, bool f
             &&  pLease->m_MacAddress.au16[0] == pMacAddress->au16[0]
             &&  pLease->m_MacAddress.au16[1] == pMacAddress->au16[1]
             &&  pLease->m_MacAddress.au16[2] == pMacAddress->au16[2])
-        {
-            if (fEnsureUpToDateConfig)
-                updateLeaseConfig(pLease);
             return pLease;
-        }
     }
 
     return NULL;
@@ -1349,21 +1611,76 @@ VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4
  */
 VBoxNetDhcpLease *VBoxNetDhcp::newLease(PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
-    debugPrint(0, true, "newLease is not implemented");
-    return NULL;
-}
+    RTMAC const MacAddr = pDhcpMsg->bp_chaddr.Mac;
+    RTTIMESPEC  Now;
+    RTTimeNow(&Now);
 
+    /*
+     * Search the possible leases.
+     *
+     * We'll try do all the searches in one pass, that is to say, perfect
+     * match, old lease, and next free/expired lease.
+     */
+    VBoxNetDhcpLease *pBest = NULL;
+    VBoxNetDhcpLease *pOld  = NULL;
+    VBoxNetDhcpLease *pFree = NULL;
 
-/**
- * Updates the configuration of the lease in question.
- *
- * @todo it's possible that we'll simplify this stuff by expanding all the
- *       possible leases when loading the config instead in newLease()...
- *
- * @param   pLease          The lease.
- */
-void VBoxNetDhcp::updateLeaseConfig(VBoxNetDhcpLease *pLease)
-{
+    size_t cLeases = m_Leases.size();
+    for (size_t i = 0; i < cLeases; i++)
+    {
+        VBoxNetDhcpLease *pCur = &m_Leases[i];
+
+        /* Skip it if no configuration, that means its not in the current config. */
+        if (!pCur->m_pCfg)
+            continue;
+
+        /* best */
+        if (    pCur->isOneSpecificClient()
+            &&  pCur->m_pCfg->matchesMacAddress(&MacAddr))
+        {
+            if (    !pBest
+                ||  pBest->m_pCfg->m_MacAddresses.size() < pCur->m_pCfg->m_MacAddresses.size())
+                pBest = pCur;
+        }
+
+        /* old lease */
+        if (    pCur->m_MacAddress.au16[0] == MacAddr.au16[0]
+            &&  pCur->m_MacAddress.au16[1] == MacAddr.au16[1]
+            &&  pCur->m_MacAddress.au16[2] == MacAddr.au16[2])
+        {
+            if (    !pOld
+                ||  RTTimeSpecGetSeconds(&pCur->m_ExpireTime) > RTTimeSpecGetSeconds(&pFree->m_ExpireTime))
+                pOld = pCur;
+        }
+
+        /* expired lease */
+        if (!pCur->isInUse(&Now))
+        {
+            if (    !pFree
+                ||  RTTimeSpecGetSeconds(&pCur->m_ExpireTime) < RTTimeSpecGetSeconds(&pFree->m_ExpireTime))
+                pFree = pCur;
+        }
+    }
+
+    VBoxNetDhcpLease *pNew = pBest;
+    if (!pNew)
+        pNew = pOld;
+    if (!pNew)
+        pNew = pFree;
+    if (!pNew)
+    {
+        debugPrint(0, true, "No more leases.");
+        return NULL;
+    }
+
+    /*
+     * Init the lease.
+     */
+    pNew->m_MacAddress = MacAddr;
+    pNew->m_xid        = pDhcpMsg->bp_xid;
+    /** @todo extract the client id. */
+
+    return pNew;
 }
 
 
