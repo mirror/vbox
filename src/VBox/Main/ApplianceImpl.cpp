@@ -1400,8 +1400,10 @@ STDMETHODIMP Appliance::Interpret()
                                 // @todo: figure out the IDE types
                                 /* Use PIIX4 as default */
                                 Utf8Str strType = "PIIX4";
-                                if (!RTStrICmp(hdc.strControllerType.c_str(), "PIIX3"))
+                                if (!hdc.strControllerType.compare("PIIX3"), Utf8Str::CaseInsensitive)
                                     strType = "PIIX3";
+                                else if (!hdc.strControllerType.compare("ICH6"), Utf8Str::CaseInsensitive)
+                                    strType = "ICH6";
                                 pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
                                                    strControllerID,
                                                    hdc.strControllerType,
@@ -1449,7 +1451,7 @@ STDMETHODIMP Appliance::Interpret()
                             if (cSCSIused < 1)
                             {
                                 Utf8Str hdcController = "LsiLogic";
-                                if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
+                                if (!hdc.strControllerType.compare("BusLogic", Utf8Str::CaseInsensitive))
                                     hdcController = "BusLogic";
                                 pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
                                                    strControllerID,
@@ -1486,9 +1488,8 @@ STDMETHODIMP Appliance::Interpret()
                     //  - figure out all possible vmdk formats we also support
                     //  - figure out if there is a url specifier for vhd already
                     //  - we need a url specifier for the vdi format
-                    if (    (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#sparse"))
-                         || (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed"))
-                       )
+                    if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
+                        || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive))
                     {
                         /* If the href is empty use the VM name as filename */
                         Utf8Str strFilename = di.strHref;
@@ -1840,7 +1841,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
             if (vsdeAudioAdapter.size() > 0)
             {
                 const Utf8Str& audioAdapterVBox = vsdeAudioAdapter.front()->strVbox;
-                if (RTStrICmp(audioAdapterVBox, "null") != 0)
+                if (audioAdapterVBox.compare("null", Utf8Str::CaseInsensitive) != 0)
                 {
                     uint32_t audio = RTStrToUInt32(audioAdapterVBox.c_str());
                     ComPtr<IAudioAdapter> audioAdapter;
@@ -2084,8 +2085,8 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                         {
                             /* Which format to use? */
                             Bstr srcFormat = L"VDI";
-                            if (   (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#sparse"))
-                                || (!RTStrICmp(di.strFormat.c_str(), "http://www.vmware.com/specifications/vmdk.html#compressed")))
+                            if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
+                                || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive))
                                 srcFormat = L"VMDK";
                             /* Create an empty hard disk */
                             rc = pVirtualBox->CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
