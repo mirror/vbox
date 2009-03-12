@@ -29,6 +29,7 @@
 
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include "VBoxHelpActions.h"
 
 /* Qt includes */
 #include <QMainWindow>

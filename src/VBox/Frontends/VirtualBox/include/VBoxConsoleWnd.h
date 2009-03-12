@@ -28,6 +28,7 @@
 #include "QIWithRetranslateUI.h"
 
 #include "VBoxProblemReporter.h"
+#include "VBoxHelpActions.h"
 
 /* Qt includes */
 #include <QMainWindow>
