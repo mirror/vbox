@@ -461,6 +461,15 @@ public:
         return ::RTStrICmp(str, pcsz);
     }
 
+    bool endsWith (const Utf8Str &that) const
+    {
+        if (length() < that.length())
+            return false;
+
+        int l = length() - that.length();
+        return ::strcmp (&str[l], that.str) == 0;
+    }
+
     bool isNull() const { return str == NULL; }
     operator bool() const { return !isNull(); }
 
