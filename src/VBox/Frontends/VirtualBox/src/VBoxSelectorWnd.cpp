@@ -410,7 +410,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mFileApplianceImportAction->setIcon (VBoxGlobal::iconSet (":/import_16px.png"));
 
     mFileApplianceExportAction = new QAction (this);
-    mFileApplianceExportAction->setIcon (VBoxGlobal::iconSet (":/import_16px.png"));
+    mFileApplianceExportAction->setIcon (VBoxGlobal::iconSet (":/export_16px.png"));
 
     mFileSettingsAction = new QAction(this);
     mFileSettingsAction->setMenuRole (QAction::PreferencesRole);
