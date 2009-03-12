@@ -133,8 +133,8 @@ else ifdef VBoxOGL_FAKEDRI
         $(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm
 endif
 VBoxOGL_LIBS = \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_OGL_CRUTIL) \
 	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET),linux solaris)
