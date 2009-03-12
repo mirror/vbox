@@ -314,21 +314,22 @@ static int vboxnetudpSend(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBU
 
     /* the IP header */
     RTNETIPV4 IpHdr;
+    size_t cbIdHdr = RT_UOFFSETOF(RTNETIPV4, ip_options);
     IpHdr.ip_v          = 4;
-    IpHdr.ip_hl         = sizeof(RTNETIPV4) / sizeof(uint32_t);
+    IpHdr.ip_hl         = cbIdHdr / sizeof(uint32_t);
     IpHdr.ip_tos        = 0;
-    IpHdr.ip_len        = RT_H2BE_U16(cbData + sizeof(RTNETUDP) + sizeof(RTNETIPV4));
+    IpHdr.ip_len        = RT_H2BE_U16(cbData + sizeof(RTNETUDP) + cbIdHdr);
     IpHdr.ip_id         = (uint16_t)RTRandU32();
     IpHdr.ip_off        = 0;
     IpHdr.ip_ttl        = 255;
     IpHdr.ip_p          = RTNETIPV4_PROT_UDP;
     IpHdr.ip_sum        = 0;
-    IpHdr.ip_src.u      = 0;
-    IpHdr.ip_dst.u      = UINT32_C(0xffffffff); /* broadcast */
+    IpHdr.ip_src        = SrcIPv4Addr;
+    IpHdr.ip_dst        = DstIPv4Addr;
     IpHdr.ip_sum        = RTNetIPv4HdrChecksum(&IpHdr);
 
     aSegs[1].pv   = &IpHdr;
-    aSegs[1].cb   = sizeof(IpHdr);
+    aSegs[1].cb   = cbIdHdr;
     aSegs[1].Phys = NIL_RTHCPHYS;
 
 
