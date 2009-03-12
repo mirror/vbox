@@ -74,18 +74,6 @@ VBoxComUnallocMem(void *ptr)
     }
 }
 
-int
-VBoxSetEnv(const char *pszVar, const char *pszValue)
-{
-    return RTEnvSet(pszVar, pszValue);
-}
-
-const char *
-VBoxGetEnv(const char *pszVar)
-{
-    return RTEnvGet(pszVar);
-}
-
 void
 VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
 {
@@ -174,9 +162,6 @@ VBoxGetXPCOMCFunctions(unsigned uVersion)
 
         VBoxUtf16ToUtf8,
         VBoxUtf8ToUtf16,
-
-        VBoxGetEnv,
-        VBoxSetEnv,
 
         VBOX_XPCOMC_VERSION
     };

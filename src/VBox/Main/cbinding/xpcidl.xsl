@@ -609,8 +609,6 @@ typedef struct VBOXXPCOMC
     int   (*pfnUtf16ToUtf8)(const PRUnichar *pwszString, char **ppszString);
     int   (*pfnUtf8ToUtf16)(const char *pszString, PRUnichar **ppwszString);
 
-    const char * (*pfnGetEnv)(const char *pszVar);
-    int   (*pfnSetEnv)(const char *pszVar, const char *pszValue);
     /** Tail version, same as uVersion. */
     unsigned uEndVersion;
 } VBOXXPCOMC;
