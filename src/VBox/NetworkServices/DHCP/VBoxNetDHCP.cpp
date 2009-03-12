@@ -28,8 +28,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/initterm.h>
 #include <iprt/net.h>
+#include <iprt/initterm.h>
+#include <iprt/alloca.h>
 #include <iprt/err.h>
 #include <iprt/time.h>
 #include <iprt/stream.h>
@@ -46,14 +47,6 @@
 
 #include <vector>
 #include <string>
-
-/** @Todo move these:  */
-
-/** The requested address. */
-#define RTNET_DHCP_OPT_REQUESTED_ADDRESS    50
-
-/** The normal size of RTNETBOOTP::bp_vend::Dhcp::dhcp_opts.  */
-#define RTNET_DHCP_OPT_SIZE         (312 - 4)
 
 
 /*******************************************************************************
@@ -91,11 +84,11 @@ public:
     /* * Option 10: Impress server. */
     /* * Option 11: Resource location server. */
     /* * Option 12: Host name. */
-    //std::string<char>           m_HostName;
+    std::string                 m_HostName;
     /* * Option 13: Boot file size option. */
     /* * Option 14: Merit dump file. */
     /** Option 15: Domain name. */
-    std::string                m_DomainName;
+    std::string                 m_DomainName;
     /* * Option 16: Swap server. */
     /* * Option 17: Root path. */
     /* * Option 18: Extension path. */
@@ -138,6 +131,8 @@ public:
     /* * Option 65: Network Information Service+ Servers. */
     /** Option 66: TFTP server name. */
     std::string                 m_TftpServer;
+    /** Address for the bp_siaddr field corresponding to m_TftpServer. */
+    RTNETADDRIPV4               m_TftpServerAddr;
     /** Option 67: Bootfile name. */
     std::string                 m_BootfileName;
 
@@ -260,7 +255,7 @@ protected:
     std::string         m_Name;
     std::string         m_Network;
     RTMAC               m_MacAddress;
-    RTNETADDRIPV4       m_IpAddress;
+    RTNETADDRIPV4       m_Ipv4Address;
     /** @} */
 
     /** The current configs. */
@@ -346,7 +341,7 @@ VBoxNetDhcp::VBoxNetDhcp()
     m_MacAddress.au8[3]     = 0x40;
     m_MacAddress.au8[4]     = 0x41;
     m_MacAddress.au8[5]     = 0x42;
-    m_IpAddress.u           = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  5)));
+    m_Ipv4Address.u         = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  5)));
 
     m_pSession              = NIL_RTR0PTR;
     m_cbSendBuf             =  8192;
@@ -477,7 +472,7 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                 m_MacAddress = Val.MacAddr;
                 break;
             case 'i':
-                m_IpAddress = Val.IPv4Addr;
+                m_Ipv4Address = Val.IPv4Addr;
                 break;
 
             case 'v':
@@ -536,8 +531,7 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
 
             case 'V':
                 RTPrintf("%sr%d\n", VBOX_VERSION_STRING, VBOX_SVN_REV);
-                rc = 0;
-                break;
+                return 0;
 
             case 'h':
                 RTPrintf("VBoxNetDHCP Version %s\n"
@@ -547,8 +541,7 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                          "Usage:\n"
                          "  TODO\n",
                          VBOX_VERSION_STRING);
-                rc = 1;
-                break;
+                return 1;
 
             default:
                 break;
@@ -816,8 +809,8 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
      * already has an address on the network. If we cannot find a valid lease,
      * make a new one and return NAC.
      */
-    RTNETADDRIPV4       IPv4Addr;
-    if (findOptionIPv4Addr(RTNET_DHCP_OPT_REQUESTED_ADDRESS, pDhcpMsg, cb, &IPv4Addr))
+    RTNETADDRIPV4 IPv4Addr;
+    if (findOptionIPv4Addr(RTNET_DHCP_OPT_REQ_ADDR, pDhcpMsg, cb, &IPv4Addr))
     {
         VBoxNetDhcpLease *pLease = findLeaseByIpv4AndMacAddresses(IPv4Addr, &pDhcpMsg->bp_chaddr.Mac);
         if (pLease)
@@ -934,6 +927,292 @@ bool VBoxNetDhcp::handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb)
 
 
 /**
+ * Helper class for stuffing DHCP options into a reply packet.
+ */
+class VBoxNetDhcpWriteCursor
+{
+private:
+    uint8_t        *m_pbCur;       /**< The current cursor position. */
+    uint8_t        *m_pbEnd;       /**< The end the current option space. */
+    uint8_t        *m_pfOverload;  /**< Pointer to the flags of the overload option. */
+    PRTNETDHCPOPT   m_pOpt;        /**< The current option. */
+    PRTNETBOOTP     m_pDhcp;       /**< The DHCP packet. */
+    bool            m_fOverflowed; /**< Set if we've overflowed, otherwise false. */
+
+public:
+    /** Instantiate an option cursor for the specified DHCP message. */
+    VBoxNetDhcpWriteCursor(PRTNETBOOTP pDhcp, size_t cbDhcp) :
+        m_pbCur(&pDhcp->bp_vend.Dhcp.dhcp_opts[0]),
+        m_pbEnd((uint8_t *)pDhcp + cbDhcp),
+        m_pfOverload(NULL),
+        m_pOpt(NULL),
+        m_pDhcp(pDhcp),
+        m_fOverflowed(false)
+    {
+        AssertPtr(pDhcp);
+        Assert(cbDhcp > RT_UOFFSETOF(RTNETBOOTP, bp_vend.Dhcp.dhcp_opts[10]));
+    }
+
+    /** Destructor.  */
+    ~VBoxNetDhcpWriteCursor()
+    {
+        m_pbCur = m_pbEnd = m_pfOverload = NULL;
+        m_pOpt = NULL;
+        m_pDhcp = NULL;
+    }
+
+    /**
+     * Try overload more BOOTP fields
+     */
+    bool overloadMore(void)
+    {
+        /* switch option area. */
+        uint8_t    *pbNew;
+        uint8_t    *pbNewEnd;
+        if (!m_pfOverload)
+        {
+            /* Add an overload option. */
+            *m_pbCur++ = RTNET_DHCP_OPT_OPTION_OVERLOAD;
+            *m_pbCur++ = 1;
+            m_pfOverload = m_pbCur;
+            *m_pbCur++ = 1;     /* bp_file flag */
+
+            pbNew      = &m_pDhcp->bp_file[0];
+            pbNewEnd   = &m_pDhcp->bp_file[sizeof(m_pDhcp->bp_file)];
+        }
+        else if (!(*m_pfOverload & 2))
+        {
+            *m_pfOverload |= 2; /* bp_sname flag */
+
+            pbNew      = &m_pDhcp->bp_sname[0];
+            pbNewEnd   = &m_pDhcp->bp_sname[sizeof(m_pDhcp->bp_sname)];
+        }
+        else
+            return false;
+
+        /* pad current option field */
+        while (m_pbCur != m_pbEnd)
+            *m_pbCur++ = RTNET_DHCP_OPT_PAD; /** @todo not sure if this stuff is at all correct... */
+
+        m_pbCur = pbNew;
+        m_pbEnd = pbNewEnd;
+        return true;
+    }
+
+    /**
+     * Begin an option.
+     *
+     * @returns true on succes, false if we're out of space.
+     *
+     * @param   uOption     The option number.
+     * @param   cb          The amount of data.
+     */
+    bool begin(uint8_t uOption, size_t cb)
+    {
+        /* Check that the data of the previous option has all been written. */
+        Assert(   !m_pOpt
+               || (m_pbCur - m_pOpt->dhcp_len == (uint8_t *)(m_pOpt + 1)));
+        AssertMsg(cb <= 255, ("%#x\n", cb));
+
+        /* Check if we need to overload more stuff. */
+        if ((uintptr_t)(m_pbEnd - m_pbCur) < cb + 2 + 3)
+        {
+            m_pOpt = NULL;
+            if (!overloadMore())
+            {
+                m_fOverflowed = true;
+                AssertMsgFailedReturn(("%u %#x\n", uOption, cb), false);
+            }
+            if ((uintptr_t)(m_pbEnd - m_pbCur) < cb + 2 + 3)
+            {
+                m_fOverflowed = true;
+                AssertMsgFailedReturn(("%u %#x\n", uOption, cb), false);
+            }
+        }
+
+        /* Emit the option header. */
+        m_pOpt = (PRTNETDHCPOPT)m_pbCur;
+        m_pOpt->dhcp_opt = uOption;
+        m_pOpt->dhcp_len = cb;
+        m_pbCur += 2;
+        return true;
+    }
+
+    /**
+     * Puts option data.
+     *
+     * @param   pvData      The data.
+     * @param   cb          The amount to put.
+     */
+    void put(void const *pvData, size_t cb)
+    {
+        Assert(m_pOpt || m_fOverflowed);
+        if (RT_LIKELY(m_pOpt))
+        {
+            Assert((uintptr_t)m_pbCur - (uintptr_t)(m_pOpt + 1) + cb  <= (size_t)m_pOpt->dhcp_len);
+            memcpy(m_pbCur, pvData, cb);
+            m_pbCur += cb;
+        }
+    }
+
+    /**
+     * Puts an IPv4 Address.
+     *
+     * @param   IPv4Addr    The address.
+     */
+    void putIPv4Addr(RTNETADDRIPV4 IPv4Addr)
+    {
+        put(&IPv4Addr, 4);
+    }
+
+    /**
+     * Adds an IPv4 address option.
+     *
+     * @returns true/false just like begin().
+     *
+     * @param   uOption     The option number.
+     * @param   IPv4Addr    The address.
+     */
+    bool optIPv4Addr(uint8_t uOption, RTNETADDRIPV4 IPv4Addr)
+    {
+        if (!begin(uOption, 4))
+            return false;
+        putIPv4Addr(IPv4Addr);
+        return true;
+    }
+
+    /**
+     * Adds an option taking 1 or more IPv4 address.
+     *
+     * If the vector contains no addresses, the option will not be added.
+     *
+     * @returns true/false just like begin().
+     *
+     * @param   uOption     The option number.
+     * @param   rIPv4Addrs  Reference to the address vector.
+     */
+    bool optIPv4Addrs(uint8_t uOption, std::vector<RTNETADDRIPV4> const &rIPv4Addrs)
+    {
+        size_t const c = rIPv4Addrs.size();
+        if (!c)
+            return true;
+
+        if (!begin(uOption, 4*c))
+            return false;
+        for (size_t i = 0; i < c; i++)
+            putIPv4Addr(rIPv4Addrs[i]);
+        return true;
+    }
+
+    /**
+     * Puts an 8-bit integer.
+     *
+     * @param   u8          The integer.
+     */
+    void putU8(uint8_t u8)
+    {
+        put(&u8, 1);
+    }
+
+    /**
+     * Adds an 8-bit integer option.
+     *
+     * @returns true/false just like begin().
+     *
+     * @param   uOption     The option number.
+     * @param   u8          The integer
+     */
+    bool optU8(uint8_t uOption, uint8_t u8)
+    {
+        if (!begin(uOption, 1))
+            return false;
+        putU8(u8);
+        return true;
+    }
+
+    /**
+     * Puts an 32-bit integer (network endian).
+     *
+     * @param   u32Network  The integer.
+     */
+    void putU32(uint32_t u32)
+    {
+        put(&u32, 4);
+    }
+
+    /**
+     * Adds an 32-bit integer (network endian) option.
+     *
+     * @returns true/false just like begin().
+     *
+     * @param   uOption     The option number.
+     * @param   u32Network  The integer.
+     */
+    bool optU32(uint8_t uOption, uint32_t u32)
+    {
+        if (!begin(uOption, 4))
+            return false;
+        putU32(u32);
+        return true;
+    }
+
+    /**
+     * Puts a std::string.
+     *
+     * @param   rStr        Reference to the string.
+     */
+    void putStr(std::string const &rStr)
+    {
+        put(rStr.c_str(), rStr.size());
+    }
+
+    /**
+     * Adds an std::string option if the string isn't empty.
+     *
+     * @returns true/false just like begin().
+     *
+     * @param   uOption     The option number.
+     * @param   rStr        Reference to the string.
+     */
+    bool optStr(uint8_t uOption, std::string const &rStr)
+    {
+        const size_t cch = rStr.size();
+        if (!cch)
+            return true;
+
+        if (!begin(uOption, cch))
+            return false;
+        put(rStr.c_str(), cch);
+        return true;
+    }
+
+    /**
+     * Whether we've overflowed.
+     *
+     * @returns true on overflow, false otherwise.
+     */
+    bool hasOverflowed(void) const
+    {
+        return m_fOverflowed;
+    }
+
+    /**
+     * Adds the terminating END option.
+     *
+     * The END will always be added as we're reserving room for it, however, we
+     * might've dropped previous options due to overflows and that is what the
+     * return status indicates.
+     *
+     * @returns true on success, false on a (previous) overflow.
+     */
+    bool optEnd(void)
+    {
+        return hasOverflowed();
+    }
+};
+
+
+/**
  * Constructs and sends a reply to a client.
  *
  * @returns
@@ -945,7 +1224,63 @@ bool VBoxNetDhcp::handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb)
  */
 void VBoxNetDhcp::makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
-    /** @todo this is required. :-) */
+    size_t      cbReply = RTNET_DHCP_NORMAL_SIZE; /** @todo respect the RTNET_DHCP_OPT_MAX_DHCP_MSG_SIZE option */
+    PRTNETBOOTP pReply = (PRTNETBOOTP)alloca(cbReply);
+
+    /*
+     * The fixed bits stuff.
+     */
+    pReply->bp_op     = RTNETBOOTP_OP_REPLY;
+    pReply->bp_htype  = RTNET_ARP_ETHER;
+    pReply->bp_hlen   = sizeof(RTMAC);
+    pReply->bp_hops   = 0;
+    pReply->bp_xid    = pDhcpMsg->bp_xid;
+    pReply->bp_secs   = 0;
+    pReply->bp_flags  = 0; // (pDhcpMsg->bp_flags & RTNET_DHCP_FLAGS_NO_BROADCAST); ??
+    pReply->bp_ciaddr.u = 0;
+    pReply->bp_yiaddr.u = pLease ? pLease->m_IPv4Address.u : 0xffffffff;
+    pReply->bp_siaddr.u = pLease && pLease->m_pCfg ? pLease->m_pCfg->m_TftpServerAddr.u : 0;
+    pReply->bp_giaddr.u = 0;
+    memset(&pReply->bp_chaddr, '\0', sizeof(pReply->bp_chaddr));
+    pReply->bp_chaddr.Mac = pDhcpMsg->bp_chaddr.Mac;
+    memset(&pReply->bp_sname[0], '\0', sizeof(pReply->bp_sname));
+    memset(&pReply->bp_file[0],  '\0', sizeof(pReply->bp_file));
+    pReply->bp_vend.Dhcp.dhcp_cookie = RT_H2N_U32_C(RTNET_DHCP_COOKIE);
+    memset(&pReply->bp_vend.Dhcp.dhcp_opts[0], '\0', RTNET_DHCP_OPT_SIZE);
+
+    /*
+     * The options - use a cursor class for dealing with the ugly stuff.
+     */
+    VBoxNetDhcpWriteCursor Cursor(pReply, cbReply);
+
+    /* The basics */
+    Cursor.optU8(RTNET_DHCP_OPT_MSG_TYPE, uMsgType);
+    Cursor.optIPv4Addr(RTNET_DHCP_OPT_SERVER_ID, m_Ipv4Address);
+
+    if (uMsgType != RTNET_DHCP_MT_NAC)
+    {
+        AssertReturnVoid(pLease && pLease->m_pCfg);
+        const VBoxNetDhcpCfg *pCfg = pLease->m_pCfg; /* no need to retain it. */
+
+        /* The IP config. */
+        Cursor.optU32(RTNET_DHCP_OPT_LEASE_TIME, RT_H2N_U32(pCfg->m_cSecLease));
+        Cursor.optIPv4Addr(RTNET_DHCP_OPT_SUBNET_MASK, pCfg->m_SubnetMask);
+        Cursor.optIPv4Addrs(RTNET_DHCP_OPT_ROUTERS, pCfg->m_Routers);
+        Cursor.optIPv4Addrs(RTNET_DHCP_OPT_ROUTERS, pCfg->m_DNSes);
+        Cursor.optStr(RTNET_DHCP_OPT_HOST_NAME, pCfg->m_HostName);
+        Cursor.optStr(RTNET_DHCP_OPT_DOMAIN_NAME, pCfg->m_DomainName);
+
+        /* The PXE config. */
+    }
+
+    /* Terminate the options. */
+    if (!Cursor.optEnd())
+        debugPrint(0, true, "option overflow\n");
+
+    /*
+     * Send it.
+     */
+
 }
 
 
@@ -982,8 +1317,8 @@ VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByMacAddress(PCRTMAC pMacAddress, bool f
  * Look up a lease by IPv4 and MAC addresses.
  *
  * @returns Pointer to the lease if found, NULL if not found.
- * @param   IPv4Addr                The IPv4 address.
- * @param   pMacAddress             The mac address.
+ * @param   IPv4Addr        The IPv4 address.
+ * @param   pMacAddress     The mac address.
  */
 VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4Addr, PCRTMAC pMacAddress)
 {
@@ -1009,13 +1344,26 @@ VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4
  * The caller has already made sure it doesn't already have a lease.
  *
  * @returns Pointer to the lease if found, NULL+log if not found.
- * @param   IPv4Addr                The IPv4 address.
- * @param   pMacAddress             The MAC address.
+ * @param   IPv4Addr        The IPv4 address.
+ * @param   pMacAddress     The MAC address.
  */
 VBoxNetDhcpLease *VBoxNetDhcp::newLease(PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
-
+    debugPrint(0, true, "newLease is not implemented");
     return NULL;
+}
+
+
+/**
+ * Updates the configuration of the lease in question.
+ *
+ * @todo it's possible that we'll simplify this stuff by expanding all the
+ *       possible leases when loading the config instead in newLease()...
+ *
+ * @param   pLease          The lease.
+ */
+void VBoxNetDhcp::updateLeaseConfig(VBoxNetDhcpLease *pLease)
+{
 }
 
 
@@ -1044,7 +1392,7 @@ VBoxNetDhcp::findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, size_
      */
     if (cb <= RT_UOFFSETOF(RTNETBOOTP, bp_vend.Dhcp.dhcp_opts))
         return NULL;
-    if (pDhcpMsg->bp_vend.Dhcp.dhcp_cookie != RTNET_DHCP_COOKIE)
+    if (pDhcpMsg->bp_vend.Dhcp.dhcp_cookie != RT_H2N_U32_C(RTNET_DHCP_COOKIE))
         return NULL;
     size_t cbLeft = cb - RT_UOFFSETOF(RTNETBOOTP, bp_vend.Dhcp.dhcp_opts);
     if (cbLeft > RTNET_DHCP_OPT_SIZE)
