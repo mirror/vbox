@@ -35,7 +35,7 @@ ifdef VBOX_ONLY_ADDITIONS
  #
  # Only build the additions, sort out the legacy names first.
  #
- LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
+ LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
  #LIBRARIES.os2 = RuntimeGuestR0OS2Warp3
  LIBRARIES.win.x86 += RuntimeGuestR0NT4
  ifndef VBOX_WITH_ADDITION_DRIVERS
@@ -64,7 +64,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
   LIBRARIES += RuntimeR0Drv
  endif
  ifdef VBOX_WITH_ADDITIONS
-  LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
+  LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
   #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
   LIBRARIES.win.x86 += RuntimeGuestR0NT4
   ifndef VBOX_WITH_ADDITION_DRIVERS
@@ -630,7 +630,7 @@ RuntimeR3L4_SOURCES = \
 
 
 #
-# RuntimeGuestR3 - Guest Additions Runtime (static).
+# RuntimeGuestR3 - Guest Additions Runtime (static/exe).
 # (The KBUILD_HOST inheritance here is for l4 cross building the linux
 # additions, while .x86 is for cross building x86 while targeting amd64.)
 #
@@ -656,6 +656,13 @@ RuntimeGuestR3_SOURCES.$(KBUILD_TARGET)  := $(RuntimeR3_SOURCES.$(KBUILD_TARGET)
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST)    := $(RuntimeR3_SOURCES.$(KBUILD_HOST))
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
+
+
+#
+# RuntimeGuestR3Shared - Guest Additions Runtime (static/dll).
+#
+RuntimeGuestR3Shared_TEMPLATE           := VBOXGUESTR3DLL
+RuntimeGuestR3Shared_EXTENDS            := RuntimeGuestR3
 
 
 #
