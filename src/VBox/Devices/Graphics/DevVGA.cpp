@@ -884,6 +884,11 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             if (val == VBE_DISPI_ID_VBOX_VIDEO) {
                 s->vbe_regs[s->vbe_index] = val;
             }
+#ifdef VBOX_WITH_HGSMI
+            else if (val == VBE_DISPI_ID_HGSMI) {
+                s->vbe_regs[s->vbe_index] = val;
+            }
+#endif /* VBOX_WITH_HGSMI */
 #endif /* VBOX */
             break;
         case VBE_DISPI_INDEX_XRES:
@@ -3130,6 +3135,29 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
     NOREF(pvUser);
 
+#ifdef VBOX_WITH_HGSMI
+#ifdef IN_RING3
+    if (s->vbe_index == VBE_DISPI_INDEX_VBVA_GUEST)
+    {
+        HGSMIGuestWrite (s->pHGSMI, u32);
+        return VINF_SUCCESS;
+    }
+    if (s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST)
+    {
+        HGSMIHostWrite (s->pHGSMI, u32);
+        return VINF_SUCCESS;
+    }
+#else
+    if (   s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST
+        || s->vbe_index == VBE_DISPI_INDEX_VBVA_GUEST)
+    {
+        Log(("vgaIOPortWriteVBEData: %s - Switching to host...\n",
+             s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST? "VBE_DISPI_INDEX_VBVA_HOST": "VBE_DISPI_INDEX_VBVA_GUEST"));
+        return VINF_IOM_HC_IOPORT_WRITE;
+    }
+#endif /* !IN_RING3 */
+#endif /* VBOX_WITH_HGSMI */
+
 #ifndef IN_RING3
     /*
      * This has to be done on the host in order to execute the connector callbacks.
@@ -3245,6 +3273,30 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIO
 PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
+
+#ifdef VBOX_WITH_HGSMI
+#ifdef IN_RING3
+    VGAState *s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+
+    if (s->vbe_index == VBE_DISPI_INDEX_VBVA_GUEST)
+    {
+        *pu32 = HGSMIGuestRead (s->pHGSMI);
+        return VINF_SUCCESS;
+    }
+    if (s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST)
+    {
+        *pu32 = HGSMIHostRead (s->pHGSMI);
+        return VINF_SUCCESS;
+    }
+#else
+    if (   Port == VBE_DISPI_INDEX_VBVA_HOST
+        || Port == VBE_DISPI_INDEX_VBVA_GUEST)
+    {
+       return VINF_IOM_HC_IOPORT_WRITE;
+    }
+#endif /* !IN_RING3 */
+#endif /* VBOX_WITH_HGSMI */
+
 #ifdef VBE_BYTEWISE_IO
     if (cb == 1)
     {
@@ -4602,7 +4654,14 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
     PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
 
+#ifndef VBOX_WITH_HGSMI
     /* This should be called only in non VBVA mode. */
+#else
+    if (VBVAUpdateDisplay (pThis) == VINF_SUCCESS)
+    {
+        return VINF_SUCCESS;
+    }
+#endif /* VBOX_WITH_HGSMI */
 
     int rc = vga_update_display(pThis, false);
     if (rc != VINF_SUCCESS)
@@ -6113,6 +6172,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     if (FileLogo != NIL_RTFILE)
         RTFileClose(FileLogo);
+
+#ifdef VBOX_WITH_HGSMI
+    VBVAInit (pThis);
+#endif /* VBOX_WITH_HGSMI */
 
     /*
      * Statistics.
