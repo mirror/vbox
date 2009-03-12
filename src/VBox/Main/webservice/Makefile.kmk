@@ -120,6 +120,8 @@ if "$(VBOX_PATH_GSOAP_BIN)" == ""
 endif
 VBOX_SOAPCPP2          := $(VBOX_PATH_GSOAP_BIN)/soapcpp2$(HOSTSUFF_EXE)
 VBOX_WSDL2H            := $(VBOX_PATH_GSOAP_BIN)/wsdl2h$(HOSTSUFF_EXE)
+VBOX_STUBMAKER         := $(firstword $(which stubmaker stubmaker.pl))
+VBOX_WSDL2PY           := $(firstword $(which wsdl2py))
 
 VBOX_PATH_GSOAP_IMPORT := $(strip $(if $(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP)/import))
 VBOX_GSOAP_INCS        := $(strip $(if $(VBOX_GSOAP_INCS),       $(VBOX_GSOAP_INCS),       $(VBOX_PATH_GSOAP) $(VBOX_PATH_GSOAP_IMPORT) ))
@@ -442,13 +444,13 @@ $(VBOXWEB_GLUE_PYTHON): $(VBOXWEB_IDL_SRC) $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL
 $(VBOXWEB_WS_PYTHON): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
 	$(call MSG_GENERATE,,$@, WS Python bindings)
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(REDIRECT) -C $(@D) -- wsdl2py  -b --file  $(VBOXWEBSERVICE_WSDL)
+	$(QUIET)$(REDIRECT) -C $(@D) -- $(VBOX_WSDL2PY) -b --file  $(VBOXWEBSERVICE_WSDL)
 	$(QUIET)$(APPEND) $@ ''
 
 $(VBOXWEB_WS_PERL): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
 	$(call MSG_GENERATE,,$@, WS Perl bindings)
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(REDIRECT) -C $(@D) -- stubmaker file://$(VBOXWEBSERVICE_WSDL)
+	$(QUIET)$(REDIRECT) -C $(@D) -- $(VBOX_STUBMAKER) file://$(VBOXWEBSERVICE_WSDL)
 # Ugly, ugly, ugly, make me right once
 	$(QUIET)perl -ne "s#http://www.virtualbox.org/Service#http://www.virtualbox.org/#; print" < $(VBOXWEB_WS_PERL) > $(VBOXWEB_WS_PERL).tmp
 	$(QUIET)mv $(VBOXWEB_WS_PERL).tmp $(VBOXWEB_WS_PERL)
