@@ -1264,7 +1264,7 @@ static HRESULT rename_shellfolder (PCWSTR wGuid, PCWSTR wNewName)
     return hr;
 }
 
-extern "C" HRESULT RenameConnection (PCWSTR GuidString, PCWSTR NewName)
+static HRESULT netIfRenameConnection (PCWSTR GuidString, PCWSTR NewName)
 {
     typedef HRESULT (WINAPI *lpHrRenameConnection) (const GUID *, PCWSTR);
     lpHrRenameConnection RenameConnectionFunc = NULL;
@@ -1300,6 +1300,32 @@ extern "C" HRESULT RenameConnection (PCWSTR GuidString, PCWSTR NewName)
     }
     if (FAILED (status))
         return status;
+
+    return S_OK;
+}
+#define VBOX_CONNECTION_NAME L"Virtualbox Host-Only Network"
+static HRESULT netIfGenConnectionName (PCWSTR DevName, WCHAR *pBuf, PULONG pcbBuf)
+{
+    WCHAR * pSuffix = wcsrchr( DevName, L'#' );
+    ULONG cbSize = sizeof(VBOX_CONNECTION_NAME);
+    ULONG cbSufSize = 0;
+
+    if(pSuffix)
+    {
+        cbSize += wcslen(pSuffix) * 2;
+    }
+
+    if(*pcbBuf < cbSize)
+    {
+        *pcbBuf = cbSize;
+        return E_FAIL;
+    }
+
+    wcscpy(pBuf, VBOX_CONNECTION_NAME);
+    if(pSuffix)
+    {
+        wcscat(pBuf, pSuffix);
+    }
 
     return S_OK;
 }
@@ -1605,6 +1631,17 @@ static int createNetworkInterface (SVCHlpClient *aClient,
                 {
                     Bstr str(name);
                     str.detachTo(pName);
+                    WCHAR ConnectoinName[128];
+                    ULONG cbBuf = sizeof(ConnectoinName);
+
+                    /* return back the bracket */
+                    pCfgGuidString [_tcslen (pCfgGuidString)] = '}';
+
+                    hr = netIfGenConnectionName (name, ConnectoinName, &cbBuf);
+                    if(hr == S_OK)
+                    {
+                        hr = netIfRenameConnection (pCfgGuidString, ConnectoinName);
+                    }
 
                     CoTaskMemFree (name);
                 }
