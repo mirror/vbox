@@ -33,7 +33,16 @@ XpComCSamples_INST = \
 	$(INST_SDK)bindings/xpcom/cbinding/samples/
 XpComCSamples_SOURCES = \
 	tstLinuxC.c \
+	tstXPCOMCGlue.c \
 	makefile.tstLinuxC=>Makefile
+
+INSTALLS += XpComCGlue
+XpComCGlue_MODE = a+r,u+rw
+XpComCGlue_INST = \
+	$(INST_SDK)bindings/xpcom/cbinding/
+XpComCGlue_SOURCES = \
+	VBoxXPCOMCGlue.c \
+	VBoxXPCOMCGlue.h
 
 INSTALLS += XpComCHeaders
 XpComCHeaders_MODE = a+r,u+rw
@@ -81,8 +90,7 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
   PROGRAMS += tstXPCOMC
   tstXPCOMC_TEMPLATE = VBOXR3EXE
   tstXPCOMC_INCS = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include
   tstXPCOMC_INTERMEDIATES = \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_CXPCOM.h
   tstXPCOMC_SOURCES = \
@@ -96,8 +104,7 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
   PROGRAMS += tstXPCOMCGlue
   tstXPCOMCGlue_TEMPLATE = VBOXR3EXE
   tstXPCOMCGlue_INCS = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include
   tstXPCOMCGlue_INTERMEDIATES = \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_CXPCOM.h
   tstXPCOMCGlue_SOURCES = \
