@@ -86,7 +86,10 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
 
 int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
-    return VERR_NOT_IMPLEMENTED;
+    char szAddress[5*8 + 1 + 5 + 1];
+    RTStrPrintf(szAddress, sizeof(szAddress), "%ls/%d",
+                aIPV6Address, aIPV6MaskPrefixLength);
+    return NetIfAdpCtl(pIf, szAddress, NULL);
 }
 
 int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
