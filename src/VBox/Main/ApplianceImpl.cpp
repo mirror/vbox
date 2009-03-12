@@ -1980,7 +1980,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
 
             /* Hard disk controller SCSI */
             std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
-            if (vsdeHDCSATA.size() > 1)
+            if (vsdeHDCSCSI.size() > 1)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Too many SCSI controllers in OVF; VirtualBox only supports one"));
             if (vsdeHDCSCSI.size() > 0)
