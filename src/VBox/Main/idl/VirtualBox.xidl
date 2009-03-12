@@ -4266,21 +4266,24 @@
 
     <method name="attachHardDisk">
       <desc>
-        Attaches a virtual hard disk identified by the given UUID @a id
-        to a device slot of the specified bus.
+        Attaches a virtual hard disk (identified by the given UUID @a id)
+        to the given hard disk controller (identified by @a name),
+        at the indicated port and device.
 
-        For the IDE bus, the @a port parameter can be either @c 0 or @c 1, to
-        specify the primary or secondary IDE controller, respectively. The
-        SATA bus supports 30 ports, so this parameter can be a number
-        ranging from @c 0 to @c 29.
+        For the IDE bus, the @a controllerPort parameter can be either
+        @c 0 or @c 1, to specify the primary or secondary IDE controller,
+        respectively. For the primary controller of the IDE bus,
+        @a device can be either @c 0 or @c 1, to specify the master or the
+        slave device, respectively. For the secondary IDE controller, the
+        device number must be @c 1 because VirtualBox reserves the
+        secondary master for the CD-ROM drive.
 
-        For the primary controller of the IDE bus, the @a device number can be
-        either @c 0 or @c 1, to specify the master or the slave device,
-        respectively. For the secondary IDE controller, the device number is
-        always @c 1 because the master device is reserved for the CD-ROM drive.
+        For an SATA controller, @a controllerPort must be a number ranging
+        from @c 0 to @c 29. For a SCSI controller, @a controllerPort must
+        be a number ranging from @c 0 to @c 15.
 
-        For the SATA bus, the @a device parameter is currently unused and
-        must be @c 0.
+        For both SCSI and SATA, the @a device parameter is unused and must
+        be @c 0.
 
         The specified device slot must not have another disk attached to it, or
         this method will fail.
@@ -4440,7 +4443,11 @@
 
     <method name="addStorageController">
       <desc>
-        Adds a new storage controller to the machine.
+        Adds a new storage controller (SCSI or SATA controller) to the machine.
+        @a name identifies the controller with subsequent calls such as
+        <link to="#getStorageControllerByName" /> or
+        <link to="#removeStorageController" /> or
+        <link to="#attachHardDisk" />.
 
         <result name="VBOX_E_OBJECT_IN_USE">
           A storage controller with given name exists already.
