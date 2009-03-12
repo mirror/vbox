@@ -378,6 +378,7 @@ private:
     QUuid getWithMediaManager (const QUuid &aInitialId = QUuid());
     QUuid getWithNewHDWizard();
     int maxNameLength() const;
+    void removeFocus();
 
     /* variables */
     CMachine mMachine;

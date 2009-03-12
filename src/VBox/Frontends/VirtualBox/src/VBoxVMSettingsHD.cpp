@@ -941,6 +941,7 @@ void VBoxVMSettingsHD::updateActions (const QModelIndex& /* aIndex */)
 
 void VBoxVMSettingsHD::onSATACheckToggled (int aState)
 {
+    removeFocus();
     if (aState == Qt::Unchecked)
     {
         /* Search the list for at least one SATA port in */
@@ -963,6 +964,7 @@ void VBoxVMSettingsHD::onSATACheckToggled (int aState)
             }
             else
             {
+                removeFocus();
                 /* Delete SATA items */
                 mModel->removeSata();
 
@@ -982,6 +984,7 @@ void VBoxVMSettingsHD::onSATACheckToggled (int aState)
 
 void VBoxVMSettingsHD::onShowDiffsCheckToggled (int aState)
 {
+    removeFocus();
     HDSettings::instance()->setShowDiffs (aState == Qt::Checked);
 }
 
@@ -1132,3 +1135,15 @@ int VBoxVMSettingsHD::maxNameLength() const
     return nameLength;
 }
 
+void VBoxVMSettingsHD::removeFocus()
+{
+#ifdef Q_WS_MAC
+    /* On the Mac checkboxes aren't focus aware. Therewith a editor widget get
+     * not closed by clicking on the checkbox. As a result the content of the
+     * currently used editor (QComboBox) isn't updated. So manually remove the
+     * focus to force the closing of any open editor widget. */
+    QWidget *focusWidget = qApp->focusWidget();
+    if (focusWidget)
+        focusWidget->clearFocus();
+#endif /* Q_WS_MAC */
+}
