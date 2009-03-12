@@ -2844,8 +2844,8 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             if (!RTPathExists(strSrcFilePath.c_str()))
                 /* This isn't allowed */
                 throw setError(VBOX_E_FILE_ERROR,
-                                tr("Source virtual disk image file '%s' doesn't exist"),
-                                    strSrcFilePath.c_str());
+                               tr("Source virtual disk image file '%s' doesn't exist"),
+                               strSrcFilePath.c_str());
 
             // output filename
             const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
@@ -2863,10 +2863,11 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             rc = pVirtualBox->FindHardDisk(bstrSrcFilePath, pSourceDisk.asOutParam());
             if (FAILED(rc)) throw rc;
 
-            /* We need the format description of the source disk image */
-            Bstr bstrSrcFormat;
-            rc = pSourceDisk->COMGETTER(Format)(bstrSrcFormat.asOutParam());
-            if (FAILED(rc)) throw rc;
+            /* Based on the file extensions we choose the right format for the
+             * disk */
+            Bstr bstrSrcFormat = L"VDI";
+            if (strTargetFilePath.endsWith(".vmdk"))
+                bstrSrcFormat = L"VMDK";
             /* Create a new hard disk interface for the destination disk image */
             Log(("Creating target disk \"%s\"\n", strTargetFilePath.raw()));
             rc = pVirtualBox->CreateHardDisk(bstrSrcFormat, Bstr(strTargetFilePath), pTargetDisk.asOutParam());
@@ -3478,7 +3479,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
                 default:
                     throw setError(VBOX_E_NOT_SUPPORTED,
-                                  tr("Cannot handle hard disk attachment: storageBus is %d, channel is %d, device is %d"), storageBus, lChannel, lDevice);
+                                   tr("Cannot handle hard disk attachment: storageBus is %d, channel is %d, device is %d"), storageBus, lChannel, lDevice);
                 break;
             }
 
