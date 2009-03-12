@@ -62,28 +62,18 @@ VBoxOGL_INCS.linux     = \
 	$(VBOX_PATH_X11_ROOT)/damageproto-1.1.0 \
 	$(VBOX_PATH_X11_ROOT)/compositeproto-0.4 \
 	$(VBOX_PATH_X11_ROOT)/fixesproto-4.0 \
-	$(VBOX_PATH_X11_ROOT)/libx11-1.1.5-other
+	$(VBOX_PATH_X11_ROOT)/libx11-1.1.5-other \
+	$(VBOX_PATH_MESA_SOURCE) \
+	$(VBOX_PATH_MESA_SOURCE)/include \
+	$(VBOX_PATH_MESA_SOURCE)/src/mesa/ \
+	$(VBOX_PATH_MESA_SOURCE)/src/mesa/glapi \
+	$(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
+	$(VBOX_PATH_MESA_SOURCE)/src/mesa/drivers/dri/common \
+	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.5
 ifdef VBoxOGL_DRI
  VBoxOGL_DEFS          += VBOXOGL_DRI IN_DRI_DRIVER
- VBoxOGL_INCS          += \
-    $(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.5
-	$(VBOX_PATH_MESA_SOURCE) \
-	$(VBOX_PATH_MESA_SOURCE)/include \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/ \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/glapi \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/drivers/dri/common \
-	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.5
 else ifdef VBoxOGL_FAKEDRI
  VBoxOGL_DEFS          += VBOXOGL_FAKEDRI
- VBoxOGL_INCS          += \
-	$(VBOX_PATH_MESA_SOURCE) \
-	$(VBOX_PATH_MESA_SOURCE)/include \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/ \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/glapi \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/drivers/dri/common \
-	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.5
 endif
 ifeq ($(KBUILD_TARGET),win)
 #fixme?, INTERMEDIATES.win ain't working
