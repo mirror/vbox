@@ -41,8 +41,6 @@
 #ifdef Q_WS_MAC
 # include <QPushButton>
 #endif
-#include <QAction>
-#include <QMenu>
 
 #include <iprt/err.h>
 #include <iprt/param.h>
