@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
 
         com::SafeIfaceArray <IMachine> machines;
         CHECK_ERROR_BREAK (virtualBox,
-                           COMGETTER(Machines2) (ComSafeArrayAsOutParam (machines)));
+                           COMGETTER(Machines) (ComSafeArrayAsOutParam (machines)));
 
         printf ("%u machines registered (machines.isNull()=%d).\n",
                 machines.size(), machines.isNull());

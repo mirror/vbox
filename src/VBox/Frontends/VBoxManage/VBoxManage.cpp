@@ -1395,7 +1395,7 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
         Bstr filePath;
 
         com::SafeIfaceArray <IMachine> machines;
-        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Machines2) (ComSafeArrayAsOutParam (machines)));
+        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Machines)(ComSafeArrayAsOutParam (machines)));
 
         for (size_t i = 0; i < machines.size(); ++ i)
         {

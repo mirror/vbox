@@ -1123,7 +1123,7 @@ void VBoxSelectorWnd::vmShowLogs (const QUuid &aUuid /*= QUuid_null*/)
 void VBoxSelectorWnd::refreshVMList()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    CMachineVector vec = vbox.GetMachines2();
+    CMachineVector vec = vbox.GetMachines();
     for (CMachineVector::ConstIterator m = vec.begin();
          m != vec.end(); ++ m)
         mVMModel->addItem (new VBoxVMItem (*m));

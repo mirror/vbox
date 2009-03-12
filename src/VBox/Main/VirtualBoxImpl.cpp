@@ -609,7 +609,7 @@ VirtualBox::COMGETTER(SystemProperties) (ISystemProperties **aSystemProperties)
 }
 
 STDMETHODIMP
-VirtualBox::COMGETTER(Machines2) (ComSafeArrayOut (IMachine *, aMachines))
+VirtualBox::COMGETTER(Machines) (ComSafeArrayOut (IMachine *, aMachines))
 {
     if (ComSafeArrayOutIsNull (aMachines))
         return E_POINTER;

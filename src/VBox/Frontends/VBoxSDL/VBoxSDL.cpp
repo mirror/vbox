@@ -828,7 +828,7 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
         Bstr filePath;
 
         com::SafeIfaceArray <IMachine> machines;
-        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Machines2) (ComSafeArrayAsOutParam (machines)));
+        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Machines)(ComSafeArrayAsOutParam (machines)));
 
         for (size_t i = 0; i < machines.size(); ++ i)
         {
@@ -841,7 +841,7 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
 
             if (version != formatVersion)
             {
-                cvtMachines.push_back (machines [i]);
+                cvtMachines.push_back (machines[i]);
                 Bstr filePath;
                 CHECK_ERROR_BREAK(machines[i], COMGETTER(SettingsFilePath) (filePath.asOutParam()));
                 fileList.push_back (Utf8StrFmt ("%ls  (%ls)", filePath.raw(),

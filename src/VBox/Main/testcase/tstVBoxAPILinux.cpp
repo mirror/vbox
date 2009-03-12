@@ -115,7 +115,7 @@ void listVMs(IVirtualBox *virtualBox)
     IMachine **machines = NULL;
     PRUint32 machineCnt = 0;
 
-    rc = virtualBox->GetMachines2(&machineCnt, &machines);
+    rc = virtualBox->GetMachines(&machineCnt, &machines);
     if (NS_SUCCEEDED(rc))
     {
         /*
