@@ -67,7 +67,7 @@ int listVMs(IVirtualBox *virtualBox)
      */
     SAFEARRAY *machinesArray = NULL;
 
-    rc = virtualBox->get_Machines2(&machinesArray);
+    rc = virtualBox->get_Machines(&machinesArray);
     if (SUCCEEDED(rc))
     {
         IMachine **machines;

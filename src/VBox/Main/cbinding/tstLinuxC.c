@@ -74,7 +74,7 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
      * Get the list of all registered VMs.
      */
 
-    rc = virtualBox->vtbl->GetMachines2(virtualBox, &machineCnt, &machines);
+    rc = virtualBox->vtbl->GetMachines(virtualBox, &machineCnt, &machines);
     if (NS_FAILED(rc))
     {
         fprintf(stderr, "could not get list of machines, rc=%08x\n",

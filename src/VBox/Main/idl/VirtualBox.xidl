@@ -1219,7 +1219,7 @@
 
   <interface
     name="IVirtualBox" extends="$dispatched"
-    uuid="339abca2-f47a-4302-87f5-7bc324e6bbde"
+    uuid="18c00639-2bc0-4d5f-93a0-5f20372f9914"
     wsmap="managed"
   >
     <desc>
@@ -1234,7 +1234,7 @@
       host, regardless of which frontend started them.
 
       To enumerate all the virtual machines on the host, use the
-      <link to="IVirtualBox::machines2"/> attribute.
+      <link to="IVirtualBox::machines"/> attribute.
     </desc>
 
     <attribute name="version" type="wstring" readonly="yes">
@@ -1349,7 +1349,7 @@
       <desc>Associated system information object.</desc>
     </attribute>
 
-    <attribute name="machines2" type="IMachine" readonly="yes" safearray="yes">
+    <attribute name="machines" type="IMachine" readonly="yes" safearray="yes">
       <desc>
         Array of machine objects registered within this VirtualBox instance.
       </desc>
@@ -3666,7 +3666,7 @@
 
       This interface is used in two contexts. First of all, a collection of
       objects implementing this interface is stored in the
-      <link to="IVirtualBox::machines2"/> attribute which lists all the virtual
+      <link to="IVirtualBox::machines"/> attribute which lists all the virtual
       machines that are currently registered with this VirtualBox
       installation. Also, once a session has been opened for the given virtual
       machine (e.g. the virtual machine is running), the machine object
@@ -3676,7 +3676,7 @@
       The main role of this interface is to expose the settings of the virtual
       machine and provide methods to change various aspects of the virtual
       machine's configuration. For machine objects stored in the
-      <link to="IVirtualBox::machines2"/> collection, all attributes are
+      <link to="IVirtualBox::machines"/> collection, all attributes are
       read-only unless explicitly stated otherwise in individual attribute
       and method descriptions. In order to change a machine setting, a session
       for this machine must be opened using one of
@@ -6535,7 +6535,7 @@
     <attribute name="id" type="uuid" readonly="yes">
       <desc>Returns the interface UUID.</desc>
     </attribute>
-    
+
     <attribute name="dhcpEnabled" type="boolean" readonly="yes">
       <desc>Specifies whether the DHCP is enabled for the interface.</desc>
     </attribute>

@@ -2266,7 +2266,7 @@ bool VBoxGlobal::checkForAutoConvertedSettings (bool aAfterRefresh /*= false*/)
     QString fileList;
     QString version;
 
-    CMachineVector vec = mVBox.GetMachines2();
+    CMachineVector vec = mVBox.GetMachines();
     for (CMachineVector::ConstIterator m = vec.begin();
          m != vec.end(); ++ m)
     {

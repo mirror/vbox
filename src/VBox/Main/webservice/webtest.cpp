@@ -156,11 +156,11 @@ int main(int argc, char* argv[])
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
-            _vbox__IVirtualBox_USCOREgetMachines2 req;
+            _vbox__IVirtualBox_USCOREgetMachines req;
             req._USCOREthis = argv[2];
-            _vbox__IVirtualBox_USCOREgetMachines2Response resp;
+            _vbox__IVirtualBox_USCOREgetMachinesResponse resp;
 
-            if (!(soaprc = soap_call___vbox__IVirtualBox_USCOREgetMachines2(&soap,
+            if (!(soaprc = soap_call___vbox__IVirtualBox_USCOREgetMachines(&soap,
                                                                 pcszArgEndpoint,
                                                                 NULL,
                                                                 &req,
