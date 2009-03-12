@@ -326,6 +326,7 @@ VirtualBox_SOURCES = \
 	src/VBoxGlobal.cpp \
 	src/VBoxMediaComboBox.cpp \
 	src/VBoxProblemReporter.cpp \
+	src/VBoxHelpActions.cpp \
 	src/VBoxSelectorWnd.cpp \
 	src/VBoxConsoleView.cpp \
 	src/VBoxConsoleWnd.cpp \

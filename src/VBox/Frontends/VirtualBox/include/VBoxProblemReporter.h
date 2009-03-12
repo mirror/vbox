@@ -30,43 +30,6 @@
 #include <QObject>
 
 class VBoxMedium;
-class QAction;
-class QMenu;
-
-// VBoxHelpActions class
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Help Menu action container.
- *
- * Contains actions for all help menu items and methods to insert them to a
- * QMenu and to perform NLS string translation.
- *
- * Instances of this class are to be created as members of QWidget classes that
- * need a Help menu. The containing class usually passes itself as an argument
- * to the #setup() method and then calls #addTo() to add actions to its Help
- * menu. The #retranslateUi() method is called when it is necessary to
- * re-translate all action NLS according to the current language.
- */
-struct VBoxHelpActions
-{
-    VBoxHelpActions()
-        : contentsAction (NULL), webAction (NULL)
-        , resetMessagesAction (NULL), registerAction (NULL)
-        , updateAction (NULL), aboutAction (NULL)
-        {}
-
-    void setup (QObject *aParent);
-    void addTo (QMenu *aMenu);
-    void retranslateUi();
-
-    QAction *contentsAction;
-    QAction *webAction;
-    QAction *resetMessagesAction;
-    QAction *registerAction;
-    QAction *updateAction;
-    QAction *aboutAction;
-};
 
 // VBoxProblemReporter class
 ////////////////////////////////////////////////////////////////////////////////
