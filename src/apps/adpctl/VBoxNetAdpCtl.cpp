@@ -24,6 +24,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <string>
+#include <list>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,37 +37,24 @@
 
 static void showUsage(void)
 {
-    fprintf(stderr, "Usage: VBoxNetAdpCtl <adapter> <address> [netmask <address>]\n");
+    fprintf(stderr, "Usage: VBoxNetAdpCtl <adapter> <address> ([netmask <address>] | remove)\n");
 }
 
-static int doExec(char *pszAdapterName, char *pszAddress, char *pszNetworkMask)
+static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
+                           const char *pcszArg2 = NULL,
+                           const char *pcszArg3 = NULL,
+                           const char *pcszArg4 = NULL)
 {
-    char *argv[] =
+    const char * const argv[] =
     {
         VBOXADPCTL_IFCONFIG_PATH,
-        pszAdapterName,
-        NULL, /* [address family] */
-        NULL, /* address */
-        NULL, /* ['netmask'] */
-        NULL, /* [network mask] */
+        pcszAdapterName,
+        pcszArg1, /* [address family] */
+        pcszArg2, /* address */
+        pcszArg3, /* ['netmask'] */
+        pcszArg4, /* [network mask] */
         NULL  /* terminator */
     };
-    int i = 2; /* index in argv. we start from address family */
-
-    if (strchr(pszAddress, ':'))
-        argv[i++] = "inet6";
-    argv[i++] = pszAddress;
-    if (pszNetworkMask)
-    {
-        argv[i++] = "netmask";
-        argv[i++] = pszNetworkMask;
-    }
-
-    return (execv(VBOXADPCTL_IFCONFIG_PATH, argv) == -1 ? EXIT_FAILURE : EXIT_SUCCESS);
-}
-
-static int executeIfconfig(char *pszAdapterName, char *pszAddress, char *pszNetworkMask)
-{
     int rc = EXIT_SUCCESS;
     pid_t childPid = fork();
     switch (childPid)
@@ -74,7 +64,8 @@ static int executeIfconfig(char *pszAdapterName, char *pszAddress, char *pszNetw
             rc = EXIT_FAILURE;
             break;
         case 0: /* Child process. */
-            rc = doExec(pszAdapterName, pszAddress, pszNetworkMask);
+            if (execv(VBOXADPCTL_IFCONFIG_PATH, (char * const*)argv) == -1)
+                rc = EXIT_FAILURE;
             break;
         default: /* Parent process. */
             waitpid(childPid, &rc, 0);
@@ -84,12 +75,53 @@ static int executeIfconfig(char *pszAdapterName, char *pszAddress, char *pszNetw
     return rc;
 }
 
+static bool removeAddresses(char *pszAdapterName)
+{
+    static char szCmd[1024], szBuf[1024];
+
+    snprintf(szCmd, sizeof(szCmd), VBOXADPCTL_IFCONFIG_PATH " %s", pszAdapterName);
+    FILE *fp = popen(szCmd, "r");
+
+    if (!fp)
+        return false;
+
+    std::list<std::string> Addresses;
+
+    while (fgets(szBuf, sizeof(szBuf), fp))
+    {
+        int cbSkipWS = strspn(szBuf, " \t");
+        assert(cbSkipWS < 20);
+        char *pszWord = strtok(szBuf + cbSkipWS, " ");
+        /* We are concerned with IPv6 address lines only. */
+        if (!pszWord || strcmp(pszWord, "inet6"))
+            continue;
+        pszWord = strtok(NULL, " ");
+        /* Skip link-local addresses. */
+        if (!pszWord || !strncmp(pszWord, "fe80", 4))
+            continue;
+        Addresses.push_back(std::string(pszWord));
+    }
+    pclose(fp);
+
+    std::list<std::string>::const_iterator it;
+    for (it = Addresses.begin(); it != Addresses.end(); it++)
+    {
+        if (executeIfconfig(pszAdapterName, "inet6", it->c_str(), "remove") != EXIT_SUCCESS)
+            return false;
+    }
+
+    return true;
+}
+
+
 int main(int argc, char *argv[])
 
 {
     char *pszAdapterName;
     char *pszAddress;
     char *pszNetworkMask = NULL;
+    char *pszOption = NULL;
+    int rc = EXIT_SUCCESS;
 
     switch (argc)
     {
@@ -100,8 +132,22 @@ int main(int argc, char *argv[])
                 showUsage();
                 return 1;
             }
+            pszOption = "netmask";
             pszNetworkMask = argv[4];
-            /* Fall through */
+            pszAdapterName = argv[1];
+            pszAddress = argv[2];
+            break;
+        case 4:
+            if (strcmp("remove", argv[3]))
+            {
+                fprintf(stderr, "Invalid argument: %s\n\n", argv[3]);
+                showUsage();
+                return 1;
+            }
+            pszOption = "remove";
+            pszAdapterName = argv[1];
+            pszAddress = argv[2];
+            break;
         case 3:
             pszAdapterName = argv[1];
             pszAddress = argv[2];
@@ -120,5 +166,21 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    return executeIfconfig(pszAdapterName, pszAddress, pszNetworkMask);
+    if (strchr(pszAddress, ':'))
+    {
+        /*
+         * Before we set IPv6 address we'd like to remove
+         * all previously assigned addresses except the
+         * self-assigned one.
+         */
+        if (pszOption && !strcmp(pszOption, "remove"))
+            rc = executeIfconfig(pszAdapterName, "inet6", pszAddress, pszOption);
+        else if (!removeAddresses(pszAdapterName))
+            rc = EXIT_FAILURE;
+        else
+            rc = executeIfconfig(pszAdapterName, "inet6", pszAddress, pszOption, pszNetworkMask);
+    }
+    else
+        rc = executeIfconfig(pszAdapterName, pszAddress, pszOption, pszNetworkMask);
+    return rc;
 }
