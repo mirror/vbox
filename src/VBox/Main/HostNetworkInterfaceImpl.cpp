@@ -203,16 +203,23 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(DhcpEnabled) (BOOL *aDhcpEnabled)
  * @returns COM status code
  * @param   aIPAddress address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (ULONG *aIPAddress)
+STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (BSTR *aIPAddress)
 {
     CheckComArgOutPointerValid(aIPAddress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    *aIPAddress = m.IPAddress;
+    in_addr tmp;
+    tmp.S_un.S_addr = m.IPAddress;
+    char *addr = inet_ntoa(tmp);
+    if(addr)
+    {
+        Bstr(addr).detachTo(aIPAddress);
+        return S_OK;
+    }
 
-    return S_OK;
+    return E_FAIL;
 }
 
 /**
@@ -221,23 +228,33 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (ULONG *aIPAddress)
  * @returns COM status code
  * @param   aNetworkMask address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask) (ULONG *aNetworkMask)
+STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
 {
     CheckComArgOutPointerValid(aNetworkMask);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    *aNetworkMask = m.networkMask;
+    in_addr tmp;
+    tmp.S_un.S_addr = m.networkMask;
+    char *addr = inet_ntoa(tmp);
+    if(addr)
+    {
+        Bstr(addr).detachTo(aNetworkMask);
+        return S_OK;
+    }
 
-    return S_OK;
+    return E_FAIL;
 }
 
 STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Supported) (BOOL *aIPV6Supported)
 {
     CheckComArgOutPointerValid(aIPV6Supported);
-
+#if defined(RT_OS_WINDOWS)
+    *aIPV6Supported = FALSE;
+#else
     *aIPV6Supported = TRUE;
+#endif
 
     return S_OK;
 }
@@ -351,7 +368,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(InterfaceType) (HostNetworkInterfac
 
 }
 
-STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (ULONG aIPAddress, ULONG aNetworkMask)
+STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_BSTR aNetMask)
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
@@ -359,13 +376,27 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (ULONG aIPAddress, ULONG
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    int rc = NetIfEnableStaticIpConfig(mVBox, this, aIPAddress, aNetworkMask);
-    if (RT_FAILURE(rc))
+    ULONG ip, mask;
+    ip = inet_addr(Utf8Str(aIPAddress).raw());
+    if(ip != INADDR_NONE)
     {
-        LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
-        return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+        mask = inet_addr(Utf8Str(aNetMask).raw());
+        if(mask != INADDR_NONE)
+        {
+            int rc = NetIfEnableStaticIpConfig(mVBox, this, ip, mask);
+            if (RT_SUCCESS(rc))
+            {
+                return S_OK;
+            }
+            else
+            {
+                LogRel(("Failed to EnableStaticIpConfig with rc=%Vrc\n", rc));
+                return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+            }
+
+        }
     }
-    return S_OK;
+    return E_FAIL;
 #endif
 }
 
