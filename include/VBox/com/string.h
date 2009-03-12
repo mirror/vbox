@@ -327,6 +327,12 @@ class Utf8Str
 {
 public:
 
+    enum CaseSensitivity
+    {
+        CaseSensitive,
+        CaseInsensitive
+    };
+
     typedef char *String;
     typedef const char *ConstString;
 
@@ -437,37 +443,54 @@ public:
         }
     }
 
-    int compare (const char *s) const
+    int compare (const char *pcsz, CaseSensitivity cs = CaseSensitive) const
     {
-        if (str == s)
+        if (str == pcsz)
             return 0;
         if (str == NULL)
             return -1;
-        if (s == NULL)
+        if (pcsz == NULL)
             return 1;
 
-        return ::strcmp (str, s);
+        if (cs == CaseSensitive)
+            return ::RTStrCmp(str, pcsz);
+        else
+            return ::RTStrICmp(str, pcsz);
     }
 
-    bool operator == (const Utf8Str &that) const { return !compare (that.str); }
-    bool operator != (const Utf8Str &that) const { return !!compare (that.str); }
+    int compare (const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const
+    {
+        return compare (that.str, cs);
+    }
+
+    bool operator == (const Utf8Str &that) const { return !compare (that); }
+    bool operator != (const Utf8Str &that) const { return !!compare (that); }
     bool operator == (const char *that) const { return !compare (that); }
     bool operator != (const char *that) const { return !!compare (that); }
-    bool operator < (const Utf8Str &that) const { return compare (that.str) < 0; }
+    bool operator < (const Utf8Str &that) const { return compare (that) < 0; }
     bool operator < (const char *that) const { return compare (that) < 0; }
 
-    int compareIgnoreCase(const char *pcsz) const
-    {
-        return ::RTStrICmp(str, pcsz);
-    }
-
-    bool endsWith (const Utf8Str &that) const
+    bool endsWith (const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const
     {
         if (length() < that.length())
             return false;
 
         int l = length() - that.length();
-        return ::strcmp (&str[l], that.str) == 0;
+        if (cs == CaseSensitive)
+            return ::RTStrCmp(&str[l], that.str) == 0;
+        else
+            return ::RTStrICmp(&str[l], that.str) == 0;
+    }
+
+    bool startsWith (const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const
+    {
+        if (length() < that.length())
+            return false;
+
+        if (cs == CaseSensitive)
+            return ::RTStrNCmp(str, that.str, that.length()) == 0;
+        else
+            return ::RTStrNICmp(str, that.str, that.length()) == 0;
     }
 
     bool isNull() const { return str == NULL; }
