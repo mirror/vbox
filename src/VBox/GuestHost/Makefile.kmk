@@ -27,5 +27,9 @@ ifdef VBOX_WITH_CROGL
  include $(PATH_SUB_CURRENT)/OpenGL/Makefile.kmk
 endif
 
+ifdef VBOX_WITH_HGSMI
+ include $(PATH_SUB_CURRENT)/HGSMI/Makefile.kmk
+endif
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
