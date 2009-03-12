@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 
 static char *nsIDToString(nsID *guid);
 static void listVMs(IVirtualBox *virtualBox, ISession *session);
@@ -308,7 +307,6 @@ int main(int argc, char **argv)
     PRUint32    revision         = 0;
     PRUnichar  *versionUtf16     = NULL;
     PRUnichar  *homefolderUtf16  = NULL;
-    struct stat stIgnored;
     nsresult    rc;     /* Result code of various function (method) calls. */
 
     printf("Starting Main\n");

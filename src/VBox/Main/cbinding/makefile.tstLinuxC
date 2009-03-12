@@ -20,20 +20,31 @@
 #
 
 PATH_BIN      = /opt/VirtualBox
-INCS_XPCOM = -I../../include
+INCS_XPCOM    = -I../../include
+GLUE_DIR      = ..
+GLUE_INC      = -I..
 
 CC            = gcc
 CFLAGS        = -g -Wall
 
 .PHONY: all
-all: tstLinuxC
+all: tstLinuxC tstXPCOMCGlue
 
 .PHONY: clean
 clean:
-	rm -f tstLinuxC.o tstLinuxC
+	rm -f tstLinuxC.o tstLinuxC tstXPCOMCGlue.o tstXPCOMCGlue VBoxXPCOMCGlue.o
 
 tstLinuxC: tstLinuxC.o
 	$(CC) -o $@ $^ -Xlinker -rpath -Xlinker $(PATH_BIN) $(PATH_BIN)/VBoxXPCOMC.so
 
 tstLinuxC.o: tstLinuxC.c
 	$(CC) $(CFLAGS) $(INCS_XPCOM) -o $@ -c $<
+
+tstXPCOMCGlue: tstXPCOMCGlue.o VBoxXPCOMCGlue.o
+	$(CC) -o $@ $^ -ldl
+
+tstXPCOMCGlue.o: tstXPCOMCGlue.c
+	$(CC) $(CFLAGS) $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $<
+
+VBoxXPCOMCGlue.o: $(GLUE_DIR)/VBoxXPCOMCGlue.c
+	$(CC) $(CFLAGS) $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $<
