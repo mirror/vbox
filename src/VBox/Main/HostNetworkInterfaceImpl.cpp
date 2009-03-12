@@ -215,7 +215,11 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (BSTR *aIPAddress)
     CheckComRCReturnRC (autoCaller.rc());
 
     in_addr tmp;
+#if defined(RT_OS_WINDOWS)
     tmp.S_un.S_addr = m.IPAddress;
+#else
+    tmp.s_addr = m.IPAddress;
+#endif
     char *addr = inet_ntoa(tmp);
     if(addr)
     {
