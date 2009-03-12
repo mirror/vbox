@@ -43,7 +43,7 @@
 #include <VBox/vmm.h>
 #include <VBox/version.h>
 
-#include "../UDPLib/VBoxNetUDP.h"
+#include "../NetLib/VBoxNetLib.h"
 
 #include <vector>
 #include <string>
@@ -904,110 +904,6 @@ int VBoxNetDhcp::tryGoOnline(void)
 
 
 /**
- * Deal with ARP queries.
- *
- * @returns true if ARP.
- *
- * @param   pSession        The support driver session.
- * @param   hIf             The internal network interface handle.
- * @param   pBuf            The internal network interface buffer.
- * @param   pMacAddr        Our MAC address.
- * @param   IPv4Addr        Our IPv4 address.
- */
-bool VBoxNetHandleArpForIP(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBUF pBuf, PCRTMAC pMacAddr, RTNETADDRIPV4 IPv4Addr)
-{
-    /*
-     * Valid IntNet Ethernet frame?
-     */
-    PCINTNETHDR pHdr = (PINTNETHDR)((uintptr_t)pBuf + pBuf->Recv.offRead);
-    if (pHdr->u16Type != INTNETHDR_TYPE_FRAME)
-        return false;
-
-    size_t      cbFrame = pHdr->cbFrame;
-    const void *pvFrame = INTNETHdrGetFramePtr(pHdr, pBuf);
-    PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pvFrame;
-
-    /*
-     * Arp frame?
-     */
-    if (pEthHdr->EtherType != RT_H2N_U16_C(RTNET_ETHERTYPE_ARP))
-        return false;
-    if (    pEthHdr->DstMac.au16[0] != 0xffff
-        ||  pEthHdr->DstMac.au16[1] != 0xffff
-        ||  pEthHdr->DstMac.au16[2] != 0xffff)
-        return false;
-    if (cbFrame < sizeof(RTNETARPIPV4) + sizeof(RTNETETHERHDR))
-        return false;
-
-    PCRTNETARPHDR pArpHdr = (PCRTNETARPHDR)(pEthHdr + 1);
-    if (pArpHdr->ar_htype != RT_H2N_U16_C(RTNET_ARP_ETHER))
-        return false;
-    if (pArpHdr->ar_hlen != sizeof(RTMAC))
-        return false;
-    if (pArpHdr->ar_ptype != RT_H2N_U16_C(RTNET_ETHERTYPE_IPV4))
-        return false;
-    if (pArpHdr->ar_plen != sizeof(RTNETADDRIPV4))
-        return false;
-
-    /* It's ARP, alright. Anything we need to do something about. */
-    PCRTNETARPIPV4 pArp = (PCRTNETARPIPV4)pArpHdr;
-    switch (pArp->Hdr.ar_oper)
-    {
-        /* 'Who has ' */
-        case RTNET_ARPOP_REQUEST:
-        case RTNET_ARPOP_REVREQUEST:
-        ///@todo case RTNET_ARPOP_INVREQUEST:
-            break;
-        default:
-            return true;
-    }
-
-    /*
-     * Deal with the queries.
-     */
-    RTNETARPIPV4 Reply;
-    switch (pArp->Hdr.ar_oper)
-    {
-        /* 'Who has ar_tpa? Tell ar_spa.'  */
-        case RTNET_ARPOP_REQUEST:
-            if (pArp->ar_spa.u != IPv4Addr.u)
-                return true;
-            Reply.Hdr.ar_oper = RTNET_ARPOP_REPLY;
-            break;
-
-        case RTNET_ARPOP_REVREQUEST:
-            if (    pArp->ar_tha.au16[0] != pMacAddr->au16[0]
-                ||  pArp->ar_tha.au16[1] != pMacAddr->au16[1]
-                ||  pArp->ar_tha.au16[2] != pMacAddr->au16[2])
-                return true;
-            Reply.Hdr.ar_oper = RTNET_ARPOP_REVREPLY;
-            break;
-
-        case RTNET_ARPOP_INVREQUEST:
-            return true;
-            //Reply.Hdr.ar_oper = RTNET_ARPOP_INVREPLY;
-            //break;
-    }
-
-    /*
-     * Complete the reply and send it.
-     */
-    Reply.Hdr.ar_htype = RT_H2N_U16_C(RTNET_ARP_ETHER);
-    Reply.Hdr.ar_ptype = RT_H2N_U16_C(RTNET_ETHERTYPE_IPV4);
-    Reply.Hdr.ar_hlen  = sizeof(RTMAC);
-    Reply.Hdr.ar_plen  = sizeof(RTNETADDRIPV4);
-    Reply.ar_sha = *pMacAddr;
-    Reply.ar_spa = IPv4Addr;
-    Reply.ar_tha = pArp->ar_sha;
-    Reply.ar_tpa = pArp->ar_spa;
-
-
-
-    return true;
-}
-
-
-/**
  * Runs the DHCP server.
  *
  * @returns exit code + error message to stderr on failure, won't return on
@@ -1068,7 +964,7 @@ int VBoxNetDhcp::run(void)
                 m_pCurMsg = NULL;
                 m_cbCurMsg = 0;
             }
-            else if (VBoxNetHandleArpForIP(m_pSession, m_hIf, m_pIfBuf, &m_MacAddress, m_Ipv4Address))
+            else if (VBoxNetArpHandleIt(m_pSession, m_hIf, m_pIfBuf, &m_MacAddress, m_Ipv4Address))
                 /* nothing */;
 
             /* Advance to the next frame. */
