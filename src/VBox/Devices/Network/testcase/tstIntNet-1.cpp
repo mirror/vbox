@@ -806,8 +806,17 @@ int main(int argc, char **argv)
 
             case '?':
             case 'h':
-                RTPrintf("syntax: tstIntNet-1 [-pStx-] [-d <secs>] [-f <file>] [-r <size>] [-s <size>]\n");
+                RTPrintf("syntax: tstIntNet-1 <options>\n"
+                         "\n"
+                         "Options:\n");
+                for (size_t i = 0; i < RT_ELEMENTS(s_aOptions); i++)
+                    RTPrintf("    -%c,%s\n", s_aOptions[i].iShort, s_aOptions[i].pszLong);
+                RTPrintf("\n"
+                         "Examples:\n"
+                         "    tstIntNet-1 -r 8192 -s 4096 -xS\n"
+                         "    tstIntNet-1 -n VBoxNetDhcp -r 4096 -s 4096 -i \"\" -xS\n");
                 return 1;
+
             case VINF_GETOPT_NOT_OPTION:
                 RTPrintf("tstIntNetR0: invalid argument: %s\n", Value.psz);
                 return 1;
