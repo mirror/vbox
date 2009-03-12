@@ -1547,7 +1547,25 @@ void VBoxNetDhcp::makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRT
     /*
      * Send it.
      */
-
+    int rc;
+#if 0
+    if (pDhcpMsg->bp_flags & RTNET_DHCP_FLAGS_NO_BROADCAST)
+    {
+        RTNETADDRIPV4 IPv4AddrBrdCast;
+        IPv4AddrBrdCast.u = UINT32_C(0xffffffff); /* broadcast IP */
+        rc = VBoxNetUDPUnicast(m_pSession, m_hIf, m_pIfBuf,
+                               m_Ipv4Address, &m_MacAddress, RTNETIPV4_PORT_BOOTPS,                 /* sender */
+                               IPv4AddrBrdCast, &pDhcpMsg->bp_chaddr.Mac, RTNETIPV4_PORT_BOOTPC,    /* receiver */
+                               pReply, cbReply);
+    }
+    else
+#endif
+        rc = VBoxNetUDPBroadcast(m_pSession, m_hIf, m_pIfBuf,
+                                 m_Ipv4Address, &m_MacAddress, RTNETIPV4_PORT_BOOTPS,               /* sender */
+                                 RTNETIPV4_PORT_BOOTPC,                                             /* receiver port */
+                                 pReply, cbReply);
+    if (RT_FAILURE(rc))
+        debugPrint(0, true, "error %Rrc when sending the reply", rc);
 }
 
 
