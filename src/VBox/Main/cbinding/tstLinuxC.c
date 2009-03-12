@@ -326,8 +326,12 @@ int main(int argc, char **argv)
 
     /*
      * VBoxGetXPCOMCFunctions() is the only function exported by
-     * VBoxXPCOMC.so. This functions gives you the pointer to the
+     * VBoxXPCOMC.so and the only one needed to make virtualbox
+     * work with C. This functions gives you the pointer to the
      * function table (g_pVBoxFuncs).
+     *
+     * Once you get the function table, then how and which functions
+     * to use is explained below.
      *
      * g_pVBoxFuncs->pfnComInitialize does all the necessary startup
      * action and provides us with pointers to vbox and session handles.
