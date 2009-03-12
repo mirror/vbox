@@ -51,7 +51,9 @@ VBoxNetDHCP_INCS = \
 	../UDPLib
 VBoxNetDHCP_SOURCES = \
 	VBoxNetDHCP.cpp \
-	../UDPLib/VBoxNetUDP.cpp
+	../NetLib/VBoxNetIntIf.cpp \
+	../NetLib/VBoxNetUDP.cpp \
+	../NetLib/VBoxNetARP.cpp
 VBoxNetDHCP_LIBS = \
 	$(LIB_RUNTIME)
 

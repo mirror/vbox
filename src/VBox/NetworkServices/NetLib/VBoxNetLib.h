@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxNetUDP - UDP Library for IntNet.
+ * VBoxNetUDP - IntNet Client Library.
  */
 
 /*
@@ -59,6 +59,13 @@ int     VBoxNetUDPBroadcast(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNET
                             RTNETADDRIPV4 SrcIPv4Addr, PCRTMAC SrcMacAddr, unsigned uSrcPort,
                             unsigned uDstPort,
                             void const *pvData, size_t cbData);
+
+bool    VBoxNetArpHandleIt(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBUF pBuf, PCRTMAC pMacAddr, RTNETADDRIPV4 IPv4Addr);
+
+int     VBoxNetIntIfFlush(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf);
+int     VBoxNetIntIfRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, size_t cSegs, PCINTNETSEG paSegs);
+int     VBoxNetIntIfSend(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBUF pBuf, size_t cSegs, PCINTNETSEG paSegs, bool fFlush);
+
 
 __END_DECLS
 
