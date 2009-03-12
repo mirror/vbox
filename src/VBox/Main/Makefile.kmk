@@ -241,7 +241,8 @@ VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)
 VBoxSVC_LIBS.solaris = \
-	adm
+	adm \
+	nsl
 ifdef VBOX_WITH_NETFLT
  ifdef VBOX_SOLARIS_NSL_RESOLVED
   VBoxSVC_LIBS.solaris += devinfo
