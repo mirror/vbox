@@ -5594,7 +5594,7 @@ static DECLCALLBACK(void) ataDetach(PPDMDEVINS pDevIns, unsigned iLUN)
  */
 static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
 {
-    int             rc;
+    int             rc = VINF_SUCCESS;
     PDMBLOCKTYPE    enmType;
 
     /*
