@@ -35,8 +35,6 @@
 #include <QStyle>
 #include <QProcess>
 #include <QHash>
-#include <QDesktopServices>
-#include <QDir>
 
 class QAction;
 class QLabel;
@@ -732,16 +730,7 @@ public:
 #endif
     }
 
-    static inline QString documentsPath()
-    {
-        QString path;
-#if QT_VERSION < 0x040400
-        path = QDir::homePath();
-#else
-        path = QDesktopServices::storageLocation (QDesktopServices::DocumentsLocation);
-#endif
-        return QDir::cleanPath (path);
-    }
+    static QString documentsPath();
 
 signals:
 
