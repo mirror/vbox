@@ -43,7 +43,10 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszMask)
     char szAdpCtl[RTPATH_MAX];
     int rc = RTPathProgram(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME));
     if (RT_FAILURE(rc))
+    {
+        LogRel(("NetIfAdpCtl: failed to get program path, rc=%Vrc.\n", rc));
         return rc;
+    }
     strcat(szAdpCtl, "/" VBOXNETADPCTL_NAME);
     args[0] = szAdpCtl;
     Bstr interfaceName;
@@ -52,13 +55,13 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszMask)
     args[1] = strName;
     if (!RTPathExists(szAdpCtl))
     {
-        LogRel(("NetIf: path %s does not exist. Failed to run " VBOXNETADPCTL_NAME " helper.\n",
+        LogRel(("NetIfAdpCtl: path %s does not exist. Failed to run " VBOXNETADPCTL_NAME " helper.\n",
                 szAdpCtl));
         return VERR_FILE_NOT_FOUND;
     }
 
     RTPROCESS pid;
-    rc = RTProcCreate(VBOXNETADPCTL_NAME, args, RTENV_DEFAULT, 0, &pid);
+    rc = RTProcCreate(szAdpCtl, args, RTENV_DEFAULT, 0, &pid);
     if (RT_SUCCESS(rc))
     {
         RTPROCSTATUS Status;
@@ -68,6 +71,9 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszMask)
             && Status.enmReason == RTPROCEXITREASON_NORMAL)
             return VINF_SUCCESS;
     }
+    else
+        LogRel(("NetIfAdpCtl: failed to create process for %.\n",
+                szAdpCtl));
     return rc;
 }
 
