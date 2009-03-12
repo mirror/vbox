@@ -1156,7 +1156,7 @@ STDMETHODIMP Appliance::Read(IN_BSTR path)
 
     // see if we can handle this file; for now we insist it has an ".ovf" extension
     m->strPath = path;
-    if (m->strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+    if (!m->strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Appliance file must have .ovf extension"));
 
@@ -1616,7 +1616,7 @@ STDMETHODIMP Appliance::Write(IN_BSTR path, IProgress **aProgress)
 
     // see if we can handle this file; for now we insist it has an ".ovf" extension
     m->strPath = path;
-    if (m->strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+    if (!m->strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Appliance file must have .ovf extension"));
 
