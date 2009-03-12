@@ -704,9 +704,11 @@ int handleAddiSCSIDisk(HandlerArg *a)
     do
     {
         ComPtr<IHardDisk> hardDisk;
+        /** @todo move the location stuff to Main, which can use pfnComposeName
+         * from the disk backends to construct the location properly. */
         CHECK_ERROR_BREAK (a->virtualBox,
             CreateHardDisk(Bstr ("iSCSI"),
-                           BstrFmt ("%ls/%ls", server.raw(), target.raw()),
+                           BstrFmt ("%ls/%ls/%ls", server.raw(), target.raw(), lun.raw()),
                            hardDisk.asOutParam()));
         CheckComRCBreakRC (rc);
 
