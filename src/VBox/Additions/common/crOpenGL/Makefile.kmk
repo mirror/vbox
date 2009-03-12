@@ -46,7 +46,7 @@ endif
 
 ifeq ($(KBUILD_TARGET),linux)
  #VBoxOGL_DRI = 1
- #VBoxOGL_FAKEDRI = 1
+ VBoxOGL_FAKEDRI = 1
  VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
 endif
 
