@@ -484,7 +484,9 @@ endif
 if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_WITH_NETFLT = 1
  VBOX_SOLARIS_NSL_RESOLVED = 1
-# VBOX_WITH_NETADP = 1
+ if1of ($(KBUILD_TARGET), darwin)
+  VBOX_WITH_NETADP = 1
+ endif
 endif
 ## Use the new version of liblzf. Remove with the old liblzf.
 #VBOX_WITH_NEW_LIBLZF = 1
