@@ -3657,7 +3657,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="ea6fb7ea-1993-4642-b113-f29eb39e0df0"
+     uuid="dcf6a64c-1466-4b5a-b822-9db04133dc74"
      wsmap="managed"
      >
     <desc>
@@ -4443,11 +4443,17 @@
 
     <method name="addStorageController">
       <desc>
-        Adds a new storage controller (SCSI or SATA controller) to the machine.
+        Adds a new storage controller (SCSI or SATA controller) to the
+        machine and returns it as an instance of
+        <link to="IStorageController" />.
+
         @a name identifies the controller with subsequent calls such as
         <link to="#getStorageControllerByName" /> or
         <link to="#removeStorageController" /> or
         <link to="#attachHardDisk" />.
+
+        After the controller has been added, you can set its exact
+        type by setting the <link to="IStorageController::controllerType" />.
 
         <result name="VBOX_E_OBJECT_IN_USE">
           A storage controller with given name exists already.
@@ -4458,6 +4464,7 @@
       </desc>
       <param name="name" type="wstring" dir="in"/>
       <param name="connectionType" type="StorageBus" dir="in"/>
+      <param name="controller" type="IStorageController" dir="return"/>
     </method>
 
     <method name="getStorageControllerByName" const="yes">

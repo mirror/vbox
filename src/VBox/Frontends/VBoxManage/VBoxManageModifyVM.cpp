@@ -1770,9 +1770,8 @@ int handleModifyVM(HandlerArg *a)
         {
             if (fSataEnabled)
             {
-                CHECK_ERROR(machine, AddStorageController(Bstr("SATA"), StorageBus_SATA));
                 ComPtr<IStorageController> ctl;
-                CHECK_ERROR(machine, GetStorageControllerByName(Bstr("SATA"), ctl.asOutParam()));
+                CHECK_ERROR(machine, AddStorageController(Bstr("SATA"), StorageBus_SATA, ctl.asOutParam()));
                 CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_IntelAhci));
             }
             else
@@ -1846,9 +1845,8 @@ int handleModifyVM(HandlerArg *a)
         {
             if (fLsiLogicEnabled)
             {
-                CHECK_ERROR(machine, AddStorageController(Bstr("LsiLogic"), StorageBus_SCSI));
                 ComPtr<IStorageController> ctl;
-                CHECK_ERROR(machine, GetStorageControllerByName(Bstr("LsiLogic"), ctl.asOutParam()));
+                CHECK_ERROR(machine, AddStorageController(Bstr("LsiLogic"), StorageBus_SCSI, ctl.asOutParam()));
                 CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_LsiLogic));
             }
             else

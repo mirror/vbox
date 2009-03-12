@@ -752,9 +752,9 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                         i.strHostResource = pelmItemChild->getValue();
                     else if (!strcmp(pcszItemChildName, "ResourceType"))
                     {
-                        int32_t iType; /** @todo how to fix correctly? (enum fun.) */
-                        pelmItemChild->copyValue(iType);
-                        i.resourceType = (OVFResourceType_T)iType;
+                        uint32_t ulType;
+                        pelmItemChild->copyValue(ulType);
+                        i.resourceType = (OVFResourceType_T)ulType;
                     }
                     else if (!strcmp(pcszItemChildName, "OtherResourceType"))
                         i.strOtherResourceType = pelmItemChild->getValue();
@@ -1217,7 +1217,6 @@ STDMETHODIMP Appliance::Interpret()
     HRESULT rc = S_OK;
 
     /* Clear any previous virtual system descriptions */
-    // @todo: have the entries deleted also?
     m->virtualSystemDescriptions.clear();
 
     /* We need the default path for storing disk images */
@@ -1334,11 +1333,9 @@ STDMETHODIMP Appliance::Interpret()
             {
                 /* Check for the constrains */
                 if (vsysThis.llNetworkNames.size() > SchemaDefs::NetworkAdapterCount)
-                {
                     pNewDesc->addWarning(tr("The virtual system claims support for %u network adapters, but VirtualBox has support for max %u network adapter only."),
                                          vsysThis.llNetworkNames.size(), SchemaDefs::NetworkAdapterCount);
 
-                }
                 /* Get the default network adapter type for the selected guest OS */
                 NetworkAdapterType_T nwAdapterVBox = NetworkAdapterType_Am79C970A;
                 rc = pGuestOSType->COMGETTER(AdapterType)(&nwAdapterVBox);
@@ -1451,11 +1448,7 @@ STDMETHODIMP Appliance::Interpret()
                             /* Check for the constrains */
                             if (cSCSIused < 1)
                             {
-                                // @todo: figure out the SCSI types
                                 Utf8Str hdcController = "LsiLogic";
-                                /* if (!RTStrICmp(hdc.strControllerType.c_str(), "LsiLogic"))
-                                   hdcController = "LsiLogic";
-                                   else*/
                                 if (!RTStrICmp(hdc.strControllerType.c_str(), "BusLogic"))
                                     hdcController = "BusLogic";
                                 pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
@@ -1472,10 +1465,6 @@ STDMETHODIMP Appliance::Interpret()
                             }
                             ++cSCSIused;
                             break;
-                        }
-                    default:
-                        {
-                            /* @todo: should we stop? */
                         }
                 }
             }
@@ -1530,11 +1519,8 @@ STDMETHODIMP Appliance::Interpret()
                                            strExtraConfig);
                     }
                     else
-                    {
-                        /* @todo: should we stop here? */
-                        pNewDesc->addWarning(tr("The virtual system claims support for the following virtual disk image format which VirtualBox not support: %s"),
-                                             di.strFormat.c_str());
-                    }
+                        throw setError(VBOX_E_FILE_ERROR,
+                                       tr("Unsupported format for virtual disk image in OVF: \"%s\"", di.strFormat.c_str()));
                 }
             }
 
@@ -1947,21 +1933,22 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
 
             /* Hard disk controller IDE */
             std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
-            /* @todo: we support one IDE controller only */
-            if (vsdeHDCIDE.size() > 0)
+            if (vsdeHDCIDE.size() > 1)
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Too many IDE controllers in OVF; VirtualBox only supports one"));
+            if (vsdeHDCIDE.size() == 1)
             {
-                /* Set the appropriate IDE controller in the virtual BIOS of the VM */
-                ComPtr<IStorageController> ctl;
-                rc = pNewMachine->GetStorageControllerByName(Bstr("IDE"), ctl.asOutParam());
+                ComPtr<IStorageController> pController;
+                rc = pNewMachine->GetStorageControllerByName(Bstr("IDE"), pController.asOutParam());
                 if (FAILED(rc)) throw rc;
 
                 const char *pcszIDEType = vsdeHDCIDE.front()->strVbox.c_str();
                 if (!strcmp(pcszIDEType, "PIIX3"))
-                    rc = ctl->COMSETTER(ControllerType)(StorageControllerType_PIIX3);
+                    rc = pController->COMSETTER(ControllerType)(StorageControllerType_PIIX3);
                 else if (!strcmp(pcszIDEType, "PIIX4"))
-                    rc = ctl->COMSETTER(ControllerType)(StorageControllerType_PIIX4);
+                    rc = pController->COMSETTER(ControllerType)(StorageControllerType_PIIX4);
                 else if (!strcmp(pcszIDEType, "ICH6"))
-                    rc = ctl->COMSETTER(ControllerType)(StorageControllerType_ICH6);
+                    rc = pController->COMSETTER(ControllerType)(StorageControllerType_ICH6);
                 else
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Invalid IDE controller type \"%s\""),
@@ -1971,31 +1958,48 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
 #ifdef VBOX_WITH_AHCI
             /* Hard disk controller SATA */
             std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
-            /* @todo: we support one SATA controller only */
+            if (vsdeHDCSATA.size() > 1)
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Too many SATA controllers in OVF; VirtualBox only supports one"));
             if (vsdeHDCSATA.size() > 0)
             {
+                ComPtr<IStorageController> pController;
                 const Utf8Str &hdcVBox = vsdeHDCIDE.front()->strVbox;
                 if (hdcVBox == "AHCI")
                 {
-                    /* For now we have just to enable the AHCI controller. */
-                    rc = pNewMachine->AddStorageController(Bstr("SATA"), StorageBus_SATA);
+                    rc = pNewMachine->AddStorageController(Bstr("SATA"), StorageBus_SATA, pController.asOutParam());
                     if (FAILED(rc)) throw rc;
                 }
                 else
-                {
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Invalid SATA controller type \"%s\""),
                                    hdcVBox.c_str());
-                }
             }
 #endif /* VBOX_WITH_AHCI */
 
             /* Hard disk controller SCSI */
             std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
-            /* @todo: do we support more than one SCSI controller? */
+            if (vsdeHDCSATA.size() > 1)
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Too many SCSI controllers in OVF; VirtualBox only supports one"));           // @todo is that true?
             if (vsdeHDCSCSI.size() > 0)
             {
-                /* @todo: revisit when Main support for SCSI is ready */
+                ComPtr<IStorageController> pController;
+                StorageControllerType_T controllerType;
+                const Utf8Str &hdcVBox = vsdeHDCIDE.front()->strVbox;
+                if (hdcVBox == "LsiLogic")
+                    controllerType = StorageControllerType_LsiLogic;
+                else if (hdcVBox == "BusLogic")
+                    controllerType = StorageControllerType_BusLogic;
+                else
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Invalid SCSI controller type \"%s\""),
+                                   hdcVBox.c_str());
+
+                rc = pNewMachine->AddStorageController(Bstr("SCSI"), StorageBus_SCSI, pController.asOutParam());
+                if (FAILED(rc)) throw rc;
+                rc = pController->COMSETTER(ControllerType)(controllerType);
+                if (FAILED(rc)) throw rc;
             }
 
             /* Now its time to register the machine before we add any hard disks */
@@ -2229,10 +2233,9 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                             break;
 
                             case HardDiskController::SCSI:
-//                                 mhda.busType = StorageBus_SCSI;
-                                throw setError(VBOX_E_NOT_SUPPORTED,
-                                               tr("SCSI controller support is not available yet in VirtualBox"));
-                                    // @todo
+                                mhda.controllerType = Bstr("SCSI");
+                                mhda.lChannel = (long)vd.ulAddressOnParent;
+                                mhda.lDevice = (long)0;
                             break;
 
                             default: break;
@@ -2397,8 +2400,6 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
         xml::ElementNode *pelmDiskSection = pelmRoot->createChild("DiskSection");
         xml::ElementNode *pelmDiskSectionInfo = pelmDiskSection->createChild("Info");
         pelmDiskSectionInfo->addContent("List of the virtual disks used in the package");
-        // @todo for each disk:
-        // xml::ElementNode *pelmDisk = pelmDiskSection->createChild("Disk");
         // for now, set up a map so we have a list of unique disk names (to make
         // sure the same disk name is only added once)
         map<Utf8Str, const VirtualSystemDescriptionEntry*> mapDisks;
@@ -2449,7 +2450,6 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
                 </OperatingSystemSection> */
             xml::ElementNode *pelmOperatingSystemSection = pelmVirtualSystem->createChild("OperatingSystemSection");
             pelmOperatingSystemSection->setAttribute("ovf:id", llOS.front()->strOvf);
-                    // @todo convert vbox OS type into OVF ID
             pelmOperatingSystemSection->createChild("Info")->addContent("blah");        // @ŧodo
             pelmOperatingSystemSection->createChild("Description")->addContent("blah");        // @ŧodo
 
@@ -3357,14 +3357,15 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
         int32_t lIDEControllerIndex = 0;
         int32_t lSATAControllerIndex = 0;
+        int32_t lSCSIControllerIndex = 0;
 
 //     <const name="HardDiskControllerIDE" value="6" />
-        ComPtr<IStorageController> ctl;
-        rc = GetStorageControllerByName(Bstr("IDE"), ctl.asOutParam());
+        ComPtr<IStorageController> pController;
+        rc = GetStorageControllerByName(Bstr("IDE"), pController.asOutParam());
         if (FAILED(rc)) throw rc;
         Utf8Str strVbox;
         StorageControllerType_T ctlr;
-        rc = ctl->COMGETTER(ControllerType)(&ctlr);
+        rc = pController->COMGETTER(ControllerType)(&ctlr);
         if (FAILED(rc)) throw rc;
         switch(ctlr)
         {
@@ -3376,21 +3377,35 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         if (strVbox.length())
         {
             lIDEControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE, Utf8StrFmt("%d", lIDEControllerIndex), strVbox, "");
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
+                               Utf8StrFmt("%d", lIDEControllerIndex),
+                               strVbox,
+                               "");
         }
 
 #ifdef VBOX_WITH_AHCI
 //     <const name="HardDiskControllerSATA" value="7" />
-        rc = GetStorageControllerByName(Bstr("IDE"), ctl.asOutParam());
+        rc = GetStorageControllerByName(Bstr("IDE"), pController.asOutParam());
         if (SUCCEEDED(rc))
         {
             lSATAControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA, Utf8StrFmt("%d", lSATAControllerIndex), strVbox, "");
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
+                               Utf8StrFmt("%d", lSATAControllerIndex),
+                               strVbox,
+                               "");
         }
 #endif // VBOX_WITH_AHCI
 
 //     <const name="HardDiskControllerSCSI" value="8" />
-        // @todo
+        rc = GetStorageControllerByName(Bstr("SCSI"), pController.asOutParam());
+        if (SUCCEEDED(rc))
+        {
+            lSCSIControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
+                               Utf8StrFmt("%d", lSCSIControllerIndex),
+                               strVbox,
+                               "");
+        }
 
 //     <const name="HardDiskImage" value="9" />
         HDData::AttachmentList::iterator itA;
