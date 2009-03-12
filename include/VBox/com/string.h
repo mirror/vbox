@@ -472,6 +472,9 @@ public:
 
     bool endsWith (const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const
     {
+        if (isNull() || that.isNull())
+            return false;
+
         if (length() < that.length())
             return false;
 
@@ -484,6 +487,9 @@ public:
 
     bool startsWith (const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const
     {
+        if (isNull() || that.isNull())
+            return false;
+
         if (length() < that.length())
             return false;
 
