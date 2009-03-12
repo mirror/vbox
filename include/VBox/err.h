@@ -1091,6 +1091,8 @@
 #define VERR_VD_VMDK_INVALID_STATE                  (-3243)
 /** VMDK: Format is invalid/inconsistent. */
 #define VERR_VD_VMDK_INVALID_FORMAT                 (-3244)
+/** VMDK: Invalid write position. */
+#define VERR_VD_VMDK_INVALID_WRITE                  (-3245)
 /** iSCSI: Invalid header, i.e. dummy for validity check. */
 #define VERR_VD_ISCSI_INVALID_HEADER                (-3250)
 /** iSCSI: Configuration value is unknown. This indicates misconfiguration. */
