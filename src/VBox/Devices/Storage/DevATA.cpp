@@ -5705,13 +5705,14 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
             pIf->PCHSGeometry.cCylinders = RT_MAX(RT_MIN(cCylinders, 16383), 1);
             pIf->PCHSGeometry.cHeads = 16;
             pIf->PCHSGeometry.cSectors = 63;
-            /* Set the disk geometry information. */
-            rc = pIf->pDrvBlockBios->pfnSetPCHSGeometry(pIf->pDrvBlockBios,
-                                                        &pIf->PCHSGeometry);
+            /* Set the disk geometry information. Ignore errors. */
+            pIf->pDrvBlockBios->pfnSetPCHSGeometry(pIf->pDrvBlockBios,
+                                                   &pIf->PCHSGeometry);
+            rc = VINF_SUCCESS;
         }
         LogRel(("PIIX3 ATA: LUN#%d: disk, PCHS=%u/%u/%u, total number of sectors %Ld\n", pIf->iLUN, pIf->PCHSGeometry.cCylinders, pIf->PCHSGeometry.cHeads, pIf->PCHSGeometry.cSectors, pIf->cTotalSectors));
     }
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -6183,7 +6184,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return rc;
     pThis->u8Type = (uint8_t)enmChipset;
-    
+
     /*
      * Initialize data (most of it anyway).
      */
@@ -6194,7 +6195,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* PCI configuration space. */
     PCIDevSetVendorId(&pThis->dev, 0x8086); /* Intel */
 
-    /* 
+    /*
      * When adding more IDE chipsets, don't forget to update pci_bios_init_device()
      * as it explicitly checks for PCI id for IDE controllers.
      */
