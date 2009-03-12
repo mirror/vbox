@@ -1358,10 +1358,10 @@ STDMETHODIMP Appliance::Interpret()
                 {
                     Utf8Str strNetwork = *nwIt; // logical network to connect to
                     // make sure it's one of these two
-                    if (    (strNetwork.compareIgnoreCase("Null"))
-                         && (strNetwork.compareIgnoreCase("Bridged"))
-                         && (strNetwork.compareIgnoreCase("Internal"))
-                         && (strNetwork.compareIgnoreCase("HostOnly"))
+                    if (    (strNetwork.compare("Null", Utf8Str::CaseInsensitive))
+                         && (strNetwork.compare("Bridged", Utf8Str::CaseInsensitive))
+                         && (strNetwork.compare("Internal", Utf8Str::CaseInsensitive))
+                         && (strNetwork.compare("HostOnly", Utf8Str::CaseInsensitive))
                        )
                         strNetwork = "NAT";
 
@@ -1929,7 +1929,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                     if (FAILED(rc)) throw rc;
 
                     // default is NAT; change to "bridged" if extra conf says so
-                    if (!pvsys->strExtraConfig.compareIgnoreCase("type=Bridged"))
+                    if (!pvsys->strExtraConfig.compare("type=Bridged", Utf8Str::CaseInsensitive))
                     {
                         rc = pNetworkAdapter->AttachToBridgedInterface();
                         if (FAILED(rc)) throw rc;
@@ -2615,9 +2615,9 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
                                 lAddress = 0;
                                 lBusNumber = 0;
 
-                                if (!desc.strVbox.compareIgnoreCase("buslogic"))
+                                if (!desc.strVbox.compare("buslogic"), Utf8Str::CaseInsensitive)
                                     strResourceSubType = "buslogic";
-                                else if (!desc.strVbox.compareIgnoreCase("lsilogic"))
+                                else if (!desc.strVbox.compare("lsilogic"), Utf8Str::CaseInsensitive)
                                     strResourceSubType = "lsilogic";
                                 else
                                     throw setError(VBOX_E_NOT_SUPPORTED,
@@ -2866,7 +2866,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             /* Based on the file extensions we choose the right format for the
              * disk */
             Bstr bstrSrcFormat = L"VDI";
-            if (strTargetFilePath.endsWith(".vmdk"))
+            if (strTargetFilePath.endsWith(".vmdk", Utf8Str::CaseInsensitive))
                 bstrSrcFormat = L"VMDK";
             /* Create a new hard disk interface for the destination disk image */
             Log(("Creating target disk \"%s\"\n", strTargetFilePath.raw()));
