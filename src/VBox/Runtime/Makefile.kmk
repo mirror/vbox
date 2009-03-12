@@ -663,6 +663,7 @@ RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOU
 #
 RuntimeGuestR3Shared_TEMPLATE           := VBOXGUESTR3DLL
 RuntimeGuestR3Shared_EXTENDS            := RuntimeGuestR3
+RuntimeGuestR3Shared_INST                = $(INST_ADDITIONS_LIB)
 
 
 #
