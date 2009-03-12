@@ -1128,8 +1128,6 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         SafeIfaceArray <IUSBDeviceFilter> Coll;
         CHECK_ERROR_RET (USBCtl, COMGETTER(DeviceFilters)(ComSafeArrayAsOutParam(Coll)), rc);
 
-        size_t index = 0; // Also used after the "for" below.
-
         if (Coll.size() == 0)
         {
             if (details != VMINFO_MACHINEREADABLE)
@@ -1137,7 +1135,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         }
         else
         {
-            for (; index < Coll.size(); ++index)
+            for (size_t index = 0; index < Coll.size(); ++index)
             {
                 ComPtr<IUSBDeviceFilter> DevPtr = Coll[index];
 
@@ -1207,7 +1205,6 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
         if (console)
         {
-            index = 0;
             /* scope */
             {
                 if (details != VMINFO_MACHINEREADABLE)
@@ -1223,7 +1220,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 }
                 else
                 {
-                    for (index = 0; index < coll.size(); ++index)
+                    for (size_t index = 0; index < coll.size(); ++index)
                     {
                         ComPtr <IHostUSBDevice> dev = coll[index];
 
@@ -1297,7 +1294,6 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 }
             }
 
-            index = 0;
             /* scope */
             {
                 if (details != VMINFO_MACHINEREADABLE)
@@ -1313,7 +1309,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 }
                 else
                 {
-                    for (index = 0; index < coll.size(); ++index)
+                    for (size_t index = 0; index < coll.size(); ++index)
                     {
                         ComPtr <IUSBDevice> dev = coll[index];
 
@@ -1398,22 +1394,16 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 #if 0 // not yet implemented
     /* globally shared folders first */
     {
-        ComPtr<ISharedFolderCollection> sfColl;
-        ComPtr<ISharedFolderEnumerator> sfEnum;
-        CHECK_ERROR_RET(virtualBox, COMGETTER(SharedFolders)(sfColl.asOutParam()), rc);
-        CHECK_ERROR_RET(sfColl, Enumerate(sfEnum.asOutParam()), rc);
-        BOOL fMore;
-        sfEnum->HasMore(&fMore);
-        while (fMore)
+        SafeIfaceArray <ISharedFolder> sfColl;
+        CHECK_ERROR_RET(virtualBox, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(sfColl)), rc);
+        for (size_t i = 0; i < sfColl.size(); ++i)
         {
-            ComPtr<ISharedFolder> sf;
-            CHECK_ERROR_RET(sfEnum, GetNext(sf.asOutParam()), rc);
+            ComPtr<ISharedFolder> sf = sfColl[i];
             Bstr name, hostPath;
             sf->COMGETTER(Name)(name.asOutParam());
             sf->COMGETTER(HostPath)(hostPath.asOutParam());
             RTPrintf("Name: '%lS', Host path: '%lS' (global mapping)\n", name.raw(), hostPath.raw());
             ++numSharedFolders;
-            CHECK_ERROR_RET(sfEnum, HasMore(&fMore), rc);
         }
     }
 #endif
