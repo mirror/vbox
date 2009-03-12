@@ -24,6 +24,7 @@ INCS_XPCOM    = -I../../include
 GLUE_DIR      = ..
 GLUE_INC      = -I..
 
+LDFLAGS       = -Xlinker -rpath -Xlinker $(PATH_BIN)
 CC            = gcc
 CFLAGS        = -g -Wall
 
@@ -35,7 +36,7 @@ clean:
 	rm -f tstLinuxC.o tstLinuxC tstXPCOMCGlue.o tstXPCOMCGlue VBoxXPCOMCGlue.o
 
 tstLinuxC: tstLinuxC.o
-	$(CC) -o $@ $^ -Xlinker -rpath -Xlinker $(PATH_BIN) $(PATH_BIN)/VBoxXPCOMC.so
+	$(CC) -o $@ $^ $(LDFLAGS) $(PATH_BIN)/VBoxXPCOMC.so
 
 tstLinuxC.o: tstLinuxC.c
 	$(CC) $(CFLAGS) $(INCS_XPCOM) -o $@ -c $<
