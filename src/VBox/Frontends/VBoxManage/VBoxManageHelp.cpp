@@ -487,7 +487,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 #if !defined(RT_OS_WINDOWS) || defined(VBOX_WITH_NETFLT)
     if (u64Cmd & USAGE_HOSTONLYIFS)
     {
-        RTPrintf("VBoxManage hostonlyif       ipconfig <name> [-dhcp| -ip<ipv4> -netmask<ipv4> | -ipv6<ipv6> -netmasklengthv6<length>]"
+        RTPrintf("VBoxManage hostonlyif       ipconfig <name> [-dhcp| -ip<ipv4> [-netmask<ipv4> (default is 255.255.255.0)]| -ipv6<ipv6> [-netmasklengthv6<length> (default is 64)]]"
 # if defined(RT_OS_WINDOWS)
                  "|\n"
                  "                            create |\n"

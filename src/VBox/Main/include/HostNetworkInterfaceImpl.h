@@ -70,8 +70,8 @@ public:
     STDMETHOD(COMGETTER(Name)) (BSTR *aInterfaceName);
     STDMETHOD(COMGETTER(Id)) (OUT_GUID aGuid);
     STDMETHOD(COMGETTER(DhcpEnabled)) (BOOL *aDhcpEnabled);
-    STDMETHOD(COMGETTER(IPAddress)) (ULONG *aIPAddress);
-    STDMETHOD(COMGETTER(NetworkMask)) (ULONG *aNetworkMask);
+    STDMETHOD(COMGETTER(IPAddress)) (BSTR *aIPAddress);
+    STDMETHOD(COMGETTER(NetworkMask)) (BSTR *aNetworkMask);
     STDMETHOD(COMGETTER(IPV6Supported)) (BOOL *aIPV6Supported);
     STDMETHOD(COMGETTER(IPV6Address)) (BSTR *aIPV6Address);
     STDMETHOD(COMGETTER(IPV6NetworkMaskPrefixLength)) (ULONG *aIPV6NetworkMaskPrefixLength);
@@ -80,7 +80,7 @@ public:
     STDMETHOD(COMGETTER(Status)) (HostNetworkInterfaceStatus_T *aStatus);
     STDMETHOD(COMGETTER(InterfaceType)) (HostNetworkInterfaceType_T *aType);
 
-    STDMETHOD(EnableStaticIpConfig) (ULONG aIPAddress, ULONG aNetworkMask);
+    STDMETHOD(EnableStaticIpConfig) (IN_BSTR aIPAddress, IN_BSTR aNetworkMask);
     STDMETHOD(EnableStaticIpConfigV6) (IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength);
     STDMETHOD(EnableDynamicIpConfig) ();
 

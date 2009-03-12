@@ -6533,7 +6533,7 @@
 
   <interface
      name="IHostNetworkInterface" extends="$unknown"
-     uuid="63d66df2-e40b-4289-acc2-7e260fe6e51e"
+     uuid="09de36e8-2588-4050-a791-655240b556e0"
      wsmap="managed"
      >
     <desc>
@@ -6554,11 +6554,11 @@
       <desc>Specifies whether the DHCP is enabled for the interface.</desc>
     </attribute>
 
-    <attribute name="IPAddress" type="unsigned long" readonly="yes">
+    <attribute name="IPAddress" type="wstring" readonly="yes">
       <desc>Returns the IP V4 address of the interface.</desc>
     </attribute>
 
-    <attribute name="networkMask" type="unsigned long" readonly="yes">
+    <attribute name="networkMask" type="wstring" readonly="yes">
       <desc>Returns the network mask of the interface.</desc>
     </attribute>
 
@@ -6592,12 +6592,12 @@
 
     <method name="enableStaticIpConfig">
       <desc>sets and enables the static IP V4 configuration for the given interface.</desc>
-      <param name="IPAddress" type="unsigned long" dir="in">
+      <param name="IPAddress" type="wstring" dir="in">
         <desc>
           IP address.
         </desc>
       </param>
-      <param name="networkMask" type="unsigned long" dir="in">
+      <param name="networkMask" type="wstring" dir="in">
         <desc>
           network mask.
         </desc>
