@@ -514,7 +514,8 @@ HRESULT Machine::init (VirtualBox *aParent, CBSTR aConfigFile,
                  * which can't be disabled (because of the DVD stuff which is
                  * not in the StorageDevice implementation at the moment)
                  */
-                rc = AddStorageController(Bstr("IDE"), StorageBus_IDE);
+                ComPtr<IStorageController> pController;
+                rc = AddStorageController(Bstr("IDE"), StorageBus_IDE, pController.asOutParam());
                 CheckComRCReturnRC(rc);
                 ComObjPtr<StorageController> ctl;
                 rc = getStorageControllerByName(Bstr("IDE"), ctl, true);
@@ -3267,7 +3268,9 @@ GetHardDiskAttachmentsOfController(IN_BSTR aName, ComSafeArrayOut (IHardDiskAtta
 }
 
 STDMETHODIMP Machine::
-AddStorageController(IN_BSTR aName, StorageBus_T aConnectionType)
+AddStorageController(IN_BSTR aName,
+                     StorageBus_T aConnectionType,
+                     IStorageController **controller)
 {
     CheckComArgStrNotEmptyOrNull(aName);
 
@@ -3299,6 +3302,8 @@ AddStorageController(IN_BSTR aName, StorageBus_T aConnectionType)
 
     mStorageControllers.backup();
     mStorageControllers->push_back (ctrl);
+
+    ctrl.queryInterfaceTo(controller);
 
     /* inform the direct session if any */
     alock.leave();
