@@ -2554,7 +2554,7 @@ ResumeExecution:
 
                 LogFlow(("Real mode X86_XCPT_GP instruction emulation at %RGv\n", (RTGCPTR)pCtx->rip));
 
-#if 0
+#if 1
                 /* For testing purposes */
                 rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
                 if (rc == VINF_SUCCESS)
