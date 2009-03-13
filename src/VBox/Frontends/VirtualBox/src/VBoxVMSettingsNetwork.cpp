@@ -294,14 +294,12 @@ void VBoxVMSettingsNetwork::populateComboboxes()
         KNetworkAttachmentType_Internal);
     mCbAttachmentType->setItemData (3,
         mCbAttachmentType->itemText (3), Qt::ToolTipRole);
-#if defined (RT_OS_LINUX) || defined (RT_OS_WINDOWS) || defined (Q_WS_MAC)
     mCbAttachmentType->insertItem (4,
         vboxGlobal().toString (KNetworkAttachmentType_HostOnly));
     mCbAttachmentType->setItemData (4,
         KNetworkAttachmentType_HostOnly);
     mCbAttachmentType->setItemData (4,
         mCbAttachmentType->itemText (4), Qt::ToolTipRole);
-#endif /* RT_OS_LINUX || RT_OS_WINDOWS */
 
     /* Set the old value */
     mCbAttachmentType->setCurrentIndex (currentAttachment);
