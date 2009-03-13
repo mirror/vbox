@@ -1215,121 +1215,6 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
 */
 
 
-#define NETSHELL_LIBRARY _T("netshell.dll")
-
-/**
- *  Use the IShellFolder API to rename the connection.
- */
-static HRESULT rename_shellfolder (PCWSTR wGuid, PCWSTR wNewName)
-{
-    /* This is the GUID for the network connections folder. It is constant.
-     * {7007ACC7-3202-11D1-AAD2-00805FC1270E} */
-    const GUID CLSID_NetworkConnections = {
-        0x7007ACC7, 0x3202, 0x11D1, {
-            0xAA, 0xD2, 0x00, 0x80, 0x5F, 0xC1, 0x27, 0x0E
-        }
-    };
-
-    LPITEMIDLIST pidl = NULL;
-    IShellFolder *pShellFolder = NULL;
-    HRESULT hr;
-
-    /* Build the display name in the form "::{GUID}". */
-    if (wcslen (wGuid) >= MAX_PATH)
-        return E_INVALIDARG;
-    WCHAR szAdapterGuid[MAX_PATH + 2] = {0};
-    swprintf (szAdapterGuid, L"::%ls", wGuid);
-
-    /* Create an instance of the network connections folder. */
-    hr = CoCreateInstance (CLSID_NetworkConnections, NULL,
-                           CLSCTX_INPROC_SERVER, IID_IShellFolder,
-                           reinterpret_cast <LPVOID *> (&pShellFolder));
-    /* Parse the display name. */
-    if (SUCCEEDED (hr))
-    {
-        hr = pShellFolder->ParseDisplayName (NULL, NULL, szAdapterGuid, NULL,
-                                             &pidl, NULL);
-    }
-    if (SUCCEEDED (hr))
-    {
-        hr = pShellFolder->SetNameOf (NULL, pidl, wNewName, SHGDN_NORMAL,
-                                      &pidl);
-    }
-
-    CoTaskMemFree (pidl);
-
-    if (pShellFolder)
-        pShellFolder->Release();
-
-    return hr;
-}
-
-static HRESULT netIfRenameConnection (PCWSTR GuidString, PCWSTR NewName)
-{
-    typedef HRESULT (WINAPI *lpHrRenameConnection) (const GUID *, PCWSTR);
-    lpHrRenameConnection RenameConnectionFunc = NULL;
-    HRESULT status;
-
-    /* First try the IShellFolder interface, which was unimplemented
-     * for the network connections folder before XP. */
-    status = rename_shellfolder (GuidString, NewName);
-    if (status == E_NOTIMPL)
-    {
-/** @todo that code doesn't seem to work! */
-        /* The IShellFolder interface is not implemented on this platform.
-         * Try the (undocumented) HrRenameConnection API in the netshell
-         * library. */
-        CLSID clsid;
-        HINSTANCE hNetShell;
-        status = CLSIDFromString ((LPOLESTR) GuidString, &clsid);
-        if (FAILED(status))
-            return E_FAIL;
-        hNetShell = LoadLibrary (NETSHELL_LIBRARY);
-        if (hNetShell == NULL)
-            return E_FAIL;
-        RenameConnectionFunc =
-          (lpHrRenameConnection) GetProcAddress (hNetShell,
-                                                 "HrRenameConnection");
-        if (RenameConnectionFunc == NULL)
-        {
-            FreeLibrary (hNetShell);
-            return E_FAIL;
-        }
-        status = RenameConnectionFunc (&clsid, NewName);
-        FreeLibrary (hNetShell);
-    }
-    if (FAILED (status))
-        return status;
-
-    return S_OK;
-}
-#define VBOX_CONNECTION_NAME L"Virtualbox Host-Only Network"
-static HRESULT netIfGenConnectionName (PCWSTR DevName, WCHAR *pBuf, PULONG pcbBuf)
-{
-    const WCHAR * pSuffix = wcsrchr( DevName, L'#' );
-    ULONG cbSize = sizeof(VBOX_CONNECTION_NAME);
-    ULONG cbSufSize = 0;
-
-    if(pSuffix)
-    {
-        cbSize += (ULONG)wcslen(pSuffix) * 2;
-    }
-
-    if(*pcbBuf < cbSize)
-    {
-        *pcbBuf = cbSize;
-        return E_FAIL;
-    }
-
-    wcscpy(pBuf, VBOX_CONNECTION_NAME);
-    if(pSuffix)
-    {
-        wcscat(pBuf, pSuffix);
-    }
-
-    return S_OK;
-}
-
 #define DRIVERHWID _T("sun_VBoxNetAdp")
 
 #define SetErrBreak(strAndArgs) \
@@ -1634,13 +1519,10 @@ static int createNetworkInterface (SVCHlpClient *aClient,
                     WCHAR ConnectoinName[128];
                     ULONG cbBuf = sizeof(ConnectoinName);
 
-                    /* return back the bracket */
-                    pCfgGuidString [_tcslen (pCfgGuidString)] = '}';
-
-                    hr = netIfGenConnectionName (name, ConnectoinName, &cbBuf);
+                    hr = VBoxNetCfgWinGenHostonlyConnectionName (name, ConnectoinName, &cbBuf);
                     if(hr == S_OK)
                     {
-                        hr = netIfRenameConnection (pCfgGuidString, ConnectoinName);
+                        hr = VBoxNetCfgWinRenameConnection ((GUID*)aGUID.raw(), ConnectoinName);
                     }
 
                     CoTaskMemFree (name);
