@@ -64,20 +64,24 @@ typedef RTGCPHYS64 VMMDEVHYPPHYS64;
 #if defined(RT_OS_LINUX)
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "/dev/vboxadd"
+# define VBOXGUEST_USER_DEVICE_NAME   "/dev/vboxuser"
 
 #elif defined(RT_OS_OS2)
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "\\Dev\\VBoxGst$"
+# define VBOXGUEST_USER_DEVICE_NAME   "\\Dev\\VBoxGst$"
 
 #elif defined(RT_OS_SOLARIS)
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "/dev/vboxguest"
+# define VBOXGUEST_USER_DEVICE_NAME   "/dev/vboxguest"
 
 #elif defined(RT_OS_WINDOWS)
 /** The support service name. */
 # define VBOXGUEST_SERVICE_NAME       "VBoxGuest"
 /** Win32 Device name. */
 # define VBOXGUEST_DEVICE_NAME        "\\\\.\\VBoxGuest"
+# define VBOXGUEST_USER_DEVICE_NAME   "\\\\.\\VBoxGuest"
 /** Global name for Win2k+ */
 # define VBOXGUEST_DEVICE_NAME_GLOBAL "\\\\.\\Global\\VBoxGuest"
 /** Win32 driver name */
@@ -88,6 +92,7 @@ typedef RTGCPHYS64 VMMDEVHYPPHYS64;
 #elif defined(RT_OS_FREEBSD)
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "/dev/vboxguest"
+# define VBOXGUEST_USER_DEVICE_NAME   "/dev/vboxguest"
 
 #else
 /* PORTME */
@@ -1655,6 +1660,7 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 
 __BEGIN_DECLS
 VBGLR3DECL(int)     VbglR3Init(void);
+VBGLR3DECL(int)     VbglR3InitUser(void);
 VBGLR3DECL(void)    VbglR3Term(void);
 # ifdef ___iprt_time_h
 VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);

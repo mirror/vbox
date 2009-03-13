@@ -77,7 +77,30 @@ static RTFILE g_File = NIL_RTFILE;
 static uint32_t volatile g_cInits = 0;
 
 
+static int vbglR3Init(char *pszDeviceName);
+
+/**
+ * Open the VBox R3 Guest Library.  This should be called by system daemons
+ * and processes.
+ */
 VBGLR3DECL(int) VbglR3Init(void)
+{
+    return vbglR3Init(VBOXGUEST_DEVICE_NAME);
+}
+
+/**
+ * Open the VBox R3 Guest Library.  Equivalent to VbglR3Init, but for user
+ * session processes.
+ */
+VBGLR3DECL(int) VbglR3InitUser(void)
+{
+    return vbglR3Init(VBOXGUEST_USER_DEVICE_NAME);
+}
+
+/**
+ * Implementation of VbglR3Init and VbglR3InitUser
+ */
+int vbglR3Init(char *pszDeviceName)
 {
     uint32_t cInits = ASMAtomicIncU32(&g_cInits);
 #ifndef VBOX_VBGLR3_XFREE86
@@ -114,7 +137,7 @@ VBGLR3DECL(int) VbglR3Init(void)
      * Have to use CreateFile here as we want to specify FILE_FLAG_OVERLAPPED
      * and possible some other bits not availble thru iprt/file.h.
      */
-    HANDLE hFile = CreateFile(VBOXGUEST_DEVICE_NAME,
+    HANDLE hFile = CreateFile(pszDeviceName,
                               GENERIC_READ | GENERIC_WRITE,
                               FILE_SHARE_READ | FILE_SHARE_WRITE,
                               NULL,
@@ -134,7 +157,7 @@ VBGLR3DECL(int) VbglR3Init(void)
      */
     HFILE hf = NULLHANDLE;
     ULONG ulAction = 0;
-    APIRET rc = DosOpen((PCSZ)VBOXGUEST_DEVICE_NAME, &hf, &ulAction, 0, FILE_NORMAL,
+    APIRET rc = DosOpen((PCSZ)pszDeviceName, &hf, &ulAction, 0, FILE_NORMAL,
                         OPEN_ACTION_OPEN_IF_EXISTS,
                         OPEN_FLAGS_FAIL_ON_ERROR | OPEN_FLAGS_NOINHERIT | OPEN_SHARE_DENYNONE | OPEN_ACCESS_READWRITE,
                         NULL);
@@ -187,10 +210,11 @@ VBGLR3DECL(int) VbglR3Init(void)
     RTFILE File = 0;
 # endif
     int rc;
-    char szDevice[sizeof(VBOXGUEST_DEVICE_NAME) + 16];
+    char szDevice[RT_MAX(sizeof(VBOXGUEST_DEVICE_NAME),
+                         sizeof(VBOXGUEST_USER_DEVICE_NAME)) + 16];
     for (unsigned iUnit = 0; iUnit < 1024; iUnit++)
     {
-        RTStrPrintf(szDevice, sizeof(szDevice), VBOXGUEST_DEVICE_NAME "%d", iUnit);
+        RTStrPrintf(szDevice, sizeof(szDevice), pszDeviceName "%d", iUnit);
 # if defined(VBOX_VBGLR3_XFREE86)
         File = xf86open(szDevice, XF86_O_RDWR);
         if (File >= 0)
@@ -213,7 +237,7 @@ VBGLR3DECL(int) VbglR3Init(void)
     g_File = File;
 
 #elif defined(VBOX_VBGLR3_XFREE86) && !defined(RT_OS_FREEBSD)
-    int File = xf86open(VBOXGUEST_DEVICE_NAME, XF86_O_RDWR);
+    int File = xf86open(pszDeviceName, XF86_O_RDWR);
     if (File == -1)
         return VERR_OPEN_FAILED;
     g_File = File;
@@ -222,7 +246,7 @@ VBGLR3DECL(int) VbglR3Init(void)
 
     /* The default implemenation. (linux, solaris) */
     RTFILE File;
-    int rc = RTFileOpen(&File, VBOXGUEST_DEVICE_NAME, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    int rc = RTFileOpen(&File, pszDeviceName, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
     g_File = File;
