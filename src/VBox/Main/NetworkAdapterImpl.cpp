@@ -943,7 +943,7 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
     else
     if (!(attachmentNode = aAdapterNode.findKey ("HostOnlyInterface")).isNull())
     {
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+#if defined(VBOX_WITH_NETFLT)
         Bstr name = attachmentNode.stringValue ("name");
         /* name can be empty, but not null */
         ComAssertRet (!name.isNull(), E_FAIL);
@@ -1051,7 +1051,7 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
         case NetworkAttachmentType_HostOnly:
         {
             Key attachmentNode = aAdapterNode.createKey ("HostOnlyInterface");
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+#if defined(VBOX_WITH_NETFLT)
             Assert (!mData->mHostInterface.isNull());
             attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
 #endif
@@ -1213,7 +1213,7 @@ void NetworkAdapter::detach()
         }
         case NetworkAttachmentType_HostOnly:
         {
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+#if defined(VBOX_WITH_NETFLT)
             /* reset handle and device name */
             mData->mHostInterface = "";
 #endif
