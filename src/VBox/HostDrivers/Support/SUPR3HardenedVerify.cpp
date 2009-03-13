@@ -144,6 +144,7 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Dll,  kSupID_AppPrivArchComp,   false, "VBoxSVCM" SUPLIB_DLL_SUFF },
     {   kSupIFT_Data, kSupID_AppPrivArchComp,   false, "VBoxXPCOMBase.xpt" },
 #endif
+#endif
 
 //#ifdef VBOX_WITH_VRDP
     {   kSupIFT_Dll,  kSupID_SharedLib,         true, "VRDPAuth" SUPLIB_DLL_SUFF },
