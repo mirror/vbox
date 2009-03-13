@@ -26,7 +26,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Targets.
 #
 ifdef VBOX_WITH_HARDENING
- PROGRAMS += VBoxNetDHCP
+ PROGRAMS += VBoxNetDHCPHardened
  DLLS += VBoxNetDHCP
 else
  PROGRAMS += VBoxNetDHCP
@@ -36,9 +36,9 @@ endif
 #
 # Hardened VBoxNetDHCP.
 #
-VBoxNetDHCP_TEMPLATE = VBOXR3HARDENEDEXE
-VBoxNetDHCP_SOURCES = VBoxNetDHCP.cpp
-VBoxNetDHCP_NAME = VBoxNetDHCP
+VBoxNetDHCPHardened_TEMPLATE = VBOXR3HARDENEDEXE
+VBoxNetDHCPHardened_SOURCES = VBoxNetDHCP.cpp
+VBoxNetDHCPHardened_NAME = VBoxNetDHCP
 
 
 #
