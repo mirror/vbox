@@ -24,8 +24,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <string>
-#include <list>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,19 +73,23 @@ static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
     return rc;
 }
 
+#define MAX_ADDRESSES 128
+#define MAX_ADDRLEN   64
+
 static bool removeAddresses(const char *pszAdapterName)
 {
-    static char szCmd[1024], szBuf[1024];
+    char szCmd[1024], szBuf[1024];
+    char aszAddresses[MAX_ADDRESSES][MAX_ADDRLEN];
 
+    memset(aszAddresses, 0, sizeof(aszAddresses));
     snprintf(szCmd, sizeof(szCmd), VBOXADPCTL_IFCONFIG_PATH " %s", pszAdapterName);
     FILE *fp = popen(szCmd, "r");
 
     if (!fp)
         return false;
 
-    std::list<std::string> Addresses;
-
-    while (fgets(szBuf, sizeof(szBuf), fp))
+    int cAddrs;
+    for (cAddrs = 0; cAddrs < MAX_ADDRESSES && fgets(szBuf, sizeof(szBuf), fp);)
     {
         int cbSkipWS = strspn(szBuf, " \t");
         assert(cbSkipWS < 20);
@@ -99,14 +101,13 @@ static bool removeAddresses(const char *pszAdapterName)
         /* Skip link-local addresses. */
         if (!pszWord || !strncmp(pszWord, "fe80", 4))
             continue;
-        Addresses.push_back(std::string(pszWord));
+        strncpy(aszAddresses[cAddrs++], pszWord, MAX_ADDRLEN-1);
     }
     pclose(fp);
 
-    std::list<std::string>::const_iterator it;
-    for (it = Addresses.begin(); it != Addresses.end(); it++)
+    for (int i = 0; i < cAddrs; i++)
     {
-        if (executeIfconfig(pszAdapterName, "inet6", it->c_str(), "remove") != EXIT_SUCCESS)
+        if (executeIfconfig(pszAdapterName, "inet6", aszAddresses[i], "remove") != EXIT_SUCCESS)
             return false;
     }
 
