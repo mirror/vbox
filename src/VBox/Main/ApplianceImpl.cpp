@@ -2963,13 +2963,20 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
                 throw rc3;
             }
 
+            // we need the following for the XML
+            uint64_t cbFile = 0;        // actual file size
+            rc = pTargetDisk->GetSize(&cbFile);
+            if (FAILED(rc)) throw rc;
+
+            ULONG64 cbCapacity = 0;     // size reported to guest
+            rc = pTargetDisk->GetLogicalSize(&cbCapacity);
+            if (FAILED(rc)) throw rc;
+            // capacity is reported in megabytes, so...
+            cbCapacity *= _1M;
+
             // upon success, close the disk as well
             rc = pTargetDisk->Close();
             if (FAILED(rc)) throw rc;
-
-            // we need the capacity and actual file size for the XML
-            uint64_t cbFile = 12345678; // @todo
-            uint64_t cbCapacity = 2345678; // @todo
 
             // now handle the XML for the disk:
             Utf8StrFmt strFileRef("file%RI32", ulFile++);
