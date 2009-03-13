@@ -1224,6 +1224,14 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
         }
         RTMemTmpFree(pTmpGT);
 
+        /* streamOptimized extents need a grain decompress buffer. */
+        pExtent->pvGrain = RTMemAlloc(VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
+        if (!pExtent->pvGrain)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+
         if (uLastGrainSector)
         {
             uint64_t uLBA = 0;
@@ -1304,7 +1312,10 @@ static int vmdkCreateGrainDirectory(PVMDKEXTENT pExtent, uint64_t uStartSector,
                                  VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + i * sizeof(uGTSectorLE),
                                  &uGTSectorLE, sizeof(uGTSectorLE), NULL);
             if (RT_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new redundant grain directory entry in '%s'"), pExtent->pszFullname);
+            {
+                rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new redundant grain directory entry in '%s'"), pExtent->pszFullname);
+                goto out;
+            }
             uOffsetSectors += VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t));
         }
 
@@ -1318,11 +1329,25 @@ static int vmdkCreateGrainDirectory(PVMDKEXTENT pExtent, uint64_t uStartSector,
                                  VMDK_SECTOR2BYTE(pExtent->uSectorGD) + i * sizeof(uGTSectorLE),
                                  &uGTSectorLE, sizeof(uGTSectorLE), NULL);
             if (RT_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new grain directory entry in '%s'"), pExtent->pszFullname);
+            {
+                rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new grain directory entry in '%s'"), pExtent->pszFullname);
+                goto out;
+            }
             uOffsetSectors += VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t));
         }
     }
     pExtent->cOverheadSectors = VMDK_BYTE2SECTOR(cbOverhead);
+
+    /* streamOptimized extents need a grain decompress buffer. */
+    if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+    {
+        pExtent->pvGrain = RTMemAlloc(VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
+        if (!pExtent->pvGrain)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+    }
 
 out:
     if (RT_FAILURE(rc))
@@ -2500,18 +2525,6 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
             pExtent->cDescriptorSectors = 4;
     }
 
-    /* streamOptimized extents need a grain decryption buffer. */
-    if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
-    {
-        pExtent->pvGrain = RTMemAlloc(VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
-        if (!pExtent->pvGrain)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-        pExtent->uGrainSector = 0;
-    }
-
 out:
     if (RT_FAILURE(rc))
         vmdkFreeExtentData(pImage, pExtent, false);
@@ -2719,6 +2732,11 @@ static void vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     {
         RTStrFree((char *)(void *)pExtent->pszFullname);
         pExtent->pszFullname = NULL;
+    }
+    if (pExtent->pvGrain)
+    {
+        RTMemFree(pExtent->pvGrain);
+        pExtent->pvGrain = NULL;
     }
 }
 
