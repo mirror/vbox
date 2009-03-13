@@ -2047,9 +2047,18 @@ void VBoxProblemReporter::cannotImportAppliance (CAppliance *aAppliance, QWidget
         /* Preserve the current error info before calling the object again */
         COMResult res (*aAppliance);
 
+        /* Add the warnings in the case of an early error */
+        QVector<QString> w = aAppliance->GetWarnings();
+        QString wstr;
+        foreach (const QString &str, w)
+            wstr += QString ("<br />Warning: %1").arg (str);
+        if (!wstr.isEmpty())
+            wstr = "<br />" + wstr;
+
         message (aParent ? aParent : mainWindowShown(),
                  Error,
                  tr ("Failed to open/interpret appliance <b>%1</b>.").arg (aAppliance->GetPath()),
+                 wstr +
                  formatErrorInfo (res));
     }
 }
