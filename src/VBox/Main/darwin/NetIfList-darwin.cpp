@@ -256,6 +256,9 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
         return RTErrConvertFromErrno(errno);
     }
 
+    PDARWINETHERNIC pNIC;
+    PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
+
     char *pEnd = pBuf + cbNeeded;
     for (pNext = pBuf; pNext < pEnd;)
     {
@@ -271,6 +274,12 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
         struct sockaddr_dl *pSdl = (struct sockaddr_dl *)(pIfMsg + 1);
 
         size_t cbNameLen = pSdl->sdl_nlen + 1;
+        for (pNIC = pEtherNICs; pNIC; pNIC = pNIC->pNext)
+            if (!strncmp(pSdl->sdl_data, pNIC->szBSDName, pSdl->sdl_len))
+            {
+                cbNameLen = strlen(pEtherNICs->szName) + 1;
+                break;
+            }
         PNETIFINFO pNew = (PNETIFINFO)RTMemAllocZ(RT_OFFSETOF(NETIFINFO, szName[cbNameLen]));
         if (!pNew)
         {
@@ -279,10 +288,29 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
         }
         memcpy(pNew->MACAddress.au8, LLADDR(pSdl), sizeof(pNew->MACAddress.au8));
         pNew->enmMediumType = NETIF_T_ETHERNET;
-        // @todo: pNew->Uuid = pEtherNICs->Uuid;
         Assert(sizeof(pNew->szShortName) >= cbNameLen);
         memcpy(pNew->szShortName, pSdl->sdl_data, cbNameLen);
-        memcpy(pNew->szName, pSdl->sdl_data, cbNameLen);
+        /*
+         * If we found the adapter in the list returned by
+         * DarwinGetEthernetControllers() copy the name and UUID from there.
+         */
+        if (pNIC)
+        {
+            memcpy(pNew->szName, pNIC->szName, cbNameLen);
+            pNew->Uuid = pNIC->Uuid;
+        }
+        else
+        {
+            memcpy(pNew->szName, pSdl->sdl_data, cbNameLen);
+            /* Generate UUID from name and MAC address. */
+            RTUUID uuid;
+            RTUuidClear(&uuid);
+            memcpy(&uuid, pNew->szShortName, RT_MIN(cbNameLen, sizeof(uuid)));
+            uuid.Gen.u8ClockSeqHiAndReserved = (uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
+            uuid.Gen.u16TimeHiAndVersion = (uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
+            memcpy(uuid.Gen.au8Node, pNew->MACAddress.au8, sizeof(uuid.Gen.au8Node));
+            pNew->Uuid = uuid;
+        }
 
         pNext += pIfMsg->ifm_msglen;
         while (pNext < pEnd)
@@ -297,15 +325,6 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 
         if (pSdl->sdl_type == IFT_ETHER)
         {
-            /* Generate UUID from name and MAC address. */
-            RTUUID uuid;
-            RTUuidClear(&uuid);
-            memcpy(&uuid, pNew->szShortName, RT_MIN(cbNameLen, sizeof(uuid)));
-            uuid.Gen.u8ClockSeqHiAndReserved = (uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
-            uuid.Gen.u16TimeHiAndVersion = (uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
-            memcpy(uuid.Gen.au8Node, pNew->MACAddress.au8, sizeof(uuid.Gen.au8Node));
-            pNew->Uuid = uuid;
-
             struct ifreq IfReq;
             strcpy(IfReq.ifr_name, pNew->szShortName);
             if (ioctl(sock, SIOCGIFFLAGS, &IfReq) < 0)
@@ -328,6 +347,12 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                 list.push_back(IfObj);
         }
         RTMemFree(pNew);
+    }
+    for (pNIC = pEtherNICs; pNIC;)
+    {
+        void *pvFree = pNIC;
+        pNIC = pNIC->pNext;
+        RTMemFree(pvFree);
     }
     close(sock);
     free(pBuf);
