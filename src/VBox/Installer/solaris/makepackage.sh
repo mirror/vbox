@@ -29,7 +29,7 @@
 HARDENED=""
 while test $# -ge 1;
 do
-    case "$1" in 
+    case "$1" in
         --hardened)
             HARDENED=1
             ;;
@@ -154,14 +154,16 @@ if test -n "$HARDENED"; then
             ||  $3 == "opt/VirtualBox/amd64/VBoxHeadless=amd64/VBoxHeadless" \
             ||  $3 == "opt/VirtualBox/amd64/VBoxSDL=amd64/VBoxSDL" \
             ||  $3 == "opt/VirtualBox/amd64/VBoxBFE=amd64/VBoxBFE" \
+            ||  $3 == "opt/VirtualBox/amd64/VBoxNetDHCP=amd64/VBoxNetDHCP" \
             ||  $3 == "opt/VirtualBox/i386/VirtualBox=i386/VirtualBox" \
             ||  $3 == "opt/VirtualBox/i386/VirtualBox3=i386/VirtualBox3" \
             ||  $3 == "opt/VirtualBox/i386/VBoxHeadless=i386/VBoxHeadless" \
             ||  $3 == "opt/VirtualBox/i386/VBoxSDL=i386/VBoxSDL" \
             ||  $3 == "opt/VirtualBox/i386/VBoxBFE=i386/VBoxBFE" \
+            ||  $3 == "opt/VirtualBox/i386/VBoxNetDHCP=i386/VBoxNetDHCP" \
             ) \
        { $4 = "4755" } { print }' prototype > prototype2
-    mv -f prototype2 prototype    
+    mv -f prototype2 prototype
 fi
 
 # VBoxUSBHelper needs to be marked setuid.
@@ -171,7 +173,7 @@ if test -f $VBOX_INSTALLED_DIR/amd64/VBoxUSBHelper || test -f $VBOX_INSTALLED_DI
             ||  $3 == "opt/VirtualBox/i386/VBoxUSBHelper=i386/VBoxUSBHelper" \
             ) \
        { $4 = "4755" } { print }' prototype > prototype2
-    mv -f prototype2 prototype        
+    mv -f prototype2 prototype
 fi
 
 # desktop links and icons
@@ -187,7 +189,7 @@ filelist_fixup prototype '$3 == "opt/VirtualBox/virtualbox-webservice.xml=virtua
 # webservice SMF start/stop script
 filelist_fixup prototype '$3 == "opt/VirtualBox/smf-vboxwebsrv.sh=smf-vboxwebsrv.sh"'                   '$3 = "opt/VirtualBox/smf-vboxwebsrv=smf-vboxwebsrv.sh"'
 
-echo " --- start of prototype  ---" 
+echo " --- start of prototype  ---"
 cat prototype
 echo " --- end of prototype --- "
 
