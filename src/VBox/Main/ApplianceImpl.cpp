@@ -197,12 +197,13 @@ struct Appliance::Data
     list<VirtualSystem>     llVirtualSystems;   // list of virtual systems, created by and valid after read()
 
     list< ComObjPtr<VirtualSystemDescription> > virtualSystemDescriptions; //
+
+    list<Utf8Str> llWarnings;
 };
 
 struct VirtualSystemDescription::Data
 {
     list<VirtualSystemDescriptionEntry> llDescriptions;
-    list<Utf8Str> llWarnings;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1275,8 +1276,8 @@ STDMETHODIMP Appliance::Interpret()
             /* Check for the constrains */
             if (cpuCountVBox > 1) //SchemaDefs::MaxCPUCount)
             {
-                pNewDesc->addWarning(tr("The virtual system claims support for %u CPU's, but VirtualBox has support for max %u CPU's only."),
-                                        cpuCountVBox, 1); //SchemaDefs::MaxCPUCount);
+                addWarning(tr("The virtual system \"%s\" claims support for %u CPU's, but VirtualBox has support for max %u CPU's only."),
+                           vsysThis.strName.c_str(), cpuCountVBox, 1); //SchemaDefs::MaxCPUCount);
                 cpuCountVBox = 1; //SchemaDefs::MaxCPUCount;
             }
             if (vsysThis.cCPUs == 0)
@@ -1293,8 +1294,8 @@ STDMETHODIMP Appliance::Interpret()
                 (ullMemSizeVBox < static_cast<uint64_t>(SchemaDefs::MinGuestRAM) ||
                  ullMemSizeVBox > static_cast<uint64_t>(SchemaDefs::MaxGuestRAM)))
             {
-                pNewDesc->addWarning(tr("The virtual system claims support for %llu MB RAM size, but VirtualBox has support for min %u & max %u MB RAM size only."),
-                                        ullMemSizeVBox, SchemaDefs::MinGuestRAM, SchemaDefs::MaxGuestRAM);
+                addWarning(tr("The virtual system \"%s\" claims support for %llu MB RAM size, but VirtualBox has support for min %u & max %u MB RAM size only."),
+                              vsysThis.strName.c_str(), ullMemSizeVBox, SchemaDefs::MinGuestRAM, SchemaDefs::MaxGuestRAM);
                 ullMemSizeVBox = RT_MIN(RT_MAX(ullMemSizeVBox, static_cast<uint64_t>(SchemaDefs::MinGuestRAM)), static_cast<uint64_t>(SchemaDefs::MaxGuestRAM));
             }
             if (vsysThis.ullMemorySize == 0)
@@ -1333,8 +1334,8 @@ STDMETHODIMP Appliance::Interpret()
             {
                 /* Check for the constrains */
                 if (vsysThis.llNetworkNames.size() > SchemaDefs::NetworkAdapterCount)
-                    pNewDesc->addWarning(tr("The virtual system claims support for %u network adapters, but VirtualBox has support for max %u network adapter only."),
-                                         vsysThis.llNetworkNames.size(), SchemaDefs::NetworkAdapterCount);
+                    addWarning(tr("The virtual system \"%s\" claims support for %u network adapters, but VirtualBox has support for max %u network adapter only."),
+                                  vsysThis.strName.c_str(), vsysThis.llNetworkNames.size(), SchemaDefs::NetworkAdapterCount);
 
                 /* Get the default network adapter type for the selected guest OS */
                 NetworkAdapterType_T nwAdapterVBox = NetworkAdapterType_Am79C970A;
@@ -1413,7 +1414,8 @@ STDMETHODIMP Appliance::Interpret()
                             {
                                 /* Warn only once */
                                 if (cIDEused == 1)
-                                    pNewDesc->addWarning(tr("The virtual system claims support for more than one IDE controller, but VirtualBox has support for only one."));
+                                    addWarning(tr("The virtual \"%s\" system requests support for more than one IDE controller, but VirtualBox has support for only one."),
+                                               vsysThis.strName.c_str());
 
                             }
                             ++cIDEused;
@@ -1437,7 +1439,8 @@ STDMETHODIMP Appliance::Interpret()
                             {
                                 /* Warn only once */
                                 if (cSATAused == 1)
-                                    pNewDesc->addWarning(tr("The virtual system claims support for more than one SATA controller, but VirtualBox has support for only one."));
+                                    addWarning(tr("The virtual system \"%s\" requests support for more than one SATA controller, but VirtualBox has support for only one"),
+                                               vsysThis.strName.c_str());
 
                             }
                             ++cSATAused;
@@ -1459,12 +1462,10 @@ STDMETHODIMP Appliance::Interpret()
                                                    hdcController);
                             }
                             else
-                            {
-                                /* Warn only once */
-                                if (cSCSIused == 1)
-                                    pNewDesc->addWarning(tr("The virtual system claims support for more than one SCSI controller, but VirtualBox has support for only one."));
-
-                            }
+                                addWarning(tr("The virtual system \"%s\" requests support for an additional SCSI controller of type \"%s\" with ID %s, but VirtualBox presently supports only one SCSI controller."),
+                                           vsysThis.strName.c_str(),
+                                           hdc.strControllerType.c_str(),
+                                           strControllerID.c_str());
                             ++cSCSIused;
                             break;
                         }
@@ -1507,7 +1508,9 @@ STDMETHODIMP Appliance::Interpret()
                         const VirtualSystemDescriptionEntry *pController;
                         if (!(pController = pNewDesc->findControllerFromID(hd.idController)))
                             throw setError(E_FAIL,
-                                           tr("Internal inconsistency looking up hard disk controller."));
+                                           tr("Cannot find hard disk controller with OVF instance ID %RI32 to which disk \"%s\" should be attached"),
+                                           hd.idController,
+                                           di.strHref.c_str());
 
                         /* controller to attach to, and the bus within that controller */
                         Utf8StrFmt strExtraConfig("controller=%RI16;channel=%RI16",
@@ -1643,6 +1646,37 @@ STDMETHODIMP Appliance::Write(IN_BSTR path, IProgress **aProgress)
     return rc;
 }
 
+/**
+* Public method implementation.
+ * @return
+ */
+STDMETHODIMP Appliance::GetWarnings(ComSafeArrayOut(BSTR, aWarnings))
+{
+    if (ComSafeArrayOutIsNull(aWarnings))
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    com::SafeArray<BSTR> sfaWarnings(m->llWarnings.size());
+
+    list<Utf8Str>::const_iterator it;
+    size_t i = 0;
+    for (it = m->llWarnings.begin();
+         it != m->llWarnings.end();
+         ++it, ++i)
+    {
+        Bstr bstr = *it;
+        bstr.cloneTo(&sfaWarnings[i]);
+    }
+
+    sfaWarnings.detachTo(ComSafeArrayOutArg(aWarnings));
+
+    return S_OK;
+}
+
 HRESULT Appliance::searchUniqueVMName(Utf8Str& aName) const
 {
     IMachine *machine = NULL;
@@ -1712,6 +1746,15 @@ uint32_t Appliance::calcMaxProgress()
     }
 
     return opCount;
+}
+
+void Appliance::addWarning(const char* aWarning, ...)
+{
+    va_list args;
+    va_start(args, aWarning);
+    Utf8StrFmtVA str(aWarning, args);
+    va_end(args);
+    m->llWarnings.push_back(str);
 }
 
 struct MyHardDiskAttachment
@@ -2606,10 +2649,12 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
                                 lAddress = 0;
                                 lBusNumber = 0;
 
-                                if (!desc.strVbox.compare("buslogic", Utf8Str::CaseInsensitive))
-                                    strResourceSubType = "buslogic";
-                                else if (!desc.strVbox.compare("lsilogic", Utf8Str::CaseInsensitive))
+                                if (    desc.strVbox.isEmpty()      // LsiLogic is the default in VirtualBox
+                                     || (!desc.strVbox.compare("lsilogic", Utf8Str::CaseInsensitive))
+                                   )
                                     strResourceSubType = "lsilogic";
+                                else if (!desc.strVbox.compare("buslogic", Utf8Str::CaseInsensitive))
+                                    strResourceSubType = "buslogic";
                                 else
                                     throw setError(VBOX_E_NOT_SUPPORTED,
                                                    tr("Invalid config string \"%s\" in SCSI controller"), desc.strVbox.c_str());
@@ -3122,37 +3167,6 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
 }
 
 /**
-* Public method implementation.
- * @return
- */
-STDMETHODIMP VirtualSystemDescription::GetWarnings(ComSafeArrayOut(BSTR, aWarnings))
-{
-    if (ComSafeArrayOutIsNull(aWarnings))
-        return E_POINTER;
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoReadLock alock(this);
-
-    com::SafeArray<BSTR> sfaWarnings(m->llWarnings.size());
-
-    list<Utf8Str>::const_iterator it;
-    size_t i = 0;
-    for (it = m->llWarnings.begin();
-         it != m->llWarnings.end();
-         ++it, ++i)
-    {
-        Bstr bstr = *it;
-        bstr.cloneTo(&sfaWarnings[i]);
-    }
-
-    sfaWarnings.detachTo(ComSafeArrayOutArg(aWarnings));
-
-    return S_OK;
-}
-
-/**
  * Internal method; adds a new description item to the member list.
  * @param aType Type of description for the new item.
  * @param strRef Reference item; only used with hard disk controllers.
@@ -3175,15 +3189,6 @@ void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
     vsde.strExtraConfig = strExtraConfig;
 
     m->llDescriptions.push_back(vsde);
-}
-
-void VirtualSystemDescription::addWarning(const char* aWarning, ...)
-{
-    va_list args;
-    va_start(args, aWarning);
-    Utf8StrFmtVA str(aWarning, args);
-    va_end(args);
-    m->llWarnings.push_back(str);
 }
 
 /**
@@ -3223,13 +3228,14 @@ const VirtualSystemDescriptionEntry* VirtualSystemDescription::findControllerFro
          it != m->llDescriptions.end();
          ++it)
     {
-        switch (it->type)
+        const VirtualSystemDescriptionEntry &d = *it;
+        switch (d.type)
         {
             case VirtualSystemDescriptionType_HardDiskControllerIDE:
             case VirtualSystemDescriptionType_HardDiskControllerSATA:
             case VirtualSystemDescriptionType_HardDiskControllerSCSI:
-                if (it->strRef == strRef)
-                    return &(*it);
+                if (d.strRef == strRef)
+                    return &d;
             break;
         }
     }
@@ -3387,6 +3393,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 #ifdef VBOX_WITH_AHCI
 //     <const name="HardDiskControllerSATA" value="7" />
         rc = GetStorageControllerByName(Bstr("IDE"), pController.asOutParam());
+        strVbox = "";
         if (SUCCEEDED(rc))
         {
             lSATAControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
@@ -3399,6 +3406,14 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
 //     <const name="HardDiskControllerSCSI" value="8" />
         rc = GetStorageControllerByName(Bstr("SCSI"), pController.asOutParam());
+        rc = pController->COMGETTER(ControllerType)(&ctlr);
+        if (FAILED(rc)) throw rc;
+        strVbox = "LsiLogic";       // the default in VBox
+        switch(ctlr)
+        {
+            case StorageControllerType_LsiLogic: strVbox = "LsiLogic"; break;
+            case StorageControllerType_BusLogic: strVbox = "BusLogic"; break;
+        }
         if (SUCCEEDED(rc))
         {
             lSCSIControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();

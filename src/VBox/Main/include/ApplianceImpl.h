@@ -40,9 +40,7 @@ class ATL_NO_VTABLE Appliance :
     public VirtualBoxSupportTranslation <Appliance>,
     public IAppliance
 {
-
 public:
-
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Appliance)
 
     DECLARE_NOT_AGGREGATABLE(Appliance)
@@ -78,6 +76,8 @@ public:
     STDMETHOD(Interpret)(void);
     STDMETHOD(ImportMachines)(IProgress **aProgress);
     STDMETHOD(Write)(IN_BSTR path, IProgress **aProgress);
+    STDMETHOD(GetWarnings)(ComSafeArrayOut(BSTR, aWarnings));
+
     /* public methods only for internal purposes */
 
     /* private instance data */
@@ -96,6 +96,7 @@ private:
     HRESULT searchUniqueVMName(Utf8Str& aName) const;
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
     uint32_t calcMaxProgress();
+    void addWarning(const char* aWarning, ...);
 
     struct TaskImportMachines;  /* Worker thread for import */
     static DECLCALLBACK(int) taskThreadImportMachines(RTTHREAD thread, void *pvUser);
@@ -123,6 +124,7 @@ class ATL_NO_VTABLE VirtualSystemDescription :
     public IVirtualSystemDescription
 {
     friend class Appliance;
+
 public:
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (VirtualSystemDescription)
 
@@ -163,8 +165,6 @@ public:
                               ComSafeArrayIn(IN_BSTR, aVboxValues),
                               ComSafeArrayIn(IN_BSTR, aExtraConfigValues));
 
-    STDMETHOD(GetWarnings)(ComSafeArrayOut(BSTR, aWarnings));
-
     /* public methods only for internal purposes */
 
     void addEntry(VirtualSystemDescriptionType_T aType,
@@ -172,8 +172,6 @@ public:
                   const Utf8Str &aOrigValue,
                   const Utf8Str &aAutoValue,
                   const Utf8Str &strExtraConfig = "");
-
-    void addWarning(const char* aWarning, ...);
 
     std::list<VirtualSystemDescriptionEntry*> findByType(VirtualSystemDescriptionType_T aType);
     const VirtualSystemDescriptionEntry* findControllerFromID(uint32_t id);
