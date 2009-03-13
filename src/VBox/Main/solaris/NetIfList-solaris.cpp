@@ -187,9 +187,14 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     Info.Uuid = Uuid;
     Info.enmMediumType = NETIF_T_ETHERNET;
 
+    HostNetworkInterfaceType_T enmType;
+    if (strncmp("vbox", szNICInstance, 4))
+        enmType = HostNetworkInterfaceType_Bridged;
+    else
+        enmType = HostNetworkInterfaceType_HostOnly;
     ComObjPtr<HostNetworkInterface> IfObj;
     IfObj.createObject();
-    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), HostNetworkInterfaceType_Bridged, &Info)))
+    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), enmType, &Info)))
         pList->push_back(IfObj);
 }
 
