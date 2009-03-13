@@ -900,8 +900,8 @@ static int vboxadd_release(struct inode *inode, struct file * filp)
         return 0;
 }
 
-/** strategy handlers (file operations) */
-static struct file_operations vbox_fops =
+/** file operations for the vboxadd device */
+static struct file_operations vboxadd_fops =
 {
     .owner   = THIS_MODULE,
     .open    = vboxadd_open,
@@ -913,11 +913,12 @@ static struct file_operations vbox_fops =
     .llseek  = no_llseek
 };
 
-static struct miscdevice gMiscDevice =
+/** Miscellaneous device allocation for vboxadd */
+static struct miscdevice gMiscVBoxAdd =
 {
     minor:      MISC_DYNAMIC_MINOR,
-    name:       "vboxadd",
-    fops:       &vbox_fops
+    name:       VBOXADD_NAME,
+    fops:       &vboxadd_fops
 };
 
 #ifndef IRQ_RETVAL
@@ -1168,248 +1169,274 @@ static void free_resources(void)
  */
 static __init int init(void)
 {
-    int err;
-    int rcVBox;
+    int rc = 0, rcVBox = VINF_SUCCESS;
+    bool haveVBoxAdd = false, haveGuestLib = false;
     struct pci_dev *pcidev = NULL;
-    VMMDevReportGuestInfo *infoReq = NULL;
 
-    if (vboxadd_cmc_init ())
+    rcVBox = vboxadd_cmc_init();
+    if (RT_FAILURE(rcVBox))
     {
-        printk (KERN_ERR "vboxadd: could not init cmc.\n");
-        return -ENODEV;
+        printk (KERN_ERR "vboxadd: could not init cmc, VBox error code %d.\n", rcVBox);
+        rc = -RTErrConvertToErrno(rcVBox);
     }
 
-    /*
-     * Detect PCI device
-     */
-    pcidev = PCI_DEV_GET(VMMDEV_VENDORID, VMMDEV_DEVICEID, pcidev);
-    if (!pcidev)
+    /* Detect PCI device */
+    if (!rc)
     {
-        printk(KERN_ERR "vboxadd: VirtualBox PCI device not found.\n");
-        return -ENODEV;
-    }
-
-    err = pci_enable_device (pcidev);
-    if (err)
-    {
-        Log(("vboxadd: could not enable device: %d\n", err));
-        PCI_DEV_PUT(pcidev);
-        return -ENODEV;
-    }
-
-    LogRel(("Starting VirtualBox version %s Guest Additions\n",
-            VBOX_VERSION_STRING));
-    /* register a character device */
-    if (vbox_major > 0)
-    {
-        err = register_chrdev(vbox_major, "vboxadd", &vbox_fops);
-        if (err < 0 || (vbox_major & err) || (!vbox_major && !err))
+        pcidev = PCI_DEV_GET(VMMDEV_VENDORID, VMMDEV_DEVICEID, pcidev);
+        if (!pcidev)
         {
-            LogRelFunc(("register_chrdev failed: vbox_major: %d, err = %d\n",
-                        vbox_major, err));
-            PCI_DEV_PUT(pcidev);
-            return -ENODEV;
-        }
-        /* if no major code was set, take the return value */
-        if (!vbox_major)
-            vbox_major = err;
-    }
-    else
-    {
-        err = misc_register(&gMiscDevice);
-        if (err)
-        {
-            LogRelFunc(("misc_register failed (rc=%d)\n", err));
-            return -ENODEV;
+            printk(KERN_ERR "vboxadd: VirtualBox Guest PCI device not found.\n");
+            rc = -ENODEV;
         }
     }
+
+    if (!rc)
+    {
+        rc = pci_enable_device (pcidev);
+        if (rc)
+            LogRel(("vboxadd: could not enable device: %d\n", rc));
+    }
+    if (rc)
+        LogRel(("Starting VirtualBox version %s Guest Additions\n",
+                VBOX_VERSION_STRING));
+
+    /* Register vboxadd */
+    if (!rc && vbox_major > 0)  /* Register as a character device in this case */
+    {
+        rc = register_chrdev(vbox_major, VBOXADD_NAME, &vboxadd_fops);
+        if (rc)  /* As we pass a non-zero major, rc should be zero on success. */
+            LogRel(("vboxadd: register_chrdev failed: vbox_major: %d, err = %d\n",
+                        vbox_major, rc));
+    }
+    else if (!rc)  /* Register as a miscellaneous device otherwise */
+    {
+        rc = misc_register(&gMiscVBoxAdd);
+        if (rc)
+            LogRel(("vboxadd: misc_register failed for %s (rc=%d)\n",
+                    VBOXADD_NAME, rc));
+    }
+    if (!rc)
+        haveVBoxAdd = true;
 
     /* allocate and initialize device extension */
-    vboxDev = kmalloc(sizeof(*vboxDev), GFP_KERNEL);
-    if (!vboxDev)
+    if (!rc)
     {
-        LogRelFunc(("cannot allocate device!\n"));
-        err = -ENOMEM;
-        goto fail;
+        vboxDev = kmalloc(sizeof(*vboxDev), GFP_KERNEL);
+        if (vboxDev)
+            memset(vboxDev, 0, sizeof(*vboxDev));
+        else
+        {
+            LogRel(("vboxadd: could not allocate private device structure\n"));
+            rc = -ENOMEM;
+        }
     }
-    memset(vboxDev, 0, sizeof(*vboxDev));
-    snprintf(vboxDev->name, sizeof(vboxDev->name), "vboxadd");
 
-    /* get the IO port region */
-    vboxDev->io_port = pci_resource_start(pcidev, 0);
-
-    /* get the memory region */
-    vboxDev->vmmdevmem = pci_resource_start(pcidev, 1);
-    vboxDev->vmmdevmem_size = pci_resource_len(pcidev, 1);
-
-    /* all resources found? */
-    if (!vboxDev->io_port || !vboxDev->vmmdevmem || !vboxDev->vmmdevmem_size)
+    if (!rc)
     {
-        LogRelFunc(("did not find expected hardware resources!\n"));
-        err = -ENXIO;
-        goto fail;
+        /* get the IO port region */
+        vboxDev->io_port = pci_resource_start(pcidev, 0);
+
+        /* get the memory region */
+        vboxDev->vmmdevmem = pci_resource_start(pcidev, 1);
+        vboxDev->vmmdevmem_size = pci_resource_len(pcidev, 1);
+
+        /* all resources found? */
+        if (!vboxDev->io_port || !vboxDev->vmmdevmem || !vboxDev->vmmdevmem_size)
+        {
+            LogRel(("vboxadd: did not find expected hardware resources\n"));
+            rc = -ENXIO;
+        }
     }
 
     /* request ownership of adapter memory */
-    if (request_mem_region(vboxDev->vmmdevmem, vboxDev->vmmdevmem_size, "vboxadd") == 0)
+    if (!rc && !request_mem_region(vboxDev->vmmdevmem, vboxDev->vmmdevmem_size,
+                                   VBOXADD_NAME))
     {
-        LogRelFunc(("failed to request adapter memory!\n"));
-        err = -ENXIO;
-        goto fail;
+        LogRel(("vboxadd: failed to obtain adapter memory\n"));
+        rc = -EBUSY;
     }
 
     /* map adapter memory into kernel address space and check version */
-    vboxDev->pVMMDevMemory = (VMMDevMemory *) ioremap(vboxDev->vmmdevmem,
+    if (!rc)
+    {
+        vboxDev->pVMMDevMemory = (VMMDevMemory *) ioremap(vboxDev->vmmdevmem,
                                                       vboxDev->vmmdevmem_size);
-    if (!vboxDev->pVMMDevMemory)
-    {
-        LogRelFunc(("ioremap failed\n"));
-        err = -ENOMEM;
-        goto fail;
+        if (!vboxDev->pVMMDevMemory)
+        {
+            LogRel(("vboxadd: ioremap failed\n"));
+            rc = -ENOMEM;
+        }
     }
 
-    if (vboxDev->pVMMDevMemory->u32Version != VMMDEV_MEMORY_VERSION)
+    if (!rc && (vboxDev->pVMMDevMemory->u32Version != VMMDEV_MEMORY_VERSION))
     {
-        LogRelFunc(("invalid VMM device memory version! (got 0x%x, expected 0x%x)\n",
-                    vboxDev->pVMMDevMemory->u32Version, VMMDEV_MEMORY_VERSION));
-        err = -ENXIO;
-        goto fail;
+        LogRel(("vboxadd: invalid VMM device memory version! (got 0x%x, expected 0x%x)\n",
+                   vboxDev->pVMMDevMemory->u32Version, VMMDEV_MEMORY_VERSION));
+        rc = -ENXIO;
     }
 
-    /* initialize VBGL subsystem */
-    rcVBox = VbglInit(vboxDev->io_port, vboxDev->pVMMDevMemory);
-    if (RT_FAILURE(rcVBox))
+    /* initialize ring 0 guest library */
+    if (!rc)
     {
-        LogRelFunc(("could not initialize VBGL subsystem! rc = %Rrc\n", rcVBox));
-        err = -ENXIO;
-        goto fail;
+        rcVBox = VbglInit(vboxDev->io_port, vboxDev->pVMMDevMemory);
+        if (RT_FAILURE(rcVBox))
+        {
+            LogRel(("vboxadd: could not initialize VBGL subsystem: %Rrc\n",
+                    rcVBox));
+            rc = -RTErrConvertToErrno(rcVBox);
+        }
     }
+    if (!rc)
+        haveGuestLib = true;
 
     /* report guest information to host, this must be done as the very first request */
-    rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&infoReq,
-                         sizeof(VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
-    if (RT_FAILURE(rcVBox))
+    if (!rc)
     {
-        LogRelFunc(("could not allocate request structure! rc = %Rrc\n", rcVBox));
-        err = -ENOMEM;
-        goto fail;
-    }
+        VMMDevReportGuestInfo *infoReq = NULL;
 
-    /* report guest version to host, the VMMDev requires that to be done first */
-    infoReq->guestInfo.additionsVersion = VMMDEV_VERSION;
+        rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&infoReq,
+                             sizeof(VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
+        if (RT_FAILURE(rcVBox))
+        {
+            LogRel(("vboxadd: could not allocate request structure: %Rrc\n", rcVBox));
+            rc = -RTErrConvertToErrno(rcVBox);
+        }
+        /* report guest version to host, the VMMDev requires that to be done
+         * before any other VMMDev operations. */
+        if (infoReq)
+        {
+            infoReq->guestInfo.additionsVersion = VMMDEV_VERSION;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 0)
-    infoReq->guestInfo.osType = VBOXOSTYPE_Linux26;
+            infoReq->guestInfo.osType = VBOXOSTYPE_Linux26;
 #else
-    infoReq->guestInfo.osType = VBOXOSTYPE_Linux24;
+            infoReq->guestInfo.osType = VBOXOSTYPE_Linux24;
 #endif
-    rcVBox = VbglGRPerform(&infoReq->header);
-    if (RT_FAILURE(rcVBox) || RT_FAILURE(infoReq->header.rc))
-    {
-        LogRelFunc(("error reporting guest info to host! rc = %Rrc, header.rc = %Rrc\n",
-                    rcVBox, infoReq->header.rc));
-        VbglGRFree(&infoReq->header);
-        err = -ENXIO;
-        goto fail;
+            rcVBox = VbglGRPerform(&infoReq->header);
+        }
+        if (infoReq && (RT_FAILURE(rcVBox) || RT_FAILURE(infoReq->header.rc)))
+        {
+            LogRel(("vboxadd: error reporting guest information to host: %Rrc, header: %Rrc\n",
+                        rcVBox, infoReq->header.rc));
+            rc = RT_FAILURE(rcVBox) ? -RTErrConvertToErrno(rcVBox)
+                                    : -RTErrConvertToErrno(infoReq->header.rc);
+        }
+        if (infoReq)
+            VbglGRFree(&infoReq->header);
     }
-    VbglGRFree(&infoReq->header);
 
     /* Unset the graphics capability until/unless X is loaded. */
     /** @todo check the error code once we bump the additions version.
               For now we ignore it for compatibility with older hosts. */
+    if (!rc)
     {
         VMMDevReqGuestCapabilities2 *vmmreqGuestCaps;
-
 
         rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&vmmreqGuestCaps,
                               sizeof(VMMDevReqGuestCapabilities2),
                               VMMDevReq_SetGuestCapabilities);
         if (RT_FAILURE(rcVBox))
         {
-            LogRelFunc(("could not allocate request structure! rc = %Rrc\n", rcVBox));
-            err = -ENOMEM;
-            goto fail;
+            LogRel(("vboxadd: could not allocate request structure: %Rrc\n",
+                    rcVBox));
+            rc = -RTErrConvertToErrno(rcVBox);
         }
-        vmmreqGuestCaps->u32OrMask = 0;
-        vmmreqGuestCaps->u32NotMask = VMMDEV_GUEST_SUPPORTS_GRAPHICS;
-        rcVBox = VbglGRPerform(&vmmreqGuestCaps->header);
-        VbglGRFree(&vmmreqGuestCaps->header);
-        if (RT_FAILURE(rcVBox))
+        else
         {
-            err = -ENXIO;
-            goto fail;
+            vmmreqGuestCaps->u32OrMask = 0;
+            vmmreqGuestCaps->u32NotMask = VMMDEV_GUEST_SUPPORTS_GRAPHICS;
+            rcVBox = VbglGRPerform(&vmmreqGuestCaps->header);
+            if (RT_FAILURE(rcVBox))
+            {
+                LogRel(("vboxadd: could not allocate request structure: %Rrc\n",
+                        rcVBox));
+                rc = -RTErrConvertToErrno(rcVBox);
+            }
+            VbglGRFree(&vmmreqGuestCaps->header);
         }
     }
 
     /* perform hypervisor address space reservation */
-    if (vboxadd_reserve_hypervisor())
+    if (!rc && vboxadd_reserve_hypervisor())
     {
         /* we just ignore the error, no address window reservation, non fatal */
     }
 
     /* allocate a VMM request structure for use in the ISR */
-    rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&vboxDev->irqAckRequest,
-                         sizeof(VMMDevEvents), VMMDevReq_AcknowledgeEvents);
-    if (RT_FAILURE(rcVBox))
+    if (!rc)
     {
-        LogRelFunc(("could not allocate request structure! rc = %Rrc\n", rcVBox));
-        err = -ENOMEM;
-        goto fail;
+        rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&vboxDev->irqAckRequest,
+                             sizeof(VMMDevEvents), VMMDevReq_AcknowledgeEvents);
+        if (RT_FAILURE(rcVBox))
+        {
+            LogRel(("vboxadd: could not allocate request structure: %Rrc\n",
+                    rcVBox));
+            rc = -RTErrConvertToErrno(rcVBox);
+        }
     }
 
     /* get ISR */
-    err = request_irq(pcidev->irq, vboxadd_irq_handler,
+    if (!rc)
+    {
+        rc = request_irq(pcidev->irq, vboxadd_irq_handler,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
-                      IRQF_SHARED,
+                          IRQF_SHARED,
 #else
-                      SA_SHIRQ,
+                          SA_SHIRQ,
 #endif
-                      "vboxadd", vboxDev);
-    if (err)
-    {
-        LogRelFunc(("could not request IRQ %d, err: %d\n", pcidev->irq, err));
-        goto fail;
+                          VBOXADD_NAME, vboxDev);
+        if (rc)
+            LogRel(("vboxadd: could not request IRQ %d, err: %d\n", pcidev->irq, rc));
+        else
+            vboxDev->irq = pcidev->irq;
     }
-    vboxDev->irq = pcidev->irq;
 
-    init_waitqueue_head (&vboxDev->eventq);
-
+    if (!rc)
     {
+        VBoxGuestFilterMaskInfo info;
+
+        init_waitqueue_head (&vboxDev->eventq);
         /* Register for notification when the host absolute pointer position
          * changes. */
-        VBoxGuestFilterMaskInfo info;
         info.u32OrMask = VMMDEV_EVENT_MOUSE_POSITION_CHANGED;
         info.u32NotMask = 0;
         rcVBox = vboxadd_control_filter_mask(&info);
         if (!RT_SUCCESS(rcVBox))
         {
-            LogRelFunc(("failed to register for VMMDEV_EVENT_MOUSE_POSITION_CHANGED events\n"));
-            err = -RTErrConvertToErrno(rcVBox);
-            goto fail;
+            LogRel(("vboxadd: failed to register for VMMDEV_EVENT_MOUSE_POSITION_CHANGED events: %Rrc\n",
+                    rcVBox));
+            rc = -RTErrConvertToErrno(rcVBox);
         }
     }
 
-    /* some useful information for the user but don't show this on the console */
-    LogRel(("VirtualBox device settings: major %d, IRQ %d, "
+    if (!rc)
+    {
+        /* some useful information for the user but don't show this on the console */
+        LogRel(("VirtualBox device settings: major %d, IRQ %d, "
                 "I/O port 0x%x, MMIO at 0x%x (size 0x%x), "
                 "hypervisor window at 0x%p (size 0x%x)\n",
                 vbox_major, vboxDev->irq, vboxDev->io_port,
                 vboxDev->vmmdevmem, vboxDev->vmmdevmem_size,
                 vboxDev->hypervisorStart, vboxDev->hypervisorSize));
-    printk(KERN_DEBUG "vboxadd: Successfully loaded version "
-            VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")\n");
-
-    /* successful return */
-    PCI_DEV_PUT(pcidev);
-    return 0;
-
-fail:
-    PCI_DEV_PUT(pcidev);
-    free_resources();
-    if (vbox_major > 0)
-        unregister_chrdev(vbox_major, "vboxadd");
-    else
-        misc_deregister(&gMiscDevice);
-    return err;
+        printk(KERN_DEBUG "vboxadd: Successfully loaded version "
+                VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")\n");
+    }
+    else  /* Clean up on failure */
+    {
+        if (haveGuestLib)
+            VbglTerminate();
+        if (vboxDev)
+            free_resources();
+        if (haveVBoxAdd && vbox_major > 0)
+            unregister_chrdev(vbox_major, VBOXADD_NAME);
+        else if (haveVBoxAdd)
+            misc_deregister(&gMiscVBoxAdd);
+    }
+    /* We always release this.  Presumably because we no longer need to do
+     * anything with the device structure. */
+    if (pcidev)
+        PCI_DEV_PUT(pcidev);
+    return rc;
 }
 
 /**
@@ -1419,9 +1446,9 @@ fail:
 static __exit void fini(void)
 {
     if (vbox_major > 0)
-        unregister_chrdev(vbox_major, "vboxadd");
+        unregister_chrdev(vbox_major, VBOXADD_NAME);
     else
-        misc_deregister(&gMiscDevice);
+        misc_deregister(&gMiscVBoxAdd);
     free_resources();
     vboxadd_cmc_fini ();
 }

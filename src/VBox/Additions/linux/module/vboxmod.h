@@ -26,11 +26,11 @@
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/asm.h>
 
+#define VBOXADD_NAME "vboxadd"
+
 typedef struct VBoxDevice VBoxDevice;
 struct VBoxDevice
 {
-    /** the device name */
-    char name[128];
     /** file node minor code */
     unsigned minor;
     /** IRQ number */
@@ -75,30 +75,5 @@ if (n >= vboxadd_verbosity) printk (KERN_DEBUG "vboxadd: " __VA_ARGS__)
 extern int vboxadd_cmc_init (void);
 extern void vboxadd_cmc_fini (void);
 DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
-
-#if 0
-/**
- * This IOCTL wrapper allows the guest to make an HGCM call from user space.  The
- * OS-independant part of the Guest Additions already contain code for making an
- * HGCM call from the guest, but this code assumes that the call is made from the
- * kernel's address space.  So before calling it, we have to copy all parameters
- * to the HGCM call from user space to kernel space and reconstruct the structures
- * passed to the call (which include pointers to other memory) inside the kernel's
- * address space.
- *
- * @returns   0 on success or Linux error code on failure
- * @param arg User space pointer to the call data structure
- */
-extern int vbox_ioctl_hgcm_call(unsigned long arg, VBoxDevice *vboxDev);
-
-/**
- * This call is similar to vbox_ioctl_hgcm_call, but for the _TIMEOUT variant
- * of the ioctl.
- *
- * @returns   0 on success or Linux error code on failure
- * @param arg      User space pointer to the call data structure
- */
-extern int vbox_ioctl_hgcm_call_timeout(unsigned long arg, VBoxDevice *vboxDev);
-#endif
 
 #endif /* !VBOXMOD_H */
