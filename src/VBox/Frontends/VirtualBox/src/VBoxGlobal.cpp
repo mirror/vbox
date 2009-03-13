@@ -1895,10 +1895,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                     /* don't use the adapter type string for types that have
                      * an additional symbolic network/interface name field, use
                      * this name instead */
-                    if (type == KNetworkAttachmentType_NAT)
-                        attType = attType.arg (tr ("NAT, '%1'",
-                            "details report (network)").arg (adapter.GetNATNetwork()));
-                    else if (type == KNetworkAttachmentType_Bridged)
+                    if (type == KNetworkAttachmentType_Bridged)
                         attType = attType.arg (tr ("Bridged network, %1",
                             "details report (network)").arg (adapter.GetHostInterface()));
                     else if (type == KNetworkAttachmentType_Internal)

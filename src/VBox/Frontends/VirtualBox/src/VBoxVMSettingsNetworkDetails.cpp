@@ -46,7 +46,6 @@ VBoxVMSettingsNetworkDetails::VBoxVMSettingsNetworkDetails (QWidget *aParent)
     Ui::VBoxVMSettingsNetworkDetails::setupUi (this);
 
     /* Setup alternative widgets */
-    mCbNAT->setInsertPolicy (QComboBox::NoInsert);
     mCbINT->setInsertPolicy (QComboBox::NoInsert);
     mLeIPv4->setValidator (new QRegExpValidator
         (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
@@ -94,10 +93,6 @@ void VBoxVMSettingsNetworkDetails::getFromAdapter (const CNetworkAdapter &aAdapt
     mAdapter = aAdapter;
 
     /* Load alternate attributes */
-    QString natName (mAdapter.GetNATNetwork());
-    if (!natName.isEmpty())
-        setProperty ("NAT_Name", QVariant (natName));
-
     QString intName (mAdapter.GetInternalNetwork());
     if (!intName.isEmpty())
         setProperty ("INT_Name", QVariant (intName));
@@ -135,11 +130,6 @@ void VBoxVMSettingsNetworkDetails::putBackToAdapter()
     QString name (currentName());
     switch (mType)
     {
-        case KNetworkAttachmentType_NAT:
-        {
-            mAdapter.SetNATNetwork (name);
-            break;
-        }
         case KNetworkAttachmentType_Bridged:
         {
             mAdapter.SetHostInterface (name);
@@ -189,9 +179,8 @@ void VBoxVMSettingsNetworkDetails::loadList (KNetworkAttachmentType aType,
     mType = aType;
 
     /* Setup visibility for alternate widgets */
-    mLsHost->setVisible (mType != KNetworkAttachmentType_Null);
-    mLbNAT->setVisible (mType == KNetworkAttachmentType_NAT);
-    mCbNAT->setVisible (mType == KNetworkAttachmentType_NAT);
+    mLsHost->setVisible (mType != KNetworkAttachmentType_Null &&
+                         mType != KNetworkAttachmentType_NAT);
     mLbBRG->setVisible (mType == KNetworkAttachmentType_Bridged);
     mCbBRG->setVisible (mType == KNetworkAttachmentType_Bridged);
     mLbINT->setVisible (mType == KNetworkAttachmentType_Internal);
@@ -215,7 +204,8 @@ void VBoxVMSettingsNetworkDetails::loadList (KNetworkAttachmentType aType,
 #endif
 
     /* Repopulate alternate combo-box with items */
-    if (mType != KNetworkAttachmentType_Null)
+    if (mType != KNetworkAttachmentType_Null &&
+        mType != KNetworkAttachmentType_NAT)
     {
         comboBox()->clear();
         populateComboboxes();
@@ -264,13 +254,6 @@ bool VBoxVMSettingsNetworkDetails::revalidate (KNetworkAttachmentType aType, QSt
 {
     switch (aType)
     {
-        case KNetworkAttachmentType_NAT:
-            if (currentName (aType).isNull())
-            {
-                aWarning = tr ("no NAT name is specified");
-                return false;
-            }
-            break;
         case KNetworkAttachmentType_Bridged:
             if (currentName (aType).isNull())
             {
@@ -333,9 +316,6 @@ QString VBoxVMSettingsNetworkDetails::currentName (KNetworkAttachmentType aType)
     QString result;
     switch (aType)
     {
-        case KNetworkAttachmentType_NAT:
-            result = property ("NAT_Name").toString();
-            break;
         case KNetworkAttachmentType_Bridged:
             result = property ("BRG_Name").toString();
             break;
@@ -360,10 +340,8 @@ void VBoxVMSettingsNetworkDetails::retranslateUi()
     switch (mType)
     {
         case KNetworkAttachmentType_Null:
-            setWindowTitle (tr ("Basic Details"));
-            break;
         case KNetworkAttachmentType_NAT:
-            setWindowTitle (tr ("NAT Details"));
+            setWindowTitle (tr ("Basic Details"));
             break;
         case KNetworkAttachmentType_Bridged:
             setWindowTitle (tr ("Bridged Network Details"));
@@ -406,11 +384,6 @@ void VBoxVMSettingsNetworkDetails::showEvent (QShowEvent *aEvent)
 void VBoxVMSettingsNetworkDetails::accept()
 {
     /* Save temporary attributes as dynamic properties */
-    setProperty ("NAT_Name",
-                 QVariant (mCbNAT->itemData (mCbNAT->currentIndex()).toString() == QString (emptyItemCode) &&
-                           mCbNAT->currentText() == mCbNAT->itemText (mCbNAT->currentIndex()) ?
-                           QString::null : mCbNAT->currentText()));
-
     setProperty ("BRG_Name",
                  QVariant (mCbBRG->itemData (mCbBRG->currentIndex()).toString() == QString (emptyItemCode) ?
                            QString::null : mCbBRG->currentText()));
@@ -587,7 +560,7 @@ void VBoxVMSettingsNetworkDetails::populateComboboxes()
 {
     /* Append || retranslate <Not Selected> item */
     QList <QComboBox*> list;
-    list << mCbNAT << mCbBRG << mCbINT << mCbHOI;
+    list << mCbBRG << mCbINT << mCbHOI;
 
     foreach (QComboBox *cb, list)
     {
@@ -603,8 +576,6 @@ QComboBox* VBoxVMSettingsNetworkDetails::comboBox() const
 {
     switch (mType)
     {
-        case KNetworkAttachmentType_NAT:
-            return mCbNAT;
         case KNetworkAttachmentType_Bridged:
             return mCbBRG;
         case KNetworkAttachmentType_Internal:
