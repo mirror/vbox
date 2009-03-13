@@ -161,25 +161,16 @@ ifdef VBOX_WITH_QT4_SUN
  qt4-bin_MODE = 755
  ifeq ($(KBUILD_TARGET),darwin)
   qt4-bin_INST = $(INST_VIRTUALBOX)Contents/
-  ifeq ($(KBUILD_TARGET_ARCH),amd64)
-   qt4-bin_SOURCES = $(foreach qtmod, QtCore QtGui QtNetwork \
-   		,$(VBOX_PATH_QT4)/lib/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox) \
-   	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib \
-   	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib \
-   	$(VBOX_PATH_QT4)/lib/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
-  else
-   qt4-bin_SOURCES = $(foreach qtmod, QtCore QtGui QtNetwork \
+  qt4-bin_SOURCES = $(foreach qtmod, QtCore QtGui QtNetwork \
    	,$(VBOX_PATH_QT4)/Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox)
-   ifdef VBOX_WITH_COCOA_QT
-    qt4-bin_SOURCES += \
-    	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib \
-    	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib \
-    	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
-   endif
+  ifdef VBOX_WITH_COCOA_QT
+   qt4-bin_SOURCES += \
+   	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib \
+   	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib \
+   	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
   endif
-  ## @todo Qt 4.5 bug: _debug.dylib for all plugins! QT45
   qt4-bin_SOURCES += \
-  	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(if-expr $(KBUILD_TARGET_ARCH) == "amd64",_debug,).dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
+  	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
   qt4-bin_SYMLINKS = $(foreach qtmod, QtCore QtGui QtNetwork \
   		,Frameworks/$(qtmod)VBox.framework/$(qtmod)VBox=>Versions/4/$(qtmod)VBox)
   ifdef VBOX_WITH_COCOA_QT
@@ -218,7 +209,7 @@ endif # VBOX_WITH_QT4_SUN
 #
 ifdef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
  ifdef VBOX_WITH_COMBINED_PACKAGE
-  ifeq ($(KBUILD_TARGET_ARCH),amd64) 
+  ifeq ($(KBUILD_TARGET_ARCH),amd64)
    INSTALLS += buildserver-additions
   endif
  else
