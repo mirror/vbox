@@ -2962,11 +2962,11 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
 
             // we need the following for the XML
             uint64_t cbFile = 0;        // actual file size
-            rc = pTargetDisk->GetSize(&cbFile);
+            rc = pTargetDisk->COMGETTER(Size)(&cbFile);
             if (FAILED(rc)) throw rc;
 
             ULONG64 cbCapacity = 0;     // size reported to guest
-            rc = pTargetDisk->GetLogicalSize(&cbCapacity);
+            rc = pTargetDisk->COMGETTER(LogicalSize)(&cbCapacity);
             if (FAILED(rc)) throw rc;
             // capacity is reported in megabytes, so...
             cbCapacity *= _1M;
@@ -2981,12 +2981,12 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             xml::ElementNode *pelmFile = pelmReferences->createChild("File");
             pelmFile->setAttribute("ovf:href", strTargetFileNameOnly);
             pelmFile->setAttribute("ovf:id", strFileRef);
-            pelmFile->setAttribute("ovf:size", Utf8StrFmt("%RI64", cbFile).c_str()); // @todo
+            pelmFile->setAttribute("ovf:size", Utf8StrFmt("%RI64", cbFile).c_str());
 
             // add disk to XML Disks section
             // <Disk ovf:capacity="8589934592" ovf:diskId="vmdisk1" ovf:fileRef="file1" ovf:format="http://www.vmware.com/specifications/vmdk.html#sparse"/>
             xml::ElementNode *pelmDisk = pelmDiskSection->createChild("Disk");
-            pelmDisk->setAttribute("ovf:capacity", Utf8StrFmt("%RI64", cbCapacity).c_str()); // @todo
+            pelmDisk->setAttribute("ovf:capacity", Utf8StrFmt("%RI64", cbCapacity).c_str());
             pelmDisk->setAttribute("ovf:diskId", strDiskID);
             pelmDisk->setAttribute("ovf:fileRef", strFileRef);
             pelmDisk->setAttribute("ovf:format", "http://www.vmware.com/specifications/vmdk.html#sparse");
