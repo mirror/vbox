@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,43 +23,34 @@
 #ifndef __VBoxVMSettingsNetwork_h__
 #define __VBoxVMSettingsNetwork_h__
 
+/* VBox Includes */
+#include "COMDefs.h"
 #include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsNetwork.gen.h"
-#include "COMDefs.h"
 
-#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
-class QTreeWidget;
-class QTreeWidgetItem;
-#endif
+/* VBox Forwardes */
+class VBoxVMSettingsNetworkPage;
+class VBoxVMSettingsNetworkDetails;
 
-/*
- * QWidget sub-class which represents one tab-page per each network adapter.
- * It has generated UI part.
- */
-class VBoxVMSettingsNetwork : public QIWithRetranslateUI<QWidget>,
+class VBoxVMSettingsNetwork : public QIWithRetranslateUI <QWidget>,
                               public Ui::VBoxVMSettingsNetwork
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsNetwork();
+    VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent);
 
     void getFromAdapter (const CNetworkAdapter &aAdapter);
     void putBackToAdapter();
 
-    QString pageTitle() const;
-
     void setValidator (QIWidgetValidator *aValidator);
+    bool revalidate (QString &aWarning, QString &aTitle);
 
     QWidget* setOrderAfter (QWidget *aAfter);
 
-    void setNetworksList (const QStringList &aList);
-
-#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
-    void setInterfaceName (const QString &);
-    QString interfaceName() const;
-#endif
+    QString pageTitle() const;
+    QString currentName (KNetworkAttachmentType aType = KNetworkAttachmentType_Null) const;
 
 protected:
 
@@ -67,81 +58,20 @@ protected:
 
 private slots:
 
-    void adapterToggled (bool aOn);
-    void naTypeChanged (const QString &aString);
-    void genMACClicked();
+    void updateCableConnectedState();
+    void detailsClicked();
 
 private:
 
-    void prepareComboboxes();
+    void populateComboboxes();
+    KNetworkAttachmentType attachmentType() const;
 
-    void setTapEnabled (bool aEnabled);
-    void setTapVisible (bool aVisible);
-
+    VBoxVMSettingsNetworkPage *mParent;
+    VBoxVMSettingsNetworkDetails *mDetails;
     CNetworkAdapter mAdapter;
     QIWidgetValidator *mValidator;
-
-#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
-    QString mInterfaceName;
-#endif
 };
 
-
-#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
-/*
- * QGroupBox sub-class which represents network interface list.
- */
-class VBoxNIList : public QIWithRetranslateUI<QWidget>
-{
-    Q_OBJECT;
-
-public:
-
-    VBoxNIList (QWidget *aParent);
-
-    bool isWrongInterface() const;
-    void setCurrentInterface (const QString &aName);
-#if defined (Q_WS_WIN) && defined(VBOX_WITH_NETFLT)
-    void updateInterfacesList(KNetworkAttachmentType enmAttachmentType);
-#endif
-signals:
-
-    void listChanged();
-    void currentInterfaceChanged (const QString &);
-
-private slots:
-
-    void onCurrentItemChanged (QTreeWidgetItem *aCurrent, QTreeWidgetItem *aPrev = 0);
-    void addHostInterface();
-    void delHostInterface();
-
-protected:
-
-    void retranslateUi();
-
-private:
-#if defined (Q_WS_WIN) && defined(VBOX_WITH_NETFLT)
-    void populateInterfacesList(KNetworkAttachmentType enmAttachmentType);
-#else
-    void populateInterfacesList();
-#endif
-    QILabelSeparator *mLbTitle;
-    QTreeWidget      *mList;
-
-# if defined (Q_WS_WIN)
-    QAction *mAddAction;
-    QAction *mDelAction;
-#  ifdef VBOX_WITH_NETFLT
-    KNetworkAttachmentType mEnmAttachmentType;
-#  endif
-# endif
-};
-#endif /* Q_WS_WIN || VBOX_WITH_NETFLT */
-
-
-/*
- * QWidget sub-class which represents network settings page itself.
- */
 class VBoxVMSettingsNetworkPage : public VBoxSettingsPage
 {
     Q_OBJECT;
@@ -150,45 +80,24 @@ public:
 
     VBoxVMSettingsNetworkPage();
 
+    QStringList natList() const;
+    QStringList netList() const;
+    QStringList intList (KHostNetworkInterfaceType aType) const;
+
 protected:
 
     void getFrom (const CMachine &aMachine);
     void putBackTo();
 
-    void setValidator (QIWidgetValidator *aVal);
+    void setValidator (QIWidgetValidator *aValidator);
     bool revalidate (QString &aWarning, QString &aTitle);
 
     void retranslateUi();
 
-private slots:
-
-    void updateNetworksList();
-#if defined (VBOX_WITH_NETFLT)
-    void updateInterfaceList();
-#endif
-#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
-    void onCurrentPageChanged (int);
-    void onCurrentInterfaceChanged (const QString &);
-#endif
-
 private:
 
-    void populateNetworksList();
-
-    /* Widgets */
-    QTabWidget *mTwAdapters;
-#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
-    VBoxNIList *mNIList;
-#endif
-
-    /* Widget Validator*/
     QIWidgetValidator *mValidator;
-
-    /* Lists */
-    QStringList mListNetworks;
-
-    /* Flags */
-    bool mLockNetworkListUpdate;
+    QTabWidget *mTwAdapters;
 };
 
 #endif // __VBoxVMSettingsNetwork_h__

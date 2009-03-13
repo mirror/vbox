@@ -27,7 +27,7 @@
    </rect>
   </property>
   <layout class="QGridLayout" >
-   <item row="0" column="0" colspan="2" >
+   <item row="0" column="0" colspan="3" >
     <widget class="QCheckBox" name="mGbAdapter" >
      <property name="whatsThis" >
       <string>When checked, plugs this virtual network adapter into the virtual machine.</string>
@@ -74,20 +74,30 @@
       <item row="0" column="0" >
        <widget class="QLabel" name="mLbAType" >
         <property name="text" >
-         <string>A&amp;dapter Type:</string>
+         <string>Adapter &amp;Type:</string>
         </property>
         <property name="alignment" >
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="buddy" >
-         <cstring>mCbAType</cstring>
+         <cstring>mCbAdapterType</cstring>
         </property>
        </widget>
       </item>
       <item row="0" column="1" >
-       <widget class="QComboBox" name="mCbAType" >
+       <widget class="QComboBox" name="mCbAdapterType" >
         <property name="whatsThis" >
          <string>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" >
+       <widget class="QToolButton" name="mTbCable" >
+        <property name="whatsThis" >
+         <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
+        </property>
+        <property name="autoRaise" >
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -100,119 +110,24 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="buddy" >
-         <cstring>mCbNAType</cstring>
+         <cstring>mCbAttachmentType</cstring>
         </property>
        </widget>
       </item>
       <item row="1" column="1" >
-       <widget class="QComboBox" name="mCbNAType" >
+       <widget class="QComboBox" name="mCbAttachmentType" >
         <property name="whatsThis" >
          <string>Controls the way how this virtual adapter is attached to the real network of the Host OS.</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0" >
-       <widget class="QLabel" name="mLbNetwork" >
-        <property name="text" >
-         <string>&amp;Network Name:</string>
-        </property>
-        <property name="alignment" >
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-        <property name="buddy" >
-         <cstring>mCbNetwork</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1" >
-       <widget class="QComboBox" name="mCbNetwork" >
+      <item row="1" column="2" >
+       <widget class="QToolButton" name="mTbDetails" >
         <property name="whatsThis" >
-         <string>Displays the name of the internal network selected for this adapter.</string>
+         <string>Open extended settings dialog for current attachment type.</string>
         </property>
-        <property name="editable" >
+        <property name="autoRaise" >
          <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0" >
-       <widget class="QLabel" name="mLbMAC" >
-        <property name="text" >
-         <string>&amp;MAC Address:</string>
-        </property>
-        <property name="alignment" >
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-        <property name="buddy" >
-         <cstring>mLeMAC</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1" >
-       <widget class="QLineEdit" name="mLeMAC" >
-        <property name="sizePolicy" >
-         <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="whatsThis" >
-         <string>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2" >
-       <widget class="QPushButton" name="mPbMAC" >
-        <property name="whatsThis" >
-         <string>Generates a new random MAC address.</string>
-        </property>
-        <property name="text" >
-         <string>&amp;Generate</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1" >
-       <widget class="QCheckBox" name="mCbCable" >
-        <property name="whatsThis" >
-         <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
-        </property>
-        <property name="text" >
-         <string>Ca&amp;ble Connected</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0" colspan="3" >
-       <widget class="QILabelSeparator" name="mGbTap" >
-        <property name="text" >
-         <string>Host Interface Settings</string>
-        </property>
-        <property name="buddy" >
-         <cstring>mLeInterface_x11</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0" >
-       <widget class="QLabel" name="mLbInterface_x11" >
-        <property name="text" >
-         <string>&amp;Interface Name:</string>
-        </property>
-        <property name="alignment" >
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-        <property name="buddy" >
-         <cstring>mLeInterface_x11</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1" >
-       <widget class="QLineEdit" name="mLeInterface_x11" >
-        <property name="sizePolicy" >
-         <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="whatsThis" >
-         <string>Displays the TAP interface name.</string>
         </property>
        </widget>
       </item>
@@ -247,13 +162,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>QILabelSeparator</class>
-   <extends>QLabel</extends>
-   <header>QILabelSeparator.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections>
   <connection>
