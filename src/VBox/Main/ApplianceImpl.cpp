@@ -2899,11 +2899,8 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             rc = pVirtualBox->FindHardDisk(bstrSrcFilePath, pSourceDisk.asOutParam());
             if (FAILED(rc)) throw rc;
 
-            /* Based on the file extensions we choose the right format for the
-             * disk */
-            Bstr bstrSrcFormat = L"VDI";
-            if (strTargetFilePath.endsWith(".vmdk", Utf8Str::CaseInsensitive))
-                bstrSrcFormat = L"VMDK";
+            /* We are always exporting to vmdfk stream optimized for now */
+            Bstr bstrSrcFormat = L"VMDK";
 
             // create a new hard disk interface for the destination disk image
             Log(("Creating target disk \"%s\"\n", strTargetFilePath.raw()));
@@ -2915,7 +2912,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             try
             {
                 // clone the source disk image
-                rc = pSourceDisk->CloneTo(pTargetDisk, HardDiskVariant_Standard, pProgress2.asOutParam());
+                rc = pSourceDisk->CloneTo(pTargetDisk, HardDiskVariant_VmdkStreamOptimized, pProgress2.asOutParam());
                 if (FAILED(rc)) throw rc;
 
                 // advance to the next operation
@@ -3428,21 +3425,24 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
 //     <const name="HardDiskControllerSCSI" value="8" />
         rc = GetStorageControllerByName(Bstr("SCSI"), pController.asOutParam());
-        rc = pController->COMGETTER(ControllerType)(&ctlr);
-        if (FAILED(rc)) throw rc;
-        strVbox = "LsiLogic";       // the default in VBox
-        switch(ctlr)
+        if (SUCCEEDED (rc))
         {
-            case StorageControllerType_LsiLogic: strVbox = "LsiLogic"; break;
-            case StorageControllerType_BusLogic: strVbox = "BusLogic"; break;
-        }
-        if (SUCCEEDED(rc))
-        {
-            lSCSIControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
-                               Utf8StrFmt("%d", lSCSIControllerIndex),
-                               strVbox,
-                               "");
+            rc = pController->COMGETTER(ControllerType)(&ctlr);
+            if (FAILED(rc)) throw rc;
+            strVbox = "LsiLogic";       // the default in VBox
+            switch(ctlr)
+            {
+                case StorageControllerType_LsiLogic: strVbox = "LsiLogic"; break;
+                case StorageControllerType_BusLogic: strVbox = "BusLogic"; break;
+            }
+            if (SUCCEEDED(rc))
+            {
+                lSCSIControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
+                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
+                                   Utf8StrFmt("%d", lSCSIControllerIndex),
+                                   strVbox,
+                                   "");
+            }
         }
 
 //     <const name="HardDiskImage" value="9" />
