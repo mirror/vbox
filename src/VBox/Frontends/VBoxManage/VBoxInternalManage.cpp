@@ -1322,7 +1322,7 @@ static int CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
         }
         else
         {
-            vrc = VDCopy(pDisk, 0, pDisk, "VMDK", Utf8Str(dst).raw(), true, 0, NULL, NULL, NULL, NULL);
+            vrc = VDCopy(pDisk, 0, pDisk, "VMDK", Utf8Str(dst).raw(), true, 0, VD_IMAGE_FLAGS_NONE, NULL, NULL, NULL, NULL);
             if (RT_FAILURE(vrc))
             {
                 RTPrintf("Error while renaming the image: %Rrc\n", vrc);
@@ -1599,7 +1599,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
 
         /* Create the output image */
         vrc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, Utf8Str(dstformat).raw(),
-                     Utf8Str(dst).raw(), false, 0, NULL, NULL, NULL, NULL);
+                     Utf8Str(dst).raw(), false, 0, VD_IMAGE_FLAGS_NONE, NULL, NULL, NULL, NULL);
         if (RT_FAILURE(vrc))
         {
             RTPrintf("Error while copying the image: %Rrc\n", vrc);

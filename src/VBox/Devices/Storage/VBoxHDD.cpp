@@ -1878,6 +1878,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pszFilename     New name of the image (may be NULL if pDiskFrom == pDiskTo).
  * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
  * @param   cbSize          New image size (0 means leave unchanged).
+ * @param   uImageFlags     Flags specifying special destination image features.
  * @param   pDstUuid        New UUID of the destination image. If NULL, a new UUID is created.
  *                          This parameter is used if and only if a true copy is created.
  *                          In all rename/move cases the UUIDs are copied over.
@@ -1889,7 +1890,8 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  */
 VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                          const char *pszBackend, const char *pszFilename,
-                         bool fMoveByRename, uint64_t cbSize, PCRTUUID pDstUuid,
+                         bool fMoveByRename, uint64_t cbSize,
+                         unsigned uImageFlags, PCRTUUID pDstUuid,
                          PVDINTERFACE pVDIfsOperation,
                          PVDINTERFACE pDstVDIfsImage,
                          PVDINTERFACE pDstVDIfsOperation)
@@ -1963,9 +1965,6 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         if (cbSize == 0)
             cbSize = cbSizeFrom;
 
-        unsigned uImageFlagsFrom;
-        uImageFlagsFrom = pImageFrom->Backend->pfnGetImageFlags(pImageFrom->pvBackendData);
-
         PDMMEDIAGEOMETRY PCHSGeometryFrom = {0, 0, 0};
         PDMMEDIAGEOMETRY LCHSGeometryFrom = {0, 0, 0};
         pImageFrom->Backend->pfnGetPCHSGeometry(pImageFrom->pvBackendData, &PCHSGeometryFrom);
@@ -2012,7 +2011,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
          * dependencies. */
         if (enmTypeFrom == VD_IMAGE_TYPE_DIFF)
         {
-            rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlagsFrom,
+            rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlags,
                               szComment, &ImageUuid, &ParentUuid, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
         } else {
             VDIMAGETYPE enmTypeTo = enmTypeFrom; /** @todo Please, review this! It's an ugly hack I think... */
@@ -2021,7 +2020,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                 enmTypeTo = VD_IMAGE_TYPE_FIXED;
 
             rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, enmTypeTo,
-                              cbSize, uImageFlagsFrom, szComment,
+                              cbSize, uImageFlags, szComment,
                               &PCHSGeometryFrom, &LCHSGeometryFrom,
                               NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
             if (RT_SUCCESS(rc) && !RTUuidIsNull(&ImageUuid))

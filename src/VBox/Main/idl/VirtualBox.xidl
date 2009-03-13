@@ -8412,7 +8412,7 @@
     </const>
     <const name="VmdkStreamOptimized" value="0x04">
       <desc>
-        VMDK streamOptimized image. Epecial import/export format which is
+        VMDK streamOptimized image. Special import/export format which is
         read-only/append-only.
       </desc>
     </const>

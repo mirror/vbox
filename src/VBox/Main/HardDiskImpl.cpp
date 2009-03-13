@@ -2238,6 +2238,7 @@ HRESULT HardDisk::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
  * NULL when @a aWait is @c false (this method will assert in this case).
  *
  * @param aTarget       Target hard disk.
+ * @param aVariant      Precise image variant to create.
  * @param aProgress     Where to find/store a Progress object to track operation
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
@@ -3399,7 +3400,7 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
             uint64_t size = 0, logicalSize = 0;
 
             /* The object may request a specific UUID (through a special form of
-             * the setLocation() argumet). Otherwise we have to generate it */
+             * the setLocation() argument). Otherwise we have to generate it */
             Guid id = that->m.id;
             bool generateUuid = id.isEmpty();
             if (generateUuid)
@@ -3439,7 +3440,7 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                                             VD_IMAGE_TYPE_NORMAL :
                                             VD_IMAGE_TYPE_FIXED,
                                         task->d.size * _1M,
-                                        VD_IMAGE_FLAGS_NONE,
+                                        task->d.variant,
                                         NULL, &geo, &geo, id.raw(),
                                         VD_OPEN_FLAGS_NORMAL,
                                         NULL, that->mm.vdDiskIfaces);
@@ -3559,7 +3560,7 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                     that->mm.vdProgress = task->progress;
 
                     vrc = VDCreateDiff (hdd, targetFormat, targetLocation,
-                                        VD_IMAGE_FLAGS_NONE,
+                                        task->d.variant,
                                         NULL, targetId.raw(),
                                         id.raw(),
                                         VD_OPEN_FLAGS_NORMAL,
@@ -3976,7 +3977,7 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
             uint64_t size = 0, logicalSize = 0;
 
             /* The object may request a specific UUID (through a special form of
-             * the setLocation() argumet). Otherwise we have to generate it */
+             * the setLocation() argument). Otherwise we have to generate it */
             Guid targetId = target->m.id;
             bool generateUuid = targetId.isEmpty();
             if (generateUuid)
@@ -4030,8 +4031,9 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                     ComAssertRCThrow (vrc, E_FAIL);
 
                     vrc = VDCopy (hdd, 0, targetHdd, targetFormat,
-                                  targetLocation, false, 0, targetId.raw(),
-                                  NULL, target->mm.vdDiskIfaces,
+                                  targetLocation, false, 0, task->d.variant,
+                                  targetId.raw(), NULL,
+                                  target->mm.vdDiskIfaces,
                                   that->mm.vdDiskIfaces);
 
                     that->mm.vdProgress = NULL;
@@ -4252,6 +4254,7 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                     that->mm.vdProgress = task->progress;
 
                     vrc = VDCreateDiff (hdd, format, location,
+                                        /// @todo use the same image variant as before
                                         VD_IMAGE_FLAGS_NONE,
                                         NULL, id.raw(),
                                         parentId.raw(),
