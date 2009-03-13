@@ -105,7 +105,7 @@ DECLINLINE(Bstr) composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
 
 DECLINLINE(ULONG) composeIPv6PrefixLenghFromAddress(PRTNETADDRIPV6 aAddrPtr)
 {
-    int res = ASMBitFirstClear(aAddrPtr, sizeof(RTNETADDRIPV6));
+    int res = ASMBitFirstClear(aAddrPtr, sizeof(RTNETADDRIPV6)*8);
     return res != -1 ? res : 128;
 }
 
