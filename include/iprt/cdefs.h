@@ -985,7 +985,7 @@
 #define RT_SIZEOFMEMB(type, member) ( sizeof(((type *)(void *)0)->member) )
 
 /** @def RT_ELEMENTS
- * Calcs the number of elements in an array.
+ * Calculates the number of elements in an array.
  * @returns Element count.
  * @param   aArray      Array in question.
  */
@@ -1458,7 +1458,7 @@
 #define NIL_OFFSET   (~0U)
 
 /** @def NOREF
- * Keeps the compiler from bitching about an unused parameters.
+ * Keeps the compiler from bitching about an unused parameter.
  */
 #define NOREF(var)               (void)(var)
 
@@ -1560,26 +1560,27 @@
 #define VALID_PHYS32(Phys)  ( (uint64_t)(Phys) < (uint64_t)_4G )
 
 /** @def N_
- * The \#define N_ is used mark a string for translation. This is usable in
+ * The \#define N_ is used to mark a string for translation. This is usable in
  * any part of the code, as it is only used by the tools that create message
  * catalogs. This macro is a no-op as far as the compiler and code generation
  * is concerned.
  *
- * If you want to both mark a string for translation and translate it, use _.
+ * If you want to both mark a string for translation and translate it, use _().
  */
 #define N_(s) (s)
 
 /** @def _
- * The \#define _ is used mark a string for translation and to translate it in
- * one step.
+ * The \#define _ is used to mark a string for translation and to translate it
+ * in one step.
  *
- * If you want to only mark a string for translation, use N_.
+ * If you want to only mark a string for translation, use N_().
  */
 #define _(s) gettext(s)
 
 
 /** @def __PRETTY_FUNCTION__
- *  With GNU C we'd like to use the builtin __PRETTY_FUNCTION__, so define that for the other compilers.
+ *  With GNU C we'd like to use the builtin __PRETTY_FUNCTION__, so define that
+ *  for the other compilers.
  */
 #if !defined(__GNUC__) && !defined(__PRETTY_FUNCTION__)
 # define __PRETTY_FUNCTION__    __FUNCTION__
@@ -1587,10 +1588,10 @@
 
 
 /** @def RT_STRICT
- * The \#define RT_STRICT controls whether or not assertions and other runtime checks
- * should be compiled in or not.
+ * The \#define RT_STRICT controls whether or not assertions and other runtime
+ * checks should be compiled in or not.
  *
- * If you want assertions which are not a subject to compile time options use
+ * If you want assertions which are not subject to compile time options use
  * the AssertRelease*() flavors.
  */
 #if !defined(RT_STRICT) && defined(DEBUG)
