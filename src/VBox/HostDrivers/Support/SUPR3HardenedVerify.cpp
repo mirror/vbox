@@ -103,35 +103,40 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxVMM"  SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxREM"  SUPLIB_DLL_SUFF },
 #if HC_ARCH_BITS == 32
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxREM32"  SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxREM64"  SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_SharedLib,         true, "VBoxREM32"  SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_SharedLib,         true, "VBoxREM64"  SUPLIB_DLL_SUFF },
 #endif
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxDD"  SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxDD2"  SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxDDU"  SUPLIB_DLL_SUFF },
 
 //#ifdef VBOX_WITH_DEBUGGER_GUI
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxDbg"  SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxDbg3" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_SharedLib,         true, "VBoxDbg"  SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_SharedLib,         true, "VBoxDbg3" SUPLIB_DLL_SUFF },
 //#endif
 
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,       false, "VBoxSharedClipboard" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,       false, "VBoxSharedFolders" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxSharedCrOpenGL" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,       false, "VBoxGuestPropSvc" SUPLIB_DLL_SUFF },
-
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxSharedCrOpenGL" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxOGLhostcrutil" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxOGLhosterrorspu" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxOGLrenderspu" SUPLIB_DLL_SUFF },
-
-    {   kSupIFT_Exe,  kSupID_AppBin,            false, "VBoxManage" SUPLIB_EXE_SUFF },
-
+//#ifdef VBOX_WITH_SHARED_CLIPBOARD
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxSharedClipboard" SUPLIB_DLL_SUFF },
+//#endif
+//#ifdef VBOX_WITH_SHARED_FOLDERS
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxSharedFolders" SUPLIB_DLL_SUFF },
+//#endif
+//#ifdef VBOX_WITH_GUEST_PROPS
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxGuestPropSvc" SUPLIB_DLL_SUFF },
+//#endif
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxSharedCrOpenGL" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxOGLhostcrutil" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxOGLhosterrorspu" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxOGLrenderspu" SUPLIB_DLL_SUFF },
+//#ifdef VBOX_WITH_MAIN
+    {   kSupIFT_Exe,  kSupID_AppBin,            true, "VBoxManage" SUPLIB_EXE_SUFF },
+//#endif
     {   kSupIFT_Exe,  kSupID_AppBin,            false, "VBoxSVC" SUPLIB_EXE_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxSettings" SUPLIB_DLL_SUFF },
 #ifdef RT_OS_WINDOWS
     /** @todo */
 #else
+#ifdef VBOX_WITH_MAIN
     {   kSupIFT_Exe,  kSupID_AppPrivArch,       false, "VBoxXPCOMIPCD" SUPLIB_EXE_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxXPCOM" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArchComp,   false, "VBoxXPCOMIPCC" SUPLIB_DLL_SUFF },
@@ -141,36 +146,36 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
 #endif
 
 //#ifdef VBOX_WITH_VRDP
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VRDPAuth" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxVRDP" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_SharedLib,         true, "VRDPAuth" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_SharedLib,         true, "VBoxVRDP" SUPLIB_DLL_SUFF },
 //#endif
 
 //#ifdef VBOX_WITH_HEADLESS
-    {   kSupIFT_Exe,  kSupID_AppBin,             true, "VBoxHeadless" SUPLIB_EXE_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxHeadless" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxFFmpegFB" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Exe,  kSupID_AppBin,            true, "VBoxHeadless" SUPLIB_EXE_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxHeadless" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxFFmpegFB" SUPLIB_DLL_SUFF },
 //#endif
 
 //#ifdef VBOX_WITH_QTGUI
-    {   kSupIFT_Exe,  kSupID_AppBin,             true, "VirtualBox" SUPLIB_EXE_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VirtualBox" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Exe,  kSupID_AppBin,            true, "VirtualBox" SUPLIB_EXE_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VirtualBox" SUPLIB_DLL_SUFF },
 # if !defined(RT_OS_DARWIN) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
-    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxKeyboard" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_SharedLib,         true, "VBoxKeyboard" SUPLIB_DLL_SUFF },
 # endif
 //#endif
 
 //#ifdef VBOX_WITH_VBOXSDL
-    {   kSupIFT_Exe,  kSupID_AppBin,             true, "VBoxSDL" SUPLIB_EXE_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxSDL" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Exe,  kSupID_AppBin,            true, "VBoxSDL" SUPLIB_EXE_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxSDL" SUPLIB_DLL_SUFF },
 //#endif
 
 //#ifdef VBOX_WITH_VBOXBFE
-    {   kSupIFT_Exe,  kSupID_AppBin,             true, "VBoxBFE" SUPLIB_EXE_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxBFE" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Exe,  kSupID_AppBin,            true, "VBoxBFE" SUPLIB_EXE_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxBFE" SUPLIB_DLL_SUFF },
 //#endif
 
 //#ifdef VBOX_WITH_WEBSERVICES
-    {   kSupIFT_Exe, kSupID_AppBin,              true, "vboxwebsrv" SUPLIB_EXE_SUFF },
+    {   kSupIFT_Exe, kSupID_AppBin,             true, "vboxwebsrv" SUPLIB_EXE_SUFF },
 //#endif
 
 #ifdef RT_OS_LINUX
