@@ -397,6 +397,7 @@ protected:
     std::string         m_Network;
     RTMAC               m_MacAddress;
     RTNETADDRIPV4       m_Ipv4Address;
+    std::string         m_LeaseDBName;
     /** @} */
 
     /** The current configs. */
@@ -528,7 +529,7 @@ VBoxNetDhcp::VBoxNetDhcp()
     m_pCurMsg               = NULL;
     memset(&m_CurHdrs, '\0', sizeof(m_CurHdrs));
 
-#if 1 /* while hacking. */
+#if 0 /* enable to hack the code without a mile long argument list. */
     VBoxNetDhcpCfg *pDefCfg = new VBoxNetDhcpCfg();
     pDefCfg->m_LowerAddr.u    = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,100)));
     pDefCfg->m_UpperAddr.u    = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,250)));
@@ -689,6 +690,7 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
         { "--network",        'n',   RTGETOPT_REQ_STRING },
         { "--mac-address",    'a',   RTGETOPT_REQ_MACADDR },
         { "--ip-address",     'i',   RTGETOPT_REQ_IPV4ADDR },
+        { "--lease-db",       'D',   RTGETOPT_REQ_STRING },
         { "--verbose",        'v',   RTGETOPT_REQ_NOTHING },
 
         { "--begin-config",   'b',   RTGETOPT_REQ_NOTHING },
@@ -725,6 +727,9 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                 break;
             case 'i':
                 m_Ipv4Address = Val.IPv4Addr;
+                break;
+            case 'd':
+                m_LeaseDBName = Val.psz;
                 break;
 
             case 'v':
