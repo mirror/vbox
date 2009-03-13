@@ -442,11 +442,29 @@ int handleModifyVM(HandlerArg *a)
             nics[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (  strncmp(a->argv[i], "-bridgeadapter", 11) == 0
-                || strncmp(a->argv[i], "-hostonlyadapter", 12) == 0
-                || strncmp(a->argv[i], "-hostifdev", 10) == 0) /* backward compatibility */
+        else if (strncmp(a->argv[i], "-hostifdev", 10) == 0) /* backward compatibility */
         {
             unsigned n = parseNum(&a->argv[i][10], NetworkAdapterCount, "NIC");
+            if (!n)
+                return 1;
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            hostifdev[n - 1] = a->argv[i + 1];
+            i++;
+        }
+        else if (  strncmp(a->argv[i], "-bridgeadapter", 14) == 0)
+        {
+            unsigned n = parseNum(&a->argv[i][14], NetworkAdapterCount, "NIC");
+            if (!n)
+                return 1;
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            hostifdev[n - 1] = a->argv[i + 1];
+            i++;
+        }
+        else if (strncmp(a->argv[i], "-hostonlyadapter", 16) == 0)
+        {
+            unsigned n = parseNum(&a->argv[i][16], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)

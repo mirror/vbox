@@ -716,23 +716,15 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     }
                     case NetworkAttachmentType_HostOnly:
                     {
-#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
                         Bstr strHostonlyAdp;
                         nic->COMGETTER(HostInterface)(strHostonlyAdp.asOutParam());
-#endif
                         if (details == VMINFO_MACHINEREADABLE)
                         {
-#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
                             RTPrintf("hostonlyadapter%d=\"%lS\"\n", currentNIC + 1, strHostonlyAdp.raw());
-#endif
                             strAttachment = "hostonly";
                         }
                         else
-#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
                             strAttachment = Utf8StrFmt("Host-only Interface '%lS'", strHostonlyAdp.raw());
-#else
-                            strAttachment = "Host-only Network";
-#endif
                         break;
                     }
                     default:

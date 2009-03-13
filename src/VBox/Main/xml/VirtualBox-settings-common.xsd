@@ -640,7 +640,7 @@
     </xsd:element>
     <xsd:element name="HostOnlyInterface">
       <xsd:complexType>
-        <xsd:attribute name="name" type="xsd:string" use="optional"/>
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
       </xsd:complexType>
     </xsd:element>
   </xsd:choice>
