@@ -599,6 +599,9 @@ typedef struct VBOXXPCOMC
     unsigned cb;
     /** The structure version. */
     unsigned uVersion;
+
+    unsigned int (*pfnGetVersion)(void);
+
     void  (*pfnComInitialize)(IVirtualBox **virtualBox, ISession **session);
     void  (*pfnComUninitialize)(void);
 

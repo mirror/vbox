@@ -30,6 +30,7 @@
 
 #include "VBoxCAPI_v2_2.h"
 #include "VBox/com/com.h"
+#include "VBox/version.h"
 
 using namespace std;
 
@@ -142,6 +143,15 @@ VBoxComUninitialize(void)
     Log(("Cbinding: Cleaned up the created IVirtualBox and ISession Objects.\n"));
 }
 
+uint32_t
+VBoxVersion(void)
+{
+    uint32_t version = 0;
+
+    version = (VBOX_VERSION_MAJOR * 1000 * 1000) + (VBOX_VERSION_MINOR * 1000) + (VBOX_VERSION_BUILD);
+
+    return version;
+}
 
 VBOXXPCOMC_DECL(PCVBOXXPCOM)
 VBoxGetXPCOMCFunctions(unsigned uVersion)
@@ -151,6 +161,8 @@ VBoxGetXPCOMCFunctions(unsigned uVersion)
     {
         sizeof(VBOXXPCOMC),
         VBOX_XPCOMC_VERSION,
+
+        VBoxVersion,
 
         VBoxComInitialize,
         VBoxComUninitialize,
