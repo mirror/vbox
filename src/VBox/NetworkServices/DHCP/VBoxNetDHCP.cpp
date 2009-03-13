@@ -37,6 +37,7 @@
 #include <iprt/path.h>
 #include <iprt/param.h>
 #include <iprt/getopt.h>
+#include <iprt/string.h>
 
 #include <VBox/sup.h>
 #include <VBox/intnet.h>
@@ -378,8 +379,8 @@ protected:
     bool                handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb);
     void                makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRTNETBOOTP pDhcpMsg, size_t cb);
 
-    VBoxNetDhcpLease   *findLeaseByMacAddress(PCRTMAC pMacAddress);
-    VBoxNetDhcpLease   *findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4Addr, PCRTMAC pMacAddress);
+    VBoxNetDhcpLease   *findLeaseByMacAddress(PCRTMAC pMacAddress, bool fAnyState);
+    VBoxNetDhcpLease   *findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4Addr, PCRTMAC pMacAddress, bool fAnyState);
     VBoxNetDhcpLease   *newLease(PCRTNETBOOTP pDhcpMsg, size_t cb);
 
     static uint8_t const *findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cb, size_t *pcbMaxOpt);
@@ -439,6 +440,7 @@ static VBoxNetDhcp *g_pDhcp;
 void VBoxNetDhcpLease::offer(uint32_t xid)
 {
     m_enmState = kState_Offer;
+    m_xid = xid;
     RTTimeNow(&m_ExpireTime);
     RTTimeSpecAddSeconds(&m_ExpireTime, 60);
 }
@@ -537,7 +539,11 @@ VBoxNetDhcp::VBoxNetDhcp()
     Addr.u                    = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  2)));
     pDefCfg->m_DNSes.push_back(Addr);
     pDefCfg->m_DomainName     = "vboxnetdhcp.org";
+#if 0
     pDefCfg->m_cSecLease      = 60*60; /* 1 hour */
+#else
+    pDefCfg->m_cSecLease      = 30; /* sec */
+#endif
     pDefCfg->m_TftpServer     = "10.0.2.3"; //??
     this->addConfig(pDefCfg);
 #endif
@@ -941,7 +947,7 @@ int VBoxNetDhcp::run(void)
         while (INTNETRingGetReadable(pRingBuf) > 0)
         {
             size_t  cb;
-            void   *pv = VBoxNetUDPMatch(m_pIfBuf, 67 /* bootps */, &m_MacAddress,
+            void   *pv = VBoxNetUDPMatch(m_pIfBuf, RTNETIPV4_PORT_BOOTPS, &m_MacAddress,
                                          VBOXNETUDP_MATCH_UNICAST | VBOXNETUDP_MATCH_BROADCAST | VBOXNETUDP_MATCH_CHECKSUM
                                          | (m_cVerbosity > 2 ? VBOXNETUDP_MATCH_PRINT_STDERR : 0),
                                          &m_CurHdrs, &cb);
@@ -1026,14 +1032,10 @@ bool VBoxNetDhcp::handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t 
 bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
     /*
-     * First, see if there is already a lease for this client. It may have rebooted,
-     * crashed or whatever that have caused it to forget its existing lease.
-     * If none was found, create a new lease for it and then construct a reply.
+     * The newLease() method contains logic for finding current leases
+     * and reusing them in case the client is forgetful.
      */
-    VBoxNetDhcpLease *pLease = findLeaseByMacAddress(&pDhcpMsg->bp_chaddr.Mac);
-    if (    !pLease
-        ||  !pLease->isInCurrentConfig())
-        pLease = newLease(pDhcpMsg, cb);
+    VBoxNetDhcpLease *pLease = newLease(pDhcpMsg, cb);
     if (!pLease)
         return false;
     debugPrint(1, true, "Offering %d.%d.%d.%d to %.6Rhxs xid=%#x",
@@ -1062,74 +1064,97 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
     /** @todo Probably need to match the server IP here to work correctly with
      *        other servers. */
-    /** @todo check this against the RFC and real code. the code is kind of
-     *        fishy... */
+    /** @todo This code isn't entirely correct and quite a bit of a hack, but it
+     *        will have to do for now as the right thing (tm) is very complex.
+     *        Part of the fun is verifying that the request is something we can
+     *        and should handle. */
 
     /*
-     * Windows will reissue these requests when rejoining a network if it thinks it
-     * already has an address on the network. If we cannot find a valid lease,
-     * make a new one and return NAC.
+     * Try find the lease by the requested address + client MAC address.
      */
-    RTNETADDRIPV4 IPv4Addr;
-    if (findOptionIPv4Addr(RTNET_DHCP_OPT_REQ_ADDR, pDhcpMsg, cb, &IPv4Addr))
+    VBoxNetDhcpLease   *pLease = NULL;
+    RTNETADDRIPV4       IPv4Addr;
+    bool                fReqAddr = findOptionIPv4Addr(RTNET_DHCP_OPT_REQ_ADDR, pDhcpMsg, cb, &IPv4Addr);
+    if (fReqAddr)
     {
-        VBoxNetDhcpLease *pLease = findLeaseByIpv4AndMacAddresses(IPv4Addr, &pDhcpMsg->bp_chaddr.Mac);
-        if (    pLease
-            &&  pLease->isInCurrentConfig())
-        {
-            if (pLease->isBeingOffered())
-                debugPrint(2, true, "REQUEST for offered lease.");
-            else
-                debugPrint(1, true, "REQUEST for lease not on offer.");
+        fReqAddr = true;
+        pLease = findLeaseByIpv4AndMacAddresses(IPv4Addr, &pDhcpMsg->bp_chaddr.Mac, true /* fAnyState */);
+    }
 
-            /* Check if the xid matches, if it doesn't it's not our call. */
-#if 0      /** @todo check how windows treats bp_xid here, it should match I think. If
-            *        it doesn't we've no way of filtering out broadcast replies to other
-            *        DHCP servers. Fix this later.
-            */
-            if (pDhcpMsg->bp_xid != pLease->m_xid)
-            {
-                debugPrint(1, true, "bp_xid %#x != lease %#x", pDhcpMsg->bp_xid, pLease->m_xid);
-                return true;
-            }
-#endif
-            /* Check if the config has changed since the offer was given? NAK it then? */
+    /*
+     * Try find the lease by the client IP address + client MAC address.
+     */
+    if (    !pLease
+        &&  pDhcpMsg->bp_ciaddr.u)
+        pLease = findLeaseByIpv4AndMacAddresses(pDhcpMsg->bp_ciaddr, &pDhcpMsg->bp_chaddr.Mac, true /* fAnyState */);
 
-            /*
-             * Ack it.
-             */
-            pLease->activate(pDhcpMsg->bp_xid);
-            makeDhcpReply(RTNET_DHCP_MT_ACK, pLease, pDhcpMsg, cb);
-        }
-        else
+#if 0 /** @todo client id stuff - it doesn't make sense here imho, we need IP + MAC. What would make sense
+                though is to compare the client id with what we've got in the lease and use it to root out
+                bad requests. */
+    /*
+     * Try find the lease by using the client id.
+     */
+    if (!pLease)
+    {
+        size_t          cbClientID = 0;
+        uint8_t const  *pbClientID  = findOption(RTNET_DHCP_OPT_CLIENT_ID, pDhcpMsg, cb, &cbClientID);
+        if (    pbClientID
+            &&  cbClientID == sizeof(RTMAC) + 1
+            &&  pbClientID[0] == RTNET_ARP_ETHER
+            &&
+                )
         {
-            /*
-             * Try make a new offer and see if we get the requested IP and config, that
-             * will make the (windows) client happy apparently...
-             */
-            pLease = newLease(pDhcpMsg, cb);
-            if (    pLease
-                &&  pLease->m_IPv4Address.u == IPv4Addr.u
-                /** @todo match requested config later */)
-            {
-                /* ACK it. */
-                debugPrint(1, true, "REQUEST for lease not on offer, new lease matches.");
-                pLease->activate();
-                makeDhcpReply(RTNET_DHCP_MT_ACK, pLease, pDhcpMsg, cb);
-            }
-            else
-            {
-                /* NAK it */
-                debugPrint(1, true, "REQUEST for lease not on offer, NACnig it.");
-                if (pLease)
-                    pLease->release();
-                pLease->activate();
-                makeDhcpReply(RTNET_DHCP_MT_NAC, NULL, pDhcpMsg, cb);
-            }
+            pLease = findLeaseByIpv4AndMacAddresses(pDhcpMsg->bp_ciaddr, &pDhcpMsg->bp_chaddr.Mac, true /* fAnyState */);
         }
     }
+#endif
+
+    /*
+     * Validate the lease that's requested.
+     * We've already check the MAC and IP addresses.
+     */
+    bool fAckIt = false;
+    if (pLease)
+    {
+        if (pLease->isBeingOffered())
+        {
+            if (pLease->m_xid == pDhcpMsg->bp_xid)
+            {
+                fAckIt = true;
+                debugPrint(2, true, "REQUEST for offered lease.");
+                pLease->activate();
+            }
+            else
+                debugPrint(2, true, "REQUEST for offered lease, xid mismatch. Expected %#x, got %#x.",
+                           pLease->m_xid, pDhcpMsg->bp_xid);
+        }
+        else if (!pLease->isInCurrentConfig())
+            debugPrint(1, true, "REQUEST for obsolete lease -> NAK");
+        else if (fReqAddr != (pDhcpMsg->bp_ciaddr.u != 0)) // ???
+        {
+            /** @todo this ain't safe. */
+            debugPrint(1, true, "REQUEST for lease not on offer, assuming renewal. lease_xid=%#x bp_xid=%#x",
+                       pLease->m_xid, pDhcpMsg->bp_xid);
+            fAckIt = true;
+            pLease->activate(pDhcpMsg->bp_xid);
+        }
+        else
+            debugPrint(1, true, "REQUEST for lease not on offer, NAK it.");
+    }
+
+    /*
+     * NAK if if no lease was found.
+     */
+    if (fAckIt)
+    {
+        debugPrint(1, false, "ACK'ing DHCP_REQUEST");
+        makeDhcpReply(RTNET_DHCP_MT_ACK, pLease, pDhcpMsg, cb);
+    }
     else
-        debugPrint(1, true, "No requested address option");
+    {
+        debugPrint(1, false, "NAK'ing DHCP_REQUEST");
+        makeDhcpReply(RTNET_DHCP_MT_NAC, NULL, pDhcpMsg, cb);
+    }
 
     return true;
 }
@@ -1155,6 +1180,7 @@ bool VBoxNetDhcp::handleDhcpReqDecline(PCRTNETBOOTP pDhcpMsg, size_t cb)
      */
 
     /** @todo this is not required in the initial implementation, do it later. */
+    debugPrint(1, true, "DECLINE is not implemented");
     return true;
 }
 
@@ -1191,6 +1217,7 @@ bool VBoxNetDhcp::handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb)
 
 
     /** @todo this is not required in the initial implementation, do it later. */
+    debugPrint(1, true, "RELEASE is not implemented");
     return true;
 }
 
@@ -1204,6 +1231,7 @@ private:
     uint8_t        *m_pbCur;       /**< The current cursor position. */
     uint8_t        *m_pbEnd;       /**< The end the current option space. */
     uint8_t        *m_pfOverload;  /**< Pointer to the flags of the overload option. */
+    uint8_t         m_fUsed;       /**< Overload fields that have been used. */
     PRTNETDHCPOPT   m_pOpt;        /**< The current option. */
     PRTNETBOOTP     m_pDhcp;       /**< The DHCP packet. */
     bool            m_fOverflowed; /**< Set if we've overflowed, otherwise false. */
@@ -1214,6 +1242,7 @@ public:
         m_pbCur(&pDhcp->bp_vend.Dhcp.dhcp_opts[0]),
         m_pbEnd((uint8_t *)pDhcp + cbDhcp),
         m_pfOverload(NULL),
+        m_fUsed(0),
         m_pOpt(NULL),
         m_pDhcp(pDhcp),
         m_fOverflowed(false)
@@ -1231,6 +1260,20 @@ public:
     }
 
     /**
+     * Try use the bp_file field.
+     * @returns true if not overloaded, false otherwise.
+     */
+    bool useBpFile(void)
+    {
+        if (    m_pfOverload
+            &&  (*m_pfOverload & 1))
+            return false;
+        m_fUsed |= 1 /* bp_file flag*/;
+        return true;
+    }
+
+
+    /**
      * Try overload more BOOTP fields
      */
     bool overloadMore(void)
@@ -1238,31 +1281,38 @@ public:
         /* switch option area. */
         uint8_t    *pbNew;
         uint8_t    *pbNewEnd;
-        if (!m_pfOverload)
+        uint8_t     fField;
+        if (!(m_fUsed & 1))
         {
-            /* Add an overload option. */
-            *m_pbCur++ = RTNET_DHCP_OPT_OPTION_OVERLOAD;
-            *m_pbCur++ = 1;
-            m_pfOverload = m_pbCur;
-            *m_pbCur++ = 1;     /* bp_file flag */
-
+            fField     = 1;
             pbNew      = &m_pDhcp->bp_file[0];
             pbNewEnd   = &m_pDhcp->bp_file[sizeof(m_pDhcp->bp_file)];
         }
-        else if (!(*m_pfOverload & 2))
+        else if (!(m_fUsed & 2))
         {
-            *m_pfOverload |= 2; /* bp_sname flag */
-
+            fField     = 2;
             pbNew      = &m_pDhcp->bp_sname[0];
             pbNewEnd   = &m_pDhcp->bp_sname[sizeof(m_pDhcp->bp_sname)];
         }
         else
             return false;
 
+        if (!m_pfOverload)
+        {
+            /* Add an overload option. */
+            *m_pbCur++ = RTNET_DHCP_OPT_OPTION_OVERLOAD;
+            *m_pbCur++ = fField;
+            m_pfOverload = m_pbCur;
+            *m_pbCur++ = 1;     /* bp_file flag */
+        }
+        else
+            *m_pfOverload |= fField;
+
         /* pad current option field */
         while (m_pbCur != m_pbEnd)
             *m_pbCur++ = RTNET_DHCP_OPT_PAD; /** @todo not sure if this stuff is at all correct... */
 
+        /* switch */
         m_pbCur = pbNew;
         m_pbEnd = pbNewEnd;
         return true;
@@ -1284,7 +1334,7 @@ public:
         AssertMsg(cb <= 255, ("%#x\n", cb));
 
         /* Check if we need to overload more stuff. */
-        if ((uintptr_t)(m_pbEnd - m_pbCur) < cb + 2 + 3)
+        if ((uintptr_t)(m_pbEnd - m_pbCur) < cb + 2 + (m_pfOverload ? 1 : 3))
         {
             m_pOpt = NULL;
             if (!overloadMore())
@@ -1292,7 +1342,7 @@ public:
                 m_fOverflowed = true;
                 AssertMsgFailedReturn(("%u %#x\n", uOption, cb), false);
             }
-            if ((uintptr_t)(m_pbEnd - m_pbCur) < cb + 2 + 3)
+            if ((uintptr_t)(m_pbEnd - m_pbCur) < cb + 2 + 1)
             {
                 m_fOverflowed = true;
                 AssertMsgFailedReturn(("%u %#x\n", uOption, cb), false);
@@ -1510,7 +1560,7 @@ void VBoxNetDhcp::makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRT
     pReply->bp_flags  = 0; // (pDhcpMsg->bp_flags & RTNET_DHCP_FLAGS_NO_BROADCAST); ??
     pReply->bp_ciaddr.u = 0;
     pReply->bp_yiaddr.u = pLease ? pLease->m_IPv4Address.u : 0xffffffff;
-    pReply->bp_siaddr.u = pLease && pLease->m_pCfg ? pLease->m_pCfg->m_TftpServerAddr.u : 0;
+    pReply->bp_siaddr.u = pLease && pLease->m_pCfg ? pLease->m_pCfg->m_TftpServerAddr.u : 0; /* (next server == TFTP)*/
     pReply->bp_giaddr.u = 0;
     memset(&pReply->bp_chaddr, '\0', sizeof(pReply->bp_chaddr));
     pReply->bp_chaddr.Mac = pDhcpMsg->bp_chaddr.Mac;
@@ -1542,6 +1592,13 @@ void VBoxNetDhcp::makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRT
         Cursor.optStr(RTNET_DHCP_OPT_DOMAIN_NAME, pCfg->m_DomainName);
 
         /* The PXE config. */
+        if (pCfg->m_BootfileName.size())
+        {
+            if (Cursor.useBpFile())
+                RTStrPrintf((char *)&pReply->bp_file[0], sizeof(pReply->bp_file), "%s", pCfg->m_BootfileName.c_str());
+            else
+                Cursor.optStr(RTNET_DHCP_OPT_BOOTFILE_NAME, pCfg->m_BootfileName);
+        }
     }
 
     /* Terminate the options. */
@@ -1553,7 +1610,7 @@ void VBoxNetDhcp::makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRT
      */
     int rc;
 #if 0
-    if (pDhcpMsg->bp_flags & RTNET_DHCP_FLAGS_NO_BROADCAST)
+    if (!(pDhcpMsg->bp_flags & RTNET_DHCP_FLAGS_NO_BROADCAST)) /** @todo need to see someone set this flag to check that it's correct. */
     {
         RTNETADDRIPV4 IPv4AddrBrdCast;
         IPv4AddrBrdCast.u = UINT32_C(0xffffffff); /* broadcast IP */
@@ -1573,14 +1630,14 @@ void VBoxNetDhcp::makeDhcpReply(uint8_t uMsgType, VBoxNetDhcpLease *pLease, PCRT
 }
 
 
-
 /**
  * Look up a lease by MAC address.
  *
  * @returns Pointer to the lease if found, NULL if not found.
  * @param   pMacAddress             The mac address.
+ * @param   fAnyState       Any state.
  */
-VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByMacAddress(PCRTMAC pMacAddress)
+VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByMacAddress(PCRTMAC pMacAddress, bool fAnyState)
 {
     size_t iLease = m_Leases.size();
     while (iLease-- > 0)
@@ -1589,7 +1646,9 @@ VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByMacAddress(PCRTMAC pMacAddress)
         if (    pLease
             &&  pLease->m_MacAddress.au16[0] == pMacAddress->au16[0]
             &&  pLease->m_MacAddress.au16[1] == pMacAddress->au16[1]
-            &&  pLease->m_MacAddress.au16[2] == pMacAddress->au16[2])
+            &&  pLease->m_MacAddress.au16[2] == pMacAddress->au16[2]
+            &&  (   fAnyState
+                 || (pLease->m_enmState != VBoxNetDhcpLease::kState_Free)) )
             return pLease;
     }
 
@@ -1603,8 +1662,9 @@ VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByMacAddress(PCRTMAC pMacAddress)
  * @returns Pointer to the lease if found, NULL if not found.
  * @param   IPv4Addr        The IPv4 address.
  * @param   pMacAddress     The mac address.
+ * @param   fAnyState       Any state.
  */
-VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4Addr, PCRTMAC pMacAddress)
+VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4Addr, PCRTMAC pMacAddress, bool fAnyState)
 {
     size_t iLease = m_Leases.size();
     while (iLease-- > 0)
@@ -1614,7 +1674,9 @@ VBoxNetDhcpLease *VBoxNetDhcp::findLeaseByIpv4AndMacAddresses(RTNETADDRIPV4 IPv4
             &&  pLease->m_IPv4Address.u      == IPv4Addr.u
             &&  pLease->m_MacAddress.au16[0] == pMacAddress->au16[0]
             &&  pLease->m_MacAddress.au16[1] == pMacAddress->au16[1]
-            &&  pLease->m_MacAddress.au16[2] == pMacAddress->au16[2])
+            &&  pLease->m_MacAddress.au16[2] == pMacAddress->au16[2]
+            &&  (   fAnyState
+                 || (pLease->m_enmState != VBoxNetDhcpLease::kState_Free)) )
             return pLease;
     }
 
@@ -1843,12 +1905,13 @@ void VBoxNetDhcp::debugPrintV(int iMinLevel, bool fMsg, const char *pszFmt, va_l
             &&  m_pCurMsg)
         {
             const char *pszMsg = m_uCurMsgType != UINT8_MAX ? debugDhcpName(m_uCurMsgType) : "";
-            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: debug: %8s chaddr=%.6Rhxs ciaddr=%d.%d.%d.%d yiaddr=%d.%d.%d.%d siaddr=%d.%d.%d.%d\n",
+            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: debug: %8s chaddr=%.6Rhxs ciaddr=%d.%d.%d.%d yiaddr=%d.%d.%d.%d siaddr=%d.%d.%d.%d xid=%#x\n",
                          pszMsg,
                          &m_pCurMsg->bp_chaddr,
                          m_pCurMsg->bp_ciaddr.au8[0], m_pCurMsg->bp_ciaddr.au8[1], m_pCurMsg->bp_ciaddr.au8[2], m_pCurMsg->bp_ciaddr.au8[3],
                          m_pCurMsg->bp_yiaddr.au8[0], m_pCurMsg->bp_yiaddr.au8[1], m_pCurMsg->bp_yiaddr.au8[2], m_pCurMsg->bp_yiaddr.au8[3],
-                         m_pCurMsg->bp_siaddr.au8[0], m_pCurMsg->bp_siaddr.au8[1], m_pCurMsg->bp_siaddr.au8[2], m_pCurMsg->bp_siaddr.au8[3]);
+                         m_pCurMsg->bp_siaddr.au8[0], m_pCurMsg->bp_siaddr.au8[1], m_pCurMsg->bp_siaddr.au8[2], m_pCurMsg->bp_siaddr.au8[3],
+                         m_pCurMsg->bp_xid);
         }
     }
 }
