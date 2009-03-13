@@ -433,13 +433,11 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/HostDrivers/VBoxNetNat/linux \
 	src/VBox/HostDrivers/VBoxNetNat/solaris \
 	src/VBox/HostDrivers/VBoxNetNat/win \
-	src/VBox/HostDrivers/VBoxNetTap \
-	src/VBox/HostDrivers/VBoxNetTap/darwin \
-	src/VBox/HostDrivers/VBoxNetTap/linux \
-	src/VBox/HostDrivers/VBoxNetTap/solaris \
-	src/VBox/HostDrivers/VBoxNetTap/win \
-	src/VBox/HostDrivers/VBoxTAP \
-	src/VBox/HostDrivers/VBoxTAP/win \
+	src/VBox/HostDrivers/VBoxNetAdp \
+	src/VBox/HostDrivers/VBoxNetAdp/darwin \
+	src/VBox/HostDrivers/VBoxNetAdp/linux \
+	src/VBox/HostDrivers/VBoxNetAdp/solaris \
+	src/VBox/HostDrivers/VBoxNetAdp/win \
 	src/VBox/HostDrivers/VBoxUSB \
 	src/VBox/HostDrivers/VBoxUSB/darwin \
 	src/VBox/HostDrivers/VBoxUSB/os2 \
