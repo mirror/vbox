@@ -6536,7 +6536,7 @@
 
   <interface
      name="IHostNetworkInterface" extends="$unknown"
-     uuid="09de36e8-2588-4050-a791-655240b556e0"
+     uuid="bcc99385-71ad-4887-90fc-15a3f2cad0a5"
      wsmap="managed"
      >
     <desc>
@@ -6623,6 +6623,10 @@
 
     <method name="enableDynamicIpConfig">
       <desc>enables the dynamic IP configuration.</desc>
+    </method>
+
+    <method name="dhcpRediscover">
+      <desc>refreshes the IP configuration for dhcp-enabled interface.</desc>
     </method>
 
   </interface>

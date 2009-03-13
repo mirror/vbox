@@ -582,6 +582,74 @@ static HRESULT netIfWinEnableDHCP(IWbemServices * pSvc, BSTR ObjPath)
     return hr;
 }
 
+static HRESULT netIfWinDhcpRediscover(IWbemServices * pSvc, BSTR ObjPath)
+{
+    ComPtr<IWbemClassObject> pClass;
+    BSTR ClassName = SysAllocString(L"Win32_NetworkAdapterConfiguration");
+    HRESULT hr;
+    if(ClassName)
+    {
+        hr = pSvc->GetObject(ClassName, 0, NULL, pClass.asOutParam(), NULL);
+        if(SUCCEEDED(hr))
+        {
+            ComPtr<IWbemClassObject> pOutParams;
+
+            hr = netIfExecMethod(pSvc, pClass, ObjPath,
+                                bstr_t(L"ReleaseDHCPLease"), NULL, NULL, 0, pOutParams.asOutParam());
+            if(SUCCEEDED(hr))
+            {
+                VARIANT varReturnValue;
+                hr = pOutParams->Get(bstr_t(L"ReturnValue"), 0,
+                    &varReturnValue, NULL, 0);
+                Assert(SUCCEEDED(hr));
+                if(SUCCEEDED(hr))
+                {
+//                    Assert(varReturnValue.vt == VT_UINT);
+                    int winEr = varReturnValue.uintVal;
+                    if(winEr == 0)
+                    {
+                        hr = netIfExecMethod(pSvc, pClass, ObjPath,
+                                            bstr_t(L"RenewDHCPLease"), NULL, NULL, 0, pOutParams.asOutParam());
+                        if(SUCCEEDED(hr))
+                        {
+                            VARIANT varReturnValue;
+                            hr = pOutParams->Get(bstr_t(L"ReturnValue"), 0,
+                                &varReturnValue, NULL, 0);
+                            Assert(SUCCEEDED(hr));
+                            if(SUCCEEDED(hr))
+                            {
+            //                    Assert(varReturnValue.vt == VT_UINT);
+                                int winEr = varReturnValue.uintVal;
+                                if(winEr == 0)
+                                {
+                                    hr = S_OK;
+                                }
+                                else
+                                {
+                                    hr = HRESULT_FROM_WIN32( winEr );
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        hr = HRESULT_FROM_WIN32( winEr );
+                    }
+                }
+            }
+        }
+        SysFreeString(ClassName);
+    }
+    else
+    {
+        DWORD dwError = GetLastError();
+        Assert(0);
+        hr = HRESULT_FROM_WIN32( dwError );
+    }
+
+    return hr;
+}
+
 static int netIfWinIsDhcpEnabled(const Guid &guid, BOOL *pEnabled)
 {
     HRESULT hr;
@@ -803,6 +871,35 @@ static int netIfEnableStaticIpConfigV6(const Guid &guid, IN_BSTR aIPV6Address, U
 }
 
 static HRESULT netIfEnableDynamicIpConfig(const Guid &guid)
+{
+    HRESULT hr;
+        ComPtr <IWbemServices> pSvc;
+        hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
+        if(SUCCEEDED(hr))
+        {
+            ComPtr <IWbemClassObject> pAdapterConfig;
+            hr = netIfWinFindAdapterClassById(pSvc, guid, pAdapterConfig.asOutParam());
+            if(SUCCEEDED(hr))
+            {
+                BSTR ObjPath;
+                hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                if(SUCCEEDED(hr))
+                {
+                    hr = netIfWinEnableDHCP(pSvc, ObjPath);
+                    if(SUCCEEDED(hr))
+                    {
+//                        hr = netIfWinUpdateConfig(pIf);
+                    }
+                    SysFreeString(ObjPath);
+                }
+            }
+        }
+
+
+    return hr;
+}
+
+static HRESULT netIfDhcpRediscover(const Guid &guid)
 {
     HRESULT hr;
         ComPtr <IWbemServices> pSvc;
@@ -1130,6 +1227,59 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
             vrc = aClient->write (Utf8Str(d->u.StaticIPV6.IPV6Address));
             if (RT_FAILURE (vrc)) break;
             vrc = aClient->write (d->u.StaticIPV6.IPV6NetMaskLength);
+            if (RT_FAILURE (vrc)) break;
+
+            /* wait for a reply */
+            bool endLoop = false;
+            while (!endLoop)
+            {
+                SVCHlpMsg::Code reply = SVCHlpMsg::Null;
+
+                vrc = aClient->read (reply);
+                if (RT_FAILURE (vrc)) break;
+
+                switch (reply)
+                {
+                    case SVCHlpMsg::OK:
+                    {
+                        /* no parameters */
+                        rc = d->iface->updateConfig();
+                        endLoop = true;
+                        break;
+                    }
+                    case SVCHlpMsg::Error:
+                    {
+                        /* read the error message */
+                        Utf8Str errMsg;
+                        vrc = aClient->read (errMsg);
+                        if (RT_FAILURE (vrc)) break;
+
+                        rc = E_FAIL; // TODO: setError (E_FAIL, errMsg);
+                        endLoop = true;
+                        break;
+                    }
+                    default:
+                    {
+                        endLoop = true;
+                        rc = E_FAIL; // TODO: ComAssertMsgFailedBreak ((
+                            //"Invalid message code %d (%08lX)\n",
+                            //reply, reply),
+                            //rc = E_FAIL);
+                    }
+                }
+            }
+
+            break;
+        }
+        case SVCHlpMsg::DhcpRediscover: /* see usage in code */
+        {
+            LogFlowFunc (("DhcpRediscover:\n"));
+            LogFlowFunc (("Network connection name = '%ls'\n", d->name.raw()));
+
+            /* write message and parameters */
+            vrc = aClient->write (d->msgCode);
+            if (RT_FAILURE (vrc)) break;
+            vrc = aClient->write (d->guid);
             if (RT_FAILURE (vrc)) break;
 
             /* wait for a reply */
@@ -1938,6 +2088,36 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
 
             break;
         }
+        case SVCHlpMsg::DhcpRediscover:
+        {
+            LogFlowFunc (("DhcpRediscover:\n"));
+
+            Guid guid;
+            vrc = aClient->read (guid);
+            if (RT_FAILURE (vrc)) break;
+
+            Utf8Str errMsg;
+            vrc = netIfDhcpRediscover (guid);
+
+            if (RT_SUCCESS (vrc))
+            {
+                /* write success followed by GUID */
+                vrc = aClient->write (SVCHlpMsg::OK);
+                if (RT_FAILURE (vrc)) break;
+            }
+            else
+            {
+                /* write failure followed by error message */
+                if (errMsg.isEmpty())
+                    errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
+                vrc = aClient->write (SVCHlpMsg::Error);
+                if (RT_FAILURE (vrc)) break;
+                vrc = aClient->write (errMsg);
+                if (RT_FAILURE (vrc)) break;
+            }
+
+            break;
+        }
         default:
             AssertMsgFailedBreakStmt (
                 ("Invalid message code %d (%08lX)\n", aMsgCode, aMsgCode),
@@ -2352,6 +2532,62 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN
 }
 
 int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
+{
+    HRESULT rc;
+    GUID guid;
+    rc = pIf->COMGETTER(Id) (&guid);
+    if(SUCCEEDED(rc))
+    {
+//        ComPtr<VirtualBox> vBox;
+//        rc = pIf->getVirtualBox (vBox.asOutParam());
+//        if(SUCCEEDED(rc))
+        {
+            /* create a progress object */
+            ComObjPtr <Progress> progress;
+            progress.createObject();
+//            ComPtr<IHost> host;
+//            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
+//            if(SUCCEEDED(rc))
+            {
+                rc = progress->init (vBox, (IHostNetworkInterface*)pIf,
+                                    Bstr ("Enabling Dynamic Ip Configuration"),
+                                    FALSE /* aCancelable */);
+                if(SUCCEEDED(rc))
+                {
+                    CheckComRCReturnRC (rc);
+//                    progress.queryInterfaceTo (aProgress);
+
+                    /* create the networkInterfaceHelperClient() argument */
+                    std::auto_ptr <NetworkInterfaceHelperClientData>
+                        d (new NetworkInterfaceHelperClientData());
+                    AssertReturn (d.get(), E_OUTOFMEMORY);
+
+                    d->msgCode = SVCHlpMsg::EnableDynamicIpConfig;
+                    d->guid = guid;
+                    d->iface = pIf;
+
+                    rc = vBox->startSVCHelperClient (
+                        IsUACEnabled() == TRUE /* aPrivileged */,
+                        netIfNetworkInterfaceHelperClient,
+                        static_cast <void *> (d.get()),
+                        progress);
+
+                    if (SUCCEEDED (rc))
+                    {
+                        /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
+                        d.release();
+
+                        progress->WaitForCompletion(-1);
+                    }
+                }
+            }
+        }
+    }
+
+    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+}
+
+int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
 {
     HRESULT rc;
     GUID guid;

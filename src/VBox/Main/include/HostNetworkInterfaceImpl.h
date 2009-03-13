@@ -83,6 +83,7 @@ public:
     STDMETHOD(EnableStaticIpConfig) (IN_BSTR aIPAddress, IN_BSTR aNetworkMask);
     STDMETHOD(EnableStaticIpConfigV6) (IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength);
     STDMETHOD(EnableDynamicIpConfig) ();
+    STDMETHOD(DhcpRediscover) ();
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HostNetworkInterface"; }

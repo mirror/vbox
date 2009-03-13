@@ -117,3 +117,9 @@ int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *)
 {
     return VERR_NOT_IMPLEMENTED;
 }
+
+int NetIfDhcpRediscover(VirtualBox *pVbox, HostNetworkInterface * pIf)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
