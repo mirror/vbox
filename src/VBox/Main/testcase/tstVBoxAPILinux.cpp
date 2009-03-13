@@ -314,6 +314,7 @@ void createVM(IVirtualBox *virtualBox)
          */
         nsCOMPtr <IProgress> progress;
         rc = hardDisk->CreateDynamicStorage(100,                                // size in megabytes
+                                            HardDiskVariant_Standard,
                                             getter_AddRefs(progress));          // optional progress object
         if (NS_FAILED(rc))
         {

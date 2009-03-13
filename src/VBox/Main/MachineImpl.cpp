@@ -2169,7 +2169,7 @@ STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
         alock.leave();
         vboxLock.unlock();
 
-        rc = hd->createDiffStorageAndWait (diff);
+        rc = hd->createDiffStorageAndWait (diff, HardDiskVariant_Standard);
 
         alock.enter();
         hdLock.enter();
@@ -7248,7 +7248,8 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
             /* leave the lock before the potentially lengthy operation */
             alock.leave();
 
-            rc = hd->createDiffStorageAndWait (diff, &aProgress);
+            rc = hd->createDiffStorageAndWait (diff, HardDiskVariant_Standard,
+                                               &aProgress);
 
             alock.enter();
 

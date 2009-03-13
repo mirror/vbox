@@ -393,9 +393,9 @@ bool VBoxNewHDWzd::createHardDisk()
     }
 
     if (isDynamicStorage())
-        progress = hd.CreateDynamicStorage (mCurrentSize);
+        progress = hd.CreateDynamicStorage (mCurrentSize, KHardDiskVariant_Standard);
     else
-        progress = hd.CreateFixedStorage (mCurrentSize);
+        progress = hd.CreateFixedStorage (mCurrentSize, KHardDiskVariant_Standard);
 
     if (!hd.isOk())
     {

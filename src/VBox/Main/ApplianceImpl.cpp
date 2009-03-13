@@ -2093,7 +2093,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                             if (FAILED(rc)) throw rc;
 
                             /* Create a dynamic growing disk image with the given capacity */
-                            rc = dstHdVBox->CreateDynamicStorage(di.iCapacity / _1M, progress.asOutParam());
+                            rc = dstHdVBox->CreateDynamicStorage(di.iCapacity / _1M, HardDiskVariant_Standard, progress.asOutParam());
                             if (FAILED(rc)) throw rc;
 
                             /* Advance to the next operation */
@@ -2128,7 +2128,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
                             rc = pVirtualBox->CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
                             if (FAILED(rc)) throw rc;
                             /* Clone the source disk image */
-                            rc = srcHdVBox->CloneTo(dstHdVBox, progress.asOutParam());
+                            rc = srcHdVBox->CloneTo(dstHdVBox, HardDiskVariant_Standard, progress.asOutParam());
                             if (FAILED(rc)) throw rc;
 
                             /* Advance to the next operation */
@@ -2864,7 +2864,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             rc = pVirtualBox->CreateHardDisk(bstrSrcFormat, Bstr(strTargetFilePath), pTargetDisk.asOutParam());
             if (FAILED(rc)) throw rc;
             // clone the source disk image
-            rc = pSourceDisk->CloneTo(pTargetDisk, pProgress2.asOutParam());
+            rc = pSourceDisk->CloneTo(pTargetDisk, HardDiskVariant_Standard, pProgress2.asOutParam());
             if (FAILED(rc)) throw rc;
 
             // advance to the next operation
