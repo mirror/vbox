@@ -6207,6 +6207,18 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             pThis->dev.config[0x48] = 0x00; /* UDMACTL */
             pThis->dev.config[0x4A] = 0x00; /* UDMATIM */
             pThis->dev.config[0x4B] = 0x00;
+            {
+                /*
+                 * See www.intel.com/Assets/PDF/manual/298600.pdf p. 30
+                 * Report
+                 *   WR_Ping-Pong_EN: must be set
+                 *   PCR0, PCR1: 80-pin primary cable reporting for both disks
+                 *   SCR0, SCR1: 80-pin secondary cable reporting for both disks
+                 */
+                uint16_t u16Config = (1<<10) | (1<<7)  | (1<<6) | (1<<5) | (1<<4) ;
+                pThis->dev.config[0x54] = u16Config & 0xff;
+                pThis->dev.config[0x55] = u16Config >> 8;
+            }
             break;
         case CHIPSET_PIIX4:
             PCIDevSetDeviceId(&pThis->dev, 0x7111); /* PIIX4 IDE */
