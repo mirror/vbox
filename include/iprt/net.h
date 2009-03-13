@@ -638,7 +638,7 @@ typedef RTNETARPHDR const *PCRTNETARPHDR;
 
 /** @name ARP operations
  * @{ */
-#define RTNET_ARPOP_REQUEST        UINT16_C(1) /**< Request hardward address given a protocol address (ARP). */
+#define RTNET_ARPOP_REQUEST        UINT16_C(1) /**< Request hardware address given a protocol address (ARP). */
 #define RTNET_ARPOP_REPLY          UINT16_C(2)
 #define RTNET_ARPOP_REVREQUEST     UINT16_C(3) /**< Request protocol address given a hardware address (RARP). */
 #define RTNET_ARPOP_REVREPLY       UINT16_C(4)
