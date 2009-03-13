@@ -1030,18 +1030,21 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
                     mTvSettings->setColumnHidden (OriginalValueSection, true);
                     mTvSettings->expandAll();
 
+// @todo can the warnings also be shown when an error occurs? I have the case here that
+// interpret() failes because there's 16 hard disks attached to four SCSI controllers,
+// and we support only one SCSI controller, and the warnings about the additional SCSI
+// controllers are not shown. Instead there's only the error message that disk X cannot
+// be attached to controller Y. I have fixed VBoxManage accordingly, but the GUI should
+// have that too. Thanks!
+
                     /* Check for warnings & if there are one display them. */
                     bool fWarningsEnabled = false;
-                    for (int i = 0; i < vsds.size(); ++i)
+                    QVector<QString> warnings = mAppliance->GetWarnings();
+                    if (warnings.size() > 0)
                     {
-                        QVector<QString> warnings = vsds[i].GetWarnings();
-                        if (warnings.size() > 0)
-                        {
-                            mWarningTextEdit->append (tr("Virtual System %1:").arg (i+1));
-                            foreach (const QString& text, warnings)
-                                mWarningTextEdit->append ("- " + text);
-                            fWarningsEnabled = true;
-                        }
+                        foreach (const QString& text, warnings)
+                            mWarningTextEdit->append ("- " + text);
+                        fWarningsEnabled = true;
                     }
                     mWarningWidget->setShown (fWarningsEnabled);
                 }

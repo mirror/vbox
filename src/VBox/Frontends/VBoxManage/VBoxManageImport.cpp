@@ -162,8 +162,30 @@ int handleImportAppliance(HandlerArg *a)
 
         CHECK_ERROR_BREAK(pAppliance, Read(bstrOvfFilename));
 
-        RTPrintf("Interpreting %s... ", strOvfFilename.c_str());
-        CHECK_ERROR_BREAK(pAppliance, Interpret());
+        // call interpret(); this can yield both warnings and errors, so we need
+        // to tinker with the error info a bit
+        RTPrintf("Interpreting %s...\n", strOvfFilename.c_str());
+        rc = pAppliance->Interpret();
+        com::ErrorInfo info0(pAppliance);
+
+        com::SafeArray<BSTR> aWarnings;
+        if (SUCCEEDED(pAppliance->GetWarnings(ComSafeArrayAsOutParam(aWarnings))))
+        {
+            unsigned cWarnings = aWarnings.size();
+            for (unsigned i = 0; i < cWarnings; ++i)
+            {
+                Bstr bstrWarning(aWarnings[i]);
+                RTPrintf("WARNING: %ls.\n", bstrWarning.raw());
+            }
+        }
+
+        if (FAILED(rc))     // during interpret, after printing warnings
+        {
+            com::GluePrintErrorInfo(info0);
+            com::GluePrintErrorContext("Interpret", __FILE__, __LINE__);
+            break;
+        }
+
         RTPrintf("OK.\n");
 
         // fetch all disks
@@ -469,6 +491,7 @@ int handleImportAppliance(HandlerArg *a)
 
             if (fExecute)
             {
+                // go!
                 ComPtr<IProgress> progress;
                 CHECK_ERROR_BREAK(pAppliance,
                                   ImportMachines(progress.asOutParam()));

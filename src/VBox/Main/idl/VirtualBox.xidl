@@ -2142,9 +2142,9 @@
 
         An error is returned if the supplied @a key does not exist. @c NULL is
         returned in @a nextKey if the supplied key is the last key. When
-        supplying @c NULL for the @a key, the first key item is returned in
-        @a nextKey (if there is any). @a nextValue is an optional parameter and
-        if supplied, the next key's value is returned in it.
+        supplying @c NULL or an empty string for the @a key, the first key item
+        is returned in @a nextKey (if there is any). @a nextValue is an optional
+        parameter and if supplied, the next key's value is returned in it.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Extra data @a key not found.
@@ -2979,6 +2979,10 @@
 
         Calling this method is the second step of importing an appliance into VirtualBox;
         see <link to="IAppliance" /> for an overview.
+
+        After calling this method, one should call <link to="#getWarnings" /> to find out
+        if problems were encountered during the processing which might later lead to
+        errors.
       </desc>
     </method>
 
@@ -3022,6 +3026,14 @@
       <param name="aProgress" type="IProgress" dir="return">
           <desc></desc>
       </param>
+    </method>
+
+    <method name="getWarnings">
+        <desc>Returns textual warnings which occured during execution of <link to="#interpret" />.</desc>
+
+        <param name="aWarnings" type="wstring" dir="return" safearray="yes">
+            <desc></desc>
+        </param>
     </method>
 
   </interface>
@@ -3210,16 +3222,6 @@
         <desc></desc>
       </param>
     </method>
-
-    <method name="getWarnings">
-      <desc>Returns textual warnings which occured during the virtual system
-          interpretion.</desc>
-
-      <param name="aWarnings" type="wstring" dir="return" safearray="yes">
-        <desc></desc>
-      </param>
-    </method>
-
   </interface>
 
 
@@ -4266,8 +4268,9 @@
 
     <method name="attachHardDisk">
       <desc>
-        Attaches a virtual hard disk (identified by the given UUID @a id)
-        to the given hard disk controller (identified by @a name),
+        Attaches a virtual hard disk (<link to="IHardDisk" />, identified
+        by the given UUID @a id) to the given hard disk controller
+        (<link to="IStorageController" />, identified by @a name),
         at the indicated port and device.
 
         For the IDE bus, the @a controllerPort parameter can be either
@@ -12382,11 +12385,25 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="6bf8335b-d14a-44a5-9b45-ddc49ce7d5b2"
     wsmap="managed"
   >
+    <desc>
+        Represents a storage controller that is attached to a virtual machine
+        (<link to="IMachine" />). Just as hard disks are attached to storage
+        controllers in a real computer, virtual hard disks (represented by
+        <link to="IHardDisk" />) are attached to virtual storage controllers,
+        represented by this interface.
+
+        VirtualBox supports three types of virtual storage controller hardware:
+        IDE, SCSI, and SATA (see <link to="#bus" />). Depending on which of
+        these three is used, certain sub-types are available and can be
+        selected in <link to="#controllerType" />.
+    </desc>
 
     <attribute name="name" type="wstring" readonly="yes">
      <desc>
-        Name of the storage controller. Acts also as a unique
-        identifier.
+        Name of the storage controller, as originally specified with
+        <link to="IMachine::addStorageController" />. This then uniquely
+        identifies this controller with other method calls such as
+        <link to="IMachine::attachHardDisk" />.
       </desc>
     </attribute>
 
@@ -12436,6 +12453,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Type of the virtual storage controller. Depending on this value,
         VirtualBox will provide a different virtual storage controller hardware
         to the guest.
+
+        For SCSI controllers, the default type is LsiLogic.
       </desc>
     </attribute>
 
