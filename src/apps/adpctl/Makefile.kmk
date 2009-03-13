@@ -24,7 +24,7 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS.darwin += VBoxNetAdpCtl
+PROGRAMS              += VBoxNetAdpCtl
 VBoxNetAdpCtl_TEMPLATE = VBOXR3EXE
 VBoxNetAdpCtl_SOURCES  = VBoxNetAdpCtl.cpp
 
