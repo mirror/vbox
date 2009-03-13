@@ -47,7 +47,7 @@ extern PCVBOXXPCOM g_pVBoxFuncs;
 extern PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions;
 
 
-int VBoxCGlueInit(const char *pszMsgPrefix);
+int VBoxCGlueInit(void);
 void VBoxCGlueTerm(void);
 
 
