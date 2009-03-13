@@ -108,6 +108,7 @@ VBOX_LNX_STRIP_BIN = \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so) \
 	$(if $(VBOX_WITH_MAIN), \
 	  VBoxManage \
+	  VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so),) \
 	  VBoxSVC \
 	  VBoxSettings.so \
 	  VBoxXPCOM.so \
