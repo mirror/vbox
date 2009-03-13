@@ -292,7 +292,7 @@ VBoxSVC_SOURCES = \
 	SystemPropertiesImpl.cpp \
 	BIOSSettingsImpl.cpp \
 	Version.cpp \
-        HostPower.cpp \
+	HostPower.cpp \
 	$(if $(VBOX_WITH_VRDP),VRDPServerImpl.cpp,) \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
@@ -304,7 +304,7 @@ VBoxSVC_SOURCES.darwin = \
 VBoxSVC_SOURCES.win = \
 	win/svcmain.cpp \
 	win/svchlp.cpp \
-        win/HostPowerWin.cpp \
+	win/HostPowerWin.cpp \
 	win/VBoxSVC.rc
 
 VBoxSVC_SOURCES.linux = \
@@ -494,7 +494,7 @@ VBoxC_DEFS = \
 	$(if $(VBOX_WITH_EFI),VBOX_WITH_EFI,) \
 	$(if $(VBOX_WITH_HPET),VBOX_WITH_HPET,) \
 	$(if $(VBOX_WITH_SMC),VBOX_WITH_SMC,) \
-        $(if $(VBOX_WITH_LPC),VBOX_WITH_LPC,) \
+	$(if $(VBOX_WITH_LPC),VBOX_WITH_LPC,) \
 	$(if $(VBOX_WITH_PDM_ASYNC_COMPLETION),VBOX_WITH_PDM_ASYNC_COMPLETION,)
 ifdef VBOX_WITH_USB
 VBoxC_DEFS += \
