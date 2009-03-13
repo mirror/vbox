@@ -25,7 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include "VirtualBox_CXPCOM.h"
+#include "VBoxCAPI_v2_2.h"
 
 PCVBOXXPCOM g_pVBoxFuncs = NULL;
 

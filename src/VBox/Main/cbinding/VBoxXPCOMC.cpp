@@ -28,8 +28,7 @@
 #include <iprt/env.h>
 #include <VBox/log.h>
 
-#include "VirtualBox_XPCOM.h"
-#include "VirtualBox_CXPCOM.h"
+#include "VBoxCAPI_v2_2.h"
 #include "VBox/com/com.h"
 
 using namespace std;
