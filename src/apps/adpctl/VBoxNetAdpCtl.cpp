@@ -33,6 +33,12 @@
 
 #define VBOXADPCTL_IFCONFIG_PATH "/sbin/ifconfig"
 
+#ifdef RT_OS_LINUX
+#define VBOXADPCTL_DEL_CMD "del"
+#else
+#define VBOXADPCTL_DEL_CMD "delete"
+#endif
+
 static void showUsage(void)
 {
     fprintf(stderr, "Usage: VBoxNetAdpCtl <adapter> <address> ([netmask <address>] | remove)\n");
@@ -41,7 +47,8 @@ static void showUsage(void)
 static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
                            const char *pcszArg2 = NULL,
                            const char *pcszArg3 = NULL,
-                           const char *pcszArg4 = NULL)
+                           const char *pcszArg4 = NULL,
+                           const char *pcszArg5 = NULL)
 {
     const char * const argv[] =
     {
@@ -51,6 +58,7 @@ static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
         pcszArg2, /* address */
         pcszArg3, /* ['netmask'] */
         pcszArg4, /* [network mask] */
+        pcszArg5, /* [network mask] */
         NULL  /* terminator */
     };
     int rc = EXIT_SUCCESS;
@@ -99,6 +107,12 @@ static bool removeAddresses(const char *pszAdapterName)
         /* We are concerned with IPv6 address lines only. */
         if (!pszWord || strcmp(pszWord, "inet6"))
             continue;
+#ifdef RT_OS_LINUX
+        pszWord = strtok(NULL, " ");
+        /* Skip "addr:". */
+        if (!pszWord || strcmp(pszWord, "addr:"))
+            continue;
+#endif
         pszWord = strtok(NULL, " ");
         /* Skip link-local addresses. */
         if (!pszWord || !strncmp(pszWord, "fe80", 4))
@@ -109,7 +123,7 @@ static bool removeAddresses(const char *pszAdapterName)
 
     for (int i = 0; i < cAddrs; i++)
     {
-        if (executeIfconfig(pszAdapterName, "inet6", aszAddresses[i], "remove") != EXIT_SUCCESS)
+        if (executeIfconfig(pszAdapterName, "inet6", VBOXADPCTL_DEL_CMD, aszAddresses[i]) != EXIT_SUCCESS)
             return false;
     }
 
@@ -125,6 +139,7 @@ int main(int argc, char *argv[])
     const char *pszNetworkMask = NULL;
     const char *pszOption = NULL;
     int rc = EXIT_SUCCESS;
+    bool fRemove = false;
 
     switch (argc)
     {
@@ -147,7 +162,7 @@ int main(int argc, char *argv[])
                 showUsage();
                 return 1;
             }
-            pszOption = "remove";
+            fRemove = true;
             pszAdapterName = argv[1];
             pszAddress = argv[2];
             break;
@@ -169,21 +184,36 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    if (strchr(pszAddress, ':'))
+    if (fRemove)
     {
-        /*
-         * Before we set IPv6 address we'd like to remove
-         * all previously assigned addresses except the
-         * self-assigned one.
-         */
-        if (pszOption && !strcmp(pszOption, "remove"))
-            rc = executeIfconfig(pszAdapterName, "inet6", pszAddress, pszOption);
-        else if (!removeAddresses(pszAdapterName))
-            rc = EXIT_FAILURE;
+        if (strchr(pszAddress, ':'))
+            rc = executeIfconfig(pszAdapterName, "inet6", VBOXADPCTL_DEL_CMD, pszAddress);
         else
-            rc = executeIfconfig(pszAdapterName, "inet6", pszAddress, pszOption, pszNetworkMask);
+        {
+#ifdef RT_OS_LINUX
+            rc = executeIfconfig(pszAdapterName, "0.0.0.0");
+#else
+            rc = executeIfconfig(pszAdapterName, "delete", pszAddress);
+#endif
+        }
     }
     else
-        rc = executeIfconfig(pszAdapterName, pszAddress, pszOption, pszNetworkMask);
+    {
+        /* We are setting/replacing address. */
+        if (strchr(pszAddress, ':'))
+        {
+            /*
+             * Before we set IPv6 address we'd like to remove
+             * all previously assigned addresses except the
+             * self-assigned one.
+             */
+            if (!removeAddresses(pszAdapterName))
+                rc = EXIT_FAILURE;
+            else
+                rc = executeIfconfig(pszAdapterName, "inet6", "add", pszAddress, pszOption, pszNetworkMask);
+        }
+        else
+            rc = executeIfconfig(pszAdapterName, pszAddress, pszOption, pszNetworkMask);
+    }
     return rc;
 }
