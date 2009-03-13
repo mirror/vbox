@@ -3450,6 +3450,8 @@ static int iscsiComposeName(PVDINTERFACE pConfig, char **pszName)
     RTMemFree(pszTarget);
     RTMemFree(pszLUN);
     RTMemFree(pszAddress);
+
+    return rc;
 }
 
 
