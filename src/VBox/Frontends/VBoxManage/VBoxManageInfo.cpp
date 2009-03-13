@@ -1412,7 +1412,6 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         com::SafeIfaceArray <ISharedFolder> folders;
 
         CHECK_ERROR_RET(machine, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), rc);
-        ULONG index = 0;
 
         for (size_t i = 0; i < folders.size(); ++i)
         {
@@ -1427,9 +1426,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 RTPrintf("\n\n");
             if (details == VMINFO_MACHINEREADABLE)
             {
-                RTPrintf("SharedFolderNameMachineMapping%d=\"%lS\"\n", index + 1,
+                RTPrintf("SharedFolderNameMachineMapping%zu=\"%lS\"\n", i + 1,
                          name.raw());
-                RTPrintf("SharedFolderPathMachineMapping%d=\"%lS\"\n", index + 1,
+                RTPrintf("SharedFolderPathMachineMapping%zu=\"%lS\"\n", i + 1,
                          hostPath.raw());
             }
             else
@@ -1444,7 +1443,6 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         com::SafeIfaceArray <ISharedFolder> folders;
 
         CHECK_ERROR_RET(console, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), rc);
-        ULONG index = 0;
 
         for (size_t i = 0; i < folders.size(); ++i)
         {
@@ -1457,9 +1455,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 RTPrintf("\n\n");
             if (details == VMINFO_MACHINEREADABLE)
             {
-                RTPrintf("SharedFolderNameTransientMapping%d=\"%lS\"\n", index + 1,
+                RTPrintf("SharedFolderNameTransientMapping%zu=\"%lS\"\n", i + 1,
                          name.raw());
-                RTPrintf("SharedFolderPathTransientMapping%d=\"%lS\"\n", index + 1,
+                RTPrintf("SharedFolderPathTransientMapping%zu=\"%lS\"\n", i + 1,
                          hostPath.raw());
             }
             else
