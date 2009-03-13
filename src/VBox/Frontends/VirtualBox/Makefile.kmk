@@ -271,6 +271,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMSettingsFD.h \
 	include/VBoxVMSettingsAudio.h \
 	include/VBoxVMSettingsNetwork.h \
+	include/VBoxVMSettingsNetworkDetails.h \
 	include/VBoxVMSettingsSerial.h \
 	include/VBoxVMSettingsParallel.h \
 	include/VBoxVMSettingsUSB.h \
@@ -351,6 +352,7 @@ VirtualBox_SOURCES = \
 	src/VBoxVMSettingsFD.cpp \
 	src/VBoxVMSettingsAudio.cpp \
 	src/VBoxVMSettingsNetwork.cpp \
+	src/VBoxVMSettingsNetworkDetails.cpp \
 	src/VBoxVMSettingsSerial.cpp \
 	src/VBoxVMSettingsParallel.cpp \
 	src/VBoxVMSettingsUSB.cpp \

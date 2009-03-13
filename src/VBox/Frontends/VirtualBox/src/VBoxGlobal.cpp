@@ -1895,12 +1895,18 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                     /* don't use the adapter type string for types that have
                      * an additional symbolic network/interface name field, use
                      * this name instead */
-                    if (type == KNetworkAttachmentType_Bridged)
-                        attType = attType.arg (tr ("host interface, %1",
+                    if (type == KNetworkAttachmentType_NAT)
+                        attType = attType.arg (tr ("NAT, '%1'",
+                            "details report (network)").arg (adapter.GetNATNetwork()));
+                    else if (type == KNetworkAttachmentType_Bridged)
+                        attType = attType.arg (tr ("Bridged network, %1",
                             "details report (network)").arg (adapter.GetHostInterface()));
                     else if (type == KNetworkAttachmentType_Internal)
-                        attType = attType.arg (tr ("internal network, '%1'",
+                        attType = attType.arg (tr ("Internal network, '%1'",
                             "details report (network)").arg (adapter.GetInternalNetwork()));
+                    else if (type == KNetworkAttachmentType_HostOnly)
+                        attType = attType.arg (tr ("Host-only network, '%1'",
+                            "details report (network)").arg (adapter.GetHostInterface()));
                     else
                         attType = attType.arg (vboxGlobal().toString (type));
 
@@ -2915,7 +2921,7 @@ void VBoxGlobal::retranslateUi()
     mNetworkAttachmentTypes [KNetworkAttachmentType_NAT] =
         tr ("NAT", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_Bridged] =
-        tr ("Bridged Interface", "NetworkAttachmentType");
+        tr ("Bridged Network", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_Internal] =
         tr ("Internal Network", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_HostOnly] =

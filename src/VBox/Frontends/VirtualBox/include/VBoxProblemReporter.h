@@ -262,10 +262,8 @@ public:
 
 #if defined Q_WS_WIN
     int confirmDeletingHostInterface (const QString &aName, QWidget *aParent = 0);
-    void cannotCreateHostInterface (const CHost &aHost,
-                                    QWidget *aParent = 0);
-    void cannotCreateHostInterface (const CProgress &aProgress, const QString &aName,
-                                    QWidget *aParent = 0);
+    void cannotCreateHostInterface (const CHost &aHost, QWidget *aParent = 0);
+    void cannotCreateHostInterface (const CProgress &aProgress, QWidget *aParent = 0);
     void cannotRemoveHostInterface (const CHost &aHost,
                                     const CHostNetworkInterface &aIface,
                                     QWidget *aParent = 0);

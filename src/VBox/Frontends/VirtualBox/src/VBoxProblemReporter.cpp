@@ -1336,16 +1336,15 @@ void VBoxProblemReporter::cannotCreateHostInterface (
     const CHost &host, QWidget *parent)
 {
     message (parent ? parent : mainWindowShown(), Error,
-        tr ("Failed to create the host network interface ."),
+        tr ("Failed to create the host-only network interface."),
         formatErrorInfo (host));
 }
 
 void VBoxProblemReporter::cannotCreateHostInterface (
-    const CProgress &progress, const QString &name, QWidget *parent)
+    const CProgress &progress, QWidget *parent)
 {
     message (parent ? parent : mainWindowShown(), Error,
-        tr ("Failed to create the host network interface <b>%1</b>.")
-            .arg (name),
+        tr ("Failed to create the host-only network interface."),
         formatErrorInfo (progress.GetErrorInfo()));
 }
 
