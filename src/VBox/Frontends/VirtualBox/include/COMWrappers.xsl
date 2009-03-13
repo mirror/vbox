@@ -115,6 +115,8 @@
  *
  *  Note: this header must be included from COMDefs.h, never directly.
  */
+
+#include &lt;QMetaType&gt;
 </xsl:text>
 
 <!-- all enum declarations -->
@@ -133,7 +135,9 @@
       <xsl:value-of select="concat(../@name,'_',@name)"/>
       <xsl:text>,&#x0A;</xsl:text>
     </xsl:for-each>
-    <xsl:text>&#x0A;};&#x0A;&#x0A;</xsl:text>
+    <xsl:text>};&#x0A;&#x0A;Q_DECLARE_METATYPE(</xsl:text>
+    <xsl:value-of select="concat('K',@name)"/>
+    <xsl:text>)&#x0A;&#x0A;</xsl:text>
   </xsl:for-each>
   <xsl:text>&#x0A;&#x0A;</xsl:text>
 
