@@ -57,11 +57,6 @@ VBoxVMSettingsNetworkDetails::VBoxVMSettingsNetworkDetails (QWidget *aParent)
     //    (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
     connect (mCbHOI, SIGNAL (currentIndexChanged (int)),
              this, SLOT (hostOnlyInterfaceChanged()));
-    connect (mRbAuto, SIGNAL (toggled (bool)),
-             this, SLOT (hostOnlyDHCPChanged()));
-    connect (mRbManual, SIGNAL (toggled (bool)),
-             this, SLOT (hostOnlyDHCPChanged()));
-    populateComboboxes();
 #if defined (Q_WS_WIN32)
     mTbAdd->setIcon (VBoxGlobal::iconSet (":/add_host_iface_16px.png",
                                           ":/add_host_iface_disabled_16px.png"));
@@ -69,6 +64,10 @@ VBoxVMSettingsNetworkDetails::VBoxVMSettingsNetworkDetails (QWidget *aParent)
                                           ":/remove_host_iface_disabled_16px.png"));
     connect (mTbAdd, SIGNAL (clicked()), this, SLOT (addInterface()));
     connect (mTbDel, SIGNAL (clicked()), this, SLOT (delInterface()));
+    connect (mRbAuto, SIGNAL (toggled (bool)),
+             this, SLOT (hostOnlyDHCPChanged()));
+    connect (mRbManual, SIGNAL (toggled (bool)),
+             this, SLOT (hostOnlyDHCPChanged()));
 #endif
 
     /* Setup common widgets */
@@ -108,7 +107,9 @@ void VBoxVMSettingsNetworkDetails::getFromAdapter (const CNetworkAdapter &aAdapt
     {
         setProperty ("HOI_Name", QVariant (ifsName));
         setProperty ("HOI_DhcpEnabled", QVariant (ifs.GetDhcpEnabled()));
+#if defined (Q_WS_WIN32)
         setProperty ("HOI_IPv6Supported", QVariant (ifs.GetIPV6Supported()));
+#endif
         if (!ifs.GetDhcpEnabled())
         {
             setProperty ("HOI_IPv4Addr", QVariant (ifs.GetIPAddress()));
@@ -187,9 +188,6 @@ void VBoxVMSettingsNetworkDetails::loadList (KNetworkAttachmentType aType,
     mCbINT->setVisible (mType == KNetworkAttachmentType_Internal);
     mLbHOI->setVisible (mType == KNetworkAttachmentType_HostOnly);
     mCbHOI->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mLbCT->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mRbAuto->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mRbManual->setVisible (mType == KNetworkAttachmentType_HostOnly);
     mLbIPv4->setVisible (mType == KNetworkAttachmentType_HostOnly);
     mLeIPv4->setVisible (mType == KNetworkAttachmentType_HostOnly);
     mLbHMv4->setVisible (mType == KNetworkAttachmentType_HostOnly);
@@ -201,6 +199,9 @@ void VBoxVMSettingsNetworkDetails::loadList (KNetworkAttachmentType aType,
 #if defined (Q_WS_WIN32)
     mTbAdd->setVisible (mType == KNetworkAttachmentType_HostOnly);
     mTbDel->setVisible (mType == KNetworkAttachmentType_HostOnly);
+    mLbCT->setVisible (mType == KNetworkAttachmentType_HostOnly);
+    mRbAuto->setVisible (mType == KNetworkAttachmentType_HostOnly);
+    mRbManual->setVisible (mType == KNetworkAttachmentType_HostOnly);
 #endif
 
     /* Repopulate alternate combo-box with items */
@@ -410,6 +411,7 @@ void VBoxVMSettingsNetworkDetails::accept()
 
 void VBoxVMSettingsNetworkDetails::hostOnlyInterfaceChanged()
 {
+#if defined (Q_WS_WIN32)
     CHostNetworkInterface iface =
         vboxGlobal().virtualBox().GetHost().FindHostNetworkInterfaceByName (mCbHOI->currentText());
 
@@ -433,11 +435,11 @@ void VBoxVMSettingsNetworkDetails::hostOnlyInterfaceChanged()
         mRbAuto->setChecked (true);
         mRbAuto->blockSignals (false);
     }
-    hostOnlyDHCPChanged();
 
-#if defined (Q_WS_WIN32)
     mTbDel->setEnabled (isValid);
 #endif
+
+    hostOnlyDHCPChanged();
 }
 
 void VBoxVMSettingsNetworkDetails::hostOnlyDHCPChanged()
