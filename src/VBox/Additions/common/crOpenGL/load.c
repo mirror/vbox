@@ -554,9 +554,10 @@ stubInit(void)
     /* we need to plug one special stub function into the dispatch table */
     glim.GetChromiumParametervCR = stub_GetChromiumParametervCR;
 
+#ifndef Linux
     /* Load pointers to native OpenGL functions into stub.nativeDispatch */
     stubInitNativeDispatch();
-
+#endif
 
 /*crDebug("stub init");
 raise(SIGINT);*/
