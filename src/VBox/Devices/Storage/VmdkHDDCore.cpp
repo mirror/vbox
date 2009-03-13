@@ -896,9 +896,6 @@ DECLINLINE(int) vmdkFileDeflateAt(PVMDKFILE pVmdkFile,
             /* Compressed grain marker. Data follows immediately. */
             uCompOffset = uOffset + 12;
             cbDecomp = cbToWrite;
-            rc = RTFileWriteAt(pVmdkFile->File, uOffset, &Marker, 12, NULL);
-            if (RT_FAILURE(rc))
-                return rc;
         }
         else
         {
@@ -924,6 +921,20 @@ DECLINLINE(int) vmdkFileDeflateAt(PVMDKFILE pVmdkFile,
              * rewritten. Cannot cause data loss as the code calling this
              * guarantees that data gets only appended. */
             rc = RTFileSetSize(pVmdkFile->File, DeflateState.uFileOffset);
+
+            if (uMarker == VMDK_MARKER_IGNORE)
+            {
+                /* Compressed grain marker. */
+                Marker.cbSize = RT_H2LE_U32(DeflateState.iOffset);
+                rc = RTFileWriteAt(pVmdkFile->File, uOffset, &Marker, 12, NULL);
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
+            else
+            {
+                /** @todo implement creating the other marker types */
+                return VERR_NOT_IMPLEMENTED;
+            }
         }
         return rc;
     }
