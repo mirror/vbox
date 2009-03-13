@@ -115,8 +115,6 @@
  *
  *  Note: this header must be included from COMDefs.h, never directly.
  */
-
-#include &lt;QMetaType&gt;
 </xsl:text>
 
 <!-- all enum declarations -->
