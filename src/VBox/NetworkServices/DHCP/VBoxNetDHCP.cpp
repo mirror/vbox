@@ -395,6 +395,8 @@ protected:
      * @{ */
     std::string         m_Name;
     std::string         m_Network;
+    std::string         m_TrunkName;
+    INTNETTRUNKTYPE     m_enmTrunkType;
     RTMAC               m_MacAddress;
     RTNETADDRIPV4       m_Ipv4Address;
     std::string         m_LeaseDBName;
@@ -509,6 +511,8 @@ VBoxNetDhcp::VBoxNetDhcp()
 {
     m_Name                  = "VBoxNetDhcp";
     m_Network               = "VBoxNetDhcp";
+    m_TrunkName             = "";
+    m_enmTrunkType          = kIntNetTrunkType_WhateverNone;
     m_MacAddress.au8[0]     = 0x08;
     m_MacAddress.au8[1]     = 0x00;
     m_MacAddress.au8[2]     = 0x27;
@@ -688,6 +692,8 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
     {
         { "--name",           'N',   RTGETOPT_REQ_STRING },
         { "--network",        'n',   RTGETOPT_REQ_STRING },
+        { "--trunk-name",     't',   RTGETOPT_REQ_STRING },
+        { "--trunk-type",     'T',   RTGETOPT_REQ_STRING },
         { "--mac-address",    'a',   RTGETOPT_REQ_MACADDR },
         { "--ip-address",     'i',   RTGETOPT_REQ_IPV4ADDR },
         { "--lease-db",       'D',   RTGETOPT_REQ_STRING },
@@ -721,6 +727,24 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                 break;
             case 'n':
                 m_Network = Val.psz;
+                break;
+            case 't':
+                m_TrunkName = Val.psz;
+                break;
+            case 'T':
+                if (!strcmp(Val.psz, "whatever"))
+                    m_enmTrunkType = kIntNetTrunkType_WhateverNone;
+                else if (!strcmp(Val.psz, "netflt"))
+                    m_enmTrunkType = kIntNetTrunkType_NetFlt;
+                else if (!strcmp(Val.psz, "netadp"))
+                    m_enmTrunkType = kIntNetTrunkType_NetAdp;
+                else if (!strcmp(Val.psz, "srvnat"))
+                    m_enmTrunkType = kIntNetTrunkType_SrvNat;
+                else
+                {
+                    RTStrmPrintf(g_pStdErr, "Invalid trunk type '%s'\n", Val.psz);
+                    return 1;
+                }
                 break;
             case 'a':
                 m_MacAddress = Val.MacAddr;
@@ -793,9 +817,12 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                          "(C) 2009 Sun Microsystems, Inc.\n"
                          "All rights reserved\n"
                          "\n"
-                         "Usage:\n"
-                         "  TODO\n",
+                         "Usage: VBoxNetDHCP <options>\n"
+                         "\n"
+                         "Options:\n"
                          VBOX_VERSION_STRING);
+                for (size_t i = 0; i < RT_ELEMENTS(s_aOptionDefs); i++)
+                    RTPrintf("    -%c, %s\n", s_aOptionDefs[i].iShort, s_aOptionDefs[i].pszLong);
                 return 1;
 
             default:
@@ -854,8 +881,10 @@ int VBoxNetDhcp::tryGoOnline(void)
     OpenReq.Hdr.cbReq = sizeof(OpenReq);
     OpenReq.pSession = m_pSession;
     strncpy(OpenReq.szNetwork, m_Network.c_str(), sizeof(OpenReq.szNetwork));
-    OpenReq.szTrunk[0] = '\0';
-    OpenReq.enmTrunkType = kIntNetTrunkType_WhateverNone;
+    OpenReq.szNetwork[sizeof(OpenReq.szNetwork) - 1] = '\0';
+    strncpy(OpenReq.szTrunk, m_TrunkName.c_str(), sizeof(OpenReq.szTrunk));
+    OpenReq.szTrunk[sizeof(OpenReq.szTrunk) - 1] = '\0';
+    OpenReq.enmTrunkType = m_enmTrunkType;
     OpenReq.fFlags = 0; /** @todo check this */
     OpenReq.cbSend = m_cbSendBuf;
     OpenReq.cbRecv = m_cbRecvBuf;
