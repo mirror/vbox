@@ -21,6 +21,12 @@
 
 #include <VBox/sup.h>
 
+#ifdef RT_OS_DARWIN
+extern "C" DECLEXPORT(int) issetugid(void)
+{
+    return 0;
+}
+#endif
 
 int main(int argc, char **argv, char **envp)
 {
