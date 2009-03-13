@@ -73,10 +73,10 @@ ifneq ($(filter l4%,$(KBUILD_TARGET) $(BUILD_TARGET_SUB)),)
 else
  SUPR3_TEMPLATE     = VBOXR3
 endif
-SUPR3_DEFS          = IN_SUP_R3 IN_RT_R3
-ifdef VBOX_WITH_SUPSVC
- SUPR3_DEFS        += VBOX_WITH_SUPSVC
-endif
+SUPR3_DEFS          = \
+	IN_SUP_R3 IN_RT_R3 \
+        $(if $(VBOX_WITH_SUPSVC),VBOX_WITH_SUPSVC) \
+        $(if $(VBOX_WITH_MAIN),VBOX_WITH_MAIN,)
 SUPR3_INCS         := $(PATH_SUB_CURRENT)
 SUPR3_INCS.l4       = $(L4_INCDIR)
 SUPR3_SOURCES       = \
@@ -91,9 +91,9 @@ SUPR3_SOURCES       = \
 #
 SUPR3HardenedStatic_TEMPLATE = VBOXR3HARDENEDLIB
 SUPR3HardenedStatic_DEFS     = IN_SUP_HARDENED_R3
-ifdef VBOX_WITH_SUPSVC
- SUPR3HardenedStatic_DEFS   += VBOX_WITH_SUPSVC
-endif
+SUPR3HardenedStatic_DEFS    += \
+	$(if $(VBOX_WITH_SUPSVC),VBOX_WITH_SUPSVC,) \
+	$(if $(VBOX_WITH_MAIN),VBOX_WITH_MAIN,)
 SUPR3HardenedStatic_INCS     = .
 SUPR3HardenedStatic_SOURCES  = \
 	SUPR3HardenedMain.cpp \
