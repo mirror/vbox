@@ -51,10 +51,6 @@
 # error "Port me"
 #endif
 
-
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
 /** The dlopen handle for VBoxXPCOMC. */
 void *g_hVBoxXPCOMC = NULL;
 /** The last load error. */
@@ -71,9 +67,8 @@ PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions = NULL;
  *
  * @returns 0 on success, -1 on failure.
  * @param   pszHome         The director where to try load VBoxXPCOMC from. Can be NULL.
- * @param   pszMsgPrefix    Error message prefix. NULL means no error messages.
  */
-static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
+static int tryLoadOne(const char *pszHome)
 {
     size_t      cchHome = pszHome ? strlen(pszHome) : 0;
     size_t      cbBuf;
@@ -88,8 +83,6 @@ static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
     if (!pszBuf)
     {
         sprintf(g_szVBoxErrMsg, "malloc(%u) failed", (unsigned)cbBuf);
-        if (pszMsgPrefix)
-            fprintf(stderr, "%s%s\n", pszMsgPrefix, g_szVBoxErrMsg);
         return -1;
     }
     if (pszHome)
@@ -142,34 +135,33 @@ static int tryLoadOne(const char *pszHome, const char *pszMsgPrefix)
  * function pointers.
  *
  * @returns 0 on success, -1 on failure.
- * @param   pszMsgPrefix    Error message prefix. NULL means no error messages.
  *
  * @remark  This should be considered moved into a separate glue library since
  *          its its going to be pretty much the same for any user of VBoxXPCOMC
  *          and it will just cause trouble to have duplicate versions of this
  *          source code all around the place.
  */
-int VBoxCGlueInit(const char *pszMsgPrefix)
+int VBoxCGlueInit(void)
 {
     /*
      * If the user specifies the location, try only that.
      */
     const char *pszHome = getenv("VBOX_APP_HOME");
     if (pszHome)
-        return tryLoadOne(pszHome, pszMsgPrefix);
+        return tryLoadOne(pszHome);
 
     /*
      * Try the known standard locations.
      */
 #if defined(__gnu__linux__) || defined(__linux__)
-    if (tryLoadOne("/opt/VirtualBox", pszMsgPrefix) == 0)
+    if (tryLoadOne("/opt/VirtualBox") == 0)
         return 0;
-    if (tryLoadOne("/usr/lib/virtualbox", pszMsgPrefix) == 0)
+    if (tryLoadOne("/usr/lib/virtualbox") == 0)
         return 0;
 #elif defined(__sun__)
-    if (tryLoadOne("/opt/VirtualBox/amd64", pszMsgPrefix) == 0)
+    if (tryLoadOne("/opt/VirtualBox/amd64") == 0)
         return 0;
-    if (tryLoadOne("/opt/VirtualBox/i386", pszMsgPrefix) == 0)
+    if (tryLoadOne("/opt/VirtualBox/i386") == 0)
         return 0;
 #elif defined(__APPLE__)
     if (tryLoadOne("/Application/VirtualBox.app/Contents/MacOS", pszMsgPrefix) == 0)
@@ -181,15 +173,12 @@ int VBoxCGlueInit(const char *pszMsgPrefix)
     /*
      * Finally try the dynamic linker search path.
      */
-    if (tryLoadOne(NULL, pszMsgPrefix) == 0)
+    if (tryLoadOne(NULL) == 0)
         return 0;
 
     /* No luck, return failure. */
-    if (pszMsgPrefix)
-        fprintf(stderr, "%sFailed to locate VBoxXPCOMC\n", pszMsgPrefix);
     return -1;
 }
-
 
 /**
  * Terminate the C glue library.
@@ -203,5 +192,5 @@ void VBoxCGlueTerm(void)
     }
     g_pVBoxFuncs = NULL;
     g_pfnGetFunctions = NULL;
+    memset(g_szVBoxErrMsg, 0, sizeof(g_szVBoxErrMsg));
 }
-

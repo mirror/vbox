@@ -318,7 +318,7 @@ int main(int argc, char **argv)
      * when done.
      */
 
-    if (VBoxCGlueInit(NULL) != 0)
+    if (VBoxCGlueInit() != 0)
     {
         fprintf(stderr, "%s: FATAL: VBoxCGlueInit failed: %s\n",
                 argv[0], g_szVBoxErrMsg);
