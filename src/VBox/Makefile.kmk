@@ -68,6 +68,7 @@ else
  ifdef VBOX_WITH_ADDITIONS
   include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
  endif
+ include $(PATH_SUB_CURRENT)/NetworkServices/Makefile.kmk
  ifdef VBOX_WITH_INSTALLER
   include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk 		        # Keep this last.
  endif
@@ -126,7 +127,9 @@ else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
   SUBDIRS += Additions
  endif
 
- SUBDIRS += Frontends
+ SUBDIRS += \
+	Frontends \
+	NetworkServices
 
  # This must be the last one.
  ifdef VBOX_WITH_INSTALLER
