@@ -665,8 +665,7 @@ static int vboxadd_control_filter_mask(VBoxGuestFilterMaskInfo *pInfo)
 }
 
 /**
- * IOCTL handler
- *
+ * IOCTL handler for vboxadd
  */
 static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                          unsigned int cmd, unsigned long arg)
@@ -851,6 +850,53 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
 }
 
 /**
+ * IOCTL handler for vboxuser
+ */
+static int vboxuser_ioctl(struct inode *inode, struct file *filp,
+                          unsigned int cmd, unsigned long arg)
+{
+        int rc = 0;
+
+        /* Deal with variable size ioctls first. */
+        if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0))
+                 == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
+        {
+        /* Do the HGCM call using the Vbgl bits */
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL", arg);
+                rc = vboxadd_hgcm_call(arg, _IOC_SIZE(cmd));
+                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL", arg);
+        }
+        else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMED(0))
+                 == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
+        {
+        /* Do the HGCM call using the Vbgl bits */
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
+                rc = vboxadd_hgcm_call_timed(arg, _IOC_SIZE(cmd));
+                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
+        }
+        else
+        {
+            switch (cmd) {
+            case VBOXGUEST_IOCTL_HGCM_CONNECT:
+                    IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CONNECT", arg);
+                    rc = vboxadd_hgcm_connect(filp, arg);
+                    IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CONNECT", arg);
+                    break;
+            case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
+                    IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_DISCONNECT", arg);
+                    vboxadd_hgcm_disconnect(filp, arg);
+                    IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_DISCONNECT", arg);
+                    break;
+            default:
+                    LogRelFunc(("unknown command: %x\n", cmd));
+                    rc = -EINVAL;
+                    break;
+            }
+        }
+        return rc;
+}
+
+/**
  * Poll function.  This returns "ready to read" if the guest is in absolute
  * mouse pointer mode and the pointer position has changed since the last
  * poll.
@@ -889,14 +935,24 @@ vboxadd_read (struct file *file, char *buf, size_t count, loff_t *loff)
 }
 
 /**
- * File close handler.  Clean up any HGCM connections associated with the open file
- * which might still be open.
+ * File close handler for vboxadd.  Clean up any HGCM connections associated
+ * with the open file which might still be open.
  */
 static int vboxadd_release(struct inode *inode, struct file * filp)
 {
         vboxadd_unregister_all_hgcm_connections(filp);
         /* Deactivate our asynchronous queue. */
         vboxadd_fasync(-1, filp, 0);
+        return 0;
+}
+
+/**
+ * File close handler for vboxuser.  Clean up any HGCM connections associated
+ * with the open file which might still be open.
+ */
+static int vboxuser_release(struct inode *inode, struct file * filp)
+{
+        vboxadd_unregister_all_hgcm_connections(filp);
         return 0;
 }
 
@@ -919,6 +975,24 @@ static struct miscdevice gMiscVBoxAdd =
     minor:      MISC_DYNAMIC_MINOR,
     name:       VBOXADD_NAME,
     fops:       &vboxadd_fops
+};
+
+/** file operations for the vboxuser device */
+static struct file_operations vboxuser_fops =
+{
+    .owner   = THIS_MODULE,
+    .open    = vboxadd_open,
+    .ioctl   = vboxuser_ioctl,
+    .release = vboxuser_release,
+    .llseek  = no_llseek
+};
+
+/** Miscellaneous device allocation for vboxuser */
+static struct miscdevice gMiscVBoxUser =
+{
+    minor:      MISC_DYNAMIC_MINOR,
+    name:       VBOXUSER_NAME,
+    fops:       &vboxuser_fops
 };
 
 #ifndef IRQ_RETVAL
@@ -1170,7 +1244,7 @@ static void free_resources(void)
 static __init int init(void)
 {
     int rc = 0, rcVBox = VINF_SUCCESS;
-    bool haveVBoxAdd = false, haveGuestLib = false;
+    bool haveVBoxAdd = false, haveVBoxUser = false, haveGuestLib = false;
     struct pci_dev *pcidev = NULL;
 
     rcVBox = vboxadd_cmc_init();
@@ -1218,6 +1292,16 @@ static __init int init(void)
     }
     if (!rc)
         haveVBoxAdd = true;
+
+    /* Register our user session device */
+    if (!rc) {
+        rc = misc_register(&gMiscVBoxUser);
+        if (rc)
+            LogRel(("vboxadd: misc_register failed for %s (rc=%d)\n",
+                    VBOXUSER_NAME, rc));
+    }
+    if (!rc)
+        haveVBoxUser = true;
 
     /* allocate and initialize device extension */
     if (!rc)
@@ -1427,6 +1511,8 @@ static __init int init(void)
             VbglTerminate();
         if (vboxDev)
             free_resources();
+        if (haveVBoxUser)
+            misc_deregister(&gMiscVBoxUser);
         if (haveVBoxAdd && vbox_major > 0)
             unregister_chrdev(vbox_major, VBOXADD_NAME);
         else if (haveVBoxAdd)
@@ -1445,6 +1531,7 @@ static __init int init(void)
  */
 static __exit void fini(void)
 {
+    misc_deregister(&gMiscVBoxUser);
     if (vbox_major > 0)
         unregister_chrdev(vbox_major, VBOXADD_NAME);
     else
