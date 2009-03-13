@@ -92,7 +92,9 @@ static bool removeAddresses(const char *pszAdapterName)
     for (cAddrs = 0; cAddrs < MAX_ADDRESSES && fgets(szBuf, sizeof(szBuf), fp);)
     {
         int cbSkipWS = strspn(szBuf, " \t");
+#if 0 /* Don't use this! assert() breaks the mac build. Use IPRT or be a rectangular building thing. */
         assert(cbSkipWS < 20);
+#endif
         char *pszWord = strtok(szBuf + cbSkipWS, " ");
         /* We are concerned with IPv6 address lines only. */
         if (!pszWord || strcmp(pszWord, "inet6"))
