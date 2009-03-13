@@ -96,32 +96,33 @@ endif
 VBOX_LNX_STRIP_BIN = \
 	VBoxDD.so \
 	VBoxDD2.so \
-	VBoxManage \
 	VBoxREM.so \
+	VBoxDDU.so \
+	VBoxVMM.so \
 	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,) \
 	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,) \
 	VBoxRT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL $(if $(VBOX_WITH_HARDENING),VBoxSDL.so),) \
-	VBoxSettings.so \
-	VBoxSharedClipboard.so \
-	VBoxSharedFolders.so \
+	$(if $(VBOX_WITH_SHARED_CLIPBOARD), VBoxSharedClipboard.so) \
+	$(if $(VBOX_WITH_SHARED_FOLDERS), VBoxSharedFolders.so) \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so) \
-	VBoxSVC \
-	VBoxDDU.so \
-	VBoxVMM.so \
-	VBoxXPCOM.so \
-	VBoxXPCOMC.so \
-	VBoxXPCOMIPCD \
+	$(if $(VBOX_WITH_MAIN), \
+	  VBoxManage \
+	  VBoxSVC \
+	  VBoxSettings.so \
+	  VBoxXPCOM.so \
+	  VBoxXPCOMC.so \
+	  VBoxXPCOMIPCD \
+	  components/VBoxXPCOMIPCC.so \
+	  components/VBoxSVCM.so \
+	  components/VBoxC.so) \
 	$(if $(VBOX_WITH_CROGL),\
 	  VBoxOGLhostcrutil.so \
 	  VBoxOGLhosterrorspu.so \
 	  VBoxOGLrenderspu.so \
 	  VBoxSharedCrOpenGL.so) \
-	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
-	VBoxTunctl \
-	components/VBoxC.so \
-	components/VBoxSVCM.so \
-	components/VBoxXPCOMIPCC.so
+	$(if $(VBOX_WITH_PYTHON),VBoxPython.so) \
+	VBoxTunctl
 
 # Do not remove relocation information of these binaries
 VBOX_LNX_STRIP_OBJ = \
@@ -141,9 +142,10 @@ endif
 # Do not strip anything of these files
 VBOX_LNX_NO_STRIP = \
 	$(if $(VBOX_OSE),,LICENSE) \
-	components/VBoxXPCOMBase.xpt \
-	components/VirtualBox_XPCOM.xpt \
-        VBoxSysInfo.sh \
+	$(if $(VBOX_WITH_MAIN), \
+	  components/VBoxXPCOMBase.xpt \
+	  components/VirtualBox_XPCOM.xpt) \
+	VBoxSysInfo.sh \
 	VBox.sh \
 	VBox.png \
 	src
@@ -169,7 +171,6 @@ ifdef VBOX_WITH_ADDITIONS_PACKING
  VBOX_LNX_NO_STRIP += \
  	additions/VBoxGuestAdditions.iso
 endif
-
 
 # Documentation
 ifdef VBOX_WITH_DOCS_PACKING
@@ -200,6 +201,13 @@ ifdef VBOX_WITH_HEADLESS
  VBOX_LNX_STRIP_BIN += \
 	VBoxHeadless \
 	$(if $(VBOX_WITH_HARDENING),VBoxHeadless.so)
+endif
+
+# BFE
+ifdef VBOX_WITH_BFE
+ VBOX_LNX_STRIP_BIN += \
+	VBoxBFE \
+	$(if $(VBOX_WITH_HARDENING),VBoxBFE.so)
 endif
 
 # Webservices
