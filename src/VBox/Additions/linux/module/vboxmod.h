@@ -27,6 +27,7 @@
 #include <iprt/asm.h>
 
 #define VBOXADD_NAME "vboxadd"
+#define VBOXUSER_NAME "vboxuser"
 
 typedef struct VBoxDevice VBoxDevice;
 struct VBoxDevice
