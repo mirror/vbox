@@ -107,21 +107,21 @@ VBOX_LNX_STRIP_BIN = \
 	$(if $(VBOX_WITH_SHARED_FOLDERS), VBoxSharedFolders.so,) \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so,) \
 	$(if $(VBOX_WITH_MAIN), \
-	  VBoxManage \
-	  VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
-	  VBoxSVC \
-	  VBoxSettings.so \
-	  VBoxXPCOM.so \
-	  VBoxXPCOMC.so \
-	  VBoxXPCOMIPCD \
-	  components/VBoxXPCOMIPCC.so \
-	  components/VBoxSVCM.so \
-	  components/VBoxC.so,) \
+		VBoxManage \
+		VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
+		VBoxSVC \
+		VBoxSettings.so \
+		VBoxXPCOM.so \
+		VBoxXPCOMC.so \
+		VBoxXPCOMIPCD \
+		components/VBoxXPCOMIPCC.so \
+		components/VBoxSVCM.so \
+		components/VBoxC.so,) \
 	$(if $(VBOX_WITH_CROGL),\
-	  VBoxOGLhostcrutil.so \
-	  VBoxOGLhosterrorspu.so \
-	  VBoxOGLrenderspu.so \
-	  VBoxSharedCrOpenGL.so,) \
+		VBoxOGLhostcrutil.so \
+		VBoxOGLhosterrorspu.so \
+		VBoxOGLrenderspu.so \
+		VBoxSharedCrOpenGL.so,) \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
 	VBoxTunctl
 
