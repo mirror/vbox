@@ -32,7 +32,7 @@ ifeq ($(KBUILD_TARGET),linux)
   include $(PATH_SUB_CURRENT)/tunctl/Makefile.kmk
  endif
 endif
-ifeq ($(KBUILD_TARGET),darwin)
+if1of ($(KBUILD_TARGET),darwin solaris)
  ifneq ($(wildcard $(PATH_SUB_CURRENT)/adpctl),)
   include $(PATH_SUB_CURRENT)/adpctl/Makefile.kmk
  endif
