@@ -2396,7 +2396,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                 if (RT_UNLIKELY(!PGM_PAGE_GET_HCPHYS(pPage)))
                 {
                     int         rc;
-                    RTGCPHYS    GCPhysPage = GCPhys + off;
+                    RTGCPHYS    GCPhysPage = pRam->GCPhys + off;
 #ifdef IN_RING3
                     if (fGrabbedLock)
                     {
