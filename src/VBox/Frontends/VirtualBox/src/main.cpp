@@ -105,7 +105,25 @@ void bt_sighandler (int sig, siginfo_t *info, void *secret) {
     exit (0);
 }
 
-#endif
+#endif /* DEBUG && X11 && LINUX*/
+
+#if defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
+# include <dlfcn.h>
+# include <sys/mman.h>
+# include <iprt/asm.h>
+
+/** Really ugly hack to shut up a silly check in AppKit. */
+static void ShutUpAppKit(void)
+{
+    /*
+     * Find issetguid() and make it always return 0 by modifying the code.
+     */
+    void *addr = dlsym(RTLD_DEFAULT, "issetugid");
+    int rc = mprotect((void *)((uintptr_t)addr & ~(uintptr_t)0xfff), 0x2000, PROT_WRITE|PROT_READ|PROT_EXEC);
+    if (!rc)
+        ASMAtomicWriteU32((volatile uint32_t *)addr, 0xccc3c031); /* xor eax, eax; ret; int3 */
+}
+#endif /* DARWIN + AMD64 */
 
 static void QtMessageOutput (QtMsgType type, const char *msg)
 {
@@ -200,6 +218,9 @@ static void showHelp()
 extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 {
     LogFlowFuncEnter();
+# if defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
+    ShutUpAppKit();
+# endif
 
 #ifdef Q_WS_WIN
     /* Initialize COM early, before QApplication calls OleInitialize(), to
@@ -463,6 +484,10 @@ int main (int argc, char **argv, char **envp)
  */
 extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va)
 {
+# if defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
+    ShutUpAppKit();
+# endif
+
     /*
      * Init the Qt application object. This is a bit hackish as we
      * don't have the argument vector handy.
