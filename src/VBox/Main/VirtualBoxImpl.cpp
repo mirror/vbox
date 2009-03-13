@@ -1400,6 +1400,8 @@ GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 
     HRESULT rc = S_OK;
 
+    Bstr bstrInKey(aKey);
+
     /* serialize file access (prevent writes) */
     AutoReadLock alock (this);
 
@@ -1430,7 +1432,7 @@ GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
                     Bstr key = (*it).stringValue ("name");
 
                     /* if we're supposed to return the first one */
-                    if (aKey == NULL)
+                    if (bstrInKey.isEmpty())
                     {
                         key.cloneTo (aNextKey);
                         if (aNextValue)
@@ -1442,7 +1444,7 @@ GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
                     }
 
                     /* did we find the key we're looking for? */
-                    if (key == aKey)
+                    if (key == bstrInKey)
                     {
                         ++ it;
                         /* is there another item? */
@@ -1469,9 +1471,9 @@ GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
          * (which is the case only when there are no items), we just fall
          * through to return NULLs and S_OK. */
 
-        if (aKey != NULL)
+        if (!bstrInKey.isEmpty())
             return setError (VBOX_E_OBJECT_NOT_FOUND,
-                tr ("Could not find the extra data key '%ls'"), aKey);
+                tr("Could not find the extra data key '%ls'"), bstrInKey.raw());
     }
     catch (...)
     {
