@@ -41,29 +41,6 @@
     </widget>
    </item>
    <item row="1" column="1" >
-    <widget class="QLabel" name="mLbNAT" >
-     <property name="text" >
-      <string>&amp;NAT Network:</string>
-     </property>
-     <property name="alignment" >
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="buddy" >
-      <cstring>mCbNAT</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="2" colspan="3" >
-    <widget class="QComboBox" name="mCbNAT" >
-     <property name="toolTip" >
-      <string>Displays the name of the NAT network selected for this adapter.</string>
-     </property>
-     <property name="editable" >
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1" >
     <widget class="QLabel" name="mLbBRG" >
      <property name="text" >
       <string>&amp;Bridged Network Adapter:</string>
@@ -76,14 +53,14 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="2" colspan="3" >
+   <item row="1" column="2" colspan="3" >
     <widget class="QComboBox" name="mCbBRG" >
      <property name="toolTip" >
       <string>Displays the name of the host network adapter selected for bridged networking.</string>
      </property>
     </widget>
    </item>
-   <item row="3" column="1" >
+   <item row="2" column="1" >
     <widget class="QLabel" name="mLbINT" >
      <property name="text" >
       <string>Internal &amp;Network:</string>
@@ -96,7 +73,7 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="2" colspan="3" >
+   <item row="2" column="2" colspan="3" >
     <widget class="QComboBox" name="mCbINT" >
      <property name="toolTip" >
       <string>Displays the name of the internal network selected for this adapter.</string>
@@ -106,7 +83,7 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="1" >
+   <item row="3" column="1" >
     <widget class="QLabel" name="mLbHOI" >
      <property name="text" >
       <string>Host-only &amp;Network Interface:</string>
@@ -119,7 +96,7 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="2" colspan="3" >
+   <item row="3" column="2" colspan="3" >
     <layout class="QHBoxLayout" >
      <item>
       <widget class="QComboBox" name="mCbHOI" >
@@ -156,7 +133,7 @@
      </item>
     </layout>
    </item>
-   <item row="5" column="1" >
+   <item row="4" column="1" >
     <widget class="QLabel" name="mLbCT" >
      <property name="text" >
       <string>Configuration Type:</string>
@@ -166,7 +143,7 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="2" colspan="3" >
+   <item row="4" column="2" colspan="3" >
     <widget class="QRadioButton" name="mRbAuto" >
      <property name="toolTip" >
       <string>Use DHCP automatic configuration for this host-only network interface.</string>
@@ -176,7 +153,7 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="2" colspan="3" >
+   <item row="5" column="2" colspan="3" >
     <widget class="QRadioButton" name="mRbManual" >
      <property name="toolTip" >
       <string>Use manual configuration for this host-only network interface.</string>
@@ -186,7 +163,7 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="1" >
+   <item row="6" column="1" >
     <widget class="QLabel" name="mLbIPv4" >
      <property name="text" >
       <string>&amp;Host IPv4 Address:</string>
@@ -199,7 +176,7 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="2" colspan="3" >
+   <item row="6" column="2" colspan="3" >
     <widget class="QLineEdit" name="mLeIPv4" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
@@ -212,7 +189,7 @@
      </property>
     </widget>
    </item>
-   <item row="8" column="1" >
+   <item row="7" column="1" >
     <widget class="QLabel" name="mLbHMv4" >
      <property name="text" >
       <string>H&amp;ost IPv4 Network Mask:</string>
@@ -225,7 +202,7 @@
      </property>
     </widget>
    </item>
-   <item row="8" column="2" colspan="3" >
+   <item row="7" column="2" colspan="3" >
     <widget class="QLineEdit" name="mLeHMv4" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
@@ -238,7 +215,7 @@
      </property>
     </widget>
    </item>
-   <item row="9" column="1" >
+   <item row="8" column="1" >
     <widget class="QLabel" name="mLbIPv6" >
      <property name="text" >
       <string>Ho&amp;st IPv6 Address:</string>
@@ -251,7 +228,7 @@
      </property>
     </widget>
    </item>
-   <item row="9" column="2" colspan="3" >
+   <item row="8" column="2" colspan="3" >
     <widget class="QLineEdit" name="mLeIPv6" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
@@ -264,7 +241,7 @@
      </property>
     </widget>
    </item>
-   <item row="10" column="1" >
+   <item row="9" column="1" >
     <widget class="QLabel" name="mLbHMv6" >
      <property name="text" >
       <string>Hos&amp;t IPv6 Network Mask Length:</string>
@@ -277,7 +254,7 @@
      </property>
     </widget>
    </item>
-   <item row="10" column="2" colspan="3" >
+   <item row="9" column="2" colspan="3" >
     <widget class="QLineEdit" name="mLeHMv6" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
@@ -290,7 +267,7 @@
      </property>
     </widget>
    </item>
-   <item row="11" column="0" colspan="5" >
+   <item row="10" column="0" colspan="5" >
     <widget class="QILabelSeparator" name="mLsHost" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
@@ -303,7 +280,7 @@
      </property>
     </widget>
    </item>
-   <item row="12" column="0" >
+   <item row="11" column="0" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Horizontal</enum>
@@ -319,7 +296,7 @@
      </property>
     </spacer>
    </item>
-   <item row="12" column="1" >
+   <item row="11" column="1" >
     <widget class="QLabel" name="mLbMAC" >
      <property name="text" >
       <string>Guest &amp;MAC Address:</string>
@@ -332,7 +309,7 @@
      </property>
     </widget>
    </item>
-   <item row="12" column="2" colspan="2" >
+   <item row="11" column="2" colspan="2" >
     <widget class="QLineEdit" name="mLeMAC" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
@@ -345,7 +322,7 @@
      </property>
     </widget>
    </item>
-   <item row="12" column="4" >
+   <item row="11" column="4" >
     <widget class="QToolButton" name="mTbMAC" >
      <property name="toolTip" >
       <string>Generates a new random MAC address.</string>
@@ -358,7 +335,7 @@
      </property>
     </widget>
    </item>
-   <item row="13" column="0" colspan="5" >
+   <item row="12" column="0" colspan="5" >
     <spacer name="verticalSpacer" >
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
@@ -371,7 +348,7 @@
      </property>
     </spacer>
    </item>
-   <item row="14" column="0" colspan="5" >
+   <item row="13" column="0" colspan="5" >
     <widget class="QIDialogButtonBox" name="mButtonBox" >
      <property name="standardButtons" >
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>

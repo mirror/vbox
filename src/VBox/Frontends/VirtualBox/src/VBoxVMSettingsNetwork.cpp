@@ -203,9 +203,6 @@ void VBoxVMSettingsNetwork::detailsClicked()
     QStringList list;
     switch (type)
     {
-        case KNetworkAttachmentType_NAT:
-            list = mParent->natList();
-            break;
         case KNetworkAttachmentType_Bridged:
             list = mParent->intList (KHostNetworkInterfaceType_Bridged);
             break;
@@ -327,43 +324,6 @@ VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage()
     /* Creating Tab Widget */
     mTwAdapters = new QTabWidget (this);
     mainLayout->addWidget (mTwAdapters);
-}
-
-QStringList VBoxVMSettingsNetworkPage::natList() const
-{
-    QStringList list;
-
-    /* Load total NAT names list of all VMs */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    ulong count = qMin ((ULONG) 4, vbox.GetSystemProperties().GetNetworkAdapterCount());
-    CMachineVector vec = vbox.GetMachines();
-    for (CMachineVector::ConstIterator m = vec.begin(); m != vec.end(); ++ m)
-    {
-        if (m->GetAccessible())
-        {
-            for (ulong slot = 0; slot < count; ++ slot)
-            {
-                QString name = m->GetNetworkAdapter (slot).GetNATNetwork();
-                if (!name.isEmpty() && !list.contains (name))
-                    list << name;
-            }
-        }
-    }
-
-    /* Append NAT names list with names from all the pages */
-    for (int index = 0; index < mTwAdapters->count(); ++ index)
-    {
-        VBoxVMSettingsNetwork *page =
-            qobject_cast <VBoxVMSettingsNetwork*> (mTwAdapters->widget (index));
-        if (page)
-        {
-            QString name = page->currentName (KNetworkAttachmentType_NAT);
-            if (!name.isEmpty() && !list.contains (name))
-                list << name;
-        }
-    }
-
-    return list;
 }
 
 QStringList VBoxVMSettingsNetworkPage::netList() const

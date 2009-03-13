@@ -80,7 +80,6 @@ public:
 
     VBoxVMSettingsNetworkPage();
 
-    QStringList natList() const;
     QStringList netList() const;
     QStringList intList (KHostNetworkInterfaceType aType) const;
 
