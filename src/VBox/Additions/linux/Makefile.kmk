@@ -107,6 +107,13 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(PATH_BIN)/additions/vboxvideo_drv_15.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_16.so \
 		$(PATH_BIN)/additions/mountvboxsf \
+		$(PATH_BIN)/additions/VBoxOGLarrayspu.so \
+		$(PATH_BIN)/additions/VBoxOGLcrutil.so \
+		$(PATH_BIN)/additions/VBoxOGLerrorspu.so \
+		$(PATH_BIN)/additions/VBoxOGLfeedbackspu.so \
+		$(PATH_BIN)/additions/VBoxOGLpackspu.so \
+		$(PATH_BIN)/additions/VBoxOGLpassthroughspu.so \
+		$(PATH_BIN)/additions/VBoxOGL.so \
 		$(VBOX_SELINUX_CMPLD) \
 		$(wildcard $(PATH_BIN)/additions/src/*) \
 		$(wildcard $(PATH_BIN)/additions/src/*/*) \
@@ -160,6 +167,13 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_15.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxvideo_drv_15.so
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_16.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxvideo_drv_16.so
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/mountvboxsf                   $(VBOX_LNX_ADD_INS_OUT_DIR)/mount.vboxsf
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxOGLarrayspu.so            $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxOGLarrayspu.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxOGLcrutil.so              $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxOGLcrutil.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxOGLerrorspu.so            $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxOGLerrorspu.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxOGLfeedbackspu.so         $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxOGLfeedbackspu.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxOGLpackspu.so             $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxOGLpackspu.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxOGLpassthroughspu.so      $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxOGLpassthroughspu.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxOGL.so                    $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxOGL.so
 ifdef VBOX_SELINUX_CMPLD
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_SELINUX_CMPLD)                                     $(VBOX_LNX_ADD_INS_OUT_DIR)
 endif
