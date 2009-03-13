@@ -8384,6 +8384,33 @@
     </const>
   </enum>
 
+  <enum
+    name="HardDiskVariant"
+    uuid="3bc36e8c-bf7a-4dba-b6cb-df87cdc9cc19"
+   >
+    <desc>
+      Virtual hard disk image variant. More than one flag may be set.
+      <see>IHardDisk</see>
+    </desc>
+
+    <const name="Standard"          value="0">
+      <desc>
+        No particular variant requested, results in using the backend default.
+      </desc>
+    </const>
+    <const name="VmdkSplit2G"       value="0x01">
+      <desc>
+        VMDK image split in chunks of less than 2GByte.
+      </desc>
+    </const>
+    <const name="VmdkStreamOptimized" value="0x04">
+      <desc>
+        VMDK streamOptimized image. Epecial import/export format which is
+        read-only/append-only.
+      </desc>
+    </const>
+  </enum>
+
   <interface
     name="IHardDiskAttachment" extends="$unknown"
     uuid="b1dd04bb-93c0-4ad3-a9cf-82316e595836"
@@ -8983,6 +9010,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="logicalSize" type="unsigned long long" dir="in">
         <desc>Maximum logical size of the hard disk in megabytes.</desc>
       </param>
+      <param name="variant" type="HardDiskVariant" dir="in">
+        <desc>Exact image variant which should be created.</desc>
+      </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
@@ -9012,6 +9042,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="logicalSize" type="unsigned long long" dir="in">
         <desc>Logical size of the hard disk in megabytes.</desc>
+      </param>
+      <param name="variant" type="HardDiskVariant" dir="in">
+        <desc>Exact image variant which should be created.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -9091,6 +9124,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="target" type="IHardDisk" dir="in">
         <desc>Target hard disk.</desc>
+      </param>
+      <param name="variant" type="HardDiskVariant" dir="in">
+        <desc>Exact image variant which should be created.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -9206,6 +9242,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="target" type="IHardDisk" dir="in">
         <desc>Target hard disk.</desc>
       </param>
+      <param name="variant" type="HardDiskVariant" dir="in">
+        <desc>Exact image variant which should be created.</desc>
+      </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
@@ -9238,6 +9277,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="target" type="IHardDisk" dir="in">
         <desc>Target hard disk.</desc>
+      </param>
+      <param name="variant" type="HardDiskVariant" dir="in">
+        <desc>Exact image variant which should be created.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>

@@ -107,13 +107,21 @@ public:
                               ComSafeArrayOut (BSTR, aReturnValues));
     STDMETHOD(SetProperties) (ComSafeArrayIn (IN_BSTR, aNames),
                               ComSafeArrayIn (IN_BSTR, aValues));
-    STDMETHOD(CreateDynamicStorage) (ULONG64 aLogicalSize, IProgress **aProgress);
-    STDMETHOD(CreateFixedStorage) (ULONG64 aLogicalSize, IProgress **aProgress);
+    STDMETHOD(CreateDynamicStorage) (ULONG64 aLogicalSize,
+                                     HardDiskVariant_T aVariant,
+                                     IProgress **aProgress);
+    STDMETHOD(CreateFixedStorage) (ULONG64 aLogicalSize,
+                                   HardDiskVariant_T aVariant,
+                                   IProgress **aProgress);
     STDMETHOD(DeleteStorage) (IProgress **aProgress);
-    STDMETHOD(CreateDiffStorage) (IHardDisk *aTarget, IProgress **aProgress);
+    STDMETHOD(CreateDiffStorage) (IHardDisk *aTarget,
+                                  HardDiskVariant_T aVariant,
+                                  IProgress **aProgress);
     STDMETHOD(MergeTo) (IN_GUID aTargetId, IProgress **aProgress);
-    STDMETHOD(CloneTo) (IHardDisk *aTarget, IProgress **aProgress);
-    STDMETHOD(FlattenTo) (IHardDisk *aTarget, IProgress **aProgress);
+    STDMETHOD(CloneTo) (IHardDisk *aTarget, HardDiskVariant_T aVariant,
+                        IProgress **aProgress);
+    STDMETHOD(FlattenTo) (IHardDisk *aTarget, HardDiskVariant_T aVariant,
+                          IProgress **aProgress);
     STDMETHOD(Compact) (IProgress **aProgress);
     STDMETHOD(Reset) (IProgress **aProgress);
 
@@ -153,16 +161,18 @@ public:
      * completion and implies the progress object will be used for waiting.
      */
     HRESULT createDiffStorageNoWait (ComObjPtr<HardDisk> &aTarget,
+                                     HardDiskVariant_T aVariant,
                                      ComObjPtr <Progress> &aProgress)
-    { return createDiffStorage (aTarget, &aProgress, false /* aWait */); }
+    { return createDiffStorage (aTarget, aVariant, &aProgress, false /* aWait */); }
 
     /**
      * Shortcut to #createDiffStorage() that wait for operation completion by
      * blocking the current thread.
      */
     HRESULT createDiffStorageAndWait (ComObjPtr<HardDisk> &aTarget,
+                                      HardDiskVariant_T aVariant,
                                       ComObjPtr <Progress> *aProgress = NULL)
-    { return createDiffStorage (aTarget, aProgress, true /* aWait */); }
+    { return createDiffStorage (aTarget, aVariant, aProgress, true /* aWait */); }
 
     HRESULT prepareMergeTo (HardDisk *aTarget, MergeChain * &aChain,
                             bool aIgnoreAttachments = false);
@@ -208,6 +218,7 @@ protected:
     HRESULT deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait);
 
     HRESULT createDiffStorage (ComObjPtr <HardDisk> &aTarget,
+                               HardDiskVariant_T aVariant,
                                ComObjPtr <Progress> *aProgress,
                                bool aWait);
 

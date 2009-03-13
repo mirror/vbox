@@ -101,6 +101,10 @@ struct HardDisk::Task : public com::SupportErrorInfoBase
 
         uint64_t size;
 
+        /* CreateDynamic, CreateStatic, CreateDiff, Clone */
+
+        HardDiskVariant_T variant;
+
         /* CreateDiff */
 
         ComObjPtr<HardDisk> target;
@@ -1174,6 +1178,7 @@ STDMETHODIMP HardDisk::SetProperties(ComSafeArrayIn (IN_BSTR, aNames),
 }
 
 STDMETHODIMP HardDisk::CreateDynamicStorage(ULONG64 aLogicalSize,
+                                            HardDiskVariant_T aVariant,
                                             IProgress **aProgress)
 {
     CheckComArgOutPointerValid (aProgress);
@@ -1212,6 +1217,7 @@ STDMETHODIMP HardDisk::CreateDynamicStorage(ULONG64 aLogicalSize,
     AssertComRCReturnRC (task->autoCaller.rc());
 
     task->d.size = aLogicalSize;
+    task->d.variant = aVariant;
 
     rc = task->startThread();
     CheckComRCReturnRC (rc);
@@ -1229,6 +1235,7 @@ STDMETHODIMP HardDisk::CreateDynamicStorage(ULONG64 aLogicalSize,
 }
 
 STDMETHODIMP HardDisk::CreateFixedStorage(ULONG64 aLogicalSize,
+                                          HardDiskVariant_T aVariant,
                                           IProgress **aProgress)
 {
     CheckComArgOutPointerValid (aProgress);
@@ -1267,6 +1274,7 @@ STDMETHODIMP HardDisk::CreateFixedStorage(ULONG64 aLogicalSize,
     AssertComRCReturnRC (task->autoCaller.rc());
 
     task->d.size = aLogicalSize;
+    task->d.variant = aVariant;
 
     rc = task->startThread();
     CheckComRCReturnRC (rc);
@@ -1302,7 +1310,9 @@ STDMETHODIMP HardDisk::DeleteStorage (IProgress **aProgress)
     return rc;
 }
 
-STDMETHODIMP HardDisk::CreateDiffStorage (IHardDisk *aTarget, IProgress **aProgress)
+STDMETHODIMP HardDisk::CreateDiffStorage (IHardDisk *aTarget,
+                                          HardDiskVariant_T aVariant,
+                                          IProgress **aProgress)
 {
     CheckComArgNotNull (aTarget);
     CheckComArgOutPointerValid (aProgress);
@@ -1328,7 +1338,7 @@ STDMETHODIMP HardDisk::CreateDiffStorage (IHardDisk *aTarget, IProgress **aProgr
 
     ComObjPtr <Progress> progress;
 
-    rc = createDiffStorageNoWait (diff, progress);
+    rc = createDiffStorageNoWait (diff, aVariant, progress);
     if (FAILED (rc))
     {
         HRESULT rc2 = UnlockRead (NULL);
@@ -1352,7 +1362,9 @@ STDMETHODIMP HardDisk::MergeTo (IN_GUID aTargetId, IProgress **aProgress)
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP HardDisk::CloneTo (IHardDisk *aTarget, IProgress **aProgress)
+STDMETHODIMP HardDisk::CloneTo (IHardDisk *aTarget,
+                                HardDiskVariant_T aVariant,
+                                IProgress **aProgress)
 {
     CheckComArgNotNull (aTarget);
     CheckComArgOutPointerValid (aProgress);
@@ -1392,6 +1404,7 @@ STDMETHODIMP HardDisk::CloneTo (IHardDisk *aTarget, IProgress **aProgress)
         AssertComRCThrowRC (task->autoCaller.rc());
 
         task->setData (target);
+        task->d.variant = aVariant;
 
         rc = task->startThread();
         CheckComRCThrowRC (rc);
@@ -1422,7 +1435,9 @@ STDMETHODIMP HardDisk::CloneTo (IHardDisk *aTarget, IProgress **aProgress)
     return rc;
 }
 
-STDMETHODIMP HardDisk::FlattenTo (IHardDisk *aTarget, IProgress **aProgress)
+STDMETHODIMP HardDisk::FlattenTo (IHardDisk *aTarget,
+                                  HardDiskVariant_T aVariant,
+                                  IProgress **aProgress)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2231,8 +2246,9 @@ HRESULT HardDisk::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
  * @note Locks this object and @a aTarget for writing.
  */
 HRESULT HardDisk::createDiffStorage(ComObjPtr<HardDisk> &aTarget,
+                                    HardDiskVariant_T aVariant,
                                     ComObjPtr<Progress> *aProgress,
-                                     bool aWait)
+                                    bool aWait)
 {
     AssertReturn (!aTarget.isNull(), E_FAIL);
     AssertReturn (aProgress != NULL || aWait == true, E_FAIL);
@@ -2310,6 +2326,7 @@ HRESULT HardDisk::createDiffStorage(ComObjPtr<HardDisk> &aTarget,
     AssertComRCReturnRC (task->autoCaller.rc());
 
     task->setData (aTarget);
+    task->d.variant = aVariant;
 
     /* register a task (it will deregister itself when done) */
     ++ mm.numCreateDiffTasks;
