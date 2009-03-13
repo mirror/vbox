@@ -2904,52 +2904,67 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             Bstr bstrSrcFormat = L"VDI";
             if (strTargetFilePath.endsWith(".vmdk", Utf8Str::CaseInsensitive))
                 bstrSrcFormat = L"VMDK";
-            /* Create a new hard disk interface for the destination disk image */
+
+            // create a new hard disk interface for the destination disk image
             Log(("Creating target disk \"%s\"\n", strTargetFilePath.raw()));
             rc = pVirtualBox->CreateHardDisk(bstrSrcFormat, Bstr(strTargetFilePath), pTargetDisk.asOutParam());
             if (FAILED(rc)) throw rc;
-            // clone the source disk image
-            rc = pSourceDisk->CloneTo(pTargetDisk, HardDiskVariant_Standard, pProgress2.asOutParam());
-            if (FAILED(rc)) throw rc;
 
-            // advance to the next operation
-            if (!task->progress.isNull())
-                task->progress->advanceOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()));
-
-            // now loop until the asynchronous operation completes and then
-            // report its result
-            BOOL fCompleted;
-            LONG currentPercent;
-            while (SUCCEEDED(pProgress2->COMGETTER(Completed(&fCompleted))))
+            // the target disk is now registered and needs to be removed again,
+            // both after successful cloning or if anything goes bad!
+            try
             {
-                rc = pProgress2->COMGETTER(Percent(&currentPercent));
+                // clone the source disk image
+                rc = pSourceDisk->CloneTo(pTargetDisk, HardDiskVariant_Standard, pProgress2.asOutParam());
                 if (FAILED(rc)) throw rc;
+
+                // advance to the next operation
                 if (!task->progress.isNull())
-                    task->progress->notifyProgress(currentPercent);
-                if (fCompleted)
-                    break;
-                // make sure the loop is not too tight
-                rc = pProgress2->WaitForCompletion(100);
+                    task->progress->advanceOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()));
+
+                // now loop until the asynchronous operation completes and then
+                // report its result
+                BOOL fCompleted;
+                LONG currentPercent;
+                while (SUCCEEDED(pProgress2->COMGETTER(Completed(&fCompleted))))
+                {
+                    rc = pProgress2->COMGETTER(Percent(&currentPercent));
+                    if (FAILED(rc)) throw rc;
+                    if (!task->progress.isNull())
+                        task->progress->notifyProgress(currentPercent);
+                    if (fCompleted)
+                        break;
+                    // make sure the loop is not too tight
+                    rc = pProgress2->WaitForCompletion(100);
+                    if (FAILED(rc)) throw rc;
+                }
+
+                // report result of asynchronous operation
+                HRESULT vrc;
+                rc = pProgress2->COMGETTER(ResultCode)(&vrc);
                 if (FAILED(rc)) throw rc;
-            }
-            // report result of asynchronous operation
-            HRESULT vrc;
-            rc = pProgress2->COMGETTER(ResultCode)(&vrc);
-            if (FAILED(rc)) throw rc;
 
-            // if the thread of the progress object has an error, then
-            // retrieve the error info from there, or it'll be lost
-            if (FAILED(vrc))
+                // if the thread of the progress object has an error, then
+                // retrieve the error info from there, or it'll be lost
+                if (FAILED(vrc))
+                {
+                    ProgressErrorInfo info(pProgress2);
+                    Utf8Str str(info.getText());
+                    const char *pcsz = str.c_str();
+                    HRESULT rc2 = setError(vrc, pcsz);
+                    throw rc2;
+                }
+            }
+            catch (HRESULT rc3)
             {
-                ProgressErrorInfo info(pProgress2);
-                Utf8Str str(info.getText());
-                const char *pcsz = str.c_str();
-                HRESULT rc2 = setError(vrc, pcsz);
-                throw rc2;
+                // upon error after registereing, close the disk or
+                // it'll stick in the registry forever
+                pTargetDisk->Close();
+                throw rc3;
             }
 
-            /* Make sure the target disk get detached */
-            rc = pTargetDisk->Close();          // @todo  close this also if an error is thrown above
+            // upon success, close the disk as well
+            rc = pTargetDisk->Close();
             if (FAILED(rc)) throw rc;
 
             // we need the capacity and actual file size for the XML
