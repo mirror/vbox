@@ -43,6 +43,7 @@ struct SVCHlpMsg
         EnableDynamicIpConfig, /* see usage in code */
         EnableStaticIpConfig, /* see usage in code */
         EnableStaticIpConfigV6, /* see usage in code */
+        DhcpRediscover, /* see usage in code */
     };
 };
 

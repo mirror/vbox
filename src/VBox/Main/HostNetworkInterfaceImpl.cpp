@@ -446,7 +446,25 @@ STDMETHODIMP HostNetworkInterface::EnableDynamicIpConfig ()
     int rc = NetIfEnableDynamicIpConfig(mVBox, this);
     if (RT_FAILURE(rc))
     {
-        LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
+        LogRel(("Failed to EnableDynamicIpConfig with rc=%Vrc\n", rc));
+        return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+    }
+    return S_OK;
+#endif
+}
+
+STDMETHODIMP HostNetworkInterface::DhcpRediscover ()
+{
+#ifndef VBOX_WITH_HOSTNETIF_API
+    return E_NOTIMPL;
+#else
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    int rc = NetIfDhcpRediscover(mVBox, this);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("Failed to DhcpRediscover with rc=%Vrc\n", rc));
         return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
     }
     return S_OK;

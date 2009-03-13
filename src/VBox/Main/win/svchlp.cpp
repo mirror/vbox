@@ -279,6 +279,7 @@ int SVCHlpServer::run()
             case SVCHlpMsg::EnableDynamicIpConfig:
             case SVCHlpMsg::EnableStaticIpConfig:
             case SVCHlpMsg::EnableStaticIpConfigV6:
+            case SVCHlpMsg::DhcpRediscover:
             {
                 vrc = netIfNetworkInterfaceHelperServer (this, msgCode);
                 break;
