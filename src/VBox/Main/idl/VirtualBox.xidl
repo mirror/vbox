@@ -2971,6 +2971,7 @@
     <const name="CdDrive" value="15" />
     <const name="DvdDrive" value="16" />
     <const name="HardDisk" value="17" />
+    <const name="OtherStorageDevice" value="20" />
     <const name="UsbController" value="23" />
     <const name="SoundCard" value="35" />
   </enum>
@@ -3170,7 +3171,7 @@
           Calling this method is the final step of exporting an appliance from VirtualBox;
           see <link to="IAppliance" /> for an overview.
 
-          Since importing the appliance will most probably involve copying and converting
+          Since exporting the appliance will most probably involve copying and converting
           disk images, which can take a long time, this method operates asynchronously and
           returns an IProgress object to allow the caller to monitor the progress.
       </desc>
