@@ -59,8 +59,8 @@ public:
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    HRESULT init(IN_BSTR aName);
-    HRESULT init(const settings::Key &aNode);
+    HRESULT init(VirtualBox *aVirtualBox, IN_BSTR aName);
+    HRESULT init(VirtualBox *aVirtualBox, const settings::Key &aNode);
     HRESULT saveSettings (settings::Key &aParentNode);
 
     // IDhcpServer properties
