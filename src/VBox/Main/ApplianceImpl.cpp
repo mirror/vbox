@@ -2625,8 +2625,40 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
                             }
                         break;
 
-//                         case VirtualSystemDescriptionType_HardDiskControllerSATA:       // @todo
-//                         break;
+                        case VirtualSystemDescriptionType_HardDiskControllerSATA:
+                            /*  <Item>
+                                    <rasd:Caption>sataController0</rasd:Caption>
+                                    <rasd:Description>SATA Controller</rasd:Description>
+                                    <rasd:InstanceId>4</rasd:InstanceId>
+                                    <rasd:ResourceType>20</rasd:ResourceType>
+                                    <rasd:ResourceSubType>ahci</rasd:ResourceSubType>
+                                    <rasd:Address>0</rasd:Address>
+                                    <rasd:BusNumber>0</rasd:BusNumber>
+                                </Item>
+                            */
+                            if (uLoop == 1)
+                            {
+                                strDescription = "SATA Controller";
+                                strCaption = "sataController0";
+                                type = OVFResourceType_OtherStorageDevice; // 20
+                                // it seems that OVFTool always writes these two, and since we can only
+                                // have one SATA controller, we'll use this as well
+                                lAddress = 0;
+                                lBusNumber = 0;
+
+                                if (    desc.strVbox.isEmpty()      // AHCI is the default in VirtualBox
+                                     || (!desc.strVbox.compare("ahci", Utf8Str::CaseInsensitive))
+                                   )
+                                    strResourceSubType = "AHCI";
+                                else
+                                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                                   tr("Invalid config string \"%s\" in SATA controller"), desc.strVbox.c_str());
+
+                                // remember this ID
+                                idSATAController = ulInstanceID;
+                                lSATAControllerIndex = lIndexThis;
+                            }
+                        break;
 
                         case VirtualSystemDescriptionType_HardDiskControllerSCSI:
                             /*  <Item>
@@ -3411,8 +3443,8 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
 
 #ifdef VBOX_WITH_AHCI
 //     <const name="HardDiskControllerSATA" value="7" />
-        rc = GetStorageControllerByName(Bstr("IDE"), pController.asOutParam());
-        strVbox = "";
+        rc = GetStorageControllerByName(Bstr("SATA"), pController.asOutParam());
+        strVbox = "AHCI";
         if (SUCCEEDED(rc))
         {
             lSATAControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
@@ -3513,12 +3545,10 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
                     lControllerVsys = lSATAControllerIndex;
                 break;
 
-//                 case StorageBus::SCSI:
-//                         // mhda.busType = StorageBus_SCSI;
-//                     throw setError(VBOX_E_NOT_SUPPORTED,
-//                                 tr("SCSI controller support is not available yet in VirtualBox"));
-//                         // @todo
-//                 break;
+                case StorageBus::SCSI:
+                    lChannelVsys = lChannel;        // should be between 0 and 15
+                    lControllerVsys = lSCSIControllerIndex;
+                break;
 
                 default:
                     throw setError(VBOX_E_NOT_SUPPORTED,
