@@ -4654,7 +4654,23 @@ void *VirtualBox::CallbackEvent::handler()
 
 STDMETHODIMP VirtualBox::CreateDhcpServer (IN_BSTR aName, IDhcpServer ** aServer)
 {
-    return E_NOTIMPL;
+    CheckComArgNotNull(aName);
+    CheckComArgNotNull(aServer);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    ComObjPtr<DhcpServer> dhcpServer;
+    dhcpServer.createObject();
+    HRESULT rc = dhcpServer->init (aName);
+    CheckComRCReturnRC (rc);
+
+    rc = registerDhcpServer(dhcpServer, true);
+    CheckComRCReturnRC (rc);
+
+    dhcpServer.queryInterfaceTo(aServer);
+
+    return rc;
 }
 
 //STDMETHODIMP VirtualBox::FindDhcpServerForInterface (IHostNetworkInterface * aIinterface, IDhcpServer ** aServer)
@@ -4669,7 +4685,14 @@ STDMETHODIMP VirtualBox::FindDhcpServerByName (IN_BSTR aName, IDhcpServer ** aSe
 
 STDMETHODIMP VirtualBox::RemoveDhcpServer (IDhcpServer * aServer)
 {
-    return E_NOTIMPL;
+    CheckComArgNotNull(aServer);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    HRESULT rc = unregisterDhcpServer(static_cast<DhcpServer *>(aServer), true);
+
+    return rc;
 }
 
 /**
@@ -4709,7 +4732,10 @@ HRESULT VirtualBox::registerDhcpServer(DhcpServer *aDhcpServer,
 
     ComPtr<IDhcpServer> existing;
     rc = FindDhcpServerByName(name.mutableRaw(), existing.asOutParam());
-    CheckComRCReturnRC (rc);
+    if(SUCCEEDED(rc))
+    {
+        return E_FAIL;
+    }
 
     mData.mDhcpServers.push_back (aDhcpServer);
 
