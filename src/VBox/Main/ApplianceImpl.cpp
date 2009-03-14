@@ -3545,7 +3545,7 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
                     lControllerVsys = lSATAControllerIndex;
                 break;
 
-                case StorageBus::SCSI:
+                case StorageBus_SCSI:
                     lChannelVsys = lChannel;        // should be between 0 and 15
                     lControllerVsys = lSCSIControllerIndex;
                 break;
