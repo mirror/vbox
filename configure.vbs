@@ -1300,7 +1300,7 @@ sub CheckForMidl()
       exit sub
    end if
 
-   CfgPrint "MAIN_IDL = " & strMidl
+   CfgPrint "VBOX_MAIN_IDL = " & strMidl
    PrintResult "Midl.exe", strMidl
 end sub
 
