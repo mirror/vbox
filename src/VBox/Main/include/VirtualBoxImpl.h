@@ -53,6 +53,7 @@ class Progress;
 class ProgressCollection;
 class Host;
 class SystemProperties;
+class DhcpServer;
 
 #ifdef RT_OS_WINDOWS
 class SVCHlpClient;
@@ -371,6 +372,7 @@ private:
     typedef std::list <ComObjPtr <DVDImage> > DVDImageList;
     typedef std::list <ComObjPtr <FloppyImage> > FloppyImageList;
     typedef std::list <ComObjPtr <SharedFolder> > SharedFolderList;
+    typedef std::list <ComObjPtr <DhcpServer> > DhcpServerList;
 
     typedef std::map <Guid, ComObjPtr<HardDisk> > HardDiskMap;
 
@@ -389,8 +391,14 @@ private:
 
     HRESULT loadMachines (const settings::Key &aGlobal);
     HRESULT loadMedia (const settings::Key &aGlobal);
+    HRESULT loadNetservices (const settings::Key &aGlobal);
 
     HRESULT registerMachine (Machine *aMachine);
+
+    HRESULT registerDhcpServer(DhcpServer *aDhcpServer,
+                                         bool aSaveRegistry = true);
+    HRESULT unregisterDhcpServer(DhcpServer *aDhcpServer,
+                                         bool aSaveRegistry = true);
 
     HRESULT lockConfig();
     HRESULT unlockConfig();
@@ -438,6 +446,7 @@ private:
         DVDImageList mDVDImages;
         FloppyImageList mFloppyImages;
         SharedFolderList mSharedFolders;
+        DhcpServerList mDhcpServers;
 
         /// @todo NEWMEDIA do we really need this map? Used only in
         /// find() it seems

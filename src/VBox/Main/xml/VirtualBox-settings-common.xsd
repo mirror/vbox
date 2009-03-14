@@ -254,6 +254,14 @@
 // Complex types
 /////////////////////////////////////////////////////////////////////////
 -->
+<xsd:complexType name="TDhcpServer">
+  <xsd:attribute name="networkName" type="xsd:string"  use="required"/>
+  <xsd:attribute name="lowerIp"     type="xsd:string"  use="optional"/>
+  <xsd:attribute name="upperIp"     type="xsd:string"  use="optional"/>
+  <xsd:attribute name="IPAddress"   type="xsd:string"  use="required"/>
+  <xsd:attribute name="networkMask" type="xsd:string"  use="required"/>
+  <xsd:attribute name="enabled"     type="xsd:boolean" use="required"/>
+</xsd:complexType>
 
 <xsd:complexType name="THardDiskBase">
   <xsd:sequence>
@@ -389,6 +397,19 @@
             <xsd:complexType>
               <xsd:sequence>
                 <xsd:element name="Image" type="TImage2" minOccurs="0" maxOccurs="unbounded"/>
+              </xsd:sequence>
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:all>
+      </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="NetserviceRegistry" minOccurs="0" maxOccurs="1">
+      <xsd:complexType>
+        <xsd:all>
+          <xsd:element name="DhcpServers" minOccurs="0">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="DhcpServer" type="TDhcpServer" minOccurs="0" maxOccurs="unbounded"/>
               </xsd:sequence>
             </xsd:complexType>
           </xsd:element>
