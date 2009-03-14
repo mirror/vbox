@@ -91,6 +91,7 @@ static const char gDefaultGlobalConfig [] =
     "  <Global>"RTFILE_LINEFEED
     "    <MachineRegistry/>"RTFILE_LINEFEED
     "    <MediaRegistry/>"RTFILE_LINEFEED
+    "    <NetserviceRegistry/>"RTFILE_LINEFEED
     "    <USBDeviceFilters/>"RTFILE_LINEFEED
     "    <SystemProperties/>"RTFILE_LINEFEED
     "  </Global>"RTFILE_LINEFEED
@@ -287,6 +288,10 @@ HRESULT VirtualBox::init()
 
             /* machines */
             rc = loadMachines (global);
+            CheckComRCThrowRC (rc);
+
+            /* net services */
+            rc = loadNetservices(global);
             CheckComRCThrowRC (rc);
 
             /* check hard disk consistency */
@@ -3112,6 +3117,58 @@ HRESULT VirtualBox::loadMedia (const settings::Key &aGlobal)
 }
 
 /**
+ *  Reads in the network service registration entries from the global settings file
+ *  and creates the relevant objects.
+ *
+ *  @param aGlobal  <Global> node
+ *
+ *  @note Can be called only from #init().
+ *  @note Doesn't lock anything.
+ */
+HRESULT VirtualBox::loadNetservices (const settings::Key &aGlobal)
+{
+    using namespace settings;
+
+    AutoCaller autoCaller (this);
+    AssertReturn (autoCaller.state() == InInit, E_FAIL);
+
+    HRESULT rc = S_OK;
+
+    Key registry = aGlobal.findKey ("NetserviceRegistry");
+    if(registry.isNull())
+        return S_OK;
+
+    const char *kMediaNodes[] = { "DhcpServers" };
+
+    for (size_t n = 0; n < RT_ELEMENTS (kMediaNodes); ++ n)
+    {
+        /* All three media nodes are optional */
+        Key node = registry.findKey (kMediaNodes [n]);
+        if (node.isNull())
+            continue;
+
+        if (n == 0)
+        {
+            Key::List dhcpServers = node.keys ("DhcpServer");
+            for (Key::List::const_iterator it = dhcpServers.begin();
+                 it != dhcpServers.end(); ++ it)
+            {
+                ComObjPtr<DhcpServer> dhcpServer;
+                dhcpServer.createObject();
+                rc = dhcpServer->init (*it);
+                CheckComRCBreakRC (rc);
+
+                rc = registerDhcpServer(dhcpServer, false /* aSaveRegistry */);
+                CheckComRCBreakRC (rc);
+            }
+
+            continue;
+        }
+    }
+   return rc;
+}
+
+/**
  *  Helper function to write out the configuration tree.
  *
  *  @note Locks this object for writing and child objects for reading/writing!
@@ -3209,6 +3266,30 @@ HRESULT VirtualBox::saveSettings()
                      ++ it)
                 {
                     rc = (*it)->saveSettings (imagesNode);
+                    CheckComRCThrowRC (rc);
+                }
+            }
+        }
+
+        /* netservices */
+        {
+            /* first, delete the entire netservice registry */
+            Key registryNode = global.findKey ("NetserviceRegistry");
+            if (!registryNode.isNull())
+                registryNode.zap();
+            /* then, recreate it */
+            registryNode = global.createKey ("NetserviceRegistry");
+
+            /* hard disks */
+            {
+                Key dhcpServersNode = registryNode.createKey ("DhcpServers");
+
+                for (DhcpServerList::const_iterator it =
+                        mData.mDhcpServers.begin();
+                     it != mData.mDhcpServers.end();
+                     ++ it)
+                {
+                    rc = (*it)->saveSettings (dhcpServersNode);
                     CheckComRCThrowRC (rc);
                 }
             }
@@ -4589,6 +4670,101 @@ STDMETHODIMP VirtualBox::FindDhcpServerByName (IN_BSTR aName, IDhcpServer ** aSe
 STDMETHODIMP VirtualBox::RemoveDhcpServer (IDhcpServer * aServer)
 {
     return E_NOTIMPL;
+}
+
+/**
+ * Remembers the given dhcp server by storing it in the hard disk registry.
+ *
+ * @param aDhcpServer     Dhcp Server object to remember.
+ * @param aSaveRegistry @c true to save hard disk registry to disk (default).
+ *
+ * When @a aSaveRegistry is @c true, this operation may fail because of the
+ * failed #saveSettings() method it calls. In this case, the dhcp server object
+ * will not be remembered. It is therefore the responsibility of the caller to
+ * call this method as the last step of some action that requires registration
+ * in order to make sure that only fully functional dhcp server objects get
+ * registered.
+ *
+ * @note Locks this object for writing and @a aDhcpServer for reading.
+ */
+HRESULT VirtualBox::registerDhcpServer(DhcpServer *aDhcpServer,
+                                     bool aSaveRegistry /*= true*/)
+{
+    AssertReturn (aDhcpServer != NULL, E_INVALIDARG);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    AutoCaller dhcpServerCaller (aDhcpServer);
+    AssertComRCReturn (dhcpServerCaller.rc(), dhcpServerCaller.rc());
+
+    AutoReadLock dhcpServerLock (aDhcpServer);
+
+    Bstr name;
+    HRESULT rc;
+    rc = aDhcpServer->COMGETTER(NetworkName) (name.asOutParam());
+    CheckComRCReturnRC (rc);
+
+    ComPtr<IDhcpServer> existing;
+    rc = FindDhcpServerByName(name.mutableRaw(), existing.asOutParam());
+    CheckComRCReturnRC (rc);
+
+    mData.mDhcpServers.push_back (aDhcpServer);
+
+    if (aSaveRegistry)
+    {
+        rc = saveSettings();
+        if (FAILED (rc))
+            unregisterDhcpServer(aDhcpServer, false /* aSaveRegistry */);
+    }
+
+    return rc;
+}
+
+/**
+ * Removes the given hard disk from the hard disk registry.
+ *
+ * @param aHardDisk     Hard disk object to remove.
+ * @param aSaveRegistry @c true to save hard disk registry to disk (default).
+ *
+ * When @a aSaveRegistry is @c true, this operation may fail because of the
+ * failed #saveSettings() method it calls. In this case, the hard disk object
+ * will NOT be removed from the registry when this method returns. It is
+ * therefore the responsibility of the caller to call this method as the first
+ * step of some action that requires unregistration, before calling uninit() on
+ * @a aHardDisk.
+ *
+ * @note Locks this object for writing and @a aHardDisk for reading.
+ */
+HRESULT VirtualBox::unregisterDhcpServer(DhcpServer *aDhcpServer,
+                                       bool aSaveRegistry /*= true*/)
+{
+    AssertReturn (aDhcpServer != NULL, E_INVALIDARG);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    AutoCaller dhcpServerCaller (aDhcpServer);
+    AssertComRCReturn (dhcpServerCaller.rc(), dhcpServerCaller.rc());
+
+    AutoReadLock dhcpServerLock (aDhcpServer);
+
+    mData.mDhcpServers.remove (aDhcpServer);
+
+    HRESULT rc = S_OK;
+
+    if (aSaveRegistry)
+    {
+        rc = saveSettings();
+        if (FAILED (rc))
+            registerDhcpServer(aDhcpServer, false /* aSaveRegistry */);
+    }
+
+    return rc;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

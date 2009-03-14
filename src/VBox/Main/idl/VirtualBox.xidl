@@ -1218,7 +1218,7 @@
   </interface>
   
   <interface
-    name="IDhcpServer" extends="$dispatched"
+    name="IDhcpServer" extends="$unknown"
     uuid="f6de19f7-f4b5-4d93-b3de-664729267a53"
     wsmap="managed"
   >
