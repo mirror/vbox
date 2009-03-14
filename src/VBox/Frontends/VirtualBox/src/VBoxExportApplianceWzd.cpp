@@ -236,7 +236,10 @@ bool VBoxExportApplianceWzd::exportVMs()
                 m.Export (appliance);
                 fResult = m.isOk();
                 if (!fResult)
-                    break;
+                {
+                    vboxProblem().cannotExportAppliance (m, &appliance, this);
+                    return false;
+                }
             }
             else
                 break;
