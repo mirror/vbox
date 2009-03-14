@@ -61,6 +61,7 @@
 #include "SystemPropertiesImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "Version.h"
+#include "DhcpServerImpl.h"
 
 #include "VirtualBoxXMLUtil.h"
 
@@ -733,6 +734,12 @@ VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanc
 #else /* !VBOX_WITH_RESOURCE_USAGE_API */
     ReturnComNotImplemented();
 #endif /* !VBOX_WITH_RESOURCE_USAGE_API */
+}
+
+STDMETHODIMP
+VirtualBox::COMGETTER(DhcpServers) (ComSafeArrayOut (IDhcpServer *, aDhcpServers))
+{
+    return E_NOTIMPL;
 }
 
 // IVirtualBox methods
@@ -4558,4 +4565,30 @@ void *VirtualBox::CallbackEvent::handler()
 
     return NULL;
 }
+
+//STDMETHODIMP VirtualBox::CreateDhcpServerForInterface (/*IHostNetworkInterface * aIinterface,*/ IDhcpServer ** aServer)
+//{
+//    return E_NOTIMPL;
+//}
+
+STDMETHODIMP VirtualBox::CreateDhcpServer (IN_BSTR aName, IDhcpServer ** aServer)
+{
+    return E_NOTIMPL;
+}
+
+//STDMETHODIMP VirtualBox::FindDhcpServerForInterface (IHostNetworkInterface * aIinterface, IDhcpServer ** aServer)
+//{
+//    return E_NOTIMPL;
+//}
+
+STDMETHODIMP VirtualBox::FindDhcpServerByName (IN_BSTR aName, IDhcpServer ** aServer)
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP VirtualBox::RemoveDhcpServer (IDhcpServer * aServer)
+{
+    return E_NOTIMPL;
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

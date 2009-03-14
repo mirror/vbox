@@ -1216,10 +1216,88 @@
     </method>
 
   </interface>
+  
+  <interface
+    name="IDhcpServer" extends="$dispatched"
+    uuid="f6de19f7-f4b5-4d93-b3de-664729267a53"
+    wsmap="managed"
+  >
+    <desc>
+      The IDhcpServer interface represents the vbox dhcp server configuration.
+
+      To enumerate all the dhcp servers on the host, use the
+      <link to="IVirtualBox::dhcpServers"/> attribute.
+    </desc>
+
+    <attribute name="enabled" type="boolean">
+      <desc>
+        specifies if the dhcp server is enabled
+      </desc>
+    </attribute>
+    
+    <attribute name="IPAddress" type="wstring" readonly="yes">
+      <desc>
+        specifies server IP
+      </desc>
+    </attribute>
+
+    <attribute name="networkMask" type="wstring" readonly="yes">
+      <desc>
+        specifies server network mask
+      </desc>
+    </attribute>
+
+    <attribute name="networkName" type="wstring" readonly="yes">
+      <desc>
+        specifies internal network name the server is used for
+      </desc>
+    </attribute>
+
+    <attribute name="FromIPAddress" type="wstring" readonly="yes">
+      <desc>
+        specifies from IP adrres in server address range
+      </desc>
+    </attribute>
+
+    <attribute name="ToIPAddress" type="wstring" readonly="yes">
+      <desc>
+        specifies to IP adrres in server address range
+      </desc>
+    </attribute>
+    
+    <method name="setConfiguration">
+      <desc>
+        configures the server
+        <result name="E_INVALIDARG">
+          invalid configuration supplied
+        </result>
+      </desc>
+      <param name="IPAddress" type="wstring" dir="in">
+        <desc>
+          server IP address
+        </desc>
+      </param>
+      <param name="networkMask" type="wstring" dir="in">
+        <desc>
+          server network mask
+      </desc>
+      </param>
+      <param name="FromIPAddress" type="wstring" dir="in">
+        <desc>
+          server From IP address for address range
+        </desc>
+      </param>
+      <param name="ToIPAddress" type="wstring" dir="in">
+        <desc>
+          server To IP address for address range
+        </desc>
+      </param>
+    </method>
+  </interface>
 
   <interface
     name="IVirtualBox" extends="$dispatched"
-    uuid="18c00639-2bc0-4d5f-93a0-5f20372f9914"
+    uuid="779264f4-65ed-48ed-be39-518ca549e296"
     wsmap="managed"
   >
     <desc>
@@ -1400,6 +1478,12 @@
     <attribute name="performanceCollector" type="IPerformanceCollector" readonly="yes">
       <desc>
         Associated performance collector object.
+      </desc>
+    </attribute>
+    
+    <attribute name="dhcpServers" type="IDhcpServer" safearray="yes" readonly="yes">
+      <desc>
+        dhcp server settings.
       </desc>
     </attribute>
 
@@ -2666,6 +2750,79 @@
       </desc>
       <param name="bakFileName" type="wstring" dir="return">
         <desc>Full path to the created backup copy.</desc>
+      </param>
+    </method>
+
+    <!--method name="createDhcpServerForInterface">
+      <desc>
+        Creates a dhcp server settings to be used for the given interface
+        <result name="E_INVALIDARG">
+          Host network interface @a name already exists.
+        </result>
+      </desc>
+      <param name="interface" type="IHostNetworkInterface" dir="in">
+        <desc>Network Interface</desc>
+      </param>
+      <param name="server" type="IDhcpServer" dir="out">
+        <desc>Dhcp server settings</desc>
+      </param>
+    </method-->
+    
+    <method name="createDhcpServer">
+      <desc>
+        Creates a dhcp server settings to be used for the given internal network name
+        <result name="E_INVALIDARG">
+          Host network interface @a name already exists.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>server name</desc>
+      </param>
+      <param name="server" type="IDhcpServer" dir="out">
+        <desc>Dhcp server settings</desc>
+      </param>
+    </method>
+    
+    <method name="findDhcpServerByName">
+      <desc>
+        Searches a dhcp server settings to be used for the given internal network name
+        <result name="E_INVALIDARG">
+          Host network interface @a name already exists.
+        </result>
+        
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>server name</desc>
+      </param>
+      <param name="server" type="IDhcpServer" dir="out">
+        <desc>Dhcp server settings</desc>
+      </param>
+    </method>
+    
+    <!--method name="findDhcpServerForInterface">
+      <desc>
+        Searches a dhcp server settings to be used for the given interface
+        <result name="E_INVALIDARG">
+          Host network interface @a name already exists.
+        </result>
+      </desc>
+      <param name="interface" type="IHostNetworkInterface" dir="in">
+        <desc>Network Interface</desc>
+      </param>
+      <param name="server" type="IDhcpServer" dir="out">
+        <desc>Dhcp server settings</desc>
+      </param>
+    </method-->
+
+    <method name="removeDhcpServer">
+      <desc>
+        Removes the dhcp server settings
+        <result name="E_INVALIDARG">
+          Host network interface @a name already exists.
+        </result>
+      </desc>
+      <param name="server" type="IDhcpServer" dir="in">
+        <desc>Dhcp server settings to be removed</desc>
       </param>
     </method>
 
@@ -6536,7 +6693,7 @@
 
   <interface
      name="IHostNetworkInterface" extends="$unknown"
-     uuid="bcc99385-71ad-4887-90fc-15a3f2cad0a5"
+     uuid="88adaf3f-166b-4542-9457-0f1323507fae"
      wsmap="managed"
      >
     <desc>
@@ -6553,6 +6710,10 @@
       <desc>Returns the interface UUID.</desc>
     </attribute>
 
+    <attribute name="networkName" type="wstring" readonly="yes">
+      <desc>Returns the name of a virtual network the interface gets attached to.</desc>
+    </attribute>
+    
     <attribute name="dhcpEnabled" type="boolean" readonly="yes">
       <desc>Specifies whether the DHCP is enabled for the interface.</desc>
     </attribute>
