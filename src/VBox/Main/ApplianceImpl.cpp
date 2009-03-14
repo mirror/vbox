@@ -3438,43 +3438,44 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
                                Utf8StrFmt("%d", lIDEControllerIndex),
                                strVbox,
-                               "");
+                               strVbox);
         }
 
 #ifdef VBOX_WITH_AHCI
 //     <const name="HardDiskControllerSATA" value="7" />
         rc = GetStorageControllerByName(Bstr("SATA"), pController.asOutParam());
-        strVbox = "AHCI";
         if (SUCCEEDED(rc))
         {
+            strVbox = "AHCI";
             lSATAControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
                                Utf8StrFmt("%d", lSATAControllerIndex),
                                strVbox,
-                               "");
+                               strVbox);
         }
 #endif // VBOX_WITH_AHCI
 
 //     <const name="HardDiskControllerSCSI" value="8" />
         rc = GetStorageControllerByName(Bstr("SCSI"), pController.asOutParam());
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
         {
             rc = pController->COMGETTER(ControllerType)(&ctlr);
-            if (FAILED(rc)) throw rc;
-            strVbox = "LsiLogic";       // the default in VBox
-            switch(ctlr)
-            {
-                case StorageControllerType_LsiLogic: strVbox = "LsiLogic"; break;
-                case StorageControllerType_BusLogic: strVbox = "BusLogic"; break;
-            }
             if (SUCCEEDED(rc))
             {
+                strVbox = "LsiLogic";       // the default in VBox
+                switch(ctlr)
+                {
+                    case StorageControllerType_LsiLogic: strVbox = "LsiLogic"; break;
+                    case StorageControllerType_BusLogic: strVbox = "BusLogic"; break;
+                }
                 lSCSIControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
                 pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
                                    Utf8StrFmt("%d", lSCSIControllerIndex),
                                    strVbox,
-                                   "");
+                                   strVbox);
             }
+            else 
+                throw rc;
         }
 
 //     <const name="HardDiskImage" value="9" />
