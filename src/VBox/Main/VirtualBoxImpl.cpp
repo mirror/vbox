@@ -3155,7 +3155,7 @@ HRESULT VirtualBox::loadNetservices (const settings::Key &aGlobal)
             {
                 ComObjPtr<DhcpServer> dhcpServer;
                 dhcpServer.createObject();
-                rc = dhcpServer->init (*it);
+                rc = dhcpServer->init (this, *it);
                 CheckComRCBreakRC (rc);
 
                 rc = registerDhcpServer(dhcpServer, false /* aSaveRegistry */);
@@ -4662,7 +4662,7 @@ STDMETHODIMP VirtualBox::CreateDhcpServer (IN_BSTR aName, IDhcpServer ** aServer
 
     ComObjPtr<DhcpServer> dhcpServer;
     dhcpServer.createObject();
-    HRESULT rc = dhcpServer->init (aName);
+    HRESULT rc = dhcpServer->init (this, aName);
     CheckComRCReturnRC (rc);
 
     rc = registerDhcpServer(dhcpServer, true);
@@ -4764,7 +4764,7 @@ HRESULT VirtualBox::registerDhcpServer(DhcpServer *aDhcpServer,
     rc = FindDhcpServerByName(name.mutableRaw(), existing.asOutParam());
     if(SUCCEEDED(rc))
     {
-        return E_FAIL;
+        return E_INVALIDARG;
     }
 
     mData.mDhcpServers.push_back (aDhcpServer);

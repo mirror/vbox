@@ -24,6 +24,8 @@
 #include "DhcpServerImpl.h"
 #include "Logging.h"
 
+#include <VBox/settings.h>
+
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
@@ -39,19 +41,69 @@ void DhcpServer::FinalRelease()
     uninit ();
 }
 
-HRESULT DhcpServer::init(IN_BSTR aName)
+HRESULT DhcpServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)
 {
-    return E_NOTIMPL;
+    AssertReturn (aName != NULL, E_INVALIDARG);
+
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+
+    unconst(mName) = aName;
+
+    /* register with VirtualBox early, since uninit() will
+     * unconditionally unregister on failure */
+    aVirtualBox->addDependentChild (this);
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
+    return S_OK;
 }
 
-HRESULT DhcpServer::init(const settings::Key &aNode)
+HRESULT DhcpServer::init(VirtualBox *aVirtualBox, const settings::Key &aNode)
 {
-    return E_NOTIMPL;
+    using namespace settings;
+
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+
+    aVirtualBox->addDependentChild (this);
+
+    unconst(mName) = aNode.stringValue ("networkName");
+    m.IPAddress = aNode.stringValue ("IPAddress");
+    m.networkMask = aNode.stringValue ("networkMask");
+    m.enabled = aNode.value <BOOL> ("enabled");
+    m.FromIPAddress = aNode.stringValue ("lowerIp");
+    m.ToIPAddress = aNode.stringValue ("upperIp");
+
+    autoInitSpan.setSucceeded();
+
+    return S_OK;
 }
 
 HRESULT DhcpServer::saveSettings (settings::Key &aParentNode)
 {
-    return E_NOTIMPL;
+    using namespace settings;
+
+    AssertReturn (!aParentNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    Key aNode = aParentNode.appendKey ("DhcpServer");
+    /* required */
+    aNode.setValue <Bstr> ("networkName", mName);
+    aNode.setValue <Bstr> ("IPAddress", m.IPAddress);
+    aNode.setValue <Bstr> ("networkMask", m.networkMask);
+    if(!m.FromIPAddress.isNull())
+        aNode.setValue <Bstr> ("FromIPAddress", m.FromIPAddress);
+    if(!m.ToIPAddress.isNull())
+        aNode.setValue <Bstr> ("ToIPAddress", m.ToIPAddress);
+
+    return S_OK;
 }
 
 STDMETHODIMP DhcpServer::COMGETTER(NetworkName) (BSTR *aName)
@@ -145,5 +197,15 @@ STDMETHODIMP DhcpServer::COMGETTER(ToIPAddress) (BSTR *aIPAddress)
 
 STDMETHODIMP DhcpServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkMask, IN_BSTR aFromIPAddress, IN_BSTR aToIPAddress)
 {
-    return E_NOTIMPL;
+    AssertReturn (aIPAddress != NULL, E_INVALIDARG);
+    AssertReturn (aNetworkMask != NULL, E_INVALIDARG);
+    AssertReturn (aFromIPAddress != NULL, E_INVALIDARG);
+    AssertReturn (aToIPAddress != NULL, E_INVALIDARG);
+
+    m.IPAddress = aIPAddress;
+    m.networkMask = aNetworkMask;
+    m.FromIPAddress = aFromIPAddress;
+    m.ToIPAddress = aToIPAddress;
+
+    return S_OK;
 }
