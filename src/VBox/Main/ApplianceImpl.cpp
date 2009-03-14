@@ -885,10 +885,6 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                     }
                     break;
 
-//                     case OVFResourceType_ParallelScsiHba:        /@todo which is the SATA controller?
-//                     {
-//                     }
-
                     case OVFResourceType_EthernetAdapter: // 10
                     {
                         /*  <Item>
@@ -978,6 +974,36 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                             i.ulLineNumber);
 
                         vsys.mapVirtualDisks[vd.strDiskId] = vd;
+                    }
+                    break;
+
+                    case OVFResourceType_OtherStorageDevice:        // 20       SATA controller
+                    {
+                        /* <Item>
+                            <rasd:Description>SATA Controller</rasd:Description>
+                            <rasd:Caption>sataController0</rasd:Caption>
+                            <rasd:InstanceID>4</rasd:InstanceID>
+                            <rasd:ResourceType>20</rasd:ResourceType>
+                            <rasd:ResourceSubType>AHCI</rasd:ResourceSubType>
+                            <rasd:Address>0</rasd:Address>
+                            <rasd:BusNumber>0</rasd:BusNumber>
+                        </Item> */
+                        if (i.strCaption.startsWith ("sataController", Utf8Str::CaseInsensitive) &&
+                            !i.strResourceSubType.compare ("AHCI", Utf8Str::CaseInsensitive))
+                        {
+                            HardDiskController hdc;
+                            hdc.system = HardDiskController::SATA;
+                            hdc.idController = i.ulInstanceID;
+                            hdc.strControllerType = i.strResourceSubType;
+
+                            vsys.mapControllers[i.ulInstanceID] = hdc;
+                        }
+                        else
+                            return setError(VBOX_E_FILE_ERROR,
+                                            tr("Error reading \"%s\": Host resource of type \"Other Storage Device (%d)\" is supported with SATA AHCI controllers only, line %d"),
+                                            pcszPath,
+                                            OVFResourceType_OtherStorageDevice,
+                                            i.ulLineNumber);
                     }
                     break;
 
