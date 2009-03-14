@@ -2092,6 +2092,23 @@ void VBoxProblemReporter::cannotExportAppliance (CAppliance *aAppliance, QWidget
     }
 }
 
+void VBoxProblemReporter::cannotExportAppliance (const CMachine &aMachine, CAppliance *aAppliance, QWidget *aParent /* = NULL */) const
+{
+    if (aAppliance->isNull() ||
+        aMachine.isNull())
+    {
+        message (aParent ? aParent : mainWindowShown(),
+                 Error,
+                 tr ("Failed to create an appliance."));
+    }else
+    {
+        message (aParent ? aParent : mainWindowShown(),
+                 Error,
+                 tr ("Failed to prepare the export of the appliance <b>%1</b>.").arg (aAppliance->GetPath()),
+                 formatErrorInfo (aMachine));
+    }
+}
+
 void VBoxProblemReporter::cannotExportAppliance (const CProgress &aProgress, CAppliance* aAppliance, QWidget *aParent /* = NULL */) const
 {
     AssertWrapperOk (aProgress);

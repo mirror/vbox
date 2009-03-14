@@ -339,6 +339,7 @@ public:
     void cannotImportAppliance (const CProgress &aProgress, CAppliance *aAppliance, QWidget *aParent = NULL) const;
 
     void cannotExportAppliance (CAppliance *aAppliance, QWidget *aParent = NULL) const;
+    void cannotExportAppliance (const CMachine &aMachine, CAppliance *aAppliance, QWidget *aParent = NULL) const;
     void cannotExportAppliance (const CProgress &aProgress, CAppliance *aAppliance, QWidget *aParent = NULL) const;
 
     void showRuntimeError (const CConsole &console, bool fatal,
