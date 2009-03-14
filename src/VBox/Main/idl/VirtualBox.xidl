@@ -1216,7 +1216,7 @@
     </method>
 
   </interface>
-  
+
   <interface
     name="IDhcpServer" extends="$unknown"
     uuid="f6de19f7-f4b5-4d93-b3de-664729267a53"
@@ -1234,7 +1234,7 @@
         specifies if the dhcp server is enabled
       </desc>
     </attribute>
-    
+
     <attribute name="IPAddress" type="wstring" readonly="yes">
       <desc>
         specifies server IP
@@ -1264,7 +1264,7 @@
         specifies to IP adrres in server address range
       </desc>
     </attribute>
-    
+
     <method name="setConfiguration">
       <desc>
         configures the server
@@ -1480,7 +1480,7 @@
         Associated performance collector object.
       </desc>
     </attribute>
-    
+
     <attribute name="dhcpServers" type="IDhcpServer" safearray="yes" readonly="yes">
       <desc>
         dhcp server settings.
@@ -2767,7 +2767,7 @@
         <desc>Dhcp server settings</desc>
       </param>
     </method-->
-    
+
     <method name="createDhcpServer">
       <desc>
         Creates a dhcp server settings to be used for the given internal network name
@@ -2778,27 +2778,27 @@
       <param name="name" type="wstring" dir="in">
         <desc>server name</desc>
       </param>
-      <param name="server" type="IDhcpServer" dir="out">
+      <param name="server" type="IDhcpServer" dir="return">
         <desc>Dhcp server settings</desc>
       </param>
     </method>
-    
+
     <method name="findDhcpServerByName">
       <desc>
         Searches a dhcp server settings to be used for the given internal network name
         <result name="E_INVALIDARG">
           Host network interface @a name already exists.
         </result>
-        
+
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>server name</desc>
       </param>
-      <param name="server" type="IDhcpServer" dir="out">
+      <param name="server" type="IDhcpServer" dir="return">
         <desc>Dhcp server settings</desc>
       </param>
     </method>
-    
+
     <!--method name="findDhcpServerForInterface">
       <desc>
         Searches a dhcp server settings to be used for the given interface
@@ -6714,7 +6714,7 @@
     <attribute name="networkName" type="wstring" readonly="yes">
       <desc>Returns the name of a virtual network the interface gets attached to.</desc>
     </attribute>
-    
+
     <attribute name="dhcpEnabled" type="boolean" readonly="yes">
       <desc>Specifies whether the DHCP is enabled for the interface.</desc>
     </attribute>
