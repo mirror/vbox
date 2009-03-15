@@ -48,7 +48,15 @@ HRESULT DhcpServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)
     AutoInitSpan autoInitSpan (this);
     AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
+    /* share VirtualBox weakly (parent remains NULL so far) */
+    unconst (mVirtualBox) = aVirtualBox;
+
     unconst(mName) = aName;
+    m.IPAddress = "0.0.0.0";
+    m.networkMask = "0.0.0.0";
+    m.enabled = FALSE;
+    m.FromIPAddress = "0.0.0.0";
+    m.ToIPAddress = "0.0.0.0";
 
     /* register with VirtualBox early, since uninit() will
      * unconditionally unregister on failure */
@@ -67,6 +75,9 @@ HRESULT DhcpServer::init(VirtualBox *aVirtualBox, const settings::Key &aNode)
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
     AssertReturn (autoInitSpan.isOk(), E_FAIL);
+
+    /* share VirtualBox weakly (parent remains NULL so far) */
+    unconst (mVirtualBox) = aVirtualBox;
 
     aVirtualBox->addDependentChild (this);
 
@@ -98,10 +109,8 @@ HRESULT DhcpServer::saveSettings (settings::Key &aParentNode)
     aNode.setValue <Bstr> ("networkName", mName);
     aNode.setValue <Bstr> ("IPAddress", m.IPAddress);
     aNode.setValue <Bstr> ("networkMask", m.networkMask);
-    if(!m.FromIPAddress.isNull())
-        aNode.setValue <Bstr> ("FromIPAddress", m.FromIPAddress);
-    if(!m.ToIPAddress.isNull())
-        aNode.setValue <Bstr> ("ToIPAddress", m.ToIPAddress);
+    aNode.setValue <Bstr> ("FromIPAddress", m.FromIPAddress);
+    aNode.setValue <Bstr> ("ToIPAddress", m.ToIPAddress);
 
     return S_OK;
 }
@@ -137,10 +146,14 @@ STDMETHODIMP DhcpServer::COMSETTER(Enabled) (BOOL aEnabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mVirtualBox, this);
+
     m.enabled = aEnabled;
 
-    return S_OK;
+    HRESULT rc = mVirtualBox->saveSettings();
 
+    return rc;
 }
 
 STDMETHODIMP DhcpServer::COMGETTER(IPAddress) (BSTR *aIPAddress)
@@ -202,10 +215,18 @@ STDMETHODIMP DhcpServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkM
     AssertReturn (aFromIPAddress != NULL, E_INVALIDARG);
     AssertReturn (aToIPAddress != NULL, E_INVALIDARG);
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mVirtualBox, this);
+
     m.IPAddress = aIPAddress;
     m.networkMask = aNetworkMask;
     m.FromIPAddress = aFromIPAddress;
     m.ToIPAddress = aToIPAddress;
 
-    return S_OK;
+    HRESULT rc = mVirtualBox->saveSettings();
+
+    return rc;
 }
