@@ -116,12 +116,17 @@ EXPORT_SYMBOL (vboxadd_cmc_close);
  */
 /* We just define a fixed number of these so far.  This can be changed if it ever becomes
    a problem. */
-static struct {
-        /** Open file structure that this connection handle is associated with */
-        struct file *filp;
-        /** HGCM connection ID */
-        uint32_t client_id;
-} hgcm_connections[MAX_HGCM_CONNECTIONS] = { { 0 } };
+static struct
+{
+    /** Open file structure that this connection handle is associated with */
+    struct file *filp;
+    /** HGCM connection ID */
+    uint32_t client_id;
+} hgcm_connections[MAX_HGCM_CONNECTIONS] 
+=
+{
+    { 0 }
+};
 
 /**
  * Register an HGCM connection as being connected with a given file descriptor, so that it
@@ -133,19 +138,22 @@ static struct {
  */
 static int vboxadd_register_hgcm_connection(uint32_t client_id, struct file *filp)
 {
-        int i;
-        bool found = false;
+    int i;
+    bool found = false;
 
-        for (i = 0; i < MAX_HGCM_CONNECTIONS; ++i) {
-                Assert(hgcm_connections[i].client_id != client_id);
+    for (i = 0; i < MAX_HGCM_CONNECTIONS; ++i)
+    {
+        Assert(hgcm_connections[i].client_id != client_id);
+    }
+    for (i = 0; (i < MAX_HGCM_CONNECTIONS) && (false == found); ++i)
+    {
+        if (ASMAtomicCmpXchgU32(&hgcm_connections[i].client_id, client_id, 0))
+        {
+            hgcm_connections[i].filp = filp;
+            found = true;
         }
-        for (i = 0; (i < MAX_HGCM_CONNECTIONS) && (false == found); ++i) {
-                if (ASMAtomicCmpXchgU32(&hgcm_connections[i].client_id, client_id, 0)) {
-                        hgcm_connections[i].filp = filp;
-                        found = true;
-                }
-        }
-        return found ? 0 : -ENFILE;  /* Any ideas for a better error code? */
+    }
+    return found ? 0 : -ENFILE;  /* Any ideas for a better error code? */
 }
 
 /**
@@ -157,20 +165,23 @@ static int vboxadd_register_hgcm_connection(uint32_t client_id, struct file *fil
  */
 static int vboxadd_unregister_hgcm_connection_no_close(uint32_t client_id)
 {
-        int i;
-        bool found = false;
+    int i;
+    bool found = false;
 
-        for (i = 0; (i < MAX_HGCM_CONNECTIONS) && (false == found); ++i) {
-                if (hgcm_connections[i].client_id == client_id) {
-                        hgcm_connections[i].filp = NULL;
-                        hgcm_connections[i].client_id = 0;
-                        found = true;
-                }
+    for (i = 0; (i < MAX_HGCM_CONNECTIONS) && (false == found); ++i)
+    {
+        if (hgcm_connections[i].client_id == client_id)
+        {
+            hgcm_connections[i].filp = NULL;
+            hgcm_connections[i].client_id = 0;
+            found = true;
         }
-        for (i = 0; i < MAX_HGCM_CONNECTIONS; ++i) {
-                Assert(hgcm_connections[i].client_id != client_id);
-        }
-        return found ? 0 : -ENOENT;
+    }
+    for (i = 0; i < MAX_HGCM_CONNECTIONS; ++i)
+    {
+        Assert(hgcm_connections[i].client_id != client_id);
+    }
+    return found ? 0 : -ENOENT;
 }
 
 /**
@@ -183,19 +194,21 @@ static int vboxadd_unregister_hgcm_connection_no_close(uint32_t client_id)
  */
 static int vboxadd_unregister_all_hgcm_connections(struct file *filp)
 {
-        int i;
+    int i;
 
-        for (i = 0; i < MAX_HGCM_CONNECTIONS; ++i) {
-                if (hgcm_connections[i].filp == filp) {
-                        VBoxGuestHGCMDisconnectInfo infoDisconnect;
-                        infoDisconnect.u32ClientID = hgcm_connections[i].client_id;
-                        vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT,
-                                         &infoDisconnect);
-                        hgcm_connections[i].filp = NULL;
-                        hgcm_connections[i].client_id = 0;
-                }
+    for (i = 0; i < MAX_HGCM_CONNECTIONS; ++i)
+    {
+        if (hgcm_connections[i].filp == filp)
+        {
+            VBoxGuestHGCMDisconnectInfo infoDisconnect;
+            infoDisconnect.u32ClientID = hgcm_connections[i].client_id;
+            vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT,
+                             &infoDisconnect);
+            hgcm_connections[i].filp = NULL;
+            hgcm_connections[i].client_id = 0;
         }
-        return 0;
+    }
+    return 0;
 }
 
 /**
@@ -216,31 +229,37 @@ vboxadd_wait_for_event (VBoxGuestWaitEventInfo *info)
     uint32_t in_mask = info->u32EventMaskIn;
 
     info->u32Result = VBOXGUEST_WAITEVENT_OK;
-    if (RT_INDEFINITE_WAIT != info->u32TimeoutIn) {
-            timeleft = wait_event_interruptible_timeout
+    if (RT_INDEFINITE_WAIT != info->u32TimeoutIn)
+    {
+        timeleft = wait_event_interruptible_timeout
                            (vboxDev->eventq,
                                (vboxDev->u32Events & in_mask)
                             || (vboxDev->u32GuestInterruptions != cInterruptions),
                             msecs_to_jiffies (info->u32TimeoutIn)
                            );
-            if (vboxDev->u32GuestInterruptions != cInterruptions) {
-                    info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
-            }
-            if (timeleft < 0) {
-                    info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
-            }
-            if (timeleft == 0) {
-                    info->u32Result = VBOXGUEST_WAITEVENT_TIMEOUT;
-            }
+        if (vboxDev->u32GuestInterruptions != cInterruptions)
+        {
+            info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
+        }
+        if (timeleft < 0)
+        {
+            info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
+        }
+        if (timeleft == 0)
+        {
+            info->u32Result = VBOXGUEST_WAITEVENT_TIMEOUT;
+        }
     }
-    else {
-            if (wait_event_interruptible(vboxDev->eventq,
-                                            (vboxDev->u32Events & in_mask)
+    else
+    {
+        if (wait_event_interruptible(vboxDev->eventq,
+                                       (vboxDev->u32Events & in_mask)
                                          || (vboxDev->u32GuestInterruptions != cInterruptions)
-                                        )
-               ) {
-                    info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
-            }
+                    )
+           )
+        {
+            info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
+        }
     }
     info->u32EventFlagsOut = vboxDev->u32Events & in_mask;
     vboxDev->u32Events &= ~in_mask;
@@ -254,23 +273,26 @@ vboxadd_wait_for_event (VBoxGuestWaitEventInfo *info)
  */
 static int vboxadd_wait_event(void *ptr)
 {
-        int rc = 0;
-        VBoxGuestWaitEventInfo info;
+    int rc = 0;
+    VBoxGuestWaitEventInfo info;
 
-        if (copy_from_user (&info, ptr, sizeof (info))) {
-                LogRelFunc (("VBOXGUEST_IOCTL_WAITEVENT: can not get event info\n"));
-                rc = -EFAULT;
+    if (copy_from_user (&info, ptr, sizeof (info)))
+    {
+        LogRelFunc (("VBOXGUEST_IOCTL_WAITEVENT: can not get event info\n"));
+        rc = -EFAULT;
+    }
+
+    if (0 == rc)
+    {
+        vboxadd_wait_for_event (&info);
+
+        if (copy_to_user (ptr, &info, sizeof (info)))
+        {
+            LogRelFunc (("VBOXGUEST_IOCTL_WAITEVENT: can not put out_mask\n"));
+            rc = -EFAULT;
         }
-
-        if (0 == rc) {
-                vboxadd_wait_for_event (&info);
-
-                if (copy_to_user (ptr, &info, sizeof (info))) {
-                        LogRelFunc (("VBOXGUEST_IOCTL_WAITEVENT: can not put out_mask\n"));
-                        rc = -EFAULT;
-                }
-        }
-        return 0;
+    }
+    return 0;
 }
 
 /**
@@ -286,48 +308,53 @@ static int vboxadd_wait_event(void *ptr)
  */
 static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
 {
-        VBoxGuestHGCMConnectInfo info;
-        int rc = 0;
+    VBoxGuestHGCMConnectInfo info;
+    int rc = 0;
 
-        if (copy_from_user ((void *)&info, (void *)userspace_info,
-                            sizeof (info)) != 0) {
-            LogFunc (("VBOXGUEST_IOCTL_HGCM_CONNECT: can not get connection info\n"));
-            rc = -EFAULT;
-        }
-        info.u32ClientID = 0;
-        if (rc >= 0) {
-            int vrc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_CONNECT,
-                                       &info);
-            rc = RT_FAILURE(vrc) ?   -RTErrConvertToErrno(vrc)
-                                   : -RTErrConvertToErrno(info.result);
-            if (rc < 0)
-                LogFunc(("hgcm connection failed.  internal ioctl result %Rrc, hgcm result %Rrc\n",
-                         vrc, info.result));
-        }
-        if (rc >= 0) {
-            /* Register that the connection is associated with this file pointer. */
-            LogFunc(("Connected, client ID %u\n", info.u32ClientID));
-            rc = vboxadd_register_hgcm_connection(info.u32ClientID, filp);
-            if (rc < 0)
-                LogFunc(("failed to register the HGCM connection\n"));
-        }
-        if (   rc >= 0
-            && copy_to_user ((void *)userspace_info, (void *)&info,
-                             sizeof(info)) != 0) {
-            LogFunc (("failed to return the connection structure\n"));
-            rc = -EFAULT;
-        }
+    if (copy_from_user ((void *)&info, (void *)userspace_info,
+                            sizeof (info)) != 0)
+    {
+        LogFunc (("VBOXGUEST_IOCTL_HGCM_CONNECT: can not get connection info\n"));
+        rc = -EFAULT;
+    }
+    info.u32ClientID = 0;
+    if (rc >= 0)
+    {
+        int vrc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_CONNECT,
+                                    &info);
+        rc = RT_FAILURE(vrc) ? -RTErrConvertToErrno(vrc)
+                             : -RTErrConvertToErrno(info.result);
         if (rc < 0)
-            /* Unregister again, as we didn't get as far as informing userspace. */
-            vboxadd_unregister_hgcm_connection_no_close(info.u32ClientID);
-        if (rc < 0 && info.u32ClientID != 0) {
-            /* Disconnect the hgcm connection again, as we told userspace it failed. */
-            VBoxGuestHGCMDisconnectInfo infoDisconnect;
-            infoDisconnect.u32ClientID = info.u32ClientID;
-            vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT,
-                             &infoDisconnect);
-        }
-        return rc;
+            LogFunc(("hgcm connection failed.  internal ioctl result %Rrc, hgcm result %Rrc\n",
+                      vrc, info.result));
+    }
+    if (rc >= 0)
+    {
+        /* Register that the connection is associated with this file pointer. */
+        LogFunc(("Connected, client ID %u\n", info.u32ClientID));
+        rc = vboxadd_register_hgcm_connection(info.u32ClientID, filp);
+        if (rc < 0)
+            LogFunc(("failed to register the HGCM connection\n"));
+    }
+    if (   rc >= 0
+        && copy_to_user ((void *)userspace_info, (void *)&info,
+                             sizeof(info)) != 0)
+    {
+        LogFunc (("failed to return the connection structure\n"));
+        rc = -EFAULT;
+    }
+    if (rc < 0)
+        /* Unregister again, as we didn't get as far as informing userspace. */
+        vboxadd_unregister_hgcm_connection_no_close(info.u32ClientID);
+    if (rc < 0 && info.u32ClientID != 0)
+    {
+        /* Disconnect the hgcm connection again, as we told userspace it failed. */
+        VBoxGuestHGCMDisconnectInfo infoDisconnect;
+        infoDisconnect.u32ClientID = info.u32ClientID;
+        vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT,
+                         &infoDisconnect);
+    }
+    return rc;
 }
 
 /**
@@ -341,26 +368,26 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
  */
 static int vboxadd_hgcm_disconnect(struct file *filp, unsigned long userspace_info)
 {
-        int rc = 0, vrc = VINF_SUCCESS;
+    int rc = 0, vrc = VINF_SUCCESS;
 
-        VBoxGuestHGCMDisconnectInfo info;
-        if (copy_from_user ((void *)&info, (void *)userspace_info,
-                            sizeof (info)) != 0) {
-            LogRelFunc (("VBOXGUEST_IOCTL_HGCM_DISCONNECT: can not get info\n"));
-            rc = -EFAULT;
-        }
-        if (rc >= 0) {
-            vrc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT,
-                                   &info);
-            rc = -RTErrConvertToErrno(vrc);
-        }
-        if (   rc >= 0
-            && copy_to_user ((void *)userspace_info, (void *)&info,
-                             sizeof(info)) != 0) {
-                LogRelFunc (("VBOXGUEST_IOCTL_HGCM_DISCONNECT: failed to return the connection structure\n"));
-                rc = -EFAULT;
-        }
-        return rc;
+    VBoxGuestHGCMDisconnectInfo info;
+    if (copy_from_user((void *)&info, (void *)userspace_info, sizeof (info)) != 0)
+    {
+        LogRelFunc (("VBOXGUEST_IOCTL_HGCM_DISCONNECT: can not get info\n"));
+        rc = -EFAULT;
+    }
+    if (rc >= 0)
+    {
+        vrc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &info);
+        rc = -RTErrConvertToErrno(vrc);
+    }
+    if (   rc >= 0
+        && copy_to_user((void *)userspace_info, (void *)&info, sizeof(info)) != 0)
+    {
+        LogRelFunc (("VBOXGUEST_IOCTL_HGCM_DISCONNECT: failed to return the connection structure\n"));
+        rc = -EFAULT;
+    }
+    return rc;
 }
 
 /** Bounce buffer structure for hcgm guest-host data copies. */
@@ -381,12 +408,15 @@ static int vboxadd_hgcm_alloc_buffer(hgcm_bounce_buffer **ppBuf, void *pUser,
     hgcm_bounce_buffer *pBuf = NULL;
     void *pKernel = NULL;
     int rc = 0;
+
     AssertPtrReturn(ppBuf, -EINVAL);
     AssertPtrReturn(pUser, -EINVAL);
+
     pBuf = kmalloc(sizeof(*pBuf), GFP_KERNEL);
     if (pBuf == NULL)
         rc = -ENOMEM;
-    if (rc >= 0) {
+    if (rc >= 0)
+    {
         pKernel = kmalloc(cb, GFP_KERNEL);
         if (pKernel == NULL)
             rc = -ENOMEM;
@@ -395,13 +425,15 @@ static int vboxadd_hgcm_alloc_buffer(hgcm_bounce_buffer **ppBuf, void *pUser,
         && copy
         && copy_from_user(pKernel, pUser, cb) != 0)
         rc = -EFAULT;
-    if (rc >= 0) {
+    if (rc >= 0)
+    {
         pBuf->pKernel = pKernel;
         pBuf->pUser = pUser;
         pBuf->cb = cb;
         *ppBuf = pBuf;
     }
-    else {
+    else
+    {
         kfree(pBuf);
         kfree(pKernel);
         LogFunc(("failed, returning %d\n", rc));
@@ -503,12 +535,14 @@ static int vboxadd_unbuffer_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCa
             }
         }
         else
+        {
             if (ppvCtx[iParm] != NULL)
             {
                 AssertFailed();
                 rc = -EOVERFLOW;  /* Something unlikely to turn up elsewhere so
                                    * we can see where it's coming from. */
             }
+        }
     }
     return rc;
 }
@@ -524,51 +558,56 @@ static int vboxadd_unbuffer_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCa
  */
 static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
 {
-        VBoxGuestHGCMCallInfo *pInfo = NULL;
-        void *apvCtx[VBOX_HGCM_MAX_PARMS];
-        unsigned haveParms = 0;
-        int rc = 0;
+    VBoxGuestHGCMCallInfo *pInfo = NULL;
+    void *apvCtx[VBOX_HGCM_MAX_PARMS];
+    unsigned haveParms = 0;
+    int rc = 0;
 
-        pInfo = kmalloc(u32Size, GFP_KERNEL);
-        if (pInfo == NULL)
-                rc = -ENOMEM;
-        if (rc >= 0 &&
-            0 != copy_from_user ((void *)pInfo, (void *)userspace_info, u32Size)) {
-                LogRelFunc (("can not get info from user space\n"));
-                rc = -EFAULT;
-        }
-        if (rc >= 0 &&
-            sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter) != u32Size) {
-                LogRelFunc (("bad parameter size, structure says %d, ioctl says %d\n",
-                             sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter),
-                             u32Size));
-            rc = -EINVAL;
-        }
-        if (rc >= 0) {
-            haveParms = 1;
-            rc = vboxadd_buffer_hgcm_parms(apvCtx, pInfo);
-        }
-        if (rc >= 0) {
-                int vrc;
-                vrc = vboxadd_cmc_call(vboxDev,
-                              VBOXGUEST_IOCTL_HGCM_CALL(u32Size), pInfo);
-                rc = -RTErrConvertToErrno(vrc);
-                if (   rc >= 0
-                    && copy_to_user ((void *)userspace_info, (void *)pInfo,
-                                     u32Size)) {
-                        LogRelFunc (("failed to return the information to user space\n"));
-                        rc = -EFAULT;
-                }
-        }
-        if (haveParms)
+    pInfo = kmalloc(u32Size, GFP_KERNEL);
+    if (pInfo == NULL)
+        rc = -ENOMEM;
+    if (   rc >= 0
+        &&  0 != copy_from_user ((void *)pInfo, (void *)userspace_info, u32Size))
+    {
+        LogRelFunc (("can not get info from user space\n"));
+        rc = -EFAULT;
+    }
+    if (   rc >= 0
+        && sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter) != u32Size)
+    {
+        LogRelFunc (("bad parameter size, structure says %d, ioctl says %d\n",
+                    sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter),
+                    u32Size));
+        rc = -EINVAL;
+    }
+    if (rc >= 0)
+    {
+        haveParms = 1;
+        rc = vboxadd_buffer_hgcm_parms(apvCtx, pInfo);
+    }
+    if (rc >= 0)
+    {
+        int vrc;
+        vrc = vboxadd_cmc_call(vboxDev,
+                               VBOXGUEST_IOCTL_HGCM_CALL(u32Size), pInfo);
+        rc = -RTErrConvertToErrno(vrc);
+        if (   rc >= 0
+            && copy_to_user ((void *)userspace_info, (void *)pInfo,
+                                     u32Size))
         {
-            int rc2 = vboxadd_unbuffer_hgcm_parms(apvCtx, pInfo);
-            if (rc >= 0 && rc2 < 0)
-                rc = rc2;
+            LogRelFunc (("failed to return the information to user space\n"));
+            rc = -EFAULT;
         }
-        if (pInfo != NULL)
-            kfree(pInfo);
-        return rc;
+    }
+    if (haveParms)
+    {
+        int rc2 = vboxadd_unbuffer_hgcm_parms(apvCtx, pInfo);
+        if (rc >= 0 && rc2 < 0)
+            rc = rc2;
+    }
+    if (pInfo != NULL)
+        kfree(pInfo);
+    return rc;
 }
 
 /**
@@ -581,54 +620,58 @@ static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
  * @param  u32Size        the size of the userspace structure
  */
 static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
-                                     uint32_t u32Size)
+                                   uint32_t u32Size)
 {
-        VBoxGuestHGCMCallInfoTimed *pInfo = NULL;
-        void *apvCtx[VBOX_HGCM_MAX_PARMS];
-        unsigned haveParms = 0;
-        int rc = 0;
+    VBoxGuestHGCMCallInfoTimed *pInfo = NULL;
+    void *apvCtx[VBOX_HGCM_MAX_PARMS];
+    unsigned haveParms = 0;
+    int rc = 0;
 
-        pInfo = kmalloc(u32Size, GFP_KERNEL);
-        if (pInfo == NULL)
-                rc = -ENOMEM;
-        if (rc >= 0 &&
-            0 != copy_from_user ((void *)pInfo, (void *)userspace_info, u32Size)) {
-                LogRelFunc (("can not get info from user space\n"));
-                rc = -EFAULT;
-        }
-        if (rc >= 0 &&
-            sizeof(*pInfo) + pInfo->info.cParms * sizeof(HGCMFunctionParameter) != u32Size) {
-                LogRelFunc (("bad parameter size, structure says %d, ioctl says %d\n",
-                             sizeof(*pInfo) + pInfo->info.cParms * sizeof(HGCMFunctionParameter),
-                             u32Size));
-            rc = -EINVAL;
-        }
-        if (rc >= 0) {
-            haveParms = 1;
-            rc = vboxadd_buffer_hgcm_parms(apvCtx, &pInfo->info);
-        }
-        if (rc >= 0) {
-                int vrc;
-                pInfo->fInterruptible = true;  /* User space may not do uninterruptible waits */
-                vrc = vboxadd_cmc_call(vboxDev,
-                              VBOXGUEST_IOCTL_HGCM_CALL_TIMED(u32Size), pInfo);
-                rc = -RTErrConvertToErrno(vrc);
-                if (   rc >= 0
-                    && copy_to_user ((void *)userspace_info, (void *)pInfo,
-                                     u32Size)) {
-                        LogRelFunc (("failed to return the information to user space\n"));
-                        rc = -EFAULT;
-                }
-        }
-        if (haveParms)
+    pInfo = kmalloc(u32Size, GFP_KERNEL);
+    if (pInfo == NULL)
+        rc = -ENOMEM;
+    if (   rc >= 0
+        &&  0 != copy_from_user ((void *)pInfo, (void *)userspace_info, u32Size))
+    {
+        LogRelFunc (("can not get info from user space\n"));
+        rc = -EFAULT;
+    }
+    if (   rc >= 0
+        && sizeof(*pInfo) + pInfo->info.cParms * sizeof(HGCMFunctionParameter) != u32Size)
+    {
+        LogRelFunc (("bad parameter size, structure says %d, ioctl says %d\n",
+                    sizeof(*pInfo) + pInfo->info.cParms * sizeof(HGCMFunctionParameter),
+                    u32Size));
+        rc = -EINVAL;
+    }
+    if (rc >= 0)
+    {
+        haveParms = 1;
+        rc = vboxadd_buffer_hgcm_parms(apvCtx, &pInfo->info);
+    }
+    if (rc >= 0)
+    {
+        int vrc;
+        pInfo->fInterruptible = true;  /* User space may not do uninterruptible waits */
+        vrc = vboxadd_cmc_call(vboxDev,
+                               VBOXGUEST_IOCTL_HGCM_CALL_TIMED(u32Size), pInfo);
+        rc = -RTErrConvertToErrno(vrc);
+        if (   rc >= 0
+            && copy_to_user ((void *)userspace_info, (void *)pInfo, u32Size))
         {
-            int rc2 = vboxadd_unbuffer_hgcm_parms(apvCtx, &pInfo->info);
-            if (rc >= 0 && rc2 < 0)
-                rc = rc2;
+            LogRelFunc (("failed to return the information to user space\n"));
+            rc = -EFAULT;
         }
-        if (pInfo != NULL)
-            kfree(pInfo);
-        return rc;
+    }
+    if (haveParms)
+    {
+        int rc2 = vboxadd_unbuffer_hgcm_parms(apvCtx, &pInfo->info);
+        if (rc >= 0 && rc2 < 0)
+            rc = rc2;
+    }
+    if (pInfo != NULL)
+        kfree(pInfo);
+    return rc;
 }
 
 /**
@@ -670,183 +713,190 @@ static int vboxadd_control_filter_mask(VBoxGuestFilterMaskInfo *pInfo)
 static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                          unsigned int cmd, unsigned long arg)
 {
-        int rc = 0;
+    int rc = 0;
 
-        /* Deal with variable size ioctls first. */
-        if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_LOG(0))
-            == VBOXGUEST_IOCTL_STRIP_SIZE(cmd)) {
-                char *pszMessage;
+    /* Deal with variable size ioctls first. */
+    if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_LOG(0))
+        == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
+    {
+        char *pszMessage;
 
-                IOCTL_LOG_ENTRY(arg);
-                pszMessage = kmalloc(_IOC_SIZE(cmd), GFP_KERNEL);
-                if (NULL == pszMessage) {
-                        LogRelFunc(("VBOXGUEST_IOCTL_LOG: cannot allocate %d bytes of memory!\n",
-                                    _IOC_SIZE(cmd)));
-                        rc = -ENOMEM;
-                }
-                if (   (0 == rc)
-                    && copy_from_user(pszMessage, (void*)arg, _IOC_SIZE(cmd))) {
-                        LogRelFunc(("VBOXGUEST_IOCTL_LOG: copy_from_user failed!\n"));
-                        rc = -EFAULT;
-                }
-                if (0 == rc) {
-                    Log(("%.*s", _IOC_SIZE(cmd), pszMessage));
-                }
-                if (NULL != pszMessage) {
-                    kfree(pszMessage);
-                }
-                IOCTL_LOG_EXIT(arg);
+        IOCTL_LOG_ENTRY(arg);
+        pszMessage = kmalloc(_IOC_SIZE(cmd), GFP_KERNEL);
+        if (NULL == pszMessage)
+        {
+            LogRelFunc(("VBOXGUEST_IOCTL_LOG: cannot allocate %d bytes of memory!\n",
+                         _IOC_SIZE(cmd)));
+            rc = -ENOMEM;
         }
-        else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_VMMREQUEST(0))
-            == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))  {
-            VMMDevRequestHeader reqHeader;
-            VMMDevRequestHeader *reqFull = NULL;
-            size_t cbRequestSize;
-            size_t cbVanillaRequestSize;
+        if (   (0 == rc)
+            && copy_from_user(pszMessage, (void*)arg, _IOC_SIZE(cmd)))
+        {
+            LogRelFunc(("VBOXGUEST_IOCTL_LOG: copy_from_user failed!\n"));
+            rc = -EFAULT;
+        }
+        if (0 == rc)
+        {
+            Log(("%.*s", _IOC_SIZE(cmd), pszMessage));
+        }
+        if (NULL != pszMessage)
+        {
+            kfree(pszMessage);
+        }
+        IOCTL_LOG_EXIT(arg);
+    }
+    else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_VMMREQUEST(0))
+             == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
+    {
+        VMMDevRequestHeader reqHeader;
+        VMMDevRequestHeader *reqFull = NULL;
+        size_t cbRequestSize;
+        size_t cbVanillaRequestSize;
 
-            IOCTL_VMM_ENTRY(arg);
-            if (copy_from_user(&reqHeader, (void*)arg, sizeof(reqHeader)))
+        IOCTL_VMM_ENTRY(arg);
+        if (copy_from_user(&reqHeader, (void*)arg, sizeof(reqHeader)))
+        {
+            LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: copy_from_user failed for vmm request!\n"));
+            rc = -EFAULT;
+        }
+        if (0 == rc)
+        {
+            /* get the request size */
+            cbVanillaRequestSize = vmmdevGetRequestSize(reqHeader.requestType);
+            if (!cbVanillaRequestSize)
             {
-                LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: copy_from_user failed for vmm request!\n"));
+                LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: invalid request type: %d\n",
+                        reqHeader.requestType));
+                rc = -EINVAL;
+            }
+        }
+        if (0 == rc)
+        {
+            cbRequestSize = reqHeader.size;
+            if (cbRequestSize < cbVanillaRequestSize)
+            {
+                LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: invalid request size: %d min: %d type: %d\n",
+                        cbRequestSize,
+                        cbVanillaRequestSize,
+                        reqHeader.requestType));
+                rc = -EINVAL;
+            }
+        }
+        if (0 == rc)
+        {
+            /* request storage for the full request */
+            rc = VbglGRAlloc(&reqFull, cbRequestSize, reqHeader.requestType);
+            if (RT_FAILURE(rc))
+            {
+                LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: could not allocate request structure! rc = %d\n", rc));
                 rc = -EFAULT;
             }
-            if (0 == rc)
+        }
+        if (0 == rc)
+        {
+            /* now get the full request */
+            if (copy_from_user(reqFull, (void*)arg, cbRequestSize))
             {
-                /* get the request size */
-                cbVanillaRequestSize = vmmdevGetRequestSize(reqHeader.requestType);
-                if (!cbVanillaRequestSize)
-                {
-                    LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: invalid request type: %d\n",
-                            reqHeader.requestType));
-                    rc = -EINVAL;
-                }
+                LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: failed to fetch full request from user space!\n"));
+                rc = -EFAULT;
             }
-            if (0 == rc)
+        }
+
+        /* now issue the request */
+        if (0 == rc)
+        {
+            int rrc = VbglGRPerform(reqFull);
+
+            /* asynchronous processing? */
+            if (rrc == VINF_HGCM_ASYNC_EXECUTE)
             {
-                cbRequestSize = reqHeader.size;
-                if (cbRequestSize < cbVanillaRequestSize)
-                {
-                    LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: invalid request size: %d min: %d type: %d\n",
-                            cbRequestSize,
-                            cbVanillaRequestSize,
-                            reqHeader.requestType));
-                    rc = -EINVAL;
-                }
+                VMMDevHGCMRequestHeader *reqHGCM = (VMMDevHGCMRequestHeader*)reqFull;
+                wait_event_interruptible (vboxDev->eventq, reqHGCM->fu32Flags & VBOX_HGCM_REQ_DONE);
+                rrc = reqFull->rc;
             }
-            if (0 == rc)
+
+            /* failed? */
+            if (RT_FAILURE(rrc) || RT_FAILURE(reqFull->rc))
             {
-                /* request storage for the full request */
-                rc = VbglGRAlloc(&reqFull, cbRequestSize, reqHeader.requestType);
-                if (RT_FAILURE(rc))
+                LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: request execution failed!\n"));
+                rc = RT_FAILURE(rrc) ? -RTErrConvertToErrno(rrc)
+                                       : -RTErrConvertToErrno(reqFull->rc);
+            }
+            else
+            {
+                /* success, copy the result data to user space */
+                if (copy_to_user((void*)arg, (void*)reqFull, cbRequestSize))
                 {
-                    LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: could not allocate request structure! rc = %d\n", rc));
+                    LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: error copying request result to user space!\n"));
                     rc = -EFAULT;
                 }
             }
-            if (0 == rc)
-            {
-                /* now get the full request */
-                if (copy_from_user(reqFull, (void*)arg, cbRequestSize))
-                {
-                    LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: failed to fetch full request from user space!\n"));
-                    rc = -EFAULT;
-                }
-            }
-
-            /* now issue the request */
-            if (0 == rc)
-            {
-                int rrc = VbglGRPerform(reqFull);
-
-                /* asynchronous processing? */
-                if (rrc == VINF_HGCM_ASYNC_EXECUTE)
-                {
-                    VMMDevHGCMRequestHeader *reqHGCM = (VMMDevHGCMRequestHeader*)reqFull;
-                    wait_event_interruptible (vboxDev->eventq, reqHGCM->fu32Flags & VBOX_HGCM_REQ_DONE);
-                    rrc = reqFull->rc;
-                }
-
-                /* failed? */
-                if (RT_FAILURE(rrc) || RT_FAILURE(reqFull->rc))
-                {
-                    LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: request execution failed!\n"));
-                    rc = RT_FAILURE(rrc) ? -RTErrConvertToErrno(rrc)
-                                           : -RTErrConvertToErrno(reqFull->rc);
-                }
-                else
-                {
-                    /* success, copy the result data to user space */
-                    if (copy_to_user((void*)arg, (void*)reqFull, cbRequestSize))
-                    {
-                        LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: error copying request result to user space!\n"));
-                        rc = -EFAULT;
-                    }
-                }
-            }
-            if (NULL != reqFull)
-                VbglGRFree(reqFull);
-            IOCTL_VMM_EXIT(arg);
         }
-        else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0))
-                 == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
-        {
+        if (NULL != reqFull)
+            VbglGRFree(reqFull);
+        IOCTL_VMM_EXIT(arg);
+    }
+    else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0))
+             == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
+    {
         /* Do the HGCM call using the Vbgl bits */
-                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL", arg);
-                rc = vboxadd_hgcm_call(arg, _IOC_SIZE(cmd));
-                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL", arg);
-        }
-        else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMED(0))
-                 == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
-        {
+        IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL", arg);
+        rc = vboxadd_hgcm_call(arg, _IOC_SIZE(cmd));
+        IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL", arg);
+    }
+    else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMED(0))
+             == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
+    {
         /* Do the HGCM call using the Vbgl bits */
-                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
-                rc = vboxadd_hgcm_call_timed(arg, _IOC_SIZE(cmd));
-                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
-        }
-        else
+        IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
+        rc = vboxadd_hgcm_call_timed(arg, _IOC_SIZE(cmd));
+        IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
+    }
+    else
+    {
+        switch (cmd)
         {
-            switch (cmd) {
             case VBOXGUEST_IOCTL_WAITEVENT:
-                    IOCTL_ENTRY("VBOXGUEST_IOCTL_WAITEVENT", arg);
-                    rc = vboxadd_wait_event((void *) arg);
-                    IOCTL_EXIT("VBOXGUEST_IOCTL_WAITEVENT", arg);
-                    break;
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_WAITEVENT", arg);
+                rc = vboxadd_wait_event((void *) arg);
+                IOCTL_EXIT("VBOXGUEST_IOCTL_WAITEVENT", arg);
+                break;
             case VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS:
-                    IOCTL_ENTRY("VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS", arg);
-                    ++vboxDev->u32GuestInterruptions;
-                    IOCTL_EXIT("VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS", arg);
-                    break;
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS", arg);
+                ++vboxDev->u32GuestInterruptions;
+                IOCTL_EXIT("VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS", arg);
+                break;
             case VBOXGUEST_IOCTL_HGCM_CONNECT:
-                    IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CONNECT", arg);
-                    rc = vboxadd_hgcm_connect(filp, arg);
-                    IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CONNECT", arg);
-                    break;
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CONNECT", arg);
+                rc = vboxadd_hgcm_connect(filp, arg);
+                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CONNECT", arg);
+                break;
             case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
-                    IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_DISCONNECT", arg);
-                    vboxadd_hgcm_disconnect(filp, arg);
-                    IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_DISCONNECT", arg);
-                    break;
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_DISCONNECT", arg);
+                vboxadd_hgcm_disconnect(filp, arg);
+                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_DISCONNECT", arg);
+                break;
             case VBOXGUEST_IOCTL_CTL_FILTER_MASK:
             {
-                    VBoxGuestFilterMaskInfo info;
-                    IOCTL_ENTRY("VBOXGUEST_IOCTL_CTL_FILTER_MASK", arg);
-                    if (copy_from_user((void*)&info, (void*)arg, sizeof(info)))
-                    {
-                        LogRelFunc(("VBOXGUEST_IOCTL_CTL_FILTER_MASK: error getting parameters from user space!\n"));
-                        rc = -EFAULT;
-                        break;
-                    }
-                    rc = -RTErrConvertToErrno(vboxadd_control_filter_mask(&info));
-                    IOCTL_EXIT("VBOXGUEST_IOCTL_CTL_FILTER_MASK", arg);
+                VBoxGuestFilterMaskInfo info;
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_CTL_FILTER_MASK", arg);
+                if (copy_from_user((void*)&info, (void*)arg, sizeof(info)))
+                {
+                    LogRelFunc(("VBOXGUEST_IOCTL_CTL_FILTER_MASK: error getting parameters from user space!\n"));
+                    rc = -EFAULT;
                     break;
+                }
+                rc = -RTErrConvertToErrno(vboxadd_control_filter_mask(&info));
+                IOCTL_EXIT("VBOXGUEST_IOCTL_CTL_FILTER_MASK", arg);
+                break;
             }
             default:
-                    LogRelFunc(("unknown command: %x\n", cmd));
-                    rc = -EINVAL;
-                    break;
-            }
+                LogRelFunc(("unknown command: %x\n", cmd));
+                rc = -EINVAL;
+                break;
         }
-        return rc;
+    }
+    return rc;
 }
 
 /**
@@ -855,45 +905,46 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
 static int vboxuser_ioctl(struct inode *inode, struct file *filp,
                           unsigned int cmd, unsigned long arg)
 {
-        int rc = 0;
+    int rc = 0;
 
-        /* Deal with variable size ioctls first. */
-        if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0))
-                 == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
-        {
+    /* Deal with variable size ioctls first. */
+    if (    VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0))
+         == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
+    {
         /* Do the HGCM call using the Vbgl bits */
-                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL", arg);
-                rc = vboxadd_hgcm_call(arg, _IOC_SIZE(cmd));
-                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL", arg);
-        }
-        else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMED(0))
-                 == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
-        {
+        IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL", arg);
+        rc = vboxadd_hgcm_call(arg, _IOC_SIZE(cmd));
+        IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL", arg);
+    }
+    else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMED(0))
+             == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
+    {
         /* Do the HGCM call using the Vbgl bits */
-                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
-                rc = vboxadd_hgcm_call_timed(arg, _IOC_SIZE(cmd));
-                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
-        }
-        else
+        IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
+        rc = vboxadd_hgcm_call_timed(arg, _IOC_SIZE(cmd));
+        IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
+    }
+    else
+    {
+        switch (cmd)
         {
-            switch (cmd) {
             case VBOXGUEST_IOCTL_HGCM_CONNECT:
-                    IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CONNECT", arg);
-                    rc = vboxadd_hgcm_connect(filp, arg);
-                    IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CONNECT", arg);
-                    break;
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CONNECT", arg);
+                rc = vboxadd_hgcm_connect(filp, arg);
+                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CONNECT", arg);
+                break;
             case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
-                    IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_DISCONNECT", arg);
-                    vboxadd_hgcm_disconnect(filp, arg);
-                    IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_DISCONNECT", arg);
-                    break;
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_DISCONNECT", arg);
+                vboxadd_hgcm_disconnect(filp, arg);
+                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_DISCONNECT", arg);
+                break;
             default:
-                    LogRelFunc(("unknown command: %x\n", cmd));
-                    rc = -EINVAL;
-                    break;
-            }
+                LogRelFunc(("unknown command: %x\n", cmd));
+                rc = -EINVAL;
+                break;
         }
-        return rc;
+    }
+    return rc;
 }
 
 /**
@@ -940,10 +991,10 @@ vboxadd_read (struct file *file, char *buf, size_t count, loff_t *loff)
  */
 static int vboxadd_release(struct inode *inode, struct file * filp)
 {
-        vboxadd_unregister_all_hgcm_connections(filp);
-        /* Deactivate our asynchronous queue. */
-        vboxadd_fasync(-1, filp, 0);
-        return 0;
+    vboxadd_unregister_all_hgcm_connections(filp);
+    /* Deactivate our asynchronous queue. */
+    vboxadd_fasync(-1, filp, 0);
+    return 0;
 }
 
 /**
@@ -952,8 +1003,8 @@ static int vboxadd_release(struct inode *inode, struct file * filp)
  */
 static int vboxuser_release(struct inode *inode, struct file * filp)
 {
-        vboxadd_unregister_all_hgcm_connections(filp);
-        return 0;
+    vboxadd_unregister_all_hgcm_connections(filp);
+    return 0;
 }
 
 /** file operations for the vboxadd device */
@@ -1143,6 +1194,7 @@ static int vboxadd_reserve_hypervisor(void)
     /* successful return */
     VbglGRFree(&req->header);
     return 0;
+
 bail_out:
     /* error return */
     if (req)
@@ -1234,7 +1286,7 @@ static void free_resources(void)
 #define PCI_DEV_PUT(x) pci_dev_put(x)
 #else
 #define PCI_DEV_GET(v,d,p) pci_find_device(v,d,p)
-#define PCI_DEV_PUT(x)
+#define PCI_DEV_PUT(x)     do {} while(0)
 #endif
 
 /**
@@ -1244,7 +1296,7 @@ static void free_resources(void)
 static __init int init(void)
 {
     int rc = 0, rcVBox = VINF_SUCCESS;
-    bool haveVBoxAdd = false, haveVBoxUser = false, haveGuestLib = false;
+    bool fHaveVBoxAdd = false, fHaveVBoxUser = false, fHaveGuestLib = false;
     struct pci_dev *pcidev = NULL;
 
     rcVBox = vboxadd_cmc_init();
@@ -1271,7 +1323,7 @@ static __init int init(void)
         if (rc)
             LogRel(("vboxadd: could not enable device: %d\n", rc));
     }
-    if (rc)
+    if (!rc)
         LogRel(("Starting VirtualBox version %s Guest Additions\n",
                 VBOX_VERSION_STRING));
 
@@ -1281,7 +1333,7 @@ static __init int init(void)
         rc = register_chrdev(vbox_major, VBOXADD_NAME, &vboxadd_fops);
         if (rc)  /* As we pass a non-zero major, rc should be zero on success. */
             LogRel(("vboxadd: register_chrdev failed: vbox_major: %d, err = %d\n",
-                        vbox_major, rc));
+                    vbox_major, rc));
     }
     else if (!rc)  /* Register as a miscellaneous device otherwise */
     {
@@ -1291,7 +1343,7 @@ static __init int init(void)
                     VBOXADD_NAME, rc));
     }
     if (!rc)
-        haveVBoxAdd = true;
+        fHaveVBoxAdd = true;
 
     /* Register our user session device */
     if (!rc) {
@@ -1301,7 +1353,7 @@ static __init int init(void)
                     VBOXUSER_NAME, rc));
     }
     if (!rc)
-        haveVBoxUser = true;
+        fHaveVBoxUser = true;
 
     /* allocate and initialize device extension */
     if (!rc)
@@ -1372,7 +1424,7 @@ static __init int init(void)
         }
     }
     if (!rc)
-        haveGuestLib = true;
+        fHaveGuestLib = true;
 
     /* report guest information to host, this must be done as the very first request */
     if (!rc)
@@ -1398,7 +1450,9 @@ static __init int init(void)
 #endif
             rcVBox = VbglGRPerform(&infoReq->header);
         }
-        if (infoReq && (RT_FAILURE(rcVBox) || RT_FAILURE(infoReq->header.rc)))
+        if (   infoReq 
+            && (   RT_FAILURE(rcVBox) 
+                || RT_FAILURE(infoReq->header.rc)))
         {
             LogRel(("vboxadd: error reporting guest information to host: %Rrc, header: %Rrc\n",
                         rcVBox, infoReq->header.rc));
@@ -1485,7 +1539,7 @@ static __init int init(void)
         info.u32OrMask = VMMDEV_EVENT_MOUSE_POSITION_CHANGED;
         info.u32NotMask = 0;
         rcVBox = vboxadd_control_filter_mask(&info);
-        if (!RT_SUCCESS(rcVBox))
+        if (RT_FAILURE(rcVBox))
         {
             LogRel(("vboxadd: failed to register for VMMDEV_EVENT_MOUSE_POSITION_CHANGED events: %Rrc\n",
                     rcVBox));
@@ -1507,21 +1561,23 @@ static __init int init(void)
     }
     else  /* Clean up on failure */
     {
-        if (haveGuestLib)
+        if (fHaveGuestLib)
             VbglTerminate();
         if (vboxDev)
             free_resources();
-        if (haveVBoxUser)
+        if (fHaveVBoxUser)
             misc_deregister(&gMiscVBoxUser);
-        if (haveVBoxAdd && vbox_major > 0)
+        if (fHaveVBoxAdd && vbox_major > 0)
             unregister_chrdev(vbox_major, VBOXADD_NAME);
-        else if (haveVBoxAdd)
+        else if (fHaveVBoxAdd)
             misc_deregister(&gMiscVBoxAdd);
     }
+
     /* We always release this.  Presumably because we no longer need to do
      * anything with the device structure. */
     if (pcidev)
         PCI_DEV_PUT(pcidev);
+
     return rc;
 }
 
