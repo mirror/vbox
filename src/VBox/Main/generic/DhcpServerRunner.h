@@ -52,6 +52,7 @@ class DhcpServerRunner
 {
 public:
     DhcpServerRunner() : mProcess (NIL_RTPROCESS) {}
+    ~DhcpServerRunner() { stop(); /* don't leave abandoned servers */}
 
     int setOption(DHCPCFG opt, char *val)
     {
