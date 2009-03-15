@@ -157,7 +157,7 @@ endif
 
 $(REM_MOD)_SOURCES.debug  += \
 	Sun/testmath.c
-$(REM_MOD)_SOURCES.win.x86 = $(REM_MOD).def
+$(REM_MOD)_SOURCES.win.x86 = $(PATH_VBoxREMImp)/VBoxREMWin.def
 ifndef VBOX_USE_REM2
  $(REM_MOD)_POST_CMDS      = $(VBOX_SIGN_IMAGE_CMDS)
 endif
@@ -250,7 +250,7 @@ VBoxREMImp_TEMPLATE        = VBOXR3
 VBoxREMImp_NAME            = VBoxREM
  endif
 VBoxREMImp_INST            = $(INST_LIB)
-VBoxREMImp_SOURCES.win     = VBoxREM.def
+VBoxREMImp_SOURCES.win     = $(PATH_VBoxREMImp)/VBoxREMWin.def
 VBoxREMImp_SOURCES.os2     = $(PATH_VBoxREMImp)/VBoxREMOS2.def
  ifn1of ($(KBUILD_TARGET), os2 win)
 VBoxREMImp_SOURCES         = $(PATH_VBoxREMImp)/VBoxREMImp.c
@@ -279,6 +279,13 @@ $$(PATH_VBoxREMImp)/VBoxREMOS2.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MA
 		-e 's/^LIBRARY .*/LIBRARY VBoxREM INITINSTANCE TERMINSTANCE\nDATA MULTIPLE\n/' \
 		--output $@ \
 		$<
+
+$$(PATH_VBoxREMImp)/VBoxREMWin.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MAKEFILE_CURRENT) | $$(dir $$@)
+ifdef VBOX_WITH_NEW_PHYS_CODE
+	$(SED) -e '/REMR3NotifyPhysRamChunkRegister/d'	--output $@ $<
+else
+	$(CP) -f $< $@
+endif
 
 
 #
