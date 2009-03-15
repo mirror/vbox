@@ -123,6 +123,7 @@ void VBoxVMSettingsNetworkDetails::getFromAdapter (const CNetworkAdapter &aAdapt
     }
 
     setProperty ("MAC_Address", QVariant (aAdapter.GetMACAddress()));
+    setProperty ("Cable_Connected", QVariant (aAdapter.GetCableConnected()));
 }
 
 void VBoxVMSettingsNetworkDetails::putBackToAdapter()
@@ -172,6 +173,7 @@ void VBoxVMSettingsNetworkDetails::putBackToAdapter()
 
     /* Save common settings */
     mAdapter.SetMACAddress (property ("MAC_Address").toString());
+    mAdapter.SetCableConnected (property ("Cable_Connected").toBool());
 }
 
 void VBoxVMSettingsNetworkDetails::loadList (KNetworkAttachmentType aType,
@@ -246,6 +248,7 @@ void VBoxVMSettingsNetworkDetails::loadList (KNetworkAttachmentType aType,
 
     /* Load common settings */
     mLeMAC->setText (property ("MAC_Address").toString());
+    mCbCable->setChecked (property ("Cable_Connected").toBool());
 
     /* Applying language settings */
     retranslateUi();
@@ -385,26 +388,36 @@ void VBoxVMSettingsNetworkDetails::showEvent (QShowEvent *aEvent)
 void VBoxVMSettingsNetworkDetails::accept()
 {
     /* Save temporary attributes as dynamic properties */
-    setProperty ("BRG_Name",
-                 QVariant (mCbBRG->itemData (mCbBRG->currentIndex()).toString() == QString (emptyItemCode) ?
-                           QString::null : mCbBRG->currentText()));
-
-    setProperty ("INT_Name",
-                 QVariant (mCbINT->itemData (mCbINT->currentIndex()).toString() == QString (emptyItemCode) &&
-                           mCbINT->currentText() == mCbINT->itemText (mCbINT->currentIndex()) ?
-                           QString::null : mCbINT->currentText()));
-
-    setProperty ("HOI_Name",
-                 QVariant (mCbHOI->itemData (mCbHOI->currentIndex()).toString() == QString (emptyItemCode) ?
-                           QString::null : mCbHOI->currentText()));
-    setProperty ("HOI_DhcpEnabled", QVariant (mRbAuto->isChecked()));
-    setProperty ("HOI_IPv6Supported", QVariant (mLeIPv6->isEnabled()));
-    setProperty ("HOI_IPv4Addr", QVariant (mLeIPv4->text()));
-    setProperty ("HOI_IPv4Mask", QVariant (mLeHMv4->text()));
-    setProperty ("HOI_IPv6Addr", QVariant (mLeIPv6->text()));
-    setProperty ("HOI_IPv6Mask", QVariant (mLeHMv6->text()));
+    switch (mType)
+    {
+        case KNetworkAttachmentType_Bridged:
+            setProperty ("BRG_Name",
+                         QVariant (mCbBRG->itemData (mCbBRG->currentIndex()).toString() == QString (emptyItemCode) ?
+                                   QString::null : mCbBRG->currentText()));
+            break;
+        case KNetworkAttachmentType_Internal:
+            setProperty ("INT_Name",
+                         QVariant (mCbINT->itemData (mCbINT->currentIndex()).toString() == QString (emptyItemCode) &&
+                                   mCbINT->currentText() == mCbINT->itemText (mCbINT->currentIndex()) ?
+                                   QString::null : mCbINT->currentText()));
+            break;
+        case KNetworkAttachmentType_HostOnly:
+            setProperty ("HOI_Name",
+                         QVariant (mCbHOI->itemData (mCbHOI->currentIndex()).toString() == QString (emptyItemCode) ?
+                                   QString::null : mCbHOI->currentText()));
+            setProperty ("HOI_DhcpEnabled", QVariant (mRbAuto->isChecked()));
+            setProperty ("HOI_IPv6Supported", QVariant (mLeIPv6->isEnabled()));
+            setProperty ("HOI_IPv4Addr", QVariant (mLeIPv4->text()));
+            setProperty ("HOI_IPv4Mask", QVariant (mLeHMv4->text()));
+            setProperty ("HOI_IPv6Addr", QVariant (mLeIPv6->text()));
+            setProperty ("HOI_IPv6Mask", QVariant (mLeHMv6->text()));
+            break;
+        default:
+            break;
+    }
 
     setProperty ("MAC_Address", QVariant (mLeMAC->text()));
+    setProperty ("Cable_Connected", QVariant (mCbCable->isChecked()));
 
     QIDialog::accept();
 }

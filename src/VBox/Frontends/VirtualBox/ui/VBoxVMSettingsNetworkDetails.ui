@@ -347,7 +347,17 @@
      </property>
     </widget>
    </item>
-   <item row="12" column="0" colspan="5" >
+   <item row="12" column="2" colspan="3" >
+    <widget class="QCheckBox" name="mCbCable" >
+     <property name="text" >
+      <string>&amp;Cable connected</string>
+     </property>
+     <property name="toolTip" >
+      <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0" colspan="5" >
     <spacer name="verticalSpacer" >
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
@@ -360,7 +370,7 @@
      </property>
     </spacer>
    </item>
-   <item row="13" column="0" colspan="5" >
+   <item row="14" column="0" colspan="5" >
     <widget class="QIDialogButtonBox" name="mButtonBox" >
      <property name="standardButtons" >
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>

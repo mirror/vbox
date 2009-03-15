@@ -53,7 +53,6 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
             w->setFixedHeight (w->sizeHint().height());
 
     /* Remove tool-button border at MAC */
-    mTbCable->setStyleSheet ("QToolButton {border: 0px none black;}");
     mTbDetails->setStyleSheet ("QToolButton {border: 0px none black;}");
 #endif /* Q_WS_MAC */
 }
@@ -69,16 +68,13 @@ void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
     int adapterPos = mCbAdapterType->findData (aAdapter.GetAdapterType());
     mCbAdapterType->setCurrentIndex (adapterPos == -1 ? 0 : adapterPos);
 
-    /* Load cable-connected status */
-    mTbCable->setProperty ("EXT_Checked", QVariant (aAdapter.GetCableConnected()));
-    updateCableConnectedState();
-
     /* Load network attachment type */
     int attachmentPos = mCbAttachmentType->findData (aAdapter.GetAttachmentType());
     mCbAttachmentType->setCurrentIndex (attachmentPos == -1 ? 0 : attachmentPos);
 
     /* Load details page */
     mDetails->getFromAdapter (aAdapter);
+    updateAttachmentInfo();
 }
 
 void VBoxVMSettingsNetwork::putBackToAdapter()
@@ -90,9 +86,6 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
     KNetworkAdapterType type = (KNetworkAdapterType)
         mCbAdapterType->itemData (mCbAdapterType->currentIndex()).toInt();
     mAdapter.SetAdapterType (type);
-
-    /* Save cable-connected status */
-    mAdapter.SetCableConnected (mTbCable->property ("EXT_Checked").toBool());
 
     /* Save network attachment type */
     switch (attachmentType())
@@ -127,9 +120,7 @@ void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
     connect (mGbAdapter, SIGNAL (toggled (bool)),
              mValidator, SLOT (revalidate()));
     connect (mCbAttachmentType, SIGNAL (activated (const QString&)),
-             mValidator, SLOT (revalidate()));
-    connect (mTbCable, SIGNAL (clicked (bool)),
-             this, SLOT (updateCableConnectedState()));
+             this, SLOT (updateAttachmentInfo()));
     connect (mTbDetails, SIGNAL (clicked (bool)),
              this, SLOT (detailsClicked()));
 
@@ -151,8 +142,7 @@ QWidget* VBoxVMSettingsNetwork::setOrderAfter (QWidget *aAfter)
 {
     setTabOrder (aAfter, mGbAdapter);
     setTabOrder (mGbAdapter, mCbAdapterType);
-    setTabOrder (mCbAdapterType, mTbCable);
-    setTabOrder (mTbCable, mCbAttachmentType);
+    setTabOrder (mCbAdapterType, mCbAttachmentType);
     return mCbAttachmentType;
 }
 
@@ -179,21 +169,74 @@ void VBoxVMSettingsNetwork::retranslateUi()
 
     /* Translate combo-boxes content */
     populateComboboxes();
+
+    /* Translate attachment info */
+    updateAttachmentInfo();
 }
 
-void VBoxVMSettingsNetwork::updateCableConnectedState()
+void VBoxVMSettingsNetwork::updateAttachmentInfo()
 {
-    if (sender())
+    KNetworkAttachmentType type = attachmentType();
+    QString line ("<tr><td><i><b><nobr><font color=grey>%1:&nbsp;</font></nobr></b></i></td>"
+                  "<td><i><font color=grey>%2</font></i></td></tr>");
+    switch (type)
     {
-        /* If click called with slot - toggle button's state */
-        bool value = mTbCable->property ("EXT_Checked").toBool();
-        mTbCable->setProperty ("EXT_Checked", QVariant (!value));
+        case KNetworkAttachmentType_Bridged:
+        {
+            QString info;
+            QString name (mDetails->currentName (type));
+            info += line.arg (tr ("Adapter"))
+                        .arg (name.isEmpty() ? tr ("Not Selected") : name);
+            mLbInfo->setText ("<table>" + info + "</table>");
+            break;
+        }
+        case KNetworkAttachmentType_Internal:
+        {
+            QString info;
+            QString name (mDetails->currentName (type));
+            info += line.arg (tr ("Name"))
+                        .arg (name.isEmpty() ? tr ("Not Selected") : name);
+            mLbInfo->setText ("<table>" + info + "</table>");
+            break;
+        }
+        case KNetworkAttachmentType_HostOnly:
+        {
+            QString info;
+            QString name (mDetails->currentName (type));
+            info += line.arg (tr ("Interface"))
+                        .arg (name.isEmpty() ? tr ("Not Selected") : name);
+            if (!name.isEmpty())
+            {
+                bool dhcp = mDetails->property ("HOI_DhcpEnabled").toBool();
+                info += line.arg (tr ("Configuration"))
+                            .arg (dhcp ? tr ("Automatic", "configuration")
+                                       : tr ("Manual", "configuration"));
+                if (!dhcp)
+                {
+                    QString ipv4addr (mDetails->property ("HOI_IPv4Addr").toString());
+                    QString ipv4mask (mDetails->property ("HOI_IPv4Mask").toString());
+                    info += line.arg (tr ("IPv4 Address")).arg (ipv4addr) +
+                            line.arg (tr ("IPv4 Mask")).arg (ipv4mask);
+                    bool ipv6 = mDetails->property ("HOI_IPv6Supported").toBool();
+                    if (ipv6)
+                    {
+                        QString ipv6addr (mDetails->property ("HOI_IPv6Addr").toString());
+                        QString ipv6mask (mDetails->property ("HOI_IPv6Mask").toString());
+                        info += line.arg (tr ("IPv6 Address")).arg (ipv6addr) +
+                                line.arg (tr ("IPv6 Mask")).arg (ipv6mask);
+                    }
+                }
+            }
+            mLbInfo->setText ("<table>" + info + "</table>");
+            break;
+        }
+        default:
+            mLbInfo->clear();
+            break;
     }
 
-    /* Feat the icon relatively button state */
-    mTbCable->setIcon (VBoxGlobal::iconSet (mTbCable->
-        property ("EXT_Checked").toBool() ? ":/connect_16px.png" :
-                                            ":/disconnect_16px.png"));
+    if (mValidator)
+        mValidator->revalidate();
 }
 
 void VBoxVMSettingsNetwork::detailsClicked()
@@ -218,8 +261,7 @@ void VBoxVMSettingsNetwork::detailsClicked()
     mDetails->loadList (type, list);
     mDetails->activateWindow();
     mDetails->exec();
-    Assert (mValidator);
-    mValidator->revalidate();
+    updateAttachmentInfo();
 }
 
 void VBoxVMSettingsNetwork::populateComboboxes()
