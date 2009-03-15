@@ -1005,7 +1005,9 @@ int VBoxNetDhcp::run(void)
                 m_cbCurMsg = 0;
             }
             else if (VBoxNetArpHandleIt(m_pSession, m_hIf, m_pIfBuf, &m_MacAddress, m_Ipv4Address))
-                /* nothing */;
+            {
+                /* nothing */
+            }
 
             /* Advance to the next frame. */
             INTNETRingSkipFrame(m_pIfBuf, pRingBuf);
