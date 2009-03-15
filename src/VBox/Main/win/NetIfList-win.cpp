@@ -2425,6 +2425,9 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
 
 int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULONG ip, ULONG mask)
 {
+#ifndef VBOX_WITH_NETFLT
+    return VERR_NOT_IMPLEMENTED;
+#else
     HRESULT rc;
     GUID guid;
     rc = pIf->COMGETTER(Id) (&guid);
@@ -2479,10 +2482,14 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
     }
 
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+#endif
 }
 
 int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
+#ifndef VBOX_WITH_NETFLT
+    return VERR_NOT_IMPLEMENTED;
+#else
     HRESULT rc;
     GUID guid;
     rc = pIf->COMGETTER(Id) (&guid);
@@ -2537,10 +2544,14 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN
     }
 
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+#endif
 }
 
 int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
 {
+#ifndef VBOX_WITH_NETFLT
+    return VERR_NOT_IMPLEMENTED;
+#else
     HRESULT rc;
     GUID guid;
     rc = pIf->COMGETTER(Id) (&guid);
@@ -2593,10 +2604,14 @@ int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
     }
 
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+#endif
 }
 
 int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
 {
+#ifndef VBOX_WITH_NETFLT
+    return VERR_NOT_IMPLEMENTED;
+#else
     HRESULT rc;
     GUID guid;
     rc = pIf->COMGETTER(Id) (&guid);
@@ -2649,6 +2664,7 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
     }
 
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+#endif
 }
 
 int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
