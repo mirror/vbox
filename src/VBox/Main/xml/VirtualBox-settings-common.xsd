@@ -256,8 +256,8 @@
 -->
 <xsd:complexType name="TDhcpServer">
   <xsd:attribute name="networkName" type="xsd:string"  use="required"/>
-  <xsd:attribute name="lowerIp"     type="xsd:string"  use="required"/>
-  <xsd:attribute name="upperIp"     type="xsd:string"  use="required"/>
+  <xsd:attribute name="lowerIP"     type="xsd:string"  use="required"/>
+  <xsd:attribute name="upperIP"     type="xsd:string"  use="required"/>
   <xsd:attribute name="IPAddress"   type="xsd:string"  use="required"/>
   <xsd:attribute name="networkMask" type="xsd:string"  use="required"/>
   <xsd:attribute name="enabled"     type="xsd:boolean" use="required"/>

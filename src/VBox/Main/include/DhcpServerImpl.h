@@ -63,14 +63,16 @@ public:
     HRESULT init(VirtualBox *aVirtualBox, const settings::Key &aNode);
     HRESULT saveSettings (settings::Key &aParentNode);
 
+    void uninit();
+
     // IDhcpServer properties
     STDMETHOD(COMGETTER(NetworkName)) (BSTR *aName);
     STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(Enabled)) (BOOL aEnabled);
     STDMETHOD(COMGETTER(IPAddress)) (BSTR *aIPAddress);
     STDMETHOD(COMGETTER(NetworkMask)) (BSTR *aNetworkMask);
-    STDMETHOD(COMGETTER(FromIPAddress)) (BSTR *aIPAddress);
-    STDMETHOD(COMGETTER(ToIPAddress)) (BSTR *aIPAddress);
+    STDMETHOD(COMGETTER(LowerIP)) (BSTR *aIPAddress);
+    STDMETHOD(COMGETTER(UpperIP)) (BSTR *aIPAddress);
 
     STDMETHOD(SetConfiguration) (IN_BSTR aIPAddress, IN_BSTR aNetworkMask, IN_BSTR aFromIPAddress, IN_BSTR aToIPAddress);
 
@@ -89,8 +91,8 @@ private:
 
         Bstr IPAddress;
         Bstr networkMask;
-        Bstr FromIPAddress;
-        Bstr ToIPAddress;
+        Bstr lowerIP;
+        Bstr upperIP;
         BOOL enabled;
     } m;
 
