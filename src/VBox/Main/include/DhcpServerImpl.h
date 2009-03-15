@@ -78,6 +78,9 @@ public:
     static const wchar_t *getComponentName() { return L"DhcpServer"; }
 
 private:
+    /** weak VirtualBox parent */
+    const ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
+
     const Bstr mName;
 
     struct Data
