@@ -4777,6 +4777,7 @@ HRESULT VirtualBox::registerDhcpServer(DhcpServer *aDhcpServer,
     {
         return E_INVALIDARG;
     }
+    rc = S_OK;
 
     mData.mDhcpServers.push_back (aDhcpServer);
 

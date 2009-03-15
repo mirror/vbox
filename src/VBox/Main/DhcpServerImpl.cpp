@@ -41,6 +41,11 @@ void DhcpServer::FinalRelease()
     uninit ();
 }
 
+void DhcpServer::uninit()
+{
+    mVirtualBox->removeDependentChild (this);
+}
+
 HRESULT DhcpServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)
 {
     AssertReturn (aName != NULL, E_INVALIDARG);
@@ -55,8 +60,8 @@ HRESULT DhcpServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)
     m.IPAddress = "0.0.0.0";
     m.networkMask = "0.0.0.0";
     m.enabled = FALSE;
-    m.FromIPAddress = "0.0.0.0";
-    m.ToIPAddress = "0.0.0.0";
+    m.lowerIP = "0.0.0.0";
+    m.upperIP = "0.0.0.0";
 
     /* register with VirtualBox early, since uninit() will
      * unconditionally unregister on failure */
@@ -85,8 +90,8 @@ HRESULT DhcpServer::init(VirtualBox *aVirtualBox, const settings::Key &aNode)
     m.IPAddress = aNode.stringValue ("IPAddress");
     m.networkMask = aNode.stringValue ("networkMask");
     m.enabled = aNode.value <BOOL> ("enabled");
-    m.FromIPAddress = aNode.stringValue ("lowerIp");
-    m.ToIPAddress = aNode.stringValue ("upperIp");
+    m.lowerIP = aNode.stringValue ("lowerIP");
+    m.upperIP = aNode.stringValue ("upperIP");
 
     autoInitSpan.setSucceeded();
 
@@ -109,8 +114,9 @@ HRESULT DhcpServer::saveSettings (settings::Key &aParentNode)
     aNode.setValue <Bstr> ("networkName", mName);
     aNode.setValue <Bstr> ("IPAddress", m.IPAddress);
     aNode.setValue <Bstr> ("networkMask", m.networkMask);
-    aNode.setValue <Bstr> ("FromIPAddress", m.FromIPAddress);
-    aNode.setValue <Bstr> ("ToIPAddress", m.ToIPAddress);
+    aNode.setValue <Bstr> ("lowerIP", m.lowerIP);
+    aNode.setValue <Bstr> ("upperIP", m.upperIP);
+    aNode.setValue <BOOL> ("enabled", m.enabled);
 
     return S_OK;
 }
@@ -182,38 +188,38 @@ STDMETHODIMP DhcpServer::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
 
 }
 
-STDMETHODIMP DhcpServer::COMGETTER(FromIPAddress) (BSTR *aIPAddress)
+STDMETHODIMP DhcpServer::COMGETTER(LowerIP) (BSTR *aIPAddress)
 {
     CheckComArgOutPointerValid(aIPAddress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    m.FromIPAddress.cloneTo(aIPAddress);
+    m.lowerIP.cloneTo(aIPAddress);
 
     return S_OK;
 
 }
 
-STDMETHODIMP DhcpServer::COMGETTER(ToIPAddress) (BSTR *aIPAddress)
+STDMETHODIMP DhcpServer::COMGETTER(UpperIP) (BSTR *aIPAddress)
 {
     CheckComArgOutPointerValid(aIPAddress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    m.ToIPAddress.cloneTo(aIPAddress);
+    m.upperIP.cloneTo(aIPAddress);
 
     return S_OK;
 
 }
 
-STDMETHODIMP DhcpServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkMask, IN_BSTR aFromIPAddress, IN_BSTR aToIPAddress)
+STDMETHODIMP DhcpServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkMask, IN_BSTR aLowerIP, IN_BSTR aUpperIP)
 {
     AssertReturn (aIPAddress != NULL, E_INVALIDARG);
     AssertReturn (aNetworkMask != NULL, E_INVALIDARG);
-    AssertReturn (aFromIPAddress != NULL, E_INVALIDARG);
-    AssertReturn (aToIPAddress != NULL, E_INVALIDARG);
+    AssertReturn (aLowerIP != NULL, E_INVALIDARG);
+    AssertReturn (aUpperIP != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -223,10 +229,10 @@ STDMETHODIMP DhcpServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkM
 
     m.IPAddress = aIPAddress;
     m.networkMask = aNetworkMask;
-    m.FromIPAddress = aFromIPAddress;
-    m.ToIPAddress = aToIPAddress;
+    m.lowerIP = aLowerIP;
+    m.upperIP = aUpperIP;
 
     HRESULT rc = mVirtualBox->saveSettings();
 
-    return rc;
+    return S_OK;
 }

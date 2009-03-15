@@ -1219,7 +1219,7 @@
 
   <interface
     name="IDhcpServer" extends="$unknown"
-    uuid="f6de19f7-f4b5-4d93-b3de-664729267a53"
+    uuid="ed5c8393-e245-476d-a272-b65063a5d542"
     wsmap="managed"
   >
     <desc>
@@ -1253,13 +1253,13 @@
       </desc>
     </attribute>
 
-    <attribute name="FromIPAddress" type="wstring" readonly="yes">
+    <attribute name="lowerIP" type="wstring" readonly="yes">
       <desc>
         specifies from IP adrres in server address range
       </desc>
     </attribute>
 
-    <attribute name="ToIPAddress" type="wstring" readonly="yes">
+    <attribute name="upperIP" type="wstring" readonly="yes">
       <desc>
         specifies to IP adrres in server address range
       </desc>

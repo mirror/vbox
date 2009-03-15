@@ -779,10 +779,10 @@ int handleList(HandlerArg *a)
                 svr->COMGETTER(NetworkMask)(netmask.asOutParam());
                 RTPrintf("NetworkMask:    %lS\n", netmask.raw());
                 Bstr lowerIp;
-                svr->COMGETTER(FromIPAddress)(lowerIp.asOutParam());
+                svr->COMGETTER(LowerIP)(lowerIp.asOutParam());
                 RTPrintf("lowerIPAddress: %lS\n", lowerIp.raw());
                 Bstr upperIp;
-                svr->COMGETTER(ToIPAddress)(upperIp.asOutParam());
+                svr->COMGETTER(UpperIP)(upperIp.asOutParam());
                 RTPrintf("upperIPAddress: %lS\n", upperIp.raw());
                 RTPrintf("\n");
             }
