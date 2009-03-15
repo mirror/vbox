@@ -382,7 +382,15 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(InterfaceType) (HostNetworkInterfac
 
 STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkName) (BSTR *aNetworkName)
 {
-    return E_NOTIMPL;
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    Utf8Str utf8Name("HostInterfaceNetworking-");
+    utf8Name.append(Utf8Str(mInterfaceName)) ;
+    Bstr netName(utf8Name);
+    netName.detachTo (aNetworkName);
+
+    return S_OK;
 }
 
 STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_BSTR aNetMask)
