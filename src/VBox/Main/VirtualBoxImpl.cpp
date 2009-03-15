@@ -397,6 +397,7 @@ void VirtualBox::uninit()
     mData.mFloppyImages.clear();
     mData.mDVDImages.clear();
     mData.mHardDisks.clear();
+    mData.mDhcpServers.clear();
 
     mData.mProgressOperations.clear();
 
