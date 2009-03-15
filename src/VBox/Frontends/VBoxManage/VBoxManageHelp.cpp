@@ -76,9 +76,9 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage list [--long|-l] vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
 #if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
-                "                            bridgedifs|hostonlyifs|hostinfo|hddbackends|hdds|dvds|floppies|\n"
+                "                            bridgedifs|hostonlyifs|dhcpservers|hostinfo|hddbackends|hdds|dvds|floppies|\n"
 #else
-                "                            bridgedifs|hostinfo|hddbackends|hdds|dvds|floppies|\n"
+                "                            bridgedifs|hostinfo|dhcpservers|hddbackends|hdds|dvds|floppies|\n"
 #endif
 
                  "                            usbhost|usbfilters|systemproperties\n"
@@ -483,16 +483,31 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [*|host|<vmname> [<metric_list>]]\n"
                  "\n");
     }
-
 #if !defined(RT_OS_WINDOWS) || defined(VBOX_WITH_NETFLT)
     if (u64Cmd & USAGE_HOSTONLYIFS)
     {
-        RTPrintf("VBoxManage hostonlyif       ipconfig <name> [-dhcp| -ip<ipv4> [-netmask<ipv4> (default is 255.255.255.0)]| -ipv6<ipv6> [-netmasklengthv6<length> (default is 64)]]"
+        RTPrintf("VBoxManage hostonlyif       ipconfig <name> \n"
+                 "                                     [-dhcp| \n"
+                 "                                      -ip<ipv4> [-netmask<ipv4> (default is 255.255.255.0)]| \n"
+                 "                                      -ipv6<ipv6> [-netmasklengthv6<length> (default is 64)]]\n"
 # if defined(RT_OS_WINDOWS)
-                 "|\n"
                  "                            create |\n"
                  "                            remove <name>\n"
 # endif
+                 "\n");
+    }
+#endif
+
+#if !defined(RT_OS_WINDOWS) || defined(VBOX_WITH_NETFLT)
+    if (u64Cmd & USAGE_DHCPSERVER)
+    {
+        RTPrintf("VBoxManage dhcpserver       [add | create] [-netname <network_name> | -ifname <hostonly_if_name>]\n"
+                 "                                [-ip <ip_address>\n"
+                 "                                 -netmask <network_mask>\n"
+                 "                                 -lowerip <lower_ip>\n"
+                 "                                 -upperip <upper_ip>]\n"
+                 "                                [-enable | -disable]\n"
+                 "                            remove [-netname <network_name> | -ifname <hostonly_if_name>]\n"
                  "\n");
     }
 #endif

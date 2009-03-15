@@ -744,7 +744,18 @@ VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanc
 STDMETHODIMP
 VirtualBox::COMGETTER(DhcpServers) (ComSafeArrayOut (IDhcpServer *, aDhcpServers))
 {
-    return E_NOTIMPL;
+    if (ComSafeArrayOutIsNull (aDhcpServers))
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    SafeIfaceArray<IDhcpServer> svrs (mData.mDhcpServers);
+    svrs.detachTo (ComSafeArrayOutArg (aDhcpServers));
+
+    return S_OK;
 }
 
 // IVirtualBox methods
