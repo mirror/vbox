@@ -784,6 +784,9 @@ int handleList(HandlerArg *a)
                 Bstr upperIp;
                 svr->COMGETTER(UpperIP)(upperIp.asOutParam());
                 RTPrintf("upperIPAddress: %lS\n", upperIp.raw());
+                BOOL bEnabled;
+                svr->COMGETTER(Enabled)(&bEnabled);
+                RTPrintf("Enabled:        %s\n", bEnabled ? "Yes" : "No");
                 RTPrintf("\n");
             }
         }
