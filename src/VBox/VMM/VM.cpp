@@ -2300,10 +2300,10 @@ static PVMATRESET vmr3AtResetFreeU(PUVM pUVM, PVMATRESET pCur, PVMATRESET pPrev)
  *
  * @returns VBox status code.
  * @param   pVM             The VM.
- * @param   pDevInst        Device instance.
+ * @param   pDevIns         Device instance.
  * @param   pfnCallback     Callback function.
  */
-VMMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET pfnCallback)
+VMMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevIns, PFNVMATRESET pfnCallback)
 {
     int         rc = VERR_VM_ATRESET_NOT_FOUND;
     PVMATRESET  pPrev = NULL;
@@ -2311,8 +2311,9 @@ VMMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESE
     while (pCur)
     {
         if (    pCur->enmType == VMATRESETTYPE_DEV
-            &&  pCur->u.Dev.pDevIns == pDevInst
-            &&  (!pfnCallback || pCur->u.Dev.pfnCallback == pfnCallback))
+            &&  pCur->u.Dev.pDevIns == pDevIns
+            &&  (   !pfnCallback 
+                 || pCur->u.Dev.pfnCallback == pfnCallback))
         {
             pCur = vmr3AtResetFreeU(pVM->pUVM, pCur, pPrev);
             rc = VINF_SUCCESS;
@@ -2607,8 +2608,8 @@ static DECLCALLBACK(int) vmR3AtStateDeregisterU(PUVM pUVM, PFNVMATSTATE pfnAtSta
     PVMATSTATE pPrev = NULL;
     PVMATSTATE pCur = pUVM->vm.s.pAtState;
     while (     pCur
-           &&   pCur->pfnAtState == pfnAtState
-           &&   pCur->pvUser == pvUser)
+           &&   (   pCur->pfnAtState != pfnAtState
+                 || pCur->pvUser != pvUser))
     {
         pPrev = pCur;
         pCur = pCur->pNext;
@@ -2778,8 +2779,8 @@ static DECLCALLBACK(int)    vmR3AtErrorDeregisterU(PUVM pUVM, PFNVMATERROR pfnAt
     PVMATERROR pPrev = NULL;
     PVMATERROR pCur = pUVM->vm.s.pAtError;
     while (     pCur
-           &&   pCur->pfnAtError == pfnAtError
-           &&   pCur->pvUser == pvUser)
+           &&   (   pCur->pfnAtError != pfnAtError
+                 || pCur->pvUser != pvUser))
     {
         pPrev = pCur;
         pCur = pCur->pNext;
@@ -3063,8 +3064,8 @@ static DECLCALLBACK(int)    vmR3AtRuntimeErrorDeregisterU(PUVM pUVM, PFNVMATRUNT
     PVMATRUNTIMEERROR pPrev = NULL;
     PVMATRUNTIMEERROR pCur = pUVM->vm.s.pAtRuntimeError;
     while (     pCur
-           &&   pCur->pfnAtRuntimeError == pfnAtRuntimeError
-           &&   pCur->pvUser == pvUser)
+           &&   (   pCur->pfnAtRuntimeError != pfnAtRuntimeError
+                 || pCur->pvUser != pvUser))
     {
         pPrev = pCur;
         pCur = pCur->pNext;
