@@ -168,7 +168,7 @@ public:
     const QList<DiskValue>& usedDisksList() { return mUsedDisksList; }
     QList<Attachment> fullUsedList();
 
-    void removeSata();
+    void removeAddController();
     void updateDisks();
 
 private:
@@ -279,13 +279,15 @@ public:
     const CMachine& machine() const { return mMachine; }
     void setMachine (const CMachine &aMachine) { mMachine = aMachine; }
 
-    int sataCount() const { return mSataCount; }
-    void setSataCount (int aSataCount)
+    int addCount() const { return mAddCount; }
+    void setAddCount (int aAddCount, KStorageBus aAddBus)
     {
-        if (mSataCount != aSataCount)
+        if (mAddCount != aAddCount ||
+            aAddBus != mAddBus)
         {
-            mSataCount = aSataCount;
-            makeSATAList();
+            mAddCount = aAddCount;
+            mAddBus = aAddBus;
+            makeAddControllerList();
         }
     }
 
@@ -312,8 +314,9 @@ private slots:
 private:
 
     void makeIDEList();
-    void makeSATAList();
+    void makeAddControllerList();
     void makeMediumList();
+
 
     static HDSettings *mInstance;
 
@@ -321,10 +324,11 @@ private:
     CMachine mMachine;
 
     QList<SlotValue> mIDEList;
-    QList<SlotValue> mSATAList;
+    QList<SlotValue> mAddControllerList;
     QList<DiskValue> mDisksList;
 
-    int mSataCount;
+    int mAddCount;
+    KStorageBus mAddBus;
     bool mShowDiffs;
 };
 
@@ -363,7 +367,9 @@ private slots:
     void delAttachment();
     void showMediaManager();
 
-    void onSATACheckToggled (int);
+    void onAddControllerCheckToggled (int);
+    void onAddControllerTypeChanged (int aIndex);
+    bool checkAddControllers (int aWhat);
     void onShowDiffsCheckToggled (int);
 
     void updateActions (const QModelIndex &aIndex);
@@ -378,7 +384,28 @@ private:
     QUuid getWithMediaManager (const QUuid &aInitialId = QUuid());
     QUuid getWithNewHDWizard();
     int maxNameLength() const;
+    void prepareComboboxes();
     void removeFocus();
+    KStorageControllerType currentControllerType() const
+    {
+        return static_cast<KStorageControllerType> (mCbControllerType->itemData (mCbControllerType->currentIndex()).toInt());
+    }
+    KStorageBus currentBusType() const
+    {
+        return vboxGlobal().toStorageBusType (currentControllerType());
+    }
+    int currentMaxPortCount() const
+    {
+        int c = 0;
+        switch (currentBusType())
+        {
+            case KStorageBus_IDE: c = 2; break;
+            case KStorageBus_SATA: c = 30; break;
+            case KStorageBus_SCSI: c = 16; break;
+            default: break;
+        }
+        return c;
+    }
 
     /* variables */
     CMachine mMachine;
@@ -391,6 +418,8 @@ private:
 
     bool mWasTableSelected;
     bool mPolished;
+
+    int mLastSelAddControllerIndex;
 };
 
 #endif // __VBoxVMSettingsHD_h__

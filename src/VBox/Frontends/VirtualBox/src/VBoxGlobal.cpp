@@ -1270,7 +1270,7 @@ QString VBoxGlobal::toFullString (KStorageBus aBus, LONG aChannel,
         case KStorageBus_SATA:
         case KStorageBus_SCSI:
         {
-            /* we only have one SATA device so far which is always zero */
+            /* we only have one SATA/SCSI device so far which is always zero */
             device = QString ("%1 %2")
                 .arg (vboxGlobal().toString (aBus))
                 .arg (vboxGlobal().toString (aBus, aChannel));
@@ -2939,18 +2939,12 @@ void VBoxGlobal::retranslateUi()
         tr ("PIIX4", "StorageControllerType");
     mStorageControllerTypes [KStorageControllerType_ICH6] =
         tr ("ICH6", "StorageControllerType");
-    /* Leave them out for now because this is used for the IDE controller
-     * setting in the general page and we do not want that the other controllers
-     * show up there.
-     */
-#if 0
     mStorageControllerTypes [KStorageControllerType_IntelAhci] =
         tr ("AHCI", "StorageControllerType");
     mStorageControllerTypes [KStorageControllerType_LsiLogic] =
         tr ("Lsilogic", "StorageControllerType");
     mStorageControllerTypes [KStorageControllerType_BusLogic] =
         tr ("BusLogic", "StorageControllerType");
-#endif
 
     mUSBDeviceStates [KUSBDeviceState_NotSupported] =
         tr ("Not supported", "USBDeviceState");

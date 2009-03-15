@@ -1150,16 +1150,28 @@ void VBoxProblemReporter::cannotDeleteHardDiskStorage (QWidget *aParent,
         formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
-int VBoxProblemReporter::confirmDetachSATASlots (QWidget *aParent)
+int VBoxProblemReporter::confirmDetachAddControllerSlots (QWidget *aParent) const
 {
     return messageOkCancel (aParent, Question,
-        tr ("<p>There are hard disks attached to SATA ports of this virtual "
-            "machine. If you disable the SATA controller, all these hard disks "
+        tr ("<p>There are hard disks attached to ports of the additional controller. "
+            "If you disable the additional controller, all these hard disks "
             "will be automatically detached.</p>"
             "<p>Are you sure that you want to "
-            "disable the SATA controller?</p>"),
+            "disable the additional controller?</p>"),
         0 /* aAutoConfirmId */,
         tr ("Disable", "hard disk"));
+}
+
+int VBoxProblemReporter::confirmChangeAddControllerSlots (QWidget *aParent) const
+{
+    return messageOkCancel (aParent, Question,
+        tr ("<p>There are hard disks attached to ports of the additional controller. "
+            "If you change the additional controller, all these hard disks "
+            "will be automatically detached.</p>"
+            "<p>Are you sure that you want to "
+            "change the additional controller?</p>"),
+        0 /* aAutoConfirmId */,
+        tr ("Change", "hard disk"));
 }
 
 int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (QWidget* aParent)
