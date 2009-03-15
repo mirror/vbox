@@ -20,6 +20,7 @@
  * additional information or have any questions.
  */
 
+
 #include "VBoxVMSettingsHD.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
@@ -34,9 +35,6 @@
 #include <QMetaProperty>
 #include <QScrollBar>
 #include <QStylePainter>
-
-/** SATA Ports count */
-static const ULONG SATAPortsCount = 30;
 
 /**
  * Clear the focus from the current focus owner on guard creation.
@@ -227,22 +225,18 @@ QList <Attachment> AttachmentsModel::fullUsedList()
     return list;
 }
 
-void AttachmentsModel::removeSata()
+void AttachmentsModel::removeAddController()
 {
-    QList <SlotValue>::iterator slotIt = mUsedSlotsList.begin();
-    QList <DiskValue>::iterator diskIt = mUsedDisksList.begin();
-    while (slotIt != mUsedSlotsList.end())
+    int i=0;
+    while (i < mUsedSlotsList.size())
     {
-        if ((*slotIt).bus == KStorageBus_SATA)
-        {
-            slotIt = mUsedSlotsList.erase (slotIt);
-            diskIt = mUsedDisksList.erase (diskIt);
-        }
+        if (mUsedSlotsList.at (i).bus == KStorageBus_SATA ||
+            mUsedSlotsList.at (i).bus == KStorageBus_SCSI)
+            /* We have to use delItem cause then all views are informed about
+               the update */
+            delItem (i);
         else
-        {
-            ++ slotIt;
-            ++ diskIt;
-        }
+            ++i;
     }
 }
 
@@ -434,11 +428,11 @@ HDSettings* HDSettings::instance (QWidget *aParent,
 HDSettings::HDSettings (QWidget *aParent, AttachmentsModel *aWatched)
     : QObject (aParent)
     , mModel (aWatched)
-    , mSataCount (SATAPortsCount)
+    , mAddCount (0)
     , mShowDiffs (false)
 {
     makeIDEList();
-    makeSATAList();
+    makeAddControllerList();
 }
 
 HDSettings::~HDSettings()
@@ -450,7 +444,7 @@ QList <SlotValue> HDSettings::slotsList (const SlotValue &aIncluding,
                                          bool aFilter /* = false */) const
 {
     /* Compose the full slots list */
-    QList <SlotValue> list (mIDEList + mSATAList);
+    QList <SlotValue> list (mIDEList + mAddControllerList);
     if (!aFilter)
         return list;
 
@@ -504,12 +498,12 @@ void HDSettings::makeIDEList()
     mIDEList << SlotValue (KStorageBus_IDE, 1, 1);
 }
 
-void HDSettings::makeSATAList()
+void HDSettings::makeAddControllerList()
 {
-    mSATAList.clear();
+    mAddControllerList.clear();
 
-    for (int i = 0; i < mSataCount; ++ i)
-        mSATAList << SlotValue (KStorageBus_SATA, i, 0);
+    for (int i = 0; i < mAddCount; ++ i)
+        mAddControllerList << SlotValue (mAddBus, i, 0);
 }
 
 void HDSettings::makeMediumList()
@@ -552,6 +546,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     : mValidator (0)
     , mWasTableSelected (false)
     , mPolished (false)
+    , mLastSelAddControllerIndex (0)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsHD::setupUi (this);
@@ -623,8 +618,10 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     connect (mVdmAction, SIGNAL (triggered (bool)),
              this, SLOT (showMediaManager()));
 
-    connect (mSATACheck, SIGNAL (stateChanged (int)),
-             this, SLOT (onSATACheckToggled (int)));
+    connect (mAddControllerCheck, SIGNAL (stateChanged (int)),
+             this, SLOT (onAddControllerCheckToggled (int)));
+    connect (mCbControllerType, SIGNAL (currentIndexChanged (int)),
+             this, SLOT (onAddControllerTypeChanged (int)));
     connect (mShowDiffsCheck, SIGNAL (stateChanged (int)),
              this, SLOT (onShowDiffsCheckToggled (int)));
 
@@ -650,12 +647,24 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
     mMachine = aMachine;
     HDSettings::instance()->setMachine (mMachine);
 
-    const QString sataName = QString("SATA");
-    CStorageController sataCtl = mMachine.GetStorageControllerByName(sataName);
+    /* For now we search for the first one which isn't IDE */
+    CStorageController addController;
+    QVector<CStorageController> scs = mMachine.GetStorageControllers();
+    foreach (const CStorageController &sc, scs)
+        if (sc.GetBus() != KStorageBus_IDE)
+        {
+            printf  ("%s\n", qPrintable(sc.GetName()));
+            addController = sc;
+            break;
+        }
+    if (!addController.isNull())
+        mCbControllerType->setCurrentIndex (mCbControllerType->findData (addController.GetControllerType()));
+    else
+        mCbControllerType->setCurrentIndex (0);
 
-    mSATACheck->setChecked (!sataCtl.isNull());
+    mAddControllerCheck->setChecked (!addController.isNull());
 
-    onSATACheckToggled (mSATACheck->checkState());
+    onAddControllerCheckToggled (mAddControllerCheck->checkState());
     onShowDiffsCheckToggled (mShowDiffsCheck->checkState());
 
     /* Load attachments list */
@@ -681,9 +690,6 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
 
 void VBoxVMSettingsHD::putBackTo()
 {
-    const QString sataName = QString("SATA");
-    const QString ideName = QString("IDE");
-
     /* Detach all attached Hard Disks */
     CHardDiskAttachmentVector vec = mMachine.GetHardDiskAttachments();
     for (int i = 0; i < vec.size(); ++ i)
@@ -702,47 +708,47 @@ void VBoxVMSettingsHD::putBackTo()
         }
     }
 
-    /* Check the SATA setting. */
-    CStorageController sataCtl = mMachine.GetStorageControllerByName(sataName);
 
-    if (mSATACheck->isChecked() && sataCtl.isNull())
+    /* Clear all storage controllers beside the IDE one */
+    CStorageController addController;
+    QVector<CStorageController> scs = mMachine.GetStorageControllers();
+    foreach (const CStorageController &sc, scs)
+        if (sc.GetBus() != KStorageBus_IDE)
+            mMachine.RemoveStorageController (sc.GetName());
+
+    /* Now add an additional controller if the user has enabled this */
+    CStorageController addCtl;
+    if (mAddControllerCheck->isChecked())
     {
-        /* The SATA controller is enabled and was disabled previously. */
-        mMachine.AddStorageController(sataName, KStorageBus_SATA);
-        sataCtl = mMachine.GetStorageControllerByName(sataName);
-        sataCtl.SetControllerType(KStorageControllerType_IntelAhci);
-    }
-    else if (!mSATACheck->isChecked() && !sataCtl.isNull())
-    {
-        /* The SATA controller is disabled now but was enabled previously. */
-        sataCtl = NULL;
-        mMachine.RemoveStorageController(sataName);
+        KStorageControllerType sct = currentControllerType();
+        KStorageBus sv = currentBusType();
+        addCtl = mMachine.AddStorageController (vboxGlobal().toString (sv), sv);
+        addCtl.SetControllerType (sct);
     }
 
-    /* Set to the maximum because we get errors if there are more hard disks
-     * than currently activated ports. */
-    if (!sataCtl.isNull())
-        sataCtl.SetPortCount (30);
+    /* On SATA it is possible to set the max port count. We want not wasting resources
+     * so we try to find the port with the highest number & set it as max port count.
+     * But first set it to the maximum because we get errors if there are more hard
+     * disks than currently activated ports. */
+    if (!addCtl.isNull() &&
+        addCtl.GetBus() == KStorageBus_SATA)
+        addCtl.SetPortCount (30);
 
     /* Attach all listed Hard Disks */
     LONG maxSATAPort = 1;
+    QString ctrlName;
     QList <Attachment> list (mModel->fullUsedList());
     for (int i = 0; i < list.size(); ++ i)
     {
+        ctrlName = vboxGlobal().toString (list [i].slot.bus);
         if (list [i].slot.bus == KStorageBus_SATA)
         {
             maxSATAPort = maxSATAPort < (list [i].slot.channel + 1) ?
                           (list [i].slot.channel + 1) : maxSATAPort;
-
-            mMachine.AttachHardDisk(list [i].disk.id,
-                sataName, list [i].slot.channel, list [i].slot.device);
-        }
-        else if (list [i].slot.bus == KStorageBus_IDE)
-        {
-            mMachine.AttachHardDisk(list [i].disk.id,
-                ideName, list [i].slot.channel, list [i].slot.device);
         }
 
+        mMachine.AttachHardDisk(list [i].disk.id,
+                                ctrlName, list [i].slot.channel, list [i].slot.device);
         /* [dsen] check this */
         if (!mMachine.isOk())
             vboxProblem().cannotAttachHardDisk (this, mMachine,
@@ -751,8 +757,10 @@ void VBoxVMSettingsHD::putBackTo()
                 list [i].slot.bus, list [i].slot.channel, list [i].slot.device);
     }
 
-    if (!sataCtl.isNull())
-        sataCtl.SetPortCount (maxSATAPort);
+    /* Set the maximum port count if the additional controller is a SATA controller. */
+    if (!addCtl.isNull() &&
+        addCtl.GetBus() == KStorageBus_SATA)
+        addCtl.SetPortCount (maxSATAPort);
 }
 
 void VBoxVMSettingsHD::setValidator (QIWidgetValidator *aVal)
@@ -795,8 +803,8 @@ bool VBoxVMSettingsHD::revalidate (QString &aWarning, QString &)
 
 void VBoxVMSettingsHD::setOrderAfter (QWidget *aWidget)
 {
-    setTabOrder (aWidget, mSATACheck);
-    setTabOrder (mSATACheck, mTwAts);
+    setTabOrder (aWidget, mAddControllerCheck);
+    setTabOrder (mAddControllerCheck, mTwAts);
     setTabOrder (mTwAts, mShowDiffsCheck);
 }
 
@@ -821,6 +829,8 @@ void VBoxVMSettingsHD::retranslateUi()
     mVdmAction->setWhatsThis (tr ("Invokes the Virtual Media Manager to select "
                                   "a hard disk to attach to the currently "
                                   "highlighted slot."));
+
+    prepareComboboxes();
 }
 
 void VBoxVMSettingsHD::addAttachment()
@@ -939,47 +949,83 @@ void VBoxVMSettingsHD::updateActions (const QModelIndex& /* aIndex */)
                             mTwAts->currentIndex().column() == 1);
 }
 
-void VBoxVMSettingsHD::onSATACheckToggled (int aState)
+void VBoxVMSettingsHD::onAddControllerCheckToggled (int aState)
 {
     removeFocus();
-    if (aState == Qt::Unchecked)
-    {
-        /* Search the list for at least one SATA port in */
-        QList <SlotValue> list (mModel->usedSlotsList());
-        int firstSataPort = 0;
-        for (; firstSataPort < list.size(); ++ firstSataPort)
-            if (list [firstSataPort].bus == KStorageBus_SATA)
-                break;
-
-        /* If list contains at least one SATA port */
-        if (firstSataPort < list.size())
+    if (mAddControllerCheck->checkState() == Qt::Unchecked)
+        if (checkAddControllers (0))
         {
-            if (vboxProblem().confirmDetachSATASlots (this) != QIMessageBox::Ok)
-            {
-                /* Switch check-box back to "Qt::Checked" */
-                mSATACheck->blockSignals (true);
-                mSATACheck->setCheckState (Qt::Checked);
-                mSATACheck->blockSignals (false);
-                return;
-            }
-            else
-            {
-                removeFocus();
-                /* Delete SATA items */
-                mModel->removeSata();
-
-                /* Set column #1 of first index to be the current */
-                mTwAts->setCurrentIndex (mModel->index (0, 1));
-
-                if (mValidator)
-                    mValidator->revalidate();
-            }
+            /* Switch check-box back to "Qt::Checked" */
+            mAddControllerCheck->blockSignals (true);
+            mAddControllerCheck->setCheckState (Qt::Checked);
+            mAddControllerCheck->blockSignals (false);
+            /* The user cancel the request so do nothing */
+            return;
         }
+
+    mCbControllerType->setEnabled (aState == Qt::Checked);
+    HDSettings::instance()->setAddCount (mAddControllerCheck->checkState() == Qt::Checked ?
+                                         currentMaxPortCount() : 0,
+                                         currentBusType());
+    updateActions (mTwAts->currentIndex());
+}
+
+void VBoxVMSettingsHD::onAddControllerTypeChanged (int aIndex)
+{
+    removeFocus();
+    if (checkAddControllers (1))
+    {
+        /* Switch check-box back to "Qt::Checked" */
+        mCbControllerType->blockSignals (true);
+        mCbControllerType->setCurrentIndex (mLastSelAddControllerIndex);
+        mCbControllerType->blockSignals (false);
+        /* The user cancel the request so do nothing */
+        return;
     }
 
-    HDSettings::instance()->setSataCount (aState == Qt::Checked ?
-                                          SATAPortsCount : 0);
+    /* Save the new index for later roll back */
+    mLastSelAddControllerIndex = aIndex;
+
+    HDSettings::instance()->setAddCount (mAddControllerCheck->checkState() == Qt::Checked ?
+                                         currentMaxPortCount() : 0,
+                                         currentBusType());
     updateActions (mTwAts->currentIndex());
+}
+
+bool VBoxVMSettingsHD::checkAddControllers (int aWhat)
+{
+    /* Search the list for at least one SATA/SCSI port in */
+    QList <SlotValue> list (mModel->usedSlotsList());
+    int firstAddPort = 0;
+    for (; firstAddPort < list.size(); ++ firstAddPort)
+        if (list [firstAddPort].bus == KStorageBus_SATA ||
+            list [firstAddPort].bus == KStorageBus_SCSI)
+            break;
+
+    /* If list contains at least one SATA/SCSI port */
+    if (firstAddPort < list.size())
+    {
+        int result = 0;
+        if (aWhat == 0)
+            result = vboxProblem().confirmDetachAddControllerSlots (this);
+        else
+            result = vboxProblem().confirmChangeAddControllerSlots (this);
+        if (result != QIMessageBox::Ok)
+            return true;
+        else
+        {
+            removeFocus();
+            /* Delete additional controller items */
+            mModel->removeAddController();
+
+            /* Set column #1 of first index to be the current */
+            mTwAts->setCurrentIndex (mModel->index (0, 1));
+
+            if (mValidator)
+                mValidator->revalidate();
+        }
+    }
+    return false;
 }
 
 void VBoxVMSettingsHD::onShowDiffsCheckToggled (int aState)
@@ -1039,7 +1085,7 @@ bool VBoxVMSettingsHD::eventFilter (QObject *aObject, QEvent *aEvent)
                     /* Due to table on getting focus back from the child
                      * put it instantly to this child again, make a hack
                      * to put focus to the real previous owner. */
-                    mSATACheck->setFocus();
+                    mAddControllerCheck->setFocus();
                     return true;
                 }
                 default:
@@ -1135,6 +1181,23 @@ int VBoxVMSettingsHD::maxNameLength() const
     return nameLength;
 }
 
+void VBoxVMSettingsHD::prepareComboboxes()
+{
+    /* Save the current selected value */
+    int current = mCbControllerType->currentIndex();
+    if (current == -1)
+        current = 0;
+    /* Clear the driver box */
+    mCbControllerType->clear();
+    /* Refill them */
+    mCbControllerType->addItem (vboxGlobal().toString (KStorageControllerType_IntelAhci), KStorageControllerType_IntelAhci);
+    mCbControllerType->addItem (vboxGlobal().toString (KStorageControllerType_LsiLogic), KStorageControllerType_LsiLogic);
+    mCbControllerType->addItem (vboxGlobal().toString (KStorageControllerType_BusLogic), KStorageControllerType_BusLogic);
+
+    /* Set the old value */
+    mCbControllerType->setCurrentIndex (current);
+}
+
 void VBoxVMSettingsHD::removeFocus()
 {
 #ifdef Q_WS_MAC
@@ -1147,3 +1210,4 @@ void VBoxVMSettingsHD::removeFocus()
         focusWidget->clearFocus();
 #endif /* Q_WS_MAC */
 }
+

@@ -347,6 +347,24 @@ public:
         return KStorageBus (it.key());
     }
 
+    KStorageBus toStorageBusType (KStorageControllerType aControllerType) const
+    {
+        KStorageBus sb = KStorageBus_Null;
+        switch (aControllerType)
+        {
+            case KStorageControllerType_Null: sb = KStorageBus_Null; break;
+            case KStorageControllerType_PIIX3:
+            case KStorageControllerType_PIIX4:
+            case KStorageControllerType_ICH6: sb = KStorageBus_IDE; break;
+            case KStorageControllerType_IntelAhci: sb = KStorageBus_SATA; break;
+            case KStorageControllerType_LsiLogic:
+            case KStorageControllerType_BusLogic: sb = KStorageBus_SCSI; break;
+            default:
+              AssertMsgFailed (("toStorageBusType: %d not handled\n", aControllerType)); break;
+        }
+        return sb;
+    }
+
     QString toString (KStorageBus aBus, LONG aChannel) const;
     LONG toStorageChannel (KStorageBus aBus, const QString &aChannel) const;
 

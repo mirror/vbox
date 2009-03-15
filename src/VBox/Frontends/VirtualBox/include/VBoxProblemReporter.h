@@ -231,7 +231,8 @@ public:
     void cannotDeleteHardDiskStorage (QWidget *aParent, const CHardDisk &aHD,
                                       const CProgress &aProgress);
 
-    int confirmDetachSATASlots (QWidget *aParent);
+    int confirmDetachAddControllerSlots (QWidget *aParent) const;
+    int confirmChangeAddControllerSlots (QWidget *aParent) const;
     int confirmRunNewHDWzdOrVDM (QWidget* aParent);
 
     void cannotCreateHardDiskStorage (QWidget *aParent, const CVirtualBox &aVBox,
