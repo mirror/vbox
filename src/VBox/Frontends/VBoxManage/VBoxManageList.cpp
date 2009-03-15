@@ -83,7 +83,8 @@ enum enOptionCodes
     LISTFLOPPIES,
     LISTUSBHOST,
     LISTUSBFILTERS,
-    LISTSYSTEMPROPERTIES
+    LISTSYSTEMPROPERTIES,
+    LISTDHCPSERVERS
 };
 
 static const RTGETOPTDEF g_aListOptions[]
@@ -96,7 +97,7 @@ static const RTGETOPTDEF g_aListOptions[]
         { "hostfloppies",       LISTHOSTFLOPPIES, RTGETOPT_REQ_NOTHING },
         { "hostifs",             LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING }, /* backward compatibility */
         { "bridgedifs",          LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING },
-        #if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
         { "hostonlyifs",          LISTHOSTONLYIFS, RTGETOPT_REQ_NOTHING },
 #endif
         { "hostinfo",           LISTHOSTINFO, RTGETOPT_REQ_NOTHING },
@@ -106,7 +107,8 @@ static const RTGETOPTDEF g_aListOptions[]
         { "floppies",           LISTFLOPPIES, RTGETOPT_REQ_NOTHING },
         { "usbhost",            LISTUSBHOST, RTGETOPT_REQ_NOTHING },
         { "usbfilters",         LISTUSBFILTERS, RTGETOPT_REQ_NOTHING },
-        { "systemproperties",   LISTSYSTEMPROPERTIES, RTGETOPT_REQ_NOTHING }
+        { "systemproperties",   LISTSYSTEMPROPERTIES, RTGETOPT_REQ_NOTHING },
+        { "dhcpservers",        LISTDHCPSERVERS, RTGETOPT_REQ_NOTHING }
       };
 
 int handleList(HandlerArg *a)
@@ -146,6 +148,7 @@ int handleList(HandlerArg *a)
             case LISTUSBHOST:
             case LISTUSBFILTERS:
             case LISTSYSTEMPROPERTIES:
+            case LISTDHCPSERVERS:
                 if (command)
                     return errorSyntax(USAGE_LIST, "Too many subcommands for \"list\" command.\n");
 
@@ -350,7 +353,11 @@ int handleList(HandlerArg *a)
                 RTPrintf("MediumType:            %s\n", getHostIfMediumTypeText(Type));
                 HostNetworkInterfaceStatus_T Status;
                 networkInterface->COMGETTER(Status)(&Status);
-                RTPrintf("Status:          %s\n\n", getHostIfStatusText(Status));
+                RTPrintf("Status:          %s\n", getHostIfStatusText(Status));
+                Bstr netName;
+                networkInterface->COMGETTER(NetworkName)(netName.asOutParam());
+                RTPrintf("VBoxNetworkName: %lS\n\n", netName.raw());
+
 #endif
             }
         }
@@ -753,6 +760,32 @@ int handleList(HandlerArg *a)
             systemProperties->COMGETTER(LogHistoryCount)(&ulValue);
             RTPrintf("Log history count:           %u\n", ulValue);
 
+        }
+        break;
+        case LISTDHCPSERVERS:
+        {
+            com::SafeIfaceArray<IDhcpServer> svrs;
+            CHECK_ERROR(a->virtualBox, COMGETTER(DhcpServers)(ComSafeArrayAsOutParam (svrs)));
+            for (size_t i = 0; i < svrs.size(); ++ i)
+            {
+                ComPtr<IDhcpServer> svr = svrs[i];
+                Bstr netName;
+                svr->COMGETTER(NetworkName)(netName.asOutParam());
+                RTPrintf("NetworkName:    %lS\n", netName.raw());
+                Bstr ip;
+                svr->COMGETTER(IPAddress)(ip.asOutParam());
+                RTPrintf("IP:             %lS\n", ip.raw());
+                Bstr netmask;
+                svr->COMGETTER(NetworkMask)(netmask.asOutParam());
+                RTPrintf("NetworkMask:    %lS\n", netmask.raw());
+                Bstr lowerIp;
+                svr->COMGETTER(FromIPAddress)(lowerIp.asOutParam());
+                RTPrintf("lowerIPAddress: %lS\n", lowerIp.raw());
+                Bstr upperIp;
+                svr->COMGETTER(ToIPAddress)(upperIp.asOutParam());
+                RTPrintf("upperIPAddress: %lS\n", upperIp.raw());
+                RTPrintf("\n");
+            }
         }
         break;
     } // end switch
