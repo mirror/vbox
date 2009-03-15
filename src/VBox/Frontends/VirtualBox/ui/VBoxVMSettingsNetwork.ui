@@ -84,20 +84,10 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1" >
+      <item row="0" column="1" colspan="2" >
        <widget class="QComboBox" name="mCbAdapterType" >
         <property name="whatsThis" >
          <string>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2" >
-       <widget class="QToolButton" name="mTbCable" >
-        <property name="whatsThis" >
-         <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
-        </property>
-        <property name="autoRaise" >
-         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -131,6 +121,22 @@
         </property>
        </widget>
       </item>
+      <item row="2" column="1" colspan="2" >
+       <widget class="QLabel" name="mLbInfo" >
+        <property name="alignment" >
+         <set>Qt::AlignLeft|Qt::AlignTop</set>
+        </property>
+        <property name="sizePolicy" >
+         <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="wordWrap" >
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -143,19 +149,6 @@
       <size>
        <width>40</width>
        <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="2" column="1" >
-    <spacer>
-     <property name="orientation" >
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" >
-      <size>
-       <width>20</width>
-       <height>40</height>
       </size>
      </property>
     </spacer>

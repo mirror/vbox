@@ -58,7 +58,7 @@ protected:
 
 private slots:
 
-    void updateCableConnectedState();
+    void updateAttachmentInfo();
     void detailsClicked();
 
 private:
