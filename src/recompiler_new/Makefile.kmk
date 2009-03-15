@@ -251,7 +251,9 @@ VBoxREMImp_NAME            = VBoxREM
  endif
 VBoxREMImp_INST            = $(INST_LIB)
 VBoxREMImp_SOURCES.win     = $(PATH_VBoxREMImp)/VBoxREMWin.def
+VBoxREMImp_CLEAN.win       = $(PATH_VBoxREMImp)/VBoxREMWin.def
 VBoxREMImp_SOURCES.os2     = $(PATH_VBoxREMImp)/VBoxREMOS2.def
+VBoxREMImp_CLEAN.os2       = $(PATH_VBoxREMImp)/VBoxREMOS2.def
  ifn1of ($(KBUILD_TARGET), os2 win)
 VBoxREMImp_SOURCES         = $(PATH_VBoxREMImp)/VBoxREMImp.c
 VBoxREMImp_CLEAN           = $(PATH_VBoxREMImp)/VBoxREMImp.c
