@@ -89,7 +89,7 @@ DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data)
 
 int vboxadd_cmc_init (void)
 {
-    return 0;
+    return VINF_SUCCESS;
 }
 
 void vboxadd_cmc_fini (void)
