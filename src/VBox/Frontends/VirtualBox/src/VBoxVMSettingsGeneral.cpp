@@ -139,6 +139,11 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
     mCbIDEController->addItem (""); /* KIDEControllerType_PIIX4 */
     mCbIDEController->addItem (""); /* KIDEControllerType_ICH6  */
 
+#ifdef QT_MAC_USE_COCOA
+    /* No OpenGL on Snow Leopard 64-bit yet */
+    mCb3D->setEnabled (false);
+#endif /* QT_MAC_USE_COCOA */
+
     qApp->installEventFilter (this);
 
     /* Applying language settings */
