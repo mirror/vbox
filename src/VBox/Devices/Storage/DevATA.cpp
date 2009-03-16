@@ -1756,10 +1756,11 @@ static bool atapiReadSS(ATADevState *s)
 
                 for (uint32_t i = s->iATAPILBA; i < s->iATAPILBA + cSectors; i++)
                 {
-                    /* sync bytes */
+                    /* Sync bytes, see 4.2.3.8 CD Main Channel Block Formats */
                     *pbBuf++ = 0x00;
-                    memset(pbBuf, 0xff, 11);
-                    pbBuf += 11;
+                    memset(pbBuf, 0xff, 10);
+                    pbBuf += 10;
+                    *pbBuf++ = 0x00;
                     /* MSF */
                     ataLBA2MSF(pbBuf, i);
                     pbBuf += 3;
@@ -1769,9 +1770,14 @@ static bool atapiReadSS(ATADevState *s)
                     if (RT_FAILURE(rc))
                         break;
                     pbBuf += 2048;
-                    /* ECC */
-                    memset(pbBuf, 0, 288);
-                    pbBuf += 288;
+                    /**
+                     * @todo: maybe compute ECC and parity, layout is:
+                     * 2072 4   EDC
+                     * 2076 172 P parity symbols
+                     * 2248 104 Q parity symbols
+                     */
+                    memset(pbBuf, 0, 280);
+                    pbBuf += 280;
                 }
             }
             break;
