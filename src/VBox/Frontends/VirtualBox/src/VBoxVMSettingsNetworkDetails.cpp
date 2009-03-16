@@ -278,14 +278,14 @@ bool VBoxVMSettingsNetworkDetails::revalidate (KNetworkAttachmentType aType, QSt
             }
             else if (!property ("HOI_DhcpEnabled").toBool())
             {
-                if (property ("HOI_IPv4Addr").toString().isEmpty() ||
+                if (!property ("HOI_IPv4Addr").toString().isEmpty() &&
                     QHostAddress (property ("HOI_IPv4Addr").toString()).protocol()
                     != QAbstractSocket::IPv4Protocol)
                 {
                     aWarning = tr ("host IPv4 address is wrong");
                     return false;
                 }
-                if (property ("HOI_IPv4Mask").toString().isEmpty() ||
+                if (!property ("HOI_IPv4Mask").toString().isEmpty() &&
                     QHostAddress (property ("HOI_IPv4Mask").toString()).protocol()
                     != QAbstractSocket::IPv4Protocol)
                 {
@@ -294,7 +294,7 @@ bool VBoxVMSettingsNetworkDetails::revalidate (KNetworkAttachmentType aType, QSt
                 }
                 if (property ("HOI_IPv6Supported").toBool())
                 {
-                    if (property ("HOI_IPv6Addr").toString().isEmpty() ||
+                    if (!property ("HOI_IPv6Addr").toString().isEmpty() &&
                         QHostAddress (property ("HOI_IPv6Addr").toString()).protocol()
                         != QAbstractSocket::IPv6Protocol)
                     {
