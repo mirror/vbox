@@ -617,7 +617,7 @@ public:
      * @returns 64-bit unsigned number on success.
      * @returns 0 on failure.
      */
-    int toInt64() const
+    int64_t toInt64() const
     {
         return RTStrToInt64(str);
     }
@@ -628,7 +628,7 @@ public:
      * @returns 64-bit unsigned number on success.
      * @returns 0 on failure.
      */
-    int toUInt64() const
+    uint64_t toUInt64() const
     {
         return RTStrToUInt64(str);
     }
