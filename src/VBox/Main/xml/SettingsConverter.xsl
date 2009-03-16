@@ -850,6 +850,21 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
 <!--
  *  Global settings
 -->
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.6']/
+                     vb:Global"
+              mode="v1.7" >
+	<xsl:copy>
+	    <xsl:apply-templates mode="v1.7" />
+	    <NetserviceRegistry>
+           <DhcpServers>
+                <DhcpServer networkName="HostInterfaceNetworking-VirtualBox Host-Only Network Adapter" 
+                        IPAddress="192.168.56.2" networkMask="255.255.255.0"
+                        lowerIP="192.168.56.3" upperIP="192.168.56.255"
+                        enabled="1"/>
+           </DhcpServers>
+        </NetserviceRegistry>              
+	</xsl:copy>
+</xsl:template>
 
 <!--
  *  Machine settings
