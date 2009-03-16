@@ -73,7 +73,7 @@ enum enOptionCodes
     LISTHOSTDVDS,
     LISTHOSTFLOPPIES,
     LISTBRIDGEDIFS,
-#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+#if defined(VBOX_WITH_NETFLT)
     LISTHOSTONLYIFS,
 #endif
     LISTHOSTINFO,
@@ -97,7 +97,7 @@ static const RTGETOPTDEF g_aListOptions[]
         { "hostfloppies",       LISTHOSTFLOPPIES, RTGETOPT_REQ_NOTHING },
         { "hostifs",             LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING }, /* backward compatibility */
         { "bridgedifs",          LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING },
-#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+#if defined(VBOX_WITH_NETFLT)
         { "hostonlyifs",          LISTHOSTONLYIFS, RTGETOPT_REQ_NOTHING },
 #endif
         { "hostinfo",           LISTHOSTINFO, RTGETOPT_REQ_NOTHING },
@@ -137,7 +137,7 @@ int handleList(HandlerArg *a)
             case LISTHOSTDVDS:
             case LISTHOSTFLOPPIES:
             case LISTBRIDGEDIFS:
-#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+#if defined(VBOX_WITH_NETFLT)
             case LISTHOSTONLYIFS:
 #endif
             case LISTHOSTINFO:
@@ -296,14 +296,14 @@ int handleList(HandlerArg *a)
         break;
 
         case LISTBRIDGEDIFS:
-#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+#if defined(VBOX_WITH_NETFLT)
         case LISTHOSTONLYIFS:
 #endif
         {
             ComPtr<IHost> host;
             CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
             com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
-#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+#if defined(VBOX_WITH_NETFLT)
             CHECK_ERROR(host,
                     FindHostNetworkInterfacesOfType (
                             command == LISTBRIDGEDIFS ? HostNetworkInterfaceType_Bridged : HostNetworkInterfaceType_HostOnly,
