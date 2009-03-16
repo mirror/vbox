@@ -142,7 +142,7 @@ namespace pm
     {
     public:
         virtual ~CollectorHAL() { };
-        virtual int preCollect(const CollectorHints& hints) { return VINF_SUCCESS; }
+        virtual int preCollect(const CollectorHints& /* hints */) { return VINF_SUCCESS; }
         virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
         virtual int getHostCpuMHz(ULONG *mhz);
         virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available) = 0;
@@ -232,7 +232,7 @@ namespace pm
         : BaseMetric(hal, "CPU/MHz", object), mMHz(mhz) {};
 
         void init(ULONG period, ULONG length);
-        void preCollect(CollectorHints& hints) {}
+        void preCollect(CollectorHints& /* hints */) {}
         void collect();
         const char *getUnit() { return "MHz"; };
         ULONG getMinValue() { return 0; };

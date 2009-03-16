@@ -329,11 +329,7 @@ static const struct
  */
 static void convertCIMOSType2VBoxOSType(Utf8Str &strType, CIMOSType_T c)
 {
-    const char *osTypeVBox = "";
-
-    for (size_t i = 0;
-         i < RT_ELEMENTS(g_osTypes);
-         ++i)
+    for (size_t i = 0; i < RT_ELEMENTS(g_osTypes); ++i)
     {
         if (c == g_osTypes[i].cim)
         {
@@ -353,11 +349,7 @@ static void convertCIMOSType2VBoxOSType(Utf8Str &strType, CIMOSType_T c)
  */
 static CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox)
 {
-    const char *osTypeVBox = "";
-
-    for (size_t i = 0;
-         i < RT_ELEMENTS(g_osTypes);
-         ++i)
+    for (size_t i = 0; i < RT_ELEMENTS(g_osTypes); ++i)
     {
         if (!RTStrICmp(pcszVbox, g_osTypes[i].pcszVbox))
             return g_osTypes[i].cim;
@@ -645,8 +637,8 @@ HRESULT Appliance::HandleDiskSection(const char *pcszPath,
  * @param pSectionElem Section element for which this helper is getting called.
  * @return
  */
-HRESULT Appliance::HandleNetworkSection(const char *pcszPath,
-                                        const xml::ElementNode *pSectionElem)
+HRESULT Appliance::HandleNetworkSection(const char * /* pcszPath */,
+                                        const xml::ElementNode * /* pSectionElem */)
 {
     // we ignore network sections for now
 
@@ -950,14 +942,13 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                             i.ulInstanceID,
                                             i.ulParent,
                                             i.ulLineNumber);
-                        const HardDiskController &hdc = it->second;
+                        //const HardDiskController &hdc = it->second;
 
                         VirtualDisk vd;
                         vd.idController = i.ulParent;
                         i.strAddressOnParent.toInt(vd.ulAddressOnParent);
-                        bool fFound = false;
                         // ovf://disk/lamp
-                        // 12345678901234
+                        // 123456789012345
                         if (i.strHostResource.substr(0, 11) == "ovf://disk/")
                             vd.strDiskId = i.strHostResource.substr(11);
                         else if (i.strHostResource.substr(0, 6) == "/disk/")
@@ -1798,7 +1789,7 @@ struct MyHardDiskAttachment
  * @param pvUser
  */
 /* static */
-DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pvUser)
+DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, void *pvUser)
 {
     std::auto_ptr<TaskImportMachines> task(static_cast<TaskImportMachines*>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
@@ -2423,7 +2414,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD aThread, void *pv
  * @param pvUser
  */
 /* static */
-DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
+DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pvUser)
 {
     std::auto_ptr<TaskWriteOVF> task(static_cast<TaskWriteOVF*>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
@@ -2491,7 +2482,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
 
         // and here come the virtual systems:
         xml::ElementNode *pelmVirtualSystemCollection = pelmRoot->createChild("VirtualSystemCollection");
-        xml::AttributeNode *pattrVirtualSystemCollectionId = pelmVirtualSystemCollection->setAttribute("ovf:id", "ExportedVirtualBoxMachines");      // whatever
+        /* xml::AttributeNode *pattrVirtualSystemCollectionId = */ pelmVirtualSystemCollection->setAttribute("ovf:id", "ExportedVirtualBoxMachines");      // whatever
 
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
         /* Iterate through all virtual systems of that appliance */
@@ -2502,7 +2493,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD aThread, void *pvUser)
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
 
             xml::ElementNode *pelmVirtualSystem = pelmVirtualSystemCollection->createChild("VirtualSystem");
-            xml::ElementNode *pelmVirtualSystemInfo = pelmVirtualSystem->createChild("Info");      // @todo put in description here after implementing an entry for it
+            /* xml::ElementNode *pelmVirtualSystemInfo = */ pelmVirtualSystem->createChild("Info");      // @todo put in description here after implementing an entry for it
 
             std::list<VirtualSystemDescriptionEntry*> llName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
             if (llName.size() != 1)
@@ -3207,6 +3198,7 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
                                                       ComSafeArrayIn(IN_BSTR, argVboxValues),
                                                       ComSafeArrayIn(IN_BSTR, argExtraConfigValues))
 {
+    NOREF(aEnabledSize);
     CheckComArgSafeArrayNotNull(argVboxValues);
     CheckComArgSafeArrayNotNull(argExtraConfigValues);
 

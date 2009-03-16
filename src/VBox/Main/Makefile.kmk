@@ -332,16 +332,16 @@ ifdef VBOX_WITH_USB
 endif
 
 ifdef VBOX_WITH_NETFLT
- # Note! The includes from the TOOL has lower prioirty than the SDKs, 
+ # Note! The includes from the TOOL has lower priority than the SDKs,
  #       since comdef.h is in both the DDK and VCC we want to make sure
  #       we're using the VCC since we're not using the DDK compiler/crt.
- #       Since this is potentially risky, restrict it to the source file 
+ #       Since this is potentially risky, restrict it to the source file
  #       needing it.
  win/NetIfList-win.cpp_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
  VBoxSVC_LIBS.win += \
 	$(PATH_LIB)/WinNetConfig.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
-	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib 
+	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
  ifdef VBOX_NETFLT_ONDEMAND_BIND
   VBoxSVC_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
  endif
@@ -699,7 +699,7 @@ endif
 
 
 ## @todo r=bird: last changes to this rule showed incorrect dependencies here as it broke testcase (see testboxwin2).
-# This is kind of obvious when looking at the rule, because it's (a) not specifing all it output
+# This is kind of obvious when looking at the rule, because it's (a) not specifying all it output
 # and (b) generating more stuff *after* the main target has been completed.
 #
 # What needs to be done is to not depend on _i.c in the object subdir, but on all the final outputs.

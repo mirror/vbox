@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -148,12 +148,12 @@ public:
         return *this;
     }
 
-    MultiResult &operator= (const MultiResult &aThat)
+    MultiResult &operator= (const MultiResult & /* aThat */)
     {
         /* We need this copy constructor only for GCC that wants to have
          * it in case of expressions like |MultiResult rc = E_FAIL;|. But
          * we assert since the optimizer should actually avoid the
-         * temporary and call the other constructor directly instead */
+         * temporary and call the other constructor directly instead. */
         AssertFailed();
         return *this;
     }

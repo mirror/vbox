@@ -158,8 +158,8 @@ protected:
      * Otherwise, returns a respective error message. Called by attachTo() from
      * within this object's AutoWriteLock.
      */
-    virtual HRESULT canAttach (const Guid &aMachineId,
-                               const Guid &aSnapshotId)
+    virtual HRESULT canAttach (const Guid & /* aMachineId */,
+                               const Guid & /* aSnapshotId */)
     { return S_OK; }
 
     /**

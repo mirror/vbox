@@ -644,7 +644,7 @@ VirtualBoxBaseProto::AutoMayUninitSpan::~AutoMayUninitSpan()
  *  translation table and current context. The current context is determined
  *  by the context parameter. Additionally, a comment to the source text
  *  string text can be given. This comment (which is NULL by default)
- *  is helpful in sutuations where it is necessary to distinguish between
+ *  is helpful in situations where it is necessary to distinguish between
  *  two or more semantically different roles of the same source text in the
  *  same context.
  *
@@ -659,8 +659,8 @@ VirtualBoxBaseProto::AutoMayUninitSpan::~AutoMayUninitSpan()
  *      in the given context.
  */
 // static
-const char *VirtualBoxBase::translate (const char *context, const char *sourceText,
-                                       const char *comment)
+const char *VirtualBoxBase::translate (const char * /* context */, const char *sourceText,
+                                       const char * /* comment */)
 {
 #if 0
     Log(("VirtualBoxBase::translate:\n"
@@ -671,7 +671,6 @@ const char *VirtualBoxBase::translate (const char *context, const char *sourceTe
 #endif
 
     /// @todo (dmik) incorporate Qt translation file parsing and lookup
-
     return sourceText;
 }
 

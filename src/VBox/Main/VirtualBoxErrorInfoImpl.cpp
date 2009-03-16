@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -181,31 +181,31 @@ NS_IMETHODIMP VirtualBoxErrorInfo::GetResult (nsresult *aResult)
 }
 
 /* readonly attribute string name; */
-NS_IMETHODIMP VirtualBoxErrorInfo::GetName (char **aName)
+NS_IMETHODIMP VirtualBoxErrorInfo::GetName (char ** /* aName */)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 /* readonly attribute string filename; */
-NS_IMETHODIMP VirtualBoxErrorInfo::GetFilename (char **aFilename)
+NS_IMETHODIMP VirtualBoxErrorInfo::GetFilename (char ** /* aFilename */)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 /* readonly attribute PRUint32 lineNumber; */
-NS_IMETHODIMP VirtualBoxErrorInfo::GetLineNumber (PRUint32 *aLineNumber)
+NS_IMETHODIMP VirtualBoxErrorInfo::GetLineNumber (PRUint32 * /* aLineNumber */)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 /* readonly attribute PRUint32 columnNumber; */
-NS_IMETHODIMP VirtualBoxErrorInfo::GetColumnNumber (PRUint32 *aColumnNumber)
+NS_IMETHODIMP VirtualBoxErrorInfo::GetColumnNumber (PRUint32 * /*aColumnNumber */)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 /* readonly attribute nsIStackFrame location; */
-NS_IMETHODIMP VirtualBoxErrorInfo::GetLocation (nsIStackFrame **aLocation)
+NS_IMETHODIMP VirtualBoxErrorInfo::GetLocation (nsIStackFrame ** /* aLocation */)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -220,13 +220,13 @@ NS_IMETHODIMP VirtualBoxErrorInfo::GetInner (nsIException **aInner)
 }
 
 /* readonly attribute nsISupports data; */
-NS_IMETHODIMP VirtualBoxErrorInfo::GetData (nsISupports **aData)
+NS_IMETHODIMP VirtualBoxErrorInfo::GetData (nsISupports ** /* aData */)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 /* string toString (); */
-NS_IMETHODIMP VirtualBoxErrorInfo::ToString (char **_retval)
+NS_IMETHODIMP VirtualBoxErrorInfo::ToString (char ** /* retval */)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
