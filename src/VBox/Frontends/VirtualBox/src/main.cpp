@@ -282,6 +282,14 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             qobject_cast <QCleanlooksStyle*> (QApplication::style()))
             QApplication::setStyle (new QPlastiqueStyle);
 
+#ifdef Q_OS_SOLARIS
+        /* Solaris have some issue with cleanlooks style which leads to application
+         * crash in case of using it on Qt4.4 version, lets make the same substitute */
+        if (QString (qVersion()).startsWith ("4.4") &&
+            qobject_cast <QCleanlooksStyle*> (QApplication::style()))
+            QApplication::setStyle (new QPlastiqueStyle);
+#endif
+
 #ifdef Q_WS_X11
         /* This patch is not used for now on Solaris & OpenSolaris because
          * there is no anti-aliasing enabled by default, Qt4 to be rebuilt. */
