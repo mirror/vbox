@@ -99,7 +99,8 @@ int handleModifyVM(HandlerArg *a)
     ULONG guestMemBalloonSize = (ULONG)-1;
     ULONG guestStatInterval = (ULONG)-1;
     int   fSataEnabled = -1;
-    int   fLsiLogicEnabled = -1;
+    int   fScsiEnabled = -1;
+    int   fScsiLsiLogic = -1;
     int   sataPortCount = -1;
     int   sataBootDevices[4] = {-1,-1,-1,-1};
 
@@ -733,27 +734,39 @@ int handleModifyVM(HandlerArg *a)
 
             sataBootDevices[bootDevicePos] = n-1;
         }
-        else if (strcmp(a->argv[i], "-lsilogic") == 0)
+        else if (strcmp(a->argv[i], "-scsi") == 0)
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             if (strcmp(a->argv[i], "on") == 0 || strcmp(a->argv[i], "enable") == 0)
-                fLsiLogicEnabled = 1;
+                fScsiEnabled = 1;
             else if (strcmp(a->argv[i], "off") == 0 || strcmp(a->argv[i], "disable") == 0)
-                fLsiLogicEnabled = 0;
+                fScsiEnabled = 0;
             else
-                return errorArgument("Invalid -lsilogic argument '%s'", a->argv[i]);
+                return errorArgument("Invalid -scsi argument '%s'", a->argv[i]);
         }
-        else if (strncmp(a->argv[i], "-lsilogicport", 13) == 0)
+        else if (strncmp(a->argv[i], "-scsiport", 9) == 0)
         {
-            unsigned n = parseNum(&a->argv[i][13], 16, "LsiLogic");
+            unsigned n = parseNum(&a->argv[i][9], 16, "SCSI");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             hdds[n-1+34] = a->argv[i];
+        }
+        else if (strcmp(a->argv[i], "-scsitype") == 0)
+        {
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            i++;
+            if (strcmp(a->argv[i], "LsiLogic") == 0 )
+                fScsiLsiLogic = 1;
+            else if (strcmp(a->argv[i], "BusLogic") == 0)
+                fScsiLsiLogic = 0;
+            else
+                return errorArgument("Invalid -scsitype argument '%s'", a->argv[i]);
         }
         else
             return errorSyntax(USAGE_MODIFYVM, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
@@ -1857,18 +1870,30 @@ int handleModifyVM(HandlerArg *a)
         }
 
         /*
-         * LsiLogic controller enable/disable
+         * SCSI controller enable/disable
          */
-        if (fLsiLogicEnabled != -1)
+        if (fScsiEnabled != -1)
         {
-            if (fLsiLogicEnabled)
+            if (fScsiEnabled)
             {
                 ComPtr<IStorageController> ctl;
-                CHECK_ERROR(machine, AddStorageController(Bstr("LsiLogic"), StorageBus_SCSI, ctl.asOutParam()));
-                CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_LsiLogic));
+                if (fScsiLsiLogic == 0)
+                {
+                    CHECK_ERROR(machine, AddStorageController(Bstr("BusLogic"), StorageBus_SCSI, ctl.asOutParam()));
+                    CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_BusLogic));
+                }
+                else /* LsiLogic is default */
+                {
+                    CHECK_ERROR(machine, AddStorageController(Bstr("LsiLogic"), StorageBus_SCSI, ctl.asOutParam()));
+                    CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_LsiLogic));
+                }
             }
             else
-                CHECK_ERROR(machine, RemoveStorageController(Bstr("LsiLogic")));
+            {
+                rc = machine->RemoveStorageController(Bstr("LsiLogic"));
+                if (!SUCCEEDED(rc))
+                    CHECK_ERROR(machine, RemoveStorageController(Bstr("BusLogic")));
+            }
         }
 
         for (uint32_t i = 34; i < 50; i++)
@@ -1877,7 +1902,9 @@ int handleModifyVM(HandlerArg *a)
             {
                 if (strcmp(hdds[i], "none") == 0)
                 {
-                    machine->DetachHardDisk(Bstr("LsiLogic"), i-34, 0);
+                    rc = machine->DetachHardDisk(Bstr("LsiLogic"), i-34, 0);
+                    if (!SUCCEEDED(rc))
+                        CHECK_ERROR(machine, DetachHardDisk(Bstr("BusLogic"), i-34, 0));
                 }
                 else
                 {
@@ -1898,7 +1925,9 @@ int handleModifyVM(HandlerArg *a)
                     if (hardDisk)
                     {
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("LsiLogic"), i-34, 0));
+                        rc = machine->AttachHardDisk(uuid, Bstr("LsiLogic"), i-34, 0);
+                        if (!SUCCEEDED(rc))
+                            CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("BusLogic"), i-34, 0));
                     }
                     else
                         rc = E_FAIL;
