@@ -56,8 +56,6 @@ typedef struct RAWIMAGE
 
     /** Open flags passed by VBoxHD layer. */
     unsigned        uOpenFlags;
-    /** Image type. */
-    VDIMAGETYPE     enmImageType;
     /** Image flags defined during creation or determined during open. */
     unsigned        uImageFlags;
     /** Total size of the image. */
@@ -145,7 +143,7 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
         rc = VERR_VD_RAW_INVALID_HEADER;
         goto out;
     }
-    pImage->enmImageType = VD_IMAGE_TYPE_FIXED;
+    pImage->uImageFlags |= VD_IMAGE_FLAGS_FIXED;
 
 out:
     if (RT_FAILURE(rc))
@@ -156,9 +154,8 @@ out:
 /**
  * Internal: Create a raw image.
  */
-static int rawCreateImage(PRAWIMAGE pImage, VDIMAGETYPE enmType,
-                          uint64_t cbSize, unsigned uImageFlags,
-                          const char *pszComment,
+static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
+                          unsigned uImageFlags, const char *pszComment,
                           PCPDMMEDIAGEOMETRY pPCHSGeometry,
                           PCPDMMEDIAGEOMETRY pLCHSGeometry,
                           PFNVMPROGRESS pfnProgress, void *pvUser,
@@ -171,13 +168,13 @@ static int rawCreateImage(PRAWIMAGE pImage, VDIMAGETYPE enmType,
     size_t cbBuf = 128 * _1K;
     void *pvBuf = NULL;
 
-    if (enmType != VD_IMAGE_TYPE_FIXED)
+    if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
     {
         rc = rawError(pImage, VERR_VD_RAW_INVALID_TYPE, RT_SRC_POS, N_("Raw: cannot create diff image '%s'"), pImage->pszFilename);
         goto out;
     }
+    uImageFlags |= VD_IMAGE_FLAGS_FIXED;
 
-    pImage->enmImageType = enmType;
     pImage->uImageFlags = uImageFlags;
     pImage->PCHSGeometry = *pPCHSGeometry;
     pImage->LCHSGeometry = *pLCHSGeometry;
@@ -255,7 +252,6 @@ static int rawCreateImage(PRAWIMAGE pImage, VDIMAGETYPE enmType,
         pfnProgress(NULL /* WARNING! pVM=NULL  */,
                     uPercentStart + uPercentSpan * 98 / 100, pvUser);
 
-    pImage->enmImageType = enmType;
     pImage->cbSize = cbSize;
 
     rc = rawFlushImage(pImage);
@@ -278,11 +274,8 @@ static void rawFreeImage(PRAWIMAGE pImage, bool fDelete)
 {
     Assert(pImage);
 
-    if (pImage->enmImageType)
-    {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rawFlushImage(pImage);
-    }
+    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        rawFlushImage(pImage);
     if (pImage->File != NIL_RTFILE)
     {
         RTFileClose(pImage->File);
@@ -373,9 +366,8 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnCreate */
-static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
-                     uint64_t cbSize, unsigned uImageFlags,
-                     const char *pszComment,
+static int rawCreate(const char *pszFilename, uint64_t cbSize,
+                     unsigned uImageFlags, const char *pszComment,
                      PCPDMMEDIAGEOMETRY pPCHSGeometry,
                      PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                      unsigned uOpenFlags, unsigned uPercentStart,
@@ -383,7 +375,7 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
                      PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation,
                      void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p", pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
     int rc;
     PRAWIMAGE pImage;
 
@@ -410,7 +402,6 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
     /* Check remaining arguments. */
     if (   !VALID_PTR(pszFilename)
         || !*pszFilename
-        || (enmType != VD_IMAGE_TYPE_FIXED)
         || !VALID_PTR(pPCHSGeometry)
         || !VALID_PTR(pLCHSGeometry))
     {
@@ -428,7 +419,7 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
     pImage->File = NIL_RTFILE;
     pImage->pVDIfsDisk = pVDIfsDisk;
 
-    rc = rawCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,
+    rc = rawCreateImage(pImage, cbSize, uImageFlags, pszComment,
                         pPCHSGeometry, pLCHSGeometry,
                         pfnProgress, pvUser, uPercentStart, uPercentSpan);
     if (RT_SUCCESS(rc))
@@ -562,25 +553,6 @@ static unsigned rawGetVersion(void *pBackendData)
         return 1;
     else
         return 0;
-}
-
-/** @copydoc VBOXHDDBACKEND::pfnGetImageType */
-static int rawGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
-{
-    LogFlowFunc(("pBackendData=%#p penmImageType=%#p\n", pBackendData, penmImageType));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
-
-    Assert(pImage);
-    Assert(penmImageType);
-
-    if (pImage)
-        *penmImageType = pImage->enmImageType;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc enmImageType=%u\n", rc, *penmImageType));
-    return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
@@ -1109,8 +1081,6 @@ VBOXHDDBACKEND g_RawBackend =
     rawFlush,
     /* pfnGetVersion */
     rawGetVersion,
-    /* pfnGetImageType */
-    rawGetImageType,
     /* pfnGetSize */
     rawGetSize,
     /* pfnGetFileSize */

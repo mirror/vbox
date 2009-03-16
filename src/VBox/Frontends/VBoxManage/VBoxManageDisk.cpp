@@ -34,6 +34,8 @@
 #include <iprt/file.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/ctype.h>
+#include <iprt/getopt.h>
 #include <VBox/log.h>
 #include <VBox/VBoxHDD.h>
 
@@ -54,79 +56,173 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
 }
 
 
+static int parseDiskVariant(const char *psz, HardDiskVariant_T *pDiskVariant)
+{
+    int rc = VINF_SUCCESS;
+    HardDiskVariant_T DiskVariant = *pDiskVariant;
+    while (psz && *psz && RT_SUCCESS(rc))
+    {
+        size_t len;
+        const char *pszComma = strchr(psz, ',');
+        if (pszComma)
+            len = pszComma - psz;
+        else
+            len = strlen(psz);
+        if (len > 0)
+        {
+            // Parsing is intentionally inconsistent: "standard" resets the
+            // variant, whereas the other flags are cumulative.
+            if (!RTStrNICmp(psz, "standard", len))
+                DiskVariant = HardDiskVariant_Standard;
+            else if (   !RTStrNICmp(psz, "fixed", len)
+                     || !RTStrNICmp(psz, "static", len))
+                DiskVariant |= HardDiskVariant_Fixed;
+            else if (!RTStrNICmp(psz, "Diff", len))
+                DiskVariant |= HardDiskVariant_Diff;
+            else if (!RTStrNICmp(psz, "split2g", len))
+                DiskVariant |= HardDiskVariant_VmdkSplit2G;
+            else if (   !RTStrNICmp(psz, "stream", len)
+                     || !RTStrNICmp(psz, "streamoptimized", len))
+                DiskVariant |= HardDiskVariant_VmdkStreamOptimized;
+            else
+                rc = VERR_PARSE_ERROR;
+        }
+        if (pszComma)
+            psz += len + 1;
+        else
+            psz += len;
+    }
+
+    if (RT_SUCCESS(rc))
+        *pDiskVariant = DiskVariant;
+    return rc;
+}
+
+static int parseDiskType(const char *psz, HardDiskType_T *pDiskType)
+{
+    int rc = VINF_SUCCESS;
+    HardDiskType_T DiskType = HardDiskType_Normal;
+    if (!RTStrICmp(psz, "normal"))
+        DiskType = HardDiskType_Normal;
+    else if (RTStrICmp(psz, "immutable"))
+        DiskType = HardDiskType_Immutable;
+    else if (RTStrICmp(psz, "writethrough"))
+        DiskType = HardDiskType_Writethrough;
+    else
+        rc = VERR_PARSE_ERROR;
+
+    if (RT_SUCCESS(rc))
+        *pDiskType = DiskType;
+    return rc;
+}
+
+static const RTGETOPTDEF g_aCreateHardDiskOptions[] =
+{
+    { "--filename",     'f', RTGETOPT_REQ_STRING },
+    { "-filename",      'f', RTGETOPT_REQ_STRING },
+    { "--size",         's', RTGETOPT_REQ_UINT64 },
+    { "-size",          's', RTGETOPT_REQ_UINT64 },
+    { "--format",       'o', RTGETOPT_REQ_STRING },
+    { "-format",        'o', RTGETOPT_REQ_STRING },
+    { "--static",       'F', RTGETOPT_REQ_NOTHING },
+    { "-static",        'F', RTGETOPT_REQ_NOTHING },
+    { "--variant",      'm', RTGETOPT_REQ_STRING },
+    { "-variant",       'm', RTGETOPT_REQ_STRING },
+    { "--type",         't', RTGETOPT_REQ_STRING },
+    { "-type",          't', RTGETOPT_REQ_STRING },
+    { "--comment",      'c', RTGETOPT_REQ_STRING },
+    { "-comment",       'c', RTGETOPT_REQ_STRING },
+    { "--remember",     'r', RTGETOPT_REQ_NOTHING },
+    { "-remember",      'r', RTGETOPT_REQ_NOTHING },
+    { "--register",     'r', RTGETOPT_REQ_NOTHING },
+    { "-register",      'r', RTGETOPT_REQ_NOTHING },
+};
+
 int handleCreateHardDisk(HandlerArg *a)
 {
     HRESULT rc;
     Bstr filename;
     uint64_t sizeMB = 0;
     Bstr format = "VDI";
-    bool fStatic = false;
+    HardDiskVariant_T DiskVariant = HardDiskVariant_Standard;
     Bstr comment;
-    bool fRegister = false;
-    const char *type = "normal";
+    bool fRemember = false;
+    HardDiskType_T DiskType = HardDiskType_Normal;
 
-    /* let's have a closer look at the arguments */
-    for (int i = 0; i < a->argc; i++)
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aCreateHardDiskOptions, RT_ELEMENTS(g_aCreateHardDiskOptions), 0, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
-        if (strcmp(a->argv[i], "-filename") == 0)
+        switch (c)
         {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            filename = a->argv[i];
+            case 'f':   // --filename
+                filename = ValueUnion.psz;
+                break;
+
+            case 's':   // --size
+                sizeMB = ValueUnion.u64;
+                break;
+
+            case 'o':   // --format
+                format = ValueUnion.psz;
+                break;
+
+            case 'F':   // --static ("fixed"/"flat")
+                DiskVariant |= HardDiskVariant_Fixed;
+                break;
+
+            case 'm':   // --variant
+                rc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
+                if (RT_FAILURE(rc))
+                    return errorArgument("Invalid hard disk variant '%s'", ValueUnion.psz);
+                break;
+
+            case 'c':   // --comment
+                comment = ValueUnion.psz;
+                break;
+
+            case 'r':   // --remember
+                fRemember = true;
+                break;
+
+            case 't':   // --type
+                rc = parseDiskType(ValueUnion.psz, &DiskType);
+                if (    RT_FAILURE(rc)
+                    ||  (DiskType != HardDiskType_Normal && DiskType != HardDiskType_Writethrough))
+                    return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                return errorSyntax(USAGE_CREATEHD, "Invalid parameter '%s'", ValueUnion.psz);
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_CREATEHD, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_CREATEHD, "Invalid option case %i", c);
+                }
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_CREATEHD, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_CREATEHD, "error: %Rrs", c);
         }
-        else if (strcmp(a->argv[i], "-size") == 0)
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            sizeMB = RTStrToUInt64(a->argv[i]);
-        }
-        else if (strcmp(a->argv[i], "-format") == 0)
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            format = a->argv[i];
-        }
-        else if (strcmp(a->argv[i], "-static") == 0)
-        {
-            fStatic = true;
-        }
-        else if (strcmp(a->argv[i], "-comment") == 0)
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            comment = a->argv[i];
-        }
-        else if (strcmp(a->argv[i], "-register") == 0)
-        {
-            fRegister = true;
-        }
-        else if (strcmp(a->argv[i], "-type") == 0)
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            type = a->argv[i];
-        }
-        else
-            return errorSyntax(USAGE_CREATEHD, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
     }
+
     /* check the outcome */
     if (!filename || (sizeMB == 0))
         return errorSyntax(USAGE_CREATEHD, "Parameters -filename and -size are required");
-
-    if (strcmp(type, "normal") && strcmp(type, "writethrough"))
-        return errorArgument("Invalid hard disk type '%s' specified", Utf8Str(type).raw());
 
     ComPtr<IHardDisk> hardDisk;
     CHECK_ERROR(a->virtualBox, CreateHardDisk(format, filename, hardDisk.asOutParam()));
     if (SUCCEEDED(rc) && hardDisk)
     {
         /* we will close the hard disk after the storage has been successfully
-         * created unless fRegister is set */
+         * created unless fRemember is set */
         bool doClose = false;
 
         if (!comment.isNull())
@@ -134,20 +230,10 @@ int handleCreateHardDisk(HandlerArg *a)
             CHECK_ERROR(hardDisk,COMSETTER(Description)(comment));
         }
         ComPtr<IProgress> progress;
-        if (fStatic)
-        {
-            CHECK_ERROR(hardDisk, CreateFixedStorage(sizeMB, HardDiskVariant_Standard, progress.asOutParam()));
-        }
-        else
-        {
-            CHECK_ERROR(hardDisk, CreateDynamicStorage(sizeMB, HardDiskVariant_Standard, progress.asOutParam()));
-        }
+        CHECK_ERROR(hardDisk, CreateBaseStorage(sizeMB, DiskVariant, progress.asOutParam()));
         if (SUCCEEDED(rc) && progress)
         {
-            if (fStatic)
-                showProgress(progress);
-            else
-                CHECK_ERROR(progress, WaitForCompletion(-1));
+            showProgress(progress);
             if (SUCCEEDED(rc))
             {
                 progress->COMGETTER(ResultCode)(&rc);
@@ -161,16 +247,12 @@ int handleCreateHardDisk(HandlerArg *a)
                 }
                 else
                 {
-                    doClose = !fRegister;
+                    doClose = !fRemember;
 
                     Guid uuid;
                     CHECK_ERROR(hardDisk, COMGETTER(Id)(uuid.asOutParam()));
 
-                    if (strcmp(type, "normal") == 0)
-                    {
-                        /* nothing required, default */
-                    }
-                    else if (strcmp(type, "writethrough") == 0)
+                    if (DiskType == HardDiskType_Writethrough)
                     {
                         CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Writethrough));
                     }
@@ -334,42 +416,81 @@ int handleModifyHardDisk(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static const RTGETOPTDEF g_aCloneHardDiskOptions[] =
+{
+    { "--format",       'o', RTGETOPT_REQ_STRING },
+    { "-format",        'o', RTGETOPT_REQ_STRING },
+    { "--static",       'F', RTGETOPT_REQ_NOTHING },
+    { "-static",        'F', RTGETOPT_REQ_NOTHING },
+    { "--variant",      'm', RTGETOPT_REQ_STRING },
+    { "-variant",       'm', RTGETOPT_REQ_STRING },
+    { "--type",         't', RTGETOPT_REQ_STRING },
+    { "-type",          't', RTGETOPT_REQ_STRING },
+    { "--remember",     'r', RTGETOPT_REQ_NOTHING },
+    { "-remember",      'r', RTGETOPT_REQ_NOTHING },
+    { "--register",     'r', RTGETOPT_REQ_NOTHING },
+    { "-register",      'r', RTGETOPT_REQ_NOTHING },
+};
+
 int handleCloneHardDisk(HandlerArg *a)
 {
     Bstr src, dst;
     Bstr format;
-    bool remember = false;
+    HardDiskVariant_T DiskVariant = HardDiskVariant_Standard;
+    bool fRemember = false;
+    HardDiskType_T DiskType = HardDiskType_Normal;
 
     HRESULT rc;
 
-    /* Parse the arguments. */
-    for (int i = 0; i < a->argc; i++)
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aCloneHardDiskOptions, RT_ELEMENTS(g_aCloneHardDiskOptions), 0, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
-        if (strcmp(a->argv[i], "-format") == 0)
+        switch (c)
         {
-            if (a->argc <= i + 1)
-            {
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            }
-            i++;
-            format = a->argv[i];
-        }
-        else if (strcmp(a->argv[i], "-remember") == 0 ||
-                 strcmp(a->argv[i], "-register") == 0 /* backward compatiblity */)
-        {
-            remember = true;
-        }
-        else if (src.isEmpty())
-        {
-            src = a->argv[i];
-        }
-        else if (dst.isEmpty())
-        {
-            dst = a->argv[i];
-        }
-        else
-        {
-            return errorSyntax(USAGE_CLONEHD, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
+            case 'o':   // --format
+                format = ValueUnion.psz;
+                break;
+
+            case 'm':   // --variant
+                rc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
+                if (RT_FAILURE(rc))
+                    return errorArgument("Invalid hard disk variant '%s'", ValueUnion.psz);
+                break;
+
+            case 'r':   // --remember
+                fRemember = true;
+                break;
+
+            case 't':   // --type
+                rc = parseDiskType(ValueUnion.psz, &DiskType);
+                if (RT_FAILURE(rc))
+                    return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (src.isEmpty())
+                    src = ValueUnion.psz;
+                else if (dst.isEmpty())
+                    dst = ValueUnion.psz;
+                else
+                    return errorSyntax(USAGE_CLONEHD, "Invalid parameter '%s'", ValueUnion.psz);
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_CLONEHD, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_CLONEHD, "Invalid option case %i", c);
+                }
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_CLONEHD, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_CLONEHD, "error: %Rrs", c);
         }
     }
 
@@ -414,7 +535,7 @@ int handleCloneHardDisk(HandlerArg *a)
         CHECK_ERROR_BREAK(a->virtualBox, CreateHardDisk(format, dst, dstDisk.asOutParam()));
 
         ComPtr<IProgress> progress;
-        CHECK_ERROR_BREAK(srcDisk, CloneTo(dstDisk, HardDiskVariant_Standard, progress.asOutParam()));
+        CHECK_ERROR_BREAK(srcDisk, CloneTo(dstDisk, DiskVariant, progress.asOutParam()));
 
         showProgress(progress);
         progress->COMGETTER(ResultCode)(&rc);
@@ -435,7 +556,7 @@ int handleCloneHardDisk(HandlerArg *a)
     }
     while (0);
 
-    if (!remember && !dstDisk.isNull())
+    if (!fRemember && !dstDisk.isNull())
     {
         /* forget the created clone */
         dstDisk->Close();
@@ -450,53 +571,76 @@ int handleCloneHardDisk(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static const RTGETOPTDEF g_aConvertFromRawHardDiskOptions[] =
+{
+    { "--format",       'o', RTGETOPT_REQ_STRING },
+    { "-format",        'o', RTGETOPT_REQ_STRING },
+    { "--static",       'F', RTGETOPT_REQ_NOTHING },
+    { "-static",        'F', RTGETOPT_REQ_NOTHING },
+    { "--variant",      'm', RTGETOPT_REQ_STRING },
+    { "-variant",       'm', RTGETOPT_REQ_STRING },
+};
+
 int handleConvertFromRaw(int argc, char *argv[])
 {
-    VDIMAGETYPE enmImgType = VD_IMAGE_TYPE_NORMAL;
+    int rc = VINF_SUCCESS;
     bool fReadFromStdIn = false;
     const char *format = "VDI";
     const char *srcfilename = NULL;
     const char *dstfilename = NULL;
     const char *filesize = NULL;
-    unsigned uImageFlags = 0; /**< @todo allow creation of non-default image variants */
+    unsigned uImageFlags = VD_IMAGE_FLAGS_NONE;
     void *pvBuf = NULL;
 
-    for (int i = 0; i < argc; i++)
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, argc, argv, g_aCloneHardDiskOptions, RT_ELEMENTS(g_aCloneHardDiskOptions), 0, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
-        if (!strcmp(argv[i], "-static"))
+        switch (c)
         {
-            enmImgType = VD_IMAGE_TYPE_FIXED;
-        }
-        else if (strcmp(argv[i], "-format") == 0)
-        {
-            if (argc <= i + 1)
-            {
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            }
-            i++;
-            format = argv[i];
-        }
-        else
-        {
-            if (srcfilename)
-            {
-                if (dstfilename)
+            case 'o':   // --format
+                format = ValueUnion.psz;
+                break;
+
+            case 'm':   // --variant
+                HardDiskVariant_T DiskVariant;
+                rc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
+                if (RT_FAILURE(rc))
+                    return errorArgument("Invalid hard disk variant '%s'", ValueUnion.psz);
+                /// @todo cleaner solution than assuming 1:1 mapping?
+                uImageFlags = (unsigned)DiskVariant;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!srcfilename)
                 {
-                    if (fReadFromStdIn && !filesize)
-                        filesize = argv[i];
-                    else
-                        return errorSyntax(USAGE_CONVERTFROMRAW, "Incorrect number of parameters");
-                }
-                else
-                    dstfilename = argv[i];
-            }
-            else
-            {
-                srcfilename = argv[i];
+                    srcfilename = ValueUnion.psz;
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
-                fReadFromStdIn = !strcmp(srcfilename, "stdin");
+                    fReadFromStdIn = !strcmp(srcfilename, "stdin");
 #endif
-            }
+                }
+                else if (!dstfilename)
+                    dstfilename = ValueUnion.psz;
+                else if (fReadFromStdIn && !filesize)
+                    filesize = ValueUnion.psz;
+                else
+                    return errorSyntax(USAGE_CONVERTFROMRAW, "Invalid parameter '%s'", ValueUnion.psz);
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_CONVERTFROMRAW, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_CONVERTFROMRAW, "Invalid option case %i", c);
+                }
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_CONVERTFROMRAW, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_CONVERTFROMRAW, "error: %Rrs", c);
         }
     }
 
@@ -505,7 +649,6 @@ int handleConvertFromRaw(int argc, char *argv[])
     RTPrintf("Converting from raw image file=\"%s\" to file=\"%s\"...\n",
              srcfilename, dstfilename);
 
-    int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = NULL;
 
     PVDINTERFACE     pVDIfs = NULL;
@@ -543,7 +686,7 @@ int handleConvertFromRaw(int argc, char *argv[])
         goto out;
     }
 
-    RTPrintf("Creating %s image with size %RU64 bytes (%RU64MB)...\n", (enmImgType == VD_IMAGE_TYPE_FIXED) ? "fixed" : "dynamic", cbFile, (cbFile + _1M - 1) / _1M);
+    RTPrintf("Creating %s image with size %RU64 bytes (%RU64MB)...\n", (uImageFlags & VD_IMAGE_FLAGS_FIXED) ? "fixed" : "dynamic", cbFile, (cbFile + _1M - 1) / _1M);
     char pszComment[256];
     RTStrPrintf(pszComment, sizeof(pszComment), "Converted image from %s", srcfilename);
     rc = VDCreate(pVDIfs, &pDisk);
@@ -562,7 +705,7 @@ int handleConvertFromRaw(int argc, char *argv[])
     LCHS.cCylinders = 0;
     LCHS.cHeads = 0;
     LCHS.cSectors = 0;
-    rc = VDCreateBase(pDisk, format, dstfilename, enmImgType, cbFile,
+    rc = VDCreateBase(pDisk, format, dstfilename, cbFile,
                       uImageFlags, pszComment, &PCHS, &LCHS, NULL,
                       VD_OPEN_FLAGS_NORMAL, NULL, NULL);
     if (RT_FAILURE(rc))

@@ -1803,8 +1803,7 @@
         to virtual machines, you must call one of the following methods to
         allocate a format-specific storage unit at the specified location:
         <ul>
-          <li><link to="IHardDisk::createDynamicStorage"/></li>
-          <li><link to="IHardDisk::createFixedStorage"/></li>
+          <li><link to="IHardDisk::createBaseStorage"/></li>
           <li><link to="IHardDisk::createDiffStorage"/></li>
         </ul>
 
@@ -8557,7 +8556,7 @@
 
   <enum
     name="HardDiskVariant"
-    uuid="3bc36e8c-bf7a-4dba-b6cb-df87cdc9cc19"
+    uuid="99334b63-7ed0-4f61-8a7e-7ec3e20dd912"
    >
     <desc>
       Virtual hard disk image variant. More than one flag may be set.
@@ -8578,6 +8577,16 @@
       <desc>
         VMDK streamOptimized image. Special import/export format which is
         read-only/append-only.
+      </desc>
+    </const>
+    <const name="Fixed" value="0x1000">
+      <desc>
+        Fixed image. Only allowed for base images.
+      </desc>
+    </const>
+    <const name="Diff" value="0x2000">
+      <desc>
+        Fixed image. Only allowed for base images.
       </desc>
     </const>
   </enum>
@@ -8617,7 +8626,7 @@
 
   <interface
     name="IHardDisk" extends="IMedium"
-    uuid="a4d391a5-e2b1-474d-824e-2ff668a92d58"
+    uuid="3498d065-dee6-48bf-bcc5-47018fee4f42"
     wsmap="managed"
   >
     <desc>
@@ -9156,12 +9165,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <!-- storage methods -->
 
-    <method name="createDynamicStorage">
+    <method name="createBaseStorage">
       <desc>
-        Starts creating a dynamically expanding hard disk storage unit in the
-        background. The previous storage unit created for this object, if
-        any, must first be deleted using <link to="#deleteStorage"/>, otherwise
-        the operation will fail.
+        Starts creating a hard disk storage unit (fixed/dynamic, according
+        to the variant flags) in in the background. The previous storage unit
+        created for this object, if any, must first be deleted using
+        <link to="#deleteStorage"/>, otherwise the operation will fail.
 
         Before the operation starts, the hard disk is placed in
         <link to="MediaState_Creating"/> state. If the create operation
@@ -9174,45 +9183,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         VirtualBox installation and may be attached to virtual machines.
 
         <result name="VBOX_E_NOT_SUPPORTED">
-          Dynamic storage creation operation is not supported. See <link
+          The variant of storage creation operation is not supported. See <link
           to="IHardDiskFormat::capabilities"/>.
         </result>
       </desc>
       <param name="logicalSize" type="unsigned long long" dir="in">
         <desc>Maximum logical size of the hard disk in megabytes.</desc>
-      </param>
-      <param name="variant" type="HardDiskVariant" dir="in">
-        <desc>Exact image variant which should be created.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
-    <method name="createFixedStorage">
-      <desc>
-        Starts creating a fixed-size hard disk storage unit in the background.
-        The previous storage unit created for this object, if
-        any, must be first deleted using <link to="#deleteStorage"/>, otherwise
-        the operation will fail.
-
-        Before the operation starts, the hard disk is placed to
-        <link to="MediaState_Creating"/> state. If the create operation
-        fails, the media will placed back to <link to="MediaState_NotCreated"/>
-        state.
-
-        After the returned progress object reports that the operation is
-        successfully complete, the media state will be set to <link
-        to="MediaState_Created"/>, the hard disk will be remembered by this
-        VirtualBox installation and may be attached to virtual machines.
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          Fixed storage creation operation is not supported. See
-          <link to="IHardDiskFormat::capabilities"/>.
-        </result>
-      </desc>
-      <param name="logicalSize" type="unsigned long long" dir="in">
-        <desc>Logical size of the hard disk in megabytes.</desc>
       </param>
       <param name="variant" type="HardDiskVariant" dir="in">
         <desc>Exact image variant which should be created.</desc>

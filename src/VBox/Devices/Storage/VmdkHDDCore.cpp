@@ -438,8 +438,6 @@ typedef struct VMDKIMAGE
 
     /** Open flags passed by VBoxHD layer. */
     unsigned        uOpenFlags;
-    /** Image type. */
-    VDIMAGETYPE     enmImageType;
     /** Image flags defined during creation or determined during open. */
     unsigned        uImageFlags;
     /** Total size of the image. */
@@ -2056,14 +2054,12 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData,
         return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot get image type from descriptor in '%s'"), pImage->pszFilename);
     if (    !strcmp(pszCreateType, "twoGbMaxExtentSparse")
         ||  !strcmp(pszCreateType, "twoGbMaxExtentFlat"))
-        pImage->uImageFlags = VD_VMDK_IMAGE_FLAGS_SPLIT_2G;
+        pImage->uImageFlags |= VD_VMDK_IMAGE_FLAGS_SPLIT_2G;
     else if (   !strcmp(pszCreateType, "partitionedDevice")
              || !strcmp(pszCreateType, "fullDevice"))
-        pImage->uImageFlags = VD_VMDK_IMAGE_FLAGS_RAWDISK;
+        pImage->uImageFlags |= VD_VMDK_IMAGE_FLAGS_RAWDISK;
     else if (!strcmp(pszCreateType, "streamOptimized"))
-        pImage->uImageFlags = VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED;
-    else
-        pImage->uImageFlags = 0;
+        pImage->uImageFlags |= VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED;
     RTStrFree((char *)(void *)pszCreateType);
 
     /* Count the number of extent config entries. */
@@ -3114,14 +3110,13 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
         pImage->cbSize += VMDK_SECTOR2BYTE(pExtent->cNominalSectors);
     }
 
-    pImage->enmImageType = VD_IMAGE_TYPE_NORMAL;
     for (unsigned i = 0; i < pImage->cExtents; i++)
     {
         pExtent = &pImage->pExtents[i];
         if (    pImage->pExtents[i].enmType == VMDKETYPE_FLAT
             ||  pImage->pExtents[i].enmType == VMDKETYPE_ZERO)
         {
-            pImage->enmImageType = VD_IMAGE_TYPE_FIXED;
+            pImage->uImageFlags |= VD_IMAGE_FLAGS_FIXED;
             break;
         }
     }
@@ -3390,8 +3385,8 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 /**
  * Internal: create a regular (i.e. file-backed) VMDK image.
  */
-static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
-                                  uint64_t cbSize, unsigned uImageFlags,
+static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
+                                  unsigned uImageFlags,
                                   PFNVMPROGRESS pfnProgress, void *pvUser,
                                   unsigned uPercentStart, unsigned uPercentSpan)
 {
@@ -3418,7 +3413,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
     size_t cbBasenameSubstr = strlen(pszBasenameSubstr) + 1;
 
     /* Create searate descriptor file if necessary. */
-    if (cExtents != 1 || enmType == VD_IMAGE_TYPE_FIXED)
+    if (cExtents != 1 || (uImageFlags & VD_IMAGE_FLAGS_FIXED))
     {
         rc = vmdkFileOpen(pImage, &pImage->pFile, pImage->pszFilename,
                           RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED,
@@ -3439,7 +3434,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
          * for basename, as it is not guaranteed that the memory can be freed
          * with RTMemTmpFree, which must be used as in other code paths
          * StrDup is not usable. */
-        if (cExtents == 1 && enmType != VD_IMAGE_TYPE_FIXED)
+        if (cExtents == 1 && !(uImageFlags & VD_IMAGE_FLAGS_FIXED))
         {
             char *pszBasename = (char *)RTMemTmpAlloc(cbBasenameSubstr);
             if (!pszBasename)
@@ -3454,7 +3449,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
             RTPathStripExt(pszBasenameBase);
             char *pszTmp;
             size_t cbTmp;
-            if (enmType == VD_IMAGE_TYPE_FIXED)
+            if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
             {
                 if (cExtents == 1)
                     rc = RTStrAPrintf(&pszTmp, "%s-flat%s", pszBasenameBase,
@@ -3495,7 +3490,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
                           false);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pExtent->pszFullname);
-        if (enmType == VD_IMAGE_TYPE_FIXED)
+        if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
         {
             rc = vmdkFileSetSize(pExtent->pFile, cbExtent);
             if (RT_FAILURE(rc))
@@ -3545,7 +3540,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
         }
 
         /* Place descriptor file information (where integrated). */
-        if (cExtents == 1 && enmType != VD_IMAGE_TYPE_FIXED)
+        if (cExtents == 1 && !(uImageFlags & VD_IMAGE_FLAGS_FIXED))
         {
             pExtent->uDescriptorSector = 1;
             pExtent->cDescriptorSectors = VMDK_BYTE2SECTOR(pImage->cbDescAlloc);
@@ -3554,7 +3549,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
             pImage->pDescData = NULL;
         }
 
-        if (enmType == VD_IMAGE_TYPE_NORMAL)
+        if (!(uImageFlags & VD_IMAGE_FLAGS_FIXED))
         {
             uint64_t cSectorsPerGDE, cSectorsPerGD;
             pExtent->enmType = VMDKETYPE_HOSTED_SPARSE;
@@ -3577,7 +3572,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
         pExtent->uSectorOffset = VMDK_BYTE2SECTOR(cbOffset);
         pExtent->fMetaDirty = true;
 
-        if (enmType == VD_IMAGE_TYPE_NORMAL)
+        if (!(uImageFlags & VD_IMAGE_FLAGS_FIXED))
         {
             rc = vmdkCreateGrainDirectory(pExtent,
                                           RT_MAX(  pExtent->uDescriptorSector
@@ -3598,12 +3593,12 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
     }
 
     const char *pszDescType = NULL;
-    if (enmType == VD_IMAGE_TYPE_FIXED)
+    if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
     {
         pszDescType =   (cExtents == 1)
                       ? "monolithicFlat" : "twoGbMaxExtentFlat";
     }
-    else if (enmType == VD_IMAGE_TYPE_NORMAL)
+    else
     {
         if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
             pszDescType = "streamOptimized";
@@ -3613,8 +3608,6 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
                           ? "monolithicSparse" : "twoGbMaxExtentSparse";
         }
     }
-    else
-        AssertMsgFailed(("invalid image type %d\n", enmType));
     rc = vmdkDescBaseSetStr(pImage, &pImage->Descriptor, "createType",
                             pszDescType);
     if (RT_FAILURE(rc))
@@ -3626,9 +3619,8 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
  * Internal: The actual code for creating any VMDK variant currently in
  * existence on hosted environments.
  */
-static int vmdkCreateImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
-                           uint64_t cbSize, unsigned uImageFlags,
-                           const char *pszComment,
+static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
+                           unsigned uImageFlags, const char *pszComment,
                            PCPDMMEDIAGEOMETRY pPCHSGeometry,
                            PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                            PFNVMPROGRESS pfnProgress, void *pvUser,
@@ -3656,7 +3648,7 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
         goto out;
     }
 
-    if (    enmType == VD_IMAGE_TYPE_FIXED
+    if (    (uImageFlags & VD_IMAGE_FLAGS_FIXED)
         &&  (uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK))
     {
         /* Raw disk image (includes raw partition). */
@@ -3666,18 +3658,12 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
         pszComment = NULL;
         rc = vmdkCreateRawImage(pImage, pRaw, cbSize);
     }
-    else if (   enmType == VD_IMAGE_TYPE_FIXED
-             || enmType == VD_IMAGE_TYPE_NORMAL)
-    {
-        /* Regular fixed or sparse image (monolithic or split). */
-        rc = vmdkCreateRegularImage(pImage, enmType, cbSize, uImageFlags,
-                                    pfnProgress, pvUser, uPercentStart,
-                                    uPercentSpan * 95 / 100);
-    }
     else
     {
-        /* Unknown/invalid image type. */
-        rc = VERR_NOT_IMPLEMENTED;
+        /* Regular fixed or sparse image (monolithic or split). */
+        rc = vmdkCreateRegularImage(pImage, cbSize, uImageFlags,
+                                    pfnProgress, pvUser, uPercentStart,
+                                    uPercentSpan * 95 / 100);
     }
 
     if (RT_FAILURE(rc))
@@ -3687,7 +3673,6 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
         pfnProgress(NULL /* WARNING! pVM=NULL */,
                     uPercentStart + uPercentSpan * 98 / 100, pvUser);
 
-    pImage->enmImageType = enmType;
     pImage->cbSize = cbSize;
 
     for (unsigned i = 0; i < pImage->cExtents; i++)
@@ -3818,27 +3803,25 @@ static void vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
 {
     AssertPtr(pImage);
 
-    if (pImage->enmImageType)
+    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
     {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        /* Mark all extents as clean. */
+        for (unsigned i = 0; i < pImage->cExtents; i++)
         {
-            /* Mark all extents as clean. */
-            for (unsigned i = 0; i < pImage->cExtents; i++)
-            {
-                if ((   pImage->pExtents[i].enmType == VMDKETYPE_HOSTED_SPARSE
+            if ((   pImage->pExtents[i].enmType == VMDKETYPE_HOSTED_SPARSE
 #ifdef VBOX_WITH_VMDK_ESX
-                     || pImage->pExtents[i].enmType == VMDKETYPE_ESX_SPARSE
+                 || pImage->pExtents[i].enmType == VMDKETYPE_ESX_SPARSE
 #endif /* VBOX_WITH_VMDK_ESX */
-                    )
-                    &&  pImage->pExtents[i].fUncleanShutdown)
-                {
-                    pImage->pExtents[i].fUncleanShutdown = false;
-                    pImage->pExtents[i].fMetaDirty = true;
-                }
+                )
+                &&  pImage->pExtents[i].fUncleanShutdown)
+            {
+                pImage->pExtents[i].fUncleanShutdown = false;
+                pImage->pExtents[i].fMetaDirty = true;
             }
         }
-        (void)vmdkFlushImage(pImage);
     }
+    (void)vmdkFlushImage(pImage);
+
     if (pImage->pExtents != NULL)
     {
         for (unsigned i = 0 ; i < pImage->cExtents; i++)
@@ -4351,9 +4334,8 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnCreate */
-static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
-                      uint64_t cbSize, unsigned uImageFlags,
-                      const char *pszComment,
+static int vmdkCreate(const char *pszFilename, uint64_t cbSize,
+                      unsigned uImageFlags, const char *pszComment,
                       PCPDMMEDIAGEOMETRY pPCHSGeometry,
                       PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                       unsigned uOpenFlags, unsigned uPercentStart,
@@ -4361,7 +4343,7 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
                       PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation,
                       void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p", pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
     int rc;
     PVMDKIMAGE pImage;
 
@@ -4384,20 +4366,14 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
         goto out;
     }
 
-    /* @todo A quick hack to support differencing images in VMDK. */
-    if (enmType == VD_IMAGE_TYPE_DIFF)
-        enmType = VD_IMAGE_TYPE_NORMAL;
-
     /* Check remaining arguments. */
     if (   !VALID_PTR(pszFilename)
         || !*pszFilename
         || strchr(pszFilename, '"')
-        || (enmType != VD_IMAGE_TYPE_NORMAL && enmType != VD_IMAGE_TYPE_FIXED)
         || !VALID_PTR(pPCHSGeometry)
         || !VALID_PTR(pLCHSGeometry)
         || (   (uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
-            && (   (uImageFlags & ~VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
-                || (enmType != VD_IMAGE_TYPE_NORMAL))))
+            && (uImageFlags & ~(VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED | VD_IMAGE_FLAGS_DIFF))))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
@@ -4424,7 +4400,7 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
         goto out;
     }
 
-    rc = vmdkCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,
+    rc = vmdkCreateImage(pImage, cbSize, uImageFlags, pszComment,
                          pPCHSGeometry, pLCHSGeometry, pUuid,
                          pfnProgress, pvUser, uPercentStart, uPercentSpan);
     if (RT_SUCCESS(rc))
@@ -5042,25 +5018,6 @@ static unsigned vmdkGetVersion(void *pBackendData)
         return VMDK_IMAGE_VERSION;
     else
         return 0;
-}
-
-/** @copydoc VBOXHDDBACKEND::pfnGetImageType */
-static int vmdkGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
-{
-    LogFlowFunc(("pBackendData=%#p penmImageType=%#p\n", pBackendData, penmImageType));
-    PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
-
-    AssertPtr(pImage);
-    AssertPtr(penmImageType);
-
-    if (pImage && pImage->cExtents != 0)
-        *penmImageType = pImage->enmImageType;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc enmImageType=%u\n", rc, *penmImageType));
-    return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
@@ -5942,8 +5899,6 @@ VBOXHDDBACKEND g_VmdkBackend =
     vmdkFlush,
     /* pfnGetVersion */
     vmdkGetVersion,
-    /* pfnGetImageType */
-    vmdkGetImageType,
     /* pfnGetSize */
     vmdkGetSize,
     /* pfnGetFileSize */

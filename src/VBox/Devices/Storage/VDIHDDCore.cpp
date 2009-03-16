@@ -54,10 +54,9 @@ static const char *const s_apszVdiFileExtensions[] =
 static unsigned getPowerOfTwo(unsigned uNumber);
 static void vdiInitPreHeader(PVDIPREHEADER pPreHdr);
 static int  vdiValidatePreHeader(PVDIPREHEADER pPreHdr);
-static void vdiInitHeader(PVDIHEADER pHeader, VDIMAGETYPE enmType,
-                          uint32_t uImageFlags, const char *pszComment,
-                          uint64_t cbDisk, uint32_t cbBlock,
-                          uint32_t cbBlockExtra);
+static void vdiInitHeader(PVDIHEADER pHeader, uint32_t uImageFlags,
+                          const char *pszComment, uint64_t cbDisk,
+                          uint32_t cbBlock, uint32_t cbBlockExtra);
 static int  vdiValidateHeader(PVDIHEADER pHeader);
 static void vdiSetupImageDesc(PVDIIMAGEDESC pImage);
 static int  vdiUpdateHeader(PVDIIMAGEDESC pImage);
@@ -126,44 +125,34 @@ static int vdiValidatePreHeader(PVDIPREHEADER pPreHdr)
 }
 
 /**
- * Internal: translate VD image type enum to VDI image type enum.
+ * Internal: translate VD image flags to VDI image type enum.
  */
-static VDIIMAGETYPE vdiTranslateTypeVD2VDI(VDIMAGETYPE enmType)
+static VDIIMAGETYPE vdiTranslateImageFlags2VDI(unsigned uImageFlags)
 {
-    switch (enmType)
-    {
-        case VD_IMAGE_TYPE_NORMAL:
-            return VDI_IMAGE_TYPE_NORMAL;
-        case VD_IMAGE_TYPE_FIXED:
-            return VDI_IMAGE_TYPE_FIXED;
-        case VD_IMAGE_TYPE_UNDO:
-            return VDI_IMAGE_TYPE_UNDO;
-        case VD_IMAGE_TYPE_DIFF:
-            return VDI_IMAGE_TYPE_DIFF;
-        default:
-            AssertMsgFailed(("invalid VDIMAGETYPE enmType=%d\n", (int)enmType));
-            return VDI_IMAGE_TYPE_NORMAL;
-    }
+    if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
+        return VDI_IMAGE_TYPE_FIXED;
+    else if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
+        return VDI_IMAGE_TYPE_DIFF;
+    else
+        return VDI_IMAGE_TYPE_NORMAL;
 }
 
 /**
  * Internal: translate VDI image type enum to VD image type enum.
  */
-static VDIMAGETYPE vdiTranslateTypeVDI2VD(VDIIMAGETYPE enmType)
+static unsigned vdiTranslateVDI2ImageFlags(VDIIMAGETYPE enmType)
 {
     switch (enmType)
     {
         case VDI_IMAGE_TYPE_NORMAL:
-            return VD_IMAGE_TYPE_NORMAL;
+            return VD_IMAGE_FLAGS_NONE;
         case VDI_IMAGE_TYPE_FIXED:
-            return VD_IMAGE_TYPE_FIXED;
-        case VDI_IMAGE_TYPE_UNDO:
-            return VD_IMAGE_TYPE_UNDO;
+            return VD_IMAGE_FLAGS_FIXED;
         case VDI_IMAGE_TYPE_DIFF:
-            return VD_IMAGE_TYPE_DIFF;
+            return VD_IMAGE_FLAGS_DIFF;
         default:
             AssertMsgFailed(("invalid VDIIMAGETYPE enmType=%d\n", (int)enmType));
-            return VD_IMAGE_TYPE_INVALID;
+            return VD_IMAGE_FLAGS_NONE;
     }
 }
 
@@ -171,14 +160,13 @@ static VDIMAGETYPE vdiTranslateTypeVDI2VD(VDIIMAGETYPE enmType)
  * Internal: Init VDI header. Always use latest header version.
  * @param   pHeader     Assumes it was initially initialized to all zeros.
  */
-static void vdiInitHeader(PVDIHEADER pHeader, VDIMAGETYPE enmType,
-                          uint32_t uImageFlags, const char *pszComment,
-                          uint64_t cbDisk, uint32_t cbBlock,
-                          uint32_t cbBlockExtra)
+static void vdiInitHeader(PVDIHEADER pHeader, uint32_t uImageFlags,
+                          const char *pszComment, uint64_t cbDisk,
+                          uint32_t cbBlock, uint32_t cbBlockExtra)
 {
     pHeader->uVersion = VDI_IMAGE_VERSION;
     pHeader->u.v1.cbHeader = sizeof(VDIHEADER1);
-    pHeader->u.v1.u32Type = (uint32_t)vdiTranslateTypeVD2VDI(enmType);
+    pHeader->u.v1.u32Type = (uint32_t)vdiTranslateImageFlags2VDI(uImageFlags);
     pHeader->u.v1.fFlags = (uImageFlags & VD_VDI_IMAGE_FLAGS_ZERO_EXPAND) ? 1 : 0;
 #ifdef VBOX_STRICT
     char achZero[VDI_IMAGE_COMMENT_SIZE] = {0};
@@ -350,6 +338,7 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
 static void vdiSetupImageDesc(PVDIIMAGEDESC pImage)
 {
     pImage->uImageFlags        = getImageFlags(&pImage->Header);
+    pImage->uImageFlags       |= vdiTranslateVDI2ImageFlags(getImageType(&pImage->Header));
     pImage->offStartBlocks     = getImageBlocksOffset(&pImage->Header);
     pImage->offStartData       = getImageDataOffset(&pImage->Header);
     pImage->uBlockMask         = getImageBlockSize(&pImage->Header) - 1;
@@ -362,9 +351,8 @@ static void vdiSetupImageDesc(PVDIIMAGEDESC pImage)
 /**
  * Internal: Create VDI image file.
  */
-static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
-                          uint64_t cbSize, unsigned uImageFlags,
-                          const char *pszComment,
+static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
+                          unsigned uImageFlags, const char *pszComment,
                           PCPDMMEDIAGEOMETRY pPCHSGeometry,
                           PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                           PFNVMPROGRESS pfnProgress, void *pvUser,
@@ -391,7 +379,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     vdiInitPreHeader(&pImage->PreHeader);
-    vdiInitHeader(&pImage->Header, enmType, uImageFlags, pszComment, cbSize, VDI_IMAGE_DEFAULT_BLOCK_SIZE, 0);
+    vdiInitHeader(&pImage->Header, uImageFlags, pszComment, cbSize, VDI_IMAGE_DEFAULT_BLOCK_SIZE, 0);
     /* Save PCHS geometry. Not much work, and makes the flow of information
      * quite a bit clearer - relying on the higher level isn't obvious. */
     pImage->PCHSGeometry = *pPCHSGeometry;
@@ -408,7 +396,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
         goto out;
     }
 
-    if (enmType != VD_IMAGE_TYPE_FIXED)
+    if (!(uImageFlags & VD_IMAGE_FLAGS_FIXED))
     {
         /* for growing images mark all blocks in paBlocks as free. */
         for (unsigned i = 0; i < pImage->Header.u.v1.cBlocks; i++)
@@ -438,7 +426,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
     cbTotal =   pImage->offStartData
               + (uint64_t)getImageBlocks(&pImage->Header) * pImage->cbTotalBlockData;
 
-    if (enmType == VD_IMAGE_TYPE_FIXED)
+    if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
     {
         /* Check the free space on the disk and leave early if there is not
          * sufficient space available. */
@@ -451,7 +439,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
         }
     }
 
-    if (enmType == VD_IMAGE_TYPE_FIXED)
+    if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
     {
         /*
          * Allocate & commit whole file if fixed image, it must be more
@@ -502,7 +490,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
         goto out;
     }
 
-    if (enmType == VD_IMAGE_TYPE_FIXED)
+    if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
     {
         /* Fill image with zeroes. We do this for every fixed-size image since on some systems
          * (for example Windows Vista), it takes ages to write a block near the end of a sparse
@@ -852,9 +840,8 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnCreate */
-static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
-                     uint64_t cbSize, unsigned uImageFlags,
-                     const char *pszComment,
+static int vdiCreate(const char *pszFilename, uint64_t cbSize,
+                     unsigned uImageFlags, const char *pszComment,
                      PCPDMMEDIAGEOMETRY pPCHSGeometry,
                      PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                      unsigned uOpenFlags, unsigned uPercentStart,
@@ -862,7 +849,7 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
                      PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation,
                      void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p", pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
     int rc;
     PVDIIMAGEDESC pImage;
 
@@ -889,8 +876,6 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
     /* Check remaining arguments. */
     if (   !VALID_PTR(pszFilename)
         || !*pszFilename
-        || (enmType != VD_IMAGE_TYPE_NORMAL && enmType != VD_IMAGE_TYPE_FIXED
-            && enmType != VD_IMAGE_TYPE_DIFF)
         || cbSize < VDI_IMAGE_DEFAULT_BLOCK_SIZE
         || !VALID_PTR(pPCHSGeometry)
         || !VALID_PTR(pLCHSGeometry))
@@ -910,7 +895,7 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
     pImage->paBlocks = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
 
-    rc = vdiCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,
+    rc = vdiCreateImage(pImage, cbSize, uImageFlags, pszComment,
                         pPCHSGeometry, pLCHSGeometry, pUuid,
                         pfnProgress, pvUser, uPercentStart, uPercentSpan);
     if (RT_SUCCESS(rc))
@@ -1189,25 +1174,6 @@ static unsigned vdiGetVersion(void *pBackendData)
 
     LogFlowFunc(("returns %#x\n", uVersion));
     return uVersion;
-}
-
-/** @copydoc VBOXHDDBACKEND::pfnGetImageType */
-static int vdiGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
-{
-    LogFlowFunc(("pBackendData=%#p penmImageType=%#p\n", pBackendData, penmImageType));
-    PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
-    int rc = VINF_SUCCESS;
-
-    AssertPtr(pImage);
-    AssertPtr(penmImageType);
-
-    if (pImage)
-        *penmImageType = vdiTranslateTypeVDI2VD(getImageType(&pImage->Header));
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc enmImageType=%u\n", rc, *penmImageType));
-    return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
@@ -1892,8 +1858,6 @@ VBOXHDDBACKEND g_VDIBackend =
     vdiFlush,
     /* pfnGetVersion */
     vdiGetVersion,
-    /* pfnGetImageType */
-    vdiGetImageType,
     /* pfnGetSize */
     vdiGetSize,
     /* pfnGetFileSize */
