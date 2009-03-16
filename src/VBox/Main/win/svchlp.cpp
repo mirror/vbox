@@ -281,7 +281,9 @@ int SVCHlpServer::run()
             case SVCHlpMsg::EnableStaticIpConfigV6:
             case SVCHlpMsg::DhcpRediscover:
             {
+#ifdef VBOX_WITH_NETFLT
                 vrc = netIfNetworkInterfaceHelperServer (this, msgCode);
+#endif
                 break;
             }
             default:
