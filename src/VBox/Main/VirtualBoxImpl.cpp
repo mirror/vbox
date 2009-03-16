@@ -716,7 +716,9 @@ STDMETHODIMP VirtualBox::COMGETTER(GuestOSTypes) (ComSafeArrayOut (IGuestOSType 
 STDMETHODIMP
 VirtualBox::COMGETTER(SharedFolders) (ComSafeArrayOut (ISharedFolder *, aSharedFolders))
 {
+#ifndef RT_OS_WINDOWS
     NOREF(aSharedFoldersSize);
+#endif /* RT_OS_WINDOWS */
 
     CheckComArgOutSafeArrayPointerValid(aSharedFolders);
 
