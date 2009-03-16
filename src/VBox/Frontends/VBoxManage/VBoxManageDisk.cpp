@@ -59,7 +59,7 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
 static int parseDiskVariant(const char *psz, HardDiskVariant_T *pDiskVariant)
 {
     int rc = VINF_SUCCESS;
-    HardDiskVariant_T DiskVariant = *pDiskVariant;
+    unsigned DiskVariant = (unsigned)(*pDiskVariant);
     while (psz && *psz && RT_SUCCESS(rc))
     {
         size_t len;
@@ -94,7 +94,7 @@ static int parseDiskVariant(const char *psz, HardDiskVariant_T *pDiskVariant)
     }
 
     if (RT_SUCCESS(rc))
-        *pDiskVariant = DiskVariant;
+        *pDiskVariant = (HardDiskVariant_T)DiskVariant;
     return rc;
 }
 
