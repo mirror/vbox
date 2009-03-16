@@ -110,7 +110,7 @@ void crServerAddToRunQueue( CRClient *client )
 
 
 
-static void
+void
 crServerDeleteClient( CRClient *client )
 {
     int i, j;

@@ -61,6 +61,8 @@ void crServerWriteback(void);
 int crServerRecv( CRConnection *conn, CRMessage *msg, unsigned int len );
 void crServerSerializeRemoteStreams(void);
 void crServerAddToRunQueue( CRClient *client );
+void crServerDeleteClient( CRClient *client );
+
 
 void crServerApplyBaseProjection( const CRmatrix *baseProj );
 void crServerApplyViewMatrix( const CRmatrix *view );
