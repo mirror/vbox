@@ -154,6 +154,8 @@ struct VirtualSystem
 {
     Utf8Str             strName;                // copy of VirtualSystem/@id
 
+    Utf8Str             strDescription;         // copy of VirtualSystem/Info content
+
     CIMOSType_T         cimos;
     Utf8Str             strVirtualSystemType;   // generic hardware description; OVF says this can be something like "vmx-4" or "xen";
                                                 // VMware Workstation 6.5 is "vmx-07"
@@ -691,7 +693,13 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
         const xml::AttributeNode *pTypeAttr = pelmThis->findAttribute("type");
         const char *pcszTypeAttr = (pTypeAttr) ? pTypeAttr->getValue() : "";
 
-        if (!strcmp(pcszElemName, "EulaSection"))
+        if (!strcmp(pcszElemName, "Info"))
+        {
+            // the "Info" section directly under VirtualSystem is where our export routine
+            // chooses to save the VM description (comments), so re-import it from there too
+            vsys.strDescription = pelmThis->getValue();
+        }
+        else if (!strcmp(pcszElemName, "EulaSection"))
         {
          /* <EulaSection>
                 <Info ovf:msgid="6">License agreement for the Virtual System.</Info>
@@ -1292,6 +1300,12 @@ STDMETHODIMP Appliance::Interpret()
                                vsysThis.strName,
                                nameVBox);
 
+            if (!vsysThis.strDescription.isEmpty())
+                pNewDesc->addEntry(VirtualSystemDescriptionType_Description,
+                                    "",
+                                    vsysThis.strDescription,
+                                    vsysThis.strDescription);
+
             /* Now that we know the OS type, get our internal defaults based on that. */
             ComPtr<IGuestOSType> pGuestOSType;
             rc = mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox), pGuestOSType.asOutParam());
@@ -1883,6 +1897,15 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                                                  Bstr(), Guid(),
                                                  pNewMachine.asOutParam());
             if (FAILED(rc)) throw rc;
+
+            // and the description
+            std::list<VirtualSystemDescriptionEntry*> vsdeDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
+            if (vsdeDescription.size())
+            {
+                const Utf8Str &strDescription = vsdeDescription.front()->strVbox;
+                rc = pNewMachine->COMSETTER(Description)(Bstr(strDescription));
+                if (FAILED(rc)) throw rc;
+            }
 
             if (!task->progress.isNull())
                 rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
@@ -2533,7 +2556,11 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
 
             xml::ElementNode *pelmVirtualSystem = pelmVirtualSystemCollection->createChild("VirtualSystem");
-            /* xml::ElementNode *pelmVirtualSystemInfo = */ pelmVirtualSystem->createChild("Info");      // @todo put in description here after implementing an entry for it
+
+            xml::ElementNode *pelmVirtualSystemInfo = pelmVirtualSystem->createChild("Info");
+            std::list<VirtualSystemDescriptionEntry*> llDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
+            if (llDescription.size())
+                pelmVirtualSystemInfo->addContent(llDescription.front()->strVbox);
 
             std::list<VirtualSystemDescriptionEntry*> llName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
             if (llName.size() != 1)
@@ -3472,6 +3499,13 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
                            "",
                            strVMName,
                            strVMName);
+
+        // description
+        Utf8Str strDescription(bstrDescription);
+        pNewDesc->addEntry(VirtualSystemDescriptionType_Description,
+                           "",
+                           strDescription,
+                           strDescription);
 
         /* CPU count*/
         Utf8Str strCpuCount = Utf8StrFmt("%RI32", cCPUs);
