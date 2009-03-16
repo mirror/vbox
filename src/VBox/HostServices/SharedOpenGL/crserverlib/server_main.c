@@ -360,7 +360,7 @@ void crVBoxServerRemoveClient(uint32_t u32ClientID)
     pClient->conn->Disconnect(pClient->conn);
 
     /* Let server clear client from the queue */
-    crServerServiceClients();
+    crServerDeleteClient(pClient);
 }
 
 void crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t cbBuffer)
