@@ -237,11 +237,15 @@ static void stubSPUTearDown(void)
 
 static void stubSPUSafeTearDown(void)
 {
+#ifdef CHROMIUM_THREADSAFE
+    CRmutex *mutex;
+#endif
+
     if (!stub_initialized) return;
     stub_initialized = 0;
 
 #ifdef CHROMIUM_THREADSAFE
-    CRmutex *mutex = &stub.mutex;
+    mutex = &stub.mutex;
     crLockMutex(mutex);
 #endif
     crDebug("stubSPUSafeTearDown");
