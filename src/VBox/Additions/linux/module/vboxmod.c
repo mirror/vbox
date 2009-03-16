@@ -327,8 +327,8 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
         if (rc < 0)
             LogFunc(("hgcm connection failed.  internal ioctl result %Rrc, hgcm result %Rrc\n",
                       vrc, info.result));
-            if (rc >= 0 && info.result < 0)
-                rc = info.result;
+        if (rc >= 0 && info.result < 0)
+            rc = info.result;
     }
     if (rc >= 0)
     {
@@ -494,10 +494,12 @@ static int vboxadd_buffer_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCall
                 hgcm_bounce_buffer *MemObj = NULL;
                 rc = vboxadd_hgcm_alloc_buffer(&MemObj, pv, u32Size,
                          pParm->type != VMMDevHGCMParmType_LinAddr_Out /* copy */);
-                if (rc >= 0) {
+                if (rc >= 0)
+                {
                     ppvCtx[iParm] = MemObj;
                     pParm->u.Pointer.u.linearAddr = (uintptr_t)MemObj->pKernel;
-                } else
+                }
+                else
                     ppvCtx[iParm] = NULL;
                 break;
             }
@@ -1348,7 +1350,8 @@ static __init int init(void)
         fHaveVBoxAdd = true;
 
     /* Register our user session device */
-    if (!rc) {
+    if (!rc)
+    {
         rc = misc_register(&gMiscVBoxUser);
         if (rc)
             LogRel(("vboxadd: misc_register failed for %s (rc=%d)\n",
