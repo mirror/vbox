@@ -3,7 +3,7 @@
 # libraries VBox OSE depends on.
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -67,6 +67,7 @@ WITH_ALSA=1
 WITH_PULSE=1
 WITH_DBUS=1
 WITH_KMODS=1
+WITH_OPENGL=1
 WITH_HARDENING=1
 CC="gcc"
 CC32=""
@@ -91,6 +92,8 @@ GSOAP_IMPORT=""
 LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib -lXext -lX11"
 INCX11="/usr/local/include"
 LIBXCURSOR="-lXcursor"
+LIBXMU="-lXmu"
+MESA="-lGL"
 INCZ=""
 LIBZ="-lz"
 INCPNG=""
@@ -215,6 +218,10 @@ test_header()
 
 
 # Compile a test
+#  $1   compile flags/libs
+#  $2   library name
+#  $3   package name
+#  $4   if this argument is 'nofatal', don't abort
 test_compile()
 {
   echo "compiling the following source file:" >> $LOG
@@ -1130,31 +1137,6 @@ EOF
 
 
 #
-# Check for the Xcursor library, needed by VBoxSDL and VBoxBFE
-#
-check_xcursor()
-{
-  test_header Xcursor
-  cat > $ODIR.tmp_src.cc << EOF
-#include <cstdio>
-#include <X11/Xlib.h>
-#include <X11/Xcursor/Xcursor.h>
-extern "C" int main(void)
-{
-  XcursorImage *cursor = XcursorImageCreate (10, 10);
-  XcursorImageDestroy(cursor);
-  return 0;
-}
-EOF
-  [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
-  if test_compile "$LIBX11 $LIBXCURSOR $I_INCX11" Xcursor Xcursor; then
-    log_success "found"
-    cnf_append "VBOX_XCURSOR_LIBS" "`strip_l "$LIBXCURSOR"`"
-  fi
-}
-
-
-#
 # Check for the X libraries (Xext, X11)
 #
 check_x()
@@ -1181,6 +1163,97 @@ EOF
   [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
   if test_compile "$LIBX11 $I_INCX11" Xlibs Xlibs; then
     log_success "found"
+  fi
+}
+
+
+#
+# Check for the Xcursor library, needed by VBoxSDL and VBoxBFE
+#
+check_xcursor()
+{
+  test_header Xcursor
+  cat > $ODIR.tmp_src.cc << EOF
+#include <cstdio>
+#include <X11/Xlib.h>
+#include <X11/Xcursor/Xcursor.h>
+extern "C" int main(void)
+{
+  XcursorImage *cursor = XcursorImageCreate (10, 10);
+  XcursorImageDestroy(cursor);
+  return 0;
+}
+EOF
+  [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
+  if test_compile "$LIBX11 $LIBXCURSOR $I_INCX11" Xcursor Xcursor; then
+    log_success "found"
+    cnf_append "VBOX_XCURSOR_LIBS" "`strip_l "$LIBXCURSOR"`"
+  fi
+}
+
+
+#
+# Check for the Xmu library, needed by OpenGL
+#
+check_xmu()
+{
+  test_header Xmu
+  cat > $ODIR.tmp_src.cc << EOF
+#include <cstdio>
+#include <X11/Xatom.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/Xmu/StdCmap.h>
+extern "C" int main(void)
+{
+  Display *dpy;
+  int scrn_num;
+  Screen *scrn;
+
+  dpy = XOpenDisplay(NULL);
+  scrn_num = DefaultScreen(dpy);
+  scrn     = ScreenOfDisplay(dpy, scrn_num);
+  Status status = XmuLookupStandardColormap(dpy, RootWindowOfScreen(scrn), 0,
+                  24, XA_RGB_DEFAULT_MAP, False, True);
+  printf("Status = %x\n", status);
+  return 0;
+}
+EOF
+  [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
+  if test_compile "$LIBX11 $LIBXMU $I_INCX11" Xmu Xmu; then
+    log_success "found"
+    cnf_append "VBOX_XMU_LIBS" "`strip_l "$LIBXMU"`"
+  fi
+}
+
+
+#
+# Check for Mesa, needed by OpenGL
+#
+check_mesa()
+{
+  test_header "Mesa / GLU"
+  cat > $ODIR.tmp_src.cc << EOF
+#include <cstdio>
+#include <X11/Xlib.h>
+#include <GL/glx.h>
+#include <GL/glu.h>
+extern "C" int main(void)
+{
+  Display *dpy;
+  int major, minor;
+
+  dpy = XOpenDisplay(NULL);
+  if (glXQueryVersion(dpy, &major, &minor))
+  {
+    printf("found version %u.%u, OK.\n", major, minor);
+  }
+  return 0;
+}
+EOF
+  [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
+  if test_compile "$LIBX11 $MESA $I_INCX11" Mesa Mesa; then
+    test_execute
   fi
 }
 
@@ -1736,6 +1809,7 @@ Configuration:
   --disable-dbus           don't use DBus and hal for hardware detection
   --disable-kmods          don't build Linux kernel modules (host and guest)
   --disable-hardening      don't be strict about /dev/vboxdrv access
+  --disable-opengl         disable OpenGL support
   --enable-webservice      enable the webservice stuff
   --build-libxml2          build libxml2 from sources
   --build-libxslt          build libxslt from sources
@@ -1839,6 +1913,9 @@ for option in $*; do
     --disable-kmods)
       WITH_KMODS=0
       ;;
+    --disable-opengl)
+      WITH_OPENGL=0
+      ;;
     --disable-hardening)
       WITH_HARDENING=0
       ;;
@@ -1865,6 +1942,7 @@ for option in $*; do
       WITH_SDL=0
       WITH_SDL_TTF=0
       WITH_X11=0
+      WITH_OPENGL=0
       WITH_QT4=0
       ;;
     --ose)
@@ -1988,6 +2066,10 @@ if [ -n "$HEADLESS" ]; then
   cnf_append "VBOX_HEADLESS" "1"
 fi
 
+if [ $WITH_OPENGL -eq 0 ]; then
+  cnf_append "VBOX_WITH_CROGL" ""
+fi
+
 if [ "$OS" = "darwin" ]; then
   # On Darwin we want to build against Qt4 only. WITH_QT4 is enabled by
   # default so disable Qt3. --disable-qt disables both Qt3 and Qt4 GUI now,
@@ -2029,12 +2111,11 @@ check_gcc
 [ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
 [ $WITH_X11    -eq 1 ] && check_x
-# TODO check for Xmu (X11/Xmu/StdCmap.h)
-# TODO check for mesa-common-dev (GL/glx.h)
-# TODO check for libglu1-mesa-dev (GL/glu.h)
-# TODO check for xcomposite-dev (X11/extensions/Xcomposite.h)
-# TODO check for libxdamange-dev (X11/extensions/Xdamage.h)
+# TODO check for xcomposite-dev (X11/extensions/Xcomposite.h, additions only)
+# TODO check for libxdamange-dev (X11/extensions/Xdamage.h, additions only)
 [ $WITH_X11    -eq 1 ] && check_xcursor
+[ $WITH_OPENGL -eq 1 ] && check_xmu
+[ $WITH_OPENGL -eq 1 ] && check_mesa
 [ $WITH_QT4    -eq 1 ] && check_qt4
 [ $WITH_PYTHON -eq 1 -a "$OS" != "darwin" ] && check_python
 

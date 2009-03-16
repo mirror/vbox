@@ -354,8 +354,6 @@ endif
 if1of ($(KBUILD_TARGET),win linux solaris darwin)
  VBOX_WITH_CROGL = 1
 endif
-# Enable OpenGL service
-VBOX_WITH_OGL = 1
 # Enable shared folders
 VBOX_WITH_SHARED_FOLDERS = 1
 # Enable shared clipboard
