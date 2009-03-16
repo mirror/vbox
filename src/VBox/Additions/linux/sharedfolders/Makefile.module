@@ -148,7 +148,7 @@ else # neq($(KERNELRELEASE),)
  #
 
  # guess kernel version (24 or 26)
- ifeq ($(shell if grep '"2\.4\.' $(PWD)/include/linux/version.h > /dev/null; then echo yes; fi),yes)
+ ifeq ($(shell if echo "$(VERSION).$(PATCHLEVEL)." | grep '2\.4\.' > /dev/null; then echo yes; fi),yes)
   KERN_VERSION := 24
  else
   KERN_VERSION := 26

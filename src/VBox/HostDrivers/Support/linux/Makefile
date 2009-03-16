@@ -183,17 +183,11 @@ ifeq ($(KERNELRELEASE),)
   endif # MODULE_DIR unspecified
  endif
 
- # guess kernel version (24 or 26)
- KERN_VERSION := $(if $(wildcard $(KERN_DIR)/Rules.make),24,26)
-
 else # neq($(KERNELRELEASE),)
 
  #
  # building from kbuild (make -C <kernel_directory> M=`pwd`)
  #
-
- # guess kernel version (24 or 26)
- KERN_VERSION := $(if $(wildcard $(PWD)/Rules.make),24,26)
 
 endif # neq($(KERNELRELEASE),)
 
@@ -202,7 +196,6 @@ ifdef DEBUG
 $(warning dbg: KERN_DIR     = $(KERN_DIR))
 $(warning dbg: KERN_INCL    = $(KERN_INCL))
 $(warning dbg: MODULE_DIR   = $(MODULE_DIR))
-$(warning dbg: KERN_VERSION = $(KERN_VERSION))
 endif
 
 KBUILD_VERBOSE ?= 1
