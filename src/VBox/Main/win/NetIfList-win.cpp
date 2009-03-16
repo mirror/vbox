@@ -802,7 +802,7 @@ static int netIfEnableStaticIpConfig(const Guid &guid, ULONG ip, ULONG mask)
                 hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
                 if(SUCCEEDED(hr))
                 {
-                    hr = netIfWinEnableStaticV4(pSvc, ObjPath, aIp, aMask, 1);
+                    hr = netIfWinEnableStaticV4(pSvc, ObjPath, aIp, aMask, ip != 0 ? 1 : 0);
                     if(SUCCEEDED(hr))
                     {
 #if 0
