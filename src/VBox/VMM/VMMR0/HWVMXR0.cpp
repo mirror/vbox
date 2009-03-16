@@ -2587,7 +2587,7 @@ ResumeExecution:
                         X86EFLAGS eflags;
 
                         cbParm  = (Cpu.prefix & PREFIX_OPSIZE) ? 4 : 2;
-                        uMask   = (Cpu.prefix & PREFIX_ADDRSIZE) ? 0xffffffff : 0xffff;
+                        uMask   = (Cpu.prefix & PREFIX_OPSIZE) ? 0xffffffff : 0xffff;
 
                         rc = SELMToFlatEx(pVM, DIS_SELREG_SS, CPUMCTX2CORE(pCtx), pCtx->esp & uMask, 0, &GCPtrStack);
                         if (RT_FAILURE(rc))
@@ -2595,8 +2595,8 @@ ResumeExecution:
                             rc = VERR_EM_INTERPRETER;
                             break;
                         }
-#ifdef VBOX_WITH_NEW_PHYS_CODE
                         eflags.u = 0;
+#ifdef VBOX_WITH_NEW_PHYS_CODE
                         rc = PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &eflags.u, cbParm);
                         if (RT_FAILURE(rc))
                         {
@@ -2606,7 +2606,7 @@ ResumeExecution:
 #else
                         PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &eflags.u, cbParm);
 #endif
-                        LogFlow(("POPF %x -> %RGv\n", eflags.u, pCtx->rsp));
+                        LogFlow(("POPF %x -> %RGv mask=%x\n", eflags.u, pCtx->rsp, uMask));
                         pCtx->eflags.u = (pCtx->eflags.u & ~(X86_EFL_POPF_BITS & uMask)) | (eflags.u & X86_EFL_POPF_BITS & uMask);
                         /* RF cleared when popped in real mode; see pushf description in AMD manual. */
                         pCtx->eflags.Bits.u1RF = 0;
@@ -2625,7 +2625,7 @@ ResumeExecution:
                         X86EFLAGS eflags;
 
                         cbParm  = (Cpu.prefix & PREFIX_OPSIZE) ? 4 : 2;
-                        uMask   = (Cpu.prefix & PREFIX_ADDRSIZE) ? 0xffffffff : 0xffff;
+                        uMask   = (Cpu.prefix & PREFIX_OPSIZE) ? 0xffffffff : 0xffff;
 
                         rc = SELMToFlatEx(pVM, DIS_SELREG_SS, CPUMCTX2CORE(pCtx), (pCtx->esp - cbParm) & uMask, 0, &GCPtrStack);
                         if (RT_FAILURE(rc))
