@@ -133,7 +133,8 @@ fi
 
 cleanup()
 {
-  rm -f $ODIR.tmp_src.cc $ODIR.tmp_src.c $ODIR.tmp_out $ODIR.test_execute.log
+#  rm -f $ODIR.tmp_src.cc $ODIR.tmp_src.c $ODIR.tmp_out $ODIR.test_execute.log
+echo "cleanup"
 }
 
 fail()
@@ -228,7 +229,7 @@ test_compile()
   cat $ODIR.tmp_src.cc >> $LOG
   echo "using the following command line:" >> $LOG
   echo "$CXX -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc \"$1\"" >> $LOG
-  $CXX -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc $1 >> $LOG 2>&1
+  $CXX -g -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc $1 >> $LOG 2>&1
   if [ $? -ne 0 ]; then
     if [ -z "$4" ]; then
       echo
@@ -1211,11 +1212,14 @@ extern "C" int main(void)
   Screen *scrn;
 
   dpy = XOpenDisplay(NULL);
-  scrn_num = DefaultScreen(dpy);
-  scrn     = ScreenOfDisplay(dpy, scrn_num);
-  Status status = XmuLookupStandardColormap(dpy, RootWindowOfScreen(scrn), 0,
-                  24, XA_RGB_DEFAULT_MAP, False, True);
-  printf("Status = %x\n", status);
+  if (dpy)
+  {
+    scrn_num = DefaultScreen(dpy);
+    scrn     = ScreenOfDisplay(dpy, scrn_num);
+    Status status = XmuLookupStandardColormap(dpy, RootWindowOfScreen(scrn), 0,
+                    24, XA_RGB_DEFAULT_MAP, False, True);
+    printf("Status = %x\n", status);
+  }
   return 0;
 }
 EOF
@@ -1244,10 +1248,15 @@ extern "C" int main(void)
   int major, minor;
 
   dpy = XOpenDisplay(NULL);
-  if (glXQueryVersion(dpy, &major, &minor))
+  if (dpy)
   {
-    printf("found version %u.%u, OK.\n", major, minor);
+    if (glXQueryVersion(dpy, &major, &minor))
+    {
+      printf("found version %u.%u, OK.\n", major, minor);
+      return 0;
+    }
   }
+  printf("found (inactive), OK.\n");
   return 0;
 }
 EOF
