@@ -270,7 +270,7 @@ public:
 
 protected:
 
-    ErrorInfo (bool aDummy)
+    ErrorInfo (bool /* aDummy */)
         : mIsBasicAvailable (false), mIsFullAvailable (false)
         , mResultCode (S_OK)
         {}

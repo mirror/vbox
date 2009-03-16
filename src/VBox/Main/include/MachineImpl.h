@@ -633,9 +633,9 @@ public:
     // callback handlers
     virtual HRESULT onDVDDriveChange() { return S_OK; }
     virtual HRESULT onFloppyDriveChange() { return S_OK; }
-    virtual HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter) { return S_OK; }
-    virtual HRESULT onSerialPortChange(ISerialPort *serialPort) { return S_OK; }
-    virtual HRESULT onParallelPortChange(IParallelPort *ParallelPort) { return S_OK; }
+    virtual HRESULT onNetworkAdapterChange(INetworkAdapter * /* networkAdapter */) { return S_OK; }
+    virtual HRESULT onSerialPortChange(ISerialPort * /* serialPort */) { return S_OK; }
+    virtual HRESULT onParallelPortChange(IParallelPort * /* parallelPort */) { return S_OK; }
     virtual HRESULT onVRDPServerChange() { return S_OK; }
     virtual HRESULT onUSBControllerChange() { return S_OK; }
     virtual HRESULT onStorageControllerChange() { return S_OK; }

@@ -86,8 +86,8 @@ class ComWeakRef
 {
 protected:
 
-    static void addref (C *p) {}
-    static void release (C *p) {}
+    static void addref  (C * /* p */) {}
+    static void release (C * /* p */) {}
 };
 
 /**

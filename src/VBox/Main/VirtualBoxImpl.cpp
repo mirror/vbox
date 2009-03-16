@@ -717,6 +717,7 @@ STDMETHODIMP
 VirtualBox::COMGETTER(SharedFolders) (ComSafeArrayOut (ISharedFolder *, aSharedFolders))
 {
     CheckComArgOutSafeArrayPointerValid(aSharedFolders);
+    NOREF(aSharedFoldersSize);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1385,7 +1386,7 @@ STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
 }
 
 STDMETHODIMP
-VirtualBox::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
+VirtualBox::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL /* aWritable */)
 {
     CheckComArgNotNull(aName);
     CheckComArgNotNull(aHostPath);
@@ -1859,8 +1860,8 @@ STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *aCallback)
     return rc;
 }
 
-STDMETHODIMP VirtualBox::WaitForPropertyChange (IN_BSTR aWhat, ULONG aTimeout,
-                                                BSTR *aChanged, BSTR *aValues)
+STDMETHODIMP VirtualBox::WaitForPropertyChange (IN_BSTR /* aWhat */, ULONG /* aTimeout */,
+                                                BSTR * /* aChanged */, BSTR * /* aValues */)
 {
     ReturnComNotImplemented();
 }
@@ -4115,7 +4116,7 @@ HRESULT VirtualBox::unlockConfig()
  *  that have opened sessions using IVirtualBox::OpenSession()
  */
 // static
-DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
+DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser)
 {
     LogFlowFuncEnter();
 

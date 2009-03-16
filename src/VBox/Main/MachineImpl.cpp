@@ -2832,7 +2832,7 @@ STDMETHODIMP Machine::FindSnapshot (IN_BSTR aName, ISnapshot **aSnapshot)
     return rc;
 }
 
-STDMETHODIMP Machine::SetCurrentSnapshot (IN_GUID aId)
+STDMETHODIMP Machine::SetCurrentSnapshot (IN_GUID /* aId */)
 {
     /// @todo (dmik) don't forget to set
     //  mData->mCurrentStateModified to FALSE
@@ -10104,7 +10104,7 @@ HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
  *
  * @note Locks this object for writing.
  */
-void SessionMachine::takeSnapshotHandler (TakeSnapshotTask &aTask)
+void SessionMachine::takeSnapshotHandler (TakeSnapshotTask & /* aTask */)
 {
     LogFlowThisFuncEnter();
 
@@ -11271,7 +11271,7 @@ HRESULT SessionMachine::updateMachineStateOnClient()
 }
 
 /* static */
-DECLCALLBACK(int) SessionMachine::taskHandler (RTTHREAD thread, void *pvUser)
+DECLCALLBACK(int) SessionMachine::taskHandler (RTTHREAD /* thread */, void *pvUser)
 {
     AssertReturn (pvUser, VERR_INVALID_POINTER);
 

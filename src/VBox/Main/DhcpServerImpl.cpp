@@ -142,7 +142,6 @@ STDMETHODIMP DhcpServer::COMGETTER(NetworkName) (BSTR *aName)
     mName.cloneTo(aName);
 
     return S_OK;
-
 }
 
 STDMETHODIMP DhcpServer::COMGETTER(Enabled) (BOOL *aEnabled)
@@ -155,7 +154,6 @@ STDMETHODIMP DhcpServer::COMGETTER(Enabled) (BOOL *aEnabled)
     *aEnabled = m.enabled;
 
     return S_OK;
-
 }
 
 STDMETHODIMP DhcpServer::COMSETTER(Enabled) (BOOL aEnabled)
@@ -183,7 +181,6 @@ STDMETHODIMP DhcpServer::COMGETTER(IPAddress) (BSTR *aIPAddress)
     m.IPAddress.cloneTo(aIPAddress);
 
     return S_OK;
-
 }
 
 STDMETHODIMP DhcpServer::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
@@ -196,7 +193,6 @@ STDMETHODIMP DhcpServer::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
     m.networkMask.cloneTo(aNetworkMask);
 
     return S_OK;
-
 }
 
 STDMETHODIMP DhcpServer::COMGETTER(LowerIP) (BSTR *aIPAddress)
@@ -209,7 +205,6 @@ STDMETHODIMP DhcpServer::COMGETTER(LowerIP) (BSTR *aIPAddress)
     m.lowerIP.cloneTo(aIPAddress);
 
     return S_OK;
-
 }
 
 STDMETHODIMP DhcpServer::COMGETTER(UpperIP) (BSTR *aIPAddress)
@@ -222,7 +217,6 @@ STDMETHODIMP DhcpServer::COMGETTER(UpperIP) (BSTR *aIPAddress)
     m.upperIP.cloneTo(aIPAddress);
 
     return S_OK;
-
 }
 
 STDMETHODIMP DhcpServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkMask, IN_BSTR aLowerIP, IN_BSTR aUpperIP)
@@ -243,7 +237,5 @@ STDMETHODIMP DhcpServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkM
     m.lowerIP = aLowerIP;
     m.upperIP = aUpperIP;
 
-    HRESULT rc = mVirtualBox->saveSettings();
-
-    return S_OK;
+    return mVirtualBox->saveSettings();
 }

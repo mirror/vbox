@@ -71,7 +71,7 @@ static const unsigned g_cb_xml_VirtualBox_settings_root_xsd =
  *              a wrong URI/ID pair.
  */
 xml::Input *
-SettingsTreeHelper::resolveEntity (const char *aURI, const char *aID)
+SettingsTreeHelper::resolveEntity (const char *aURI, const char * /* aID */)
 {
     if (strcmp (aURI, VBOX_XML_SCHEMA_COMMON) == 0)
     {
@@ -184,7 +184,7 @@ namespace settings
 {
 
 template<> stdx::char_auto_ptr
-ToString <com::Bstr> (const com::Bstr &aValue, unsigned int aExtra)
+ToString <com::Bstr> (const com::Bstr &aValue, unsigned int /* aExtra */)
 {
     stdx::char_auto_ptr result;
 
@@ -247,7 +247,7 @@ template<> com::Guid FromString <com::Guid> (const char *aValue)
 }
 
 template<> stdx::char_auto_ptr
-ToString <com::Guid> (const com::Guid &aValue, unsigned int aExtra)
+ToString <com::Guid> (const com::Guid &aValue, unsigned int /* aExtra */)
 {
     /* For settings, the format is always {XXX...XXX} */
     stdx::char_auto_ptr result (new char [RTUUID_STR_LENGTH + 2]);

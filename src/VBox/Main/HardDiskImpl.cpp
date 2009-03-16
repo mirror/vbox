@@ -1354,7 +1354,7 @@ STDMETHODIMP HardDisk::CreateDiffStorage (IHardDisk *aTarget,
     return rc;
 }
 
-STDMETHODIMP HardDisk::MergeTo (IN_GUID aTargetId, IProgress **aProgress)
+STDMETHODIMP HardDisk::MergeTo (IN_GUID /* aTargetId */, IProgress ** /* aProgress */)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1436,9 +1436,12 @@ STDMETHODIMP HardDisk::CloneTo (IHardDisk *aTarget,
 }
 
 STDMETHODIMP HardDisk::FlattenTo (IHardDisk *aTarget,
-                                  HardDiskVariant_T aVariant,
+                                  HardDiskVariant_T /* aVariant */,
                                   IProgress **aProgress)
 {
+    CheckComArgNotNull (aTarget);
+    CheckComArgOutPointerValid (aProgress);
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -1447,6 +1450,8 @@ STDMETHODIMP HardDisk::FlattenTo (IHardDisk *aTarget,
 
 STDMETHODIMP HardDisk::Compact (IProgress **aProgress)
 {
+    CheckComArgOutPointerValid (aProgress);
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -3151,8 +3156,8 @@ HRESULT HardDisk::canClose()
 /**
  * @note Called from within this object's AutoWriteLock.
  */
-HRESULT HardDisk::canAttach(const Guid &aMachineId,
-                            const Guid &aSnapshotId)
+HRESULT HardDisk::canAttach(const Guid & /* aMachineId */,
+                            const Guid & /* aSnapshotId */)
 {
     if (mm.numCreateDiffTasks > 0)
         return setError (E_FAIL,
@@ -3260,6 +3265,8 @@ Utf8Str HardDisk::vdError (int aVRC)
 DECLCALLBACK(void) HardDisk::vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
                                          const char *pszFormat, va_list va)
 {
+    NOREF(pszFile); NOREF(iLine); NOREF(pszFunction); /* RT_SRC_POS_DECL */
+
     HardDisk *that = static_cast<HardDisk*>(pvUser);
     AssertReturnVoid (that != NULL);
 
@@ -3297,7 +3304,7 @@ DECLCALLBACK(int) HardDisk::vdProgressCall(PVM /* pVM */, unsigned uPercent,
 
 /* static */
 DECLCALLBACK(bool) HardDisk::vdConfigAreKeysValid (void *pvUser,
-                                                    const char *pszzValid)
+                                                    const char * /* pszzValid */)
 {
     HardDisk *that = static_cast<HardDisk*>(pvUser);
     AssertReturn (that != NULL, false);
@@ -3418,7 +3425,7 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
 
                 Utf8Str format (that->mm.format);
                 Utf8Str location (that->m.locationFull);
-                uint64_t capabilities = that->mm.formatObj->capabilities();
+                /* uint64_t capabilities = */ that->mm.formatObj->capabilities();
 
                 /* unlock before the potentially lengthy operation */
                 Assert (that->m.state == MediaState_Creating);

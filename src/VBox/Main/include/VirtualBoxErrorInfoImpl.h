@@ -83,8 +83,10 @@ private:
     // FIXME: declare these here until VBoxSupportsTranslation base
     //        is available in this class.
     static const char *tr (const char *a) { return a; }
-    static HRESULT setError (HRESULT rc, const char *a,
-                             const char *b, void *c) { return rc; }
+    static HRESULT setError (HRESULT rc,
+                             const char * /* a */,
+                             const char * /* b */,
+                             void *       /* c */) { return rc; }
 
     HRESULT mResultCode;
     Bstr mText;
