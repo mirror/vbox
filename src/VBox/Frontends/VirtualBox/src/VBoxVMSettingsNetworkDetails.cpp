@@ -56,8 +56,8 @@ VBoxVMSettingsNetworkDetails::VBoxVMSettingsNetworkDetails (QWidget *aParent)
                   "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
                   "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
                   "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}"), this));
-    //mLeHMv6->setValidator (new QRegExpValidator
-    //    (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
+    mLeHMv6->setValidator (new QRegExpValidator
+        (QRegExp ("[1-9][0-9]|1[0-1][0-9]|12[0-8]"), this));
     mLeIPv6->setFixedWidthByText (QString().fill ('X', 32) + QString().fill (':', 7));
     connect (mCbHOI, SIGNAL (currentIndexChanged (int)),
              this, SLOT (hostOnlyInterfaceChanged()));
