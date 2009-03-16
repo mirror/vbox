@@ -2828,6 +2828,18 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                                 lAutomaticAllocation = 1;
                                 strCaption = Utf8StrFmt("Ethernet adapter on '%s'", desc.strOvf.c_str());
                                 type = OVFResourceType_EthernetAdapter; // 10
+                                /* Set the hardware type to something useful.
+                                 * To be compatible with vmware & others we set
+                                 * PCNet32 for our PCNet types. For the E1000
+                                 * cards we invented E1000 as a generic type.
+                                 * */
+                                switch (desc.strVbox.toInt32())
+                                {
+                                    case NetworkAdapterType_Am79C970A:
+                                    case NetworkAdapterType_Am79C973: strResourceSubType = "PCNet32"; break;
+                                    case NetworkAdapterType_I82540EM:
+                                    case NetworkAdapterType_I82543GC: strResourceSubType = "E1000"; break;
+                                }
                                 strConnection = desc.strOvf;
 
                                 mapNetworks[desc.strOvf] = true;
