@@ -3323,6 +3323,8 @@ QIcon VBoxGlobal::iconSetFull (const QSize &aNormalSize, const QSize &aSmallSize
 QIcon VBoxGlobal::standardIcon (QStyle::StandardPixmap aStandard, QWidget *aWidget /* = NULL */)
 {
     QStyle *style = aWidget ? aWidget->style(): QApplication::style();
+    if (!style)
+        return QIcon();
 #ifdef Q_WS_MAC
     /* At least in Qt 4.3.4/4.4 RC1 SP_MessageBoxWarning is the application
      * icon. So change this to the critical icon. (Maybe this would be
