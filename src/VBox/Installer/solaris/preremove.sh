@@ -38,6 +38,7 @@ if test "$currentzone" = "global"; then
 
     # vboxdrv.sh would've been installed, we just need to call it.
     /opt/VirtualBox/vboxdrv.sh usbstop alwaysremdrv
+    /opt/VirtualBox/vboxdrv.sh netstop alwaysremdrv
     /opt/VirtualBox/vboxdrv.sh fltstop alwaysremdrv
     /opt/VirtualBox/vboxdrv.sh stop alwaysremdrv
 
