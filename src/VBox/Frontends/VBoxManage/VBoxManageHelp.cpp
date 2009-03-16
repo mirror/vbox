@@ -505,7 +505,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 #if !defined(RT_OS_WINDOWS) || defined(VBOX_WITH_NETFLT)
     if (u64Cmd & USAGE_DHCPSERVER)
     {
-        RTPrintf("VBoxManage dhcpserver       [add | create] [-netname <network_name> | -ifname <hostonly_if_name>]\n"
+        RTPrintf("VBoxManage dhcpserver       [add | modify] [-netname <network_name> | -ifname <hostonly_if_name>]\n"
                  "                                [-ip <ip_address>\n"
                  "                                 -netmask <network_mask>\n"
                  "                                 -lowerip <lower_ip>\n"
