@@ -2951,7 +2951,8 @@
     uuid="646a78d7-6f04-49f4-82c4-75c28a75a4cd"
   >
     <desc>
-      OVF resource type.
+        OVF resource type (as listed with CIM_ResourceAllocationSettingData; see for example
+        http://msdn.microsoft.com/en-us/library/cc136877(VS.85).aspx).
     </desc>
 
     <const name="Other" value="1" />
@@ -3206,17 +3207,18 @@
     <const name="Ignore" value="1" />
     <const name="OS" value="2" />
     <const name="Name" value="3" />
-    <const name="CPU" value="4" />
-    <const name="Memory" value="5" />
-    <const name="HardDiskControllerIDE" value="6" />
-    <const name="HardDiskControllerSATA" value="7" />
-    <const name="HardDiskControllerSCSI" value="8" />
-    <const name="HardDiskImage" value="9" />
-    <const name="Floppy" value="10" />
-    <const name="CDROM" value="11" />
-    <const name="NetworkAdapter" value="12" />
-    <const name="USBController" value="13" />
-    <const name="SoundCard" value="14" />
+    <const name="Description" value="4" />
+    <const name="CPU" value="5" />
+    <const name="Memory" value="6" />
+    <const name="HardDiskControllerIDE" value="7" />
+    <const name="HardDiskControllerSATA" value="8" />
+    <const name="HardDiskControllerSCSI" value="9" />
+    <const name="HardDiskImage" value="10" />
+    <const name="Floppy" value="11" />
+    <const name="CDROM" value="12" />
+    <const name="NetworkAdapter" value="13" />
+    <const name="USBController" value="14" />
+    <const name="SoundCard" value="15" />
 
   </enum>
 
