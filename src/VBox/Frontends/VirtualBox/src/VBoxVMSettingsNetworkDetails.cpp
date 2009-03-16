@@ -227,18 +227,18 @@ void VBoxVMSettingsNetworkDetails::loadList (KNetworkAttachmentType aType,
         {
             mRbManual->setChecked (true);
             QString ipv4 (property ("HOI_IPv4Addr").toString());
-            if (!ipv4.isEmpty() && ipv4 != mLeIPv4->text())
+            if (ipv4 != mLeIPv4->text())
                 mLeIPv4->setText (ipv4);
             QString nmv4 (property ("HOI_IPv4Mask").toString());
-            if (!nmv4.isEmpty() && nmv4 != mLeHMv4->text())
+            if (nmv4 != mLeHMv4->text())
                 mLeHMv4->setText (nmv4);
             if (property ("HOI_IPv6Supported").toBool())
             {
                 QString ipv6 (property ("HOI_IPv6Addr").toString());
-                if (!ipv6.isEmpty() && ipv6 != mLeIPv6->text())
+                if (ipv6 != mLeIPv6->text())
                     mLeIPv6->setText (ipv6);
                 QString nmv6 (property ("HOI_IPv6Mask").toString());
-                if (!nmv6.isEmpty() && nmv6 != mLeHMv6->text())
+                if (nmv6 != mLeHMv6->text())
                     mLeHMv6->setText (nmv6);
             }
         }
