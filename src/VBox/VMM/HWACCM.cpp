@@ -316,6 +316,7 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitPopf,               "/HWACCM/CPU%d/Exit/Instr/Popf");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitIret,               "/HWACCM/CPU%d/Exit/Instr/Iret");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitInt,                "/HWACCM/CPU%d/Exit/Instr/Int");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitHlt,                "/HWACCM/CPU%d/Exit/Instr/Hlt");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitIOWrite,            "/HWACCM/CPU%d/Exit/IO/Write");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitIORead,             "/HWACCM/CPU%d/Exit/IO/Read");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitIOStringWrite,      "/HWACCM/CPU%d/Exit/IO/WriteString");

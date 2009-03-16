@@ -2554,20 +2554,6 @@ ResumeExecution:
 
                 LogFlow(("Real mode X86_XCPT_GP instruction emulation at %RGv\n", (RTGCPTR)pCtx->rip));
 
-#if 1
-                /* For testing purposes */
-                rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
-                if (rc == VINF_SUCCESS)
-                {
-                    /* EIP has been updated already. */
- 
-                    /* lidt, lgdt can end up here. In the future crx changes as well. Just reload the whole context to be done with it. */
-                    pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
-                    /* Only resume if successful. */
-                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
-                    goto ResumeExecution;
-                }
-#else
                 rc = EMInterpretDisasOne(pVM, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
                 if (RT_SUCCESS(rc))
                 {
@@ -2584,6 +2570,13 @@ ResumeExecution:
                     case OP_STI:
                         pCtx->eflags.Bits.u1IF = 1;
                         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitSti);
+                        break;
+
+                    case OP_HLT:
+                        fUpdateRIP = false;
+                        rc = VINF_EM_HALT;
+                        pCtx->rip += Cpu.opsize;
+                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitHlt);
                         break;
 
                     case OP_POPF:
@@ -2773,7 +2766,7 @@ ResumeExecution:
                 }
                 else
                     rc = VERR_EM_INTERPRETER;
-#endif
+
                 AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_HALT, ("Unexpected rc=%Rrc\n", rc));
                 break;
             }
