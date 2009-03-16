@@ -219,7 +219,9 @@ static void stubSPUTearDown(void)
     crSPUUnloadChain(stub.spu);
     stub.spu = NULL;
 
+#ifndef Linux
     crUnloadOpenGL();
+#endif
 
     crNetTearDown();
 
@@ -236,6 +238,9 @@ static void stubSPUTearDown(void)
 
 static void stubSPUSafeTearDown(void)
 {
+    if (!stub_initialized) return;
+    stub_initialized = 0;
+
 #ifdef CHROMIUM_THREADSAFE
     CRmutex *mutex = &stub.mutex;
     crLockMutex(mutex);
