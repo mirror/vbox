@@ -2940,7 +2940,7 @@ void VBoxGlobal::retranslateUi()
     mStorageControllerTypes [KStorageControllerType_ICH6] =
         tr ("ICH6", "StorageControllerType");
     mStorageControllerTypes [KStorageControllerType_IntelAhci] =
-        tr ("SATA (AHCI)", "StorageControllerType");
+        tr ("AHCI", "StorageControllerType");
     mStorageControllerTypes [KStorageControllerType_LsiLogic] =
         tr ("Lsilogic", "StorageControllerType");
     mStorageControllerTypes [KStorageControllerType_BusLogic] =

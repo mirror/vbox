@@ -1189,9 +1189,9 @@ void VBoxVMSettingsHD::prepareComboboxes()
     /* Clear the driver box */
     mCbControllerType->clear();
     /* Refill them */
-    mCbControllerType->addItem (vboxGlobal().toString (KStorageControllerType_IntelAhci), KStorageControllerType_IntelAhci);
-    mCbControllerType->addItem (vboxGlobal().toString (KStorageControllerType_LsiLogic), KStorageControllerType_LsiLogic);
-    mCbControllerType->addItem (vboxGlobal().toString (KStorageControllerType_BusLogic), KStorageControllerType_BusLogic);
+    mCbControllerType->addItem (QString ("%1 (%2)").arg (vboxGlobal().toString (KStorageBus_SATA)).arg (vboxGlobal().toString (KStorageControllerType_IntelAhci)), KStorageControllerType_IntelAhci);
+    mCbControllerType->addItem (QString ("%1 (%2)").arg (vboxGlobal().toString (KStorageBus_SCSI)).arg (vboxGlobal().toString (KStorageControllerType_LsiLogic)), KStorageControllerType_LsiLogic);
+    mCbControllerType->addItem (QString ("%1 (%2)").arg (vboxGlobal().toString (KStorageBus_SCSI)).arg (vboxGlobal().toString (KStorageControllerType_BusLogic)), KStorageControllerType_BusLogic);
 
     /* Set the old value */
     mCbControllerType->setCurrentIndex (current);
