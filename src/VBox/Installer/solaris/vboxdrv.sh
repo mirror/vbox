@@ -24,6 +24,7 @@ ALWAYSREMDRV=""
 MODNAME="vboxdrv"
 VBIMODNAME="vbi"
 FLTMODNAME="vboxflt"
+NETMODNAME="vboxnet"
 USBMODNAME="vboxusbmon"
 MODDIR32="/platform/i86pc/kernel/drv"
 MODDIR64=$MODDIR32/amd64
@@ -119,6 +120,18 @@ vboxflt_loaded()
 vboxflt_added()
 {
     module_added $FLTMODNAME
+    return $?
+}
+
+vboxnet_added()
+{
+    module_added $NETMODNAME
+    return $?
+}
+
+vboxnet_loaded()
+{
+    module_loaded $NETMODNAME
     return $?
 }
 
@@ -252,6 +265,53 @@ stop_vboxflt()
 }
 
 
+start_vboxnet()
+{
+    if vboxnet_loaded; then
+        info "VirtualBox NetAdapter kernel module already loaded."
+    else
+        /usr/sbin/add_drv -m'* 0666 root sys' $NETMODNAME || abort "Failed to add VirtualBox NetAdapter Kernel module."
+        /usr/sbin/modload -p drv/$NETMODNAME
+        if test ! vboxnet_loaded; then
+            abort "Failed to load VirtualBox NetAdapter kernel module."
+        else
+            # Plumb the interface!
+            /sbin/ifconfig vboxnet0 plumb up
+            info "VirtualBox NetAdapter kernel module loaded."
+        fi
+    fi
+}
+
+stop_vboxnet()
+{
+    if vboxnet_loaded; then
+        vboxnet_mod_id=`/usr/sbin/modinfo | grep $NETMODNAME | cut -f 1 -d ' '`
+        if test -n "$vboxnet_mod_id"; then
+            /sbin/ifconfig vboxnet0 unplumb
+            /usr/sbin/modunload -i $vboxnet_mod_id
+
+            # see stop_vboxdrv() for why we have "alwaysremdrv".
+            if test -n "$ALWAYSREMDRV"; then
+                /usr/sbin/rem_drv $NETMODNAME
+            else
+                if test "$?" -eq 0; then
+                    /usr/sbin/rem_drv $NETMODNAME || abort "Unloaded VirtualBox NetAdapter kernel module, but failed to remove it!"
+                else
+                    abort "Failed to unload VirtualBox NetAdapter kernel module. Old one still active!!"
+                fi
+            fi
+
+            info "VirtualBox NetAdapter kernel module unloaded."
+        fi
+    elif vboxnet_added; then
+        /usr/sbin/rem_drv $NETMODNAME || abort "Unloaded VirtualBox NetAdapter kernel module, but failed to remove it!"
+        info "VirtualBox NetAdapter kernel module unloaded."
+    elif test -z "$SILENTUNLOAD"; then
+        info "VirtualBox NetAdapter kernel module not loaded."
+    fi
+}
+
+
 start_vboxusbmon()
 {
     if vboxusbmon_loaded; then
@@ -309,6 +369,7 @@ status_vboxdrv()
 stop_all_modules()
 {
     stop_vboxusbmon
+    stop_vboxnet
     stop_vboxflt
     stop_module
 }
@@ -317,6 +378,7 @@ start_all_modules()
 {
     start_module
     start_vboxflt
+    start_vboxnet
     start_vboxusbmon
 }
 
@@ -363,8 +425,14 @@ usbstart)
 usbstop)
     stop_vboxusbmon
     ;;
+netstart)
+    start_vboxnet
+    ;;
+netstop)
+    stop_vboxnet
+    ;;
 *)
-    echo "Usage: $0 {start|stop|status|fltstart|fltstop|usbstart|usbstop|stopall|startall}"
+    echo "Usage: $0 {start|stop|status|fltstart|fltstop|usbstart|usbstop|netstart|netstop|stopall|startall}"
     exit 1
 esac
 

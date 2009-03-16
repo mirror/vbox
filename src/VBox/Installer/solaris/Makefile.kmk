@@ -133,7 +133,8 @@ SOLARIS_STRIP_EXES = \
 	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE,) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	$(if $(VBOX_WITH_USB),VBoxUSBHelper,) \
-	VBoxNetDHCP \
+	$(if $(VBOX_WITH_NETADP),VBoxNetAdpCtl,) \
+	$(if $(VBOX_WITH_NETADP),VBoxNetDHCP,) \
 	VBoxSVC \
 	VBoxXPCOMIPCD \
 	kchmviewer
@@ -142,6 +143,7 @@ SOLARIS_STRIP_EXES = \
 SOLARIS_STRIP_BINS = \
 	vboxdrv \
 	$(if $(VBOX_WITH_NETFLT),vboxflt,) \
+	$(if $(VBOX_WITH_NETADP),vboxnet,) \
 	$(if $(VBOX_WITH_USB),vboxusbmon,) \
 	VBoxDD.so \
 	VBoxDD2.so \
@@ -211,6 +213,7 @@ SOLARIS_EXTRAS = \
 	autoresponse \
 	vboxdrv.conf \
 	$(if $(VBOX_WITH_NETFLT),vboxflt.conf,) \
+	$(if $(VBOX_WITH_NETADP),vboxnet.conf,) \
 	$(if $(VBOX_WITH_USB),vboxusbmon.conf,) \
 	vboxdrv.sh \
 	VBox.sh \
@@ -389,6 +392,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(if $(and $(VBOX_LICENSE_BINS),$(VBOX_WITH_QTGUI)),$(VBOX_LICENSE_BINS),) \
 		$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf \
 		$(if $(VBOX_WITH_NETFLT),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf,) \
+		$(if $(VBOX_WITH_NETADP),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetAdp/solaris/vboxnet.conf,) \
 		$(if $(VBOX_WITH_USB),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/solaris/vboxusbmon.conf,) \
 		$(if $(not $(VBOX_WITH_NETFLT))$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh,) \
 		$(if $(not $(VBOX_WITH_NETFLT))$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh,) \
@@ -411,6 +415,7 @@ endif
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf               $(SOLARIS_INST_DIR)/vboxdrv.conf
 	$(QUIET)$(if $(VBOX_WITH_NETFLT),$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf         $(SOLARIS_INST_DIR)/vboxflt.conf,)
+	$(QUIET)$(if $(VBOX_WITH_NETADP),$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetAdp/solaris/vboxnet.conf         $(SOLARIS_INST_DIR)/vboxnet.conf,)
 	$(QUIET)$(if $(VBOX_WITH_USB),$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/solaris/vboxusbmon.conf               $(SOLARIS_INST_DIR)/vboxusbmon.conf,)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)

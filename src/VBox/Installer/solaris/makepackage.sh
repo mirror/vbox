@@ -137,6 +137,10 @@ filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxdrv=amd64/vboxdrv"'   
 filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxflt=i386/vboxflt"'                             '$3 = "platform/i86pc/kernel/drv/vboxflt=i386/vboxflt"; $6 = "sys"'
 filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxflt=amd64/vboxflt"'                           '$3 = "platform/i86pc/kernel/drv/amd64/vboxflt=amd64/vboxflt"; $6 = "sys"'
 
+# NetAdapter vboxnet
+filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxnet=i386/vboxnet"'                             '$3 = "platform/i86pc/kernel/drv/vboxnet=i386/vboxnet"; $6 = "sys"'
+filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxnet=amd64/vboxnet"'                           '$3 = "platform/i86pc/kernel/drv/amd64/vboxnet=amd64/vboxnet"; $6 = "sys"'
+
 # USB vboxusbmon
 filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxusbmon=i386/vboxusbmon"'                       '$3 = "platform/i86pc/kernel/drv/vboxusbmon=i386/vboxusbmon"; $6 = "sys"'
 filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxusbmon=amd64/vboxusbmon"'                     '$3 = "platform/i86pc/kernel/drv/amd64/vboxusbmon=amd64/vboxusbmon"; $6 = "sys"'
@@ -144,6 +148,7 @@ filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxusbmon=amd64/vboxusbmo
 # All the driver conf files
 filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv.conf=vboxdrv.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxdrv.conf=vboxdrv.conf"'
 filelist_fixup prototype '$3 == "opt/VirtualBox/vboxflt.conf=vboxflt.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxflt.conf=vboxflt.conf"'
+filelist_fixup prototype '$3 == "opt/VirtualBox/vboxnet.conf=vboxnet.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxnet.conf=vboxnet.conf"'
 filelist_fixup prototype '$3 == "opt/VirtualBox/vboxusbmon.conf=vboxusbmon.conf"'                       '$3 = "platform/i86pc/kernel/drv/vboxusbmon.conf=vboxusbmon.conf"'
 
 # hardening requires some executables to be marked setuid.
@@ -166,7 +171,7 @@ if test -n "$HARDENED"; then
     mv -f prototype2 prototype
 fi
 
-# VBoxUSBHelper needs to be marked setuid.
+# VBoxUSBHelper needs to be marked setuid root.
 if test -f $VBOX_INSTALLED_DIR/amd64/VBoxUSBHelper || test -f $VBOX_INSTALLED_DIR/i386/VBoxUSBHelper; then
     $VBOX_AWK 'NF == 6 \
         && (    $3 == "opt/VirtualBox/amd64/VBoxUSBHelper=amd64/VBoxUSBHelper" \
@@ -175,6 +180,17 @@ if test -f $VBOX_INSTALLED_DIR/amd64/VBoxUSBHelper || test -f $VBOX_INSTALLED_DI
        { $4 = "4755" } { print }' prototype > prototype2
     mv -f prototype2 prototype
 fi
+
+# VBoxNetAdpCtl needs to be marked setuid root.
+if test -f $VBOX_INSTALLED_DIR/amd64/VBoxNetAdpCtl || test -f $VBOX_INSTALLED_DIR/i386/VBoxNetAdpCtl; then
+    $VBOX_AWK 'NF == 6 \
+        && (    $3 == "opt/VirtualBox/amd64/VBoxNetAdpCtl=amd64/VBoxNetAdpCtl" \
+            ||  $3 == "opt/VirtualBox/i386/VBoxNetAdpCtl=i386/VBoxNetAdpCtl" \
+            ) \
+       { $4 = "4755" } { print }' prototype > prototype2
+    mv -f prototype2 prototype
+fi
+
 
 # desktop links and icons
 filelist_fixup prototype '$3 == "opt/VirtualBox/virtualbox.desktop=virtualbox.desktop"'                 '$3 = "usr/share/applications/virtualbox.desktop=virtualbox.desktop"'

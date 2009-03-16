@@ -36,17 +36,27 @@ if test "$currentzone" = "global"; then
     if test "$rc" -eq 0; then
         /opt/VirtualBox/vboxdrv.sh start
         rc=$?
+
+        # VBoxDrv loaded successfully, proceed with the rest...
         if test "$rc" -eq 0; then
+            # Load VBoxNetAdapter vboxnet
+            if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
+                /opt/VirtualBox/vboxdrv.sh netstart
+                rc=$?
+            fi
+
+            # Load VBoxNetFilter vboxflt
             if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
                 /opt/VirtualBox/vboxdrv.sh fltstart
                 rc=$?
             fi
 
+            # Load VBoxUSBMon vboxusbmon (do NOT load for Solaris 10)
             if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$osversion" != "5.10"; then
                 /opt/VirtualBox/vboxdrv.sh usbstart
                 rc=$?
                 if test "$rc" -eq 0; then
-                    # add vboxusbmon to the devlink.tab
+                    # Add vboxusbmon to the devlink.tab
                     sed -e '
                     /name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
                     echo "type=ddi_pseudo;name=vboxusbmon	\D" >> /etc/devlink.vbox
@@ -101,16 +111,16 @@ if test "$currentzone" = "global"; then
         /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
     fi
 
-    # add vboxdrv to the devlink.tab
+    # Add vboxdrv to the devlink.tab
     sed -e '
 /name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
     echo "type=ddi_pseudo;name=vboxdrv	\D" >> /etc/devlink.vbox
     mv -f /etc/devlink.vbox /etc/devlink.tab
 
-    # create the device link
+    # Create the device link
     /usr/sbin/devfsadm -i vboxdrv
 
-    # don't create link for Solaris 10
+    # Don't create link for Solaris 10
     if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$osversion" != "5.10"; then
         /usr/sbin/devfsadm -i vboxusbmon
     fi
