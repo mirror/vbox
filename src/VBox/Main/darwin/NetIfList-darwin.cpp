@@ -161,9 +161,7 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 
 void extractAddresses(int iAddrMask, caddr_t cp, caddr_t cplim, PNETIFINFO pInfo)
 {
-    struct sockaddr *sa;
-    struct sockaddr_in *pIPAddr, *pIPNetMask;
-    struct sockaddr_in6 *pIPv6Addr, *pIPv6NetMask;
+    struct sockaddr *sa, *addresses[RTAX_MAX];
 
     for (int i = 0; i < RTAX_MAX && cp < cplim; i++) {
         if (!(iAddrMask & (1 << i)))
@@ -171,52 +169,34 @@ void extractAddresses(int iAddrMask, caddr_t cp, caddr_t cplim, PNETIFINFO pInfo
 
         sa = (struct sockaddr *)cp;
 
-        switch (i)
-        {
-            case RTAX_IFA:
-                switch (sa->sa_family)
-                {
-                    case AF_INET:
-                        pIPAddr = (struct sockaddr_in *)sa;
-                        Assert(sizeof(pInfo->IPAddress) == sizeof(pIPAddr->sin_addr));
-                        if (!pInfo->IPAddress.u)
-                            pInfo->IPAddress.u = pIPAddr->sin_addr.s_addr;
-                        break;
-                    case AF_INET6:
-                        pIPv6Addr = (struct sockaddr_in6 *)sa;
-                        Assert(sizeof(pInfo->IPv6Address) == sizeof(pIPv6Addr->sin6_addr));
-                        if (!(pInfo->IPv6Address.s.Lo || pInfo->IPv6Address.s.Hi))
-                            memcpy(pInfo->IPv6Address.au8,
-                                   pIPv6Addr->sin6_addr.__u6_addr.__u6_addr8,
-                                   sizeof(pInfo->IPv6Address));
-                        break;
-                    default:
-                        Log(("NetIfList: Unsupported address family: %u\n", sa->sa_family));
-                        break;
-                }
-                break;
-            case RTAX_NETMASK:
-                switch (sa->sa_family)
-                {
-                    case AF_INET:
-                        pIPAddr = (struct sockaddr_in *)sa;
-                        if (!pInfo->IPNetMask.u)
-                            pInfo->IPNetMask.u = pIPAddr->sin_addr.s_addr;
-                        break;
-                    case AF_INET6:
-                        pIPv6Addr = (struct sockaddr_in6 *)sa;
-                        if (!(pInfo->IPv6NetMask.s.Lo || pInfo->IPv6NetMask.s.Hi))
-                            memcpy(pInfo->IPv6NetMask.au8,
-                                   pIPv6Addr->sin6_addr.__u6_addr.__u6_addr8,
-                                   sizeof(pInfo->IPv6NetMask));
-                        break;
-                    default:
-                        Log(("NetIfList: Unsupported address family: %u\n", sa->sa_family));
-                        break;
-                }
-                break;
-        }
+        addresses[i] = sa;
+        
         ADVANCE(cp, sa);
+    }
+
+    switch (addresses[RTAX_IFA]->sa_family)
+    {
+        case AF_INET:
+            if (!pInfo->IPAddress.u)
+            {
+                pInfo->IPAddress.u = ((struct sockaddr_in *)addresses[RTAX_IFA])->sin_addr.s_addr;
+                pInfo->IPNetMask.u = ((struct sockaddr_in *)addresses[RTAX_NETMASK])->sin_addr.s_addr;
+            }
+            break;
+        case AF_INET6:
+            if (!pInfo->IPv6Address.s.Lo && !pInfo->IPv6Address.s.Hi)
+            {
+                memcpy(pInfo->IPv6Address.au8,
+                       ((struct sockaddr_in6 *)addresses[RTAX_IFA])->sin6_addr.__u6_addr.__u6_addr8,
+                       sizeof(pInfo->IPv6Address));
+                memcpy(pInfo->IPv6NetMask.au8,
+                       ((struct sockaddr_in6 *)addresses[RTAX_NETMASK])->sin6_addr.__u6_addr.__u6_addr8,
+                       sizeof(pInfo->IPv6NetMask));
+            }
+            break;
+        default:
+            Log(("NetIfList: Unsupported address family: %u\n", sa->sa_family));
+            break;
     }
 }
 

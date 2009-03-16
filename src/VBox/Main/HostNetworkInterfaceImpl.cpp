@@ -214,6 +214,12 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (BSTR *aIPAddress)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
+    if (m.IPAddress == 0)
+    {
+        Bstr("").detachTo(aIPAddress);
+        return S_OK;
+    }
+
     in_addr tmp;
 #if defined(RT_OS_WINDOWS)
     tmp.S_un.S_addr = m.IPAddress;
@@ -242,6 +248,12 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
+
+    if (m.IPAddress == 0 || m.networkMask == 0)
+    {
+        Bstr("").detachTo(aNetworkMask);
+        return S_OK;
+    }
 
     in_addr tmp;
 #if defined(RT_OS_WINDOWS)
@@ -408,7 +420,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
         mask = inet_addr(Utf8Str(aNetMask).raw());
         if(mask != INADDR_NONE)
         {
-            int rc = NetIfEnableStaticIpConfig(mVBox, this, ip, mask);
+            int rc = NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, ip, mask);
             if (RT_SUCCESS(rc))
             {
                 return S_OK;
@@ -438,7 +450,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    int rc = NetIfEnableStaticIpConfigV6(mVBox, this, aIPV6Address, aIPV6MaskPrefixLength);
+    int rc = NetIfEnableStaticIpConfigV6(mVBox, this, m.IPV6Address, aIPV6Address, aIPV6MaskPrefixLength);
     if (RT_FAILURE(rc))
     {
         LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));

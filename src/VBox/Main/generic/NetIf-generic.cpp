@@ -31,14 +31,9 @@
 
 #define VBOXNETADPCTL_NAME "VBoxNetAdpCtl"
 
-static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszMask)
+static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszOption, char *pszMask)
 {
-    const char *args[] = { NULL, NULL, pszAddr, NULL, NULL, NULL };
-    if (pszMask)
-    {
-        args[3] = "netmask";
-        args[4] = pszMask;
-    }
+    const char *args[] = { NULL, NULL, pszAddr, pszOption, pszMask, NULL };
 
     char szAdpCtl[RTPATH_MAX];
     int rc = RTPathProgram(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME));
@@ -77,25 +72,46 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszMask)
     return rc;
 }
 
-int NetIfEnableStaticIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * pIf, ULONG ip, ULONG mask)
+int NetIfEnableStaticIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * pIf, ULONG aOldIp, ULONG aNewIp, ULONG aMask)
 {
+    char *pszOption, *pszMask;
     char szAddress[16]; /* 4*3 + 3*1 + 1 */
     char szNetMask[16]; /* 4*3 + 3*1 + 1 */
-    uint8_t *pu8Addr = (uint8_t *)&ip;
-    uint8_t *pu8Mask = (uint8_t *)&mask;
+    uint8_t *pu8Addr = (uint8_t *)&aNewIp;
+    uint8_t *pu8Mask = (uint8_t *)&aMask;
+    if (aNewIp == 0)
+    {
+        pu8Addr = (uint8_t *)&aOldIp;
+        pszOption = "remove";
+        pszMask   = NULL;
+    }
+    else
+    {
+        pszOption = "netmask";
+        pszMask  = szNetMask;
+        RTStrPrintf(szNetMask, sizeof(szNetMask), "%d.%d.%d.%d",
+                    pu8Mask[0], pu8Mask[1], pu8Mask[2], pu8Mask[3]);
+    }
     RTStrPrintf(szAddress, sizeof(szAddress), "%d.%d.%d.%d",
                 pu8Addr[0], pu8Addr[1], pu8Addr[2], pu8Addr[3]);
-    RTStrPrintf(szNetMask, sizeof(szNetMask), "%d.%d.%d.%d",
-                pu8Mask[0], pu8Mask[1], pu8Mask[2], pu8Mask[3]);
-    return NetIfAdpCtl(pIf, szAddress, szNetMask);
+    return NetIfAdpCtl(pIf, szAddress, pszOption, pszMask);
 }
 
-int NetIfEnableStaticIpConfigV6(VirtualBox * /* vBox */, HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
+int NetIfEnableStaticIpConfigV6(VirtualBox * /* vBox */, HostNetworkInterface * pIf, IN_BSTR aOldIPV6Address, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
     char szAddress[5*8 + 1 + 5 + 1];
-    RTStrPrintf(szAddress, sizeof(szAddress), "%ls/%d",
-                aIPV6Address, aIPV6MaskPrefixLength);
-    return NetIfAdpCtl(pIf, szAddress, NULL);
+    if (Bstr(aIPV6Address).length())
+    {
+        RTStrPrintf(szAddress, sizeof(szAddress), "%ls/%d",
+                    aIPV6Address, aIPV6MaskPrefixLength);
+        return NetIfAdpCtl(pIf, szAddress, NULL, NULL);
+    }
+    else
+    {
+        RTStrPrintf(szAddress, sizeof(szAddress), "%ls",
+                    aOldIPV6Address);
+        return NetIfAdpCtl(pIf, szAddress, "remove", NULL);
+    }
 }
 
 int NetIfEnableDynamicIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * /* pIf */)
