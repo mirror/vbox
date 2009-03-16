@@ -44,6 +44,7 @@
 # include "win/DrvIntNet-win.h"
 #endif
 
+#include "DhcpServerRunner.h"
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -1066,6 +1067,43 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pThis->hIf = OpenReq.hIf;
     Log(("IntNet%d: hIf=%RX32 '%s'\n", pDrvIns->iInstance, pThis->hIf, pThis->szNetwork));
 
+#if 0
+    DhcpServerRunner dhcp;
+    dhcp.setOption(DHCPCFG_NETNAME, OpenReq.szNetwork);
+    dhcp.setOption(DHCPCFG_TRUNKNAME, OpenReq.szTrunk);
+    switch(OpenReq.enmTrunkType)
+    {
+    case kIntNetTrunkType_WhateverNone:
+        dhcp.setOption(DHCPCFG_TRUNKTYPE, TRUNKTYPE_WHATEVER);
+        break;
+    case kIntNetTrunkType_NetFlt:
+        dhcp.setOption(DHCPCFG_TRUNKTYPE, TRUNKTYPE_NETFLT);
+        break;
+    case kIntNetTrunkType_NetAdp:
+        dhcp.setOption(DHCPCFG_TRUNKTYPE, TRUNKTYPE_NETADP);
+        break;
+    case kIntNetTrunkType_SrvNat:
+        dhcp.setOption(DHCPCFG_TRUNKTYPE, TRUNKTYPE_SRVNAT);
+        break;
+    }
+//temporary hack for testing
+    //    DHCPCFG_NAME
+    dhcp.setOption(DHCPCFG_MACADDRESS, "080027A03128");
+    dhcp.setOption(DHCPCFG_IPADDRESS,  "192.168.55.1");
+//        DHCPCFG_LEASEDB,
+//        DHCPCFG_VERBOSE,
+//        DHCPCFG_BEGINCONFIG,
+//        DHCPCFG_GATEWAY,
+    dhcp.setOption(DHCPCFG_LOWERIP,  "192.168.55.10");
+    dhcp.setOption(DHCPCFG_UPPERIP,  "192.168.55.100");
+    dhcp.setOption(DHCPCFG_NETMASK,  "255.255.255.0");
+//        DHCPCFG_HELP,
+//        DHCPCFG_VERSION,
+//        DHCPCFG_NOTOPT_MAXVAL
+    dhcp.start();
+
+    dhcp.detachFromServer(); /* need to do this to avoid server shutdown on runner destruction */
+#endif
     /*
      * Get default buffer.
      */
@@ -1115,7 +1153,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         drvIntNetSetActive(pThis, true /* fActive */);
     }
 
-    return rc;
+   return rc;
 }
 
 

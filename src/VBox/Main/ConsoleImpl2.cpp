@@ -1298,8 +1298,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
         }
 
+
         NetworkAttachmentType_T networkAttachment;
         hrc = networkAdapter->COMGETTER(AttachmentType)(&networkAttachment);        H();
+        Bstr networkName;
         switch (networkAttachment)
         {
             case NetworkAttachmentType_Null:
@@ -1343,7 +1345,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 {
                     STR_CONV();
                     if (psz && *psz)
+                    {
                         rc = CFGMR3InsertString(pCfg, "Network", psz);              RC_CHECK();
+                        networkName = Bstr(psz);
+                    }
+
                     STR_FREE();
                 }
                 break;
@@ -1485,6 +1491,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     char szNetwork[80];
                     RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
                     rc = CFGMR3InsertString(pCfg, "Network", szNetwork);            RC_CHECK();
+                    networkName = Bstr(szNetwork);
 
 # if defined(RT_OS_DARWIN)
                     /** @todo Come up with a better deal here. Problem is that IHostNetworkInterface is completely useless here. */
@@ -1706,6 +1713,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");        RC_CHECK();
                         rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);             RC_CHECK();
                         rc = CFGMR3InsertString(pCfg, "Network", psz);              RC_CHECK();
+                        networkName = Bstr(psz);
                     }
                     STR_FREE();
                 }
@@ -1780,14 +1788,17 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 char szNetwork[80];
                 RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
                 rc = CFGMR3InsertString(pCfg, "Network", szNetwork);            RC_CHECK();
+                networkName = Bstr(szNetwork);
 #elif defined(RT_OS_DARWIN)
                 rc = CFGMR3InsertString(pCfg, "Trunk", "vboxnet0");             RC_CHECK();
                 rc = CFGMR3InsertString(pCfg, "Network", "HostInterfaceNetworking-vboxnet0"); RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp); RC_CHECK();
+                networkName = Bstr("HostInterfaceNetworking-vboxnet0");
 #else
                 rc = CFGMR3InsertString(pCfg, "Trunk", "vboxnet0");             RC_CHECK();
                 rc = CFGMR3InsertString(pCfg, "Network", "HostInterfaceNetworking-vboxnet0"); RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
+                networkName = Bstr("HostInterfaceNetworking-vboxnet0");
 #endif
                 break;
             }
@@ -1796,6 +1807,15 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 AssertMsgFailed(("should not get here!\n"));
                 break;
         }
+
+        ComPtr<IDhcpServer> dhcpServer;
+        hrc = virtualBox->FindDhcpServerByName(networkName.mutableRaw(), dhcpServer.asOutParam());
+        if(FAILED(hrc))
+        {
+            LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Id) failed, hrc (0x%x)", hrc));
+            H();
+        }
+
     }
 
     /*

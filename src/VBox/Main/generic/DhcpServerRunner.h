@@ -68,6 +68,8 @@ public:
     int start();
     int stop();
     bool isRunning();
+
+    void detachFromServer();
 private:
     Utf8Str mOptions[DHCPCFG_NOTOPT_MAXVAL];
     RTPROCESS mProcess;
