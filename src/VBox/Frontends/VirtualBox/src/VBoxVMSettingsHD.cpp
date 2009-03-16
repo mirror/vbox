@@ -653,7 +653,6 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
     foreach (const CStorageController &sc, scs)
         if (sc.GetBus() != KStorageBus_IDE)
         {
-            printf  ("%s\n", qPrintable(sc.GetName()));
             addController = sc;
             break;
         }
