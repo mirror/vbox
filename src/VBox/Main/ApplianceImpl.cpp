@@ -142,6 +142,14 @@ struct VirtualDisk
 
 typedef map<Utf8Str, VirtualDisk> VirtualDisksMap;
 
+struct EthernetAdapter
+{
+    Utf8Str             strAdapterType;         // "PCNet32" or "E1000" or whatever; from <rasd:ResourceSubType>
+    Utf8Str             strNetworkName;         // from <rasd:Connection>
+};
+
+typedef list<EthernetAdapter> EthernetAdaptersList;
+
 struct VirtualSystem
 {
     Utf8Str             strName;                // copy of VirtualSystem/@id
@@ -155,9 +163,7 @@ struct VirtualSystem
     uint64_t            ullMemorySize;          // always in bytes, copied from llHardwareItems; default = 0 (unspecified)
     uint16_t            cCPUs;                  // no. of CPUs, copied from llHardwareItems; default = 1
 
-    list<Utf8Str>       llNetworkNames;
-            // list of strings referring to network names
-            // (one for each VirtualSystem/Item[@ResourceType=10]/Connection element)
+    EthernetAdaptersList llEthernetAdapters;    // (one for each VirtualSystem/Item[@ResourceType=10]element)
 
     ControllersMap      mapControllers;
             // list of hard disk controllers
@@ -265,61 +271,61 @@ static const struct
 }
     g_osTypes[] =
     {
-        { CIMOSType_CIMOS_Unknown, SchemaDefs_OSTypeId_Other },
-        { CIMOSType_CIMOS_OS2, SchemaDefs_OSTypeId_OS2 },
-        { CIMOSType_CIMOS_MSDOS, SchemaDefs_OSTypeId_DOS },
-        { CIMOSType_CIMOS_WIN3x, SchemaDefs_OSTypeId_Windows31 },
-        { CIMOSType_CIMOS_WIN95, SchemaDefs_OSTypeId_Windows95 },
-        { CIMOSType_CIMOS_WIN98, SchemaDefs_OSTypeId_Windows98 },
-        { CIMOSType_CIMOS_WINNT, SchemaDefs_OSTypeId_WindowsNT4 },
-        { CIMOSType_CIMOS_NetWare, SchemaDefs_OSTypeId_Netware },
-        { CIMOSType_CIMOS_NovellOES, SchemaDefs_OSTypeId_Netware },
-        { CIMOSType_CIMOS_Solaris, SchemaDefs_OSTypeId_Solaris },
-        { CIMOSType_CIMOS_SunOS, SchemaDefs_OSTypeId_Solaris },
-        { CIMOSType_CIMOS_FreeBSD, SchemaDefs_OSTypeId_FreeBSD },
-        { CIMOSType_CIMOS_NetBSD, SchemaDefs_OSTypeId_NetBSD },
-        { CIMOSType_CIMOS_QNX, SchemaDefs_OSTypeId_QNX },
-        { CIMOSType_CIMOS_Windows2000, SchemaDefs_OSTypeId_Windows2000 },
-        { CIMOSType_CIMOS_WindowsMe, SchemaDefs_OSTypeId_WindowsMe },
-        { CIMOSType_CIMOS_OpenBSD, SchemaDefs_OSTypeId_OpenBSD },
-        { CIMOSType_CIMOS_WindowsXP, SchemaDefs_OSTypeId_WindowsXP },
-        { CIMOSType_CIMOS_WindowsXPEmbedded, SchemaDefs_OSTypeId_WindowsXP },
-        { CIMOSType_CIMOS_WindowsEmbeddedforPointofService, SchemaDefs_OSTypeId_WindowsXP },
-        { CIMOSType_CIMOS_MicrosoftWindowsServer2003, SchemaDefs_OSTypeId_Windows2003 },
-        { CIMOSType_CIMOS_MicrosoftWindowsServer2003_64, SchemaDefs_OSTypeId_Windows2003_64 },
-        { CIMOSType_CIMOS_WindowsXP_64, SchemaDefs_OSTypeId_WindowsXP_64 },
-        { CIMOSType_CIMOS_WindowsVista, SchemaDefs_OSTypeId_WindowsVista },
-        { CIMOSType_CIMOS_WindowsVista_64, SchemaDefs_OSTypeId_WindowsVista_64 },
-        { CIMOSType_CIMOS_MicrosoftWindowsServer2008, SchemaDefs_OSTypeId_Windows2008 },
-        { CIMOSType_CIMOS_MicrosoftWindowsServer2008_64, SchemaDefs_OSTypeId_Windows2008_64 },
-        { CIMOSType_CIMOS_FreeBSD_64, SchemaDefs_OSTypeId_FreeBSD_64 },
-        { CIMOSType_CIMOS_RedHatEnterpriseLinux, SchemaDefs_OSTypeId_RedHat },
-        { CIMOSType_CIMOS_RedHatEnterpriseLinux_64, SchemaDefs_OSTypeId_RedHat_64 },
-        { CIMOSType_CIMOS_Solaris_64, SchemaDefs_OSTypeId_Solaris_64 },
-        { CIMOSType_CIMOS_SUSE, SchemaDefs_OSTypeId_OpenSUSE },
-        { CIMOSType_CIMOS_SLES, SchemaDefs_OSTypeId_OpenSUSE },
-        { CIMOSType_CIMOS_NovellLinuxDesktop, SchemaDefs_OSTypeId_OpenSUSE },
-        { CIMOSType_CIMOS_SUSE_64, SchemaDefs_OSTypeId_OpenSUSE_64 },
-        { CIMOSType_CIMOS_SLES_64, SchemaDefs_OSTypeId_OpenSUSE_64 },
-        { CIMOSType_CIMOS_LINUX, SchemaDefs_OSTypeId_Linux },
-        { CIMOSType_CIMOS_SunJavaDesktopSystem, SchemaDefs_OSTypeId_Linux },
-        { CIMOSType_CIMOS_TurboLinux, SchemaDefs_OSTypeId_Linux},
+        { CIMOSType_CIMOS_Unknown,                              SchemaDefs_OSTypeId_Other },
+        { CIMOSType_CIMOS_OS2,                                  SchemaDefs_OSTypeId_OS2 },
+        { CIMOSType_CIMOS_MSDOS,                                SchemaDefs_OSTypeId_DOS },
+        { CIMOSType_CIMOS_WIN3x,                                SchemaDefs_OSTypeId_Windows31 },
+        { CIMOSType_CIMOS_WIN95,                                SchemaDefs_OSTypeId_Windows95 },
+        { CIMOSType_CIMOS_WIN98,                                SchemaDefs_OSTypeId_Windows98 },
+        { CIMOSType_CIMOS_WINNT,                                SchemaDefs_OSTypeId_WindowsNT4 },
+        { CIMOSType_CIMOS_NetWare,                              SchemaDefs_OSTypeId_Netware },
+        { CIMOSType_CIMOS_NovellOES,                            SchemaDefs_OSTypeId_Netware },
+        { CIMOSType_CIMOS_Solaris,                              SchemaDefs_OSTypeId_OpenSolaris },
+        { CIMOSType_CIMOS_SunOS,                                SchemaDefs_OSTypeId_OpenSolaris },
+        { CIMOSType_CIMOS_FreeBSD,                              SchemaDefs_OSTypeId_FreeBSD },
+        { CIMOSType_CIMOS_NetBSD,                               SchemaDefs_OSTypeId_NetBSD },
+        { CIMOSType_CIMOS_QNX,                                  SchemaDefs_OSTypeId_QNX },
+        { CIMOSType_CIMOS_Windows2000,                          SchemaDefs_OSTypeId_Windows2000 },
+        { CIMOSType_CIMOS_WindowsMe,                            SchemaDefs_OSTypeId_WindowsMe },
+        { CIMOSType_CIMOS_OpenBSD,                              SchemaDefs_OSTypeId_OpenBSD },
+        { CIMOSType_CIMOS_WindowsXP,                            SchemaDefs_OSTypeId_WindowsXP },
+        { CIMOSType_CIMOS_WindowsXPEmbedded,                    SchemaDefs_OSTypeId_WindowsXP },
+        { CIMOSType_CIMOS_WindowsEmbeddedforPointofService,     SchemaDefs_OSTypeId_WindowsXP },
+        { CIMOSType_CIMOS_MicrosoftWindowsServer2003,           SchemaDefs_OSTypeId_Windows2003 },
+        { CIMOSType_CIMOS_MicrosoftWindowsServer2003_64,        SchemaDefs_OSTypeId_Windows2003_64 },
+        { CIMOSType_CIMOS_WindowsXP_64,                         SchemaDefs_OSTypeId_WindowsXP_64 },
+        { CIMOSType_CIMOS_WindowsVista,                         SchemaDefs_OSTypeId_WindowsVista },
+        { CIMOSType_CIMOS_WindowsVista_64,                      SchemaDefs_OSTypeId_WindowsVista_64 },
+        { CIMOSType_CIMOS_MicrosoftWindowsServer2008,           SchemaDefs_OSTypeId_Windows2008 },
+        { CIMOSType_CIMOS_MicrosoftWindowsServer2008_64,        SchemaDefs_OSTypeId_Windows2008_64 },
+        { CIMOSType_CIMOS_FreeBSD_64,                           SchemaDefs_OSTypeId_FreeBSD_64 },
+        { CIMOSType_CIMOS_RedHatEnterpriseLinux,                SchemaDefs_OSTypeId_RedHat },
+        { CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             SchemaDefs_OSTypeId_RedHat_64 },
+        { CIMOSType_CIMOS_Solaris_64,                           SchemaDefs_OSTypeId_OpenSolaris_64 },
+        { CIMOSType_CIMOS_SUSE,                                 SchemaDefs_OSTypeId_OpenSUSE },
+        { CIMOSType_CIMOS_SLES,                                 SchemaDefs_OSTypeId_OpenSUSE },
+        { CIMOSType_CIMOS_NovellLinuxDesktop,                   SchemaDefs_OSTypeId_OpenSUSE },
+        { CIMOSType_CIMOS_SUSE_64,                              SchemaDefs_OSTypeId_OpenSUSE_64 },
+        { CIMOSType_CIMOS_SLES_64,                              SchemaDefs_OSTypeId_OpenSUSE_64 },
+        { CIMOSType_CIMOS_LINUX,                                SchemaDefs_OSTypeId_Linux },
+        { CIMOSType_CIMOS_SunJavaDesktopSystem,                 SchemaDefs_OSTypeId_Linux },
+        { CIMOSType_CIMOS_TurboLinux,                           SchemaDefs_OSTypeId_Linux},
 
             //                { CIMOSType_CIMOS_TurboLinux_64, },
             //                { CIMOSType_CIMOS_Linux_64, },
             //                    osTypeVBox = VBOXOSTYPE_Linux_x64;
             //                    break;
 
-        { CIMOSType_CIMOS_Mandriva, SchemaDefs_OSTypeId_Mandriva },
-        { CIMOSType_CIMOS_Mandriva_64, SchemaDefs_OSTypeId_Mandriva_64 },
-        { CIMOSType_CIMOS_Ubuntu, SchemaDefs_OSTypeId_Ubuntu },
-        { CIMOSType_CIMOS_Ubuntu_64, SchemaDefs_OSTypeId_Ubuntu_64 },
-        { CIMOSType_CIMOS_Debian, SchemaDefs_OSTypeId_Debian },
-        { CIMOSType_CIMOS_Debian_64, SchemaDefs_OSTypeId_Debian_64 },
-        { CIMOSType_CIMOS_Linux_2_4_x, SchemaDefs_OSTypeId_Linux24 },
-        { CIMOSType_CIMOS_Linux_2_4_x_64, SchemaDefs_OSTypeId_Linux24_64 },
-        { CIMOSType_CIMOS_Linux_2_6_x, SchemaDefs_OSTypeId_Linux26 },
-        { CIMOSType_CIMOS_Linux_2_6_x_64, SchemaDefs_OSTypeId_Linux26_64 }
+        { CIMOSType_CIMOS_Mandriva,                             SchemaDefs_OSTypeId_Mandriva },
+        { CIMOSType_CIMOS_Mandriva_64,                          SchemaDefs_OSTypeId_Mandriva_64 },
+        { CIMOSType_CIMOS_Ubuntu,                               SchemaDefs_OSTypeId_Ubuntu },
+        { CIMOSType_CIMOS_Ubuntu_64,                            SchemaDefs_OSTypeId_Ubuntu_64 },
+        { CIMOSType_CIMOS_Debian,                               SchemaDefs_OSTypeId_Debian },
+        { CIMOSType_CIMOS_Debian_64,                            SchemaDefs_OSTypeId_Debian_64 },
+        { CIMOSType_CIMOS_Linux_2_4_x,                          SchemaDefs_OSTypeId_Linux24 },
+        { CIMOSType_CIMOS_Linux_2_4_x_64,                       SchemaDefs_OSTypeId_Linux24_64 },
+        { CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Linux26 },
+        { CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Linux26_64 }
 };
 
 /**
@@ -881,13 +887,12 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                     case OVFResourceType_EthernetAdapter: // 10
                     {
                         /*  <Item>
-                                <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
-                                <rasd:Caption>Ethernet adapter on 'VM Network'</rasd:Caption>
-                                <rasd:Connection>VM Network</rasd:Connection>
-                                <rasd:Description>VM Network?</rasd:Description>
-                                <rasd:ElementName>Ethernet adapter</rasd:ElementName>
-                                <rasd:InstanceID>3</rasd:InstanceID>
-                                <rasd:ResourceType>10</rasd:ResourceType>
+                            <rasd:Caption>Ethernet adapter on 'Bridged'</rasd:Caption>
+                            <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
+                            <rasd:Connection>Bridged</rasd:Connection>
+                            <rasd:InstanceID>6</rasd:InstanceID>
+                            <rasd:ResourceType>10</rasd:ResourceType>
+                            <rasd:ResourceSubType>E1000</rasd:ResourceSubType>
                             </Item>
 
                             OVF spec DSP 0243 page 21:
@@ -898,7 +903,10 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                             at the outermost envelope level." */
 
                         // only store the name
-                        vsys.llNetworkNames.push_back(i.strConnection);
+                        EthernetAdapter ea;
+                        ea.strAdapterType = i.strResourceSubType;
+                        ea.strNetworkName = i.strConnection;
+                        vsys.llEthernetAdapters.push_back(ea);
                     }
                     break;
 
@@ -1346,28 +1354,29 @@ STDMETHODIMP Appliance::Interpret()
 #endif /* VBOX_WITH_USB */
 
             /* Network Controller */
-            // @todo: there is no hardware specification in the OVF file; supposedly the
-            // hardware will then be determined by the VirtualSystemType element (e.g. "vmx-07")
-            if (vsysThis.llNetworkNames.size() > 0)
+            uint32_t cEthernetAdapters = vsysThis.llEthernetAdapters.size();
+            if (cEthernetAdapters > 0)
             {
                 /* Check for the constrains */
-                if (vsysThis.llNetworkNames.size() > SchemaDefs::NetworkAdapterCount)
+                if (cEthernetAdapters > SchemaDefs::NetworkAdapterCount)
                     addWarning(tr("The virtual system \"%s\" claims support for %u network adapters, but VirtualBox has support for max %u network adapter only."),
-                                  vsysThis.strName.c_str(), vsysThis.llNetworkNames.size(), SchemaDefs::NetworkAdapterCount);
+                                  vsysThis.strName.c_str(), cEthernetAdapters, SchemaDefs::NetworkAdapterCount);
 
                 /* Get the default network adapter type for the selected guest OS */
-                NetworkAdapterType_T nwAdapterVBox = NetworkAdapterType_Am79C970A;
-                rc = pGuestOSType->COMGETTER(AdapterType)(&nwAdapterVBox);
+                NetworkAdapterType_T defaultAdapterVBox = NetworkAdapterType_Am79C970A;
+                rc = pGuestOSType->COMGETTER(AdapterType)(&defaultAdapterVBox);
                 CheckComRCThrowRC(rc);
-                list<Utf8Str>::const_iterator nwIt;
+
+                EthernetAdaptersList::const_iterator itEA;
                 /* Iterate through all abstract networks. We support 8 network
                  * adapters at the maximum, so the first 8 will be added only. */
                 size_t a = 0;
-                for (nwIt = vsysThis.llNetworkNames.begin();
-                     nwIt != vsysThis.llNetworkNames.end() && a < SchemaDefs::NetworkAdapterCount;
-                     ++nwIt, ++a)
+                for (itEA = vsysThis.llEthernetAdapters.begin();
+                     itEA != vsysThis.llEthernetAdapters.end() && a < SchemaDefs::NetworkAdapterCount;
+                     ++itEA, ++a)
                 {
-                    Utf8Str strNetwork = *nwIt; // logical network to connect to
+                    const EthernetAdapter &ea = *itEA; // logical network to connect to
+                    Utf8Str strNetwork = ea.strNetworkName;
                     // make sure it's one of these two
                     if (    (strNetwork.compare("Null", Utf8Str::CaseInsensitive))
                          && (strNetwork.compare("Bridged", Utf8Str::CaseInsensitive))
@@ -1375,6 +1384,12 @@ STDMETHODIMP Appliance::Interpret()
                          && (strNetwork.compare("HostOnly", Utf8Str::CaseInsensitive))
                        )
                         strNetwork = "NAT";
+
+                    NetworkAdapterType_T nwAdapterVBox = defaultAdapterVBox;
+                    if (!ea.strAdapterType.compare("PCNet32", Utf8Str::CaseInsensitive))
+                        nwAdapterVBox = NetworkAdapterType_Am79C973;
+                    else if (!ea.strAdapterType.compare("E1000", Utf8Str::CaseInsensitive))
+                        nwAdapterVBox = NetworkAdapterType_I82540EM;
 
                     pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
                                        "",      // ref
