@@ -590,6 +590,50 @@ public:
     Utf8Str substr(size_t pos = 0, size_t n = npos) const;
 
     /**
+     * Attempts to convert the member string into an 32-bit integer.
+     *
+     * @returns 32-bit unsigned number on success.
+     * @returns 0 on failure.
+     */
+    int toInt32() const
+    {
+        return RTStrToInt32(str);
+    }
+
+    /**
+     * Attempts to convert the member string into an unsigned 32-bit integer.
+     *
+     * @returns 32-bit unsigned number on success.
+     * @returns 0 on failure.
+     */
+    int toUInt32() const
+    {
+        return RTStrToUInt32(str);
+    }
+
+    /**
+     * Attempts to convert the member string into an 64-bit integer.
+     *
+     * @returns 64-bit unsigned number on success.
+     * @returns 0 on failure.
+     */
+    int toInt64() const
+    {
+        return RTStrToInt64(str);
+    }
+
+    /**
+     * Attempts to convert the member string into an unsigned 64-bit integer.
+     *
+     * @returns 64-bit unsigned number on success.
+     * @returns 0 on failure.
+     */
+    int toUInt64() const
+    {
+        return RTStrToUInt64(str);
+    }
+
+    /**
      * Attempts to convert the member string into an unsigned 64-bit integer.
      * @return IPRT error code.
      * @param i Output buffer.
