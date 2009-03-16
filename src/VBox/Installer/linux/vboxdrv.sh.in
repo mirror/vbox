@@ -14,7 +14,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-# chkconfig: 35 30 60
+# chkconfig: 35 30 70
 # description: VirtualBox Linux kernel module
 #
 ### BEGIN INIT INFO
