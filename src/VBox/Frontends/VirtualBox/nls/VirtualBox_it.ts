@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1" language="it">
+<!DOCTYPE TS>
+<TS version="2.0" language="it">
 <defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
@@ -147,42 +148,42 @@
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="340"/>
         <source>Left Shift</source>
-        <translation>Shift Sinistro</translation>
+        <translation>Shift sinistro</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="341"/>
         <source>Right Shift</source>
-        <translation>Shift Destro</translation>
+        <translation>Shift destro</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="342"/>
         <source>Left Ctrl</source>
-        <translation>Ctrl Sinistro</translation>
+        <translation>Ctrl sinistro</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="343"/>
         <source>Right Ctrl</source>
-        <translation>Ctrl Destro</translation>
+        <translation>Ctrl destro</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="344"/>
         <source>Left Alt</source>
-        <translation>Alt Sinistro</translation>
+        <translation>Alt sinistro</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="345"/>
         <source>Right Alt</source>
-        <translation>Alt Destro</translation>
+        <translation>Alt destro</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="346"/>
         <source>Left WinKey</source>
-        <translation>Win Sinistro</translation>
+        <translation>Win sinistro</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="347"/>
         <source>Right WinKey</source>
-        <translation>Win Destro</translation>
+        <translation>Win destro</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="348"/>
@@ -577,7 +578,7 @@ Versione %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="126"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Annulla lo scaricamento dell&apos;immagine CD di VirtualBox Guest Additions</translation>
+        <translation>Annulla lo scaricamento dell&apos;immagine CD di VirtualBox Guest Addition</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="157"/>
@@ -587,7 +588,7 @@ Versione %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="162"/>
         <source>Select folder to save Guest Additions image to</source>
-        <translation>Selezionare la cartella dove salvare l&apos;immagine di Guest Additions</translation>
+        <translation>Selezionare la cartella dove salvare l&apos;immagine di Guest Addition</translation>
     </message>
 </context>
 <context>
@@ -623,7 +624,7 @@ Versione %1</translation>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="210"/>
         <source>&amp;Revert to the current snapshot</source>
-        <translation>&amp;Ripristinare lo snapshot attuale</translation>
+        <translation>&amp;Ripristinare l&apos;istantanea corrente</translation>
     </message>
     <message>
         <source>Alt+R</source>
@@ -632,7 +633,7 @@ Versione %1</translation>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="204"/>
         <source>Revert the machine state to the state stored in the current snapshot</source>
-        <translation>Ripristinare lo stato della macchina a quello memorizzato nello snapshot attuale</translation>
+        <translation>Ripristinare lo stato della macchina a quello memorizzato nell&apos;istantanea corrente</translation>
     </message>
     <message>
         <source>Help</source>
@@ -684,7 +685,7 @@ Versione %1</translation>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="207"/>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Se marcata, lo stato della macchina sarà ripristinato dallo stato memorizzato nell&apos;istantanea corrente immediatamente dopo lo spegnimento. Tale funzionalità è utile se volete scartare i risultati delle vostre ultime sessioni e tornare all&apos;istantanea corrente.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Se marcata, lo stato della macchina sarà ripristinato dallo stato memorizzato nell&apos;istantanea corrente immediatamente dopo lo spegnimento. Tale funzionalità è utile se volete scartare i risultati delle ultime sessioni e tornare all&apos;istantanea corrente.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="104"/>
@@ -699,7 +700,7 @@ Versione %1</translation>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Spegne la macchina virtuale.&lt;/p&gt;&lt;p&gt;Nota che questa azione fermerà immediatamente l&apos;esecuzione della macchina e il sistema operativo guest non sarà in grado di effettuare una procedura corretta di spegnimento che potrebbe risultare in &lt;i&gt;perdite di dati&lt;/i&gt; della macchina virtuale. La selezione di questa azione è consigliata solo se la macchina virtuale non risponde all&apos;azione &lt;b&gt;Invia segnale di spegnimentol&lt;/b&gt; .&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Spegne la macchina virtuale.&lt;/p&gt;&lt;p&gt;Nota che questa azione fermerà immediatamente l&apos;esecuzione della macchina e il sistema operativo guest non sarà in grado di effettuare una procedura corretta di spegnimento che potrebbe risultare in &lt;i&gt;perdite di dati&lt;/i&gt; della macchina virtuale. La selezione di questa azione è consigliata solo se la macchina virtuale non risponde all&apos;azione &lt;b&gt;Invia segnale di spegnimento&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -823,12 +824,12 @@ Versione %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1641"/>
         <source>Take &amp;Snapshot...</source>
-        <translation>Cattura &amp;snapshot...</translation>
+        <translation>Cattura i&amp;stantanea...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1642"/>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Cattura uno snapshot della macchina virtuale</translation>
+        <translation>Cattura un&apos;istantanea della macchina virtuale</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1652"/>
@@ -848,7 +849,7 @@ Versione %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1657"/>
         <source>Unmount the currently mounted floppy media</source>
-        <translation>Smonta il floppy disk attualmente montato</translation>
+        <translation>Smonta il floppy attualmente montato</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1659"/>
@@ -1164,7 +1165,7 @@ Versione %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1595"/>
         <source>Seam&amp;less Mode</source>
-        <translation>Moda&amp;lità Trasparente</translation>
+        <translation>Moda&amp;lità trasparente</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1596"/>
@@ -1245,7 +1246,7 @@ Versione %1</translation>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1916"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Driver %1 (%2)&lt;/b&gt;: cavo %3&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Scheda %1 (%2)&lt;/b&gt;: cavo %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1919"/>
@@ -1336,7 +1337,7 @@ Versione %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1646"/>
         <source>Show Session Information Dialog</source>
-        <translation>Visualizza la finestra Informazioni di Sessione</translation>
+        <translation>Visualizza la finestra Informazioni di sessione</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1685"/>
@@ -1743,7 +1744,7 @@ Versione %1</translation>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="152"/>
         <source>The download process has been cancelled by the user.</source>
-        <translation>Il processo di download è stato annullato dall&apos;utente.</translation>
+        <translation>Il processo di scaricamento è stato annullato dall&apos;utente.</translation>
     </message>
 </context>
 <context>
@@ -5194,17 +5195,17 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1694"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Hai fatto &lt;b&gt;clic con il mouse&lt;/b&gt; sullo schermo della macchina virtuale o premuto il &lt;b&gt;tasto host&lt;/b&gt;. La macchina virtuale &lt;b&gt;acquisirà&lt;/b&gt; il puntatore del mouse (solo se l&apos;integrazione non è supportata dal sistema guest) e la tastiera e li renderà indisponibili alle applicazioni in esecuzione sulla macchina host.&lt;/p&gt;&lt;p&gt;Puoi premere il &lt;b&gt;tasto host&lt;/b&gt; in qualunque momento per &lt;b&gt;liberare&lt;/b&gt; la tastiera e il mouse (se acquisiti) e restituirli alle solite operazioni. Il tasto host assegnato è mostrato nella barra di stato nella parte bassa della finestra della macchina virtuale, accanto all&apos;icona&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Questa icona, insieme a quella del mouse posizionata accanto, indica lo stato di acquisizione della tastiera e del mouse.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1727"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;L&apos;opzione &lt;b&gt;Acquiszione automatica della tastiera&lt;/b&gt; è attiva. La macchina virtuale &lt;b&gt;acquisirà&lt;/b&gt; automaticamente la tastiera ogni volta che la finestra della MV è attiva e la renderà indisponibile alle applicazioni in esecuzione sulla macchina host: quando la tastiera è acquisita, tutte le combinazioni di tasti (incluse quelle di sistema come Alt-Tab) saranno inviate alla MV.&lt;/p&gt;&lt;p&gt;Puoi premere il &lt;b&gt;tasto host&lt;/b&gt; in qualunque momento per &lt;b&gt;liberare&lt;/b&gt; la tastiera e il mouse (se acquisiti) e restituirli alle solite operazioni. Il tasto host assegnato è mostrato nella barra di stato nella parte bassa della finestra della macchina virtuale, accanto all&apos;icona&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Questa icona, insieme a quella del mouse posizionata accanto, indica lo stato di acquisizione della tastiera e del mouse.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1772"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;La macchina virtuale segnala che il sistema guest supporta &lt;b&gt;integrazione del puntatore del mouse&lt;/b&gt;. Ciò significa che non è necessario &lt;i&gt;acquisire&lt;/i&gt; il puntatore del mouse per poterlo utilizzare nel sistema guest -- tutte le azioni del mouse eseguite quando il puntatore si trova sullo schermo della macchina virtuale sono inviate direttamente al sistema guest. Se è il mouse è stato acquisito, sarà automaticamente liberato.&lt;/p&gt;&lt;p&gt;L&apos;icona del mouse nella barra di stato apparirà come &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp; per informarti che l&apos;integrazione del puntatore del mouse è supportata dal sistema guest ed è attiva.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: alcune applicazioni potrebbero non funzionare correttamente nella modalità di integrazione del puntatore del mouse. Puoi sempre disabilitarla per la sessione corrente (per poi riabilitarla) selezionando l&apos;azione corrispondente nella barra dei menu.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1922"/>
@@ -5403,12 +5404,12 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1817"/>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Uno o più dischi fissi virtuali, CD/DVD o floppy non sono la momento accessibili. Ciò significa che non sarai in grado di operare con le macchine virtuali che utilizzano questi supporti fino a quando non ritorneranno accessibili.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Controlla&lt;/b&gt; per aprire la finestra del gestore supporti virtuali e vedere quali supporti non sono accessibili, o premi &lt;b&gt;Ignora&lt;/b&gt; per ignorare questo messaggio.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1853"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;I file delle impostazioni di VirtualBox sono stati convertiti automaticamente dal vecchio formato al nuovo richiesto dalla nuova versione di VirtualBox.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; per avviare VirtualBox o premi &lt;b&gt;Altro&lt;/b&gt; se desideri maggiori informazioni su quali file sono stati convertiti e accedere ad azioni aggiuntive.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Esci&lt;/b&gt; per terminare VirtualBox senza salvare i risultati della conversione su disco.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
@@ -5425,7 +5426,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1890"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;I seguenti file delle impostazioni di VirtualBox sono stati convertiti automaticamente al nuovo formato della versione &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Comunque, i risultati della conversione non sono ancora stati salvati su disco. Premi: &lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; per creare delle copie di sicurezza dei file delle impostazioni nel vecchio formato prima di salvarli nel nuovo formato;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sovrascrivi&lt;/b&gt; per salvare tutti i file convertiti senza creare copie di sicurezza (dopo non sarà possibile utilizzare questi file con una versione più datata di VirtualBox);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;È consigliato selezionare sempre &lt;b&gt;Backup&lt;/b&gt; perché in questo caso sarà possibile tornare alla vecchia versione di VirtualBox (se necessario) senza perdere le impostazioni correnti. Vedi il manuale di VirtualBox per ulteriori informazioni sull&apos;operazione di downgrade.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1893"/>
@@ -5441,7 +5442,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2009"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Si è verificato un errore critico durante il funzionamento della macchina virtuale e l&apos;esecuzione della macchina è stata fermata.&lt;/p&gt;&lt;p&gt;Per ottenere aiuto, vedi la sezione Community su &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; o il contratto di supporto. Fornisci il contenuto del file di log &lt;tt&gt;VBox.log&lt;/tt&gt; e il file immagine &lt;tt&gt;VBox.png&lt;/tt&gt;, che puoi trovare nella cartella &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, così come una descrizione di cosa stavi facendo quando si è verificato l&apos;errore. Nota che puoi anche accedere ai suddetti file selezionando &lt;b&gt;Mostra log&lt;/b&gt; dal menu &lt;b&gt;Macchina&lt;/b&gt; della finestra principale di VirtualBox. &lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; se vuoi spegnere la macchina o &lt;b&gt;Ignora&lt;/b&gt; se desideri lasciarla così com&apos;è per debug. Nota che il debug richiede conoscenza particolare e strumenti, perciò è consigliato premere &lt;b&gt;OK&lt;/b&gt; subito.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2166"/>
@@ -8855,7 +8856,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="693"/>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, la funzionalità di estensione dell&apos;indirizzo fisico (PAE) della CPU dell&apos;host sarà esposta alla macchina virtuale.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="696"/>
@@ -8915,7 +8916,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="873"/>
         <source>Runtime:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tempo di esecuzione:</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="376"/>

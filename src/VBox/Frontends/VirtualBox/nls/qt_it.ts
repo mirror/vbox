@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1" language="it">
+<!DOCTYPE TS>
+<TS version="2.0" language="it">
 <defaultcodec></defaultcodec>
 <context>
     <name>PPDOptionsModel</name>
@@ -24,7 +25,7 @@
     <message>
         <location filename="../src/qt3support/other/q3accel.cpp" line="497"/>
         <source>Ambiguous %1 not handled</source>
-        <translation type="unfinished"></translation>
+        <translation>Ambiguità di %1 non gestita</translation>
     </message>
 </context>
 <context>
@@ -145,7 +146,7 @@
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="2549"/>
         <source>List View</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista a elenco</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="2557"/>
@@ -190,7 +191,7 @@
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="2683"/>
         <source>Symlink to Directory</source>
-        <translation>Collegamenti simbolico a una cartella</translation>
+        <translation>Collegamento simbolico a una cartella</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="2684"/>
@@ -885,7 +886,7 @@ in
     <message>
         <location filename="../src/sql/drivers/db2/qsql_db2.cpp" line="1414"/>
         <source>Unable to commit transaction</source>
-        <translation type="unfinished">Impossibile applicare la transazione</translation>
+        <translation>Impossibile applicare la transazione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/db2/qsql_db2.cpp" line="1431"/>
@@ -908,17 +909,17 @@ in
     <message>
         <location filename="../src/sql/drivers/db2/qsql_db2.cpp" line="562"/>
         <source>Unable to prepare statement</source>
-        <translation type="unfinished">Impossible preparare l&apos;istruzione</translation>
+        <translation>Impossible preparare l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/db2/qsql_db2.cpp" line="758"/>
         <source>Unable to bind variable</source>
-        <translation type="unfinished">Impossibile associare la variabile</translation>
+        <translation>Impossibile associare la variabile</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/db2/qsql_db2.cpp" line="849"/>
         <source>Unable to fetch record %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile ottenere il record %1</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/db2/qsql_db2.cpp" line="866"/>
@@ -1248,7 +1249,7 @@ Verifica che sia stato fornito il nome file corretto.</translation>
     <message>
         <location filename="../src/gui/ui_qfiledialog.h" line="261"/>
         <source>List View</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista a elenco</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_qfiledialog.h" line="262"/>
@@ -1313,7 +1314,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/gui/itemviews/qfileiconprovider.cpp" line="332"/>
         <source>Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Disco</translation>
     </message>
     <message>
         <location filename="../src/gui/itemviews/qfileiconprovider.cpp" line="336"/>
@@ -1775,32 +1776,32 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="353"/>
         <source>Unable to create BLOB</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile creare BLOB</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="359"/>
         <source>Unable to write BLOB</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere BLOB</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="373"/>
         <source>Unable to open BLOB</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire BLOB</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="391"/>
         <source>Unable to read BLOB</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile leggere BLOB</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="703"/>
         <source>Could not find array</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile trovare il vettore</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="546"/>
         <source>Could not get array data</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile ottenere il vettore di dati</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="758"/>
@@ -1825,7 +1826,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="835"/>
         <source>Could not prepare statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile preparare l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="848"/>
@@ -1835,17 +1836,17 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="857"/>
         <source>Could not describe statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile descrivere l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="972"/>
         <source>Unable to close statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile chiudere l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="980"/>
         <source>Unable to execute query</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eseguire la query</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/ibase/qsql_ibase.cpp" line="1022"/>
@@ -2025,7 +2026,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/mysql/qsql_mysql.cpp" line="1204"/>
         <source>Unable to begin transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile iniziare la transazione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/mysql/qsql_mysql.cpp" line="1221"/>
@@ -2043,37 +2044,37 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/mysql/qsql_mysql.cpp" line="444"/>
         <source>Unable to fetch data</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile ottenere i dati</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/mysql/qsql_mysql.cpp" line="594"/>
         <source>Unable to execute query</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eseguire la query</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/mysql/qsql_mysql.cpp" line="600"/>
         <source>Unable to store result</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile memorizzare i risultati</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/mysql/qsql_mysql.cpp" line="731"/>
         <source>Unable to prepare statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile preparare l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/mysql/qsql_mysql.cpp" line="762"/>
         <source>Unable to reset statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile ripristinare l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/mysql/qsql_mysql.cpp" line="849"/>
         <source>Unable to bind value</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile associare il valore</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/mysql/qsql_mysql.cpp" line="860"/>
         <source>Unable to execute statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eseguire l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/mysql/qsql_mysql.cpp" line="895"/>
@@ -2309,7 +2310,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="178"/>
         <source>Unsupported socket operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Operazione su socket non supportata</translation>
     </message>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="181"/>
@@ -2319,7 +2320,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="184"/>
         <source>Invalid socket descriptor</source>
-        <translation type="unfinished"></translation>
+        <translation>Descrittore di socket non valido</translation>
     </message>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="190"/>
@@ -2344,7 +2345,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="202"/>
         <source>The bound address is already in use</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;indirizzo associato è già utilizzato</translation>
     </message>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="205"/>
@@ -2379,7 +2380,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="226"/>
         <source>Another socket is already listening on the same port</source>
-        <translation type="unfinished"></translation>
+        <translation>Un altro socket è già in ascolto sulla stessa porta</translation>
     </message>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="160"/>
@@ -2456,12 +2457,12 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/oci/qsql_oci.cpp" line="1646"/>
         <source>Unable to prepare statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible preparare l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/oci/qsql_oci.cpp" line="1664"/>
         <source>Unable to bind value</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile associare il valore</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/oci/qsql_oci.cpp" line="1689"/>
@@ -2471,7 +2472,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/oci/qsql_oci.cpp" line="1706"/>
         <source>Unable to execute statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eseguire l&apos;istruzione</translation>
     </message>
 </context>
 <context>
@@ -2494,7 +2495,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/odbc/qsql_odbc.cpp" line="1725"/>
         <source>Unable to commit transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile applicare la transazione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/odbc/qsql_odbc.cpp" line="1742"/>
@@ -2517,7 +2518,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/odbc/qsql_odbc.cpp" line="1317"/>
         <source>Unable to execute statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eseguire l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/odbc/qsql_odbc.cpp" line="820"/>
@@ -2527,12 +2528,12 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/odbc/qsql_odbc.cpp" line="1073"/>
         <source>Unable to prepare statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile preparare l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/odbc/qsql_odbc.cpp" line="1308"/>
         <source>Unable to bind variable</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile associare la variabile</translation>
     </message>
 </context>
 <context>
@@ -2548,17 +2549,17 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/psql/qsql_psql.cpp" line="548"/>
         <source>Unable to connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile connettersi</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/psql/qsql_psql.cpp" line="587"/>
         <source>Could not begin transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile iniziare la transazione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/psql/qsql_psql.cpp" line="604"/>
         <source>Could not commit transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile appliare l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/psql/qsql_psql.cpp" line="620"/>
@@ -2988,7 +2989,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/corelib/tools/qregexp.cpp" line="31"/>
         <source>no error occurred</source>
-        <translation type="unfinished"></translation>
+        <translation>non si è verificato alcun errore</translation>
     </message>
     <message>
         <location filename="../src/corelib/tools/qregexp.cpp" line="32"/>
@@ -3013,17 +3014,17 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/corelib/tools/qregexp.cpp" line="36"/>
         <source>invalid octal value</source>
-        <translation type="unfinished"></translation>
+        <translation>valore ottale non valido</translation>
     </message>
     <message>
         <location filename="../src/corelib/tools/qregexp.cpp" line="37"/>
         <source>missing left delim</source>
-        <translation type="unfinished"></translation>
+        <translation>delimitatore sinistro mancante</translation>
     </message>
     <message>
         <location filename="../src/corelib/tools/qregexp.cpp" line="38"/>
         <source>unexpected end</source>
-        <translation type="unfinished"></translation>
+        <translation>fine inattesa</translation>
     </message>
     <message>
         <location filename="../src/corelib/tools/qregexp.cpp" line="40"/>
@@ -3036,17 +3037,17 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/sql/drivers/sqlite2/qsql_sqlite2.cpp" line="346"/>
         <source>Error to open database</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore in fase di apertura del database</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/sqlite2/qsql_sqlite2.cpp" line="387"/>
         <source>Unable to begin transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile inizare la transazione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/sqlite2/qsql_sqlite2.cpp" line="404"/>
         <source>Unable to commit transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile applicare l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/sqlite2/qsql_sqlite2.cpp" line="421"/>
@@ -3072,22 +3073,22 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="461"/>
         <source>Error opening database</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore in fase di apertura del database</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="472"/>
         <source>Error closing database</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore in fase di chiusura del database</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="492"/>
         <source>Unable to begin transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile iniziare la transazione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="507"/>
         <source>Unable to commit transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile applicare l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="522"/>
@@ -3100,12 +3101,12 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="213"/>
         <source>Unable to fetch row</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile ottenere la riga</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="265"/>
         <source>Unable to execute statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eseguire l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="284"/>
@@ -3115,7 +3116,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="328"/>
         <source>Unable to bind parameters</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile associare i parametri</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="335"/>
@@ -3133,7 +3134,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/gui/widgets/qscrollbar.cpp" line="399"/>
         <source>Left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Bordo sinistro</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qscrollbar.cpp" line="399"/>
@@ -3143,7 +3144,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/gui/widgets/qscrollbar.cpp" line="401"/>
         <source>Right edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Bordo destro</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qscrollbar.cpp" line="401"/>
@@ -3702,7 +3703,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/network/qsocks5socketengine.cpp" line="1187"/>
         <source>Socks5 timeout error connecting to socks server</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione al server Socks5 fuori tempo massimo </translation>
     </message>
 </context>
 <context>
@@ -3776,22 +3777,22 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="483"/>
         <source>Unable to write data: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere i dati: %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="552"/>
         <source>Error while reading: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore in fase di lettura: %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="582"/>
         <source>Error during SSL handshake: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore durante l&apos;handshake SSL: %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="218"/>
         <source>Error creating SSL context (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore in fase di creazione del contesto SSL (%1)</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="240"/>
@@ -3816,12 +3817,12 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="263"/>
         <source>Error loading local certificate, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore di caricamento del certificato locale, %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="275"/>
         <source>Error loading private key, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore di caricamento della chiave privata, %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="282"/>
@@ -4040,7 +4041,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="554"/>
         <source>Go Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Indietro</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="555"/>
@@ -4055,7 +4056,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="557"/>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>Completato</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="558"/>
@@ -4085,7 +4086,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="568"/>
         <source>&amp;Help</source>
-        <translation type="unfinished"></translation>
+        <translation>Ai&amp;uto</translation>
     </message>
 </context>
 <context>
@@ -4161,7 +4162,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxml.cpp" line="31"/>
         <source>no error occurred</source>
-        <translation type="unfinished"></translation>
+        <translation>non si è verificato alcun errore</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="32"/>
@@ -4171,7 +4172,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxml.cpp" line="33"/>
         <source>unexpected end of file</source>
-        <translation type="unfinished"></translation>
+        <translation>fine file inattesa</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="34"/>
@@ -4266,7 +4267,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxml.cpp" line="52"/>
         <source>recursive entities</source>
-        <translation type="unfinished"></translation>
+        <translation>entità ricorsive</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="55"/>
@@ -4279,32 +4280,32 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1687"/>
         <source>Extra content at end of document.</source>
-        <translation type="unfinished"></translation>
+        <translation>Contenuto aggiuntivo alla fine del documento.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="613"/>
         <source>Invalid entity value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valore dell&apos;entità non valido.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="720"/>
         <source>Invalid XML character.</source>
-        <translation type="unfinished"></translation>
+        <translation>Carattere XML non valido.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="978"/>
         <source>Sequence &apos;]]&gt;&apos; not allowed in content.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sequenza &apos;]]&gt;&apos; non consentita nel  contenuto.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1286"/>
         <source>Namespace prefix &apos;%1&apos; not declared</source>
-        <translation type="unfinished"></translation>
+        <translation>Prefisso di spazio dei nomi &apos;%1&apos; non dichiarato</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1324"/>
         <source>Attribute redefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Attributo ridefinito.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1436"/>
@@ -4314,12 +4315,12 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1464"/>
         <source>Invalid XML version string.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stringa di versione XML non valida.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1466"/>
         <source>Unsupported XML version.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione XML non supportata.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1489"/>
@@ -4329,7 +4330,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1496"/>
         <source>Encoding %1 is unsupported</source>
-        <translation type="unfinished"></translation>
+        <translation>La codifica %1 non è supportata</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1498"/>
@@ -4354,7 +4355,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1534"/>
         <source>Invalid document.</source>
-        <translation type="unfinished"></translation>
+        <translation>Documento non valido.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1574"/>
@@ -4414,7 +4415,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1676"/>
         <source>Invalid XML name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome XML non valido.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1699"/>
@@ -4454,7 +4455,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1558"/>
         <source>%1 is an invalid PUBLIC identifier.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 è un identificatore PUBLIC non valido.</translation>
     </message>
 </context>
 </TS>
