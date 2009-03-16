@@ -1808,13 +1808,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
         }
 
-        ComPtr<IDhcpServer> dhcpServer;
-        hrc = virtualBox->FindDhcpServerByName(networkName.mutableRaw(), dhcpServer.asOutParam());
-        if(FAILED(hrc))
-        {
-            LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Id) failed, hrc (0x%x)", hrc));
-            H();
-        }
+//        ComPtr<IDhcpServer> dhcpServer;
+//        hrc = virtualBox->FindDhcpServerByName(networkName.mutableRaw(), dhcpServer.asOutParam());
+//        if(FAILED(hrc))
+//        {
+//            LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Id) failed, hrc (0x%x)", hrc));
+//            H();
+//        }
 
     }
 
