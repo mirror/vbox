@@ -375,8 +375,6 @@ ifdef VBOX_WITH_HOSTNETIF_API
  endif
 endif
 
-VBoxSVC_SOURCES         += generic/DhcpServerRunner.cpp
-
 
 win/VBoxSVC.rc_INCS  = $(PATH_VBoxSVC)
 win/VBoxSVC.rc_DEPS  = $(PATH_VBoxSVC)/VBoxSVC.rgs $(PATH_VBoxSVC)/VBoxSVC-icon.rc
