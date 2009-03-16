@@ -73,10 +73,14 @@ VBoxVMSettingsNetworkDetails::VBoxVMSettingsNetworkDetails (QWidget *aParent)
     /* Setup common widgets */
     mLeMAC->setValidator (new QRegExpValidator
         (QRegExp ("[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
-    QStyleOption options;
+    QStyleOptionFrame options;
     options.initFrom (mLeMAC);
-    QSize contentSize (mLeMAC->fontMetrics().width ('X') * 12,
-                       mLeMAC->fontMetrics().xHeight());
+    options.rect = mLeMAC->contentsRect();
+    options.lineWidth = mLeMAC->style()->pixelMetric (QStyle::PM_DefaultFrameWidth);
+    options.midLineWidth = 0;
+    options.state |= QStyle::State_Sunken;
+    QSize contentSize (mLeMAC->fontMetrics().width ('X') * 12 + 2*2,
+                       mLeMAC->fontMetrics().xHeight()        + 2*1);
     QSize totalSize = style()->sizeFromContents (QStyle::CT_LineEdit,
                                                  &options, contentSize, this);
     mLeMAC->setMinimumWidth (totalSize.width());
