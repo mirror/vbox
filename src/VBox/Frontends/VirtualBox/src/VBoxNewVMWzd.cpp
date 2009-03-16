@@ -334,6 +334,12 @@ bool VBoxNewVMWzd::constructMachine()
     /* Enabling audio by default */
     mMachine.GetAudioAdapter().SetEnabled (true);
 
+#ifdef VBOX_WITH_USB
+    /* Enable the OHCI and EHCI controller by default for new VMs. (new in 2.2) */
+    mMachine.GetUSBController().SetEnabled (true);
+    mMachine.GetUSBController().SetEnabledEhci (true);
+#endif
+
     /* Register the VM prior to attaching hard disks */
     vbox.RegisterMachine (mMachine);
     if (!vbox.isOk())
