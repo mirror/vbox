@@ -103,10 +103,15 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     RTStrPrintf(szNICInstance, sizeof(szNICInstance), "%s%d", pszIface, Instance);
     char szNICDesc[256];
     std::string Description = SolarisNICMap[pszIface];
-    if (Description != "")
-        RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - %s", szNICInstance, Description.c_str());
+    if (Description != "VirtualBox Host Ethernet")
+    {
+        if (Description != "")
+            RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - %s", szNICInstance, Description.c_str());
+        else
+            RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - Ethernet", szNICInstance);
+    }
     else
-        RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - Ethernet", szNICInstance);
+        RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s", szNICInstance);
 
     /*
      * Try to get IP V4 address and netmask as well as Ethernet address.
