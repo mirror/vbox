@@ -215,15 +215,19 @@ void VBoxVMSettingsNetwork::updateAttachmentInfo()
                 {
                     QString ipv4addr (mDetails->property ("HOI_IPv4Addr").toString());
                     QString ipv4mask (mDetails->property ("HOI_IPv4Mask").toString());
-                    info += line.arg (tr ("IPv4 Address")).arg (ipv4addr) +
-                            line.arg (tr ("IPv4 Mask")).arg (ipv4mask);
+                    info += line.arg (tr ("IPv4 Address"))
+                                .arg (ipv4addr.isEmpty() ? tr ("Not Set", "address") : ipv4addr) +
+                            line.arg (tr ("IPv4 Mask"))
+                                .arg (ipv4mask.isEmpty() ? tr ("Not Set", "mask") : ipv4mask);
                     bool ipv6 = mDetails->property ("HOI_IPv6Supported").toBool();
                     if (ipv6)
                     {
                         QString ipv6addr (mDetails->property ("HOI_IPv6Addr").toString());
                         QString ipv6mask (mDetails->property ("HOI_IPv6Mask").toString());
-                        info += line.arg (tr ("IPv6 Address")).arg (ipv6addr) +
-                                line.arg (tr ("IPv6 Mask")).arg (ipv6mask);
+                        info += line.arg (tr ("IPv6 Address"))
+                                    .arg (ipv6addr.isEmpty() ? tr ("Not Set", "address") : ipv6addr) +
+                                line.arg (tr ("IPv6 Mask"))
+                                    .arg (ipv6mask.isEmpty() ? tr ("Not Set", "length") : ipv6mask);
                     }
                 }
             }
