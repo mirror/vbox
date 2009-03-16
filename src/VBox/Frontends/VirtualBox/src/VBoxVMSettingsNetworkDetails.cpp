@@ -51,11 +51,14 @@ VBoxVMSettingsNetworkDetails::VBoxVMSettingsNetworkDetails (QWidget *aParent)
         (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
     mLeHMv4->setValidator (new QRegExpValidator
         (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
-    //mLeIPv6->setValidator (new QRegExpValidator
-    //    (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
+    mLeIPv6->setValidator (new QRegExpValidator
+        (QRegExp ("[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
+                  "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
+                  "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
+                  "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}"), this));
     //mLeHMv6->setValidator (new QRegExpValidator
     //    (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
-    mLeIPv6->setFixedWidthByText (QString().fill ('X', 39));
+    mLeIPv6->setFixedWidthByText (QString().fill ('X', 32) + QString().fill (':', 7));
     connect (mCbHOI, SIGNAL (currentIndexChanged (int)),
              this, SLOT (hostOnlyInterfaceChanged()));
 #if defined (Q_WS_WIN32)
