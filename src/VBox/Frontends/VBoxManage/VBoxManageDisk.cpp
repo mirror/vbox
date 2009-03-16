@@ -171,8 +171,12 @@ int handleCreateHardDisk(HandlerArg *a)
                 break;
 
             case 'F':   // --static ("fixed"/"flat")
-                DiskVariant |= (unsigned)HardDiskVariant_Fixed;
+            {
+                unsigned uDiskVariant = DiskVariant;
+                uDiskVariant |= HardDiskVariant_Fixed;
+                DiskVariant = uDiskVariant;
                 break;
+            }
 
             case 'm':   // --variant
                 rc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
