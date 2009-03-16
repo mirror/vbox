@@ -108,9 +108,8 @@ void VBoxVMSettingsNetworkDetails::getFromAdapter (const CNetworkAdapter &aAdapt
         setProperty ("HOI_Name", QVariant (ifsName));
 #if defined (Q_WS_WIN32)
         setProperty ("HOI_DhcpEnabled", QVariant (ifs.GetDhcpEnabled()));
-#else
-        setProperty ("HOI_IPv6Supported", QVariant (ifs.GetIPV6Supported()));
 #endif
+        setProperty ("HOI_IPv6Supported", QVariant (ifs.GetIPV6Supported()));
         if (!ifs.GetDhcpEnabled())
         {
             setProperty ("HOI_IPv4Addr", QVariant (ifs.GetIPAddress()));
