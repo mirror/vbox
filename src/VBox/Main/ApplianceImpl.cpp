@@ -2511,8 +2511,8 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                 </OperatingSystemSection> */
             xml::ElementNode *pelmOperatingSystemSection = pelmVirtualSystem->createChild("OperatingSystemSection");
             pelmOperatingSystemSection->setAttribute("ovf:id", llOS.front()->strOvf);
-            pelmOperatingSystemSection->createChild("Info")->addContent("blah");        // @ŧodo
-            pelmOperatingSystemSection->createChild("Description")->addContent("blah");        // @ŧodo
+//             pelmOperatingSystemSection->createChild("Info")->addContent("blah");        // @ŧodo
+//             pelmOperatingSystemSection->createChild("Description")->addContent("blah");        // @ŧodo
 
             // <VirtualHardwareSection ovf:id="hw1" ovf:transport="iso">
             xml::ElementNode *pelmVirtualHardwareSection = pelmVirtualSystem->createChild("VirtualHardwareSection");
