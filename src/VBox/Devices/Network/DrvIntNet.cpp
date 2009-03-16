@@ -1066,7 +1066,6 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     AssertRelease(OpenReq.hIf != INTNET_HANDLE_INVALID);
     pThis->hIf = OpenReq.hIf;
     Log(("IntNet%d: hIf=%RX32 '%s'\n", pDrvIns->iInstance, pThis->hIf, pThis->szNetwork));
-
 #if 0
     DhcpServerRunner dhcp;
     dhcp.setOption(DHCPCFG_NETNAME, OpenReq.szNetwork);
@@ -1092,14 +1091,15 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     dhcp.setOption(DHCPCFG_IPADDRESS,  "192.168.55.1");
 //        DHCPCFG_LEASEDB,
 //        DHCPCFG_VERBOSE,
-//        DHCPCFG_BEGINCONFIG,
 //        DHCPCFG_GATEWAY,
     dhcp.setOption(DHCPCFG_LOWERIP,  "192.168.55.10");
     dhcp.setOption(DHCPCFG_UPPERIP,  "192.168.55.100");
     dhcp.setOption(DHCPCFG_NETMASK,  "255.255.255.0");
+
 //        DHCPCFG_HELP,
 //        DHCPCFG_VERSION,
 //        DHCPCFG_NOTOPT_MAXVAL
+    dhcp.setOption(DHCPCFG_BEGINCONFIG,  "");
     dhcp.start();
 
     dhcp.detachFromServer(); /* need to do this to avoid server shutdown on runner destruction */
