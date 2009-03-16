@@ -1188,7 +1188,7 @@ STDMETHODIMP HardDisk::CreateBaseStorage(ULONG64 aLogicalSize,
 
     AutoWriteLock alock (this);
 
-    aVariant &= ~HardDiskVariant_Diff;
+    aVariant = (HardDiskVariant_T)((unsigned)aVariant & (unsigned)~HardDiskVariant_Diff);
     if (    !(aVariant & HardDiskVariant_Fixed)
         &&  !(mm.formatObj->capabilities() & HardDiskFormatCapabilities_CreateDynamic))
         return setError (VBOX_E_NOT_SUPPORTED,
