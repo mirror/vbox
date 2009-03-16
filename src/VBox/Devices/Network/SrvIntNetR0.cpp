@@ -4159,15 +4159,21 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
     if (RT_SUCCESS(rc) || rc == VERR_NOT_FOUND)
     {
         bool fCloseNetwork = true;
-        if (rc == VERR_NOT_FOUND)
+        bool fNewNet = rc == VERR_NOT_FOUND;
+        if (fNewNet)
             rc = intnetR0CreateNetwork(pIntNet, pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, &pNetwork);
         if (RT_SUCCESS(rc))
             rc = intnetR0NetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, &fCloseNetwork, phIf);
 
         RTSemFastMutexRelease(pIntNet->FastMutex);
 
-        if (RT_FAILURE(rc) && pNetwork && fCloseNetwork)
-            intnetR0NetworkClose(pNetwork, pSession);
+        if (RT_FAILURE(rc))
+        {
+            if(pNetwork && fCloseNetwork)
+                intnetR0NetworkClose(pNetwork, pSession);
+        }
+        else if(!fNewNet)
+            rc = VINF_ALREADY_INITIALIZED;
     }
     else
         RTSemFastMutexRelease(pIntNet->FastMutex);
