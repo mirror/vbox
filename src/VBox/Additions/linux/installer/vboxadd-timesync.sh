@@ -18,7 +18,7 @@
 # additional information or have any questions.
 #
 
-# chkconfig: 35 35 56
+# chkconfig: 35 35 65
 # description: VirtualBox Additions timesync
 #
 ### BEGIN INIT INFO
