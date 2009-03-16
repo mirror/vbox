@@ -327,6 +327,8 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
         if (rc < 0)
             LogFunc(("hgcm connection failed.  internal ioctl result %Rrc, hgcm result %Rrc\n",
                       vrc, info.result));
+            if (rc >= 0 && info.result < 0)
+                rc = info.result;
     }
     if (rc >= 0)
     {
