@@ -2586,8 +2586,16 @@ ResumeExecution:
                         uint32_t  uMask;
                         X86EFLAGS eflags;
 
-                        cbParm  = (Cpu.prefix & PREFIX_OPSIZE) ? 4 : 2;
-                        uMask   = (Cpu.prefix & PREFIX_OPSIZE) ? 0xffffffff : 0xffff;
+                        if (Cpu.prefix & PREFIX_OPSIZE)
+                        {
+                            cbParm = 4;
+                            uMask  = 0xffffffff;
+                        }
+                        else
+                        {
+                            cbParm = 2;
+                            uMask  = 0xffff;
+                        }
 
                         rc = SELMToFlatEx(pVM, DIS_SELREG_SS, CPUMCTX2CORE(pCtx), pCtx->esp & uMask, 0, &GCPtrStack);
                         if (RT_FAILURE(rc))
@@ -2624,8 +2632,16 @@ ResumeExecution:
                         uint32_t  uMask;
                         X86EFLAGS eflags;
 
-                        cbParm  = (Cpu.prefix & PREFIX_OPSIZE) ? 4 : 2;
-                        uMask   = (Cpu.prefix & PREFIX_OPSIZE) ? 0xffffffff : 0xffff;
+                        if (Cpu.prefix & PREFIX_OPSIZE)
+                        {
+                            cbParm = 4;
+                            uMask  = 0xffffffff;
+                        }
+                        else
+                        {
+                            cbParm = 2;
+                            uMask  = 0xffff;
+                        }
 
                         rc = SELMToFlatEx(pVM, DIS_SELREG_SS, CPUMCTX2CORE(pCtx), (pCtx->esp - cbParm) & uMask, 0, &GCPtrStack);
                         if (RT_FAILURE(rc))
