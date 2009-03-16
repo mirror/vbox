@@ -106,8 +106,9 @@ void VBoxVMSettingsNetworkDetails::getFromAdapter (const CNetworkAdapter &aAdapt
     else if (!ifs.isNull() && ifs.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
     {
         setProperty ("HOI_Name", QVariant (ifsName));
-        setProperty ("HOI_DhcpEnabled", QVariant (ifs.GetDhcpEnabled()));
 #if defined (Q_WS_WIN32)
+        setProperty ("HOI_DhcpEnabled", QVariant (ifs.GetDhcpEnabled()));
+#else
         setProperty ("HOI_IPv6Supported", QVariant (ifs.GetIPV6Supported()));
 #endif
         if (!ifs.GetDhcpEnabled())
