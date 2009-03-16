@@ -1808,13 +1808,71 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
         }
 
-//        ComPtr<IDhcpServer> dhcpServer;
-//        hrc = virtualBox->FindDhcpServerByName(networkName.mutableRaw(), dhcpServer.asOutParam());
-//        if(FAILED(hrc))
-//        {
-//            LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Id) failed, hrc (0x%x)", hrc));
-//            H();
-//        }
+        if(!networkName.isNull())
+        {
+            ComPtr<IDhcpServer> dhcpServer;
+            hrc = virtualBox->FindDhcpServerByName(networkName.mutableRaw(), dhcpServer.asOutParam());
+            if(SUCCEEDED(hrc))
+            {
+                /* there is a DHCP server available for this network */
+                BOOL bEnabled;
+                hrc = dhcpServer->COMGETTER(Enabled)(&bEnabled);
+                if(FAILED(hrc))
+                {
+                    LogRel(("DHCP svr: COMGETTER(Enabled) failed, hrc (0x%x)", hrc));
+                    H();
+                }
+
+                if(bEnabled)
+                {
+                    Bstr ip, mask, lowerIp, upperIp;
+
+                    hrc = dhcpServer->COMGETTER(IPAddress)(ip.asOutParam());
+                    if(FAILED(hrc))
+                    {
+                        LogRel(("DHCP svr: COMGETTER(IPAddress) failed, hrc (0x%x)", hrc));
+                        H();
+                    }
+
+                    hrc = dhcpServer->COMGETTER(NetworkMask)(mask.asOutParam());
+                    if(FAILED(hrc))
+                    {
+                        LogRel(("DHCP svr: COMGETTER(NetworkMask) failed, hrc (0x%x)", hrc));
+                        H();
+                    }
+
+                    hrc = dhcpServer->COMGETTER(LowerIP)(lowerIp.asOutParam());
+                    if(FAILED(hrc))
+                    {
+                        LogRel(("DHCP svr: COMGETTER(LowerIP) failed, hrc (0x%x)", hrc));
+                        H();
+                    }
+
+                    hrc = dhcpServer->COMGETTER(UpperIP)(upperIp.asOutParam());
+                    if(FAILED(hrc))
+                    {
+                        LogRel(("DHCP svr: COMGETTER(UpperIP) failed, hrc (0x%x)", hrc));
+                        H();
+                    }
+
+                    char strMAC[13];
+                    Guid guid;
+                    guid.create();
+                    RTStrPrintf (strMAC, sizeof(strMAC), "080027%02X%02X%02X",
+                                 guid.ptr()->au8[0], guid.ptr()->au8[1], guid.ptr()->au8[2]);
+
+                    rc = CFGMR3InsertString(pCfg, "DhcpIPAddress", Utf8Str(ip).raw());             RC_CHECK();
+                    rc = CFGMR3InsertString(pCfg, "DhcpNetworkMask", Utf8Str(mask).raw());             RC_CHECK();
+                    rc = CFGMR3InsertString(pCfg, "DhcpLowerIP", Utf8Str(lowerIp).raw());             RC_CHECK();
+                    rc = CFGMR3InsertString(pCfg, "DhcpUpperIP", Utf8Str(upperIp).raw());             RC_CHECK();
+                    rc = CFGMR3InsertString(pCfg, "DhcpMacAddress", strMAC);             RC_CHECK();
+                }
+            }
+            else
+            {
+                hrc = S_OK;
+            }
+        }
 
     }
 
