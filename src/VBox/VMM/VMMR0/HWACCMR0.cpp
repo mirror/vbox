@@ -513,7 +513,9 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
         * Both the LOCK and VMXON bit must be set; otherwise VMXON will generate a #GP.
         * Once the lock bit is set, this MSR can no longer be modified.
         */
-        if (!(val & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK)))
+        if (    !(val & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
+            ||  ((val & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK)) == MSR_IA32_FEATURE_CONTROL_VMXON) /* Some BIOSes forget to set the locked bit. */
+           )
         {
             /* MSR is not yet locked; we can change it ourselves here */
             ASMWrMsr(MSR_IA32_FEATURE_CONTROL, HWACCMR0Globals.vmx.msr.feature_ctrl | MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK);
