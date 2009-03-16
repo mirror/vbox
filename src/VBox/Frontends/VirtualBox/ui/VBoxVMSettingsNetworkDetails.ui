@@ -189,7 +189,7 @@
     </widget>
    </item>
    <item row="6" column="2" colspan="3" >
-    <widget class="QLineEdit" name="mLeIPv4" >
+    <widget class="QILineEdit" name="mLeIPv4" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
        <horstretch>0</horstretch>
@@ -215,7 +215,7 @@
     </widget>
    </item>
    <item row="7" column="2" colspan="3" >
-    <widget class="QLineEdit" name="mLeHMv4" >
+    <widget class="QILineEdit" name="mLeHMv4" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
        <horstretch>0</horstretch>
@@ -241,7 +241,7 @@
     </widget>
    </item>
    <item row="8" column="2" colspan="3" >
-    <widget class="QLineEdit" name="mLeIPv6" >
+    <widget class="QILineEdit" name="mLeIPv6" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
        <horstretch>0</horstretch>
@@ -267,7 +267,7 @@
     </widget>
    </item>
    <item row="9" column="2" colspan="3" >
-    <widget class="QLineEdit" name="mLeHMv6" >
+    <widget class="QILineEdit" name="mLeHMv6" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
        <horstretch>0</horstretch>
@@ -322,7 +322,7 @@
     </widget>
    </item>
    <item row="11" column="2" colspan="2" >
-    <widget class="QLineEdit" name="mLeMAC" >
+    <widget class="QILineEdit" name="mLeMAC" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
        <horstretch>0</horstretch>
@@ -384,6 +384,11 @@
    <class>QILabelSeparator</class>
    <extends>QLabel</extends>
    <header>QILabelSeparator.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QILineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>QILineEdit.h</header>
   </customwidget>
   <customwidget>
    <class>QIDialogButtonBox</class>

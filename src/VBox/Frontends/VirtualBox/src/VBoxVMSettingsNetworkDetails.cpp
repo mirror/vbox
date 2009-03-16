@@ -55,6 +55,7 @@ VBoxVMSettingsNetworkDetails::VBoxVMSettingsNetworkDetails (QWidget *aParent)
     //    (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
     //mLeHMv6->setValidator (new QRegExpValidator
     //    (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
+    mLeIPv6->setFixedWidthByText (QString().fill ('X', 39));
     connect (mCbHOI, SIGNAL (currentIndexChanged (int)),
              this, SLOT (hostOnlyInterfaceChanged()));
 #if defined (Q_WS_WIN32)
@@ -73,17 +74,7 @@ VBoxVMSettingsNetworkDetails::VBoxVMSettingsNetworkDetails (QWidget *aParent)
     /* Setup common widgets */
     mLeMAC->setValidator (new QRegExpValidator
         (QRegExp ("[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
-    QStyleOptionFrame options;
-    options.initFrom (mLeMAC);
-    options.rect = mLeMAC->contentsRect();
-    options.lineWidth = mLeMAC->style()->pixelMetric (QStyle::PM_DefaultFrameWidth);
-    options.midLineWidth = 0;
-    options.state |= QStyle::State_Sunken;
-    QSize contentSize (mLeMAC->fontMetrics().width ('X') * 12 + 2*2,
-                       mLeMAC->fontMetrics().xHeight()        + 2*1);
-    QSize totalSize = style()->sizeFromContents (QStyle::CT_LineEdit,
-                                                 &options, contentSize, this);
-    mLeMAC->setMinimumWidth (totalSize.width());
+    mLeMAC->setFixedWidthByText (QString().fill ('X', 12));
     connect (mTbMAC, SIGNAL (clicked()), this, SLOT (genMACClicked()));
 #if defined (Q_WS_MAC)
     /* Remove tool-button border at MAC */
