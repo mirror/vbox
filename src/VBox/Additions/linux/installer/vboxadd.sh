@@ -205,16 +205,15 @@ start()
         }
     fi
     if [ ! -c $userdev ]; then
-        maj=0
+        maj=10
         min=`sed -n 's;\([0-9]\+\) vboxuser;\1;p' /proc/misc`
         if [ ! -z "$min" ]; then
-            maj=10
+            mknod -m 0666 $userdev c $maj $min || {
+                rm -f $dev 2>/dev/null
+                rmmod vboxadd 2>/dev/null
+                fail "Cannot create device $userdev with major $maj and minor $min"
+            }
         fi
-        test ! -z "$maj" && mknod -m 0666 $userdev c $maj $min || {
-            rm -f $dev 2>/dev/null
-            rmmod vboxadd 2>/dev/null
-            fail "Cannot create device $userdev with major $maj and minor $min"
-        }
     fi
     chown $owner:$group $dev 2>/dev/null || {
         rm -f $dev 2>/dev/null
