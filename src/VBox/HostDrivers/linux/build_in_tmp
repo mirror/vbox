@@ -39,7 +39,8 @@ then
         if echo "$line" | grep -q added > /dev/null ||
            echo "$line" | grep -q built > /dev/null ||
            echo "$line" | grep -q installed > /dev/null; then
-            version=`echo "$line" | sed "s/_MODULE_,\([^,]*\),.*/\1/;t;d"`
+            # either 'vboxvideo, <version>: added' or 'vboxvideo, <version>, ...: installed'
+            version=`echo "$line" | sed "s/_MODULE_,\([^,]*\)[,:].*/\1/;t;d"`
             echo "  removing old DKMS module _MODULE_ version $version"
             $DKMS remove -m _MODULE_ -v $version --all
         fi
