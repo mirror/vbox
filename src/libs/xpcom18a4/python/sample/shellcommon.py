@@ -191,7 +191,7 @@ def startVm(ctx,mach,type):
             print session.QueryErrorObject(rc)
 
 def getMachines(ctx):
-    return ctx['vb'].getMachines2()
+    return ctx['vb'].getMachines()
 
 def asState(var):
     if var:
