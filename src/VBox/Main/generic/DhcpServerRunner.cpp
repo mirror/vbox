@@ -55,12 +55,10 @@ static const ARGDEF g_aArgDefs[] = {
 
 static const ARGDEF * getArgDef(DHCPCFG type)
 {
-    for(int i = 0; i < sizeof(g_aArgDefs)/sizeof(g_aArgDefs[0]); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aArgDefs); i++)
     {
-        if(g_aArgDefs[i].Type == type)
-        {
+        if (g_aArgDefs[i].Type == type)
             return &g_aArgDefs[i];
-        }
     }
     return NULL;
 }
