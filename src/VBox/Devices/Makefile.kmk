@@ -622,6 +622,7 @@ Drivers_SOURCES    = \
 	Input/DrvKeyboardQueue.cpp \
 	Input/DrvMouseQueue.cpp \
 	Network/DrvIntNet.cpp \
+	Network/DhcpServerRunner.cpp \
 	PC/DrvACPI.cpp \
 	Serial/DrvChar.cpp \
 	Serial/DrvNamedPipe.cpp \
@@ -716,6 +717,7 @@ Drivers_SOURCES       = \
 	Storage/DrvVD.cpp \
 	PC/DrvACPI.cpp \
 	Network/DrvIntNet.cpp \
+	Network/DhcpServerRunner.cpp \
 	Network/DrvNetSniffer.cpp \
 	Network/Pcap.cpp \
 	Audio/audio.c \

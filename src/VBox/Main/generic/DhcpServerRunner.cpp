@@ -63,6 +63,11 @@ static const ARGDEF * getArgDef(DHCPCFG type)
     return NULL;
 }
 
+void DhcpServerRunner::detachFromServer()
+{
+    mProcess = NIL_RTPROCESS;
+}
+
 int DhcpServerRunner::start()
 {
     if(isRunning())
