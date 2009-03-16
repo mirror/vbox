@@ -2228,16 +2228,7 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > 
     return rc;
 }
 
-#else /* !VBOX_WITH_NETFLT */
-
-int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
-                                       SVCHlpMsg::Code aMsgCode)
-{
-    /* dummy */
-    return VINF_SUCCESS;
-}
-
-#endif /* ! VBOX_WITH_NETFLT */
+#endif /* VBOX_WITH_NETFLT */
 
 
 static int netIfListHostAdapters(std::list <ComObjPtr <HostNetworkInterface> > &list)
