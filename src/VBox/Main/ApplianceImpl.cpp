@@ -3198,7 +3198,6 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
                                                       ComSafeArrayIn(IN_BSTR, argVboxValues),
                                                       ComSafeArrayIn(IN_BSTR, argExtraConfigValues))
 {
-    NOREF(aEnabledSize);
     CheckComArgSafeArrayNotNull(argVboxValues);
     CheckComArgSafeArrayNotNull(argExtraConfigValues);
 
