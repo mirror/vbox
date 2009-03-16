@@ -89,19 +89,23 @@ static int halInitPrivate(RTMemAutoPtr <DBusConnection, VBoxHalShutdownPrivate> 
 static int halFindDeviceStringMatch (DBusConnection *pConnection,
                                      const char *pszKey, const char *pszValue,
                                      RTMemAutoPtr <DBusMessage, VBoxDBusMessageUnref> *pMessage);
+/*
 static int halFindDeviceStringMatchVector (DBusConnection *pConnection,
                                            const char *pszKey,
                                            const char *pszValue,
                                            std::vector<std::string> *pMatches);
+*/
 static int halGetPropertyStrings (DBusConnection *pConnection,
                                   const char *pszUdi, size_t cKeys,
                                   const char **papszKeys, char **papszValues,
                                   RTMemAutoPtr <DBusMessage, VBoxDBusMessageUnref> *pMessage);
+/*
 static int halGetPropertyStringsVector (DBusConnection *pConnection,
                                         const char *pszUdi, size_t cProps,
                                         const char **papszKeys,
                                         std::vector<std::string> *pMatches,
                                         bool *pfMatches, bool *pfSuccess);
+*/
 static int getDriveInfoFromHal(DriveInfoList *pList, bool isDVD,
                                bool *pfSuccess);
 static int getUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess);
@@ -631,7 +635,7 @@ int halInit (RTMemAutoPtr <DBusConnection, VBoxHalShutdown> *pConnection)
     }
     if (halSuccess)
     {
-        dbus_bus_add_match (dbusConnection.get(), 
+        dbus_bus_add_match (dbusConnection.get(),
                             "type='signal',"
                             "interface='org.freedesktop.Hal.Manager',"
                             "sender='org.freedesktop.Hal',"
@@ -679,7 +683,7 @@ int halInitPrivate (RTMemAutoPtr <DBusConnection, VBoxHalShutdownPrivate> *pConn
     }
     if (halSuccess)
     {
-        dbus_bus_add_match (dbusConnection.get(), 
+        dbus_bus_add_match (dbusConnection.get(),
                             "type='signal',"
                             "interface='org.freedesktop.Hal.Manager',"
                             "sender='org.freedesktop.Hal',"
@@ -707,7 +711,7 @@ void VBoxHalShutdown (DBusConnection *pConnection)
     LogFlowFunc (("pConnection=%p\n", pConnection));
     autoDBusError dbusError;
 
-    dbus_bus_remove_match (pConnection, 
+    dbus_bus_remove_match (pConnection,
                            "type='signal',"
                            "interface='org.freedesktop.Hal.Manager',"
                            "sender='org.freedesktop.Hal',"
@@ -729,7 +733,7 @@ void VBoxHalShutdownPrivate (DBusConnection *pConnection)
     LogFlowFunc (("pConnection=%p\n", pConnection));
     autoDBusError dbusError;
 
-    dbus_bus_remove_match (pConnection, 
+    dbus_bus_remove_match (pConnection,
                            "type='signal',"
                            "interface='org.freedesktop.Hal.Manager',"
                            "sender='org.freedesktop.Hal',"
@@ -924,7 +928,7 @@ int halGetPropertyStrings (DBusConnection *pConnection, const char *pszUdi,
     autoDBusError dbusError;
 
     RTMemAutoPtr <DBusMessage, VBoxDBusMessageUnref> message, reply;
-    DBusMessageIter iterGet, iterProps, iterKey, iterValue;
+    DBusMessageIter iterGet, iterProps;
 
     /* Initialise the return array to NULLs */
     for (size_t i = 0; i < cProps; ++i)
@@ -1201,7 +1205,7 @@ int getUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess)
         {
             USBDeviceInfo info (pszDevice, pszSysfsPath);
             bool ifaceSuccess = true;  /* If we can't get the interfaces, just
-                                        * skip this one device. */            
+                                        * skip this one device. */
             rc = getUSBInterfacesFromHal (&info.mInterfaces, pszUdi, &ifaceSuccess);
             if (RT_SUCCESS(rc) && halSuccess && ifaceSuccess)
                 try
@@ -1286,7 +1290,7 @@ int getOldUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess)
         {
             USBDeviceInfo info (pszDevice, pszSysfsPath);
             bool ifaceSuccess = false;  /* If we can't get the interfaces, just
-                                         * skip this one device. */            
+                                         * skip this one device. */
             rc = getUSBInterfacesFromHal (&info.mInterfaces, pszSysfsPath,
                                           &ifaceSuccess);
             if (RT_SUCCESS(rc) && halSuccess && ifaceSuccess)
@@ -1410,7 +1414,7 @@ int getUSBInterfacesFromHal(std::vector <std::string> *pList,
  * @param   pvUser      A pointer to the flag variable we are to set.
  */
 /* static */
-DBusHandlerResult dbusFilterFunction (DBusConnection *pConnection,
+DBusHandlerResult dbusFilterFunction (DBusConnection * /* pConnection */,
                                       DBusMessage *pMessage, void *pvUser)
 {
     volatile bool *pTriggered = reinterpret_cast<volatile bool *> (pvUser);

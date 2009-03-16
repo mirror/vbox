@@ -77,7 +77,7 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszMask)
     return rc;
 }
 
-int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULONG ip, ULONG mask)
+int NetIfEnableStaticIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * pIf, ULONG ip, ULONG mask)
 {
     char szAddress[16]; /* 4*3 + 3*1 + 1 */
     char szNetMask[16]; /* 4*3 + 3*1 + 1 */
@@ -90,7 +90,7 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
     return NetIfAdpCtl(pIf, szAddress, szNetMask);
 }
 
-int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
+int NetIfEnableStaticIpConfigV6(VirtualBox * /* vBox */, HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
     char szAddress[5*8 + 1 + 5 + 1];
     RTStrPrintf(szAddress, sizeof(szAddress), "%ls/%d",
@@ -98,27 +98,27 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN
     return NetIfAdpCtl(pIf, szAddress, NULL);
 }
 
-int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
+int NetIfEnableDynamicIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * /* pIf */)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
-int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVbox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress)
+int NetIfCreateHostOnlyNetworkInterface (VirtualBox * /* pVbox */, IHostNetworkInterface ** /* aHostNetworkInterface */, IProgress ** /* aProgress */)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
-int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVbox, IN_GUID aId, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress)
+int NetIfRemoveHostOnlyNetworkInterface (VirtualBox * /* pVbox */, IN_GUID /* aId */, IHostNetworkInterface ** /* aHostNetworkInterface */, IProgress ** /* aProgress */)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
-int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *)
+int NetIfGetConfig(HostNetworkInterface * /* pIf */, NETIFINFO *)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
-int NetIfDhcpRediscover(VirtualBox *pVbox, HostNetworkInterface * pIf)
+int NetIfDhcpRediscover(VirtualBox * /* pVbox */, HostNetworkInterface * /* pIf */)
 {
     return VERR_NOT_IMPLEMENTED;
 }
