@@ -87,19 +87,20 @@ int NetIfDhcpRediscover(VirtualBox *pVbox, HostNetworkInterface * pIf);
 
 DECLINLINE(Bstr) composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
 {
-    char szTmp[8*5];
+    char szTmp[8*5] = "";
 
-    RTStrPrintf(szTmp, sizeof(szTmp),
-                "%02x%02x:%02x%02x:%02x%02x:%02x%02x:"
-                "%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-                aAddrPtr->au8[0], aAddrPtr->au8[1],
-                aAddrPtr->au8[2], aAddrPtr->au8[3],
-                aAddrPtr->au8[4], aAddrPtr->au8[5],
-                aAddrPtr->au8[6], aAddrPtr->au8[7],
-                aAddrPtr->au8[8], aAddrPtr->au8[9],
-                aAddrPtr->au8[10], aAddrPtr->au8[11],
-                aAddrPtr->au8[12], aAddrPtr->au8[13],
-                aAddrPtr->au8[14], aAddrPtr->au8[15]);
+    if (aAddrPtr->s.Lo || aAddrPtr->s.Hi)
+        RTStrPrintf(szTmp, sizeof(szTmp),
+                    "%02x%02x:%02x%02x:%02x%02x:%02x%02x:"
+                    "%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+                    aAddrPtr->au8[0], aAddrPtr->au8[1],
+                    aAddrPtr->au8[2], aAddrPtr->au8[3],
+                    aAddrPtr->au8[4], aAddrPtr->au8[5],
+                    aAddrPtr->au8[6], aAddrPtr->au8[7],
+                    aAddrPtr->au8[8], aAddrPtr->au8[9],
+                    aAddrPtr->au8[10], aAddrPtr->au8[11],
+                    aAddrPtr->au8[12], aAddrPtr->au8[13],
+                    aAddrPtr->au8[14], aAddrPtr->au8[15]);
     return Bstr(szTmp);
 }
 
