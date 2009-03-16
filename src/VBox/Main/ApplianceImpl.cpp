@@ -30,6 +30,7 @@
 #include "GuestOSTypeImpl.h"
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
+#include "HostNetworkInterfaceImpl.h"
 
 #include "Logging.h"
 
@@ -1970,6 +1971,30 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                     {
                         rc = pNetworkAdapter->AttachToBridgedInterface();
                         if (FAILED(rc)) throw rc;
+                        ComPtr<IHost> host;
+                        rc = pVirtualBox->COMGETTER(Host)(host.asOutParam());
+                        if (FAILED(rc)) throw rc;
+                        com::SafeIfaceArray<IHostNetworkInterface> nwInterfaces;
+                        rc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
+                        if (FAILED(rc)) throw rc;
+                        /* We search for the first host network interface which
+                         * is usable for the bridged networking */
+                        for (size_t i=0; i < nwInterfaces.size(); ++i)
+                        {
+                            HostNetworkInterfaceType_T itype;
+                            rc = nwInterfaces[i]->COMGETTER(InterfaceType)(&itype);
+                            if (FAILED(rc)) throw rc;
+                            if (itype == HostNetworkInterfaceType_Bridged)
+                            {
+                                Bstr name;
+                                rc = nwInterfaces[i]->COMGETTER(Name)(name.asOutParam());
+                                if (FAILED(rc)) throw rc;
+                                /* Set the interface name to attach to */
+                                pNetworkAdapter->COMSETTER(HostInterface)(name);
+                                if (FAILED(rc)) throw rc;
+                                break;
+                            }
+                        }
                     }
                 }
             }
