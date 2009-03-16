@@ -413,14 +413,25 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
+    if (Bstr(aIPAddress).isEmpty())
+        if (m.IPAddress)
+            return NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, 0, 0);
+        else
+            return S_OK;
+
     ULONG ip, mask;
     ip = inet_addr(Utf8Str(aIPAddress).raw());
     if(ip != INADDR_NONE)
     {
-        mask = inet_addr(Utf8Str(aNetMask).raw());
+        if (Bstr(aNetMask).isEmpty())
+            mask = 0xFFFFFF;
+        else
+            mask = inet_addr(Utf8Str(aNetMask).raw());
         if(mask != INADDR_NONE)
         {
-            int rc = NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, ip, mask);
+            int rc = S_OK;
+            if (m.IPAddress != ip || m.networkMask != mask)
+                rc = NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, ip, mask);
             if (RT_SUCCESS(rc))
             {
                 return S_OK;
@@ -450,7 +461,11 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    int rc = NetIfEnableStaticIpConfigV6(mVBox, this, m.IPV6Address, aIPV6Address, aIPV6MaskPrefixLength);
+    if (aIPV6MaskPrefixLength == 0)
+        aIPV6MaskPrefixLength = 64;
+    int rc = S_OK;
+    if (m.IPV6Address != aIPV6Address || m.IPV6NetworkMaskPrefixLength != aIPV6MaskPrefixLength)
+        rc = NetIfEnableStaticIpConfigV6(mVBox, this, m.IPV6Address, aIPV6Address, aIPV6MaskPrefixLength);
     if (RT_FAILURE(rc))
     {
         LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
