@@ -27,7 +27,7 @@
    </rect>
   </property>
   <layout class="QGridLayout" >
-   <item row="0" column="0" colspan="3" >
+   <item row="0" column="0" colspan="2" >
     <widget class="QCheckBox" name="mGbAdapter" >
      <property name="whatsThis" >
       <string>When checked, plugs this virtual network adapter into the virtual machine.</string>
@@ -121,37 +121,31 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="1" colspan="2" >
+      <item row="2" column="1" colspan="3" >
        <widget class="QLabel" name="mLbInfo" >
         <property name="alignment" >
          <set>Qt::AlignLeft|Qt::AlignTop</set>
-        </property>
-        <property name="sizePolicy" >
-         <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
         </property>
         <property name="wordWrap" >
          <bool>true</bool>
         </property>
        </widget>
       </item>
+      <item rowspan="2" row="0" column="3" >
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
      </layout>
     </widget>
-   </item>
-   <item row="1" column="2" >
-    <spacer>
-     <property name="orientation" >
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" >
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>
