@@ -478,7 +478,7 @@ public:
         if (length() < that.length())
             return false;
 
-        int l = length() - that.length();
+        size_t l = length() - that.length();
         if (cs == CaseSensitive)
             return ::RTStrCmp(&str[l], that.str) == 0;
         else
