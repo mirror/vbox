@@ -104,7 +104,6 @@ typedef struct VBOXHDDBACKEND
      * @returns VBox status code.
      * @param   pszFilename     Name of the image file to create. Guaranteed to be available and
      *                          unchanged during the lifetime of this image.
-     * @param   enmType         Image type. Both base and diff image types are valid.
      * @param   cbSize          Image size in bytes.
      * @param   uImageFlags     Flags specifying special image features.
      * @param   pszComment      Pointer to image comment. NULL is ok.
@@ -119,9 +118,8 @@ typedef struct VBOXHDDBACKEND
      * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
      * @param   ppvBackendData  Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE enmType,
-                                          uint64_t cbSize, unsigned uImageFlags,
-                                          const char *pszComment,
+    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, uint64_t cbSize,
+                                          unsigned uImageFlags, const char *pszComment,
                                           PCPDMMEDIAGEOMETRY pPCHSGeometry,
                                           PCPDMMEDIAGEOMETRY pLCHSGeometry,
                                           PCRTUUID pUuid, unsigned uOpenFlags,
@@ -219,15 +217,6 @@ typedef struct VBOXHDDBACKEND
      * @param   pvBackendData   Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(unsigned, pfnGetVersion, (void *pvBackendData));
-
-    /**
-     * Get the type information for a disk image.
-     *
-     * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
-     * @param   penmType        Image type of this image.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnGetImageType, (void *pvBackendData, PVDIMAGETYPE penmType));
 
     /**
      * Get the capacity of a disk image.

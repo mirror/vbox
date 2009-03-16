@@ -57,7 +57,7 @@
  */
 struct HardDisk::Task : public com::SupportErrorInfoBase
 {
-    enum Operation { CreateDynamic, CreateFixed, CreateDiff,
+    enum Operation { CreateBase, CreateDiff,
                      Merge, Clone, Delete, Reset };
 
     HardDisk *that;
@@ -97,11 +97,11 @@ struct HardDisk::Task : public com::SupportErrorInfoBase
     {
         Data() : size (0) {}
 
-        /* CreateDynamic, CreateStatic */
+        /* CreateBase */
 
         uint64_t size;
 
-        /* CreateDynamic, CreateStatic, CreateDiff, Clone */
+        /* CreateBase, CreateDiff, Clone */
 
         HardDiskVariant_T variant;
 
@@ -1177,9 +1177,9 @@ STDMETHODIMP HardDisk::SetProperties(ComSafeArrayIn (IN_BSTR, aNames),
     return rc;
 }
 
-STDMETHODIMP HardDisk::CreateDynamicStorage(ULONG64 aLogicalSize,
-                                            HardDiskVariant_T aVariant,
-                                            IProgress **aProgress)
+STDMETHODIMP HardDisk::CreateBaseStorage(ULONG64 aLogicalSize,
+                                         HardDiskVariant_T aVariant,
+                                         IProgress **aProgress)
 {
     CheckComArgOutPointerValid (aProgress);
 
@@ -1188,65 +1188,14 @@ STDMETHODIMP HardDisk::CreateDynamicStorage(ULONG64 aLogicalSize,
 
     AutoWriteLock alock (this);
 
-    if (!(mm.formatObj->capabilities() &
-          HardDiskFormatCapabilities_CreateDynamic))
+    aVariant &= ~HardDiskVariant_Diff;
+    if (    !(aVariant & HardDiskVariant_Fixed)
+        &&  !(mm.formatObj->capabilities() & HardDiskFormatCapabilities_CreateDynamic))
         return setError (VBOX_E_NOT_SUPPORTED,
             tr ("Hard disk format '%ls' does not support dynamic storage "
                 "creation"), mm.format.raw());
-
-    switch (m.state)
-    {
-        case MediaState_NotCreated:
-            break;
-        default:
-            return setStateError();
-    }
-
-    ComObjPtr <Progress> progress;
-    progress.createObject();
-    HRESULT rc = progress->init (mVirtualBox, static_cast<IHardDisk*>(this),
-        BstrFmt (tr ("Creating dynamic hard disk storage unit '%ls'"),
-                 m.locationFull.raw()),
-        FALSE /* aCancelable */);
-    CheckComRCReturnRC (rc);
-
-    /* setup task object and thread to carry out the operation
-     * asynchronously */
-
-    std::auto_ptr <Task> task (new Task (this, progress, Task::CreateDynamic));
-    AssertComRCReturnRC (task->autoCaller.rc());
-
-    task->d.size = aLogicalSize;
-    task->d.variant = aVariant;
-
-    rc = task->startThread();
-    CheckComRCReturnRC (rc);
-
-    /* go to Creating state on success */
-    m.state = MediaState_Creating;
-
-    /* task is now owned by taskThread() so release it */
-    task.release();
-
-    /* return progress to the caller */
-    progress.queryInterfaceTo (aProgress);
-
-    return S_OK;
-}
-
-STDMETHODIMP HardDisk::CreateFixedStorage(ULONG64 aLogicalSize,
-                                          HardDiskVariant_T aVariant,
-                                          IProgress **aProgress)
-{
-    CheckComArgOutPointerValid (aProgress);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoWriteLock alock (this);
-
-    if (!(mm.formatObj->capabilities() &
-          HardDiskFormatCapabilities_CreateFixed))
+    if (    (aVariant & HardDiskVariant_Fixed)
+        &&  !(mm.formatObj->capabilities() & HardDiskFormatCapabilities_CreateDynamic))
         return setError (VBOX_E_NOT_SUPPORTED,
             tr ("Hard disk format '%ls' does not support fixed storage "
                 "creation"), mm.format.raw());
@@ -1261,16 +1210,18 @@ STDMETHODIMP HardDisk::CreateFixedStorage(ULONG64 aLogicalSize,
 
     ComObjPtr <Progress> progress;
     progress.createObject();
+    /// @todo include fixed/dynamic
     HRESULT rc = progress->init (mVirtualBox, static_cast<IHardDisk*>(this),
-        BstrFmt (tr ("Creating fixed hard disk storage unit '%ls'"),
-                 m.locationFull.raw()),
+        (aVariant & HardDiskVariant_Fixed)
+          ? BstrFmt (tr ("Creating fixed hard disk storage unit '%ls'"), m.locationFull.raw())
+          : BstrFmt (tr ("Creating dynamic hard disk storage unit '%ls'"), m.locationFull.raw()),
         FALSE /* aCancelable */);
     CheckComRCReturnRC (rc);
 
     /* setup task object and thread to carry out the operation
      * asynchronously */
 
-    std::auto_ptr <Task> task (new Task (this, progress, Task::CreateFixed));
+    std::auto_ptr <Task> task (new Task (this, progress, Task::CreateBase));
     AssertComRCReturnRC (task->autoCaller.rc());
 
     task->d.size = aLogicalSize;
@@ -2986,11 +2937,11 @@ HRESULT HardDisk::queryInfo()
             }
 
             /* check the type */
-            VDIMAGETYPE type;
-            vrc = VDGetImageType (hdd, 0, &type);
+            unsigned uImageFlags;
+            vrc = VDGetImageFlags (hdd, 0, &uImageFlags);
             ComAssertRCThrow (vrc, E_FAIL);
 
-            if (type == VD_IMAGE_TYPE_DIFF)
+            if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
             {
                 RTUUID parentId;
                 vrc = VDGetParentUuid (hdd, 0, &parentId);
@@ -3396,8 +3347,7 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
     {
         ////////////////////////////////////////////////////////////////////////
 
-        case Task::CreateDynamic:
-        case Task::CreateFixed:
+        case Task::CreateBase:
         {
             /* The lock is also used as a signal from the task initiator (which
              * releases it only after RTThreadCreate()) that we can start the job */
@@ -3443,9 +3393,6 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                     that->mm.vdProgress = task->progress;
 
                     vrc = VDCreateBase (hdd, format, location,
-                                        task->operation == Task::CreateDynamic ?
-                                            VD_IMAGE_TYPE_NORMAL :
-                                            VD_IMAGE_TYPE_FIXED,
                                         task->d.size * _1M,
                                         task->d.variant,
                                         NULL, &geo, &geo, id.raw(),

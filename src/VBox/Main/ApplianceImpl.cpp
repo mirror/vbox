@@ -2216,7 +2216,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                             if (FAILED(rc)) throw rc;
 
                             /* Create a dynamic growing disk image with the given capacity */
-                            rc = dstHdVBox->CreateDynamicStorage(di.iCapacity / _1M, HardDiskVariant_Standard, progress.asOutParam());
+                            rc = dstHdVBox->CreateBaseStorage(di.iCapacity / _1M, HardDiskVariant_Standard, progress.asOutParam());
                             if (FAILED(rc)) throw rc;
 
                             /* Advance to the next operation */

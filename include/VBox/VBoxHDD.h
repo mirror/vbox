@@ -68,35 +68,15 @@ __BEGIN_DECLS
 /** Placeholder for specifying the last opened image. */
 #define VD_LAST_IMAGE               0xffffffffU
 
-/** @name VBox HDD container image types
- * @{ */
-typedef enum VDIMAGETYPE
-{
-    /** Invalid image type. Should never be returned/passed through the API. */
-    VD_IMAGE_TYPE_INVALID   = 0,
-    /** Normal dynamically growing base image file. */
-    VD_IMAGE_TYPE_NORMAL,
-    /** Preallocated base image file of a fixed size. */
-    VD_IMAGE_TYPE_FIXED,
-    /** Dynamically growing image file for undo/commit changes support. */
-    VD_IMAGE_TYPE_UNDO,
-    /** Dynamically growing image file for differencing support. */
-    VD_IMAGE_TYPE_DIFF,
-
-    /** First valid image type value. */
-    VD_IMAGE_TYPE_FIRST     = VD_IMAGE_TYPE_NORMAL,
-    /** Last valid image type value. */
-    VD_IMAGE_TYPE_LAST      = VD_IMAGE_TYPE_DIFF
-} VDIMAGETYPE;
-/** Pointer to VBox HDD container image type. */
-typedef VDIMAGETYPE *PVDIMAGETYPE;
-/** @} */
-
 /** @name VBox HDD container image flags
  * @{
  */
 /** No flags. */
 #define VD_IMAGE_FLAGS_NONE                     (0)
+/** Fixed image. */
+#define VD_IMAGE_FLAGS_FIXED                    (0x10000)
+/** Diff image. Mutually exclusive with fixed image. */
+#define VD_IMAGE_FLAGS_DIFF                     (0x20000)
 /** VMDK: Split image into 2GB extents. */
 #define VD_VMDK_IMAGE_FLAGS_SPLIT_2G            (0x0001)
 /** VMDK: Raw disk image (giving access to a number of host partitions). */
@@ -108,10 +88,10 @@ typedef VDIMAGETYPE *PVDIMAGETYPE;
 #define VD_VDI_IMAGE_FLAGS_ZERO_EXPAND          (0x0100)
 
 /** Mask of valid image flags for VMDK. */
-#define VD_VMDK_IMAGE_FLAGS_MASK            (VD_IMAGE_FLAGS_NONE | VD_VMDK_IMAGE_FLAGS_SPLIT_2G | VD_VMDK_IMAGE_FLAGS_RAWDISK | VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+#define VD_VMDK_IMAGE_FLAGS_MASK            (VD_IMAGE_FLAGS_FIXED | VD_IMAGE_FLAGS_DIFF | VD_IMAGE_FLAGS_NONE | VD_VMDK_IMAGE_FLAGS_SPLIT_2G | VD_VMDK_IMAGE_FLAGS_RAWDISK | VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
 
 /** Mask of valid image flags for VDI. */
-#define VD_VDI_IMAGE_FLAGS_MASK             (VD_IMAGE_FLAGS_NONE | VD_VDI_IMAGE_FLAGS_ZERO_EXPAND)
+#define VD_VDI_IMAGE_FLAGS_MASK             (VD_IMAGE_FLAGS_FIXED | VD_IMAGE_FLAGS_DIFF | VD_IMAGE_FLAGS_NONE | VD_VDI_IMAGE_FLAGS_ZERO_EXPAND)
 
 /** Mask of all valid image flags for all formats. */
 #define VD_IMAGE_FLAGS_MASK                 (VD_VMDK_IMAGE_FLAGS_MASK | VD_VDI_IMAGE_FLAGS_MASK)
@@ -1182,7 +1162,6 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pDisk           Pointer to HDD container.
  * @param   pszBackend      Name of the image file backend to use (case insensitive).
  * @param   pszFilename     Name of the image file to create.
- * @param   enmType         Image type, only base image types are acceptable.
  * @param   cbSize          Image size in bytes.
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
@@ -1194,9 +1173,8 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
 VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
-                               const char *pszFilename, VDIMAGETYPE enmType,
-                               uint64_t cbSize, unsigned uImageFlags,
-                               const char *pszComment,
+                               const char *pszFilename, uint64_t cbSize,
+                               unsigned uImageFlags, const char *pszComment,
                                PCPDMMEDIAGEOMETRY pPCHSGeometry,
                                PCPDMMEDIAGEOMETRY pLCHSGeometry,
                                PCRTUUID pUuid, unsigned uOpenFlags,
@@ -1435,18 +1413,6 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  */
 VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
                                unsigned *puVersion);
-
-/**
- * Get type of image in HDD container.
- *
- * @return  VBox status code.
- * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to HDD container.
- * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- * @param   penmType        Where to store the image type.
- */
-VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage,
-                                 PVDIMAGETYPE penmType);
 
 /**
  * List the capabilities of image backend in HDD container.

@@ -313,9 +313,9 @@ void createVM(IVirtualBox *virtualBox)
          * a dynamically expanding image.
          */
         nsCOMPtr <IProgress> progress;
-        rc = hardDisk->CreateDynamicStorage(100,                                // size in megabytes
-                                            HardDiskVariant_Standard,
-                                            getter_AddRefs(progress));          // optional progress object
+        rc = hardDisk->CreateBaseStorage(100,                                // size in megabytes
+                                         HardDiskVariant_Standard,
+                                         getter_AddRefs(progress));          // optional progress object
         if (NS_FAILED(rc))
         {
             printf("Failed creating hard disk image! rc=%08X\n", rc);

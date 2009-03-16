@@ -2648,9 +2648,8 @@ out:
 
 
 /** @copydoc VBOXHDDBACKEND::pfnCreate */
-static int iscsiCreate(const char *pszFilename, VDIMAGETYPE enmType,
-                       uint64_t cbSize, unsigned uImageFlags,
-                       const char *pszComment,
+static int iscsiCreate(const char *pszFilename, uint64_t cbSize,
+                       unsigned uImageFlags, const char *pszComment,
                        PCPDMMEDIAGEOMETRY pPCHSGeometry,
                        PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                        unsigned uOpenFlags, unsigned uPercentStart,
@@ -2658,7 +2657,7 @@ static int iscsiCreate(const char *pszFilename, VDIMAGETYPE enmType,
                        PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation,
                        void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p", pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
     int rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
@@ -2882,26 +2881,6 @@ static unsigned iscsiGetVersion(void *pBackendData)
 }
 
 
-/** @copydoc VBOXHDDBACKEND::pfnGetImageType */
-static int iscsiGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
-{
-    LogFlowFunc(("pBackendData=%#p penmImageType=%#p\n", pBackendData, penmImageType));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
-
-    Assert(pImage);
-    Assert(penmImageType);
-
-    if (pImage)
-        *penmImageType = VD_IMAGE_TYPE_FIXED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc enmImageType=%u\n", rc, *penmImageType));
-    return rc;
-}
-
-
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
 static uint64_t iscsiGetSize(void *pBackendData)
 {
@@ -3011,7 +2990,7 @@ static unsigned iscsiGetImageFlags(void *pBackendData)
     Assert(pImage);
     NOREF(pImage);
 
-    uImageFlags = VD_IMAGE_FLAGS_NONE;
+    uImageFlags = VD_IMAGE_FLAGS_FIXED;
 
     LogFlowFunc(("returns %#x\n", uImageFlags));
     return uImageFlags;
@@ -3487,8 +3466,6 @@ VBOXHDDBACKEND g_ISCSIBackend =
     iscsiFlush,
     /* pfnGetVersion */
     iscsiGetVersion,
-    /* pfnGetImageType */
-    iscsiGetImageType,
     /* pfnGetSize */
     iscsiGetSize,
     /* pfnGetFileSize */

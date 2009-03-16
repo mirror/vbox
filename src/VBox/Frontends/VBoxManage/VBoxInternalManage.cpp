@@ -1214,10 +1214,10 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     LCHS.cCylinders = 0;
     LCHS.cHeads = 0;
     LCHS.cSectors = 0;
-    vrc = VDCreateBase(pDisk, "VMDK", Utf8Str(filename).raw(),
-                       VD_IMAGE_TYPE_FIXED, cbSize,
-                       VD_VMDK_IMAGE_FLAGS_RAWDISK, (char *)&RawDescriptor,
-		               &PCHS, &LCHS, NULL, VD_OPEN_FLAGS_NORMAL, NULL, NULL);
+    vrc = VDCreateBase(pDisk, "VMDK", Utf8Str(filename).raw(), cbSize,
+                       VD_IMAGE_FLAGS_FIXED | VD_VMDK_IMAGE_FLAGS_RAWDISK,
+                       (char *)&RawDescriptor, &PCHS, &LCHS, NULL,
+                       VD_OPEN_FLAGS_NORMAL, NULL, NULL);
     if (RT_FAILURE(vrc))
     {
         RTPrintf("Error while creating the raw disk VMDK: %Rrc\n", vrc);
@@ -1599,7 +1599,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
 
         /* Create the output image */
         vrc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, Utf8Str(dstformat).raw(),
-                     Utf8Str(dst).raw(), false, 0, VD_IMAGE_FLAGS_NONE, NULL, NULL, NULL, NULL);
+                     Utf8Str(dst).raw(), false, 0, VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED, NULL, NULL, NULL, NULL);
         if (RT_FAILURE(vrc))
         {
             RTPrintf("Error while copying the image: %Rrc\n", vrc);

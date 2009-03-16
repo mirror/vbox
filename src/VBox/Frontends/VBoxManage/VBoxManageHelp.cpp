@@ -320,14 +320,13 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_CREATEHD)
     {
-        /// @todo NEWMEDIA add -format to specify the hard disk backend
-        RTPrintf("VBoxManage createhd         -filename <filename>\n"
-                 "                            -size <megabytes>\n"
-                 "                            [-format VDI|VMDK|VHD]\n"
-                 "                            [-static]\n"
-                 "                            [-comment <comment>]\n"
-                 "                            [-register]\n"
-                 "                            [-type normal|writethrough] (default: normal)\n"
+        RTPrintf("VBoxManage createhd         --filename <filename>\n"
+                 "                            --size <megabytes>\n"
+                 "                            [--format VDI|VMDK|VHD] (default: VDI)\n"
+                 "                            [--variant Standard|Fixed|Diff|Split2G|Stream]\n"
+                 "                            [--type normal|writethrough] (default: normal)\n"
+                 "                            [--comment <comment>]\n"
+                 "                            [--remember]\n"
                  "\n");
     }
 
@@ -343,17 +342,21 @@ void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_CLONEHD)
     {
         RTPrintf("VBoxManage clonehd          <uuid>|<filename> <outputfile>\n"
-                 "                            [-format VDI|VMDK|VHD|RAW|<other>]\n"
-                 "                            [-remember]\n"
+                 "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
+                 "                            [--variant Standard|Fixed|Diff|Split2G|Stream]\n"
+                 "                            [--type normal|writethrough|immutable]\n"
+                 "                            [--remember]\n"
                  "\n");
     }
 
     if (u64Cmd & USAGE_CONVERTFROMRAW)
     {
-        RTPrintf("VBoxManage convertfromraw   [-static] [-format VDI|VMDK|VHD]\n"
-                 "                            <filename> <outputfile>\n"
-                 "VBoxManage convertfromraw   [-static] [-format VDI|VMDK|VHD]\n"
-                 "                            stdin <outputfile> <bytes>\n"
+        RTPrintf("VBoxManage convertfromraw   <filename> <outputfile>\n"
+                 "                            [--format VDI|VMDK|VHD]\n"
+                 "                            [--variant Standard|Fixed|Diff|Split2G|Stream]\n"
+                 "VBoxManage convertfromraw   stdin <outputfile> <bytes>\n"
+                 "                            [--format VDI|VMDK|VHD]\n"
+                 "                            [--variant Standard|Fixed|Diff|Split2G|Stream]\n"
                  "\n");
     }
 
