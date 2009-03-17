@@ -133,8 +133,7 @@ fi
 
 cleanup()
 {
-#  rm -f $ODIR.tmp_src.cc $ODIR.tmp_src.c $ODIR.tmp_out $ODIR.test_execute.log
-echo "cleanup"
+  rm -f $ODIR.tmp_src.cc $ODIR.tmp_src.c $ODIR.tmp_out $ODIR.test_execute.log
 }
 
 fail()
