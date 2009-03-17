@@ -1,4 +1,4 @@
-/* $Id$ */
+/* $Id: DHCPServerRunner.h 44622 2009-03-17 13:48:59Z misha $ */
 /** @file
  * VirtualBox Main - interface for VBox DHCP server
  */
@@ -307,7 +307,7 @@ public:
             return VERR_INVALID_STATE;
 
 #ifdef RT_OS_WINDOWS
-        if(val)
+        if(val && strlen(val))
         {
             mOptions[opt] = "\"";
             mOptions[opt].append(val);
