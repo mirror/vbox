@@ -39,20 +39,20 @@ VBoxGuest_INCS        = \
 	../include	
 VBoxGuest_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxGuest_LDFLAGS.amd64 = -Entry:DriverEntry
-VBoxGuest_SDKS          = WINDDKWLH
 VBoxGuest_SOURCES       = \
 	VBoxGuest.cpp \
 	VBoxGuestPnP.cpp \
 	Helper.cpp \
 	VBoxGuest.rc
 VBoxGuest_LIBS        = \
-	$(PATH_SDK_WINDDKWLH_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_WINDDKWLH_LIB)/hal.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
 	$(VBOX_LIB_VBGL_R0BASE) \
-	$(VBOX_LIB_IPRT_GUEST_R0) \
+	$(VBOX_LIB_IPRT_GUEST_R0)
 
 ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
- VBoxGuest_LIBS += \
+ #VBoxGuest_SDKS = WINDDKWLH
+ VBoxGuest_LIBS = \
 	$(PATH_SDK_WINDDKWLH_LIB)/ksecdd.lib \
 	$(PATH_SDK_WINDDKWLH_LIB)/BufferOverflowK.lib \
 	$(PATH_SDK_WINDDKWLH_LIB)/aux_klib.lib
