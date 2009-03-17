@@ -463,11 +463,13 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    if (aIPV6MaskPrefixLength == 0)
-        aIPV6MaskPrefixLength = 64;
     int rc = S_OK;
     if (m.IPV6Address != aIPV6Address || m.IPV6NetworkMaskPrefixLength != aIPV6MaskPrefixLength)
+    {
+        if (aIPV6MaskPrefixLength == 0)
+            aIPV6MaskPrefixLength = 64;
         rc = NetIfEnableStaticIpConfigV6(mVBox, this, m.IPV6Address, aIPV6Address, aIPV6MaskPrefixLength);
+    }
     if (RT_FAILURE(rc))
     {
         LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
