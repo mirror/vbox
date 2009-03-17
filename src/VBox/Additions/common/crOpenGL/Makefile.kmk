@@ -97,16 +97,20 @@ VBoxOGL_SOURCES        = \
 	$(VBOX_PATH_CROGL_GENFILES)/tsfuncs.c
 VBoxOGL_SOURCES.linux  = \
 	glx.c \
-	xfont.c \
-	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
+	xfont.c
 ifdef VBoxOGL_DRI
  VBoxOGL_SOURCES.linux += \
 	$(VBOX_PATH_CROGL_GENFILES)/DD_gl.c \
+	$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm \
 	dri_drv.c
 else ifdef VBoxOGL_FAKEDRI
  VBoxOGL_SOURCES.linux += \
-        $(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm \
-        fakedri_drv.c
+	$(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm \
+	$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm \
+	fakedri_drv.c
+else
+ VBoxOGL_SOURCES.linux += \
+	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
 endif
 VBoxOGL_SOURCES.win    = \
 	wgl.c \
@@ -185,7 +189,7 @@ $(VBOX_PATH_CROGL_GENFILES)/DD_gl.h: $(PATH_SUB_CURRENT)/DD_glh.py $(VBOX_CROGL_
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 $(VBOX_PATH_CROGL_GENFILES)/DD_gl.c: $(PATH_SUB_CURRENT)/DD_glc.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
-$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm: \
+$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm: \
 		$(PATH_SUB_CURRENT)/Linux_i386_exports_dri.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
@@ -195,7 +199,7 @@ $(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
-$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm: \
+$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm: \
 		$(PATH_SUB_CURRENT)/Linux_i386_exports_dri.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
