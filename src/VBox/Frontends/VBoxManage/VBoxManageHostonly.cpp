@@ -171,10 +171,10 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
 
     bool bDhcp = false;
     bool bNetmasklengthv6 = false;
-    uint32_t uNetmasklengthv6 = -1;
+    uint32_t uNetmasklengthv6 = (uint32_t)-1;
     const char *pIpv6 = NULL;
-    const char * pIp = NULL;
-    const char * pNetmask = NULL;
+    const char *pIp = NULL;
+    const char *pNetmask = NULL;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -265,28 +265,28 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
     ComPtr<IHostNetworkInterface> hif;
     CHECK_ERROR(host, FindHostNetworkInterfaceByName(name, hif.asOutParam()));
 
-    if(FAILED(rc))
+    if (FAILED(rc))
         return errorArgument("could not find interface '%s'", a->argv[iStart]);
 
-    if(bDhcp)
+    if (bDhcp)
     {
         CHECK_ERROR(hif, EnableDynamicIpConfig ());
     }
-    else if(pIp)
+    else if (pIp)
     {
-        if(!pNetmask)
+        if (!pNetmask)
             pNetmask = "255.255.255.0"; /* ?? */
 
-        CHECK_ERROR(hif, EnableStaticIpConfig (Bstr(pIp), Bstr(pNetmask)));
+        CHECK_ERROR(hif, EnableStaticIpConfig(Bstr(pIp), Bstr(pNetmask)));
     }
-    else if(pIpv6)
+    else if (pIpv6)
     {
-        if(uNetmasklengthv6 == -1)
+        if (uNetmasklengthv6 == (uint32_t)-1)
             uNetmasklengthv6 = 64; /* ?? */
 
         BOOL bIpV6Supported;
-        CHECK_ERROR(hif, COMGETTER(IPV6Supported) (&bIpV6Supported));
-        if(!bIpV6Supported)
+        CHECK_ERROR(hif, COMGETTER(IPV6Supported)(&bIpV6Supported));
+        if (!bIpV6Supported)
         {
             RTPrintf("IPv6 setting is not supported for this adapter\n");
             return 1;
@@ -294,7 +294,7 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
 
 
         Bstr ipv6str(pIpv6);
-        CHECK_ERROR(hif, EnableStaticIpConfigV6 (ipv6str, (ULONG)uNetmasklengthv6));
+        CHECK_ERROR(hif, EnableStaticIpConfigV6(ipv6str, (ULONG)uNetmasklengthv6));
     }
     else
     {
