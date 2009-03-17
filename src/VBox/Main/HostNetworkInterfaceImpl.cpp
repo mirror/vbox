@@ -216,7 +216,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (BSTR *aIPAddress)
 
     if (m.IPAddress == 0)
     {
-        Bstr("").detachTo(aIPAddress);
+        Bstr(VBOXNET_IPV4ADDR_DEFAULT).detachTo(aIPAddress);
         return S_OK;
     }
 
@@ -249,9 +249,9 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    if (m.IPAddress == 0 || m.networkMask == 0)
+    if (m.networkMask == 0)
     {
-        Bstr("").detachTo(aNetworkMask);
+        Bstr(VBOXNET_IPV4MASK_DEFAULT).detachTo(aNetworkMask);
         return S_OK;
     }
 
@@ -416,7 +416,17 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
     if (Bstr(aIPAddress).isEmpty())
     {
         if (m.IPAddress)
-            return NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, 0, 0);
+        {
+            int rc = NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, 0, 0);
+            if (RT_SUCCESS(rc))
+            {
+                if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw())), Bstr(""))))
+                    return E_FAIL;
+                if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw())), Bstr(""))))
+                    return E_FAIL;
+                return S_OK;
+            }
+        }
         else
             return S_OK;
     }
@@ -431,11 +441,15 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
             mask = inet_addr(Utf8Str(aNetMask).raw());
         if(mask != INADDR_NONE)
         {
-            int rc = S_OK;
-            if (m.IPAddress != ip || m.networkMask != mask)
-                rc = NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, ip, mask);
+            if (m.IPAddress == ip && m.networkMask == mask)
+                return S_OK;
+            int rc = NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, ip, mask);
             if (RT_SUCCESS(rc))
             {
+                if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw())), Bstr(aIPAddress))))
+                    return E_FAIL;
+                if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw())), Bstr(aNetMask))))
+                    return E_FAIL;
                 return S_OK;
             }
             else
@@ -469,11 +483,20 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
         if (aIPV6MaskPrefixLength == 0)
             aIPV6MaskPrefixLength = 64;
         rc = NetIfEnableStaticIpConfigV6(mVBox, this, m.IPV6Address, aIPV6Address, aIPV6MaskPrefixLength);
-    }
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
-        return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
+            return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+        }
+        else
+        {
+            if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPV6Address", mInterfaceName.raw())), Bstr(aIPV6Address))))
+                return E_FAIL;
+            if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPV6NetMask", mInterfaceName.raw())), 
+                                           Bstr(Utf8StrFmt("%u", aIPV6MaskPrefixLength)))))
+                return E_FAIL;
+        }
+
     }
     return S_OK;
 #endif
