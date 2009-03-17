@@ -89,7 +89,7 @@
  */
 static SUPINSTFILE const    g_aSupInstallFiles[] =
 {
-    /*         type,                    dir,fOptional, pszFile                */
+    /*  type,         dir,                      fOpt,  pszFile                */
     /* ---------------------------------------------------------------------- */
     {   kSupIFT_Dll,  kSupID_AppPrivArch,       false, "VMMR0.r0" },
     {   kSupIFT_Dll,  kSupID_AppPrivArch,       false, "VBoxDDR0.r0" },
@@ -176,12 +176,16 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
 //#endif
 
 //#ifdef VBOX_WITH_WEBSERVICES
-    {   kSupIFT_Exe, kSupID_AppBin,             true, "vboxwebsrv" SUPLIB_EXE_SUFF },
+    {   kSupIFT_Exe,  kSupID_AppBin,            true, "vboxwebsrv" SUPLIB_EXE_SUFF },
 //#endif
 
 #ifdef RT_OS_LINUX
-    {   kSupIFT_Exe, kSupID_AppBin,             true, "VBoxTunctl" SUPLIB_EXE_SUFF },
+    {   kSupIFT_Exe,  kSupID_AppBin,            true, "VBoxTunctl" SUPLIB_EXE_SUFF },
 #endif
+
+//#ifdef VBOX_WITH_NETFLT
+    {   kSupIFT_Exe,  kSupID_AppBin,            true, "VBoxNetDHCP" SUPLIB_EXE_SUFF },
+//#endif
 };
 
 
