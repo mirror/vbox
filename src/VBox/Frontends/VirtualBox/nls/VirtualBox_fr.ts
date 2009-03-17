@@ -1152,7 +1152,7 @@ p, li { white-space: pre-wrap; }(new line)
     </message>
     <message>
         <source>&amp;Export &gt;</source>
-        <translation>&amp;Export &gt;</translation>
+        <translation>&amp;Exporter &gt;</translation>
     </message>
 </context>
 <context>
@@ -2421,41 +2421,41 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will you guide to the process of importing an Appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an Appliance you have to select a file describing the Appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;(new line)
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;(new line)
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;(new line)
 p, li { white-space: pre-wrap; }(new line)
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;(new line)
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Cet assistant vous guidera à travers le processus d&apos;import d&apos;une application virtuelle.&lt;/p&gt;(new line)
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Vous pouvez utiliser le bouton &lt;span style=&quot; font-weight:600;&quot;&gt;Suivant&lt;/span&gt; pour aller à la page suivante de l&apos;assistant et le bouton &lt;span style=&quot; font-weight:600;&quot;&gt;Précédent&lt;/span&gt; pour retourner à la page précédente.&lt;/p&gt;(new line)
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an Appliance you have to select a file describing the Appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Afin d&apos;importer une application virtuelle, il vous faudra séléctionner un fichier décrivant cette application.  VirtualBox supporte actuellement le format Open Virtualization Format (OVF). Veuillez séléctionner le fichier à importer ci-dessous pour pouvoir continuer :&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; &amp;Précédent</translation>
+        <translation>&lt; &amp;Précédent</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">&amp;Suivant &gt;</translation>
+        <translation>&amp;Suivant &gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annuler</translation>
+        <translation>Annuler</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Paramètres d&apos;import d&apos;applications virtuelles</translation>
     </message>
     <message>
         <source>These are the Virtual Machines as described in the Appliance. VirtualBox has done some initial mapping of the various values. You can change most of the shown properties by double clicking on the items. To disable some of them use the check box near the values.</source>
-        <translation type="unfinished"></translation>
+        <translation>Voici les machines virtuelles décrites dans l&apos;application virtuelle. VirtualBox a effectué une translation initiale des valeurs de l&apos;application. Vous pouvez en changer la plupart en double-cliquant dessus. Pour en désactiver certains, vous pouvez utiliser les cases à cocher près des valeurs.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>Valeurs par défaut</translation>
     </message>
     <message>
         <source>&amp;Import &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Importer &gt;</translation>
     </message>
 </context>
 <context>
@@ -3788,72 +3788,72 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un fichier nommé &lt;b&gt;%1&lt;/b&gt; existe déjà. Voulez-vous vraiment le remplacer?&lt;br /&gt;&lt;br /&gt;Le fichier existe dans &quot;%2&quot;. Si vous le remplacez son contenu sera perdu.</translation>
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible d&apos;utiliser les facilités USB de l&apos;hôte, parce que ni le système de fichiers USB (usbfs), ni les services DBus et hal ne sont disponibles actuellement. Si vous souhaitez utiliser des périphériques USB hôte dans des systèmes virtuels, veuillez corriger ceci et redémarrer VirtualBox.</translation>
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vous tentez d&apos;éteindre la machine virtuelle en utilisant le bouton marche/arrêt ACPI. Ceci n&apos;est pas possible actuellement, car l&apos;invité ne supporte pas le sous-système ACPI.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64 bits guest will fail to detect a 64 bits CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please check if you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;L&apos;accéleration processeur VT-x/AMD-V a été activée mais n&apos;est pas fonctionelle. Votre machine virtuelle 64 bits ne détectera pas un processeur 64 bits et ne pourra pas démarrer.&lt;/p&gt;&lt;p&gt;Veuillez vérifier que vous avez activé VT-x/AMD-V correctement dans le BIOS de votre ordinateur hôte.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="unfinished"></translation>
+        <translation>Fermer la machine</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished">Continuer</translation>
+        <translation>Continuer</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Il y a des disques durs connectés aux ports du controleur supplémentaire. Si vous désactivez le controleur supplémentaire, ces disques seront automatiquement détachés.&lt;/p&gt;&lt;p&gt;Êtes-vous sûr de vouloir désactiver le controleur supplémentaire?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Il y a des disques durs connectés aux ports du controleur supplémentaire. Si vous changez le controleur supplémentaire, ces disques seront automatiquement détachés.&lt;/p&gt;&lt;p&gt;Êtes-vous sûr de vouloir changer le controleur supplémentaire?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Changer</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Désirez-vous enlever l&apos;adaptateur réseau sélectionné &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note : cet adaptateur est éventuellement utilisé par cette ou d&apos;autres machines virtuelles. Si vous éliminez cet adaptateur, les adapteurs virtuels ne fonctionneront plus. Vous pouvez corriger le paramétrage des adaptateurs affectés en conséquence.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Désirez-vous éliminer l&apos;interface réseau &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt; sélectionné ?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note :&lt;/b&gt; cet interface pourait être utilisé par un ou plusieurs adaptateurs réseau de cette ou d&apos;autres machines virtuelles. Si vous éliminez cet interface, les adapteurs virtuels ne fonctionneront plus jusqu&apos;à ce que vous les reconfigurez avec un autre nom d&apos;interface ou un autre type d&apos;accès.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec de création de l&apos;interface réseau accès hôte seulement.</translation>
     </message>
     <message>
         <source>Failed to open appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec d&apos;ouverture de l&apos;application virtuelle.</translation>
     </message>
     <message>
         <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec d&apos;ouverture ou d&apos;interprétation de l&apos;application virtuelle &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec d&apos;import de l&apos;application virtuelle &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec de création de l&apos;application virtuelle.</translation>
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec de préparation de l&apos;export de l&apos;application virtuelle &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec d&apos;export de l&apos;application virtuelle &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -4084,19 +4084,19 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Importer application virtuelle...</translation>
     </message>
     <message>
         <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Importer une application virtuelle dans VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Export Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Exporter application virtuelle...</translation>
     </message>
     <message>
         <source>Export an appliance out of VM&apos;s from VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporte des machines virtuelles VirtualBox comme application virtuelle</translation>
     </message>
 </context>
 <context>
