@@ -825,6 +825,11 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                     RTPrintf("    -%c, %s\n", s_aOptionDefs[i].iShort, s_aOptionDefs[i].pszLong);
                 return 1;
 
+            case VERR_GETOPT_UNKNOWN_OPTION:
+            case VINF_GETOPT_NOT_OPTION:
+                RTPrintf("Unknown option '%s'. Use --help for more information.\n", Val.psz);
+                return 1;
+
             default:
                 break;
         }
