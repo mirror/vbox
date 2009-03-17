@@ -31,7 +31,7 @@
 
 #define VBOXNETADPCTL_NAME "VBoxNetAdpCtl"
 
-static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszOption, char *pszMask)
+static int NetIfAdpCtl(HostNetworkInterface * pIf, const char *pszAddr, const char *pszOption, const char *pszMask)
 {
     const char *args[] = { NULL, NULL, pszAddr, pszOption, pszMask, NULL };
 
@@ -74,7 +74,7 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, char *pszAddr, char *pszOptio
 
 int NetIfEnableStaticIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * pIf, ULONG aOldIp, ULONG aNewIp, ULONG aMask)
 {
-    char *pszOption, *pszMask;
+    const char *pszOption, *pszMask;
     char szAddress[16]; /* 4*3 + 3*1 + 1 */
     char szNetMask[16]; /* 4*3 + 3*1 + 1 */
     uint8_t *pu8Addr = (uint8_t *)&aNewIp;
