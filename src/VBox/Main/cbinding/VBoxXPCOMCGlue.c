@@ -31,12 +31,21 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "VBoxXPCOMCGlue.h"
+
+#ifdef VBOX_WITH_XPCOM
+# define VIR_ALLOC_N(a, b) ((a) = (char *)malloc(b))
+# define VIR_FREE(name) (free(name))
+#else /* !VBOX_WITH_XPCOM */
+# include <config.h>
+# include "memory.h"
+#endif /* !VBOX_WITH_XPCOM */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <dlfcn.h>
 
+#include "VBoxXPCOMCGlue.h"
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -79,7 +88,7 @@ static int tryLoadOne(const char *pszHome)
      * Construct the full name.
      */
     cbBuf = cchHome + sizeof("/" DYNLIB_NAME);
-    pszBuf = (char *)malloc(cbBuf);
+    if(VIR_ALLOC_N(pszBuf, cbBuf)) {;}
     if (!pszBuf)
     {
         sprintf(g_szVBoxErrMsg, "malloc(%u) failed", (unsigned)cbBuf);
@@ -127,7 +136,7 @@ static int tryLoadOne(const char *pszHome)
     }
     else
         sprintf(g_szVBoxErrMsg, "dlopen(%.80s): %128s", pszBuf, dlerror());
-    free(pszBuf);
+    VIR_FREE(pszBuf);
     return rc;
 }
 
