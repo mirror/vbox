@@ -124,6 +124,10 @@ typedef struct _BASE_ADDRESS {
 
 } BASE_ADDRESS, *PBASE_ADDRESS;
 
+typedef struct 
+{
+    KBUGCHECK_CALLBACK_RECORD bugcheckRecord;
+} VBOXBUGCHECKCONTEXT, *PVBOXBUGCHECKCONTEXT;
 
 /**
  * Device extension.
@@ -215,9 +219,9 @@ typedef struct VBOXGUESTDEVEXT
     /* Preallocated generic request for shutdown. */
     VMMDevPowerStateRequest *powerStateRequest;
 
-    /* Record for bugcheck callback routine. */
-    KBUGCHECK_CALLBACK_RECORD bugcheckRecord;
-    CHAR* pcBugcheckBuffer;
+    /* Bugcheck context. */
+    BOOLEAN bBugcheckCallbackRegistered;
+    PVBOXBUGCHECKCONTEXT bugcheckContext;
 
 } VBOXGUESTDEVEXT, *PVBOXGUESTDEVEXT;
 

@@ -129,6 +129,10 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
     pDevExt->busNumber = busNumber;
     pDevExt->slotNumber = slotNumber;
 
+#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
+    rc = hlpRegisterBugCheckCallback(pDevExt);
+#endif
+
     //
     // let's have a look at what our PCI adapter offers
     //

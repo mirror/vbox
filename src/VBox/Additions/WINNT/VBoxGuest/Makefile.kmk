@@ -31,21 +31,32 @@ ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxGuest_NOINST     = true
 endif
 VBoxGuest_DEFS        = LOG_TO_BACKDOOR VBGL_VBOXGUEST VBOX_WITH_HGCM VBOX_REBOOT_ON_UNINSTALL
+ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
+ VBoxGuest_DEFS      += VBOX_WITH_GUEST_BUGCHECK_DETECTION
+endif
 #VBoxGuest_DEFS       += LOG_ENABLED
-VBoxGuest_INCS        = ../include
+VBoxGuest_INCS        = \
+	../include	
 VBoxGuest_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxGuest_LDFLAGS.amd64 = -Entry:DriverEntry
-VBoxGuest_SOURCES     = \
+VBoxGuest_SDKS          = WINDDKWLH
+VBoxGuest_SOURCES       = \
 	VBoxGuest.cpp \
 	VBoxGuestPnP.cpp \
 	Helper.cpp \
 	VBoxGuest.rc
 VBoxGuest_LIBS        = \
-	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+	$(PATH_SDK_WINDDKWLH_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_WINDDKWLH_LIB)/hal.lib \
 	$(VBOX_LIB_VBGL_R0BASE) \
-	$(VBOX_LIB_IPRT_GUEST_R0)
+	$(VBOX_LIB_IPRT_GUEST_R0) \
 
+ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
+ VBoxGuest_LIBS += \
+	$(PATH_SDK_WINDDKWLH_LIB)/ksecdd.lib \
+	$(PATH_SDK_WINDDKWLH_LIB)/BufferOverflowK.lib \
+	$(PATH_SDK_WINDDKWLH_LIB)/aux_klib.lib
+endif
 
 #
 # VBoxGuestNT - NT version of the driver (x86 only).
@@ -54,6 +65,7 @@ SYSMODS.x86 += VBoxGuestNT
 VBoxGuestNT_EXTENDS   = VBoxGuest
 VBoxGuestNT_NOINST    = $(NO_SUCH_VARIABLE)
 VBoxGuestNT_DEFS      = $(VBoxGuest_DEFS) TARGET_NT4
+
 VBoxGuestNT_SOURCES   = \
 	VBoxGuest.cpp \
 	Helper.cpp \

@@ -308,30 +308,32 @@ VBOX_WITH_HEADLESS = 1
 VBOX_WITH_DEBUGGER = 1
 # Enable the debugger GUI.
 VBOX_WITH_DEBUGGER_GUI = 1
-# build the Host Guest Communication Manager component
+# Build the Host Guest Communication Manager component.
 VBOX_WITH_HGCM = 1
+# Build the bugcheck detection code.
+VBOX_WITH_GUEST_BUGCHECK_DETECTION =
 # Enable the USB feature.
 VBOX_WITH_USB = 1
-# Enable the USB 2.0 controller
+# Enable the USB 2.0 controller.
 VBOX_WITH_EHCI = 1
 # Enable the ISCSI feature, with INIP support.
 VBOX_WITH_ISCSI = 1
 VBOX_WITH_INIP = 1
-# Enable the E1000 feature
+# Enable the E1000 feature.
 VBOX_WITH_E1000 = 1
-# Enable ALSA support for Linux
+# Enable ALSA support for Linux.
 VBOX_WITH_ALSA = 1
-# Enable Pulse support for Linux
+# Enable Pulse support for Linux.
 VBOX_WITH_PULSE = 1
-# Enable statically linked dbus support for Linux
+# Enable statically linked dbus support for Linux.
 ifeq ($(KBUILD_TARGET),linux)
  VBOX_WITH_DBUS = 1
 endif
-# Disable WINMM support for Windows (not implemented)
+# Disable WINMM support for Windows (not implemented).
 VBOX_WITH_WINMM =
-# Disable VMI BIOS (not yet ready)
+# Disable VMI BIOS (not yet ready).
 VBOX_WITH_VMI =
-# Enable the kchmviewer
+# Enable the kchmviewer.
 VBOX_WITH_KCHMVIEWER = 1
 # Build the testsuite.
 VBOX_WITH_TESTSUITE = 1
