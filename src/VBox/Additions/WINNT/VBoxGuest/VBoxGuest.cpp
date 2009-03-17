@@ -293,12 +293,16 @@ void VBoxGuestUnload(PDRIVER_OBJECT pDrvObj)
 
 #ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
     /* Unregister bugcheck callback. */
-    if (pDevExt->bBugcheckCallbackRegistered && pDevExt->bugcheckContext)
+    if (pDevExt->bugcheckContext)
     {
-        if (FALSE == KeDeregisterBugCheckCallback(&pDevExt->bugcheckContext->bugcheckRecord))
-            dprintf(("VBoxGuest::VBoxGuestUnload: Unregistering bugcheck callback routine failed!\n"));
+        if (pDevExt->bBugcheckCallbackRegistered)
+        {
+            if (FALSE == KeDeregisterBugCheckCallback(&pDevExt->bugcheckContext->bugcheckRecord))
+                dprintf(("VBoxGuest::VBoxGuestUnload: Unregistering bugcheck callback routine failed!\n"));
+        }
 
         ExFreePool(&pDevExt->bugcheckContext);
+        pDevExt->bugcheckContext = NULL;
         pDevExt->bBugcheckCallbackRegistered = FALSE;
     }
 #endif

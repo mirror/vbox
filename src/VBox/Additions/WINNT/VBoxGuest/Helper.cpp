@@ -261,7 +261,7 @@ NTSTATUS hlpRegisterBugCheckCallback (PVBOXGUESTDEVEXT pDevExt)
     rc = AuxKlibInitialize();
     if (NT_ERROR(rc))
     {
-        dprintf(("VBoxGuest::VBoxGuestAddDevice: Unabled to initialize AuxKlib!\n"));
+        dprintf(("VBoxGuest::hlpRegisterBugCheckCallback: Unabled to initialize AuxKlib!\n"));
         return STATUS_DRIVER_UNABLE_TO_LOAD;
     }
  #endif
@@ -273,7 +273,7 @@ NTSTATUS hlpRegisterBugCheckCallback (PVBOXGUESTDEVEXT pDevExt)
     pDevExt->bugcheckContext = (VBOXBUGCHECKCONTEXT*)ExAllocatePool(NonPagedPool, sizeof(VBOXBUGCHECKCONTEXT));
     if(!pDevExt->bugcheckContext)
     {
-        dprintf(("VBoxGuest::VBoxGuestAddDevice: Not enough memory for bugcheck context!\n"));
+        dprintf(("VBoxGuest::hlpRegisterBugCheckCallback: Not enough memory for bugcheck context!\n"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
@@ -289,7 +289,7 @@ NTSTATUS hlpRegisterBugCheckCallback (PVBOXGUESTDEVEXT pDevExt)
     else
     {
         pDevExt->bBugcheckCallbackRegistered = TRUE;
-        dprintf(("VBoxGuest::VBoxGuestAddDevice: Bugcheck callback registered.\n"));
+        dprintf(("VBoxGuest::hlpRegisterBugCheckCallback: Bugcheck callback registered.\n"));
     }
 
     return rc;
