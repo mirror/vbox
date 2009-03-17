@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <comment>
- VBox frontends: Qt4 GUI ("VirtualBox"):
+ VBox frontends: Qt4 GUI (&quot;VirtualBox&quot;):
 
  Copyright (C) 2009 Sun Microsystems, Inc.
 
@@ -9,7 +9,7 @@
  available from http://www.virtualbox.org. This file is free software;
  you can redistribute it and/or modify it under the terms of the GNU
  General Public License (GPL) as published by the Free Software
- Foundation, in version 2 as it comes in the "COPYING" file of the
+ Foundation, in version 2 as it comes in the &quot;COPYING&quot; file of the
  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 
@@ -26,9 +26,6 @@
     <width>459</width>
     <height>305</height>
    </rect>
-  </property>
-  <property name="windowTitle">
-   <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <property name="margin">
