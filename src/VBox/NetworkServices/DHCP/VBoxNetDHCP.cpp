@@ -2045,5 +2045,75 @@ int main(int argc, char **argv, char **envp)
     return TrustedMain(argc, argv, envp);
 }
 
+# ifdef RT_OS_WINDOWS
+
+#include <windows.h>
+#include <iprt/mem.h>
+
+int WINAPI WinMain(          HINSTANCE hInstance,
+    HINSTANCE hPrevInstance,
+    LPSTR lpCmdLine,
+    int nCmdShow
+)
+{
+    int rc = RTR3InitAndSUPLib();
+    if (RT_FAILURE(rc))
+    {
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: RTR3InitAndSupLib failed, rc=%Rrc\n", rc);
+        return 1;
+    }
+
+    LPWSTR lpwCmd = GetCommandLineW();
+    size_t size = wcslen(lpwCmd);
+    size++; /* for null terminator */
+
+    int argc;
+    int ret = 1;
+
+    LPWSTR * pwArgs = CommandLineToArgvW(lpwCmd,&argc);
+    if(pwArgs)
+    {
+        size+=argc-1; /* null terminators */
+        char **argv = (char**)RTMemTmpAlloc(size + argc*sizeof(char*));
+        if(argv)
+        {
+            char *pBuf = (char*)(argv+argc);
+            int i;
+            for(i = 0; i < argc; i++)
+            {
+                argv[i] = pBuf;
+
+                int num = WideCharToMultiByte(
+                        CP_ACP, /*UINT CodePage*/
+                        0, /*DWORD dwFlags*/
+                        pwArgs[i],
+                        -1, /*int cchWideChar */
+                        argv[i], /*LPSTR lpMultiByteStr*/
+                        size, /*int cbMultiByte*/
+                        NULL, /*LPCSTR lpDefaultChar*/
+                        FALSE/*LPBOOL lpUsedDefaultChar*/
+                    );
+                if(num <= 0)
+                    break;
+
+                size-=num;
+                pBuf+=num;
+            }
+
+            if(i == argc)
+            {
+                ret = TrustedMain(argc, argv, NULL);
+            }
+            RTMemFree(argv);
+        }
+
+        LocalFree(pwArgs);
+    }
+
+    return ret;
+}
+
+# endif
+
 #endif /* !VBOX_WITH_HARDENING */
 
