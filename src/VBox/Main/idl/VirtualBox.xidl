@@ -3350,6 +3350,36 @@
 
     </method>
 
+    <method name="getDescriptionByType">
+      <desc>This is the same as <link to="getDescription" /> except that you can specify which types 
+      should be returned.</desc>
+
+      <param name="aType" type="VirtualSystemDescriptionType" dir="in">
+        <desc></desc>
+      </param>
+
+      <param name="aTypes" type="VirtualSystemDescriptionType" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
+      <param name="aRefs" type="wstring" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
+      <param name="aOvfValues" type="wstring" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
+      <param name="aVboxValues" type="wstring" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
+      <param name="aExtraConfigValues" type="wstring" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
+    </method>
+
     <method name="setFinalValues">
       <desc>
         This method allows the appliance's user to change the configuration for the virtual
