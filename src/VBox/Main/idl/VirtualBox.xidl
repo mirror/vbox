@@ -1218,15 +1218,15 @@
   </interface>
 
   <interface
-    name="IDhcpServer" extends="$unknown"
-    uuid="ed5c8393-e245-476d-a272-b65063a5d542"
+    name="IDHCPServer" extends="$unknown"
+    uuid="fab58256-c76e-4ddd-8029-18343e5b0069"
     wsmap="managed"
   >
     <desc>
-      The IDhcpServer interface represents the vbox dhcp server configuration.
+      The IDHCPServer interface represents the vbox dhcp server configuration.
 
       To enumerate all the dhcp servers on the host, use the
-      <link to="IVirtualBox::dhcpServers"/> attribute.
+      <link to="IVirtualBox::DHCPServers"/> attribute.
     </desc>
 
     <attribute name="enabled" type="boolean">
@@ -1481,7 +1481,7 @@
       </desc>
     </attribute>
 
-    <attribute name="dhcpServers" type="IDhcpServer" safearray="yes" readonly="yes">
+    <attribute name="DHCPServers" type="IDHCPServer" safearray="yes" readonly="yes">
       <desc>
         dhcp server settings.
       </desc>
@@ -2752,7 +2752,7 @@
       </param>
     </method>
 
-    <!--method name="createDhcpServerForInterface">
+    <!--method name="createDHCPServerForInterface">
       <desc>
         Creates a dhcp server settings to be used for the given interface
         <result name="E_INVALIDARG">
@@ -2762,12 +2762,12 @@
       <param name="interface" type="IHostNetworkInterface" dir="in">
         <desc>Network Interface</desc>
       </param>
-      <param name="server" type="IDhcpServer" dir="out">
+      <param name="server" type="IDHCPServer" dir="out">
         <desc>Dhcp server settings</desc>
       </param>
     </method-->
 
-    <method name="createDhcpServer">
+    <method name="createDHCPServer">
       <desc>
         Creates a dhcp server settings to be used for the given internal network name
         <result name="E_INVALIDARG">
@@ -2777,12 +2777,12 @@
       <param name="name" type="wstring" dir="in">
         <desc>server name</desc>
       </param>
-      <param name="server" type="IDhcpServer" dir="return">
+      <param name="server" type="IDHCPServer" dir="return">
         <desc>Dhcp server settings</desc>
       </param>
     </method>
 
-    <method name="findDhcpServerByName">
+    <method name="findDHCPServerByNetworkName">
       <desc>
         Searches a dhcp server settings to be used for the given internal network name
         <result name="E_INVALIDARG">
@@ -2793,12 +2793,12 @@
       <param name="name" type="wstring" dir="in">
         <desc>server name</desc>
       </param>
-      <param name="server" type="IDhcpServer" dir="return">
+      <param name="server" type="IDHCPServer" dir="return">
         <desc>Dhcp server settings</desc>
       </param>
     </method>
 
-    <!--method name="findDhcpServerForInterface">
+    <!--method name="findDHCPServerForInterface">
       <desc>
         Searches a dhcp server settings to be used for the given interface
         <result name="E_INVALIDARG">
@@ -2808,19 +2808,19 @@
       <param name="interface" type="IHostNetworkInterface" dir="in">
         <desc>Network Interface</desc>
       </param>
-      <param name="server" type="IDhcpServer" dir="out">
+      <param name="server" type="IDHCPServer" dir="out">
         <desc>Dhcp server settings</desc>
       </param>
     </method-->
 
-    <method name="removeDhcpServer">
+    <method name="removeDHCPServer">
       <desc>
         Removes the dhcp server settings
         <result name="E_INVALIDARG">
           Host network interface @a name already exists.
         </result>
       </desc>
-      <param name="server" type="IDhcpServer" dir="in">
+      <param name="server" type="IDHCPServer" dir="in">
         <desc>Dhcp server settings to be removed</desc>
       </param>
     </method>

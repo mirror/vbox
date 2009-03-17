@@ -193,7 +193,7 @@ int handleUSBFilter(HandlerArg *a);
 int handleHostonlyIf(HandlerArg *a);
 
 /* VBoxManageHostonly.cpp */
-int handleDhcpServer(HandlerArg *a);
+int handleDHCPServer(HandlerArg *a);
 
 #endif /* !VBOX_ONLY_DOCS */
 unsigned long VBoxSVNRev();

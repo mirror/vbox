@@ -254,7 +254,7 @@
 // Complex types
 /////////////////////////////////////////////////////////////////////////
 -->
-<xsd:complexType name="TDhcpServer">
+<xsd:complexType name="TDHCPServer">
   <xsd:attribute name="networkName" type="xsd:string"  use="required"/>
   <xsd:attribute name="lowerIP"     type="xsd:string"  use="required"/>
   <xsd:attribute name="upperIP"     type="xsd:string"  use="required"/>
@@ -406,10 +406,10 @@
     <xsd:element name="NetserviceRegistry" minOccurs="0" maxOccurs="1">
       <xsd:complexType>
         <xsd:all>
-          <xsd:element name="DhcpServers" minOccurs="0">
+          <xsd:element name="DHCPServers" minOccurs="0">
             <xsd:complexType>
               <xsd:sequence>
-                <xsd:element name="DhcpServer" type="TDhcpServer" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="DHCPServer" type="TDHCPServer" minOccurs="0" maxOccurs="unbounded"/>
               </xsd:sequence>
             </xsd:complexType>
           </xsd:element>

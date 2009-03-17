@@ -234,14 +234,14 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
         NetName = Bstr(pNetName);
     }
 
-    ComPtr<IDhcpServer> svr;
-    rc = a->virtualBox->FindDhcpServerByName(NetName.mutableRaw(), svr.asOutParam());
+    ComPtr<IDHCPServer> svr;
+    rc = a->virtualBox->FindDHCPServerByNetworkName(NetName.mutableRaw(), svr.asOutParam());
     if(enmCode == OP_ADD)
     {
         if(SUCCEEDED(rc))
             return errorArgument("dhcp server already exists");
 
-        CHECK_ERROR(a->virtualBox, CreateDhcpServer(NetName.mutableRaw(), svr.asOutParam()));
+        CHECK_ERROR(a->virtualBox, CreateDHCPServer(NetName.mutableRaw(), svr.asOutParam()));
         if(FAILED(rc))
             return errorArgument("failed to create server");
     }
@@ -266,7 +266,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
     }
     else
     {
-        CHECK_ERROR(a->virtualBox, RemoveDhcpServer(svr));
+        CHECK_ERROR(a->virtualBox, RemoveDHCPServer(svr));
         if(FAILED(rc))
             return errorArgument("failed to remove server");
     }
@@ -275,7 +275,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 }
 
 
-int handleDhcpServer(HandlerArg *a)
+int handleDHCPServer(HandlerArg *a)
 {
     int result = 0;
     if (a->argc < 1)

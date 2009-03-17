@@ -1854,8 +1854,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         if(!networkName.isNull())
         {
-            ComPtr<IDhcpServer> dhcpServer;
-            hrc = virtualBox->FindDhcpServerByName(networkName.mutableRaw(), dhcpServer.asOutParam());
+            ComPtr<IDHCPServer> dhcpServer;
+            hrc = virtualBox->FindDHCPServerByNetworkName(networkName.mutableRaw(), dhcpServer.asOutParam());
             if(SUCCEEDED(hrc))
             {
                 /* there is a DHCP server available for this network */

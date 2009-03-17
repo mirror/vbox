@@ -53,7 +53,7 @@ class Progress;
 class ProgressCollection;
 class Host;
 class SystemProperties;
-class DhcpServer;
+class DHCPServer;
 
 #ifdef RT_OS_WINDOWS
 class SVCHlpClient;
@@ -133,7 +133,7 @@ public:
     STDMETHOD(COMGETTER(GuestOSTypes)) (ComSafeArrayOut (IGuestOSType *, aGuestOSTypes));
     STDMETHOD(COMGETTER(SharedFolders)) (ComSafeArrayOut (ISharedFolder *, aSharedFolders));
     STDMETHOD(COMGETTER(PerformanceCollector)) (IPerformanceCollector **aPerformanceCollector);
-    STDMETHOD(COMGETTER(DhcpServers)) (ComSafeArrayOut (IDhcpServer *, aDhcpServers));
+    STDMETHOD(COMGETTER(DHCPServers)) (ComSafeArrayOut (IDHCPServer *, aDHCPServers));
 
     /* IVirtualBox methods */
 
@@ -185,11 +185,11 @@ public:
     STDMETHOD(SaveSettings)();
     STDMETHOD(SaveSettingsWithBackup) (BSTR *aBakFileName);
 
-//    STDMETHOD(CreateDhcpServerForInterface) (/*IHostNetworkInterface * aIinterface, */IDhcpServer ** aServer);
-    STDMETHOD(CreateDhcpServer) (IN_BSTR aName, IDhcpServer ** aServer);
-//    STDMETHOD(FindDhcpServerForInterface) (IHostNetworkInterface * aIinterface, IDhcpServer ** aServer);
-    STDMETHOD(FindDhcpServerByName) (IN_BSTR aName, IDhcpServer ** aServer);
-    STDMETHOD(RemoveDhcpServer) (IDhcpServer * aServer);
+//    STDMETHOD(CreateDHCPServerForInterface) (/*IHostNetworkInterface * aIinterface, */IDHCPServer ** aServer);
+    STDMETHOD(CreateDHCPServer) (IN_BSTR aName, IDHCPServer ** aServer);
+//    STDMETHOD(FindDHCPServerForInterface) (IHostNetworkInterface * aIinterface, IDHCPServer ** aServer);
+    STDMETHOD(FindDHCPServerByNetworkName) (IN_BSTR aName, IDHCPServer ** aServer);
+    STDMETHOD(RemoveDHCPServer) (IDHCPServer * aServer);
 
     /* public methods only for internal purposes */
 
@@ -372,7 +372,7 @@ private:
     typedef std::list <ComObjPtr <DVDImage> > DVDImageList;
     typedef std::list <ComObjPtr <FloppyImage> > FloppyImageList;
     typedef std::list <ComObjPtr <SharedFolder> > SharedFolderList;
-    typedef std::list <ComObjPtr <DhcpServer> > DhcpServerList;
+    typedef std::list <ComObjPtr <DHCPServer> > DHCPServerList;
 
     typedef std::map <Guid, ComObjPtr<HardDisk> > HardDiskMap;
 
@@ -395,9 +395,9 @@ private:
 
     HRESULT registerMachine (Machine *aMachine);
 
-    HRESULT registerDhcpServer(DhcpServer *aDhcpServer,
+    HRESULT registerDHCPServer(DHCPServer *aDHCPServer,
                                          bool aSaveRegistry = true);
-    HRESULT unregisterDhcpServer(DhcpServer *aDhcpServer,
+    HRESULT unregisterDHCPServer(DHCPServer *aDHCPServer,
                                          bool aSaveRegistry = true);
 
     HRESULT lockConfig();
@@ -446,7 +446,7 @@ private:
         DVDImageList mDVDImages;
         FloppyImageList mFloppyImages;
         SharedFolderList mSharedFolders;
-        DhcpServerList mDhcpServers;
+        DHCPServerList mDHCPServers;
 
         /// @todo NEWMEDIA do we really need this map? Used only in
         /// find() it seems
