@@ -3223,7 +3223,7 @@
 
   <interface
      name="IVirtualSystemDescription" extends="$unknown"
-     uuid="8606c2ae-c06f-487f-9573-1465b44f9524"
+     uuid="c2e9f5b5-522c-47e5-be55-0d20b46a95d9"
      wsmap="managed"
      >
 
