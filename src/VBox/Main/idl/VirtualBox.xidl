@@ -2958,21 +2958,21 @@
     <const name="ComputerSystem" value="2" />
     <const name="Processor" value="3" />
     <const name="Memory" value="4" />
-    <const name="IdeController" value="5" />
-    <const name="ParallelScsiHba" value="6" />
-    <const name="FcHba" value="7" />
-    <const name="iScsiHba" value="8" />
-    <const name="IbHca" value="9" />
+    <const name="IDEController" value="5" />
+    <const name="ParallelSCSIHBA" value="6" />
+    <const name="FCHBA" value="7" />
+    <const name="iSCSIHBA" value="8" />
+    <const name="IBHCA" value="9" />
     <const name="EthernetAdapter" value="10" />
     <const name="OtherNetworkAdapter" value="11" />
-    <const name="IoSlot" value="12" />
-    <const name="IoDevice" value="13" />
+    <const name="IOSlot" value="12" />
+    <const name="IODevice" value="13" />
     <const name="FloppyDrive" value="14" />
-    <const name="CdDrive" value="15" />
-    <const name="DvdDrive" value="16" />
+    <const name="CDDrive" value="15" />
+    <const name="DVDDrive" value="16" />
     <const name="HardDisk" value="17" />
     <const name="OtherStorageDevice" value="20" />
-    <const name="UsbController" value="23" />
+    <const name="USBController" value="23" />
     <const name="SoundCard" value="35" />
   </enum>
 

@@ -853,7 +853,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                             i.ulLineNumber);
                     break;
 
-                    case OVFResourceType_IdeController:          // 5       IdeController
+                    case OVFResourceType_IDEController:          // 5
                     {
                         /*  <Item>
                                 <rasd:Caption>ideController0</rasd:Caption>
@@ -873,7 +873,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                     }
                     break;
 
-                    case OVFResourceType_ParallelScsiHba:        // 6       SCSI controller
+                    case OVFResourceType_ParallelSCSIHBA:        // 6       SCSI controller
                     {
                         /*  <Item>
                                 <rasd:Caption>SCSI Controller 0 - LSI Logic</rasd:Caption>
@@ -922,7 +922,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                         vsys.fHasFloppyDrive = true;           // we have no additional information
                     break;
 
-                    case OVFResourceType_CdDrive:       // 15
+                    case OVFResourceType_CDDrive:       // 15
                         /*  <Item ovf:required="false">
                                 <rasd:Caption>cdrom1</rasd:Caption>
                                 <rasd:InstanceId>7</rasd:InstanceId>
@@ -1015,7 +1015,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                     }
                     break;
 
-                    case OVFResourceType_UsbController: // 23
+                    case OVFResourceType_USBController: // 23
                         /*  <Item ovf:required="false">
                                 <rasd:Caption>usb</rasd:Caption>
                                 <rasd:Description>USB Controller</rasd:Description>
@@ -2746,7 +2746,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                             if (uLoop == 1)
                             {
                                 strDescription = "IDE Controller";
-                                type = OVFResourceType_IdeController; // 5
+                                type = OVFResourceType_IDEController; // 5
                                 // it seems that OVFTool always writes these two, and since we can only
                                 // have one IDE controller, we'll use this as well
                                 lAddress = 1;
@@ -2808,7 +2808,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                             {
                                 strDescription = "SCSI Controller";
                                 strCaption = "scsiController0";
-                                type = OVFResourceType_ParallelScsiHba; // 6
+                                type = OVFResourceType_ParallelSCSIHBA; // 6
                                 // it seems that OVFTool always writes these two, and since we can only
                                 // have one SATA controller, we'll use this as well
                                 lAddress = 0;
@@ -2898,7 +2898,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
 
                                 strDescription = "CD-ROM Drive";
                                 strCaption = "cdrom1";          // this is what OVFTool writes
-                                type = OVFResourceType_CdDrive; // 15
+                                type = OVFResourceType_CDDrive; // 15
                                 lAutomaticAllocation = 1;
                                 ulParent = idIDEController;
                                 lAddressOnParent = 0;           // this is what OVFTool writes
@@ -2951,7 +2951,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                             {
                                 strDescription = "USB Controller";
                                 strCaption = "usb";
-                                type = OVFResourceType_UsbController; // 23
+                                type = OVFResourceType_USBController; // 23
                                 lAddress = 0;                   // this is what OVFTool writes
                                 lBusNumber = 0;                 // this is what OVFTool writes
                             }
