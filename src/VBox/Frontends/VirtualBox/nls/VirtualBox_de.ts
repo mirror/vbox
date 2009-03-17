@@ -6010,7 +6010,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="59"/>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Namen des Host-Adapters, der für Bridged Networking verwendet wird.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="66"/>
@@ -6025,7 +6025,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="89"/>
         <source>Host-only &amp;Network Interface:</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only &amp;Netzwerkinterface:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="104"/>
@@ -6065,47 +6065,47 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="174"/>
         <source>M&amp;anual Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>M&amp;anuelle Konfiguration</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="181"/>
         <source>&amp;Host IPv4 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Host IPv4-Adresse:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="200"/>
         <source>Displays the host IPv4 address for this interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Host-IPv4-Adresse für dieses Interface.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="207"/>
         <source>H&amp;ost IPv4 Network Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>H&amp;ost IPv4-Netzmaske:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="226"/>
         <source>Displays the host IPv4 network mask for this interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Host-IPv4-Netzmaske für dieses Interface.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="233"/>
         <source>Ho&amp;st IPv6 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ho&amp;st IPv6-Adresse:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="252"/>
         <source>Displays the host IPv6 address for this interface if IPv6 protocol is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Host-IPv6-Adresse für dieses Interface falls das IPv6-Protokoll unterstützt wird.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="259"/>
         <source>Hos&amp;t IPv6 Network Mask Length:</source>
-        <translation type="unfinished"></translation>
+        <translation>Hos&amp;t IPv6-Netzmaskenlänge:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="278"/>
         <source>Displays the host IPv6 network mask prefix length for this interface if IPv6 protocol is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Prefixlänge der Host-IPv6-Netzmaske für dieses Interface falls das IPv6-Protokoll unterstützt wird.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="291"/>
