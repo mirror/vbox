@@ -853,19 +853,19 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
 <xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.6']/
                      vb:Global"
               mode="v1.7" >
-	<xsl:copy>
-	    <xsl:apply-templates mode="v1.7" />
-	    <NetserviceRegistry>
+    <xsl:copy>
+        <xsl:apply-templates mode="v1.7" />
+        <NetserviceRegistry>
            <DhcpServers>
               <xsl:choose>
-    	        <xsl:when test="substring-after(../@version,'-')='windows'">
-	               <DhcpServer networkName="HostInterfaceNetworking-VirtualBox Host-Only Network Adapter" 
+                <xsl:when test="substring-after(../@version,'-')='windows'">
+                   <DhcpServer networkName="HostInterfaceNetworking-VirtualBox Host-Only Network Adapter" 
                         IPAddress="192.168.56.2" networkMask="255.255.255.0"
                         lowerIP="192.168.56.3" upperIP="192.168.56.255"
                         enabled="1"/>
-       	        </xsl:when>
+                </xsl:when>
                 <xsl:otherwise>
-	               <DhcpServer networkName="HostInterfaceNetworking-vboxnet0" 
+                   <DhcpServer networkName="HostInterfaceNetworking-vboxnet0" 
                         IPAddress="192.168.56.2" networkMask="255.255.255.0"
                         lowerIP="192.168.56.3" upperIP="192.168.56.255"
                         enabled="1"/>
@@ -873,7 +873,7 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
               </xsl:choose>
            </DhcpServers>
         </NetserviceRegistry>              
-	</xsl:copy>
+    </xsl:copy>
 </xsl:template>
 
 <!--
@@ -896,7 +896,14 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
               mode="v1.7">
   <StorageControllers>
     <StorageController name="IDE">
-      <xsl:attribute name="type"><xsl:value-of select="../vb:Hardware/vb:BIOS/vb:IDEController/@type"/></xsl:attribute>
+      <xsl:choose>
+        <xsl:when test="not(../vb:Hardware/vb:BIOS/vb:IDEController)">
+          <xsl:attribute name="type">PIIX3</xsl:attribute>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:attribute name="type"><xsl:value-of select="../vb:Hardware/vb:BIOS/vb:IDEController/@type"/></xsl:attribute>
+        </xsl:otherwise>
+      </xsl:choose>
       <xsl:attribute name="PortCount">2</xsl:attribute>
       <xsl:for-each select="./vb:HardDiskAttachment[@bus = 'IDE']">
          <xsl:apply-templates select="." mode="v1.7-attached-device"/>
