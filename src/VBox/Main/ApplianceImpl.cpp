@@ -1399,11 +1399,28 @@ STDMETHODIMP Appliance::Interpret()
                        )
                         strNetwork = "NAT";
 
+                    /* Figure out the hardware type */
                     NetworkAdapterType_T nwAdapterVBox = defaultAdapterVBox;
                     if (!ea.strAdapterType.compare("PCNet32", Utf8Str::CaseInsensitive))
-                        nwAdapterVBox = NetworkAdapterType_Am79C973;
+                    {
+                        /* If the default adapter is already one of the two
+                         * PCNet adapters use the default one. If not use the
+                         * Am79C970A as fallback. */
+                        if (!(defaultAdapterVBox == NetworkAdapterType_Am79C970A ||
+                              defaultAdapterVBox == NetworkAdapterType_Am79C973))
+                            nwAdapterVBox = NetworkAdapterType_Am79C970A;
+                    }
+#ifdef VBOX_WITH_E1000
                     else if (!ea.strAdapterType.compare("E1000", Utf8Str::CaseInsensitive))
-                        nwAdapterVBox = NetworkAdapterType_I82540EM;
+                    {
+                        /* If the default adapter is already one of the two
+                         * E1000 adapters use the default one. If not use the
+                         * I82540EM as fallback. */
+                        if (!(defaultAdapterVBox == NetworkAdapterType_I82540EM ||
+                              defaultAdapterVBox == NetworkAdapterType_I82543GC))
+                            nwAdapterVBox = NetworkAdapterType_I82540EM;
+                    }
+#endif /* VBOX_WITH_E1000 */
 
                     pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
                                        "",      // ref
@@ -2872,15 +2889,16 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                                 type = OVFResourceType_EthernetAdapter; // 10
                                 /* Set the hardware type to something useful.
                                  * To be compatible with vmware & others we set
-                                 * PCNet32 for our PCNet types. For the E1000
-                                 * cards we invented E1000 as a generic type.
-                                 * */
+                                 * PCNet32 for our PCNet types & E1000 for the
+                                 * E1000 cards. */
                                 switch (desc.strVbox.toInt32())
                                 {
                                     case NetworkAdapterType_Am79C970A:
                                     case NetworkAdapterType_Am79C973: strResourceSubType = "PCNet32"; break;
+#ifdef VBOX_WITH_E1000
                                     case NetworkAdapterType_I82540EM:
                                     case NetworkAdapterType_I82543GC: strResourceSubType = "E1000"; break;
+#endif /* VBOX_WITH_E1000 */
                                 }
                                 strConnection = desc.strOvf;
 
