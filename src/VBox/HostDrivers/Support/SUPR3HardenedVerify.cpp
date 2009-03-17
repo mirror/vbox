@@ -185,6 +185,7 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
 
 //#ifdef VBOX_WITH_NETFLT
     {   kSupIFT_Exe,  kSupID_AppBin,            true, "VBoxNetDHCP" SUPLIB_EXE_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       true, "VBoxNetDHCP" SUPLIB_DLL_SUFF },
 //#endif
 };
 
