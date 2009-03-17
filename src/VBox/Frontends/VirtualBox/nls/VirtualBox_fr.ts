@@ -5167,7 +5167,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cette machine virtuelle est configurée pour un système invité 64 bits. Afin que l&apos;invité détecte un procésseur 64 bits et puisse démarrer, la fonctionnalité de virtualisation procésseur (VT-x/AMD-V) doit être activé. Cette fonctionnalité sera activée automatiquement si vous choisissez OK pour accepter les préférences pour la machine.</translation>
     </message>
 </context>
 <context>
@@ -5234,11 +5234,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si cette case est cochée, un controleur virtuel supplémentaire (SATA ou SCSI) sera activé pour cette machine.</translation>
     </message>
     <message>
         <source>&amp;Enable Additional Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Activer un controleur supplémentaire</translation>
     </message>
 </context>
 <context>
@@ -5345,133 +5345,133 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptateur</translation>
     </message>
     <message>
         <source>Not Selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Non sélectionné</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nom</translation>
     </message>
     <message>
         <source>Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Interface</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Configuration</translation>
     </message>
     <message>
         <source>Automatic</source>
         <comment>configuration</comment>
-        <translation type="unfinished"></translation>
+        <translation>Automatique</translation>
     </message>
     <message>
         <source>Manual</source>
         <comment>configuration</comment>
-        <translation type="unfinished"></translation>
+        <translation>Manuelle</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresse IPv4</translation>
     </message>
     <message>
         <source>IPv4 Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Masque IPv4</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresse IPv6</translation>
     </message>
     <message>
         <source>IPv6 Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Masque IPv6</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Type d&apos;adaptateur :</translation>
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvrir la boîte de dialogue préférences étendues pour le type d&apos;accès actuel.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>aucun adaptateur réseau pour accès par pont n&apos;a été sélectionné</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation type="unfinished"></translation>
+        <translation>aucun nom de réseau interne n&apos;a été spécifié</translation>
     </message>
     <message>
         <source>no host-only interface is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>aucune interface n&apos;a été sélectionnée pour l&apos;accès hôte seulement</translation>
     </message>
     <message>
         <source>host IPv4 address is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>l&apos;adresse IPv4 hôte n&apos;est pas correcte</translation>
     </message>
     <message>
         <source>host IPv4 network mask is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>le masque réseau IPv4 hôte n&apos;est pas correcte</translation>
     </message>
     <message>
         <source>host IPv6 address is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>l&apos;adresse IPv6 hôte n&apos;est pas correcte</translation>
     </message>
     <message>
         <source>Basic Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Détails de base</translation>
     </message>
     <message>
         <source>Bridged Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Détails accès par pont</translation>
     </message>
     <message>
         <source>Internal Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Détails réseau interne</translation>
     </message>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Détails accès hôte seulement</translation>
     </message>
     <message>
         <source>Not Selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Non sélectionné</translation>
     </message>
     <message>
         <source>Performing</source>
         <comment>creating/removing host-only interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>En execution</translation>
     </message>
     <message>
         <source>Host Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Paramètrage hôte</translation>
     </message>
     <message>
         <source>&amp;Bridged Network Adapter:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptateur réseau pour l&apos;accès par &amp;pont :</translation>
     </message>
     <message>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le nom de l&apos;adaptateur réseau hôte séléctionné pour l&apos;accès réseau par pont.</translation>
     </message>
     <message>
         <source>Internal &amp;Network:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Réseau interne :</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished">Affiche le nom du réseau interne affecté à cet adaptateur.</translation>
+        <translation>Affiche le nom du réseau interne affecté à cet adaptateur.</translation>
     </message>
     <message>
         <source>Host-only &amp;Network Interface:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Interface &amp;réseau pour l&apos;accès hôte seulement :</translation>
     </message>
     <message>
         <source>Displays the name of the VirtualBox network interface selected for host-only networking.</source>
