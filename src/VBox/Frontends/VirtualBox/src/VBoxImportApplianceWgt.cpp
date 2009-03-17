@@ -297,7 +297,7 @@ public:
                     switch (mType)
                     {
                         case KVirtualSystemDescriptionType_Name: v = QIcon (":/name_16px.png"); break;
-                        case KVirtualSystemDescriptionType_Description: v = QIcon (":/name_16px.png"); break;
+                        case KVirtualSystemDescriptionType_Description: v = QIcon (":/description_16px.png"); break;
                         case KVirtualSystemDescriptionType_OS: v = QIcon (":/os_type_16px.png"); break;
                         case KVirtualSystemDescriptionType_CPU: v = QIcon (":/cpu_16px.png"); break;
                         case KVirtualSystemDescriptionType_Memory: v = QIcon (":/ram_16px.png"); break;
