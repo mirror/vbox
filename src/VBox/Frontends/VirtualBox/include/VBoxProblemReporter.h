@@ -149,6 +149,8 @@ public:
     bool askForOverridingFileIfExists (const QString& path, QWidget *aParent = NULL) const;
 
     /* Special problem handlers */
+    void showBETAWarning();
+
 #ifdef Q_WS_X11
     void cannotFindLicenseFiles (const QString &aPath);
     void cannotOpenLicenseFile (QWidget *aParent, const QString &aPath);
