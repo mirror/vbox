@@ -137,8 +137,10 @@ typedef struct SSMHANDLE
     PRTZIPCOMP      pZipComp;
     /** The decompressor of the current data unit. */
     PRTZIPDECOMP    pZipDecomp;
-    /** Number of bytes left in the current data unit. */
+    /** Number of compressed bytes left in the current data unit. */
     uint64_t        cbUnitLeft;
+    /** The current uncompressed offset into the data unit. */
+    uint64_t        offUnit;
 
     /** Pointer to the progress callback function. */
     PFNVMPROGRESS   pfnProgress;
@@ -274,6 +276,7 @@ typedef struct SSMFILEUNITHDR
     char            achMagic[8];
     /** Number of bytes in this data unit including the header. */
     uint64_t        cbUnit;
+    /** @todo Add uncompressed byte count as well. */
     /** Data version. */
     uint32_t        u32Version;
     /** Instance number. */
@@ -978,6 +981,8 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     Handle.rc               = VINF_SUCCESS;
     Handle.pZipComp         = NULL;
     Handle.pZipDecomp       = NULL;
+    Handle.cbUnitLeft       = 0;
+    Handle.offUnit          = UINT64_MAX;
     Handle.pfnProgress      = pfnProgress;
     Handle.pvUser           = pvUser;
     Handle.uPercent         = 0;
@@ -1116,7 +1121,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                 /*
                  * Write data unit header
                  */
-                uint64_t   offHdr = RTFileTell(Handle.File);
+                uint64_t        offHdr = RTFileTell(Handle.File);
                 SSMFILEUNITHDR  UnitHdr = { SSMFILEUNITHDR_MAGIC, 0, pUnit->u32Version, pUnit->u32Instance, (uint32_t)pUnit->cchName + 1, { '\0' } };
                 rc = RTFileWrite(Handle.File, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]), NULL);
                 if (RT_SUCCESS(rc))
@@ -1127,6 +1132,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                         /*
                          * Call the execute handler.
                          */
+                        Handle.offUnit = 0;
                         switch (pUnit->enmType)
                         {
                             case SSMUNITTYPE_DEV:
@@ -1163,14 +1169,16 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                 if (RT_SUCCESS(rc))
                                 {
                                     UnitHdr.cbUnit = offEnd - offHdr;
+                                    ///@todo UnitHdr.cbUnitUncompressed = Handle.offUnit;
                                     rc = RTFileWrite(Handle.File, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]), NULL);
                                     if (RT_SUCCESS(rc))
                                     {
                                         rc = RTFileSeek(Handle.File, offEnd, RTFILE_SEEK_BEGIN, NULL);
                                         if (RT_SUCCESS(rc))
-                                            Log(("SSM: Data unit: offset %#9llx size %9lld '%s'\n", offHdr, UnitHdr.cbUnit, pUnit->szName));
+                                            Log(("SSM: Data unit: offset %#9llx size %9lld / %9lld '%s'\n", offHdr, UnitHdr.cbUnit, Handle.offUnit, pUnit->szName));
                                     }
                                 }
+                                Handle.offUnit = UINT64_MAX;
                             }
                             else
                             {
@@ -1541,6 +1549,8 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     Handle.rc               = VINF_SUCCESS;
     Handle.pZipComp         = NULL;
     Handle.pZipDecomp       = NULL;
+    Handle.cbUnitLeft       = 0;
+    Handle.offUnit          = UINT64_MAX;
     Handle.pfnProgress      = pfnProgress;
     Handle.pvUser           = pvUser;
     Handle.uPercent         = 0;
@@ -1718,6 +1728,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                      * Call the execute handler.
                                      */
                                     Handle.cbUnitLeft = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDR, szName[UnitHdr.cchName]);
+                                    Handle.offUnit = 0;
                                     switch (pUnit->enmType)
                                     {
                                         case SSMUNITTYPE_DEV:
@@ -1808,6 +1819,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                             Handle.rc = rc = VINF_SUCCESS;
                                             ssmR3Progress(&Handle, Handle.offEstUnitEnd - Handle.offEst);
                                         }
+                                        Handle.offUnit = UINT64_MAX;
                                     }
                                     else
                                     {
@@ -2008,6 +2020,7 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
             //pSSM->pZipComp      = NULL;
             //pSSM->pZipDecomp    = NULL;
             //pSSM->cbUnitLeft    = 0;
+            pSSM->offUnit         = UINT64_MAX;
             //pSSM->pfnProgress   = NULL;
             //pSSM->pvUser        = NULL;
             //pSSM->uPercent      = 0;
@@ -2112,6 +2125,7 @@ VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
     }
     pSSM->rc            = VERR_SSM_UNIT_NOT_FOUND;
     pSSM->cbUnitLeft    = 0;
+    pSSM->offUnit       = UINT64_MAX;
 
     /*
      * Walk the data units until we find EOF or a match.
@@ -2167,6 +2181,7 @@ VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
 
                             pSSM->rc = rc = VINF_SUCCESS;
                             pSSM->cbUnitLeft = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDR, szName[UnitHdr.cchName]);
+                            pSSM->offUnit = 0;
                             if (piVersion)
                                 *piVersion = UnitHdr.u32Version;
                         }
@@ -2270,6 +2285,7 @@ static int ssmR3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
             if (RT_FAILURE(pSSM->rc))
                 break;
             ssmR3Progress(pSSM, cbChunk);
+            pSSM->offUnit += cbChunk;
             cbBuf -= cbChunk;
             pvBuf = (char *)pvBuf + cbChunk;
         }
@@ -2793,7 +2809,10 @@ static int ssmR3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
          */
         pSSM->rc = RTZipDecompress(pSSM->pZipDecomp, pvBuf, cbBuf, NULL);
         if (RT_SUCCESS(pSSM->rc))
+        {
             Log2(("ssmR3Read: pvBuf=%p cbBuf=%#x %.*Rhxs%s\n", pvBuf, cbBuf, RT_MIN(cbBuf, 128), pvBuf, cbBuf > 128 ? "..." : ""));
+            pSSM->offUnit += cbBuf;
+        }
         else
             AssertMsgFailed(("rc=%Rrc cbBuf=%#x\n", pSSM->rc, cbBuf));
     }
@@ -3439,7 +3458,7 @@ VMMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
 
 
 /**
- * Query what to do after this operation.
+ * Get what to do after this operation.
  *
  * @returns SSMAFTER enum value.
  * @param   pSSM            SSM operation handle.
@@ -3447,5 +3466,17 @@ VMMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
 VMMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM)
 {
     return pSSM->enmAfter;
+}
+
+
+/**
+ * Get the current unit byte offset (uncompressed).
+ *  
+ * @returns The offset. UINT64_MAX if called at a wrong time. 
+ * @param   pSSM            SSM operation handle. 
+ */
+VMMR3DECL(uint64_t) SSMR3HandleGetUnitOffset(PSSMHANDLE pSSM)
+{
+    return pSSM->offUnit;
 }
 
