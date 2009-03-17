@@ -25,7 +25,8 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS              += VBoxNetAdpCtl
-VBoxNetAdpCtl_TEMPLATE = VBOXR3EXE
+### Another template? We must *not* set RPATH!
+VBoxNetAdpCtl_TEMPLATE = VBOXR3HARDENEDEXE
 VBoxNetAdpCtl_SOURCES  = VBoxNetAdpCtl.cpp
 
 include $(KBUILD_PATH)/subfooter.kmk
