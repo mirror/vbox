@@ -161,6 +161,13 @@ public:
                               ComSafeArrayOut(BSTR, aVboxValues),
                               ComSafeArrayOut(BSTR, aExtraConfigValues));
 
+    STDMETHOD(GetDescriptionByType)(VirtualSystemDescriptionType_T aType,
+                                    ComSafeArrayOut(VirtualSystemDescriptionType_T, aTypes),
+                                    ComSafeArrayOut(BSTR, aRefs),
+                                    ComSafeArrayOut(BSTR, aOvfValues),
+                                    ComSafeArrayOut(BSTR, aVboxValues),
+                                    ComSafeArrayOut(BSTR, aExtraConfigValues));
+
     STDMETHOD(SetFinalValues)(ComSafeArrayIn(BOOL, aEnabled),
                               ComSafeArrayIn(IN_BSTR, aVboxValues),
                               ComSafeArrayIn(IN_BSTR, aExtraConfigValues));
