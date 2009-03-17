@@ -819,7 +819,7 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                          "\n"
                          "Usage: VBoxNetDHCP <options>\n"
                          "\n"
-                         "Options:\n"
+                         "Options:\n",
                          VBOX_VERSION_STRING);
                 for (size_t i = 0; i < RT_ELEMENTS(s_aOptionDefs); i++)
                     RTPrintf("    -%c, %s\n", s_aOptionDefs[i].iShort, s_aOptionDefs[i].pszLong);
