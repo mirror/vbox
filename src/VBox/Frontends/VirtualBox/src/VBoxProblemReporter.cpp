@@ -888,6 +888,15 @@ void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine,
         formatErrorInfo (aMachine));
 }
 
+bool VBoxProblemReporter::askAboutSnapshotAndStateDiscarding()
+{
+    return messageOkCancel (mainWindowShown(), Question,
+        tr ("<p>Are you sure you wish to delete the selected snapshot "
+            "and saved state?</p>"),
+        "confirmSnapshotAndStateDiscarding" /* aAutoConfirmId */,
+        tr ("Discard"), tr ("Cancel"));
+}
+
 void VBoxProblemReporter::cannotDiscardSnapshot (const CConsole &aConsole,
                                                  const QString &aSnapshotName)
 {
