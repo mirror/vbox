@@ -2337,7 +2337,10 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
                 rc = SSMR3PutU8(pSSM, 0 /* ZERO */);
             }
             else
+            {    
+                SSMR3PutU8(pSSM, uType);
                 rc = pgmR3SavePage(pVM, pSSM, pPage, GCPhysPage, pRam);
+            }
             if (RT_FAILURE(rc))
                 break;
         }
@@ -2446,12 +2449,10 @@ static int pgmR3LoadPageBits(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAGE p
     /*
      * Match up the type, dealing with MMIO2 aliases (dropped).
      */
-    if (    PGM_PAGE_GET_TYPE(pPage) != uType
-        &&  uType != PGMPAGETYPE_INVALID)
-    {
-        AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] GCPhys=%#x %s\n", pPage, GCPhys, pRam->pszDesc), rc);
-        return VERR_SSM_UNEXPECTED_DATA;
-    }
+    AssertLogRelMsgReturn(   PGM_PAGE_GET_TYPE(pPage) == uType
+                          || uType == PGMPAGETYPE_INVALID,
+                          ("pPage=%R[pgmpage] GCPhys=%#x %s\n", pPage, GCPhys, pRam->pszDesc), 
+                          VERR_SSM_UNEXPECTED_DATA);
 
     /*
      * Load the page.
@@ -2480,14 +2481,14 @@ static int pgmR3LoadPage(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAGE pPage
 {
     uint8_t         uState;
     int rc = SSMR3GetU8(pSSM, &uState);
-    AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] GCPhys=%#x %s\n", pPage, GCPhys, pRam->pszDesc), rc);
+    AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] GCPhys=%#x %s rc=%Rrc\n", pPage, GCPhys, pRam->pszDesc, rc), rc);
     if (uState == 0 /* zero */)
         rc = pgmR3LoadPageZero(pVM, uType, pPage, GCPhys, pRam);
     else if (uState == 1)
         rc = pgmR3LoadPageBits(pVM, pSSM, uType, pPage, GCPhys, pRam);
     else
         rc = VERR_INTERNAL_ERROR;
-    AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] uState=%d uType=%d GCPhys=%#x %s\n",
+    AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] uState=%d uType=%d GCPhys=%RGp %s rc=%Rrc\n",
                                  pPage, uState, uType, GCPhys, pRam->pszDesc),
                             rc);
     return VINF_SUCCESS;
@@ -2578,8 +2579,8 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         rc = SSMR3GetU32(pSSM, &cbRamSize);
         if (RT_FAILURE(rc))
             return rc;
-        if (cbRamSize != pPGM->cbRamSize)
-            return VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH;
+        AssertLogRelMsgReturn(cbRamSize == pPGM->cbRamSize, ("%#x != %#x\n", cbRamSize, pPGM->cbRamSize), 
+                              VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH);
         SSMR3GetGCPhys(pSSM,    &pPGM->GCPhysA20Mask);
 
         uint32_t u32 = 0;
@@ -2719,7 +2720,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                 /* Hack for PDMDevHlpPhysReserve(pDevIns, 0xfff80000, 0x80000, "High ROM Region"); */
             &&  (   u32Version != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE
                  || GCPhys     != UINT32_C(0xfff80000)
-                 || GCPhysLast != UINT32_C(0xfff80000)
+                 || GCPhysLast != UINT32_C(0xffffffff)
                  || pRam->GCPhysLast != GCPhysLast
                  || pRam->GCPhys     <  GCPhys
                  || !fHaveBits)
@@ -2781,7 +2782,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
             /*
              * Old format.
              */
-            AssertLogRelReturn(pVM->pgm.s.fRamPreAlloc, VERR_NOT_SUPPORTED); /* can't be detected. */
+            AssertLogRelReturn(!pVM->pgm.s.fRamPreAlloc, VERR_NOT_SUPPORTED); /* can't be detected. */
 
             /* Of the page flags, pick up MMIO2 and ROM/RESERVED for the !fHaveBits case.
                The rest is generally irrelevant and wrong since the stuff have to match registrations. */
@@ -2795,12 +2796,13 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
             }
 
             /* Load the bits */
-            if (!fHaveBits)
+            if (    !fHaveBits 
+                &&  GCPhysLast < UINT32_C(0xe0000000))
             {
                 /*
                  * Dynamic chunks.
                  */
-                const uint32_t cPagesInChunk = (1*1024*1024) >> PAGE_SHIFT;;
+                const uint32_t cPagesInChunk = (1*1024*1024) >> PAGE_SHIFT;
                 AssertLogRelMsgReturn(cPages % cPagesInChunk == 0,
                                       ("cPages=%#x cPagesInChunk=%#x\n", cPages, cPagesInChunk, pRam->GCPhys, pRam->pszDesc),
                                       VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
@@ -2810,16 +2812,21 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                     uint8_t fPresent;
                     rc = SSMR3GetU8(pSSM, &fPresent);
                     AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhys=%#x %s\n", rc, iPage, pRam->GCPhys, pRam->pszDesc), rc);
-                    AssertLogRelMsgReturn(fPresent == true || fPresent == false,
+                    AssertLogRelMsgReturn(fPresent == (uint8_t)true || fPresent == (uint8_t)false,
                                           ("fPresent=%#x iPage=%#x GCPhys=%#x %s\n", fPresent, iPage, pRam->GCPhys, pRam->pszDesc),
                                           VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
-                    for (i = 0; i < cPagesInChunk; i++, iPage++)
+                    for (uint32_t iChunkPage = 0; iChunkPage < cPagesInChunk; iChunkPage++, iPage++)
                     {
                         RTGCPHYS const  GCPhysPage = ((RTGCPHYS)iPage << PAGE_SHIFT) + pRam->GCPhys;
                         PPGMPAGE        pPage      = &pRam->aPages[iPage];
                         if (fPresent)
-                            rc = pgmR3LoadPageBits(pVM, pSSM, PGMPAGETYPE_INVALID, pPage, GCPhysPage, pRam);
+                        {
+                            if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO)
+                                rc = pgmR3LoadPageToDevNull(pSSM);
+                            else
+                                rc = pgmR3LoadPageBits(pVM, pSSM, PGMPAGETYPE_INVALID, pPage, GCPhysPage, pRam);
+                        }
                         else
                             rc = pgmR3LoadPageZero(pVM, PGMPAGETYPE_INVALID, pPage, GCPhysPage, pRam);
                         AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhys=%#x %s\n", rc, iPage, pRam->GCPhys, pRam->pszDesc), rc);
@@ -2831,7 +2838,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                 /*
                  * MMIO2.
                  */
-                AssertLogRelMsgReturn((fFlags & 0x03) == RT_BIT(3) /*MM_RAM_FLAGS_MMIO2*/,
+                AssertLogRelMsgReturn((fFlags & 0x0f) == RT_BIT(3) /*MM_RAM_FLAGS_MMIO2*/,
                                       ("fFlags=%#x GCPhys=%#x %s\n", fFlags, pRam->GCPhys, pRam->pszDesc),
                                       VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
                 AssertLogRelMsgReturn(pRam->pvR3,
@@ -2840,6 +2847,12 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 
                 rc = SSMR3GetMem(pSSM, pRam->pvR3, pRam->cb);
                 AssertLogRelMsgRCReturn(rc, ("GCPhys=%#x %s\n", pRam->GCPhys, pRam->pszDesc), rc);
+            }
+            else if (GCPhysLast < UINT32_C(0xfff80000))
+            {
+                /*
+                 * PCI MMIO, no pages saved.
+                 */
             }
             else
             {
