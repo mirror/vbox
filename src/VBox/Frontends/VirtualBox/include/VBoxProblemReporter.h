@@ -200,6 +200,7 @@ public:
     bool warnAboutVirtNotEnabled();
 
     void cannotSetSnapshotFolder (const CMachine &aMachine, const QString &aPath);
+    bool askAboutSnapshotAndStateDiscarding();
     void cannotDiscardSnapshot (const CConsole &aConsole,
                                 const QString &aSnapshotName);
     void cannotDiscardSnapshot (const CProgress &aProgress,

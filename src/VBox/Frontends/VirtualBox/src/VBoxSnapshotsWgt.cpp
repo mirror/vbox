@@ -566,6 +566,9 @@ void VBoxSnapshotsWgt::discardCurState()
 
 void VBoxSnapshotsWgt::discardCurSnapAndState()
 {
+    if (!vboxProblem().askAboutSnapshotAndStateDiscarding())
+        return;
+
     SnapshotWgtItem *item = mTreeWidget->selectedItems().isEmpty() ? 0 :
         static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]);
     AssertReturn (item, (void) 0);
