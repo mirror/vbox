@@ -42,7 +42,7 @@
 VBGLR3DECL(int) VbglR3ClipboardConnect(uint32_t *pu32ClientId)
 {
     VBoxGuestHGCMConnectInfo Info;
-    Info.result = (uint32_t)VERR_WRONG_ORDER; /** @todo drop the cast when the result type has been fixed! */
+    Info.result = VERR_WRONG_ORDER;
     Info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
     memset(&Info.Loc.u, 0, sizeof(Info.Loc.u));
     strcpy(Info.Loc.u.host.achName, "VBoxSharedClipboard");
@@ -68,7 +68,7 @@ VBGLR3DECL(int) VbglR3ClipboardConnect(uint32_t *pu32ClientId)
 VBGLR3DECL(int) VbglR3ClipboardDisconnect(uint32_t u32ClientId)
 {
     VBoxGuestHGCMDisconnectInfo Info;
-    Info.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+    Info.result = VERR_WRONG_ORDER;
     Info.u32ClientID = u32ClientId;
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Info, sizeof(Info));
@@ -92,7 +92,7 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(uint32_t u32ClientId, uint32_t *pMsg, 
 {
     VBoxClipboardGetHostMsg Msg;
 
-    Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+    Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG;
     Msg.hdr.cParms = 2;
@@ -141,7 +141,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(uint32_t u32ClientId, uint32_t fFormat, 
 {
     VBoxClipboardReadData Msg;
 
-    Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+    Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_READ_DATA;
     Msg.hdr.cParms = 3;
@@ -181,7 +181,7 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(uint32_t u32ClientId, uint32_t fFor
 {
     VBoxClipboardFormats Msg;
 
-    Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+    Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_FORMATS;
     Msg.hdr.cParms = 1;
@@ -209,7 +209,7 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(uint32_t u32ClientId, uint32_t fFor
 VBGLR3DECL(int) VbglR3ClipboardWriteData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb)
 {
     VBoxClipboardWriteData Msg;
-    Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+    Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA;
     Msg.hdr.cParms = 2;
