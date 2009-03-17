@@ -5471,95 +5471,95 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host-only &amp;Network Interface:</source>
-        <translation type="unfinished">Interface &amp;réseau pour l&apos;accès hôte seulement :</translation>
+        <translation>Interface &amp;réseau pour l&apos;accès hôte seulement :</translation>
     </message>
     <message>
         <source>Displays the name of the VirtualBox network interface selected for host-only networking.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le nom de l&apos;interface réseau VirtualBox sélectionnée pour l&apos;accès hôte seulement.</translation>
     </message>
     <message>
         <source>Add new VirtualBox host-only network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter un nouvelle interface réseau VirtualBox pour l&apos;accès hôte seulement.</translation>
     </message>
     <message>
         <source>Remove selected VirtualBox host-only network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enlève l&apos;interface réseau VirtualBox sélectionnée pour l&apos;accès hôte seulement.</translation>
     </message>
     <message>
         <source>Configuration Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Type de configuration :</translation>
     </message>
     <message>
         <source>Use DHCP automatic configuration for this host-only network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Utiliser la configuration automatique DHCP pour cette interface réseau pour accès hôte seulement.</translation>
     </message>
     <message>
         <source>&amp;DHCP Automatic Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Configuration automatique &amp;DHCP</translation>
     </message>
     <message>
         <source>Use manual configuration for this host-only network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Utiliser la configuration manuelle pour cette interface réseau pour accès hôte seulement.</translation>
     </message>
     <message>
         <source>M&amp;anual Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Configuration m&amp;anuelle</translation>
     </message>
     <message>
         <source>&amp;Host IPv4 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresse IPv4 &amp;hôte :</translation>
     </message>
     <message>
         <source>Displays the host IPv4 address for this interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche l&apos;adresse IPv4 hôte pour cette interface.</translation>
     </message>
     <message>
         <source>H&amp;ost IPv4 Network Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>Masque réseau IPv4 h&amp;ôte :</translation>
     </message>
     <message>
         <source>Displays the host IPv4 network mask for this interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le masque réseau IPv4 hôte pour cette interface.</translation>
     </message>
     <message>
         <source>Ho&amp;st IPv6 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresse IPv6 hô&amp;te :</translation>
     </message>
     <message>
         <source>Displays the host IPv6 address for this interface if IPv6 protocol is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche l&apos;adresse IPv6 hôte pour cette interface si le protocole IPv6 est supporté.</translation>
     </message>
     <message>
         <source>Hos&amp;t IPv6 Network Mask Length:</source>
-        <translation type="unfinished"></translation>
+        <translation>Longuer &amp;masque réseau IPv6 hôte :</translation>
     </message>
     <message>
         <source>Displays the host IPv6 network mask prefix length for this interface if IPv6 protocol is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche la longueur du préfixe de la masque réseau hôte IPv6 si le protocole est supporté.</translation>
     </message>
     <message>
         <source>Guest Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Paramètres invité</translation>
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresse &amp;MAC invité :</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">Affiche l&apos;adresse MAC de cet adaptateur. Il comprend exactement 12 caractères  choisis entre {0-9,A-F}. Noter que le second caractère doit être un nombre pair.</translation>
+        <translation>Affiche l&apos;adresse MAC de cet adaptateur. Il comprend exactement 12 caractères choisis entre {0-9,A-F}. Veuillez noter que le second caractère doit être un nombre pair.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Génère une nouvelle adresse MAC aléatoire.</translation>
+        <translation>Génère une nouvelle adresse MAC aléatoire.</translation>
     </message>
     <message>
         <source>&amp;Cable connected</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Cable connecté</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">Indique si le cable de l&apos;adaptateur virtuel de réseau est relié lors du lancement de la machine virtuelle.</translation>
+        <translation>Indique si le cable réseau virtuel est connecté ou non lors du lancement de la machine virtuelle.</translation>
     </message>
 </context>
 <context>
