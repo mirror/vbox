@@ -79,6 +79,11 @@
 # include <devguid.h>
 #endif
 
+#if !defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+# include <HostNetworkInterfaceImpl.h>
+# include <netif.h>
+#endif
+
 #include <VBox/param.h>
 
 
@@ -1800,6 +1805,45 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
                 networkName = Bstr("HostInterfaceNetworking-vboxnet0");
 #endif
+#ifndef RT_OS_WINDOWS
+                Bstr HifName;
+                hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
+                if(FAILED(hrc))
+                {
+                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));
+                    H();
+                }
+
+                Utf8Str HifNameUtf8(HifName);
+                const char *pszHifName = HifNameUtf8.raw();
+                ComPtr<IHostNetworkInterface> hostInterface;
+                rc = host->FindHostNetworkInterfaceByName(HifName, hostInterface.asOutParam());
+                if (!SUCCEEDED(rc))
+                {
+                    LogRel(("NetworkAttachmentType_HostOnly: FindByName failed, rc (0x%x)", rc));
+                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                      N_("Inexistent host networking interface, name '%ls'"),
+                                      HifName.raw());
+                }
+                Bstr tmpAddr, tmpMask;
+                hrc = virtualBox->GetExtraData(Bstr("HostOnly/vboxnet0/IPAddress"), tmpAddr.asOutParam());
+                if (SUCCEEDED(hrc) && !tmpAddr.isNull())
+                {
+                    hrc = virtualBox->GetExtraData(Bstr("HostOnly/vboxnet0/IPNetMask"), tmpMask.asOutParam());
+                    if (SUCCEEDED(hrc) && !tmpAddr.isEmpty())
+                        hrc = hostInterface->EnableStaticIpConfig(tmpAddr, tmpMask);
+                }
+                else
+                    hrc = hostInterface->EnableStaticIpConfig(Bstr(VBOXNET_IPV4ADDR_DEFAULT),
+                                                              Bstr(VBOXNET_IPV4MASK_DEFAULT));
+                
+                
+                hrc = virtualBox->GetExtraData(Bstr("HostOnly/vboxnet0/IPV6Address"), tmpAddr.asOutParam());
+                if (SUCCEEDED(hrc))
+                    hrc = virtualBox->GetExtraData(Bstr("HostOnly/vboxnet0/IPV6NetMask"), tmpMask.asOutParam());
+                if (SUCCEEDED(hrc) && !tmpAddr.isEmpty())
+                    hrc = hostInterface->EnableStaticIpConfigV6(tmpAddr, Utf8Str(tmpMask).toUInt32());
+#endif 
                 break;
             }
 
