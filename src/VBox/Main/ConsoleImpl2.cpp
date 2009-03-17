@@ -1805,7 +1805,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
                 networkName = Bstr("HostInterfaceNetworking-vboxnet0");
 #endif
-#ifndef RT_OS_WINDOWS
+#if !defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
                 Bstr HifName;
                 hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
                 if(FAILED(hrc))
