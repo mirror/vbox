@@ -464,8 +464,12 @@ VMMR0DECL(int) HWACCMR0Term(void)
     {
         int aRc[RTCPUSET_MAX_CPUS];
 
-        rc = RTPowerNotificationDeregister(hwaccmR0PowerCallback, 0);
-        Assert(RT_SUCCESS(rc));
+        Assert(!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx);
+        if (!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
+        {
+            rc = RTPowerNotificationDeregister(hwaccmR0PowerCallback, 0);
+            Assert(RT_SUCCESS(rc));
+        }
 
         memset(aRc, 0, sizeof(aRc));
         rc = RTMpOnAll(hwaccmR0DisableCPU, aRc, NULL);
@@ -510,9 +514,9 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
         val = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
 
         /*
-        * Both the LOCK and VMXON bit must be set; otherwise VMXON will generate a #GP.
-        * Once the lock bit is set, this MSR can no longer be modified.
-        */
+         * Both the LOCK and VMXON bit must be set; otherwise VMXON will generate a #GP.
+         * Once the lock bit is set, this MSR can no longer be modified.
+         */
         if (    !(val & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
             ||  ((val & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK)) == MSR_IA32_FEATURE_CONTROL_VMXON) /* Some BIOSes forget to set the locked bit. */
            )
@@ -704,6 +708,7 @@ static DECLCALLBACK(void) hwaccmR0DisableCPU(RTCPUID idCpu, void *pvUser1, void 
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
     Assert(ASMAtomicReadBool(&pCpu->fInUse) == false);
+    Assert(!pCpu->fConfigured || pCpu->pMemObj);
 
     if (!pCpu->pMemObj)
         return;
