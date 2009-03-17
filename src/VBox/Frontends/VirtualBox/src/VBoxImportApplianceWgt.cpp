@@ -27,10 +27,12 @@
 #include "VBoxFilePathSelectorWidget.h"
 #include "VBoxOSTypeSelectorButton.h"
 
+/* Qt includes */
 #include <QItemDelegate>
 #include <QSortFilterProxyModel>
 #include <QHeaderView>
 #include <QLineEdit>
+#include <QTextEdit>
 #include <QSpinBox>
 #include <QComboBox>
 
@@ -248,6 +250,7 @@ public:
                     switch (mType)
                     {
                         case KVirtualSystemDescriptionType_Name: v = VBoxImportApplianceWgt::tr ("Name"); break;
+                        case KVirtualSystemDescriptionType_Description: v = VBoxImportApplianceWgt::tr ("Description"); break;
                         case KVirtualSystemDescriptionType_OS: v = VBoxImportApplianceWgt::tr ("Guest OS Type"); break;
                         case KVirtualSystemDescriptionType_CPU: v = VBoxImportApplianceWgt::tr ("CPU"); break;
                         case KVirtualSystemDescriptionType_Memory: v = VBoxImportApplianceWgt::tr ("RAM"); break;
@@ -294,6 +297,7 @@ public:
                     switch (mType)
                     {
                         case KVirtualSystemDescriptionType_Name: v = QIcon (":/name_16px.png"); break;
+                        case KVirtualSystemDescriptionType_Description: v = QIcon (":/name_16px.png"); break;
                         case KVirtualSystemDescriptionType_OS: v = QIcon (":/os_type_16px.png"); break;
                         case KVirtualSystemDescriptionType_CPU: v = QIcon (":/cpu_16px.png"); break;
                         case KVirtualSystemDescriptionType_Memory: v = QIcon (":/ram_16px.png"); break;
@@ -368,6 +372,7 @@ public:
                 flags |= Qt::ItemIsUserCheckable;
             /* Some items are editable */
             if ((mType == KVirtualSystemDescriptionType_Name ||
+                 mType == KVirtualSystemDescriptionType_Description ||
                  mType == KVirtualSystemDescriptionType_OS ||
                  mType == KVirtualSystemDescriptionType_Memory ||
                  mType == KVirtualSystemDescriptionType_SoundCard ||
@@ -401,6 +406,12 @@ public:
                 case KVirtualSystemDescriptionType_Name:
                 {
                     QLineEdit *e = new QLineEdit (aParent);
+                    editor = e;
+                    break;
+                }
+                case KVirtualSystemDescriptionType_Description:
+                {
+                    QTextEdit *e = new QTextEdit (aParent);
                     editor = e;
                     break;
                 }
@@ -509,6 +520,15 @@ public:
                 }
                 break;
             }
+            case KVirtualSystemDescriptionType_Description:
+            {
+                if (QTextEdit *e = qobject_cast<QTextEdit*> (aEditor))
+                {
+                    e->setPlainText (mConfigValue);
+                    fDone = true;
+                }
+                break;
+            }
             case KVirtualSystemDescriptionType_SoundCard:
             case KVirtualSystemDescriptionType_NetworkAdapter:
             {
@@ -578,6 +598,15 @@ public:
                 if (QLineEdit *e = qobject_cast<QLineEdit*> (aEditor))
                 {
                     mConfigValue = e->text();
+                    fDone = true;
+                }
+                break;
+            }
+            case KVirtualSystemDescriptionType_Description:
+            {
+                if (QTextEdit *e = qobject_cast<QTextEdit*> (aEditor))
+                {
+                    mConfigValue = e->toPlainText();
                     fDone = true;
                 }
                 break;
@@ -722,6 +751,7 @@ private:
 KVirtualSystemDescriptionType VirtualSystemSortProxyModel::mSortList[] =
 {
     KVirtualSystemDescriptionType_Name,
+    KVirtualSystemDescriptionType_Description,
     KVirtualSystemDescriptionType_OS,
     KVirtualSystemDescriptionType_CPU,
     KVirtualSystemDescriptionType_Memory,
