@@ -414,10 +414,12 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
     CheckComRCReturnRC (autoCaller.rc());
 
     if (Bstr(aIPAddress).isEmpty())
+    {
         if (m.IPAddress)
             return NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, 0, 0);
         else
             return S_OK;
+    }
 
     ULONG ip, mask;
     ip = inet_addr(Utf8Str(aIPAddress).raw());
