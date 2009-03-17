@@ -1118,6 +1118,9 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
             case kIntNetTrunkType_SrvNat:
                 dhcp.setOption(DHCPCFG_TRUNKTYPE, TRUNKTYPE_SRVNAT);
                 break;
+            default:
+                AssertFailed();
+                break;
             }
         //temporary hack for testing
             //    DHCPCFG_NAME

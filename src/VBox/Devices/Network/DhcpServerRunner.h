@@ -299,7 +299,7 @@ public:
     DhcpServerRunner() : mProcess (NIL_RTPROCESS) {}
     ~DhcpServerRunner() { stop(); /* don't leave abandoned servers */}
 
-    int setOption(DHCPCFG opt, char *val)
+    int setOption(DHCPCFG opt, const char *val)
     {
         if(opt == 0 || opt >= DHCPCFG_NOTOPT_MAXVAL)
             return VERR_INVALID_PARAMETER;
