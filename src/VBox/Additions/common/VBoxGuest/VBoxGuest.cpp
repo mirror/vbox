@@ -1145,7 +1145,7 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
     if (pDevExt->u32ClipboardClientId != 0)
     {
         VBoxGuestHGCMDisconnectInfo Info;
-        Info.result = (uint32_t)VERR_WRONG_ORDER;           /** @todo Vitali, why is this member unsigned? */
+        Info.result = VERR_WRONG_ORDER;
         Info.u32ClientID = pDevExt->u32ClipboardClientId;
         rc = VbglHGCMDisconnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
         if (RT_SUCCESS(rc))
@@ -1168,7 +1168,7 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
     Info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
     strcpy(Info.Loc.u.host.achName, "VBoxSharedClipboard");
     Info.u32ClientID = 0;
-    Info.result = (uint32_t)VERR_WRONG_ORDER;
+    Info.result = VERR_WRONG_ORDER;
 
     rc = VbglHGCMConnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
     if (RT_FAILURE(rc))
@@ -1176,7 +1176,7 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
         LogRel(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: VbglHGCMConnected -> rc=%Rrc\n", rc));
         return rc;
     }
-    if (RT_FAILURE((int32_t)Info.result))
+    if (RT_FAILURE(Info.result))
     {
         LogRel(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: VbglHGCMConnected -> rc=%Rrc\n", rc));
         return rc;
