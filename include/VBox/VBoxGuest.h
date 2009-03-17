@@ -1374,7 +1374,7 @@ AssertCompileSize(VBoxGuestFilterMaskInfo, 8);
 # pragma pack(1)
 typedef struct _VBoxGuestHGCMConnectInfo
 {
-    uint32_t result;          /**< OUT */
+    int32_t result;           /**< OUT */
     HGCMServiceLocation Loc;  /**< IN */
     uint32_t u32ClientID;     /**< OUT */
 } VBoxGuestHGCMConnectInfo;
@@ -1382,14 +1382,14 @@ AssertCompileSize(VBoxGuestHGCMConnectInfo, 4+4+128+4);
 
 typedef struct _VBoxGuestHGCMDisconnectInfo
 {
-    uint32_t result;          /**< OUT */
+    int32_t result;           /**< OUT */
     uint32_t u32ClientID;     /**< IN */
 } VBoxGuestHGCMDisconnectInfo;
 AssertCompileSize(VBoxGuestHGCMDisconnectInfo, 8);
 
 typedef struct _VBoxGuestHGCMCallInfo
 {
-    uint32_t result;          /**< OUT Host HGCM return code.*/
+    int32_t result;           /**< OUT Host HGCM return code.*/
     uint32_t u32ClientID;     /**< IN  The id of the caller. */
     uint32_t u32Function;     /**< IN  Function number. */
     uint32_t cParms;          /**< IN  How many parms. */
