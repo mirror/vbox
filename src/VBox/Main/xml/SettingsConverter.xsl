@@ -857,10 +857,20 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
 	    <xsl:apply-templates mode="v1.7" />
 	    <NetserviceRegistry>
            <DhcpServers>
-                <DhcpServer networkName="HostInterfaceNetworking-VirtualBox Host-Only Network Adapter" 
+              <xsl:choose>
+    	        <xsl:when test="substring-after(../@version,'-')='windows'">
+	               <DhcpServer networkName="HostInterfaceNetworking-VirtualBox Host-Only Network Adapter" 
                         IPAddress="192.168.56.2" networkMask="255.255.255.0"
                         lowerIP="192.168.56.3" upperIP="192.168.56.255"
                         enabled="1"/>
+       	        </xsl:when>
+                <xsl:otherwise>
+	               <DhcpServer networkName="HostInterfaceNetworking-vboxnet0" 
+                        IPAddress="192.168.56.2" networkMask="255.255.255.0"
+                        lowerIP="192.168.56.3" upperIP="192.168.56.255"
+                        enabled="1"/>
+                </xsl:otherwise>
+              </xsl:choose>
            </DhcpServers>
         </NetserviceRegistry>              
 	</xsl:copy>
