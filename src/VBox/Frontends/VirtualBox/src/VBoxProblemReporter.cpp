@@ -457,6 +457,14 @@ bool VBoxProblemReporter::askForOverridingFileIfExists (const QString& aPath, QW
 // Special Problem handlers
 /////////////////////////////////////////////////////////////////////////////
 
+void VBoxProblemReporter::showBETAWarning()
+{
+    message
+        (0, Warning,
+         tr ("You're running a prerelease version of VirtualBox. "
+             "This version is not designed for production use."));
+}
+
 #ifdef Q_WS_X11
 void VBoxProblemReporter::cannotFindLicenseFiles (const QString &aPath)
 {

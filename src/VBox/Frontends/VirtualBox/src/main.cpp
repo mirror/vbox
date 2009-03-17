@@ -413,6 +413,11 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             }
             else
             {
+                /* Check for BETA version */
+                QString vboxVersion (vboxGlobal().virtualBox().GetVersion());
+                if (vboxVersion.contains ("BETA"))
+                    vboxProblem().showBETAWarning();
+
                 vboxGlobal().setMainWindow (&vboxGlobal().selectorWnd());
 #ifdef VBOX_GUI_WITH_SYSTRAY
                 if (vboxGlobal().trayIconInstall())
