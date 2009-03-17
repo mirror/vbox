@@ -2024,6 +2024,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                     // default is NAT; change to "bridged" if extra conf says so
                     if (!pvsys->strExtraConfig.compare("type=Bridged", Utf8Str::CaseInsensitive))
                     {
+                        /* Attach to the right interface */
                         rc = pNetworkAdapter->AttachToBridgedInterface();
                         if (FAILED(rc)) throw rc;
                         ComPtr<IHost> host;
@@ -2033,13 +2034,44 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                         rc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
                         if (FAILED(rc)) throw rc;
                         /* We search for the first host network interface which
-                         * is usable for the bridged networking */
+                         * is usable for bridged networking */
                         for (size_t i=0; i < nwInterfaces.size(); ++i)
                         {
                             HostNetworkInterfaceType_T itype;
                             rc = nwInterfaces[i]->COMGETTER(InterfaceType)(&itype);
                             if (FAILED(rc)) throw rc;
                             if (itype == HostNetworkInterfaceType_Bridged)
+                            {
+                                Bstr name;
+                                rc = nwInterfaces[i]->COMGETTER(Name)(name.asOutParam());
+                                if (FAILED(rc)) throw rc;
+                                /* Set the interface name to attach to */
+                                pNetworkAdapter->COMSETTER(HostInterface)(name);
+                                if (FAILED(rc)) throw rc;
+                                break;
+                            }
+                        }
+                    }
+                    /* Next test for host only interfaces */
+                    else if (!pvsys->strExtraConfig.compare("type=HostOnly", Utf8Str::CaseInsensitive))
+                    {
+                        /* Attach to the right interface */
+                        rc = pNetworkAdapter->AttachToHostOnlyInterface();
+                        if (FAILED(rc)) throw rc;
+                        ComPtr<IHost> host;
+                        rc = pVirtualBox->COMGETTER(Host)(host.asOutParam());
+                        if (FAILED(rc)) throw rc;
+                        com::SafeIfaceArray<IHostNetworkInterface> nwInterfaces;
+                        rc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
+                        if (FAILED(rc)) throw rc;
+                        /* We search for the first host network interface which
+                         * is usable for host only networking */
+                        for (size_t i=0; i < nwInterfaces.size(); ++i)
+                        {
+                            HostNetworkInterfaceType_T itype;
+                            rc = nwInterfaces[i]->COMGETTER(InterfaceType)(&itype);
+                            if (FAILED(rc)) throw rc;
+                            if (itype == HostNetworkInterfaceType_HostOnly)
                             {
                                 Bstr name;
                                 rc = nwInterfaces[i]->COMGETTER(Name)(name.asOutParam());
