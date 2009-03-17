@@ -2485,7 +2485,7 @@ typedef struct PGM
      * But whould need arrise, we'll subject physical addresses to this mask. */
     RTGCPHYS                        GCPhysA20Mask;
     /** A20 gate state - boolean! */
-    RTUINT                          fA20Enabled;
+    bool                            fA20Enabled;
 
     /** What needs syncing (PGM_SYNC_*).
      * This is used to queue operations for PGMSyncCR3, PGMInvalidatePage,
