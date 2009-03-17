@@ -159,37 +159,27 @@ if test -n "$HARDENED"; then
             ||  $3 == "opt/VirtualBox/amd64/VBoxHeadless=amd64/VBoxHeadless" \
             ||  $3 == "opt/VirtualBox/amd64/VBoxSDL=amd64/VBoxSDL" \
             ||  $3 == "opt/VirtualBox/amd64/VBoxBFE=amd64/VBoxBFE" \
-            ||  $3 == "opt/VirtualBox/amd64/VBoxNetDHCP=amd64/VBoxNetDHCP" \
             ||  $3 == "opt/VirtualBox/i386/VirtualBox=i386/VirtualBox" \
             ||  $3 == "opt/VirtualBox/i386/VirtualBox3=i386/VirtualBox3" \
             ||  $3 == "opt/VirtualBox/i386/VBoxHeadless=i386/VBoxHeadless" \
             ||  $3 == "opt/VirtualBox/i386/VBoxSDL=i386/VBoxSDL" \
             ||  $3 == "opt/VirtualBox/i386/VBoxBFE=i386/VBoxBFE" \
-            ||  $3 == "opt/VirtualBox/i386/VBoxNetDHCP=i386/VBoxNetDHCP" \
             ) \
        { $4 = "4755" } { print }' prototype > prototype2
     mv -f prototype2 prototype
 fi
 
-# VBoxUSBHelper needs to be marked setuid root.
-if test -f $VBOX_INSTALLED_DIR/amd64/VBoxUSBHelper || test -f $VBOX_INSTALLED_DIR/i386/VBoxUSBHelper; then
-    $VBOX_AWK 'NF == 6 \
-        && (    $3 == "opt/VirtualBox/amd64/VBoxUSBHelper=amd64/VBoxUSBHelper" \
-            ||  $3 == "opt/VirtualBox/i386/VBoxUSBHelper=i386/VBoxUSBHelper" \
-            ) \
-       { $4 = "4755" } { print }' prototype > prototype2
-    mv -f prototype2 prototype
-fi
-
-# VBoxNetAdpCtl needs to be marked setuid root.
-if test -f $VBOX_INSTALLED_DIR/amd64/VBoxNetAdpCtl || test -f $VBOX_INSTALLED_DIR/i386/VBoxNetAdpCtl; then
-    $VBOX_AWK 'NF == 6 \
-        && (    $3 == "opt/VirtualBox/amd64/VBoxNetAdpCtl=amd64/VBoxNetAdpCtl" \
-            ||  $3 == "opt/VirtualBox/i386/VBoxNetAdpCtl=i386/VBoxNetAdpCtl" \
-            ) \
-       { $4 = "4755" } { print }' prototype > prototype2
-    mv -f prototype2 prototype
-fi
+# Other executables that need setuid root (hardened or otherwise)
+$VBOX_AWK 'NF == 6 \
+    && (    $3 == "opt/VirtualBox/amd64/VBoxUSBHelper=amd64/VBoxUSBHelper" \
+        ||  $3 == "opt/VirtualBox/i386/VBoxUSBHelper=i386/VBoxUSBHelper" \
+        ||  $3 == "opt/VirtualBox/amd64/VBoxNetAdpCtl=amd64/VBoxNetAdpCtl" \
+        ||  $3 == "opt/VirtualBox/i386/VBoxNetAdpCtl=i386/VBoxNetAdpCtl" \
+        ||  $3 == "opt/VirtualBox/amd64/VBoxNetDHCP=amd64/VBoxNetDHCP" \
+        ||  $3 == "opt/VirtualBox/i386/VBoxNetDHCP=i386/VBoxNetDHCP" \
+        ) \
+   { $4 = "4755" } { print }' prototype > prototype2
+mv -f prototype2 prototype
 
 
 # desktop links and icons
