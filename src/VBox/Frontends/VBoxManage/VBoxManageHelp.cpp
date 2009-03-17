@@ -323,7 +323,7 @@ void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("VBoxManage createhd         --filename <filename>\n"
                  "                            --size <megabytes>\n"
                  "                            [--format VDI|VMDK|VHD] (default: VDI)\n"
-                 "                            [--variant Standard|Fixed|Diff|Split2G|Stream]\n"
+                 "                            [--variant Standard,Fixed,Diff,Split2G,Stream]\n"
                  "                            [--type normal|writethrough] (default: normal)\n"
                  "                            [--comment <comment>]\n"
                  "                            [--remember]\n"
@@ -343,7 +343,7 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage clonehd          <uuid>|<filename> <outputfile>\n"
                  "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
-                 "                            [--variant Standard|Fixed|Diff|Split2G|Stream]\n"
+                 "                            [--variant Standard,Fixed,Diff,Split2G,Stream]\n"
                  "                            [--type normal|writethrough|immutable]\n"
                  "                            [--remember]\n"
                  "\n");
@@ -353,10 +353,10 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage convertfromraw   <filename> <outputfile>\n"
                  "                            [--format VDI|VMDK|VHD]\n"
-                 "                            [--variant Standard|Fixed|Diff|Split2G|Stream]\n"
+                 "                            [--variant Standard,Fixed,Diff,Split2G,Stream]\n"
                  "VBoxManage convertfromraw   stdin <outputfile> <bytes>\n"
                  "                            [--format VDI|VMDK|VHD]\n"
-                 "                            [--variant Standard|Fixed|Diff|Split2G|Stream]\n"
+                 "                            [--variant Standard,Fixed,Diff,Split2G,Stream]\n"
                  "\n");
     }
 
