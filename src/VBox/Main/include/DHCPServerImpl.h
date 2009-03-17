@@ -28,33 +28,33 @@
 #include "VirtualBoxImpl.h"
 
 #ifdef VBOX_WITH_HOSTNETIF_API
-/* class DhcpServer; */
+/* class DHCPServer; */
 /* #include "netif.h" */
 struct NETIFINFO;
 #endif
 
-class ATL_NO_VTABLE DhcpServer :
+class ATL_NO_VTABLE DHCPServer :
     public VirtualBoxBaseNEXT,
-    public VirtualBoxSupportErrorInfoImpl <DhcpServer, IDhcpServer>,
-    public VirtualBoxSupportTranslation <DhcpServer>,
-    public IDhcpServer
+    public VirtualBoxSupportErrorInfoImpl <DHCPServer, IDHCPServer>,
+    public VirtualBoxSupportTranslation <DHCPServer>,
+    public IDHCPServer
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (DhcpServer)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (DHCPServer)
 
-    DECLARE_NOT_AGGREGATABLE (DhcpServer)
+    DECLARE_NOT_AGGREGATABLE (DHCPServer)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP (DhcpServer)
+    BEGIN_COM_MAP (DHCPServer)
         COM_INTERFACE_ENTRY (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY (IDhcpServer)
+        COM_INTERFACE_ENTRY (IDHCPServer)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
 
-    DECLARE_EMPTY_CTOR_DTOR (DhcpServer)
+    DECLARE_EMPTY_CTOR_DTOR (DHCPServer)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -65,7 +65,7 @@ public:
 
     void uninit();
 
-    // IDhcpServer properties
+    // IDHCPServer properties
     STDMETHOD(COMGETTER(NetworkName)) (BSTR *aName);
     STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(Enabled)) (BOOL aEnabled);
@@ -77,7 +77,7 @@ public:
     STDMETHOD(SetConfiguration) (IN_BSTR aIPAddress, IN_BSTR aNetworkMask, IN_BSTR aFromIPAddress, IN_BSTR aToIPAddress);
 
     // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"DhcpServer"; }
+    static const wchar_t *getComponentName() { return L"DHCPServer"; }
 
 private:
     /** weak VirtualBox parent */

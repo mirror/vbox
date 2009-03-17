@@ -18,7 +18,7 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-#include "DhcpServerRunner.h"
+#include "DHCPServerRunner.h"
 #include <iprt/process.h>
 #include <iprt/param.h>
 #include <iprt/env.h>
@@ -65,12 +65,12 @@ static const ARGDEF * getArgDef(DHCPCFG type)
     return NULL;
 }
 
-void DhcpServerRunner::detachFromServer()
+void DHCPServerRunner::detachFromServer()
 {
     mProcess = NIL_RTPROCESS;
 }
 
-int DhcpServerRunner::start()
+int DHCPServerRunner::start()
 {
     if(isRunning())
         return VINF_ALREADY_INITIALIZED;
@@ -122,7 +122,7 @@ int DhcpServerRunner::start()
     return rc;
 }
 
-int DhcpServerRunner::stop()
+int DHCPServerRunner::stop()
 {
     if(!isRunning())
         return VINF_OBJECT_DESTROYED;
@@ -132,7 +132,7 @@ int DhcpServerRunner::stop()
     return rc;
 }
 
-bool DhcpServerRunner::isRunning()
+bool DHCPServerRunner::isRunning()
 {
     if(mProcess == NIL_RTPROCESS)
         return false;

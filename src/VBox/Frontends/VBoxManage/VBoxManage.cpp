@@ -1725,7 +1725,7 @@ int main(int argc, char *argv[])
         { "import",           handleImportAppliance },
         { "export",           handleExportAppliance },
         { "hostonlyif",       handleHostonlyIf },
-        { "dhcpserver",       handleDhcpServer},
+        { "dhcpserver",       handleDHCPServer},
         { NULL,               NULL }
     };
 

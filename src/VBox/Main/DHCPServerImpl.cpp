@@ -21,7 +21,7 @@
  * additional information or have any questions.
  */
 
-#include "DhcpServerImpl.h"
+#include "DHCPServerImpl.h"
 #include "Logging.h"
 
 #include <VBox/settings.h>
@@ -29,19 +29,19 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (DhcpServer)
+DEFINE_EMPTY_CTOR_DTOR (DHCPServer)
 
-HRESULT DhcpServer::FinalConstruct()
+HRESULT DHCPServer::FinalConstruct()
 {
     return S_OK;
 }
 
-void DhcpServer::FinalRelease()
+void DHCPServer::FinalRelease()
 {
     uninit ();
 }
 
-void DhcpServer::uninit()
+void DHCPServer::uninit()
 {
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan (this);
@@ -57,7 +57,7 @@ void DhcpServer::uninit()
     unconst (mVirtualBox).setNull();
 }
 
-HRESULT DhcpServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)
+HRESULT DHCPServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)
 {
     AssertReturn (aName != NULL, E_INVALIDARG);
 
@@ -84,7 +84,7 @@ HRESULT DhcpServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)
     return S_OK;
 }
 
-HRESULT DhcpServer::init(VirtualBox *aVirtualBox, const settings::Key &aNode)
+HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const settings::Key &aNode)
 {
     using namespace settings;
 
@@ -109,7 +109,7 @@ HRESULT DhcpServer::init(VirtualBox *aVirtualBox, const settings::Key &aNode)
     return S_OK;
 }
 
-HRESULT DhcpServer::saveSettings (settings::Key &aParentNode)
+HRESULT DHCPServer::saveSettings (settings::Key &aParentNode)
 {
     using namespace settings;
 
@@ -120,7 +120,7 @@ HRESULT DhcpServer::saveSettings (settings::Key &aParentNode)
 
     AutoReadLock alock (this);
 
-    Key aNode = aParentNode.appendKey ("DhcpServer");
+    Key aNode = aParentNode.appendKey ("DHCPServer");
     /* required */
     aNode.setValue <Bstr> ("networkName", mName);
     aNode.setValue <Bstr> ("IPAddress", m.IPAddress);
@@ -132,7 +132,7 @@ HRESULT DhcpServer::saveSettings (settings::Key &aParentNode)
     return S_OK;
 }
 
-STDMETHODIMP DhcpServer::COMGETTER(NetworkName) (BSTR *aName)
+STDMETHODIMP DHCPServer::COMGETTER(NetworkName) (BSTR *aName)
 {
     CheckComArgOutPointerValid(aName);
 
@@ -144,7 +144,7 @@ STDMETHODIMP DhcpServer::COMGETTER(NetworkName) (BSTR *aName)
     return S_OK;
 }
 
-STDMETHODIMP DhcpServer::COMGETTER(Enabled) (BOOL *aEnabled)
+STDMETHODIMP DHCPServer::COMGETTER(Enabled) (BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
@@ -156,7 +156,7 @@ STDMETHODIMP DhcpServer::COMGETTER(Enabled) (BOOL *aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP DhcpServer::COMSETTER(Enabled) (BOOL aEnabled)
+STDMETHODIMP DHCPServer::COMSETTER(Enabled) (BOOL aEnabled)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -171,7 +171,7 @@ STDMETHODIMP DhcpServer::COMSETTER(Enabled) (BOOL aEnabled)
     return rc;
 }
 
-STDMETHODIMP DhcpServer::COMGETTER(IPAddress) (BSTR *aIPAddress)
+STDMETHODIMP DHCPServer::COMGETTER(IPAddress) (BSTR *aIPAddress)
 {
     CheckComArgOutPointerValid(aIPAddress);
 
@@ -183,7 +183,7 @@ STDMETHODIMP DhcpServer::COMGETTER(IPAddress) (BSTR *aIPAddress)
     return S_OK;
 }
 
-STDMETHODIMP DhcpServer::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
+STDMETHODIMP DHCPServer::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
 {
     CheckComArgOutPointerValid(aNetworkMask);
 
@@ -195,7 +195,7 @@ STDMETHODIMP DhcpServer::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
     return S_OK;
 }
 
-STDMETHODIMP DhcpServer::COMGETTER(LowerIP) (BSTR *aIPAddress)
+STDMETHODIMP DHCPServer::COMGETTER(LowerIP) (BSTR *aIPAddress)
 {
     CheckComArgOutPointerValid(aIPAddress);
 
@@ -207,7 +207,7 @@ STDMETHODIMP DhcpServer::COMGETTER(LowerIP) (BSTR *aIPAddress)
     return S_OK;
 }
 
-STDMETHODIMP DhcpServer::COMGETTER(UpperIP) (BSTR *aIPAddress)
+STDMETHODIMP DHCPServer::COMGETTER(UpperIP) (BSTR *aIPAddress)
 {
     CheckComArgOutPointerValid(aIPAddress);
 
@@ -219,7 +219,7 @@ STDMETHODIMP DhcpServer::COMGETTER(UpperIP) (BSTR *aIPAddress)
     return S_OK;
 }
 
-STDMETHODIMP DhcpServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkMask, IN_BSTR aLowerIP, IN_BSTR aUpperIP)
+STDMETHODIMP DHCPServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkMask, IN_BSTR aLowerIP, IN_BSTR aUpperIP)
 {
     AssertReturn (aIPAddress != NULL, E_INVALIDARG);
     AssertReturn (aNetworkMask != NULL, E_INVALIDARG);

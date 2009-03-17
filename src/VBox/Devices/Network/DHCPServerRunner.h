@@ -293,11 +293,11 @@ protected:
 
 };
 
-class DhcpServerRunner
+class DHCPServerRunner
 {
 public:
-    DhcpServerRunner() : mProcess (NIL_RTPROCESS) {}
-    ~DhcpServerRunner() { stop(); /* don't leave abandoned servers */}
+    DHCPServerRunner() : mProcess (NIL_RTPROCESS) {}
+    ~DHCPServerRunner() { stop(); /* don't leave abandoned servers */}
 
     int setOption(DHCPCFG opt, const char *val)
     {

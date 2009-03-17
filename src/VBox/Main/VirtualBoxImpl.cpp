@@ -61,7 +61,7 @@
 #include "SystemPropertiesImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "Version.h"
-#include "DhcpServerImpl.h"
+#include "DHCPServerImpl.h"
 
 #include "VirtualBoxXMLUtil.h"
 
@@ -92,8 +92,8 @@ static const char gDefaultGlobalConfig [] =
     "    <MachineRegistry/>"RTFILE_LINEFEED
     "    <MediaRegistry/>"RTFILE_LINEFEED
     "    <NetserviceRegistry>"RTFILE_LINEFEED
-    "       <DhcpServers>"RTFILE_LINEFEED
-    "          <DhcpServer "
+    "       <DHCPServers>"RTFILE_LINEFEED
+    "          <DHCPServer "
 #ifdef RT_OS_WINDOWS
                           "networkName=\"HostInterfaceNetworking-VirtualBox Host-Only Network Adapter\" "
 #else
@@ -102,7 +102,7 @@ static const char gDefaultGlobalConfig [] =
                           "IPAddress=\"192.168.56.100\" networkMask=\"255.255.255.0\" "
                           "lowerIP=\"192.168.56.101\" upperIP=\"192.168.56.254\" "
                           "enabled=\"1\"/>"RTFILE_LINEFEED
-    "       </DhcpServers>"RTFILE_LINEFEED
+    "       </DHCPServers>"RTFILE_LINEFEED
     "    </NetserviceRegistry>"RTFILE_LINEFEED
     "    <USBDeviceFilters/>"RTFILE_LINEFEED
     "    <SystemProperties/>"RTFILE_LINEFEED
@@ -409,7 +409,7 @@ void VirtualBox::uninit()
     mData.mFloppyImages.clear();
     mData.mDVDImages.clear();
     mData.mHardDisks.clear();
-    mData.mDhcpServers.clear();
+    mData.mDHCPServers.clear();
 
     mData.mProgressOperations.clear();
 
@@ -759,9 +759,9 @@ VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanc
 }
 
 STDMETHODIMP
-VirtualBox::COMGETTER(DhcpServers) (ComSafeArrayOut (IDhcpServer *, aDhcpServers))
+VirtualBox::COMGETTER(DHCPServers) (ComSafeArrayOut (IDHCPServer *, aDHCPServers))
 {
-    if (ComSafeArrayOutIsNull (aDhcpServers))
+    if (ComSafeArrayOutIsNull (aDHCPServers))
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -769,8 +769,8 @@ VirtualBox::COMGETTER(DhcpServers) (ComSafeArrayOut (IDhcpServer *, aDhcpServers
 
     AutoReadLock alock (this);
 
-    SafeIfaceArray<IDhcpServer> svrs (mData.mDhcpServers);
-    svrs.detachTo (ComSafeArrayOutArg (aDhcpServers));
+    SafeIfaceArray<IDHCPServer> svrs (mData.mDHCPServers);
+    svrs.detachTo (ComSafeArrayOutArg (aDHCPServers));
 
     return S_OK;
 }
@@ -3166,7 +3166,7 @@ HRESULT VirtualBox::loadNetservices (const settings::Key &aGlobal)
     if(registry.isNull())
         return S_OK;
 
-    const char *kMediaNodes[] = { "DhcpServers" };
+    const char *kMediaNodes[] = { "DHCPServers" };
 
     for (size_t n = 0; n < RT_ELEMENTS (kMediaNodes); ++ n)
     {
@@ -3177,16 +3177,16 @@ HRESULT VirtualBox::loadNetservices (const settings::Key &aGlobal)
 
         if (n == 0)
         {
-            Key::List dhcpServers = node.keys ("DhcpServer");
+            Key::List dhcpServers = node.keys ("DHCPServer");
             for (Key::List::const_iterator it = dhcpServers.begin();
                  it != dhcpServers.end(); ++ it)
             {
-                ComObjPtr<DhcpServer> dhcpServer;
+                ComObjPtr<DHCPServer> dhcpServer;
                 dhcpServer.createObject();
                 rc = dhcpServer->init (this, *it);
                 CheckComRCBreakRC (rc);
 
-                rc = registerDhcpServer(dhcpServer, false /* aSaveRegistry */);
+                rc = registerDHCPServer(dhcpServer, false /* aSaveRegistry */);
                 CheckComRCBreakRC (rc);
             }
 
@@ -3310,11 +3310,11 @@ HRESULT VirtualBox::saveSettings()
 
             /* hard disks */
             {
-                Key dhcpServersNode = registryNode.createKey ("DhcpServers");
+                Key dhcpServersNode = registryNode.createKey ("DHCPServers");
 
-                for (DhcpServerList::const_iterator it =
-                        mData.mDhcpServers.begin();
-                     it != mData.mDhcpServers.end();
+                for (DHCPServerList::const_iterator it =
+                        mData.mDHCPServers.begin();
+                     it != mData.mDHCPServers.end();
                      ++ it)
                 {
                     rc = (*it)->saveSettings (dhcpServersNode);
@@ -4675,12 +4675,12 @@ void *VirtualBox::CallbackEvent::handler()
     return NULL;
 }
 
-//STDMETHODIMP VirtualBox::CreateDhcpServerForInterface (/*IHostNetworkInterface * aIinterface,*/ IDhcpServer ** aServer)
+//STDMETHODIMP VirtualBox::CreateDHCPServerForInterface (/*IHostNetworkInterface * aIinterface,*/ IDHCPServer ** aServer)
 //{
 //    return E_NOTIMPL;
 //}
 
-STDMETHODIMP VirtualBox::CreateDhcpServer (IN_BSTR aName, IDhcpServer ** aServer)
+STDMETHODIMP VirtualBox::CreateDHCPServer (IN_BSTR aName, IDHCPServer ** aServer)
 {
     CheckComArgNotNull(aName);
     CheckComArgNotNull(aServer);
@@ -4688,12 +4688,12 @@ STDMETHODIMP VirtualBox::CreateDhcpServer (IN_BSTR aName, IDhcpServer ** aServer
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    ComObjPtr<DhcpServer> dhcpServer;
+    ComObjPtr<DHCPServer> dhcpServer;
     dhcpServer.createObject();
     HRESULT rc = dhcpServer->init (this, aName);
     CheckComRCReturnRC (rc);
 
-    rc = registerDhcpServer(dhcpServer, true);
+    rc = registerDHCPServer(dhcpServer, true);
     CheckComRCReturnRC (rc);
 
     dhcpServer.queryInterfaceTo(aServer);
@@ -4701,12 +4701,12 @@ STDMETHODIMP VirtualBox::CreateDhcpServer (IN_BSTR aName, IDhcpServer ** aServer
     return rc;
 }
 
-//STDMETHODIMP VirtualBox::FindDhcpServerForInterface (IHostNetworkInterface * aIinterface, IDhcpServer ** aServer)
+//STDMETHODIMP VirtualBox::FindDHCPServerForInterface (IHostNetworkInterface * aIinterface, IDHCPServer ** aServer)
 //{
 //    return E_NOTIMPL;
 //}
 
-STDMETHODIMP VirtualBox::FindDhcpServerByName (IN_BSTR aName, IDhcpServer ** aServer)
+STDMETHODIMP VirtualBox::FindDHCPServerByNetworkName (IN_BSTR aName, IDHCPServer ** aServer)
 {
     CheckComArgNotNull(aName);
     CheckComArgNotNull(aServer);
@@ -4718,11 +4718,11 @@ STDMETHODIMP VirtualBox::FindDhcpServerByName (IN_BSTR aName, IDhcpServer ** aSe
 
     HRESULT rc;
     Bstr bstr;
-    ComPtr <DhcpServer> found;
+    ComPtr <DHCPServer> found;
 
-    for (DhcpServerList::const_iterator it =
-            mData.mDhcpServers.begin();
-         it != mData.mDhcpServers.end();
+    for (DHCPServerList::const_iterator it =
+            mData.mDHCPServers.begin();
+         it != mData.mDHCPServers.end();
          ++ it)
     {
         rc = (*it)->COMGETTER(NetworkName) (bstr.asOutParam());
@@ -4741,14 +4741,14 @@ STDMETHODIMP VirtualBox::FindDhcpServerByName (IN_BSTR aName, IDhcpServer ** aSe
     return found.queryInterfaceTo (aServer);
 }
 
-STDMETHODIMP VirtualBox::RemoveDhcpServer (IDhcpServer * aServer)
+STDMETHODIMP VirtualBox::RemoveDHCPServer (IDHCPServer * aServer)
 {
     CheckComArgNotNull(aServer);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    HRESULT rc = unregisterDhcpServer(static_cast<DhcpServer *>(aServer), true);
+    HRESULT rc = unregisterDHCPServer(static_cast<DHCPServer *>(aServer), true);
 
     return rc;
 }
@@ -4756,7 +4756,7 @@ STDMETHODIMP VirtualBox::RemoveDhcpServer (IDhcpServer * aServer)
 /**
  * Remembers the given dhcp server by storing it in the hard disk registry.
  *
- * @param aDhcpServer     Dhcp Server object to remember.
+ * @param aDHCPServer     Dhcp Server object to remember.
  * @param aSaveRegistry @c true to save hard disk registry to disk (default).
  *
  * When @a aSaveRegistry is @c true, this operation may fail because of the
@@ -4766,43 +4766,43 @@ STDMETHODIMP VirtualBox::RemoveDhcpServer (IDhcpServer * aServer)
  * in order to make sure that only fully functional dhcp server objects get
  * registered.
  *
- * @note Locks this object for writing and @a aDhcpServer for reading.
+ * @note Locks this object for writing and @a aDHCPServer for reading.
  */
-HRESULT VirtualBox::registerDhcpServer(DhcpServer *aDhcpServer,
+HRESULT VirtualBox::registerDHCPServer(DHCPServer *aDHCPServer,
                                      bool aSaveRegistry /*= true*/)
 {
-    AssertReturn (aDhcpServer != NULL, E_INVALIDARG);
+    AssertReturn (aDHCPServer != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock (this);
 
-    AutoCaller dhcpServerCaller (aDhcpServer);
+    AutoCaller dhcpServerCaller (aDHCPServer);
     AssertComRCReturn (dhcpServerCaller.rc(), dhcpServerCaller.rc());
 
-    AutoReadLock dhcpServerLock (aDhcpServer);
+    AutoReadLock dhcpServerLock (aDHCPServer);
 
     Bstr name;
     HRESULT rc;
-    rc = aDhcpServer->COMGETTER(NetworkName) (name.asOutParam());
+    rc = aDHCPServer->COMGETTER(NetworkName) (name.asOutParam());
     CheckComRCReturnRC (rc);
 
-    ComPtr<IDhcpServer> existing;
-    rc = FindDhcpServerByName(name.mutableRaw(), existing.asOutParam());
+    ComPtr<IDHCPServer> existing;
+    rc = FindDHCPServerByNetworkName(name.mutableRaw(), existing.asOutParam());
     if(SUCCEEDED(rc))
     {
         return E_INVALIDARG;
     }
     rc = S_OK;
 
-    mData.mDhcpServers.push_back (aDhcpServer);
+    mData.mDHCPServers.push_back (aDHCPServer);
 
     if (aSaveRegistry)
     {
         rc = saveSettings();
         if (FAILED (rc))
-            unregisterDhcpServer(aDhcpServer, false /* aSaveRegistry */);
+            unregisterDHCPServer(aDHCPServer, false /* aSaveRegistry */);
     }
 
     return rc;
@@ -4823,22 +4823,22 @@ HRESULT VirtualBox::registerDhcpServer(DhcpServer *aDhcpServer,
  *
  * @note Locks this object for writing and @a aHardDisk for reading.
  */
-HRESULT VirtualBox::unregisterDhcpServer(DhcpServer *aDhcpServer,
+HRESULT VirtualBox::unregisterDHCPServer(DHCPServer *aDHCPServer,
                                        bool aSaveRegistry /*= true*/)
 {
-    AssertReturn (aDhcpServer != NULL, E_INVALIDARG);
+    AssertReturn (aDHCPServer != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock (this);
 
-    AutoCaller dhcpServerCaller (aDhcpServer);
+    AutoCaller dhcpServerCaller (aDHCPServer);
     AssertComRCReturn (dhcpServerCaller.rc(), dhcpServerCaller.rc());
 
-    AutoReadLock dhcpServerLock (aDhcpServer);
+    AutoReadLock dhcpServerLock (aDHCPServer);
 
-    mData.mDhcpServers.remove (aDhcpServer);
+    mData.mDHCPServers.remove (aDHCPServer);
 
     HRESULT rc = S_OK;
 
@@ -4846,7 +4846,7 @@ HRESULT VirtualBox::unregisterDhcpServer(DhcpServer *aDhcpServer,
     {
         rc = saveSettings();
         if (FAILED (rc))
-            registerDhcpServer(aDhcpServer, false /* aSaveRegistry */);
+            registerDHCPServer(aDHCPServer, false /* aSaveRegistry */);
     }
 
     return rc;

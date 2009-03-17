@@ -110,7 +110,7 @@
 #include <SerialPortImpl.h>
 #include <ParallelPortImpl.h>
 #include <USBControllerImpl.h>
-#include "DhcpServerImpl.h"
+#include "DHCPServerImpl.h"
 #ifdef VBOX_WITH_USB
 # include <HostUSBDeviceImpl.h>
 # include <USBDeviceImpl.h>
@@ -194,8 +194,8 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostFloppyDrive, IHostFloppyDrive)
 NS_DECL_CLASSINFO(HostNetworkInterface)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostNetworkInterface, IHostNetworkInterface)
 
-NS_DECL_CLASSINFO(DhcpServer)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(DhcpServer, IDhcpServer)
+NS_DECL_CLASSINFO(DHCPServer)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(DHCPServer, IDHCPServer)
 
 NS_DECL_CLASSINFO(GuestOSType)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestOSType, IGuestOSType)

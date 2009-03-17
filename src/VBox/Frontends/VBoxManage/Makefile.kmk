@@ -59,7 +59,7 @@ endif
  	VBoxManageUSB.cpp \
  	VBoxInternalManage.cpp \
  	VBoxManageHostonly.cpp \
- 	VBoxManageDhcpServer.cpp \
+ 	VBoxManageDHCPServer.cpp \
  	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
  	VBoxManageSVN.cpp
 endif # !VBOX_ONLY_DOCS

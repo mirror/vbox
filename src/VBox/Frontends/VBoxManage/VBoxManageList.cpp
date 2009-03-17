@@ -764,11 +764,11 @@ int handleList(HandlerArg *a)
         break;
         case LISTDHCPSERVERS:
         {
-            com::SafeIfaceArray<IDhcpServer> svrs;
-            CHECK_ERROR(a->virtualBox, COMGETTER(DhcpServers)(ComSafeArrayAsOutParam (svrs)));
+            com::SafeIfaceArray<IDHCPServer> svrs;
+            CHECK_ERROR(a->virtualBox, COMGETTER(DHCPServers)(ComSafeArrayAsOutParam (svrs)));
             for (size_t i = 0; i < svrs.size(); ++ i)
             {
-                ComPtr<IDhcpServer> svr = svrs[i];
+                ComPtr<IDHCPServer> svr = svrs[i];
                 Bstr netName;
                 svr->COMGETTER(NetworkName)(netName.asOutParam());
                 RTPrintf("NetworkName:    %lS\n", netName.raw());
