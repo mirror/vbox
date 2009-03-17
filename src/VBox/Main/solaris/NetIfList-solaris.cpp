@@ -193,7 +193,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     Info.enmMediumType = NETIF_T_ETHERNET;
 
     HostNetworkInterfaceType_T enmType;
-    if (strncmp("vbox", szNICInstance, 4))
+    if (strncmp("vboxnet", szNICInstance, 7))
         enmType = HostNetworkInterfaceType_Bridged;
     else
         enmType = HostNetworkInterfaceType_HostOnly;

@@ -147,7 +147,7 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                     IfObj.createObject();
 
                     HostNetworkInterfaceType_T enmType;
-                    if (strncmp("vbox", pszName, 4))
+                    if (strncmp("vboxnet", pszName, 7))
                         enmType = HostNetworkInterfaceType_Bridged;
                     else
                         enmType = HostNetworkInterfaceType_HostOnly;
