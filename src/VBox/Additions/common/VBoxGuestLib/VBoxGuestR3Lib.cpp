@@ -77,7 +77,7 @@ static RTFILE g_File = NIL_RTFILE;
 static uint32_t volatile g_cInits = 0;
 
 
-static int vbglR3Init(char *pszDeviceName);
+static int vbglR3Init(const char *pszDeviceName);
 
 /**
  * Open the VBox R3 Guest Library.  This should be called by system daemons
@@ -100,7 +100,7 @@ VBGLR3DECL(int) VbglR3InitUser(void)
 /**
  * Implementation of VbglR3Init and VbglR3InitUser
  */
-int vbglR3Init(char *pszDeviceName)
+int vbglR3Init(const char *pszDeviceName)
 {
     uint32_t cInits = ASMAtomicIncU32(&g_cInits);
 #ifndef VBOX_VBGLR3_XFREE86
