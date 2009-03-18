@@ -93,7 +93,9 @@ extern const PDMDRVREG g_DrvMediaISO;
 extern const PDMDRVREG g_DrvRawImage;
 extern const PDMDRVREG g_DrvISCSI;
 extern const PDMDRVREG g_DrvISCSITransportTcp;
+#ifdef RT_OS_LINUX
 extern const PDMDRVREG g_DrvHostInterface;
+#endif
 extern const PDMDRVREG g_DrvIntNet;
 extern const PDMDRVREG g_DrvNAT;
 extern const PDMDRVREG g_DrvNetSniffer;

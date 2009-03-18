@@ -1650,11 +1650,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
                     else
                     {
-# ifndef VBOX_WITH_NETFLT
-                        rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface");                     RC_CHECK();
-                        rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                                 RC_CHECK();
-                        rc = CFGMR3InsertString(pCfg, "HostInterfaceName", Utf8Str(hostInterfaceName)); RC_CHECK();
-# else
+# ifdef VBOX_WITH_NETFLT
                         rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");                            RC_CHECK();
                         rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                                 RC_CHECK();
                         rc = CFGMR3InsertString(pCfg, "Trunk", Utf8Str(hostInterfaceName));             RC_CHECK();
@@ -1836,14 +1832,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 else
                     hrc = hostInterface->EnableStaticIpConfig(Bstr(VBOXNET_IPV4ADDR_DEFAULT),
                                                               Bstr(VBOXNET_IPV4MASK_DEFAULT));
-                
-                
+
+
                 hrc = virtualBox->GetExtraData(Bstr("HostOnly/vboxnet0/IPV6Address"), tmpAddr.asOutParam());
                 if (SUCCEEDED(hrc))
                     hrc = virtualBox->GetExtraData(Bstr("HostOnly/vboxnet0/IPV6NetMask"), tmpMask.asOutParam());
                 if (SUCCEEDED(hrc) && !tmpAddr.isEmpty())
                     hrc = hostInterface->EnableStaticIpConfigV6(tmpAddr, Utf8Str(tmpMask).toUInt32());
-#endif 
+#endif
                 break;
             }
 
