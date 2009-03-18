@@ -170,26 +170,65 @@ static void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
     }
     if (!vboxIsHostMouseFound ())
     {
-        WCHAR wszProperty[512];
-        ULONG ResultLength = 0;
-        wszProperty[0] = 0;
-        NTSTATUS status = IoGetDeviceProperty(devExt->PDO, DevicePropertyDeviceDescription,
-                                              sizeof (wszProperty),
-                                              &wszProperty,
-                                              &ResultLength);
-        dprintf(("VBoxMouse::vboxDeviceAdded: looking for host mouse: %ls Len is %d, status %x\n",
-                 wszProperty, ResultLength, status));
+        NTSTATUS status;
+        UCHAR Property[512];
+        ULONG ResultLength;
+
+        ResultLength = 0;
+        status = IoGetDeviceProperty(devExt->PDO, DevicePropertyBootConfiguration,
+                                     sizeof (Property),
+                                     &Property,
+                                     &ResultLength);
+
+        dprintf(("VBoxMouse::vboxDeviceAdded: looking for host mouse: Len is %d, status %x\n",
+                 ResultLength, status));
 
         if (status == STATUS_SUCCESS)
         {
-            UNICODE_STRING MicrosoftPS2Mouse;
-            RtlInitUnicodeString (&MicrosoftPS2Mouse, L"Microsoft PS/2 Mouse");
-            UNICODE_STRING DeviceDescription;
-            RtlInitUnicodeString (&DeviceDescription, wszProperty);
+            /* Check whether the device claims the IO port 0x60. */
+            BOOLEAN bPort60h = FALSE;
 
-            if (RtlCompareUnicodeString (&DeviceDescription, &MicrosoftPS2Mouse, TRUE) == 0)
+            CM_RESOURCE_LIST *pResourceList = (CM_RESOURCE_LIST *)&Property[0];
+
+            dprintf(("Configuration: descriptors %d\n",
+                      pResourceList->Count));
+
+            ULONG iDescriptor = 0;
+            for (; iDescriptor < pResourceList->Count; iDescriptor++)
             {
-                /* Mark the PS/2 device as the Host one, that is the emulated mouse.
+                CM_FULL_RESOURCE_DESCRIPTOR *pFullDescriptor = &pResourceList->List[iDescriptor];
+
+                dprintf(("Descriptor %d: InterfaceType %d, BusType %d, list ver %d, list rev %d, count %d\n",
+                         iDescriptor,
+                         pFullDescriptor->InterfaceType,
+                         pFullDescriptor->BusNumber,
+                         pFullDescriptor->PartialResourceList.Version,
+                         pFullDescriptor->PartialResourceList.Revision,
+                         pFullDescriptor->PartialResourceList.Count));
+
+                ULONG iPartialDescriptor = 0;
+                for (; iPartialDescriptor < pFullDescriptor->PartialResourceList.Count; iPartialDescriptor++)
+                {
+                    CM_PARTIAL_RESOURCE_DESCRIPTOR *pPartialDescriptor = &pFullDescriptor->PartialResourceList.PartialDescriptors[iPartialDescriptor];
+
+                    dprintf(("  PartialDescriptor %d: type %d, ShareDisposition %d, Flags 0x%04X, Start 0x%llx, length 0x%x\n",
+                             iPartialDescriptor,
+                             pPartialDescriptor->Type, pPartialDescriptor->ShareDisposition, pPartialDescriptor->Flags,
+                             pPartialDescriptor->u.Generic.Start.QuadPart, pPartialDescriptor->u.Generic.Length));
+
+                    if (pPartialDescriptor->Type == CmResourceTypePort)
+                    {
+                        if (pPartialDescriptor->u.Port.Start.QuadPart == 0x60)
+                        {
+                            bPort60h = TRUE;
+                        }
+                    }
+                }
+            }
+
+            if (bPort60h)
+            {
+                /* It's the emulated 8042 PS/2 mouse/kbd device, so mark it as the Host one.
                  * For this device the filter will query absolute mouse coords from the host.
                  */
                 InterlockedExchange (&g_ctx.fHostMouseFound, TRUE);
