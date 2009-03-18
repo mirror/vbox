@@ -1,0 +1,48 @@
+# $Id$
+## @file
+# Sub-Makefile for the vboxvideo DRM module (Solaris kernel OpenGL module).
+#
+
+#
+# Copyright (C) 2009 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+
+SUB_DEPTH = ../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+ifneq ($(KBUILD_HOST),solaris)
+$(error "The Solaris guest additions can only be built on Solaris!")
+endif
+
+#
+# vboxvideo - The Video DRM (Direct Rendering Module) kernel module
+#
+SYSMODS.solaris        += vboxvideo
+vboxvideo_TEMPLATE      = VBOXGUESTR0
+vboxvideo_DEFS          = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV)
+vboxvideo_DEPS         += $(VBOX_SVN_REV_KMK)
+vboxvideo_INCS         := \
+	include/
+vboxvideo_SOURCES       = \
+	vboxvideo_drm.c
+vboxvideo_LIBS          = \
+	$(VBOX_LIB_VBGL_R0) \
+	$(VBOX_LIB_IPRT_GUEST_R0)
+vboxvideo_LDFLAGS      += -N misc/drm
+
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
