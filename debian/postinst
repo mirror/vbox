@@ -109,13 +109,19 @@ fi
 # The starters need to be Suid root. They drop the privileges before starting
 # the real frontend.
 if ! dpkg-statoverride --list /usr/lib/virtualbox/VirtualBox > /dev/null 2>&1; then
-  chmod 4711 /usr/lib/virtualbox/VirtualBox
+  chmod 4511 /usr/lib/virtualbox/VirtualBox
 fi
 if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxHeadless > /dev/null 2>&1; then
-  chmod 4711 /usr/lib/virtualbox/VBoxHeadless
+  chmod 4511 /usr/lib/virtualbox/VBoxHeadless
 fi
 if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxSDL > /dev/null 2>&1; then
-  chmod 4711 /usr/lib/virtualbox/VBoxSDL
+  chmod 4511 /usr/lib/virtualbox/VBoxSDL
+fi
+if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxNetDHCP > /dev/null 2>&1; then
+  chmod 4511 /usr/lib/virtualbox/VBoxNetDHCP
+fi
+if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxNetAdpCtl > /dev/null 2>&1; then
+  chmod 4511 /usr/lib/virtualbox/VBoxNetAdpCtl
 fi
 
 #DEBHELPER#
