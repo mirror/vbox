@@ -886,7 +886,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
 
         /* Read in the block's bitmap. */
         rc = RTFileReadAt(pImage->File,
-            (uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] * VHD_SECTOR_SIZE,
+            ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
             pImage->pu8Bitmap, pImage->cbDataBlockBitmap, NULL);
         if (RT_SUCCESS(rc))
         {
@@ -957,7 +957,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
                 } while (cSectors < (cbRead / VHD_SECTOR_SIZE));
 
                 cbRead = cSectors * VHD_SECTOR_SIZE;
-                Log(("%s: Sectors free: uVhdOffset=%llu cbRead=%u\n", uVhdOffset, cbRead));
+                Log(("%s: Sectors free: uVhdOffset=%llu cbRead=%u\n", __FUNCTION__, uVhdOffset, cbRead));
                 rc = VERR_VD_BLOCK_FREE;
             }
         }
@@ -1043,7 +1043,7 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
 
         /* Read in the block's bitmap. */
         rc = RTFileReadAt(pImage->File,
-            (uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] * VHD_SECTOR_SIZE,
+            ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
             pImage->pu8Bitmap, pImage->cbDataBlockBitmap, NULL);
         if (RT_SUCCESS(rc))
         {
@@ -1060,7 +1060,7 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
 
             /* Write the bitmap back. */
             rc = RTFileWriteAt(pImage->File,
-                pImage->pBlockAllocationTable[cBlockAllocationTableEntry] * VHD_SECTOR_SIZE,
+                ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
                 pImage->pu8Bitmap, pImage->cbDataBlockBitmap, NULL);
         }
     }
