@@ -116,13 +116,17 @@ ALIGN(16)
     sldt    ax
     push    xAX
 
+    ; The TR limit is reset to 0x67; restore it manually
+    str     eax
+    push    xAX
+
     ; VMX only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
     sub     xSP, xS*2
     sgdt    [xSP]
 
     sub     xSP, xS*2
     sidt    [xSP]
-
+    
 %ifdef VBOX_WITH_DR6_EXPERIMENT
     ; Restore DR6 - experiment, not safe!
     mov     xBX, [xSI + CPUMCTX.dr6]
@@ -176,7 +180,7 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     add     xSP, xS*2
 
     push    xDI
-    mov     xDI, [xSP + xS * 2]         ; pCtx (*2 to skip the saved LDTR)
+    mov     xDI, [xSP + xS * 3]         ; pCtx (*3 to skip the saved LDTR + TR)
 
     mov     [ss:xDI + CPUMCTX.eax], eax
     mov     [ss:xDI + CPUMCTX.ebx], ebx
@@ -197,9 +201,22 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     mov     [ss:xDI + CPUMCTX.dr6], xAX
 %endif
 
+    ; Restore TSS selector; must mark it as not busy before using ltr (!)
+    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
+    ; @todo get rid of sgdt
+    pop     xBX         ; saved TR
+    sub     xSP, xS*2
+    sgdt    [xSP]
+    mov     eax, ebx
+    and     al, 0F8h                                ; mask away TI and RPL bits, get descriptor offset.
+    add     eax, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
+    and     dword [ss:eax + 4], ~0200h                 ; clear busy flag (2nd type2 bit)
+    ltr     bx
+    add     xSP, xS*2
+    
     pop     xAX         ; saved LDTR
     lldt    ax
-
+    
     add     xSP, xS      ; pCtx
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -245,6 +262,19 @@ ALIGN(16)
     lgdt    [xSP]
     add     xSP, xS*2
 
+    ; Restore TSS selector; must mark it as not busy before using ltr (!)
+    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
+    ; @todo get rid of sgdt
+    pop     xBX         ; saved TR
+    sub     xSP, xS*2
+    sgdt    [xSP]
+    mov     eax, ebx
+    and     al, 0F8h                                ; mask away TI and RPL bits, get descriptor offset.
+    add     eax, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
+    and     dword [ss:eax + 4], ~0200h                 ; clear busy flag (2nd type2 bit)
+    ltr     bx
+    add     xSP, xS*2
+
     pop     xAX         ; saved LDTR
     lldt    ax
 
@@ -267,6 +297,19 @@ ALIGN(16)
     lidt    [xSP]
     add     xSP, xS*2
     lgdt    [xSP]
+    add     xSP, xS*2
+
+    ; Restore TSS selector; must mark it as not busy before using ltr (!)
+    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
+    ; @todo get rid of sgdt
+    pop     xBX         ; saved TR
+    sub     xSP, xS*2
+    sgdt    [xSP]
+    mov     eax, ebx
+    and     al, 0F8h                                ; mask away TI and RPL bits, get descriptor offset.
+    add     eax, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
+    and     dword [ss:eax + 4], ~0200h                 ; clear busy flag (2nd type2 bit)
+    ltr     bx
     add     xSP, xS*2
 
     pop     xAX         ; saved LDTR
