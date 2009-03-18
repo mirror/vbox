@@ -204,6 +204,13 @@ start()
             fail "Cannot create device $dev with major $maj and minor $min"
         }
     fi
+    chown $owner:$group $dev 2>/dev/null || {
+        rm -f $dev 2>/dev/null
+        rm -f $userdev 2>/dev/null
+        rmmod vboxadd 2>/dev/null
+        fail "Cannot change owner $owner:$group for device $dev"
+    }
+
     if [ ! -c $userdev ]; then
         maj=10
         min=`sed -n 's;\([0-9]\+\) vboxuser;\1;p' /proc/misc`
@@ -213,20 +220,14 @@ start()
                 rmmod vboxadd 2>/dev/null
                 fail "Cannot create device $userdev with major $maj and minor $min"
             }
+            chown $owner:$group $userdev 2>/dev/null || {
+                rm -f $dev 2>/dev/null
+                rm -f $userdev 2>/dev/null
+                rmmod vboxadd 2>/dev/null
+                fail "Cannot change owner $owner:$group for device $userdev"
+            }
         fi
     fi
-    chown $owner:$group $dev 2>/dev/null || {
-        rm -f $dev 2>/dev/null
-        rm -f $userdev 2>/dev/null
-        rmmod vboxadd 2>/dev/null
-        fail "Cannot change owner $owner:$group for device $dev"
-    }
-    chown $owner:$group $userdev 2>/dev/null || {
-        rm -f $dev 2>/dev/null
-        rm -f $userdev 2>/dev/null
-        rmmod vboxadd 2>/dev/null
-        fail "Cannot change owner $owner:$group for device $userdev"
-    }
 
     if [ -n "$BUILDVBOXVFS" ]; then
         running_vboxvfs || {
