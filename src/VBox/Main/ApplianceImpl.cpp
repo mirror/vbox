@@ -507,7 +507,7 @@ HRESULT Appliance::LoopThruSections(const char *pcszPath,
             if (!(SUCCEEDED((rc = HandleDiskSection(pcszPath, pReferencesElem, pElem)))))
                 return rc;
         }
-       else if (    (!strcmp(pcszElemName, "NetworkSection"))            // we ignore NetworkSections for now
+       else if (    (!strcmp(pcszElemName, "NetworkSection"))
                   || (    (!strcmp(pcszElemName, "Section"))
                        && (!strcmp(pcszTypeAttr, "ovf:NetworkSection_Type"))
                      )
@@ -516,7 +516,7 @@ HRESULT Appliance::LoopThruSections(const char *pcszPath,
             if (!(SUCCEEDED((rc = HandleNetworkSection(pcszPath, pElem)))))
                 return rc;
         }
-        else if (    (!strcmp(pcszElemName, "DeploymentOptionSection>")))
+        else if (    (!strcmp(pcszElemName, "DeploymentOptionSection")))
         {
             // TODO
         }
@@ -693,13 +693,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
         const xml::AttributeNode *pTypeAttr = pelmThis->findAttribute("type");
         const char *pcszTypeAttr = (pTypeAttr) ? pTypeAttr->getValue() : "";
 
-        if (!strcmp(pcszElemName, "Info"))
-        {
-            // the "Info" section directly under VirtualSystem is where our export routine
-            // chooses to save the VM description (comments), so re-import it from there too
-            vsys.strDescription = pelmThis->getValue();
-        }
-        else if (!strcmp(pcszElemName, "EulaSection"))
+        if (!strcmp(pcszElemName, "EulaSection"))
         {
          /* <EulaSection>
                 <Info ovf:msgid="6">License agreement for the Virtual System.</Info>
@@ -1061,6 +1055,14 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                 pelmThis->getLineNumber());
 
             vsys.cimos = (CIMOSType_T)cimos64;
+        }
+        else if (    (!strcmp(pcszElemName, "AnnotationSection"))
+                  || (!strcmp(pcszTypeAttr, "ovf:AnnotationSection_Type"))
+                )
+        {
+            const xml::ElementNode *pelmAnnotation;
+            if ((pelmAnnotation = pelmThis->findChildElement("Annotation")))
+                vsys.strDescription = pelmAnnotation->getValue();
         }
     }
 
@@ -2560,10 +2562,8 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
         pelmRoot->setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
         pelmRoot->setAttribute("xsi:schemaLocation", "http://schemas.dmtf.org/ovf/envelope/1 ../ovf-envelope.xsd");
 
-
         // <Envelope>/<References>
         xml::ElementNode *pelmReferences = pelmRoot->createChild("References");
-                // @ŧodo
 
         /* <Envelope>/<DiskSection>:
             <DiskSection>
@@ -2606,10 +2606,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
 
             xml::ElementNode *pelmVirtualSystem = pelmVirtualSystemCollection->createChild("VirtualSystem");
 
-            xml::ElementNode *pelmVirtualSystemInfo = pelmVirtualSystem->createChild("Info");
-            std::list<VirtualSystemDescriptionEntry*> llDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
-            if (llDescription.size())
-                pelmVirtualSystemInfo->addContent(llDescription.front()->strVbox);
+            /*xml::ElementNode *pelmVirtualSystemInfo =*/ pelmVirtualSystem->createChild("Info")->addContent("A virtual machine");
 
             std::list<VirtualSystemDescriptionEntry*> llName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
             if (llName.size() != 1)
@@ -2617,6 +2614,20 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                                tr("Missing VM name"));
             pelmVirtualSystem->setAttribute("ovf:id", llName.front()->strVbox);
 
+            // description
+            std::list<VirtualSystemDescriptionEntry*> llDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
+            if (llDescription.size())
+            {
+                /*  <Section ovf:required="false" xsi:type="ovf:AnnotationSection_Type">
+                        <Info>A human-readable annotation</Info>
+                        <Annotation>Plan 9</Annotation>
+                    </Section> */
+                xml::ElementNode *pelmAnnotationSection = pelmVirtualSystem->createChild("AnnotationSection");
+                pelmAnnotationSection->createChild("Info")->addContent("A human-readable annotation");
+                pelmAnnotationSection->createChild("Annotation")->addContent(llDescription.front()->strVbox);
+            }
+
+            // operating system
             std::list<VirtualSystemDescriptionEntry*> llOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
             if (llOS.size() != 1)
                 throw setError(VBOX_E_NOT_SUPPORTED,
