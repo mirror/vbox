@@ -2001,6 +2001,7 @@ HRESULT VirtualBox::removeProgress (IN_GUID aId)
 
     size_t cnt = mData.mProgressOperations.erase (aId);
     Assert (cnt == 1);
+    NOREF(cnt);
 
     return S_OK;
 }
@@ -3505,6 +3506,7 @@ HRESULT VirtualBox::unregisterHardDisk(HardDisk *aHardDisk,
 
     size_t cnt = mData.mHardDiskMap.erase (aHardDisk->id());
     Assert (cnt == 1);
+    NOREF(cnt);
 
     if (aHardDisk->parent().isNull())
     {
