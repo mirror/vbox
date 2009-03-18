@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -61,7 +61,7 @@
 #endif /* defined (RT_OS_OS2) */
 
 /* Include iprt/types.h (which also includes iprt/types.h) now to make sure iprt
- * get to stdint.h first, otherwise a system/xpcom header might beat us and
+ * gets to stdint.h first, otherwise a system/xpcom header might beat us and
  * we'll be without the macros that are optional in C++. */
 #include <iprt/types.h>
 
@@ -93,12 +93,12 @@
 /** Immutable BSTR string */
 typedef const OLECHAR *CBSTR;
 
-/** Input BSTR argument the interface method declaration. */
+/** Input BSTR argument of interface method declaration. */
 #define IN_BSTR BSTR
 
-/** Input GUID argument the interface method declaration. */
+/** Input GUID argument of interface method declaration. */
 #define IN_GUID GUID
-/** Output GUID argument the interface method declaration. */
+/** Output GUID argument of interface method declaration. */
 #define OUT_GUID GUID*
 
 /** Makes the name of the getter interface function (n must be capitalized). */
@@ -338,8 +338,8 @@ typedef nsIID   IID;
 
 #define COM_IIDOF(I) NS_GET_IID (I)
 
-/* two very simple ATL emulator classes to provide
- * FinalConstruct()/FinalRelease() functionality on Linux */
+/* Two very simple ATL emulator classes to provide
+ * FinalConstruct()/FinalRelease() functionality on Linux. */
 
 class CComObjectRootEx
 {
@@ -447,7 +447,7 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
 #endif /* !defined (VBOX_WITH_XPCOM) */
 
 /**
- *  Declares a whar_t string literal from the argument.
+ *  Declares a wchar_t string literal from the argument.
  *  Necessary to overcome MSC / GCC differences.
  *  @param s    expression to stringify
  */
@@ -482,7 +482,7 @@ namespace com
  *
  * }}}
  *
- * On practice, you will need to use a FWResult variable when you call some COM
+ * In practice, you will need to use a FWResult variable when you call some COM
  * method B after another COM method A fails and want to return the result code
  * of A even if B also fails, but want to return the failed result code of B if
  * A issues a warning or succeeds.
@@ -538,7 +538,7 @@ private:
  *
  * }}}
  *
- * On practice, you will need to use a LWResult variable when you call some COM
+ * In practice, you will need to use a LWResult variable when you call some COM
  * method B after COM method A fails and want to return the result code of B
  * if B also fails, but still want to return the failed result code of A if B
  * issues a warning or succeeds.
@@ -577,4 +577,3 @@ private:
 } /* namespace com */
 
 #endif /* ___VBox_com_defs_h */
-
