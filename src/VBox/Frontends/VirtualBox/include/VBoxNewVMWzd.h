@@ -49,17 +49,19 @@ private slots:
 
     void accept();
     void showMediaManager();
-    void showNewHDWizard();
     void onOSTypeChanged();
     void slRAMValueChanged (int aValue);
     void leRAMTextChanged (const QString &aTtext);
+    void hdTypeChanged();
     void revalidate (QIWidgetValidator *aWval);
     void enableNext (const QIWidgetValidator *aWval);
     void onPageShow();
+    void showBackPage();
     void showNextPage();
 
 private:
 
+    bool showNewHDWizard();
     bool constructMachine();
     void ensureNewHardDiskDeleted();
 

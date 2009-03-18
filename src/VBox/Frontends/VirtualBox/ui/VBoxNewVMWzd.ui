@@ -823,43 +823,37 @@
               <bool>true</bool>
              </property>
              <layout class="QGridLayout" >
-              <property name="topMargin" >
-               <number>4</number>
-              </property>
-              <item row="1" column="0" >
-               <widget class="QPushButton" name="mPbNewHD" >
-                <property name="text" >
-                 <string>N&amp;ew...</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1" >
-               <widget class="QPushButton" name="mPbExistingHD" >
-                <property name="text" >
-                 <string>E&amp;xisting...</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="2" >
-               <spacer>
-                <property name="orientation" >
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" >
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
               <item row="0" column="0" colspan="3" >
+               <widget class="QRadioButton" name="mNewVDIRadio" >
+                <property name="text" >
+                 <string>&amp;Create new hard disk</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0" colspan="3" >
+               <widget class="QRadioButton" name="mExistRadio" >
+                <property name="text" >
+                 <string>&amp;Use existing hard disk</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1" >
                <widget class="VBoxMediaComboBox" name="mHDCombo" >
                 <property name="sizePolicy" >
                  <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="2" >
+               <widget class="QToolButton" name="mTbVmm" >
+                <property name="autoRaise" >
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -1198,9 +1192,10 @@
   <tabstop>mBtnBack3</tabstop>
   <tabstop>mBtnNext3</tabstop>
   <tabstop>mBtnCancel3</tabstop>
+  <tabstop>mNewVDIRadio</tabstop>
+  <tabstop>mExistRadio</tabstop>
   <tabstop>mHDCombo</tabstop>
-  <tabstop>mPbNewHD</tabstop>
-  <tabstop>mPbExistingHD</tabstop>
+  <tabstop>mTbVmm</tabstop>
   <tabstop>mBtnBack4</tabstop>
   <tabstop>mBtnNext4</tabstop>
   <tabstop>mBtnCancel4</tabstop>

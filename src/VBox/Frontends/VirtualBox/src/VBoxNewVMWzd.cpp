@@ -87,8 +87,18 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
              this, SLOT (leRAMTextChanged (const QString&)));
 
     /* HDD Images page */
+    QStyleOptionButton options;
+    options.initFrom (mNewVDIRadio);
+    QGridLayout *hdLayout = qobject_cast <QGridLayout*> (mGbHDA->layout());
+    int wid = mNewVDIRadio->style()->subElementRect (QStyle::SE_RadioButtonIndicator, &options, mNewVDIRadio).width() +
+              mNewVDIRadio->style()->pixelMetric (QStyle::PM_RadioButtonLabelSpacing, &options, mNewVDIRadio) -
+              hdLayout->spacing() - 1;
+    QSpacerItem *spacer = new QSpacerItem (wid, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
+    hdLayout->addItem (spacer, 2, 0);
     mHDCombo->setType (VBoxDefs::MediaType_HardDisk);
     mHDCombo->repopulate();
+    mTbVmm->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
+                                          ":/select_file_dis_16px.png"));
 
     mWvalHDD = new QIWidgetValidator (mPageHDD, this);
     connect (mWvalHDD, SIGNAL (validityChanged (const QIWidgetValidator*)),
@@ -96,16 +106,20 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
     connect (mWvalHDD, SIGNAL (isValidRequested (QIWidgetValidator*)),
              this, SLOT (revalidate (QIWidgetValidator*)));
     connect (mGbHDA, SIGNAL (toggled (bool)), mWvalHDD, SLOT (revalidate()));
+    connect (mNewVDIRadio, SIGNAL (toggled (bool)), this, SLOT (hdTypeChanged()));
+    connect (mExistRadio, SIGNAL (toggled (bool)), this, SLOT (hdTypeChanged()));
     connect (mHDCombo, SIGNAL (currentIndexChanged (int)),
              mWvalHDD, SLOT (revalidate()));
-    connect (mPbNewHD, SIGNAL (clicked()), this, SLOT (showNewHDWizard()));
-    connect (mPbExistingHD, SIGNAL (clicked()), this, SLOT (showMediaManager()));
+    connect (mTbVmm, SIGNAL (clicked()), this, SLOT (showMediaManager()));
 
     /* Name and OS page */
     onOSTypeChanged();
 
     /* Memory page */
     slRAMValueChanged (mSlRAM->value());
+
+    /* HDD Images page */
+    hdTypeChanged();
 
     /* Initial revalidation */
     mWvalNameAndOS->revalidate();
@@ -200,23 +214,6 @@ void VBoxNewVMWzd::showMediaManager()
     mHDCombo->setFocus();
 }
 
-void VBoxNewVMWzd::showNewHDWizard()
-{
-    VBoxNewHDWzd dlg (this);
-
-    dlg.setRecommendedFileName (mLeName->text());
-    dlg.setRecommendedSize (mOSTypeSelector->type().GetRecommendedHDD());
-
-    if (dlg.exec() == QDialog::Accepted)
-    {
-        ensureNewHardDiskDeleted();
-        mHardDisk = dlg.hardDisk();
-        mHDCombo->setCurrentItem (mHardDisk.GetId());
-    }
-
-    mHDCombo->setFocus();
-}
-
 void VBoxNewVMWzd::onOSTypeChanged()
 {
     slRAMValueChanged (mOSTypeSelector->type().GetRecommendedRAM());
@@ -230,6 +227,14 @@ void VBoxNewVMWzd::slRAMValueChanged (int aValue)
 void VBoxNewVMWzd::leRAMTextChanged (const QString &aText)
 {
     mSlRAM->setValue (aText.toInt());
+}
+
+void VBoxNewVMWzd::hdTypeChanged()
+{
+    mHDCombo->setEnabled (mExistRadio->isChecked());
+    mTbVmm->setEnabled (mExistRadio->isChecked());
+    if (mExistRadio->isChecked())
+        mHDCombo->setFocus();
 }
 
 void VBoxNewVMWzd::revalidate (QIWidgetValidator *aWval)
@@ -286,6 +291,16 @@ void VBoxNewVMWzd::onPageShow()
         nextButton (page)->setDefault (true);
 }
 
+void VBoxNewVMWzd::showBackPage()
+{
+    /* Delete temporary HD if present */
+    if (sender() == mBtnBack5)
+        ensureNewHardDiskDeleted();
+
+    /* Switch to the back page */
+    QIAbstractWizard::showBackPage();
+}
+
 void VBoxNewVMWzd::showNextPage()
 {
     /* Ask user about disk-less machine */
@@ -293,10 +308,33 @@ void VBoxNewVMWzd::showNextPage()
         !vboxProblem().confirmHardDisklessMachine (this))
         return;
 
+    /* Show the New Hard Disk wizard */
+    if (sender() == mBtnNext4 && mNewVDIRadio->isChecked() &&
+        !showNewHDWizard())
+        return;
+
     /* Switch to the next page */
     QIAbstractWizard::showNextPage();
 }
 
+
+bool VBoxNewVMWzd::showNewHDWizard()
+{
+    VBoxNewHDWzd dlg (this);
+
+    dlg.setRecommendedFileName (mLeName->text());
+    dlg.setRecommendedSize (mOSTypeSelector->type().GetRecommendedHDD());
+
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        ensureNewHardDiskDeleted();
+        mHardDisk = dlg.hardDisk();
+        mHDCombo->setCurrentItem (mHardDisk.GetId());
+        return true;
+    }
+
+    return false;
+}
 
 bool VBoxNewVMWzd::constructMachine()
 {
@@ -359,7 +397,7 @@ bool VBoxNewVMWzd::constructMachine()
         if (!session.isNull())
         {
             CMachine m = session.GetMachine();
-            m.AttachHardDisk(mHDCombo->id(), QString("IDE"), 0, 0);
+            m.AttachHardDisk (mHDCombo->id(), QString("IDE"), 0, 0);
             if (m.isOk())
             {
                 m.SaveSettings();
