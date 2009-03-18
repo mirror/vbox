@@ -756,6 +756,7 @@ void QIMessageBox::refreshDetails()
 {
     /* Update message text iteself */
     mTextLabel->setText (mText + mDetailsList [mDetailsIndex].first);
+    mTextLabel->updateSizeHint();
     /* Update details table */
     mDetailsText->setText (mDetailsList [mDetailsIndex].second);
     setDetailsShown (!mDetailsText->toPlainText().isEmpty());
