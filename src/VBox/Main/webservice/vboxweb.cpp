@@ -43,7 +43,9 @@
 #include <iprt/ldr.h>
 
 // workaround for compile problems on gcc 4.1
+#ifdef __GNUC__
 #pragma GCC visibility push(default)
+#endif
 
 // gSOAP headers (must come after vbox includes because it checks for conflicting defs)
 #include "soapH.h"
@@ -52,7 +54,9 @@
 #include <map>
 #include <sstream>
 
+#ifdef __GNUC__
 #pragma GCC visibility pop
+#endif
 
 // shared webservice header
 #include "vboxweb.h"
