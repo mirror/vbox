@@ -1126,7 +1126,8 @@ VMMDECL(int) PGMPhysGCPtr2CCPtr(PVM pVM, RTGCPTR GCPtr, void **ppv, PPGMPAGEMAPL
  */
 VMMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void const **ppv, PPGMPAGEMAPLOCK pLock)
 {
-    VM_ASSERT_EMT(pVM);
+    /* Debugger uses this API too */
+    //VM_ASSERT_EMT(pVM);
     RTGCPHYS GCPhys;
     int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, &GCPhys);
     if (RT_SUCCESS(rc))

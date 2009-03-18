@@ -740,6 +740,11 @@ REMR3DECL(int) REMR3Step(PVM pVM)
                 rc = pVM->rem.s.rc;
                 pVM->rem.s.rc = VERR_INTERNAL_ERROR;
                 break;
+            case EXCP_EXECUTE_RAW:             
+            case EXCP_EXECUTE_HWACC:
+                /** @todo: is it correct? */
+                rc = VINF_SUCCESS; 
+                break;
             default:
                 AssertReleaseMsgFailed(("This really shouldn't happen, rc=%d!\n", rc));
                 rc = VERR_INTERNAL_ERROR;
