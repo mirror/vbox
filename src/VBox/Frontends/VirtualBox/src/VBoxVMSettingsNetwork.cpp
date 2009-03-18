@@ -245,6 +245,8 @@ void VBoxVMSettingsNetwork::updateAttachmentInfo()
 
 void VBoxVMSettingsNetwork::detailsClicked()
 {
+    /* Lock the button to avoid double-click bug */
+    mTbDetails->setEnabled (false);
     /* Reload alternate list */
     KNetworkAttachmentType type = attachmentType();
     QStringList list;
@@ -266,6 +268,8 @@ void VBoxVMSettingsNetwork::detailsClicked()
     mDetails->activateWindow();
     mDetails->exec();
     updateAttachmentInfo();
+    /* Unlock the previously locked button */
+    mTbDetails->setEnabled (true);
 }
 
 void VBoxVMSettingsNetwork::populateComboboxes()
