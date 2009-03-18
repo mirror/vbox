@@ -79,5 +79,11 @@ if defined(VBOX_WITH_MAIN) && !defined(VBOX_ONLY_DOCS)
 
 endif # VBOX_WITH_MAIN && !VBOX_ONLY_DOCS
 
+if defined(VBOX_WITH_CROGL) && !defined(VBOX_OSE)
+ ifeq ($(KBUILD_TARGET),linux)
+  include $(PATH_SUB_CURRENT)/mesa-7.2/Makefile.kmk
+ endif
+endif
+
 include $(KBUILD_PATH)/subfooter.kmk
 
