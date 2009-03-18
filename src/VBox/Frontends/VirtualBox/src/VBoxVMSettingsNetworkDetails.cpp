@@ -36,8 +36,6 @@ VBoxVMSettingsNetworkDetails::VBoxVMSettingsNetworkDetails (QWidget *aParent)
     : QIWithRetranslateUI2 <QIDialog> (aParent
 #ifdef Q_WS_MAC
     ,Qt::Sheet
-#else
-    ,Qt::Tool
 #endif /* Q_WS_MAC */
     )
     , mType (KNetworkAttachmentType_Null)
