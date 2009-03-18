@@ -1843,7 +1843,8 @@ VBOXHDDBACKEND g_VhdBackend =
     /* cbSize */
     sizeof(VBOXHDDBACKEND),
     /* uBackendCaps */
-    VD_CAP_UUID | VD_CAP_DIFF | VD_CAP_FILE,
+    VD_CAP_UUID | VD_CAP_DIFF | VD_CAP_FILE |
+    VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC,
     /* papszFileExtensions */
     s_apszVhdFileExtensions,
     /* paConfigInfo */
