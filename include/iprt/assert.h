@@ -342,7 +342,7 @@ __END_DECLS
 #endif
 
 /** @def Assert
- * Assert that an expression is true. If it's not hit breakpoint.
+ * Assert that an expression is true. If false, hit breakpoint.
  * @param   expr    Expression which should be true.
  */
 #ifdef RT_STRICT
