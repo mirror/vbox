@@ -75,7 +75,7 @@ void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_LIST)
     {
         RTPrintf("VBoxManage list [--long|-l] vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
-#if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+#if defined(VBOX_WITH_NETFLT)
                 "                            bridgedifs|hostonlyifs|dhcpservers|hostinfo|\n"
 #else
                 "                            bridgedifs|hostinfo|dhcpservers|\n"
@@ -154,7 +154,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-dvdpassthrough on|off]\n"
                  "                            [-floppy disabled|empty|<uuid>|\n"
                  "                                     <filename>|host:<drive>]\n"
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+#if defined(VBOX_WITH_NETFLT)
                  "                            [-nic<1-N> none|null|nat|bridged|intnet|hostonly]\n"
 #else /* !RT_OS_LINUX && !RT_OS_DARWIN */
                  "                            [-nic<1-N> none|null|nat|bridged|intnet]\n"
@@ -488,7 +488,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [*|host|<vmname> [<metric_list>]]\n"
                  "\n");
     }
-#if !defined(RT_OS_WINDOWS) || defined(VBOX_WITH_NETFLT)
+#if defined(VBOX_WITH_NETFLT)
     if (u64Cmd & USAGE_HOSTONLYIFS)
     {
         RTPrintf("VBoxManage hostonlyif       ipconfig <name> \n"
@@ -503,21 +503,23 @@ void printUsage(USAGECATEGORY u64Cmd)
     }
 #endif
 
-#if !defined(RT_OS_WINDOWS) || defined(VBOX_WITH_NETFLT)
     if (u64Cmd & USAGE_DHCPSERVER)
     {
         RTPrintf("VBoxManage dhcpserver       add|modify -netname <network_name> |\n"
+#if defined(VBOX_WITH_NETFLT)
                  "                                        -ifname <hostonly_if_name>\n"
+#endif
                  "                                [-ip <ip_address>\n"
                  "                                 -netmask <network_mask>\n"
                  "                                 -lowerip <lower_ip>\n"
                  "                                 -upperip <upper_ip>]\n"
                  "                                [-enable | -disable]\n"
                  "VBoxManage dhcpserver       remove -netname <network_name> |\n"
+#if defined(VBOX_WITH_NETFLT)
                  "                                   -ifname <hostonly_if_name>\n"
+#endif
                  "\n");
     }
-#endif
 }
 
 /**

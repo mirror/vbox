@@ -1724,7 +1724,9 @@ int main(int argc, char *argv[])
         { "metrics",          handleMetrics },
         { "import",           handleImportAppliance },
         { "export",           handleExportAppliance },
+#if defined(VBOX_WITH_NETFLT)
         { "hostonlyif",       handleHostonlyIf },
+#endif
         { "dhcpserver",       handleDHCPServer},
         { NULL,               NULL }
     };
