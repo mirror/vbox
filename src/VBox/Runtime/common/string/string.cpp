@@ -38,18 +38,6 @@
 #include <iprt/err.h>
 #include "internal/string.h"
 
-#include <locale.h>
-
-
-/**
- * Init C runtime locale
- * note: actually where is no need in this global var, use it only for
- * auto run of setlocale() func.
- */
-/** @todo rewrite this to do setlocale() from some proper init function. */
-static int g_RTLocaleInited = (setlocale(LC_CTYPE, "") != NULL);
-
-
 /**
  * Free string allocated by any of the non-UCS-2 string functions.
  *
