@@ -303,6 +303,8 @@ typedef struct VMDKEXTENT
     bool        fUncleanShutdown;
     /** Flag whether the metadata in the extent header needs to be updated. */
     bool        fMetaDirty;
+    /** Flag whether there is a footer in this extent. */
+    bool        fFooter;
     /** Compression type for this extent. */
     uint16_t    uCompression;
     /** Last grain which has been written to. Only for streamOptimized extents. */
@@ -2459,8 +2461,9 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     if (    RT_LE2H_U32(Header.flags & RT_BIT(17))
         &&  RT_LE2H_U64(Header.gdOffset) == VMDK_GD_AT_END)
     {
-        /* Extent with markers. Use this as criteria to read the footer, as
-         * the spec is as usual totally fuzzy what the criteria really is. */
+        /* Read the footer, which isn't compressed and comes before the
+         * end-of-stream marker. This is bending the VMDK 1.1 spec, but that's
+         * VMware reality. Theory and practice have very little in common. */
         uint64_t cbSize;
         rc = vmdkFileGetSize(pExtent->pFile, &cbSize);
         AssertRC(rc);
@@ -2470,7 +2473,7 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
             goto out;
         }
         cbSize = RT_ALIGN_64(cbSize, 512);
-        rc = vmdkFileInflateAt(pExtent->pFile, cbSize - 2 * 512, &Header, sizeof(Header), VMDK_MARKER_FOOTER, NULL, NULL);
+        rc = vmdkFileReadAt(pExtent->pFile, cbSize - 2*512, &Header, sizeof(Header), NULL);
         AssertRC(rc);
         if (RT_FAILURE(rc))
         {
@@ -2480,6 +2483,7 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         rc = vmdkValidateHeader(pImage, pExtent, &Header);
         if (RT_FAILURE(rc))
             goto out;
+        pExtent->fFooter = true;
     }
     pExtent->uVersion = RT_LE2H_U32(Header.version);
     pExtent->enmType = VMDKETYPE_HOSTED_SPARSE; /* Just dummy value, changed later. */
@@ -2599,13 +2603,13 @@ out:
 /**
  * Internal: write/update the metadata for a sparse extent.
  */
-static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent)
+static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent, uint64_t uOffset)
 {
     SparseExtentHeader Header;
 
     memset(&Header, '\0', sizeof(Header));
     Header.magicNumber = RT_H2LE_U32(VMDK_SPARSE_MAGICNUMBER);
-    Header.version = RT_H2LE_U32(1);
+    Header.version = RT_H2LE_U32(pExtent->uVersion);
     Header.flags = RT_H2LE_U32(RT_BIT(0));
     if (pExtent->pRGD)
         Header.flags |= RT_H2LE_U32(RT_BIT(1));
@@ -2616,15 +2620,31 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent)
     Header.descriptorOffset = RT_H2LE_U64(pExtent->uDescriptorSector);
     Header.descriptorSize = RT_H2LE_U64(pExtent->cDescriptorSectors);
     Header.numGTEsPerGT = RT_H2LE_U32(pExtent->cGTEntries);
-    if (pExtent->pRGD)
+    if (pExtent->fFooter && uOffset == 0)
     {
-        Assert(pExtent->uSectorRGD);
-        Header.rgdOffset = RT_H2LE_U64(pExtent->uSectorRGD);
-        Header.gdOffset = RT_H2LE_U64(pExtent->uSectorGD);
+        if (pExtent->pRGD)
+        {
+            Assert(pExtent->uSectorRGD);
+            Header.rgdOffset = RT_H2LE_U64(VMDK_GD_AT_END);
+            Header.gdOffset = RT_H2LE_U64(VMDK_GD_AT_END);
+        }
+        else
+        {
+            Header.gdOffset = RT_H2LE_U64(VMDK_GD_AT_END);
+        }
     }
     else
     {
-        Header.gdOffset = RT_H2LE_U64(pExtent->uSectorGD);
+        if (pExtent->pRGD)
+        {
+            Assert(pExtent->uSectorRGD);
+            Header.rgdOffset = RT_H2LE_U64(pExtent->uSectorRGD);
+            Header.gdOffset = RT_H2LE_U64(pExtent->uSectorGD);
+        }
+        else
+        {
+            Header.gdOffset = RT_H2LE_U64(pExtent->uSectorGD);
+        }
     }
     Header.overHead = RT_H2LE_U64(pExtent->cOverheadSectors);
     Header.uncleanShutdown = pExtent->fUncleanShutdown;
@@ -2634,7 +2654,7 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent)
     Header.doubleEndLineChar2 = '\n';
     Header.compressAlgorithm = RT_H2LE_U16(pExtent->uCompression);
 
-    int rc = vmdkFileWriteAt(pExtent->pFile, 0, &Header, sizeof(Header), NULL);
+    int rc = vmdkFileWriteAt(pExtent->pFile, uOffset, &Header, sizeof(Header), NULL);
     AssertRC(rc);
     if (RT_FAILURE(rc))
         rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error writing extent header in '%s'"), pExtent->pszFullname);
@@ -3561,7 +3581,13 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
             pExtent->cGDEntries = (pExtent->cSectors + cSectorsPerGDE - 1) / cSectorsPerGDE;
             cSectorsPerGD = (pExtent->cGDEntries + (512 / sizeof(uint32_t) - 1)) / (512 / sizeof(uint32_t));
             if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+            {
+                /* The spec says version is 1 for all VMDKs, but the vast
+                 * majority of streamOptimized VMDKs actually contain
+                 * version 3 - so go with the majority. Both are acepted. */
+                pExtent->uVersion = 3;
                 pExtent->uCompression = VMDK_COMPRESSION_DEFLATE;
+            }
         }
         else
             pExtent->enmType = VMDKETYPE_FLAT;
@@ -3820,7 +3846,10 @@ static void vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
             }
         }
     }
-    (void)vmdkFlushImage(pImage);
+    /* Don't attempt to flush the image if there is no file - usually happens
+     * when creating fails for whatever reason. */
+    if (pImage->pFile != NULL)
+        (void)vmdkFlushImage(pImage);
 
     if (pImage->pExtents != NULL)
     {
@@ -3869,9 +3898,20 @@ static int vmdkFlushImage(PVMDKIMAGE pImage)
             switch (pExtent->enmType)
             {
                 case VMDKETYPE_HOSTED_SPARSE:
-                    rc = vmdkWriteMetaSparseExtent(pExtent);
+                    rc = vmdkWriteMetaSparseExtent(pExtent, 0);
                     if (RT_FAILURE(rc))
                         goto out;
+                    if (pExtent->fFooter)
+                    {
+                        uint64_t cbSize;
+                        rc = vmdkFileGetSize(pExtent->pFile, &cbSize);
+                        if (RT_FAILURE(rc))
+                            goto out;
+                        cbSize = RT_ALIGN_64(cbSize, 512);
+                        rc = vmdkWriteMetaSparseExtent(pExtent, cbSize - 2*512);
+                        if (RT_FAILURE(rc))
+                            goto out;
+                    }
                     break;
 #ifdef VBOX_WITH_VMDK_ESX
                 case VMDKETYPE_ESX_SPARSE:
@@ -4041,15 +4081,25 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         cbExtentSize = RT_ALIGN_64(cbExtentSize, 512);
         uGTSector = VMDK_BYTE2SECTOR(cbExtentSize);
         /* For writable streamOptimized extents the final sector is the
-         * end-of-stream marker. Will be re-added after the grain table. */
+         * end-of-stream marker. Will be re-added after the grain table.
+         * If the file has a footer it also will be re-added before EOS. */
         if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
         {
+            uint64_t uEOSOff = 0;
             uGTSector--;
+            if (pExtent->fFooter)
+            {
+                uGTSector--;
+                uEOSOff = 512;
+                rc = vmdkWriteMetaSparseExtent(pExtent, VMDK_SECTOR2BYTE(uGTSector) + pExtent->cGTEntries * sizeof(uint32_t));
+                if (RT_FAILURE(rc))
+                    return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after grain table in '%s'"), pExtent->pszFullname);
+            }
             pExtent->uLastGrainSector = 0;
             uint8_t aEOS[512];
             memset(aEOS, '\0', sizeof(aEOS));
             rc = vmdkFileWriteAt(pExtent->pFile,
-                                 VMDK_SECTOR2BYTE(uGTSector) + pExtent->cGTEntries * sizeof(uint32_t),
+                                 VMDK_SECTOR2BYTE(uGTSector) + pExtent->cGTEntries * sizeof(uint32_t) + uEOSOff,
                                  aEOS, sizeof(aEOS), NULL);
             if (RT_FAILURE(rc))
                 return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after grain table in '%s'"), pExtent->pszFullname);
@@ -4083,15 +4133,25 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
             Assert(!(cbExtentSize % 512));
             uRGTSector = VMDK_BYTE2SECTOR(cbExtentSize);
             /* For writable streamOptimized extents the final sector is the
-             * end-of-stream marker. Will be re-added after the grain table. */
+             * end-of-stream marker. Will be re-added after the grain table.
+             * If the file has a footer it also will be re-added before EOS. */
             if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
             {
+                uint64_t uEOSOff = 0;
                 uRGTSector--;
+                if (pExtent->fFooter)
+                {
+                    uRGTSector--;
+                    uEOSOff = 512;
+                    rc = vmdkWriteMetaSparseExtent(pExtent, VMDK_SECTOR2BYTE(uRGTSector) + pExtent->cGTEntries * sizeof(uint32_t));
+                    if (RT_FAILURE(rc))
+                        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after redundant grain table in '%s'"), pExtent->pszFullname);
+                }
                 pExtent->uLastGrainSector = 0;
                 uint8_t aEOS[512];
                 memset(aEOS, '\0', sizeof(aEOS));
                 rc = vmdkFileWriteAt(pExtent->pFile,
-                                     VMDK_SECTOR2BYTE(uRGTSector) + pExtent->cGTEntries * sizeof(uint32_t),
+                                     VMDK_SECTOR2BYTE(uRGTSector) + pExtent->cGTEntries * sizeof(uint32_t) + uEOSOff,
                                      aEOS, sizeof(aEOS), NULL);
                 if (RT_FAILURE(rc))
                     return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after redundant grain table in '%s'"), pExtent->pszFullname);
@@ -4156,7 +4216,11 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
          * written block properly. Also we're trying to avoid unnecessary gaps.
          * Additionally the end-of-stream marker needs to be written. */
         if (!pExtent->uLastGrainSector)
+        {
             cbExtentSize -= 512;
+            if (pExtent->fFooter)
+                cbExtentSize -= 512;
+        }
         else
             cbExtentSize = VMDK_SECTOR2BYTE(pExtent->uLastGrainSector) + pExtent->cbLastGrainWritten;
         Assert(cbWrite == VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
@@ -4177,9 +4241,17 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         memcpy(pExtent->pvGrain, pvBuf, cbWrite);
         pExtent->uGrainSector = uSector;
 
+        uint64_t uEOSOff = 0;
+        if (pExtent->fFooter)
+        {
+            uEOSOff = 512;
+            rc = vmdkWriteMetaSparseExtent(pExtent, cbExtentSize + RT_ALIGN(cbGrain, 512));
+            if (RT_FAILURE(rc))
+                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after allocated data block in '%s'"), pExtent->pszFullname);
+        }
         uint8_t aEOS[512];
         memset(aEOS, '\0', sizeof(aEOS));
-        rc = vmdkFileWriteAt(pExtent->pFile, cbExtentSize + RT_ALIGN(cbGrain, 512),
+        rc = vmdkFileWriteAt(pExtent->pFile, cbExtentSize + RT_ALIGN(cbGrain, 512) + uEOSOff,
                              aEOS, sizeof(aEOS), NULL);
         if (RT_FAILURE(rc))
             return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after allocated data block in '%s'"), pExtent->pszFullname);
@@ -4956,10 +5028,18 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     pExtent->uLastGrainWritten = uSectorExtentRel / pExtent->cSectorsPerGrain;
                     pExtent->cbLastGrainWritten = cbGrain;
 
+                    uint64_t uEOSOff = 0;
+                    if (pExtent->fFooter)
+                    {
+                        uEOSOff = 512;
+                        rc = vmdkWriteMetaSparseExtent(pExtent, VMDK_SECTOR2BYTE(uSectorExtentAbs) + RT_ALIGN(cbGrain, 512));
+                        if (RT_FAILURE(rc))
+                            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after data block in '%s'"), pExtent->pszFullname);
+                    }
                     uint8_t aEOS[512];
                     memset(aEOS, '\0', sizeof(aEOS));
                     rc = vmdkFileWriteAt(pExtent->pFile,
-                                         VMDK_SECTOR2BYTE(uSectorExtentAbs) + RT_ALIGN(cbGrain, 512),
+                                         VMDK_SECTOR2BYTE(uSectorExtentAbs) + RT_ALIGN(cbGrain, 512) + uEOSOff,
                                          aEOS, sizeof(aEOS), NULL);
                     if (RT_FAILURE(rc))
                         return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after data block in '%s'"), pExtent->pszFullname);
