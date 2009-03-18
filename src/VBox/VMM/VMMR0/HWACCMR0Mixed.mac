@@ -205,14 +205,16 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
     pop     xBX         ; saved TR
+%ifndef RT_ARCH_AMD64
     sub     xSP, xS*2
     sgdt    [xSP]
     mov     eax, ebx
     and     al, 0F8h                                ; mask away TI and RPL bits, get descriptor offset.
-    add     eax, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
-    and     dword [ss:eax + 4], ~0200h                 ; clear busy flag (2nd type2 bit)
+    add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
+    and     dword [ss:xAX + 4], ~0200h                 ; clear busy flag (2nd type2 bit)
     ltr     bx
     add     xSP, xS*2
+%endif
     
     pop     xAX         ; saved LDTR
     lldt    ax
@@ -266,6 +268,7 @@ ALIGN(16)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
     pop     xBX         ; saved TR
+%ifndef RT_ARCH_AMD64
     sub     xSP, xS*2
     sgdt    [xSP]
     mov     eax, ebx
@@ -274,6 +277,7 @@ ALIGN(16)
     and     dword [ss:eax + 4], ~0200h                 ; clear busy flag (2nd type2 bit)
     ltr     bx
     add     xSP, xS*2
+%endif
 
     pop     xAX         ; saved LDTR
     lldt    ax
@@ -303,6 +307,7 @@ ALIGN(16)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
     pop     xBX         ; saved TR
+%ifndef RT_ARCH_AMD64
     sub     xSP, xS*2
     sgdt    [xSP]
     mov     eax, ebx
@@ -311,6 +316,7 @@ ALIGN(16)
     and     dword [ss:eax + 4], ~0200h                 ; clear busy flag (2nd type2 bit)
     ltr     bx
     add     xSP, xS*2
+%endif
 
     pop     xAX         ; saved LDTR
     lldt    ax
