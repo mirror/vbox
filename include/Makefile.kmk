@@ -41,7 +41,6 @@ r3_only_hdrs := \
 
 hdrs := $(filter-out \
 	VBox/VBoxGuest16.h \
-	VBox/tapwin32.h \
 	VBox/usblib-win.h \
 	VBox/usblib-solaris.h, \
 	$(wildcard VBox/*.h iprt/*.h))

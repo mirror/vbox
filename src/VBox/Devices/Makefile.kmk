@@ -726,7 +726,6 @@ Drivers_SOURCES       = \
 	Audio/audiosniffer.c
 
 Drivers_SOURCES.l4    = \
-	Network/DrvTAP.cpp \
 	Audio/ossaudio.c
 endif # l4
 
@@ -740,8 +739,6 @@ ifeq ($(KBUILD_TARGET),os2)
 Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHost% \
 	, $(Drivers_SOURCES))
-Drivers_SOURCES.os2   = \
-	Network/DrvTAPOs2.cpp
 endif
 
 ifeq ($(KBUILD_TARGET),solaris)
@@ -750,7 +747,6 @@ Drivers_SOURCES      := $(filter-out \
 	, $(Drivers_SOURCES))
 Drivers_SOURCES.solaris = \
 	Audio/solaudio.c \
-	$(if $(VBOX_SOLARIS_10),,Network/DrvTAP.cpp) \
 	Storage/DrvHostBase.cpp \
 	Storage/DrvHostDVD.cpp \
 	Serial/DrvHostSerial.cpp
@@ -764,7 +760,6 @@ Drivers_SOURCES.solaris = \
 endif
 
 Drivers_SOURCES.win   = \
-	Network/DrvTAPWin.cpp \
 	Audio/dsoundaudio.c \
 	Serial/DrvHostSerial.cpp
 
