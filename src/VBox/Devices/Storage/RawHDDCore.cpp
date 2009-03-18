@@ -274,10 +274,10 @@ static void rawFreeImage(PRAWIMAGE pImage, bool fDelete)
 {
     Assert(pImage);
 
-    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        rawFlushImage(pImage);
     if (pImage->File != NIL_RTFILE)
     {
+        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+            rawFlushImage(pImage);
         RTFileClose(pImage->File);
         pImage->File = NIL_RTFILE;
     }
