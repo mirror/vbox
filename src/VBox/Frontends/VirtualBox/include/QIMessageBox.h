@@ -27,8 +27,8 @@
 #include "QIDialog.h"
 
 /* Qt includes */
-#include <QMessageBox>
 #include <QCheckBox>
+#include <QMessageBox>
 #include <QTextEdit>
 
 /* VBox forwards */
@@ -41,76 +41,6 @@ class QCloseEvent;
 class QLabel;
 class QPushButton;
 class QSpacerItem;
-class QToolButton;
-class QVBoxLayout;
-
-/** @class QIArrowButton
- *
- *  The QIArrowButton class is an arrow tool-botton with text-label.
- *  It is declared here until moved into separate file in case
- *  of it will be used somewhere except problem-reporter dialog.
- */
-class QIArrowButton : public QWidget
-{
-    Q_OBJECT;
-
-public:
-
-    QIArrowButton (const QString &aName, QWidget *aParent = 0);
-
-    bool isExpanded() const;
-
-    void animateClick();
-
-signals:
-
-    void clicked();
-
-private slots:
-
-    void buttonClicked();
-
-private:
-
-    void updateIcon();
-
-    bool eventFilter (QObject *aObject, QEvent *aEvent);
-
-    void paintEvent (QPaintEvent *aEvent);
-
-    bool mIsExpanded;
-    QToolButton *mButton;
-    QLabel *mLabel;
-};
-
-/** @class QIArrowSplitter
- *
- *  The QIArrowSplitter class is a folding widget placeholder.
- *  It is declared here until moved into separate file in case
- *  of it will be used somewhere except problem-reporter dialog.
- */
-class QIArrowSplitter : public QWidget
-{
-    Q_OBJECT;
-
-public:
-
-    QIArrowSplitter (QWidget *aParent = 0);
-
-    void addWidget (const QString &aName, QWidget *aWidget);
-
-public slots:
-
-    void toggleWidget();
-
-private:
-
-    bool eventFilter (QObject *aObject, QEvent *aEvent);
-
-    QVBoxLayout *mMainLayout;
-    QList <QIArrowButton*> mButtonsList;
-    QList <QWidget*> mWidgetsList;
-};
 
 /** @class QIMessageBox
  *
@@ -161,9 +91,6 @@ public:
     QString detailsText () const { return mDetailsText->toHtml(); }
     void setDetailsText (const QString &aText);
 
-    bool isDetailsShown() const { return mDetailsVBox->isVisible(); }
-    void setDetailsShown (bool aShown);
-
     QPixmap standardPixmap (QIMessageBox::Icon aIcon);
 
 private:
@@ -173,7 +100,13 @@ private:
     void closeEvent (QCloseEvent *e);
     void showEvent (QShowEvent *e);
 
+    void refreshDetails();
+    void setDetailsShown (bool aShown);
+
 private slots:
+
+    void detailsBack();
+    void detailsNext();
 
     void done0() { mWasDone = true; done (mButton0 & ButtonMask); }
     void done1() { mWasDone = true; done (mButton1 & ButtonMask); }
@@ -193,6 +126,9 @@ private:
     QTextEdit *mDetailsText;
     QSpacerItem *mSpacer;
     QIDialogButtonBox *mButtonBox;
+    QString mText;
+    QList < QPair <QString, QString> > mDetailsList;
+    int mDetailsIndex;
     bool mWasDone : 1;
     bool mWasPolished : 1;
 };

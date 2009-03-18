@@ -338,10 +338,7 @@ int VBoxProblemReporter::message (QWidget *aParent, Type aType, const QString &a
         box->setButtonText (2, aText3);
 
     if (!aDetails.isEmpty())
-    {
         box->setDetailsText (aDetails);
-        box->setDetailsShown (true);
-    }
 
     if (aAutoConfirmId)
     {
@@ -2392,8 +2389,7 @@ QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
     formatted += "</table>";
 
     if (aInfo.next())
-        formatted = doFormatErrorInfo (*aInfo.next()) +  "<p></p>" +
-                    formatted;
+        formatted = formatted + "<!--EOP-->" + doFormatErrorInfo (*aInfo.next());
 
     return formatted;
 }
