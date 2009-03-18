@@ -42,15 +42,19 @@
 
 #elif defined RT_OS_LINUX
 # include <sys/ioctl.h>
+# include <linux/version.h>
+/* All the following crap is apparently not necessary anymore since Linux
+ * version 2.6.22. Check for 2.6.23 to be in the safe side. */
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 /* This is a hack to work around conflicts between these linux kernel headers
  * and the GLIBC tcpip headers. They have different declarations of the 4
  * standard byte order functions. */
-# define _LINUX_BYTEORDER_GENERIC_H
+#  define _LINUX_BYTEORDER_GENERIC_H
+#  include <linux/byteorder/generic.h>
 /* This is another hack for not bothering with C++ unfriendly byteswap macros. */
-# define _LINUX_BYTEORDER_SWAB_H
-# define _LINUX_BYTEORDER_SWABB_H
-/* Those macros that are needed are defined in the header below */
-# include "swab.h"
+/* Those macros that are needed are defined in the header below. */
+#  include "swab.h"
+# endif
 # include <linux/cdrom.h>
 # include <sys/fcntl.h>
 # include <errno.h>

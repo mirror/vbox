@@ -32,8 +32,8 @@
 #ifndef _VBOX_LINUX_SWAB_H
 #define _VBOX_LINUX_SWAB_H
 
-# define _LINUX_BYTEORDER_SWAB_H
-# define _LINUX_BYTEORDER_SWABB_H
+#define _LINUX_BYTEORDER_SWAB_H
+#define _LINUX_BYTEORDER_SWABB_H
 
 #include <asm/types.h>
 
