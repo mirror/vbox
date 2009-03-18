@@ -463,6 +463,7 @@ int handleModifyVM(HandlerArg *a)
             hostifdev[n - 1] = a->argv[i + 1];
             i++;
         }
+#if defined(VBOX_WITH_NETFLT)
         else if (strncmp(a->argv[i], "-hostonlyadapter", 16) == 0)
         {
             unsigned n = parseNum(&a->argv[i][16], NetworkAdapterCount, "NIC");
@@ -473,6 +474,7 @@ int handleModifyVM(HandlerArg *a)
             hostifdev[n - 1] = a->argv[i + 1];
             i++;
         }
+#endif
         else if (strncmp(a->argv[i], "-intnet", 7) == 0)
         {
             unsigned n = parseNum(&a->argv[i][7], NetworkAdapterCount, "NIC");
@@ -1454,14 +1456,14 @@ int handleModifyVM(HandlerArg *a)
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
                     CHECK_ERROR_RET(nic, AttachToInternalNetwork(), 1);
                 }
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
+#if defined(VBOX_WITH_NETFLT)
                 else if (strcmp(nics[n], "hostonly") == 0)
                 {
 
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
                     CHECK_ERROR_RET(nic, AttachToHostOnlyInterface(), 1);
                 }
-#endif /* defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) */
+#endif
                 else
                 {
                     errorArgument("Invalid type '%s' specfied for NIC %lu", nics[n], n + 1);
