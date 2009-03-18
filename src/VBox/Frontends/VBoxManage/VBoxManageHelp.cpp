@@ -76,11 +76,11 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage list [--long|-l] vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
 #if (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT))
-                "                            bridgedifs|hostonlyifs|dhcpservers|hostinfo|hddbackends|hdds|dvds|floppies|\n"
+                "                            bridgedifs|hostonlyifs|dhcpservers|hostinfo|\n"
 #else
-                "                            bridgedifs|hostinfo|dhcpservers|hddbackends|hdds|dvds|floppies|\n"
+                "                            bridgedifs|hostinfo|dhcpservers|\n"
 #endif
-
+                 "                            hddbackends|hdds|dvds|floppies|\n"
                  "                            usbhost|usbfilters|systemproperties\n"
                  "\n");
     }
@@ -111,18 +111,6 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-register]\n"
                  "                            [-basefolder <path> | -settingsfile <path>]\n"
                  "                            [-uuid <uuid>]\n"
-                 "\n");
-    }
-
-    if (u64Cmd & USAGE_IMPORTAPPLIANCE)
-    {
-        RTPrintf("VBoxManage import           <ovf>\n"
-                 "\n"); // @todo
-    }
-
-    if (u64Cmd & USAGE_EXPORTAPPLIANCE)
-    {
-        RTPrintf("VBoxManage export           <machines> [--output|-o] <ovf>\n"
                  "\n");
     }
 
@@ -242,6 +230,18 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-usbehci on|off]\n"
                  "                            [-snapshotfolder default|<path>]\n");
         RTPrintf("\n");
+    }
+
+    if (u64Cmd & USAGE_IMPORTAPPLIANCE)
+    {
+        RTPrintf("VBoxManage import           <ovf> [--dry-run|-n] [more options]\n"
+                 "    (run with -n to have options displayed for a particular OVF)\n\n");
+    }
+
+    if (u64Cmd & USAGE_EXPORTAPPLIANCE)
+    {
+        RTPrintf("VBoxManage export           <machines> [--output|-o] <ovf>\n"
+                 "\n");
     }
 
     if (u64Cmd & USAGE_STARTVM)
@@ -472,7 +472,8 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_METRICS)
     {
-        RTPrintf("VBoxManage metrics          list [*|host|<vmname> [<metric_list>]] (comma-separated)\n\n"
+        RTPrintf("VBoxManage metrics          list [*|host|<vmname> [<metric_list>]] \n"
+                 "                                                 (comma-separated)\n\n"
                  "VBoxManage metrics          setup\n"
                  "                            [-period <seconds>]\n"
                  "                            [-samples <count>]\n"
@@ -491,9 +492,9 @@ void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_HOSTONLYIFS)
     {
         RTPrintf("VBoxManage hostonlyif       ipconfig <name> \n"
-                 "                                     [-dhcp| \n"
-                 "                                      -ip<ipv4> [-netmask<ipv4> (default is 255.255.255.0)]| \n"
-                 "                                      -ipv6<ipv6> [-netmasklengthv6<length> (default is 64)]]\n"
+                 "                            [-dhcp| \n"
+                 "                            -ip<ipv4> [-netmask<ipv4> (deflt: 255.255.255.0)]| \n"
+                 "                            -ipv6<ipv6> [-netmasklengthv6<length> (deflt: 64)]]\n"
 # if defined(RT_OS_WINDOWS)
                  "                            create |\n"
                  "                            remove <name>\n"
@@ -505,13 +506,15 @@ void printUsage(USAGECATEGORY u64Cmd)
 #if !defined(RT_OS_WINDOWS) || defined(VBOX_WITH_NETFLT)
     if (u64Cmd & USAGE_DHCPSERVER)
     {
-        RTPrintf("VBoxManage dhcpserver       [add | modify] [-netname <network_name> | -ifname <hostonly_if_name>]\n"
+        RTPrintf("VBoxManage dhcpserver       add|modify -netname <network_name> |\n"
+                 "                                        -ifname <hostonly_if_name>\n"
                  "                                [-ip <ip_address>\n"
                  "                                 -netmask <network_mask>\n"
                  "                                 -lowerip <lower_ip>\n"
                  "                                 -upperip <upper_ip>]\n"
                  "                                [-enable | -disable]\n"
-                 "                            remove [-netname <network_name> | -ifname <hostonly_if_name>]\n"
+                 "VBoxManage dhcpserver       remove -netname <network_name> |\n"
+                 "                                   -ifname <hostonly_if_name>\n"
                  "\n");
     }
 #endif
