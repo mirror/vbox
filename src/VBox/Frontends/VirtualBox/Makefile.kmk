@@ -293,6 +293,7 @@ VirtualBox_QT_MOCHDRS = \
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
+	src/QIMessageBox.cpp \
 	src/VBoxSelectorWnd.cpp \
 	src/VBoxConsoleWnd.cpp \
 	src/VBoxMediaManagerDlg.cpp
