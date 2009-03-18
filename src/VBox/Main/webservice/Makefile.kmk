@@ -120,8 +120,8 @@ if "$(VBOX_PATH_GSOAP_BIN)" == ""
 endif
 VBOX_SOAPCPP2          := $(VBOX_PATH_GSOAP_BIN)/soapcpp2$(HOSTSUFF_EXE)
 VBOX_WSDL2H            := $(VBOX_PATH_GSOAP_BIN)/wsdl2h$(HOSTSUFF_EXE)
-VBOX_STUBMAKER         := $(firstword $(which stubmaker stubmaker.pl))
-VBOX_WSDL2PY           := $(firstword $(which wsdl2py))
+VBOX_STUBMAKER         := $(firstword $(which stubmaker stubmaker.pl) stubmaker_not_found)
+VBOX_WSDL2PY           := $(firstword $(which wsdl2py) wsdl2py_not_found)
 
 VBOX_PATH_GSOAP_IMPORT := $(strip $(if $(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP)/import))
 VBOX_GSOAP_INCS        := $(strip $(if $(VBOX_GSOAP_INCS),       $(VBOX_GSOAP_INCS),       $(VBOX_PATH_GSOAP) $(VBOX_PATH_GSOAP_IMPORT) ))
