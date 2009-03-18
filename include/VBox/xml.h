@@ -297,7 +297,7 @@ public:
     /**
      * Possible file access modes.
      */
-    enum Mode { Mode_Read, Mode_Write, Mode_ReadWrite };
+    enum Mode { Mode_Read, Mode_WriteCreate, Mode_Overwrite, Mode_ReadWrite };
 
     /**
      * Opens a file with the given name in the given mode. If @a aMode is Read
