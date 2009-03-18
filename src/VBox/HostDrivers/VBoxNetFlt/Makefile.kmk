@@ -230,7 +230,7 @@ VBoxNetAdp_SOURCES = \
 	win/VBoxNetFlt-win.c \
 	win/VBoxNetFltMp-win.c \
 	win/VBoxNetFlt-win.rc
-VBoxNetAdp_DEFS += VBOXNETFLT_STATIC_CONFIG VBOX_TAPMINIPORT
+VBoxNetAdp_DEFS += VBOXNETFLT_STATIC_CONFIG VBOXNETADP
 VBoxNetAdp_LDFLAGS.win.x86 = -Entry:DriverEntry@8
 VBoxNetAdp_LDFLAGS.win.amd64 = -Entry:DriverEntry
 VBoxNetAdp_SOURCES.win.amd64 += win/VBoxNetFltA-win.asm
