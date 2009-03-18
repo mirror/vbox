@@ -175,6 +175,8 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/*.gc $(prefix)/usr/lib/$(package)
 	mv $(archdir)/*.r0 $(prefix)/usr/lib/$(package)
 	mv $(archdir)/*.rel $(prefix)/usr/lib/$(package) || true
+	mv $(archdir)/VBoxNetDHCP $(prefix)/usr/lib/$(package)
+	mv $(archdir)/VBoxNetAdpCtl $(prefix)/usr/lib/$(package)
 	mv $(archdir)/VBoxXPCOMIPCD $(prefix)/usr/lib/$(package)
 	mv $(archdir)/components $(prefix)/usr/lib/$(package)/components
 	mv $(archdir)/*.so $(prefix)/usr/lib/$(package)
