@@ -261,7 +261,7 @@ int cpu_exec(CPUState *env1)
 {
 #define DECLARE_HOST_REGS 1
 #include "hostregs_helper.h"
-    int ret, interrupt_request;
+    int ret = 0, interrupt_request;
     TranslationBlock *tb;
     uint8_t *tc_ptr;
     unsigned long next_tb;
