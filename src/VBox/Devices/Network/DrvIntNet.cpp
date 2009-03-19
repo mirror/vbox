@@ -1103,10 +1103,14 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
 
             DHCPServerRunner dhcp;
             dhcp.setOption(DHCPCFG_NETNAME, OpenReq.szNetwork);
-            dhcp.setOption(DHCPCFG_TRUNKNAME, OpenReq.szTrunk);
+            if(OpenReq.enmTrunkType == kIntNetTrunkType_NetFlt
+                    || OpenReq.enmTrunkType == kIntNetTrunkType_NetAdp)
+                dhcp.setOption(DHCPCFG_TRUNKNAME, OpenReq.szTrunk);
+
             switch(OpenReq.enmTrunkType)
             {
             case kIntNetTrunkType_WhateverNone:
+            case kIntNetTrunkType_None:
                 dhcp.setOption(DHCPCFG_TRUNKTYPE, TRUNKTYPE_WHATEVER);
                 break;
             case kIntNetTrunkType_NetFlt:
