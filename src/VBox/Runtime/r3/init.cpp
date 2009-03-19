@@ -39,6 +39,7 @@
 #else
 # include <unistd.h>
 #endif
+#include <locale.h>
 
 #include <iprt/initterm.h>
 #include <iprt/asm.h>
@@ -54,8 +55,6 @@
 # include <VBox/sup.h>
 # include <stdlib.h>
 #endif
-
-#include <locale.h>
 
 #include "internal/path.h"
 #include "internal/process.h"
@@ -262,10 +261,10 @@ static int rtR3Init(bool fInitSUPLib, const char *pszProgramPath)
     g_u64ProgramStartMicroTS = g_u64ProgramStartNanoTS / 1000;
     g_u64ProgramStartMilliTS = g_u64ProgramStartNanoTS / 1000000;
 
-    /**
+    /*
      * Init C runtime locale
      */
-    char *pcDummy = setlocale(LC_CTYPE, "");
+    setlocale(LC_CTYPE, "");
 
     /*
      * More stuff to come?
