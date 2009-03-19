@@ -44,8 +44,8 @@
 # include <sys/ioctl.h>
 # include <linux/version.h>
 /* All the following crap is apparently not necessary anymore since Linux
- * version 2.6.22. Check for 2.6.23 to be in the safe side. */
-# if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 23)
+ * version 2.6.29. */
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
 /* This is a hack to work around conflicts between these linux kernel headers
  * and the GLIBC tcpip headers. They have different declarations of the 4
  * standard byte order functions. */
