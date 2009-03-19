@@ -309,8 +309,8 @@ void VBoxNewVMWzd::showNextPage()
         return;
 
     /* Show the New Hard Disk wizard */
-    if (sender() == mBtnNext4 && mNewVDIRadio->isChecked() &&
-        !showNewHDWizard())
+    if (sender() == mBtnNext4 && mGbHDA->isChecked() &&
+        mNewVDIRadio->isChecked() && !showNewHDWizard())
         return;
 
     /* Switch to the next page */
