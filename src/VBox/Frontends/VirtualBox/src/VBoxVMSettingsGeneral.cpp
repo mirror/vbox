@@ -212,13 +212,9 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost()
                              .GetProcessorFeature (KProcessorFeature_HWVirtEx);
     mCbVirt->setEnabled (fVTxAMDVSupported);
-    if (fVTxAMDVSupported)
-    {
-        aMachine.GetHWVirtExEnabled() == KTSBool_True ?
-            mCbVirt->setCheckState (Qt::Checked) :
-            mCbVirt->setCheckState (Qt::Unchecked);
-    }
-    else mCbVirt->setCheckState (Qt::Unchecked);
+    aMachine.GetHWVirtExEnabled() == KTSBool_True ?
+        mCbVirt->setCheckState (Qt::Checked) :
+        mCbVirt->setCheckState (Qt::Unchecked);
 
     /* Nested Paging */
     mCbNestedPaging->setEnabled (   fVTxAMDVSupported
