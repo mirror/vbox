@@ -2741,7 +2741,8 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
     switch (pRegFrame->ecx)
     {
     case MSR_IA32_TSC:
-        return EMInterpretRdtsc(pVM, pRegFrame);
+        val = TMCpuTickGet(pVM);
+        break;
 
     case MSR_IA32_APICBASE:
         rc = PDMApicGetBase(pVM, &val);

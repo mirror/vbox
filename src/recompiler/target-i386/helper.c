@@ -3188,8 +3188,9 @@ void helper_rdmsr(void)
             val = 0; /** @todo else exception? */
         break;
     }
+    case MSR_IA32_TSC:
     case MSR_K8_TSC_AUX:
-        val = cpu_rdmsr(env, MSR_K8_TSC_AUX);
+        val = cpu_rdmsr(env, (uint32_t)ECX);
         break;
 #endif /* VBOX */
     }
