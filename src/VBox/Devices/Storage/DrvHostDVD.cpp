@@ -50,7 +50,6 @@
  * and the GLIBC tcpip headers. They have different declarations of the 4
  * standard byte order functions. */
 #  define _LINUX_BYTEORDER_GENERIC_H
-#  include <linux/byteorder/generic.h>
 /* This is another hack for not bothering with C++ unfriendly byteswap macros. */
 /* Those macros that are needed are defined in the header below. */
 #  include "swab.h"
