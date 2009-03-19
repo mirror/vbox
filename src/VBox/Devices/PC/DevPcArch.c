@@ -258,10 +258,10 @@ static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * 2. 0xfff80000-0xffffffff
      * Note: This will be removed before long.
      */
-    rc = PDMDevHlpPhysReserve(pDevIns, 0x000a0000, 0x50000, "Low ROM Region");
+    rc = MMR3PhysReserve(PDMDevHlpGetVM(pDevIns), 0x000a0000, 0x50000, "Low ROM Region");
     if (RT_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpPhysReserve(pDevIns, 0xfff80000, 0x80000, "High ROM Region");
+    rc = MMR3PhysReserve(PDMDevHlpGetVM(pDevIns), 0xfff80000, 0x80000, "High ROM Region");
     if (RT_FAILURE(rc))
         return rc;
 #endif
