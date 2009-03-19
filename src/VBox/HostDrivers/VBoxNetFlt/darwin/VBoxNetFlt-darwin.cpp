@@ -1049,19 +1049,14 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
     ifnet_t pIfNet = vboxNetFltDarwinRetainIfNet(pThis);
     if (pIfNet)
     {
-        /*
-         * If there is no need to set promiscuous mode the only thing
-         * we have to do in order to preserve the backward compatibility
-         * is to try bringing the interface up if it gets activated.
-         */
         if (pThis->fDisablePromiscuous)
         {
-            Log(("vboxNetFltPortOsSetActive: promisc disabled, do nothing.\n"));
+            /*
+             * Promiscuous mode should not be used (wireless), we just need to
+             * make sure the interface is up.
+             */
             if (fActive)
             {
-                /*
-                 * Try bring the interface up and running if it's down.
-                 */
                 u_int16_t fIf = ifnet_flags(pIfNet);
                 if ((fIf & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING))
                 {
@@ -1069,81 +1064,82 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
                     ifnet_ioctl(pIfNet, 0, SIOCSIFFLAGS, NULL);
                 }
             }
-            vboxNetFltDarwinReleaseIfNet(pThis, pIfNet);
-            return;
-        }
-        /*
-         * This api is a bit weird, the best reference is the code.
-         *
-         * Also, we have a bit or race conditions wrt the maintance of
-         * host the interface promiscuity for vboxNetFltPortOsIsPromiscuous.
-         */
-        unsigned const cPromiscBefore = VBOX_GET_PCOUNT(pIfNet);
-        u_int16_t fIf;
-        if (fActive)
-        {
-            Assert(!pThis->u.s.fSetPromiscuous);
-            errno_t err = ENETDOWN;
-            ASMAtomicWriteBool(&pThis->u.s.fNeedSetPromiscuous, true);
-
-            /*
-             * Try bring the interface up and running if it's down.
-             */
-            fIf = ifnet_flags(pIfNet);
-            if ((fIf & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING))
-            {
-                err = ifnet_set_flags(pIfNet, IFF_UP, IFF_UP);
-                errno_t err2 = ifnet_ioctl(pIfNet, 0, SIOCSIFFLAGS, NULL);
-                if (!err)
-                    err = err2;
-                fIf = ifnet_flags(pIfNet);
-            }
-
-            /*
-             * Is it already up?  If it isn't, leave it to the link event or
-             * we'll upset if_pcount (as stated above, ifnet_set_promiscuous is weird).
-             */
-            if ((fIf & (IFF_UP | IFF_RUNNING)) == (IFF_UP | IFF_RUNNING))
-            {
-                err = ifnet_set_promiscuous(pIfNet, 1);
-                pThis->u.s.fSetPromiscuous = err == 0;
-                if (!err)
-                {
-                    ASMAtomicWriteBool(&pThis->u.s.fNeedSetPromiscuous, false);
-
-                    /* check if it actually worked, this stuff is not always behaving well. */
-                    if (!(ifnet_flags(pIfNet) & IFF_PROMISC))
-                    {
-                        err = ifnet_set_flags(pIfNet, IFF_PROMISC, IFF_PROMISC);
-                        if (!err)
-                            err = ifnet_ioctl(pIfNet, 0, SIOCSIFFLAGS, NULL);
-                        if (!err)
-                            Log(("vboxNetFlt: fixed IFF_PROMISC on %s (%d->%d)\n", pThis->szName, cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
-                        else
-                            Log(("VBoxNetFlt: failed to fix IFF_PROMISC on %s, err=%d (%d->%d)\n",
-                                 pThis->szName, err, cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
-                    }
-                }
-                else
-                    Log(("VBoxNetFlt: ifnet_set_promiscuous -> err=%d grr! (%d->%d)\n", err, cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
-            }
-            else if (!err)
-                Log(("VBoxNetFlt: Waiting for the link to come up... (%d->%d)\n", cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
-            if (err)
-                LogRel(("VBoxNetFlt: Failed to put '%s' into promiscuous mode, err=%d (%d->%d)\n", pThis->szName, err, cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
         }
         else
         {
-            ASMAtomicWriteBool(&pThis->u.s.fNeedSetPromiscuous, false);
-            if (pThis->u.s.fSetPromiscuous)
+            /*
+             * This api is a bit weird, the best reference is the code.
+             *
+             * Also, we have a bit or race conditions wrt the maintance of
+             * host the interface promiscuity for vboxNetFltPortOsIsPromiscuous.
+             */
+            unsigned const cPromiscBefore = VBOX_GET_PCOUNT(pIfNet);
+            u_int16_t fIf;
+            if (fActive)
             {
-                errno_t err = ifnet_set_promiscuous(pIfNet, 0);
-                AssertMsg(!err, ("%d\n", err)); NOREF(err);
-            }
-            pThis->u.s.fSetPromiscuous = false;
+                Assert(!pThis->u.s.fSetPromiscuous);
+                errno_t err = ENETDOWN;
+                ASMAtomicWriteBool(&pThis->u.s.fNeedSetPromiscuous, true);
 
-            fIf = ifnet_flags(pIfNet);
-            Log(("VBoxNetFlt: fIf=%#x; %d->%d\n", fIf, cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
+                /*
+                 * Try bring the interface up and running if it's down.
+                 */
+                fIf = ifnet_flags(pIfNet);
+                if ((fIf & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING))
+                {
+                    err = ifnet_set_flags(pIfNet, IFF_UP, IFF_UP);
+                    errno_t err2 = ifnet_ioctl(pIfNet, 0, SIOCSIFFLAGS, NULL);
+                    if (!err)
+                        err = err2;
+                    fIf = ifnet_flags(pIfNet);
+                }
+
+                /*
+                 * Is it already up?  If it isn't, leave it to the link event or
+                 * we'll upset if_pcount (as stated above, ifnet_set_promiscuous is weird).
+                 */
+                if ((fIf & (IFF_UP | IFF_RUNNING)) == (IFF_UP | IFF_RUNNING))
+                {
+                    err = ifnet_set_promiscuous(pIfNet, 1);
+                    pThis->u.s.fSetPromiscuous = err == 0;
+                    if (!err)
+                    {
+                        ASMAtomicWriteBool(&pThis->u.s.fNeedSetPromiscuous, false);
+
+                        /* check if it actually worked, this stuff is not always behaving well. */
+                        if (!(ifnet_flags(pIfNet) & IFF_PROMISC))
+                        {
+                            err = ifnet_set_flags(pIfNet, IFF_PROMISC, IFF_PROMISC);
+                            if (!err)
+                                err = ifnet_ioctl(pIfNet, 0, SIOCSIFFLAGS, NULL);
+                            if (!err)
+                                Log(("vboxNetFlt: fixed IFF_PROMISC on %s (%d->%d)\n", pThis->szName, cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
+                            else
+                                Log(("VBoxNetFlt: failed to fix IFF_PROMISC on %s, err=%d (%d->%d)\n",
+                                     pThis->szName, err, cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
+                        }
+                    }
+                    else
+                        Log(("VBoxNetFlt: ifnet_set_promiscuous -> err=%d grr! (%d->%d)\n", err, cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
+                }
+                else if (!err)
+                    Log(("VBoxNetFlt: Waiting for the link to come up... (%d->%d)\n", cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
+                if (err)
+                    LogRel(("VBoxNetFlt: Failed to put '%s' into promiscuous mode, err=%d (%d->%d)\n", pThis->szName, err, cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
+            }
+            else
+            {
+                ASMAtomicWriteBool(&pThis->u.s.fNeedSetPromiscuous, false);
+                if (pThis->u.s.fSetPromiscuous)
+                {
+                    errno_t err = ifnet_set_promiscuous(pIfNet, 0);
+                    AssertMsg(!err, ("%d\n", err)); NOREF(err);
+                }
+                pThis->u.s.fSetPromiscuous = false;
+
+                fIf = ifnet_flags(pIfNet);
+                Log(("VBoxNetFlt: fIf=%#x; %d->%d\n", fIf, cPromiscBefore, VBOX_GET_PCOUNT(pIfNet)));
+            }
         }
 
         vboxNetFltDarwinReleaseIfNet(pThis, pIfNet);
