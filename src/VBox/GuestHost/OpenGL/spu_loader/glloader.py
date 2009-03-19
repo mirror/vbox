@@ -437,7 +437,9 @@ possibly_useful_glx_functions = [
 	"glXDestroyPbuffer",
 	"glXQueryContext",
 	"glXQueryDrawable",
-	"glXMakeContextCurrent"
+	"glXMakeContextCurrent",
+    "glXCreateWindow",
+    "glXGetVisualFromFBConfig",
 ]
 
 print '#ifdef WINDOWS'

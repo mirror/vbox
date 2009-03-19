@@ -17,7 +17,10 @@ print """
 #include "cr_string.h"
 #include "cr_version.h"
 #include "stub.h"
-
+#include "dri_glx.h"
+#if defined(VBOXOGL_DRI) || defined(VBOXOGL_FAKEDRI)
+#include "cr_gl.h"
+#endif
 
 struct name_address {
   const char *name;
@@ -39,7 +42,7 @@ for func_name in keys:
 
 	wrap = apiutil.GetCategoryWrapper(func_name)
 	name = "gl" + func_name
-	address = "gl" + func_name
+	address = "VBOXGLTAG(gl" + func_name + ")"
 	if wrap:
 		print '#ifdef CR_%s' % wrap
 	print '\t{ "%s", (CR_PROC) %s },' % (name, address)
@@ -61,14 +64,6 @@ print """
 	{ NULL, NULL }
 };
 
-DECLEXPORT(void) glXBindTexImageEXT(Display *dpy, GLXDrawable draw, int buffer, const int *attrib_list);
-DECLEXPORT(void) glXReleaseTexImageEXT(Display *dpy, GLXDrawable draw, int buffer);
-DECLEXPORT(void) glXQueryDrawable(Display *dpy, GLXDrawable draw, int attribute, unsigned int *value);
-DECLEXPORT(GLXFBConfig *) glXGetFBConfigs(Display *dpy, int screen, int *nelements);
-DECLEXPORT(int) glXGetFBConfigAttrib(Display *dpy, GLXFBConfig config, int attribute, int *value);
-DECLEXPORT(GLXPixmap) glXCreatePixmap(Display *dpy, GLXFBConfig config, Pixmap pixmap, const int *attrib_list);
-
-
 CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 {
 	int i;
@@ -80,12 +75,18 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 		}
 	}
 
-    if (!crStrcmp( name, "glXBindTexImageEXT" )) return (CR_PROC) glXBindTexImageEXT;
-    if (!crStrcmp( name, "glXReleaseTexImageEXT" )) return (CR_PROC) glXReleaseTexImageEXT;
-    if (!crStrcmp( name, "glXQueryDrawable" )) return (CR_PROC) glXQueryDrawable;
-    if (!crStrcmp( name, "glXGetFBConfigs" )) return (CR_PROC) glXGetFBConfigs;
-    if (!crStrcmp( name, "glXGetFBConfigAttrib" )) return (CR_PROC) glXGetFBConfigAttrib;
-    if (!crStrcmp( name, "glXCreatePixmap" )) return (CR_PROC) glXCreatePixmap;
+    /*@todo, reuse fakedri_glxfuncsList.h and dri_glx.h here*/
+    /*also, in case of fake dri, those should point to vbox_glX* not to vbox_stub* ones, VBOXGLXENTRYTAG */
+    if (!crStrcmp( name, "glXBindTexImageEXT" )) return (CR_PROC) VBOXGLXTAG(glXBindTexImageEXT);
+    if (!crStrcmp( name, "glXReleaseTexImageEXT" )) return (CR_PROC) VBOXGLXTAG(glXReleaseTexImageEXT);
+    if (!crStrcmp( name, "glXQueryDrawable" )) return (CR_PROC) VBOXGLXTAG(glXQueryDrawable);
+    if (!crStrcmp( name, "glXGetFBConfigs" )) return (CR_PROC) VBOXGLXTAG(glXGetFBConfigs);
+    if (!crStrcmp( name, "glXGetFBConfigAttrib" )) return (CR_PROC) VBOXGLXTAG(glXGetFBConfigAttrib);
+    if (!crStrcmp( name, "glXCreatePixmap" )) return (CR_PROC) VBOXGLXTAG(glXCreatePixmap);
+    if (!crStrcmp( name, "glXCreateWindow" )) return (CR_PROC) VBOXGLXTAG(glXCreateWindow);
+    if (!crStrcmp( name, "glXGetVisualFromFBConfig" )) return (CR_PROC) VBOXGLXTAG(glXGetVisualFromFBConfig);
+    if (!crStrcmp( name, "glXDestroyWindow" )) return (CR_PROC) VBOXGLXTAG(glXDestroyWindow);
+    if (!crStrcmp( name, "glXDestroyPixmap" )) return (CR_PROC) VBOXGLXTAG(glXDestroyPixmap);
 
     if (name) crDebug("Returning NULL for %s", name);
 	return NULL;

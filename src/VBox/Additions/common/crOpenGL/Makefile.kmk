@@ -71,6 +71,7 @@ VBoxOGL_INCS.linux     = \
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/drivers/dri/common \
 	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.5
+VBoxOGL_DEFS.linux     += VBOX_NO_NATIVEGL
 ifdef VBoxOGL_DRI
  VBoxOGL_DEFS          += VBOXOGL_DRI IN_DRI_DRIVER
 else ifdef VBoxOGL_FAKEDRI
@@ -172,17 +173,15 @@ $(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm: \
 		| $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 else ifeq ($(KBUILD_TARGET),linux)
-if !defined(VBoxOGL_DRI) && !defined(VBoxOGL_FAKEDRI)
 $(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+if !defined(VBoxOGL_DRI) && !defined(VBoxOGL_FAKEDRI)
 $(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm: \
 		$(PATH_SUB_CURRENT)/Linux_i386_exports.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 else ifdef VBoxOGL_DRI
-$(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress_dri.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
-	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 $(VBOX_PATH_CROGL_GENFILES)/DD_gl.h: $(PATH_SUB_CURRENT)/DD_glh.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
@@ -195,8 +194,6 @@ $(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm: \
 		| $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 else ifdef VBoxOGL_FAKEDRI
-$(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress_dri.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
-	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 $(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm: \
