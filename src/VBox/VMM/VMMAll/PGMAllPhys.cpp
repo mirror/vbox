@@ -938,9 +938,13 @@ int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
  * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
- *
- * @remark  Avoid calling this API from within critical sections (other than
- *          the PGM one) because of the deadlock risk.
+ *  
+ * @remarks The caller is responsible for dealing with access handlers. 
+ * @todo    Add an informational return code for pages with access handlers? 
+ *  
+ * @remark  Avoid calling this API from within critical sections (other than the
+ *          PGM one) because of the deadlock risk. External threads may need to
+ *          delegate jobs to the EMTs.
  * @thread  Any thread.
  */
 VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
@@ -971,7 +975,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
         }
     }
 
-# else
+# else  /* IN_RING3 || IN_RING0 */
     int rc = pgmLock(pVM);
     AssertRCReturn(rc, rc);
 
@@ -1040,8 +1044,8 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
  *
  * This API should only be used for very short term, as it will consume
  * scarse resources (R0 and GC) in the mapping cache. When you're done
- * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
- *
+ * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it. 
+ *  
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
@@ -1052,14 +1056,87 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
  * @param   ppv         Where to store the address corresponding to GCPhys.
  * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
  *
+ * @remarks The caller is responsible for dealing with access handlers. 
+ * @todo    Add an informational return code for pages with access handlers? 
+ *  
  * @remark  Avoid calling this API from within critical sections (other than
  *          the PGM one) because of the deadlock risk.
  * @thread  Any thread.
  */
 VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock)
 {
-    /** @todo implement this */
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+# if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+
+    /*
+     * Find the page and make sure it's readable.
+     */
+    PPGMPAGE pPage;
+    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+    if (RT_SUCCESS(rc))
+    {
+        if (RT_UNLIKELY(PGM_PAGE_IS_MMIO(pPage)))
+            rc = VERR_PGM_PHYS_PAGE_RESERVED;
+        else
+        {
+            *ppv = pgmDynMapHCPageOff(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK)); /** @todo add a read only flag? */
+#if 0
+            pLock->pvMap = 0;
+            pLock->pvPage = pPage;
+#else
+            pLock->u32Dummy = UINT32_MAX;
+#endif
+            AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 /* not returned */, ("%Rrc\n", rc));
+            rc = VINF_SUCCESS;
+        }
+    }
+
+# else  /* IN_RING3 || IN_RING0 */
+    int rc = pgmLock(pVM);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Query the Physical TLB entry for the page (may fail).
+     */
+    PPGMPAGEMAPTLBE pTlbe;
+    rc = pgmPhysPageQueryTlbe(&pVM->pgm.s, GCPhys, &pTlbe);
+    if (RT_SUCCESS(rc))
+    {
+        /* MMIO pages doesn't have any readable backing. */
+        PPGMPAGE pPage = pTlbe->pPage;
+        if (RT_UNLIKELY(PGM_PAGE_IS_MMIO(pPage)))
+            rc = VERR_PGM_PHYS_PAGE_RESERVED;
+        else 
+        {
+            /*
+             * Now, just perform the locking and calculate the return address.
+             */
+            PPGMPAGEMAP pMap = pTlbe->pMap;
+            pMap->cRefs++;
+#if 0 /** @todo implement locking properly */
+            if (RT_LIKELY(pPage->cLocks != PGM_PAGE_MAX_LOCKS))
+                if (RT_UNLIKELY(++pPage->cLocks == PGM_PAGE_MAX_LOCKS))
+                {
+                    AssertMsgFailed(("%RGp is entering permanent locked state!\n", GCPhys));
+                    pMap->cRefs++; /* Extra ref to prevent it from going away. */
+                }
+#endif
+            *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
+            pLock->pvPage = pPage;
+            pLock->pvMap = pMap;
+        }
+    }
+
+    pgmUnlock(pVM);
+#endif /* IN_RING3 || IN_RING0 */
+    return rc;
+
+#else  /* !VBOX_WITH_NEW_PHYS_CODE */
+    /*
+     * Fallback code.
+     */
     return PGMPhysGCPhys2CCPtr(pVM, GCPhys, (void **)ppv, pLock);
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 }
 
 

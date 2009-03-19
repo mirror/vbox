@@ -345,6 +345,230 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
 }
 
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+/** 
+ * VMR3ReqCall worker for PGMR3PhysGCPhys2CCPtrExternal to make pages writable.
+ *  
+ * @returns see PGMR3PhysGCPhys2CCPtrExternal
+ * @param   pVM         The VM handle.
+ * @param   pGCPhys     Pointer to the guest physical address.
+ * @param   ppv         Where to store the mapping address.
+ * @param   pLock       Where to store the lock.
+ */ 
+static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
+{
+    /*
+     * Just hand it to PGMPhysGCPhys2CCPtr and check that it's not a page with 
+     * an access handler after it succeeds.
+     */
+    int rc = pgmLock(pVM);
+    AssertRCReturn(rc, rc);
+
+    rc = PGMPhysGCPhys2CCPtr(pVM, *pGCPhys, ppv, pLock);
+    if (RT_SUCCESS(rc))
+    {
+        PPGMPAGEMAPTLBE pTlbe;
+        int rc2 = pgmPhysPageQueryTlbe(&pVM->pgm.s, *pGCPhys, &pTlbe);
+        AssertFatalRC(rc2);
+        PPGMPAGE pPage = pTlbe->pPage;
+#if 1
+        if (PGM_PAGE_IS_MMIO(pPage))
+#else
+        if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+#endif
+        {
+            PGMPhysReleasePageMappingLock(pVM, pLock);
+            rc = VERR_PGM_PHYS_PAGE_RESERVED;
+        }
+    }
+
+    pgmUnlock(pVM);
+    return rc;
+}
+#endif /* VBOX_WITH_NEW_PHYS_CODE */
+
+
+/**
+ * Requests the mapping of a guest page into ring-3, external threads.
+ *
+ * When you're done with the page, call PGMPhysReleasePageMappingLock() ASAP to 
+ * release it. 
+ *
+ * This API will assume your intention is to write to the page, and will 
+ * therefore replace shared and zero pages. If you do not intend to modify the 
+ * page, use the PGMR3PhysGCPhys2CCPtrReadOnlyExternal() API. 
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical 
+ *          backing or if the page has any active access handlers. The caller
+ *          must fall back on using PGMR3PhysWriteExternal.
+ * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The guest physical address of the page that should be mapped.
+ * @param   ppv         Where to store the address corresponding to GCPhys.
+ * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
+ *
+ * @remark  Avoid calling this API from within critical sections (other than the
+ *          PGM one) because of the deadlock risk when we have to delegating the
+ *          task to an EMT.
+ * @thread  Any.
+ */
+VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
+{
+    VM_ASSERT_OTHER_THREAD(pVM);
+    AssertPtr(ppv);
+    AssertPtr(pLock);
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    int rc = pgmLock(pVM);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Query the Physical TLB entry for the page (may fail).
+     */
+    PPGMPAGEMAPTLBE pTlbe;
+    rc = pgmPhysPageQueryTlbe(&pVM->pgm.s, GCPhys, &pTlbe);
+    if (RT_SUCCESS(rc))
+    {
+        PPGMPAGE pPage = pTlbe->pPage;
+#if 1
+        if (PGM_PAGE_IS_MMIO(pPage))
+            rc = VERR_PGM_PHYS_PAGE_RESERVED;
+#else
+        if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+            rc = VERR_PGM_PHYS_PAGE_RESERVED;
+#endif
+        else
+        {
+            /*
+             * If the page is shared, the zero page, or being write monitored
+             * it must be converted to an page that's writable if possible. 
+             * This has to be done on an EMT.
+             */
+            if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
+            {
+                pgmUnlock(pVM);
+    
+                PVMREQ pReq = NULL;
+                rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
+                                 (PFNRT)pgmR3PhysGCPhys2CCPtrDelegated, 4, pVM, &GCPhys, ppv, pLock);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = pReq->iStatus;
+                    VMR3ReqFree(pReq);
+                }
+                return rc;
+            }
+
+            /*
+             * Now, just perform the locking and calculate the return address.
+             */
+            PPGMPAGEMAP pMap = pTlbe->pMap;
+            pMap->cRefs++;
+#if 0 /** @todo implement locking properly */
+            if (RT_LIKELY(pPage->cLocks != PGM_PAGE_MAX_LOCKS))
+                if (RT_UNLIKELY(++pPage->cLocks == PGM_PAGE_MAX_LOCKS))
+                {
+                    AssertMsgFailed(("%RGp is entering permanent locked state!\n", GCPhys));
+                    pMap->cRefs++; /* Extra ref to prevent it from going away. */
+                }
+#endif
+            *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
+            pLock->pvPage = pPage;
+            pLock->pvMap = pMap;
+        }
+    }
+
+    pgmUnlock(pVM);
+    return rc;
+
+#else  /* !VBOX_WITH_NEW_PHYS_CODE */
+    /*
+     * Fallback code.
+     */
+    return PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1, (PRTR3PTR)ppv);
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
+}
+
+
+/**
+ * Requests the mapping of a guest page into ring-3, external threads.
+ * 
+ * When you're done with the page, call PGMPhysReleasePageMappingLock() ASAP to
+ * release it.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical 
+ *          backing or if the page as an active ALL access handler. The caller
+ *          must fall back on using PGMPhysRead.
+ * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The guest physical address of the page that should be mapped.
+ * @param   ppv         Where to store the address corresponding to GCPhys.
+ * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
+ *
+ * @remark  Avoid calling this API from within critical sections (other than
+ *          the PGM one) because of the deadlock risk.
+ * @thread  Any.
+ */
+VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock)
+{
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    int rc = pgmLock(pVM);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Query the Physical TLB entry for the page (may fail).
+     */
+    PPGMPAGEMAPTLBE pTlbe;
+    rc = pgmPhysPageQueryTlbe(&pVM->pgm.s, GCPhys, &pTlbe);
+    if (RT_SUCCESS(rc))
+    {
+        PPGMPAGE pPage = pTlbe->pPage;
+#if 1
+        /* MMIO pages doesn't have any readable backing. */
+        if (PGM_PAGE_IS_MMIO(pPage))
+            rc = VERR_PGM_PHYS_PAGE_RESERVED;
+#else
+        if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
+            rc = VERR_PGM_PHYS_PAGE_RESERVED;
+#endif
+        else 
+        {
+            /*
+             * Now, just perform the locking and calculate the return address.
+             */
+            PPGMPAGEMAP pMap = pTlbe->pMap;
+            pMap->cRefs++;
+#if 0 /** @todo implement locking properly */
+            if (RT_LIKELY(pPage->cLocks != PGM_PAGE_MAX_LOCKS))
+                if (RT_UNLIKELY(++pPage->cLocks == PGM_PAGE_MAX_LOCKS))
+                {
+                    AssertMsgFailed(("%RGp is entering permanent locked state!\n", GCPhys));
+                    pMap->cRefs++; /* Extra ref to prevent it from going away. */
+                }
+#endif
+            *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
+            pLock->pvPage = pPage;
+            pLock->pvMap = pMap;
+        }
+    }
+
+    pgmUnlock(pVM);
+    return rc;
+
+#else  /* !VBOX_WITH_NEW_PHYS_CODE */
+    /*
+     * Fallback code.
+     */
+    return PGMPhysGCPhys2CCPtr(pVM, GCPhys, (void **)ppv, pLock);
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
+}
+
 
 /**
  * Links a new RAM range into the list.

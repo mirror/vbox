@@ -358,28 +358,6 @@ VMMDECL(void)       PGMPhysInvalidatePageGCMapTLB(PVM pVM);
 VMMDECL(void)       PGMPhysInvalidatePageR0MapTLB(PVM pVM);
 VMMDECL(void)       PGMPhysInvalidatePageR3MapTLB(PVM pVM);
 
-/**
- * Page mapping lock.
- *
- * @remarks This doesn't work in structures shared between
- *          ring-3, ring-0 and/or GC.
- */
-typedef struct PGMPAGEMAPLOCK
-{
-    /** @todo see PGMPhysIsPageMappingLockValid for possibly incorrect assumptions */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-    /** Just a dummy for the time being. */
-    uint32_t    u32Dummy;
-#else
-    /** Pointer to the PGMPAGE. */
-    void       *pvPage;
-    /** Pointer to the PGMCHUNKR3MAP. */
-    void       *pvMap;
-#endif
-} PGMPAGEMAPLOCK;
-/** Pointer to a page mapping lock. */
-typedef PGMPAGEMAPLOCK *PPGMPAGEMAPLOCK;
-
 VMMDECL(int)        PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
 VMMDECL(int)        PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock);
 VMMDECL(int)        PGMPhysGCPtr2CCPtr(PVM pVM, RTGCPTR GCPtr, void **ppv, PPGMPAGEMAPLOCK pLock);
@@ -574,6 +552,8 @@ VMMR3DECL(void)     PGMR3PhysWriteU32(PVM pVM, RTGCPHYS GCPhys, uint32_t Value);
 VMMR3DECL(void)     PGMR3PhysWriteU64(PVM pVM, RTGCPHYS GCPhys, uint64_t Value);
 VMMR3DECL(int)      PGMR3PhysReadExternal(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
 VMMR3DECL(int)      PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
+VMMR3DECL(int)      PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
+VMMR3DECL(int)      PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock);
 VMMR3DECL(int)      PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk);
 VMMR3DECL(void)     PGMR3PhysChunkInvalidateTLB(PVM pVM);
 VMMR3DECL(int)      PGMR3PhysAllocateHandyPages(PVM pVM);

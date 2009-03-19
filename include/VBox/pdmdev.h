@@ -2401,25 +2401,94 @@ typedef struct PDMDEVHLPR3
 
     /**
      * Read physical memory.
-     *
+     *  
+     * @returns VINF_SUCCESS (for now).
      * @param   pDevIns         Device instance.
      * @param   GCPhys          Physical address start reading from.
      * @param   pvBuf           Where to put the read bits.
      * @param   cbRead          How many bytes to read.
      * @thread  Any thread, but the call may involve the emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+    DECLR3CALLBACKMEMBER(int, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
 
     /**
      * Write to physical memory.
      *
+     * @returns VINF_SUCCESS for now, and later maybe VERR_EM_MEMORY.
      * @param   pDevIns         Device instance.
      * @param   GCPhys          Physical address to write to.
      * @param   pvBuf           What to write.
      * @param   cbWrite         How many bytes to write.
      * @thread  Any thread, but the call may involve the emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
+    DECLR3CALLBACKMEMBER(int, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
+
+    /**
+     * Requests the mapping of a guest page into ring-3.
+     *
+     * When you're done with the page, call pfnPhysReleasePageMappingLock() ASAP to
+     * release it. 
+     *
+     * This API will assume your intention is to write to the page, and will 
+     * therefore replace shared and zero pages. If you do not intend to modify the 
+     * page, use the pfnPhysGCPhys2CCPtrReadOnly() API. 
+     *
+     * @returns VBox status code.
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical 
+     *          backing or if the page has any active access handlers. The caller
+     *          must fall back on using PGMR3PhysWriteExternal.
+     * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+     *
+     * @param   pVM             The VM handle.
+     * @param   GCPhys          The guest physical address of the page that should be mapped.
+     * @param   fFlags          Flags reserved for future use, MBZ. 
+     * @param   ppv             Where to store the address corresponding to GCPhys.
+     * @param   pLock           Where to store the lock information that 
+     *                          pfnPhysReleasePageMappingLock needs.
+     *
+     * @remark  Avoid calling this API from within critical sections (other than the
+     *          PGM one) because of the deadlock risk when we have to delegating the
+     *          task to an EMT.
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPhysGCPhys2CCPtr,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv, PPGMPAGEMAPLOCK pLock));
+
+    /**
+     * Requests the mapping of a guest page into ring-3, external threads.
+     * 
+     * When you're done with the page, call pfnPhysReleasePageMappingLock() ASAP to
+     * release it.
+     *
+     * @returns VBox status code.
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical 
+     *          backing or if the page as an active ALL access handler. The caller
+     *          must fall back on using PGMPhysRead.
+     * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+     *
+     * @param   pDevIns         Device instance.
+     * @param   GCPhys          The guest physical address of the page that should be mapped. 
+     * @param   fFlags          Flags reserved for future use, MBZ. 
+     * @param   ppv             Where to store the address corresponding to GCPhys.
+     * @param   pLock           Where to store the lock information that 
+     *                          pfnPhysReleasePageMappingLock needs.
+     *
+     * @remark  Avoid calling this API from within critical sections. 
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPhysGCPhys2CCPtrReadOnly,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void const **ppv, PPGMPAGEMAPLOCK pLock));
+
+    /**
+     * Release the mapping of a guest page.
+     *
+     * This is the counter part of pfnPhysGCPhys2CCPtr and 
+     * pfnPhysGCPhys2CCPtrReadOnly. 
+     *
+     * @param   pDevIns         Device instance.
+     * @param   pLock           The lock structure initialized by the mapping function.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnPhysReleasePageMappingLock,(PPDMDEVINS pDevIns, PPGMPAGEMAPLOCK pLock));
 
     /**
      * Read guest physical memory by virtual address.
@@ -2442,47 +2511,6 @@ typedef struct PDMDEVHLPR3
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnPhysWriteGCVirt,(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb));
-
-    /**
-     * Reserve physical address space for ROM and MMIO ranges.
-     *
-     * @returns VBox status code.
-     * @param   pDevIns         Device instance.
-     * @param   GCPhys          Start physical address.
-     * @param   cbRange         The size of the range.
-     * @param   pszDesc         Description string.
-     * @thread  The emulation thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnPhysReserve,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc));
-
-    /**
-     * Convert a guest physical address to a host virtual address. (OBSOLETE)
-     *
-     * @returns VBox status code.
-     * @param   pDevIns         Device instance.
-     * @param   GCPhys          Start physical address.
-     * @param   cbRange         The size of the range. Use 0 if you don't care about the range.
-     * @param   ppvHC           Where to store the HC pointer corresponding to GCPhys.
-     * @thread  The emulation thread.
-     *
-     * @remark  Careful with page boundraries.
-     * @remark  Do not use the mapping after you return to the caller! (it could get invalidated/changed)
-     */
-    DECLR3CALLBACKMEMBER(int, pfnObsoletePhys2HCVirt,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC));
-
-    /**
-     * Convert a guest virtual address to a host virtual address. (OBSOLETE)
-     *
-     * @returns VBox status code.
-     * @param   pDevIns         Device instance.
-     * @param   GCPtr           Guest virtual address.
-     * @param   pHCPtr          Where to store the HC pointer corresponding to GCPtr.
-     * @thread  The emulation thread.
-     *
-     * @remark  Careful with page boundraries.
-     * @remark  Do not use the mapping after you return to the caller! (it could get invalidated/changed)
-     */
-    DECLR3CALLBACKMEMBER(int, pfnObsoletePhysGCPtr2HCPtr,(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr));
 
     /**
      * Checks if the Gate A20 is enabled or not.
@@ -2742,12 +2770,12 @@ typedef struct PDMDEVHLPR3
      * VM is powered off.
      *
      * @return VBox status code.
-     * @param   pDevIns     The device owning the MMIO2 memory.
-     * @param   iRegion     The region.
-     * @param   off         The offset into the region. Will be rounded down to closest page boundrary.
-     * @param   cb          The number of bytes to map. Will be rounded up to the closest page boundrary.
-     * @param   pszDesc     Mapping description.
-     * @param   pRCPtr      Where to store the RC address.
+     * @param   pDevIns         The device owning the MMIO2 memory.
+     * @param   iRegion         The region.
+     * @param   off             The offset into the region. Will be rounded down to closest page boundrary.
+     * @param   cb              The number of bytes to map. Will be rounded up to the closest page boundrary.
+     * @param   pszDesc         Mapping description.
+     * @param   pRCPtr          Where to store the RC address.
      */
     DECLR3CALLBACKMEMBER(int, pfnMMHyperMapMMIO2,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
                                                   const char *pszDesc, PRTRCPTR pRCPtr));
@@ -2759,12 +2787,12 @@ typedef struct PDMDEVHLPR3
      * or the VM is terminated.
      *
      * @return VBox status code.
-     * @param   pDevIns     The device owning the MMIO2 memory.
-     * @param   iRegion     The region.
-     * @param   off         The offset into the region. Must be page aligned.
-     * @param   cb          The number of bytes to map. Must be page aligned.
-     * @param   pszDesc     Mapping description.
-     * @param   pR0Ptr      Where to store the R0 address.
+     * @param   pDevIns         The device owning the MMIO2 memory.
+     * @param   iRegion         The region.
+     * @param   off             The offset into the region. Must be page aligned.
+     * @param   cb              The number of bytes to map. Must be page aligned.
+     * @param   pszDesc         Mapping description.
+     * @param   pR0Ptr          Where to store the R0 address.
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIO2MapKernel,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
                                                   const char *pszDesc, PRTR0PTR pR0Ptr));
@@ -2803,7 +2831,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf2070000
+#define PDM_DEVHLP_VERSION  0xf2080000
 
 
 /**
@@ -2837,22 +2865,24 @@ typedef struct PDMDEVHLPRC
     /**
      * Read physical memory.
      *
+     * @returns VINF_SUCCESS (for now).
      * @param   pDevIns         Device instance.
      * @param   GCPhys          Physical address start reading from.
      * @param   pvBuf           Where to put the read bits.
      * @param   cbRead          How many bytes to read.
      */
-    DECLRCCALLBACKMEMBER(void, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+    DECLRCCALLBACKMEMBER(int, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
 
     /**
      * Write to physical memory.
      *
+     * @returns VINF_SUCCESS for now, and later maybe VERR_EM_MEMORY.
      * @param   pDevIns         Device instance.
      * @param   GCPhys          Physical address to write to.
      * @param   pvBuf           What to write.
      * @param   cbWrite         How many bytes to write.
      */
-    DECLRCCALLBACKMEMBER(void, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
+    DECLRCCALLBACKMEMBER(int, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
 
     /**
      * Checks if the Gate A20 is enabled or not.
@@ -2939,7 +2969,7 @@ typedef RCPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RCPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION  0xfb010000
+#define PDM_DEVHLPRC_VERSION  0xfb010001
 
 
 /**
@@ -2973,22 +3003,24 @@ typedef struct PDMDEVHLPR0
     /**
      * Read physical memory.
      *
+     * @returns VINF_SUCCESS (for now).
      * @param   pDevIns         Device instance.
      * @param   GCPhys          Physical address start reading from.
      * @param   pvBuf           Where to put the read bits.
      * @param   cbRead          How many bytes to read.
      */
-    DECLR0CALLBACKMEMBER(void, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+    DECLR0CALLBACKMEMBER(int, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
 
     /**
      * Write to physical memory.
      *
+     * @returns VINF_SUCCESS for now, and later maybe VERR_EM_MEMORY.
      * @param   pDevIns         Device instance.
      * @param   GCPhys          Physical address to write to.
      * @param   pvBuf           What to write.
      * @param   cbWrite         How many bytes to write.
      */
-    DECLR0CALLBACKMEMBER(void, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
+    DECLR0CALLBACKMEMBER(int, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
 
     /**
      * Checks if the Gate A20 is enabled or not.
@@ -3083,7 +3115,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION  0xfb020000
+#define PDM_DEVHLPR0_VERSION  0xfb020001
 
 
 
@@ -3520,16 +3552,6 @@ DECLINLINE(int) PDMDevHlpPhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, 
     return pDevIns->pDevHlpR3->pfnPhysWriteGCVirt(pDevIns, GCVirtDst, pvSrc, cb);
 }
 
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-/**
- * @copydoc PDMDEVHLPR3::pfnPhysReserve
- */
-DECLINLINE(int) PDMDevHlpPhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc)
-{
-    return pDevIns->pDevHlpR3->pfnPhysReserve(pDevIns, GCPhys, cbRange, pszDesc);
-}
-#endif
-
 /**
  * @copydoc PDMDEVHLPR3::pfnPhysGCPtr2GCPhys
  */
@@ -3714,18 +3736,46 @@ DECLINLINE(void) PDMDevHlpISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLev
 /**
  * @copydoc PDMDEVHLPR3::pfnPhysRead
  */
-DECLINLINE(void) PDMDevHlpPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+DECLINLINE(int) PDMDevHlpPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
-    pDevIns->CTX_SUFF(pDevHlp)->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+    return pDevIns->CTX_SUFF(pDevHlp)->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
 }
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPhysWrite
  */
-DECLINLINE(void) PDMDevHlpPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+DECLINLINE(int) PDMDevHlpPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
-    pDevIns->CTX_SUFF(pDevHlp)->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+    return pDevIns->CTX_SUFF(pDevHlp)->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
 }
+
+#ifdef IN_RING3
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPhysGCPhys2CCPtr
+ */
+DECLINLINE(int) PDMDevHlpPhysGCPhys2CCPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv, PPGMPAGEMAPLOCK pLock)
+{
+    return pDevIns->CTX_SUFF(pDevHlp)->pfnPhysGCPhys2CCPtr(pDevIns, GCPhys, fFlags, ppv, pLock);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPhysGCPhys2CCPtrReadOnly
+ */
+DECLINLINE(int) PDMDevHlpPhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void const **ppv, PPGMPAGEMAPLOCK pLock)
+{
+    return pDevIns->CTX_SUFF(pDevHlp)->pfnPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhys, fFlags, ppv, pLock);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPhysReleasePageMappingLock
+ */
+DECLINLINE(void) PDMDevHlpPhysReleasePageMappingLock(PPDMDEVINS pDevIns, PPGMPAGEMAPLOCK pLock)
+{
+    pDevIns->CTX_SUFF(pDevHlp)->pfnPhysReleasePageMappingLock(pDevIns, pLock);
+}
+
+#endif /* IN_RING3 */
 
 /**
  * @copydoc PDMDEVHLPR3::pfnA20IsEnabled
