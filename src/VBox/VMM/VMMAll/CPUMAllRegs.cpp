@@ -33,6 +33,7 @@
 #include <VBox/err.h>
 #include <VBox/dis.h>
 #include <VBox/log.h>
+#include <VBox/tm.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #ifdef IN_RING3
@@ -809,6 +810,10 @@ VMMDECL(uint64_t)  CPUMGetGuestMsr(PVM pVM, unsigned idMsr)
 
     switch (idMsr)
     {
+        case MSR_IA32_TSC:
+            u64 = TMCpuTickGet(pVM);
+            break;
+
         case MSR_IA32_CR_PAT:
             u64 = pCpumCpu->Guest.msrPAT;
             break;
