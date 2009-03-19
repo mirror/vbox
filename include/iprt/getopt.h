@@ -274,6 +274,8 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
  *              default:
  *                  if (ch > 0)
  *                      Error("missing case: %c\n", ch);
+ *                  else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
+ *                      Error("unknown option: %s", psz);
  *                  else if (ValueUnion.pDef)
  *                      Error("%s: %Rrs", ValueUnion.pDef->pszLong, ch);
  *                  else
