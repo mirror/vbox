@@ -23,23 +23,14 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <sys/conf.h>
-#include <sys/modctl.h>
-#include <sys/mutex.h>
-#include <sys/pci.h>
-#include <sys/stat.h>
-#include <sys/ddi.h>
-#include <sys/ddi_intr.h>
-#include <sys/sunddi.h>
-#include <sys/open.h>
-
-#include <VBox/log.h>
-#include <VBox/version.h>
-
+#undef offsetof     /* This gets redefined in drmP.h */
 #include "include/drmP.h"
 #include "include/drm.h"
 
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
+
+#include <VBox/log.h>
+#include <VBox/version.h>
 
 
 /*******************************************************************************
@@ -366,19 +357,22 @@ static int VBoxVideoSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void
 }
 
 
-static int vboxVideoSolarisLoad(drm_driver_t *pDriver, unsigned long fFlag)
+static int vboxVideoSolarisLoad(drm_device_t *pDevice, unsigned long fFlag)
 {
     return 0;
 }
 
-static int vboxVideoSolarisUnload(drm_driver_t *pDriver)
+static int vboxVideoSolarisUnload(drm_device_t *pDevice)
 {
     return 0;
 }
 
-static int vboxVideoSolarisPreClose(drm_driver_t *pDriver, drm_file_t *pFile)
+static void vboxVideoSolarisLastClose(drm_device_t *pDevice)
 {
-    return 0;
+}
+
+static void vboxVideoSolarisPreClose(drm_device_t *pDevice, drm_file_t *pFile)
+{
 }
 
 
@@ -391,7 +385,7 @@ static void vboxVideoSolarisConfigure(drm_driver_t *pDriver)
     pDriver->load               = vboxVideoSolarisLoad;
     pDriver->unload             = vboxVideoSolarisUnload;
     pDriver->preclose           = vboxVideoSolarisPreClose;
-    pDriver->lastclose          = vboxVideoSolarisUnload;
+    pDriver->lastclose          = vboxVideoSolarisLastClose;
     pDriver->device_is_agp      = drm_device_is_agp;
 #if 0
     pDriver->get_vblank_counter = drm_vblank_count;
