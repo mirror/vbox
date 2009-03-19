@@ -1414,7 +1414,8 @@ EOF
 
 
 #
-# Check whether static libstdc++ is installed
+# Check whether static libstdc++ is installed. This library is required
+# for the Linux guest additions.
 #
 check_staticlibstdcxx()
 {
@@ -2129,7 +2130,9 @@ check_gcc
 
 # Linux-specific
 if [ "$OS" = "linux" ]; then
-  check_staticlibstdcxx
+  # don't check for the static libstdc++ in the PUEL version as we build the
+  # additions at a dedicated box
+  [ $OSE -ge 1 ] && check_staticlibstdcxx
   if [ $WITH_KMODS -eq 1 ]; then
     check_linux
   else
