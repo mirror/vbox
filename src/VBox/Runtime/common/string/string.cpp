@@ -38,6 +38,7 @@
 #include <iprt/err.h>
 #include "internal/string.h"
 
+
 /**
  * Free string allocated by any of the non-UCS-2 string functions.
  *
