@@ -979,7 +979,7 @@ typedef X86PGPAEUINT const *PCX86PGPAEUINT;
 /** Bit 0 -  P  - Present bit. */
 #define X86_PTE_BIT_P                       0
 /** Bit 1 - R/W - Read (clear) / Write (set) bit. */
-#define X86_PTE_BIT_RW                      1)
+#define X86_PTE_BIT_RW                      1
 /** Bit 2 - U/S - User (set) / Supervisor (clear) bit. */
 #define X86_PTE_BIT_US                      2
 /** Bit 3 - PWT - Page level write thru bit. */
