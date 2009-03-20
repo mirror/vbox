@@ -8111,7 +8111,7 @@
   >
     <desc>
       The IMedium interface is a common interface for all objects representing
-      virtual media such as hard disks, DVD images.
+      virtual media such as hard disks, CD/DVD images and floppy images.
 
       Each medium is associated with a storage unit (such as a file on the host
       computer or a network resource) that holds actual data. The location of
@@ -8167,7 +8167,7 @@
       <h3>Accessibility Checks</h3>
 
       The given medium (with the created storage unit) is considered to be
-      <i>accessible</i> when its storage unit can be successfully read from.
+      <i>accessible</i> when its storage unit can be read.
       Accessible media are indicated by the <link to="MediaState_Created"/>
       value of the <link to="#state"/> attribute. When the storage unit cannot
       be read (for example, because it is located on a disconnected network
@@ -8231,8 +8231,8 @@
       <desc>
         Current media state. Inspect <link to="MediaState"/> values for details.
 
-        Reading this attribute may take long time because a new accessibility
-        check of the storage unit is performed every time the attribute is read.
+        Reading this attribute may take a long time because an accessibility
+        check of the storage unit is performed each time the attribute is read.
         This check may cause a significant delay if the storage unit of the
         given medium is, for example, a file located on a network share which is
         not currently accessible due to connectivity problems -- the call will
@@ -8248,7 +8248,7 @@
         non-null value of <link to="#lastAccessError"/> will indicate a failed
         accessibility check in this case.
 
-        Note that not all media states are applicable to certain media types.
+        Note that not all media states are applicable to all media types.
         For example, states <link to="MediaState_NotCreated"/>,
         <link to="MediaState_LockedWrite"/>, <link to="MediaState_Creating"/>,
         <link to="MediaState_Deleting"/> are meaningless for IDVDImage and
@@ -8261,8 +8261,8 @@
         Location of the storage unit holding media data.
 
         The format of the location string is media type specific. For media
-        types that use regular files in a host's file system, the location
-        string is just a full file name.
+        types using regular files in a host's file system, the location
+        string is the full file name.
 
         Some media types may support changing the storage unit location by
         simply changing the value of this property. If this operation is not
@@ -8289,7 +8289,7 @@
         to sort the media list alphabetically when needed.
 
         For example, for locations that are regular files in the host's file
-        system, the value of this attribute is just a file name (+ extension),
+        system, the value of this attribute is just the file name (+ extension),
         without the path specification.
 
         Note that as opposed to the <link to="#location"/> attribute, the name
@@ -8343,7 +8343,7 @@
     <method name="getSnapshotIds">
       <desc>
         Returns an array of UUIDs of all snapshots of the given machine where
-        this medium is attached to it.
+        this medium is attached to.
 
         If the medium is attached to the machine in the current state, then the
         first element in the array will always be the ID of the queried machine
@@ -8355,7 +8355,7 @@
 
         The returned array may be <tt>null</tt> if this medium is not attached
         to the given machine at all, neither in the current state nor in one of
-        snapshots.
+        the snapshots.
       </desc>
       <param name="machineId" type="uuid" dir="in">
         <desc>
@@ -8423,7 +8423,7 @@
       <desc>
         Cancels the read lock previously set by <link to="#lockRead"/>.
 
-        Either on success or on failure, this method returns the current state
+        For both, success and failure, this method returns the current state
         of the medium <b>after</b> the operation.
 
         See <link to="#lockRead"/> for more details.
@@ -8445,36 +8445,36 @@
         Locks this medium for writing.
 
         The write lock, as opposed to <link to="#lockRead"/>, is
-        exclusive: there may be only one client that holds a write lock
+        exclusive: there may be only one client holding a write lock
         and there may be no read locks while the write lock is held.
 
         When the medium is locked for writing, it cannot be modified
         from within VirtualBox and it is not guaranteed that the values
         of its properties are up-to-date. Any method that changes the
         properties of this medium or contents of the storage unit will
-        return an error ((unless explicitly stated otherwise) and an
-        attempt to start a virtual machine that wants to modify or to
-        read the medium will also fail.
+        return an error (unless explicitly stated otherwise) and an
+        attempt to start a virtual machine wanting to modify or to
+        read the medium will fail.
 
         When the virtual machine is started up, it locks for writing all
-        media it uses to write data to. If some media cannot be locked
+        media it uses to write data to. If any medium could not be locked
         for writing, the startup procedure will fail.
 
         The medium locked for writing must be unlocked using the <link
         to="#unlockWrite"/> method. Calls to <link to="#lockWrite"/>
-        can <b>not</b> be nested and must be followed by a paired <link
-        to="#unlockWrite"/> call.
+        can <b>not</b> be nested and must be followed by a<link
+        to="#unlockWrite"/> call before the next lockWrite call.
 
         This method sets the media state to <link
         to="MediaState_LockedWrite"/> on success. The state prior to
         this call must be <link to="MediaState_Created"/> or <link
         to="MediaState_Inaccessible"/>. As you can see, inaccessible
         media can be locked too. This is not an error; this method
-        performs a logical lock that prevents modifications of this
+        performs a logical lock preventing modifications of this
         media through the VirtualBox API, not a physical lock of the
         underlying storage unit.
 
-        Either on success or on failure, this method returns the current
+        For both, success and failure, this method returns the current
         state of the medium <b>before</b> the operation.
 
         <result name="VBOX_E_INVALID_OBJECT_STATE">
@@ -8494,7 +8494,7 @@
       <desc>
         Cancels the write lock previously set by <link to="#lockWrite"/>.
 
-        Either on success or on failure, this method returns the current
+        For both, success and failure, this method returns the current
         state of the medium <b>after</b> the operation.
 
         See <link to="#lockWrite"/> for more details.
@@ -9786,7 +9786,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Invalid image file location.
         </result>
         <result name="VBOX_E_OBJECT_NOT_FOUND">
-          Could not find a CD/DVD image matching @a imageID.
+          Could not find a CD/DVD image matching @a imageId.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Invalid media state.
