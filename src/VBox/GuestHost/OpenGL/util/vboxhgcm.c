@@ -975,7 +975,7 @@ void crVBoxHGCMConnection(CRConnection *conn)
     conn->allow_redir_ptr = 1;
 
     //@todo remove this crap at all later
-    conn->cbHostBufferAllocated = 1*1024;
+    conn->cbHostBufferAllocated = 2*1024;
     conn->pHostBuffer = (uint8_t*) crAlloc(conn->cbHostBufferAllocated);
     CRASSERT(conn->pHostBuffer);
     conn->cbHostBuffer = 0;
