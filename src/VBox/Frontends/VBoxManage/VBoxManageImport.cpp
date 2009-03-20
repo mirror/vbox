@@ -41,6 +41,7 @@
 
 #include <iprt/stream.h>
 #include <iprt/getopt.h>
+#include <iprt/ctype.h>
 
 #include <VBox/log.h>
 
@@ -534,13 +535,9 @@ int handleExportAppliance(HandlerArg *a)
 
         RTGETOPTUNION ValueUnion;
         RTGETOPTSTATE GetState;
-        RTGetOptInit(&GetState,
-                     a->argc,
-                     a->argv,
-                     g_aExportOptions,
-                     RT_ELEMENTS(g_aExportOptions),
-                     0, // start at 0 even though arg 1 was "list" because main() has hacked both the argc and argv given to us
-                     0 /* fFlags */);
+        // start at 0 because main() has hacked both the argc and argv given to us
+        RTGetOptInit(&GetState, a->argc, a->argv, g_aExportOptions,
+                     RT_ELEMENTS(g_aExportOptions), 0, 0 /* fFlags */);
         while ((c = RTGetOpt(&GetState, &ValueUnion)))
         {
             switch (c)
@@ -572,11 +569,18 @@ int handleExportAppliance(HandlerArg *a)
 
                 default:
                     if (c > 0)
-                        return errorSyntax(USAGE_LIST, "missing case: %c\n", c);
+                    {
+                        if (RT_C_IS_GRAPH(c))
+                            return errorSyntax(USAGE_EXPORTAPPLIANCE, "unhandled option: -%c", c);
+                        else
+                            return errorSyntax(USAGE_EXPORTAPPLIANCE, "unhandled option: %i", c);
+                    }
+                    else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "unknown option: %s", ValueUnion.psz);
                     else if (ValueUnion.pDef)
-                        return errorSyntax(USAGE_LIST, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                     else
-                        return errorSyntax(USAGE_LIST, "%Rrs", c);
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "%Rrs", c);
             }
 
             if (FAILED(rc))
