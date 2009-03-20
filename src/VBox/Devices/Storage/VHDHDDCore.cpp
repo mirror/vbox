@@ -1570,6 +1570,8 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
          */
         pImage->u64DataOffset     = VHD_FOOTER_DATA_OFFSET_FIXED;
         pImage->uCurrentEndOfFile = cbSize;
+        /** @todo r=klaus replace this with actual data writes, see the experience
+         * with VDI files on Windows, can cause long freezes when writing. */
         rc = RTFileSetSize(File, pImage->uCurrentEndOfFile + sizeof(VHDFooter));
         if (RT_FAILURE(rc))
         {
