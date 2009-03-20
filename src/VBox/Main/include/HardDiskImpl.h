@@ -55,6 +55,7 @@ public:
         List;
 
     class MergeChain;
+    class CloneChain;
 
     VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE (HardDisk)
 
