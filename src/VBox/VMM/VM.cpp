@@ -274,6 +274,12 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
 #endif
                     break;
 
+                case VERR_VERSION_MISMATCH:
+                    pszError = N_("VMMR0 driver version mismatch. Please terminate all VMs, make sure that not "
+                                  "VBoxNetDHCP is running and try again. If you still get this error, re-install "
+                                  "VirtualBox");
+                    break;
+
                 default:
                     pszError = N_("Unknown error creating VM");
                     break;
