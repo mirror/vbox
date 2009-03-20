@@ -1612,7 +1612,8 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
 
     if (mMachineState != MachineState_Running)
         return setError (VBOX_E_INVALID_VM_STATE,
-            tr ("Invalid machine state: %d)"), mMachineState);
+            tr ("Invalid machine state %d when checking if the guest entered "
+                "the ACPI mode)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
