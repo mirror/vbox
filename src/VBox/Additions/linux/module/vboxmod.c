@@ -70,6 +70,7 @@ do { \
 #include <VBox/VBoxDev.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 #include <iprt/memobj.h>
 #include <linux/miscdevice.h>
 #include <linux/poll.h>
@@ -414,12 +415,12 @@ static int vboxadd_hgcm_alloc_buffer(hgcm_bounce_buffer **ppBuf, void *pUser,
     AssertPtrReturn(ppBuf, -EINVAL);
     AssertPtrReturn(pUser, -EINVAL);
 
-    pBuf = kmalloc(sizeof(*pBuf), GFP_KERNEL);
+    pBuf = RTMemAlloc(sizeof(*pBuf));
     if (pBuf == NULL)
         rc = -ENOMEM;
     if (rc >= 0)
     {
-        pKernel = kmalloc(cb, GFP_KERNEL);
+        pKernel = RTMemAlloc(cb);
         if (pKernel == NULL)
             rc = -ENOMEM;
     }
@@ -436,8 +437,8 @@ static int vboxadd_hgcm_alloc_buffer(hgcm_bounce_buffer **ppBuf, void *pUser,
     }
     else
     {
-        kfree(pBuf);
-        kfree(pKernel);
+        RTMemFree(pBuf);
+        RTMemFree(pKernel);
         LogFunc(("failed, returning %d\n", rc));
     }
     return rc;
@@ -450,8 +451,8 @@ static int vboxadd_hgcm_free_buffer(hgcm_bounce_buffer *pBuf, bool copy)
     AssertPtrReturn(pBuf, -EINVAL);
     if (copy && copy_to_user(pBuf->pUser, pBuf->pKernel, pBuf->cb) != 0)
         rc = -EFAULT;
-    kfree(pBuf->pKernel);  /* We want to do this whatever the outcome. */
-    kfree(pBuf);
+    RTMemFree(pBuf->pKernel);  /* We want to do this whatever the outcome. */
+    RTMemFree(pBuf);
     if (rc < 0)
         LogFunc(("failed, returning %d\n", rc));
     return rc;
