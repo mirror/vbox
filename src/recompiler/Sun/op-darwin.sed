@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -35,9 +35,9 @@ s/^[[:blank:]]*\.section[[:blank:]][[:blank:]]*\.rodata[[:blank:]]*$/\t.const/
 /^[[:blank:]]*\.section[[:blank:]][[:blank:]]*\.note\.GNU-stack,/d
 
 # .zero seems to be similar to .spaces...
-s/^\([[:blank:]]*\)\.zero[[:blank:]][[:blank:]]*\([0-9][0-9]*\)/\1.space \2/
+s/^\([[:blank:]]*\)\.zero[[:blank:]][[:blank:]]*\([[:digit:]][[:digit:]]*\)/\1.space \2/
 
-# It looks like if .align is taking a byte count on linux and a power of 
+# It looks like if .align is taking a byte count on linux and a power of
 # two on Darwin, translate to power of two.
 s/\.align 128/\.align 7/
 s/\.align 64/\.align 6/
@@ -47,11 +47,10 @@ s/\.align 8/\.align 3/
 s/\.align 4/\.align 2/
 s/\.align 2/\.align 1/
 
-
 # Darwin uses underscore prefixed names like the DOS based i386 OSes
-# linux does. So, all global symbols needs to be translated.
+# linux does. So, all global symbols need to be translated.
 s/^[[:blank:]]*\.globl[[:blank:]][[:blank:]]*\([^\t\n ]*\)[[:blank:]]*$/#define \1 _\1\n.globl \1/
 
-# special hack for __op_labelN
-s/__op_label\([0-9]\)/___op_label\1/g
+# Special hack for __op_labelN.
+s/__op_label\([[:digit:]]\)/___op_label\1/g
 

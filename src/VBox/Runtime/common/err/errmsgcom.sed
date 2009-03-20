@@ -3,7 +3,7 @@
 # IPRT - SED script for converting COM errors
 #
 
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -61,7 +61,7 @@ N
     # double quotes have to be escaped, too
     s/"/\\"/g
     # output C array entry
-    s/\([a-zA-Z0-9_]*\)[\t ]*\n\(.*\)[\t ]*$/{ "\2", "\1", \1 }, /
+    s/\([[:alnum:]_]*\)[\t ]*\n\(.*\)[\t ]*$/{ "\2", "\1", \1 }, /
 }
 b end
 

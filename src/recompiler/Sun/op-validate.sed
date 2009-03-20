@@ -1,12 +1,12 @@
 # $Id$
 ## @file
 #
-# Just some quit sed hacks for validating an op.S assembly file.
+# Just some quick sed hacks for validating an op.S assembly file.
 # Will try this with gcc 4.x later to see if we can permit gcc 4
 # to build op.c by using this script as guard against bad code.
 #
 
-## @todo need to check that we've the got two __op_label[0-1].op_goto_tb[0-1] symbols!
+## @todo need to check that we've the got two __op_label[01].op_goto_tb[01] symbols!
 
 # if (ret) goto return
 /^[[:space:]]*ret[[:space:]]*$/b return
@@ -60,8 +60,8 @@ b end
 :return
 N
 s/^[[:blank:]]*ret[[:blank:]]*\n*[[:blank:]]*//
-/\.Lfe[0-9][0-9]*:/d
-/\.LFE[0-9][0-9]*:/d
+/\.Lfe[[:digit:]][[:digit:]]*:/d
+/\.LFE[[:digit:]][[:digit:]]*:/d
 /size[[:space:]]/d
 /^[/#]NO_APP[[:space:]]*$/d
 /^$/!b bad
@@ -73,7 +73,7 @@ b end
 #
 #/^[[:blank:]]*jmp/
 :jump
-s/^[[:space:]]*j[a-z]*[[:space:]][[:space:]]*//
+s/^[[:space:]]*j[[:lower:]]*[[:space:]][[:space:]]*//
 /^\.L/d
 /^[1-9][fb]$/d
 /^__op_gen_label1$/d
@@ -83,10 +83,10 @@ s/^[[:space:]]*j[a-z]*[[:space:]][[:space:]]*//
 /^$/!b bad
 b end
 
-# An error was found
+# An error was found.
 :bad
 q 1
 
-# next expression
+# Next expression.
 :end
 
