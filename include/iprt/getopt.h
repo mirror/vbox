@@ -273,7 +273,12 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
  *
  *              default:
  *                  if (ch > 0)
- *                      Error("missing case: %c\n", ch);
+ *                  {
+ *                      if (RT_C_IS_GRAPH(ch)
+ *                          Error("unhandled option: -%c\n", ch);
+ *                      else
+ *                          Error("unhandled option: %i\n", ch);
+ *                  }
  *                  else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
  *                      Error("unknown option: %s", psz);
  *                  else if (ValueUnion.pDef)
