@@ -10922,6 +10922,8 @@ HRESULT SessionMachine::lockMedia()
 
             bool first = true;
 
+            /** @todo split out the media locking, and put it into
+             * HardDiskImpl.cpp, as it needs this functionality too. */
             while (!hd.isNull())
             {
                 if (first)
