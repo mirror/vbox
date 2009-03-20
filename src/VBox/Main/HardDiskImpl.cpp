@@ -1326,7 +1326,7 @@ STDMETHODIMP HardDisk::CreateBaseStorage(ULONG64 aLogicalSize,
         (aVariant & HardDiskVariant_Fixed)
           ? BstrFmt (tr ("Creating fixed hard disk storage unit '%ls'"), m.locationFull.raw())
           : BstrFmt (tr ("Creating dynamic hard disk storage unit '%ls'"), m.locationFull.raw()),
-        FALSE /* aCancelable */);
+        TRUE /* aCancelable */);
     CheckComRCReturnRC (rc);
 
     /* setup task object and thread to carry out the operation
@@ -1456,7 +1456,7 @@ STDMETHODIMP HardDisk::CloneTo (IHardDisk *aTarget,
         rc = progress->init (mVirtualBox, static_cast <IHardDisk *> (this),
             BstrFmt (tr ("Creating clone hard disk '%ls'"),
                      target->m.locationFull.raw()),
-            FALSE /* aCancelable */);
+            TRUE /* aCancelable */);
         CheckComRCThrowRC (rc);
 
         /* setup task object and thread to carry out the operation
@@ -1544,7 +1544,7 @@ STDMETHODIMP HardDisk::FlattenTo (IHardDisk *aTarget,
         rc = progress->init (mVirtualBox, static_cast <IHardDisk *> (this),
             BstrFmt (tr ("Creating flattened clone hard disk '%ls'"),
                      target->m.locationFull.raw()),
-            FALSE /* aCancelable */);
+            TRUE /* aCancelable */);
         CheckComRCThrowRC (rc);
 
         /* setup task object and thread to carry out the operation
@@ -2458,7 +2458,7 @@ HRESULT HardDisk::createDiffStorage(ComObjPtr<HardDisk> &aTarget,
             rc = progress->init (mVirtualBox, static_cast<IHardDisk*> (this),
                 BstrFmt (tr ("Creating differencing hard disk storage unit '%ls'"),
                          aTarget->m.locationFull.raw()),
-                FALSE /* aCancelable */);
+                TRUE /* aCancelable */);
             CheckComRCReturnRC (rc);
         }
     }
@@ -2704,7 +2704,7 @@ HRESULT HardDisk::mergeTo(MergeChain *aChain,
             rc = progress->init (mVirtualBox, static_cast<IHardDisk*>(this),
                 BstrFmt (tr ("Merging hard disk '%s' to '%s'"),
                          name().raw(), aChain->target()->name().raw()),
-                FALSE /* aCancelable */);
+                TRUE /* aCancelable */);
             CheckComRCReturnRC (rc);
         }
     }
@@ -3434,7 +3434,14 @@ DECLCALLBACK(int) HardDisk::vdProgressCall(PVM /* pVM */, unsigned uPercent,
     {
         /* update the progress object, capping it at 99% as the final percent
          * is used for additional operations like setting the UUIDs and similar. */
-        that->mm.vdProgress->notifyProgress (RT_MIN (uPercent, 99));
+        HRESULT rc = that->mm.vdProgress->notifyProgress (uPercent * 99 / 100);
+        if (FAILED(rc))
+        {
+            if (rc == E_FAIL)
+                return VERR_CANCELLED;
+            else
+                return VERR_INVALID_STATE;
+        }
     }
 
     return VINF_SUCCESS;
