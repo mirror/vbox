@@ -278,6 +278,17 @@ typedef enum _SHFLCREATERESULT
 /** Do not allow access. */
 #define SHFL_CF_ACCESS_DENYALL          (SHFL_CF_ACCESS_DENYREAD | SHFL_CF_ACCESS_DENYWRITE)
 
+/** Requested access to attributes of the object. */
+#define SHFL_CF_ACCESS_MASK_ATTR        (0x00030000)
+
+/** No access requested. */
+#define SHFL_CF_ACCESS_ATTR_NONE        (0x00000000)
+/** Read access requested. */
+#define SHFL_CF_ACCESS_ATTR_READ        (0x00010000)
+/** Write access requested. */
+#define SHFL_CF_ACCESS_ATTR_WRITE       (0x00020000)
+/** Read/Write access requested. */
+#define SHFL_CF_ACCESS_ATTR_READWRITE   (SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_WRITE)
 
 /** @} */
 
