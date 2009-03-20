@@ -203,7 +203,10 @@ def guestStats(ctx,mach):
     for metric in ctx['perf'].query(["*"], [mach]):
         print metric['name'], metric['values_as_string']
 
-def cmdExistingVm(ctx,mach,cmd):
+def guestExec(ctx, machine, console, cmds):
+    exec cmds
+
+def cmdExistingVm(ctx,mach,cmd,args):
     mgr=ctx['mgr']
     vb=ctx['vb']
     session = mgr.getSessionObject(vb)
@@ -223,13 +226,20 @@ def cmdExistingVm(ctx,mach,cmd):
     if ctx['remote'] and cmd == 'stats2':
         print 'Trying to use local only functionality, ignored'
         return
-    console=session.console
+    console=session.console    
     ops={'pause' :     lambda: console.pause(),
          'resume':     lambda: console.resume(),
          'powerdown':  lambda: console.powerDown(),
          'stats':      lambda: guestStats(ctx, mach),
+         'guest':      lambda: guestExec(ctx, mach, console, args)
          }
-    ops[cmd]()
+    try:
+        ops[cmd]()
+    except Exception, e:
+        print 'failed: ',e
+        if g_verbose:
+            traceback.print_exc()
+
     session.close()
 
 # can cache known machines, if needed
@@ -339,28 +349,38 @@ def pauseCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    cmdExistingVm(ctx, mach, 'pause')
+    cmdExistingVm(ctx, mach, 'pause', '')
     return 0
 
 def powerdownCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    cmdExistingVm(ctx, mach, 'powerdown')
+    cmdExistingVm(ctx, mach, 'powerdown', '')
     return 0
 
 def resumeCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    cmdExistingVm(ctx, mach, 'resume')
+    cmdExistingVm(ctx, mach, 'resume', '')
     return 0
 
 def statsCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    cmdExistingVm(ctx, mach, 'stats')
+    cmdExistingVm(ctx, mach, 'stats', '')
+    return 0
+
+def guestCmd(ctx, args):
+    if (len(args) < 3):
+        print "usage: guest name commands"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    cmdExistingVm(ctx, mach, 'guest', ' '.join(args[2:]))
     return 0
 
 def setvarCmd(ctx, args):
@@ -445,7 +465,9 @@ commands = {'help':['Prints help information', helpCmd],
             'setvar':['Set VMs variable: setvar Fedora BIOSSettings.ACPIEnabled True', setvarCmd],
             'eval':['Evaluate arbitrary Python construction: eval for m in getMachines(ctx): print m.name,"has",m.memorySize,"M"', evalCmd],
             'quit':['Exits', quitCmd],
-            'host':['Show host information', hostCmd]}
+            'host':['Show host information', hostCmd],
+            'guest':['Execute command for guest: guest Win32 console.mouse.putMouseEvent(20, 20, 0, 0)', guestCmd],
+            }
 
 def runCommand(ctx, cmd):
     if len(cmd) == 0: return 0
