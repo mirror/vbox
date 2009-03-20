@@ -737,13 +737,8 @@ STDMETHODIMP Progress::Cancel()
         return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("Operation cannot be canceled"));
 
-/// @todo (dmik): implement operation cancellation!
-//    mCompleted = TRUE;
-//    mCanceled = TRUE;
-//    return S_OK;
-
-    ComAssertMsgFailed (("Not implemented!"));
-    ReturnComNotImplemented();
+    mCanceled = TRUE;
+    return S_OK;
 }
 
 // public methods only for internal purposes
@@ -762,8 +757,16 @@ HRESULT Progress::notifyProgress (LONG aPercent)
 
     AutoWriteLock alock (this);
 
-    AssertReturn (!mCompleted && !mCanceled, E_FAIL);
     AssertReturn (aPercent >= 0 && aPercent <= 100, E_INVALIDARG);
+
+    if (mCancelable && mCanceled)
+    {
+        Assert(!mCompleted);
+        return E_FAIL;
+    }
+    else
+        AssertReturn (!mCompleted && !mCanceled, E_FAIL);
+
 
     mOperationPercent = aPercent;
 
@@ -825,6 +828,9 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode)
     AutoWriteLock alock (this);
 
     AssertReturn (mCompleted == FALSE, E_FAIL);
+
+    if (mCanceled && SUCCEEDED(aResultCode))
+        aResultCode = E_FAIL;
 
     mCompleted = TRUE;
     mResultCode = aResultCode;
@@ -936,6 +942,11 @@ HRESULT Progress::notifyCompleteBstr (HRESULT aResultCode, const GUID &aIID,
     AssertComRCReturnRC (autoCaller.rc());
 
     AutoWriteLock alock (this);
+
+    AssertReturn (mCompleted == FALSE, E_FAIL);
+
+    if (mCanceled && SUCCEEDED(aResultCode))
+        aResultCode = E_FAIL;
 
     mCompleted = TRUE;
     mResultCode = aResultCode;
@@ -1416,13 +1427,8 @@ STDMETHODIMP CombinedProgress::Cancel()
     if (!mCancelable)
         return setError (E_FAIL, tr ("Operation cannot be cancelled"));
 
-/// @todo (dmik): implement operation cancellation!
-//    mCompleted = TRUE;
-//    mCanceled = TRUE;
-//    return S_OK;
-
-    ComAssertMsgFailed (("Not implemented!"));
-    ReturnComNotImplemented();
+    mCanceled = TRUE;
+    return S_OK;
 }
 
 // private methods
