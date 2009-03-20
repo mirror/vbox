@@ -17,9 +17,9 @@ s/^ *//g
 #
 # Figure which type of line this is and process it accordingly.
 #
-/^[A-Za-z_][A-Za-z0-9_]*:/b struct
+/^[[:alpha:]_][[:alnum:]_]*:/b struct
 /<gap>/b member
-/^\.[A-Za-z_][A-Za-z0-9_.:]* res.*$/b member_two
+/^\.[[:alpha:]_][[:alnum:]_.:]* res.*$/b member_two
 b error
 b member_two
 
@@ -40,10 +40,10 @@ b end
 # Note: the 't' command doesn't seem to be working right with 's'.
 #
 :member
-s/[0-9a-fA-Z]* *//
+s/[[:xdigit:]]* *//
 s/<gap> *//
-/^\.[a-zA-Z0-9_.]*[:]* .*$/!t error
-s/\(\.[a-zA-Z0-9_]*\)[:]* .*$/\1 / 
+/^\.[[:alnum:]_.]*[:]* .*$/!t error
+s/\(\.[[:alnum:]_]*\)[:]* .*$/\1 /
 G
 s/^\([^ ]*\) \(.*\)$/global \2\1 ; member/
 s/\n//m
@@ -57,7 +57,7 @@ b end
 :member_two
 s/[:]*  *res[bwdtq] .*$//
 s/$/ /
-/^\.[a-zA-Z0-9_.]* *$/!t error
+/^\.[[:alnum:]_.]* *$/!t error
 G
 s/^\([^ ]*\) \(.*\)$/global \2\1 ; member2/
 s/\n//m
