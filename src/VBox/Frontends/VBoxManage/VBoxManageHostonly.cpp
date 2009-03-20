@@ -42,6 +42,7 @@
 #include <iprt/string.h>
 #include <iprt/net.h>
 #include <iprt/getopt.h>
+#include <iprt/ctype.h>
 
 #include <VBox/log.h>
 
@@ -140,22 +141,18 @@ static int handleRemove(HandlerArg *a, int iStart, int *pcProcessed)
 }
 #endif
 
-enum enOptionCodes
-{
-    DHCP = 1000,
-    IP,
-    NETMASK,
-    IPV6,
-    NETMASKLENGTHV6
-};
-
-static const RTGETOPTDEF g_aListOptions[]
+static const RTGETOPTDEF g_aHostOnlyIPOptions[]
     = {
-        { "-dhcp",              DHCP, RTGETOPT_REQ_NOTHING },
-        { "-ip",                IP, RTGETOPT_REQ_STRING },
-        { "-netmask",           NETMASK, RTGETOPT_REQ_STRING },
-        { "-ipv6",              IPV6, RTGETOPT_REQ_STRING },
-        { "-netmasklengthv6",   NETMASKLENGTHV6, RTGETOPT_REQ_UINT8 }
+        { "--dhcp",             'd', RTGETOPT_REQ_NOTHING },
+        { "-dhcp",              'd', RTGETOPT_REQ_NOTHING },    // deprecated
+        { "--ip",               'a', RTGETOPT_REQ_STRING },
+        { "-ip",                'a', RTGETOPT_REQ_STRING },     // deprecated
+        { "--netmask",          'm', RTGETOPT_REQ_STRING },
+        { "-netmask",           'm', RTGETOPT_REQ_STRING },     // deprecated
+        { "--ipv6",             'b', RTGETOPT_REQ_STRING },
+        { "-ipv6",              'b', RTGETOPT_REQ_STRING },     // deprecated
+        { "--netmasklengthv6",  'l', RTGETOPT_REQ_UINT8 },
+        { "-netmasklengthv6",   'l', RTGETOPT_REQ_UINT8 }       // deprecated
       };
 
 static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
@@ -182,63 +179,41 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
     RTGetOptInit(&GetState,
                  a->argc,
                  a->argv,
-                 g_aListOptions,
-                 RT_ELEMENTS(g_aListOptions),
+                 g_aHostOnlyIPOptions,
+                 RT_ELEMENTS(g_aHostOnlyIPOptions),
                  index,
                  0 /* fFlags */);
     while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
         {
-            case DHCP:   // -dhcp
+            case 'd':   // --dhcp
                 if (bDhcp)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify -dhcp once.");
-                else if(bNetmasklengthv6 || pIpv6 || pIp || pNetmask)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify --dhcp once.");
                 else
                     bDhcp = true;
             break;
-            case IP:
+            case 'a':   // --ip
                 if(pIp)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify -ip once.");
-                else if (bDhcp)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
-                else if(bNetmasklengthv6 || pIpv6)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify --ip once.");
                 else
-                {
                     pIp = ValueUnion.psz;
-                }
             break;
-            case NETMASK:
+            case 'm':   // --netmask
                 if(pNetmask)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify -netmask once.");
-                else if (bDhcp)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
-                else if(bNetmasklengthv6 || pIpv6)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify --netmask once.");
                 else
-                {
                     pNetmask = ValueUnion.psz;
-                }
             break;
-            case IPV6:
+            case 'b':   // --ipv6
                 if(pIpv6)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify -ipv6 once.");
-                else if (bDhcp)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
-                else if(pIp || pNetmask)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify --ipv6 once.");
                 else
                     pIpv6 = ValueUnion.psz;
             break;
-            case NETMASKLENGTHV6:
+            case 'l':   // --netmasklengthv6
                 if(bNetmasklengthv6)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify -netmasklengthv6 once.");
-                else if (bDhcp)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use -dhcp with static ip configuration parameters: -ip, -netmask, -ipv6 and -netmasklengthv6.");
-                else if(pIp || pNetmask)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can not use ipv4 configuration (-ip and -netmask) with ipv6 (-ipv6 and -netmasklengthv6) simultaneously.");
+                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify --netmasklengthv6 once.");
                 else
                 {
                     bNetmasklengthv6 = true;
@@ -246,18 +221,30 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
                 }
             break;
             case VINF_GETOPT_NOT_OPTION:
-            case VERR_GETOPT_UNKNOWN_OPTION:
-                return errorSyntax(USAGE_HOSTONLYIFS, "Unknown option \"%s\".", ValueUnion.psz);
+                return errorSyntax(USAGE_HOSTONLYIFS, "unhandled parameter: %s", ValueUnion.psz);
             break;
             default:
                 if (c > 0)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "missing case: %c\n", c);
+                {
+                    if (RT_C_IS_GRAPH(c))
+                        return errorSyntax(USAGE_HOSTONLYIFS, "unhandled option: -%c", c);
+                    else
+                        return errorSyntax(USAGE_HOSTONLYIFS, "unhandled option: %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_HOSTONLYIFS, "unknown option: %s", ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     return errorSyntax(USAGE_HOSTONLYIFS, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
                     return errorSyntax(USAGE_HOSTONLYIFS, "%Rrs", c);
         }
     }
+
+    /* parameter sanity check */
+    if (bDhcp && (bNetmasklengthv6 || pIpv6 || pIp || pNetmask))
+        return errorSyntax(USAGE_HOSTONLYIFS, "You can not use --dhcp with static ip configuration parameters: --ip, --netmask, --ipv6 and --netmasklengthv6.");
+    if((pIp || pNetmask) && (bNetmasklengthv6 || pIpv6))
+        return errorSyntax(USAGE_HOSTONLYIFS, "You can not use ipv4 configuration (--ip and --netmask) with ipv6 (--ipv6 and --netmasklengthv6) simultaneously.");
 
     ComPtr<IHost> host;
     CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));

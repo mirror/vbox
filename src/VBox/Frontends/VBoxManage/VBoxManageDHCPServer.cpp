@@ -1,4 +1,4 @@
-/* $Id: VBoxManageDHCPServer.cpp 44622 2009-03-17 13:48:59Z misha $ */
+/* $Id$ */
 /** @file
  * VBoxManage - Implementation of dhcpserver command.
  */
@@ -42,6 +42,7 @@
 #include <iprt/string.h>
 #include <iprt/net.h>
 #include <iprt/getopt.h>
+#include <iprt/ctype.h>
 
 #include <VBox/log.h>
 
@@ -57,28 +58,24 @@ typedef enum enMainOpCodes
     OP_MODIFY,
 } OPCODE;
 
-enum enOptionCodes
-{
-    NETNAME = 1000,
-    IFNAME,
-    IP,
-    NETMASK,
-    LOWERIP,
-    UPPERIP,
-    ENABLE,
-    DISABLE
-};
-
-static const RTGETOPTDEF g_aListOptions[]
+static const RTGETOPTDEF g_aDHCPIPOptions[]
     = {
-        { "-netname",           NETNAME, RTGETOPT_REQ_STRING },
-        { "-ifname",            IFNAME,  RTGETOPT_REQ_STRING },
-        { "-ip",                IP,      RTGETOPT_REQ_STRING },
-        { "-netmask",           NETMASK, RTGETOPT_REQ_STRING },
-        { "-lowerip",           LOWERIP, RTGETOPT_REQ_STRING },
-        { "-upperip",           UPPERIP, RTGETOPT_REQ_STRING },
-        { "-enable",            ENABLE,  RTGETOPT_REQ_NOTHING },
-        { "-disable",           DISABLE,  RTGETOPT_REQ_NOTHING }
+        { "--netname",          'n', RTGETOPT_REQ_STRING },
+        { "-netname",           'n', RTGETOPT_REQ_STRING },     // deprecated (if removed check below)
+        { "--ifname",           'i', RTGETOPT_REQ_STRING },
+        { "-ifname",            'i', RTGETOPT_REQ_STRING },     // deprecated
+        { "--ip",               'a', RTGETOPT_REQ_STRING },
+        { "-ip",                'a', RTGETOPT_REQ_STRING },     // deprecated
+        { "--netmask",          'm', RTGETOPT_REQ_STRING },
+        { "-netmask",           'm', RTGETOPT_REQ_STRING },     // deprecated
+        { "--lowerip",          'l', RTGETOPT_REQ_STRING },
+        { "-lowerip",           'l', RTGETOPT_REQ_STRING },     // deprecated
+        { "--upperip",          'u', RTGETOPT_REQ_STRING },
+        { "-upperip",           'u', RTGETOPT_REQ_STRING },     // deprecated
+        { "--enable",           'e', RTGETOPT_REQ_NOTHING },
+        { "-enable",            'e', RTGETOPT_REQ_NOTHING },    // deprecated
+        { "--disable",          'd', RTGETOPT_REQ_NOTHING },
+        { "-disable",           'd', RTGETOPT_REQ_NOTHING }     // deprecated
       };
 
 static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
@@ -103,89 +100,95 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
     RTGetOptInit(&GetState,
                  a->argc,
                  a->argv,
-                 g_aListOptions,
-                 enmCode != OP_REMOVE ? RT_ELEMENTS(g_aListOptions): 2, /* we use only -netname and -ifname for remove*/
+                 g_aDHCPIPOptions,
+                 enmCode != OP_REMOVE ? RT_ELEMENTS(g_aDHCPIPOptions): 4, /* we use only --netname and --ifname for remove*/
                  index,
                  0 /* fFlags */);
     while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
         {
-            case NETNAME:
+            case 'n':   // --netname
                 if(pNetName)
-                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify -netname once.");
+                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify --netname once.");
                 else if (pIfName)
-                    return errorSyntax(USAGE_DHCPSERVER, "You can either use a -netname or -ifname for identifying the dhcp server.");
+                    return errorSyntax(USAGE_DHCPSERVER, "You can either use a --netname or --ifname for identifying the dhcp server.");
                 else
                 {
                     pNetName = ValueUnion.psz;
                 }
             break;
-            case IFNAME:
+            case 'i':   // --ifname
                 if(pIfName)
-                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify -ifname once.");
+                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify --ifname once.");
                 else if (pNetName)
-                    return errorSyntax(USAGE_DHCPSERVER, "You can either use a -netname or -ipname for identifying the dhcp server.");
+                    return errorSyntax(USAGE_DHCPSERVER, "You can either use a --netname or --ipname for identifying the dhcp server.");
                 else
                 {
                     pIfName = ValueUnion.psz;
                 }
             break;
-            case IP:
+            case 'a':   // -ip
                 if(pIp)
-                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify -ip once.");
+                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify --ip once.");
                 else
                 {
                     pIp = ValueUnion.psz;
                 }
             break;
-            case NETMASK:
+            case 'm':   // --netmask
                 if(pNetmask)
-                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify -netmask once.");
+                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify --netmask once.");
                 else
                 {
                     pNetmask = ValueUnion.psz;
                 }
             break;
-            case LOWERIP:
+            case 'l':   // --lowerip
                 if(pLowerIp)
-                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify -lowerip once.");
+                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify --lowerip once.");
                 else
                 {
                     pLowerIp = ValueUnion.psz;
                 }
             break;
-            case UPPERIP:
+            case 'u':   // --upperip
                 if(pUpperIp)
-                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify -upperip once.");
+                    return errorSyntax(USAGE_DHCPSERVER, "You can only specify --upperip once.");
                 else
                 {
                     pUpperIp = ValueUnion.psz;
                 }
             break;
-            case ENABLE:
+            case 'e':   // --enable
                 if(enable >= 0)
-                    return errorSyntax(USAGE_DHCPSERVER, "You can specify either -enable or -disable once.");
+                    return errorSyntax(USAGE_DHCPSERVER, "You can specify either --enable or --disable once.");
                 else
                 {
                     enable = 1;
                 }
             break;
-            case DISABLE:
+            case 'd':   // --disable
                 if(enable >= 0)
-                    return errorSyntax(USAGE_DHCPSERVER, "You can specify either -enable or -disable once.");
+                    return errorSyntax(USAGE_DHCPSERVER, "You can specify either --enable or --disable once.");
                 else
                 {
                     enable = 0;
                 }
             break;
             case VINF_GETOPT_NOT_OPTION:
-            case VERR_GETOPT_UNKNOWN_OPTION:
-                return errorSyntax(USAGE_DHCPSERVER, "Unknown option \"%s\".", ValueUnion.psz);
+                return errorSyntax(USAGE_DHCPSERVER, "unhandled parameter: %s", ValueUnion.psz);
             break;
             default:
                 if (c > 0)
-                    return errorSyntax(USAGE_DHCPSERVER, "missing case: %c\n", c);
+                {
+                    if (RT_C_IS_GRAPH(c))
+                        return errorSyntax(USAGE_DHCPSERVER, "unhandled option: -%c", c);
+                    else
+                        return errorSyntax(USAGE_DHCPSERVER, "unhandled option: %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_DHCPSERVER, "unknown option: %s", ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     return errorSyntax(USAGE_DHCPSERVER, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
@@ -194,23 +197,23 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
     }
 
     if(! pNetName && !pIfName)
-        return errorSyntax(USAGE_DHCPSERVER, "You need to specify either -netname or -ifname to identify the dhcp server");
+        return errorSyntax(USAGE_DHCPSERVER, "You need to specify either --netname or --ifname to identify the dhcp server");
 
     if(enmCode != OP_REMOVE)
     {
         if(enable < 0 || pIp || pNetmask || pLowerIp || pUpperIp)
         {
             if(!pIp)
-                return errorSyntax(USAGE_DHCPSERVER, "You need to specify -ip option");
+                return errorSyntax(USAGE_DHCPSERVER, "You need to specify --ip option");
 
             if(!pNetmask)
-                return errorSyntax(USAGE_DHCPSERVER, "You need to specify -netmask option");
+                return errorSyntax(USAGE_DHCPSERVER, "You need to specify --netmask option");
 
             if(!pLowerIp)
-                return errorSyntax(USAGE_DHCPSERVER, "You need to specify -lowerip option");
+                return errorSyntax(USAGE_DHCPSERVER, "You need to specify --lowerip option");
 
             if(!pUpperIp)
-                return errorSyntax(USAGE_DHCPSERVER, "You need to specify -upperip option");
+                return errorSyntax(USAGE_DHCPSERVER, "You need to specify --upperip option");
         }
     }
 

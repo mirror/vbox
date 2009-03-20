@@ -119,23 +119,23 @@ static int parseDiskType(const char *psz, HardDiskType_T *pDiskType)
 static const RTGETOPTDEF g_aCreateHardDiskOptions[] =
 {
     { "--filename",     'f', RTGETOPT_REQ_STRING },
-    { "-filename",      'f', RTGETOPT_REQ_STRING },
+    { "-filename",      'f', RTGETOPT_REQ_STRING },     // deprecated
     { "--size",         's', RTGETOPT_REQ_UINT64 },
-    { "-size",          's', RTGETOPT_REQ_UINT64 },
+    { "-size",          's', RTGETOPT_REQ_UINT64 },     // deprecated
     { "--format",       'o', RTGETOPT_REQ_STRING },
-    { "-format",        'o', RTGETOPT_REQ_STRING },
+    { "-format",        'o', RTGETOPT_REQ_STRING },     // deprecated
     { "--static",       'F', RTGETOPT_REQ_NOTHING },
-    { "-static",        'F', RTGETOPT_REQ_NOTHING },
+    { "-static",        'F', RTGETOPT_REQ_NOTHING },    // deprecated
     { "--variant",      'm', RTGETOPT_REQ_STRING },
-    { "-variant",       'm', RTGETOPT_REQ_STRING },
+    { "-variant",       'm', RTGETOPT_REQ_STRING },     // deprecated
     { "--type",         't', RTGETOPT_REQ_STRING },
-    { "-type",          't', RTGETOPT_REQ_STRING },
+    { "-type",          't', RTGETOPT_REQ_STRING },     // deprecated
     { "--comment",      'c', RTGETOPT_REQ_STRING },
-    { "-comment",       'c', RTGETOPT_REQ_STRING },
+    { "-comment",       'c', RTGETOPT_REQ_STRING },     // deprecated
     { "--remember",     'r', RTGETOPT_REQ_NOTHING },
-    { "-remember",      'r', RTGETOPT_REQ_NOTHING },
-    { "--register",     'r', RTGETOPT_REQ_NOTHING },
-    { "-register",      'r', RTGETOPT_REQ_NOTHING },
+    { "-remember",      'r', RTGETOPT_REQ_NOTHING },    // deprecated
+    { "--register",     'r', RTGETOPT_REQ_NOTHING },    // deprecated (inofficial)
+    { "-register",      'r', RTGETOPT_REQ_NOTHING },    // deprecated
 };
 
 int handleCreateHardDisk(HandlerArg *a)
@@ -487,11 +487,13 @@ int handleCloneHardDisk(HandlerArg *a)
             default:
                 if (c > 0)
                 {
-                    if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_CLONEHD, "Invalid option -%c", c);
+                    if (RT_C_IS_GRAPH(c))
+                        return errorSyntax(USAGE_CLONEHD, "unhandled option: -%c", c);
                     else
-                        return errorSyntax(USAGE_CLONEHD, "Invalid option case %i", c);
+                        return errorSyntax(USAGE_CLONEHD, "unhandled option: %i", c);
                 }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_CLONEHD, "unknown option: %s", ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     return errorSyntax(USAGE_CLONEHD, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else

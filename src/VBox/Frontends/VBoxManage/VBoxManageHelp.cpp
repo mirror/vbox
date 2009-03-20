@@ -76,9 +76,9 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage list [--long|-l] vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
 #if defined(VBOX_WITH_NETFLT)
-                "                            bridgedifs|hostonlyifs|dhcpservers|hostinfo|\n"
+                 "                            bridgedifs|hostonlyifs|dhcpservers|hostinfo|\n"
 #else
-                "                            bridgedifs|hostinfo|dhcpservers|\n"
+                 "                            bridgedifs|hostinfo|dhcpservers|\n"
 #endif
                  "                            hddbackends|hdds|dvds|floppies|\n"
                  "                            usbhost|usbfilters|systemproperties\n"
@@ -240,7 +240,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_EXPORTAPPLIANCE)
     {
-        RTPrintf("VBoxManage export           <machines> [--output|-o] <ovf>\n"
+        RTPrintf("VBoxManage export           <machines> --output|-o <ovf>\n"
                  "\n");
     }
 
@@ -472,7 +472,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_METRICS)
     {
-        RTPrintf("VBoxManage metrics          list [*|host|<vmname> [<metric_list>]] \n"
+        RTPrintf("VBoxManage metrics          list [*|host|<vmname> [<metric_list>]]\n"
                  "                                                 (comma-separated)\n\n"
                  "VBoxManage metrics          setup\n"
                  "                            [-period <seconds>]\n"
@@ -491,10 +491,10 @@ void printUsage(USAGECATEGORY u64Cmd)
 #if defined(VBOX_WITH_NETFLT)
     if (u64Cmd & USAGE_HOSTONLYIFS)
     {
-        RTPrintf("VBoxManage hostonlyif       ipconfig <name> \n"
-                 "                            [-dhcp| \n"
-                 "                            -ip<ipv4> [-netmask<ipv4> (deflt: 255.255.255.0)]| \n"
-                 "                            -ipv6<ipv6> [-netmasklengthv6<length> (deflt: 64)]]\n"
+        RTPrintf("VBoxManage hostonlyif       ipconfig <name>\n"
+                 "                            [--dhcp |\n"
+                 "                            --ip<ipv4> [--netmask<ipv4> (def: 255.255.255.0)] |\n"
+                 "                            --ipv6<ipv6> [--netmasklengthv6<length> (def: 64)]]\n"
 # if defined(RT_OS_WINDOWS)
                  "                            create |\n"
                  "                            remove <name>\n"
@@ -505,18 +505,18 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_DHCPSERVER)
     {
-        RTPrintf("VBoxManage dhcpserver       add|modify -netname <network_name> |\n"
+        RTPrintf("VBoxManage dhcpserver       add|modify --netname <network_name> |\n"
 #if defined(VBOX_WITH_NETFLT)
-                 "                                        -ifname <hostonly_if_name>\n"
+                 "                                       --ifname <hostonly_if_name>\n"
 #endif
-                 "                                [-ip <ip_address>\n"
-                 "                                 -netmask <network_mask>\n"
-                 "                                 -lowerip <lower_ip>\n"
-                 "                                 -upperip <upper_ip>]\n"
-                 "                                [-enable | -disable]\n"
-                 "VBoxManage dhcpserver       remove -netname <network_name> |\n"
+                 "                                [--ip <ip_address>\n"
+                 "                                 --netmask <network_mask>\n"
+                 "                                 --lowerip <lower_ip>\n"
+                 "                                 --upperip <upper_ip>]\n"
+                 "                                [--enable | --disable]\n"
+                 "VBoxManage dhcpserver       remove --netname <network_name> |\n"
 #if defined(VBOX_WITH_NETFLT)
-                 "                                   -ifname <hostonly_if_name>\n"
+                 "                                   --ifname <hostonly_if_name>\n"
 #endif
                  "\n");
     }
