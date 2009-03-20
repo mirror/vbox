@@ -3,7 +3,7 @@
 # IPRT - SED script for converting */err.h.
 #
 
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -46,7 +46,7 @@ b end
 ##
 # Convert the defines
 :defines
-s/^[[:space:]]*#[[:space:]]*define[[:space:]]*\([a-zA-Z0-9_]*\)[[:space:]]*\(.*\)[[:space:]]*$/    "\1",\n     \1 }, /
+s/^[[:space:]]*#[[:space:]]*define[[:space:]]*\([[:alnum:]_]*\)[[:space:]]*\(.*\)[[:space:]]*$/    "\1",\n     \1 }, /
 b end
 
 ##

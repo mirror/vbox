@@ -6,7 +6,7 @@
 /\[bits /d
 /\[absolute /d
 / times /d
-s/ *[0-9]* //
+s/ *[[:digit:]]* //
 /^ *$/d
 s/ *$//g
 s/^ *//g
