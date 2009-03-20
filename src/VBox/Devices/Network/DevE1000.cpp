@@ -4270,30 +4270,27 @@ static DECLCALLBACK(PDMNETWORKLINKSTATE) e1kGetLinkState(PPDMINETWORKCONFIG pInt
 static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
 {
     E1KSTATE *pState = IFACE_TO_STATE(pInterface, INetworkConfig);
-    switch (enmState)
+    bool fOldUp = !!(STATUS & STATUS_LU);
+    bool fNewUp = enmState == PDMNETWORKLINKSTATE_UP;
+
+    if (fNewUp != fOldUp)
     {
-        case PDMNETWORKLINKSTATE_UP:
+        if (fNewUp)
+        {
             E1kLog(("%s Link is up\n", INSTANCE(pState)));
             STATUS |= STATUS_LU;
             Phy::setLinkStatus(&pState->phy, true);
-            break;
-        case PDMNETWORKLINKSTATE_DOWN:
+        }
+        else
+        {
             E1kLog(("%s Link is down\n", INSTANCE(pState)));
             STATUS &= ~STATUS_LU;
             Phy::setLinkStatus(&pState->phy, false);
-            break;
-        case PDMNETWORKLINKSTATE_DOWN_RESUME:
-            /// @todo I failed to locate any references to this state,
-            /// looks like it is never used.
-            E1kLog(("%s Link is down temporarely\n", INSTANCE(pState)));
-            STATUS &= ~STATUS_LU;
-            Phy::setLinkStatus(&pState->phy, false);
-            break;
-        default:
-            E1kLog(("%s Invalid link state: %d\n", INSTANCE(pState), enmState));
-            return VERR_INVALID_PARAMETER;
+        }
+        e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
+        if (pState->pDrv)
+            pState->pDrv->pfnNotifyLinkChanged(pState->pDrv, enmState);
     }
-    e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
     return VINF_SUCCESS;
 }
 
