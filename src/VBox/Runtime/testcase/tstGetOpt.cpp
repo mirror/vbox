@@ -90,7 +90,7 @@ int main()
         { "--mac",              'm', RTGETOPT_REQ_MACADDR },
     };
 
-    char *argv2[] =
+    const char *argv2[] =
     {
         "-s",               "string1",
         "--optwithstring",  "string2",
@@ -133,7 +133,7 @@ int main()
     };
     int argc2 = (int)RT_ELEMENTS(argv2) - 1;
 
-    CHECK(RT_SUCCESS(RTGetOptInit(&GetState, argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), 0, 0 /* fFlags */)));
+    CHECK(RT_SUCCESS(RTGetOptInit(&GetState, argc2, (char**)argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), 0, 0 /* fFlags */)));
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 2);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string1"));
