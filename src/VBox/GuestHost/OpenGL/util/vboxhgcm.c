@@ -170,7 +170,7 @@ static int crVBoxHGCMCall(void *pvData, unsigned cbData)
     {
         return VINF_SUCCESS;
     }
-    crDebug("vboxCall failed with %x\n", errno);
+    crWarning("vboxCall failed with %x\n", errno);
     return VERR_NOT_SUPPORTED;
 #endif /*#ifdef RT_OS_WINDOWS*/
 
@@ -324,7 +324,7 @@ static void crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned i
 
     if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
     {
-        crDebug("SHCRGL_GUEST_FN_WRITE failed with %x %x\n", rc, parms.hdr.result);
+        crWarning("SHCRGL_GUEST_FN_WRITE failed with %x %x\n", rc, parms.hdr.result);
     }
 }
 
@@ -350,7 +350,7 @@ static void crVBoxHGCMReadExact( CRConnection *conn, const void *buf, unsigned i
 
     if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
     {
-        crDebug("SHCRGL_GUEST_FN_WRITE_READ failed with %x %x\n", rc, parms.hdr.result);
+        crWarning("SHCRGL_GUEST_FN_READ failed with %x %x\n", rc, parms.hdr.result);
         return;
     }
 
@@ -425,7 +425,7 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
         }
         else
         {
-            crDebug("SHCRGL_GUEST_FN_WRITE_READ failed with %x %x\n", rc, parms.hdr.result);
+            crWarning("SHCRGL_GUEST_FN_WRITE_READ (%i) failed with %x %x\n", len, rc, parms.hdr.result);
             return;
         }
     }
