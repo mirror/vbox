@@ -37,6 +37,7 @@
 #include <iprt/rand.h>
 #include <iprt/initterm.h>
 #include <iprt/getopt.h>
+#include <iprt/ctype.h>
 #include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
@@ -309,12 +310,19 @@ int main(int argc, char* argv[])
             break;
 #endif
             case VINF_GETOPT_NOT_OPTION:
-                RTStrmPrintf(g_pStdErr, "Unknown option %s\n", ValueUnion.psz);
+                RTStrmPrintf(g_pStdErr, "unhandled parameter: %s\n", ValueUnion.psz);
             return 1;
 
             default:
                 if (c > 0)
-                    RTStrmPrintf(g_pStdErr, "missing case: %c\n", c);
+                {
+                    if (RT_C_IS_GRAPH(c))
+                        RTStrmPrintf(g_pStdErr, "unhandled option: -%c", c);
+                    else
+                        RTStrmPrintf(g_pStdErr, "unhandled option: %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    RTStrmPrintf(g_pStdErr, "unknown option: %s", ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     RTStrmPrintf(g_pStdErr, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
