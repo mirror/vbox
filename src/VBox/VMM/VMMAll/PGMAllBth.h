@@ -3415,6 +3415,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
     rc = pgmRamGCPhys2HCPhys(pPGM, cr3 & GST_CR3_PAGE_MASK, &HCPhys);
     AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%RHp HCPhyswShw=%RHp (cr3)\n", HCPhys, HCPhysShw), false);
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT && defined(IN_RING3)
+    pgmGstGet32bitPDPtr(pPGM);
     RTGCPHYS GCPhys;
     rc = PGMR3DbgR3Ptr2GCPhys(pVM, pPGM->pGst32BitPdR3, &GCPhys);
     AssertRCReturn(rc, 1);
@@ -4138,23 +4139,18 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     RTHCPTR     HCPtrGuestCR3;
     RTHCPHYS    HCPhysGuestCR3;
 # ifdef VBOX_WITH_NEW_PHYS_CODE
-    /** @todo this needs some reworking. current code is just a big hack. */
-#  if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-#   if 1 /* temp hack */
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-    return VINF_PGM_SYNC_CR3;
-#   else
-    AssertFailedReturn(VERR_INTERNAL_ERROR);
-#   endif
-    int rc = VERR_INTERNAL_ERROR;
-#  else
     pgmLock(pVM);
-    PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysCR3);
+    PPGMPAGE    pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysCR3);
     AssertReturn(pPage, VERR_INTERNAL_ERROR);
-    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhysCR3 & GST_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3);
     HCPhysGuestCR3 = PGM_PAGE_GET_HCPHYS(pPage);
-    pgmUnlock(pVM);
+    /** @todo this needs some reworking wrt. locking.  */
+#  if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+    HCPtrGuestCR3 = NIL_RTHCPTR;
+    int rc = VINF_SUCCESS;
+#  else
+    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhysCR3 & GST_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3);
 #  endif
+    pgmUnlock(pVM);
 # else  /* !VBOX_WITH_NEW_PHYS_CODE */
     int rc = pgmRamGCPhys2HCPtrAndHCPhys(&pVM->pgm.s, GCPhysCR3 & GST_CR3_PAGE_MASK, &HCPtrGuestCR3, &HCPhysGuestCR3);
 # endif /* !VBOX_WITH_NEW_PHYS_CODE */
@@ -4186,7 +4182,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
              * Map the 4 PDs too.
              */
             PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(&pVM->pgm.s);
-            RTGCPTR GCPtr = pVM->pgm.s.GCPtrCR3Mapping + PAGE_SIZE;
+            RTGCPTR  GCPtr      = pVM->pgm.s.GCPtrCR3Mapping + PAGE_SIZE;
             for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++, GCPtr += PAGE_SIZE)
             {
                 if (pGuestPDPT->a[i].n.u1Present)
@@ -4195,17 +4191,17 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                     RTHCPHYS    HCPhys;
                     RTGCPHYS    GCPhys = pGuestPDPT->a[i].u & X86_PDPE_PG_MASK;
 #  ifdef VBOX_WITH_NEW_PHYS_CODE
-#   if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-                    AssertFailedReturn(VERR_INTERNAL_ERROR);
-                    int rc2 = VERR_INTERNAL_ERROR;
-#   else
                     pgmLock(pVM);
-                    PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+                    PPGMPAGE    pPage  = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
                     AssertReturn(pPage, VERR_INTERNAL_ERROR);
-                    int rc2 = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, (void **)&HCPtr);
                     HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
-                    pgmUnlock(pVM);
+#   if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+                    HCPtr = NIL_RTHCPTR;
+                    int rc2 = VINF_SUCCESS;
+#   else
+                    int rc2 = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, (void **)&HCPtr);
 #   endif
+                    pgmUnlock(pVM);
 #  else  /* !VBOX_WITH_NEW_PHYS_CODE */
                     int rc2 = pgmRamGCPhys2HCPtrAndHCPhys(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
 #  endif /* !VBOX_WITH_NEW_PHYS_CODE */
@@ -4298,7 +4294,8 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  endif
 
 #  ifndef PGM_WITHOUT_MAPPINGS
-    /* Apply all hypervisor mappings to the new CR3.
+    /* 
+     * Apply all hypervisor mappings to the new CR3.
      * Note that SyncCR3 will be executed in case CR3 is changed in a guest paging mode; this will
      * make sure we check for conflicts in the new CR3 root.
      */
