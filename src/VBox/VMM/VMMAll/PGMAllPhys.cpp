@@ -1006,13 +1006,15 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
              * Now, just perform the locking and calculate the return address.
              */
             PPGMPAGEMAP pMap = pTlbe->pMap;
-            pMap->cRefs++;
+            if (pMap)
+                pMap->cRefs++;
 #if 0 /** @todo implement locking properly */
             if (RT_LIKELY(pPage->cLocks != PGM_PAGE_MAX_LOCKS))
                 if (RT_UNLIKELY(++pPage->cLocks == PGM_PAGE_MAX_LOCKS))
                 {
                     AssertMsgFailed(("%RGp is entering permanent locked state!\n", GCPhys));
-                    pMap->cRefs++; /* Extra ref to prevent it from going away. */
+                    if (pMap)
+                        pMap->cRefs++; /* Extra ref to prevent it from going away. */
                 }
 #endif
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
@@ -1112,13 +1114,15 @@ VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
              * Now, just perform the locking and calculate the return address.
              */
             PPGMPAGEMAP pMap = pTlbe->pMap;
-            pMap->cRefs++;
+            if (pMap)
+                pMap->cRefs++;
 #if 0 /** @todo implement locking properly */
             if (RT_LIKELY(pPage->cLocks != PGM_PAGE_MAX_LOCKS))
                 if (RT_UNLIKELY(++pPage->cLocks == PGM_PAGE_MAX_LOCKS))
                 {
                     AssertMsgFailed(("%RGp is entering permanent locked state!\n", GCPhys));
-                    pMap->cRefs++; /* Extra ref to prevent it from going away. */
+                    if (pMap)
+                        pMap->cRefs++; /* Extra ref to prevent it from going away. */
                 }
 #endif
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));

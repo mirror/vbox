@@ -1309,6 +1309,162 @@ VMMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     return rc;
 }
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE 
+#ifdef IN_RING3
+
+/**
+ * Performs the lazy mapping of the 32-bit guest PD. 
+ *  
+ * @returns Pointer to the mapping.
+ * @param   pPGM        The PGM instance data.
+ */
+PX86PD pgmGstLazyMap32BitPD(PPGM pPGM)
+{
+    Assert(!pPGM->CTX_SUFF(pGst32BitPd));
+    PVM pVM = PGM2VM(pPGM);
+    pgmLock(pVM);
+
+    PPGMPAGE    pPage = pgmPhysGetPage(pPGM, pPGM->GCPhysCR3);
+    AssertReturn(pPage, NULL);
+
+    RTHCPTR     HCPtrGuestCR3;
+    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pPGM->GCPhysCR3 & X86_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3);
+    AssertRCReturn(rc, NULL);
+
+    pPGM->pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pPGM->pGst32BitPdR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
+# endif
+
+    pgmUnlock(pVM);
+    return pPGM->CTX_SUFF(pGst32BitPd);
+}
+
+
+/**
+ * Performs the lazy mapping of the PAE guest PDPT.
+ *  
+ * @returns Pointer to the mapping.
+ * @param   pPGM        The PGM instance data.
+ */
+PX86PDPT pgmGstLazyMapPaePDPT(PPGM pPGM)
+{
+    Assert(!pPGM->CTX_SUFF(pGstPaePdpt));
+    PVM pVM = PGM2VM(pPGM);
+    pgmLock(pVM);
+
+    PPGMPAGE    pPage = pgmPhysGetPage(pPGM, pPGM->GCPhysCR3);
+    AssertReturn(pPage, NULL);
+
+    RTHCPTR     HCPtrGuestCR3;
+    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pPGM->GCPhysCR3 & X86_CR3_PAE_PAGE_MASK, (void **)&HCPtrGuestCR3);
+    AssertRCReturn(rc, NULL);
+
+    pPGM->pGstPaePdptR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pPGM->pGstPaePdptR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+# endif
+
+    pgmUnlock(pVM);
+    return pPGM->CTX_SUFF(pGstPaePdpt);
+}
+
+#endif /* IN_RING3  */
+
+/**
+ * Performs the lazy mapping / updating of a PAE guest PD.
+ *  
+ * @returns Pointer to the mapping.
+ * @param   pPGM        The PGM instance data. 
+ * @param   iPdpt       Which PD entry to map (0..3). 
+ */
+PX86PDPAE pgmGstLazyMapPaePD(PPGM pPGM, uint32_t iPdpt)
+{
+    PVM             pVM         = PGM2VM(pPGM);
+    pgmLock(pVM);
+
+    PX86PDPT        pGuestPDPT  = pPGM->CTX_SUFF(pGstPaePdpt);
+    Assert(pGuestPDPT);
+    Assert(pGuestPDPT->a[iPdpt].n.u1Present);
+    RTGCPHYS        GCPhys      = pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK;
+    bool const      fChanged    = pPGM->aGCPhysGstPaePDs[iPdpt] != GCPhys;
+
+    PPGMPAGE        pPage       = pgmPhysGetPage(pPGM, GCPhys);
+    if (RT_LIKELY(pPage))
+    {
+        int         rc          = VINF_SUCCESS;
+        RTRCPTR     RCPtr       = NIL_RTRCPTR;
+        RTHCPTR     HCPtr       = NIL_RTHCPTR;
+#if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &HCPtr);
+        AssertRC(rc);
+#endif
+        if (RT_SUCCESS(rc) && fChanged)
+        {
+            RCPtr = (RTRCPTR)(RTRCUINTPTR)(pPGM->GCPtrCR3Mapping + (1 + iPdpt) * PAGE_SIZE);
+            rc = PGMMap(pVM, (RTRCUINTPTR)RCPtr, PGM_PAGE_GET_HCPHYS(pPage), PAGE_SIZE, 0);
+        }
+        if (RT_SUCCESS(rc))
+        {
+            pPGM->apGstPaePDsR3[iPdpt]          = (R3PTRTYPE(PX86PDPAE))HCPtr;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+            pPGM->apGstPaePDsR0[iPdpt]          = (R0PTRTYPE(PX86PDPAE))HCPtr;
+# endif 
+            if (fChanged)
+            {    
+                pPGM->aGCPhysGstPaePDs[iPdpt]   = GCPhys;
+                pPGM->apGstPaePDsRC[iPdpt]      = (RCPTRTYPE(PX86PDPAE))RCPtr;
+            }
+
+            pgmUnlock(pVM);
+            return pPGM->CTX_SUFF(apGstPaePDs)[iPdpt];
+        }
+    }
+
+    /* Invalid page or some failure, invalidate the entry. */
+    pPGM->aGCPhysGstPaePDs[iPdpt]   = NIL_RTGCPHYS;
+    pPGM->apGstPaePDsR3[iPdpt]      = 0;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pPGM->apGstPaePDsR0[iPdpt]      = 0;
+# endif 
+    pPGM->apGstPaePDsRC[iPdpt]      = 0;
+
+    pgmUnlock(pVM);
+    return NULL;
+}
+
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R3
+/**
+ * Performs the lazy mapping of the 32-bit guest PD. 
+ *  
+ * @returns Pointer to the mapping.
+ * @param   pPGM        The PGM instance data.
+ */
+PX86PML4 pgmGstLazyMapPml4(PPGM pPGM)
+{
+    Assert(!pPGM->CTX_SUFF(pGstAmd64Pml4));
+    PVM pVM = PGM2VM(pPGM);
+    pgmLock(pVM);
+
+    PPGMPAGE    pPage = pgmPhysGetPage(pPGM, pPGM->GCPhysCR3);
+    AssertReturn(pPage, NULL);
+
+    RTHCPTR     HCPtrGuestCR3;
+    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pPGM->GCPhysCR3 & X86_CR3_AMD64_PAGE_MASK, (void **)&HCPtrGuestCR3);
+    AssertRCReturn(rc, NULL);
+
+    pPGM->pGstAmd64Pml4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pPGM->pGstAmd64Pml4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
+# endif
+
+    pgmUnlock(pVM);
+    return pPGM->CTX_SUFF(pGstAmd64Pml4);
+}
+#endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R3 */
+
+#endif /* VBOX_WITH_NEW_PHYS_CODE */
 
 /**
  * Gets the specified page directory pointer table entry.
