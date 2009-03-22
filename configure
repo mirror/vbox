@@ -1731,7 +1731,11 @@ check_gsoap()
           cnf_append "VBOX_GSOAP_INSTALLED"   "1"
           cnf_append "VBOX_PATH_GSOAP"        "$GSOAP"
           cnf_append "VBOX_PATH_GSOAP_IMPORT" "$GSOAP_IMPORT"
-          cnf_append "VBOX_GSOAP_CXX_SOURCES" ""
+          if [ -f "$GSOAP/share/gsoap/stdsoap2.cpp" ]; then
+            cnf_append "VBOX_GSOAP_CXX_SOURCES" "$GSOAP/share/gsoap/stdsoap2.cpp"
+          else
+            cnf_append "VBOX_GSOAP_CXX_SOURCES" ""
+          fi
           cnf_append "VBOX_GSOAP_CXX_LIBS"    "libgsoap++"
           log_success "found"
         else
