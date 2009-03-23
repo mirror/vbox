@@ -76,13 +76,19 @@ public:
     HRESULT FinalConstruct();
     void FinalRelease();
 
+    enum HDDOpenMode  { OpenReadWrite, OpenReadOnly };
+                // have to use a special enum or otherwise the overloaded init() is ambiguous
+
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (VirtualBox *aVirtualBox, CBSTR aFormat,
-                  CBSTR aLocation);
-    HRESULT init (VirtualBox *aVirtualBox,
-                  CBSTR aLocation);
-    HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
-                  const settings::Key &aNode);
+    HRESULT init(VirtualBox *aVirtualBox,
+                 CBSTR aFormat,
+                 CBSTR aLocation);
+    HRESULT init(VirtualBox *aVirtualBox,
+                 CBSTR aLocation,
+                 HDDOpenMode enOpenMode);
+    HRESULT init(VirtualBox *aVirtualBox,
+                 HardDisk *aParent,
+                 const settings::Key &aNode);
     void uninit();
 
     // IMedium properties & methods
@@ -247,7 +253,7 @@ private:
     HRESULT setLocation (CBSTR aLocation);
     HRESULT setFormat (CBSTR aFormat);
 
-    HRESULT queryInfo();
+    HRESULT queryInfo(bool fWrite);
 
     HRESULT canClose();
     HRESULT canAttach (const Guid &aMachineId,

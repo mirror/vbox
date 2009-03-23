@@ -623,7 +623,8 @@ void HardDisk::FinalRelease()
  * @param aVirtualBox   VirtualBox object.
  * @param aLocaiton     Storage unit location.
  */
-HRESULT HardDisk::init (VirtualBox *aVirtualBox, CBSTR aFormat,
+HRESULT HardDisk::init (VirtualBox *aVirtualBox,
+                        CBSTR aFormat,
                         CBSTR aLocation)
 {
     AssertReturn (aVirtualBox != NULL, E_FAIL);
@@ -694,7 +695,8 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox, CBSTR aFormat,
 
 /**
  * Initializes the hard disk object by opening the storage unit at the specified
- * location.
+ * location. If the fWrite parameter is true, then the image will be opened
+ * read/write, otherwise it will be opened read-only.
  *
  * Note that the UUID, format and the parent of this hard disk will be
  * determined when reading the hard disk storage unit. If the detected parent is
@@ -703,7 +705,9 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox, CBSTR aFormat,
  * @param aVirtualBox   VirtualBox object.
  * @param aLocaiton     Storage unit location.
  */
-HRESULT HardDisk::init (VirtualBox *aVirtualBox, CBSTR aLocation)
+HRESULT HardDisk::init(VirtualBox *aVirtualBox,
+                       CBSTR aLocation,
+                       HDDOpenMode enOpenMode)
 {
     AssertReturn (aVirtualBox, E_INVALIDARG);
     AssertReturn (aLocation, E_INVALIDARG);
@@ -728,7 +732,7 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox, CBSTR aLocation)
     CheckComRCReturnRC (rc);
 
     /* get all the information about the medium from the storage unit */
-    rc = queryInfo();
+    rc = queryInfo((enOpenMode == OpenReadWrite) /* fWrite */ );
     if (SUCCEEDED (rc))
     {
         /* if the storage unit is not accessible, it's not acceptable for the
@@ -755,7 +759,7 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox, CBSTR aLocation)
 
 /**
  * Initializes the hard disk object by loading its data from the given settings
- * node.
+ * node. In this mode, the image will always be opened read/write.
  *
  * @param aVirtualBox   VirtualBox object.
  * @param aParent       Parent hard disk or NULL for a root (base) hard disk.
@@ -763,7 +767,8 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox, CBSTR aLocation)
  *
  * @note Locks VirtualBox lock for writing, treeLock() for writing.
  */
-HRESULT HardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
+HRESULT HardDisk::init (VirtualBox *aVirtualBox,
+                        HardDisk *aParent,
                         const settings::Key &aNode)
 {
     using namespace settings;
@@ -868,7 +873,7 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
     {
         ComObjPtr<HardDisk> hardDisk;
         hardDisk.createObject();
-        rc = hardDisk->init (aVirtualBox, this, *it);
+        rc = hardDisk->init(aVirtualBox, this, *it);
         CheckComRCBreakRC (rc);
 
         rc = mVirtualBox->registerHardDisk(hardDisk, false /* aSaveRegistry */);
@@ -2990,7 +2995,7 @@ HRESULT HardDisk::setFormat (CBSTR aFormat)
  *       for the first time). Locks mParent for reading. Locks this object for
  *       writing.
  */
-HRESULT HardDisk::queryInfo()
+HRESULT HardDisk::queryInfo(bool fWrite)
 {
     AutoWriteLock alock (this);
 
@@ -3073,7 +3078,7 @@ HRESULT HardDisk::queryInfo()
              * when opening hard disks of some third-party formats for the first
              * time in VirtualBox (such as VMDK for which VDOpen() needs to
              * generate an UUID if it is missing) */
-            if (!isImport)
+            if (!fWrite || !isImport)
                 flags |= VD_OPEN_FLAGS_READONLY;
 
             vrc = VDOpen (hdd, Utf8Str (mm.format), location, flags,

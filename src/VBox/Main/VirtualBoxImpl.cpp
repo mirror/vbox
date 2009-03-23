@@ -1124,7 +1124,7 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
 
     ComObjPtr<HardDisk> hardDisk;
     hardDisk.createObject();
-    rc = hardDisk->init (this, format, aLocation);
+    rc = hardDisk->init(this, format, aLocation);
 
     if (SUCCEEDED (rc))
         hardDisk.queryInterfaceTo (aHardDisk);
@@ -1132,8 +1132,7 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
-                                      IHardDisk **aHardDisk)
+STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation, BOOL fWrite, IHardDisk **aHardDisk)
 {
     CheckComArgNotNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
@@ -1147,7 +1146,9 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
 
     ComObjPtr<HardDisk> hardDisk;
     hardDisk.createObject();
-    rc = hardDisk->init (this, aLocation);
+    rc = hardDisk->init(this,
+                        aLocation,
+                        (fWrite) ? HardDisk::OpenReadWrite : HardDisk::OpenReadOnly );
 
     if (SUCCEEDED (rc))
     {
@@ -3090,7 +3091,7 @@ HRESULT VirtualBox::loadMedia (const settings::Key &aGlobal)
             {
                 ComObjPtr<HardDisk> hardDisk;
                 hardDisk.createObject();
-                rc = hardDisk->init (this, NULL, *it);
+                rc = hardDisk->init(this, NULL, *it);
                 CheckComRCBreakRC (rc);
 
                 rc = registerHardDisk(hardDisk, false /* aSaveRegistry */);

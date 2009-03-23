@@ -2151,9 +2151,10 @@ STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
 
         ComObjPtr<HardDisk> diff;
         diff.createObject();
-        rc = diff->init (mParent, hd->preferredDiffFormat(),
-                         BstrFmt ("%ls"RTPATH_SLASH_STR,
-                                  mUserData->mSnapshotFolderFull.raw()));
+        rc = diff->init(mParent,
+                        hd->preferredDiffFormat(),
+                        BstrFmt ("%ls"RTPATH_SLASH_STR,
+                                 mUserData->mSnapshotFolderFull.raw()));
         CheckComRCReturnRC (rc);
 
         /* make sure the hard disk is not modified before createDiffStorage() */
