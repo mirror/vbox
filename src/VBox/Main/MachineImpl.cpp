@@ -7767,14 +7767,17 @@ void Machine::rollback (bool aNotify)
         mStorageControllers.rollback();
     }
 
-    /* rollback any changes to devices after restoring the list */
-    StorageControllerList::const_iterator it = mStorageControllers->begin();
-    while (it != mStorageControllers->end())
+    if (!mStorageControllers.isNull())
     {
-        if ((*it)->isModified())
-            (*it)->rollback();
+        /* rollback any changes to devices after restoring the list */
+        StorageControllerList::const_iterator it = mStorageControllers->begin();
+        while (it != mStorageControllers->end())
+        {
+            if ((*it)->isModified())
+                (*it)->rollback();
 
-        ++ it;
+            ++ it;
+        }
     }
 
     mUserData.rollback();
