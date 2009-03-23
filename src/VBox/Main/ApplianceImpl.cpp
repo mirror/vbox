@@ -181,8 +181,8 @@ struct VirtualSystem
     Utf8Str             strSoundCardType;       // if not empty, then the system wants a soundcard; this then specifies the hardware;
                                                 // VMware Workstation 6.5 uses "ensoniq1371" for example
 
-    Utf8Str             strLicenceInfo;         // license info if any; receives contents of VirtualSystem/EulaSection/Info
-    Utf8Str             strLicenceText;         // license info if any; receives contents of VirtualSystem/EulaSection/License
+    Utf8Str             strLicenseInfo;         // license info if any; receives contents of VirtualSystem/EulaSection/Info
+    Utf8Str             strLicenseText;         // license info if any; receives contents of VirtualSystem/EulaSection/License
 
     VirtualSystem()
         : ullMemorySize(0), cCPUs(1), fHasFloppyDrive(false), fHasCdromDrive(false), fHasUsbController(false)
@@ -705,8 +705,8 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                  && ((pelmLicense = pelmThis->findChildElement("License")))
                )
             {
-                vsys.strLicenceInfo = pelmInfo->getValue();
-                vsys.strLicenceText = pelmLicense->getValue();
+                vsys.strLicenseInfo = pelmInfo->getValue();
+                vsys.strLicenseText = pelmLicense->getValue();
             }
         }
         else if (    (!strcmp(pcszElemName, "VirtualHardwareSection"))
