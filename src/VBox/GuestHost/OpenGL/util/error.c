@@ -355,7 +355,14 @@ DECLEXPORT(void) crDebug( char *format, ... )
 #if defined(IN_GUEST) || defined(DEBUG_leo) || defined(DEBUG_ll158262)
     outputChromiumMessage( output, txt );
 #else
-    Log(("%s\n", txt));
+    if (output==stderr)
+    {
+        LogRel(("%s\n", txt));
+    }
+    else
+    {
+        outputChromiumMessage(output, txt);
+    }
 #endif
     va_end( args );
 }
