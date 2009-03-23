@@ -205,12 +205,9 @@ void VBoxCGlueTerm(void)
 {
     if (g_hVBoxXPCOMC)
     {
-        /* VBoxRT.so doesn't like being reloaded and it asserts at:
-         * Expression: g_szrtProcExePath[0] != '\0'
-         * Location  : src/VBox/Runtime/r3/process.cpp(100) char* RTProcGetExecutableName(char*, size_t)
-         * so for time being not comment the following line
-         */
-        /* dlclose(g_hVBoxXPCOMC); */
+#if 0 /* VBoxRT.so doesn't like being reloaded. See @bugref{3725}. */
+        dlclose(g_hVBoxXPCOMC);
+#endif
         g_hVBoxXPCOMC = NULL;
     }
     g_pVBoxFuncs = NULL;
