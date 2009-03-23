@@ -24,8 +24,8 @@
 #include "resource.h"
 
 VS_VERSION_INFO    VERSIONINFO
-  FILEVERSION      1,0,0,1
-  PRODUCTVERSION   1,0,0,1
+  FILEVERSION      VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
+  PRODUCTVERSION   VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
   FILEFLAGSMASK    VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
   FILEFLAGS        VS_FF_DEBUG|VS_FF_PRIVATEBUILD|VS_FF_PRERELEASE
@@ -41,14 +41,14 @@ BEGIN
     BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
     BEGIN
     VALUE "CompanyName",     "Sun Microsystems, Inc.\0"
-    VALUE "FileDescription", "Sun xVM VirtualBox Interface\0"
-    VALUE "FileVersion",     "1.0.000\0"
+    VALUE "FileDescription", "Sun VirtualBox Interface\0"
+    VALUE "FileVersion",     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
     VALUE "InternalName",    "VBOXSVC\0"
     VALUE "LegalCopyright",  "\0"
     VALUE "LegalTrademarks", "\0"
     VALUE "OriginalFilename","VBOXSVC.EXE\0"
-    VALUE "ProductName",     "Sun xVM VirtualBox\0"
-    VALUE "ProductVersion",  "1.0.000\0"
+    VALUE "ProductName",     "Sun VirtualBox\0"
+    VALUE "ProductVersion",  VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
 
     VALUE "OLESelfRegister", ""
 
