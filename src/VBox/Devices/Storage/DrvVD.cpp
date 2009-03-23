@@ -1009,13 +1009,23 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         }
 
         if (RT_SUCCESS(rc))
+        {
             Log(("%s: %d - Opened '%s' in %s mode\n", __FUNCTION__,
                  iLevel, pszName,
                  VDIsReadOnly(pThis->pDisk) ? "read-only" : "read-write"));
+            if (   VDIsReadOnly(pThis->pDisk)
+                && !fReadOnly)
+            {
+                rc = PDMDrvHlpVMSetError(pDrvIns, VERR_VD_IMAGE_READ_ONLY, RT_SRC_POS,
+                                         N_("Failed to open image '%s' for writing due to wrong "
+                                            "permissions"), pszName);
+                break;
+            }
+        }
         else
         {
            rc = PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                    N_("Failed to open image '%s' in %s mode rc=%Rrc\n"), pszName,
+                                    N_("Failed to open image '%s' in %s mode rc=%Rrc"), pszName,
                                     (uOpenFlags & VD_OPEN_FLAGS_READONLY) ? "readonly" : "read-write", rc);
            break;
         }
