@@ -495,10 +495,10 @@ VMMR3DECL(int)      PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_
 /** @group PGMR3PhysRegisterRom flags.
  * @{ */
 /** Inidicates that ROM shadowing should be enabled. */
-#define PGMPHYS_ROM_FLAG_SHADOWED           RT_BIT_32(0)
+#define PGMPHYS_ROM_FLAGS_SHADOWED          RT_BIT_32(0)
 /** Indicates that what pvBinary points to won't go away
  * and can be used for strictness checks. */
-#define PGMPHYS_ROM_FLAG_PERMANENT_BINARY   RT_BIT_32(1)
+#define PGMPHYS_ROM_FLAGS_PERMANENT_BINARY  RT_BIT_32(1)
 /** @} */
 
 VMMR3DECL(int)      PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS cb,

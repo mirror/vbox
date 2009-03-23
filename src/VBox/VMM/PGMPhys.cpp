@@ -346,19 +346,19 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
 
 
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-/** 
+/**
  * VMR3ReqCall worker for PGMR3PhysGCPhys2CCPtrExternal to make pages writable.
- *  
+ *
  * @returns see PGMR3PhysGCPhys2CCPtrExternal
  * @param   pVM         The VM handle.
  * @param   pGCPhys     Pointer to the guest physical address.
  * @param   ppv         Where to store the mapping address.
  * @param   pLock       Where to store the lock.
- */ 
+ */
 static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
     /*
-     * Just hand it to PGMPhysGCPhys2CCPtr and check that it's not a page with 
+     * Just hand it to PGMPhysGCPhys2CCPtr and check that it's not a page with
      * an access handler after it succeeds.
      */
     int rc = pgmLock(pVM);
@@ -391,16 +391,16 @@ static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPh
 /**
  * Requests the mapping of a guest page into ring-3, external threads.
  *
- * When you're done with the page, call PGMPhysReleasePageMappingLock() ASAP to 
- * release it. 
+ * When you're done with the page, call PGMPhysReleasePageMappingLock() ASAP to
+ * release it.
  *
- * This API will assume your intention is to write to the page, and will 
- * therefore replace shared and zero pages. If you do not intend to modify the 
- * page, use the PGMR3PhysGCPhys2CCPtrReadOnlyExternal() API. 
+ * This API will assume your intention is to write to the page, and will
+ * therefore replace shared and zero pages. If you do not intend to modify the
+ * page, use the PGMR3PhysGCPhys2CCPtrReadOnlyExternal() API.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
- * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical 
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical
  *          backing or if the page has any active access handlers. The caller
  *          must fall back on using PGMR3PhysWriteExternal.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
@@ -444,13 +444,13 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
         {
             /*
              * If the page is shared, the zero page, or being write monitored
-             * it must be converted to an page that's writable if possible. 
+             * it must be converted to an page that's writable if possible.
              * This has to be done on an EMT.
              */
             if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
             {
                 pgmUnlock(pVM);
-    
+
                 PVMREQ pReq = NULL;
                 rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                                  (PFNRT)pgmR3PhysGCPhys2CCPtrDelegated, 4, pVM, &GCPhys, ppv, pLock);
@@ -495,13 +495,13 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
 
 /**
  * Requests the mapping of a guest page into ring-3, external threads.
- * 
+ *
  * When you're done with the page, call PGMPhysReleasePageMappingLock() ASAP to
  * release it.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
- * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical 
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical
  *          backing or if the page as an active ALL access handler. The caller
  *          must fall back on using PGMPhysRead.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
@@ -537,7 +537,7 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
         if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
 #endif
-        else 
+        else
         {
             /*
              * Now, just perform the locking and calculate the return address.
@@ -1695,8 +1695,8 @@ VMMR3DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRe
  *                              Must be page aligned!
  * @param   pvBinary            Pointer to the binary data backing the ROM image.
  *                              This must be exactly \a cbRange in size.
- * @param   fFlags              Mask of flags. PGMPHYS_ROM_FLAG_SHADOWED
- *                              and/or PGMPHYS_ROM_FLAG_PERMANENT_BINARY.
+ * @param   fFlags              Mask of flags. PGMPHYS_ROM_FLAGS_SHADOWED
+ *                              and/or PGMPHYS_ROM_FLAGS_PERMANENT_BINARY.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  *
  * @remark  There is no way to remove the rom, automatically on device cleanup or
@@ -1719,7 +1719,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     AssertReturn(GCPhysLast > GCPhys, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pvBinary, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
-    AssertReturn(!(fFlags & ~(PGMPHYS_ROM_FLAG_SHADOWED | PGMPHYS_ROM_FLAG_PERMANENT_BINARY)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY)), VERR_INVALID_PARAMETER);
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
 
     const uint32_t cPages = cb >> PAGE_SHIFT;
@@ -1793,7 +1793,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      * Update the base memory reservation if necessary.
      */
     uint32_t cExtraBaseCost = fRamExists ? cPages : 0;
-    if (fFlags & PGMPHYS_ROM_FLAG_SHADOWED)
+    if (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
         cExtraBaseCost += cPages;
     if (cExtraBaseCost)
     {
@@ -1898,11 +1898,11 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
              * ROM behavior and not the handler behavior (which is to route all access
              * to PGM atm).
              */
-            if (fFlags & PGMPHYS_ROM_FLAG_SHADOWED)
+            if (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
             {
                 REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, true /* fShadowed */);
                 rc = PGMR3HandlerPhysicalRegister(pVM,
-                                                  fFlags & PGMPHYS_ROM_FLAG_SHADOWED
+                                                  fFlags & PGMPHYS_ROM_FLAGS_SHADOWED
                                                   ? PGMPHYSHANDLERTYPE_PHYSICAL_ALL
                                                   : PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
                                                   GCPhys, GCPhysLast,
@@ -1913,7 +1913,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
             else
             {
                 rc = PGMR3HandlerPhysicalRegister(pVM,
-                                                  fFlags & PGMPHYS_ROM_FLAG_SHADOWED
+                                                  fFlags & PGMPHYS_ROM_FLAGS_SHADOWED
                                                   ? PGMPHYSHANDLERTYPE_PHYSICAL_ALL
                                                   : PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
                                                   GCPhys, GCPhysLast,
@@ -1953,7 +1953,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                     pRomNew->GCPhysLast = GCPhysLast;
                     pRomNew->cb = cb;
                     pRomNew->fFlags = fFlags;
-                    pRomNew->pvOriginal = fFlags & PGMPHYS_ROM_FLAG_PERMANENT_BINARY ? pvBinary : NULL;
+                    pRomNew->pvOriginal = fFlags & PGMPHYS_ROM_FLAGS_PERMANENT_BINARY ? pvBinary : NULL;
                     pRomNew->pszDesc = pszDesc;
 
                     for (unsigned iPage = 0; iPage < cPages; iPage++)
@@ -2036,61 +2036,92 @@ static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void
     const uint32_t  iPage    = (GCPhys - pRom->GCPhys) >> PAGE_SHIFT;
     Assert(iPage < (pRom->cb >> PAGE_SHIFT));
     PPGMROMPAGE     pRomPage = &pRom->aPages[iPage];
-    switch (pRomPage->enmProt)
-    {
-        /*
-         * Ignore.
-         */
-        case PGMROMPROT_READ_ROM_WRITE_IGNORE:
-        case PGMROMPROT_READ_RAM_WRITE_IGNORE:
-            return VINF_SUCCESS;
+    Log5(("pgmR3PhysRomWriteHandler: %d %c %#08RGp %#04zx\n", pRomPage->enmProt, enmAccessType == PGMACCESSTYPE_READ ? 'R' : 'W', GCPhys, cbBuf));
 
-        /*
-         * Write to the ram page.
-         */
-        case PGMROMPROT_READ_ROM_WRITE_RAM:
-        case PGMROMPROT_READ_RAM_WRITE_RAM: /* yes this will get here too, it's *way* simpler that way. */
+    if (enmAccessType == PGMACCESSTYPE_READ)
+    {
+        switch (pRomPage->enmProt)
         {
-            /* This should be impossible now, pvPhys doesn't work cross page anylonger. */
-            Assert(((GCPhys - pRom->GCPhys + cbBuf - 1) >> PAGE_SHIFT) == iPage);
+            /*
+             * Take the default action.
+             */
+            case PGMROMPROT_READ_ROM_WRITE_IGNORE:
+            case PGMROMPROT_READ_RAM_WRITE_IGNORE:
+            case PGMROMPROT_READ_ROM_WRITE_RAM:
+            case PGMROMPROT_READ_RAM_WRITE_RAM:
+                return VINF_PGM_HANDLER_DO_DEFAULT;
+
+            default:
+                AssertMsgFailedReturn(("enmProt=%d iPage=%d GCPhys=%RGp\n",
+                                       pRom->aPages[iPage].enmProt, iPage, GCPhys),
+                                      VERR_INTERNAL_ERROR);
+        }
+    }
+    else
+    {
+        Assert(enmAccessType == PGMACCESSTYPE_WRITE);
+        switch (pRomPage->enmProt)
+        {
+            /*
+             * Ignore writes.
+             */
+            case PGMROMPROT_READ_ROM_WRITE_IGNORE:
+            case PGMROMPROT_READ_RAM_WRITE_IGNORE:
+                return VINF_SUCCESS;
 
             /*
-             * Take the lock, do lazy allocation, map the page and copy the data.
-             *
-             * Note that we have to bypass the mapping TLB since it works on
-             * guest physical addresses and entering the shadow page would
-             * kind of screw things up...
+             * Write to the ram page.
              */
-            int rc = pgmLock(pVM);
-            AssertRC(rc);
-
-            if (RT_UNLIKELY(PGM_PAGE_GET_STATE(&pRomPage->Shadow) != PGM_PAGE_STATE_ALLOCATED))
+            case PGMROMPROT_READ_ROM_WRITE_RAM:
+            case PGMROMPROT_READ_RAM_WRITE_RAM: /* yes this will get here too, it's *way* simpler that way. */
             {
-                rc = pgmPhysPageMakeWritable(pVM, &pRomPage->Shadow, GCPhys);
-                if (RT_FAILURE(rc))
+                /* This should be impossible now, pvPhys doesn't work cross page anylonger. */
+                Assert(((GCPhys - pRom->GCPhys + cbBuf - 1) >> PAGE_SHIFT) == iPage);
+
+                /*
+                 * Take the lock, do lazy allocation, map the page and copy the data.
+                 *
+                 * Note that we have to bypass the mapping TLB since it works on
+                 * guest physical addresses and entering the shadow page would
+                 * kind of screw things up...
+                 */
+                int rc = pgmLock(pVM);
+                AssertRC(rc);
+                PPGMPAGE pShadowPage = &pRomPage->Shadow;
+                if (!PGMROMPROT_IS_ROM(pRomPage->enmProt))
                 {
-                    pgmUnlock(pVM);
-                    return rc;
+                    pShadowPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+                    AssertLogRelReturn(pShadowPage, VERR_INTERNAL_ERROR);
                 }
-                AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 /* returned */, ("%Rrc\n", rc));
+
+                if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pShadowPage) != PGM_PAGE_STATE_ALLOCATED))
+                {
+                    rc = pgmPhysPageMakeWritable(pVM, pShadowPage, GCPhys);
+                    if (RT_FAILURE(rc))
+                    {
+                        pgmUnlock(pVM);
+                        return rc;
+                    }
+                    AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 /* returned */, ("%Rrc\n", rc));
+                }
+
+                void       *pvDstPage;
+                PPGMPAGEMAP pMapIgnored;
+                int rc2 = pgmPhysPageMap(pVM, pShadowPage, GCPhys & X86_PTE_PG_MASK, &pMapIgnored, &pvDstPage);
+                if (RT_SUCCESS(rc2))
+                    memcpy((uint8_t *)pvDstPage + (GCPhys & PAGE_OFFSET_MASK), pvBuf, cbBuf);
+                else
+                    rc = rc2;
+
+                pgmUnlock(pVM);
+                return rc;
             }
 
-            void *pvDstPage;
-            PPGMPAGEMAP pMapIgnored;
-            int rc2 = pgmPhysPageMap(pVM, &pRomPage->Shadow, GCPhys & X86_PTE_PG_MASK, &pMapIgnored, &pvDstPage);
-            if (RT_SUCCESS(rc2))
-                memcpy((uint8_t *)pvDstPage + (GCPhys & PAGE_OFFSET_MASK), pvBuf, cbBuf);
-            else
-                rc = rc2;
-
-            pgmUnlock(pVM);
-            return rc;
+            default:
+                AssertMsgFailedReturn(("enmProt=%d iPage=%d GCPhys=%RGp\n",
+                                       pRom->aPages[iPage].enmProt, iPage, GCPhys),
+                                      VERR_INTERNAL_ERROR);
         }
-
-        default:
-            AssertMsgFailedReturn(("enmProt=%d iPage=%d GCPhys=%RGp\n",
-                                   pRom->aPages[iPage].enmProt, iPage, GCPhys),
-                                  VERR_INTERNAL_ERROR);
     }
 }
 
@@ -2111,7 +2142,7 @@ int pgmR3PhysRomReset(PVM pVM)
     {
         const uint32_t cPages = pRom->cb >> PAGE_SHIFT;
 
-        if (pRom->fFlags & PGMPHYS_ROM_FLAG_SHADOWED)
+        if (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
         {
             /*
              * Reset the physical handler.
@@ -2245,7 +2276,7 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
         if (    GCPhys     <= pRom->GCPhysLast
             &&  GCPhysLast >= pRom->GCPhys
-            &&  (pRom->fFlags & PGMPHYS_ROM_FLAG_SHADOWED))
+            &&  (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED))
         {
             /*
              * Iterate the relevant pages and the ncessary make changes.
@@ -2253,7 +2284,7 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
             bool fChanges = false;
             uint32_t const cPages = pRom->GCPhysLast <= GCPhysLast
                                   ? pRom->cb >> PAGE_SHIFT
-                                  : (GCPhysLast - pRom->GCPhys) >> PAGE_SHIFT;
+                                  : (GCPhysLast - pRom->GCPhys + 1) >> PAGE_SHIFT;
             for (uint32_t iPage = (GCPhys - pRom->GCPhys) >> PAGE_SHIFT;
                  iPage < cPages;
                  iPage++)
@@ -2278,6 +2309,7 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
                     *pRamPage = *pNew;
                     /** @todo preserve the volatile flags (handlers) when these have been moved out of HCPhys! */
                 }
+                pRomPage->enmProt = enmProt;
             }
 
             /*

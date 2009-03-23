@@ -24,6 +24,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_ACPI
 #include <VBox/pdmdev.h>
+#include <VBox/pgm.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
 #include <iprt/assert.h>
@@ -1914,7 +1915,8 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpROMRegister(pDevIns, rsdp_addr, 0x1000, s->au8RSDPPage, false /* fShadow */, "ACPI RSDP");
+    rc = PDMDevHlpROMRegister(pDevIns, rsdp_addr, 0x1000, s->au8RSDPPage,
+                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "ACPI RSDP");
     if (RT_FAILURE(rc))
         return rc;
 

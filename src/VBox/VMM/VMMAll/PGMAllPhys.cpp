@@ -114,7 +114,7 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
         case PGMROMPROT_READ_RAM_WRITE_RAM:
             rc = PGMHandlerPhysicalPageTempOff(pVM, pRom->GCPhys, GCPhysFault & X86_PTE_PG_MASK);
             AssertRC(rc);
-            break; /** @todo Must restart the instruction, not use the interpreter! */
+            break; /** @todo Must edit the shadow PT and restart the instruction, not use the interpreter! */
 
         case PGMROMPROT_READ_ROM_WRITE_RAM:
             /* Handle it in ring-3 because it's *way* easier there. */
@@ -938,10 +938,10 @@ int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
  * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
- *  
- * @remarks The caller is responsible for dealing with access handlers. 
- * @todo    Add an informational return code for pages with access handlers? 
- *  
+ *
+ * @remarks The caller is responsible for dealing with access handlers.
+ * @todo    Add an informational return code for pages with access handlers?
+ *
  * @remark  Avoid calling this API from within critical sections (other than the
  *          PGM one) because of the deadlock risk. External threads may need to
  *          delegate jobs to the EMTs.
@@ -1046,8 +1046,8 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
  *
  * This API should only be used for very short term, as it will consume
  * scarse resources (R0 and GC) in the mapping cache. When you're done
- * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it. 
- *  
+ * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
+ *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
@@ -1058,9 +1058,9 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
  * @param   ppv         Where to store the address corresponding to GCPhys.
  * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
  *
- * @remarks The caller is responsible for dealing with access handlers. 
- * @todo    Add an informational return code for pages with access handlers? 
- *  
+ * @remarks The caller is responsible for dealing with access handlers.
+ * @todo    Add an informational return code for pages with access handlers?
+ *
  * @remark  Avoid calling this API from within critical sections (other than
  *          the PGM one) because of the deadlock risk.
  * @thread  Any thread.
@@ -1108,7 +1108,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
         PPGMPAGE pPage = pTlbe->pPage;
         if (RT_UNLIKELY(PGM_PAGE_IS_MMIO(pPage)))
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
-        else 
+        else
         {
             /*
              * Now, just perform the locking and calculate the return address.
