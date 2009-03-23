@@ -3085,6 +3085,12 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
                 pVM->pgm.s.cPrivatePages,
                 pVM->pgm.s.cSharedPages,
                 pVM->pgm.s.cZeroPages));
+#if 1
+        for (uint32_t i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
+            LogRel(("PGM: aHandyPages[#%-2d] = {.HCPhysGCPhys=%RHp, .idPage=%#08x, .idSharedPage=%#08x}\n",
+                    i, pVM->pgm.s.aHandyPages[i].HCPhysGCPhys, pVM->pgm.s.aHandyPages[i].idPage,
+                    pVM->pgm.s.aHandyPages[i].idSharedPage));
+#endif
         rc = VERR_EM_NO_MEMORY;
         //rc = VINF_EM_NO_MEMORY;
         //VM_FF_SET(pVM, VM_FF_PGM_WE_ARE_SCREWED?);
