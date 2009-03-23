@@ -31,11 +31,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-
-#ifdef VBOX_WITH_XPCOM
-# define VIR_ALLOC_N(a, b) ((a) = (char *)malloc(b))
-# define VIR_FREE(name) (free(name))
-#else /* !VBOX_WITH_XPCOM */
+#ifndef VBOX_WITH_XPCOM /** @todo Find libvirt define to test for! */
 # include <config.h>
 # include "memory.h"
 #endif /* !VBOX_WITH_XPCOM */
@@ -46,6 +42,7 @@
 #include <dlfcn.h>
 
 #include "VBoxXPCOMCGlue.h"
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -60,6 +57,15 @@
 # error "Port me"
 #endif
 
+#ifdef VBOX_WITH_XPCOM /** @todo Find libvirt define to test for! */
+# define VIR_ALLOC_N(a, b) ((a) = (char *)malloc(b))
+# define VIR_FREE(name) (free(name))
+#endif /* !VBOX_WITH_XPCOM */
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 /** The dlopen handle for VBoxXPCOMC. */
 void *g_hVBoxXPCOMC = NULL;
 /** The last load error. */
@@ -191,6 +197,7 @@ int VBoxCGlueInit(void)
     return -1;
 }
 
+
 /**
  * Terminate the C glue library.
  */
@@ -210,3 +217,4 @@ void VBoxCGlueTerm(void)
     g_pfnGetFunctions = NULL;
     memset(g_szVBoxErrMsg, 0, sizeof(g_szVBoxErrMsg));
 }
+
