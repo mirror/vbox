@@ -2818,6 +2818,7 @@ static int vmdkCreateExtents(PVMDKIMAGE pImage, unsigned cExtents)
             pExtents[i].pGD = NULL;
             pExtents[i].pRGD = NULL;
             pExtents[i].pDescData = NULL;
+            pExtents[i].uVersion = 1;
             pExtents[i].uCompression = VMDK_COMPRESSION_NONE;
             pExtents[i].uExtent = i;
             pExtents[i].pImage = pImage;
