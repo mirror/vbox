@@ -804,8 +804,10 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                 vsys.mapHardwareItems[i.ulInstanceID] = i;
             }
 
+            // now go thru all hardware items and handle them according to their type;
+            // in this first loop we handle all items _except_ hard disk images,
+            // which we'll handle in a second loop below
             HardwareItemsMap::const_iterator itH;
-
             for (itH = vsys.mapHardwareItems.begin();
                  itH != vsys.mapHardwareItems.end();
                  ++itH)
@@ -932,51 +934,7 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                     break;
 
                     case OVFResourceType_HardDisk: // 17
-                    {
-                        /*  <Item>
-                                <rasd:Caption>Harddisk 1</rasd:Caption>
-                                <rasd:Description>HD</rasd:Description>
-                                <rasd:ElementName>Hard Disk</rasd:ElementName>
-                                <rasd:HostResource>ovf://disk/lamp</rasd:HostResource>
-                                <rasd:InstanceID>5</rasd:InstanceID>
-                                <rasd:Parent>4</rasd:Parent>
-                                <rasd:ResourceType>17</rasd:ResourceType>
-                            </Item> */
-
-                        // look up the hard disk controller element whose InstanceID equals our Parent;
-                        // this is how the connection is specified in OVF
-                        ControllersMap::const_iterator it = vsys.mapControllers.find(i.ulParent);
-                        if (it == vsys.mapControllers.end())
-                            return setError(VBOX_E_FILE_ERROR,
-                                            tr("Error reading \"%s\": Hard disk item with instance ID %d specifies invalid parent %d, line %d"),
-                                            pcszPath,
-                                            i.ulInstanceID,
-                                            i.ulParent,
-                                            i.ulLineNumber);
-                        //const HardDiskController &hdc = it->second;
-
-                        VirtualDisk vd;
-                        vd.idController = i.ulParent;
-                        i.strAddressOnParent.toInt(vd.ulAddressOnParent);
-                        // ovf://disk/lamp
-                        // 123456789012345
-                        if (i.strHostResource.substr(0, 11) == "ovf://disk/")
-                            vd.strDiskId = i.strHostResource.substr(11);
-                        else if (i.strHostResource.substr(0, 6) == "/disk/")
-                            vd.strDiskId = i.strHostResource.substr(6);
-
-                        if (    !(vd.strDiskId.length())
-                             || (m->mapDisks.find(vd.strDiskId) == m->mapDisks.end())
-                           )
-                            return setError(VBOX_E_FILE_ERROR,
-                                            tr("Error reading \"%s\": Hard disk item with instance ID %d specifies invalid host resource \"%s\", line %d"),
-                                            pcszPath,
-                                            i.ulInstanceID,
-                                            i.strHostResource.c_str(),
-                                            i.ulLineNumber);
-
-                        vsys.mapVirtualDisks[vd.strDiskId] = vd;
-                    }
+                        // handled separately in second loop below
                     break;
 
                     case OVFResourceType_OtherStorageDevice:        // 20       SATA controller
@@ -1040,6 +998,68 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                         pcszPath,
                                         i.resourceType,
                                         i.ulLineNumber);
+                } // end switch
+            }
+
+            // now run through the items for a second time, but handle only
+            // hard disk images; otherwise the code would fail if a hard
+            // disk image appears in the OVF before its hard disk controller
+            for (itH = vsys.mapHardwareItems.begin();
+                 itH != vsys.mapHardwareItems.end();
+                 ++itH)
+            {
+                const VirtualHardwareItem &i = itH->second;
+
+                // do some analysis
+                switch (i.resourceType)
+                {
+                    case OVFResourceType_HardDisk: // 17
+                    {
+                        /*  <Item>
+                                <rasd:Caption>Harddisk 1</rasd:Caption>
+                                <rasd:Description>HD</rasd:Description>
+                                <rasd:ElementName>Hard Disk</rasd:ElementName>
+                                <rasd:HostResource>ovf://disk/lamp</rasd:HostResource>
+                                <rasd:InstanceID>5</rasd:InstanceID>
+                                <rasd:Parent>4</rasd:Parent>
+                                <rasd:ResourceType>17</rasd:ResourceType>
+                            </Item> */
+
+                        // look up the hard disk controller element whose InstanceID equals our Parent;
+                        // this is how the connection is specified in OVF
+                        ControllersMap::const_iterator it = vsys.mapControllers.find(i.ulParent);
+                        if (it == vsys.mapControllers.end())
+                            return setError(VBOX_E_FILE_ERROR,
+                                            tr("Error reading \"%s\": Hard disk item with instance ID %d specifies invalid parent %d, line %d"),
+                                            pcszPath,
+                                            i.ulInstanceID,
+                                            i.ulParent,
+                                            i.ulLineNumber);
+                        //const HardDiskController &hdc = it->second;
+
+                        VirtualDisk vd;
+                        vd.idController = i.ulParent;
+                        i.strAddressOnParent.toInt(vd.ulAddressOnParent);
+                        // ovf://disk/lamp
+                        // 123456789012345
+                        if (i.strHostResource.substr(0, 11) == "ovf://disk/")
+                            vd.strDiskId = i.strHostResource.substr(11);
+                        else if (i.strHostResource.substr(0, 6) == "/disk/")
+                            vd.strDiskId = i.strHostResource.substr(6);
+
+                        if (    !(vd.strDiskId.length())
+                             || (m->mapDisks.find(vd.strDiskId) == m->mapDisks.end())
+                           )
+                            return setError(VBOX_E_FILE_ERROR,
+                                            tr("Error reading \"%s\": Hard disk item with instance ID %d specifies invalid host resource \"%s\", line %d"),
+                                            pcszPath,
+                                            i.ulInstanceID,
+                                            i.strHostResource.c_str(),
+                                            i.ulLineNumber);
+
+                        vsys.mapVirtualDisks[vd.strDiskId] = vd;
+                    }
+                    break;
                 }
             }
         }
