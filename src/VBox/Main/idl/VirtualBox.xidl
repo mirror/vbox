@@ -1873,10 +1873,17 @@
         This method tries to guess the storage format of the specified hard disk
         by reading hard disk data at the specified location.
 
+        If @write is true, the image is opened for read/write access and must
+        have according permissions, as VirtualBox may actually write status
+        information into the disk's metadata sections. Note that write access
+        is required for all typical image usage in VirtualBox, since VirtualBox
+        may need to write metadata such as a UUID into the image. The only
+        exception is opening a source image temporarily for copying and
+        cloning when the image will quickly be closed againl.
+
         Note that the format of the location string is storage format specific.
         See <link to="IMedium::location"/>, IHardDisk and
         <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
-
 
         <result name="VBOX_E_FILE_ERROR">
           Invalid hard disk storage file location.
@@ -1894,6 +1901,11 @@
           Location of the storage unit that contains hard disk data in one of
           the supported storage formats.
         </desc>
+      </param>
+      <param name="write" type="boolean" dir="in">
+          <desc>
+              If true, opens for read/write access. If false, opens for read access only.
+          </desc>
       </param>
       <param name="hardDisk" type="IHardDisk" dir="return">
         <desc>Opened hard disk object.</desc>
@@ -3351,7 +3363,7 @@
     </method>
 
     <method name="getDescriptionByType">
-      <desc>This is the same as <link to="getDescription" /> except that you can specify which types 
+      <desc>This is the same as <link to="getDescription" /> except that you can specify which types
       should be returned.</desc>
 
       <param name="aType" type="VirtualSystemDescriptionType" dir="in">

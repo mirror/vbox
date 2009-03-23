@@ -1669,7 +1669,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             /* we've not found the image */
             RTPrintf("Adding hard disk '%S'...\n", hdaFile);
-            virtualBox->OpenHardDisk(hdaFileBstr, hardDisk.asOutParam());
+            virtualBox->OpenHardDisk(hdaFileBstr, TRUE /* fWrite */, hardDisk.asOutParam());
         }
         /* do we have the right image now? */
         if (hardDisk)
