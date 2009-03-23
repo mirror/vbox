@@ -1014,7 +1014,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                  iLevel, pszName,
                  VDIsReadOnly(pThis->pDisk) ? "read-only" : "read-write"));
             if (   VDIsReadOnly(pThis->pDisk)
-                && !fReadOnly)
+                && !fReadOnly
+                && iLevel == 0)
             {
                 rc = PDMDrvHlpVMSetError(pDrvIns, VERR_VD_IMAGE_READ_ONLY, RT_SRC_POS,
                                          N_("Failed to open image '%s' for writing due to wrong "
