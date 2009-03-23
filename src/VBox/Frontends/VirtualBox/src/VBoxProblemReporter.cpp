@@ -451,6 +451,23 @@ bool VBoxProblemReporter::askForOverridingFileIfExists (const QString& aPath, QW
         return true;
 }
 
+bool VBoxProblemReporter::askForOverridingFilesIfExists (const QStringList& aPaths, QWidget *aParent /* = NULL */) const
+{
+    QStringList existingFiles;
+    foreach (const QString &file, aPaths)
+    {
+        QFileInfo fi (file);
+        if (fi.exists())
+            existingFiles << fi.absoluteFilePath();
+    }
+    if (existingFiles.size() == 1)
+        /* If it is only one file use the single question versions above */
+        return askForOverridingFileIfExists (existingFiles.at (0), aParent);
+    else if (existingFiles.size() > 1)
+        return messageYesNo (aParent, Question, tr ("The following files exists already:<br /><br />%1<br /><br />Are you sure you want to replace them? Replacing them will overwrite there contents.").arg (existingFiles.join ("<br />")));
+    else
+        return true;
+}
 // Special Problem handlers
 /////////////////////////////////////////////////////////////////////////////
 

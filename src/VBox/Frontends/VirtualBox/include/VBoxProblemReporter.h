@@ -147,6 +147,7 @@ public:
 
     /* Generic problem handlers */
     bool askForOverridingFileIfExists (const QString& path, QWidget *aParent = NULL) const;
+    bool askForOverridingFilesIfExists (const QStringList& aPaths, QWidget *aParent /* = NULL */) const;
 
     /* Special problem handlers */
     void showBETAWarning();

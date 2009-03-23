@@ -130,13 +130,35 @@ void VBoxExportApplianceWzd::enableNext (const QIWidgetValidator *aWval)
 
 void VBoxExportApplianceWzd::accept()
 {
-    /* Check if the file exists already, if yes get confirmation for
-     * overwriting from the user. */
-    if (!vboxProblem().askForOverridingFileIfExists (mFileSelector->path(), this))
-        return;
-    /* Export the VMs, on success we are finished */
-    if (exportVMs())
-        QIAbstractWizard::accept();
+    CAppliance appliance;
+    /* Prepare the export of the VM's. */
+    if (prepareForExportVMs (appliance))
+    {
+        QFileInfo fi (mFileSelector->path());
+        QStringList files;
+        files << mFileSelector->path();
+        /* We need to know every filename which will be created, so that we can
+         * ask the user for confirmation of overwriting. For that we iterating
+         * over all virtual systems & fetch all descriptions of the type
+         * HardDiskImage. */
+        CVirtualSystemDescriptionVector vsds = appliance.GetVirtualSystemDescriptions();
+        for (int i=0; i < vsds.size(); ++i)
+        {
+            QVector<KVirtualSystemDescriptionType> types;
+            QVector<QString> refs, origValues, configValues, extraConfigValues;
+
+            vsds[i].GetDescriptionByType (KVirtualSystemDescriptionType_HardDiskImage, types, refs, origValues, configValues, extraConfigValues);
+            foreach (const QString &s, origValues)
+                files << QString ("%1/%2").arg (fi.absolutePath()).arg (s);
+        }
+        /* Check if the file exists already, if yes get confirmation for
+         * overwriting from the user. */
+        if (!vboxProblem().askForOverridingFilesIfExists (files, this))
+            return;
+        /* Export the VMs, on success we are finished */
+        if (exportVMs(appliance))
+            QIAbstractWizard::accept();
+    }
 }
 
 void VBoxExportApplianceWzd::showNextPage()
@@ -213,12 +235,12 @@ void VBoxExportApplianceWzd::addListViewVMItems (const QString& aSelectName)
         mVMListWidget->setCurrentItem (list.first());
 }
 
-bool VBoxExportApplianceWzd::exportVMs()
+bool VBoxExportApplianceWzd::prepareForExportVMs (CAppliance &aAppliance)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
     /* Create a appliance object */
-    CAppliance appliance = vbox.CreateAppliance();
-    bool fResult = appliance.isOk();
+    aAppliance = vbox.CreateAppliance();
+    bool fResult = aAppliance.isOk();
     if (fResult)
     {
         /* Iterate over all selected items */
@@ -233,40 +255,42 @@ bool VBoxExportApplianceWzd::exportVMs()
             if (fResult)
             {
                 /* Add the export description to our appliance object */
-                m.Export (appliance);
+                m.Export (aAppliance);
                 fResult = m.isOk();
                 if (!fResult)
                 {
-                    vboxProblem().cannotExportAppliance (m, &appliance, this);
+                    vboxProblem().cannotExportAppliance (m, &aAppliance, this);
                     return false;
                 }
             }
             else
                 break;
         }
-        /* Proceed if there where no errors */
-        if (fResult)
-        {
-            /* Write the appliance */
-            CProgress progress = appliance.Write (mFileSelector->path());
-            fResult = appliance.isOk();
-            if (fResult)
-            {
-                /* Show some progress, so the user know whats going on */
-                vboxProblem().showModalProgressDialog (progress, tr ("Exporting Appliance ..."), this);
-                if (!progress.isOk() || progress.GetResultCode() != 0)
-                {
-                    vboxProblem().cannotExportAppliance (progress, &appliance, this);
-                    return false;
-                }
-                else
-                    return true;
-            }
-        }
     }
     if (!fResult)
-        vboxProblem().cannotExportAppliance (&appliance, this);
+        vboxProblem().cannotExportAppliance (&aAppliance, this);
+    return fResult;
+}
 
+bool VBoxExportApplianceWzd::exportVMs (CAppliance &aAppliance)
+{
+    /* Write the appliance */
+    CProgress progress = aAppliance.Write (mFileSelector->path());
+    bool fResult = aAppliance.isOk();
+    if (fResult)
+    {
+        /* Show some progress, so the user know whats going on */
+        vboxProblem().showModalProgressDialog (progress, tr ("Exporting Appliance ..."), this);
+        if (!progress.isOk() || progress.GetResultCode() != 0)
+        {
+            vboxProblem().cannotExportAppliance (progress, &aAppliance, this);
+            return false;
+        }
+        else
+            return true;
+    }
+    if (!fResult)
+        vboxProblem().cannotExportAppliance (&aAppliance, this);
     return false;
 }
 
