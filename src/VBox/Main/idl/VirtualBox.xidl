@@ -1873,13 +1873,13 @@
         This method tries to guess the storage format of the specified hard disk
         by reading hard disk data at the specified location.
 
-        If @write is true, the image is opened for read/write access and must
+        If @a write is true, the image is opened for read/write access and must
         have according permissions, as VirtualBox may actually write status
         information into the disk's metadata sections. Note that write access
         is required for all typical image usage in VirtualBox, since VirtualBox
         may need to write metadata such as a UUID into the image. The only
         exception is opening a source image temporarily for copying and
-        cloning when the image will quickly be closed againl.
+        cloning when the image will quickly be closed again.
 
         Note that the format of the location string is storage format specific.
         See <link to="IMedium::location"/>, IHardDisk and
