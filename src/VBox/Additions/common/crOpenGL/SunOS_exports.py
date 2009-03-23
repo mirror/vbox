@@ -5,7 +5,7 @@
 
 import entrypoints
 
-hacks = ["TexImage3D"]
+hacks = []
 
 entrypoints.GenerateEntrypoints(hacks)
 

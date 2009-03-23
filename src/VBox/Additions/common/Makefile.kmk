@@ -32,7 +32,7 @@ if1of ($(KBUILD_TARGET), freebsd os2 solaris)
  include $(PATH_SUB_CURRENT)/VBoxService/Makefile.kmk
 endif
 ifdef VBOX_WITH_CROGL
- include $(PATH_SUB_CURRENT)/crOpenGL/Makefile.kmk
+  include $(PATH_SUB_CURRENT)/crOpenGL/Makefile.kmk
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk

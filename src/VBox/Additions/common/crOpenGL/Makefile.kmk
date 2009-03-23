@@ -36,7 +36,7 @@ DLLS.win += \
     VBoxOGLfeedbackspu
 
 ifndef VBOX_OSE  ## @todo Solaris too?
-DLLS.linux += \
+DLLS += \
     VBoxOGL \
     VBoxOGLarrayspu \
     VBoxOGLpassthroughspu \
@@ -44,9 +44,11 @@ DLLS.linux += \
     VBoxOGLfeedbackspu
 endif
 
-ifeq ($(KBUILD_TARGET),linux)
+if1of ($(KBUILD_TARGET),linux solaris)
  #VBoxOGL_DRI = 1
- VBoxOGL_FAKEDRI = 1
+ ifneq ($(KBUILD_TARGET),solaris)       # temporary
+  VBoxOGL_FAKEDRI = 1
+ endif
  VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
 endif
 
@@ -55,7 +57,8 @@ endif
 #
 VBoxOGL_TEMPLATE       = VBOXCROGLR3GUESTDLL
 VBoxOGL_INCS           = .
-VBoxOGL_INCS.linux     = \
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGL_INCS     += \
 	$(VBOX_PATH_X11_ROOT)/libXdamage-1.1 \
 	$(VBOX_PATH_X11_ROOT)/libXcomposite-0.4.0 \
 	$(VBOX_PATH_X11_ROOT)/libXfixes-4.0.3 \
@@ -71,7 +74,8 @@ VBoxOGL_INCS.linux     = \
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/drivers/dri/common \
 	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.5
-VBoxOGL_DEFS.linux     += VBOX_NO_NATIVEGL
+ VBoxOGL_DEFS     += VBOX_NO_NATIVEGL
+endif
 ifdef VBoxOGL_DRI
  VBoxOGL_DEFS          += VBOXOGL_DRI IN_DRI_DRIVER
 else ifdef VBoxOGL_FAKEDRI
@@ -89,30 +93,36 @@ else ifdef VBoxOGL_FAKEDRI
  VBoxOGL_INTERMEDIATES += \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_gl.h
 endif
-VBoxOGL_SOURCES        = \
+VBoxOGL_SOURCES       += \
 	load.c \
 	stub.c \
 	context.c \
 	$(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c \
 	$(VBOX_PATH_CROGL_GENFILES)/NULLfuncs.c \
 	$(VBOX_PATH_CROGL_GENFILES)/tsfuncs.c
-VBoxOGL_SOURCES.linux  = \
+
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGL_SOURCES += \
 	glx.c \
 	xfont.c
-ifdef VBoxOGL_DRI
- VBoxOGL_SOURCES.linux += \
+ ifdef VBoxOGL_DRI
+  VBoxOGL_SOURCES += \
  	$(VBOX_PATH_CROGL_GENFILES)/DD_gl.c \
  	$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm \
  	dri_drv.c
-else ifdef VBoxOGL_FAKEDRI
- VBoxOGL_SOURCES.linux += \
+ else ifdef VBoxOGL_FAKEDRI
+  VBoxOGL_SOURCES += \
  	$(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm \
  	$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm \
  	fakedri_drv.c
-else
+ else
+  VBoxOGL_SOURCES.solaris += \
+	$(VBOX_PATH_CROGL_GENFILES)/sunos_exports.c
  VBoxOGL_SOURCES.linux += \
  	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
+ endif
 endif
+
 VBoxOGL_SOURCES.win    = \
 	wgl.c \
 	icd_drv.c \
@@ -123,20 +133,24 @@ VBoxOGL_CLEAN          = \
 	$(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c \
 	$(VBOX_PATH_CROGL_GENFILES)/NULLfuncs.c \
 	$(VBOX_PATH_CROGL_GENFILES)/tsfuncs.c
-VBoxOGL_CLEAN.linux    = \
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGL_CLEAN           += \
 	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
+endif
 VBoxOGL_CLEAN.win      = \
 	$(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm \
 	$(VBOX_PATH_CROGL_GENFILES)/cropengl.def
-ifdef VBoxOGL_DRI
- VBoxOGL_CLEAN.linux   += \
+if1of ($(KBUILD_TARGET),linux solaris)
+ ifdef VBoxOGL_DRI
+  VBoxOGL_CLEAN   += \
  	$(VBOX_PATH_CROGL_GENFILES)/cr_gl.h \
  	$(VBOX_PATH_CROGL_GENFILES)/DD_gl.h \
  	$(VBOX_PATH_CROGL_GENFILES)/DD_gl.c
-else ifdef VBoxOGL_FAKEDRI
- VBoxOGL_CLEAN.linux   += \
+ else ifdef VBoxOGL_FAKEDRI
+  VBoxOGL_CLEAN   += \
  	$(VBOX_PATH_CROGL_GENFILES)/cr_gl.h \
  	$(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm
+ endif
 endif
 VBoxOGL_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
@@ -172,15 +186,23 @@ $(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm: \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
-else ifeq ($(KBUILD_TARGET),linux)
+else if1of ($(KBUILD_TARGET),linux solaris)
 $(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 if !defined(VBoxOGL_DRI) && !defined(VBoxOGL_FAKEDRI)
+ ifeq ($(KBUILD_TARGET),solaris)
+$(VBOX_PATH_CROGL_GENFILES)/sunos_exports.c: \
+		$(PATH_SUB_CURRENT)/SunOS_exports.py \
+		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
+		| $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+ else
 $(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm: \
 		$(PATH_SUB_CURRENT)/Linux_i386_exports.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+ endif
 else ifdef VBoxOGL_DRI
 $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
