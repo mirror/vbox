@@ -2374,6 +2374,9 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
         cbLimit += uOffset;
         pDescFile = pImage->pExtents[0].pFile;
     }
+    /* Bail out if there is no file to write to. */
+    if (pDescFile == NULL)
+        return VERR_INVALID_PARAMETER;
     for (unsigned i = 0; i < pImage->Descriptor.cLines; i++)
     {
         const char *psz = pImage->Descriptor.aLines[i];
@@ -3847,10 +3850,7 @@ static void vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
             }
         }
     }
-    /* Don't attempt to flush the image if there is no file - usually happens
-     * when creating fails for whatever reason. */
-    if (pImage->pFile != NULL)
-        (void)vmdkFlushImage(pImage);
+    (void)vmdkFlushImage(pImage);
 
     if (pImage->pExtents != NULL)
     {
@@ -4638,7 +4638,7 @@ static int vmdkRename(void *pBackendData, const char *pszFilename)
     /* Make sure the descriptor gets written back. */
     pImage->Descriptor.fDirty = true;
     /* Flush the descriptor now, in case it is embedded. */
-    vmdkFlushImage(pImage);
+    (void)vmdkFlushImage(pImage);
 
     /* Close and rename/move extents. */
     for (i = 0; i < cExtents; i++)
