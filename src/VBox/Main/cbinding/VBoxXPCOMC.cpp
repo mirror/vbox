@@ -39,33 +39,33 @@ static IVirtualBox         *Ivirtualbox;
 static nsIServiceManager   *serviceManager;
 static nsIComponentManager *manager;
 
-void VBoxComUninitialize(void);
+static void VBoxComUninitialize(void);
 
-int
+static int
 VBoxUtf16ToUtf8(const PRUnichar *pwszString, char **ppszString)
 {
     return RTUtf16ToUtf8(pwszString, ppszString);
 }
 
-int
+static int
 VBoxUtf8ToUtf16(const char *pszString, PRUnichar **ppwszString)
 {
     return RTStrToUtf16(pszString, ppwszString);
 }
 
-void
+static void
 VBoxUtf16Free(PRUnichar *pwszString)
 {
     RTUtf16Free(pwszString);
 }
 
-void
+static void
 VBoxUtf8Free(char *pszString)
 {
     RTStrFree(pszString);
 }
 
-void
+static void
 VBoxComUnallocMem(void *ptr)
 {
     if (ptr)
@@ -74,7 +74,7 @@ VBoxComUnallocMem(void *ptr)
     }
 }
 
-void
+static void
 VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
 {
     nsresult rc;
@@ -128,7 +128,7 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
     Log(("Cbinding: ISession object created.\n"));
 }
 
-void
+static void
 VBoxComUninitialize(void)
 {
     if (Session)
@@ -143,7 +143,7 @@ VBoxComUninitialize(void)
     Log(("Cbinding: Cleaned up the created IVirtualBox and ISession Objects.\n"));
 }
 
-uint32_t
+static uint32_t
 VBoxVersion(void)
 {
     uint32_t version = 0;
