@@ -65,6 +65,23 @@
 
 #define VBOX_APP_NAME L"VirtualBox"
 
+static HRESULT netIfWinIsHostOnly(IWbemClassObject * pAdapterConfig, BOOL * pbIsHostOnly)
+{
+    VARIANT vtServiceName;
+    BOOL bIsHostOnly = FALSE;
+    VariantInit(&vtServiceName);
+
+    HRESULT hr = pAdapterConfig->Get(L"ServiceName", 0, &vtServiceName, 0, 0);
+    if(SUCCEEDED(hr))
+    {
+        *pbIsHostOnly = !Bstr(vtServiceName.bstrVal).compare(Bstr("VBoxNetAdp"));
+
+        VariantClear(&vtServiceName);
+    }
+
+    return hr;
+}
+
 static HRESULT netIfWinCreateIWbemServices(IWbemServices ** ppSvc)
 {
     HRESULT hres;
@@ -793,29 +810,41 @@ static int netIfEnableStaticIpConfig(const Guid &guid, ULONG ip, ULONG mask)
             hr = netIfWinFindAdapterClassById(pSvc, guid, pAdapterConfig.asOutParam());
             if(SUCCEEDED(hr))
             {
-                in_addr aIp[1];
-                in_addr aMask[1];
-                aIp[0].S_un.S_addr = ip;
-                aMask[0].S_un.S_addr = mask;
-
-                BSTR ObjPath;
-                hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                BOOL bIsHostOnly;
+                hr = netIfWinIsHostOnly(pAdapterConfig, &bIsHostOnly);
                 if(SUCCEEDED(hr))
                 {
-                    hr = netIfWinEnableStaticV4(pSvc, ObjPath, aIp, aMask, ip != 0 ? 1 : 0);
-                    if(SUCCEEDED(hr))
+                    if(bIsHostOnly)
                     {
-#if 0
-                        in_addr aGw[1];
-                        aGw[0].S_un.S_addr = gw;
-                        hr = netIfWinSetGatewaysV4(pSvc, ObjPath, aGw, 1);
+                        in_addr aIp[1];
+                        in_addr aMask[1];
+                        aIp[0].S_un.S_addr = ip;
+                        aMask[0].S_un.S_addr = mask;
+
+                        BSTR ObjPath;
+                        hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
                         if(SUCCEEDED(hr))
-#endif
                         {
-//                            hr = netIfWinUpdateConfig(pIf);
+                            hr = netIfWinEnableStaticV4(pSvc, ObjPath, aIp, aMask, ip != 0 ? 1 : 0);
+                            if(SUCCEEDED(hr))
+                            {
+#if 0
+                                in_addr aGw[1];
+                                aGw[0].S_un.S_addr = gw;
+                                hr = netIfWinSetGatewaysV4(pSvc, ObjPath, aGw, 1);
+                                if(SUCCEEDED(hr))
+#endif
+                                {
+        //                            hr = netIfWinUpdateConfig(pIf);
+                                }
+                            }
+                            SysFreeString(ObjPath);
                         }
                     }
-                    SysFreeString(ObjPath);
+                    else
+                    {
+                        hr = E_FAIL;
+                    }
                 }
             }
         }
@@ -860,6 +889,7 @@ static int netIfEnableStaticIpConfigV6(const Guid & guid, IN_BSTR aIPV6Address, 
 
 static int netIfEnableStaticIpConfigV6(const Guid &guid, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
+#if 0
     RTNETADDRIPV6 Mask;
     int rc = prefixLength2IPv6Address(aIPV6MaskPrefixLength, &Mask);
     if(RT_SUCCESS(rc))
@@ -868,6 +898,9 @@ static int netIfEnableStaticIpConfigV6(const Guid &guid, IN_BSTR aIPV6Address, U
         rc = netIfEnableStaticIpConfigV6(guid, aIPV6Address, maskStr, NULL);
     }
     return rc;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 static HRESULT netIfEnableDynamicIpConfig(const Guid &guid)
@@ -881,16 +914,28 @@ static HRESULT netIfEnableDynamicIpConfig(const Guid &guid)
             hr = netIfWinFindAdapterClassById(pSvc, guid, pAdapterConfig.asOutParam());
             if(SUCCEEDED(hr))
             {
-                BSTR ObjPath;
-                hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                BOOL bIsHostOnly;
+                hr = netIfWinIsHostOnly(pAdapterConfig, &bIsHostOnly);
                 if(SUCCEEDED(hr))
                 {
-                    hr = netIfWinEnableDHCP(pSvc, ObjPath);
-                    if(SUCCEEDED(hr))
+                    if(bIsHostOnly)
                     {
-//                        hr = netIfWinUpdateConfig(pIf);
+                        BSTR ObjPath;
+                        hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                        if(SUCCEEDED(hr))
+                        {
+                            hr = netIfWinEnableDHCP(pSvc, ObjPath);
+                            if(SUCCEEDED(hr))
+                            {
+//                              hr = netIfWinUpdateConfig(pIf);
+                            }
+                            SysFreeString(ObjPath);
+                        }
                     }
-                    SysFreeString(ObjPath);
+                    else
+                    {
+                        hr = E_FAIL;
+                    }
                 }
             }
         }
@@ -910,16 +955,28 @@ static HRESULT netIfDhcpRediscover(const Guid &guid)
             hr = netIfWinFindAdapterClassById(pSvc, guid, pAdapterConfig.asOutParam());
             if(SUCCEEDED(hr))
             {
-                BSTR ObjPath;
-                hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                BOOL bIsHostOnly;
+                hr = netIfWinIsHostOnly(pAdapterConfig, &bIsHostOnly);
                 if(SUCCEEDED(hr))
                 {
-                    hr = netIfWinDhcpRediscover(pSvc, ObjPath);
-                    if(SUCCEEDED(hr))
+                    if(bIsHostOnly)
                     {
+                        BSTR ObjPath;
+                        hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                        if(SUCCEEDED(hr))
+                        {
+                            hr = netIfWinDhcpRediscover(pSvc, ObjPath);
+                            if(SUCCEEDED(hr))
+                            {
 //                        hr = netIfWinUpdateConfig(pIf);
+                            }
+                            SysFreeString(ObjPath);
+                        }
                     }
-                    SysFreeString(ObjPath);
+                    else
+                    {
+                        hr = E_FAIL;
+                    }
                 }
             }
         }
