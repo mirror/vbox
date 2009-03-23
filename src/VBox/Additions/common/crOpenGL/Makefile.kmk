@@ -35,13 +35,15 @@ DLLS.win += \
     VBoxOGLpackspu \
     VBoxOGLfeedbackspu
 
-ifndef VBOX_OSE  ## @todo Solaris too?
+ifndef VBOX_OSE
+ if1of ($(KBUILD_TARGET),linux solaris)
 DLLS += \
     VBoxOGL \
     VBoxOGLarrayspu \
     VBoxOGLpassthroughspu \
     VBoxOGLpackspu \
     VBoxOGLfeedbackspu
+ endif
 endif
 
 if1of ($(KBUILD_TARGET),linux solaris)
