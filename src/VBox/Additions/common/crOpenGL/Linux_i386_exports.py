@@ -25,6 +25,16 @@ def GenerateEntrypoints():
     print "%endif"
     print ""
 
+    print"""
+    %ifdef RT_ARCH_AMD64
+     %define PTR_PRE qword
+     %define PTR_CB  8
+    %else
+     %define PTR_PRE dword
+     %define PTR_CB  4
+    %endif
+    """
+
     keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
 
     for index in range(len(keys)):
@@ -33,7 +43,7 @@ def GenerateEntrypoints():
             continue
 
         print "BEGINPROC_EXPORTED gl%s" % func_name
-        print "\tjmp \t[RTHCPTR_PRE glim + RTHCPTR_CB*%d]" % index
+        print "\tjmp \t[PTR_PRE glim + PTR_CB*%d]" % index
         print "ENDPROC gl%s" % func_name
         print ""
 
@@ -58,7 +68,7 @@ def GenerateEntrypoints():
             # this dict lookup should never fail (raise an exception)!
             index = keys.index(alias)
             print "BEGINPROC_EXPORTED gl%s" % func_name
-            print "\tjmp \t[RTHCPTR_PRE glim + RTHCPTR_CB*%d]" % index
+            print "\tjmp \t[PTR_PRE glim + PTR_CB*%d]" % index
             print "ENDPROC gl%s" % func_name
             print ""
 

@@ -21,6 +21,16 @@ def GenerateEntrypoints():
 	print "%endif"
 	print ""
 
+    print"""
+    %ifdef RT_ARCH_AMD64
+     %define PTR_PRE qword
+     %define PTR_CB  8
+    %else
+     %define PTR_PRE dword
+     %define PTR_CB  4
+    %endif
+    """
+
 	# Get sorted list of dispatched functions.
 	# The order is very important - it must match cr_opcodes.h
 	# and spu_dispatch_table.h
@@ -33,9 +43,9 @@ def GenerateEntrypoints():
 
 		print "BEGINPROC_EXPORTED cr_gl%s" % func_name
 		print "%ifdef RT_ARCH_AMD64"
-        print "\tjmp \t[RTHCPTR_PRE glim + RTHCPTR_CB*%d]" % index
+        print "\tjmp \t[PTR_PRE glim + PTR_CB*%d]" % index
 		print "%else ; X86"
-        print "\tjmp \t[RTHCPTR_PRE _glim + RTHCPTR_CB*%d]" % index
+        print "\tjmp \t[PTR_PRE _glim + PTR_CB*%d]" % index
 		print "%endif"
 		print "ENDPROC cr_gl%s" % func_name
 		print ""
@@ -61,9 +71,9 @@ def GenerateEntrypoints():
 			# this dict lookup should never fail (raise an exception)!
 			index = keys.index(alias)
 			print "BEGINPROC_EXPORTED cr_gl%s" % func_name
-            print "\tjmp \t[RTHCPTR_PRE glim + RTHCPTR_CB*%d]" % index
+            print "\tjmp \t[PTR_PRE glim + PTR_CB*%d]" % index
 			print "%else ; X86"
-            print "\tjmp \t[RTHCPTR_PRE _glim + RTHCPTR_CB*%d]" % index
+            print "\tjmp \t[PTR_PRE _glim + PTR_CB*%d]" % index
 			print "%endif"
 			print "ENDPROC cr_gl%s" % func_name
 			print ""
