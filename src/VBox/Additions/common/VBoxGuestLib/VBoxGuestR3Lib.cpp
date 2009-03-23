@@ -53,10 +53,11 @@
    prototype what we need here. */
 # define XF86_O_RDWR  0x0002
 typedef void *pointer;
-extern "C" int xf86open(const char*, int,...);
+extern "C" int xf86open(const char *, int, ...);
 extern "C" int xf86close(int);
 extern "C" int xf86ioctl(int, unsigned long, pointer);
 #endif
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -77,30 +78,11 @@ static RTFILE g_File = NIL_RTFILE;
 static uint32_t volatile g_cInits = 0;
 
 
-static int vbglR3Init(const char *pszDeviceName);
-
-/**
- * Open the VBox R3 Guest Library.  This should be called by system daemons
- * and processes.
- */
-VBGLR3DECL(int) VbglR3Init(void)
-{
-    return vbglR3Init(VBOXGUEST_DEVICE_NAME);
-}
-
-/**
- * Open the VBox R3 Guest Library.  Equivalent to VbglR3Init, but for user
- * session processes.
- */
-VBGLR3DECL(int) VbglR3InitUser(void)
-{
-    return vbglR3Init(VBOXGUEST_USER_DEVICE_NAME);
-}
 
 /**
  * Implementation of VbglR3Init and VbglR3InitUser
  */
-int vbglR3Init(const char *pszDeviceName)
+static int vbglR3Init(const char *pszDeviceName)
 {
     uint32_t cInits = ASMAtomicIncU32(&g_cInits);
 #ifndef VBOX_VBGLR3_XFREE86
@@ -210,8 +192,7 @@ int vbglR3Init(const char *pszDeviceName)
     RTFILE File = 0;
 # endif
     int rc;
-    char szDevice[RT_MAX(sizeof(VBOXGUEST_DEVICE_NAME),
-                         sizeof(VBOXGUEST_USER_DEVICE_NAME)) + 16];
+    char szDevice[RT_MAX(sizeof(VBOXGUEST_DEVICE_NAME), sizeof(VBOXGUEST_USER_DEVICE_NAME)) + 16];
     for (unsigned iUnit = 0; iUnit < 1024; iUnit++)
     {
         RTStrPrintf(szDevice, sizeof(szDevice), pszDeviceName "%d", iUnit);
@@ -266,6 +247,26 @@ int vbglR3Init(const char *pszDeviceName)
         RTLogRelSetDefaultInstance(pReleaseLogger);
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Open the VBox R3 Guest Library.  This should be called by system daemons
+ * and processes.
+ */
+VBGLR3DECL(int) VbglR3Init(void)
+{
+    return vbglR3Init(VBOXGUEST_DEVICE_NAME);
+}
+
+
+/**
+ * Open the VBox R3 Guest Library.  Equivalent to VbglR3Init, but for user
+ * session processes.
+ */
+VBGLR3DECL(int) VbglR3InitUser(void)
+{
+    return vbglR3Init(VBOXGUEST_USER_DEVICE_NAME);
 }
 
 
