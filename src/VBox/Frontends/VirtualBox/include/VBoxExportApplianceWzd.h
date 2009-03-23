@@ -28,6 +28,7 @@
 #include "QIWithRetranslateUI.h"
 
 class QIWidgetValidator;
+class CAppliance;
 
 class VBoxExportApplianceWzd : public QIWithRetranslateUI<QIAbstractWizard>,
                                public Ui::VBoxExportApplianceWzd
@@ -51,7 +52,8 @@ private slots:
 
 private:
     void addListViewVMItems (const QString& aSelectName);
-    bool exportVMs();
+    bool prepareForExportVMs (CAppliance &aAppliance);
+    bool exportVMs (CAppliance &aAppliance);
 
     /* Private member vars */
     QString mDefaultApplianceName;
