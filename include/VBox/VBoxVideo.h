@@ -33,14 +33,14 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-/* 
+/*
  * The last 4096 bytes of the guest VRAM contains the generic info for all
  * DualView chunks: sizes and offsets of chunks. This is filled by miniport.
  *
  * Last 4096 bytes of each chunk contain chunk specific data: framebuffer info,
  * etc. This is used exclusively by the corresponding instance of a display driver.
  *
- * The VRAM layout: 
+ * The VRAM layout:
  *     Last 4096 bytes - Adapter information area.
  *     4096 bytes aligned miniport heap (value specified in the config rouded up).
  *     Slack - what left after dividing the VRAM.
@@ -68,10 +68,10 @@
  *
  * VBE_DISPI_INDEX_VBOX_VIDEO is used to read the configuration information
  * from the host and issue commands to the host.
- * 
+ *
  * The guest writes the VBE_DISPI_INDEX_VBOX_VIDEO index register, the the
  * following operations with the VBE data register can be performed:
- * 
+ *
  * Operation            Result
  * write 16 bit value   NOP
  * read 16 bit value    count of monitors
@@ -92,11 +92,11 @@
 /*
  * The minimum HGSMI heap size is PAGE_SIZE (4096 bytes) and is a restriction of the
  * runtime heapsimple API. Use minimum 2 pages here, because the info area also may
- * contain other data (for example HGSMIHOSTFLAGS structure). 
+ * contain other data (for example HGSMIHOSTFLAGS structure).
  */
-#define VBVA_ADAPTER_INFORMATION_SIZE  8*_1K
-#define VBVA_DISPLAY_INFORMATION_SIZE  8*_1K
-#define VBVA_MIN_BUFFER_SIZE           64*_1K
+#define VBVA_ADAPTER_INFORMATION_SIZE  (8*_1K)
+#define VBVA_DISPLAY_INFORMATION_SIZE  (8*_1K)
+#define VBVA_MIN_BUFFER_SIZE           (64*_1K)
 #endif /* VBOX_WITH_HGSMI */
 
 
@@ -107,7 +107,7 @@
 #define VBOX_VIDEO_INTERPRET_ADAPTER_MEMORY      0x00000000
 
 /* The value for port IO to let the adapter to interpret the display memory.
- * The display number is encoded in low 16 bits. 
+ * The display number is encoded in low 16 bits.
  */
 #define VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE 0x00010000
 
