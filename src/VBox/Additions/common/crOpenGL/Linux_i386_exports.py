@@ -33,13 +33,7 @@ def GenerateEntrypoints():
             continue
 
         print "BEGINPROC_EXPORTED gl%s" % func_name
-        print "%ifdef RT_ARCH_AMD64"
-        print "\tmov \trax, qword glim+%d" % (8*index)
-        print "\tjmp \t[rax]"
-        print "%else ; X86"
-        print "\tmov \teax, dword glim+%d" % (4*index)
-        print "\tjmp \t[eax]"
-        print "%endif"
+        print "\tjmp \t[RTHCPTR_PRE glim + RTHCPTR_CB*%d]" % index
         print "ENDPROC gl%s" % func_name
         print ""
 
@@ -64,13 +58,7 @@ def GenerateEntrypoints():
             # this dict lookup should never fail (raise an exception)!
             index = keys.index(alias)
             print "BEGINPROC_EXPORTED gl%s" % func_name
-            print "%ifdef RT_ARCH_AMD64"
-            print "\tmov \trax, qword glim+%d" % (8*index)
-            print "\tjmp \t[rax]"
-            print "%else ; X86"
-            print "\tmov \teax, dword glim+%d" % (4*index)
-            print "\tjmp \t[eax]"
-            print "%endif"
+            print "\tjmp \t[RTHCPTR_PRE glim + RTHCPTR_CB*%d]" % index
             print "ENDPROC gl%s" % func_name
             print ""
 
