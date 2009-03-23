@@ -134,7 +134,7 @@ SOLARIS_STRIP_EXES = \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	$(if $(VBOX_WITH_USB),VBoxUSBHelper,) \
 	$(if $(VBOX_WITH_NETADP),VBoxNetAdpCtl,) \
-	$(if $(VBOX_WITH_NETADP),VBoxNetDHCP,) \
+	VBoxNetDHCP \
 	VBoxSVC \
 	VBoxXPCOMIPCD \
 	kchmviewer
