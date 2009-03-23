@@ -92,16 +92,28 @@ using namespace com;
 typedef struct HOSTPARTITION
 {
     unsigned        uIndex;
+    /** partition type */
     unsigned        uType;
+    /** CHS/cylinder of the first sector */
     unsigned        uStartCylinder;
+    /** CHS/head of the first sector */
     unsigned        uStartHead;
+    /** CHS/head of the first sector */
     unsigned        uStartSector;
+    /** CHS/cylinder of the last sector */
     unsigned        uEndCylinder;
+    /** CHS/head of the last sector */
     unsigned        uEndHead;
+    /** CHS/sector of the last sector */
     unsigned        uEndSector;
+    /** start sector of this partition relative to the beginning of the hard
+     * disk or relative to the beginning of the extended partition table */
     uint64_t        uStart;
+    /** numer of sectors of the partition */
     uint64_t        uSize;
+    /** start sector of this partition _table_ */
     uint64_t        uPartDataStart;
+    /** numer of sectors of this partition _table_ */
     uint64_t        cPartDataSectors;
 } HOSTPARTITION, *PHOSTPARTITION;
 
@@ -634,6 +646,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             /* Fill out partitioning location info for EBR. */
             pCP->uPartDataStart = uStart + uOffset;
             pCP->cPartDataSectors = uStartOffset;
+            RTPrintf("cPartDataSectors = %u\n", pCP->cPartDataSectors);
             p += 16;
             if (p[4] == 0)
                 uExtended = (unsigned)-1;
@@ -667,7 +680,8 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             {
                 RTPrintf("Two partitions start at the same place. Aborting\n");
                 return VERR_INVALID_PARAMETER;
-            } else if (pPart->aPartitions[j].uStart == 0)
+            }
+            else if (pPart->aPartitions[j].uStart == 0)
             {
                 RTPrintf("Partition starts at sector 0. Aborting\n");
                 return VERR_INVALID_PARAMETER;
