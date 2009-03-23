@@ -3041,14 +3041,16 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
     uint32_t iClear = pVM->pgm.s.cHandyPages;
     AssertMsgReturn(iClear <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), ("%d", iClear), VERR_INTERNAL_ERROR);
     Log(("PGMR3PhysAllocateHandyPages: %d -> %d\n", iClear, RT_ELEMENTS(pVM->pgm.s.aHandyPages)));
+    int rcAlloc = VINF_SUCCESS;
+    int rcSeed  = VINF_SUCCESS;
     int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
     while (rc == VERR_GMM_SEED_ME)
     {
         void *pvChunk;
-        rc = SUPPageAlloc(GMM_CHUNK_SIZE >> PAGE_SHIFT, &pvChunk);
+        rcAlloc = rc = SUPPageAlloc(GMM_CHUNK_SIZE >> PAGE_SHIFT, &pvChunk);
         if (RT_SUCCESS(rc))
         {
-            rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
+            rcSeed = rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
             if (RT_FAILURE(rc))
                 SUPPageFree(pvChunk, GMM_CHUNK_SIZE >> PAGE_SHIFT);
         }
@@ -3075,8 +3077,14 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
     }
     else
     {
-        LogRel(("PGM: Failed to procure handy pages, rc=%Rrc cHandyPages=%u\n",
-                rc, pVM->pgm.s.cHandyPages));
+        LogRel(("PGM: Failed to procure handy pages; rc=%Rrc rcAlloc=%Rrc rcSeed=%Rrc cHandyPages=%#x\n"
+                "     cAllPages=%#x cPrivatePages=%#x cSharedPages=%#x cZeroPages=%#x\n",
+                rc, rcSeed, rcAlloc,
+                pVM->pgm.s.cHandyPages,
+                pVM->pgm.s.cAllPages,
+                pVM->pgm.s.cPrivatePages,
+                pVM->pgm.s.cSharedPages,
+                pVM->pgm.s.cZeroPages));
         rc = VERR_EM_NO_MEMORY;
         //rc = VINF_EM_NO_MEMORY;
         //VM_FF_SET(pVM, VM_FF_PGM_WE_ARE_SCREWED?);
@@ -3085,6 +3093,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
 /** @todo Do proper VERR_EM_NO_MEMORY reporting. */
     AssertMsg(   pVM->pgm.s.cHandyPages == RT_ELEMENTS(pVM->pgm.s.aHandyPages)
               || rc != VINF_SUCCESS, ("%d rc=%Rrc\n", pVM->pgm.s.cHandyPages, rc));
+
     pgmUnlock(pVM);
     Assert(rc == VINF_SUCCESS || rc == VINF_EM_NO_MEMORY || rc == VERR_EM_NO_MEMORY);
     return rc;
