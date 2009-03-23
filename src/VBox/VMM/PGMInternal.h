@@ -1121,7 +1121,7 @@ typedef struct PGMROMRANGE
     uint32_t                            fFlags;
     /** Alignment padding ensuring that aPages is sizeof(PGMROMPAGE) aligned. */
     uint32_t                            au32Alignemnt[HC_ARCH_BITS == 32 ? 7 : 3];
-    /** Pointer to the original bits when PGMPHYS_ROM_FLAG_PERMANENT_BINARY was specified.
+    /** Pointer to the original bits when PGMPHYS_ROM_FLAGS_PERMANENT_BINARY was specified.
      * This is used for strictness checks. */
     R3PTRTYPE(const void *)             pvOriginal;
     /** The ROM description. */
@@ -3645,7 +3645,7 @@ DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PPGM pPGM, RTGCPTR GCPtr)
 # ifdef IN_RING3
     if (!pGuestPDPT)
         pGuestPDPT = pgmGstLazyMapPaePDPT(pPGM);
-# endif 
+# endif
 # endif
 #endif
     return &pGuestPDPT->a[(GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE];

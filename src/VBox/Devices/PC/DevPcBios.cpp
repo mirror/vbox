@@ -25,6 +25,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_PC_BIOS
 #include <VBox/pdmdev.h>
 #include <VBox/mm.h>
+#include <VBox/pgm.h>
 
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -164,6 +165,8 @@ typedef struct DEVPCBIOS
     uint8_t        *pu8LanBoot;
     /** The name of the LAN boot ROM file. */
     char           *pszLanBootFile;
+    /** The size of the LAN boot ROM. */
+    uint64_t        cbLanBoot;
     /** The DMI tables. */
     uint8_t        au8DMIPage[0x1000];
     /** The boot countdown (in seconds). */
@@ -1220,6 +1223,42 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
 
     if (pThis->u8IOAPIC)
         pcbiosPlantMPStable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE, pThis->cCpus);
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    /*
+     * Re-shadow the LAN ROM image and make it RAM/RAM.
+     *
+     * This is normally done by the BIOS code, but since we're currently lacking
+     * the chipset support for this we do it here (and in the constructor).
+     */
+    uint32_t    cPages = RT_ALIGN_64(pThis->cbLanBoot, PAGE_SIZE) >> PAGE_SHIFT;
+    RTGCPHYS    GCPhys = VBOX_LANBOOT_SEG << 4;
+    while (cPages > 0)
+    {
+        uint8_t abPage[PAGE_SIZE];
+        int     rc;
+
+        /* Read the (original) ROM page and write it back to the RAM page. */
+        rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, PAGE_SIZE, PGMROMPROT_READ_ROM_WRITE_RAM);
+        AssertLogRelRC(rc);
+
+        rc = PDMDevHlpPhysRead(pDevIns, GCPhys, abPage, PAGE_SIZE);
+        AssertLogRelRC(rc);
+        if (RT_FAILURE(rc))
+            memset(abPage, 0xcc, sizeof(abPage));
+
+        rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, abPage, PAGE_SIZE);
+        AssertLogRelRC(rc);
+
+        /* Switch to the RAM/RAM mode. */
+        rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, PAGE_SIZE, PGMROMPROT_READ_RAM_WRITE_RAM);
+        AssertLogRelRC(rc);
+
+        /* Advance */
+        GCPhys += PAGE_SIZE;
+        cPages--;
+    }
+#endif
 }
 
 
@@ -1473,7 +1512,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pThis->u8IOAPIC)
         pcbiosPlantMPStable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE, pThis->cCpus);
 
-    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage, false /* fShadow */, "DMI tables");
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage,
+                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1569,12 +1609,13 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         RTFileClose(FilePcBios);
 
     /* If we were unable to get the data from file for whatever reason, fall
-     * back to the built-in ROM image.
-     */
+       back to the built-in ROM image. */
+    uint32_t fFlags = 0;
     if (pThis->pu8PcBios == NULL)
     {
         pu8PcBiosBinary = g_abPcBiosBinary;
         cbPcBiosBinary  = g_cbPcBiosBinary;
+        fFlags          = PGMPHYS_ROM_FLAGS_PERMANENT_BINARY;
     }
     else
     {
@@ -1594,11 +1635,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                      ("cbPcBiosBinary=%#x\n", cbPcBiosBinary));
     cb = RT_MIN(cbPcBiosBinary, 128 * _1K); /* Effectively either 64 or 128K. */
     rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &pu8PcBiosBinary[cbPcBiosBinary - cb],
-                              false /* fShadow */, "PC BIOS - 0xfffff");
+                              fFlags, "PC BIOS - 0xfffff");
     if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-(int32_t)cbPcBiosBinary, cbPcBiosBinary, pu8PcBiosBinary,
-                              false /* fShadow */, "PC BIOS - 0xffffffff");
+                              fFlags, "PC BIOS - 0xffffffff");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1607,7 +1648,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Map the VMI BIOS into memory.
      */
     AssertReleaseMsg(g_cbVmiBiosBinary == _4K, ("cbVmiBiosBinary=%#x\n", g_cbVmiBiosBinary));
-    rc = PDMDevHlpROMRegister(pDevIns, VBOX_VMI_BIOS_BASE, g_cbVmiBiosBinary, g_abVmiBiosBinary, false, "VMI BIOS");
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_VMI_BIOS_BASE, g_cbVmiBiosBinary, g_abVmiBiosBinary,
+                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "VMI BIOS");
     if (RT_FAILURE(rc))
         return rc;
 #endif /* VBOX_WITH_VMI */
@@ -1720,8 +1762,21 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * the (up to) 32 kb ROM image.
      */
     if (pu8LanBootBinary)
+    {
+        pThis->cbLanBoot = cbLanBootBinary;
+
         rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, pu8LanBootBinary,
-                                  true /* fShadow */, "Net Boot ROM");
+                                  PGMPHYS_ROM_FLAGS_SHADOWED, "Net Boot ROM");
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        if (RT_SUCCESS(rc))
+        {
+            rc = PDMDevHlpROMProtectShadow(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, PGMROMPROT_READ_RAM_WRITE_RAM);
+            AssertRCReturn(rc, rc);
+            rc = PDMDevHlpPhysWrite(pDevIns, VBOX_LANBOOT_SEG << 4, pu8LanBootBinary, cbLanBootBinary);
+            AssertRCReturn(rc, rc);
+        }
+#endif
+    }
 
     rc = CFGMR3QueryU8Def(pCfgHandle, "DelayBoot", &pThis->uBootDelay, 0);
     if (RT_FAILURE(rc))
