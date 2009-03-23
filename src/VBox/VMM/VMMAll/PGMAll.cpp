@@ -1309,12 +1309,12 @@ VMMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     return rc;
 }
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
 #ifdef IN_RING3
 
 /**
- * Performs the lazy mapping of the 32-bit guest PD. 
- *  
+ * Performs the lazy mapping of the 32-bit guest PD.
+ *
  * @returns Pointer to the mapping.
  * @param   pPGM        The PGM instance data.
  */
@@ -1343,7 +1343,7 @@ PX86PD pgmGstLazyMap32BitPD(PPGM pPGM)
 
 /**
  * Performs the lazy mapping of the PAE guest PDPT.
- *  
+ *
  * @returns Pointer to the mapping.
  * @param   pPGM        The PGM instance data.
  */
@@ -1371,12 +1371,13 @@ PX86PDPT pgmGstLazyMapPaePDPT(PPGM pPGM)
 
 #endif /* IN_RING3  */
 
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 /**
  * Performs the lazy mapping / updating of a PAE guest PD.
- *  
+ *
  * @returns Pointer to the mapping.
- * @param   pPGM        The PGM instance data. 
- * @param   iPdpt       Which PD entry to map (0..3). 
+ * @param   pPGM        The PGM instance data.
+ * @param   iPdpt       Which PD entry to map (0..3).
  */
 PX86PDPAE pgmGstLazyMapPaePD(PPGM pPGM, uint32_t iPdpt)
 {
@@ -1409,9 +1410,9 @@ PX86PDPAE pgmGstLazyMapPaePD(PPGM pPGM, uint32_t iPdpt)
             pPGM->apGstPaePDsR3[iPdpt]          = (R3PTRTYPE(PX86PDPAE))HCPtr;
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pPGM->apGstPaePDsR0[iPdpt]          = (R0PTRTYPE(PX86PDPAE))HCPtr;
-# endif 
+# endif
             if (fChanged)
-            {    
+            {
                 pPGM->aGCPhysGstPaePDs[iPdpt]   = GCPhys;
                 pPGM->apGstPaePDsRC[iPdpt]      = (RCPTRTYPE(PX86PDPAE))RCPtr;
             }
@@ -1426,18 +1427,19 @@ PX86PDPAE pgmGstLazyMapPaePD(PPGM pPGM, uint32_t iPdpt)
     pPGM->apGstPaePDsR3[iPdpt]      = 0;
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pPGM->apGstPaePDsR0[iPdpt]      = 0;
-# endif 
+# endif
     pPGM->apGstPaePDsRC[iPdpt]      = 0;
 
     pgmUnlock(pVM);
     return NULL;
 }
+#endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R3
 /**
- * Performs the lazy mapping of the 32-bit guest PD. 
- *  
+ * Performs the lazy mapping of the 32-bit guest PD.
+ *
  * @returns Pointer to the mapping.
  * @param   pPGM        The PGM instance data.
  */
