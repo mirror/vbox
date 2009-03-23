@@ -475,10 +475,12 @@ public:
         if (isNull() || that.isNull())
             return false;
 
-        if (length() < that.length())
+        size_t l1 = length();
+        size_t l2 = that.length();
+        if (l1 < l2)
             return false;
 
-        size_t l = length() - that.length();
+        size_t l = l1 - l2;
         if (cs == CaseSensitive)
             return ::RTStrCmp(&str[l], that.str) == 0;
         else
@@ -490,13 +492,15 @@ public:
         if (isNull() || that.isNull())
             return false;
 
-        if (length() < that.length())
+        size_t l1 = length();
+        size_t l2 = that.length();
+        if (l1 < l2)
             return false;
 
         if (cs == CaseSensitive)
-            return ::RTStrNCmp(str, that.str, that.length()) == 0;
+            return ::RTStrNCmp(str, that.str, l2) == 0;
         else
-            return ::RTStrNICmp(str, that.str, that.length()) == 0;
+            return ::RTStrNICmp(str, that.str, l2) == 0;
     }
 
     bool isNull() const { return str == NULL; }
