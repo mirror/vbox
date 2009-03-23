@@ -121,6 +121,24 @@ __BEGIN_DECLS
  *          and will be ignored on those.
  */
 #define RTFILE_O_WRITE_THROUGH      0x00008000
+
+/** File attributes access, *CREATE* only.
+ * @remark  This might not be implemented on all platforms,
+ *          and will be ignored on those.
+ */
+/** Attributes can be read if the file is being opened
+ * with read access, and can be written with write access.
+ */
+#define RTFILE_O_ACCESS_ATTR_DEFAULT 0x00000000
+/** Attributes can be read. */
+#define RTFILE_O_ACCESS_ATTR_READ   0x00010000
+/** Attributes can be written. */
+#define RTFILE_O_ACCESS_ATTR_WRITE  0x00020000
+/** Attributes can be both read & written. */
+#define RTFILE_O_ACCESS_ATTR_READWRITE 0x00030000
+/** The file attributes access mask. */
+#define RTFILE_O_ACCESS_ATTR_MASK   0x00030000
+
 /** Unix file mode mask for use when creating files. */
 #define RTFILE_O_CREATE_MODE_MASK   0x1ff00000
 /** The number of bits to shift to get the file mode mask.
@@ -131,7 +149,7 @@ __BEGIN_DECLS
 /** Mask of all valid flags.
  * @remark  This doesn't validate the access mode properly.
  */
-#define RTFILE_O_VALID_MASK          0x1ff0FB73
+#define RTFILE_O_VALID_MASK          0x1ff3FB73
 
 /** @} */
 

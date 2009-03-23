@@ -208,8 +208,25 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
             AssertMsgFailed(("Impossible fOpen=%#x\n", fOpen));
             return VERR_INVALID_PARAMETER;
     }
+
     /* RTFileSetMode needs following rights as well. */
-    dwDesiredAccess |= FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | SYNCHRONIZE;
+    switch (fOpen & RTFILE_O_ACCESS_ATTR_MASK)
+    {
+        case RTFILE_O_ACCESS_ATTR_READ:      dwDesiredAccess |= FILE_READ_ATTRIBUTES | SYNCHRONIZE; break;
+        case RTFILE_O_ACCESS_ATTR_WRITE:     dwDesiredAccess |= FILE_WRITE_ATTRIBUTES | SYNCHRONIZE; break;
+        case RTFILE_O_ACCESS_ATTR_READWRITE: dwDesiredAccess |= FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | SYNCHRONIZE; break;
+        default:
+            /* Attributes access is the same as the file access. */
+            switch (fOpen & RTFILE_O_ACCESS_MASK)
+            {
+                case RTFILE_O_READ:      dwDesiredAccess |= FILE_READ_ATTRIBUTES | SYNCHRONIZE; break;
+                case RTFILE_O_WRITE:     dwDesiredAccess |= FILE_WRITE_ATTRIBUTES | SYNCHRONIZE; break;
+                case RTFILE_O_READWRITE: dwDesiredAccess |= FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | SYNCHRONIZE; break;
+                default:
+                    AssertMsgFailed(("Impossible fOpen=%#x\n", fOpen));
+                    return VERR_INVALID_PARAMETER;
+            }
+    }
 
     DWORD dwShareMode;
     Assert(RTFILE_O_DENY_READWRITE == RTFILE_O_DENY_ALL && !RTFILE_O_DENY_NONE);

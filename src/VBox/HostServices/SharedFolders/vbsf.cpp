@@ -556,6 +556,38 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
         }
     }
 
+    switch (BIT_FLAG(fShflFlags, SHFL_CF_ACCESS_MASK_ATTR))
+    {
+        default:
+        case SHFL_CF_ACCESS_ATTR_NONE:
+        {
+            fOpen |= RTFILE_O_ACCESS_ATTR_DEFAULT;
+            Log(("FLAG: SHFL_CF_ACCESS_ATTR_NONE\n"));
+            break;
+        }
+
+        case SHFL_CF_ACCESS_ATTR_READ:
+        {
+            fOpen |= RTFILE_O_ACCESS_ATTR_READ;
+            Log(("FLAG: SHFL_CF_ACCESS_ATTR_READ\n"));
+            break;
+        }
+
+        case SHFL_CF_ACCESS_ATTR_WRITE:
+        {
+            fOpen |= RTFILE_O_ACCESS_ATTR_WRITE;
+            Log(("FLAG: SHFL_CF_ACCESS_ATTR_WRITE\n"));
+            break;
+        }
+
+        case SHFL_CF_ACCESS_ATTR_READWRITE:
+        {
+            fOpen |= RTFILE_O_ACCESS_ATTR_READWRITE;
+            Log(("FLAG: SHFL_CF_ACCESS_ATTR_READWRITE\n"));
+            break;
+        }
+    }
+
     /* Sharing mask */
     switch (BIT_FLAG(fShflFlags, SHFL_CF_ACCESS_MASK_DENY))
     {
