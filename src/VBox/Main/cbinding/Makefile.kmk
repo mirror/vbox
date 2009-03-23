@@ -32,9 +32,8 @@ XpComCSamples_MODE = a+r,u+rw
 XpComCSamples_INST = \
 	$(INST_SDK)bindings/xpcom/cbinding/samples/
 XpComCSamples_SOURCES = \
-	tstLinuxC.c \
 	tstXPCOMCGlue.c \
-	makefile.tstLinuxC=>Makefile
+	makefile.tstXPCOMCGlue=>Makefile
 
 INSTALLS += XpComCGlue
 XpComCGlue_MODE = a+r,u+rw
@@ -86,19 +85,6 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
  if defined(VBOX_WITH_TESTCASES) && "$(KBUILD_TARGET)" != "darwin"
   #
   # The testcase (also in samples).
-  #
-  PROGRAMS += tstXPCOMC
-  tstXPCOMC_TEMPLATE = VBOXR3EXE
-  tstXPCOMC_INCS = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include
-  tstXPCOMC_INTERMEDIATES = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v2_2.h
-  tstXPCOMC_SOURCES = \
-  	tstLinuxC.c
-  tstXPCOMC_LIBS = \
-  	$(VBoxXPCOMC_1_TARGET)
-
-  #
   # C testcase using the dynamic glue.
   #
   PROGRAMS += tstXPCOMCGlue
