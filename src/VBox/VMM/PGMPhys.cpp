@@ -3087,9 +3087,25 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
                 pVM->pgm.s.cZeroPages));
 #if 1
         for (uint32_t i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
+        {
             LogRel(("PGM: aHandyPages[#%-2d] = {.HCPhysGCPhys=%RHp, .idPage=%#08x, .idSharedPage=%#08x}\n",
                     i, pVM->pgm.s.aHandyPages[i].HCPhysGCPhys, pVM->pgm.s.aHandyPages[i].idPage,
                     pVM->pgm.s.aHandyPages[i].idSharedPage));
+            uint32_t const idPage = pVM->pgm.s.aHandyPages[i].idPage;
+            if (idPage != NIL_GMM_PAGEID)
+            {
+                for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3;
+                     pRam;
+                     pRam = pRam->pNextR3)
+                {
+                    uint32_t const cPages = pRam->cb >> PAGE_SHIFT;
+                    for (uint32_t iPage = 0; iPage < cPages; iPage++)
+                        if (PGM_PAGE_GET_PAGEID(&pRam->aPages[iPage]) == idPage)
+                            LogRel(("PGM: Used by %RGp %R{pgmpage} (%s)\n",
+                                    pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pRam->aPages[iPage], pRam->pszDesc));
+                }
+            }
+        }
 #endif
         rc = VERR_EM_NO_MEMORY;
         //rc = VINF_EM_NO_MEMORY;
