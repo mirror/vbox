@@ -2337,7 +2337,7 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
                 rc = SSMR3PutU8(pSSM, 0 /* ZERO */);
             }
             else
-            {    
+            {
                 SSMR3PutU8(pSSM, uType);
                 rc = pgmR3SavePage(pVM, pSSM, pPage, GCPhysPage, pRam);
             }
@@ -2451,7 +2451,7 @@ static int pgmR3LoadPageBits(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAGE p
      */
     AssertLogRelMsgReturn(   PGM_PAGE_GET_TYPE(pPage) == uType
                           || uType == PGMPAGETYPE_INVALID,
-                          ("pPage=%R[pgmpage] GCPhys=%#x %s\n", pPage, GCPhys, pRam->pszDesc), 
+                          ("pPage=%R[pgmpage] GCPhys=%#x %s\n", pPage, GCPhys, pRam->pszDesc),
                           VERR_SSM_UNEXPECTED_DATA);
 
     /*
@@ -2489,7 +2489,7 @@ static int pgmR3LoadPage(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAGE pPage
     else
         rc = VERR_INTERNAL_ERROR;
     AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] uState=%d uType=%d GCPhys=%RGp %s rc=%Rrc\n",
-                                 pPage, uState, uType, GCPhys, pRam->pszDesc),
+                                 pPage, uState, uType, GCPhys, pRam->pszDesc, rc),
                             rc);
     return VINF_SUCCESS;
 }
@@ -2579,7 +2579,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         rc = SSMR3GetU32(pSSM, &cbRamSize);
         if (RT_FAILURE(rc))
             return rc;
-        AssertLogRelMsgReturn(cbRamSize == pPGM->cbRamSize, ("%#x != %#x\n", cbRamSize, pPGM->cbRamSize), 
+        AssertLogRelMsgReturn(cbRamSize == pPGM->cbRamSize, ("%#x != %#x\n", cbRamSize, pPGM->cbRamSize),
                               VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH);
         SSMR3GetGCPhys(pSSM,    &pPGM->GCPhysA20Mask);
 
@@ -2775,6 +2775,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                     rc = pgmR3LoadShadowedRomPage(pVM, pSSM, pPage, GCPhys, pRam);
                 else
                     rc = pgmR3LoadPage(pVM, pSSM, uType, pPage, GCPhysPage, pRam);
+                AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhys=%#x %s\n", rc, iPage, pRam->GCPhys, pRam->pszDesc), rc);
             }
         }
         else
@@ -2796,7 +2797,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
             }
 
             /* Load the bits */
-            if (    !fHaveBits 
+            if (    !fHaveBits
                 &&  GCPhysLast < UINT32_C(0xe0000000))
             {
                 /*
