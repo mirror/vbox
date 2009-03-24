@@ -1202,12 +1202,20 @@ RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args);
 
 
 /**
- * Gets the default logger instance.
+ * Gets the default logger instance, creating it if necessary.
  *
  * @returns Pointer to default logger instance.
  * @returns NULL if no default logger instance available.
  */
 RTDECL(PRTLOGGER)   RTLogDefaultInstance(void);
+
+/**
+ * Gets the default logger instance.
+ *
+ * @returns Pointer to default logger instance.
+ * @returns NULL if no default logger instance available.
+ */
+RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void);
 
 #ifndef IN_RC
 /**
