@@ -1715,7 +1715,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         /** @todo we should probably deal with out-of-memory conditions here, but for now increasing
          * the heap size should suffice. */
         AssertFatalRC(rc);
-        Assert(!(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));   
+        Assert(!(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
     }
     pPage->fMonitored = true;
     return rc;
@@ -1812,7 +1812,8 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     {
         rc = PGMHandlerPhysicalDeregister(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1));
         AssertFatalRC(rc);
-        Assert(!(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));   
+        AssertMsg(!(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3),
+                  ("%#x %#x\n", pVM->pgm.s.fSyncFlags, pVM->fForcedActions));
     }
     pPage->fMonitored = false;
 
