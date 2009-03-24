@@ -4294,7 +4294,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  endif
 
 #  ifndef PGM_WITHOUT_MAPPINGS
-    /* 
+    /*
      * Apply all hypervisor mappings to the new CR3.
      * Note that SyncCR3 will be executed in case CR3 is changed in a guest paging mode; this will
      * make sure we check for conflicts in the new CR3 root.
