@@ -2174,7 +2174,6 @@ static PPGMROMPAGE pgmR3GetRomPage(PVM pVM, RTGCPHYS GCPhys)
         if (GCPhys - pRomRange->GCPhys < pRomRange->cb)
             return &pRomRange->aPages[off >> PAGE_SHIFT];
     }
-    AssertLogRelMsgFailed(("GCPhys=%RGp\n", GCPhys));
     return NULL;
 }
 
@@ -2530,14 +2529,16 @@ static int pgmR3LoadShadowedRomPage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RT
         AssertLogRelReturn(pRomPage->enmProt == enmProt, VERR_INTERNAL_ERROR);
     }
 
-    PPGMPAGE pPageActive  = PGMROMPROT_IS_ROM(enmProt) ? &pRomPage->Virgin : &pRomPage->Shadow;
-    PPGMPAGE pPagePassive = PGMROMPROT_IS_ROM(enmProt) ? &pRomPage->Shadow : &pRomPage->Virgin;
+    PPGMPAGE pPageActive  = PGMROMPROT_IS_ROM(enmProt) ? &pRomPage->Virgin      : &pRomPage->Shadow;
+    PPGMPAGE pPagePassive = PGMROMPROT_IS_ROM(enmProt) ? &pRomPage->Shadow      : &pRomPage->Virgin;
+    uint8_t  u8ActiveType = PGMROMPROT_IS_ROM(enmProt) ? PGMPAGETYPE_ROM        : PGMPAGETYPE_ROM_SHADOW;
+    uint8_t  u8PassiveType= PGMROMPROT_IS_ROM(enmProt) ? PGMPAGETYPE_ROM_SHADOW : PGMPAGETYPE_ROM;
 
-    rc = pgmR3LoadPage(pVM, pSSM, PGMPAGETYPE_ROM_SHADOW, pPage, GCPhys, pRam);
+    rc = pgmR3LoadPage(pVM, pSSM, u8ActiveType, pPage, GCPhys, pRam);
     if (RT_SUCCESS(rc))
     {
         *pPageActive = *pPage;
-        rc = pgmR3LoadPage(pVM, pSSM, PGMPAGETYPE_ROM_SHADOW, pPagePassive, GCPhys, pRam);
+        rc = pgmR3LoadPage(pVM, pSSM, u8PassiveType, pPagePassive, GCPhys, pRam);
     }
     return rc;
 }
@@ -2772,10 +2773,10 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                 rc = SSMR3GetU8(pSSM, &uType);
                 AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] iPage=%#x GCPhysPage=%#x %s\n", pPage, iPage, GCPhysPage, pRam->pszDesc), rc);
                 if (uType == PGMPAGETYPE_ROM_SHADOW)
-                    rc = pgmR3LoadShadowedRomPage(pVM, pSSM, pPage, GCPhys, pRam);
+                    rc = pgmR3LoadShadowedRomPage(pVM, pSSM, pPage, GCPhysPage, pRam);
                 else
                     rc = pgmR3LoadPage(pVM, pSSM, uType, pPage, GCPhysPage, pRam);
-                AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhys=%#x %s\n", rc, iPage, pRam->GCPhys, pRam->pszDesc), rc);
+                AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhysPage=%#x %s\n", rc, iPage, GCPhysPage, pRam->pszDesc), rc);
             }
         }
         else
@@ -2830,7 +2831,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                         }
                         else
                             rc = pgmR3LoadPageZero(pVM, PGMPAGETYPE_INVALID, pPage, GCPhysPage, pRam);
-                        AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhys=%#x %s\n", rc, iPage, pRam->GCPhys, pRam->pszDesc), rc);
+                        AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhysPage=%#x %s\n", rc, iPage, GCPhysPage, pRam->pszDesc), rc);
                     }
                 }
             }
