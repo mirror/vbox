@@ -1862,8 +1862,32 @@ int VBoxProblemReporter::warnAboutAutoConvertedSettings (const QString &aFormatV
                                                          const QString &aFileList,
                                                          bool aAfterRefresh)
 {
+    /* The aAfterRefresh parameter says if an item which was inaccessible is
+       become accessible after a refresh. For the time beeing we present the
+       old message dialog. This case should be rather unlikly. */
     if (!aAfterRefresh)
     {
+        int rc = message (mainWindowShown(), Info,
+            tr ("<p>Your existing VirtualBox settings files will be automatically "
+                "converted from the old format to a new format necessary for the "
+                "new version of VirtualBox.</p>"
+                "<p>Press <b>OK</b> to start VirtualBox now or press <b>Exit</b> if "
+                "you want to terminate the VirtualBox "
+                "application without any further actions.</p>"),
+            NULL /* aAutoConfirmId */,
+            QIMessageBox::Ok | QIMessageBox::Default,
+            QIMessageBox::Cancel | QIMessageBox::Escape,
+            0,
+            0,
+            tr ("E&xit", "warnAboutAutoConvertedSettings message box"));
+
+        if (rc == QIMessageBox::Cancel)
+            return QIMessageBox::Cancel;
+
+        /* We backup in any case */
+        return QIMessageBox::No;
+
+#if 0
         int rc = message (mainWindowShown(), Info,
             tr ("<p>Your existing VirtualBox settings files were automatically "
                 "converted from the old format to a new format necessary for the "
@@ -1888,6 +1912,7 @@ int VBoxProblemReporter::warnAboutAutoConvertedSettings (const QString &aFormatV
 
         if (rc == QIMessageBox::Cancel)
             return QIMessageBox::Cancel;
+#endif
     }
 
     return message (mainWindowShown(), Info,
