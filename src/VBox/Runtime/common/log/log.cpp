@@ -1394,7 +1394,7 @@ RTDECL(void) RTLogFlush(PRTLOGGER pLogger)
 
 
 /**
- * Gets the default logger instance.
+ * Gets the default logger instance, creating it if necessary.
  *
  * @returns Pointer to default logger instance.
  * @returns NULL if no default logger instance available.
@@ -1426,6 +1426,36 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
         g_pLogger = RTLogDefaultInit();
     return g_pLogger;
 #endif /* !IN_RC */
+}
+
+
+/**
+ * Gets the default logger instance.
+ *
+ * @returns Pointer to default logger instance.
+ * @returns NULL if no default logger instance available.
+ */
+RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void)
+{
+#ifdef IN_RC
+    return &g_Logger;
+#else
+# ifdef IN_RING0
+    /*
+     * Check per thread loggers first.
+     */
+    if (g_cPerThreadLoggers)
+    {
+        const RTNATIVETHREAD Self = RTThreadNativeSelf();
+        int32_t i = RT_ELEMENTS(g_aPerThreadLoggers);
+        while (i-- > 0)
+            if (g_aPerThreadLoggers[i].NativeThread == Self)
+                return g_aPerThreadLoggers[i].pLogger;
+    }
+# endif /* IN_RING0 */
+
+    return g_pLogger;
+#endif
 }
 
 
