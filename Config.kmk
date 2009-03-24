@@ -308,8 +308,8 @@ VBOX_WITH_DEBUGGER = 1
 VBOX_WITH_DEBUGGER_GUI = 1
 # Build the Host Guest Communication Manager component.
 VBOX_WITH_HGCM = 1
-# Build the bugcheck detection code.
-VBOX_WITH_GUEST_BUGCHECK_DETECTION =
+## Build the bugcheck detection code.
+#VBOX_WITH_GUEST_BUGCHECK_DETECTION =
 # Enable the USB feature.
 VBOX_WITH_USB = 1
 # Enable the USB 2.0 controller.
