@@ -135,6 +135,7 @@ static void     supdrvLdrUnsetVMMR0EPs(PSUPDRVDEVEXT pDevExt);
 static int      supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 static int      supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
+static int      supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq);
 static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
 #ifdef RT_OS_WINDOWS
 static int      supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages);
@@ -1510,6 +1511,28 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_CallServiceModule(pDevExt, pSession, pReq);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_LOGGER_SETTINGS(0)):
+        {
+            /* validate */
+            PSUPLOGGERSETTINGS pReq = (PSUPLOGGERSETTINGS)pReqHdr;
+            uint32_t cbStrTab;
+            REQ_CHECK_SIZE_OUT(SUP_IOCTL_LOGGER_SETTINGS, SUP_IOCTL_LOGGER_SETTINGS_SIZE_OUT);
+            REQ_CHECK_EXPR(SUP_IOCTL_LOGGER_SETTINGS, pReq->Hdr.cbIn >= SUP_IOCTL_LOGGER_SETTINGS_SIZE_IN(1));
+            cbStrTab = pReq->Hdr.cbIn - SUP_IOCTL_LOGGER_SETTINGS_SIZE_IN(0);
+            REQ_CHECK_EXPR(SUP_IOCTL_LOGGER_SETTINGS, pReq->u.In.offGroups      < cbStrTab);
+            REQ_CHECK_EXPR(SUP_IOCTL_LOGGER_SETTINGS, pReq->u.In.offFlags       < cbStrTab);
+            REQ_CHECK_EXPR(SUP_IOCTL_LOGGER_SETTINGS, pReq->u.In.offDestination < cbStrTab);
+            REQ_CHECK_EXPR_FMT(pReq->u.In.szStrings[cbStrTab - 1] == '\0',
+                               ("SUP_IOCTL_LOGGER_SETTINGS: cbIn=%#x cbStrTab=%#x LastChar=%d\n",
+                                pReq->Hdr.cbIn, cbStrTab, pReq->u.In.szStrings[cbStrTab - 1]));
+            REQ_CHECK_EXPR(SUP_IOCTL_LOGGER_SETTINGS, pReq->u.In.fWhich <= SUPLOGGERSETTINGS_WHICH_RELEASE);
+            REQ_CHECK_EXPR(SUP_IOCTL_LOGGER_SETTINGS, pReq->u.In.fWhat  <= SUPLOGGERSETTINGS_WHAT_DESTROY);
+
+            /* execute */
+            pReq->Hdr.rc = supdrvIOCtl_LoggerSettings(pDevExt, pSession, pReq);
             return 0;
         }
 
@@ -4030,6 +4053,140 @@ static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
 #else  /* RT_OS_WINDOWS && !DEBUG */
     return VERR_NOT_IMPLEMENTED;
 #endif /* RT_OS_WINDOWS && !DEBUG */
+}
+
+
+/**
+ * Implements the logger settings request.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt     The device extension.
+ * @param   pSession    The caller's session.
+ * @param   pReq        The request.
+ */
+static int supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq)
+{
+    const char *pszGroup = &pReq->u.In.szStrings[pReq->u.In.offGroups];
+    const char *pszFlags = &pReq->u.In.szStrings[pReq->u.In.offFlags];
+    const char *pszDest  = &pReq->u.In.szStrings[pReq->u.In.offDestination];
+    PRTLOGGER   pLogger  = NULL;
+    int         rc;
+
+    /*
+     * Some further validation.
+     */
+    switch (pReq->u.In.fWhat)
+    {
+        case SUPLOGGERSETTINGS_WHAT_SETTINGS:
+        case SUPLOGGERSETTINGS_WHAT_CREATE:
+            break;
+
+        case SUPLOGGERSETTINGS_WHAT_DESTROY:
+            if (*pszGroup || *pszFlags || *pszDest)
+                return VERR_INVALID_PARAMETER;
+            if (pReq->u.In.fWhich == SUPLOGGERSETTINGS_WHICH_RELEASE)
+                return VERR_ACCESS_DENIED;
+            break;
+
+        default:
+            return VERR_INTERNAL_ERROR;
+    }
+
+    /*
+     * Get the logger.
+     */
+    switch (pReq->u.In.fWhich)
+    {
+        case SUPLOGGERSETTINGS_WHICH_DEBUG:
+            pLogger = RTLogGetDefaultInstance();
+            break;
+
+        case SUPLOGGERSETTINGS_WHICH_RELEASE:
+            pLogger = RTLogRelDefaultInstance();
+            break;
+
+        default:
+            return VERR_INTERNAL_ERROR;
+    }
+
+    /*
+     * Do the job.
+     */
+    switch (pReq->u.In.fWhat)
+    {
+        case SUPLOGGERSETTINGS_WHAT_SETTINGS:
+            if (pLogger)
+            {
+                rc = RTLogFlags(pLogger, pszFlags);
+                if (RT_SUCCESS(rc))
+                    rc = RTLogGroupSettings(pLogger, pszGroup);
+                NOREF(pszDest);
+            }
+            else
+                rc = VERR_NOT_FOUND;
+            break;
+
+        case SUPLOGGERSETTINGS_WHAT_CREATE:
+        {
+            if (pLogger)
+                rc = VERR_ALREADY_EXISTS;
+            else
+            {
+                static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+
+                rc = RTLogCreate(&pLogger,
+                                 0 /* fFlags */,
+                                 pszGroup,
+                                 pReq->u.In.fWhich == SUPLOGGERSETTINGS_WHICH_DEBUG
+                                 ? "VBOX_LOG"
+                                 : "VBOX_RELEASE_LOG",
+                                 RT_ELEMENTS(s_apszGroups),
+                                 s_apszGroups,
+                                 RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER,
+                                 NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTLogFlags(pLogger, pszFlags);
+                    NOREF(pszDest);
+                    if (RT_SUCCESS(rc))
+                    {
+                        switch (pReq->u.In.fWhich)
+                        {
+                            case SUPLOGGERSETTINGS_WHICH_DEBUG:
+                                pLogger = RTLogSetDefaultInstance(pLogger);
+                                break;
+                            case SUPLOGGERSETTINGS_WHICH_RELEASE:
+                                pLogger = RTLogRelSetDefaultInstance(pLogger);
+                                break;
+                        }
+                    }
+                    RTLogDestroy(pLogger);
+                }
+            }
+            break;
+        }
+
+        case SUPLOGGERSETTINGS_WHAT_DESTROY:
+            switch (pReq->u.In.fWhich)
+            {
+                case SUPLOGGERSETTINGS_WHICH_DEBUG:
+                    pLogger = RTLogSetDefaultInstance(NULL);
+                    break;
+                case SUPLOGGERSETTINGS_WHICH_RELEASE:
+                    pLogger = RTLogRelSetDefaultInstance(NULL);
+                    break;
+            }
+            rc = RTLogDestroy(pLogger);
+            break;
+
+        default:
+        {
+            rc = VERR_INTERNAL_ERROR;
+            break;
+        }
+    }
+
+    return rc;
 }
 
 

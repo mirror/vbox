@@ -733,6 +733,104 @@ SUPR3DECL(int) SUPR3CallR0Service(const char *pszService, size_t cchService, uin
 }
 
 
+/**
+ * Worker for the SUPR3Logger* APIs.
+ *
+ * @returns VBox status code.
+ * @param   enmWhich    Which logger.
+ * @param   fWhat       What to do with the logger.
+ * @param   pszFlags    The flags settings.
+ * @param   pszGroups   The groups settings.
+ * @param   pszDest     The destionation specificier.
+ */
+static int supR3LoggerSettings(SUPLOGGER enmWhich, uint32_t fWhat, const char *pszFlags, const char *pszGroups, const char *pszDest)
+{
+    size_t const cchFlags  = pszFlags  ? strlen(pszFlags)  : 0;
+    size_t const cchGroups = pszGroups ? strlen(pszGroups) : 0;
+    size_t const cchDest   = pszDest   ? strlen(pszDest)   : 0;
+    size_t const cbStrTab  = cchFlags  + !!cchFlags
+                           + cchGroups + !!cchGroups
+                           + cchDest   + !!cchDest
+                           + (!cchFlags && !cchGroups && !cchDest);
+
+    PSUPLOGGERSETTINGS pReq  = (PSUPLOGGERSETTINGS)alloca(SUP_IOCTL_LOGGER_SETTINGS_SIZE(cbStrTab));
+    pReq->Hdr.u32Cookie = g_u32Cookie;
+    pReq->Hdr.u32SessionCookie = g_u32SessionCookie;
+    pReq->Hdr.cbIn  = SUP_IOCTL_LOGGER_SETTINGS_SIZE_IN(cbStrTab);
+    pReq->Hdr.cbOut = SUP_IOCTL_LOGGER_SETTINGS_SIZE_OUT;
+    pReq->Hdr.fFlags= SUPREQHDR_FLAGS_DEFAULT;
+    pReq->Hdr.rc    = VERR_INTERNAL_ERROR;
+    switch (enmWhich)
+    {
+        case SUPLOGGER_DEBUG:   pReq->u.In.fWhich = SUPLOGGERSETTINGS_WHICH_DEBUG; break;
+        case SUPLOGGER_RELEASE: pReq->u.In.fWhich = SUPLOGGERSETTINGS_WHICH_RELEASE; break;
+        default:
+            return VERR_INVALID_PARAMETER;
+    }
+    pReq->u.In.fWhat = fWhat;
+
+    uint32_t off = 0;
+    if (cchFlags)
+    {
+        pReq->u.In.offFlags = off;
+        memcpy(&pReq->u.In.szStrings[off], pszFlags, cchFlags + 1);
+        off += cchFlags + 1;
+    }
+    else
+        pReq->u.In.offFlags = cbStrTab - 1;
+
+    if (cchGroups)
+    {
+        pReq->u.In.offGroups = off;
+        memcpy(&pReq->u.In.szStrings[off], pszGroups, cchGroups + 1);
+        off += cchGroups + 1;
+    }
+    else
+        pReq->u.In.offGroups = cbStrTab - 1;
+
+    if (cchDest)
+    {
+        pReq->u.In.offDestination = off;
+        memcpy(&pReq->u.In.szStrings[off], pszDest, cchDest + 1);
+        off += cchDest + 1;
+    }
+    else
+        pReq->u.In.offDestination = cbStrTab - 1;
+
+    if (!off)
+    {
+        pReq->u.In.szStrings[0] = '\0';
+        off++;
+    }
+    Assert(off == cbStrTab);
+    Assert(pReq->u.In.szStrings[cbStrTab - 1] == '\0');
+
+
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_LOGGER_SETTINGS(cbStrTab), pReq, SUP_IOCTL_LOGGER_SETTINGS_SIZE(cbStrTab));
+    if (RT_SUCCESS(rc))
+        rc = pReq->Hdr.rc;
+    return rc;
+}
+
+
+SUPR3DECL(int) SUPR3LoggerSettings(SUPLOGGER enmWhich, const char *pszFlags, const char *pszGroups, const char *pszDest)
+{
+    return supR3LoggerSettings(enmWhich, SUPLOGGERSETTINGS_WHAT_SETTINGS, pszFlags, pszGroups, pszDest);
+}
+
+
+SUPR3DECL(int) SUPR3LoggerCreate(SUPLOGGER enmWhich, const char *pszFlags, const char *pszGroups, const char *pszDest)
+{
+    return supR3LoggerSettings(enmWhich, SUPLOGGERSETTINGS_WHAT_CREATE, pszFlags, pszGroups, pszDest);
+}
+
+
+SUPR3DECL(int) SUPR3LoggerDestroy(SUPLOGGER enmWhich)
+{
+    return supR3LoggerSettings(enmWhich, SUPLOGGERSETTINGS_WHAT_DESTROY, NULL, NULL, NULL);
+}
+
+
 SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages)
 {
     /*
