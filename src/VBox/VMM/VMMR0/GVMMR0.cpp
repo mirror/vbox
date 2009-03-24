@@ -39,6 +39,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GVMM
 #include <VBox/gvmm.h>
+#include <VBox/gmm.h>
 #include "GVMMR0Internal.h"
 #include <VBox/gvm.h>
 #include <VBox/vm.h>
@@ -578,7 +579,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppV
                         pGVM->pVM = NULL;
 
                         gvmmR0InitPerVMData(pGVM);
-                        /* GMMR0InitPerVMData(pGVM); - later */
+                        GMMR0InitPerVMData(pGVM);
 
                         /*
                          * Allocate the shared VM structure and associated page array.
@@ -867,7 +868,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
  *
  * @param   pGVM        The GVM pointer.
  */
-static void gmmR0CleanupVM(PGVM pGVM)
+static void gvmmR0CleanupVM(PGVM pGVM)
 {
     if (    pGVM->gvmm.s.fDoneVMMR0Init
         &&  !pGVM->gvmm.s.fDoneVMMR0Term)
@@ -875,12 +876,14 @@ static void gmmR0CleanupVM(PGVM pGVM)
         if (    pGVM->gvmm.s.VMMemObj != NIL_RTR0MEMOBJ
             &&  RTR0MemObjAddress(pGVM->gvmm.s.VMMemObj) == pGVM->pVM)
         {
-            LogFlow(("gmmR0CleanupVM: Calling VMMR0TermVM\n"));
+            LogFlow(("gvmmR0CleanupVM: Calling VMMR0TermVM\n"));
             VMMR0TermVM(pGVM->pVM, pGVM);
         }
         else
-            AssertMsgFailed(("gmmR0CleanupVM: VMMemObj=%p pVM=%p\n", pGVM->gvmm.s.VMMemObj, pGVM->pVM));
+            AssertMsgFailed(("gvmmR0CleanupVM: VMMemObj=%p pVM=%p\n", pGVM->gvmm.s.VMMemObj, pGVM->pVM));
     }
+
+    GMMR0CleanupVM(pGVM);
 }
 
 
@@ -974,7 +977,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     if (    VALID_PTR(pGVM)
         &&  pGVM->u32Magic == GVM_MAGIC)
     {
-        gmmR0CleanupVM(pGVM);
+        gvmmR0CleanupVM(pGVM);
 
         /*
          * Do the GVMM cleanup - must be done last.
