@@ -646,7 +646,6 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             /* Fill out partitioning location info for EBR. */
             pCP->uPartDataStart = uStart + uOffset;
             pCP->cPartDataSectors = uStartOffset;
-            RTPrintf("cPartDataSectors = %u\n", pCP->cPartDataSectors);
             p += 16;
             if (p[4] == 0)
                 uExtended = (unsigned)-1;
