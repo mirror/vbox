@@ -1322,11 +1322,19 @@ STDMETHODIMP Appliance::Interpret()
                                vsysThis.strName,
                                nameVBox);
 
+            /* VM description */
             if (!vsysThis.strDescription.isEmpty())
                 pNewDesc->addEntry(VirtualSystemDescriptionType_Description,
                                     "",
                                     vsysThis.strDescription,
                                     vsysThis.strDescription);
+
+            /* VM license */
+            if (!vsysThis.strLicenseText.isEmpty())
+                pNewDesc->addEntry(VirtualSystemDescriptionType_License,
+                                    "",
+                                    vsysThis.strLicenseText,
+                                    vsysThis.strLicenseText);
 
             /* Now that we know the OS type, get our internal defaults based on that. */
             ComPtr<IGuestOSType> pGuestOSType;
@@ -2373,7 +2381,6 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                         }
 
                         llHardDisksCreated.push_back(dstHdVBox);
-
                         /* Now use the new uuid to attach the disk image to our new machine */
                         ComPtr<IMachine> sMachine;
                         rc = session->COMGETTER(Machine)(sMachine.asOutParam());
@@ -3411,6 +3418,50 @@ STDMETHODIMP VirtualSystemDescription::GetDescriptionByType(VirtualSystemDescrip
     sfaOrigValues.detachTo(ComSafeArrayOutArg(aOrigValues));
     sfaVboxValues.detachTo(ComSafeArrayOutArg(aVboxValues));
     sfaExtraConfigValues.detachTo(ComSafeArrayOutArg(aExtraConfigValues));
+
+    return S_OK;
+}
+
+/**
+ * Public method implementation.
+ * @return
+ */
+STDMETHODIMP VirtualSystemDescription::GetValuesByType(VirtualSystemDescriptionType_T aType,
+                                                       VirtualSystemDescriptionValueType_T aWhich,
+                                                       ComSafeArrayOut(BSTR, aValues))
+{
+    if (ComSafeArrayOutIsNull(aValues))
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    std::list<VirtualSystemDescriptionEntry*> vsd = findByType (aType);
+    com::SafeArray<BSTR> sfaValues((ULONG)vsd.size());
+
+    list<VirtualSystemDescriptionEntry*>::const_iterator it;
+    size_t i = 0;
+    for (it = vsd.begin();
+         it != vsd.end();
+         ++it, ++i)
+    {
+        const VirtualSystemDescriptionEntry *vsde = (*it);
+
+        Bstr bstr;
+        switch (aWhich)
+        {
+            case VirtualSystemDescriptionValueType_Reference: bstr = vsde->strRef; break;
+            case VirtualSystemDescriptionValueType_Original: bstr = vsde->strOvf; break;
+            case VirtualSystemDescriptionValueType_Auto: bstr = vsde->strVbox; break;
+            case VirtualSystemDescriptionValueType_ExtraConfig: bstr = vsde->strExtraConfig; break;
+        }
+
+        bstr.cloneTo(&sfaValues[i]);
+    }
+
+    sfaValues.detachTo(ComSafeArrayOutArg(aValues));
 
     return S_OK;
 }
