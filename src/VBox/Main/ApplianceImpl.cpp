@@ -2656,6 +2656,19 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                 pelmAnnotationSection->createChild("Annotation")->addContent(llDescription.front()->strVbox);
             }
 
+            // license
+            std::list<VirtualSystemDescriptionEntry*> llLicense = vsdescThis->findByType(VirtualSystemDescriptionType_License);
+            if (llLicense.size())
+            {
+                /* <EulaSection>
+                   <Info ovf:msgid="6">License agreement for the Virtual System.</Info>
+                   <License ovf:msgid="1">License terms can go in here.</License>
+                   </EulaSection> */
+                xml::ElementNode *pelmAnnotationSection = pelmVirtualSystem->createChild("EulaSection");
+                pelmAnnotationSection->createChild("Info")->addContent("License agreement for the Virtual System.");
+                pelmAnnotationSection->createChild("License")->addContent(llLicense.front()->strVbox);
+            }
+
             // operating system
             std::list<VirtualSystemDescriptionEntry*> llOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
             if (llOS.size() != 1)
@@ -3516,6 +3529,27 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
 }
 
 /**
+ * Public method implementation.
+ * @return
+ */
+STDMETHODIMP VirtualSystemDescription::AddDescription(VirtualSystemDescriptionType_T aType,
+                                                      IN_BSTR aVboxValue,
+                                                      IN_BSTR aExtraConfigValue)
+{
+    CheckComArgNotNull(aVboxValue);
+    CheckComArgNotNull(aExtraConfigValue);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    addEntry(aType, "", aVboxValue, aVboxValue, aExtraConfigValue);
+
+    return S_OK;
+}
+
+/**
  * Internal method; adds a new description item to the member list.
  * @param aType Type of description for the new item.
  * @param strRef Reference item; only used with hard disk controllers.
@@ -3607,11 +3641,11 @@ const VirtualSystemDescriptionEntry* VirtualSystemDescription::findControllerFro
 * @return
 */
 
-STDMETHODIMP Machine::Export(IAppliance *appliance)
+STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription **aDescription)
 {
     HRESULT rc = S_OK;
 
-    if (!appliance)
+    if (!aAppliance)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
@@ -3955,9 +3989,13 @@ STDMETHODIMP Machine::Export(IAppliance *appliance)
         }
 
         // finally, add the virtual system to the appliance
-        Appliance *pAppliance = static_cast<Appliance*>(appliance);
+        Appliance *pAppliance = static_cast<Appliance*>(aAppliance);
         AutoCaller autoCaller(pAppliance);
         if (FAILED(rc)) throw rc;
+
+        /* We return the new description to the caller */
+        ComPtr<IVirtualSystemDescription> copy(pNewDesc);
+        copy.queryInterfaceTo(aDescription);
 
         AutoWriteLock alock(pAppliance);
 

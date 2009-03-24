@@ -255,7 +255,7 @@ bool VBoxExportApplianceWzd::prepareForExportVMs (CAppliance &aAppliance)
             if (fResult)
             {
                 /* Add the export description to our appliance object */
-                m.Export (aAppliance);
+                CVirtualSystemDescription vsd = m.Export (aAppliance);
                 fResult = m.isOk();
                 if (!fResult)
                 {

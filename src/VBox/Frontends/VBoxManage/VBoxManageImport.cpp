@@ -604,7 +604,8 @@ int handleExportAppliance(HandlerArg *a)
              ++itM)
         {
             ComPtr<IMachine> pMachine = *itM;
-            CHECK_ERROR_BREAK(pMachine, Export(pAppliance));
+            ComPtr<IVirtualSystemDescription> pVSD;
+            CHECK_ERROR_BREAK(pMachine, Export(pAppliance, pVSD.asOutParam()));
         }
 
         if (FAILED(rc))

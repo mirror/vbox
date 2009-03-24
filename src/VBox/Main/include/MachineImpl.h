@@ -553,7 +553,7 @@ public:
     STDMETHOD(SaveSettingsWithBackup) (BSTR *aBakFileName);
     STDMETHOD(DiscardSettings)();
     STDMETHOD(DeleteSettings)();
-    STDMETHOD(Export)(IAppliance *appliance);
+    STDMETHOD(Export)(IAppliance *aAppliance, IVirtualSystemDescription **aDescription);
     STDMETHOD(GetSnapshot) (IN_GUID aId, ISnapshot **aSnapshot);
     STDMETHOD(FindSnapshot) (IN_BSTR aName, ISnapshot **aSnapshot);
     STDMETHOD(SetCurrentSnapshot) (IN_GUID aId);
