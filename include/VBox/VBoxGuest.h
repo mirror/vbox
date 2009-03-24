@@ -64,23 +64,27 @@ typedef RTGCPHYS64 VMMDEVHYPPHYS64;
 #if defined(RT_OS_LINUX)
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "/dev/vboxadd"
+/** The support device name of the user accessible device node. */
 # define VBOXGUEST_USER_DEVICE_NAME   "/dev/vboxuser"
 
 #elif defined(RT_OS_OS2)
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "\\Dev\\VBoxGst$"
+/** The support device name of the user accessible device node. */
 # define VBOXGUEST_USER_DEVICE_NAME   "\\Dev\\VBoxGst$"
 
 #elif defined(RT_OS_SOLARIS)
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "/dev/vboxguest"
+/** The support device name of the user accessible device node. */
 # define VBOXGUEST_USER_DEVICE_NAME   "/dev/vboxguest"
 
 #elif defined(RT_OS_WINDOWS)
 /** The support service name. */
 # define VBOXGUEST_SERVICE_NAME       "VBoxGuest"
-/** Win32 Device name. */
+/** Win32 device name. */
 # define VBOXGUEST_DEVICE_NAME        "\\\\.\\VBoxGuest"
+/** The support device name of the user accessible device node. */
 # define VBOXGUEST_USER_DEVICE_NAME   "\\\\.\\VBoxGuest"
 /** Global name for Win2k+ */
 # define VBOXGUEST_DEVICE_NAME_GLOBAL "\\\\.\\Global\\VBoxGuest"
@@ -92,6 +96,7 @@ typedef RTGCPHYS64 VMMDEVHYPPHYS64;
 #elif defined(RT_OS_FREEBSD)
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "/dev/vboxguest"
+/** The support device name of the user accessible device node. */
 # define VBOXGUEST_USER_DEVICE_NAME   "/dev/vboxguest"
 
 #else
@@ -1236,7 +1241,7 @@ typedef struct VBGLBIGREQ
     RTR3PTR     pvDataR3;
 #if HC_ARCH_BITS == 32
     uint32_t    u32Padding;
-#endif    
+#endif
 } VBGLBIGREQ;
 /** Pointer to a request wrapper for solaris guests. */
 typedef VBGLBIGREQ *PVBGLBIGREQ;
@@ -1297,7 +1302,7 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 # define VBOXGUEST_IOCTL_CODE_FAST_32(Function)  VBOXGUEST_IOCTL_CODE_FAST_(Function)
 #endif /* RT_ARCH_AMD64 */
 
-/** IOCTL to VBoxGuest to query the VMMDev IO port region start. 
+/** IOCTL to VBoxGuest to query the VMMDev IO port region start.
  * @remarks Ring-0 only. */
 #define VBOXGUEST_IOCTL_GETVMMDEVPORT   VBOXGUEST_IOCTL_CODE(1, sizeof(VBoxGuestPortInfo))
 
