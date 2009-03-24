@@ -1340,6 +1340,7 @@ void VBoxSelectorWnd::retranslateUi()
         QString (" (%1)").arg (mVmConfigAction->shortcut().toString()));
 
     mVmDeleteAction->setText (tr ("&Delete"));
+    mVmDeleteAction->setShortcut (QKeySequence ("Ctrl+R"));
     mVmDeleteAction->setStatusTip (tr ("Delete the selected virtual machine"));
 
     /* Note: mVmStartAction text is set up in vmListViewCurrentChanged() */
@@ -1352,8 +1353,7 @@ void VBoxSelectorWnd::retranslateUi()
     mVmPauseAction->setStatusTip (
         tr ("Suspend the execution of the virtual machine"));
 
-    mVmRefreshAction->setText (tr ("&Refresh"));
-    mVmRefreshAction->setShortcut (QKeySequence ("Ctrl+R"));
+    mVmRefreshAction->setText (tr ("Re&fresh"));
     mVmRefreshAction->setStatusTip (
         tr ("Refresh the accessibility state of the selected virtual machine"));
 
