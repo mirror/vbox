@@ -395,7 +395,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             dns = dns->Next;
         }
         buff_size = wcstombs(NULL, addr->DnsSuffix, 0);
-        if (buff_size == 0)
+        if (buff_size == 0 || buff_size == (size_t)-1)
             goto next;
         suffix = RTMemAllocZ(buff_size + 1);
         wcstombs(suffix, addr->DnsSuffix, buff_size);
