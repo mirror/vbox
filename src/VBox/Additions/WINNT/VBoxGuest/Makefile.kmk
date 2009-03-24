@@ -53,9 +53,9 @@ VBoxGuest_LIBS        = \
 
 ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
  VBoxGuest_LIBS += \
+	$(PATH_SDK_WINDDKWLH_LIB)/aux_klib.lib \
 	$(PATH_SDK_WINDDKWLH_LIB)/ksecdd.lib \
-	$(PATH_SDK_WINDDKWLH_LIB)/BufferOverflowK.lib \
-	$(PATH_SDK_WINDDKWLH_LIB)/aux_klib.lib
+	$(PATH_SDK_WINDDKWLH_LIB)/BufferOverflowK.lib
  VBoxGuest_HelperBugCheck.cpp_SDKS = WINDDKWLH
 endif
 
