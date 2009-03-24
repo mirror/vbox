@@ -554,6 +554,7 @@ static bool atapiReadTOCRawSS(ATADevState *);
 static bool atapiReadTrackInformationSS(ATADevState *);
 static bool atapiRequestSenseSS(ATADevState *);
 static bool atapiPassthroughSS(ATADevState *);
+static bool atapiReadDVDStructureSS(ATADevState *);
 
 /**
  * Begin of transfer function indexes for g_apfnBeginTransFuncs.
@@ -609,6 +610,7 @@ typedef enum ATAFNSS
     ATAFN_SS_ATAPI_READ_TRACK_INFORMATION,
     ATAFN_SS_ATAPI_REQUEST_SENSE,
     ATAFN_SS_ATAPI_PASSTHROUGH,
+    ATAFN_SS_ATAPI_READ_DVD_STRUCTURE,
     ATAFN_SS_MAX
 } ATAFNSS;
 
@@ -640,7 +642,8 @@ static const PSourceSinkFunc g_apfnSourceSinkFuncs[ATAFN_SS_MAX] =
     atapiReadTOCRawSS,
     atapiReadTrackInformationSS,
     atapiRequestSenseSS,
-    atapiPassthroughSS
+    atapiPassthroughSS,
+    atapiReadDVDStructureSS
 };
 
 
@@ -2007,6 +2010,162 @@ static bool atapiPassthroughSS(ATADevState *s)
     return false;
 }
 
+/** @todo: Revise ASAP. */
+static bool atapiReadDVDStructureSS(ATADevState *s)
+{
+    uint8_t *buf = s->CTX_SUFF(pbIOBuffer);
+    int media = s->aATAPICmd[1];
+    int format = s->aATAPICmd[7];
+
+    uint16_t max_len = ataBE2H_U16(&s->aATAPICmd[8]);
+
+    memset(buf, 0, max_len);
+
+    switch (format) {
+        case 0x00:
+        case 0x01:
+        case 0x02:
+        case 0x03:
+        case 0x04:
+        case 0x05:
+        case 0x06:
+        case 0x07:
+        case 0x08:
+        case 0x09:
+        case 0x0a:
+        case 0x0b:
+        case 0x0c:
+        case 0x0d:
+        case 0x0e:
+        case 0x0f:
+        case 0x10:
+        case 0x11:
+        case 0x30:
+        case 0x31:
+        case 0xff:
+            if (media == 0)
+            {
+                int uASC = SCSI_ASC_NONE;
+
+                switch (format)
+                {
+                    case 0x0: /* Physical format information */
+                        {
+                            int layer = s->aATAPICmd[6];
+                            uint64_t total_sectors;
+
+                            if (layer != 0)
+                            {
+                                uASC = -SCSI_ASC_INV_FIELD_IN_CMD_PACKET;
+                                break;
+                            }
+
+                            total_sectors = s->cTotalSectors;
+                            total_sectors >>= 2;
+                            if (total_sectors == 0)
+                            {
+                                uASC = -SCSI_ASC_MEDIUM_NOT_PRESENT;
+                                break;
+                            }
+
+                            buf[4] = 1;   /* DVD-ROM, part version 1 */
+                            buf[5] = 0xf; /* 120mm disc, minimum rate unspecified */
+                            buf[6] = 1;   /* one layer, read-only (per MMC-2 spec) */
+                            buf[7] = 0;   /* default densities */
+
+                            /* FIXME: 0x30000 per spec? */
+                            ataH2BE_U32(buf + 8, 0); /* start sector */
+                            ataH2BE_U32(buf + 12, total_sectors - 1); /* end sector */
+                            ataH2BE_U32(buf + 16, total_sectors - 1); /* l0 end sector */
+
+                            /* Size of buffer, not including 2 byte size field */
+                            ataH2BE_U32(&buf[0], 2048 + 2);
+
+                            /* 2k data + 4 byte header */
+                            uASC = (2048 + 4);
+                        }
+                        break;
+                    case 0x01: /* DVD copyright information */
+                        buf[4] = 0; /* no copyright data */
+                        buf[5] = 0; /* no region restrictions */
+
+                        /* Size of buffer, not including 2 byte size field */
+                        ataH2BE_U16(buf, 4 + 2);
+
+                        /* 4 byte header + 4 byte data */
+                        uASC = (4 + 4);
+
+                    case 0x03: /* BCA information - invalid field for no BCA info */
+                        uASC = -SCSI_ASC_INV_FIELD_IN_CMD_PACKET;
+                        break;
+
+                    case 0x04: /* DVD disc manufacturing information */
+                        /* Size of buffer, not including 2 byte size field */
+                        ataH2BE_U16(buf, 2048 + 2);
+
+                        /* 2k data + 4 byte header */
+                        uASC = (2048 + 4);
+                        break;
+                    case 0xff:
+                        /*
+                         * This lists all the command capabilities above.  Add new ones
+                         * in order and update the length and buffer return values.
+                         */
+
+                        buf[4] = 0x00; /* Physical format */
+                        buf[5] = 0x40; /* Not writable, is readable */
+                        ataH2BE_U16((buf + 6), 2048 + 4);
+
+                        buf[8] = 0x01; /* Copyright info */
+                        buf[9] = 0x40; /* Not writable, is readable */
+                        ataH2BE_U16((buf + 10), 4 + 4);
+
+                        buf[12] = 0x03; /* BCA info */
+                        buf[13] = 0x40; /* Not writable, is readable */
+                        ataH2BE_U16((buf + 14), 188 + 4);
+
+                        buf[16] = 0x04; /* Manufacturing info */
+                        buf[17] = 0x40; /* Not writable, is readable */
+                        ataH2BE_U16((buf + 18), 2048 + 4);
+
+                        /* Size of buffer, not including 2 byte size field */
+                        ataH2BE_U16(buf, 16 + 2);
+
+                        /* data written + 4 byte header */
+                        uASC = (16 + 4);
+                        break;
+                    default: /* TODO: formats beyond DVD-ROM requires */
+                        uASC = -SCSI_ASC_INV_FIELD_IN_CMD_PACKET;
+                }
+
+                if (uASC < 0)
+                {
+                    s->iSourceSink = ATAFN_SS_NULL;
+                    atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, -uASC);
+                    return false;
+                }
+                break;
+            }
+            /* TODO: BD support, fall through for now */
+
+        /* Generic disk structures */
+        case 0x80: /* TODO: AACS volume identifier */
+        case 0x81: /* TODO: AACS media serial number */
+        case 0x82: /* TODO: AACS media identifier */
+        case 0x83: /* TODO: AACS media key block */
+        case 0x90: /* TODO: List of recognized format layers */
+        case 0xc0: /* TODO: Write protection status */
+        default:
+            s->iSourceSink = ATAFN_SS_NULL;
+            atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST,
+                                SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+            return false;
+    }
+
+    s->iSourceSink = ATAFN_SS_NULL;
+    atapiCmdOK(s);
+    return false;
+}
 
 static bool atapiReadSectors(ATADevState *s, uint32_t iATAPILBA, uint32_t cSectors, uint32_t cbSector)
 {
@@ -2850,6 +3009,23 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
             cbMax = ataBE2H_U16(pbPacket + 3);
             ataStartTransfer(s, RT_MIN(cbMax, 36), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_INQUIRY, true);
             break;
+        case SCSI_READ_DVD_STRUCTURE:
+        {
+            /* Only available for ICH6 for now. */
+            PCIATAState *pDevice = PDMINS_2_DATA(s->CTX_SUFF(pDevIns), PCIATAState *);
+
+            if (   (PCIDevGetVendorId(&pDevice->dev) == 0x8086)
+                && (PCIDevGetDeviceId(&pDevice->dev) == 0x269e))
+            {
+                cbMax = ataBE2H_U16(pbPacket + 8);
+                ataStartTransfer(s, RT_MIN(cbMax, 4), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ_DVD_STRUCTURE, true);
+            }
+            else
+            {
+                atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
+            }
+            break;
+        }
         default:
             atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
             break;
