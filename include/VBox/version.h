@@ -46,7 +46,7 @@
 
 /** Prefined strings for Windows resource files */
 #define VBOX_RC_COMPANY_NAME            VBOX_VENDOR
-#define VBOX_RC_LEGAL_COPYRIGHT         "Copyright (C) 2008 Sun Microsystems, Inc.\0"
+#define VBOX_RC_LEGAL_COPYRIGHT         "Copyright (C) 2009 Sun Microsystems, Inc.\0"
 #define VBOX_RC_PRODUCT_VERSION         VBOX_VERSION_MAJOR_NR , VBOX_VERSION_MINOR_NR , 0 , 0
 #define VBOX_RC_FILE_VERSION            VBOX_VERSION_MAJOR_NR , VBOX_VERSION_MINOR_NR , 0 , 0
 
