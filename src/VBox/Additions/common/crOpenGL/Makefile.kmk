@@ -48,9 +48,7 @@ endif
 
 if1of ($(KBUILD_TARGET),linux solaris)
  #VBoxOGL_DRI = 1
- ifneq ($(KBUILD_TARGET),solaris)       # temporary
-  VBoxOGL_FAKEDRI = 1
- endif
+ VBoxOGL_FAKEDRI = 1
  VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
 endif
 
@@ -107,21 +105,29 @@ if1of ($(KBUILD_TARGET),linux solaris)
  VBoxOGL_SOURCES += \
 	glx.c \
 	xfont.c
+
  ifdef VBoxOGL_DRI
   VBoxOGL_SOURCES += \
  	$(VBOX_PATH_CROGL_GENFILES)/DD_gl.c \
- 	$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm \
  	dri_drv.c
+  VBoxOGL_SOURCES.linux += \
+ 	$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm
+  VBoxOGL_SOURCES.solaris += \
+ 	$(VBOX_PATH_CROGL_GENFILES)/solaris_exports_dri.asm
  else ifdef VBoxOGL_FAKEDRI
   VBoxOGL_SOURCES += \
- 	$(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm \
- 	$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm \
  	fakedri_drv.c
- else
+  VBoxOGL_SOURCES.linux += \
+ 	$(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm \
+ 	$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm
   VBoxOGL_SOURCES.solaris += \
-	$(VBOX_PATH_CROGL_GENFILES)/sunos_exports.c
- VBoxOGL_SOURCES.linux += \
- 	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
+ 	$(VBOX_PATH_CROGL_GENFILES)/solaris_glxapi_exports.asm \
+ 	$(VBOX_PATH_CROGL_GENFILES)/solaris_exports_dri.asm
+ else
+  VBoxOGL_SOURCES.linux += \
+  	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
+  VBoxOGL_SOURCES.solaris += \
+  	$(VBOX_PATH_CROGL_GENFILES)/solaris_exports.asm
  endif
 endif
 
@@ -135,10 +141,10 @@ VBoxOGL_CLEAN          = \
 	$(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c \
 	$(VBOX_PATH_CROGL_GENFILES)/NULLfuncs.c \
 	$(VBOX_PATH_CROGL_GENFILES)/tsfuncs.c
-if1of ($(KBUILD_TARGET),linux solaris)
- VBoxOGL_CLEAN           += \
+VBoxOGL_CLEAN.linux        += \
 	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
-endif
+VBoxOGL_CLEAN.solaris        += \
+	$(VBOX_PATH_CROGL_GENFILES)/solaris_exports.asm
 VBoxOGL_CLEAN.win      = \
 	$(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm \
 	$(VBOX_PATH_CROGL_GENFILES)/cropengl.def
@@ -150,8 +156,11 @@ if1of ($(KBUILD_TARGET),linux solaris)
  	$(VBOX_PATH_CROGL_GENFILES)/DD_gl.c
  else ifdef VBoxOGL_FAKEDRI
   VBoxOGL_CLEAN   += \
- 	$(VBOX_PATH_CROGL_GENFILES)/cr_gl.h \
+ 	$(VBOX_PATH_CROGL_GENFILES)/cr_gl.h
+  VBoxOGL_CLEAN.linux   += \
  	$(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm
+  VBoxOGL_CLEAN.solaris   += \
+ 	$(VBOX_PATH_CROGL_GENFILES)/solaris_glxapi_exports.asm
  endif
 endif
 VBoxOGL_LIBS = \
@@ -193,8 +202,8 @@ $(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 if !defined(VBoxOGL_DRI) && !defined(VBoxOGL_FAKEDRI)
  ifeq ($(KBUILD_TARGET),solaris)
-$(VBOX_PATH_CROGL_GENFILES)/sunos_exports.c: \
-		$(PATH_SUB_CURRENT)/SunOS_exports.py \
+$(VBOX_PATH_CROGL_GENFILES)/solaris_exports.asm: \
+		$(PATH_SUB_CURRENT)/SunOS_i386_exports.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
@@ -212,14 +221,31 @@ $(VBOX_PATH_CROGL_GENFILES)/DD_gl.h: $(PATH_SUB_CURRENT)/DD_glh.py $(VBOX_CROGL_
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 $(VBOX_PATH_CROGL_GENFILES)/DD_gl.c: $(PATH_SUB_CURRENT)/DD_glc.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+ ifeq ($(KBUILD_TARGET),solaris)
+$(VBOX_PATH_CROGL_GENFILES)/solaris_exports_dri.asm: \
+		$(PATH_SUB_CURRENT)/SunOS_i386_exports_dri.py \
+		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
+		| $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) 
+ else
 $(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm: \
 		$(PATH_SUB_CURRENT)/Linux_i386_exports_dri.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+ endif
 else ifdef VBoxOGL_FAKEDRI
 $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+ ifeq ($(KBUILD_TARGET),solaris)
+$(VBOX_PATH_CROGL_GENFILES)/solaris_exports_dri.asm: \
+		$(PATH_SUB_CURRENT)/SunOS_i386_exports_dri.py \
+		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
+		| $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+$(VBOX_PATH_CROGL_GENFILES)/solaris_glxapi_exports.asm: $(PATH_SUB_CURRENT)/SunOS_i386_glxapi_exports.py | $$(dir $$@)
+	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $<
+ else
 $(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm: \
 		$(PATH_SUB_CURRENT)/Linux_i386_exports_dri.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
@@ -227,6 +253,7 @@ $(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm: \
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 $(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm: $(PATH_SUB_CURRENT)/Linux_i386_glxapi_exports.py | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $<
+ endif
 endif
 endif
 
