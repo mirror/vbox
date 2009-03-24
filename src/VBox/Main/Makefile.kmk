@@ -279,6 +279,7 @@ VBoxSVC_SOURCES = \
 	HostFloppyDriveImpl.cpp \
 	HostNetworkInterfaceImpl.cpp \
 	DHCPServerImpl.cpp \
+	DHCPServerRunner.cpp \
 	GuestOSTypeImpl.cpp \
 	NetworkAdapterImpl.cpp \
 	SerialPortImpl.cpp \

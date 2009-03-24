@@ -84,6 +84,8 @@
 # include <netif.h>
 #endif
 
+#include "DHCPServerRunner.h"
+
 #include <VBox/param.h>
 
 
@@ -1306,7 +1308,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         NetworkAttachmentType_T networkAttachment;
         hrc = networkAdapter->COMGETTER(AttachmentType)(&networkAttachment);        H();
-        Bstr networkName;
+        Bstr networkName, trunkName, trunkType;
         switch (networkAttachment)
         {
             case NetworkAttachmentType_Null:
@@ -1352,7 +1354,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     if (psz && *psz)
                     {
                         rc = CFGMR3InsertString(pCfg, "Network", psz);              RC_CHECK();
-                        networkName = Bstr(psz);
+                        /* NAT uses its own DHCP implementation */
+                        //networkName = Bstr(psz);
                     }
 
                     STR_FREE();
@@ -1497,6 +1500,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
                     rc = CFGMR3InsertString(pCfg, "Network", szNetwork);            RC_CHECK();
                     networkName = Bstr(szNetwork);
+                    trunkName = Bstr(pszTrunk);
+                    trunkType = Bstr(TRUNKTYPE_NETFLT);
 
 # if defined(RT_OS_DARWIN)
                     /** @todo Come up with a better deal here. Problem is that IHostNetworkInterface is completely useless here. */
@@ -1714,7 +1719,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");        RC_CHECK();
                         rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);             RC_CHECK();
                         rc = CFGMR3InsertString(pCfg, "Network", psz);              RC_CHECK();
+                        rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_WhateverNone); RC_CHECK();
                         networkName = Bstr(psz);
+                        trunkType = Bstr(TRUNKTYPE_WHATEVER);
                     }
                     STR_FREE();
                 }
@@ -1790,16 +1797,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
                 rc = CFGMR3InsertString(pCfg, "Network", szNetwork);            RC_CHECK();
                 networkName = Bstr(szNetwork);
+                trunkName   = Bstr(pszTrunk);
+                trunkType   = TRUNKTYPE_NETADP;
 #elif defined(RT_OS_DARWIN)
                 rc = CFGMR3InsertString(pCfg, "Trunk", "vboxnet0");             RC_CHECK();
                 rc = CFGMR3InsertString(pCfg, "Network", "HostInterfaceNetworking-vboxnet0"); RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp); RC_CHECK();
                 networkName = Bstr("HostInterfaceNetworking-vboxnet0");
+                trunkName   = Bstr("vboxnet0");
+                trunkType   = TRUNKTYPE_NETADP;
 #else
                 rc = CFGMR3InsertString(pCfg, "Trunk", "vboxnet0");             RC_CHECK();
                 rc = CFGMR3InsertString(pCfg, "Network", "HostInterfaceNetworking-vboxnet0"); RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
                 networkName = Bstr("HostInterfaceNetworking-vboxnet0");
+                trunkName   = Bstr("vboxnet0");
+                trunkType   = TRUNKTYPE_NETFLT;
 #endif
 #if !defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
                 Bstr HifName;
@@ -1850,6 +1863,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         if(!networkName.isNull())
         {
+            /*
+             * Until we implement service reference counters DHCP Server will be stopped
+             * by DHCPServerRunner destructor.
+             */
             ComPtr<IDHCPServer> dhcpServer;
             hrc = virtualBox->FindDHCPServerByNetworkName(networkName.mutableRaw(), dhcpServer.asOutParam());
             if(SUCCEEDED(hrc))
@@ -1862,51 +1879,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     LogRel(("DHCP svr: COMGETTER(Enabled) failed, hrc (0x%x)", hrc));
                     H();
                 }
-
+            
                 if(bEnabled)
-                {
-                    Bstr ip, mask, lowerIp, upperIp;
-
-                    hrc = dhcpServer->COMGETTER(IPAddress)(ip.asOutParam());
-                    if(FAILED(hrc))
-                    {
-                        LogRel(("DHCP svr: COMGETTER(IPAddress) failed, hrc (0x%x)", hrc));
-                        H();
-                    }
-
-                    hrc = dhcpServer->COMGETTER(NetworkMask)(mask.asOutParam());
-                    if(FAILED(hrc))
-                    {
-                        LogRel(("DHCP svr: COMGETTER(NetworkMask) failed, hrc (0x%x)", hrc));
-                        H();
-                    }
-
-                    hrc = dhcpServer->COMGETTER(LowerIP)(lowerIp.asOutParam());
-                    if(FAILED(hrc))
-                    {
-                        LogRel(("DHCP svr: COMGETTER(LowerIP) failed, hrc (0x%x)", hrc));
-                        H();
-                    }
-
-                    hrc = dhcpServer->COMGETTER(UpperIP)(upperIp.asOutParam());
-                    if(FAILED(hrc))
-                    {
-                        LogRel(("DHCP svr: COMGETTER(UpperIP) failed, hrc (0x%x)", hrc));
-                        H();
-                    }
-
-                    char strMAC[13];
-                    Guid guid;
-                    guid.create();
-                    RTStrPrintf (strMAC, sizeof(strMAC), "080027%02X%02X%02X",
-                                 guid.ptr()->au8[0], guid.ptr()->au8[1], guid.ptr()->au8[2]);
-
-                    rc = CFGMR3InsertString(pCfg, "DhcpIPAddress", Utf8Str(ip).raw());             RC_CHECK();
-                    rc = CFGMR3InsertString(pCfg, "DhcpNetworkMask", Utf8Str(mask).raw());             RC_CHECK();
-                    rc = CFGMR3InsertString(pCfg, "DhcpLowerIP", Utf8Str(lowerIp).raw());             RC_CHECK();
-                    rc = CFGMR3InsertString(pCfg, "DhcpUpperIP", Utf8Str(upperIp).raw());             RC_CHECK();
-                    rc = CFGMR3InsertString(pCfg, "DhcpMacAddress", strMAC);             RC_CHECK();
-                }
+                    hrc = dhcpServer->Start(networkName, trunkName, trunkType);
             }
             else
             {
