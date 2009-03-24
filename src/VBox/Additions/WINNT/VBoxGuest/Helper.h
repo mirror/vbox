@@ -59,9 +59,8 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt);
  * Helper for registering the bugcheck callback rountine(s).
  *
  * @param pDevExt   VMMDev device extension
- * @return NT status code
  */
-NTSTATUS hlpRegisterBugCheckCallback (PVBOXGUESTDEVEXT pDevExt);
+void hlpRegisterBugCheckCallback (PVBOXGUESTDEVEXT pDevExt);
 
 /**
  * Helper for deregistering the bugcheck callback rountine(s).
