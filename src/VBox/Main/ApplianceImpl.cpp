@@ -693,7 +693,9 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
         const xml::AttributeNode *pTypeAttr = pelmThis->findAttribute("type");
         const char *pcszTypeAttr = (pTypeAttr) ? pTypeAttr->getValue() : "";
 
-        if (!strcmp(pcszElemName, "EulaSection"))
+        if (    (!strcmp(pcszElemName, "EulaSection"))
+             || (!strcmp(pcszTypeAttr, "ovf:EulaSection_Type"))
+           )
         {
          /* <EulaSection>
                 <Info ovf:msgid="6">License agreement for the Virtual System.</Info>
