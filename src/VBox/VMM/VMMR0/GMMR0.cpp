@@ -1333,8 +1333,8 @@ DECLINLINE(void) gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet)
  */
 static void gmmR0FreeChunkId(PGMM pGMM, uint32_t idChunk)
 {
-    Assert(idChunk != NIL_GMM_CHUNKID);
-    Assert(ASMBitTest(&pGMM->bmChunkId[0], idChunk));
+    AssertReturnVoid(idChunk != NIL_GMM_CHUNKID);
+    AssertMsg(ASMBitTest(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk));
     ASMAtomicBitClear(&pGMM->bmChunkId[0], idChunk);
 }
 
@@ -1369,7 +1369,10 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
     {
         idChunk = ASMBitNextClear(&pGMM->bmChunkId[0], GMM_CHUNKID_LAST + 1, idChunk);
         if (idChunk > NIL_GMM_CHUNKID)
+        {
+            AssertMsgReturn(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk), NIL_GVM_HANDLE);
             return pGMM->idChunkPrev = idChunk;
+        }
     }
 
     /*
@@ -1377,8 +1380,8 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
      * We're not racing anyone, so there is no need to expect failures or have restart loops.
      */
     idChunk = ASMBitFirstClear(&pGMM->bmChunkId[0], GMM_CHUNKID_LAST + 1);
-    AssertMsgReturn(idChunk > NIL_GMM_CHUNKID, ("%d\n", idChunk), NIL_GVM_HANDLE);
-    AssertMsgReturn(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%d\n", idChunk), NIL_GVM_HANDLE);
+    AssertMsgReturn(idChunk > NIL_GMM_CHUNKID, ("%#x\n", idChunk), NIL_GVM_HANDLE);
+    AssertMsgReturn(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk), NIL_GVM_HANDLE);
 
     return pGMM->idChunkPrev = idChunk;
 }
@@ -2100,7 +2103,8 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PG
          */
         if (RT_UNLIKELY(   pChunk->cFree == GMM_CHUNK_NUM_PAGES
                         && pChunk->pFreeNext
-                        && pChunk->pFreePrev))
+                        && pChunk->pFreePrev
+                        && !pGMM->fLegacyMode))
             gmmR0FreeChunk(pGMM, pChunk);
     }
 }
