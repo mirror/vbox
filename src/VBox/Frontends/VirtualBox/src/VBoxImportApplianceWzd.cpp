@@ -25,7 +25,90 @@
 #include "QIWidgetValidator.h"
 #include "VBoxProblemReporter.h"
 
+/* Qt includes */
 #include <QFileInfo>
+#include <QDialogButtonBox>
+#include <QPrinter>
+#include <QPrintDialog>
+#include <QTextStream>
+
+////////////////////////////////////////////////////////////////////////////////
+// VBoxImportLicenseViewer
+
+VBoxImportLicenseViewer::VBoxImportLicenseViewer (QWidget *aParent /* = NULL */)
+  : QIDialog (aParent)
+{
+    QVBoxLayout *pMainLayout = new QVBoxLayout (this);
+    pMainLayout->setMargin (12);
+
+    mCaption = new QLabel (this);
+    mCaption->setWordWrap (true);
+    pMainLayout->addWidget (mCaption);
+
+    mLicenseText = new QTextEdit (this);
+    mLicenseText->setReadOnly (true);
+    pMainLayout->addWidget (mLicenseText);
+
+    mButtonBox = new QDialogButtonBox (QDialogButtonBox::No | QDialogButtonBox::Yes, Qt::Horizontal, this);
+    mPrintBtn = new QPushButton (this);
+    mButtonBox->addButton (mPrintBtn, QDialogButtonBox::ActionRole);
+    mSaveBtn = new QPushButton (this);
+    mButtonBox->addButton (mSaveBtn, QDialogButtonBox::ActionRole);
+    mButtonBox->button (QDialogButtonBox::Yes)->setDefault (true);
+    connect (mButtonBox, SIGNAL (rejected()),
+             this, SLOT (reject()));
+    connect (mButtonBox, SIGNAL (accepted()),
+             this, SLOT (accept()));
+    connect (mPrintBtn, SIGNAL (clicked()),
+             this, SLOT (print()));
+    connect (mSaveBtn, SIGNAL (clicked()),
+             this, SLOT (save()));
+    pMainLayout->addWidget (mButtonBox);
+
+    retranslateUi();
+}
+
+void VBoxImportLicenseViewer::setContent (const QString &aName, const QString &aText)
+{ 
+    mName = aName; 
+    mText = aText; 
+    mCaption->setText (tr ("<b>To continue importing the Appliance you must agree to the terms of the software license agreement for the Virtual System \"%1\".</b><br /><br />Click <b>Agree</b> to continue or click <b>Disagree</b> to cancel the import.").arg (mName));
+    mLicenseText->setText (mText);
+
+}
+
+void VBoxImportLicenseViewer::retranslateUi()
+{
+    setWindowTitle (tr ("Software License Agreement"));
+    mButtonBox->button (QDialogButtonBox::No)->setText (tr ("&Disagree"));
+    mButtonBox->button (QDialogButtonBox::Yes)->setText (tr ("&Agree"));
+    mPrintBtn->setText (tr ("&Print..."));
+    mSaveBtn->setText (tr ("&Save..."));
+
+    setContent (mName, mText);
+}
+
+void VBoxImportLicenseViewer::print()
+{
+    QPrinter printer;
+    QPrintDialog pd (&printer, this);
+    if (pd.exec() == QDialog::Accepted) 
+        mLicenseText->print (&printer);
+}
+
+void VBoxImportLicenseViewer::save()
+{
+    QString fileName = vboxGlobal().getSaveFileName (vboxGlobal().documentsPath(), tr("Text (*.txt)"), this, tr("Select a file to save into..."));
+    if (!fileName.isEmpty())
+    {
+        QFile file (fileName);
+        if (file.open(QFile::WriteOnly | QFile::Truncate)) 
+        {
+            QTextStream out (&file);
+            out << mLicenseText->toPlainText();
+        }
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxImportApplianceWzd
@@ -96,6 +179,22 @@ void VBoxImportApplianceWzd::enableNext (const QIWidgetValidator *aWval)
 
 void VBoxImportApplianceWzd::accept()
 {
+    /* Make sure the final values are puted back. */
+    mImportSettingsWgt->prepareImport();
+    /* Check if there are license agreements the use must confirm */
+    QList < QPair <QString, QString> > licAgreements = mImportSettingsWgt->licenseAgreements();
+    if (!licAgreements.isEmpty())
+    {
+        VBoxImportLicenseViewer ilv (this);
+        for (int i=0; i < licAgreements.size(); ++i)
+        {
+            const QPair <QString, QString> &lic = licAgreements.at (i);
+            ilv.setContent (lic.first, lic.second);
+            if (ilv.exec() == QDialog::Rejected)
+                return;
+        }
+    }
+    /* Now import all virtual systems */
     if (mImportSettingsWgt->import())
         QIAbstractWizard::accept();
 }

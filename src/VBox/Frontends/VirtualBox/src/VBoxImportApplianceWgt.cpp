@@ -52,6 +52,7 @@ public:
     VirtualSystemSortProxyModel (QObject *aParent = NULL);
 
 protected:
+    bool filterAcceptsRow (int aSourceRow, const QModelIndex & aSourceParent) const;
     bool lessThan (const QModelIndex &aLeft, const QModelIndex &aRight) const;
 
     static KVirtualSystemDescriptionType mSortList[];
@@ -753,6 +754,7 @@ KVirtualSystemDescriptionType VirtualSystemSortProxyModel::mSortList[] =
     KVirtualSystemDescriptionType_Name,
     KVirtualSystemDescriptionType_Description,
     KVirtualSystemDescriptionType_OS,
+    KVirtualSystemDescriptionType_License,
     KVirtualSystemDescriptionType_CPU,
     KVirtualSystemDescriptionType_Memory,
     KVirtualSystemDescriptionType_Floppy,
@@ -768,6 +770,28 @@ KVirtualSystemDescriptionType VirtualSystemSortProxyModel::mSortList[] =
 VirtualSystemSortProxyModel::VirtualSystemSortProxyModel (QObject *aParent)
     : QSortFilterProxyModel (aParent)
 {}
+
+bool VirtualSystemSortProxyModel::filterAcceptsRow (int aSourceRow, const QModelIndex & aSourceParent) const
+{
+    /* By default enable all, we will explicitly filter out below */
+    if (aSourceParent.isValid())
+    {
+        QModelIndex i = aSourceParent.child (aSourceRow, 0);
+        if (i.isValid())
+        {
+            ModelItem *item = static_cast<ModelItem*> (i.internalPointer());
+            /* We filter hardware types only */
+            if (item->type() == HardwareType)
+            {
+                HardwareItem *hwItem = static_cast<HardwareItem*> (item);
+                /* The license type shouldn't be displayed */
+                if (hwItem->mType == KVirtualSystemDescriptionType_License)
+                    return false;
+            }
+        }
+    }
+    return true;
+}
 
 bool VirtualSystemSortProxyModel::lessThan (const QModelIndex &aLeft, const QModelIndex &aRight) const
 {
@@ -1060,13 +1084,6 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
                     mTvSettings->setColumnHidden (OriginalValueSection, true);
                     mTvSettings->expandAll();
 
-// @todo can the warnings also be shown when an error occurs? I have the case here that
-// interpret() failes because there's 16 hard disks attached to four SCSI controllers,
-// and we support only one SCSI controller, and the warnings about the additional SCSI
-// controllers are not shown. Instead there's only the error message that disk X cannot
-// be attached to controller Y. I have fixed VBoxManage accordingly, but the GUI should
-// have that too. Thanks!
-
                     /* Check for warnings & if there are one display them. */
                     bool fWarningsEnabled = false;
                     QVector<QString> warnings = mAppliance->GetWarnings();
@@ -1091,11 +1108,16 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
     return fResult;
 }
 
+void VBoxImportApplianceWgt::prepareImport()
+{
+    if (mAppliance)
+        mModel->putBack();
+}
+
 bool VBoxImportApplianceWgt::import()
 {
     if (mAppliance)
     {
-        mModel->putBack();
         /* Start the import asynchronously */
         CProgress progress;
         progress = mAppliance->ImportMachines();
@@ -1116,6 +1138,30 @@ bool VBoxImportApplianceWgt::import()
             vboxProblem().cannotImportAppliance (mAppliance, this);
     }
     return false;
+}
+
+QList < QPair<QString, QString> > VBoxImportApplianceWgt::licenseAgreements() const
+{
+    QList < QPair<QString, QString> > list;
+
+    CVirtualSystemDescriptionVector vsds = mAppliance->GetVirtualSystemDescriptions();
+    for (int i=0; i < vsds.size(); ++i)
+    {
+        QVector<QString> license;
+        vsds[i].GetValuesByType (KVirtualSystemDescriptionType_License, 
+                                 KVirtualSystemDescriptionValueType_Original, 
+                                 license);
+        if (!license.isEmpty())
+        {
+            QVector<QString> name;
+            vsds[i].GetValuesByType (KVirtualSystemDescriptionType_Name, 
+                                     KVirtualSystemDescriptionValueType_Auto, 
+                                     name);
+            list << QPair<QString, QString> (name.first(), license.first());
+        }
+    }
+
+    return list;
 }
 
 void VBoxImportApplianceWgt::restoreDefaults()
