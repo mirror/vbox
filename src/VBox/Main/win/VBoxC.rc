@@ -19,7 +19,7 @@
  */
 
 #include <windows.h>
-#include <winver.h>
+#include <VBox/version.h>
 
 #include "resource.h"
 
@@ -40,13 +40,12 @@ BEGIN
   BEGIN
     BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
     BEGIN
-    VALUE "CompanyName",     "Sun Microsystems, Inc.\0"
-    VALUE "FileDescription", "Sun VirtualBox Interface\0"
+    VALUE "CompanyName",     VBOX_RC_COMPANY_NAME
+    VALUE "FileDescription", "VirtualBox Interface\0"
     VALUE "FileVersion",     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
-    VALUE "InternalName",    "VBOXC\0"
-    VALUE "LegalCopyright",  "\0"
-    VALUE "LegalTrademarks", "\0"
-    VALUE "OriginalFilename","VBOXC.DLL\0"
+    VALUE "InternalName",    "VBoxC.dll\0"
+    VALUE "LegalCopyright",  VBOX_RC_LEGAL_COPYRIGHT
+    VALUE "OriginalFilename","VBoxC.dll\0"
     VALUE "ProductName",     "Sun VirtualBox\0"
     VALUE "ProductVersion",  VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
 
