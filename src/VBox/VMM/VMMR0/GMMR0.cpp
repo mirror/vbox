@@ -2030,7 +2030,7 @@ static void gmmR0FreeChunk(PGMM pGMM, PGMMCHUNK pChunk)
             PAVLU32NODECORE pCore = RTAvlU32Remove(&pGMM->pChunks, pChunk->Core.Key);
             Assert(pCore == &pChunk->Core); NOREF(pCore);
 
-            PGMMCHUNKTLBE pTlbe = &pGMM->ChunkTLB.aEntries[GMM_CHUNKTLB_IDX(pChunk->Key)];
+            PGMMCHUNKTLBE pTlbe = &pGMM->ChunkTLB.aEntries[GMM_CHUNKTLB_IDX(pChunk->Core.Key)];
             if (pTlbe->pChunk == pChunk)
             {
                 pTlbe->idChunk = NIL_GMM_CHUNKID;
