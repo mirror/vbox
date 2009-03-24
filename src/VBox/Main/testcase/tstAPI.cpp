@@ -561,7 +561,7 @@ int main(int argc, char *argv[])
         ComPtr <IHardDisk> hd;
         Bstr src = L"E:\\develop\\innotek\\images\\NewHardDisk.vdi";
         printf ("Opening the existing hard disk '%ls'...\n", src.raw());
-        CHECK_ERROR_BREAK (virtualBox, OpenHardDisk (src, hd.asOutParam()));
+        CHECK_ERROR_BREAK (virtualBox, OpenHardDisk (src, AccessMode_ReadWrite, hd.asOutParam()));
         printf ("Enter to continue...\n");
         getchar();
         printf ("Registering the existing hard disk '%ls'...\n", src.raw());
