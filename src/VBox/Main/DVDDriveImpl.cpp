@@ -589,6 +589,18 @@ bool DVDDrive::rollback()
         }
 
         m.rollback();
+        if (!m->image.isNull())
+        {
+            /* Reattach from the old image. */
+            HRESULT rc = m->image->attachTo(mParent->id(), mParent->snapshotId());
+            AssertComRC (rc);
+            if (Global::IsOnline (adep.machineState()))
+            {
+                /* Lock from the old image. */
+                rc = m->image->LockRead (NULL);
+                AssertComRC (rc);
+            }
+        }
     }
 
     return changed;
@@ -608,32 +620,12 @@ void DVDDrive::commit()
     AutoCaller peerCaller (mPeer);
     AssertComRCReturnVoid (peerCaller.rc());
 
-    /* we need adep for the state check */
-    Machine::AutoAnyStateDependency adep (mParent);
-    AssertComRCReturnVoid (adep.rc());
-
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
     AutoMultiWriteLock2 alock (mPeer, this);
 
     if (m.isBackedUp())
     {
-        Data *oldData = m.backedUpData();
-
-        if (!oldData->image.isNull() &&
-            !oldData->image.equalsTo (m->image))
-        {
-            /* detach the old image that will go away after commit */
-            oldData->image->detachFrom (mParent->id(), mParent->snapshotId());
-
-            /* unlock the image for reading if the VM is online */
-            if (Global::IsOnline (adep.machineState()))
-            {
-                HRESULT rc = oldData->image->UnlockRead (NULL);
-                AssertComRC (rc);
-            }
-        }
-
         m.commit();
         if (mPeer)
         {
@@ -675,6 +667,21 @@ void DVDDrive::copyFrom (DVDDrive *aThat)
 HRESULT DVDDrive::unmount()
 {
     AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
+
+    /* we need adep for the state check */
+    Machine::AutoAnyStateDependency adep (mParent);
+    AssertComRCReturn (adep.rc(), false);
+
+    if (!m->image.isNull())
+    {
+        HRESULT rc = m->image->detachFrom (mParent->id(), mParent->snapshotId());
+        AssertComRC (rc);
+        if (Global::IsOnline (adep.machineState()))
+        {
+            rc = m->image->UnlockRead (NULL);
+            AssertComRC (rc);
+        }
+    }
 
     m.backup();
 
