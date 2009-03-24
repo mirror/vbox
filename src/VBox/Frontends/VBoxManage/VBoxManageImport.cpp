@@ -119,6 +119,7 @@ int handleImportAppliance(HandlerArg *a)
         else if (    (strThisArg == "-ostype")
                   || (strThisArg == "-vmname")
                   || (strThisArg == "-memory")
+                  || (strThisArg == "-eula")
                   || (fIsIgnore = (strThisArg == "-ignore"))
                   || (strThisArg.substr(0, 5) == "-type")
                   || (strThisArg.substr(0, 11) == "-controller")
@@ -222,6 +223,8 @@ int handleImportAppliance(HandlerArg *a)
                                    ulVsys, cVirtualSystemDescriptions);
         }
 
+        uint32_t cLicensesInTheWay = 0;
+
         // dump virtual system descriptions and match command-line arguments
         if (cVirtualSystemDescriptions > 0)
         {
@@ -289,6 +292,34 @@ int handleImportAppliance(HandlerArg *a)
                                 RTPrintf("%2d: Suggested OS type: \"%ls\""
                                         "\n    (change with \"-vsys %d -ostype <type>\"; use \"list ostypes\" to list all)\n",
                                         a, bstrFinalValue.raw(), i);
+                        break;
+
+                        case VirtualSystemDescriptionType_License:
+                            ++cLicensesInTheWay;
+                            if (findArgValue(strOverride, pmapArgs, "-eula"))
+                            {
+                                if (strOverride == "show")
+                                {
+                                    RTPrintf("%2d: End-user license agreement"
+                                             "\n    (accept with \"-vsys %d -eula accept\"):"
+                                             "\n\n%ls\n\n",
+                                             a, i, bstrFinalValue.raw());
+                                }
+                                else if (strOverride == "accept")
+                                {
+                                    RTPrintf("%2d: End-user license agreement (accepted)\n",
+                                             a);
+                                    --cLicensesInTheWay;
+                                }
+                                else
+                                    return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                                       "Argument to -eula must be either \"show\" or \"accept\".");
+                            }
+                            else
+                                RTPrintf("%2d: End-user license agreement"
+                                        "\n    (display with \"-vsys %d -eula show\";"
+                                        "\n    accept with \"-vsys %d -eula accept\")\n",
+                                        a, i, i);
                         break;
 
                         case VirtualSystemDescriptionType_CPU:
@@ -490,7 +521,12 @@ int handleImportAppliance(HandlerArg *a)
 
             } // for (unsigned i = 0; i < cVirtualSystemDescriptions; ++i)
 
-            if (fExecute)
+            if (cLicensesInTheWay == 1)
+                RTPrintf("ERROR: Cannot import until the license agreement listed above is accepted.\n");
+            else if (cLicensesInTheWay > 1)
+                RTPrintf("ERROR: Cannot import until the %c license agreements listed above are accepted.\n", cLicensesInTheWay);
+
+            if (!cLicensesInTheWay && fExecute)
             {
                 // go!
                 ComPtr<IProgress> progress;
