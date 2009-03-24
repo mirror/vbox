@@ -30,11 +30,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifndef VBOX_WITH_XPCOM /** @todo Find libvirt define to test for! */
-# include <config.h>
-# include "memory.h"
-#endif /* !VBOX_WITH_XPCOM */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -55,11 +50,6 @@
 #else
 # error "Port me"
 #endif
-
-#ifdef VBOX_WITH_XPCOM /** @todo Find libvirt define to test for! */
-# define VIR_ALLOC_N(a, b) ((a) = (char *)malloc(b))
-# define VIR_FREE(name) (free(name))
-#endif /* !VBOX_WITH_XPCOM */
 
 
 /*******************************************************************************
@@ -85,18 +75,18 @@ PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions = NULL;
 static int tryLoadOne(const char *pszHome)
 {
     size_t      cchHome = pszHome ? strlen(pszHome) : 0;
-    size_t      cbBuf;
+    size_t      cbReq;
+    char        szBuf[4096];
     char *      pszBuf;
     int         rc = -1;
 
     /*
      * Construct the full name.
      */
-    cbBuf = cchHome + sizeof("/" DYNLIB_NAME);
-    if(VIR_ALLOC_N(pszBuf, cbBuf)) {;}
-    if (!pszBuf)
+    cbReq = cchHome + sizeof("/" DYNLIB_NAME);
+    if (cbReq > sizeof(szBuf))
     {
-        sprintf(g_szVBoxErrMsg, "malloc(%u) failed", (unsigned)cbBuf);
+        sprintf(g_szVBoxErrMsg, "path buffer too small: %u bytes required", (unsigned)cbReq);
         return -1;
     }
     if (pszHome)
@@ -141,7 +131,6 @@ static int tryLoadOne(const char *pszHome)
     }
     else
         sprintf(g_szVBoxErrMsg, "dlopen(%.80s): %128s", pszBuf, dlerror());
-    VIR_FREE(pszBuf);
     return rc;
 }
 
