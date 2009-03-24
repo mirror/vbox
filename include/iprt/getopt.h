@@ -236,62 +236,64 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
  * code would look something like this:
  *
  * @code
- * int main(int argc, char *argv[])
- * {
- *      static const RTGETOPTDEF s_aOptions[] =
- *      {
- *          { "--optwithstring",    's', RTGETOPT_REQ_STRING },
- *          { "--optwithint",       'i', RTGETOPT_REQ_INT32 },
- *          { "--verbose",          'v', 0 },
- *      };
- *
- *      int ch;
- *      int i = 1;
- *      RTGETOPTUNION ValueUnion;
- *      RTGETOPTSTATE GetState;
- *      RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
- *      while ((ch = RTGetOpt(&GetState, &ValueUnion)))
- *      {
- *          // for options that require an argument, ValueUnion has received the value
- *          switch (ch)
- *          {
- *              case 's': // --optwithstring or -s
- *                  // string argument, copy ValueUnion.psz
- *                  break;
- *
- *              case 'i': // --optwithint or -i
- *                  // integer argument, copy ValueUnion.i32
- *                  break;
- *
- *              case 'v': // --verbose or -v
- *                  g_fOptVerbose = true;
- *                  break;
- *
- *              case VINF_GETOPT_NOT_OPTION:
- *                  // handle non-option argument in ValueUnion.psz.
- *                  break;
- *
- *              default:
- *                  if (ch > 0)
- *                  {
- *                      if (RT_C_IS_GRAPH(ch)
- *                          Error("unhandled option: -%c\n", ch);
- *                      else
- *                          Error("unhandled option: %i\n", ch);
- *                  }
- *                  else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
- *                      Error("unknown option: %s", psz);
- *                  else if (ValueUnion.pDef)
- *                      Error("%s: %Rrs", ValueUnion.pDef->pszLong, ch);
- *                  else
- *                      Error("%Rrs", ch);
- *                  return 1;
- *          }
- *      }
- *
- *      return 0;
- * }
- * @endcode
+int main(int argc, char **argv)
+{
+     RTR3Init();
+
+     static const RTGETOPTDEF s_aOptions[] =
+     {
+         { "--optwithstring",    's', RTGETOPT_REQ_STRING },
+         { "--optwithint",       'i', RTGETOPT_REQ_INT32 },
+         { "--verbose",          'v', 0 },
+     };
+
+     int ch;
+     int i = 1;
+     RTGETOPTUNION ValueUnion;
+     RTGETOPTSTATE GetState;
+     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+     {
+         // for options that require an argument, ValueUnion has received the value
+         switch (ch)
+         {
+             case 's': // --optwithstring or -s
+                 // string argument, copy ValueUnion.psz
+                 break;
+
+             case 'i': // --optwithint or -i
+                 // integer argument, copy ValueUnion.i32
+                 break;
+
+             case 'v': // --verbose or -v
+                 g_fOptVerbose = true;
+                 break;
+
+             case VINF_GETOPT_NOT_OPTION:
+                 // handle non-option argument in ValueUnion.psz.
+                 break;
+
+             default:
+                 if (ch > 0)
+                 {
+                     if (RT_C_IS_GRAPH(ch))
+                         Error("unhandled option: -%c\n", ch);
+                     else
+                         Error("unhandled option: %i\n", ch);
+                 }
+                 else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
+                     Error("unknown option: %s\n", ValueUnion.psz);
+                 else if (ValueUnion.pDef)
+                     Error("%s: %Rrs\n", ValueUnion.pDef->pszLong, ch);
+                 else
+                     Error("%Rrs\n", ch);
+                 return 1;
+         }
+     }
+
+     return 0;
+}
+   @endcode
  *
  * @returns 0 when done parsing.
  * @returns IPRT error status on parse error.
