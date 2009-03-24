@@ -43,6 +43,7 @@ using namespace com;
 #include <iprt/ldr.h>
 #include <iprt/getopt.h>
 #include <iprt/env.h>
+#include <VBox/err.h>
 
 #ifdef VBOX_FFMPEG
 #include <cstdlib>
@@ -629,7 +630,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
     rc = com::Initialize();
     if (FAILED(rc))
     {
-        RTPrintf("ERROR: failed to initialize COM!\n");
+        RTPrintf("VBoxHeadless: ERROR: failed to initialize COM!\n");
         return rc;
     }
 
@@ -640,12 +641,12 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 
         rc = virtualBox.createLocalObject(CLSID_VirtualBox);
         if (FAILED(rc))
-            RTPrintf("ERROR: failed to create the VirtualBox object!\n");
+            RTPrintf("VBoxHeadless: ERROR: failed to create the VirtualBox object!\n");
         else
         {
             rc = session.createInprocObject(CLSID_Session);
             if (FAILED(rc))
-                RTPrintf("ERROR: failed to create a session object!\n");
+                RTPrintf("VBoxHeadless: ERROR: failed to create a session object!\n");
         }
 
         if (FAILED(rc))
@@ -958,7 +959,22 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 int main (int argc, char **argv, char **envp)
 {
     // initialize VBox Runtime
-    RTR3InitAndSUPLib();
+    int rc = RTR3InitAndSUPLib();
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("VBoxHeadless: Runtime Error!\n");
+        switch (rc)
+        {
+            case VERR_VM_DRIVER_NOT_INSTALLED:
+                RTPrintf("Cannot access the kernel driver. Make sure the kernel module has been \n"
+                        "loaded successfully. Aborting ...\n");
+                break;
+            default:
+                break;
+        }
+        return 1;
+    }
+
     return TrustedMain (argc, argv, envp);
 }
 #endif /* !VBOX_WITH_HARDENING */
