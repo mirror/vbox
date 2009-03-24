@@ -216,7 +216,14 @@ static int rtR3Init(bool fInitSUPLib, const char *pszProgramPath)
          * Init GIP first.
          * (The more time for updates before real use, the better.)
          */
-        SUPR3Init(NULL);
+        rc = SUPR3Init(NULL);
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("Failed to initializeble the support library, rc=%Rrc!\n", rc));
+            ASMAtomicWriteBool(&g_fInitializing, false);
+            ASMAtomicDecS32(&g_cUsers);
+            return rc;
+        }
     }
 #endif
 
