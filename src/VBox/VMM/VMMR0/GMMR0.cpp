@@ -1530,9 +1530,11 @@ static void gmmR0AllocatePage(PGMM pGMM, uint32_t hGVM, PGMMCHUNK pChunk, PGMMPA
     const uint32_t iPage = pChunk->iFreeHead;
     AssertReleaseMsg(iPage < RT_ELEMENTS(pChunk->aPages), ("%d\n", iPage));
     PGMMPAGE pPage = &pChunk->aPages[iPage];
-    Log3(("pPage=%x iPage=%#x iFreeHead=%#x iNext=%#x u2State=%d\n", pPage, iPage, pChunk->iFreeHead, pPage->Free.iNext, pPage->Common.u2State));
     Assert(GMM_PAGE_IS_FREE(pPage));
     pChunk->iFreeHead = pPage->Free.iNext;
+    Log3(("A pPage=%p iPage=%#x/%#x u2State=%d iFreeHead=%#x iNext=%#x\n",
+          pPage, iPage, (pChunk->Core.Key << GMM_CHUNKID_SHIFT) | iPage,
+          pPage->Common.u2State, pChunk->iFreeHead, pPage->Free.iNext));
 
     /* make the page private. */
     pPage->u = 0;
@@ -1826,7 +1828,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
                     }
                     else
                     {
-                        Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not private!\n", iPage, paPages[iPage].idPage));
+                        Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not private! %.*Rhxs\n", iPage, paPages[iPage].idPage, sizeof(*pPage), pPage));
                         rc = VERR_GMM_PAGE_NOT_PRIVATE;
                         break;
                     }
@@ -2055,10 +2057,14 @@ static void gmmR0FreeChunk(PGMM pGMM, PGMMCHUNK pChunk)
  *
  * @param   pGMM        Pointer to the GMM instance data.
  * @param   pChunk      Pointer to the chunk this page belongs to.
+ * @param   idPage      The Page ID.
  * @param   pPage       Pointer to the page.
  */
-static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, PGMMPAGE pPage)
+static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PGMMPAGE pPage)
 {
+    Log3(("F pPage=%p iPage=%#x/%#x u2State=%d iFreeHead=%#x\n",
+          pPage, pPage - &pChunk->aPages[0], idPage, pPage->Common.u2State, pChunk->iFreeHead)); NOREF(idPage);
+
     /*
      * Put the page on the free list.
      */
@@ -2120,7 +2126,7 @@ DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage)
     pChunk->cShared--;
     pGMM->cAllocatedPages--;
     pGMM->cSharedPages--;
-    gmmR0FreePageWorker(pGMM, pChunk, pPage);
+    gmmR0FreePageWorker(pGMM, pChunk, idPage, pPage);
 }
 
 
@@ -2141,7 +2147,7 @@ DECLINLINE(void) gmmR0FreePrivatePage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage
 
     pChunk->cPrivate--;
     pGMM->cAllocatedPages--;
-    gmmR0FreePageWorker(pGMM, pChunk, pPage);
+    gmmR0FreePageWorker(pGMM, pChunk, idPage, pPage);
 }
 
 
