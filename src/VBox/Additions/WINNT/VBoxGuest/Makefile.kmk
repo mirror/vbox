@@ -43,6 +43,7 @@ VBoxGuest_SOURCES       = \
 	VBoxGuest.cpp \
 	VBoxGuestPnP.cpp \
 	Helper.cpp \
+	HelperBugCheck.cpp \
 	VBoxGuest.rc
 VBoxGuest_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
@@ -51,11 +52,11 @@ VBoxGuest_LIBS        = \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 
 ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
- VBoxGuest_SDKS = WINDDKWLH
- VBoxGuest_LIBS = \
+ VBoxGuest_LIBS += \
 	$(PATH_SDK_WINDDKWLH_LIB)/ksecdd.lib \
 	$(PATH_SDK_WINDDKWLH_LIB)/BufferOverflowK.lib \
 	$(PATH_SDK_WINDDKWLH_LIB)/aux_klib.lib
+ VBoxGuest_HelperBugCheck.cpp_SDKS = WINDDKWLH
 endif
 
 #
@@ -69,6 +70,7 @@ VBoxGuestNT_DEFS      = $(VBoxGuest_DEFS) TARGET_NT4
 VBoxGuestNT_SOURCES   = \
 	VBoxGuest.cpp \
 	Helper.cpp \
+	HelperBugCheck.cpp \
 	NTLegacy.cpp \
 	VBoxGuest.rc
 VBoxGuestNT_LIBS      = \
