@@ -1291,7 +1291,7 @@ VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3
 /** @todo this is kind of hacky and needs some more work. */
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
 
-    LogAlways(("PGMPhysGCPhys2R3Ptr(,%RGp,%#x,): dont use this API!\n", GCPhys, cbRange)); /** @todo eliminate this API! */
+    Log(("PGMPhysGCPhys2R3Ptr(,%RGp,%#x,): dont use this API!\n", GCPhys, cbRange)); /** @todo eliminate this API! */
 # if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 # else
