@@ -45,7 +45,7 @@ def GenerateEntrypoints():
         print "%ifdef RT_ARCH_AMD64"
         print "\tjmp \t[glim+%d wrt rip wrt ..gotpcrel]" % (8*index)
         print "%else ; X86"
-        print "\tjmp \t[glim+%d wrt rip wrt ..gotpcrel]" % (4*index)
+        print "\tjmp \t[glim+%d wrt ..gotpc]" % (4*index)
         print "%endif"
         print "ENDPROC gl%s" % func_name
         print ""
@@ -74,7 +74,7 @@ def GenerateEntrypoints():
             print "%ifdef RT_ARCH_AMD64"
             print "\tjmp \t[glim+%d wrt rip wrt ..gotpcrel]" % (8*index)
             print "%else ; X86"
-            print "\tjmp \t[glim+%d wrt rip wrt ..gotpcrel]" % (4*index)
+            print "\tjmp \t[glim+%d wrt ..gotpc]" % (4*index)
             print "%endif"
             print "ENDPROC gl%s" % func_name
             print ""
