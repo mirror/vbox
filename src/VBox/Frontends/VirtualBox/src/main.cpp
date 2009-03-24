@@ -50,6 +50,8 @@
 #include <iprt/stream.h>
 #ifdef VBOX_WITH_HARDENING
 # include <VBox/sup.h>
+#else
+# include <VBox/err.h>
 #endif
 
 #ifdef RT_OS_LINUX
@@ -479,10 +481,50 @@ int main (int argc, char **argv, char **envp)
         }
     }
 
+    int rc;
     if (!fInitSUPLib)
-        RTR3Init();
+        rc = RTR3Init();
     else
-        RTR3InitAndSUPLib();
+        rc = RTR3InitAndSUPLib();
+    if (RT_FAILURE(rc))
+    {
+        QApplication a (argc, &argv[0]);
+        QString msgTitle = QApplication::tr ("VirtualBox - Runtime Error");
+        QString msgText = "<html>";
+        
+        switch (rc)
+        {
+            case VERR_VM_DRIVER_NOT_INSTALLED:
+                msgText += QApplication::tr (
+                        "<b>Cannot access the kernel driver!</b><br/><br/>"
+# ifdef RT_OS_LINUX
+                        "The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or "
+                        "there is a permission problem with /dev/vboxdrv. Re-setup the kernel "
+                        "module by executing<br/><br/>"
+                        "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
+                        "as root. Users of Ubuntu or Fedora should install the DKMS package "
+                        "at first. This package keeps track of Linux kernel changes and "
+                        "recompiles the vboxdrv kernel module if necessary."
+# else
+                        "Make sure the kernel module has been loaded successfully."
+# endif
+                        );
+                break;
+            default:
+                msgText += QApplication::tr (
+                        "Unknown %2 error during initialization of the Runtime"
+                        ).arg (rc);
+                break;
+        }
+        msgText += "</html>";
+        QMessageBox::critical (
+                               0,                      /* parent */
+                               msgTitle,
+                               msgText,
+                               QMessageBox::Abort,     /* button0 */
+                               0);                     /* button1 */
+        return 1;
+    }
 
     return TrustedMain (argc, argv, envp);
 }
