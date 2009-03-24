@@ -181,7 +181,7 @@ void VBoxImportApplianceWzd::accept()
 {
     /* Make sure the final values are puted back. */
     mImportSettingsWgt->prepareImport();
-    /* Check if there are license agreements the use must confirm */
+    /* Check if there are license agreements the user must confirm */
     QList < QPair <QString, QString> > licAgreements = mImportSettingsWgt->licenseAgreements();
     if (!licAgreements.isEmpty())
     {
