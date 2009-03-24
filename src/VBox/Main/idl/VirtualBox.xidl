@@ -1231,7 +1231,7 @@
 
   <interface
     name="IDHCPServer" extends="$unknown"
-    uuid="fab58256-c76e-4ddd-8029-18343e5b0069"
+    uuid="6cfe387c-74fb-4ca7-bff6-973bec8af7a3"
     wsmap="managed"
   >
     <desc>
@@ -1304,6 +1304,39 @@
           server To IP address for address range
         </desc>
       </param>
+    </method>
+
+    <method name="start">
+      <desc>
+        Starts DHCP server process.
+        <result name="E_FAIL">
+          Failed to start the process.
+        </result>
+      </desc>
+      <param name="networkName" type="wstring" dir="in">
+        <desc>
+          Name of internal network DHCP server should attach to.
+        </desc>
+      </param>
+      <param name="trunkName" type="wstring" dir="in">
+        <desc>
+          Name of internal network trunk.
+        </desc>
+      </param>
+      <param name="trunkType" type="wstring" dir="in">
+        <desc>
+          Type of internal network trunk.
+        </desc>
+      </param>
+    </method>
+
+    <method name="stop">
+      <desc>
+        Stops DHCP server process.
+        <result name="E_FAIL">
+          Failed to stop the process.
+        </result>
+      </desc>
     </method>
   </interface>
 

@@ -61,6 +61,7 @@
 #include "SystemPropertiesImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "Version.h"
+#include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
 
 #include "VirtualBoxXMLUtil.h"
