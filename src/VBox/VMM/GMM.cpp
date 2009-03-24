@@ -109,7 +109,14 @@ GMMR3DECL(int) GMMR3AllocatePagesPerform(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
     {
         int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_ALLOCATE_PAGES, 0, &pReq->Hdr);
         if (RT_SUCCESS(rc))
+        {
+#ifdef LOG_ENABLED
+            for (uint32_t iPage = 0; iPage < pReq->cPages; iPage++)
+                Log3(("GMMR3AllocatePagesPerform: idPage=%#x HCPhys=%RHp\n",
+                      pReq->aPages[iPage].idPage, pReq->aPages[iPage].HCPhysGCPhys));
+#endif
             return rc;
+        }
         if (rc != VERR_GMM_SEED_ME)
             return VMSetError(pVM, rc, RT_SRC_POS,
                               N_("GMMR0AllocatePages failed to allocate %u pages"),
