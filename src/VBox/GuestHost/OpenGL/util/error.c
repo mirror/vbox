@@ -174,7 +174,7 @@ DECLEXPORT(void) crError( char *format, ... )
 #endif
     va_start( args, format );
     vsprintf( txt + offset, format, args );
-#if defined(IN_GUEST) || defined(DEBUG_leo) || defined(DEBUG_ll158262)
+#if defined(IN_GUEST)
     outputChromiumMessage( stderr, txt );
 #else
     LogRel(("%s\n", txt));
@@ -226,7 +226,7 @@ DECLEXPORT(void) crWarning( char *format, ... )
         offset = sprintf( txt, "OpenGL Warning: ");
         va_start( args, format );
         vsprintf( txt + offset, format, args );
-#if defined(IN_GUEST) || defined(DEBUG_leo) || defined(DEBUG_ll158262)
+#if defined(IN_GUEST)
         outputChromiumMessage( stderr, txt );
 #else
         LogRel(("%s\n", txt));
@@ -249,7 +249,7 @@ DECLEXPORT(void) crInfo( char *format, ... )
     offset = sprintf( txt, "OpenGL Info: ");
     va_start( args, format );
     vsprintf( txt + offset, format, args );
-#if defined(IN_GUEST) || defined(DEBUG_leo) || defined(DEBUG_ll158262)
+#if defined(IN_GUEST)
     outputChromiumMessage( stderr, txt );
 #else
     LogRel(("%s\n", txt));
@@ -352,7 +352,7 @@ DECLEXPORT(void) crDebug( char *format, ... )
 #endif
     va_start( args, format );
     vsprintf( txt + offset, format, args );
-#if defined(IN_GUEST) || defined(DEBUG_leo) || defined(DEBUG_ll158262)
+#if defined(IN_GUEST)
     outputChromiumMessage( output, txt );
 #else
     if (output==stderr)
