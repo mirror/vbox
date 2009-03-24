@@ -36,7 +36,7 @@ ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
 endif
 #VBoxGuest_DEFS       += LOG_ENABLED
 VBoxGuest_INCS        = \
-	../include	
+	../include
 VBoxGuest_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxGuest_LDFLAGS.amd64 = -Entry:DriverEntry
 VBoxGuest_SOURCES       = \
@@ -51,7 +51,7 @@ VBoxGuest_LIBS        = \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 
 ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
- #VBoxGuest_SDKS = WINDDKWLH
+ VBoxGuest_SDKS = WINDDKWLH
  VBoxGuest_LIBS = \
 	$(PATH_SDK_WINDDKWLH_LIB)/ksecdd.lib \
 	$(PATH_SDK_WINDDKWLH_LIB)/BufferOverflowK.lib \

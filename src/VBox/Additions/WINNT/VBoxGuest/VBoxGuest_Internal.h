@@ -124,10 +124,6 @@ typedef struct _BASE_ADDRESS {
 
 } BASE_ADDRESS, *PBASE_ADDRESS;
 
-typedef struct 
-{
-    KBUGCHECK_CALLBACK_RECORD bugcheckRecord;
-} VBOXBUGCHECKCONTEXT, *PVBOXBUGCHECKCONTEXT;
 
 /**
  * Device extension.
@@ -219,9 +215,10 @@ typedef struct VBOXGUESTDEVEXT
     /* Preallocated generic request for shutdown. */
     VMMDevPowerStateRequest *powerStateRequest;
 
-    /* Bugcheck context. */
+    /** Is the bugcheck callback registered? */
     BOOLEAN bBugcheckCallbackRegistered;
-    PVBOXBUGCHECKCONTEXT bugcheckContext;
+    /** The bugcheck registration record. */
+    KBUGCHECK_CALLBACK_RECORD bugcheckRecord;
 
 } VBOXGUESTDEVEXT, *PVBOXGUESTDEVEXT;
 
@@ -245,7 +242,7 @@ extern winVersion_t winVersion;
 typedef struct VBOXGUESTSESSION
 {
     /** Array containing HGCM client IDs associated with this session.
-     * This will be automatically disconnected when the session is closed. 
+     * This will be automatically disconnected when the session is closed.
      * Note that array size also affects/is maximum number of supported opengl threads per guest process.
      */
     uint32_t volatile           aHGCMClientIds[8];
