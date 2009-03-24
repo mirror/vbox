@@ -495,6 +495,43 @@ SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg,
  */
 SUPR3DECL(int) SUPR3CallR0Service(const char *pszService, size_t cchService, uint32_t uOperation, uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr);
 
+/** Which logger. */
+typedef enum SUPLOGGER
+{
+    SUPLOGGER_DEBUG = 1,
+    SUPLOGGER_RELEASE
+} SUPLOGGER;
+
+/**
+ * Changes the settings of the specified ring-0 logger.
+ *
+ * @returns VBox status code.
+ * @param   enmWhich    Which logger.
+ * @param   pszFlags    The flags settings.
+ * @param   pszGroups   The groups settings.
+ * @param   pszDest     The destionation specificier.
+ */
+SUPR3DECL(int) SUPR3LoggerSettings(SUPLOGGER enmWhich, const char *pszFlags, const char *pszGroups, const char *pszDest);
+
+/**
+ * Creates a ring-0 logger instance.
+ *
+ * @returns VBox status code.
+ * @param   enmWhich    Which logger to create.
+ * @param   pszFlags    The flags settings.
+ * @param   pszGroups   The groups settings.
+ * @param   pszDest     The destionation specificier.
+ */
+SUPR3DECL(int) SUPR3LoggerCreate(SUPLOGGER enmWhich, const char *pszFlags, const char *pszGroups, const char *pszDest);
+
+/**
+ * Destroys a ring-0 logger instance.
+ *
+ * @returns VBox status code.
+ * @param   enmWhich    Which logger.
+ */
+SUPR3DECL(int) SUPR3LoggerDestroy(SUPLOGGER enmWhich);
+
 /**
  * Queries the paging mode of the host OS.
  *

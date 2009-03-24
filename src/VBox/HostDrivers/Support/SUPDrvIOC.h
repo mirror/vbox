@@ -903,10 +903,10 @@ typedef struct SUPCALLSERVICE
  *
  * @{
  */
-#define SUP_IOCTL_PAGE_ALLOC_EX                     SUP_CTL_CODE_BIG(23)
-#define SUP_IOCTL_PAGE_ALLOC_EX_SIZE(cPages)        RT_UOFFSETOF(SUPPAGEALLOCEX, u.Out.aPages[cPages])
-#define SUP_IOCTL_PAGE_ALLOC_EX_SIZE_IN             (sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPPAGEALLOCEX, u.In))
-#define SUP_IOCTL_PAGE_ALLOC_EX_SIZE_OUT(cPages)    SUP_IOCTL_PAGE_ALLOC_EX_SIZE(cPages)
+#define SUP_IOCTL_PAGE_ALLOC_EX                         SUP_CTL_CODE_BIG(23)
+#define SUP_IOCTL_PAGE_ALLOC_EX_SIZE(cPages)            RT_UOFFSETOF(SUPPAGEALLOCEX, u.Out.aPages[cPages])
+#define SUP_IOCTL_PAGE_ALLOC_EX_SIZE_IN                 (sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPPAGEALLOCEX, u.In))
+#define SUP_IOCTL_PAGE_ALLOC_EX_SIZE_OUT(cPages)        SUP_IOCTL_PAGE_ALLOC_EX_SIZE(cPages)
 typedef struct SUPPAGEALLOCEX
 {
     /** The header. */
@@ -951,10 +951,10 @@ typedef struct SUPPAGEALLOCEX
  *
  * @{
  */
-#define SUP_IOCTL_PAGE_MAP_KERNEL                     SUP_CTL_CODE_SIZE(24, SUP_IOCTL_PAGE_MAP_KERNEL_SIZE)
-#define SUP_IOCTL_PAGE_MAP_KERNEL_SIZE                sizeof(SUPPAGEMAPKERNEL)
-#define SUP_IOCTL_PAGE_MAP_KERNEL_SIZE_IN             sizeof(SUPPAGEMAPKERNEL)
-#define SUP_IOCTL_PAGE_MAP_KERNEL_SIZE_OUT            sizeof(SUPPAGEMAPKERNEL)
+#define SUP_IOCTL_PAGE_MAP_KERNEL                       SUP_CTL_CODE_SIZE(24, SUP_IOCTL_PAGE_MAP_KERNEL_SIZE)
+#define SUP_IOCTL_PAGE_MAP_KERNEL_SIZE                  sizeof(SUPPAGEMAPKERNEL)
+#define SUP_IOCTL_PAGE_MAP_KERNEL_SIZE_IN               sizeof(SUPPAGEMAPKERNEL)
+#define SUP_IOCTL_PAGE_MAP_KERNEL_SIZE_OUT              sizeof(SUPPAGEMAPKERNEL)
 typedef struct SUPPAGEMAPKERNEL
 {
     /** The header. */
@@ -979,6 +979,53 @@ typedef struct SUPPAGEMAPKERNEL
         } Out;
     } u;
 } SUPPAGEMAPKERNEL, *PSUPPAGEMAPKERNEL;
+/** @} */
+
+
+/** @name SUP_IOCTL_LOGGER_SETTINGS
+ * Changes the ring-0 release or debug logger settings.
+ * @{
+ */
+#define SUP_IOCTL_LOGGER_SETTINGS(cbStrTab)             SUP_CTL_CODE_SIZE(25, SUP_IOCTL_LOGGER_SETTINGS_SIZE(cbStrTab))
+#define SUP_IOCTL_LOGGER_SETTINGS_SIZE(cbStrTab)        RT_UOFFSETOF(SUPLOGGERSETTINGS, u.In.szStrings[cbStrTab])
+#define SUP_IOCTL_LOGGER_SETTINGS_SIZE_IN(cbStrTab)     RT_UOFFSETOF(SUPLOGGERSETTINGS, u.In.szStrings[cbStrTab])
+#define SUP_IOCTL_LOGGER_SETTINGS_SIZE_OUT              sizeof(SUPREQHDR)
+typedef struct SUPLOGGERSETTINGS
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Which logger. */
+            uint32_t        fWhich;
+            /** What to do with it. */
+            uint32_t        fWhat;
+            /** Offset of the flags setting string. */
+            uint32_t        offFlags;
+            /** Offset of the groups setting string. */
+            uint32_t        offGroups;
+            /** Offset of the destination setting string. */
+            uint32_t        offDestination;
+            /** The string table. */
+            char            szStrings[1];
+        } In;
+    } u;
+} SUPLOGGERSETTINGS, *PSUPLOGGERSETTINGS;
+
+/** Debug logger. */
+#define SUPLOGGERSETTINGS_WHICH_DEBUG       0
+/** Release logger. */
+#define SUPLOGGERSETTINGS_WHICH_RELEASE     1
+
+/** Change the settings. */
+#define SUPLOGGERSETTINGS_WHAT_SETTINGS     0
+/** Create the logger instance. */
+#define SUPLOGGERSETTINGS_WHAT_CREATE       1
+/** Destroy the logger instance. */
+#define SUPLOGGERSETTINGS_WHAT_DESTROY      2
+
 /** @} */
 
 
