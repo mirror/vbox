@@ -3453,7 +3453,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Des disques durs sont raccordés aux ports SATA de cette machine virtuelle. Si vous désactivez le contrôleur SATA, tous les disques seront automatiquement détachés.&lt;/p&gt;Désirez-vous vraiment  désactivez le contrôleur SATA ?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Des disques durs sont raccordés aux ports SATA de cette machine virtuelle. Si vous désactivez le contrôleur SATA, tous les disques seront automatiquement détachés.&lt;/p&gt;Désirez-vous vraiment désactivez le contrôleur SATA ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Disable</source>
@@ -5155,7 +5155,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation>Activez l&apos;accélération &amp;3D</translation>
+        <translation>Activer l&apos;accélération &amp;3D</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
