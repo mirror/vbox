@@ -3338,6 +3338,13 @@
         <link to="IMachine" /> name that does not exist yet.
       </li>
       <li>
+          "Description": an arbitrary description.
+      </li>
+      <li>
+          "License": the EULA section from the OVF, if present. It is the responsibility of the calling
+          code to display such a license for agreement; the Main API does not enforce any such policy.
+      </li>
+      <li>
         "CPU": the number of CPUs. There can be at most one such item, which will presently be ignored.
       </li>
       <li>
