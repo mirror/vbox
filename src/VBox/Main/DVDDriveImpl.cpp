@@ -603,18 +603,6 @@ bool DVDDrive::rollback()
         }
 
         m.rollback();
-        if (!m->image.isNull())
-        {
-            /* Reattach from the old image. */
-            HRESULT rc = m->image->attachTo(mParent->id(), mParent->snapshotId());
-            AssertComRC (rc);
-            if (Global::IsOnline (adep.machineState()))
-            {
-                /* Lock from the old image. */
-                rc = m->image->LockRead (NULL);
-                AssertComRC (rc);
-            }
-        }
     }
 
     return changed;
