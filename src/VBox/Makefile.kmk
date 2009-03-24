@@ -27,7 +27,7 @@ ifdef VBOX_SINGLE_MAKEFILE
 ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  ifdef VBOX_WITH_CROGL
-  if1of ($(KBUILD_TARGET),win linux)  ## @todo add Solaris here?
+  if1of ($(KBUILD_TARGET),win linux solaris)
    include $(PATH_SUB_CURRENT)/GuestHost/Makefile.kmk
   endif
  endif
