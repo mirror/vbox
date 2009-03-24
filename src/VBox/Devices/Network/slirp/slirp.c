@@ -100,7 +100,7 @@
             DO_ENGAGE_EVENT1((so), fdset, ICMP);    \
     } while (0)
 # else /* !RT_OS_WINDOWS */
-#  ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC 
+#  ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 #   define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
 #  else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 #   define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0
@@ -334,24 +334,24 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     char *suffix;
     struct dns_entry *da = NULL;
     ULONG ret = ERROR_SUCCESS;
-    
+
     /* @todo add SKIPing flags to get only required information */
 
     ret = pData->pfGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, addresses, &size);
-    if (ret != ERROR_BUFFER_OVERFLOW) 
+    if (ret != ERROR_BUFFER_OVERFLOW)
     {
         LogRel(("NAT: error %lu occured on capacity detection operation\n", ret));
         return -1;
     }
-    
-    if (size == 0) 
+
+    if (size == 0)
     {
         LogRel(("NAT: Win socket API returns non capacity\n"));
         return -1;
     }
-    
+
     addresses = RTMemAllocZ(size);
-    if (addresses == NULL) 
+    if (addresses == NULL)
     {
         LogRel(("NAT: No memory available \n"));
         return -1;
@@ -361,16 +361,16 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     if (ret != ERROR_SUCCESS)
     {
         LogRel(("NAT: error %lu occured on fetching adapters info\n", ret));
-        return -1; 
+        return -1;
     }
     addr = addresses;
-    while(addr != NULL) 
+    while(addr != NULL)
     {
         size_t buff_size;
         if (addr->OperStatus != IfOperStatusUp)
             goto next;
         dns = addr->FirstDnsServerAddress;
-        while (dns != NULL) 
+        while (dns != NULL)
         {
             struct sockaddr *saddr = dns->Address.lpSockaddr;
             if (saddr->sa_family != AF_INET)
@@ -385,28 +385,28 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             LogRel(("NAT: adding %R[IP4] to DNS server list\n", &((struct sockaddr_in *)saddr)->sin_addr));
             if ((((struct sockaddr_in *)saddr)->sin_addr.s_addr & htonl(IN_CLASSA_NET)) == ntohl(INADDR_LOOPBACK & IN_CLASSA_NET)) {
                 da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
-            } 
-            else 
+            }
+            else
             {
                 da->de_addr.s_addr = ((struct sockaddr_in *)saddr)->sin_addr.s_addr;
             }
             LIST_INSERT_HEAD(&pData->dns_list_head, da, de_list);
-        next_dns:    
+        next_dns:
             dns = dns->Next;
         }
         buff_size = wcstombs(NULL, addr->DnsSuffix, 0);
-        if (buff_size == 0) 
+        if (buff_size == 0)
             goto next;
-        suffix = RTMemAllocZ(buff_size);
+        suffix = RTMemAllocZ(buff_size + 1);
         wcstombs(suffix, addr->DnsSuffix, buff_size);
         LogRel(("NAT: adding %s to DNS suffix list\n", suffix));
         *ppszDomain = suffix;
-        next:
+    next:
         addr = addr->Next;
     }
     /*@todo add dns suffix if required */
     LogRel(("NAT: adding dns suffix %s to the list \n", ppszDomain));
-    return 0; 
+    return 0;
 }
 # endif /* VBOX_WITH_MULTI_DNS */
 
@@ -870,10 +870,10 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
                 {
 #ifdef VBOX_WITH_SLIRP_DNS_PROXY
                     Log2(("NAT: %R[natsock] expired\n", so));
-                    if (so->so_timeout != NULL) 
+                    if (so->so_timeout != NULL)
                     {
                         so->so_timeout(pData, so, so->so_timeout_arg);
-                    } 
+                    }
 #endif
 #ifdef VBOX_WITH_SLIRP_MT
                     /* we need so_next for continue our cycle*/
@@ -1206,7 +1206,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 socklen_t optlen = sizeof(int);
                 inq = outq = 0;
                 status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
-                if (status != 0) 
+                if (status != 0)
                     Log(("NAT: can't get error status from %R[natsock]\n", so));
 #ifndef RT_OS_SOLARIS
                 status = ioctl(so->s, FIONREAD, &inq); /* tcp(7) recommends SIOCINQ which is Linux specific */
@@ -1216,27 +1216,27 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                     Log(("NAT: can't get depth of IN queue status from %R[natsock]\n", so));
                 }
                 status = ioctl(so->s, TIOCOUTQ, &outq); /* SIOCOUTQ see previous comment */
-                if (status != 0) 
+                if (status != 0)
                     Log(("NAT: can't get depth of OUT queue from %R[natsock]\n", so));
 #else
                 /*
                  * Solaris has bit different ioctl commands and its handlings
-                 * hint: streamio(7) I_NREAD 
+                 * hint: streamio(7) I_NREAD
                  */
 #endif
                 if (   so->so_state & SS_ISFCONNECTING
                     || UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
                 {
                     /**
-                     * Check if we need here take care about gracefull connection 
+                     * Check if we need here take care about gracefull connection
                      * @todo try with proxy server
                      */
                     if (UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
                     {
                         /*
-                         * Never meet inq != 0 or outq != 0, anyway let it stay for a while 
-                         * in case it happens we'll able to detect it. 
-                         * Give TCP/IP stack wait or expire the socket. 
+                         * Never meet inq != 0 or outq != 0, anyway let it stay for a while
+                         * in case it happens we'll able to detect it.
+                         * Give TCP/IP stack wait or expire the socket.
                          */
                         Log(("NAT: %R[natsock] err(%d:%s) s(in:%d,out:%d)happens on read I/O, "
                             "other side close connection \n", so, err, strerror(err), inq, outq));
@@ -1246,14 +1246,14 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 }
                 if (   !UNIX_CHECK_FD_SET(so, NetworkEvents, readfds)
                     && !UNIX_CHECK_FD_SET(so, NetworkEvents, writefds)
-                    && !UNIX_CHECK_FD_SET(so, NetworkEvents, xfds)) 
+                    && !UNIX_CHECK_FD_SET(so, NetworkEvents, xfds))
                 {
                     Log(("NAT: system expires the socket %R[natsock] err(%d:%s) s(in:%d,out:%d) happens on non-I/O. ",
                             so, err, strerror(err), inq, outq));
                     goto tcp_input_close;
                 }
                 Log(("NAT: %R[natsock] we've met(%d:%s) s(in:%d, out:%d) unhandled combination hup (%d) "
-                    "rederr(%d) on (r:%d, w:%d, x:%d)\n", 
+                    "rederr(%d) on (r:%d, w:%d, x:%d)\n",
                         so, err, strerror(err),
                         inq, outq,
                         UNIX_CHECK_FD_SET(so, ign, rdhup),
@@ -1261,7 +1261,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                         UNIX_CHECK_FD_SET(so, ign, readfds),
                         UNIX_CHECK_FD_SET(so, ign, writefds),
                         UNIX_CHECK_FD_SET(so, ign, xfds)));
-                /* 
+                /*
                  * Give OS's TCP/IP stack a chance to resolve an issue or expire the socket.
                  */
                 CONTINUE(tcp);
@@ -1647,17 +1647,17 @@ uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport)
 {
     uint16_t hdport, hsport, service;
     hdport = ntohs(dport);
-    hsport = ntohs(sport); 
+    hsport = ntohs(sport);
     Log2(("proto: %d, dport: %d sport: %d\n", proto, hdport, hsport));
     service = 0;
 #if 0
     /* Always return 0 here */
-    switch (hdport) 
+    switch (hdport)
     {
         case 500:
                 /* service = sport; */
         break;
-    } 
+    }
 #endif
     Log2(("service : %d\n", service));
     return htons(service);
