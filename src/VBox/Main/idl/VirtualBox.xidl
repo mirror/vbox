@@ -3223,7 +3223,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="8ac36d00-bb7c-4a35-a835-3f004b27427b"
+    uuid="325e7fec-ce06-4174-9654-98f99478d03f"
   >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -3232,17 +3232,32 @@
     <const name="OS" value="2" />
     <const name="Name" value="3" />
     <const name="Description" value="4" />
-    <const name="CPU" value="5" />
-    <const name="Memory" value="6" />
-    <const name="HardDiskControllerIDE" value="7" />
-    <const name="HardDiskControllerSATA" value="8" />
-    <const name="HardDiskControllerSCSI" value="9" />
-    <const name="HardDiskImage" value="10" />
-    <const name="Floppy" value="11" />
-    <const name="CDROM" value="12" />
-    <const name="NetworkAdapter" value="13" />
-    <const name="USBController" value="14" />
-    <const name="SoundCard" value="15" />
+    <const name="License" value="5" />
+    <const name="CPU" value="6" />
+    <const name="Memory" value="7" />
+    <const name="HardDiskControllerIDE" value="8" />
+    <const name="HardDiskControllerSATA" value="9" />
+    <const name="HardDiskControllerSCSI" value="10" />
+    <const name="HardDiskImage" value="11" />
+    <const name="Floppy" value="12" />
+    <const name="CDROM" value="13" />
+    <const name="NetworkAdapter" value="14" />
+    <const name="USBController" value="15" />
+    <const name="SoundCard" value="16" />
+
+  </enum>
+
+  <enum
+    name="VirtualSystemDescriptionValueType"
+    uuid="56d9403f-3425-4118-9919-36f2a9b8c77c"
+  >
+    <desc>Used with <link to="GetValuesByType" /> to describe the value 
+    type to fetch.</desc>
+
+    <const name="Reference" value="1" />
+    <const name="Original" value="2" />
+    <const name="Auto" value="3" />
+    <const name="ExtraConfig" value="4" />
 
   </enum>
 
@@ -3400,6 +3415,25 @@
       </param>
 
       <param name="aExtraConfigValues" type="wstring" dir="out" safearray="yes">
+        <desc></desc>
+      </param>
+
+    </method>
+
+    <method name="getValuesByType">
+      <desc>This is the same as <link to="getDescriptionByType" /> except that you can specify which
+      value types should be returned. See <link to="VirtualSystemDescriptionValueType" /> for possible 
+      values.</desc>
+
+      <param name="aType" type="VirtualSystemDescriptionType" dir="in">
+        <desc></desc>
+      </param>
+
+      <param name="aWhich" type="VirtualSystemDescriptionValueType" dir="in">
+        <desc></desc>
+      </param>
+
+      <param name="aValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
