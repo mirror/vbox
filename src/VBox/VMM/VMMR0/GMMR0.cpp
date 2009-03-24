@@ -1318,6 +1318,8 @@ DECLINLINE(void) gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet)
         pChunk->pFreePrev = NULL;
         unsigned iList = (pChunk->cFree - 1) >> GMM_CHUNK_FREE_SET_SHIFT;
         pChunk->pFreeNext = pSet->apLists[iList];
+        if (pChunk->pFreeNext)
+            pChunk->pFreeNext->pFreePrev = pChunk;
         pSet->apLists[iList] = pChunk;
 
         pSet->cPages += pChunk->cFree;
@@ -1998,6 +2000,8 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
  */
 static void gmmR0FreeChunk(PGMM pGMM, PGMMCHUNK pChunk)
 {
+    Assert(pChunk->Core.Key != NIL_GMM_CHUNKID);
+
     /*
      * If there are current mappings of the chunk, then request the
      * VMs to unmap them. Reposition the chunk in the free list so
@@ -2026,7 +2030,7 @@ static void gmmR0FreeChunk(PGMM pGMM, PGMMCHUNK pChunk)
             PAVLU32NODECORE pCore = RTAvlU32Remove(&pGMM->pChunks, pChunk->Core.Key);
             Assert(pCore == &pChunk->Core); NOREF(pCore);
 
-            PGMMCHUNKTLBE pTlbe = &pGMM->ChunkTLB.aEntries[GMM_CHUNKTLB_IDX(pCore->Key)];
+            PGMMCHUNKTLBE pTlbe = &pGMM->ChunkTLB.aEntries[GMM_CHUNKTLB_IDX(pChunk->Key)];
             if (pTlbe->pChunk == pChunk)
             {
                 pTlbe->idChunk = NIL_GMM_CHUNKID;
