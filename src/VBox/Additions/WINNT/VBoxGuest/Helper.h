@@ -63,7 +63,12 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt);
  */
 NTSTATUS hlpRegisterBugCheckCallback (PVBOXGUESTDEVEXT pDevExt);
 
-VOID hlpVBoxGuestBugCheckCallback (PVOID pvBuffer, ULONG ulLength);
+/**
+ * Helper for deregistering the bugcheck callback rountine(s).
+ *
+ * @param pDevExt   VMMDev device extension
+ */
+void hlpDeregisterBugCheckCallback (PVBOXGUESTDEVEXT pDevExt);
 #endif
 }
 

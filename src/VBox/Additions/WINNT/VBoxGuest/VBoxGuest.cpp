@@ -31,11 +31,6 @@
 #endif
 #include "Helper.h"
 #include <excpt.h>
-#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
- #ifndef TARGET_NT4
-  #include <aux_klib.h>
- #endif
-#endif
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -46,8 +41,9 @@
 #include <VBoxGuestInternal.h>
 
 #ifdef TARGET_NT4
-/* XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist on NT4, so...
- * The same for ExAllocatePool.
+/*
+ * XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist
+ * on NT4, so... The same for ExAllocatePool.
  */
 #undef ExAllocatePool
 #undef ExFreePool
@@ -246,7 +242,7 @@ static NTSTATUS VBoxGuestAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevOb
 #endif
 
 #ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-    rc = hlpRegisterBugCheckCallback(pDevExt);
+    hlpRegisterBugCheckCallback(pDevExt); /* ignore failure! */
 #endif
 
     /* Driver is ready now. */
@@ -292,19 +288,7 @@ void VBoxGuestUnload(PDRIVER_OBJECT pDrvObj)
     VBoxCleanupMemBalloon(pDevExt);
 
 #ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-    /* Unregister bugcheck callback. */
-    if (pDevExt->bugcheckContext)
-    {
-        if (pDevExt->bBugcheckCallbackRegistered)
-        {
-            if (FALSE == KeDeregisterBugCheckCallback(&pDevExt->bugcheckContext->bugcheckRecord))
-                dprintf(("VBoxGuest::VBoxGuestUnload: Unregistering bugcheck callback routine failed!\n"));
-        }
-
-        ExFreePool(&pDevExt->bugcheckContext);
-        pDevExt->bugcheckContext = NULL;
-        pDevExt->bBugcheckCallbackRegistered = FALSE;
-    }
+    hlpDeregisterBugCheckCallback(pDevExt); /* ignore failure! */
 #endif
 
     /*
@@ -1712,7 +1696,7 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
                     RT_ALIGN_P(pDevExt->hypervisorMapping, 0x400000)));
 
             /* align at 4MB */
-            req->hypervisorStart = (RTGCPTR)RT_ALIGN_P(pDevExt->hypervisorMapping, 0x400000);
+            req->hypervisorStart = (uintptr_t)RT_ALIGN_P(pDevExt->hypervisorMapping, 0x400000);
 
             req->header.requestType = VMMDevReq_SetHypervisorInfo;
             req->header.rc          = VERR_GENERAL_FAILURE;

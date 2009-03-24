@@ -1,7 +1,8 @@
 /** @file
- *
  * VBoxGuest -- VirtualBox Win32 guest support driver
- *
+ */
+
+/*
  * Copyright (C) 2006-2007 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -26,9 +27,9 @@
 #include <VBox/VBoxGuestLib.h>
 
 #ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
- #ifndef TARGET_NT4
-  #include <aux_klib.h>
- #endif
+# ifndef TARGET_NT4
+#  include <aux_klib.h>
+# endif
 #endif
 
 #ifdef ALLOC_PRAGMA
@@ -253,80 +254,99 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
 }
 
 #ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-NTSTATUS hlpRegisterBugCheckCallback (PVBOXGUESTDEVEXT pDevExt)
+/**
+ * Called when a bug check occurs.
+ *
+ * @param   pvBuffer        Pointer to our device extension, just in case it
+ *                          comes in handy some day.
+ * @param   cbBuffer        The size of our device extension.
+ */
+static VOID hlpVBoxGuestBugCheckCallback(PVOID pvBuffer, ULONG cbBuffer)
 {
-    int rc = STATUS_SUCCESS;
+    /*PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvBuffer;*/
 
- #ifndef TARGET_NT4
+    LogRelBackdoor(("Windows bug check (bluescreen) detected!\n"));
+
+# ifndef TARGET_NT4
+    /*
+     * Try get details.
+     */
+    KBUGCHECK_DATA bugCheckData;
+    bugCheckData.BugCheckDataSize = sizeof(KBUGCHECK_DATA);
+    NTSTATUS rc = AuxKlibGetBugCheckData(&bugCheckData);
+    if (NT_SUCCESS(rc))
+    {
+        LogRelBackdoor(("Bug check code: 0x%08x\n", bugCheckData.BugCheckCode));
+        LogRelBackdoor(("Bug check parameters: 1=0x%p 2=0x%p 3=0x%p 4=0x%p\n",
+                        bugCheckData.Parameter1,
+                        bugCheckData.Parameter2,
+                        bugCheckData.Parameter3,
+                        bugCheckData.Parameter4));
+        LogRelBackdoor(("For details run \"!analyze -show %x %p %p %p %p\" in WinDbg.\n",
+                        bugCheckData.BugCheckCode,
+                        bugCheckData.Parameter1,
+                        bugCheckData.Parameter2,
+                        bugCheckData.Parameter3,
+                        bugCheckData.Parameter4));
+    }
+    else
+        LogRelBackdoor(("Unable to retrieve bugcheck details! Error: %#x\n", rc));
+# else  /* NT4 */
+    LogRelBackdoor(("No additional information for Windows NT 4.0 bugcheck available.\n"));
+# endif /* NT4 */
+
+    /*
+     * Notify the host that we've panicked.
+     */
+    /** @todo Notify the host somehow over DevVMM. */
+
+    NOREF(pvBuffer); NOREF(cbBuffer);
+}
+
+NTSTATUS hlpRegisterBugCheckCallback(PVBOXGUESTDEVEXT pDevExt)
+{
+    NTSTATUS rc = STATUS_SUCCESS;
+    pDevExt->bBugcheckCallbackRegistered = FALSE;
+
+# ifndef TARGET_NT4
+    /*
+     * This is required for calling AuxKlibGetBugCheckData() in hlpVBoxGuestBugCheckCallback().
+     */
     rc = AuxKlibInitialize();
     if (NT_ERROR(rc))
     {
-        dprintf(("VBoxGuest::hlpRegisterBugCheckCallback: Unabled to initialize AuxKlib!\n"));
+        dprintf(("VBoxGuest::hlpRegisterBugCheckCallback: Unabled to initialize AuxKlib! rc=%#x\n", rc));
         return STATUS_DRIVER_UNABLE_TO_LOAD;
     }
- #endif
+# endif
 
     /*
-     * Setup bugcheck callback routine ASAP.
+     * Setup bugcheck callback routine.
      */
     pDevExt->bBugcheckCallbackRegistered = FALSE;
-    pDevExt->bugcheckContext = (VBOXBUGCHECKCONTEXT*)ExAllocatePool(NonPagedPool, sizeof(VBOXBUGCHECKCONTEXT));
-    if(!pDevExt->bugcheckContext)
-    {
-        dprintf(("VBoxGuest::hlpRegisterBugCheckCallback: Not enough memory for bugcheck context!\n"));
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    KeInitializeCallbackRecord(&pDevExt->bugcheckContext->bugcheckRecord);
-    if (FALSE == KeRegisterBugCheckCallback(&pDevExt->bugcheckContext->bugcheckRecord,
-                                            &hlpVBoxGuestBugCheckCallback,
-                                            pDevExt->bugcheckContext,
-                                            sizeof(VBOXBUGCHECKCONTEXT),
-                                            (PUCHAR)"VBoxGuest"))
-    {
-        LogRelBackdoor(("Could not register bugcheck callback routine!\n"));
-    }
-    else
+    KeInitializeCallbackRecord(&pDevExt->bugcheckRecord);
+    if (KeRegisterBugCheckCallback(&pDevExt->bugcheckRecord,
+                                   &hlpVBoxGuestBugCheckCallback,
+                                   pDevExt,
+                                   sizeof(*pDevExt),
+                                   (PUCHAR)"VBoxGuest"))
     {
         pDevExt->bBugcheckCallbackRegistered = TRUE;
         dprintf(("VBoxGuest::hlpRegisterBugCheckCallback: Bugcheck callback registered.\n"));
     }
+    else
+        LogRelBackdoor(("Could not register bugcheck callback routine!\n"));
 
     return rc;
 }
 
-VOID hlpVBoxGuestBugCheckCallback(PVOID pvBuffer, ULONG ulLength)
+void hlpDeregisterBugCheckCallback(PVBOXGUESTDEVEXT pDevExt)
 {
-    NTSTATUS rc = 0;
-    PVBOXBUGCHECKCONTEXT pContext = (PVBOXBUGCHECKCONTEXT)pvBuffer;
-
-    LogRelBackdoor(("Windows bugcheck (bluescreen) detected!\n"));
-
-#ifndef TARGET_NT4
-    KBUGCHECK_DATA bugcheckData;
-    bugcheckData.BugCheckDataSize = sizeof(KBUGCHECK_DATA);
-    rc = AuxKlibGetBugCheckData(&bugcheckData);
-    if (!RT_SUCCESS(rc))
+    if (pDevExt->bBugcheckCallbackRegistered)
     {
-        LogRelBackdoor(("Unable to retrieve bugcheck details! Error: %d\n", rc));
-        return;
+        if (!KeDeregisterBugCheckCallback(&pDevExt->bugcheckRecord))
+            dprintf(("VBoxGuest::VBoxGuestUnload: Unregistering bugcheck callback routine failed!\n"));
+        pDevExt->bBugcheckCallbackRegistered = FALSE;
     }
-
-    LogRelBackdoor(("Bugcheck code: 0x%08x\n", bugcheckData.BugCheckCode));
-    LogRelBackdoor(("Bugcheck parameters: 1=%ld 2=%ld 3=%ld 4=%ld\n", 
-                   bugcheckData.Parameter1,
-                   bugcheckData.Parameter2,
-                   bugcheckData.Parameter3,
-                   bugcheckData.Parameter4));
-#else
-    LogRelBackdoor(("No additional information for Windows NT 4.0 bugcheck available.\n"));
-#endif
-
-    if (pvBuffer)
-    {
-        /* @todo - Not used yet. */
-    }
-
-    /* @todo Notify the host somehow over DevVMM. */
 }
 #endif
