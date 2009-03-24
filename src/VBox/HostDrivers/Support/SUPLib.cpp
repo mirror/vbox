@@ -322,7 +322,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
                                 ASMAtomicCmpXchgPtr((void * volatile *)&g_pSUPGlobalInfoPageR0, (void *)GipMapReq.u.Out.pGipR0, NULL);
                             }
                         }
-                        return VINF_SUCCESS;
+                        return rc;
                     }
 
                     /* bailout */
