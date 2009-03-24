@@ -119,6 +119,11 @@
  *      xpcom/include/nsprpub/prtypes.h
  *      xpcom/include/xpcom/nsISupportsBase.h
  *
+ * These files were originally triple-licensed (MPL/GPL2/LGPL2.1). Sun
+ * elects to distribute this derived work under the LGPL2.1 only.
+ */
+
+/*
  * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
