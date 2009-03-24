@@ -3296,7 +3296,7 @@
 
   <interface
      name="IVirtualSystemDescription" extends="$unknown"
-     uuid="c2e9f5b5-522c-47e5-be55-0d20b46a95d9"
+     uuid="d7525e6c-531a-4c51-8e04-41235083a3d8"
      wsmap="managed"
      >
 
@@ -3500,6 +3500,27 @@
       </param>
 
       <param name="aExtraConfigValues" type="wstring" dir="in" safearray="yes">
+        <desc></desc>
+      </param>
+    </method>
+
+    <method name="addDescription">
+      <desc>
+      This method adds an additional description entry to the stack of already
+      available descriptions for this virtual system. This is handy for writing
+      values which aren't directly supported by VirtualBox. One example would
+      be the License type of <link to="VirtualSystemDescriptionType" />.
+      </desc>
+
+      <param name="aType" type="VirtualSystemDescriptionType" dir="in">
+        <desc></desc>
+      </param>
+
+      <param name="aVboxValue" type="wstring" dir="in">
+        <desc></desc>
+      </param>
+
+      <param name="aExtraConfigValue" type="wstring" dir="in">
         <desc></desc>
       </param>
     </method>
@@ -3940,7 +3961,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="dcf6a64c-1466-4b5a-b822-9db04133dc74"
+     uuid="13420cbb-175a-4456-85d0-301126dfdec7"
      wsmap="managed"
      >
     <desc>
@@ -5053,8 +5074,11 @@
               steps required to export VirtualBox machines to OVF.
         </desc>
 
-        <param name="appliance" type="IAppliance" dir="in">
+        <param name="aAppliance" type="IAppliance" dir="in">
             <desc>Appliance to export this machine to.</desc>
+        </param>
+        <param name="aDescription" type="IVirtualSystemDescription" dir="return">
+            <desc>VirtualSystemDescription object which is created for this machine.</desc>
         </param>
     </method >
 

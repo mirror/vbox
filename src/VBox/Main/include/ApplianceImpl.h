@@ -176,6 +176,10 @@ public:
                               ComSafeArrayIn(IN_BSTR, aVboxValues),
                               ComSafeArrayIn(IN_BSTR, aExtraConfigValues));
 
+    STDMETHOD(AddDescription)(VirtualSystemDescriptionType_T aType,
+                              IN_BSTR aVboxValue,
+                              IN_BSTR aExtraConfigValue);
+
     /* public methods only for internal purposes */
 
     void addEntry(VirtualSystemDescriptionType_T aType,
