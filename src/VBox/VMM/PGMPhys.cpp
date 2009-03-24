@@ -23,7 +23,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_PGM
+#define LOG_GROUP LOG_GROUP_PGM_PHYS
 #include <VBox/pgm.h>
 #include <VBox/cpum.h>
 #include <VBox/iom.h>
@@ -2157,45 +2157,30 @@ int pgmR3PhysRomReset(PVM pVM)
              */
             if (!pVM->pgm.s.fRamPreAlloc)
             {
-                /* Count dirty shadow pages. */
-                uint32_t cDirty = 0;
-                uint32_t iPage = cPages;
-                while (iPage-- > 0)
+                /* Free the dirty pages. */
+                uint32_t            cPendingPages = 0;
+                PGMMFREEPAGESREQ    pReq;
+                rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+                AssertRCReturn(rc, rc);
+
+                for (uint32_t iPage = 0; iPage < cPages; iPage++)
                     if (PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO)
-                        cDirty++;
-                if (cDirty)
+                    {
+                        Assert(PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) == PGM_PAGE_STATE_ALLOCATED);
+                        rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, &pRom->aPages[iPage].Shadow, pRom->GCPhys + (iPage << PAGE_SHIFT));
+                        AssertLogRelRCReturn(rc, rc);
+                    }
+
+                if (cPendingPages)
                 {
-                    /* Free the dirty pages. */
-                    PGMMFREEPAGESREQ pReq;
-                    rc = GMMR3FreePagesPrepare(pVM, &pReq, cDirty, GMMACCOUNT_BASE);
-                    AssertRCReturn(rc, rc);
-
-                    uint32_t iReqPage = 0;
-                    for (iPage = 0; iPage < cPages; iPage++)
-                        if (PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO)
-                        {
-                            Assert(PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) == PGM_PAGE_STATE_ALLOCATED);
-                            pReq->aPages[iReqPage].idPage = PGM_PAGE_GET_PAGEID(&pRom->aPages[iPage].Shadow);
-                            iReqPage++;
-                        }
-
-                    rc = GMMR3FreePagesPerform(pVM, pReq, cDirty);
-                    GMMR3FreePagesCleanup(pReq);
-                    AssertRCReturn(rc, rc);
-
-                    /* setup the zero page. */
-                    for (iPage = 0; iPage < cPages; iPage++)
-                        if (PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO)
-                            PGM_PAGE_INIT_ZERO_REAL(&pRom->aPages[iPage].Shadow, pVM, PGMPAGETYPE_ROM_SHADOW);
-
-                    /* update the page count stats. */
-                    pVM->pgm.s.cPrivatePages -= cDirty;
-                    pVM->pgm.s.cZeroPages    += cDirty;
+                    rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
+                    AssertLogRelRCReturn(rc, rc);
                 }
+                GMMR3FreePagesCleanup(pReq);
             }
             else
             {
-                /* clear all the pages. */
+                /* clear all the shadow pages. */
                 for (uint32_t iPage = 0; iPage < cPages; iPage++)
                 {
                     Assert(PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO);
@@ -3071,6 +3056,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
             AssertLogRelMsgBreak(RT_SUCCESS(rc), ("idPage=%#x HCPhysGCPhys=%RHp rc=%Rrc", pPage->idPage, pPage->HCPhysGCPhys, rc));
             ASMMemZeroPage(pv);
             iClear++;
+            Log3(("PGMR3PhysAllocateHandyPages: idPage=%#x HCPhys=%RGp\n", pPage->idPage, pPage->HCPhysGCPhys));
         }
 
         VM_FF_CLEAR(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
@@ -3088,7 +3074,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
 #if 1
         for (uint32_t i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
         {
-            LogRel(("PGM: aHandyPages[#%-2d] = {.HCPhysGCPhys=%RHp, .idPage=%#08x, .idSharedPage=%#08x}\n",
+            LogRel(("PGM: aHandyPages[#%#04x] = {.HCPhysGCPhys=%RHp, .idPage=%#08x, .idSharedPage=%#08x}\n",
                     i, pVM->pgm.s.aHandyPages[i].HCPhysGCPhys, pVM->pgm.s.aHandyPages[i].idPage,
                     pVM->pgm.s.aHandyPages[i].idSharedPage));
             uint32_t const idPage = pVM->pgm.s.aHandyPages[i].idPage;
@@ -3140,7 +3126,8 @@ static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPa
      * Assert sanity.
      */
     Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
-    if (RT_UNLIKELY(PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_RAM))
+    if (RT_UNLIKELY(    PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_RAM
+                    &&  PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_ROM_SHADOW))
     {
         AssertMsgFailed(("GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
         return VMSetError(pVM, VERR_PGM_PHYS_NOT_RAM, RT_SRC_POS, "GCPhys=%RGp type=%d", GCPhys, PGM_PAGE_GET_TYPE(pPage));
@@ -3150,6 +3137,7 @@ static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPa
         return VINF_SUCCESS;
 
     const uint32_t idPage = PGM_PAGE_GET_PAGEID(pPage);
+    Log3(("pgmPhysFreePage: idPage=%#x HCPhys=%RGp pPage=%R[pgmpage]\n", idPage, pPage));
     if (RT_UNLIKELY(    idPage == NIL_GMM_PAGEID
                     ||  idPage > GMM_PAGEID_LAST
                     ||  PGM_PAGE_GET_CHUNKID(pPage) == NIL_GMM_CHUNKID))
