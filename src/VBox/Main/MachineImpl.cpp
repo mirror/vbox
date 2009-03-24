@@ -7749,27 +7749,27 @@ void Machine::rollback (bool aNotify)
         }
     }
 
-    if (mStorageControllers.isBackedUp())
-    {
-        /* unitialize all new devices (absent in the backed up list). */
-        StorageControllerList::const_iterator it = mStorageControllers->begin();
-        StorageControllerList *backedList = mStorageControllers.backedUpData();
-        while (it != mStorageControllers->end())
-        {
-            if (std::find (backedList->begin(), backedList->end(), *it ) ==
-                backedList->end())
-            {
-                (*it)->uninit();
-            }
-            ++ it;
-        }
-
-        /* restore the list */
-        mStorageControllers.rollback();
-    }
-
     if (!mStorageControllers.isNull())
     {
+        if (mStorageControllers.isBackedUp())
+        {
+            /* unitialize all new devices (absent in the backed up list). */
+            StorageControllerList::const_iterator it = mStorageControllers->begin();
+            StorageControllerList *backedList = mStorageControllers.backedUpData();
+            while (it != mStorageControllers->end())
+            {
+                if (std::find (backedList->begin(), backedList->end(), *it ) ==
+                    backedList->end())
+                {
+                    (*it)->uninit();
+                }
+                ++ it;
+            }
+
+            /* restore the list */
+            mStorageControllers.rollback();
+        }
+
         /* rollback any changes to devices after restoring the list */
         StorageControllerList::const_iterator it = mStorageControllers->begin();
         while (it != mStorageControllers->end())
@@ -7784,8 +7784,6 @@ void Machine::rollback (bool aNotify)
     mUserData.rollback();
 
     mHWData.rollback();
-
-    mStorageControllers.rollback();
 
     if (mHDData.isBackedUp())
         fixupHardDisks(false /* aCommit */);
