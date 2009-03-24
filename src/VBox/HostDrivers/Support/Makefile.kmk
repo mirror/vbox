@@ -167,7 +167,8 @@ VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 VBoxDrv_SOURCES       = \
 	win/SUPDrv-win.cpp \
 	win/SUPDrvA-win.asm \
-	SUPDrv.c
+	SUPDrv.c \
+	win/VBoxDrv.rc
 VBoxDrv_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxDrv_LDFLAGS.amd64 = -Entry:DriverEntry
 VBoxDrv_LIBS          = \
