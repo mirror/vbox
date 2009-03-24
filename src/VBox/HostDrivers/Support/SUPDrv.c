@@ -2783,7 +2783,7 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3)
  */
 SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip)
 {
-    int             rc = 0;
+    int             rc = VINF_SUCCESS;
     PSUPDRVDEVEXT   pDevExt = pSession->pDevExt;
     RTR3PTR         pGip = NIL_RTR3PTR;
     RTHCPHYS        HCPhys = NIL_RTHCPHYS;
@@ -2911,7 +2911,7 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
             &&  !--pDevExt->cGipUsers)
         {
             LogFlow(("SUPR0GipUnmap: Suspends GIP updating\n"));
-            rc = RTTimerStop(pDevExt->pGipTimer); AssertRC(rc); rc = 0;
+            rc = RTTimerStop(pDevExt->pGipTimer); AssertRC(rc); rc = VINF_SUCCESS;
         }
     }
 
