@@ -3284,7 +3284,7 @@
     name="VirtualSystemDescriptionValueType"
     uuid="56d9403f-3425-4118-9919-36f2a9b8c77c"
   >
-    <desc>Used with <link to="GetValuesByType" /> to describe the value 
+    <desc>Used with <link to="GetValuesByType" /> to describe the value
     type to fetch.</desc>
 
     <const name="Reference" value="1" />
@@ -3455,7 +3455,7 @@
 
     <method name="getValuesByType">
       <desc>This is the same as <link to="getDescriptionByType" /> except that you can specify which
-      value types should be returned. See <link to="VirtualSystemDescriptionValueType" /> for possible 
+      value types should be returned. See <link to="VirtualSystemDescriptionValueType" /> for possible
       values.</desc>
 
       <param name="aType" type="VirtualSystemDescriptionType" dir="in">
@@ -3466,7 +3466,7 @@
         <desc></desc>
       </param>
 
-      <param name="aValues" type="wstring" dir="out" safearray="yes">
+      <param name="aValues" type="wstring" dir="return" safearray="yes">
         <desc></desc>
       </param>
 

@@ -1148,15 +1148,13 @@ QList < QPair<QString, QString> > VBoxImportApplianceWgt::licenseAgreements() co
     for (int i=0; i < vsds.size(); ++i)
     {
         QVector<QString> license;
-        vsds[i].GetValuesByType (KVirtualSystemDescriptionType_License, 
-                                 KVirtualSystemDescriptionValueType_Original, 
-                                 license);
+        license = vsds[i].GetValuesByType (KVirtualSystemDescriptionType_License,
+                                           KVirtualSystemDescriptionValueType_Original);
         if (!license.isEmpty())
         {
             QVector<QString> name;
-            vsds[i].GetValuesByType (KVirtualSystemDescriptionType_Name, 
-                                     KVirtualSystemDescriptionValueType_Auto, 
-                                     name);
+            name = vsds[i].GetValuesByType (KVirtualSystemDescriptionType_Name,
+                                            KVirtualSystemDescriptionValueType_Auto);
             list << QPair<QString, QString> (name.first(), license.first());
         }
     }
