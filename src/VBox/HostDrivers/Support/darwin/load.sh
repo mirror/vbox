@@ -75,6 +75,19 @@ if test -n "$LOADED"; then
     echo "load.sh: Successfully unloaded org.virtualbox.kext.VBoxNetFlt"
 fi
 
+# Make sure VBoxNetAdp is unloaded as it might be using symbols from us.
+LOADED=`kextstat -b org.virtualbox.kext.VBoxNetAdp -l`
+if test -n "$LOADED"; then
+    echo "load.sh: Unloading org.virtualbox.kext.VBoxNetAdp..."
+    sudo kextunload -v 6 -b org.virtualbox.kext.VBoxNetAdp
+    LOADED=`kextstat -b org.virtualbox.kext.VBoxNetAdp -l`
+    if test -n "$LOADED"; then
+        echo "load.sh: failed to unload org.virtualbox.kext.VBoxNetAdp, see above..."
+        exit 1;
+    fi
+    echo "load.sh: Successfully unloaded org.virtualbox.kext.VBoxNetAdp"
+fi
+
 # Try unload any existing instance first.
 LOADED=`kextstat -b $BUNDLE -l`
 if test -n "$LOADED"; then
