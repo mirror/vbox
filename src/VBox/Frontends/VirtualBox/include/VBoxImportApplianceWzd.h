@@ -26,8 +26,37 @@
 #include "VBoxImportApplianceWzd.gen.h"
 #include "QIAbstractWizard.h"
 #include "QIWithRetranslateUI.h"
+#include "QIDialog.h"
 
 class QIWidgetValidator;
+
+class QDialogButtonBox;
+
+class VBoxImportLicenseViewer: public QIDialog
+{
+    Q_OBJECT;
+
+public:
+    VBoxImportLicenseViewer (QWidget *aParent = NULL);
+
+    void setContent (const QString &aName, const QString &aText);
+
+protected:
+    void retranslateUi();
+
+private slots:
+    void print();
+    void save();
+
+private:
+    QLabel *mCaption;
+    QTextEdit *mLicenseText;
+    QDialogButtonBox *mButtonBox;
+    QPushButton *mPrintBtn;
+    QPushButton *mSaveBtn;
+    QString mName;
+    QString mText;
+};
 
 class VBoxImportApplianceWzd : public QIWithRetranslateUI<QIAbstractWizard>,
                                public Ui::VBoxImportApplianceWzd

@@ -38,9 +38,11 @@ public:
     VBoxImportApplianceWgt (QWidget *aParent);
 
     bool setFile (const QString& aFile);
+    void prepareImport();
     bool import();
 
     bool isValid() const { return mAppliance != NULL; }
+    QList < QPair <QString, QString> > licenseAgreements() const;
 
     static int minGuestRAM() { return mMinGuestRAM; }
     static int maxGuestRAM() { return mMaxGuestRAM; }
