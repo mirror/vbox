@@ -23,11 +23,8 @@
 #ifndef __VBoxSettingsDialogSpecific_h__
 #define __VBoxSettingsDialogSpecific_h__
 
-#include "VBoxSettingsDialog.h"
 #include "COMDefs.h"
-
-class VBoxGlobalSettings;
-class VBoxSettingsPage;
+#include "VBoxSettingsDialog.h"
 
 /*
  * Dialog which encapsulate all the specific funtionalities of the
@@ -45,7 +42,8 @@ public:
         InputId,
         UpdateId,
         LanguageId,
-        USBId
+        USBId,
+        NetworkId
     };
 
     VBoxGLSettingsDlg (QWidget *aParent);
@@ -94,10 +92,6 @@ public:
     VBoxVMSettingsDlg (QWidget *aParent, const CMachine &aMachine,
                        const QString &aCategory, const QString &aControl);
 
-protected slots:
-
-    void revalidate (QIWidgetValidator *aWval);
-
 protected:
 
     void getFrom();
@@ -114,9 +108,7 @@ private slots:
 
 private:
 
-    void addItem (const QString &aBigIcon, const QString &aBigIconDisabled, const QString &aSmallIcon, const QString &aSmallIconDisabled, int aId, const QString &aLink, VBoxSettingsPage* aPrefPage = NULL, int aParentId = -1);
     void updateAvailability();
-    VBoxSettingsPage* attachValidator (VBoxSettingsPage *aPage);
 
     CMachine mMachine;
     bool mAllowResetFirstRunFlag;

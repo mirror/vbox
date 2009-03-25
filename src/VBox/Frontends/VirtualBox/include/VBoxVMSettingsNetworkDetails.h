@@ -55,13 +55,7 @@ protected:
 private slots:
 
     void accept();
-    void hostOnlyInterfaceChanged();
-    void hostOnlyDHCPChanged();
     void genMACClicked();
-#if defined (Q_WS_WIN32)
-    void addInterface();
-    void delInterface();
-#endif
 
 private:
 

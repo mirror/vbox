@@ -56,6 +56,8 @@ FORMS = \
     ui/VBoxGLSettingsInput.ui \
     ui/VBoxGLSettingsUpdate.ui \
     ui/VBoxGLSettingsLanguage.ui \
+    ui/VBoxGLSettingsNetwork.ui \
+    ui/VBoxGLSettingsNetworkDetails.ui \
     ui/VBoxImportApplianceWgt.ui \
     ui/VBoxImportApplianceWzd.ui \
     ui/VBoxExportApplianceWzd.ui

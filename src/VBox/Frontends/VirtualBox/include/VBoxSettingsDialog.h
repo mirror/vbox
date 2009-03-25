@@ -23,15 +23,20 @@
 #ifndef __VBoxSettingsDialog_h__
 #define __VBoxSettingsDialog_h__
 
-#include "VBoxSettingsDialog.gen.h"
+/* VBox includes */
 #include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
+#include "VBoxSettingsDialog.gen.h"
 
-class VBoxWarnIconLabel;
+/* Qt forwards */
 class QIWidgetValidator;
-class VBoxSettingsSelector;
-class QTimer;
 class QStackedWidget;
+class QTimer;
+
+/* VBox forwards*/
+class VBoxWarnIconLabel;
+class VBoxSettingsSelector;
+class VBoxSettingsPage;
 
 /*
  * Base dialog class for both Global & VM settings which
@@ -51,7 +56,7 @@ public:
 
 protected slots:
 
-    virtual void revalidate (QIWidgetValidator * /* aWval */) {}
+    virtual void revalidate (QIWidgetValidator *aWval);
     void categoryChanged (int aId);
 
 protected:
@@ -63,6 +68,11 @@ protected:
 
     void setError (const QString &aError);
     void setWarning (const QString &aWarning);
+
+    void addItem (const QString &aBigIcon, const QString &aBigIconDisabled,
+                  const QString &aSmallIcon, const QString &aSmallIconDisabled,
+                  int aId, const QString &aLink,
+                  VBoxSettingsPage* aPrefPage = NULL, int aParentId = -1);
 
     VBoxSettingsSelector *mSelector;
     QStackedWidget *mStack;
@@ -77,6 +87,8 @@ private:
 
     bool eventFilter (QObject *aObject, QEvent *aEvent);
     void showEvent (QShowEvent *aEvent);
+
+    VBoxSettingsPage* attachValidator (VBoxSettingsPage *aPage);
 
     /* Flags */
     bool mPolished;
