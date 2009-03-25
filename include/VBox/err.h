@@ -432,12 +432,22 @@
 #define VINF_PGM_PHYS_TLB_CATCH_WRITE           1635
 /** No CR3 root shadow page table.. */
 #define VERR_PGM_NO_CR3_SHADOW_ROOT             (-1636)
-/** Trying to free a page that isn't RAM. */
-#define VERR_PGM_PHYS_NOT_RAM                   (-1637)
 /** Trying to free a page with an invalid Page ID. */
-#define VERR_PGM_PHYS_INVALID_PAGE_ID           (-1638)
+#define VERR_PGM_PHYS_INVALID_PAGE_ID           (-1637)
 /** PGMPhysWrite/Read hit a handler in Ring-0 or raw-mode context. */
-#define VERR_PGM_PHYS_WR_HIT_HANDLER            (-1639)
+#define VERR_PGM_PHYS_WR_HIT_HANDLER            (-1638)
+/** Trying to free a page that isn't RAM. */
+#define VERR_PGM_PHYS_NOT_RAM                   (-1639)
+/** Not ROM page. */
+#define VERR_PGM_PHYS_NOT_ROM                   (-1640)
+/** Not MMIO page. */
+#define VERR_PGM_PHYS_NOT_MMIO                  (-1641)
+/** Not MMIO2 page. */
+#define VERR_PGM_PHYS_NOT_MMIO2                 (-1642)
+/** Already aliased to a different page. */
+#define VERR_PGM_HANDLER_ALREADY_ALIASED        (-1643)
+/** Already aliased to the same page. */
+#define VINF_PGM_HANDLER_ALREADY_ALIASED        (1643)
 /** @} */
 
 

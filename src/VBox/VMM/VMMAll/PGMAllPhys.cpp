@@ -667,7 +667,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
              * One solution would be to seed MMIO2 pages to GMM and get unique Page IDs for
              * them, that would also avoid this mess. It would actually be kind of
              * elegant... */
-            AssertFailedReturn(VERR_INTERNAL_ERROR);
+            AssertLogRelMsgFailedReturn(("%RGp\n", GCPhys), VERR_INTERNAL_ERROR);
         }
         else
         {

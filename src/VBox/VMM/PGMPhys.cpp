@@ -659,6 +659,50 @@ static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam)
 }
 
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+/**
+ * Frees a range of pages, replacing them with ZERO pages of the specified type.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pRam        The RAM range in which the pages resides.
+ * @param   GCPhys      The address of the first page.
+ * @param   GCPhysLast  The address of the last page.
+ * @param   uType       The page type to replace then with.
+ */
+static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast, uint8_t uType)
+{
+    uint32_t            cPendingPages = 0;
+    PGMMFREEPAGESREQ    pReq;
+    int rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+    AssertLogRelRCReturn(rc, rc);
+
+    /* Itegerate the pages. */
+    PPGMPAGE pPageDst   = &pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
+    uint32_t cPagesLeft = ((GCPhysLast - GCPhys) >> PAGE_SHIFT) + 1;
+    while (cPagesLeft-- > 0)
+    {
+        rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPageDst, GCPhys);
+        AssertLogRelRCReturn(rc, rc); /* We're done for if this goes wrong. */
+
+        PGM_PAGE_SET_TYPE(pPageDst, uType);
+
+        GCPhys += PAGE_SIZE;
+        pPageDst++;
+    }
+
+    if (cPendingPages)
+    {
+        rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
+        AssertLogRelRCReturn(rc, rc);
+    }
+    GMMR3FreePagesCleanup(pReq);
+
+    return rc;
+}
+#endif /* VBOX_WITH_NEW_PHYS_CODE */
+
+
 /**
  * Sets up a range RAM.
  *
@@ -810,6 +854,10 @@ int pgmR3PhysRamReset(PVM pVM)
                         }
                         break;
 
+                    case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                        pgmHandlerPhysicalResetAliasedPage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                        break;
+
                     case PGMPAGETYPE_MMIO2:
                     case PGMPAGETYPE_ROM_SHADOW: /* handled by pgmR3PhysRomReset. */
                     case PGMPAGETYPE_ROM:
@@ -869,6 +917,10 @@ int pgmR3PhysRamReset(PVM pVM)
                         }
                         break;
 #endif /* VBOX_WITH_NEW_PHYS_CODE */
+
+                    case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                        pgmHandlerPhysicalResetAliasedPage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                        break;
 
                     case PGMPAGETYPE_MMIO2:
                     case PGMPAGETYPE_ROM_SHADOW:
@@ -981,7 +1033,23 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
     }
     PPGMRAMRANGE pNew;
     if (fRamExists)
+    {
         pNew = NULL;
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        /*
+         * Make all the pages in the range MMIO/ZERO pages, freeing any
+         * RAM pages currently mapped here. This might not be 100% correct
+         * for PCI memory, but we're doing the same thing for MMIO2 pages.
+         */
+        rc = pgmLock(pVM);
+        if (RT_SUCCESS(rc))
+        {
+            rc = pgmR3PhysFreePageRange(pVM, pRam, GCPhys, GCPhysLast, PGMPAGETYPE_MMIO);
+            pgmUnlock(pVM);
+        }
+        AssertRCReturn(rc, rc);
+#endif
+    }
     else
     {
         /*
@@ -1066,13 +1134,12 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
     int rc = PGMHandlerPhysicalDeregister(pVM, GCPhys);
     if (RT_SUCCESS(rc))
     {
-        RTGCPHYS GCPhysLast = GCPhys + (cb - 1);
-        PPGMRAMRANGE pRamPrev = NULL;
-        PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3;
+        RTGCPHYS        GCPhysLast  = GCPhys + (cb - 1);
+        PPGMRAMRANGE    pRamPrev    = NULL;
+        PPGMRAMRANGE    pRam        = pVM->pgm.s.pRamRangesR3;
         while (pRam && GCPhysLast >= pRam->GCPhys)
         {
-            /*if (    GCPhysLast >= pRam->GCPhys
-                &&  GCPhys     <= pRam->GCPhysLast) - later */
+            /** @todo We're being a bit too careful here. rewrite. */
             if (    GCPhysLast == pRam->GCPhysLast
                 &&  GCPhys     == pRam->GCPhys)
             {
@@ -1081,28 +1148,31 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                 /*
                  * See if all the pages are dead MMIO pages.
                  */
-                bool            fAllMMIO = true;
-                PPGMPAGE        pPage    = &pRam->aPages[0];
                 uint32_t const  cPages   = cb >> PAGE_SHIFT;
+                bool            fAllMMIO = true;
+                uint32_t        iPage    = 0;
                 uint32_t        cLeft    = cPages;
                 while (cLeft-- > 0)
                 {
+                    PPGMPAGE    pPage    = &pRam->aPages[iPage];
                     if (    PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO
                         /*|| not-out-of-action later */)
                     {
                         fAllMMIO = false;
+#ifdef VBOX_WITH_NEW_PHYS_CODE
                         Assert(PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO2_ALIAS_MMIO);
+                        AssertMsgFailed(("%RGp %R[pgmpage]\n", pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), pPage));
+#endif
                         break;
                     }
                     Assert(PGM_PAGE_IS_ZERO(pPage));
                     pPage++;
                 }
-
-                /*
-                 * Unlink it and free if it's all MMIO.
-                 */
                 if (fAllMMIO)
                 {
+                    /*
+                     * Ad-hoc range, unlink and free it.
+                     */
                     Log(("PGMR3PhysMMIODeregister: Freeing ad-hoc MMIO range for %RGp-%RGp %s\n",
                          GCPhys, GCPhysLast, pRam->pszDesc));
 
@@ -1112,9 +1182,36 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                     pgmR3PhysUnlinkRamRange2(pVM, pRam, pRamPrev);
                     pRam->cb = pRam->GCPhys = pRam->GCPhysLast = NIL_RTGCPHYS;
                     MMHyperFree(pVM, pRam);
+                    break;
+                }
+            }
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+            /*
+             * Range match? It will all be within one range (see PGMAllHandler.cpp).
+             */
+            if (    GCPhysLast >= pRam->GCPhys
+                &&  GCPhys     <= pRam->GCPhysLast)
+            {
+                Assert(GCPhys     >= pRam->GCPhys);
+                Assert(GCPhysLast <= pRam->GCPhysLast);
+
+                /*
+                 * Turn the pages back into RAM pages.
+                 */
+                uint32_t iPage = (GCPhys - pRam->GCPhys) >> PAGE_SHIFT;
+                uint32_t cLeft = cb >> PAGE_SHIFT;
+                while (cLeft--)
+                {
+                    PPGMPAGE pPage = &pRam->aPages[iPage];
+                    AssertMsg(PGM_PAGE_IS_MMIO(pPage), ("%RGp %R[pgmpage]\n", pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), pPage));
+                    AssertMsg(PGM_PAGE_IS_ZERO(pPage), ("%RGp %R[pgmpage]\n", pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), pPage));
+                    if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO)
+                        PGM_PAGE_SET_TYPE(pPage, PGMPAGETYPE_RAM);
                 }
                 break;
             }
+#endif
 
             /* next */
             pRamPrev = pRam;
@@ -1451,6 +1548,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
 
     if (fRamExists)
     {
+/** @todo use pgmR3PhysFreePageRange here. */
         uint32_t            cPendingPages = 0;
         PGMMFREEPAGESREQ    pReq;
         int rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
@@ -3087,7 +3185,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
                     uint32_t const cPages = pRam->cb >> PAGE_SHIFT;
                     for (uint32_t iPage = 0; iPage < cPages; iPage++)
                         if (PGM_PAGE_GET_PAGEID(&pRam->aPages[iPage]) == idPage)
-                            LogRel(("PGM: Used by %RGp %R{pgmpage} (%s)\n",
+                            LogRel(("PGM: Used by %RGp %R[pgmpage] (%s)\n",
                                     pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pRam->aPages[iPage], pRam->pszDesc));
                 }
             }
