@@ -66,9 +66,6 @@ else
  $(warning Using BUILD_TYPE='$(BUILD_TYPE)' from the $(origin BUILD_TYPE).)
 endif
 
-# use vm_insert_page() API (if available) to map kernel pages to userland - better debugging 
-# VBOX_USE_INSERT_PAGE = 1
-
 # override is required by the Debian guys
 override MODULE = vboxdrv
 OBJS   = \

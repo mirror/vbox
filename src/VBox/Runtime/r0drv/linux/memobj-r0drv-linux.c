@@ -50,6 +50,14 @@
 # define PAGE_READONLY_EXEC PAGE_READONLY
 #endif
 
+/*
+ * 2.6.29+ kernels don't work with remap_pfn_range() anymore because
+ * track_pfn_vma_new() is apparently not defined for non-RAM pages.
+ * It should be safe to use vm_insert_page() older kernels as well.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+# define VBOX_USE_INSERT_PAGE
+#endif
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
