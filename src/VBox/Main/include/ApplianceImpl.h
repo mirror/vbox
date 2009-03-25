@@ -33,6 +33,7 @@ namespace xml
 }
 
 class VirtualBox;
+class Progress;
 
 class ATL_NO_VTABLE Appliance :
     public VirtualBoxBaseWithChildrenNEXT,
@@ -95,7 +96,7 @@ private:
 
     HRESULT searchUniqueVMName(Utf8Str& aName) const;
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
-    uint32_t calcMaxProgress();
+    HRESULT setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
     void addWarning(const char* aWarning, ...);
 
     struct TaskImportMachines;  /* Worker thread for import */
@@ -115,6 +116,8 @@ struct VirtualSystemDescriptionEntry
     Utf8Str strOvf;                         // original OVF value (type-dependent)
     Utf8Str strVbox;                        // configuration value (type-dependent)
     Utf8Str strExtraConfig;                 // extra configuration key=value strings (type-dependent)
+
+    uint32_t ulSizeMB;                      // hard disk images only: size of the uncompressed image in MB
 };
 
 class ATL_NO_VTABLE VirtualSystemDescription :
@@ -186,6 +189,7 @@ public:
                   const Utf8Str &strRef,
                   const Utf8Str &aOrigValue,
                   const Utf8Str &aAutoValue,
+                  uint32_t ulSizeMB = 0,
                   const Utf8Str &strExtraConfig = "");
 
     std::list<VirtualSystemDescriptionEntry*> findByType(VirtualSystemDescriptionType_T aType);
