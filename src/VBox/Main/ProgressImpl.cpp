@@ -472,15 +472,62 @@ void Progress::FinalRelease()
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initializes the normal progress object.
+ * Initializes the normal progress object. With this variant, one can have
+ * an arbitrary number of sub-operation which IProgress can analyze to
+ * have a weighted progress computed.
+ *
+ * For example, say that one IProgress is supposed to track the cloning
+ * of two hard disk images, which are 100 MB and 1000 MB in size, respectively,
+ * and each of these hard disks should be one sub-operation of the IProgress.
+ *
+ * Obviously the progress would be misleading if the progress displayed 50%
+ * after the smaller image was cloned and would then take much longer for
+ * the second half.
+ *
+ * With weighted progress, one can invoke the following calls:
+ *
+ * 1) create progress object with cOperations = 2 and ulTotalOperationsWeight =
+ *    1100 (100 MB plus 1100, but really the weights can be any ULONG); pass
+ *    in ulFirstOperationWeight = 100 for the first sub-operation
+ *
+ * 2) Then keep calling setCurrentOperationProgress() with a percentage
+ *    for the first image; the total progress will increase up to a value
+ *    of 9% (100MB / 1100MB * 100%).
+ *
+ * 3) Then call setNextOperation with the second weight (1000 for the megabytes
+ *    of the second disk).
+ *
+ * 4) Then keep calling setCurrentOperationProgress() with a percentage for
+ *    the second image, where 100% of the operation will then yield a 100%
+ *    progress of the entire task.
+ *
+ * Weighting is optional; you can simply assign a weight of 1 to each operation
+ * and pass ulTotalOperationsWeight == cOperations to this constructor (but
+ * for that variant and for backwards-compatibility a simpler constructor exists
+ * in ProgressImpl.h as well).
+ *
+ * Even simpler, if you need no sub-operations at all, pass in cOperations =
+ * ulTotalOperationsWeight = ulFirstOperationWeight = 1.
  *
  * @param aParent           See ProgressBase::init().
  * @param aInitiator        See ProgressBase::init().
  * @param aDescription      See ProgressBase::init().
  * @param aCancelable       Flag whether the task maybe canceled.
- * @param aOperationCount   Number of operations within this task (at least 1).
- * @param aOperationDescription Description of the first operation.
+ * @param cOperations       Number of operations within this task (at least 1).
+ * @param ulTotalOperationsWeight Total weight of operations; must be the sum of ulFirstOperationWeight and
+ *                          what is later passed with each subsequent setNextOperation() call.
+ * @param bstrFirstOperationDescription Description of the first operation.
+ * @param ulFirstOperationWeight Weight of first sub-operation.
  * @param aId               See ProgressBase::init().
+ */
+/**
+ *
+ * @param aParent
+ * @param aInitiator
+ * @param aDescription
+ * @param aCancelable
+ * @param aId
+ * @return
  */
 HRESULT Progress::init (
 #if !defined (VBOX_COM_INPROC)
