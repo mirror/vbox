@@ -31,6 +31,7 @@
 #define ___VBox_param_h
 
 #include <iprt/param.h>
+#include <iprt/cdefs.h>
 
 
 /** @defgroup   grp_vbox_param  VBox Parameter Definition
@@ -39,7 +40,7 @@
 
 /** The maximum number of pages that can be allocated and mapped
  * by various MM, PGM and SUP APIs. */
-#define VBOX_MAX_ALLOC_PAGE_COUNT   (128 * _1M / PAGE_SIZE)
+#define VBOX_MAX_ALLOC_PAGE_COUNT   (128U * _1M / PAGE_SIZE)
 
 
 /** @defgroup   grp_vbox_param_mm  Memory Monitor Parameters
@@ -52,13 +53,29 @@
 #define MM_HYPER_AREA_ADDRESS       UINT32_C(0xa0000000)
 
 /** The max size of the hypervisor memory area. */
-#define MM_HYPER_AREA_MAX_SIZE      (40 * _1M) /**< @todo Readjust when floating RAMRANGEs have been implemented. Used to be 20 * _1MB */
+#define MM_HYPER_AREA_MAX_SIZE      (40U * _1M) /**< @todo Readjust when floating RAMRANGEs have been implemented. Used to be 20 * _1MB */
 
 /** Maximum number of bytes we can dynamically map into the hypervisor region.
  * This must be a power of 2 number of pages!
  */
-#define MM_HYPER_DYNAMIC_SIZE       (16 * PAGE_SIZE)
+#define MM_HYPER_DYNAMIC_SIZE       (16U * PAGE_SIZE)
 
+/** The minimum guest RAM size in bytes. */
+#define MM_RAM_MIN                  UINT32_C(0x00400000)
+/** The maximum guest RAM size in bytes. */
+#if HC_ARCH_BITS == 64 && defined(VBOX_WITH_NEW_PHYS_CODE)
+# define MM_RAM_MAX                 UINT64_C(0x400000000)
+#else
+# define MM_RAM_MAX                 UINT64_C(0x0E0000000)
+#endif
+/** The minimum guest RAM size in MBs. */
+#define MM_RAM_MIN_IN_MB            UINT32_C(4)
+/** The maximum guest RAM size in MBs. */
+#if HC_ARCH_BITS == 64 && defined(VBOX_WITH_NEW_PHYS_CODE)
+# define MM_RAM_MAX_IN_MB           UINT32_C(16384)
+#else
+# define MM_RAM_MAX_IN_MB           UINT32_C(3584)
+#endif
 /** The default size of the below 4GB RAM hole. */
 #define MM_RAM_HOLE_SIZE_DEFAULT    (512U * _1M)
 
@@ -71,7 +88,7 @@
  */
 
 /** VMM stack size. */
-#define VMM_STACK_SIZE              8192
+#define VMM_STACK_SIZE              8192U
 
 /** @} */
 

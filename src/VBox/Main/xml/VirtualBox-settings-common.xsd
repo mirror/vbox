@@ -776,6 +776,17 @@
   <xsd:attribute name="notificationPatterns" type="xsd:string" default=""/>
 </xsd:complexType>
 
+<xsd:complexType name="TMemory">
+  <xsd:attribute name="RAMSize" use="required">
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:unsignedInt">
+        <xsd:minInclusive value="4"/>
+        <xsd:maxInclusive value="16384"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:attribute>
+</xsd:complexType>
+
 <xsd:complexType name="THardware">
   <xsd:all>
     <xsd:element name="CPU" type="TCPU" minOccurs="0"/>
