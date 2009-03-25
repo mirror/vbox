@@ -33,8 +33,9 @@
 #endif /* Q_WS_MAC */
 
 /* Qt includes */
-#include <QTimer>
+#include <QPushButton>
 #include <QStackedWidget>
+#include <QTimer>
 
 #if MAC_LEOPARD_STYLE
 # define VBOX_GUI_WITH_TOOLBAR_SETTINGS
