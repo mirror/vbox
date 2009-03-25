@@ -43,7 +43,7 @@ if1of ($(KBUILD_TARGET), linux solaris) ## @todo X11
  ifndef VBOX_HEADLESS
   VBoxSharedClipboard_SOURCES += \
   	clipboard-helper.cpp \
-  	x11.cpp
+  	x11-clipboard.cpp
  else
   VBoxSharedClipboard_SOURCES += \
   	x11-stub.cpp
