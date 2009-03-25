@@ -1,8 +1,8 @@
 #!/bin/sh
-# Sun xVM VirtualBox
+# Sun VirtualBox
 # VirtualBox Guest Additions kernel module control script for Solaris.
 #
-# Copyright (C) 2008 Sun Microsystems, Inc.
+# Copyright (C) 2008-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -39,7 +39,7 @@ info()
 check_if_installed()
 {
     cputype=`isainfo -k`
-    modulepath="$MODDIR32/$MODNAME"    
+    modulepath="$MODDIR32/$MODNAME"
     if test "$cputype" = "amd64"; then
         modulepath="$MODDIR64/$MODNAME"
     fi

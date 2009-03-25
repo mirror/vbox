@@ -1,6 +1,6 @@
 PKG="SUNWvboxkern"
-NAME="Sun xVM VirtualBox Kernel Interface Module"
-SUNW_PRODNAME="Sun xVM VirtualBox Kernel Interface Module"
+NAME="Sun VirtualBox Kernel Interface Module"
+SUNW_PRODNAME="Sun VirtualBox Kernel Interface Module"
 ARCH="@UNAME_P@"
 VERSION="@VBOX_VERSION_STRING@,REV=@VBOX_VERSION_REVSTAMP@"
 SUNW_PRODVERS="@VBOX_VERSION_STRING@"
@@ -11,5 +11,5 @@ EMAIL="info@virtualbox.org"
 HOTLINE="Please contact your local service provider"
 BASEDIR="/"
 CLASSES=none
-DESC="Sun xVM VirtualBox kernel interface module (vbi) for SunOS 32-bit and 64-bit"
+DESC="Sun VirtualBox kernel interface module (vbi) for SunOS 32-bit and 64-bit"
 

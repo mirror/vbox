@@ -1,6 +1,6 @@
 
-Sun xVM VirtualBox for OpenSolaris (TM) Operating System
---------------------------------------------------------
+Sun VirtualBox for OpenSolaris (TM) Operating System
+----------------------------------------------------
 
 Upgrading:
 ----------

@@ -3,9 +3,9 @@
  *  :tabSize=2:indentSize=2:noTabs=true:
  *  :folding=explicit:collapseFolds=1:
  *
- *  Sun xVM VirtualBox Settings Schema Version 1.0-linux
+ *  Sun VirtualBox Settings Schema Version 1.0-linux
 
-     Copyright (C) 2004-2008 Sun Microsystems, Inc.
+     Copyright (C) 2004-2009 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -30,7 +30,7 @@
 
 <xsd:annotation>
   <xsd:documentation xml:lang="en">
-    Sun xVM VirtualBox Settings Schema (linux).
+    Sun VirtualBox Settings Schema (linux).
     Copyright (c) 2004-2008 Sun Microsystems, Inc.
   </xsd:documentation>
 </xsd:annotation>

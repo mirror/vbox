@@ -1,8 +1,8 @@
 #! /bin/sh
-# Sun xVM VirtualBox
+# Sun VirtualBox
 # Linux Additions kernel module init script
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -284,7 +284,7 @@ setup()
         begin "Removing old VirtualBox vboxvfs kernel module"
         find /lib/modules/`uname -r` -name "vboxvfs\.*" 2>/dev/null|xargs rm -f 2>/dev/null
         succ_msg
-    fi  
+    fi
     if find /lib/modules/`uname -r` -name "vboxadd\.*" 2>/dev/null|grep -q vboxadd; then
         begin "Removing old VirtualBox vboxadd kernel module"
         find /lib/modules/`uname -r` -name "vboxadd\.*" 2>/dev/null|xargs rm -f 2>/dev/null
