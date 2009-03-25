@@ -3236,8 +3236,17 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bst
         }
     }
 
-    ULONG ulTotalOperationsWeight = ulTotalMB * 100 / ulPercentForDisks;
-    m->ulWeightPerOperation = ulTotalOperationsWeight / 100;
+    ULONG ulTotalOperationsWeight;
+    if (ulTotalMB)
+    {
+        ulTotalOperationsWeight = ulTotalMB * 100 / ulPercentForDisks;
+        m->ulWeightPerOperation = ulTotalOperationsWeight / 100;
+    }
+    else
+    {
+        ulTotalOperationsWeight = cFixed;
+        m->ulWeightPerOperation = 1;
+    }
 
     Log(("Setting up progress object: ulTotalMB = %d, cFixed = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightPerOperation = %d\n",
          ulTotalMB, cFixed, cDisks, cFixed + (ULONG)cDisks, ulTotalOperationsWeight, m->ulWeightPerOperation));
@@ -3869,8 +3878,13 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
             Bstr bstrLocation;
             rc = pHardDisk->COMGETTER(Location)(bstrLocation.asOutParam());
+            if (FAILED(rc)) throw rc;
             Bstr bstrName;
             rc = pHardDisk->COMGETTER(Name)(bstrName.asOutParam());
+            if (FAILED(rc)) throw rc;
+            ULONG64 ullSize;
+            rc = pHardDisk->COMGETTER(Size)(&ullSize);
+            if (FAILED(rc)) throw rc;
 
             // and how this translates to the virtual system
             int32_t lControllerVsys = 0;
@@ -3919,6 +3933,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                                strTargetVmdkName,   // disk ID: let's use the name
                                strTargetVmdkName,   // OVF value:
                                Utf8Str(bstrLocation), // vbox value: media path
+                               (uint32_t)(ullSize / _1M),
                                Utf8StrFmt("controller=%RI32;channel=%RI32", lControllerVsys, lChannelVsys));
         }
 
