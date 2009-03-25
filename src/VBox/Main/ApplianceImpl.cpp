@@ -217,44 +217,6 @@ struct VirtualSystemDescription::Data
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Threads
-//
-////////////////////////////////////////////////////////////////////////////////
-
-struct Appliance::TaskImportMachines
-{
-    TaskImportMachines(Appliance *aThat, Progress *aProgress)
-        : pAppliance(aThat)
-        , progress(aProgress)
-        , rc(S_OK)
-    {}
-    ~TaskImportMachines() {}
-
-    HRESULT startThread();
-
-    Appliance *pAppliance;
-    ComObjPtr<Progress> progress;
-    HRESULT rc;
-};
-
-struct Appliance::TaskWriteOVF
-{
-    TaskWriteOVF(Appliance *aThat, Progress *aProgress)
-        : pAppliance(aThat)
-        , progress(aProgress)
-        , rc(S_OK)
-    {}
-    ~TaskWriteOVF() {}
-
-    HRESULT startThread();
-
-    Appliance *pAppliance;
-    ComObjPtr<Progress> progress;
-    HRESULT rc;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-//
 // internal helpers
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -394,34 +356,6 @@ STDMETHODIMP VirtualBox::CreateAppliance(IAppliance** anAppliance)
         appliance.queryInterfaceTo(anAppliance);
 
     return rc;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Appliance::task methods
-//
-////////////////////////////////////////////////////////////////////////////////
-
-HRESULT Appliance::TaskImportMachines::startThread()
-{
-    int vrc = RTThreadCreate(NULL, Appliance::taskThreadImportMachines, this,
-                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                             "Appliance::Task");
-    ComAssertMsgRCRet(vrc,
-                      ("Could not create taskThreadImportMachines (%Rrc)\n", vrc), E_FAIL);
-
-    return S_OK;
-}
-
-HRESULT Appliance::TaskWriteOVF::startThread()
-{
-    int vrc = RTThreadCreate(NULL, Appliance::taskThreadWriteOVF, this,
-                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                             "Appliance::Task");
-    ComAssertMsgRCRet(vrc,
-                      ("Could not create taskThreadExportOVF (%Rrc)\n", vrc), E_FAIL);
-
-    return S_OK;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1637,6 +1571,33 @@ STDMETHODIMP Appliance::Interpret()
     return rc;
 }
 
+struct Appliance::TaskImportMachines
+{
+    TaskImportMachines(Appliance *aThat, Progress *aProgress)
+        : pAppliance(aThat)
+        , progress(aProgress)
+        , rc(S_OK)
+    {}
+    ~TaskImportMachines() {}
+
+    HRESULT startThread();
+
+    Appliance *pAppliance;
+    ComObjPtr<Progress> progress;
+    HRESULT rc;
+};
+
+HRESULT Appliance::TaskImportMachines::startThread()
+{
+    int vrc = RTThreadCreate(NULL, Appliance::taskThreadImportMachines, this,
+                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
+                             "Appliance::Task");
+    ComAssertMsgRCRet(vrc,
+                      ("Could not create taskThreadImportMachines (%Rrc)\n", vrc), E_FAIL);
+
+    return S_OK;
+}
+
 /**
  * Public method implementation.
  * @param aProgress
@@ -1687,170 +1648,6 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
         progress.queryInterfaceTo(aProgress);
 
     return rc;
-}
-
-STDMETHODIMP Appliance::Write(IN_BSTR path, IProgress **aProgress)
-{
-    HRESULT rc = S_OK;
-
-    CheckComArgOutPointerValid(aProgress);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(rc = autoCaller.rc())) return rc;
-
-    AutoWriteLock(this);
-
-    // see if we can handle this file; for now we insist it has an ".ovf" extension
-    m->strPath = path;
-    if (!m->strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
-        return setError(VBOX_E_FILE_ERROR,
-                        tr("Appliance file must have .ovf extension"));
-
-    ComObjPtr<Progress> progress;
-    try
-    {
-        uint32_t opCount = calcMaxProgress();
-        Bstr progressDesc = BstrFmt(tr("Write appliance '%s'"),
-                                    m->strPath.raw());
-        /* Create the progress object */
-        progress.createObject();
-        rc = progress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                            progressDesc,
-                            FALSE /* aCancelable */,
-                            opCount,
-                            progressDesc);
-        CheckComRCThrowRC(rc);
-
-        /* Initialize our worker task */
-        std::auto_ptr<TaskWriteOVF> task(new TaskWriteOVF(this, progress));
-        //AssertComRCThrowRC (task->autoCaller.rc());
-
-        rc = task->startThread();
-        CheckComRCThrowRC(rc);
-
-        task.release();
-    }
-    catch (HRESULT aRC)
-    {
-        rc = aRC;
-    }
-
-    if (SUCCEEDED(rc))
-        /* Return progress to the caller */
-        progress.queryInterfaceTo(aProgress);
-
-    return rc;
-}
-
-/**
-* Public method implementation.
- * @return
- */
-STDMETHODIMP Appliance::GetWarnings(ComSafeArrayOut(BSTR, aWarnings))
-{
-    if (ComSafeArrayOutIsNull(aWarnings))
-        return E_POINTER;
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoReadLock alock(this);
-
-    com::SafeArray<BSTR> sfaWarnings(m->llWarnings.size());
-
-    list<Utf8Str>::const_iterator it;
-    size_t i = 0;
-    for (it = m->llWarnings.begin();
-         it != m->llWarnings.end();
-         ++it, ++i)
-    {
-        Bstr bstr = *it;
-        bstr.cloneTo(&sfaWarnings[i]);
-    }
-
-    sfaWarnings.detachTo(ComSafeArrayOutArg(aWarnings));
-
-    return S_OK;
-}
-
-HRESULT Appliance::searchUniqueVMName(Utf8Str& aName) const
-{
-    IMachine *machine = NULL;
-    char *tmpName = RTStrDup(aName.c_str());
-    int i = 1;
-    /* @todo: Maybe too cost-intensive; try to find a lighter way */
-    while (mVirtualBox->FindMachine(Bstr(tmpName), &machine) != VBOX_E_OBJECT_NOT_FOUND)
-    {
-        RTStrFree(tmpName);
-        RTStrAPrintf(&tmpName, "%s_%d", aName.c_str(), i);
-        ++i;
-    }
-    aName = tmpName;
-    RTStrFree(tmpName);
-
-    return S_OK;
-}
-
-HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
-{
-    IHardDisk *harddisk = NULL;
-    char *tmpName = RTStrDup(aName.c_str());
-    int i = 1;
-    /* Check if the file exists or if a file with this path is registered
-     * already */
-    /* @todo: Maybe too cost-intensive; try to find a lighter way */
-    while (RTPathExists(tmpName) ||
-           mVirtualBox->FindHardDisk(Bstr(tmpName), &harddisk) != VBOX_E_OBJECT_NOT_FOUND)
-    {
-        RTStrFree(tmpName);
-        char *tmpDir = RTStrDup(aName.c_str());
-        RTPathStripFilename(tmpDir);;
-        char *tmpFile = RTStrDup(RTPathFilename(aName.c_str()));
-        RTPathStripExt(tmpFile);
-        const char *tmpExt = RTPathExt(aName.c_str());
-        RTStrAPrintf(&tmpName, "%s%c%s_%d%s", tmpDir, RTPATH_DELIMITER, tmpFile, i, tmpExt);
-        RTStrFree(tmpFile);
-        RTStrFree(tmpDir);
-        ++i;
-    }
-    aName = tmpName;
-    RTStrFree(tmpName);
-
-    return S_OK;
-}
-
-/**
- * Calculates the maximum progress value for importMachines() and write().
- * @return
- */
-uint32_t Appliance::calcMaxProgress()
-{
-    /* Figure out how many sub operation the import will need */
-    /* One for the appliance */
-    uint32_t opCount = 1;
-    list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
-    for (it = m->virtualSystemDescriptions.begin();
-         it != m->virtualSystemDescriptions.end();
-         ++it)
-    {
-        /* One for every Virtual System */
-        ++opCount;
-        ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-        /* One for every hard disk of the Virtual System */
-        std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
-        opCount += (uint32_t)avsdeHDs.size();
-    }
-
-    return opCount;
-}
-
-void Appliance::addWarning(const char* aWarning, ...)
-{
-    va_list args;
-    va_start(args, aWarning);
-    Utf8StrFmtVA str(aWarning, args);
-    va_end(args);
-    m->llWarnings.push_back(str);
 }
 
 struct MyHardDiskAttachment
@@ -2553,6 +2350,86 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
     return VINF_SUCCESS;
 }
 
+struct Appliance::TaskWriteOVF
+{
+    TaskWriteOVF(Appliance *aThat, Progress *aProgress)
+        : pAppliance(aThat)
+        , progress(aProgress)
+        , rc(S_OK)
+    {}
+    ~TaskWriteOVF() {}
+
+    HRESULT startThread();
+
+    Appliance *pAppliance;
+    ComObjPtr<Progress> progress;
+    HRESULT rc;
+};
+
+HRESULT Appliance::TaskWriteOVF::startThread()
+{
+    int vrc = RTThreadCreate(NULL, Appliance::taskThreadWriteOVF, this,
+                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
+                             "Appliance::Task");
+    ComAssertMsgRCRet(vrc,
+                      ("Could not create taskThreadExportOVF (%Rrc)\n", vrc), E_FAIL);
+
+    return S_OK;
+}
+
+STDMETHODIMP Appliance::Write(IN_BSTR path, IProgress **aProgress)
+{
+    HRESULT rc = S_OK;
+
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(rc = autoCaller.rc())) return rc;
+
+    AutoWriteLock(this);
+
+    // see if we can handle this file; for now we insist it has an ".ovf" extension
+    m->strPath = path;
+    if (!m->strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+        return setError(VBOX_E_FILE_ERROR,
+                        tr("Appliance file must have .ovf extension"));
+
+    ComObjPtr<Progress> progress;
+    try
+    {
+        uint32_t opCount = calcMaxProgress();
+        Bstr progressDesc = BstrFmt(tr("Write appliance '%s'"),
+                                    m->strPath.raw());
+        /* Create the progress object */
+        progress.createObject();
+        rc = progress->init(mVirtualBox, static_cast<IAppliance*>(this),
+                            progressDesc,
+                            FALSE /* aCancelable */,
+                            opCount,
+                            progressDesc);
+        CheckComRCThrowRC(rc);
+
+        /* Initialize our worker task */
+        std::auto_ptr<TaskWriteOVF> task(new TaskWriteOVF(this, progress));
+        //AssertComRCThrowRC (task->autoCaller.rc());
+
+        rc = task->startThread();
+        CheckComRCThrowRC(rc);
+
+        task.release();
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    if (SUCCEEDED(rc))
+        /* Return progress to the caller */
+        progress.queryInterfaceTo(aProgress);
+
+    return rc;
+}
+
 /**
  * Worker thread implementation for Write() (ovf writer).
  * @param aThread
@@ -3248,6 +3125,117 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
     LogFlowFuncLeave();
 
     return VINF_SUCCESS;
+}
+
+/**
+* Public method implementation.
+ * @return
+ */
+STDMETHODIMP Appliance::GetWarnings(ComSafeArrayOut(BSTR, aWarnings))
+{
+    if (ComSafeArrayOutIsNull(aWarnings))
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    com::SafeArray<BSTR> sfaWarnings(m->llWarnings.size());
+
+    list<Utf8Str>::const_iterator it;
+    size_t i = 0;
+    for (it = m->llWarnings.begin();
+         it != m->llWarnings.end();
+         ++it, ++i)
+    {
+        Bstr bstr = *it;
+        bstr.cloneTo(&sfaWarnings[i]);
+    }
+
+    sfaWarnings.detachTo(ComSafeArrayOutArg(aWarnings));
+
+    return S_OK;
+}
+
+HRESULT Appliance::searchUniqueVMName(Utf8Str& aName) const
+{
+    IMachine *machine = NULL;
+    char *tmpName = RTStrDup(aName.c_str());
+    int i = 1;
+    /* @todo: Maybe too cost-intensive; try to find a lighter way */
+    while (mVirtualBox->FindMachine(Bstr(tmpName), &machine) != VBOX_E_OBJECT_NOT_FOUND)
+    {
+        RTStrFree(tmpName);
+        RTStrAPrintf(&tmpName, "%s_%d", aName.c_str(), i);
+        ++i;
+    }
+    aName = tmpName;
+    RTStrFree(tmpName);
+
+    return S_OK;
+}
+
+HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
+{
+    IHardDisk *harddisk = NULL;
+    char *tmpName = RTStrDup(aName.c_str());
+    int i = 1;
+    /* Check if the file exists or if a file with this path is registered
+     * already */
+    /* @todo: Maybe too cost-intensive; try to find a lighter way */
+    while (RTPathExists(tmpName) ||
+           mVirtualBox->FindHardDisk(Bstr(tmpName), &harddisk) != VBOX_E_OBJECT_NOT_FOUND)
+    {
+        RTStrFree(tmpName);
+        char *tmpDir = RTStrDup(aName.c_str());
+        RTPathStripFilename(tmpDir);;
+        char *tmpFile = RTStrDup(RTPathFilename(aName.c_str()));
+        RTPathStripExt(tmpFile);
+        const char *tmpExt = RTPathExt(aName.c_str());
+        RTStrAPrintf(&tmpName, "%s%c%s_%d%s", tmpDir, RTPATH_DELIMITER, tmpFile, i, tmpExt);
+        RTStrFree(tmpFile);
+        RTStrFree(tmpDir);
+        ++i;
+    }
+    aName = tmpName;
+    RTStrFree(tmpName);
+
+    return S_OK;
+}
+
+/**
+ * Calculates the maximum progress value for importMachines() and write().
+ * @return
+ */
+uint32_t Appliance::calcMaxProgress()
+{
+    /* Figure out how many sub operation the import will need */
+    /* One for the appliance */
+    uint32_t opCount = 1;
+    list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
+    for (it = m->virtualSystemDescriptions.begin();
+         it != m->virtualSystemDescriptions.end();
+         ++it)
+    {
+        /* One for every Virtual System */
+        ++opCount;
+        ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
+        /* One for every hard disk of the Virtual System */
+        std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+        opCount += (uint32_t)avsdeHDs.size();
+    }
+
+    return opCount;
+}
+
+void Appliance::addWarning(const char* aWarning, ...)
+{
+    va_list args;
+    va_start(args, aWarning);
+    Utf8StrFmtVA str(aWarning, args);
+    va_end(args);
+    m->llWarnings.push_back(str);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
