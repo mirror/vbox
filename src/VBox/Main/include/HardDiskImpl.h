@@ -255,7 +255,7 @@ private:
     HRESULT setLocation (CBSTR aLocation);
     HRESULT setFormat (CBSTR aFormat);
 
-    HRESULT queryInfo(bool fWrite);
+    virtual HRESULT queryInfo(bool fWrite);
 
     HRESULT canClose();
     HRESULT canAttach (const Guid &aMachineId,

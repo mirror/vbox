@@ -142,7 +142,7 @@ protected:
     virtual Utf8Str name();
 
     virtual HRESULT setLocation (CBSTR aLocation);
-    virtual HRESULT queryInfo();
+    virtual HRESULT queryInfo(bool fWrite);
 
     /**
      * Performs extra checks if the medium can be closed and returns S_OK in
