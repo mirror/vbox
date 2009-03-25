@@ -358,27 +358,98 @@ void VBoxVMSettingsGeneral::setValidator (QIWidgetValidator *aVal)
 
 bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle */)
 {
-    /* System RAM & Video RAM sliders correlation test */
+    /* Come up with some nice round percent boundraries relative to
+       the system memory. A max of 75% on a 256GB config is ridiculous,
+       even on an 8GB rig reserving 2GB for the OS is way to conservative.
+       The max numbers can be estimated using the following program:
+
+            double calcMaxPct(uint64_t cbRam)
+            {
+                double cbRamOverhead = cbRam * 0.0390625; // 160 bytes per page.
+                double cbRamForTheOS = RT_MAX(RT_MIN(_512M, cbRam * 0.25), _64M);
+                double OSPct  = (cbRamOverhead + cbRamForTheOS) * 100.0 / cbRam;
+                double MaxPct = 100 - OSPct;
+                return MaxPct;
+            }
+
+            int main()
+            {
+                uint64_t cbRam = _1G;
+                for (; !(cbRam >> 33); cbRam += _1G)
+                    printf("%8lluGB %.1f%% %8lluKB\n", cbRam >> 30, calcMaxPct(cbRam),
+                           (uint64_t)(cbRam * calcMaxPct(cbRam) / 100.0) >> 20);
+                for (; !(cbRam >> 51); cbRam <<= 1)
+                    printf("%8lluGB %.1f%% %8lluKB\n", cbRam >> 30, calcMaxPct(cbRam),
+                           (uint64_t)(cbRam * calcMaxPct(cbRam) / 100.0) >> 20);
+                return 0;
+            }
+
+       Note. We might wanna put these calculations somewhere global later. */
     ulong fullSize = vboxGlobal().virtualBox().GetHost().GetMemorySize();
+    double maxPct  = 0.75;
+    double warnPct = 0.50;
+    if (fullSize < 3072)
+        /* done */;
+    else if (fullSize < 4096)   /* 3GB */
+        maxPct  = 0.80;
+    else if (fullSize < 6144)   /* 4-5GB */
+    {
+        maxPct  = 0.84;
+        warnPct = 0.60;
+    }
+    else if (fullSize < 8192)   /* 6-7GB */
+    {
+        maxPct  = 0.88;
+        warnPct = 0.65;
+    }
+    else if (fullSize < 16384)  /* 8-15GB */
+    {
+        maxPct  = 0.90;
+        warnPct = 0.70;
+    }
+    else if (fullSize < 32768)  /* 16-31GB */
+    {
+        maxPct  = 0.93;
+        warnPct = 0.75;
+    }
+    else if (fullSize < 65536)  /* 32-63GB */
+    {
+        maxPct  = 0.94;
+        warnPct = 0.80;
+    }
+    else if (fullSize < 131072) /* 64-127GB */
+    {
+        maxPct  = 0.95;
+        warnPct = 0.85;
+    }
+    else                        /* 128GB- */
+    {
+        maxPct  = 0.96;
+        warnPct = 0.90;
+    }
+
+    /* System RAM & Video RAM sliders correlation test */
     quint64 needBytes = VBoxGlobal::requiredVideoMemory (&mMachine);
-    if (mSlRam->value() + mSlVideo->value() > 0.75 * fullSize)
+    if (mSlRam->value() + mSlVideo->value() > maxPct * fullSize)
     {
         aWarning = tr (
-            "you have assigned more than <b>75%</b> of your computer's memory "
-            "(<b>%1</b>) to the virtual machine. Not enough memory is left "
+            "you have assigned more than <b>%1%</b> of your computer's memory "
+            "(<b>%2</b>) to the virtual machine. Not enough memory is left "
             "for your host operating system. Please select a smaller amount.")
+            .arg ((unsigned)(maxPct * 100))
             .arg (vboxGlobal().formatSize (fullSize * _1M));
         return false;
-    } else
-    if (mSlRam->value() + mSlVideo->value() > 0.5 * fullSize)
+    }
+    if (mSlRam->value() + mSlVideo->value() > warnPct * fullSize)
     {
         aWarning = tr (
-            "you have assigned more than <b>50%</b> of your computer's memory "
-            "(<b>%1</b>) to the virtual machine. Not enough memory might be "
+            "you have assigned more than <b>%1%</b> of your computer's memory "
+            "(<b>%2</b>) to the virtual machine. Not enough memory might be "
             "left for your host operating system. Continue at your own risk.")
+            .arg ((unsigned)(warnPct * 100))
             .arg (vboxGlobal().formatSize (fullSize * _1M));
         return true;
-    } else
+    }
     if ((quint64) mSlVideo->value() * _1M < needBytes)
     {
         aWarning = tr (
