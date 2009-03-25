@@ -256,7 +256,7 @@ void VBoxGLSettingsLanguage::reload (const QString &aLangId)
     }
 
     /* Adjust selector list */
-    mTwLanguage->setFixedWidth (static_cast<QAbstractItemView*> (mTwLanguage)
+    mTwLanguage->setMinimumWidth (static_cast<QAbstractItemView*> (mTwLanguage)
         ->sizeHintForColumn (0) + 2 * mTwLanguage->frameWidth() +
         QApplication::style()->pixelMetric (QStyle::PM_ScrollBarExtent));
     mTwLanguage->resizeColumnToContents (0);
