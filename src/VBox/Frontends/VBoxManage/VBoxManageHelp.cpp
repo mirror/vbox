@@ -560,8 +560,8 @@ int errorArgument(const char *pszFormat, ...)
 void showProgress(ComPtr<IProgress> progress)
 {
     BOOL fCompleted;
-    LONG currentPercent;
-    LONG lastPercent = 0;
+    ULONG currentPercent;
+    ULONG lastPercent = 0;
 
     RTPrintf("0%%...");
     RTStrmFlush(g_pStdOut);
@@ -573,7 +573,7 @@ void showProgress(ComPtr<IProgress> progress)
         if (((currentPercent / 10) > (lastPercent / 10)))
         {
             /* make sure to also print out missed steps */
-            for (LONG curVal = (lastPercent / 10) * 10 + 10; curVal <= (currentPercent / 10) * 10; curVal += 10)
+            for (ULONG curVal = (lastPercent / 10) * 10 + 10; curVal <= (currentPercent / 10) * 10; curVal += 10)
             {
                 if (curVal < 100)
                 {
