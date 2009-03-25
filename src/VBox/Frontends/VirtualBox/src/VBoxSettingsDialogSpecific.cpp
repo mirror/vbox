@@ -57,7 +57,6 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 #endif /* Q_WS_MAC */
 
     /* Creating settings pages */
-    QWidget *page = NULL;
     VBoxSettingsPage *prefPage = NULL;
 
     /* General page */
