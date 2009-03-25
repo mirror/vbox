@@ -1,10 +1,10 @@
 #!/usr/bin/perl -w
 #
-# Sun xVM VirtualBox
+# Sun VirtualBox
 #
 # Guest Additions X11 config update script
 #
-# Copyright (C) 2006-2008 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;

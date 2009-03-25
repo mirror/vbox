@@ -1137,7 +1137,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     SDL_Event EvHKeyDown2;
 
     LogFlow(("SDL GUI started\n"));
-    RTPrintf("Sun xVM VirtualBox SDL GUI version %s\n"
+    RTPrintf("Sun VirtualBox SDL GUI version %s\n"
              "(C) 2005-2009 Sun Microsystems, Inc.\n"
              "All rights reserved.\n\n",
              VBOX_VERSION_STRING);
@@ -4046,7 +4046,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
     strcpy(szPrevTitle, szTitle);
 
 
-    strcpy(szTitle, "Sun xVM VirtualBox - ");
+    strcpy(szTitle, "Sun VirtualBox - ");
 
     Bstr name;
     gMachine->COMGETTER(Name)(name.asOutParam());
@@ -4167,7 +4167,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
 #ifdef VBOX_WIN32_UI
     setUITitle(szTitle);
 #else
-    SDL_WM_SetCaption(szTitle, "Sun xVM VirtualBox");
+    SDL_WM_SetCaption(szTitle, "Sun VirtualBox");
 #endif
 }
 

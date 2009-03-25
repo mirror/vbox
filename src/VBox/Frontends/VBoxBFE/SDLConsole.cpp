@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1268,7 +1268,7 @@ void SDLConsole::updateTitlebar()
     char pszTitle[1024];
 
     RTStrPrintf(pszTitle, sizeof(pszTitle),
-                "Sun xVM VirtualBox%s%s",
+                "Sun VirtualBox%s%s",
                 g_uProgressPercent == ~0U && machineState == VMSTATE_SUSPENDED ? " - [Paused]" : "",
                 mfInputGrab                                                    ? " - [Input captured]": "");
 
@@ -1311,8 +1311,8 @@ void SDLConsole::updateTitlebarProgress(const char *pszStr, int iPercent)
 {
     char szTitle[256];
     AssertMsg(iPercent >= 0 && iPercent <= 100, ("%d\n", iPercent));
-    RTStrPrintf(szTitle, sizeof(szTitle), "Sun xVM VirtualBox - %s %d%%...", pszStr, iPercent);
-    SDL_WM_SetCaption(szTitle, "Sun xVM VirtualBox");
+    RTStrPrintf(szTitle, sizeof(szTitle), "Sun VirtualBox - %s %d%%...", pszStr, iPercent);
+    SDL_WM_SetCaption(szTitle, "Sun VirtualBox");
 }
 
 /**

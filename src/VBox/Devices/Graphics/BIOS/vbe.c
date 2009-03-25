@@ -78,7 +78,7 @@ _vbebios_product_name:
 .byte        0x00
 
 _vbebios_product_revision:
-.ascii       "Sun xVM VirtualBox Version "
+.ascii       "Sun VirtualBox Version "
 .ascii       VBOX_VERSION_STRING
 .byte        0x00
 
@@ -149,7 +149,7 @@ vesa_pm_set_display_start:
   mov  ax, #0x0100
   ret
 vesa_pm_set_display_start1:
-; convert offset to (X, Y) coordinate 
+; convert offset to (X, Y) coordinate
 ; (would be simpler to change Bochs VBE API...)
   push eax
   push ecx
@@ -575,11 +575,11 @@ ASM_START
 #ifdef VBE_BYTEWISE_IO
   call in_ax_dx
 #else
-  in  ax,dx 
+  in  ax,dx
 #endif
-  pop dx 
-  cmp dx,ax 
-  jne dispi_set_bank_farcall_error 
+  pop dx
+  cmp dx,ax
+  jne dispi_set_bank_farcall_error
   mov ax, #0x004f
   retf
 dispi_set_bank_farcall_get:
@@ -1154,7 +1154,7 @@ Bit16u *AX;Bit16u ES;Bit16u DI;
 #ifdef VBOX
   #define RT_OFFSETOF(type, member)   ( (int)(unsigned)&( ((type *)(void *)0)->member) )
 
-        /* Don't use a local copy of VbeInfoBlock on the stack; it's too big. 
+        /* Don't use a local copy of VbeInfoBlock on the stack; it's too big.
          * The Ubuntu 8.04 64 bits splash screen emulator can't handle this.
          */
 #ifdef VBE2_NO_VESA_CHECK
@@ -1568,7 +1568,7 @@ void vbe_biosfn_save_video_state(ES, BX)
     enable = inw(VBE_DISPI_IOPORT_DATA);
     write_word(ES, BX, enable);
     BX += 2;
-    if (!(enable & VBE_DISPI_ENABLED)) 
+    if (!(enable & VBE_DISPI_ENABLED))
         return;
     for(i = VBE_DISPI_INDEX_XRES; i <= VBE_DISPI_INDEX_Y_OFFSET; i++) {
         if (i != VBE_DISPI_INDEX_ENABLE) {
@@ -1587,7 +1587,7 @@ void vbe_biosfn_restore_video_state(ES, BX)
 
     enable = read_word(ES, BX);
     BX += 2;
-    
+
     if (!(enable & VBE_DISPI_ENABLED)) {
         outw(VBE_DISPI_IOPORT_INDEX,VBE_DISPI_INDEX_ENABLE);
         outw(VBE_DISPI_IOPORT_DATA, enable);
@@ -1908,19 +1908,19 @@ ASM_END
  * Notes:
  *     Secondary palette support is a "future extension".
  *     Attempts to set/get it should return status 02h.
- * 
+ *
  *     In VBE 3.0, reading palette data is optional and
  *     subfunctions 01h and 03h may return failure.
- * 
+ *
  *     The format of palette entries is as follows:
- * 
+ *
  *     PaletteEntry struc
  *     Blue     db  ?   ; Blue channel value (6 or 8 bits)
  *     Green    db  ?   ; Green channel value (6 or 8 bits)
  *     Red      db  ?   ; Red channel value (6 or 8 bits)
  *     Padding  db  ?   ; DWORD alignment byte (unused)
  *     PaletteEntry ends
- * 
+ *
  *     Most applications use VGA DAC registers directly to
  *     set/get palette in VBE modes. However, subfn 4F09h is
  *     required for NonVGA controllers (eg. XGA).

@@ -1,6 +1,6 @@
 PKG="SUNWvboxguest"
-NAME="Sun xVM VirtualBox Guest Additions"
-SUNW_PRODNAME="Sun xVM VirtualBox Guest Additions"
+NAME="Sun VirtualBox Guest Additions"
+SUNW_PRODNAME="Sun VirtualBox Guest Additions"
 ARCH="@UNAME_P@"
 VERSION="@VBOX_VERSION_STRING@,REV=r@VBOX_SVN_REV@.@VBOX_VERSION_REVSTAMP@"
 SUNW_PRODVERS="@VBOX_VERSION_STRING@"

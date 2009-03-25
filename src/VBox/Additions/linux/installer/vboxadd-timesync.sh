@@ -1,9 +1,9 @@
 #!/bin/sh
 #
-# Sun xVM VirtualBox
+# Sun VirtualBox
 # Linux Additions timesync daemon init script
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -174,7 +174,7 @@ if [ "$system" = "arch" ]; then
     }
 
 fi
- 
+
 if [ "$system" = "slackware" ]; then
     daemon() {
         $1 $2

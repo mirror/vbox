@@ -1,11 +1,11 @@
 #!/bin/sh
 ## @file
-# Sun xVM VirtualBox
+# Sun VirtualBox
 # VirtualBox package creation script, Solaris hosts.
 #
 
 #
-# Copyright (C) 2007-2008 Sun Microsystems, Inc.
+# Copyright (C) 2007-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;

@@ -1,8 +1,8 @@
 #!/bin/sh
-# Sun xVM VirtualBox
-# VirtualBox Zone Access Grant script for Solaris (Hack).
+# Sun VirtualBox
+# VirtualBox Zone Access Grant script for Solaris (workaround).
 #
-# Copyright (C) 2007-2008 Sun Microsystems, Inc.
+# Copyright (C) 2007-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,7 @@ if test -c "/devices/pseudo/vboxdrv@0:vboxdrv"; then
         exit 2
     fi
 else
-    echo "VirtualBox Host kernel module not loaded!! Zone access hack failed."
+    echo "VirtualBox Host kernel module not loaded!! Zone access workaround failed."
     exit 1
 fi
 

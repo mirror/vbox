@@ -1,8 +1,8 @@
 #!/bin/bash
-# Sun xVM VirtualBox
+# Sun VirtualBox
 # VirtualBox VNIC setup script for Solaris hosts with Crossbow.
 #
-# Copyright (C) 2007 Sun Microsystems, Inc.
+# Copyright (C) 2007-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -56,7 +56,7 @@ if [ -z "$2" ]; then
         else
             phys_field=`/usr/sbin/dladm show-link -p -o link,class | /usr/bin/awk 'BEGIN{FS=":"} /up/ {print $1}'`
             eval $phys_field
-            phys_nic="$LINK"            
+            phys_nic="$LINK"
         fi
         if [ -z "$phys_nic" ]; then
             # Failed to get any NICs!

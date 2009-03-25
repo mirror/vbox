@@ -1600,7 +1600,7 @@ void VBoxConsoleWnd::retranslateUi()
 #ifdef VBOX_OSE
     caption_prefix = tr ("VirtualBox OSE");
 #else
-    caption_prefix = tr ("Sun xVM VirtualBox");
+    caption_prefix = tr ("Sun VirtualBox");
 #endif
 
     /*

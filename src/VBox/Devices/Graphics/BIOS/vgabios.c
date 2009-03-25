@@ -438,7 +438,7 @@ init_vga_card:
   ret
 
 msg_vga_init:
-.ascii "Sun xVM VirtualBox Version "
+.ascii "Sun VirtualBox Version "
 .ascii VBOX_VERSION_STRING
 .ascii " VGA BIOS"
 .byte 0x0d,0x0a,0x00
@@ -3212,7 +3212,7 @@ Bit16u BX;Bit16u ES;Bit16u DI;
 }
 
 // --------------------------------------------------------------------------------------------
-static Bit16u biosfn_read_video_state_size2 (CX) 
+static Bit16u biosfn_read_video_state_size2 (CX)
      Bit16u CX;
 {
     Bit16u size;
@@ -3228,13 +3228,13 @@ static Bit16u biosfn_read_video_state_size2 (CX)
     }
     return size;
 }
-static void biosfn_read_video_state_size (CX, BX) 
+static void biosfn_read_video_state_size (CX, BX)
      Bit16u CX; Bit16u *BX;
 {
     Bit16u ss=get_SS();
     write_word(ss, BX, biosfn_read_video_state_size2(CX));
 }
-static Bit16u biosfn_save_video_state (CX,ES,BX) 
+static Bit16u biosfn_save_video_state (CX,ES,BX)
      Bit16u CX;Bit16u ES;Bit16u BX;
 {
     Bit16u i, v, crtc_addr, ar_index;
@@ -3319,7 +3319,7 @@ static Bit16u biosfn_save_video_state (CX,ES,BX)
     return BX;
 }
 
-static Bit16u biosfn_restore_video_state (CX,ES,BX) 
+static Bit16u biosfn_restore_video_state (CX,ES,BX)
      Bit16u CX;Bit16u ES;Bit16u BX;
 {
     Bit16u i, crtc_addr, v, addr1, ar_index;

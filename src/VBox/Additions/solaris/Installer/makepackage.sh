@@ -1,8 +1,8 @@
 #!/bin/sh
-# Sun xVM VirtualBox
+# Sun VirtualBox
 # VirtualBox Solaris Guest Additions package creation script.
 #
-# Copyright (C) 2008 Sun Microsystems, Inc.
+# Copyright (C) 2008-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -89,7 +89,7 @@ filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxfsmount=vboxf
 
 
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxservice.xml=vboxservice.xml"'  '$3 = "var/svc/manifest/system/virtualbox/vboxservice.xml=vboxservice.xml"'
-echo " --- start of prototype  ---" 
+echo " --- start of prototype  ---"
 cat prototype
 echo " --- end of prototype --- "
 

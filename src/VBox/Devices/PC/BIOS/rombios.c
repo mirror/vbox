@@ -1011,7 +1011,7 @@ static char bios_prefix_string[] = "BIOS: ";
 /* Do not use build timestamps in this string. Otherwise even rebuilding the
  * very same code will lead to compare errors when restoring saved state. */
 static char bios_cvs_version_string[] = "VirtualBox " VBOX_VERSION_STRING;
-#define BIOS_COPYRIGHT_STRING "Sun xVM VirtualBox BIOS"
+#define BIOS_COPYRIGHT_STRING "Sun VirtualBox BIOS"
 #else /* !VBOX */
 static char bios_cvs_version_string[] = "$Revision: 1.176 $ $Date: 2006/12/30 17:13:17 $";
 

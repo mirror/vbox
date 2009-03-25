@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -225,7 +225,7 @@ static void showHelp()
     dflt = "image";
 #endif
 
-    RTPrintf("Sun xVM VirtualBox Graphical User Interface "VBOX_VERSION_STRING"\n"
+    RTPrintf("Sun VirtualBox Graphical User Interface "VBOX_VERSION_STRING"\n"
             "(C) 2005-2009 Sun Microsystems, Inc.\n"
             "All rights reserved.\n"
             "\n"
