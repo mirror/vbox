@@ -168,11 +168,8 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
     if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pNew->Core))
     {
         rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pNew, pRam);
-        if (rc == VINF_PGM_GCPHYS_ALIASED)
-        {
-            pVM->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-        }
+        if (rc == VINF_PGM_SYNC_CR3)
+            rc = VINF_PGM_GCPHYS_ALIASED;
         pVM->pgm.s.fPhysCacheFlushPending = true;
         HWACCMFlushTLB(pVM);
 #ifndef IN_RING3
@@ -202,8 +199,8 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS when shadow PTs was successfully updated.
- * @retval  VINF_PGM_GCPHYS_ALIASED when the shadow PTs could be updated because
- *          the guest page aliased or/and mapped by multiple PTs.
+ * @retval  VINF_PGM_SYNC_CR3 when the shadow PTs could be updated because
+ *          the guest page aliased or/and mapped by multiple PTs. FFs set.
  * @param   pVM     The VM handle.
  * @param   pCur    The physical handler.
  * @param   pRam    The RAM range.
@@ -440,14 +437,8 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
     bool fFlushTLBs = false;
     int rc = pgmPoolTrackFlushGCPhys(pVM, pPage, &fFlushTLBs);
     AssertLogRelRCReturnVoid(rc);
-    if (rc == VINF_PGM_GCPHYS_ALIASED)
-    {
-        pVM->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
-        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-        rc = VINF_PGM_SYNC_CR3;
-    }
 # ifdef IN_RC
-    else if (fFlushTLBs)
+    if (fFlushTLBs && rc != VINF_PGM_SYNC_CR3)
         PGM_INVL_GUEST_TLBS();
 # else
     HWACCMFlushTLB(pVM);
@@ -579,11 +570,6 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
                      * Set ram flags, flush shadow PT entries and finally tell REM about this.
                      */
                     rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
-                    if (rc == VINF_PGM_GCPHYS_ALIASED)
-                    {
-                        pVM->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
-                        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-                    }
                     pVM->pgm.s.fPhysCacheFlushPending = true;
 
 #ifndef IN_RING3
@@ -890,11 +876,6 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                      * Set the flags and flush shadow PT entries.
                      */
                     rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
-                    if (rc == VINF_PGM_GCPHYS_ALIASED)
-                    {
-                        pVM->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
-                        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-                    }
                     pVM->pgm.s.fPhysCacheFlushPending = true;
                     HWACCMFlushTLB(pVM);
                 }

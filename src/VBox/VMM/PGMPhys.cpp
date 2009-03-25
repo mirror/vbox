@@ -2334,6 +2334,8 @@ int pgmR3PhysRomReset(PVM pVM)
  * any pages that are not the part of a shadowed ROM.
  *
  * @returns VBox status code.
+ * @retval  VINF_PGM_SYNC_CR3
+ *
  * @param   pVM         Pointer to the shared VM structure.
  * @param   GCPhys      Where to start. Page aligned.
  * @param   cb          How much to change. Page aligned.
@@ -2355,14 +2357,15 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
     /*
      * Process the request.
      */
-    bool fFlushedPool = false;
+    int  rc = VINF_SUCCESS;
+    bool fFlushTLB = false;
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
         if (    GCPhys     <= pRom->GCPhysLast
             &&  GCPhysLast >= pRom->GCPhys
             &&  (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED))
         {
             /*
-             * Iterate the relevant pages and the ncessary make changes.
+             * Iterate the relevant pages and make necessary the changes.
              */
             bool fChanges = false;
             uint32_t const cPages = pRom->GCPhysLast <= GCPhysLast
@@ -2377,16 +2380,14 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
                 {
                     fChanges = true;
 
-                    /* flush the page pool first so we don't leave any usage references dangling. */
-                    if (!fFlushedPool)
-                    {
-                        pgmPoolFlushAll(pVM);
-                        fFlushedPool = true;
-                    }
+                    /* flush references to the page. */
+                    PPGMPAGE pRamPage = pgmPhysGetPage(&pVM->pgm.s, pRom->GCPhys + (iPage << PAGE_SHIFT));
+                    int rc2 = pgmPoolTrackFlushGCPhys(pVM, pRamPage, &fFlushTLB);
+                    if (rc2 != VINF_SUCCESS && (rc == VINF_SUCCESS || RT_FAILURE(rc2)))
+                        rc = rc2;
 
                     PPGMPAGE pOld = PGMROMPROT_IS_ROM(pRomPage->enmProt) ? &pRomPage->Virgin : &pRomPage->Shadow;
                     PPGMPAGE pNew = PGMROMPROT_IS_ROM(pRomPage->enmProt) ? &pRomPage->Shadow : &pRomPage->Virgin;
-                    PPGMPAGE pRamPage = pgmPhysGetPage(&pVM->pgm.s, pRom->GCPhys + (iPage << PAGE_SHIFT));
 
                     *pOld = *pRamPage;
                     *pRamPage = *pNew;
@@ -2409,7 +2410,9 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
             GCPhys = pRom->GCPhys + (cPages << PAGE_SHIFT);
         }
 
-    return VINF_SUCCESS;
+    if (fFlushTLB)
+        PGM_INVL_GUEST_TLBS();
+    return rc;
 }
 
 #ifndef VBOX_WITH_NEW_PHYS_CODE
