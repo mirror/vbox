@@ -2629,8 +2629,8 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if all references has been successfully cleared.
- * @retval  VINF_PGM_GCPHYS_ALIASED if we're better off with a CR3 sync and
- *          a page pool cleaning.
+ * @retval  VINF_PGM_SYNC_CR3 if we're better off with a CR3 sync and a page
+ *          pool cleaning. FF and sync flags are set.
  *
  * @param   pVM         The VM handle.
  * @param   pPhysPage   The guest page in question.
@@ -2705,6 +2705,13 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
 #else
     rc = VINF_PGM_GCPHYS_ALIASED;
 #endif
+
+    if (rc == VINF_PGM_GCPHYS_ALIASED)
+    {
+        pVM->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
+        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        rc = VINF_PGM_SYNC_CR3;
+    }
 
     return rc;
 }
@@ -3953,10 +3960,12 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 #endif
     }
 
-    /* Force a shadow mode reinit (necessary for nested paging and ept). */
+    /*
+     * Force a shadow mode reinit (necessary for nested paging and ept).
+     * Reinit the current shadow paging mode as well; nested paging and
+     * EPT use a root CR3 which will get flushed here.
+     */
     pVM->pgm.s.enmShadowMode = PGMMODE_INVALID;
-
-    /* Reinit the current shadow paging mode as well; nested paging and EPT use a root CR3 which will get flushed here. */
     rc = PGMR3ChangeMode(pVM, PGMGetGuestMode(pVM));
     AssertRC(rc);
 
