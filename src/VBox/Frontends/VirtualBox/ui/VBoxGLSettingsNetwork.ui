@@ -75,7 +75,7 @@
       <bool>false</bool>
      </property>
      <property name="sizePolicy" >
-      <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+      <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -83,13 +83,7 @@
      <property name="minimumSize" >
       <size>
        <width>0</width>
-       <height>120</height>
-      </size>
-     </property>
-     <property name="maximumSize" >
-      <size>
-       <width>16777215</width>
-       <height>120</height>
+       <height>150</height>
       </size>
      </property>
      <property name="whatsThis" >
@@ -109,13 +103,13 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="3" rowspan="1" >
+   <item row="2" column="3" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
      </property>
      <property name="sizeType" >
-      <enum>QSizePolicy::Minimum</enum>
+      <enum>QSizePolicy::Expanding</enum>
      </property>
      <property name="sizeHint" >
       <size>
@@ -128,13 +122,13 @@
    <item row="3" column="2" >
     <widget class="QLabel" name="mLbInfo" >
      <property name="sizePolicy" >
-      <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
+      <sizepolicy vsizetype="Minimum" hsizetype="Expanding" >
        <horstretch>0</horstretch>
-       <verstretch>1</verstretch>
+       <verstretch>0</verstretch>
       </sizepolicy>
      </property>
      <property name="alignment" >
-      <set>Qt::AlignLeft|Qt::AlignTop</set>
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
      </property>
      <property name="wordWrap" >
       <bool>true</bool>

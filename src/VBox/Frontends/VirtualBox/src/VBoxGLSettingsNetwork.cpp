@@ -175,36 +175,36 @@ bool NetworkItem::revalidate (QString &aWarning, QString & /* aTitle */)
 QString NetworkItem::updateInfo()
 {
     /* Update information label */
-    QString hdr ("<tr><td><b><nobr>%1:&nbsp;</nobr></b></td>"
+    QString hdr ("<tr><td><nobr>%1:&nbsp;</nobr></td>"
                  "<td><nobr>%2</nobr></td></tr>");
-    QString sub ("<tr><td><b><nobr>&nbsp;&nbsp;%1:&nbsp;</nobr></b></td>"
+    QString sub ("<tr><td><nobr>&nbsp;&nbsp;%1:&nbsp;</nobr></td>"
                  "<td><nobr>%2</nobr></td></tr>");
     QString data, tip, buffer;
 
     /* Host-only Interface information */
     buffer = hdr.arg (QTreeWidget::tr ("Host Interface"))
-                .arg (mDhcpClientEnabled ? QTreeWidget::tr ("automatically configured", "interface")
-                                         : QTreeWidget::tr ("manually configured", "interface"));
+                .arg (mDhcpClientEnabled ? QTreeWidget::tr ("Automatically configured", "interface")
+                                         : QTreeWidget::tr ("Manually configured", "interface"));
     data += buffer;
     tip += buffer;
 
     if (!mDhcpClientEnabled)
     {
         buffer = sub.arg (QTreeWidget::tr ("IPv4 Address"))
-                    .arg (mInterfaceAddress.isEmpty() ? QTreeWidget::tr ("not set", "address")
+                    .arg (mInterfaceAddress.isEmpty() ? QTreeWidget::tr ("Not set", "address")
                                                       : mInterfaceAddress) +
                  sub.arg (QTreeWidget::tr ("IPv4 Mask"))
-                    .arg (mInterfaceMask.isEmpty() ? QTreeWidget::tr ("not set", "mask")
+                    .arg (mInterfaceMask.isEmpty() ? QTreeWidget::tr ("Not set", "mask")
                                                    : mInterfaceMask);
         tip += buffer;
 
         if (mIpv6Supported)
         {
             buffer = sub.arg (QTreeWidget::tr ("IPv6 Address"))
-                        .arg (mInterfaceAddress6.isEmpty() ? QTreeWidget::tr ("not set", "address")
+                        .arg (mInterfaceAddress6.isEmpty() ? QTreeWidget::tr ("Not set", "address")
                                                            : mInterfaceAddress6) +
                      sub.arg (QTreeWidget::tr ("IPv6 Mask Length"))
-                        .arg (mInterfaceMaskLength6.isEmpty() ? QTreeWidget::tr ("not set", "length")
+                        .arg (mInterfaceMaskLength6.isEmpty() ? QTreeWidget::tr ("Not set", "length")
                                                               : mInterfaceMaskLength6);
             tip += buffer;
         }
@@ -212,24 +212,24 @@ QString NetworkItem::updateInfo()
 
     /* DHCP Server information */
     buffer = hdr.arg (QTreeWidget::tr ("DHCP Server"))
-                .arg (mDhcpServerEnabled ? QTreeWidget::tr ("enabled", "server")
-                                         : QTreeWidget::tr ("disabled", "server"));
+                .arg (mDhcpServerEnabled ? QTreeWidget::tr ("Enabled", "server")
+                                         : QTreeWidget::tr ("Disabled", "server"));
     data += buffer;
     tip += buffer;
 
     if (mDhcpServerEnabled)
     {
         buffer = sub.arg (QTreeWidget::tr ("Address"))
-                    .arg (mDhcpServerAddress.isEmpty() ? QTreeWidget::tr ("not set", "address")
+                    .arg (mDhcpServerAddress.isEmpty() ? QTreeWidget::tr ("Not set", "address")
                                                        : mDhcpServerAddress) +
                  sub.arg (QTreeWidget::tr ("Mask"))
-                    .arg (mDhcpServerMask.isEmpty() ? QTreeWidget::tr ("not set", "mask")
+                    .arg (mDhcpServerMask.isEmpty() ? QTreeWidget::tr ("Not set", "mask")
                                                     : mDhcpServerMask) +
                  sub.arg (QTreeWidget::tr ("Lower Bound"))
-                    .arg (mDhcpLowerAddress.isEmpty() ? QTreeWidget::tr ("not set", "bound")
+                    .arg (mDhcpLowerAddress.isEmpty() ? QTreeWidget::tr ("Not set", "bound")
                                                       : mDhcpLowerAddress) +
                  sub.arg (QTreeWidget::tr ("Upper Bound"))
-                    .arg (mDhcpUpperAddress.isEmpty() ? QTreeWidget::tr ("not set", "bound")
+                    .arg (mDhcpUpperAddress.isEmpty() ? QTreeWidget::tr ("Not set", "bound")
                                                       : mDhcpUpperAddress);
         tip += buffer;
     }
@@ -247,6 +247,9 @@ VBoxGLSettingsNetwork::VBoxGLSettingsNetwork()
     /* Setup tree-widget */
     mTwInterfaces->header()->hide();
     mTwInterfaces->setContextMenuPolicy (Qt::CustomContextMenu);
+
+    /* Setup data label */
+    mLbInfo->setMinimumHeight (fontMetrics().height() * 4);
 
     /* Prepare toolbar */
     mAddInterface = new QAction (mTwInterfaces);
