@@ -65,6 +65,7 @@ VBoxGLSettingsNetworkDetails::VBoxGLSettingsNetworkDetails (QWidget *aParent)
     /* Setup widgets */
     mLeIPv6->setFixedWidthByText (QString().fill ('X', 32) + QString().fill (':', 7));
 
+#if defined (Q_WS_WIN32)
     QStyleOption options1;
     options1.initFrom (mCbManual);
     QGridLayout *layout1 = qobject_cast <QGridLayout*> (mTwDetails->widget (0)->layout());
@@ -73,6 +74,9 @@ VBoxGLSettingsNetworkDetails::VBoxGLSettingsNetworkDetails (QWidget *aParent)
                layout1->spacing() - 1;
     QSpacerItem *spacer1 = new QSpacerItem (wid1, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
     layout1->addItem (spacer1, 1, 0, 4);
+#else
+    mCbManual->setVisible (false);
+#endif
 
     QStyleOption options2;
     options2.initFrom (mCbDhcpServerEnabled);
