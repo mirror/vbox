@@ -732,7 +732,9 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                 m_TrunkName = Val.psz;
                 break;
             case 'T':
-                if (!strcmp(Val.psz, "whatever"))
+                if (!strcmp(Val.psz, "none"))
+                    m_enmTrunkType = kIntNetTrunkType_None;
+                else if (!strcmp(Val.psz, "whatever"))
                     m_enmTrunkType = kIntNetTrunkType_WhateverNone;
                 else if (!strcmp(Val.psz, "netflt"))
                     m_enmTrunkType = kIntNetTrunkType_NetFlt;
