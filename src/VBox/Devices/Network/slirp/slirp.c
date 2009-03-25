@@ -10,6 +10,7 @@
 # include <sys/ioctl.h>
 # include <poll.h>
 #else
+# include <Winnls.h>
 # define _WINSOCK2API_
 # include <IPHlpApi.h>
 #endif
@@ -331,6 +332,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     PIP_ADAPTER_ADDRESSES addr = NULL;
     PIP_ADAPTER_DNS_SERVER_ADDRESS dns = NULL;
     ULONG size = 0;
+    int wlen = 0;
     char *suffix;
     struct dns_entry *da = NULL;
     ULONG ret = ERROR_SUCCESS;
@@ -394,12 +396,20 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         next_dns:
             dns = dns->Next;
         }
+#if 1
         buff_size = wcstombs(NULL, addr->DnsSuffix, 0);
         if (buff_size == 0 || buff_size == (size_t)-1)
             goto next;
         suffix = RTMemAllocZ(buff_size + 1);
         wcstombs(suffix, addr->DnsSuffix, buff_size);
+        suffix[buff_size] = '\0';
         LogRel(("NAT: adding %s to DNS suffix list\n", suffix));
+#else
+        /*Probably more correct way but not working */
+        buff_size = WideCharToMultiByte(CP_ACP, 0, addr->DnsSuffix, -1, NULL, 0, NULL, NULL);
+        suffix = RTMemAllocZ(buff_size);
+        WideCharToMultiByte(CP_ACP, 0, addr->DnsSuffix, -1, suffix, buff_size, NULL, NULL);
+#endif
         *ppszDomain = suffix;
     next:
         addr = addr->Next;
