@@ -248,9 +248,6 @@ VBoxGLSettingsNetwork::VBoxGLSettingsNetwork()
     mTwInterfaces->header()->hide();
     mTwInterfaces->setContextMenuPolicy (Qt::CustomContextMenu);
 
-    /* Setup data label */
-    mLbInfo->setMinimumHeight (fontMetrics().height() * 4);
-
     /* Prepare toolbar */
     mAddInterface = new QAction (mTwInterfaces);
     mRemInterface = new QAction (mTwInterfaces);
@@ -317,6 +314,17 @@ void VBoxGLSettingsNetwork::getFrom (const CSystemProperties &, const VBoxGlobal
 
     mTwInterfaces->setCurrentItem (item);
     updateCurrentItem();
+
+#ifdef Q_WS_MAC
+    int width = qMax (static_cast<QAbstractItemView*> (mTwInterfaces)
+        ->sizeHintForColumn (0) + 2 * mTwInterfaces->frameWidth() +
+        QApplication::style()->pixelMetric (QStyle::PM_ScrollBarExtent),
+        160);
+    mTwInterfaces->setFixedWidth (width);
+    mTwInterfaces->resizeColumnToContents (0);
+#else /* Q_WS_MAC */
+    mSpacer1->changeSize (0, 0, QSizePolicy::Ignored, QSizePolicy::Ignored);
+#endif /* Q_WS_MAC */
 }
 
 void VBoxGLSettingsNetwork::putBackTo (CSystemProperties &, VBoxGlobalSettings &)
