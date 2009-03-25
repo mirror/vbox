@@ -596,7 +596,7 @@ extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWha
 # ifdef RT_OS_LINUX
             msgText += g_QStrHintLinuxNoDriver;
 # else
-            msgText += g_QStrHintOtherDriver;
+            msgText += g_QStrHintOtherNoDriver;
 # endif
             break;
 # ifdef RT_OS_LINUX
