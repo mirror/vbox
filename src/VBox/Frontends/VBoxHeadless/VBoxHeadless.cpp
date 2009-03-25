@@ -309,7 +309,7 @@ static void SaveState(int sig)
         rc = progress->COMGETTER(Completed)(&fCompleted);
         if (FAILED(rc) || fCompleted)
             break;
-        LONG cPercentNow;
+        ULONG cPercentNow;
         rc = progress->COMGETTER(Percent)(&cPercentNow);
         if (FAILED(rc))
             break;

@@ -3920,7 +3920,7 @@ void SaveState(void)
      * Wait for the operation to be completed and work
      * the title bar in the mean while.
      */
-    LONG    cPercent = 0;
+    ULONG    cPercent = 0;
 #ifndef RT_OS_DARWIN /* don't break the other guys yet. */
     for (;;)
     {
@@ -3928,7 +3928,7 @@ void SaveState(void)
         rc = gProgress->COMGETTER(Completed)(&fCompleted);
         if (FAILED(rc) || fCompleted)
             break;
-        LONG cPercentNow;
+        ULONG cPercentNow;
         rc = gProgress->COMGETTER(Percent)(&cPercentNow);
         if (FAILED(rc))
             break;
@@ -3960,7 +3960,7 @@ void SaveState(void)
         rc = gProgress->COMGETTER(Completed)(&fCompleted);
         if (FAILED(rc) || fCompleted)
             break;
-        LONG cPercentNow;
+        ULONG cPercentNow;
         rc = gProgress->COMGETTER(Percent)(&cPercentNow);
         if (FAILED(rc))
             break;
@@ -4121,7 +4121,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
                 strcat(szTitle, " - Starting...");
             else if (machineState == MachineState_Restoring)
             {
-                LONG cPercentNow;
+                ULONG cPercentNow;
                 HRESULT rc = gProgress->COMGETTER(Percent)(&cPercentNow);
                 if (SUCCEEDED(rc))
                     RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
@@ -4657,14 +4657,14 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
              * Wait for the operation to be completed and work
              * the title bar in the mean while.
              */
-            LONG    cPercent = 0;
+            ULONG    cPercent = 0;
             for (;;)
             {
                 BOOL fCompleted = false;
                 rc = gProgress->COMGETTER(Completed)(&fCompleted);
                 if (FAILED(rc) || fCompleted)
                     break;
-                LONG cPercentNow;
+                ULONG cPercentNow;
                 rc = gProgress->COMGETTER(Percent)(&cPercentNow);
                 if (FAILED(rc))
                     break;
