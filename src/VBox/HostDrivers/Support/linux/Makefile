@@ -228,18 +228,6 @@ ifeq ($(BUILD_TYPE),debug)
  KFLAGS  += -DIPRT_DEBUG_SEMS
 endif
 
-# By default we use remap_pfn_range() kernel API to make kernel pages
-# visible for userland. Unfortuately, it leads to situation that
-# during debug session all structures on that page (such as PVM pointer)
-# are not accessible to the debugger (see #3214).
-# This code enables experimental support
-# for vm_insert_page() kernel API, allowing to export kernel pages
-# to the userland in more debugger-friendly way. Due to stability
-# concerns, not enabled by default yet.
-ifdef VBOX_USE_INSERT_PAGE
- KFLAGS  += -DVBOX_USE_INSERT_PAGE
-endif
-
 # 2.6 and later
 MODULE_EXT    := ko
 $(MODULE)-y   := $(OBJS)
