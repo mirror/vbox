@@ -36,6 +36,10 @@
 #include <QProcess>
 #include <QHash>
 
+#ifdef Q_WS_X11
+# include <sys/wait.h>
+#endif
+
 class QAction;
 class QLabel;
 class QToolButton;
@@ -226,6 +230,10 @@ public:
         if (firstShotReady)
             result = process.readAllStandardOutput();
         process.setProcessState (QProcess::NotRunning);
+#ifdef Q_WS_X11
+        int status;
+        waitpid(process.pid(), &status, 0);
+#endif
         return result;
     }
 
