@@ -34,6 +34,8 @@
 #include <algorithm>
 #include <functional>
 
+#include "Performance.h"
+
 static Bstr gMetricNames[] =
 {
     "CPU/Load/User",

@@ -2,11 +2,11 @@
 
 /** @file
  *
- * VBox Performance COM Classes declaration.
+ * VBox Performance COM class implementation.
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,9 +33,13 @@
 //#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 #include <list>
-//#include <set>
 
-#include "Performance.h"
+namespace pm
+{
+    class Metric;
+    class BaseMetric;
+    class CollectorHAL;
+}
 
 #undef min
 #undef max
