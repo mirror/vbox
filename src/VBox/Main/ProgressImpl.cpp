@@ -520,15 +520,6 @@ void Progress::FinalRelease()
  * @param ulFirstOperationWeight Weight of first sub-operation.
  * @param aId               See ProgressBase::init().
  */
-/**
- *
- * @param aParent
- * @param aInitiator
- * @param aDescription
- * @param aCancelable
- * @param aId
- * @return
- */
 HRESULT Progress::init (
 #if !defined (VBOX_COM_INPROC)
                         VirtualBox *aParent,
