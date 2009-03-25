@@ -58,6 +58,37 @@
 # include <unistd.h>
 #endif
 
+/* XXX Temporarily. Don't rely on ther user to hack the Makefile himsef! */
+QString g_QStrHintLinuxNoMemory = QApplication::tr(
+  "This error means that the kernel driver was either not able to "
+  "allocate enough memory or that some mapping operation failed.<br/><br/>"
+  "There are known problems with Linux 2.6.29. If you are running "
+  "such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable "
+  "<i>VBOX_USE_INSERT_PAGE = 1</i>. After that, re-compile the kernel "
+  "module by executing<br/><br/>"
+  "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
+  "as root."
+  );
+
+QString g_QStrHintLinuxNoDriver = QApplication::tr(
+  "The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or "
+  "there is a permission problem with /dev/vboxdrv. Re-setup the kernel "
+  "module by executing<br/><br/>"
+  "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
+  "as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS "
+  "package first. This package keeps track of Linux kernel changes and "
+  "recompiles the vboxdrv kernel module if necessary."
+  );
+
+QString g_QStrHintOtherNoDriver = QApplication::tr(
+  "Make sure the kernel module has been loaded successfully."
+  );
+
+/* I hope this isn't (C), (TM) or (R) Microsoft support ;-) */
+QString g_QStrHintReinstall = QApplication::tr(
+  "It may help to reinstall VirtualBox."
+  );
+
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
 
 #include <signal.h>
@@ -496,20 +527,18 @@ int main (int argc, char **argv, char **envp)
         {
             case VERR_VM_DRIVER_NOT_INSTALLED:
                 msgText += QApplication::tr (
-                        "<b>Cannot access the kernel driver!</b><br/><br/>"
+                        "<b>Cannot access the kernel driver!</b><br/><br/>");
 # ifdef RT_OS_LINUX
-                        "The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or "
-                        "there is a permission problem with /dev/vboxdrv. Re-setup the kernel "
-                        "module by executing<br/><br/>"
-                        "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
-                        "as root. Users of Ubuntu or Fedora should install the DKMS package "
-                        "at first. This package keeps track of Linux kernel changes and "
-                        "recompiles the vboxdrv kernel module if necessary."
+                msgText += g_QStrHintLinuxNoDriver;
 # else
-                        "Make sure the kernel module has been loaded successfully."
+                msgText += g_QStrHintOtherNoDriver;
 # endif
-                        );
                 break;
+# ifdef RT_OS_LINUX
+            case VERR_NO_MEMORY:
+                msgText += g_QStrHintLinuxNoMemory;
+                break;
+# endif
             default:
                 msgText += QApplication::tr (
                         "Unknown %2 error during initialization of the Runtime"
@@ -564,24 +593,23 @@ extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWha
     switch (enmWhat)
     {
         case kSupInitOp_Driver:
-            msgText += QApplication::tr (
-#ifdef RT_OS_LINUX
-            "The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or "
-            "there is a permission problem with /dev/vboxdrv. Re-setup the kernel "
-            "module by executing<br/><br/>"
-            "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
-            "as root. Users of Ubuntu or Fedora should install the DKMS package "
-            "at first. This package keeps track of Linux kernel changes and "
-            "recompiles the vboxdrv kernel module if necessary."
-#else
-            "Make sure the kernel module has been loaded successfully."
-#endif
-            );
+# ifdef RT_OS_LINUX
+            msgText += g_QStrHintLinuxNoDriver;
+# else
+            msgText += g_QStrHintOtherDriver;
+# endif
             break;
+# ifdef RT_OS_LINUX
         case kSupInitOp_IPRT:
+            if (rc == VERR_NO_MEMORY)
+                msgText += g_QStrHintLinuxNoMemory;
+            else
+# endif
+                msgText += g_QStrHintReinstall;
+            break;
         case kSupInitOp_Integrity:
         case kSupInitOp_RootCheck:
-            msgText += QApplication::tr ("It may help to reinstall VirtualBox."); /* hope this isn't (C), (TM) or (R) Microsoft support ;-) */
+            msgText += g_QStrHintReinstall;
             break;
         default:
             /* no hints here */
@@ -589,9 +617,9 @@ extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWha
     }
     msgText += "</html>";
 
-#ifdef RT_OS_LINUX
+# ifdef RT_OS_LINUX
     sleep(2);
-#endif
+# endif
     QMessageBox::critical (
         0,                      /* parent */
         msgTitle,               /* title */
