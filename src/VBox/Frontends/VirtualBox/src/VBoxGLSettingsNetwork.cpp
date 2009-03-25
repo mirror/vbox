@@ -116,7 +116,7 @@ void NetworkItem::putBackToInterface()
     dhcp.SetConfiguration (mDhcpServerAddress, mDhcpServerMask, mDhcpLowerAddress, mDhcpUpperAddress);
 }
 
-bool NetworkItem::revalidate (QString &aWarning, QString &aTitle)
+bool NetworkItem::revalidate (QString &aWarning, QString & /* aTitle */)
 {
     /* Host-only Interface validation */
     if (!mDhcpClientEnabled)
