@@ -986,7 +986,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
 /**
  * Replaces an MMIO page with an MMIO2 page.
  *
- * This is a worker for IOMMMIOModifyPage that works in a similar way to
+ * This is a worker for IOMMMIOMapMMIO2Page that works in a similar way to
  * PGMHandlerPhysicalPageTempOff but for an MMIO page. Since an MMIO page has no
  * backing, the caller must provide a replacement page. For various reasons the
  * replacement page must be an MMIO2 page.
