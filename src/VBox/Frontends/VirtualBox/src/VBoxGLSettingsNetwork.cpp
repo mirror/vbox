@@ -443,21 +443,18 @@ void VBoxGLSettingsNetwork::editInterface()
     NetworkItem *item = static_cast <NetworkItem*> (mTwInterfaces->currentItem());
     AssertMsg (item, ("Current item should be selected!\n"));
 
-    if (item)
+    /* Edit current item data */
+    VBoxGLSettingsNetworkDetails details (this);
+    details.getFromItem (item);
+    if (details.exec() == QDialog::Accepted)
     {
-        /* Edit current item data */
-        VBoxGLSettingsNetworkDetails details (this);
-        details.getFromItem (item);
-        if (details.exec() == QDialog::Accepted)
-        {
-            details.putBackToItem();
-            item->setChanged (true);
-            item->updateInfo();
-        }
-
-        updateCurrentItem();
-        mValidator->revalidate();
+        details.putBackToItem();
+        item->setChanged (true);
+        item->updateInfo();
     }
+
+    updateCurrentItem();
+    mValidator->revalidate();
 }
 
 void VBoxGLSettingsNetwork::updateCurrentItem()
