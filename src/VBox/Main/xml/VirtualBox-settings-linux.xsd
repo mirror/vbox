@@ -54,17 +54,6 @@
 /////////////////////////////////////////////////////////////////////////
 -->
 
-<xsd:complexType name="TMemory">
-  <xsd:attribute name="RAMSize" use="required">
-    <xsd:simpleType>
-      <xsd:restriction base="xsd:unsignedInt">
-        <xsd:minInclusive value="4"/>
-        <xsd:maxInclusive value="3584"/>
-      </xsd:restriction>
-    </xsd:simpleType>
-  </xsd:attribute>
-</xsd:complexType>
-
 <xsd:complexType name="TAudioAdapter">
   <xsd:complexContent>
     <xsd:extension base="TAudioAdapterBase">

@@ -148,7 +148,8 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestRAM)(ULONG *minRAM)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* no need to lock, this is const */
-    *minRAM = SchemaDefs::MinGuestRAM;
+    AssertCompile(MM_RAM_MIN_IN_MB >= SchemaDefs::MinGuestRAM);
+    *minRAM = MM_RAM_MIN_IN_MB;
 
     return S_OK;
 }
@@ -162,7 +163,8 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestRAM)(ULONG *maxRAM)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* no need to lock, this is const */
-    *maxRAM = SchemaDefs::MaxGuestRAM;
+    AssertCompile(MM_RAM_MAX_IN_MB <= SchemaDefs::MaxGuestRAM);
+    *maxRAM = MM_RAM_MAX_IN_MB;
 
     return S_OK;
 }
