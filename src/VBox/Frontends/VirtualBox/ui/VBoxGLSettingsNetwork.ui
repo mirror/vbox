@@ -23,8 +23,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>286</width>
-    <height>219</height>
+    <width>218</width>
+    <height>216</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -126,7 +126,7 @@
       <enum>Qt::Horizontal</enum>
      </property>
      <property name="sizeType">
-      <enum>QSizePolicy::Expanding</enum>
+      <enum>QSizePolicy::Ignored</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>
