@@ -468,6 +468,7 @@ void VBoxGLSettingsNetwork::updateCurrentItem()
     mLbInfo->setText (item ? item->updateInfo() : QString());
     /* Update availability */
     mRemInterface->setEnabled (item);
+    mEditInterface->setEnabled (item);
 #if !defined (Q_WS_WIN32)
     /* Disable add/remove for all except win for now */
     mAddInterface->setEnabled (false);
