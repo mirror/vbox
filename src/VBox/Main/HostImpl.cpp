@@ -95,6 +95,7 @@ extern "C" char *getfullrawname(char *);
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
 #include "Logging.h"
+#include "Performance.h"
 
 #ifdef RT_OS_DARWIN
 # include "darwin/iokit.h"
