@@ -459,7 +459,7 @@ void VBoxGLSettingsNetwork::updateCurrentItem()
     /* Get current item */
     NetworkItem *item = static_cast <NetworkItem*> (mTwInterfaces->currentItem());
     /* Set the final label text */
-    mLbInfo->setText (item->updateInfo());
+    mLbInfo->setText (item ? item->updateInfo() : QString());
     /* Update availability */
     mRemInterface->setEnabled (item);
 #if !defined (Q_WS_WIN32)
