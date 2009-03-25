@@ -63,7 +63,7 @@ HostPowerServiceDarwin::~HostPowerServiceDarwin()
 }
 
 
-DECLCALLBACK(int) HostPowerServiceDarwin::powerChangeNotificationThread (RTTHREAD ThreadSelf, void *pInstance)
+DECLCALLBACK(int) HostPowerServiceDarwin::powerChangeNotificationThread (RTTHREAD /* ThreadSelf */, void *pInstance)
 {
     HostPowerServiceDarwin *pPowerObj = static_cast<HostPowerServiceDarwin *> (pInstance);
 
@@ -100,7 +100,7 @@ DECLCALLBACK(int) HostPowerServiceDarwin::powerChangeNotificationThread (RTTHREA
     return VINF_SUCCESS;
 }
 
-void HostPowerServiceDarwin::powerChangeNotificationHandler (void *pvData, io_service_t service, natural_t messageType, void *pMessageArgument)
+void HostPowerServiceDarwin::powerChangeNotificationHandler (void *pvData, io_service_t /* service */, natural_t messageType, void *pMessageArgument)
 {
     HostPowerServiceDarwin *pPowerObj = static_cast<HostPowerServiceDarwin *> (pvData);
     Log (( "powerChangeNotificationHandler: messageType %08lx, arg %08lx\n", (long unsigned int)messageType, (long unsigned int)pMessageArgument));
