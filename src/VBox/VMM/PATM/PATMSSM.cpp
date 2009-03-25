@@ -582,7 +582,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 
         pPatchRec->patch.pPrivInstrHC   = 0;
         /* The GC virtual ptr is fixed, but we must convert it manually again to HC. */
-        rc = PGMPhysGCPtr2R3Ptr(pVM, pPatchRec->patch.pPrivInstrGC, (PRTR3PTR)&pPatchRec->patch.pPrivInstrHC);
+        int rc2 = rc = PGMPhysGCPtr2R3Ptr(pVM, pPatchRec->patch.pPrivInstrGC, (PRTR3PTR)&pPatchRec->patch.pPrivInstrHC);
         /* Can fail due to page or page table not present. */
 
         /*
@@ -613,7 +613,10 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                     Assert(pPatchRec->patch.cbPatchJump == SIZEOF_NEARJUMP32 || pPatchRec->patch.cbPatchJump == SIZEOF_NEAR_COND_JUMP32);
                     unsigned offset = (pPatchRec->patch.cbPatchJump == SIZEOF_NEARJUMP32) ? 1 : 2;
 
-                    Assert(pPatchRec->patch.pPrivInstrHC);
+                    /** @todo This will fail & crash in patmCorrectFixup if the page isn't present
+                     *        when we restore. Happens with my XP image here
+                     *        (pPrivInstrGC=0x8069e051). */
+                    AssertLogRelMsg(pPatchRec->patch.pPrivInstrHC, ("%RRv rc=%Rrc\n", pPatchRec->patch.pPrivInstrGC, rc2));
                     rec.pRelocPos = pPatchRec->patch.pPrivInstrHC + offset;
                     pFixup        = (RTRCPTR *)rec.pRelocPos;
                 }
