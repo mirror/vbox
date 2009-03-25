@@ -1197,7 +1197,7 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
             && !vga_is_dirty(s, addr))
         {
             /** @todo only allow read access (doesn't work now) */
-            IOMMMIOModifyPage(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), GCPhys, s->GCPhysVRAM + addr, X86_PTE_RW|X86_PTE_P);
+            IOMMMIOMapMMIO2Page(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), GCPhys, s->GCPhysVRAM + addr, X86_PTE_RW|X86_PTE_P);
             /* Set as dirty as write accesses won't be noticed now. */
             vga_set_dirty(s, addr);
             s->fRemappedVGA = true;
@@ -1329,7 +1329,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
             if (   (s->sr[2] & 3) == 3
                 && !vga_is_dirty(s, addr))
             {
-                IOMMMIOModifyPage(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), GCPhys, s->GCPhysVRAM + addr, X86_PTE_RW | X86_PTE_P);
+                IOMMMIOMapMMIO2Page(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), GCPhys, s->GCPhysVRAM + addr, X86_PTE_RW | X86_PTE_P);
                 s->fRemappedVGA = true;
             }
 # endif /* IN_RC */
