@@ -857,7 +857,30 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
                 }
             }
 
-            render_spu.ws.wglMakeCurrent( window->device_context, context->hRC );
+            if (!render_spu.ws.wglMakeCurrent(window->device_context, context->hRC))
+            {
+                DWORD err = GetLastError();
+                crWarning("Render SPU: (MakeCurrent) failed to make 0x%x, 0x%x cureent with 0x%x error.", window->device_context, context->hRC, err);
+
+                /* Workaround for Intel drivers, which report support for wglChoosePixelFormatEXT, but it doesn't work. */
+                if ((err==ERROR_INVALID_PIXEL_FORMAT) && (!context->everCurrent))
+                {
+                    crDebug("Trying to resetup pixel format");
+                    if (!bSetupPixelFormatNormal(window->device_context, context->visual->visAttribs))
+                    {
+                        crWarning("Failed to resetup pixel format");
+                    }
+
+                    if (!render_spu.ws.wglMakeCurrent(window->device_context, context->hRC))
+                    {
+                        crError("Can't make context current");
+                    }
+                    else
+                    {
+                        crInfo("Render SPU: (MakeCurrent) passed after pixel format reset");
+                    }
+                }
+            }
         }
 
     }
