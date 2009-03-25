@@ -180,6 +180,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
     if (uSvnRev != VMMGetSvnRev())
     {
         LogRel(("VMMR0InitVM: Revision mismatch, r3=%d r0=%d\n", uSvnRev, VMMGetSvnRev()));
+        SUPR0Printf("VMMR0InitVM: Revision mismatch, r3=%d r0=%d\n", uSvnRev, VMMGetSvnRev());
         return VERR_VERSION_MISMATCH;
     }
     if (    !VALID_PTR(pVM)
