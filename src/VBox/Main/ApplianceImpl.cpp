@@ -1714,10 +1714,6 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                 task->progress->setNextOperation(BstrFmt(tr("Importing virtual system %d"), i + 1),
                                                  pAppliance->m->ulWeightPerOperation);
 
-            /* How many sub notifications are necessary? */
-            const float opCountMax = 100.0/5;
-            uint32_t opCount = 0;
-
             /* Guest OS type */
             std::list<VirtualSystemDescriptionEntry*> vsdeOS;
             vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
@@ -1753,7 +1749,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             }
 
             if (!task->progress.isNull())
-                rc = task->progress->setCurrentOperationProgress((uint32_t)(opCountMax * opCount++));
+                rc = task->progress->setCurrentOperationProgress(20);       // let's say 1/5 of the XML is done here
 
             /* CPU count (ignored for now) */
             // EntriesList vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
@@ -1777,7 +1773,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             if (FAILED(rc)) throw rc;
 
             if (!task->progress.isNull())
-                task->progress->setCurrentOperationProgress((uint32_t)(opCountMax * opCount++));
+                rc = task->progress->setCurrentOperationProgress(40);       // let's say 2/5 of the XML is done here
 
             /* Audio Adapter */
             std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->findByType(VirtualSystemDescriptionType_SoundCard);
@@ -1813,7 +1809,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
 #endif /* VBOX_WITH_USB */
 
             if (!task->progress.isNull())
-                task->progress->setCurrentOperationProgress((uint32_t)(opCountMax * opCount++));
+                rc = task->progress->setCurrentOperationProgress(60);       // let's say 3/5 of the XML is done here
 
             /* Change the network adapters */
             std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
@@ -1926,7 +1922,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             if (FAILED(rc)) throw rc;
 
             if (!task->progress.isNull())
-                task->progress->setCurrentOperationProgress((uint32_t)(opCountMax * opCount++));
+                rc = task->progress->setCurrentOperationProgress(80);       // let's say 4/5 of the XML is done here
 
             /* CDROM drive */
             /* @todo: I can't disable the CDROM. So nothing to do for now */
@@ -2012,7 +2008,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             if (FAILED(rc)) throw rc;
 
             if (!task->progress.isNull())
-                task->progress->setCurrentOperationProgress((uint32_t)(opCountMax * opCount++));
+                rc = task->progress->setCurrentOperationProgress(90);
 
             // store new machine for roll-back in case of errors
             llMachinesRegistered.push_back(newMachineId);
@@ -2077,7 +2073,8 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                         if (FAILED(rc))
                             throw rc;
 
-                        ComPtr<IProgress> progress;
+                        // subprogress object for hard disk
+                        ComPtr<IProgress> pProgress2;
 
                         ComPtr<IHardDisk> dstHdVBox;
                         /* If strHref is empty we have to create a new file */
@@ -2093,7 +2090,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                             if (FAILED(rc)) throw rc;
 
                             /* Create a dynamic growing disk image with the given capacity */
-                            rc = dstHdVBox->CreateBaseStorage(di.iCapacity / _1M, HardDiskVariant_Standard, progress.asOutParam());
+                            rc = dstHdVBox->CreateBaseStorage(di.iCapacity / _1M, HardDiskVariant_Standard, pProgress2.asOutParam());
                             if (FAILED(rc)) throw rc;
 
                             /* Advance to the next operation */
@@ -2131,7 +2128,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                             rc = pVirtualBox->CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
                             if (FAILED(rc)) throw rc;
                             /* Clone the source disk image */
-                            rc = srcHdVBox->CloneTo(dstHdVBox, HardDiskVariant_Standard, progress.asOutParam());
+                            rc = srcHdVBox->CloneTo(dstHdVBox, HardDiskVariant_Standard, pProgress2.asOutParam());
                             if (FAILED(rc)) throw rc;
 
                             /* Advance to the next operation */
@@ -2140,32 +2137,39 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                                                                  vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
                         }
 
-                        // now loop until the asynchronous operation completes and then
-                        // report its result
+                        // now loop until the asynchronous operation completes and then report its result
                         BOOL fCompleted;
+                        BOOL fCanceled;
                         ULONG currentPercent;
-                        while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+                        while (SUCCEEDED(pProgress2->COMGETTER(Completed(&fCompleted))))
                         {
-                            rc = progress->COMGETTER(Percent(&currentPercent));
+                            rc = task->progress->COMGETTER(Canceled)(&fCanceled);
                             if (FAILED(rc)) throw rc;
-                            if (!task->progress.isNull())
-                                task->progress->setCurrentOperationProgress(currentPercent);
-                            if (fCompleted)
-                                break;
+                            if (fCanceled)
+                                pProgress2->Cancel();
+                            else
+                            {
+                                rc = pProgress2->COMGETTER(Percent(&currentPercent));
+                                if (FAILED(rc)) throw rc;
+                                if (!task->progress.isNull())
+                                    task->progress->setCurrentOperationProgress(currentPercent);
+                                if (fCompleted)
+                                    break;
+                            }
                             /* Make sure the loop is not too tight */
-                            rc = progress->WaitForCompletion(100);
+                            rc = pProgress2->WaitForCompletion(100);
                             if (FAILED(rc)) throw rc;
                         }
                         // report result of asynchronous operation
                         HRESULT vrc;
-                        rc = progress->COMGETTER(ResultCode)(&vrc);
+                        rc = pProgress2->COMGETTER(ResultCode)(&vrc);
                         if (FAILED(rc)) throw rc;
 
                         // if the thread of the progress object has an error, then
                         // retrieve the error info from there, or it'll be lost
                         if (FAILED(vrc))
                         {
-                            ProgressErrorInfo info(progress);
+                            ProgressErrorInfo info(pProgress2);
                             Utf8Str str(info.getText());
                             const char *pcsz = str.c_str();
                             HRESULT rc2 = setError(vrc,
@@ -3024,23 +3028,29 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                     task->progress->setNextOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()),
                                                      pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
-                // now loop until the asynchronous operation completes and then
-                // report its result
+                // now loop until the asynchronous operation completes and then report its result
                 BOOL fCompleted;
+                BOOL fCanceled;
                 ULONG currentPercent;
                 while (SUCCEEDED(pProgress2->COMGETTER(Completed(&fCompleted))))
                 {
-                    rc = pProgress2->COMGETTER(Percent(&currentPercent));
+                    rc = task->progress->COMGETTER(Canceled)(&fCanceled);
                     if (FAILED(rc)) throw rc;
-                    if (!task->progress.isNull())
-                        task->progress->setCurrentOperationProgress(currentPercent);
-                    if (fCompleted)
-                        break;
-                    // make sure the loop is not too tight
+                    if (fCanceled)
+                        pProgress2->Cancel();
+                    else
+                    {
+                        rc = pProgress2->COMGETTER(Percent(&currentPercent));
+                        if (FAILED(rc)) throw rc;
+                        if (!task->progress.isNull())
+                            task->progress->setCurrentOperationProgress(currentPercent);
+                        if (fCompleted)
+                            break;
+                    }
+                    /* Make sure the loop is not too tight */
                     rc = pProgress2->WaitForCompletion(100);
                     if (FAILED(rc)) throw rc;
                 }
-
                 // report result of asynchronous operation
                 HRESULT vrc;
                 rc = pProgress2->COMGETTER(ResultCode)(&vrc);
@@ -3200,7 +3210,10 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
 }
 
 /**
- * Calculates the no. of operations for the IProgress objects in importMachines() and write().
+ * Sets up the given progress object so that it represents disk images accurately
+ * during importMachines() and write().
+ * @param pProgress
+ * @param bstrDescription
  * @return
  */
 HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription)
@@ -3244,6 +3257,7 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bst
     }
     else
     {
+        // no disks to export:
         ulTotalOperationsWeight = cFixed;
         m->ulWeightPerOperation = 1;
     }
@@ -3253,7 +3267,7 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bst
 
     rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
                          bstrDescription,
-                         FALSE /* aCancelable */,
+                         TRUE /* aCancelable */,
                          cFixed + (ULONG)cDisks, // ULONG cOperations,
                          ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
                          bstrDescription, // CBSTR bstrFirstOperationDescription,
