@@ -31,6 +31,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifdef LIBVIRT_VERSION
+# include <config.h>
+#endif /* LIBVIRT_VERSION */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -78,7 +82,6 @@ static int tryLoadOne(const char *pszHome)
     size_t      cchHome = pszHome ? strlen(pszHome) : 0;
     size_t      cbReq;
     char        szBuf[4096];
-    char *      pszBuf;
     int         rc = -1;
 
     /*
@@ -90,20 +93,17 @@ static int tryLoadOne(const char *pszHome)
         sprintf(g_szVBoxErrMsg, "path buffer too small: %u bytes required", (unsigned)cbReq);
         return -1;
     }
-    if (pszHome)
-    {
-        memcpy(pszBuf, pszHome, cchHome);
-        pszBuf[cchHome] = '/';
-        cchHome++;
-    }
-    memcpy(&pszBuf[cchHome], DYNLIB_NAME, sizeof(DYNLIB_NAME));
+    memcpy(szBuf, pszHome, cchHome);
+    szBuf[cchHome] = '/';
+    cchHome++;
+    memcpy(&szBuf[cchHome], DYNLIB_NAME, sizeof(DYNLIB_NAME));
 
     /*
      * Try load it by that name, setting the VBOX_APP_HOME first (for now).
      * Then resolve and call the function table getter.
      */
     setenv("VBOX_APP_HOME", pszHome, 0 /* no need to overwrite */);
-    g_hVBoxXPCOMC = dlopen(pszBuf, RTLD_NOW | RTLD_LOCAL);
+    g_hVBoxXPCOMC = dlopen(szBuf, RTLD_NOW | RTLD_LOCAL);
     if (g_hVBoxXPCOMC)
     {
         PFNVBOXGETXPCOMCFUNCTIONS pfnGetFunctions;
@@ -119,11 +119,11 @@ static int tryLoadOne(const char *pszHome)
             }
             else
                 sprintf(g_szVBoxErrMsg, "%.80s: pfnGetFunctions(%#x) failed",
-                        pszBuf, VBOX_XPCOMC_VERSION);
+                        szBuf, VBOX_XPCOMC_VERSION);
         }
         else
             sprintf(g_szVBoxErrMsg, "dlsym(%.80s/%.32s): %128s",
-                    pszBuf, VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME, dlerror());
+                    szBuf, VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME, dlerror());
         if (rc != 0)
         {
             dlclose(g_hVBoxXPCOMC);
@@ -131,7 +131,7 @@ static int tryLoadOne(const char *pszHome)
         }
     }
     else
-        sprintf(g_szVBoxErrMsg, "dlopen(%.80s): %128s", pszBuf, dlerror());
+        sprintf(g_szVBoxErrMsg, "dlopen(%.80s): %128s", szBuf, dlerror());
     return rc;
 }
 
