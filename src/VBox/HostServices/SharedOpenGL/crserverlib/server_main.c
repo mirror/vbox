@@ -328,6 +328,7 @@ void crVBoxServerAddClient(uint32_t u32ClientID)
 
     newClient->spu_id = 0;
     newClient->currentCtx = cr_server.DummyContext;
+    newClient->currentContextNumber = -1;
     newClient->conn = crNetAcceptClient(cr_server.protocol, NULL,
                                         cr_server.tcpip_port,
                                         cr_server.mtu, 0);
