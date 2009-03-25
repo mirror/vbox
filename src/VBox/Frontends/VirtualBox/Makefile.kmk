@@ -400,7 +400,7 @@ endif
 
 VirtualBox_SOURCES.win += \
 	src/VBoxFBDDRAW.cpp \
-	$(PATH_VirtualBox)/VirtualBox.rc
+	src/win/VirtualBox.rc
 
 VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
@@ -504,14 +504,16 @@ $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc: \
 
 ifeq ($(KBUILD_TARGET),win)
 #
-# On Windows we'll have to generate/edit the resource file.
+# On Windows we'll have to generate/edit part of the resource file.
 # The IDI_ICON1 name is Qt specific.
 #
-$$(PATH_VirtualBox)/VirtualBox.rc: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
-	$(RM) -f $@
-	$(APPEND) $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+src/win/VirtualBox.rc_INCS  = $(PATH_VirtualBox)
+src/win/VirtualBox.rc_DEPS  = $(PATH_VirtualBox)/VirtualBox-icon.rc
+src/win/VirtualBox.rc_CLEAN = $(PATH_VirtualBox)/VirtualBox-icon.rc
 
-VirtualBox_CLEAN.win += $$(PATH_VirtualBox)/VirtualBox.rc
+$$(PATH_VirtualBox)/VirtualBox-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
+	$(APPEND) -t $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+
 endif # win
 
 
