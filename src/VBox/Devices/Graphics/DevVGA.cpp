@@ -1192,7 +1192,6 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
         ret = s->vram_ptr[addr];
 #else /* VBOX */
 # ifndef IN_RC
-#  ifndef VBOX_WITH_NEW_PHYS_CODE /* disable this temporarily. */
         /* If all planes are accessible, then map the page to the frame buffer and make it writable. */
         if (   (s->sr[2] & 3) == 3
             && !vga_is_dirty(s, addr))
@@ -1203,7 +1202,6 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
             vga_set_dirty(s, addr);
             s->fRemappedVGA = true;
         }
-#  endif /* !VBOX_WITH_NEW_PHYS_CODE */
 # endif /* IN_RC */
         VERIFY_VRAM_READ_OFF_RETURN(s, addr, *prc);
         ret = s->CTX_SUFF(vram_ptr)[addr];
@@ -1327,7 +1325,6 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
             s->vram_ptr[addr] = val;
 #else /* VBOX */
 # ifndef IN_RC
-#  ifndef VBOX_WITH_NEW_PHYS_CODE /* disable this temporarily. */
             /* If all planes are accessible, then map the page to the frame buffer and make it writable. */
             if (   (s->sr[2] & 3) == 3
                 && !vga_is_dirty(s, addr))
@@ -1335,7 +1332,6 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
                 IOMMMIOModifyPage(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), GCPhys, s->GCPhysVRAM + addr, X86_PTE_RW | X86_PTE_P);
                 s->fRemappedVGA = true;
             }
-#  endif /* !VBOX_WITH_NEW_PHYS_CODE */
 # endif /* IN_RC */
 
             VERIFY_VRAM_WRITE_OFF_RETURN(s, addr);
