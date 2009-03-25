@@ -322,8 +322,7 @@ void VBoxGLSettingsNetwork::getFrom (const CSystemProperties &, const VBoxGlobal
         160);
     mTwInterfaces->setFixedWidth (width);
     mTwInterfaces->resizeColumnToContents (0);
-#else /* Q_WS_MAC */
-    mSpacer1->changeSize (0, 0, QSizePolicy::Ignored, QSizePolicy::Ignored);
+    mSpacer1->changeSize (0, 1, QSizePolicy::Expanding, QSizePolicy::Preferred);
 #endif /* Q_WS_MAC */
 }
 
