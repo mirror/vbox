@@ -283,6 +283,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxGLSettingsInput.h \
 	include/VBoxGLSettingsUpdate.h \
 	include/VBoxGLSettingsLanguage.h \
+	include/VBoxGLSettingsNetwork.h \
+	include/VBoxGLSettingsNetworkDetails.h \
 	include/VBoxSettingsDialog.h \
 	include/VBoxSettingsDialogSpecific.h \
 	include/VBoxSettingsPage.h \
@@ -365,6 +367,8 @@ VirtualBox_SOURCES = \
 	src/VBoxGLSettingsInput.cpp \
 	src/VBoxGLSettingsUpdate.cpp \
 	src/VBoxGLSettingsLanguage.cpp \
+	src/VBoxGLSettingsNetwork.cpp \
+	src/VBoxGLSettingsNetworkDetails.cpp \
 	src/VBoxSettingsDialog.cpp \
 	src/VBoxSettingsDialogSpecific.cpp \
 	src/VBoxSettingsSelector.cpp \

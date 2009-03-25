@@ -1,0 +1,374 @@
+<ui version="4.0" >
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+ Copyright (C) 2009 Sun Microsystems, Inc.
+
+ This file is part of VirtualBox Open Source Edition (OSE), as
+ available from http://www.virtualbox.org. This file is free software;
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License (GPL) as published by the Free Software
+ Foundation, in version 2 as it comes in the "COPYING" file of the
+ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ Clara, CA 95054 USA or visit http://www.sun.com if you need
+ additional information or have any questions.
+ </comment>
+ <class>VBoxGLSettingsNetworkDetails</class>
+ <widget class="QWidget" name="VBoxGLSettingsNetworkDetails" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>402</width>
+    <height>255</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Host-only Network Details</string>
+  </property>
+  <layout class="QVBoxLayout" >
+   <item>
+    <widget class="QTabWidget" name="mTwDetails" >
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="currentIndex" >
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="mTabInterface" >
+      <attribute name="title" >
+       <string>Host-only &amp;Interface</string>
+      </attribute>
+      <layout class="QGridLayout" >
+       <item row="0" column="0" colspan="3" >
+        <widget class="QCheckBox" name="mCbManual" >
+         <property name="text" >
+          <string>&amp;Manual Configuration</string>
+         </property>
+         <property name="checked" >
+          <bool>true</bool>
+         </property>
+         <property name="toolTip" >
+          <string>Use manual configuration for this host-only network interface.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1" >
+        <widget class="QLabel" name="mLbIPv4" >
+         <property name="text" >
+          <string>IPv4 &amp;Address:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeIPv4</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2" >
+        <widget class="QILineEdit" name="mLeIPv4" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip" >
+          <string>Displays the host IPv4 address for this interface.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1" >
+        <widget class="QLabel" name="mLbNMv4" >
+         <property name="text" >
+          <string>IPv4 Network Ma&amp;sk:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeNMv4</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2" >
+        <widget class="QILineEdit" name="mLeNMv4" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip" >
+          <string>Displays the host IPv4 network mask for this interface.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1" >
+        <widget class="QLabel" name="mLbIPv6" >
+         <property name="text" >
+          <string>IPv6 Add&amp;ress:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeIPv6</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2" >
+        <widget class="QILineEdit" name="mLeIPv6" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip" >
+          <string>Displays the host IPv6 address for this interface if IPv6 protocol is supported.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1" >
+        <widget class="QLabel" name="mLbNMv6" >
+         <property name="text" >
+          <string>IPv6 Network Mask L&amp;ength:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeNMv6</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="2" >
+        <widget class="QILineEdit" name="mLeNMv6" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip" >
+          <string>Displays the host IPv6 network mask prefix length for this interface if IPv6 protocol is supported.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="3" >
+        <spacer name="verticalSpacer" >
+         <property name="orientation" >
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0" >
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="mTabDhcpServer" >
+      <attribute name="title" >
+       <string>&amp;DHCP Server</string>
+      </attribute>
+      <layout class="QGridLayout" >
+       <item row="0" column="0" colspan="3" >
+        <widget class="QCheckBox" name="mCbDhcpServerEnabled" >
+         <property name="text" >
+          <string>&amp;Enable Server</string>
+         </property>
+         <property name="toolTip" >
+          <string>Indicates whether the DHCP Server is enabled on machine startup or not.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1" >
+        <widget class="QLabel" name="mLbDhcpAddress" >
+         <property name="text" >
+          <string>Server &amp;Address:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeDhcpAddress</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2" >
+        <widget class="QILineEdit" name="mLeDhcpAddress" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip" >
+          <string>Displays the address of DHCP server for internal network based on this host-only interface.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1" >
+        <widget class="QLabel" name="mLbDhcpMask" >
+         <property name="text" >
+          <string>Server &amp;Mask:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeDhcpMask</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2" >
+        <widget class="QILineEdit" name="mLeDhcpMask" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip" >
+          <string>Displays the network mask of DHCP server for internal network based on this host-only interface.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1" >
+        <widget class="QLabel" name="mLbDhcpLowerAddress" >
+         <property name="text" >
+          <string>&amp;Lower Address Bound:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeDhcpLowerAddress</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2" >
+        <widget class="QILineEdit" name="mLeDhcpLowerAddress" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip" >
+          <string>Displays the lower address presented by DHCP server for internal network based on this host-only interface.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1" >
+        <widget class="QLabel" name="mLbDhcpUpperAddress" >
+         <property name="text" >
+          <string>&amp;Upper Address Bound:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeDhcpUpperAddress</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="2" >
+        <widget class="QILineEdit" name="mLeDhcpUpperAddress" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip" >
+          <string>Displays the upper address presented by DHCP server for internal network based on this host-only interface.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="3" >
+        <spacer name="verticalSpacer" >
+         <property name="orientation" >
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0" >
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QIDialogButtonBox" name="mButtonBox" >
+     <property name="standardButtons" >
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QILineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>QILineEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QIDialogButtonBox</class>
+   <extends>QDialogButtonBox</extends>
+   <header>QIDialogButtonBox.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>mButtonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>VBoxGLSettingsNetworkDetails</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>162</x>
+     <y>339</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>162</x>
+     <y>179</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mButtonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>VBoxGLSettingsNetworkDetails</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>162</x>
+     <y>339</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>162</x>
+     <y>179</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
+

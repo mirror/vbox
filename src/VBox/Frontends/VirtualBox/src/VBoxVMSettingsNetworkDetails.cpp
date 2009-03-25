@@ -45,37 +45,20 @@ VBoxVMSettingsNetworkDetails::VBoxVMSettingsNetworkDetails (QWidget *aParent)
 
     /* Setup alternative widgets */
     mCbINT->setInsertPolicy (QComboBox::NoInsert);
-    mLeIPv4->setValidator (new QRegExpValidator
-        (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
-    mLeHMv4->setValidator (new QRegExpValidator
-        (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
-    mLeIPv6->setValidator (new QRegExpValidator
-        (QRegExp ("[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                  "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                  "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                  "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}"), this));
-    mLeHMv6->setValidator (new QRegExpValidator
-        (QRegExp ("[1-9][0-9]|1[0-1][0-9]|12[0-8]"), this));
-    mLeIPv6->setFixedWidthByText (QString().fill ('X', 32) + QString().fill (':', 7));
-    connect (mCbHOI, SIGNAL (currentIndexChanged (int)),
-             this, SLOT (hostOnlyInterfaceChanged()));
-#if defined (Q_WS_WIN32)
-    mTbAdd->setIcon (VBoxGlobal::iconSet (":/add_host_iface_16px.png",
-                                          ":/add_host_iface_disabled_16px.png"));
-    mTbDel->setIcon (VBoxGlobal::iconSet (":/remove_host_iface_16px.png",
-                                          ":/remove_host_iface_disabled_16px.png"));
-    connect (mTbAdd, SIGNAL (clicked()), this, SLOT (addInterface()));
-    connect (mTbDel, SIGNAL (clicked()), this, SLOT (delInterface()));
-    connect (mRbAuto, SIGNAL (toggled (bool)),
-             this, SLOT (hostOnlyDHCPChanged()));
-    connect (mRbManual, SIGNAL (toggled (bool)),
-             this, SLOT (hostOnlyDHCPChanged()));
-#endif
 
     /* Setup common widgets */
     mLeMAC->setValidator (new QRegExpValidator
         (QRegExp ("[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
-    mLeMAC->setFixedWidthByText (QString().fill ('X', 12));
+    QStyleOptionFrame sof;
+    sof.initFrom (mLeMAC);
+    sof.rect = mLeMAC->contentsRect();
+    sof.lineWidth = mLeMAC->style()->pixelMetric (QStyle::PM_DefaultFrameWidth);
+    sof.midLineWidth = 0;
+    sof.state |= QStyle::State_Sunken;
+    QSize sc (mLeMAC->fontMetrics().width (QString().fill ('X', 12)) + 2*2,
+              mLeMAC->fontMetrics().xHeight()                        + 2*1);
+    QSize sa = mLeMAC->style()->sizeFromContents (QStyle::CT_LineEdit, &sof, sc, mLeMAC);
+    mLeMAC->setMinimumWidth (sa.width());
     connect (mTbMAC, SIGNAL (clicked()), this, SLOT (genMACClicked()));
 #if defined (Q_WS_MAC)
     /* Remove tool-button border at MAC */
@@ -87,37 +70,19 @@ void VBoxVMSettingsNetworkDetails::getFromAdapter (const CNetworkAdapter &aAdapt
 {
     mAdapter = aAdapter;
 
-    /* Load alternate attributes */
+    /* Load alternate settings */
     QString intName (mAdapter.GetInternalNetwork());
     if (!intName.isEmpty())
         setProperty ("INT_Name", QVariant (intName));
-
     QString ifsName (mAdapter.GetHostInterface());
     CHostNetworkInterface ifs =
         vboxGlobal().virtualBox().GetHost().FindHostNetworkInterfaceByName (ifsName);
     if (!ifs.isNull() && ifs.GetInterfaceType() == KHostNetworkInterfaceType_Bridged)
-    {
         setProperty ("BRG_Name", QVariant (ifsName));
-    }
     else if (!ifs.isNull() && ifs.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
-    {
         setProperty ("HOI_Name", QVariant (ifsName));
-#if defined (Q_WS_WIN32)
-        setProperty ("HOI_DhcpEnabled", QVariant (ifs.GetDhcpEnabled()));
-#endif
-        setProperty ("HOI_IPv6Supported", QVariant (ifs.GetIPV6Supported()));
-        if (!ifs.GetDhcpEnabled())
-        {
-            setProperty ("HOI_IPv4Addr", QVariant (ifs.GetIPAddress()));
-            setProperty ("HOI_IPv4Mask", QVariant (ifs.GetNetworkMask()));
-            if (ifs.GetIPV6Supported())
-            {
-                setProperty ("HOI_IPv6Addr", QVariant (ifs.GetIPV6Address()));
-                setProperty ("HOI_IPv6Mask", QVariant (QString::number (ifs.GetIPV6NetworkMaskPrefixLength())));
-            }
-        }
-    }
 
+    /* Load common settings */
     setProperty ("MAC_Address", QVariant (aAdapter.GetMACAddress()));
     setProperty ("Cable_Connected", QVariant (aAdapter.GetCableConnected()));
 }
@@ -129,40 +94,14 @@ void VBoxVMSettingsNetworkDetails::putBackToAdapter()
     switch (mType)
     {
         case KNetworkAttachmentType_Bridged:
-        {
             mAdapter.SetHostInterface (name);
             break;
-        }
         case KNetworkAttachmentType_Internal:
-        {
             mAdapter.SetInternalNetwork (name);
             break;
-        }
         case KNetworkAttachmentType_HostOnly:
-        {
-            CHostNetworkInterface iface =
-                vboxGlobal().virtualBox().GetHost().FindHostNetworkInterfaceByName (name);
-            if (!iface.isNull())
-            {
-                if (property ("HOI_DhcpEnabled").toBool())
-                {
-                    iface.EnableDynamicIpConfig();
-                }
-                else
-                {
-                    iface.EnableStaticIpConfig (property ("HOI_IPv4Addr").toString(),
-                                                property ("HOI_IPv4Mask").toString());
-
-                    if (property ("HOI_IPv6Supported").toBool())
-                    {
-                        iface.EnableStaticIpConfigV6 (property ("HOI_IPv6Addr").toString(),
-                                                      property ("HOI_IPv6Mask").toString().toULong());
-                    }
-                }
-            }
             mAdapter.SetHostInterface (name);
             break;
-        }
         default:
             break;
     }
@@ -186,21 +125,6 @@ void VBoxVMSettingsNetworkDetails::loadList (KNetworkAttachmentType aType,
     mCbINT->setVisible (mType == KNetworkAttachmentType_Internal);
     mLbHOI->setVisible (mType == KNetworkAttachmentType_HostOnly);
     mCbHOI->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mLbIPv4->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mLeIPv4->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mLbHMv4->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mLeHMv4->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mLbIPv6->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mLeIPv6->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mLbHMv6->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mLeHMv6->setVisible (mType == KNetworkAttachmentType_HostOnly);
-#if defined (Q_WS_WIN32)
-    mTbAdd->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mTbDel->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mLbCT->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mRbAuto->setVisible (mType == KNetworkAttachmentType_HostOnly);
-    mRbManual->setVisible (mType == KNetworkAttachmentType_HostOnly);
-#endif
 
     /* Repopulate alternate combo-box with items */
     if (mType != KNetworkAttachmentType_Null &&
@@ -211,35 +135,6 @@ void VBoxVMSettingsNetworkDetails::loadList (KNetworkAttachmentType aType,
         comboBox()->insertItems (comboBox()->count(), aList);
         int pos = comboBox()->findText (currentName());
         comboBox()->setCurrentIndex (pos == -1 ? 0 : pos);
-    }
-
-    /* Reload alternate combo-box dependences */
-    if (mType == KNetworkAttachmentType_HostOnly)
-    {
-        hostOnlyInterfaceChanged();
-        if (property ("HOI_DhcpEnabled").toBool())
-        {
-            mRbAuto->setChecked (true);
-        }
-        else
-        {
-            mRbManual->setChecked (true);
-            QString ipv4 (property ("HOI_IPv4Addr").toString());
-            if (ipv4 != mLeIPv4->text())
-                mLeIPv4->setText (ipv4);
-            QString nmv4 (property ("HOI_IPv4Mask").toString());
-            if (nmv4 != mLeHMv4->text())
-                mLeHMv4->setText (nmv4);
-            if (property ("HOI_IPv6Supported").toBool())
-            {
-                QString ipv6 (property ("HOI_IPv6Addr").toString());
-                if (ipv6 != mLeIPv6->text())
-                    mLeIPv6->setText (ipv6);
-                QString nmv6 (property ("HOI_IPv6Mask").toString());
-                if (nmv6 != mLeHMv6->text())
-                    mLeHMv6->setText (nmv6);
-            }
-        }
     }
 
     /* Load common settings */
@@ -273,33 +168,6 @@ bool VBoxVMSettingsNetworkDetails::revalidate (KNetworkAttachmentType aType, QSt
             {
                 aWarning = tr ("no host-only interface is selected");
                 return false;
-            }
-            else if (!property ("HOI_DhcpEnabled").toBool())
-            {
-                if (!property ("HOI_IPv4Addr").toString().isEmpty() &&
-                    QHostAddress (property ("HOI_IPv4Addr").toString()).protocol()
-                    != QAbstractSocket::IPv4Protocol)
-                {
-                    aWarning = tr ("host IPv4 address is wrong");
-                    return false;
-                }
-                if (!property ("HOI_IPv4Mask").toString().isEmpty() &&
-                    QHostAddress (property ("HOI_IPv4Mask").toString()).protocol()
-                    != QAbstractSocket::IPv4Protocol)
-                {
-                    aWarning = tr ("host IPv4 network mask is wrong");
-                    return false;
-                }
-                if (property ("HOI_IPv6Supported").toBool())
-                {
-                    if (!property ("HOI_IPv6Addr").toString().isEmpty() &&
-                        QHostAddress (property ("HOI_IPv6Addr").toString()).protocol()
-                        != QAbstractSocket::IPv6Protocol)
-                    {
-                        aWarning = tr ("host IPv6 address is wrong");
-                        return false;
-                    }
-                }
             }
             break;
         default:
@@ -355,7 +223,7 @@ void VBoxVMSettingsNetworkDetails::retranslateUi()
     }
 
     /* Translate empty items */
-    mNotSelected = tr ("Not Selected");
+    mNotSelected = tr ("Not selected");
     populateComboboxes();
 }
 
@@ -401,91 +269,14 @@ void VBoxVMSettingsNetworkDetails::accept()
             setProperty ("HOI_Name",
                          QVariant (mCbHOI->itemData (mCbHOI->currentIndex()).toString() == QString (emptyItemCode) ?
                                    QString::null : mCbHOI->currentText()));
-            setProperty ("HOI_DhcpEnabled", QVariant (mRbAuto->isChecked()));
-            setProperty ("HOI_IPv6Supported", QVariant (mLeIPv6->isEnabled()));
-            setProperty ("HOI_IPv4Addr", QVariant (mLeIPv4->text()));
-            setProperty ("HOI_IPv4Mask", QVariant (mLeHMv4->text()));
-            setProperty ("HOI_IPv6Addr", QVariant (mLeIPv6->text()));
-            setProperty ("HOI_IPv6Mask", QVariant (mLeHMv6->text()));
             break;
         default:
             break;
     }
-
     setProperty ("MAC_Address", QVariant (mLeMAC->text()));
     setProperty ("Cable_Connected", QVariant (mCbCable->isChecked()));
 
     QIDialog::accept();
-}
-
-void VBoxVMSettingsNetworkDetails::hostOnlyInterfaceChanged()
-{
-#if defined (Q_WS_WIN32)
-    CHostNetworkInterface iface =
-        vboxGlobal().virtualBox().GetHost().FindHostNetworkInterfaceByName (mCbHOI->currentText());
-
-    bool isValid = !iface.isNull() &&
-                   iface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly;
-    bool isManual = isValid && !iface.GetDhcpEnabled();
-
-    mLbCT->setEnabled (isValid);
-    mRbAuto->setEnabled (isValid);
-    mRbManual->setEnabled (isValid);
-
-    if (isManual)
-    {
-        mRbManual->blockSignals (true);
-        mRbManual->setChecked (true);
-        mRbManual->blockSignals (false);
-    }
-    else
-    {
-        mRbAuto->blockSignals (true);
-        mRbAuto->setChecked (true);
-        mRbAuto->blockSignals (false);
-    }
-
-    mTbDel->setEnabled (isValid);
-#endif
-
-    hostOnlyDHCPChanged();
-}
-
-void VBoxVMSettingsNetworkDetails::hostOnlyDHCPChanged()
-{
-    CHostNetworkInterface iface =
-        vboxGlobal().virtualBox().GetHost().FindHostNetworkInterfaceByName (mCbHOI->currentText());
-
-    bool isManual = !iface.isNull() &&
-                    iface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly &&
-                    mRbManual->isChecked();
-    bool isIPv6Supported = isManual && iface.GetIPV6Supported();
-
-    mLeIPv4->clear();
-    mLeHMv4->clear();
-    mLeIPv6->clear();
-    mLeHMv6->clear();
-
-    mLbIPv4->setEnabled (isManual);
-    mLbHMv4->setEnabled (isManual);
-    mLeIPv4->setEnabled (isManual);
-    mLeHMv4->setEnabled (isManual);
-    mLbIPv6->setEnabled (isIPv6Supported);
-    mLbHMv6->setEnabled (isIPv6Supported);
-    mLeIPv6->setEnabled (isIPv6Supported);
-    mLeHMv6->setEnabled (isIPv6Supported);
-
-    if (isManual)
-    {
-        mLeIPv4->setText (iface.GetIPAddress());
-        mLeHMv4->setText (iface.GetNetworkMask());
-
-        if (isIPv6Supported)
-        {
-            mLeIPv6->setText (iface.GetIPV6Address());
-            mLeHMv6->setText (QString::number (iface.GetIPV6NetworkMaskPrefixLength()));
-        }
-    }
 }
 
 void VBoxVMSettingsNetworkDetails::genMACClicked()
@@ -493,79 +284,6 @@ void VBoxVMSettingsNetworkDetails::genMACClicked()
     mAdapter.SetMACAddress (QString::null);
     mLeMAC->setText (mAdapter.GetMACAddress());
 }
-
-#if defined (Q_WS_WIN32)
-void VBoxVMSettingsNetworkDetails::addInterface()
-{
-    /* Allow the started helper process to make itself the foreground window */
-    AllowSetForegroundWindow (ASFW_ANY);
-
-    /* Creating interface */
-    CHost host = vboxGlobal().virtualBox().GetHost();
-    CHostNetworkInterface iface;
-    CProgress progress = host.CreateHostOnlyNetworkInterface (iface);
-    if (host.isOk())
-    {
-        vboxProblem().showModalProgressDialog (progress,
-            tr ("Performing", "creating/removing host-only interface"), this);
-        if (progress.GetResultCode() == 0)
-        {
-            mCbHOI->insertItem (mCbHOI->count(), iface.GetName());
-            mCbHOI->setCurrentIndex (mCbHOI->count() - 1);
-        }
-        else
-            vboxProblem().cannotCreateHostInterface (progress, this);
-    }
-    else
-        vboxProblem().cannotCreateHostInterface (host, this);
-
-    /* Allow the started helper process to make itself the foreground window */
-    AllowSetForegroundWindow (ASFW_ANY);
-}
-
-void VBoxVMSettingsNetworkDetails::delInterface()
-{
-    /* Allow the started helper process to make itself the foreground window */
-    AllowSetForegroundWindow (ASFW_ANY);
-
-    Assert (mCbHOI->itemData (mCbHOI->currentIndex()).toString()
-            != QString (emptyItemCode));
-
-    /* Check interface name */
-    QString name (mCbHOI->currentText());
-
-    /* Asking user about deleting selected network interface */
-    int delNetIface = vboxProblem().confirmDeletingHostInterface (name, this);
-    if (delNetIface == QIMessageBox::Cancel) return;
-
-    /* Removing interface */
-    CHost host = vboxGlobal().virtualBox().GetHost();
-    CHostNetworkInterface iface = host.FindHostNetworkInterfaceByName (name);
-    if (!iface.isNull())
-    {
-        /* Delete interface */
-        CProgress progress = host.RemoveHostOnlyNetworkInterface (iface.GetId(), iface);
-        if (host.isOk())
-        {
-            vboxProblem().showModalProgressDialog (progress,
-                tr ("Performing", "creating/removing host-only interface"), this);
-            if (progress.GetResultCode() == 0)
-            {
-                int pos = mCbHOI->findText (name);
-                Assert (pos != -1);
-                mCbHOI->removeItem (pos);
-            }
-            else
-                vboxProblem().cannotRemoveHostInterface (progress, iface, this);
-        }
-    }
-    if (!host.isOk())
-        vboxProblem().cannotRemoveHostInterface (host, iface, this);
-
-    /* Allow the started helper process to make itself the foreground window */
-    AllowSetForegroundWindow (ASFW_ANY);
-}
-#endif
 
 void VBoxVMSettingsNetworkDetails::populateComboboxes()
 {

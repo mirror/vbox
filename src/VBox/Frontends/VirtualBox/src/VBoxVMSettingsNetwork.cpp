@@ -38,7 +38,7 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
 
     /* Setup widgets */
     mTbDetails->setIcon (VBoxGlobal::iconSet (
-        ":/global_settings_16px.png", ":/global_settings_disabled_16px.png"));
+        ":/guesttools_16px.png", ":/guesttools_disabled_16px.png"));
 
     /* Applying language settings */
     retranslateUi();
@@ -176,68 +176,54 @@ void VBoxVMSettingsNetwork::retranslateUi()
 
 void VBoxVMSettingsNetwork::updateAttachmentInfo()
 {
-    KNetworkAttachmentType type = attachmentType();
     QString line ("<tr><td><i><b><nobr><font color=grey>%1:&nbsp;</font></nobr></b></i></td>"
                   "<td><i><font color=grey>%2</font></i></td></tr>");
+    QString info;
+
+    /* Append alternative information */
+    KNetworkAttachmentType type = attachmentType();
     switch (type)
     {
         case KNetworkAttachmentType_Bridged:
         {
-            QString info;
             QString name (mDetails->currentName (type));
-            info += line.arg (tr ("Adapter"))
-                        .arg (name.isEmpty() ? tr ("Not Selected") : name);
-            mLbInfo->setText ("<table>" + info + "</table>");
+            info += line.arg (tr ("Adapter", "network"))
+                        .arg (name.isEmpty() ? tr ("not selected", "adapter") : name);
             break;
         }
         case KNetworkAttachmentType_Internal:
         {
-            QString info;
             QString name (mDetails->currentName (type));
-            info += line.arg (tr ("Name"))
-                        .arg (name.isEmpty() ? tr ("Not Selected") : name);
-            mLbInfo->setText ("<table>" + info + "</table>");
+            info += line.arg (tr ("Network", "internal"))
+                        .arg (name.isEmpty() ? tr ("not selected", "network") : name);
             break;
         }
         case KNetworkAttachmentType_HostOnly:
         {
-            QString info;
             QString name (mDetails->currentName (type));
-            info += line.arg (tr ("Interface"))
-                        .arg (name.isEmpty() ? tr ("Not Selected") : name);
-            if (!name.isEmpty())
-            {
-                bool dhcp = mDetails->property ("HOI_DhcpEnabled").toBool();
-                info += line.arg (tr ("Configuration"))
-                            .arg (dhcp ? tr ("Automatic", "configuration")
-                                       : tr ("Manual", "configuration"));
-                if (!dhcp)
-                {
-                    QString ipv4addr (mDetails->property ("HOI_IPv4Addr").toString());
-                    QString ipv4mask (mDetails->property ("HOI_IPv4Mask").toString());
-                    info += line.arg (tr ("IPv4 Address"))
-                                .arg (ipv4addr.isEmpty() ? tr ("Not Set", "address") : ipv4addr) +
-                            line.arg (tr ("IPv4 Mask"))
-                                .arg (ipv4mask.isEmpty() ? tr ("Not Set", "mask") : ipv4mask);
-                    bool ipv6 = mDetails->property ("HOI_IPv6Supported").toBool();
-                    if (ipv6)
-                    {
-                        QString ipv6addr (mDetails->property ("HOI_IPv6Addr").toString());
-                        QString ipv6mask (mDetails->property ("HOI_IPv6Mask").toString());
-                        info += line.arg (tr ("IPv6 Address"))
-                                    .arg (ipv6addr.isEmpty() ? tr ("Not Set", "address") : ipv6addr) +
-                                line.arg (tr ("IPv6 Mask"))
-                                    .arg (ipv6mask.isEmpty() ? tr ("Not Set", "length") : ipv6mask);
-                    }
-                }
-            }
-            mLbInfo->setText ("<table>" + info + "</table>");
+            info += line.arg (tr ("Interface", "network"))
+                        .arg (name.isEmpty() ? tr ("not selected", "interface") : name);
             break;
         }
         default:
-            mLbInfo->clear();
             break;
     }
+
+#if 0
+    /* Append common information */
+    QString macAddress (mDetails->property ("MAC_Address").toString());
+    info += line.arg (tr ("MAC Address"))
+                .arg (macAddress.isEmpty() ? tr ("not selected", "address") : macAddress);
+    bool cableConnected (mDetails->property ("Cable_Connected").toBool());
+    info += line.arg (tr ("Cable"))
+                .arg (cableConnected ? tr ("connected", "cable") : tr ("not connected", "cable"));
+#endif
+
+    /* Finally set full label text */
+    if (info.isEmpty())
+        mLbInfo->clear();
+    else
+        mLbInfo->setText ("<table>" + info + "</table>");
 
     if (mValidator)
         mValidator->revalidate();

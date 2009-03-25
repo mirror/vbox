@@ -32,6 +32,7 @@
 #include "VBoxGLSettingsInput.h"
 #include "VBoxGLSettingsUpdate.h"
 #include "VBoxGLSettingsLanguage.h"
+#include "VBoxGLSettingsNetwork.h"
 
 #include "VBoxVMSettingsGeneral.h"
 #include "VBoxVMSettingsHD.h"
@@ -61,50 +62,41 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* General page */
     prefPage = new VBoxGLSettingsGeneral();
-    page = mSelector->addItem (":/machine_32px.png", ":/machine_disabled_32px.png", ":/machine_16px.png", ":/machine_disabled_16px.png",
-                               GeneralId, "#general",
-                               prefPage);
-    if (page)
-        mStack->addWidget (page);
-    prefPage->setOrderAfter (mSelector->widget());
+    addItem (":/machine_32px.png", ":/machine_disabled_32px.png", ":/machine_16px.png", ":/machine_disabled_16px.png",
+             GeneralId, "#general",
+             prefPage);
 
     /* Input page */
     prefPage = new VBoxGLSettingsInput();
-    page = mSelector->addItem (":/hostkey_32px.png", ":/hostkey_disabled_32px.png", ":/hostkey_16px.png", ":/hostkey_disabled_16px.png",
-                               InputId, "#input",
-                               prefPage);
-    if (page)
-        mStack->addWidget (page);
-    prefPage->setOrderAfter (mSelector->widget());
+    addItem (":/hostkey_32px.png", ":/hostkey_disabled_32px.png", ":/hostkey_16px.png", ":/hostkey_disabled_16px.png",
+             InputId, "#input",
+             prefPage);
 
     /* Update page */
     prefPage = new VBoxGLSettingsUpdate();
-    page = mSelector->addItem (":/refresh_32px.png", ":/refresh_disabled_32px.png", ":/refresh_16px.png", ":/refresh_disabled_16px.png",
-                               UpdateId, "#update",
-                               prefPage);
-    if (page)
-        mStack->addWidget (page);
-    prefPage->setOrderAfter (mSelector->widget());
+    addItem (":/refresh_32px.png", ":/refresh_disabled_32px.png", ":/refresh_16px.png", ":/refresh_disabled_16px.png",
+             UpdateId, "#update",
+             prefPage);
 
     /* Language page */
     prefPage = new VBoxGLSettingsLanguage();
-    page = mSelector->addItem (":/site_32px.png", ":/site_disabled_32px.png", ":/site_16px.png", ":/site_disabled_16px.png",
-                               LanguageId, "#language",
-                               prefPage);
-    if (page)
-        mStack->addWidget (page);
-    prefPage->setOrderAfter (mSelector->widget());
+    addItem (":/site_32px.png", ":/site_disabled_32px.png", ":/site_16px.png", ":/site_disabled_16px.png",
+             LanguageId, "#language",
+             prefPage);
 
 #ifdef ENABLE_GLOBAL_USB
     /* USB page */
     prefPage = VBoxVMSettingsUSB (VBoxVMSettingsUSB::HostType);
-    page = mSelector->addItem (":/usb_32px.png", ":/usb_disabled_32px.png", ":/usb_16px.png", ":/usb_disabled_16px.png"
-                               USBId, "#usb",
-                               prefPage);
-    if (page)
-        mStack->addWidget (page);
-    prefPage->setOrderAfter (mSelector->widget());
+    addItem (":/usb_32px.png", ":/usb_disabled_32px.png", ":/usb_16px.png", ":/usb_disabled_16px.png"
+             USBId, "#usb",
+             prefPage);
 #endif
+
+    /* Network page */
+    prefPage = new VBoxGLSettingsNetwork();
+    addItem (":/nw_32px.png", ":/nw_disabled_32px.png", ":/nw_16px.png", ":/nw_disabled_16px.png",
+             NetworkId, "#language",
+             prefPage);
 
     /* Update Selector with available items */
     updateAvailability();
@@ -121,7 +113,7 @@ void VBoxGLSettingsDlg::getFrom()
     CSystemProperties prop = vboxGlobal().virtualBox().GetSystemProperties();
     VBoxGlobalSettings sett = vboxGlobal().settings();
 
-    QList<VBoxSettingsPage*> pages = mSelector->settingPages();
+    QList <VBoxSettingsPage*> pages = mSelector->settingPages();
     foreach (VBoxSettingsPage *page, pages)
         if (page->isEnabled())
             page->getFrom (prop, sett);
@@ -133,7 +125,7 @@ void VBoxGLSettingsDlg::putBackTo()
     VBoxGlobalSettings sett = vboxGlobal().settings();
     VBoxGlobalSettings newsett = sett;
 
-    QList<VBoxSettingsPage*> pages = mSelector->settingPages();
+    QList <VBoxSettingsPage*> pages = mSelector->settingPages();
     foreach (VBoxSettingsPage *page, pages)
         if (page->isEnabled())
             page->putBackTo (prop, newsett);
@@ -168,6 +160,9 @@ void VBoxGLSettingsDlg::retranslateUi()
     /* USB page */
     mSelector->setItemText (USBId, tr ("USB"));
 #endif
+
+    /* Network page */
+    mSelector->setItemText (NetworkId, tr ("Network"));
 
     /* Translate the selector */
     mSelector->polish();
@@ -309,13 +304,13 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
         /* Search for a widget with the given name */
         if (!aControl.isNull())
         {
-            if (QWidget *w = mStack->currentWidget()->findChild<QWidget*> (aControl))
+            if (QWidget *w = mStack->currentWidget()->findChild <QWidget*> (aControl))
             {
-                QList<QWidget*> parents;
+                QList <QWidget*> parents;
                 QWidget *p = w;
                 while ((p = p->parentWidget()) != NULL)
                 {
-                    if (QTabWidget *tb = qobject_cast<QTabWidget*> (p))
+                    if (QTabWidget *tb = qobject_cast <QTabWidget*> (p))
                     {
                         /* The tab contents widget is two steps down
                          * (QTabWidget -> QStackedWidget -> QWidget) */
@@ -335,46 +330,9 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
         mSelector->selectById (0);
 }
 
-void VBoxVMSettingsDlg::addItem (const QString &aBigIcon,
-                                 const QString &aBigIconDisabled,
-                                 const QString &aSmallIcon,
-                                 const QString &aSmallIconDisabled,
-                                 int aId,
-                                 const QString &aLink,
-                                 VBoxSettingsPage* aPrefPage /* = NULL*/,
-                                 int aParentId /* = -1 */)
-{
-    QWidget *page = mSelector->addItem (aBigIcon, aBigIconDisabled, aSmallIcon, aSmallIconDisabled,
-                                        aId, aLink,
-                                        aPrefPage, aParentId);
-    if (page)
-        mStack->addWidget (page);
-    if (aPrefPage)
-        attachValidator (aPrefPage);
-}
-
-void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *aWval)
-{
-    /* Do individual validations for pages */
-    QWidget *pg = aWval->widget();
-    bool valid = aWval->isOtherValid();
-
-    VBoxSettingsPage *page = static_cast <VBoxSettingsPage*> (pg);
-    QString pageTitle = mSelector->itemTextByPage (page);
-
-    QString text;
-    valid = page->revalidate (text, pageTitle);
-    text = text.isEmpty() ? QString::null :
-           tr ("On the <b>%1</b> page, %2").arg (pageTitle, text);
-    aWval->setLastWarning (text);
-    valid ? setWarning (text) : setError (text);
-
-    aWval->setOtherValid (valid);
-}
-
 void VBoxVMSettingsDlg::getFrom()
 {
-    QList<VBoxSettingsPage*> pages = mSelector->settingPages();
+    QList <VBoxSettingsPage*> pages = mSelector->settingPages();
     foreach (VBoxSettingsPage *page, pages)
         page->getFrom (mMachine);
 
@@ -386,7 +344,7 @@ void VBoxVMSettingsDlg::getFrom()
 
 void VBoxVMSettingsDlg::putBackTo()
 {
-    QList<VBoxSettingsPage*> pages = mSelector->settingPages();
+    QList <VBoxSettingsPage*> pages = mSelector->settingPages();
     foreach (VBoxSettingsPage *page, pages)
         page->putBackTo();
 
@@ -461,7 +419,7 @@ void VBoxVMSettingsDlg::retranslateUi()
     updateAvailability();
 
     /* Revalidate all pages to retranslate the warning messages also. */
-    QList<QIWidgetValidator*> l = this->findChildren<QIWidgetValidator*>();
+    QList <QIWidgetValidator*> l = this->findChildren <QIWidgetValidator*> ();
     foreach (QIWidgetValidator *wval, l)
         if (!wval->isValid())
             revalidate (wval);
@@ -485,21 +443,6 @@ void VBoxVMSettingsDlg::resetFirstRunFlag()
 {
     if (mAllowResetFirstRunFlag)
         mResetFirstRunFlag = true;
-}
-
-VBoxSettingsPage* VBoxVMSettingsDlg::attachValidator (VBoxSettingsPage *aPage)
-{
-    QIWidgetValidator *wval = new QIWidgetValidator (mSelector->itemTextByPage (aPage),
-                                                     aPage, this);
-    connect (wval, SIGNAL (validityChanged (const QIWidgetValidator*)),
-             this, SLOT (enableOk (const QIWidgetValidator*)));
-    connect (wval, SIGNAL (isValidRequested (QIWidgetValidator*)),
-             this, SLOT (revalidate (QIWidgetValidator*)));
-
-    aPage->setValidator (wval);
-    aPage->setOrderAfter (mSelector->widget());
-
-    return aPage;
 }
 
 void VBoxVMSettingsDlg::updateAvailability()

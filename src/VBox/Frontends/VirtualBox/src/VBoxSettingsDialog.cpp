@@ -34,7 +34,6 @@
 
 /* Qt includes */
 #include <QTimer>
-#include <QPushButton>
 #include <QStackedWidget>
 
 #if MAC_LEOPARD_STYLE
@@ -42,7 +41,7 @@
 #endif /* MAC_LEOPARD_STYLE */
 
 VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
-    : QIWithRetranslateUI<QIMainDialog> (aParent)
+    : QIWithRetranslateUI <QIMainDialog> (aParent)
     , mPolished (false)
     , mValid (true)
     , mSilent (true)
@@ -67,13 +66,13 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     f.setPointSize (f.pointSize() + 2);
     mLbTitle->setFont (f);
 
-    QGridLayout *mainLayout = static_cast<QGridLayout*> (mAllWidget->layout());
+    QGridLayout *mainLayout = static_cast <QGridLayout*> (mAllWidget->layout());
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     mLbTitle->hide();
     mLbWhatsThis->hide();
     mSelector = new VBoxSettingsToolBarSelector (this);
-    static_cast<VBoxToolBar*> (mSelector->widget())->setMacToolbar();
-    addToolBar (qobject_cast<QToolBar*> (mSelector->widget()));
+    static_cast <VBoxToolBar*> (mSelector->widget())->setMacToolbar();
+    addToolBar (qobject_cast <QToolBar*> (mSelector->widget()));
     /* No title in this mode, we change the title of the window. */
     mainLayout->setColumnMinimumWidth (0, 0);
     mainLayout->setHorizontalSpacing (0);
@@ -123,6 +122,60 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     retranslateUi();
 }
 
+void VBoxSettingsDialog::revalidate (QIWidgetValidator *aWval)
+{
+    /* Perform validations for particular page */
+    VBoxSettingsPage *page = qobject_cast <VBoxSettingsPage*> (aWval->widget());
+    AssertMsg (page, ("Every validator should corresponds a page!\n"));
+
+    QString warning;
+    QString title = mSelector->itemTextByPage (page);
+    bool valid = page->revalidate (warning, title);
+    warning = warning.isEmpty() ? QString::null :
+        tr ("On the <b>%1</b> page, %2").arg (title, warning);
+    aWval->setLastWarning (warning);
+    valid ? setWarning (warning) : setError (warning);
+
+    aWval->setOtherValid (valid);
+}
+
+void VBoxSettingsDialog::categoryChanged (int aId)
+{
+    QWidget *rootPage = mSelector->rootPage (aId);
+#ifndef Q_WS_MAC
+    mLbTitle->setText (mSelector->itemText (aId));
+    mStack->setCurrentIndex (mStack->indexOf (rootPage));
+#else /* Q_WS_MAC */
+    QSize cs = size();
+    /* First make all fully resizeable */
+    setMinimumSize (QSize (minimumWidth(), 0));
+    setMaximumSize (QSize (minimumWidth(), QWIDGETSIZE_MAX));
+    for (int i = 0; i < mStack->count(); ++i)
+        mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
+    int a = mStack->indexOf (rootPage);
+    if (a < mSizeList.count())
+    {
+        QSize ss = mSizeList.at (a);
+        mStack->widget (a)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
+        /* Switch to the new page first if we are shrinking */
+        if (cs.height() > ss.height())
+            mStack->setCurrentIndex (mStack->indexOf (rootPage));
+        /* Do the animation */
+        ::darwinWindowAnimateResize (this, QRect (x(), y(),
+                                                  ss.width(), ss.height()));
+        /* Switch to the new page last if we are zooming */
+        if (cs.height() <= ss.height())
+            mStack->setCurrentIndex (mStack->indexOf (rootPage));
+        /* Make the widget fixed size */
+        setFixedSize (ss);
+    }
+    ::darwinSetShowsResizeIndicator (this, false);
+#endif /* !Q_WS_MAC */
+# ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    setWindowTitle (dialogTitle());
+# endif
+}
+
 void VBoxSettingsDialog::retranslateUi()
 {
     /* Translate uic generated strings */
@@ -135,17 +188,26 @@ void VBoxSettingsDialog::retranslateUi()
     else if (!mSilent)
         mIconLabel->setWarningText (mWarnHint);
 
-    QList<QIWidgetValidator*> vlist = findChildren<QIWidgetValidator*>();
+    QList <QIWidgetValidator*> vlist = findChildren <QIWidgetValidator*> ();
 
     /* Rename all validators to make them feat new language. */
     foreach (QIWidgetValidator *wval, vlist)
         wval->setCaption (mSelector->itemTextByPage (
-            qobject_cast<VBoxSettingsPage*> (wval->widget())));
+            qobject_cast <VBoxSettingsPage*> (wval->widget())));
 
     /* Revalidate all pages to retranslate the warning messages also. */
     foreach (QIWidgetValidator *wval, vlist)
         if (!wval->isValid())
             revalidate (wval);
+}
+
+QString VBoxSettingsDialog::titleExtension() const
+{
+#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    return mSelector->itemText (mSelector->currentId());
+#else
+    return tr ("Settings");
+#endif
 }
 
 void VBoxSettingsDialog::setError (const QString &aError)
@@ -192,9 +254,27 @@ void VBoxSettingsDialog::setWarning (const QString &aWarning)
         updateWhatsThis (true);
 }
 
+void VBoxSettingsDialog::addItem (const QString &aBigIcon,
+                                  const QString &aBigIconDisabled,
+                                  const QString &aSmallIcon,
+                                  const QString &aSmallIconDisabled,
+                                  int aId,
+                                  const QString &aLink,
+                                  VBoxSettingsPage* aPrefPage /* = NULL*/,
+                                  int aParentId /* = -1 */)
+{
+    QWidget *page = mSelector->addItem (aBigIcon, aBigIconDisabled, aSmallIcon, aSmallIconDisabled,
+                                        aId, aLink,
+                                        aPrefPage, aParentId);
+    if (page)
+        mStack->addWidget (page);
+    if (aPrefPage)
+        attachValidator (aPrefPage);
+}
+
 void VBoxSettingsDialog::enableOk (const QIWidgetValidator*)
 {
-    QList <QIWidgetValidator*> vlist (findChildren <QIWidgetValidator*>());
+    QList <QIWidgetValidator*> vlist (findChildren <QIWidgetValidator*> ());
 
     /* Detect ERROR presence */
     {
@@ -259,52 +339,6 @@ void VBoxSettingsDialog::enableOk (const QIWidgetValidator*)
     }
 }
 
-QString VBoxSettingsDialog::titleExtension() const
-{
-#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    return mSelector->itemText (mSelector->currentId());
-#else
-    return tr ("Settings");
-#endif
-}
-
-void VBoxSettingsDialog::categoryChanged (int aId)
-{
-    QWidget *rootPage = mSelector->rootPage (aId);
-#ifndef Q_WS_MAC
-    mLbTitle->setText (mSelector->itemText (aId));
-    mStack->setCurrentIndex (mStack->indexOf (rootPage));
-#else /* Q_WS_MAC */
-    QSize cs = size();
-    /* First make all fully resizeable */
-    setMinimumSize (QSize (minimumWidth(), 0));
-    setMaximumSize (QSize (minimumWidth(), QWIDGETSIZE_MAX));
-    for (int i = 0; i < mStack->count(); ++i)
-        mStack->widget (i)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Ignored);
-    int a = mStack->indexOf (rootPage);
-    if (a < mSizeList.count())
-    {
-        QSize ss = mSizeList.at (a);
-        mStack->widget (a)->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
-        /* Switch to the new page first if we are shrinking */
-        if (cs.height() > ss.height())
-            mStack->setCurrentIndex (mStack->indexOf (rootPage));
-        /* Do the animation */
-        ::darwinWindowAnimateResize (this, QRect (x(), y(),
-                                                  ss.width(), ss.height()));
-        /* Switch to the new page last if we are zooming */
-        if (cs.height() <= ss.height())
-            mStack->setCurrentIndex (mStack->indexOf (rootPage));
-        /* Make the widget fixed size */
-        setFixedSize (ss);
-    }
-    ::darwinSetShowsResizeIndicator (this, false);
-#endif /* !Q_WS_MAC */
-# ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    setWindowTitle (dialogTitle());
-# endif
-}
-
 void VBoxSettingsDialog::updateWhatsThis (bool aGotFocus /* = false */)
 {
     QString text;
@@ -352,7 +386,7 @@ bool VBoxSettingsDialog::eventFilter (QObject *aObject, QEvent *aEvent)
     if (!aObject->isWidgetType())
         return QIMainDialog::eventFilter (aObject, aEvent);
 
-    QWidget *widget = static_cast<QWidget*> (aObject);
+    QWidget *widget = static_cast <QWidget*> (aObject);
     if (widget->window() != this)
         return QIMainDialog::eventFilter (aObject, aEvent);
 
@@ -443,5 +477,20 @@ void VBoxSettingsDialog::showEvent (QShowEvent *aEvent)
 #endif /* Q_WS_MAC */
 
     VBoxGlobal::centerWidget (this, parentWidget());
+}
+
+VBoxSettingsPage* VBoxSettingsDialog::attachValidator (VBoxSettingsPage *aPage)
+{
+    QIWidgetValidator *wval = new QIWidgetValidator (mSelector->itemTextByPage (aPage),
+                                                     aPage, this);
+    connect (wval, SIGNAL (validityChanged (const QIWidgetValidator*)),
+             this, SLOT (enableOk (const QIWidgetValidator*)));
+    connect (wval, SIGNAL (isValidRequested (QIWidgetValidator*)),
+             this, SLOT (revalidate (QIWidgetValidator*)));
+
+    aPage->setValidator (wval);
+    aPage->setOrderAfter (mSelector->widget());
+
+    return aPage;
 }
 
