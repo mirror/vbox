@@ -7819,17 +7819,39 @@
      wsmap="managed"
      >
     <desc>
-      The IProgress interface represents a task progress object that allows
-      to wait for the completion of some asynchronous task.
+        The IProgress interface allows for monitoring the progress of
+        an asynchronous tasks within VirtualBox.
 
-      The task consists of one or more operations that run sequentially,
-      one by one. There is an individual percentage of completion of the
-      current operation and the percentage of completion of the task as a
-      whole. Similarly, you can wait for the completion of a particular
-      operation or for the completion of the whole task.
+        An instance of this is returned every time VirtualBox starts
+        an asynchronous task (in other words, a separate thread) which
+        continues to run after a method call returns. For example,
+        <link to="IConsole::saveState" />, which saves the state of
+        a running virtual machine, can take a long time to complete.
+        To be able to display a progress bar, a user interface such as
+        the VirtualBox graphical user interface can use the IProgress
+        object returned by that method.
 
-      Every operation is identified by a number (starting from 0)
-      and has a separate description.
+        Note that IProgress is a "read-only" interface in the sense
+        that only the VirtualBox internals behind the Main API can
+        create and manipulate progress objects, whereas client code
+        can only use the IProgress object to monitor a task's
+        progress and, if <link to="#cancelable" /> is true,
+        cancel the task by calling <link to="#cancel" />.
+
+        A task represented by IProgress can consist of one or more
+        sub-operations that run sequentially, one by one (see
+        <link to="#operation" /> and <link to="#operationCount" />).
+        Every operation is identified by a number (starting from 0)
+        and has a separate description.
+
+        You can find the individual percentage of completion of the current
+        operation in <link to="#operationPercent" /> and the
+        percentage of completion of the task as a whole
+        in <link to="#percent" />.
+        Similarly, you can wait for the completion of a particular
+        operation via <link to="#waitForOperationCompletion" /> or
+        for the completion of the whole task via
+        <link to="#waitForCompletion" />.
     </desc>
 
     <attribute name="id" type="uuid" readonly="yes">
@@ -7850,7 +7872,7 @@
 
     <attribute name="percent" type="long" readonly="yes">
       <desc>
-        Current task progress value in percent.
+        Current progress value of the task as a whole, in percent.
         This value depends on how many operations are already complete.
       </desc>
     </attribute>
@@ -7873,7 +7895,7 @@
     <attribute name="errorInfo" type="IVirtualBoxErrorInfo" readonly="yes">
       <desc>
         Extended information about the unsuccessful result of the
-        progress operation. May be NULL when no extended information
+        progress operation. May be NULL if no extended information
         is available.
         Valid only if <link to="#completed"/> is true and
         <link to="#resultCode"/> indicates a failure.
@@ -7882,46 +7904,43 @@
 
     <attribute name="operationCount" type="unsigned long" readonly="yes">
       <desc>
-        Number of operations this task is divided into.
-        Every task consists of at least one operation.
+          Number of sub-operations this task is divided into.
+          Every task consists of at least one suboperation.
       </desc>
     </attribute>
 
     <attribute name="operation" type="unsigned long" readonly="yes">
-      <desc>Number of the operation being currently executed.</desc>
+        <desc>Number of the sub-operation being currently executed.</desc>
     </attribute>
 
     <attribute name="operationDescription" type="wstring" readonly="yes">
       <desc>
-        Description of the operation being currently executed.
+          Description of the sub-operation being currently executed.
       </desc>
     </attribute>
 
     <attribute name="operationPercent" type="long" readonly="yes">
-      <desc>Current operation progress value in percent.</desc>
+        <desc>Progress value of the current sub-operation only, in percent.</desc>
     </attribute>
 
     <method name="waitForCompletion">
       <desc>
-        Waits until the task is done (including all operations) with a
-        given timeout.
+          Waits until the task is done (including all sub-operations)
+          with a given timeout in milliseconds; specify -1 for an indefinite wait.
 
         <result name="VBOX_E_IPRT_ERROR">
           Failed to wait for task completion.
         </result>
-
       </desc>
+
       <param name="timeout" type="long" dir="in">
-        <desc>
-          Timeout value in milliseconds.
-          Specify -1 for an indefinite wait.
-        </desc>
       </param>
     </method>
 
     <method name="waitForOperationCompletion">
       <desc>
-        Waits until the given operation is done with a given timeout.
+          Waits until the given operation is done with a given timeout in
+          milliseconds; specify -1 for an indefinite wait.
 
         <result name="VBOX_E_IPRT_ERROR">
           Failed to wait for operation completion.
@@ -7935,10 +7954,6 @@
         </desc>
       </param>
       <param name="timeout" type="long" dir="in">
-        <desc>
-          Timeout value in milliseconds.
-          Specify -1 for an indefinite wait.
-        </desc>
       </param>
     </method>
 
