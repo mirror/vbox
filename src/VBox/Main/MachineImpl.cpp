@@ -118,11 +118,11 @@ static const char gDefaultMachineConfig[] =
  */
 static DECLCALLBACK(int) progressCallback (unsigned uPercentage, void *pvUser)
 {
-    Progress *progress = static_cast <Progress *> (pvUser);
+    Progress *progress = static_cast<Progress*>(pvUser);
 
     /* update the progress object */
     if (progress)
-        progress->notifyProgress (uPercentage);
+        progress->setCurrentOperationProgress(uPercentage);
 
     return VINF_SUCCESS;
 }
@@ -7224,9 +7224,9 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
 
                 Assert (hd->type() == HardDiskType_Writethrough);
 
-                rc = aProgress->advanceOperation (
-                    BstrFmt (tr ("Skipping writethrough hard disk '%s'"),
-                             hd->root()->name().raw()));
+                rc = aProgress->setNextOperation(BstrFmt(tr("Skipping writethrough hard disk '%s'"),
+                                                         hd->root()->name().raw()),
+                                                 1);        // weight
                 CheckComRCThrowRC (rc);
 
                 mHDData->mAttachments.push_back (hda);
@@ -7235,9 +7235,9 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
 
             /* need a diff */
 
-            rc = aProgress->advanceOperation (
-                BstrFmt (tr ("Creating differencing hard disk for '%s'"),
-                         hd->root()->name().raw()));
+            rc = aProgress->setNextOperation(BstrFmt(tr("Creating differencing hard disk for '%s'"),
+                                                     hd->root()->name().raw()),
+                                             1);        // weight
             CheckComRCThrowRC (rc);
 
             ComObjPtr<HardDisk> diff;
@@ -10146,8 +10146,8 @@ void SessionMachine::takeSnapshotHandler (TakeSnapshotTask & /* aTask */)
         LogFlowThisFunc (("Copying the execution state from '%s' to '%s'...\n",
                           stateFrom.raw(), stateTo.raw()));
 
-        mSnapshotData.mServerProgress->advanceOperation (
-            Bstr (tr ("Copying the execution state")));
+        mSnapshotData.mServerProgress->setNextOperation(Bstr(tr("Copying the execution state")),
+                                                        1);        // weight
 
         /* Leave the lock before a lengthy operation (mMachineState is
          * MachineState_Saving here) */
@@ -10299,9 +10299,9 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
 
                 Assert (hd->type() == HardDiskType_Writethrough);
 
-                rc = aTask.progress->advanceOperation (
-                    BstrFmt (tr ("Skipping writethrough hard disk '%s'"),
-                             hd->root()->name().raw()));
+                rc = aTask.progress->setNextOperation(BstrFmt(tr("Skipping writethrough hard disk '%s'"),
+                                                              hd->root()->name().raw()),
+                                                      1); // weight
                 CheckComRCThrowRC (rc);
 
                 continue;
@@ -10454,8 +10454,8 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
             //  to return a warning if the state file path cannot be deleted
             if (stateFilePath)
             {
-                aTask.progress->advanceOperation (
-                    Bstr (tr ("Discarding the execution state")));
+                aTask.progress->setNextOperation(Bstr(tr("Discarding the execution state")),
+                                                 1);        // weight
 
                 RTFileDelete (Utf8Str (stateFilePath));
             }
@@ -10699,8 +10699,8 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
                 LogFlowThisFunc (("Copying saved state file from '%s' to '%s'...\n",
                                   snapStateFilePath.raw(), stateFilePath.raw()));
 
-                aTask.progress->advanceOperation (
-                    Bstr (tr ("Restoring the execution state")));
+                aTask.progress->setNextOperation(Bstr(tr("Restoring the execution state")),
+                                                 1);        // weight
 
                 /* leave the lock before the potentially lengthy operation */
                 snapshotLock.unlock();

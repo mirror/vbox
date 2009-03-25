@@ -7815,7 +7815,7 @@
 
   <interface
      name="IProgress" extends="$unknown"
-     uuid="d3aa5417-6103-41fc-9e54-01ee1d08f42f"
+     uuid="ee1aa091-fda8-47a9-8f1c-4bba002a3229"
      wsmap="managed"
      >
     <desc>
@@ -7870,10 +7870,11 @@
       <desc>Whether the task can be interrupted.</desc>
     </attribute>
 
-    <attribute name="percent" type="long" readonly="yes">
+    <attribute name="percent" type="unsigned long" readonly="yes">
       <desc>
         Current progress value of the task as a whole, in percent.
         This value depends on how many operations are already complete.
+        Returns 100 if <link to="#completed" /> is true.
       </desc>
     </attribute>
 
@@ -7919,7 +7920,7 @@
       </desc>
     </attribute>
 
-    <attribute name="operationPercent" type="long" readonly="yes">
+    <attribute name="operationPercent" type="unsigned long" readonly="yes">
         <desc>Progress value of the current sub-operation only, in percent.</desc>
     </attribute>
 

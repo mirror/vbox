@@ -4612,7 +4612,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->notifyProgress (99 * (++ step) / StepCount );
+        aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
 
 #ifdef VBOX_WITH_HGCM
 
@@ -4679,7 +4679,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->notifyProgress (99 * (++ step) / StepCount );
+        aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
 
 # endif /* VBOX_WITH_GUEST_PROPS defined */
 
@@ -4699,7 +4699,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->notifyProgress (99 * (++ step) / StepCount );
+        aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
 
 #endif /* VBOX_WITH_HGCM */
 
@@ -4730,7 +4730,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->notifyProgress (99 * (++ step) / StepCount );
+        aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
 
     vrc = VINF_SUCCESS;
 
@@ -4759,7 +4759,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->notifyProgress (99 * (++ step) / StepCount );
+        aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
 
     LogFlowThisFunc (("Ready for VM destruction.\n"));
 
@@ -4803,7 +4803,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
         /* advance percent count */
         if (aProgress)
-            aProgress->notifyProgress (99 * (++ step) / StepCount );
+            aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
 
         if (VBOX_SUCCESS (vrc))
         {
@@ -4831,7 +4831,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
         /* advance percent count */
         if (aProgress)
-            aProgress->notifyProgress (99 * (++ step) / StepCount );
+            aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
     }
     else
     {
@@ -5936,7 +5936,7 @@ Console::stateProgressCallback (PVM pVM, unsigned uPercent, void *pvUser)
 
     /* update the progress object */
     if (task->mProgress)
-        task->mProgress->notifyProgress (uPercent);
+        task->mProgress->setCurrentOperationProgress(uPercent);
 
     return VINF_SUCCESS;
 }

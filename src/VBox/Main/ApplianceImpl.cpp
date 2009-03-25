@@ -209,6 +209,8 @@ struct Appliance::Data
     list< ComObjPtr<VirtualSystemDescription> > virtualSystemDescriptions; //
 
     list<Utf8Str> llWarnings;
+
+    ULONG                   ulWeightPerOperation;   // for progress calculations
 };
 
 struct VirtualSystemDescription::Data
@@ -1393,6 +1395,7 @@ STDMETHODIMP Appliance::Interpret()
                                        "",      // ref
                                        strNetwork,      // orig
                                        Utf8StrFmt("%RI32", (uint32_t)nwAdapterVBox),   // conf
+                                       0,
                                        Utf8StrFmt("type=%s", strNetwork.c_str()));       // extra conf
                 }
             }
@@ -1551,6 +1554,7 @@ STDMETHODIMP Appliance::Interpret()
                                            hd.strDiskId,
                                            di.strHref,
                                            strPath,
+                                           (uint32_t)(di.iPopulatedSize / _1M),
                                            strExtraConfig);
                     }
                     else
@@ -1618,16 +1622,9 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
     ComObjPtr<Progress> progress;
     try
     {
-        uint32_t opCount = calcMaxProgress();
         Bstr progressDesc = BstrFmt(tr("Import appliance '%s'"),
                                     m->strPath.raw());
-        /* Create the progress object */
-        progress.createObject();
-        rc = progress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                            progressDesc,
-                            FALSE /* aCancelable */,
-                            opCount,
-                            progressDesc);
+        rc = setUpProgress(progress, progressDesc);
         if (FAILED(rc)) throw rc;
 
         /* Initialize our worker task */
@@ -1714,7 +1711,8 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
         try
         {
             if (!task->progress.isNull())
-                task->progress->advanceOperation(BstrFmt(tr("Importing Virtual System %d"), i + 1));
+                task->progress->setNextOperation(BstrFmt(tr("Importing virtual system %d"), i + 1),
+                                                 pAppliance->m->ulWeightPerOperation);
 
             /* How many sub notifications are necessary? */
             const float opCountMax = 100.0/5;
@@ -1755,7 +1753,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             }
 
             if (!task->progress.isNull())
-                rc = task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
+                rc = task->progress->setCurrentOperationProgress((uint32_t)(opCountMax * opCount++));
 
             /* CPU count (ignored for now) */
             // EntriesList vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
@@ -1779,7 +1777,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             if (FAILED(rc)) throw rc;
 
             if (!task->progress.isNull())
-                task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
+                task->progress->setCurrentOperationProgress((uint32_t)(opCountMax * opCount++));
 
             /* Audio Adapter */
             std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->findByType(VirtualSystemDescriptionType_SoundCard);
@@ -1815,7 +1813,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
 #endif /* VBOX_WITH_USB */
 
             if (!task->progress.isNull())
-                task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
+                task->progress->setCurrentOperationProgress((uint32_t)(opCountMax * opCount++));
 
             /* Change the network adapters */
             std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
@@ -1928,7 +1926,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             if (FAILED(rc)) throw rc;
 
             if (!task->progress.isNull())
-                task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
+                task->progress->setCurrentOperationProgress((uint32_t)(opCountMax * opCount++));
 
             /* CDROM drive */
             /* @todo: I can't disable the CDROM. So nothing to do for now */
@@ -2014,7 +2012,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             if (FAILED(rc)) throw rc;
 
             if (!task->progress.isNull())
-                task->progress->notifyProgress((uint32_t)(opCountMax * opCount++));
+                task->progress->setCurrentOperationProgress((uint32_t)(opCountMax * opCount++));
 
             // store new machine for roll-back in case of errors
             llMachinesRegistered.push_back(newMachineId);
@@ -2100,7 +2098,8 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
 
                             /* Advance to the next operation */
                             if (!task->progress.isNull())
-                                task->progress->advanceOperation (BstrFmt(tr("Creating virtual disk image '%s'"), pcszDstFilePath));
+                                task->progress->setNextOperation(BstrFmt(tr("Creating virtual disk image '%s'"), pcszDstFilePath),
+                                                                 vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally
                         }
                         else
                         {
@@ -2137,19 +2136,20 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
 
                             /* Advance to the next operation */
                             if (!task->progress.isNull())
-                                task->progress->advanceOperation (BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()));
+                                task->progress->setNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()),
+                                                                 vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
                         }
 
                         // now loop until the asynchronous operation completes and then
                         // report its result
                         BOOL fCompleted;
-                        LONG currentPercent;
+                        ULONG currentPercent;
                         while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
                         {
                             rc = progress->COMGETTER(Percent(&currentPercent));
                             if (FAILED(rc)) throw rc;
                             if (!task->progress.isNull())
-                                task->progress->notifyProgress(currentPercent);
+                                task->progress->setCurrentOperationProgress(currentPercent);
                             if (fCompleted)
                                 break;
                             /* Make sure the loop is not too tight */
@@ -2398,17 +2398,10 @@ STDMETHODIMP Appliance::Write(IN_BSTR path, IProgress **aProgress)
     ComObjPtr<Progress> progress;
     try
     {
-        uint32_t opCount = calcMaxProgress();
-        Bstr progressDesc = BstrFmt(tr("Write appliance '%s'"),
+        Bstr progressDesc = BstrFmt(tr("Export appliance '%s'"),
                                     m->strPath.raw());
-        /* Create the progress object */
-        progress.createObject();
-        rc = progress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                            progressDesc,
-                            FALSE /* aCancelable */,
-                            opCount,
-                            progressDesc);
-        CheckComRCThrowRC(rc);
+        rc = setUpProgress(progress, progressDesc);
+        if (FAILED(rc)) throw rc;
 
         /* Initialize our worker task */
         std::auto_ptr<TaskWriteOVF> task(new TaskWriteOVF(this, progress));
@@ -3028,18 +3021,19 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
 
                 // advance to the next operation
                 if (!task->progress.isNull())
-                    task->progress->advanceOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()));
+                    task->progress->setNextOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()),
+                                                     pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
                 // now loop until the asynchronous operation completes and then
                 // report its result
                 BOOL fCompleted;
-                LONG currentPercent;
+                ULONG currentPercent;
                 while (SUCCEEDED(pProgress2->COMGETTER(Completed(&fCompleted))))
                 {
                     rc = pProgress2->COMGETTER(Percent(&currentPercent));
                     if (FAILED(rc)) throw rc;
                     if (!task->progress.isNull())
-                        task->progress->notifyProgress(currentPercent);
+                        task->progress->setCurrentOperationProgress(currentPercent);
                     if (fCompleted)
                         break;
                     // make sure the loop is not too tight
@@ -3206,28 +3200,56 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
 }
 
 /**
- * Calculates the maximum progress value for importMachines() and write().
+ * Calculates the no. of operations for the IProgress objects in importMachines() and write().
  * @return
  */
-uint32_t Appliance::calcMaxProgress()
+HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription)
 {
-    /* Figure out how many sub operation the import will need */
-    /* One for the appliance */
-    uint32_t opCount = 1;
+    HRESULT rc;
+
+    /* Create the progress object */
+    pProgress.createObject();
+
+    // use one percent for parsing the XML and one percent for each virtual system
+    // in the XML; use the rest (e.g. 97%) for the disk images
+    ULONG cFixed = 1 + m->virtualSystemDescriptions.size();
+    ULONG ulPercentForDisks = 100 - cFixed;
+
+    // weigh the disk images according to their sizes
+    uint32_t ulTotalMB = 0;
+    uint32_t cDisks = 0;
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
     for (it = m->virtualSystemDescriptions.begin();
          it != m->virtualSystemDescriptions.end();
          ++it)
     {
-        /* One for every Virtual System */
-        ++opCount;
         ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
         /* One for every hard disk of the Virtual System */
         std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
-        opCount += (uint32_t)avsdeHDs.size();
+        std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
+        for (itH = avsdeHDs.begin();
+                itH != avsdeHDs.end();
+                ++itH)
+        {
+            ulTotalMB += (**itH).ulSizeMB;
+            ++cDisks;
+        }
     }
 
-    return opCount;
+    ULONG ulTotalOperationsWeight = ulTotalMB * 100 / ulPercentForDisks;
+    m->ulWeightPerOperation = ulTotalOperationsWeight / 100;
+
+    Log(("Setting up progress object: ulTotalMB = %d, cFixed = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightPerOperation = %d\n",
+         ulTotalMB, cFixed, cDisks, cFixed + (ULONG)cDisks, ulTotalOperationsWeight, m->ulWeightPerOperation));
+
+    rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
+                         bstrDescription,
+                         FALSE /* aCancelable */,
+                         cFixed + (ULONG)cDisks, // ULONG cOperations,
+                         ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
+                         bstrDescription, // CBSTR bstrFirstOperationDescription,
+                         m->ulWeightPerOperation); // ULONG ulFirstOperationWeight,
+    return rc;
 }
 
 void Appliance::addWarning(const char* aWarning, ...)
@@ -3535,7 +3557,7 @@ STDMETHODIMP VirtualSystemDescription::AddDescription(VirtualSystemDescriptionTy
 
     AutoWriteLock alock(this);
 
-    addEntry(aType, "", aVboxValue, aVboxValue, aExtraConfigValue);
+    addEntry(aType, "", aVboxValue, aVboxValue, 0, aExtraConfigValue);
 
     return S_OK;
 }
@@ -3552,6 +3574,7 @@ void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
                                         const Utf8Str &strRef,
                                         const Utf8Str &aOrigValue,
                                         const Utf8Str &aAutoValue,
+                                        uint32_t ulSizeMB,
                                         const Utf8Str &strExtraConfig /*= ""*/)
 {
     VirtualSystemDescriptionEntry vsde;
@@ -3561,6 +3584,7 @@ void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
     vsde.strOvf = aOrigValue;
     vsde.strVbox = aAutoValue;
     vsde.strExtraConfig = strExtraConfig;
+    vsde.ulSizeMB = ulSizeMB;
 
     m->llDescriptions.push_back(vsde);
 }

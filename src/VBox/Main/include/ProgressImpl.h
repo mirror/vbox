@@ -71,7 +71,7 @@ public:
 
     // IProgress properties
     STDMETHOD(COMGETTER(Cancelable)) (BOOL *aCancelable);
-    STDMETHOD(COMGETTER(Percent)) (LONG *aPercent);
+    STDMETHOD(COMGETTER(Percent)) (ULONG *aPercent);
     STDMETHOD(COMGETTER(Completed)) (BOOL *aCompleted);
     STDMETHOD(COMGETTER(Canceled)) (BOOL *aCanceled);
     STDMETHOD(COMGETTER(ResultCode)) (HRESULT *aResultCode);
@@ -79,7 +79,7 @@ public:
     STDMETHOD(COMGETTER(OperationCount)) (ULONG *aOperationCount);
     STDMETHOD(COMGETTER(Operation)) (ULONG *aCount);
     STDMETHOD(COMGETTER(OperationDescription)) (BSTR *aOperationDescription);
-    STDMETHOD(COMGETTER(OperationPercent)) (LONG *aOperationPercent);
+    STDMETHOD(COMGETTER(OperationPercent)) (ULONG *aOperationPercent);
 
     // public methods only for internal purposes
 
@@ -111,10 +111,15 @@ protected:
     HRESULT mResultCode;
     ComPtr <IVirtualBoxErrorInfo> mErrorInfo;
 
-    ULONG mOperationCount;
-    ULONG mOperation;
-    Bstr mOperationDescription;
-    LONG mOperationPercent;
+    ULONG m_cOperations;                            // number of operations (so that progress dialog can display something like 1/3)
+    ULONG m_ulTotalOperationsWeight;                // sum of weights of all operations, given to constructor
+
+    ULONG m_ulOperationsCompletedWeight;            // summed-up weight of operations that have been completed; initially 0
+
+    ULONG m_ulCurrentOperation;                     // operations counter, incremented with each setNextOperation()
+    Bstr m_bstrOperationDescription;                // name of current operation; initially from constructor, changed with setNextOperation()
+    ULONG m_ulCurrentOperationWeight;               // weight of current operation, given to setNextOperation()
+    ULONG m_ulOperationPercent;                     // percentage of current operation, set with setCurrentOperationProgress()
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -147,7 +152,17 @@ public:
 
     // public initializer/uninitializer for internal purposes only
 
-    HRESULT init (
+    /**
+     * Simplified constructor for progress objects that have only one
+     * operation as a task.
+     * @param aParent
+     * @param aInitiator
+     * @param aDescription
+     * @param aCancelable
+     * @param aId
+     * @return
+     */
+    HRESULT init(
 #if !defined (VBOX_COM_INPROC)
                   VirtualBox *aParent,
 #endif
@@ -155,20 +170,64 @@ public:
                   CBSTR aDescription, BOOL aCancelable,
                   OUT_GUID aId = NULL)
     {
-        return init (
+        return init(
 #if !defined (VBOX_COM_INPROC)
             aParent,
 #endif
-            aInitiator, aDescription, aCancelable, 1, aDescription, aId);
+            aInitiator,
+            aDescription,
+            aCancelable,
+            1,      // cOperations
+            1,      // ulTotalOperationsWeight
+            aDescription, // bstrFirstOperationDescription
+            1,      // ulFirstOperationWeight
+            aId);
     }
 
-    HRESULT init (
+    /**
+     * Not quite so simplified constructor for progress objects that have
+     * more than one operation, but all sub-operations are weighed the same.
+     * @param aParent
+     * @param aInitiator
+     * @param aDescription
+     * @param aCancelable
+     * @param cOperations
+     * @param bstrFirstOperationDescription
+     * @param aId
+     * @return
+     */
+    HRESULT init(
 #if !defined (VBOX_COM_INPROC)
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
                   CBSTR aDescription, BOOL aCancelable,
-                  ULONG aOperationCount, CBSTR aOperationDescription,
+                  ULONG cOperations,
+                  CBSTR bstrFirstOperationDescription,
+                  OUT_GUID aId = NULL)
+    {
+        return init(
+#if !defined (VBOX_COM_INPROC)
+            aParent,
+#endif
+            aInitiator,
+            aDescription,
+            aCancelable,
+            cOperations,      // cOperations
+            cOperations,      // ulTotalOperationsWeight = cOperations
+            bstrFirstOperationDescription, // bstrFirstOperationDescription
+            1,      // ulFirstOperationWeight: weigh them all the same
+            aId);
+    }
+
+    HRESULT init(
+#if !defined (VBOX_COM_INPROC)
+                  VirtualBox *aParent,
+#endif
+                  IUnknown *aInitiator,
+                  CBSTR aDescription, BOOL aCancelable,
+                  ULONG cOperations, ULONG ulTotalOperationsWeight,
+                  CBSTR bstrFirstOperationDescription, ULONG ulFirstOperationWeight,
                   OUT_GUID aId = NULL);
 
     HRESULT init (BOOL aCancelable, ULONG aOperationCount,
@@ -177,21 +236,21 @@ public:
     void uninit();
 
     // IProgress methods
-    STDMETHOD(WaitForCompletion) (LONG aTimeout);
-    STDMETHOD(WaitForOperationCompletion) (ULONG aOperation, LONG aTimeout);
+    STDMETHOD(WaitForCompletion)(LONG aTimeout);
+    STDMETHOD(WaitForOperationCompletion)(ULONG aOperation, LONG aTimeout);
     STDMETHOD(Cancel)();
 
     // public methods only for internal purposes
 
-    HRESULT notifyProgress (LONG aPercent);
-    HRESULT advanceOperation (CBSTR aOperationDescription);
+    HRESULT setCurrentOperationProgress(ULONG aPercent);
+    HRESULT setNextOperation(CBSTR bstrNextOperationDescription, ULONG ulNextOperationsWeight);
 
-    HRESULT notifyComplete (HRESULT aResultCode);
-    HRESULT notifyComplete (HRESULT aResultCode, const GUID &aIID,
-                            const Bstr &aComponent,
-                            const char *aText, ...);
-    HRESULT notifyCompleteBstr (HRESULT aResultCode, const GUID &aIID,
-                                const Bstr &aComponent, const Bstr &aText);
+    HRESULT notifyComplete(HRESULT aResultCode);
+    HRESULT notifyComplete(HRESULT aResultCode, const GUID &aIID,
+                           const Bstr &aComponent,
+                           const char *aText, ...);
+    HRESULT notifyCompleteBstr(HRESULT aResultCode, const GUID &aIID,
+                               const Bstr &aComponent, const Bstr &aText);
 
     /** For com::SupportErrorInfoImpl. */
     static const char *ComponentName() { return "Progress"; }
@@ -327,14 +386,14 @@ public:
     void uninit();
 
     // IProgress properties
-    STDMETHOD(COMGETTER(Percent)) (LONG *aPercent);
+    STDMETHOD(COMGETTER(Percent)) (ULONG *aPercent);
     STDMETHOD(COMGETTER(Completed)) (BOOL *aCompleted);
     STDMETHOD(COMGETTER(Canceled)) (BOOL *aCanceled);
     STDMETHOD(COMGETTER(ResultCode)) (HRESULT *aResultCode);
     STDMETHOD(COMGETTER(ErrorInfo)) (IVirtualBoxErrorInfo **aErrorInfo);
     STDMETHOD(COMGETTER(Operation)) (ULONG *aCount);
     STDMETHOD(COMGETTER(OperationDescription)) (BSTR *aOperationDescription);
-    STDMETHOD(COMGETTER(OperationPercent)) (LONG *aOperationPercent);
+    STDMETHOD(COMGETTER(OperationPercent)) (ULONG *aOperationPercent);
 
     // IProgress methods
     STDMETHOD(WaitForCompletion) (LONG aTimeout);
@@ -358,4 +417,4 @@ private:
 };
 
 #endif /* ____H_PROGRESSIMPL */
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */
+
