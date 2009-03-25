@@ -30,7 +30,7 @@ EXPORTS
     PGMHandlerPhysicalPageTempOff
     PGMShwModifyPage
     IOMMMIOResetRegion
-    IOMMMIOModifyPage
+    IOMMMIOMapMMIO2Page
     RTLogDefaultInstance
     RTLogRelDefaultInstance
     RTLogLogger
