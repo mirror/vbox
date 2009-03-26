@@ -1245,39 +1245,43 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
     /*
      * Select one page from the tail of the age list.
      */
-    uint16_t iToFree = pPool->iAgeTail;
-    if (iToFree == iUser)
-        iToFree = pPool->aPages[iToFree].iAgePrev;
-/* This is the alternative to the SyncCR3 pgmPoolCacheUsed calls.
-    if (pPool->aPages[iToFree].iUserHead != NIL_PGMPOOL_USER_INDEX)
+    PPGMPOOLPAGE    pPage;
+    for (unsigned iLoop = 0; ; iLoop++)
     {
-        uint16_t i = pPool->aPages[iToFree].iAgePrev;
-        for (unsigned j = 0; j < 10 && i != NIL_PGMPOOL_USER_INDEX; j++, i = pPool->aPages[i].iAgePrev)
+        uint16_t iToFree = pPool->iAgeTail;
+        if (iToFree == iUser)
+            iToFree = pPool->aPages[iToFree].iAgePrev;
+/* This is the alternative to the SyncCR3 pgmPoolCacheUsed calls.
+        if (pPool->aPages[iToFree].iUserHead != NIL_PGMPOOL_USER_INDEX)
         {
-            if (pPool->aPages[iToFree].iUserHead == NIL_PGMPOOL_USER_INDEX)
-                continue;
-            iToFree = i;
-            break;
+            uint16_t i = pPool->aPages[iToFree].iAgePrev;
+            for (unsigned j = 0; j < 10 && i != NIL_PGMPOOL_USER_INDEX; j++, i = pPool->aPages[i].iAgePrev)
+            {
+                if (pPool->aPages[iToFree].iUserHead == NIL_PGMPOOL_USER_INDEX)
+                    continue;
+                iToFree = i;
+                break;
+            }
         }
-    }
 */
+        Assert(iToFree != iUser);
+        AssertRelease(iToFree != NIL_PGMPOOL_IDX);
+        pPage = &pPool->aPages[iToFree];
 
-    Assert(iToFree != iUser);
-    AssertRelease(iToFree != NIL_PGMPOOL_IDX);
-
-    PPGMPOOLPAGE pPage = &pPool->aPages[iToFree];
+        /*
+         * Reject any attempts at flushing the currently active shadow CR3 mapping.
+         * Call pgmPoolCacheUsed to move the page to the head of the age list.
+         */
+        if (!pgmPoolIsPageLocked(&pPool->CTX_SUFF(pVM)->pgm.s, pPage))
+            break;
+        LogFlow(("pgmPoolCacheFreeOne: refuse CR3 mapping\n"));
+        pgmPoolCacheUsed(pPool, pPage);
+        AssertLogRelReturn(iLoop < 8192, VERR_INTERNAL_ERROR);
+    }
 
     /*
-     * Reject any attempts at flushing the currently active shadow CR3 mapping
+     * Found a usable page, flush it and return.
      */
-    if (pgmPoolIsPageLocked(&pPool->CTX_SUFF(pVM)->pgm.s, pPage))
-    {
-        /* Refresh the cr3 mapping by putting it at the head of the age list. */
-        LogFlow(("pgmPoolCacheFreeOne refuse CR3 mapping\n"));
-        pgmPoolCacheUsed(pPool, pPage);
-        return pgmPoolCacheFreeOne(pPool, iUser);
-    }
-
     int rc = pgmPoolFlushPage(pPool, pPage);
     if (rc == VINF_SUCCESS)
         PGM_INVL_GUEST_TLBS(); /* see PT handler. */
