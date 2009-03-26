@@ -679,8 +679,9 @@ EOF
 
 
 #
-# Check for libxslt, needed by VBoxSettings. For now we depend on 1.1.17.
-# This library is available on Ubuntu Edgy which fulfils the minimal libxml2
+# Check for libxslt, needed by VBoxSettings. For now we depend on 1.1.15,
+# as Solaris right now has no newer version and it definitely works.
+# 1.1.17 is available on Ubuntu Edgy which fulfils the minimal libxml2
 # requirement (2.6.26).
 #
 check_libxslt()
