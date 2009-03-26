@@ -318,7 +318,7 @@ bool VBoxProblemReporter::askForOverridingFilesIfExists (const QStringList& aPat
         /* If it is only one file use the single question versions above */
         return askForOverridingFileIfExists (existingFiles.at (0), aParent);
     else if (existingFiles.size() > 1)
-        return messageYesNo (aParent, Question, tr ("The following files exists already:<br /><br />%1<br /><br />Are you sure you want to replace them? Replacing them will overwrite there contents.").arg (existingFiles.join ("<br />")));
+        return messageYesNo (aParent, Question, tr ("The following files exists already:<br /><br />%1<br /><br />Are you sure you want to replace them? Replacing them will overwrite their contents.").arg (existingFiles.join ("<br />")));
     else
         return true;
 }
