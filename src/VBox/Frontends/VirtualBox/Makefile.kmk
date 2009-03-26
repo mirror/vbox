@@ -250,6 +250,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxConsoleWnd.h \
 	include/VBoxConsoleView.h \
 	include/VBoxProblemReporter.h \
+	include/VBoxProgressDialog.h \
 	include/VBoxDownloaderWgt.h \
 	include/VBoxAboutDlg.h \
 	include/VBoxCloseVMDlg.h \
@@ -330,6 +331,7 @@ VirtualBox_SOURCES = \
 	src/VBoxGlobal.cpp \
 	src/VBoxMediaComboBox.cpp \
 	src/VBoxProblemReporter.cpp \
+	src/VBoxProgressDialog.cpp \
 	src/VBoxHelpActions.cpp \
 	src/VBoxSelectorWnd.cpp \
 	src/VBoxConsoleView.cpp \
