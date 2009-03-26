@@ -130,7 +130,7 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
 PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
 {
     /* Here we deal with allocation of the root shadow page table for real and protected mode during mode switches;
-     * Other modes rely on MapCR3/UnmapCR3 to setup the shadow root page tables. 
+     * Other modes rely on MapCR3/UnmapCR3 to setup the shadow root page tables.
      */
 #if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT \
           || PGM_SHW_TYPE == PGM_TYPE_PAE    \
@@ -186,8 +186,9 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
 
     /* Apply all hypervisor mappings to the new CR3. */
     return pgmMapActivateCR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
-#endif
+#else
     return VINF_SUCCESS;
+#endif
 }
 
 
