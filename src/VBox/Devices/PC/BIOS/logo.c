@@ -257,55 +257,69 @@ ASM_END
 void print_detected_harddisks()
 {
     Bit16u ebda_seg=read_word(0x0040,0x000E);
-    Bit8u actual_device = 0;
-    Bit8u first_ctrl_printed = 0;
-    Bit8u second_ctrl_printed = 0;
+    Bit8u hd_count;
+    Bit8u hd_curr = 0;
+    Bit8u ide_ctrl_printed = 0;
+    Bit8u sata_ctrl_printed = 0;
+    Bit8u scsi_ctrl_printed = 0;
     Bit8u device;
 
-    device = read_byte(ebda_seg, &EbdaData->ata.hdidmap[actual_device]);
+    hd_count = read_byte(ebda_seg, &EbdaData->ata.hdcount);
 
-    while ((actual_device < BX_MAX_ATA_DEVICES) && (device < BX_MAX_ATA_DEVICES))
+    for (hd_curr = 0; hd_curr < hd_count; hd_curr++)
     {
-        Bit8u device_position;
+        device = read_byte(ebda_seg, &EbdaData->ata.hdidmap[hd_curr]);
 
-        device_position = device;
-
-        if ((device_position < 4) && (first_ctrl_printed == 0))
+        if (!VBOX_IS_SCSI_DEVICE(device))
         {
-            printf("IDE controller:\n");
-            first_ctrl_printed = 1;
+
+            if ((device < 4) && (ide_ctrl_printed == 0))
+            {
+                printf("IDE controller:\n");
+                ide_ctrl_printed = 1;
+            }
+            else if ((device >= 4) && (sata_ctrl_printed == 0))
+            {
+                printf("\n\nAHCI controller:\n");
+                sata_ctrl_printed = 1;
+            }
+
+            printf("\n    %d) ", hd_curr+1);
+
+            /*
+             * If actual_device is bigger than or equal 4
+             * this is the next controller and
+             * the positions start at the beginning.
+             */
+            if (device >= 4)
+                device -= 4;
+
+            if (device / 2)
+                printf("Secondary ");
+            else
+                printf("Primary ");
+
+            if (device % 2)
+                printf("Slave");
+            else
+                printf("Master");
         }
-        else if ((device_position >= 4) && (second_ctrl_printed == 0))
+        else
         {
-            printf("\n\nAHCI controller:\n");
-            second_ctrl_printed = 1;
+            if (scsi_ctrl_printed == 0)
+            {
+                printf("\n\nSCSI controller:\n");
+                scsi_ctrl_printed = 1;
+            }
+
+            printf("\n    %d) Hard disk", hd_curr+1);
+
         }
-
-        printf("\n    %d) ", actual_device+1);
-
-        /*
-         * If actual_device is bigger than or equal 4
-         * this is the next controller and
-         * the positions start at the beginning.
-         */
-        if (device_position >= 4)
-            device_position -= 4;
-
-        if (device_position / 2)
-            printf("Secondary ");
-        else
-            printf("Primary ");
-
-        if (device_position % 2)
-            printf("Slave");
-        else
-            printf("Master");
-
-        actual_device++;
-        device = read_byte(ebda_seg, &EbdaData->ata.hdidmap[actual_device]);
     }
 
-    if ((first_ctrl_printed == 0) && (second_ctrl_printed == 0))
+    if (   (ide_ctrl_printed == 0)
+        && (sata_ctrl_printed == 0)
+        && (scsi_ctrl_printed == 0))
         printf("No hard disks found");
 
     printf("\n");
@@ -315,23 +329,18 @@ Bit8u get_boot_drive(scode)
    Bit8u scode;
 {
     Bit16u ebda_seg=read_word(0x0040,0x000E);
-    Bit8u actual_device;
-    Bit8u detected_devices = 0;
 
-    for (actual_device = 0; actual_device < BX_MAX_ATA_DEVICES; actual_device++)
-    {
-        Bit8u device = read_byte(ebda_seg, &EbdaData->ata.hdidmap[actual_device]);
+    /* Check that the scan code is in the range of detected hard disks. */
+    Bit8u hd_count = read_byte(ebda_seg, &EbdaData->ata.hdcount);
 
-        if (device < BX_MAX_ATA_DEVICES)
-        {
-            scode--;
-            if (scode == 0x01)
-                return actual_device;
-        }
-    }
+    /* The key '1' has scancode 0x02 which represents the first disk */
+    scode -= 2;
+
+    if (scode < hd_count)
+        return scode;
 
     /* Scancode is higher than number of available devices */
-    return 0x08;
+    return 0xff;
 }
 
 void show_logo()
@@ -471,13 +480,11 @@ done:
                     boot_drive = get_boot_drive(scode);
 
                     /*
-                     * We support a maximum of 8 boot drives.
-                     * If this value is bigger than 7 not all
-                     * values are used and the user pressed
-                     * and invalid key.
-                     * Wait for the next pressed key.
+                     * 0xff indicates that there is no mapping
+                     * from the scan code to a hard drive.
+                     * Wait for next keystroke.
                      */
-                    if (boot_drive > 7)
+                    if (boot_drive == 0xff)
                         continue;
 
                     write_byte(ebda_seg, &EbdaData->uForceBootDrive, boot_drive);

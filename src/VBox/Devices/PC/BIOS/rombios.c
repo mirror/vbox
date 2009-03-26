@@ -219,7 +219,12 @@
 #endif
 
 #ifdef VBOX_WITH_SCSI
-#    define BX_MAX_SCSI_DEVICES 2
+/* Enough for now */
+#    define BX_MAX_SCSI_DEVICES 4
+
+/* A SCSI device starts always at BX_MAX_ATA_DEVICES. */
+#    define VBOX_IS_SCSI_DEVICE(device_id) (device_id >= BX_MAX_ATA_DEVICES)
+#    define VBOX_GET_SCSI_DEVICE(device_id) (device_id - BX_MAX_ATA_DEVICES)
 #endif
 
 #ifndef VBOX
