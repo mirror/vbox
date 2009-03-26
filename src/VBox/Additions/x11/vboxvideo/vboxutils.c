@@ -464,7 +464,13 @@ vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     pVBox->reqp->fFlags = 0;
     rc = VbglR3SetPointerShapeReq(pVBox->reqp);
     if (RT_FAILURE(rc))
+    {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not hide the virtual mouse pointer.\n");
+        /* Play safe, and disable the hardware cursor until the next mode
+         * switch, since obviously something happened that we didn't
+         * anticipate. */
+        pVBox->forceSWCursor = TRUE;
+    }
 }
 
 static void
@@ -476,8 +482,13 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     if (vbox_host_uses_hwcursor(pScrn)) {
         pVBox->reqp->fFlags = VBOX_MOUSE_POINTER_VISIBLE;
         rc = VbglR3SetPointerShapeReq(pVBox->reqp);
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(rc)) {
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not unhide the virtual mouse pointer.\n");
+            /* Play safe, and disable the hardware cursor until the next mode
+             * switch, since obviously something happened that we didn't
+             * anticipate. */
+            pVBox->forceSWCursor = TRUE;
+        }
     }
 }
 
@@ -495,8 +506,13 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
 #endif
 
     rc = VbglR3SetPointerShapeReq(reqp);
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(rc)) {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,  "Unable to set the virtual mouse pointer image.\n");
+        /* Play safe, and disable the hardware cursor until the next mode
+         * switch, since obviously something happened that we didn't
+         * anticipate. */
+        pVBox->forceSWCursor = TRUE;
+    }
 }
 
 static void
