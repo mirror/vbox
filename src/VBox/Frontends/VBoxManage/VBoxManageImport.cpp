@@ -294,6 +294,11 @@ int handleImportAppliance(HandlerArg *a)
                                         a, bstrFinalValue.raw(), i);
                         break;
 
+                        case VirtualSystemDescriptionType_Description:
+                            RTPrintf("%2d: Description: \"%ls\"\n",
+                                     a, bstrFinalValue.raw());
+                        break;
+
                         case VirtualSystemDescriptionType_License:
                             ++cLicensesInTheWay;
                             if (findArgValue(strOverride, pmapArgs, "-eula"))
