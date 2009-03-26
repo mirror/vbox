@@ -2146,7 +2146,10 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                             rc = task->progress->COMGETTER(Canceled)(&fCanceled);
                             if (FAILED(rc)) throw rc;
                             if (fCanceled)
+                            {
                                 pProgress2->Cancel();
+                                break;
+                            }
                             else
                             {
                                 rc = pProgress2->COMGETTER(Percent(&currentPercent));
@@ -3037,7 +3040,10 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                     rc = task->progress->COMGETTER(Canceled)(&fCanceled);
                     if (FAILED(rc)) throw rc;
                     if (fCanceled)
+                    {
                         pProgress2->Cancel();
+                        break;
+                    }
                     else
                     {
                         rc = pProgress2->COMGETTER(Percent(&currentPercent));
