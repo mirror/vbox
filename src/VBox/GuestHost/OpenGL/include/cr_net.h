@@ -26,6 +26,10 @@
 #include <netinet/in.h>
 #endif
 
+#ifdef SunOS
+#include <sys/types.h>
+#endif
+
 #include "cr_protocol.h"
 #include "cr_threads.h"
 
