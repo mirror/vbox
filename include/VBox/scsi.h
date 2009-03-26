@@ -114,7 +114,8 @@ typedef enum SCSICMD
     SCSI_READ_16                        = 0x88,
     SCSI_WRITE_16                       = 0x8a,
     SCSI_READ_6                         = 0x08,
-    SCSI_WRITE_6                        = 0x0a
+    SCSI_WRITE_6                        = 0x0a,
+    SCSI_LOG_SENSE                      = 0x4d
 } SCSICMD;
 
 /* Mode page codes for mode sense/select commands. */
