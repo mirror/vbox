@@ -866,7 +866,7 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
     void        *pvChunk      = NULL;
     int rc = SUPR3PageAllocEx(cChunkPages, 0 /*fFlags*/, &pvChunk,
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                              VMMIsHwVirtExtForced(pVM) ? &pvR0 : NULL,
+                              VMMIsHwVirtExtForced(pVM) ? &R0PtrChunk : NULL,
 #else
                               NULL,
 #endif
