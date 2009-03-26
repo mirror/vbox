@@ -373,7 +373,7 @@ int main(int argc, char **argv)
     if (fDaemonize && !fDaemonzied)
     {
         VBoxServiceVerbose(1, "Daemonizing...\n");
-        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, NULL);
+        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
         if (RT_FAILURE(rc))
             return VBoxServiceError("daemon failed: %Rrc\n", rc);
         /* in-child */
