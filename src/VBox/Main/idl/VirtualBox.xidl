@@ -3265,18 +3265,23 @@
     <const name="OS" value="2" />
     <const name="Name" value="3" />
     <const name="Description" value="4" />
-    <const name="License" value="5" />
-    <const name="CPU" value="6" />
-    <const name="Memory" value="7" />
-    <const name="HardDiskControllerIDE" value="8" />
-    <const name="HardDiskControllerSATA" value="9" />
-    <const name="HardDiskControllerSCSI" value="10" />
-    <const name="HardDiskImage" value="11" />
-    <const name="Floppy" value="12" />
-    <const name="CDROM" value="13" />
-    <const name="NetworkAdapter" value="14" />
-    <const name="USBController" value="15" />
-    <const name="SoundCard" value="16" />
+    <const name="Product" value="5" />
+    <const name="Vendor" value="6" />
+    <const name="Version" value="7" />
+    <const name="ProductUrl" value="8" />
+    <const name="VendorUrl" value="9" />
+    <const name="License" value="10" />
+    <const name="CPU" value="11" />
+    <const name="Memory" value="12" />
+    <const name="HardDiskControllerIDE" value="13" />
+    <const name="HardDiskControllerSATA" value="14" />
+    <const name="HardDiskControllerSCSI" value="15" />
+    <const name="HardDiskImage" value="16" />
+    <const name="Floppy" value="17" />
+    <const name="CDROM" value="18" />
+    <const name="NetworkAdapter" value="19" />
+    <const name="USBController" value="20" />
+    <const name="SoundCard" value="21" />
 
   </enum>
 
