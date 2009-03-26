@@ -333,6 +333,8 @@ extensions_num_get_values = {
     'GL_FOG_COORDINATE_ARRAY_BUFFER_BINDING_ARB': (1, 'CR_ARB_vertex_buffer_object'),
     'GL_WEIGHT_ARRAY_BUFFER_BINDING_ARB': (1, 'CR_ARB_vertex_buffer_object'),
     'GL_MAX_TEXTURE_IMAGE_UNITS_ARB': (1, 'CR_ARB_fragment_program'),
+    # We don't support GL_ARB_draw_buffers, but for some reason ubuntu64 8.10 vm queries it on macos host
+    'GL_MAX_DRAW_BUFFERS_ARB': (1, 'VBOX')
 }
 
 get_keys = num_get_values.keys() + extensions_num_get_values.keys()
