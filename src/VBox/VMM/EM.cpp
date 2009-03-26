@@ -760,6 +760,13 @@ static int emR3Debug(PVM pVM, int rc)
                 case VERR_TRPM_DONT_PANIC:
                 case VERR_VMM_RING0_ASSERTION:
                 case VERR_INTERNAL_ERROR:
+                case VERR_INTERNAL_ERROR_2:
+                case VERR_INTERNAL_ERROR_3:
+                case VERR_INTERNAL_ERROR_4:
+                case VERR_INTERNAL_ERROR_5:
+                case VERR_IPE_UNEXPECTED_STATUS:
+                case VERR_IPE_UNEXPECTED_INFO_STATUS:
+                case VERR_IPE_UNEXPECTED_ERROR_STATUS:
                     return rc;
 
                 /*
@@ -1291,7 +1298,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
 
             default:
                 AssertReleaseMsgFailed(("Unknown return code %Rrc from PATMR3HandleTrap\n", rc));
-                return VERR_INTERNAL_ERROR;
+                return VERR_IPE_UNEXPECTED_STATUS;
         }
     }
 
@@ -1873,7 +1880,7 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
              */
             default:
                 AssertReleaseMsgFailed(("Unknown return code %Rrc from PATMR3HandleTrap!\n", rc));
-                return VERR_INTERNAL_ERROR;
+                return VERR_IPE_UNEXPECTED_STATUS;
         }
     }
     return VINF_SUCCESS;
