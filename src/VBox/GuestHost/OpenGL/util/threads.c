@@ -133,7 +133,16 @@ void crInitMutex(CRmutex *mutex)
 #ifdef WINDOWS
     InitializeCriticalSection(mutex);
 #else
-    pthread_mutex_init(mutex, NULL);
+    pthread_mutexattr_t mta;
+    int rc;
+
+    rc = pthread_mutexattr_init(&mta);
+    CRASSERT(!rc);
+    rc = pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
+    CRASSERT(!rc);
+    rc = pthread_mutex_init(mutex, &mta);
+    CRASSERT(!rc);
+    pthread_mutexattr_destroy(&mta);
 #endif
 }
 
