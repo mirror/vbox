@@ -145,6 +145,11 @@ typedef enum SCSICMD
 #define SCSI_STATUS_ACA_ACTIVE                  0x30
 #define SCSI_STATUS_TASK_ABORTED                0x40
 
+/* Sense data response codes - This is the first byte in the sense data */
+#define SCSI_SENSE_RESPONSE_CODE_CURR_FIXED     0x70
+#define SCSI_SENSE_RESPONSE_CODE_DEFERRED_FIXED 0x71
+#define SCSI_SENSE_RESPONSE_CODE_CURR_DESC      0x72
+#define SCSI_SENSE_RESPONSE_CODE_DEFERRED_DESC  0x73
 
 /* Sense keys */
 #define SCSI_SENSE_NONE             0
