@@ -234,7 +234,8 @@ vboxvideo_drv_16_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
 vboxvideo_drv_16_SOURCES  = \
 	vboxvideo_15.c \
-	vboxutils.c
+	vboxutils.c \
+	vboxvideo_dri.c
 
 
 include	$(KBUILD_PATH)/subfooter.kmk
