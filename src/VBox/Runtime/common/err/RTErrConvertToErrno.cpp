@@ -438,8 +438,15 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
 #ifdef EPROCLIM
         case VERR_MAX_PROCS_REACHED:                return EPROCLIM;
 #endif
+#ifdef EDOOFUS
+        case VERR_INTERNAL_ERROR:
+        case VERR_INTERNAL_ERROR_2:
+        case VERR_INTERNAL_ERROR_3:                 return EDOOFUS;
+#endif
 
         default:
+            /* The idea here is that if you hit this, you will have to
+               translate the status code yourself. */
             AssertMsgFailed(("Unhandled error code %Rrc\n", iErr));
 #ifdef EPROTO
             return EPROTO;
