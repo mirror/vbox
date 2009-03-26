@@ -601,7 +601,7 @@ VMMR3DECL(int) CFGMR3QueryInteger(PCFGMNODE pNode, const char *pszName, uint64_t
  * @param   pNode           Which node to search for pszName in.
  * @param   pszName         Name of an integer value.
  * @param   pu64            Where to store the integer value. This is set to the default on failure.
- * @param   u64Def          The default value.
+ * @param   u64Def          The default value. This is always set.
  */
 VMMR3DECL(int) CFGMR3QueryIntegerDef(PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def)
 {
