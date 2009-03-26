@@ -381,7 +381,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
      */
     bool fFlushTLBs = false;
     int rc = pgmPoolTrackFlushGCPhys(pVM, pPage, &fFlushTLBs);
-    AssertMsgReturn(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3, ("%Rrc\n", rc), RT_FAILURE(rc) ? rc : VERR_INTERNAL_ERROR_3);
+    AssertMsgReturn(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3, ("%Rrc\n", rc), RT_FAILURE(rc) ? rc : VERR_IPE_UNEXPECTED_STATUS);
 
     /*
      * Ensure that we've got a page handy, take it and use it.
@@ -641,12 +641,12 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
     const uint32_t idChunk = PGM_PAGE_GET_CHUNKID(pPage);
     if (idChunk == NIL_GMM_CHUNKID)
     {
-        AssertMsgReturn(PGM_PAGE_GET_PAGEID(pPage) == NIL_GMM_PAGEID, ("pPage=%R[pgmpage]\n", pPage), VERR_INTERNAL_ERROR);
+        AssertMsgReturn(PGM_PAGE_GET_PAGEID(pPage) == NIL_GMM_PAGEID, ("pPage=%R[pgmpage]\n", pPage), VERR_INTERNAL_ERROR_2);
         if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2)
         {
             /* Lookup the MMIO2 range and use pvR3 to calc the address. */
             PPGMRAMRANGE pRam = pgmPhysGetRange(&pVM->pgm.s, GCPhys);
-            AssertMsgReturn(pRam || !pRam->pvR3, ("pRam=%p pPage=%R[pgmpage]\n", pRam, pPage), VERR_INTERNAL_ERROR);
+            AssertMsgReturn(pRam || !pRam->pvR3, ("pRam=%p pPage=%R[pgmpage]\n", pRam, pPage), VERR_INTERNAL_ERROR_2);
             *ppv = (void *)((uintptr_t)pRam->pvR3 + (GCPhys - pRam->GCPhys));
         }
         else if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO)
@@ -655,15 +655,15 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
              * One solution would be to seed MMIO2 pages to GMM and get unique Page IDs for
              * them, that would also avoid this mess. It would actually be kind of
              * elegant... */
-            AssertLogRelMsgFailedReturn(("%RGp\n", GCPhys), VERR_INTERNAL_ERROR);
+            AssertLogRelMsgFailedReturn(("%RGp\n", GCPhys), VERR_INTERNAL_ERROR_3);
         }
         else
         {
             /** @todo handle MMIO2 */
-            AssertMsgReturn(PGM_PAGE_IS_ZERO(pPage), ("pPage=%R[pgmpage]\n", pPage), VERR_INTERNAL_ERROR);
+            AssertMsgReturn(PGM_PAGE_IS_ZERO(pPage), ("pPage=%R[pgmpage]\n", pPage), VERR_INTERNAL_ERROR_2);
             AssertMsgReturn(PGM_PAGE_GET_HCPHYS(pPage) == pVM->pgm.s.HCPhysZeroPg,
-                        ("pPage=%R[pgmpage]\n", pPage),
-                        VERR_INTERNAL_ERROR);
+                            ("pPage=%R[pgmpage]\n", pPage),
+                            VERR_INTERNAL_ERROR_2);
             *ppv = pVM->pgm.s.CTXALLSUFF(pvZeroPg);
         }
         *ppMap = NULL;
@@ -3538,7 +3538,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVM pVM, PCPUMCTXCORE pCtxCore, vo
                         break;
                     default:
                         AssertMsgFailed(("%Rrc\n", rc));
-                        AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                        AssertReturn(RT_FAILURE(rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
                         return rc;
                 }
                 PGMPhysReleasePageMappingLock(pVM, &Lock);
@@ -3588,7 +3588,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVM pVM, PCPUMCTXCORE pCtxCore, vo
                             break;
                         default:
                             AssertMsgFailed(("%Rrc\n", rc));
-                            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                            AssertReturn(RT_FAILURE(rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
                             return rc;
                     }
 
@@ -3605,7 +3605,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVM pVM, PCPUMCTXCORE pCtxCore, vo
                             break;
                         default:
                             AssertMsgFailed(("%Rrc\n", rc));
-                            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                            AssertReturn(RT_FAILURE(rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
                             return rc;
                     }
 
@@ -3648,7 +3648,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVM pVM, PCPUMCTXCORE pCtxCore, vo
 
         default:
             AssertMsgFailed(("rc=%Rrc GCPtrSrc=%RGv cb=%#x\n", rc, GCPtrSrc, cb));
-            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+            AssertReturn(RT_FAILURE(rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
             return rc;
     }
     if (fRaiseTrap)
@@ -3731,7 +3731,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVM pVM, PCPUMCTXCORE pCtxCore, R
                         break;
                     default:
                         AssertMsgFailed(("%Rrc\n", rc));
-                        AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                        AssertReturn(RT_FAILURE(rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
                         return rc;
                 }
 
@@ -3784,7 +3784,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVM pVM, PCPUMCTXCORE pCtxCore, R
                             break;
                         default:
                             AssertMsgFailed(("%Rrc\n", rc));
-                            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                            AssertReturn(RT_FAILURE(rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
                             return rc;
                     }
 
@@ -3801,7 +3801,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVM pVM, PCPUMCTXCORE pCtxCore, R
                             break;
                         default:
                             AssertMsgFailed(("%Rrc\n", rc));
-                            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+                            AssertReturn(RT_FAILURE(rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
                             return rc;
                     }
 
@@ -3850,7 +3850,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVM pVM, PCPUMCTXCORE pCtxCore, R
 
         default:
             AssertMsgFailed(("rc=%Rrc GCPtrDst=%RGv cb=%#x\n", rc, GCPtrDst, cb));
-            AssertReturn(RT_FAILURE(rc), VERR_INTERNAL_ERROR);
+            AssertReturn(RT_FAILURE(rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
             return rc;
     }
     if (fRaiseTrap)
