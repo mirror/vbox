@@ -622,6 +622,7 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int                pgmR3InitPaging(PVM pVM);
+static void               pgmR3InitStats(PVM pVM);
 static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -636,10 +637,6 @@ static DECLCALLBACK(int)  pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
 static int                pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0);
 static void               pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst);
 static PGMMODE            pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher);
-
-#ifdef VBOX_WITH_STATISTICS
-static void               pgmR3InitStats(PVM pVM);
-#endif
 
 #ifdef VBOX_WITH_DEBUGGER
 /** @todo all but the two last commands must be converted to 'info'. */
@@ -1329,11 +1326,8 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
                                    "Dumps guest mappings.",
                                    pgmR3MapInfo);
 
-        STAM_REL_REG(pVM, &pVM->pgm.s.cGuestModeChanges, STAMTYPE_COUNTER, "/PGM/cGuestModeChanges", STAMUNIT_OCCURENCES, "Number of guest mode changes.");
-        STAM_REL_REG(pVM, &pVM->pgm.s.cRelocations, STAMTYPE_COUNTER, "/PGM/cRelocations", STAMUNIT_OCCURENCES, "Number of hypervisor relocations.");
-#ifdef VBOX_WITH_STATISTICS
         pgmR3InitStats(pVM);
-#endif
+
 #ifdef VBOX_WITH_DEBUGGER
         /*
          * Debugger commands.
@@ -1529,37 +1523,39 @@ static int pgmR3InitPaging(PVM pVM)
 }
 
 
-#ifdef VBOX_WITH_STATISTICS
 /**
  * Init statistics
  */
 static void pgmR3InitStats(PVM pVM)
 {
-    PPGM pPGM = &pVM->pgm.s;
-    unsigned i;
-
-    /*
-     * Note! The layout of this function matches the member layout exactly!
-     */
+    PPGM        pPGM = &pVM->pgm.s;
+    unsigned    i;
 
     /* Common - misc variables */
-    STAM_REG(pVM, &pPGM->cAllPages,                         STAMTYPE_U32,     "/PGM/Page/cAllPages",                STAMUNIT_OCCURENCES,     "The total number of pages.");
-    STAM_REG(pVM, &pPGM->cPrivatePages,                     STAMTYPE_U32,     "/PGM/Page/cPrivatePages",            STAMUNIT_OCCURENCES,     "The number of private pages.");
-    STAM_REG(pVM, &pPGM->cSharedPages,                      STAMTYPE_U32,     "/PGM/Page/cSharedPages",             STAMUNIT_OCCURENCES,     "The number of shared pages.");
-    STAM_REG(pVM, &pPGM->cZeroPages,                        STAMTYPE_U32,     "/PGM/Page/cZeroPages",               STAMUNIT_OCCURENCES,     "The number of zero backed pages.");
-    STAM_REG(pVM, &pPGM->cHandyPages,                       STAMTYPE_U32,     "/PGM/Page/cHandyPages",              STAMUNIT_OCCURENCES,     "The number of handy pages (not included in cAllPages).");
-    STAM_REG(pVM, &pPGM->ChunkR3Map.c,                      STAMTYPE_U32,     "/PGM/ChunkR3Map/c",                      STAMUNIT_OCCURENCES, "Number of mapped chunks.");
-    STAM_REG(pVM, &pPGM->ChunkR3Map.cMax,                   STAMTYPE_U32,     "/PGM/ChunkR3Map/cMax",                   STAMUNIT_OCCURENCES, "Maximum number of mapped chunks.");
+    STAM_REL_REG(pVM, &pPGM->cAllPages,                     STAMTYPE_U32,     "/PGM/Page/cAllPages",                STAMUNIT_OCCURENCES,     "The total number of pages.");
+    STAM_REL_REG(pVM, &pPGM->cPrivatePages,                 STAMTYPE_U32,     "/PGM/Page/cPrivatePages",            STAMUNIT_OCCURENCES,     "The number of private pages.");
+    STAM_REL_REG(pVM, &pPGM->cSharedPages,                  STAMTYPE_U32,     "/PGM/Page/cSharedPages",             STAMUNIT_OCCURENCES,     "The number of shared pages.");
+    STAM_REL_REG(pVM, &pPGM->cZeroPages,                    STAMTYPE_U32,     "/PGM/Page/cZeroPages",               STAMUNIT_OCCURENCES,     "The number of zero backed pages.");
+    STAM_REL_REG(pVM, &pPGM->cHandyPages,                   STAMTYPE_U32,     "/PGM/Page/cHandyPages",              STAMUNIT_OCCURENCES,     "The number of handy pages (not included in cAllPages).");
+    STAM_REL_REG(pVM, &pPGM->cGuestModeChanges,             STAMTYPE_COUNTER, "/PGM/cGuestModeChanges",             STAMUNIT_OCCURENCES,     "Number of guest mode changes.");
+    STAM_REL_REG(pVM, &pPGM->cRelocations,                  STAMTYPE_COUNTER, "/PGM/cRelocations",                  STAMUNIT_OCCURENCES,     "Number of hypervisor relocations.");
+    STAM_REL_REG(pVM, &pPGM->ChunkR3Map.c,                  STAMTYPE_U32,     "/PGM/ChunkR3Map/c",                  STAMUNIT_OCCURENCES,     "Number of mapped chunks.");
+    STAM_REL_REG(pVM, &pPGM->ChunkR3Map.cMax,               STAMTYPE_U32,     "/PGM/ChunkR3Map/cMax",               STAMUNIT_OCCURENCES,     "Maximum number of mapped chunks.");
 
+    /*
+     * Note! The layout below matches the member layout exactly!
+     */
+
+#ifdef VBOX_WITH_STATISTICS
     /* Common - stats */
-#ifdef PGMPOOL_WITH_GCPHYS_TRACKING
+# ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     STAM_REG(pVM, &pPGM->StatTrackVirgin,                   STAMTYPE_COUNTER, "/PGM/Track/Virgin",                  STAMUNIT_OCCURENCES,     "The number of first time shadowings");
     STAM_REG(pVM, &pPGM->StatTrackAliased,                  STAMTYPE_COUNTER, "/PGM/Track/Aliased",                 STAMUNIT_OCCURENCES,     "The number of times switching to cRef2, i.e. the page is being shadowed by two PTs.");
     STAM_REG(pVM, &pPGM->StatTrackAliasedMany,              STAMTYPE_COUNTER, "/PGM/Track/AliasedMany",             STAMUNIT_OCCURENCES,     "The number of times we're tracking using cRef2.");
     STAM_REG(pVM, &pPGM->StatTrackAliasedLots,              STAMTYPE_COUNTER, "/PGM/Track/AliasedLots",             STAMUNIT_OCCURENCES,     "The number of times we're hitting pages which has overflowed cRef2");
     STAM_REG(pVM, &pPGM->StatTrackOverflows,                STAMTYPE_COUNTER, "/PGM/Track/Overflows",               STAMUNIT_OCCURENCES,     "The number of times the extent list grows to long.");
     STAM_REG(pVM, &pPGM->StatTrackDeref,                    STAMTYPE_PROFILE, "/PGM/Track/Deref",                   STAMUNIT_OCCURENCES,     "Profiling of SyncPageWorkerTrackDeref (expensive).");
-#endif
+# endif
     for (i = 0; i < RT_ELEMENTS(pPGM->StatSyncPtPD); i++)
         STAMR3RegisterF(pVM, &pPGM->StatSyncPtPD[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                         "The number of SyncPT per PD n.", "/PGM/PDSyncPT/%04X", i);
@@ -1786,9 +1782,8 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatR3FlushTLBSameCR3,             STAMTYPE_COUNTER, "/PGM/R3/FlushTLB/SameCR3",           STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with the same CR3, non-global. (flush)");
     STAM_REG(pVM, &pPGM->StatR3FlushTLBSameCR3Global,       STAMTYPE_COUNTER, "/PGM/R3/FlushTLB/SameCR3Global",     STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with the same CR3, global. (flush)");
     STAM_REG(pVM, &pPGM->StatR3GstModifyPage,               STAMTYPE_PROFILE, "/PGM/R3/GstModifyPage",              STAMUNIT_TICKS_PER_CALL, "Profiling of the PGMGstModifyPage() body.");
-
-}
 #endif /* VBOX_WITH_STATISTICS */
+}
 
 
 /**
