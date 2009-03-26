@@ -766,7 +766,6 @@ if defined(VBOX_WITH_NETFLT)
  if defined(VBOX_NETFLT_ONDEMAND_BIND)
   Drivers_DEFS.win     += VBOX_NETFLT_ONDEMAND_BIND
  endif
- Drivers_SOURCES.win   += Network/win/DrvIntNet-win.cpp
 endif
 
 # -- features --

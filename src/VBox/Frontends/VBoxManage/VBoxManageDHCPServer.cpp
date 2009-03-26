@@ -60,10 +60,15 @@ typedef enum enMainOpCodes
 
 static const RTGETOPTDEF g_aDHCPIPOptions[]
     = {
-        { "--netname",          'n', RTGETOPT_REQ_STRING },
-        { "-netname",           'n', RTGETOPT_REQ_STRING },     // deprecated (if removed check below)
-        { "--ifname",           'i', RTGETOPT_REQ_STRING },
-        { "-ifname",            'i', RTGETOPT_REQ_STRING },     // deprecated
+        { "--netname",          't', RTGETOPT_REQ_STRING },  /* we use 't' instead of 'n' to avoid
+                                                              * 1. the misspelled "-enable" long option to be treated as 'e' (for -enable) + 'n' (for -netname) + "<the_rest_opt>" (for net name)
+                                                              * 2. the misspelled "-netmask" to be treated as 'n' (for -netname) + "<the_rest_opt>" (for net name)
+                                                              */
+        { "-netname",           't', RTGETOPT_REQ_STRING },     // deprecated (if removed check below)
+        { "--ifname",           'f', RTGETOPT_REQ_STRING },  /* we use 'f' instead of 'i' to avoid
+                                                              * 1. the misspelled "-disable" long option to be treated as 'd' (for -disable) + 'i' (for -ifname) + "<the_rest_opt>" (for if name)
+                                                              */
+        { "-ifname",            'f', RTGETOPT_REQ_STRING },     // deprecated
         { "--ip",               'a', RTGETOPT_REQ_STRING },
         { "-ip",                'a', RTGETOPT_REQ_STRING },     // deprecated
         { "--netmask",          'm', RTGETOPT_REQ_STRING },
@@ -108,7 +113,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
     {
         switch (c)
         {
-            case 'n':   // --netname
+            case 't':   // --netname
                 if(pNetName)
                     return errorSyntax(USAGE_DHCPSERVER, "You can only specify --netname once.");
                 else if (pIfName)
@@ -118,7 +123,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                     pNetName = ValueUnion.psz;
                 }
             break;
-            case 'i':   // --ifname
+            case 'f':   // --ifname
                 if(pIfName)
                     return errorSyntax(USAGE_DHCPSERVER, "You can only specify --ifname once.");
                 else if (pNetName)
