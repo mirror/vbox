@@ -504,6 +504,10 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VWRN_DANGLING_OBJECTS               86
 /** Invalid Base64 encoding. */
 #define VERR_INVALID_BASE64_ENCODING        (-87)
+/** Internal error no. 2 - we're screwed if this happens. */
+#define VERR_INTERNAL_ERROR_2               (-88)
+/** Internal error no. 3 - we're screwed if this happens. */
+#define VERR_INTERNAL_ERROR_3               (-89)
 /** @} */
 
 
