@@ -417,7 +417,6 @@ static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPh
  */
 VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
-    VM_ASSERT_OTHER_THREAD(pVM);
     AssertPtr(ppv);
     AssertPtr(pLock);
 
