@@ -279,9 +279,6 @@ static const struct
         { CIMOSType_CIMOS_TurboLinux,                           SchemaDefs_OSTypeId_Linux},
 
             //                { CIMOSType_CIMOS_TurboLinux_64, },
-            //                { CIMOSType_CIMOS_Linux_64, },
-            //                    osTypeVBox = VBOXOSTYPE_Linux_x64;
-            //                    break;
 
         { CIMOSType_CIMOS_Mandriva,                             SchemaDefs_OSTypeId_Mandriva },
         { CIMOSType_CIMOS_Mandriva_64,                          SchemaDefs_OSTypeId_Mandriva_64 },
@@ -292,7 +289,8 @@ static const struct
         { CIMOSType_CIMOS_Linux_2_4_x,                          SchemaDefs_OSTypeId_Linux24 },
         { CIMOSType_CIMOS_Linux_2_4_x_64,                       SchemaDefs_OSTypeId_Linux24_64 },
         { CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Linux26 },
-        { CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Linux26_64 }
+        { CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Linux26_64 },
+        { CIMOSType_CIMOS_Linux_64,                             SchemaDefs_OSTypeId_Linux26_64 }
 };
 
 /**
