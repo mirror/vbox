@@ -3256,7 +3256,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="325e7fec-ce06-4174-9654-98f99478d03f"
+    uuid="68537dd6-78e6-4863-a1cd-20be54761891"
   >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -3264,12 +3264,12 @@
     <const name="Ignore" value="1" />
     <const name="OS" value="2" />
     <const name="Name" value="3" />
-    <const name="Description" value="4" />
-    <const name="Product" value="5" />
-    <const name="Vendor" value="6" />
-    <const name="Version" value="7" />
-    <const name="ProductUrl" value="8" />
-    <const name="VendorUrl" value="9" />
+    <const name="Product" value="4" />
+    <const name="Vendor" value="5" />
+    <const name="Version" value="6" />
+    <const name="ProductUrl" value="7" />
+    <const name="VendorUrl" value="8" />
+    <const name="Description" value="9" />
     <const name="License" value="10" />
     <const name="CPU" value="11" />
     <const name="Memory" value="12" />
