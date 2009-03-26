@@ -1364,7 +1364,7 @@ STDMETHODIMP Appliance::Interpret()
                          && (strNetwork.compare("Internal", Utf8Str::CaseInsensitive))
                          && (strNetwork.compare("HostOnly", Utf8Str::CaseInsensitive))
                        )
-                        strNetwork = "NAT";
+                        strNetwork = "Bridged";     // VMware assumes this is the default apparently
 
                     /* Figure out the hardware type */
                     NetworkAdapterType_T nwAdapterVBox = defaultAdapterVBox;
@@ -1391,7 +1391,7 @@ STDMETHODIMP Appliance::Interpret()
 
                     pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
                                        "",      // ref
-                                       strNetwork,      // orig
+                                       ea.strNetworkName,      // orig
                                        Utf8StrFmt("%RI32", (uint32_t)nwAdapterVBox),   // conf
                                        0,
                                        Utf8StrFmt("type=%s", strNetwork.c_str()));       // extra conf
