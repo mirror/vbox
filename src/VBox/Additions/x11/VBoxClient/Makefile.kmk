@@ -51,10 +51,11 @@ VBoxClient_LIBS += \
 ifdef VBOX_X11_SEAMLESS_GUEST
  VBoxClient_DEFS += SEAMLESS_GUEST DYNAMIC_RESIZE
  VBoxClient_SOURCES += \
+	seamless.cpp \
 	seamless-host.cpp \
 	seamless-x11.cpp \
 	thread.cpp \
-	displaychange-x11.cpp
+	autoresize.cpp
  VBoxClient_LIBS += \
 	Xext Xmu
 endif
