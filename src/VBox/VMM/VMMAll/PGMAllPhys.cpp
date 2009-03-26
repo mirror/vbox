@@ -381,7 +381,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
      */
     bool fFlushTLBs = false;
     int rc = pgmPoolTrackFlushGCPhys(pVM, pPage, &fFlushTLBs);
-    AssertMsgReturn(rc == VINF_SUCCESS || rc == VINF_PGM_GCPHYS_ALIASED, ("%Rrc\n", rc), RT_FAILURE(rc) ? rc : VERR_INTERNAL_ERROR);
+    AssertMsgReturn(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3, ("%Rrc\n", rc), RT_FAILURE(rc) ? rc : VERR_INTERNAL_ERROR_3);
 
     /*
      * Ensure that we've got a page handy, take it and use it.
