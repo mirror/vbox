@@ -255,7 +255,7 @@ private:
     HRESULT setLocation (CBSTR aLocation);
     HRESULT setFormat (CBSTR aFormat);
 
-    virtual HRESULT queryInfo(bool fWrite);
+    virtual HRESULT queryInfo();
 
     HRESULT canClose();
     HRESULT canAttach (const Guid &aMachineId,
@@ -288,15 +288,24 @@ private:
 
     struct Data
     {
-        Data() : type (HardDiskType_Normal), logicalSize (0), autoReset (false)
-               , implicit (false), numCreateDiffTasks (0)
-               , vdProgress (NULL) , vdDiskIfaces (NULL) {}
+        Data()
+            : type(HardDiskType_Normal),
+              logicalSize(0),
+              hddOpenMode(OpenReadWrite),
+              autoReset(false),
+              implicit(false),
+              numCreateDiffTasks(0),
+              vdProgress(NULL),
+              vdDiskIfaces(NULL)
+        {}
 
         const Bstr format;
         ComObjPtr <HardDiskFormat> formatObj;
 
         HardDiskType_T type;
         uint64_t logicalSize;   /*< In MBytes. */
+
+        HDDOpenMode hddOpenMode;
 
         BOOL autoReset : 1;
 

@@ -728,12 +728,16 @@ HRESULT HardDisk::init(VirtualBox *aVirtualBox,
     /* there must be a storage unit */
     m.state = MediaState_Created;
 
+    /* remember the open mode (defaults to ReadWrite) */
+    mm.hddOpenMode = enOpenMode;
+
     rc = setLocation (aLocation);
     CheckComRCReturnRC (rc);
 
     /* get all the information about the medium from the storage unit */
-    rc = queryInfo((enOpenMode == OpenReadWrite) /* fWrite */ );
-    if (SUCCEEDED (rc))
+    rc = queryInfo();
+
+    if (SUCCEEDED(rc))
     {
         /* if the storage unit is not accessible, it's not acceptable for the
          * newly opened media so convert this into an error */
@@ -744,9 +748,10 @@ HRESULT HardDisk::init(VirtualBox *aVirtualBox,
         }
         else
         {
-            /* storage format must be detected by queryInfo() if the medium is
-            * accessible */
-            AssertReturn (!m.id.isEmpty() && !mm.format.isNull(), E_FAIL);
+            AssertReturn(!m.id.isEmpty(), E_FAIL);
+
+            /* storage format must be detected by queryInfo() if the medium is accessible */
+            AssertReturn(!mm.format.isNull(), E_FAIL);
         }
     }
 
@@ -2995,7 +3000,7 @@ HRESULT HardDisk::setFormat (CBSTR aFormat)
  *       for the first time). Locks mParent for reading. Locks this object for
  *       writing.
  */
-HRESULT HardDisk::queryInfo(bool fWrite)
+HRESULT HardDisk::queryInfo()
 {
     AutoWriteLock alock (this);
 
@@ -3078,11 +3083,16 @@ HRESULT HardDisk::queryInfo(bool fWrite)
              * when opening hard disks of some third-party formats for the first
              * time in VirtualBox (such as VMDK for which VDOpen() needs to
              * generate an UUID if it is missing) */
-            if (!fWrite || !isImport)
+            if (    (mm.hddOpenMode == OpenReadOnly)
+                 || !isImport
+               )
                 flags |= VD_OPEN_FLAGS_READONLY;
 
-            vrc = VDOpen (hdd, Utf8Str (mm.format), location, flags,
-                          mm.vdDiskIfaces);
+            vrc = VDOpen(hdd,
+                         Utf8Str(mm.format),
+                         location,
+                         flags,
+                         mm.vdDiskIfaces);
             if (RT_FAILURE (vrc))
             {
                 lastAccessError = Utf8StrFmt (
@@ -3095,12 +3105,16 @@ HRESULT HardDisk::queryInfo(bool fWrite)
             {
                 /* check the UUID */
                 RTUUID uuid;
-                vrc = VDGetUuid (hdd, 0, &uuid);
-                ComAssertRCThrow (vrc, E_FAIL);
+                vrc = VDGetUuid(hdd, 0, &uuid);
+                ComAssertRCThrow(vrc, E_FAIL);
 
                 if (isImport)
                 {
-                    unconst (m.id) = uuid;
+                    unconst(m.id) = uuid;
+
+                    if (m.id.isEmpty() && (mm.hddOpenMode == OpenReadOnly))
+                        // only when importing a VDMK that has no UUID, create one in memory
+                        unconst(m.id).create();
                 }
                 else
                 {
@@ -3125,7 +3139,7 @@ HRESULT HardDisk::queryInfo(bool fWrite)
 
                 /* generate an UUID for an imported UUID-less hard disk */
                 if (isImport)
-                    unconst (m.id).create();
+                    unconst(m.id).create();
             }
 
             /* check the type */
