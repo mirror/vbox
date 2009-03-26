@@ -217,8 +217,7 @@ int main(int argc, char *argv[])
     }
     if (fDaemonise)
     {
-        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */,
-                             NULL);
+        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
         if (RT_FAILURE(rc))
         {
             RTPrintf("VBoxClient: failed to daemonize. exiting.\n");

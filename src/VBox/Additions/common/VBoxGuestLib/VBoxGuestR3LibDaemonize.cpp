@@ -50,6 +50,7 @@
 
 #include <iprt/string.h>
 #include <iprt/file.h>
+#include <iprt/process.h>
 #include <VBox/VBoxGuest.h>
 
 
@@ -62,19 +63,13 @@
  *
  * @param   fNoChDir    Pass false to change working directory to root.
  * @param   fNoClose    Pass false to redirect standard file streams to /dev/null.
- * @param   pszPidfile  Path to a file to write the pid of the daemon process
- *                      to.  Daemonising will fail if this file already exists
- *                      or cannot be written.  Optional.
  */
-VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose,
-                                char const *pszPidfile)
+VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
 {
 #if defined(RT_OS_DARWIN)
 # error "PORTME"
 
 #elif defined(RT_OS_OS2)
-    /** @todo create a pidfile if this is (/was :) ) usual on OS/2 */
-    NOREF(pszPidfile);
     PPIB pPib;
     PTIB pTib;
     DosGetInfoBlocks(&pTib, &pPib);
@@ -149,20 +144,6 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose,
      *   fork() once more on Linux to get rid of the session leadership role.
      */
 
-    /* We start off by opening the pidfile, so that we can fail straight away
-     * if it already exists. */
-    RTFILE hPidfile = NIL_RTFILE;
-    if (pszPidfile != NULL)
-    {
-        /* @note the exclusive create is not guaranteed on all file
-         * systems (e.g. NFSv2) */
-        int rc = RTFileOpen(&hPidfile, pszPidfile,
-                              RTFILE_O_READWRITE | RTFILE_O_CREATE
-                            | (0644 << RTFILE_O_CREATE_MODE_SHIFT));
-        if (!RT_SUCCESS(rc))
-            return rc;
-    }
-
     struct sigaction OldSigAct;
     struct sigaction SigAct;
     memset(&SigAct, 0, sizeof(SigAct));
@@ -173,18 +154,7 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose,
     if (pid == -1)
         return RTErrConvertFromErrno(errno);
     if (pid != 0)
-    {
-# ifndef RT_OS_LINUX /* On Linux we do another fork later */
-        if (hPidfile != NIL_RTFILE)
-        {
-            char szBuf[256];
-            size_t cbPid = RTStrPrintf(szBuf, sizeof(szBuf), "%d\n", pid);
-            RTFileWrite(hPidfile, szBuf, cbPid, NULL);
-            RTFileClose(hPidfile);
-        }
-# endif
         exit(0);
-    }
 
     /*
      * The orphaned child becomes is reparented to the init process.
@@ -236,19 +206,65 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose,
     if (pid == -1)
         return RTErrConvertFromErrno(errno);
     if (pid != 0)
-    {
-        if (hPidfile != NIL_RTFILE)
-        {
-            char szBuf[256];
-            size_t cbPid = RTStrPrintf(szBuf, sizeof(szBuf), "%d\n", pid);
-            RTFileWrite(hPidfile, szBuf, cbPid, NULL);
-            RTFileClose(hPidfile);
-        }
         exit(0);
-    }
 # endif /* RT_OS_LINUX */
 
     return VINF_SUCCESS;
 #endif
 }
 
+/**
+ * Creates a pidfile and returns the open file descriptor.
+ * On Unix-y systems, this call also places an advisory lock on the open
+ * file.  It will overwrite any existing pidfiles without a lock on them,
+ * on the assumption that they are stale files which an old process did not
+ * properly clean up.
+ *
+ * @returns iprt status code
+ * @param   pszPath  the path and filename to create the pidfile under
+ * @param   pFile    where to store the file descriptor of the open
+ *                   (and locked on Unix-y systems) pidfile.
+ *                   On failure, or if another process owns the pidfile,
+ *                   this will be set to NIL_RTFILE.
+ */
+VBGLR3DECL(int) VbglR3PidFile(const char *pszPath, PRTFILE pFile)
+{
+    AssertPtrReturn(pszPath, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+    RTFILE hPidFile = NIL_RTFILE;
+    int rc = RTFileOpen(&hPidFile, pszPath,
+                          RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE
+                        | (0644 << RTFILE_O_CREATE_MODE_SHIFT));
+    if (RT_SUCCESS(rc))
+        rc = RTFileLock(hPidFile, RTFILE_LOCK_WRITE, 0, ~0);
+    if (RT_SUCCESS(rc))
+    {
+        char szBuf[256];
+        size_t cbPid = RTStrPrintf(szBuf, sizeof(szBuf), "%d\n",
+                                   RTProcSelf());
+        RTFileWrite(hPidFile, szBuf, cbPid, NULL);
+    }
+    *pFile = hPidFile;
+    return rc;
+#else  /* !RT_OS_LINUX and !RT_OS_SOLARIS */
+# error portme
+#endif  /* !RT_OS_LINUX and !RT_OS_SOLARIS */
+}
+
+/**
+ * Close and remove an open pidfile.
+ * @param  pszPath  the path to the pidfile
+ * @param  File     the open file descriptor
+ */
+VBGLR3DECL(void) VbglR3ClosePidFile(const char *pszPath, RTFILE File)
+{
+    AssertPtrReturnVoid(pszPath);
+    AssertReturnVoid(File != NIL_RTFILE);
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+    RTFileDelete(pszPath);
+    RTFileClose(File);
+#else  /* !RT_OS_LINUX and !RT_OS_SOLARIS */
+# error portme
+#endif  /* !RT_OS_LINUX and !RT_OS_SOLARIS */
+}
