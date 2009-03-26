@@ -42,25 +42,23 @@ VBoxGLSettingsNetworkDetails::VBoxGLSettingsNetworkDetails (QWidget *aParent)
     setWindowIcon (QIcon (":/guesttools_16px.png"));
 
     /* Setup validators */
-    mLeIPv4->setValidator (new QRegExpValidator
-        (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
-    mLeNMv4->setValidator (new QRegExpValidator
-        (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
-    mLeIPv6->setValidator (new QRegExpValidator
-        (QRegExp ("[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                  "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                  "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                  "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}"), this));
-    mLeNMv6->setValidator (new QRegExpValidator
-        (QRegExp ("[1-9][0-9]|1[0-1][0-9]|12[0-8]"), this));
-    mLeDhcpAddress->setValidator (new QRegExpValidator
-        (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
-    mLeDhcpMask->setValidator (new QRegExpValidator
-        (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
-    mLeDhcpLowerAddress->setValidator (new QRegExpValidator
-        (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
-    mLeDhcpUpperAddress->setValidator (new QRegExpValidator
-        (QRegExp ("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"), this));
+    QString templateIPv4 ("([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\."
+                          "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\."
+                          "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\."
+                          "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])");
+    QString templateIPv6 ("[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
+                          "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
+                          "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
+                          "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}");
+
+    mLeIPv4->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
+    mLeNMv4->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
+    mLeIPv6->setValidator (new QRegExpValidator (QRegExp (templateIPv6), this));
+    mLeNMv6->setValidator (new QRegExpValidator (QRegExp ("[1-9][0-9]|1[0-1][0-9]|12[0-8]"), this));
+    mLeDhcpAddress->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
+    mLeDhcpMask->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
+    mLeDhcpLowerAddress->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
+    mLeDhcpUpperAddress->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
 
     /* Setup widgets */
     mLeIPv6->setFixedWidthByText (QString().fill ('X', 32) + QString().fill (':', 7));
