@@ -44,6 +44,7 @@
 # include "win/DrvIntNet-win.h"
 #endif
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -778,12 +779,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
                               "QuietlyIgnoreTrunkWirePromisc\0"
                               "IgnoreTrunkHostPromisc\0"
                               "QuietlyIgnoreTrunkHostPromisc\0"
-                              "IsService\0"
-                              "DhcpIPAddress\0"
-                              "DhcpNetworkMask\0"
-                              "DhcpLowerIP\0"
-                              "DhcpUpperIP\0"
-                              "DhcpMacAddress\0"))
+                              "IsService\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     /*
