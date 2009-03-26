@@ -681,12 +681,12 @@ static void mmR3HyperStatRegisterOne(PVM pVM, PMMHYPERSTAT pStat)
     if (pStat->fRegistered)
         return;
     const char *pszTag = mmR3GetTagName((MMTAG)pStat->Core.Key);
+    STAMR3RegisterF(pVM, &pStat->cbCurAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, "Number of bytes currently allocated.",           "/MM/HyperHeap/%s", pszTag);
     STAMR3RegisterF(pVM, &pStat->cAllocations,   STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Number of alloc calls.",                         "/MM/HyperHeap/%s/cAllocations", pszTag);
     STAMR3RegisterF(pVM, &pStat->cFrees,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Number of free calls.",                          "/MM/HyperHeap/%s/cFrees", pszTag);
     STAMR3RegisterF(pVM, &pStat->cFailures,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Number of failures.",                            "/MM/HyperHeap/%s/cFailures", pszTag);
     STAMR3RegisterF(pVM, &pStat->cbAllocated,    STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, "Total number of allocated bytes.",               "/MM/HyperHeap/%s/cbAllocated", pszTag);
     STAMR3RegisterF(pVM, &pStat->cbFreed,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, "Total number of freed bytes.",                   "/MM/HyperHeap/%s/cbFreed", pszTag);
-    STAMR3RegisterF(pVM, &pStat->cbCurAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, "Number of bytes currently allocated.",           "/MM/HyperHeap/%s/cbCurAllocated", pszTag);
     STAMR3RegisterF(pVM, &pStat->cbMaxAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, "Max number of bytes allocated at the same time.","/MM/HyperHeap/%s/cbMaxAllocated", pszTag);
     pStat->fRegistered = true;
 }
