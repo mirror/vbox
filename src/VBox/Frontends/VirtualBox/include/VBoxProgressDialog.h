@@ -61,6 +61,9 @@ protected:
     virtual void timerEvent (QTimerEvent *aEvent);
     virtual void closeEvent (QCloseEvent *aEvent);
 
+private slots:
+    void cancelOperation();
+
 private:
     /* Private member vars */
     CProgress &mProgress;
