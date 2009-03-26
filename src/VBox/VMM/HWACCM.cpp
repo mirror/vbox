@@ -446,10 +446,8 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     {
         LogRel(("HWACCM: No VT-x or AMD-V CPU extension found. Reason %Rrc\n", pVM->hwaccm.s.lLastError));
         LogRel(("HWACCM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hwaccm.s.vmx.msr.feature_ctrl));
-#ifdef RT_OS_DARWIN
         if (VMMIsHwVirtExtForced(pVM))
             return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is not available.");
-#endif
         return VINF_SUCCESS;
     }
 
