@@ -216,7 +216,8 @@ VBGLR3DECL(int) VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint3
  */
 VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits)
 {
-    bool fRc = false;
+    bool fRc = true;  /* If for some reason we can't contact the host then
+                       * we like everything. */
     int rc;
     VMMDevVideoModeSupportedRequest req;
 
@@ -224,7 +225,7 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
     req.width      = cx;
     req.height     = cy;
     req.bpp        = cBits;
-    req.fSupported = false;
+    req.fSupported = true;
     rc = vbglR3GRPerform(&req.header);
     if (RT_SUCCESS(rc) && RT_SUCCESS(req.header.rc))
         fRc = req.fSupported;
