@@ -267,17 +267,14 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
             case PGMMODE_PAE:
             case PGMMODE_PAE_NX:
             {
-                PX86PDPT  pShwPdpt;
-                PX86PDPAE pShwPaePd;
-                const unsigned iPdPt = iNewPDE / 256;
-                unsigned iPDE = iNewPDE * 2 % 512;
-
-                pShwPdpt  = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
+                const unsigned  iPdPt     = iNewPDE / 256;
+                unsigned        iPDE      = iNewPDE * 2 % 512;
+                PX86PDPT        pShwPdpt  = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
                 Assert(pShwPdpt);
 #ifdef IN_RC    /* Lock mapping to prevent it from being reused during pgmShwSyncPaePDPtr. */
                 PGMDynLockHCPage(pVM, (uint8_t *)pShwPdpt);
 #endif
-                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPdPt << X86_PDPT_SHIFT));
+                PX86PDPAE       pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, (iPdPt << X86_PDPT_SHIFT));
                 if (!pShwPaePd)
                 {
                     X86PDPE GstPdpe;
@@ -311,8 +308,8 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                     /* Mark the page as locked; disallow flushing. */
                     pgmPoolLockPage(pVM->pgm.s.CTX_SUFF(pPool), pPoolPagePd);
                 }
-# ifdef VBOX_STRICT
-                else 
+#ifdef VBOX_STRICT
+                else
                 if (pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING)
                 {
                     Assert(PGMGetGuestMode(pVM) >= PGMMODE_PAE);
@@ -320,7 +317,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                     Assert(pShwPaePd->a[iPDE+1].u & PGM_PDFLAGS_MAPPING);
                     AssertFatalMsg((pShwPaePd->a[iPDE+1].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT1, ("%RX64 vs %RX64\n", pShwPaePd->a[iPDE+1].u & X86_PDE_PG_MASK, pMap->aPTs[i].HCPhysPaePT1));
                 }
-# endif
+#endif
                 if (    pShwPaePd->a[iPDE].n.u1Present
                     &&  !(pShwPaePd->a[iPDE].u & PGM_PDFLAGS_MAPPING))
                 {
@@ -363,17 +360,19 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
     }
 }
 
+
 /**
  * Clears all PDEs involved with the mapping in the shadow page table.
  *
- * @param   pVM         The VM handle.
- * @param   pShwPageCR3 CR3 root page
- * @param   pMap        Pointer to the mapping in question.
- * @param   iOldPDE     The index of the 32-bit PDE corresponding to the base of the mapping.
+ * @param   pVM             The VM handle.
+ * @param   pShwPageCR3     CR3 root page
+ * @param   pMap            Pointer to the mapping in question.
+ * @param   iOldPDE         The index of the 32-bit PDE corresponding to the base of the mapping.
+ * @param   fDeactivateCR3  Set if it's pgmMapDeactivateCR3 calling.
  */
-void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE)
+void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE, bool fDeactivateCR3)
 {
-    Log(("pgmMapClearShadowPDEs old pde %x (cPTs=%x) (mappings enabled %d)\n", iOldPDE, pMap->cPTs, pgmMapAreMappingsEnabled(&pVM->pgm.s)));
+    Log(("pgmMapClearShadowPDEs: old pde %x (cPTs=%x) (mappings enabled %d) fDeactivateCR3=%RTbool\n", iOldPDE, pMap->cPTs, pgmMapAreMappingsEnabled(&pVM->pgm.s), fDeactivateCR3));
 
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
@@ -414,17 +413,27 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
             case PGMMODE_PAE:
             case PGMMODE_PAE_NX:
             {
-                PX86PDPT  pShwPdpt = NULL;
-                PX86PDPAE pShwPaePd = NULL;
-
-                const unsigned iPdpt = iOldPDE / 256;         /* iOldPDE * 2 / 512; iOldPDE is in 4 MB pages */
-                unsigned iPDE = iOldPDE * 2 % 512;
-                pShwPdpt  = (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
-                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pShwPdpt, (iPdpt << X86_PDPT_SHIFT));
+                const unsigned  iPdpt     = iOldPDE / 256;      /* iOldPDE * 2 / 512; iOldPDE is in 4 MB pages */
+                unsigned        iPDE      = iOldPDE * 2 % 512;
+                PX86PDPT        pShwPdpt  = (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
+                PX86PDPAE       pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pShwPdpt, (iPdpt << X86_PDPT_SHIFT));
 
                 /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entry. (legacy PAE guest mode) */
-                pShwPdpt->a[iPdpt].u &= ~PGM_PLXFLAGS_MAPPING;
-
+                if (fDeactivateCR3)
+                    pShwPdpt->a[iPdpt].u &= ~PGM_PLXFLAGS_MAPPING;
+                else if (pShwPdpt->a[iPdpt].u & PGM_PLXFLAGS_MAPPING)
+                {
+                    /* See if there are any other mappings here. This is suboptimal code. */
+                    pShwPdpt->a[iPdpt].u &= ~PGM_PLXFLAGS_MAPPING;
+                    for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
+                        if (    pCur != pMap
+                            &&  (   (pCur->GCPtr >> X86_PDPT_SHIFT) == iPdpt
+                                 || (pCur->GCPtrLast >> X86_PDPT_SHIFT) == iPdpt))
+                        {
+                            pShwPdpt->a[iPdpt].u |= PGM_PLXFLAGS_MAPPING;
+                            break;
+                        }
+                }
                 if (pCurrentShwPdpt)
                 {
                     /* If the page directory of the old CR3 is reused in the new one, then don't clear the hypervisor mappings. */
@@ -473,11 +482,11 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
  * @param   pMap        Pointer to the mapping in question.
  * @param   iPDE        The index of the 32-bit PDE corresponding to the base of the mapping.
  */
-void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iPDE)
+static void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iPDE)
 {
     Assert(pShwPageCR3);
 
-    unsigned i = pMap->cPTs;
+    uint32_t i = pMap->cPTs;
     PGMMODE  enmShadowMode = PGMGetShadowMode(pVM);
 
     iPDE += i;
@@ -485,7 +494,7 @@ void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
     {
         iPDE--;
 
-        switch(enmShadowMode)
+        switch (enmShadowMode)
         {
             case PGMMODE_32_BIT:
             {
@@ -493,32 +502,38 @@ void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                 AssertFatal(pShw32BitPd);
 
                 AssertMsg(pShw32BitPd->a[iPDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT),
-                          ("Expected %x vs %x\n", pShw32BitPd->a[iPDE].u, (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT)));
+                          ("Expected %x vs %x; iPDE=%#x %RGv %s\n",
+                           pShw32BitPd->a[iPDE].u,  (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT),
+                           iPDE, pMap->GCPtr, R3STRING(pMap->pszDesc) ));
                 break;
             }
 
             case PGMMODE_PAE:
             case PGMMODE_PAE_NX:
             {
-                PX86PDPT  pPdpt = NULL;
-                PX86PDPAE pShwPaePd = NULL;
-
-                const unsigned iPD = iPDE / 256;         /* iPDE * 2 / 512; iPDE is in 4 MB pages */
-                unsigned iPaePDE = iPDE * 2 % 512;
-                pPdpt     = (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
-                pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pPdpt, (iPD << X86_PDPT_SHIFT));
+                const unsigned  iPD       = iPDE / 256;         /* iPDE * 2 / 512; iPDE is in 4 MB pages */
+                unsigned        iPaePDE   = iPDE * 2 % 512;
+                PX86PDPT        pPdpt     = (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPageCR3);
+                PX86PDPAE       pShwPaePd = pgmShwGetPaePDPtr(&pVM->pgm.s, pPdpt, (iPD << X86_PDPT_SHIFT));
                 AssertFatal(pShwPaePd);
 
                 AssertMsg(pShwPaePd->a[iPaePDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0),
-                         ("Expected %RX64 vs %RX64\n", pShwPaePd->a[iPDE].u, (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPaePT0)));
+                          ("Expected %RX64 vs %RX64; iPDE=%#x iPD=%#x iPaePDE=%#x %RGv %s\n",
+                           pShwPaePd->a[iPDE].u,     (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0),
+                           iPDE, iPD, iPaePDE, pMap->GCPtr, R3STRING(pMap->pszDesc) ));
 
                 iPaePDE++;
                 AssertFatal(iPaePDE < 512);
 
                 AssertMsg(pShwPaePd->a[iPaePDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1),
-                         ("Expected %RX64 vs %RX64\n", pShwPaePd->a[iPDE].u, (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPaePT1)));
+                          ("Expected %RX64 vs %RX64; iPDE=%#x iPD=%#x iPaePDE=%#x %RGv %s\n",
+                           pShwPaePd->a[iPDE].u,     (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1),
+                           iPDE, iPD, iPaePDE, pMap->GCPtr, R3STRING(pMap->pszDesc) ));
 
-                Assert(pPdpt->a[iPD].u & PGM_PLXFLAGS_MAPPING);
+                AssertMsg(pPdpt->a[iPD].u & PGM_PLXFLAGS_MAPPING,
+                          ("%RX64; iPD=%#x iPDE=%#x iPaePDE=%#x %RGv %s\n",
+                           pPdpt->a[iPD].u,
+                           iPDE, iPD, iPaePDE, pMap->GCPtr, R3STRING(pMap->pszDesc) ));
                 break;
             }
 
@@ -528,6 +543,7 @@ void pgmMapCheckShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
         }
     }
 }
+
 
 /**
  * Check the hypervisor mappings in the active CR3.
@@ -557,6 +573,7 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
 #endif /* defined(VBOX_STRICT) && !defined(IN_RING0) */
 
 #ifndef IN_RING0
+
 /**
  * Apply the hypervisor mappings to the active CR3.
  *
@@ -572,8 +589,8 @@ int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return VINF_SUCCESS;
 
-    /* @note A log flush (in RC) can cause problems when called from MapCR3 (inconsistent state will trigger assertions). */
-    Log4(("PGMMapActivateAll fixed mappings=%d\n", pVM->pgm.s.fMappingsFixed));
+    /* Note. A log flush (in RC) can cause problems when called from MapCR3 (inconsistent state will trigger assertions). */
+    Log4(("pgmMapActivateCR3: fixed mappings=%d idxShwPageCR3=%#x\n", pVM->pgm.s.fMappingsFixed, pShwPageCR3 ? pShwPageCR3->idx : NIL_PGMPOOL_IDX));
 
     Assert(pShwPageCR3 && pShwPageCR3 == pVM->pgm.s.CTX_SUFF(pShwPageCR3));
 
@@ -583,7 +600,6 @@ int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
     for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
     {
         unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
-
         pgmMapSetShadowPDEs(pVM, pCur, iPDE);
     }
     return VINF_SUCCESS;
@@ -606,6 +622,7 @@ int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
         return VINF_SUCCESS;
 
     Assert(pShwPageCR3);
+    Log4(("pgmMapDeactivateCR3: fixed mappings=%d idxShwPageCR3=%#x\n", pVM->pgm.s.fMappingsFixed, pShwPageCR3 ? pShwPageCR3->idx : NIL_PGMPOOL_IDX));
 
     /*
      * Iterate mappings.
@@ -613,11 +630,11 @@ int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
     for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
     {
         unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
-
-        pgmMapClearShadowPDEs(pVM, pShwPageCR3, pCur, iPDE);
+        pgmMapClearShadowPDEs(pVM, pShwPageCR3, pCur, iPDE, true /*fDeactivateCR3*/);
     }
     return VINF_SUCCESS;
 }
+
 
 /**
  * Checks guest PD for conflicts with VMM GC mappings.
@@ -710,6 +727,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
     return false;
 }
 
+
 /**
  * Checks and resolves (ring 3 only) guest conflicts with VMM GC mappings.
  *
@@ -727,9 +745,6 @@ VMMDECL(int) PGMMapResolveConflicts(PVM pVM)
     PGMMODE const enmGuestMode = PGMGetGuestMode(pVM);
     Assert(enmGuestMode <= PGMMODE_PAE_NX);
 
-    /*
-     * Iterate mappings.
-     */
     if (enmGuestMode == PGMMODE_32_BIT)
     {
         /*
@@ -738,53 +753,53 @@ VMMDECL(int) PGMMapResolveConflicts(PVM pVM)
         PX86PD pPD = pgmGstGet32bitPDPtr(&pVM->pgm.s);
         Assert(pPD);
 
-        for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
+        /*
+         * Iterate mappings.
+         */
+        for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; )
         {
-            unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
-            unsigned iPT = pCur->cPTs;
+            PPGMMAPPING pNext = pCur->CTX_SUFF(pNext);
+            unsigned    iPDE  = pCur->GCPtr >> X86_PD_SHIFT;
+            unsigned    iPT   = pCur->cPTs;
             while (iPT-- > 0)
             {
                 if (    pPD->a[iPDE + iPT].n.u1Present /** @todo PGMGstGetPDE. */
-                    &&  (pVM->fRawR0Enabled || pPD->a[iPDE + iPT].n.u1User))
+                    &&  (   pVM->fRawR0Enabled
+                         || pPD->a[iPDE + iPT].n.u1User))
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
 
 #ifdef IN_RING3
                     Log(("PGMHasMappingConflicts: Conflict was detected at %08RX32 for mapping %s (32 bits)\n"
                          "                        iPDE=%#x iPT=%#x PDE=%RGp.\n",
-                        (iPT + iPDE) << X86_PD_SHIFT, pCur->pszDesc,
-                        iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
+                         (iPT + iPDE) << X86_PD_SHIFT, pCur->pszDesc,
+                         iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
                     int rc = pgmR3SyncPTResolveConflict(pVM, pCur, pPD, iPDE << X86_PD_SHIFT);
                     AssertRCReturn(rc, rc);
-
-                    /*
-                     * Update pCur.
-                     */
-                    pCur = pVM->pgm.s.CTX_SUFF(pMappings);
-                    while (pCur && pCur->GCPtr < (iPDE << X86_PD_SHIFT))
-                        pCur = pCur->CTX_SUFF(pNext);
                     break;
 #else
                     Log(("PGMHasMappingConflicts: Conflict was detected at %08RX32 for mapping (32 bits)\n"
                          "                        iPDE=%#x iPT=%#x PDE=%RGp.\n",
-                        (iPT + iPDE) << X86_PD_SHIFT,
-                        iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
+                         (iPT + iPDE) << X86_PD_SHIFT,
+                         iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
                     return VINF_PGM_SYNC_CR3;
 #endif
                 }
             }
-            if (!pCur) 
-                break;
+            pCur = pNext;
         }
     }
     else if (   enmGuestMode == PGMMODE_PAE
              || enmGuestMode == PGMMODE_PAE_NX)
     {
-        for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
+        /*
+         * Iterate mappings.
+         */
+        for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur;)
         {
-            RTGCPTR   GCPtr = pCur->GCPtr;
-
-            unsigned  iPT = pCur->cb >> X86_PD_PAE_SHIFT;
+            PPGMMAPPING pNext = pCur->CTX_SUFF(pNext);
+            RTGCPTR     GCPtr = pCur->GCPtr;
+            unsigned    iPT   = pCur->cb >> X86_PD_PAE_SHIFT;
             while (iPT-- > 0)
             {
                 X86PDEPAE Pde = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
@@ -796,33 +811,26 @@ VMMDECL(int) PGMMapResolveConflicts(PVM pVM)
 #ifdef IN_RING3
                     Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping %s (PAE)\n"
                          "                        PDE=%016RX64.\n",
-                        GCPtr, pCur->pszDesc, Pde.u));
+                         GCPtr, pCur->pszDesc, Pde.u));
                     int rc = pgmR3SyncPTResolveConflictPAE(pVM, pCur, pCur->GCPtr);
                     AssertRCReturn(rc, rc);
-
-                    /*
-                     * Update pCur.
-                     */
-                    pCur = pVM->pgm.s.CTX_SUFF(pMappings);
-                    while (pCur && pCur->GCPtr < GCPtr)
-                        pCur = pCur->CTX_SUFF(pNext);
                     break;
 #else
                     Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping (PAE)\n"
                          "                        PDE=%016RX64.\n",
-                        GCPtr, Pde.u));
+                         GCPtr, Pde.u));
                     return VINF_PGM_SYNC_CR3;
 #endif
                 }
                 GCPtr += (1 << X86_PD_PAE_SHIFT);
             }
-            if (!pCur) 
-                break;
+            pCur = pNext;
         }
     }
     else
         AssertFailed();
 
+    Assert(!PGMMapHasConflicts(pVM));
     return VINF_SUCCESS;
 }
 

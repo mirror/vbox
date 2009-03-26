@@ -363,7 +363,8 @@
 # define PGM_INVL_GUEST_TLBS()          HWACCMFlushTLB(pVM)
 #endif
 
-/** Size of the GCPtrConflict array in PGMMAPPING. */
+/** Size of the GCPtrConflict array in PGMMAPPING.
+ * @remarks Must be a power of two. */
 #define PGMMAPPING_CONFLICT_MAX         8
 
 /**
@@ -394,7 +395,7 @@ typedef struct PGMMAPPING
     /** Mapping description / name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
     /** Last 8 addresses that caused conflicts. */
-    RTGCPTR                             GCPtrConflict[PGMMAPPING_CONFLICT_MAX];
+    RTGCPTR                             aGCPtrConflicts[PGMMAPPING_CONFLICT_MAX];
     /** Number of conflicts for this hypervisor mapping. */
     uint32_t                            cConflicts;
     /** Number of page tables. */
@@ -1014,23 +1015,22 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 typedef struct PGMRAMRANGE
 {
+    /** Start of the range. Page aligned. */
+    RTGCPHYS                            GCPhys;
+    /** Size of the range. (Page aligned of course). */
+    RTGCPHYS                            cb;
     /** Pointer to the next RAM range - for R3. */
     R3PTRTYPE(struct PGMRAMRANGE *)     pNextR3;
     /** Pointer to the next RAM range - for R0. */
     R0PTRTYPE(struct PGMRAMRANGE *)     pNextR0;
     /** Pointer to the next RAM range - for RC. */
     RCPTRTYPE(struct PGMRAMRANGE *)     pNextRC;
-    /** Pointer alignment. */
-    RTRCPTR                             RCPtrAlignment;
-    /** Start of the range. Page aligned. */
-    RTGCPHYS                            GCPhys;
+    /** PGM_RAM_RANGE_FLAGS_* flags. */
+    uint32_t                            fFlags;
     /** Last address in the range (inclusive). Page aligned (-1). */
     RTGCPHYS                            GCPhysLast;
-    /** Size of the range. (Page aligned of course). */
-    RTGCPHYS                            cb;
-    /** MM_RAM_* flags */
-    uint32_t                            fFlags;
-    uint32_t                            u32Alignment; /**< alignment. */
+    /** Start of the HC mapping of the range. This is only used for MMIO2. */
+    R3PTRTYPE(void *)                   pvR3;
 #ifndef VBOX_WITH_NEW_PHYS_CODE
     /** R3 virtual lookup ranges for chunks.
      * Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges.
@@ -1041,25 +1041,29 @@ typedef struct PGMRAMRANGE
     R3R0PTRTYPE(PRTR3UINTPTR)           paChunkR3Ptrs;
 # endif
 #endif
-    /** Start of the HC mapping of the range. This is only used for MMIO2. */
-    R3PTRTYPE(void *)                   pvR3;
     /** The range description. */
     R3PTRTYPE(const char *)             pszDesc;
-
+    /** Pointer to self - R0 pointer. */
+    R0PTRTYPE(struct PGMRAMRANGE *)     pSelfR0;
+    /** Pointer to self - RC pointer. */
+    RCPTRTYPE(struct PGMRAMRANGE *)     pSelfRC;
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
-#ifdef VBOX_WITH_NEW_PHYS_CODE
-    uint32_t                            au32Reserved[2];
-#elif HC_ARCH_BITS == 32
-    uint32_t                            au32Reserved[1];
+#if HC_ARCH_BITS == (defined(VBOX_WITH_NEW_PHYS_CODE) ? 64 : 32)
+    uint32_t                            u32Alignment2;
 #endif
-
     /** Array of physical guest page tracking structures. */
     PGMPAGE                             aPages[1];
 } PGMRAMRANGE;
 /** Pointer to Ram range for GC Phys to HC Phys conversion. */
 typedef PGMRAMRANGE *PPGMRAMRANGE;
 
-#ifndef VBOX_WITH_NEW_PHYS_CODE
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+/** @name PGMRAMRANGE::fFlags
+ * @{ */
+/** The RAM range is floating around as an independent guest mapping. */
+#define PGM_RAM_RANGE_FLAGS_FLOATING        RT_BIT(20)
+/** @} */
+#else
 /** Return hc ptr corresponding to the ram range and physical offset */
 #define PGMRAMRANGE_GETHCPTR(pRam, off) \
     (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC) ? (RTHCPTR)((pRam)->paChunkR3Ptrs[(off) >> PGM_DYNAMIC_CHUNK_SHIFT] + ((off) & PGM_DYNAMIC_CHUNK_OFFSET_MASK)) \
@@ -2379,7 +2383,9 @@ typedef struct PGM
     R0PTRTYPE(PPGMRAMRANGE)         pRamRangesR0;
     /** RC pointer corresponding to PGM::pRamRangesR3. */
     RCPTRTYPE(PPGMRAMRANGE)         pRamRangesRC;
-    /** The configured RAM size. */
+    /** The configured RAM size.
+     * @remarks Do NOT use this, it's too small to hold the whole stuff.
+     * @todo    Remove with VBOX_WITH_NEW_PHYS_CODE! */
     RTUINT                          cbRamSize;
 
     /** Pointer to the list of ROM ranges - for R3.
@@ -2427,10 +2433,8 @@ typedef struct PGM
     uint32_t                        cbMappingFixed;
     /** Base address (GC) of fixed mapping */
     RTGCPTR                         GCPtrMappingFixed;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
-    uint32_t                        u32Padding0; /**< alignment padding. */
-#endif
-
+    /** The address of the previous RAM range mapping. */
+    RTGCPTR                         GCPtrPrevRamRangeMapping;
 
     /** @name Intermediate Context
      * @{ */
@@ -2888,6 +2892,7 @@ int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTG
 VMMDECL(int)    pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 #ifdef IN_RING3
 int             pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk);
+void            pgmR3PhysRelinkRamRanges(PVM pVM);
 int             pgmR3PhysRamReset(PVM pVM);
 int             pgmR3PhysRomReset(PVM pVM);
 # ifndef VBOX_WITH_NEW_PHYS_CODE
@@ -2928,10 +2933,10 @@ int             pgmPoolMonitorMonitorCR3(PPGMPOOL pPool, uint16_t idxRoot, RTGCP
 int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
 #endif
 
-void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE);
 void            pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
-int             pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
+void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE, bool fDeactivateCR3);
 int             pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
+int             pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 
 int             pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
 #ifndef IN_RC

@@ -510,7 +510,12 @@ VMMR3DECL(int)      PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys
 VMMR3DECL(int)      PGMR3PhysSetFlags(PVM pVM, RTGCPHYS GCPhys, size_t cb, unsigned fFlags, unsigned fMask);
 #endif /* !VBOX_WITH_NEW_PHYS_CODE */
 VMMDECL(void)       PGMR3PhysSetA20(PVM pVM, bool fEnable);
-VMMR3DECL(int)      PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc);
+/** @name PGMR3MapPT flags.
+ * @{ */
+/** The mapping may be unmapped later. The default is permanent mappings. */
+#define PGMR3MAPPT_FLAGS_UNMAPPABLE     RT_BIT(0)
+/** @} */
+VMMR3DECL(int)      PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, uint32_t fFlags, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc);
 VMMR3DECL(int)      PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr);
 VMMR3DECL(int)      PGMR3FinalizeMappings(PVM pVM);
 VMMR3DECL(int)      PGMR3MappingsSize(PVM pVM, uint32_t *pcb);
