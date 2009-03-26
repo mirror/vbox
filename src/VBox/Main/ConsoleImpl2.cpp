@@ -191,7 +191,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ULONG cRamMBs;
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                H();
 #if 0 /* enable to play with lots of memory. */
-    cRamMBs = 8 * 1024;
+    cRamMBs = 512 * 1024;
 #endif
     uint64_t const cbRam = cRamMBs * (uint64_t)_1M;
     uint32_t const cbRamHole = MM_RAM_HOLE_SIZE_DEFAULT;
@@ -239,6 +239,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         fHWVirtExEnabled = (hwVirtExEnabled == TSBool_True);
 #ifdef RT_OS_DARWIN
     rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHWVirtExEnabled);      RC_CHECK();
+#elif defined(VBOX_WITH_NEW_PHYS_CODE)
+    /* With more than 4GB PGM will use different RAMRANGE sizes for raw mode and hv mode to optimize lookup times. */
+    rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHWVirtExEnabled && cbRam > (_4G - cbRamHole)); RC_CHECK();
 #else
     rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      0);                     RC_CHECK();
 #endif
@@ -1879,7 +1882,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     LogRel(("DHCP svr: COMGETTER(Enabled) failed, hrc (0x%x)", hrc));
                     H();
                 }
-            
+
                 if(bEnabled)
                     hrc = dhcpServer->Start(networkName, trunkName, trunkType);
             }
