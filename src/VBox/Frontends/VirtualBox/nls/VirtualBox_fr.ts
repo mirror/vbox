@@ -2481,11 +2481,11 @@ p, li { white-space: pre-wrap; }(new line)
     </message>
     <message>
         <source>Find </source>
-        <translation>Chercher</translation>
+        <translation>Chercher </translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>Entrer, ici, la chaîne de caractères à rechercher</translation>
+        <translation>Entrez ici la chaîne de caractères à rechercher</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
@@ -2497,7 +2497,7 @@ p, li { white-space: pre-wrap; }(new line)
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>Suiva&amp;nt</translation>
+        <translation>&amp;Suivant</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
@@ -2505,11 +2505,11 @@ p, li { white-space: pre-wrap; }(new line)
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>&amp;Casse respectée</translation>
+        <translation>&amp;Respecter la case</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>Recherche tient compte de la case des caractères (si cochée)</translation>
+        <translation>Si cette case est cochée, la recherche tient compte des majuscules et des minuscules</translation>
     </message>
     <message>
         <source>String not found</source>
@@ -4736,7 +4736,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>&amp;Actualiser</translation>
+        <translation>Ac&amp;tualiser</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
