@@ -833,6 +833,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);         RC_CHECK();
                 rc = CFGMR3InsertNode(pCtlInst,    "Config", &pCfg);                   RC_CHECK();
                 fSCSI = true;
+
+                /* Attach the status driver */
+                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                              RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");            RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapSCSILeds[0]); RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                   RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Last",     15);                                  RC_CHECK();
                 break;
             }
             case StorageControllerType_BusLogic:
@@ -846,6 +854,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);         RC_CHECK();
                 rc = CFGMR3InsertNode(pCtlInst,    "Config", &pCfg);                   RC_CHECK();
                 fSCSI = true;
+
+                /* Attach the status driver */
+                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                              RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");            RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapSCSILeds[0]); RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                   RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Last",     15);                                  RC_CHECK();
                 break;
             }
             case StorageControllerType_IntelAhci:
