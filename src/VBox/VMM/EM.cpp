@@ -2553,6 +2553,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
                 return rc;
         }
         /** @todo maybe prefetch the supervisor stack page as well */
+        Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT));
     }
 
     /*
@@ -2615,6 +2616,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
         if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL)
             &&  PGMMapHasConflicts(pVM))
         {
+            PGMMapCheck(pVM);
             AssertMsgFailed(("We should not get conflicts any longer!!!\n"));
             return VERR_INTERNAL_ERROR;
         }
@@ -2652,6 +2654,12 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
             STAM_PROFILE_ADV_SUSPEND(&pVM->em.s.StatRAWEntry, b);
             CSAMR3CheckCodeEx(pVM, CPUMCTX2CORE(pCtx), pCtx->eip);
             STAM_PROFILE_ADV_RESUME(&pVM->em.s.StatRAWEntry, b);
+            if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+            {
+                rc = emR3RawForcedActions(pVM, pCtx);
+                if (RT_FAILURE(rc))
+                    break;
+            }
         }
 
 #ifdef LOG_ENABLED
@@ -2728,7 +2736,8 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
         if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL)
             &&  PGMMapHasConflicts(pVM))
         {
-            AssertMsgFailed(("We should not get conflicts any longer!!!\n"));
+            PGMMapCheck(pVM);
+            AssertMsgFailed(("We should not get conflicts any longer!!! rc=%Rrc\n", rc));
             return VERR_INTERNAL_ERROR;
         }
 #endif /* VBOX_STRICT */
