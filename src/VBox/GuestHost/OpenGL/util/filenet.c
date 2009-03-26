@@ -324,7 +324,7 @@ crFileDoConnect( CRConnection *conn )
 									 S_IREAD | S_IWRITE);
 #else
 	conn->fd = open( conn->filename, O_CREAT | O_WRONLY | O_BINARY,
-									 S_IREAD | S_IWRITE | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+								     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 #endif
 	if (conn->fd < 0)
 	{
