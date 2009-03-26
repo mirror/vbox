@@ -372,7 +372,7 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
         LogFunc (("failed to return the connection structure\n"));
         rc = -EFAULT;
     }
-    if (rc < 0)
+    if (rc < 0 && (info.u32ClientID != 0))
         /* Unregister again, as we didn't get as far as informing userspace. */
         vboxadd_unregister_hgcm_connection_no_close(info.u32ClientID);
     if (rc < 0 && info.u32ClientID != 0)
