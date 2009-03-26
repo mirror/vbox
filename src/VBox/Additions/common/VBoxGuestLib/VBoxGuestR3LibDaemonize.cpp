@@ -237,7 +237,10 @@ VBGLR3DECL(int) VbglR3PidFile(const char *pszPath, PRTFILE pFile)
                           RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE
                         | (0644 << RTFILE_O_CREATE_MODE_SHIFT));
     if (RT_SUCCESS(rc))
-        rc = RTFileLock(hPidFile, RTFILE_LOCK_WRITE, 0, ~0);
+        /** @todo using size 0 for locking means lock all on Posix.
+         * We should adopt this as our convention too, or something
+         * similar. */
+        rc = RTFileLock(hPidFile, RTFILE_LOCK_WRITE, 0, 0);
     if (RT_SUCCESS(rc))
     {
         char szBuf[256];
