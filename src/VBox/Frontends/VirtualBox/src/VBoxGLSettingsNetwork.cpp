@@ -122,22 +122,24 @@ bool NetworkItem::revalidate (QString &aWarning, QString & /* aTitle */)
     if (!mDhcpClientEnabled)
     {
         if (!mInterfaceAddress.isEmpty() &&
-            QHostAddress (mInterfaceAddress).protocol() != QAbstractSocket::IPv4Protocol)
+            (QHostAddress (mInterfaceAddress) == QHostAddress::Any ||
+             QHostAddress (mInterfaceAddress).protocol() != QAbstractSocket::IPv4Protocol))
         {
             aWarning = QTreeWidget::tr ("host IPv4 address of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
         if (!mInterfaceMask.isEmpty() &&
-            QHostAddress (mInterfaceMask).protocol() != QAbstractSocket::IPv4Protocol)
+            (QHostAddress (mInterfaceMask) == QHostAddress::Any ||
+             QHostAddress (mInterfaceMask).protocol() != QAbstractSocket::IPv4Protocol))
         {
             aWarning = QTreeWidget::tr ("host IPv4 network mask of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
         if (mIpv6Supported)
         {
-
-           if (!mInterfaceAddress6.isEmpty() &&
-                QHostAddress (mInterfaceAddress6).protocol() != QAbstractSocket::IPv6Protocol)
+            if (!mInterfaceAddress6.isEmpty() &&
+                (QHostAddress (mInterfaceAddress6) == QHostAddress::AnyIPv6 ||
+                 QHostAddress (mInterfaceAddress6).protocol() != QAbstractSocket::IPv6Protocol))
             {
                 aWarning = QTreeWidget::tr ("host IPv6 address of <b>%1</b> is wrong").arg (text (0));
                 return false;
@@ -148,22 +150,26 @@ bool NetworkItem::revalidate (QString &aWarning, QString & /* aTitle */)
     /* DHCP Server settings */
     if (mDhcpServerEnabled)
     {
-        if (QHostAddress (mDhcpServerAddress).protocol() != QAbstractSocket::IPv4Protocol)
+        if (QHostAddress (mDhcpServerAddress) == QHostAddress::Any ||
+            QHostAddress (mDhcpServerAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
             aWarning = QTreeWidget::tr ("DHCP server address of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
-        if (QHostAddress (mDhcpServerMask).protocol() != QAbstractSocket::IPv4Protocol)
+        if (QHostAddress (mDhcpServerMask) == QHostAddress::Any ||
+            QHostAddress (mDhcpServerMask).protocol() != QAbstractSocket::IPv4Protocol)
         {
             aWarning = QTreeWidget::tr ("DHCP server mask of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
-        if (QHostAddress (mDhcpLowerAddress).protocol() != QAbstractSocket::IPv4Protocol)
+        if (QHostAddress (mDhcpLowerAddress) == QHostAddress::Any ||
+            QHostAddress (mDhcpLowerAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
             aWarning = QTreeWidget::tr ("DHCP lower address bound of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
-        if (QHostAddress (mDhcpUpperAddress).protocol() != QAbstractSocket::IPv4Protocol)
+        if (QHostAddress (mDhcpUpperAddress) == QHostAddress::Any ||
+            QHostAddress (mDhcpUpperAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
             aWarning = QTreeWidget::tr ("DHCP upper address bound of <b>%1</b> is wrong").arg (text (0));
             return false;
