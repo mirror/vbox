@@ -920,6 +920,7 @@ DECLINLINE(int) vmdkFileDeflateAt(PVMDKFILE pVmdkFile,
             /* Set the file size to remove old garbage in case the block is
              * rewritten. Cannot cause data loss as the code calling this
              * guarantees that data gets only appended. */
+            Assert(DeflateState.uFileOffset > uCompOffset);
             rc = RTFileSetSize(pVmdkFile->File, DeflateState.uFileOffset);
 
             if (uMarker == VMDK_MARKER_IGNORE)
