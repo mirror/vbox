@@ -4,8 +4,8 @@ Encoding=UTF-8
 Version=1.0
 Name=vboxclient
 Name[C]=vboxclient
-Comment[C]=VirtualBox Client
-Comment=VirtualBox Client
-Exec=/usr/bin/VBoxClient
+Comment[C]=VirtualBox User Session Services
+Comment=VirtualBox User Session Services
+Exec=/usr/bin/VBoxClient-all
 X-GNOME-Autostart-enabled=true
-
+X-KDE-autostart-after=panel

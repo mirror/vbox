@@ -17,5 +17,6 @@
 # additional information or have any questions.
 #
 
-/usr/bin/VBoxClient
-
+/usr/bin/VBoxClient --clipboard
+/usr/bin/VBoxClient --autoresize
+/usr/bin/VBoxClient --seamless
