@@ -50,9 +50,9 @@ struct DiskImage
     Utf8Str strDiskId;              // value from DiskSection/Disk/@diskId
     int64_t iCapacity;              // value from DiskSection/Disk/@capacity;
                                     // (maximum size for dynamic images, I guess; we always translate this to bytes)
-    int64_t iPopulatedSize;         // value from DiskSection/Disk/@populatedSize
+    int64_t iPopulatedSize;         // optional value from DiskSection/Disk/@populatedSize
                                     // (actual used size of disk, always in bytes; can be an estimate of used disk
-                                    // space, but cannot be larger than iCapacity)
+                                    // space, but cannot be larger than iCapacity; -1 if not set)
     Utf8Str strFormat;              // value from DiskSection/Disk/@format
                 // typically http://www.vmware.com/specifications/vmdk.html#sparse
 
@@ -1550,11 +1550,20 @@ STDMETHODIMP Appliance::Interpret()
                         Utf8StrFmt strExtraConfig("controller=%RI16;channel=%RI16",
                                                   pController->ulIndex,
                                                   hd.ulAddressOnParent);
+                        ULONG ulSize = 0;
+                        if (di.iPopulatedSize != -1)
+                            ulSize = (ULONG)(di.iPopulatedSize / _1M);
+                        else if (di.iSize != -1)
+                            ulSize = (ULONG)(di.iSize / _1M);
+                        else if (di.iCapacity != -1)
+                            ulSize = (ULONG)(di.iCapacity / _1M);
+                        if (ulSize == 0)
+                            ulSize = 10000;         // assume 10 GB, this is for the progress bar only anyway
                         pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
                                            hd.strDiskId,
                                            di.strHref,
                                            strPath,
-                                           (uint32_t)(di.iPopulatedSize / _1M),
+                                           ulSize,
                                            strExtraConfig);
                     }
                     else
@@ -1744,9 +1753,6 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                 if (FAILED(rc)) throw rc;
             }
 
-            if (!task->progress.isNull())
-                rc = task->progress->setCurrentOperationProgress(20);       // let's say 1/5 of the XML is done here
-
             /* CPU count (ignored for now) */
             // EntriesList vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
 
@@ -1767,9 +1773,6 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             /* Set the VRAM */
             rc = pNewMachine->COMSETTER(VRAMSize)(vramVBox);
             if (FAILED(rc)) throw rc;
-
-            if (!task->progress.isNull())
-                rc = task->progress->setCurrentOperationProgress(40);       // let's say 2/5 of the XML is done here
 
             /* Audio Adapter */
             std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->findByType(VirtualSystemDescriptionType_SoundCard);
@@ -1803,9 +1806,6 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             rc = usbController->COMSETTER(Enabled)(fUSBEnabled);
             if (FAILED(rc)) throw rc;
 #endif /* VBOX_WITH_USB */
-
-            if (!task->progress.isNull())
-                rc = task->progress->setCurrentOperationProgress(60);       // let's say 3/5 of the XML is done here
 
             /* Change the network adapters */
             std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
@@ -1917,9 +1917,6 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             rc = floppyDrive->COMSETTER(Enabled)(fFloppyEnabled);
             if (FAILED(rc)) throw rc;
 
-            if (!task->progress.isNull())
-                rc = task->progress->setCurrentOperationProgress(80);       // let's say 4/5 of the XML is done here
-
             /* CDROM drive */
             /* @todo: I can't disable the CDROM. So nothing to do for now */
             // std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsd->findByType(VirtualSystemDescriptionType_CDROM);
@@ -2002,9 +1999,6 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             Guid newMachineId;
             rc = pNewMachine->COMGETTER(Id)(newMachineId.asOutParam());
             if (FAILED(rc)) throw rc;
-
-            if (!task->progress.isNull())
-                rc = task->progress->setCurrentOperationProgress(90);
 
             // store new machine for roll-back in case of errors
             llMachinesRegistered.push_back(newMachineId);
@@ -3159,10 +3153,11 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bst
         std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
         std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
         for (itH = avsdeHDs.begin();
-                itH != avsdeHDs.end();
-                ++itH)
+             itH != avsdeHDs.end();
+             ++itH)
         {
-            ulTotalMB += (**itH).ulSizeMB;
+            const VirtualSystemDescriptionEntry *pHD = *itH;
+            ulTotalMB += pHD->ulSizeMB;
             ++cDisks;
         }
     }
