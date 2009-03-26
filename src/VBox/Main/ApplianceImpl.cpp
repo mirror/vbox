@@ -1710,10 +1710,6 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
         /* Catch possible errors */
         try
         {
-            if (!task->progress.isNull())
-                task->progress->setNextOperation(BstrFmt(tr("Importing virtual system %d"), i + 1),
-                                                 pAppliance->m->ulWeightPerOperation);
-
             /* Guest OS type */
             std::list<VirtualSystemDescriptionEntry*> vsdeOS;
             vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
@@ -2137,48 +2133,8 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                                                                  vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
                         }
 
-                        // now loop until the asynchronous operation completes and then report its result
-                        BOOL fCompleted;
-                        BOOL fCanceled;
-                        ULONG currentPercent;
-                        while (SUCCEEDED(pProgress2->COMGETTER(Completed(&fCompleted))))
-                        {
-                            rc = task->progress->COMGETTER(Canceled)(&fCanceled);
-                            if (FAILED(rc)) throw rc;
-                            if (fCanceled)
-                            {
-                                pProgress2->Cancel();
-                                break;
-                            }
-                            else
-                            {
-                                rc = pProgress2->COMGETTER(Percent(&currentPercent));
-                                if (FAILED(rc)) throw rc;
-                                if (!task->progress.isNull())
-                                    task->progress->setCurrentOperationProgress(currentPercent);
-                                if (fCompleted)
-                                    break;
-                            }
-                            /* Make sure the loop is not too tight */
-                            rc = pProgress2->WaitForCompletion(100);
-                            if (FAILED(rc)) throw rc;
-                        }
-                        // report result of asynchronous operation
-                        HRESULT vrc;
-                        rc = pProgress2->COMGETTER(ResultCode)(&vrc);
-                        if (FAILED(rc)) throw rc;
-
-                        // if the thread of the progress object has an error, then
-                        // retrieve the error info from there, or it'll be lost
-                        if (FAILED(vrc))
-                        {
-                            ProgressErrorInfo info(pProgress2);
-                            Utf8Str str(info.getText());
-                            const char *pcsz = str.c_str();
-                            HRESULT rc2 = setError(vrc,
-                                                   pcsz);
-                            throw rc2;
-                        }
+                        // now wait for the background disk operation to complete; this throws HRESULTs on error
+                        pAppliance->waitForAsyncProgress(task->progress, pProgress2);
 
                         if (fSourceHdNeedsClosing)
                         {
@@ -3031,51 +2987,12 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                     task->progress->setNextOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()),
                                                      pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
-                // now loop until the asynchronous operation completes and then report its result
-                BOOL fCompleted;
-                BOOL fCanceled;
-                ULONG currentPercent;
-                while (SUCCEEDED(pProgress2->COMGETTER(Completed(&fCompleted))))
-                {
-                    rc = task->progress->COMGETTER(Canceled)(&fCanceled);
-                    if (FAILED(rc)) throw rc;
-                    if (fCanceled)
-                    {
-                        pProgress2->Cancel();
-                        break;
-                    }
-                    else
-                    {
-                        rc = pProgress2->COMGETTER(Percent(&currentPercent));
-                        if (FAILED(rc)) throw rc;
-                        if (!task->progress.isNull())
-                            task->progress->setCurrentOperationProgress(currentPercent);
-                        if (fCompleted)
-                            break;
-                    }
-                    /* Make sure the loop is not too tight */
-                    rc = pProgress2->WaitForCompletion(100);
-                    if (FAILED(rc)) throw rc;
-                }
-                // report result of asynchronous operation
-                HRESULT vrc;
-                rc = pProgress2->COMGETTER(ResultCode)(&vrc);
-                if (FAILED(rc)) throw rc;
-
-                // if the thread of the progress object has an error, then
-                // retrieve the error info from there, or it'll be lost
-                if (FAILED(vrc))
-                {
-                    ProgressErrorInfo info(pProgress2);
-                    Utf8Str str(info.getText());
-                    const char *pcsz = str.c_str();
-                    HRESULT rc2 = setError(vrc, pcsz);
-                    throw rc2;
-                }
+                // now wait for the background disk operation to complete; this throws HRESULTs on error
+                pAppliance->waitForAsyncProgress(task->progress, pProgress2);
             }
             catch (HRESULT rc3)
             {
-                // upon error after registereing, close the disk or
+                // upon error after registering, close the disk or
                 // it'll stick in the registry forever
                 pTargetDisk->Close();
                 throw rc3;
@@ -3229,11 +3146,6 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bst
     /* Create the progress object */
     pProgress.createObject();
 
-    // use one percent for parsing the XML and one percent for each virtual system
-    // in the XML; use the rest (e.g. 97%) for the disk images
-    ULONG cFixed = 1 + m->virtualSystemDescriptions.size();
-    ULONG ulPercentForDisks = 100 - cFixed;
-
     // weigh the disk images according to their sizes
     uint32_t ulTotalMB = 0;
     uint32_t cDisks = 0;
@@ -3255,30 +3167,88 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bst
         }
     }
 
+    ULONG cOperations = 1 + cDisks;     // one op per disk plus 1 for the XML
+
     ULONG ulTotalOperationsWeight;
     if (ulTotalMB)
     {
-        ulTotalOperationsWeight = ulTotalMB * 100 / ulPercentForDisks;
-        m->ulWeightPerOperation = ulTotalOperationsWeight / 100;
+        ulTotalOperationsWeight = (ULONG)((double)ulTotalMB * 99 / 100);    // use 99% of the progress for the disks
+        m->ulWeightPerOperation = (ULONG)((double)ulTotalMB * 1  / 100);    // use 1% of the progress for the XML
     }
     else
     {
         // no disks to export:
-        ulTotalOperationsWeight = cFixed;
+        ulTotalOperationsWeight = 1;
         m->ulWeightPerOperation = 1;
     }
 
-    Log(("Setting up progress object: ulTotalMB = %d, cFixed = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightPerOperation = %d\n",
-         ulTotalMB, cFixed, cDisks, cFixed + (ULONG)cDisks, ulTotalOperationsWeight, m->ulWeightPerOperation));
+    Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightPerOperation = %d\n",
+         ulTotalMB, cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightPerOperation));
 
     rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
                          bstrDescription,
                          TRUE /* aCancelable */,
-                         cFixed + (ULONG)cDisks, // ULONG cOperations,
+                         cOperations, // ULONG cOperations,
                          ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
                          bstrDescription, // CBSTR bstrFirstOperationDescription,
                          m->ulWeightPerOperation); // ULONG ulFirstOperationWeight,
     return rc;
+}
+
+/**
+ * Called from the import and export background threads to synchronize the second
+ * background disk thread's progress object with the current progress object so
+ * that the user interface sees progress correctly and that cancel signals are
+ * passed on to the second thread.
+ * @param pProgressThis Progress object of the current thread.
+ * @param pProgressAsync Progress object of asynchronous task running in background.
+ */
+void Appliance::waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis,
+                                     ComPtr<IProgress> &pProgressAsync)
+{
+    HRESULT rc;
+
+    // now loop until the asynchronous operation completes and then report its result
+    BOOL fCompleted;
+    BOOL fCanceled;
+    ULONG currentPercent;
+    while (SUCCEEDED(pProgressAsync->COMGETTER(Completed(&fCompleted))))
+    {
+        rc = pProgressThis->COMGETTER(Canceled)(&fCanceled);
+        if (FAILED(rc)) throw rc;
+        if (fCanceled)
+        {
+            pProgressAsync->Cancel();
+            break;
+        }
+
+        rc = pProgressAsync->COMGETTER(Percent(&currentPercent));
+        if (FAILED(rc)) throw rc;
+        if (!pProgressThis.isNull())
+            pProgressThis->setCurrentOperationProgress(currentPercent);
+        if (fCompleted)
+            break;
+
+        /* Make sure the loop is not too tight */
+        rc = pProgressAsync->WaitForCompletion(100);
+        if (FAILED(rc)) throw rc;
+    }
+    // report result of asynchronous operation
+    HRESULT vrc;
+    rc = pProgressAsync->COMGETTER(ResultCode)(&vrc);
+    if (FAILED(rc)) throw rc;
+
+
+    // if the thread of the progress object has an error, then
+    // retrieve the error info from there, or it'll be lost
+    if (FAILED(vrc))
+    {
+        ProgressErrorInfo info(pProgressAsync);
+        Utf8Str str(info.getText());
+        const char *pcsz = str.c_str();
+        HRESULT rc2 = setError(vrc, pcsz);
+        throw rc2;
+    }
 }
 
 void Appliance::addWarning(const char* aWarning, ...)

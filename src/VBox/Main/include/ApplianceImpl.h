@@ -97,6 +97,7 @@ private:
     HRESULT searchUniqueVMName(Utf8Str& aName) const;
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
     HRESULT setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
+    void waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis, ComPtr<IProgress> &pProgressAsync);
     void addWarning(const char* aWarning, ...);
 
     struct TaskImportMachines;  /* Worker thread for import */
