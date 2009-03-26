@@ -213,7 +213,7 @@ int main(int argc, char **argv)
                     {
                         DISCPUSTATE Cpu;
                         memset(&Cpu, 0, sizeof(Cpu));
-#if 1
+#ifdef RT_ARCH_X86 /** @todo select according to the module type. */
                         Cpu.mode = CPUMODE_32BIT;
 #else
                         Cpu.mode = CPUMODE_64BIT;
