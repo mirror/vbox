@@ -20,23 +20,23 @@
  * additional information or have any questions.
  */
 
-#include <VBox/VBoxGuest.h>
-#include <VBox/log.h>
-#include <iprt/initterm.h>
-#include <iprt/path.h>
-#include <iprt/stream.h>
-
 #include <sys/types.h>
 #include <stdlib.h>       /* For exit */
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
 
-#include <X11/Xlib.h>
-#include <X11/Intrinsic.h>
+#include <iprt/env.h>
+#include <iprt/initterm.h>
+#include <iprt/path.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
+#include <VBox/VBoxGuest.h>
+#include <VBox/log.h>
 
-#include "clipboard.h"
+#include "VBoxClient.h"
 
 #ifdef DYNAMIC_RESIZE
 # include "displaychange.h"
@@ -49,44 +49,40 @@
 
 static int (*gpfnOldIOErrorHandler)(Display *) = NULL;
 
-/* Make these global so that the destructors are called if we make an "emergency exit",
-   i.e. a (handled) signal or an X11 error. */
-#ifdef DYNAMIC_RESIZE
-VBoxGuestDisplayChangeMonitor gDisplayChange;
-# ifdef SEAMLESS_GUEST
-    /** Our instance of the seamless class.  This only makes sense if dynamic resizing
-        is enabled. */
-    VBoxGuestSeamless gSeamless;
-# endif /* SEAMLESS_GUEST defined */
-#endif /* DYNAMIC_RESIZE */
-#ifdef VBOX_X11_CLIPBOARD
-    VBoxGuestClipboard gClipboard;
-#endif
+/** Object representing the service we are running.  This has to be global
+ * so that the cleanup routine can access it. */
+VBoxClient::Service *g_pService;
+/** The name of our pidfile.  It is global for the benefit of the cleanup
+ * routine. */
+static char *g_pszPidFile;
+/** The file handle of our pidfile.  It is global for the benefit of the
+ * cleanup routine. */
+static RTFILE g_hPidFile;
+
+/** Clean up if we get a signal or something.  This is extern so that we
+ * can call it from other compilation units. */
+void VBoxClient::CleanUp()
+{
+    if (g_pService)
+    {
+        g_pService->cleanup();
+        delete g_pService;
+    }
+    if (g_pszPidFile && g_hPidFile)
+        VbglR3ClosePidFile(g_pszPidFile, g_hPidFile);
+    VbglR3Term();
+    exit(0);
+}
 
 /**
- * Drop the programmes privileges to the caller's.
- * @returns IPRT status code
- * @todo move this into the R3 guest library
+ * A standard signal handler which cleans up and exits.
  */
-int vboxClientDropPrivileges(void)
+void vboxClientSignalHandler(int cSignal)
 {
-    int rc = VINF_SUCCESS;
-    int rcSystem, rcErrno;
-
-    LogFlowFunc(("\n"));
-#ifdef _POSIX_SAVED_IDS
-    rcSystem = setuid(getuid());
-#else
-    rcSystem = setreuid(-1, getuid());
-#endif
-    if (rcSystem < 0)
-    {
-        rcErrno = errno;
-        rc = RTErrConvertFromErrno(rcErrno);
-        LogRel(("VBoxClient: failed to drop privileges, error %Rrc.\n", rc));
-    }
-    LogFlowFunc(("returning %Rrc\n", rc));
-    return rc;
+    Log(("VBoxClient: terminated with signal %d\n", cSignal));
+    /** Disable seamless mode */
+    RTPrintf(("VBoxClient: terminating...\n"));
+    VBoxClient::CleanUp();
 }
 
 /**
@@ -111,42 +107,24 @@ int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
     }
     XGetErrorText(pDisplay, pError->error_code, errorText, sizeof(errorText));
     LogRel(("VBoxClient: an X Window protocol error occurred: %s (error code %d).  Request code: %d, minor code: %d, serial number: %d\n", errorText, pError->error_code, pError->request_code, pError->minor_code, pError->serial));
-    /** Disable seamless mode */
-    VbglR3SeamlessSetCap(false);
-    VbglR3Term();
-    exit(1);
+    VBoxClient::CleanUp();
+    return 0;  /* We should never reach this. */
 }
 
 /**
  * Xlib error handler for fatal errors.  This often means that the programme is still running
  * when X exits.
  */
-int vboxClientXLibIOErrorHandler(Display *pDisplay)
+static int vboxClientXLibIOErrorHandler(Display *pDisplay)
 {
     Log(("VBoxClient: a fatal guest X Window error occurred.  This may just mean that the Window system was shut down while the client was still running.\n"));
-    /** Disable seamless mode */
-    VbglR3SeamlessSetCap(false);
-    VbglR3Term();
-    return gpfnOldIOErrorHandler(pDisplay);
+    VBoxClient::CleanUp();
+    return 0;  /* We should never reach this. */
 }
 
 /**
- * A standard signal handler which cleans up and exits.  Our global static objects will
- * be cleaned up properly as we exit using "exit".
- */
-void vboxClientSignalHandler(int cSignal)
-{
-    Log(("VBoxClient: terminated with signal %d\n", cSignal));
-    /** Disable seamless mode */
-    VbglR3SeamlessSetCap(false);
-    RTPrintf(("VBoxClient: terminating...\n"));
-    /* don't call VbglR3Term() here otherwise the /dev/vboxadd filehandle is closed */
-    /* Our pause() call will now return and exit. */
-}
-
-/**
- * Reset all standard termination signals to call our signal handler, which cleans up
- * and exits.
+ * Reset all standard termination signals to call our signal handler, which
+ * cleans up and exits.
  */
 void vboxClientSetSignalHandlers(void)
 {
@@ -173,11 +151,13 @@ void vboxClientSetSignalHandlers(void)
  */
 void vboxClientUsage(const char *pcszFileName)
 {
-    RTPrintf("Usage: %s [-d|--nodaemon]\n", pcszFileName);
+    RTPrintf("Usage: %s --clipboard|--autoresize|--seamless [-d|--nodaemon]\n", pcszFileName);
     RTPrintf("Start the VirtualBox X Window System guest services.\n\n");
     RTPrintf("Options:\n");
-    RTPrintf("  -d, --nodaemon   do not lower privileges and continue running as a system\n");
-    RTPrintf("                   service\n");
+    RTPrintf("  --clipboard      start the shared clipboard service\n");
+    RTPrintf("  --autoresize     start the display auto-resize service\n");
+    RTPrintf("  --seamless       start the seamless windows service\n");
+    RTPrintf("  -d, --nodaemon   continue running as a system service\n");
     RTPrintf("\n");
     exit(0);
 }
@@ -190,6 +170,10 @@ int main(int argc, char *argv[])
     int rcClipboard, rc = VINF_SUCCESS;
     const char *pszFileName = RTPathFilename(argv[0]);
     bool fDaemonise = true;
+    /* Have any fatal errors occurred yet? */
+    bool fSuccess = true;
+    /* Do we know which service we wish to run? */
+    bool fHaveService = false;
 
     if (NULL == pszFileName)
         pszFileName = "VBoxClient";
@@ -203,6 +187,27 @@ int main(int argc, char *argv[])
     {
         if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--nodaemon"))
             fDaemonise = false;
+        else if (!strcmp(argv[i], "--clipboard"))
+        {
+            if (g_pService == NULL)
+                g_pService = VBoxClient::GetClipboardService();
+            else
+                fSuccess = false;
+        }
+        else if (!strcmp(argv[i], "--autoresize"))
+        {
+            if (g_pService == NULL)
+                g_pService = VBoxClient::GetAutoResizeService();
+            else
+                fSuccess = false;
+        }
+        else if (!strcmp(argv[i], "--seamless"))
+        {
+            if (g_pService == NULL)
+                g_pService = VBoxClient::GetSeamlessService();
+            else
+                fSuccess = false;
+        }
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             vboxClientUsage(pszFileName);
@@ -215,109 +220,59 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
+    if (!fSuccess || !g_pService)
+    {
+        vboxClientUsage(pszFileName);
+        exit(1);
+    }
     if (fDaemonise)
     {
         rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("VBoxClient: failed to daemonize. exiting.\n");
+            RTPrintf("VBoxClient: failed to daemonize.  Exiting.\n");
+            Log(("VBoxClient: failed to daemonize.  Exiting.\n"));
 #ifdef DEBUG
             RTPrintf("Error %Rrc\n", rc);
 #endif
             return 1;
         }
     }
+    const char *pszHome = RTEnvGet("HOME");
+    if (pszHome == NULL)
+    {
+        RTPrintf("VBoxClient: failed to get home directory.  Exiting.\n");
+        Log(("VBoxClient: failed to get home directory.  Exiting.\n"));
+        return 1;
+    }
+    if (RTStrAPrintf(&g_pszPidFile, "%s/%s", pszHome, g_pService->getPidFilePath()) == -1)
+    if (pszHome == NULL)
+    {
+        RTPrintf("VBoxClient: out of memory.  Exiting.\n");
+        Log(("VBoxClient: out of memory.  Exiting.\n"));
+        return 1;
+    }
     /* Initialise the guest library. */
-    if (RT_FAILURE(VbglR3Init()))
+    if (RT_FAILURE(VbglR3InitUser()))
     {
         RTPrintf("Failed to connect to the VirtualBox kernel service\n");
+        Log(("Failed to connect to the VirtualBox kernel service\n"));
         return 1;
     }
-    if (fDaemonise && RT_FAILURE(vboxClientDropPrivileges()))
-        return 1;
-    LogRel(("VBoxClient: starting...\n"));
-    /* Initialise threading in X11 and in Xt. */
-    if (!XInitThreads() || !XtToolkitThreadInitialize())
+    if (g_pszPidFile && RT_FAILURE(VbglR3PidFile(g_pszPidFile, &g_hPidFile)))
     {
-        LogRel(("VBoxClient: error initialising threads in X11, exiting.\n"));
+        RTPrintf("Failed to create a pidfile.  Exiting.\n");
+        Log(("Failed to create a pidfile.  Exiting.\n"));
+        VbglR3Term();
         return 1;
     }
+    /* Set signal handlers to clean up on exit. */
+    vboxClientSetSignalHandlers();
     /* Set an X11 error handler, so that we don't die when we get unavoidable errors. */
     XSetErrorHandler(vboxClientXLibErrorHandler);
     /* Set an X11 I/O error handler, so that we can shutdown properly on fatal errors. */
-    gpfnOldIOErrorHandler = XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
-    vboxClientSetSignalHandlers();
-    try
-    {
-#ifdef VBOX_X11_CLIPBOARD
-        /* Connect to the host clipboard. */
-        LogRel(("VBoxClient: starting clipboard Guest Additions...\n"));
-        rcClipboard = gClipboard.init();
-        if (RT_FAILURE(rcClipboard))
-        {
-            LogRel(("VBoxClient: vboxClipboardConnect failed with rc = %Rrc\n", rcClipboard));
-        }
-#endif  /* VBOX_X11_CLIPBOARD defined */
-#ifdef DYNAMIC_RESIZE
-        LogRel(("VBoxClient: starting dynamic guest resizing...\n"));
-        rc = gDisplayChange.init();
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("VBoxClient: failed to start dynamic guest resizing, rc = %Rrc\n", rc));
-        }
-# ifdef SEAMLESS_GUEST
-        if (RT_SUCCESS(rc))
-        {
-            LogRel(("VBoxClient: starting seamless Guest Additions...\n"));
-            rc = gSeamless.init();
-            if (RT_FAILURE(rc))
-            {
-                LogRel(("VBoxClient: failed to start seamless Additions, rc = %Rrc\n", rc));
-            }
-        }
-# endif /* SEAMLESS_GUEST defined */
-#endif /* DYNAMIC_RESIZE defined */
-    }
-    catch (std::exception e)
-    {
-        LogRel(("VBoxClient: failed to initialise Guest Additions - caught exception: %s\n", e.what()));
-        rc = VERR_UNRESOLVED_ERROR;
-    }
-    catch (...)
-    {
-        LogRel(("VBoxClient: failed to initialise Guest Additions - caught unknown exception.\n"));
-        rc = VERR_UNRESOLVED_ERROR;
-    }
-    LogRel(("VBoxClient: sleeping...\n"));
-    pause();
-    LogRel(("VBoxClient: exiting...\n"));
-    try
-    {
-        /* r=frank: Why all these 2s delays? What are we waiting for? */
-#ifdef DYNAMIC_RESIZE
-# ifdef SEAMLESS_GUEST
-        LogRel(("VBoxClient: shutting down seamless Guest Additions...\n"));
-        gSeamless.uninit(2000);
-# endif /* SEAMLESS_GUEST defined */
-        LogRel(("VBoxClient: shutting down dynamic guest resizing...\n"));
-        gDisplayChange.uninit(2000);
-#endif /* DYNAMIC_RESIZE defined */
-#ifdef VBOX_X11_CLIPBOARD
-        /* Connect to the host clipboard. */
-        LogRel(("VBoxClient: shutting down clipboard Guest Additions...\n"));
-        gClipboard.uninit(2000);
-#endif  /* VBOX_X11_CLIPBOARD defined */
-    }
-    catch (std::exception e)
-    {
-        LogRel(("VBoxClient: failed to shut down Guest Additions - caught exception: %s\n", e.what()));
-        rc = VERR_UNRESOLVED_ERROR;
-    }
-    catch (...)
-    {
-        LogRel(("VBoxClient: failed to shut down Guest Additions - caught unknown exception.\n"));
-        rc = VERR_UNRESOLVED_ERROR;
-    }
-    VbglR3Term();
-    return RT_SUCCESS(rc) ? 0 : 1;
+    XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
+    g_pService->run();
+    VBoxClient::CleanUp();
+    return 1;  /* We should never get here. */
 }
