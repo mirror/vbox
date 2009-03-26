@@ -229,6 +229,25 @@ void VBoxVMInformationDlg::retranslateUi()
             << QString ("/Devices/SATA/Port%1/WrittenBytes").arg (i);
     }
 
+    /* SCSI HD statistics: */
+    for (int i = 0; i < 16; ++ i)
+    {
+        /* Names */
+        mNamesMap [QString ("/Devices/SCSI/%1/ReadBytes").arg (i)]
+            = tr ("Data Read");
+        mNamesMap [QString ("/Devices/SCSI/%1/WrittenBytes").arg (i)]
+            = tr ("Data Written");
+
+        /* Units */
+        mUnitsMap [QString ("/Devices/SCSI/%1/ReadBytes").arg (i)] = "B";
+        mUnitsMap [QString ("/Devices/SCSI/%1/WrittenBytes").arg (i)] = "B";
+
+        /* Belongs to */
+        mLinksMap [QString ("SCSI%1").arg (i)] = QStringList()
+            << QString ("/Devices/SCSI/%1/ReadBytes").arg (i)
+            << QString ("/Devices/SCSI/%1/WrittenBytes").arg (i);
+    }
+
     /* Network Adapters statistics: */
     ulong count = vboxGlobal().virtualBox()
         .GetSystemProperties().GetNetworkAdapterCount();
@@ -496,6 +515,25 @@ void VBoxVMInformationDlg::refreshStatistics()
                 hdStat += formatHardDisk (sataCtl, i, 0,
                                           QString ("SATA%1").arg (i));
                 hdStat += paragraph;
+            }
+        }
+
+        /* @todo Rework if more than one additional
+         * controller is allowed.
+         */
+        const QString scsiCtl = QString("SCSI");
+
+        if (!m.GetStorageControllerByName(scsiCtl).isNull())
+        {
+            /* SCSI Hard Disks */
+            for (int i = 0; i < 16; ++ i)
+            {
+                if (!m.GetHardDisk(scsiCtl, i, 0).isNull())
+                {
+                    hdStat += formatHardDisk (scsiCtl, i, 0,
+                                              QString ("SCSI%1").arg (i));
+                    hdStat += paragraph;
+                }
             }
         }
 
