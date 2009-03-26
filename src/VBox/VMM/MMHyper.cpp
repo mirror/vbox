@@ -720,15 +720,19 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
     int rc = SUPR3PageAllocEx(cPages,
                               0 /*fFlags*/,
                               &pv,
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
                               VMMIsHwVirtExtForced(pVM) ? &pvR0 : NULL,
+#else
+                              NULL,
+#endif
                               paPages);
     if (RT_SUCCESS(rc))
     {
-        if (!VMMIsHwVirtExtForced(pVM))
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+        if (!VMMIsHwVirtExtForced(pVM))
             pvR0 = NIL_RTR0PTR;
 #else
-            pvR0 = (uintptr_t)pv;
+        pvR0 = (uintptr_t)pv;
 #endif
         memset(pv, 0, cbAligned);
 
@@ -886,15 +890,19 @@ VMMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MM
     int rc = SUPR3PageAllocEx(cPages,
                               0 /*fFlags*/,
                               &pvPages,
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
                               VMMIsHwVirtExtForced(pVM) ? &pvR0 : NULL,
+#else
+                              NULL,
+#endif
                               paPages);
     if (RT_SUCCESS(rc))
     {
-        if (!VMMIsHwVirtExtForced(pVM))
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+        if (!VMMIsHwVirtExtForced(pVM))
             pvR0 = NIL_RTR0PTR;
 #else
-            pvR0 = (uintptr_t)pvPages;
+        pvR0 = (uintptr_t)pvPages;
 #endif
         memset(pvPages, 0, cb);
 
