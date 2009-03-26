@@ -1390,12 +1390,21 @@ static int vmdkStringUnquote(PVMDKIMAGE pImage, const char *pszStr,
     /* Skip over whitespace. */
     while (*pszStr == ' ' || *pszStr == '\t')
         pszStr++;
-    if (*pszStr++ != '"')
-        return vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrectly quoted value in descriptor in '%s'"), pImage->pszFilename);
 
-    pszQ = (char *)strchr(pszStr, '"');
-    if (pszQ == NULL)
-        return vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrectly quoted value in descriptor in '%s'"), pImage->pszFilename);
+    if (*pszStr != '"')
+    {
+        pszQ = (char *)pszStr;
+        while (*pszQ && *pszQ != ' ' && *pszQ != '\t')
+            pszQ++;
+    }
+    else
+    {
+        pszStr++;
+        pszQ = (char *)strchr(pszStr, '"');
+        if (pszQ == NULL)
+            return vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrectly quoted value in descriptor in '%s'"), pImage->pszFilename);
+    }
+
     pszUnquoted = (char *)RTMemTmpAlloc(pszQ - pszStr + 1);
     if (!pszUnquoted)
         return VERR_NO_MEMORY;
