@@ -142,6 +142,10 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, ui
 /**
  * Disassembles one instruction.
  *
+ * @returns VBox status code, see SELMToFlatEx and EMInterpretDisasOneEx for
+ *          details.
+ * @retval  VERR_INTERNAL_ERROR on DISCoreOneEx failure.
+ *
  * @param   pVM             The VM handle.
  * @param   pCtxCore        The context core (used for both the mode and instruction).
  * @param   pCpu            Where to return the parsed instruction info.
@@ -165,6 +169,9 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE p
  * Disassembles one instruction.
  *
  * This is used by internally by the interpreter and by trap/access handlers.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_INTERNAL_ERROR on DISCoreOneEx failure.
  *
  * @param   pVM             The VM handle.
  * @param   GCPtrInstr      The flat address of the instruction.
