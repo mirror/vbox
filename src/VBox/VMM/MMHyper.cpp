@@ -159,7 +159,7 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
      */
     while ((RTINT)pVM->mm.s.offHyperNextStatic + 64*_1K < (RTINT)pVM->mm.s.cbHyperArea - _4M)
         pVM->mm.s.cbHyperArea -= _4M;
-    int rc = PGMR3MapPT(pVM, pVM->mm.s.pvHyperAreaGC, pVM->mm.s.cbHyperArea,
+    int rc = PGMR3MapPT(pVM, pVM->mm.s.pvHyperAreaGC, pVM->mm.s.cbHyperArea, 0 /*fFlags*/,
                         mmR3HyperRelocateCallback, NULL, "Hypervisor Memory Area");
     if (RT_FAILURE(rc))
         return rc;

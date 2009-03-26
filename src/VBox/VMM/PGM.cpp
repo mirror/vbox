@@ -1184,6 +1184,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.enmGuestMode     = PGMMODE_INVALID;
     pVM->pgm.s.enmHostMode      = SUPPAGINGMODE_INVALID;
     pVM->pgm.s.GCPhysCR3        = NIL_RTGCPHYS;
+    pVM->pgm.s.GCPtrPrevRamRangeMapping = MM_HYPER_AREA_ADDRESS;
     pVM->pgm.s.fA20Enabled      = true;
     pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1; /* default; checked later */
     pVM->pgm.s.pGstPaePdptR3    = NULL;
@@ -1925,9 +1926,11 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     if (pVM->pgm.s.pRamRangesR3)
     {
-        pVM->pgm.s.pRamRangesRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pRamRangesR3);
-        for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesR3; pCur->pNextR3; pCur = pCur->pNextR3)
-            pCur->pNextRC = MMHyperR3ToRC(pVM, pCur->pNextR3);
+        /* Update the pSelfRC pointers and relink them. */
+        for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
+            if (!(pCur->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING))
+                pCur->pSelfRC = MMHyperCCToRC(pVM, pCur);
+        pgmR3PhysRelinkRamRanges(pVM);
     }
 
     /*

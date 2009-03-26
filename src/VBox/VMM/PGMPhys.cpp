@@ -571,6 +571,55 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
 
 
 /**
+ * Relinks the RAM ranges using the pSelfRC and pSelfR0 pointers.
+ *
+ * Called when anything was relocated.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ */
+void pgmR3PhysRelinkRamRanges(PVM pVM)
+{
+    PPGMRAMRANGE pCur;
+
+#ifdef VBOX_STRICT
+    for (pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
+    {
+        Assert((pCur->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pCur->pSelfR0 == MMHyperCCToR0(pVM, pCur));
+        Assert((pCur->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pCur->pSelfRC == MMHyperCCToRC(pVM, pCur));
+        Assert((pCur->GCPhys     & PAGE_OFFSET_MASK) == 0);
+        Assert((pCur->GCPhysLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
+        Assert((pCur->cb         & PAGE_OFFSET_MASK) == 0);
+        Assert(pCur->cb == pCur->GCPhysLast - pCur->GCPhys + 1);
+        for (PPGMRAMRANGE pCur2 = pVM->pgm.s.pRamRangesR3; pCur2; pCur2 = pCur2->pNextR3)
+            Assert(   pCur2 == pCur
+                   || strcmp(pCur2->pszDesc, pCur->pszDesc)); /** @todo fix MMIO ranges!! */
+    }
+#endif
+
+    pCur = pVM->pgm.s.pRamRangesR3;
+    if (pCur)
+    {
+        pVM->pgm.s.pRamRangesR0 = pCur->pSelfR0;
+        pVM->pgm.s.pRamRangesRC = pCur->pSelfRC;
+
+        for (; pCur->pNextR3; pCur = pCur->pNextR3)
+        {
+            pCur->pNextR0 = pCur->pNextR3->pSelfR0;
+            pCur->pNextRC = pCur->pNextR3->pSelfRC;
+        }
+
+        Assert(pCur->pNextR0 == NIL_RTR0PTR);
+        Assert(pCur->pNextRC == NIL_RTRCPTR);
+    }
+    else
+    {
+        Assert(pVM->pgm.s.pRamRangesR0 == NIL_RTR0PTR);
+        Assert(pVM->pgm.s.pRamRangesRC == NIL_RTRCPTR);
+    }
+}
+
+
+/**
  * Links a new RAM range into the list.
  *
  * @param   pVM         Pointer to the shared VM structure.
@@ -580,25 +629,27 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
 static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev)
 {
     AssertMsg(pNew->pszDesc, ("%RGp-%RGp\n", pNew->GCPhys, pNew->GCPhysLast));
+    Assert((pNew->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pNew->pSelfR0 == MMHyperCCToR0(pVM, pNew));
+    Assert((pNew->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pNew->pSelfRC == MMHyperCCToRC(pVM, pNew));
 
     pgmLock(pVM);
 
     PPGMRAMRANGE pRam = pPrev ? pPrev->pNextR3 : pVM->pgm.s.pRamRangesR3;
     pNew->pNextR3 = pRam;
-    pNew->pNextR0 = pRam ? MMHyperCCToR0(pVM, pRam) : NIL_RTR0PTR;
-    pNew->pNextRC = pRam ? MMHyperCCToRC(pVM, pRam) : NIL_RTRCPTR;
+    pNew->pNextR0 = pRam ? pRam->pSelfR0 : NIL_RTR0PTR;
+    pNew->pNextRC = pRam ? pRam->pSelfRC : NIL_RTRCPTR;
 
     if (pPrev)
     {
         pPrev->pNextR3 = pNew;
-        pPrev->pNextR0 = MMHyperCCToR0(pVM, pNew);
-        pPrev->pNextRC = MMHyperCCToRC(pVM, pNew);
+        pPrev->pNextR0 = pNew->pSelfR0;
+        pPrev->pNextRC = pNew->pSelfRC;
     }
     else
     {
         pVM->pgm.s.pRamRangesR3 = pNew;
-        pVM->pgm.s.pRamRangesR0 = MMHyperCCToR0(pVM, pNew);
-        pVM->pgm.s.pRamRangesRC = MMHyperCCToRC(pVM, pNew);
+        pVM->pgm.s.pRamRangesR0 = pNew->pSelfR0;
+        pVM->pgm.s.pRamRangesRC = pNew->pSelfRC;
     }
 
     pgmUnlock(pVM);
@@ -615,6 +666,8 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
 static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pPrev)
 {
     Assert(pPrev ? pPrev->pNextR3 == pRam : pVM->pgm.s.pRamRangesR3 == pRam);
+    Assert((pRam->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pRam->pSelfR0 == MMHyperCCToR0(pVM, pRam));
+    Assert((pRam->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pRam->pSelfRC == MMHyperCCToRC(pVM, pRam));
 
     pgmLock(pVM);
 
@@ -622,15 +675,15 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
     if (pPrev)
     {
         pPrev->pNextR3 = pNext;
-        pPrev->pNextR0 = pNext ? MMHyperCCToR0(pVM, pNext) : NIL_RTR0PTR;
-        pPrev->pNextRC = pNext ? MMHyperCCToRC(pVM, pNext) : NIL_RTRCPTR;
+        pPrev->pNextR0 = pNext ? pNext->pSelfR0 : NIL_RTR0PTR;
+        pPrev->pNextRC = pNext ? pNext->pSelfRC : NIL_RTRCPTR;
     }
     else
     {
         Assert(pVM->pgm.s.pRamRangesR3 == pRam);
         pVM->pgm.s.pRamRangesR3 = pNext;
-        pVM->pgm.s.pRamRangesR0 = pNext ? MMHyperCCToR0(pVM, pNext) : NIL_RTR0PTR;
-        pVM->pgm.s.pRamRangesRC = pNext ? MMHyperCCToRC(pVM, pNext) : NIL_RTRCPTR;
+        pVM->pgm.s.pRamRangesR0 = pNext ? pNext->pSelfR0 : NIL_RTR0PTR;
+        pVM->pgm.s.pRamRangesRC = pNext ? pNext->pSelfRC : NIL_RTRCPTR;
     }
 
     pgmUnlock(pVM);
@@ -645,6 +698,8 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
  */
 static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam)
 {
+    pgmLock(pVM);
+
     /* find prev. */
     PPGMRAMRANGE pPrev = NULL;
     PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesR3;
@@ -656,6 +711,8 @@ static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam)
     AssertFatal(pCur);
 
     pgmR3PhysUnlinkRamRange2(pVM, pRam, pPrev);
+
+    pgmUnlock(pVM);
 }
 
 
@@ -701,6 +758,163 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
     return rc;
 }
 #endif /* VBOX_WITH_NEW_PHYS_CODE */
+
+
+/**
+ * PGMR3PhysRegisterRam worker that initializes and links a RAM range.
+ *
+ * @param   pVM             The VM handle.
+ * @param   pNew            The new RAM range.
+ * @param   GCPhys          The address of the RAM range.
+ * @param   GCPhysLast      The last address of the RAM range.
+ * @param   RCPtrNew        The RC address if the range is floating. NIL_RTRCPTR
+ *                          if in HMA.
+ * @param   R0PtrNew        Ditto for R0.
+ * @param   pszDesc         The description.
+ * @param   pPrev           The previous RAM range (for linking).
+ */
+static void pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
+                                         RTRCPTR RCPtrNew, RTR0PTR R0PtrNew, const char *pszDesc, PPGMRAMRANGE pPrev)
+{
+    /*
+     * Initialize the range.
+     */
+    pNew->pSelfR0       = R0PtrNew != NIL_RTR0PTR ? R0PtrNew : MMHyperCCToR0(pVM, pNew);
+    pNew->pSelfRC       = RCPtrNew != NIL_RTRCPTR ? RCPtrNew : MMHyperCCToRC(pVM, pNew);
+    pNew->GCPhys        = GCPhys;
+    pNew->GCPhysLast    = GCPhysLast;
+    pNew->cb            = GCPhysLast - GCPhys + 1;
+    pNew->pszDesc       = pszDesc;
+    pNew->fFlags        = RCPtrNew != NIL_RTR0PTR ? PGM_RAM_RANGE_FLAGS_FLOATING : 0;
+    pNew->pvR3          = NULL;
+
+    uint32_t const cPages = pNew->cb >> PAGE_SHIFT;
+    RTGCPHYS iPage = cPages;
+    while (iPage-- > 0)
+        PGM_PAGE_INIT_ZERO(&pNew->aPages[iPage], pVM, PGMPAGETYPE_RAM);
+
+    /* Update the page count stats. */
+    pVM->pgm.s.cZeroPages += cPages;
+    pVM->pgm.s.cAllPages  += cPages;
+
+    /*
+     * Link it.
+     */
+    pgmR3PhysLinkRamRange(pVM, pNew, pPrev);
+}
+
+
+/**
+ * Relocate a floating RAM range.
+ *
+ * @copydoc FNPGMRELOCATE.
+ */
+static DECLCALLBACK(bool) pgmR3PhysRamRangeRelocate(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew, PGMRELOCATECALL enmMode, void *pvUser)
+{
+    PPGMRAMRANGE pRam = (PPGMRAMRANGE)pvUser;
+    Assert(pRam->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING);
+    Assert(pRam->pSelfRC == GCPtrOld + PAGE_SIZE);
+
+    switch (enmMode)
+    {
+        case PGMRELOCATECALL_SUGGEST:
+            return true;
+        case PGMRELOCATECALL_RELOCATE:
+        {
+            /* Update myself and then relink all the ranges. */
+            pgmLock(pVM);
+            pRam->pSelfRC = (RTRCPTR)(GCPtrNew + PAGE_SIZE);
+            pgmR3PhysRelinkRamRanges(pVM);
+            pgmUnlock(pVM);
+            return true;
+        }
+
+        default:
+            AssertFailedReturn(false);
+    }
+}
+
+
+/**
+ * PGMR3PhysRegisterRam worker that registers a high chunk.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   GCPhys          The address of the RAM.
+ * @param   cRamPages       The number of RAM pages to register.
+ * @param   cbChunk         The size of the PGMRAMRANGE guest mapping.
+ * @param   iChunk          The chunk number.
+ * @param   pszDesc         The RAM range description.
+ * @param   ppPrev          Previous RAM range pointer. In/Out.
+ */
+static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRamPages,
+                                         uint32_t cbChunk, uint32_t iChunk, const char *pszDesc,
+                                         PPGMRAMRANGE *ppPrev)
+{
+    const char *pszDescChunk = iChunk == 0
+                             ? pszDesc
+                             : MMR3HeapAPrintf(pVM, MM_TAG_PGM_PHYS, "%s (#%u)", pszDesc, iChunk + 1);
+    AssertReturn(pszDescChunk, VERR_NO_MEMORY);
+
+    /*
+     * Allocate memory for the new chunk.
+     */
+    size_t const cChunkPages  = RT_ALIGN_Z(RT_UOFFSETOF(PGMRAMRANGE, aPages[cRamPages]), PAGE_SIZE) >> PAGE_SHIFT;
+    PSUPPAGE     paChunkPages = (PSUPPAGE)RTMemTmpAllocZ(sizeof(SUPPAGE) * cChunkPages);
+    AssertReturn(paChunkPages, VERR_NO_TMP_MEMORY);
+    RTR0PTR      R0PtrChunk   = NIL_RTR0PTR;
+    void        *pvChunk      = NULL;
+    int rc = SUPR3PageAllocEx(cChunkPages, 0 /*fFlags*/, &pvChunk,
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+                              VMMIsHwVirtExtForced(pVM) ? &pvR0 : NULL,
+#else
+                              NULL,
+#endif
+                              paChunkPages);
+    if (RT_SUCCESS(rc))
+    {
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+        if (!VMMIsHwVirtExtForced(pVM))
+            R0PtrChunk = NIL_RTR0PTR;
+#else
+        R0PtrChunk = (uintptr_t)pvChunk;
+#endif
+        memset(pvChunk, 0, cChunkPages << PAGE_SHIFT);
+
+        PPGMRAMRANGE pNew = (PPGMRAMRANGE)pvChunk;
+
+        /*
+         * Create a mapping and map the pages into it.
+         * We push these in below the HMA.
+         */
+        RTGCPTR GCPtrChunkMap = pVM->pgm.s.GCPtrPrevRamRangeMapping - cbChunk;
+        rc = PGMR3MapPT(pVM, GCPtrChunkMap, cbChunk, 0 /*fFlags*/, pgmR3PhysRamRangeRelocate, pNew, pszDescChunk);
+        if (RT_SUCCESS(rc))
+        {
+            pVM->pgm.s.GCPtrPrevRamRangeMapping = GCPtrChunkMap;
+
+            RTGCPTR const   GCPtrChunk = GCPtrChunkMap + PAGE_SIZE;
+            RTGCPTR         GCPtrPage  = GCPtrChunk;
+            for (uint32_t iPage = 0; iPage < cChunkPages && RT_SUCCESS(rc); iPage++, GCPtrPage += PAGE_SIZE)
+                rc = PGMMap(pVM, GCPtrPage, paChunkPages[iPage].Phys, PAGE_SIZE, 0);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Ok, init and link the range.
+                 */
+                pgmR3PhysInitAndLinkRamRange(pVM, pNew, GCPhys, GCPhys + ((RTGCPHYS)cRamPages << PAGE_SHIFT) - 1,
+                                             (RTRCPTR)GCPtrChunk, R0PtrChunk, pszDescChunk, *ppPrev);
+                *ppPrev = pNew;
+            }
+        }
+
+        if (RT_FAILURE(rc))
+            SUPR3PageFreeEx(pvChunk, cChunkPages);
+    }
+
+    RTMemTmpFree(paChunkPages);
+    return rc;
+}
 
 
 /**
@@ -758,45 +972,79 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     if (RT_FAILURE(rc))
         return rc;
 
-    /*
-     * Allocate RAM range.
-     */
-    const size_t cbRamRange = RT_OFFSETOF(PGMRAMRANGE, aPages[cPages]);
-    PPGMRAMRANGE pNew;
-    rc = MMR3HyperAllocOnceNoRel(pVM, cbRamRange, 0, MM_TAG_PGM_PHYS, (void **)&pNew);
-    AssertLogRelMsgRCReturn(rc, ("cbRamRange=%zu\n", cbRamRange), rc);
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    if (    GCPhys >= _4G
+        &&  cPages > 256)
+    {
+        /*
+         * The PGMRAMRANGE structures for the high memory can get very big.
+         * In order to avoid SUPR3PageAllocEx allocation failures due to the
+         * allocation size limit there and also to avoid being unable to find
+         * guest mapping space for them, we split this memory up into 4MB in
+         * (potential) raw-mode configs and 16MB chunks in forced AMD-V/VT-x
+         * mode.
+         *
+         * The first and last page of each mapping are guard pages and marked
+         * not-present. So, we've got 4186112 and 16769024 bytes available for
+         * the PGMRAMRANGE structure.
+         *
+         * Note! The sizes used here will influence the saved state.
+         */
+        uint32_t cbChunk;
+        uint32_t cPagesPerChunk;
+        if (VMMIsHwVirtExtForced(pVM))
+        {
+            cbChunk = 16U*_1M;
+            cPagesPerChunk = 1048048; /* max ~1048059 */
+            AssertCompile(sizeof(PGMRAMRANGE) + sizeof(PGMPAGE) * 1048048 < 16U*_1M - PAGE_SIZE * 2);
+        }
+        else
+        {
+            cbChunk = 4U*_1M;
+            cPagesPerChunk = 261616; /* max ~261627 */
+            AssertCompile(sizeof(PGMRAMRANGE) + sizeof(PGMPAGE) * 261616  <  4U*_1M - PAGE_SIZE * 2);
+        }
+        AssertRelease(RT_UOFFSETOF(PGMRAMRANGE, aPages[cPagesPerChunk]) + PAGE_SIZE * 2 <= cbChunk);
 
-    /*
-     * Initialize the range.
-     */
-    pNew->GCPhys        = GCPhys;
-    pNew->GCPhysLast    = GCPhysLast;
-    pNew->pszDesc       = pszDesc;
-    pNew->cb            = cb;
-    pNew->fFlags        = 0;
+        RTGCPHYS cPagesLeft  = cPages;
+        RTGCPHYS GCPhysChunk = GCPhys;
+        uint32_t iChunk      = 0;
+        while (cPagesLeft > 0)
+        {
+            uint32_t cPagesInChunk = cPagesLeft;
+            if (cPagesInChunk > cPagesPerChunk)
+                cPagesInChunk = cPagesPerChunk;
 
-    pNew->pvR3          = NULL;
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-    pNew->paChunkR3Ptrs = NULL;
+            rc = pgmR3PhysRegisterHighRamChunk(pVM, GCPhysChunk, cPagesInChunk, cbChunk, iChunk, pszDesc, &pPrev);
+            AssertRCReturn(rc, rc);
 
-    /* Allocate memory for chunk to HC ptr lookup array. */
-    rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->paChunkR3Ptrs);
-    AssertRCReturn(rc, rc);
-    pNew->fFlags |= MM_RAM_FLAGS_DYNAMIC_ALLOC;
-
+            /* advance */
+            GCPhysChunk += (RTGCPHYS)cPagesInChunk << PAGE_SHIFT;
+            cPagesLeft  -= cPagesInChunk;
+            iChunk++;
+        }
+    }
+    else
 #endif
-    RTGCPHYS iPage = cPages;
-    while (iPage-- > 0)
-        PGM_PAGE_INIT_ZERO(&pNew->aPages[iPage], pVM, PGMPAGETYPE_RAM);
+    {
+        /*
+         * Allocate, initialize and link the new RAM range.
+         */
+        const size_t cbRamRange = RT_OFFSETOF(PGMRAMRANGE, aPages[cPages]);
+        PPGMRAMRANGE pNew;
+        rc = MMR3HyperAllocOnceNoRel(pVM, cbRamRange, 0, MM_TAG_PGM_PHYS, (void **)&pNew);
+        AssertLogRelMsgRCReturn(rc, ("cbRamRange=%zu\n", cbRamRange), rc);
 
-    /* Update the page count stats. */
-    pVM->pgm.s.cZeroPages += cPages;
-    pVM->pgm.s.cAllPages  += cPages;
+#ifndef VBOX_WITH_NEW_PHYS_CODE
+        /* Allocate memory for chunk to HC ptr lookup array. */
+        pNew->paChunkR3Ptrs = NULL;
+        rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->paChunkR3Ptrs);
+        AssertRCReturn(rc, rc);
+        pNew->fFlags |= MM_RAM_FLAGS_DYNAMIC_ALLOC;
+#endif
 
-    /*
-     * Insert the new RAM range.
-     */
-    pgmR3PhysLinkRamRange(pVM, pNew, pPrev);
+        pgmR3PhysInitAndLinkRamRange(pVM, pNew, GCPhys, GCPhysLast, NIL_RTRCPTR, NIL_RTR0PTR, pszDesc, pPrev);
+    }
 
     /*
      * Notify REM.
@@ -836,7 +1084,9 @@ int pgmR3PhysRamReset(PVM pVM)
      */
     for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
     {
-        uint32_t    iPage = pRam->cb >> PAGE_SHIFT; Assert((RTGCPHYS)iPage << PAGE_SHIFT == pRam->cb);
+        uint32_t iPage = pRam->cb >> PAGE_SHIFT;
+        AssertMsg(((RTGCPHYS)iPage << PAGE_SHIFT) == pRam->cb, ("%RGp %RGp\n", (RTGCPHYS)iPage << PAGE_SHIFT, pRam->cb));
+
 #ifdef VBOX_WITH_NEW_PHYS_CODE
         if (!pVM->pgm.s.fRamPreAlloc)
         {
@@ -1066,11 +1316,13 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
         AssertLogRelMsgRCReturn(rc, ("cbRamRange=%zu\n", cbRamRange), rc);
 
         /* Initialize the range. */
+        pNew->pSelfR0       = MMHyperCCToR0(pVM, pNew);
+        pNew->pSelfRC       = MMHyperCCToRC(pVM, pNew);
         pNew->GCPhys        = GCPhys;
         pNew->GCPhysLast    = GCPhysLast;
-        pNew->pszDesc       = pszDesc;
         pNew->cb            = cb;
-        pNew->fFlags        = 0; /* Some MMIO flag here? */
+        pNew->pszDesc       = pszDesc;
+        pNew->fFlags        = 0; /** @todo add some kind of ad-hoc flag? */
 
         pNew->pvR3          = NULL;
 #ifndef VBOX_WITH_NEW_PHYS_CODE
@@ -1289,7 +1541,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
     const uint32_t cPages = cb >> PAGE_SHIFT;
-    AssertLogRelReturn((RTGCPHYS)cPages << PAGE_SHIFT == cb, VERR_INVALID_PARAMETER);
+    AssertLogRelReturn(((RTGCPHYS)cPages << PAGE_SHIFT) == cb, VERR_INVALID_PARAMETER);
     AssertLogRelReturn(cPages <= INT32_MAX / 2, VERR_NO_MEMORY);
 
     /*
@@ -1317,21 +1569,23 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
         AssertLogRelMsgRC(rc, ("cbRamRange=%zu\n", cbRange));
         if (RT_SUCCESS(rc))
         {
-            pNew->pDevInsR3 = pDevIns;
-            pNew->pvR3 = pvPages;
-            //pNew->pNext = NULL;
-            //pNew->fMapped = false;
-            //pNew->fOverlapping = false;
-            pNew->iRegion = iRegion;
-            pNew->RamRange.GCPhys = NIL_RTGCPHYS;
-            pNew->RamRange.GCPhysLast = NIL_RTGCPHYS;
-            pNew->RamRange.pszDesc = pszDesc;
-            pNew->RamRange.cb = cb;
-            //pNew->RamRange.fFlags = 0;
+            pNew->pDevInsR3             = pDevIns;
+            pNew->pvR3                  = pvPages;
+            //pNew->pNext               = NULL;
+            //pNew->fMapped             = false;
+            //pNew->fOverlapping        = false;
+            pNew->iRegion               = iRegion;
+            pNew->RamRange.pSelfR0      = MMHyperCCToR0(pVM, &pNew->RamRange);
+            pNew->RamRange.pSelfRC      = MMHyperCCToRC(pVM, &pNew->RamRange);
+            pNew->RamRange.GCPhys       = NIL_RTGCPHYS;
+            pNew->RamRange.GCPhysLast   = NIL_RTGCPHYS;
+            pNew->RamRange.pszDesc      = pszDesc;
+            pNew->RamRange.cb           = cb;
+            //pNew->RamRange.fFlags     = 0; /// @todo MMIO2 flag?
 
-            pNew->RamRange.pvR3 = pvPages;       ///@todo remove this [new phys code]
+            pNew->RamRange.pvR3         = pvPages;
 #ifndef VBOX_WITH_NEW_PHYS_CODE
-            pNew->RamRange.paChunkR3Ptrs = NULL; ///@todo remove this [new phys code]
+            pNew->RamRange.paChunkR3Ptrs = NULL;
 #endif
 
             uint32_t iPage = cPages;
@@ -1879,9 +2133,9 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         while (cPagesLeft-- > 0)
         {
             AssertLogRelMsgReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM,
-                                  ("%RGp isn't a RAM page (%d) - registering %RGp-%RGp (%s).\n",
-                                   GCPhys, PGM_PAGE_GET_TYPE(pPage), GCPhys, GCPhysLast, pszDesc),
-                                  VERR_PGM_RAM_CONFLICT);
+                                  ("%RGp (%R[pgmpage]) isn't a RAM page - registering %RGp-%RGp (%s).\n",
+                                   pRam->GCPhys + (RTGCPTR)(uintptr_t)(pPage - &pRam->aPages[0]) << PAGE_SHIFT,
+                                   pPage, GCPhys, GCPhysLast, pszDesc), VERR_PGM_RAM_CONFLICT);
             Assert(PGM_PAGE_IS_ZERO(pPage));
             pPage++;
         }
@@ -1943,10 +2197,12 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
             PPGMROMPAGE pRomPage = &pRomNew->aPages[0];
             if (!fRamExists)
             {
+                pRamNew->pSelfR0       = MMHyperCCToR0(pVM, pRamNew);
+                pRamNew->pSelfRC       = MMHyperCCToRC(pVM, pRamNew);
                 pRamNew->GCPhys        = GCPhys;
                 pRamNew->GCPhysLast    = GCPhysLast;
-                pRamNew->pszDesc       = pszDesc;
                 pRamNew->cb            = cb;
+                pRamNew->pszDesc       = pszDesc;
                 pRamNew->fFlags        = 0;
                 pRamNew->pvR3          = NULL;
 

@@ -52,18 +52,20 @@ static void pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, RTHCPHYS HCPh
  * @param   pVM             VM Handle.
  * @param   GCPtr           Virtual Address. (Page table aligned!)
  * @param   cb              Size of the range. Must be a 4MB aligned!
+ * @param   fFlags          PGMR3MAPPT_FLAGS_UNMAPPABLE or 0.
  * @param   pfnRelocate     Relocation callback function.
  * @param   pvUser          User argument to the callback.
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
-VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc)
+VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, uint32_t fFlags, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc)
 {
-    LogFlow(("PGMR3MapPT: GCPtr=%#x cb=%d pfnRelocate=%p pvUser=%p pszDesc=%s\n", GCPtr, cb, pfnRelocate, pvUser, pszDesc));
+    LogFlow(("PGMR3MapPT: GCPtr=%#x cb=%d fFlags=%#x pfnRelocate=%p pvUser=%p pszDesc=%s\n", GCPtr, cb, fFlags, pfnRelocate, pvUser, pszDesc));
     AssertMsg(pVM->pgm.s.pInterPD, ("Paging isn't initialized, init order problems!\n"));
 
     /*
      * Validate input.
      */
+    Assert(!fFlags || fFlags == PGMR3MAPPT_FLAGS_UNMAPPABLE);
     if (cb < _2M || cb > 64 * _1M)
     {
         AssertMsgFailed(("Serious? cb=%d\n", cb));
@@ -129,7 +131,11 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
      * Allocate and initialize the new list node.
      */
     PPGMMAPPING pNew;
-    int rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMMAPPING, aPTs[cPTs]), 0, MM_TAG_PGM, (void **)&pNew);
+    int rc;
+    if (fFlags & PGMR3MAPPT_FLAGS_UNMAPPABLE)
+        rc = MMHyperAlloc(           pVM, RT_OFFSETOF(PGMMAPPING, aPTs[cPTs]), 0, MM_TAG_PGM_MAPPINGS, (void **)&pNew);
+    else
+        rc = MMR3HyperAllocOnceNoRel(pVM, RT_OFFSETOF(PGMMAPPING, aPTs[cPTs]), 0, MM_TAG_PGM_MAPPINGS, (void **)&pNew);
     if (RT_FAILURE(rc))
         return rc;
     pNew->GCPtr         = GCPtr;
@@ -145,7 +151,10 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
      * (One 32-bit PT and two PAE PTs.)
      */
     uint8_t *pbPTs;
-    rc = MMHyperAlloc(pVM, PAGE_SIZE * 3 * cPTs, PAGE_SIZE, MM_TAG_PGM, (void **)&pbPTs);
+    if (fFlags & PGMR3MAPPT_FLAGS_UNMAPPABLE)
+        rc = MMHyperAlloc(           pVM, PAGE_SIZE * 3 * cPTs, PAGE_SIZE, MM_TAG_PGM_MAPPINGS, (void **)&pbPTs);
+    else
+        rc = MMR3HyperAllocOnceNoRel(pVM, PAGE_SIZE * 3 * cPTs, PAGE_SIZE, MM_TAG_PGM_MAPPINGS, (void **)&pbPTs);
     if (RT_FAILURE(rc))
     {
         MMHyperFree(pVM, pNew);
@@ -215,6 +224,9 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
  * @returns VBox status code.
  * @param   pVM     VM Handle.
  * @param   GCPtr   Virtual Address. (Page table aligned!)
+ *
+ * @remarks Don't call this without passing PGMR3MAPPT_FLAGS_UNMAPPABLE to
+ *          PGMR3MapPT or you'll burn in the heap.
  */
 VMMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr)
 {
@@ -647,7 +659,7 @@ VMMR3DECL(int) PGMR3MappingsDisable(PVM pVM)
     AssertRCReturn(rc, rc);
 
     /*
-     * Mark the mappings as fixed (using fake values) and disabled. 
+     * Mark the mappings as fixed (using fake values) and disabled.
      */
     pVM->pgm.s.fDisableMappings  = true;
     pVM->pgm.s.fMappingsFixed    = true;
@@ -899,7 +911,7 @@ static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
 {
     unsigned i = pMap->cPTs;
 
-    pgmMapClearShadowPDEs(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pMap, iOldPDE);
+    pgmMapClearShadowPDEs(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pMap, iOldPDE, false /*fDeactivateCR3*/);
 
     iOldPDE += i;
     while (i-- > 0)
@@ -1069,6 +1081,7 @@ void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping, RT
     pMapping->pfnRelocate(pVM, iPDOld << X86_PD_SHIFT, iPDNew << X86_PD_SHIFT, PGMRELOCATECALL_RELOCATE, pMapping->pvUser);
 }
 
+
 /**
  * Checks if a new mapping address wasn't previously used and caused a clash with guest mappings.
  *
@@ -1078,13 +1091,14 @@ void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping, RT
  */
 bool pgmR3MapIsKnownConflictAddress(PPGMMAPPING pMapping, RTGCPTR GCPtr)
 {
-    for (unsigned i=0; i<RT_ELEMENTS(pMapping->GCPtrConflict); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pMapping->aGCPtrConflicts); i++)
     {
-        if (GCPtr == pMapping->GCPtrConflict[i])
+        if (GCPtr == pMapping->aGCPtrConflicts[i])
             return true;
     }
     return false;
 }
+
 
 /**
  * Resolves a conflict between a page table based GC mapping and
@@ -1101,7 +1115,7 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTG
     STAM_REL_COUNTER_INC(&pVM->pgm.s.cRelocations);
     STAM_PROFILE_START(&pVM->pgm.s.StatR3ResolveConflict, a);
 
-    pMapping->GCPtrConflict[pMapping->cConflicts & (PGMMAPPING_CONFLICT_MAX-1)] = GCPtrOldMapping;
+    pMapping->aGCPtrConflicts[pMapping->cConflicts & (PGMMAPPING_CONFLICT_MAX-1)] = GCPtrOldMapping;
     pMapping->cConflicts++;
 
     /*
@@ -1174,7 +1188,7 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
     STAM_REL_COUNTER_INC(&pVM->pgm.s.cRelocations);
     STAM_PROFILE_START(&pVM->pgm.s.StatR3ResolveConflict, a);
 
-    pMapping->GCPtrConflict[pMapping->cConflicts & (PGMMAPPING_CONFLICT_MAX-1)] = GCPtrOldMapping;
+    pMapping->aGCPtrConflicts[pMapping->cConflicts & (PGMMAPPING_CONFLICT_MAX-1)] = GCPtrOldMapping;
     pMapping->cConflicts++;
 
     for (int iPDPTE = X86_PG_PAE_PDPE_ENTRIES - 1; iPDPTE >= 0; iPDPTE--)
@@ -1242,6 +1256,7 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
     AssertMsgFailed(("Failed to relocate page table mapping '%s' from %#x! (cPTs=%d)\n", pMapping->pszDesc, GCPtrOldMapping, pMapping->cb >> X86_PD_PAE_SHIFT));
     return VERR_PGM_NO_HYPERVISOR_ADDRESS;
 }
+
 
 /**
  * Read memory from the guest mappings.
