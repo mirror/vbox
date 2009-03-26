@@ -181,7 +181,11 @@ typedef struct PhysPageDesc {
  */
 #define L1_BITS (TARGET_VIRT_ADDR_SPACE_BITS - L2_BITS - TARGET_PAGE_BITS)
 #else
+# ifdef VBOX /* > 4GB please. */
+#define L1_BITS (TARGET_PHYS_ADDR_SPACE_BITS - L2_BITS - TARGET_PAGE_BITS)
+# else
 #define L1_BITS (32 - L2_BITS - TARGET_PAGE_BITS)
+# endif
 #endif
 
 #define L1_SIZE (1 << L1_BITS)
@@ -347,8 +351,16 @@ DECLINLINE(PageDesc **) page_l1_map(target_ulong index)
 #if TARGET_LONG_BITS > 32
     /* Host memory outside guest VM.  For 32-bit targets we have already
        excluded high addresses.  */
+# ifndef VBOX
     if (index > ((target_ulong)L2_SIZE * L1_SIZE))
         return NULL;
+# else  /* VBOX */
+    AssertMsgReturn(index < (target_ulong)L2_SIZE * L1_SIZE,
+                    ("index=%RGp >= %RGp; L1_SIZE=%#x L2_SIZE=%#x\n",
+                     (RTGCPHYS)index, (RTGCPHYS)L2_SIZE * L1_SIZE, L1_SIZE, L2_SIZE),
+                    NULL);
+# endif /* VBOX */
+
 #endif
     return &l1_map[index >> L2_BITS];
 }
