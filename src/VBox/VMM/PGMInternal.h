@@ -1061,13 +1061,13 @@ typedef struct PGMRAMRANGE
 /** Pointer to Ram range for GC Phys to HC Phys conversion. */
 typedef PGMRAMRANGE *PPGMRAMRANGE;
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
 /** @name PGMRAMRANGE::fFlags
  * @{ */
 /** The RAM range is floating around as an independent guest mapping. */
 #define PGM_RAM_RANGE_FLAGS_FLOATING        RT_BIT(20)
 /** @} */
-#else
+
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 /** Return hc ptr corresponding to the ram range and physical offset */
 #define PGMRAMRANGE_GETHCPTR(pRam, off) \
     (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC) ? (RTHCPTR)((pRam)->paChunkR3Ptrs[(off) >> PGM_DYNAMIC_CHUNK_SHIFT] + ((off) & PGM_DYNAMIC_CHUNK_OFFSET_MASK)) \
