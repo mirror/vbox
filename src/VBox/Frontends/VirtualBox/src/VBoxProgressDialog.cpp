@@ -65,7 +65,11 @@ VBoxProgressDialog::VBoxProgressDialog (CProgress &aProgress, const QString &aTi
     setValue (0);
     mCancelEnabled = aProgress.GetCancelable();
     if (mCancelEnabled)
+    {
         setCancelButtonText(tr ("&Cancel"));
+        connect (this, SIGNAL (canceled()),
+                 this, SLOT (cancelOperation()));
+    }
 }
 
 int VBoxProgressDialog::run (int aRefreshInterval)
@@ -88,9 +92,14 @@ int VBoxProgressDialog::run (int aRefreshInterval)
     return Rejected;
 }
 
+void VBoxProgressDialog::cancelOperation()
+{
+    mProgress.Cancel();
+}
+
 void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
 {
-    if (!mEnded && (!mProgress.isOk() || mProgress.GetCompleted()))
+    if (!mEnded && (!mProgress.isOk() || mProgress.GetCompleted() || mProgress.GetCanceled()))
     {
         /* Progress finished */
         if (mProgress.isOk())
