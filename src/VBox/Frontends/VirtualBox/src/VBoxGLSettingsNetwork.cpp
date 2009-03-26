@@ -250,6 +250,14 @@ VBoxGLSettingsNetwork::VBoxGLSettingsNetwork()
     /* Apply UI decorations */
     Ui::VBoxGLSettingsNetwork::setupUi (this);
 
+#ifdef Q_WS_MAC
+    /* Make shifting spacer for MAC as we have fixed-size networks list */
+    QSpacerItem *shiftSpacer =
+        new QSpacerItem (0, 1, QSizePolicy::Expanding, QSizePolicy::Preferred);
+    QGridLayout *mainLayout = static_cast <QGridLayout*> (layout());
+    mainLayout->addItem (shiftSpacer, 1, 4, 2);
+#endif
+
     /* Setup tree-widget */
     mTwInterfaces->header()->hide();
     mTwInterfaces->setContextMenuPolicy (Qt::CustomContextMenu);
@@ -328,7 +336,6 @@ void VBoxGLSettingsNetwork::getFrom (const CSystemProperties &, const VBoxGlobal
         160);
     mTwInterfaces->setFixedWidth (width);
     mTwInterfaces->resizeColumnToContents (0);
-    mSpacer1->changeSize (0, 1, QSizePolicy::Expanding, QSizePolicy::Preferred);
 #endif /* Q_WS_MAC */
 }
 

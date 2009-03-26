@@ -44,7 +44,7 @@
      </property>
     </spacer>
    </item>
-   <item row="0" column="1" colspan="4">
+   <item row="0" column="1" colspan="3">
     <widget class="QLabel" name="mLbPageName">
      <property name="text">
       <string>&amp;Host-only Networks List:</string>
@@ -120,23 +120,7 @@
      </property>
     </spacer>
    </item>
-   <item row="2" column="4">
-    <spacer name="mSpacer1">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Ignored</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>2</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="3" column="2" colspan="3">
+   <item row="3" column="2" colspan="2">
     <widget class="QLabel" name="mLbInfo">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
