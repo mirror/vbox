@@ -1,0 +1,54 @@
+/*
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * additional information or have any questions.
+ */
+
+#include <windows.h>
+#include <VBox/version.h>
+
+VS_VERSION_INFO    VERSIONINFO
+  FILEVERSION      VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
+  PRODUCTVERSION   VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
+  FILEFLAGSMASK    VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        VS_FF_DEBUG|VS_FF_PRIVATEBUILD|VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0 // final version
+#endif
+  FILEOS           VOS__WINDOWS32
+  FILETYPE         VFT_APP
+  FILESUBTYPE      0   // not used
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
+    BEGIN
+    VALUE "CompanyName",     VBOX_RC_COMPANY_NAME
+    VALUE "FileDescription", "VirtualBox GUI\0"
+    VALUE "FileVersion",     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
+    VALUE "InternalName",    "VirtualBox.exe\0"
+    VALUE "LegalCopyright",  VBOX_RC_LEGAL_COPYRIGHT
+    VALUE "OriginalFilename","VirtualBox.exe\0"
+    VALUE "ProductName",     "Sun VirtualBox\0"
+    VALUE "ProductVersion",  VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
+
+/* Creates the application icon. */
+#include "VirtualBox-icon.rc"
