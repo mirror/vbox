@@ -129,6 +129,32 @@ static struct
     { 0 }
 };
 
+
+/**
+ * This function converts a VBox result code into a Linux error number.
+ * Note that we return 0 (success) for all informational values, as Linux
+ * has no such concept.
+ */
+static int vboxadd_convert_result(int vbox_err)
+{
+    if (   vbox_err > -1000
+        && vbox_err < 1000)
+        return RTErrConvertToErrno(vbox_err);
+    switch (vbox_err)
+    {
+        case VERR_HGCM_SERVICE_NOT_FOUND:      return ESRCH;
+        case VINF_HGCM_CLIENT_REJECTED:        return 0;
+        case VERR_HGCM_INVALID_CMD_ADDRESS:    return EFAULT;
+        case VINF_HGCM_ASYNC_EXECUTE:          return 0;
+        case VERR_HGCM_INTERNAL:               return EPROTO;
+        case VERR_HGCM_INVALID_CLIENT_ID:      return EINVAL;
+        case VINF_HGCM_SAVE_STATE:             return 0;
+        /* No reason to return this to a guest */
+        // case VERR_HGCM_SERVICE_EXISTS:         return EEXIST;
+    }
+    AssertMsgFailedReturn(("Unhandled error code %Rrc\n", vbox_err), EPROTO);
+}
+
 /**
  * Register an HGCM connection as being connected with a given file descriptor, so that it
  * will be closed automatically when that file descriptor is.
@@ -323,8 +349,8 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
     {
         int vrc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_CONNECT,
                                     &info);
-        rc = RT_FAILURE(vrc) ? -RTErrConvertToErrno(vrc)
-                             : -RTErrConvertToErrno(info.result);
+        rc = RT_FAILURE(vrc) ? -vboxadd_convert_result(vrc)
+                             : -vboxadd_convert_result(info.result);
         if (rc < 0)
             LogFunc(("hgcm connection failed.  internal ioctl result %Rrc, hgcm result %Rrc\n",
                       vrc, info.result));
@@ -382,7 +408,9 @@ static int vboxadd_hgcm_disconnect(struct file *filp, unsigned long userspace_in
     if (rc >= 0)
     {
         vrc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &info);
-        rc = -RTErrConvertToErrno(vrc);
+        rc = -vboxadd_convert_result(vrc);
+        if (rc < 0)
+            LogFunc(("HGCM disconnect failed, error %Rrc\n", vrc));
     }
     if (   rc >= 0
         && copy_to_user((void *)userspace_info, (void *)&info, sizeof(info)) != 0)
@@ -595,7 +623,9 @@ static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
         int vrc;
         vrc = vboxadd_cmc_call(vboxDev,
                                VBOXGUEST_IOCTL_HGCM_CALL(u32Size), pInfo);
-        rc = -RTErrConvertToErrno(vrc);
+        rc = -vboxadd_convert_result(vrc);
+        if (rc < 0)
+            LogFunc(("HGCM call failed, error %Rrc\n", vrc));
         if (   rc >= 0
             && copy_to_user ((void *)userspace_info, (void *)pInfo,
                                      u32Size))
@@ -660,7 +690,9 @@ static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
         pInfo->fInterruptible = true;  /* User space may not do uninterruptible waits */
         vrc = vboxadd_cmc_call(vboxDev,
                                VBOXGUEST_IOCTL_HGCM_CALL_TIMED(u32Size), pInfo);
-        rc = -RTErrConvertToErrno(vrc);
+        rc = -vboxadd_convert_result(vrc);
+        if (rc < 0)
+            LogFunc(("HGCM call failed, error %Rrc", vrc));
         if (   rc >= 0
             && copy_to_user ((void *)userspace_info, (void *)pInfo, u32Size))
         {
