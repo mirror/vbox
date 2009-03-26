@@ -339,28 +339,14 @@ void *mmR3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZero)
 
         /* register the statistics */
         PUVM pUVM = pHeap->pUVM;
-        char szName[80];
         const char *pszTag = mmR3GetTagName(enmTag);
-        RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cAllocations", pszTag);
-        STAMR3RegisterU(pUVM, &pStat->cAllocations,   STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_CALLS, "Number or MMR3HeapAlloc() calls.");
-
-        RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cReallocations", pszTag);
-        STAMR3RegisterU(pUVM, &pStat->cReallocations, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_CALLS, "Number of MMR3HeapRealloc() calls.");
-
-        RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cFrees", pszTag);
-        STAMR3RegisterU(pUVM, &pStat->cFrees,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_CALLS, "Number of MMR3HeapFree() calls.");
-
-        RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cFailures", pszTag);
-        STAMR3RegisterU(pUVM, &pStat->cFailures,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_COUNT, "Number of failures.");
-
-        RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cbCurAllocated", pszTag);
-        STAMR3RegisterU(pUVM, &pStat->cbCurAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_BYTES, "Number of bytes currently allocated.");
-
-        RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cbAllocated", pszTag);
-        STAMR3RegisterU(pUVM, &pStat->cbAllocated,    STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_BYTES, "Total number of bytes allocated.");
-
-        RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cbFreed", pszTag);
-        STAMR3RegisterU(pUVM, &pStat->cbFreed,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_BYTES, "Total number of bytes freed.");
+        STAMR3RegisterFU(pUVM, &pStat->cbCurAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of bytes currently allocated.",    "/MM/R3Heap/%s", pszTag);
+        STAMR3RegisterFU(pUVM, &pStat->cAllocations,   STAMTYPE_U64, STAMVISIBILITY_ALWAYS,  STAMUNIT_CALLS, "Number or MMR3HeapAlloc() calls.",        "/MM/R3Heap/%s/cAllocations", pszTag);
+        STAMR3RegisterFU(pUVM, &pStat->cReallocations, STAMTYPE_U64, STAMVISIBILITY_ALWAYS,  STAMUNIT_CALLS, "Number of MMR3HeapRealloc() calls.",      "/MM/R3Heap/%s/cReallocations", pszTag);
+        STAMR3RegisterFU(pUVM, &pStat->cFrees,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS,  STAMUNIT_CALLS, "Number of MMR3HeapFree() calls.",         "/MM/R3Heap/%s/cFrees", pszTag);
+        STAMR3RegisterFU(pUVM, &pStat->cFailures,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of failures.",                     "/MM/R3Heap/%s/cFailures", pszTag);
+        STAMR3RegisterFU(pUVM, &pStat->cbAllocated,    STAMTYPE_U64, STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Total number of bytes allocated.",        "/MM/R3Heap/%s/cbAllocated", pszTag);
+        STAMR3RegisterFU(pUVM, &pStat->cbFreed,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Total number of bytes freed.",            "/MM/R3Heap/%s/cbFreed", pszTag);
     }
 #endif
 
@@ -772,6 +758,7 @@ const char *mmR3GetTagName(MMTAG enmTag)
         TAG2STR(PGM);
         TAG2STR(PGM_CHUNK_MAPPING);
         TAG2STR(PGM_HANDLERS);
+        TAG2STR(PGM_MAPPINGS);
         TAG2STR(PGM_PHYS);
         TAG2STR(PGM_POOL);
 
