@@ -91,11 +91,13 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
              prefPage);
 #endif
 
+#ifdef VBOX_WITH_NETFLT
     /* Network page */
     prefPage = new VBoxGLSettingsNetwork();
     addItem (":/nw_32px.png", ":/nw_disabled_32px.png", ":/nw_16px.png", ":/nw_disabled_16px.png",
              NetworkId, "#language",
              prefPage);
+#endif
 
     /* Update Selector with available items */
     updateAvailability();
