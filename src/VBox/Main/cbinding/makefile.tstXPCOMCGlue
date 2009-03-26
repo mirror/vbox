@@ -41,3 +41,4 @@ tstXPCOMCGlue.o: tstXPCOMCGlue.c
 
 VBoxXPCOMCGlue.o: $(GLUE_DIR)/VBoxXPCOMCGlue.c
 	$(CC) $(CFLAGS) -DVBOX_WITH_XPCOM $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $<
+
