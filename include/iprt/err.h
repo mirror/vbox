@@ -360,8 +360,7 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_THREAD_NOT_WAITABLE            (-30)
 /** Pagetable not present. */
 #define VERR_PAGE_TABLE_NOT_PRESENT         (-31)
-/** Internal error - we're screwed if this happens. */
-#define VERR_INTERNAL_ERROR                 (-32)
+
 /** The per process timer is busy. */
 #define VERR_TIMER_BUSY                     (-33)
 /** Address conflict. */
@@ -504,10 +503,6 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VWRN_DANGLING_OBJECTS               86
 /** Invalid Base64 encoding. */
 #define VERR_INVALID_BASE64_ENCODING        (-87)
-/** Internal error no. 2 - we're screwed if this happens. */
-#define VERR_INTERNAL_ERROR_2               (-88)
-/** Internal error no. 3 - we're screwed if this happens. */
-#define VERR_INTERNAL_ERROR_3               (-89)
 /** @} */
 
 
@@ -608,6 +603,28 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_NO_MORE_SEARCH_HANDLES         (-202)
 /** RTDirReadEx() failed to retrieve the extra data which was requested. */
 #define VWRN_NO_DIRENT_INFO                 203
+/** @} */
+
+
+/** @name Internal Processing Errors
+ * @{
+ */
+/** Internal error - we're screwed if this happens.  */
+#define VERR_INTERNAL_ERROR                 (-225)
+/** Internal error no. 2. */
+#define VERR_INTERNAL_ERROR_2               (-226)
+/** Internal error no. 3. */
+#define VERR_INTERNAL_ERROR_3               (-227)
+/** Internal error no. 4. */
+#define VERR_INTERNAL_ERROR_4               (-228)
+/** Internal error no. 5. */
+#define VERR_INTERNAL_ERROR_5               (-229)
+/** Internal error: Unexpected status code. */
+#define VERR_IPE_UNEXPECTED_STATUS          (-230)
+/** Internal error: Unexpected status code. */
+#define VERR_IPE_UNEXPECTED_INFO_STATUS     (-231)
+/** Internal error: Unexpected status code. */
+#define VERR_IPE_UNEXPECTED_ERROR_STATUS    (-232)
 /** @} */
 
 
