@@ -4141,7 +4141,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 # ifdef VBOX_WITH_NEW_PHYS_CODE
     pgmLock(pVM);
     PPGMPAGE    pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysCR3);
-    AssertReturn(pPage, VERR_INTERNAL_ERROR);
+    AssertReturn(pPage, VERR_INTERNAL_ERROR_2);
     HCPhysGuestCR3 = PGM_PAGE_GET_HCPHYS(pPage);
     /** @todo this needs some reworking wrt. locking.  */
 #  if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
@@ -4193,7 +4193,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  ifdef VBOX_WITH_NEW_PHYS_CODE
                     pgmLock(pVM);
                     PPGMPAGE    pPage  = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
-                    AssertReturn(pPage, VERR_INTERNAL_ERROR);
+                    AssertReturn(pPage, VERR_INTERNAL_ERROR_2);
                     HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
 #   if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
                     HCPtr = NIL_RTHCPTR;
