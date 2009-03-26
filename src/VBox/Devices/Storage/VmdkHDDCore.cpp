@@ -182,7 +182,7 @@ typedef struct COWDisk_Header
 
 
 /** Convert sector number/size to byte offset/size. */
-#define VMDK_SECTOR2BYTE(u) ((u) << 9)
+#define VMDK_SECTOR2BYTE(u) ((uint64_t)(u) << 9)
 
 /** Convert byte offset/size to sector number/size. */
 #define VMDK_BYTE2SECTOR(u) ((u) >> 9)
