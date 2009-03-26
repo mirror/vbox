@@ -40,7 +40,8 @@ VBoxService_SOURCES.os2   = \
 	VBoxServiceClipboard-os2.cpp
 VBoxService_LIBS          = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3)
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
