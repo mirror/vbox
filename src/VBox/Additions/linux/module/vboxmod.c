@@ -938,6 +938,11 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
 
 /**
  * IOCTL handler for vboxuser
+ * @todo currently this is just a copy of vboxadd_ioctl.  We should
+ *       decide if we wish to restrict this.  If we do, we should remove
+ *       the more general ioctls (HGCM call, VMM device request) and
+ *       replace them with specific ones.  If not, then we should just
+ *       make vboxadd world readable and writable or something.
  */
 static int vboxuser_ioctl(struct inode *inode, struct file *filp,
                           unsigned int cmd, unsigned long arg)
@@ -945,7 +950,131 @@ static int vboxuser_ioctl(struct inode *inode, struct file *filp,
     int rc = 0;
 
     /* Deal with variable size ioctls first. */
-    if (    VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0))
+#ifdef DEBUG  /* Only allow random user applications to spam the log in 
+               * debug additions builds */
+    if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_LOG(0))
+        == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
+    {
+        char *pszMessage;
+
+        IOCTL_LOG_ENTRY(arg);
+        pszMessage = kmalloc(_IOC_SIZE(cmd), GFP_KERNEL);
+        if (NULL == pszMessage)
+        {
+            LogRelFunc(("VBOXGUEST_IOCTL_LOG: cannot allocate %d bytes of memory!\n",
+                         _IOC_SIZE(cmd)));
+            rc = -ENOMEM;
+        }
+        if (   (0 == rc)
+            && copy_from_user(pszMessage, (void*)arg, _IOC_SIZE(cmd)))
+        {
+            LogRelFunc(("VBOXGUEST_IOCTL_LOG: copy_from_user failed!\n"));
+            rc = -EFAULT;
+        }
+        if (0 == rc)
+        {
+            Log(("%.*s", _IOC_SIZE(cmd), pszMessage));
+        }
+        if (NULL != pszMessage)
+        {
+            kfree(pszMessage);
+        }
+        IOCTL_LOG_EXIT(arg);
+    }
+    else
+#endif
+    if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_VMMREQUEST(0))
+             == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
+    {
+        VMMDevRequestHeader reqHeader;
+        VMMDevRequestHeader *reqFull = NULL;
+        size_t cbRequestSize;
+        size_t cbVanillaRequestSize;
+
+        IOCTL_VMM_ENTRY(arg);
+        if (copy_from_user(&reqHeader, (void*)arg, sizeof(reqHeader)))
+        {
+            LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: copy_from_user failed for vmm request!\n"));
+            rc = -EFAULT;
+        }
+        if (0 == rc)
+        {
+            /* get the request size */
+            cbVanillaRequestSize = vmmdevGetRequestSize(reqHeader.requestType);
+            if (!cbVanillaRequestSize)
+            {
+                LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: invalid request type: %d\n",
+                        reqHeader.requestType));
+                rc = -EINVAL;
+            }
+        }
+        if (0 == rc)
+        {
+            cbRequestSize = reqHeader.size;
+            if (cbRequestSize < cbVanillaRequestSize)
+            {
+                LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: invalid request size: %d min: %d type: %d\n",
+                        cbRequestSize,
+                        cbVanillaRequestSize,
+                        reqHeader.requestType));
+                rc = -EINVAL;
+            }
+        }
+        if (0 == rc)
+        {
+            /* request storage for the full request */
+            rc = VbglGRAlloc(&reqFull, cbRequestSize, reqHeader.requestType);
+            if (RT_FAILURE(rc))
+            {
+                LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: could not allocate request structure! rc = %d\n", rc));
+                rc = -EFAULT;
+            }
+        }
+        if (0 == rc)
+        {
+            /* now get the full request */
+            if (copy_from_user(reqFull, (void*)arg, cbRequestSize))
+            {
+                LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: failed to fetch full request from user space!\n"));
+                rc = -EFAULT;
+            }
+        }
+
+        /* now issue the request */
+        if (0 == rc)
+        {
+            int rrc = VbglGRPerform(reqFull);
+
+            /* asynchronous processing? */
+            if (rrc == VINF_HGCM_ASYNC_EXECUTE)
+            {
+                VMMDevHGCMRequestHeader *reqHGCM = (VMMDevHGCMRequestHeader*)reqFull;
+                wait_event_interruptible (vboxDev->eventq, reqHGCM->fu32Flags & VBOX_HGCM_REQ_DONE);
+                rrc = reqFull->rc;
+            }
+
+            /* failed? */
+            if (RT_FAILURE(rrc) || RT_FAILURE(reqFull->rc))
+            {
+                LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: request execution failed!\n"));
+                rc = RT_FAILURE(rrc) ? -RTErrConvertToErrno(rrc)
+                                       : -RTErrConvertToErrno(reqFull->rc);
+            }
+            else
+            {
+                /* success, copy the result data to user space */
+                if (copy_to_user((void*)arg, (void*)reqFull, cbRequestSize))
+                {
+                    LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: error copying request result to user space!\n"));
+                    rc = -EFAULT;
+                }
+            }
+        }
+        if (NULL != reqFull)
+            VbglGRFree(reqFull);
+        IOCTL_VMM_EXIT(arg);
+    }
+    else if (    VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0))
          == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
     {
         /* Do the HGCM call using the Vbgl bits */
@@ -965,6 +1094,16 @@ static int vboxuser_ioctl(struct inode *inode, struct file *filp,
     {
         switch (cmd)
         {
+            case VBOXGUEST_IOCTL_WAITEVENT:
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_WAITEVENT", arg);
+                rc = vboxadd_wait_event((void *) arg);
+                IOCTL_EXIT("VBOXGUEST_IOCTL_WAITEVENT", arg);
+                break;
+            case VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS:
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS", arg);
+                ++vboxDev->u32GuestInterruptions;
+                IOCTL_EXIT("VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS", arg);
+                break;
             case VBOXGUEST_IOCTL_HGCM_CONNECT:
                 IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CONNECT", arg);
                 rc = vboxadd_hgcm_connect(filp, arg);
@@ -975,6 +1114,20 @@ static int vboxuser_ioctl(struct inode *inode, struct file *filp,
                 vboxadd_hgcm_disconnect(filp, arg);
                 IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_DISCONNECT", arg);
                 break;
+            case VBOXGUEST_IOCTL_CTL_FILTER_MASK:
+            {
+                VBoxGuestFilterMaskInfo info;
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_CTL_FILTER_MASK", arg);
+                if (copy_from_user((void*)&info, (void*)arg, sizeof(info)))
+                {
+                    LogRelFunc(("VBOXGUEST_IOCTL_CTL_FILTER_MASK: error getting parameters from user space!\n"));
+                    rc = -EFAULT;
+                    break;
+                }
+                rc = -RTErrConvertToErrno(vboxadd_control_filter_mask(&info));
+                IOCTL_EXIT("VBOXGUEST_IOCTL_CTL_FILTER_MASK", arg);
+                break;
+            }
             default:
                 LogRelFunc(("unknown command: %x\n", cmd));
                 rc = -EINVAL;
