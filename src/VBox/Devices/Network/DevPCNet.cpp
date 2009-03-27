@@ -3757,6 +3757,8 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
         PDMCritSectLeave(&pThis->CritSect);
         STAM_PROFILE_ADV_STOP(&pThis->StatTimer, a);
     }
+    else
+        pcnetPollTimerStart(pThis);
 }
 
 
