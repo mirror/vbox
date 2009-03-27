@@ -1809,6 +1809,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
 #if defined(RT_OS_WINDOWS)
+# ifndef VBOX_WITH_NETFLT
+                hrc = E_NOTIMPL;
+                LogRel(("NetworkAttachmentType_HostOnly: Not Implemented"));
+                H();
+# else
                 Bstr HifName;
                 hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
                 if(FAILED(hrc))
@@ -1942,6 +1947,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 networkName = Bstr(szNetwork);
                 trunkName   = Bstr(pszTrunk);
                 trunkType   = TRUNKTYPE_NETADP;
+# endif /* definedd VBOX_WITH_NETFLT*/
 #elif defined(RT_OS_DARWIN)
                 rc = CFGMR3InsertString(pCfg, "Trunk", "vboxnet0");             RC_CHECK();
                 rc = CFGMR3InsertString(pCfg, "Network", "HostInterfaceNetworking-vboxnet0"); RC_CHECK();
