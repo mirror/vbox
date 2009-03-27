@@ -188,21 +188,21 @@ void VBoxVMSettingsNetwork::updateAttachmentInfo()
         {
             QString name (mDetails->currentName (type));
             info += line.arg (tr ("Adapter", "network"))
-                        .arg (name.isEmpty() ? tr ("not selected", "adapter") : name);
+                        .arg (name.isEmpty() ? tr ("Not selected", "adapter") : name);
             break;
         }
         case KNetworkAttachmentType_Internal:
         {
             QString name (mDetails->currentName (type));
             info += line.arg (tr ("Network", "internal"))
-                        .arg (name.isEmpty() ? tr ("not selected", "network") : name);
+                        .arg (name.isEmpty() ? tr ("Not selected", "network") : name);
             break;
         }
         case KNetworkAttachmentType_HostOnly:
         {
             QString name (mDetails->currentName (type));
             info += line.arg (tr ("Interface", "network"))
-                        .arg (name.isEmpty() ? tr ("not selected", "interface") : name);
+                        .arg (name.isEmpty() ? tr ("Not selected", "interface") : name);
             break;
         }
         default:
@@ -213,10 +213,10 @@ void VBoxVMSettingsNetwork::updateAttachmentInfo()
     /* Append common information */
     QString macAddress (mDetails->property ("MAC_Address").toString());
     info += line.arg (tr ("MAC Address"))
-                .arg (macAddress.isEmpty() ? tr ("not selected", "address") : macAddress);
+                .arg (macAddress.isEmpty() ? tr ("Not selected", "address") : macAddress);
     bool cableConnected (mDetails->property ("Cable_Connected").toBool());
     info += line.arg (tr ("Cable"))
-                .arg (cableConnected ? tr ("connected", "cable") : tr ("not connected", "cable"));
+                .arg (cableConnected ? tr ("Connected", "cable") : tr ("Not connected", "cable"));
 #endif
 
     /* Finally set full label text */

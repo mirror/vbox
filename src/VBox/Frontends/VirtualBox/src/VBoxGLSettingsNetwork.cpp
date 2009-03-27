@@ -125,14 +125,14 @@ bool NetworkItem::revalidate (QString &aWarning, QString & /* aTitle */)
             (QHostAddress (mInterfaceAddress) == QHostAddress::Any ||
              QHostAddress (mInterfaceAddress).protocol() != QAbstractSocket::IPv4Protocol))
         {
-            aWarning = QTreeWidget::tr ("host IPv4 address of <b>%1</b> is wrong").arg (text (0));
+            aWarning = VBoxGLSettingsNetwork::tr ("host IPv4 address of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
         if (!mInterfaceMask.isEmpty() &&
             (QHostAddress (mInterfaceMask) == QHostAddress::Any ||
              QHostAddress (mInterfaceMask).protocol() != QAbstractSocket::IPv4Protocol))
         {
-            aWarning = QTreeWidget::tr ("host IPv4 network mask of <b>%1</b> is wrong").arg (text (0));
+            aWarning = VBoxGLSettingsNetwork::tr ("host IPv4 network mask of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
         if (mIpv6Supported)
@@ -141,7 +141,7 @@ bool NetworkItem::revalidate (QString &aWarning, QString & /* aTitle */)
                 (QHostAddress (mInterfaceAddress6) == QHostAddress::AnyIPv6 ||
                  QHostAddress (mInterfaceAddress6).protocol() != QAbstractSocket::IPv6Protocol))
             {
-                aWarning = QTreeWidget::tr ("host IPv6 address of <b>%1</b> is wrong").arg (text (0));
+                aWarning = VBoxGLSettingsNetwork::tr ("host IPv6 address of <b>%1</b> is wrong").arg (text (0));
                 return false;
             }
         }
@@ -153,25 +153,25 @@ bool NetworkItem::revalidate (QString &aWarning, QString & /* aTitle */)
         if (QHostAddress (mDhcpServerAddress) == QHostAddress::Any ||
             QHostAddress (mDhcpServerAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            aWarning = QTreeWidget::tr ("DHCP server address of <b>%1</b> is wrong").arg (text (0));
+            aWarning = VBoxGLSettingsNetwork::tr ("DHCP server address of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
         if (QHostAddress (mDhcpServerMask) == QHostAddress::Any ||
             QHostAddress (mDhcpServerMask).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            aWarning = QTreeWidget::tr ("DHCP server mask of <b>%1</b> is wrong").arg (text (0));
+            aWarning = VBoxGLSettingsNetwork::tr ("DHCP server mask of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
         if (QHostAddress (mDhcpLowerAddress) == QHostAddress::Any ||
             QHostAddress (mDhcpLowerAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            aWarning = QTreeWidget::tr ("DHCP lower address bound of <b>%1</b> is wrong").arg (text (0));
+            aWarning = VBoxGLSettingsNetwork::tr ("DHCP lower address bound of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
         if (QHostAddress (mDhcpUpperAddress) == QHostAddress::Any ||
             QHostAddress (mDhcpUpperAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            aWarning = QTreeWidget::tr ("DHCP upper address bound of <b>%1</b> is wrong").arg (text (0));
+            aWarning = VBoxGLSettingsNetwork::tr ("DHCP upper address bound of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
     }
@@ -188,54 +188,54 @@ QString NetworkItem::updateInfo()
     QString data, tip, buffer;
 
     /* Host-only Interface information */
-    buffer = hdr.arg (QTreeWidget::tr ("Host Interface"))
-                .arg (mDhcpClientEnabled ? QTreeWidget::tr ("Automatically configured", "interface")
-                                         : QTreeWidget::tr ("Manually configured", "interface"));
+    buffer = hdr.arg (VBoxGLSettingsNetwork::tr ("Host Interface"))
+                .arg (mDhcpClientEnabled ? VBoxGLSettingsNetwork::tr ("Automatically configured", "interface")
+                                         : VBoxGLSettingsNetwork::tr ("Manually configured", "interface"));
     data += buffer;
     tip += buffer;
 
     if (!mDhcpClientEnabled)
     {
-        buffer = sub.arg (QTreeWidget::tr ("IPv4 Address"))
-                    .arg (mInterfaceAddress.isEmpty() ? QTreeWidget::tr ("Not set", "address")
+        buffer = sub.arg (VBoxGLSettingsNetwork::tr ("IPv4 Address"))
+                    .arg (mInterfaceAddress.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "address")
                                                       : mInterfaceAddress) +
-                 sub.arg (QTreeWidget::tr ("IPv4 Mask"))
-                    .arg (mInterfaceMask.isEmpty() ? QTreeWidget::tr ("Not set", "mask")
+                 sub.arg (VBoxGLSettingsNetwork::tr ("IPv4 Mask"))
+                    .arg (mInterfaceMask.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "mask")
                                                    : mInterfaceMask);
         tip += buffer;
 
         if (mIpv6Supported)
         {
-            buffer = sub.arg (QTreeWidget::tr ("IPv6 Address"))
-                        .arg (mInterfaceAddress6.isEmpty() ? QTreeWidget::tr ("Not set", "address")
+            buffer = sub.arg (VBoxGLSettingsNetwork::tr ("IPv6 Address"))
+                        .arg (mInterfaceAddress6.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "address")
                                                            : mInterfaceAddress6) +
-                     sub.arg (QTreeWidget::tr ("IPv6 Mask Length"))
-                        .arg (mInterfaceMaskLength6.isEmpty() ? QTreeWidget::tr ("Not set", "length")
+                     sub.arg (VBoxGLSettingsNetwork::tr ("IPv6 Mask Length"))
+                        .arg (mInterfaceMaskLength6.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "length")
                                                               : mInterfaceMaskLength6);
             tip += buffer;
         }
     }
 
     /* DHCP Server information */
-    buffer = hdr.arg (QTreeWidget::tr ("DHCP Server"))
-                .arg (mDhcpServerEnabled ? QTreeWidget::tr ("Enabled", "server")
-                                         : QTreeWidget::tr ("Disabled", "server"));
+    buffer = hdr.arg (VBoxGLSettingsNetwork::tr ("DHCP Server"))
+                .arg (mDhcpServerEnabled ? VBoxGLSettingsNetwork::tr ("Enabled", "server")
+                                         : VBoxGLSettingsNetwork::tr ("Disabled", "server"));
     data += buffer;
     tip += buffer;
 
     if (mDhcpServerEnabled)
     {
-        buffer = sub.arg (QTreeWidget::tr ("Address"))
-                    .arg (mDhcpServerAddress.isEmpty() ? QTreeWidget::tr ("Not set", "address")
+        buffer = sub.arg (VBoxGLSettingsNetwork::tr ("Address"))
+                    .arg (mDhcpServerAddress.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "address")
                                                        : mDhcpServerAddress) +
-                 sub.arg (QTreeWidget::tr ("Mask"))
-                    .arg (mDhcpServerMask.isEmpty() ? QTreeWidget::tr ("Not set", "mask")
+                 sub.arg (VBoxGLSettingsNetwork::tr ("Mask"))
+                    .arg (mDhcpServerMask.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "mask")
                                                     : mDhcpServerMask) +
-                 sub.arg (QTreeWidget::tr ("Lower Bound"))
-                    .arg (mDhcpLowerAddress.isEmpty() ? QTreeWidget::tr ("Not set", "bound")
+                 sub.arg (VBoxGLSettingsNetwork::tr ("Lower Bound"))
+                    .arg (mDhcpLowerAddress.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "bound")
                                                       : mDhcpLowerAddress) +
-                 sub.arg (QTreeWidget::tr ("Upper Bound"))
-                    .arg (mDhcpUpperAddress.isEmpty() ? QTreeWidget::tr ("Not set", "bound")
+                 sub.arg (VBoxGLSettingsNetwork::tr ("Upper Bound"))
+                    .arg (mDhcpUpperAddress.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "bound")
                                                       : mDhcpUpperAddress);
         tip += buffer;
     }
