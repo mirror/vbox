@@ -73,7 +73,7 @@ void VBoxImportLicenseViewer::setContent (const QString &aName, const QString &a
 {
     mName = aName;
     mText = aText;
-    mCaption->setText (tr ("<b>To continue importing the Appliance you must agree to the terms of the software license agreement for the Virtual System \"%1\".</b><br /><br />Click <b>Agree</b> to continue or click <b>Disagree</b> to cancel the import.").arg (mName));
+    mCaption->setText (tr ("<b>The virtual system \"%1\" requires that you agree to the terms and conditions of the software license agreement shown below.</b><br /><br />Click <b>Agree</b> to continue or click <b>Disagree</b> to cancel the import.").arg (mName));
     mLicenseText->setText (mText);
 
 }
