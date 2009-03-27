@@ -156,6 +156,17 @@ void VBoxExportApplianceWzd::accept()
      * overwriting from the user. */
     if (!vboxProblem().askForOverridingFilesIfExists (files, this))
         return;
+    /* Ok all is confirmed so delete all the files which exists */
+    foreach (const QString &file, files)
+    {
+        QFile f (file);
+        if (f.exists())
+            if (!f.remove())
+            {
+                vboxProblem().cannotDeleteFile (file, this);
+                return;
+            }
+    }
     /* Export the VMs, on success we are finished */
     if (exportVMs(*appliance))
         QIAbstractWizard::accept();
