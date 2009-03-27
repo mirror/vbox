@@ -232,8 +232,7 @@ static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u
         /* This can legitimately happen if we disconnect during a request for
          * data from X11. */
         LogFunc(("host requested guest clipboard data after guest had disconnected.\n"));
-        /** @todo call vboxClipboardFormatAnnounce to do this. */
-        g_ctxX11.vboxFormats = 0;  
+        vboxClipboardFormatAnnounce(NULL, 0);
         pCtx->waiter = NONE;
         return VERR_TIMEOUT;
     }
@@ -275,8 +274,7 @@ static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u
         g_ctxHost.pClient->data.pv = 0;
         g_ctxHost.pClient->data.cb = 0;
         g_ctxHost.pClient->data.u32Format = 0;
-        /** @todo call vboxClipboardFormatAnnounce to do this. */
-        g_ctxX11.vboxFormats = 0;
+        vboxClipboardFormatAnnounce(NULL, 0);
         return rc;
     }
     if (pClient->data.pv == NULL)
