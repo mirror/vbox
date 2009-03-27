@@ -166,7 +166,18 @@ static int crVBoxHGCMCall(void *pvData, unsigned cbData)
     crDebug("vboxCall failed with %x\n", GetLastError());
     return VERR_NOT_SUPPORTED;
 #else
+# ifdef RT_OS_SOLARIS
+    VBGLBIGREQ Hdr;
+    Hdr.u32Magic = VBGLBIGREQ_MAGIC;
+    Hdr.cbData = cbData;
+    Hdr.pvDataR3 = pvData;
+#  if HC_ARCH_BITS == 32
+    Hdr.u32Padding = 0;
+#  endif
+    if (ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CALL(cbData), &Hdr) >= 0)
+# else
     if (ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CALL(cbData), pvData) >= 0)
+# endif
     {
         return VINF_SUCCESS;
     }
@@ -710,6 +721,15 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
                         &info, sizeof (info),
                         &cbReturned,
                         NULL))
+#elif defined(RT_OS_SOLARIS)
+    VBGLBIGREQ Hdr;
+    Hdr.u32Magic = VBGLBIGREQ_MAGIC;
+    Hdr.cbData = sizeof(info);
+    Hdr.pvDataR3 = &info;
+# if HC_ARCH_BITS == 32
+    Hdr.u32Padding = 0;
+# endif
+    if (ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CONNECT, &Hdr) >= 0)
 #else
     /*@todo it'd fail */
     if (ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CONNECT, &info, sizeof (info)) >= 0)
@@ -797,6 +817,15 @@ static void crVBoxHGCMDoDisconnect( CRConnection *conn )
         {
             crDebug("Disconnect failed with %x\n", GetLastError());
         }
+#elif defined(RT_OS_SOLARIS)
+        VBGLBIGREQ Hdr;
+        Hdr.u32Magic = VBGLBIGREQ_MAGIC;
+        Hdr.cbData = sizeof(info);
+        Hdr.pvDataR3 = &info;
+# if HC_ARCH_BITS == 32
+        Hdr.u32Padding = 0;
+# endif
+        if (ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Hdr) >= 0)
 #else
         if (ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &info, sizeof (info)) < 0)
         {
