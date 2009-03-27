@@ -1,5 +1,5 @@
 /** @file
- * IPRT - Test.
+ * IPRT - Testcase Framework.
  */
 
 /*
@@ -34,6 +34,13 @@
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
 
+__BEGIN_DECLS
+
+/** @defgroup grp_rt_test       RTTest - Testcase Framework.
+ * @ingroup grp_rt
+ * @{
+ */
+
 /** A test handle. */
 typedef struct RTTESTINT *RTTEST;
 /** A pointer to a test handle. */
@@ -43,9 +50,6 @@ typedef RTTEST const *PCRTTEST;
 
 /** A NIL Test handle. */
 #define NIL_RTTEST  ((RTTEST)0)
-
-
-__BEGIN_DECLS
 
 
 /**
@@ -202,6 +206,21 @@ RTR3DECL(int) RTTestFailedV(RTTEST hTest, const char *pszFormat, va_list va);
  * @param   ...         The arguments.
  */
 RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...);
+
+
+/** @def RTTEST_CHECK
+ * Check whether a boolean expression holds true.
+ *
+ * If the expression is false, call RTTestFailed giving the line number and expression.
+ *
+ * @param   hTest       The test handle.
+ * @param   expr        The expression to evaluate.
+ */
+#define RTTEST_CHECK(hTest, expr) \
+    do { if (!(expr)) { RTTestFailed((hTest), "line %u: %s", __LINE__, #expr); } } while (0)
+
+
+/** @}  */
 
 __END_DECLS
 
