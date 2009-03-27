@@ -46,6 +46,7 @@ public:
     void setChanged (bool aChanged) { mChanged = aChanged; }
 
     /* Page getters */
+    QString name() const { return mName; }
     bool isDhcpClientEnabled() const { return mDhcpClientEnabled; }
     QString interfaceAddress() const { return mInterfaceAddress; }
     QString interfaceMask() const { return mInterfaceMask; }
@@ -80,6 +81,7 @@ private:
     bool mChanged;
 
     /* Host-only Interface */
+    QString mName;
     bool mDhcpClientEnabled;
     QString mInterfaceAddress;
     QString mInterfaceMask;

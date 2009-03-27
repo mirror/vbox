@@ -33,6 +33,7 @@
 NetworkItem::NetworkItem()
     : QTreeWidgetItem()
     , mChanged (false)
+    , mName (QString::null)
     , mDhcpClientEnabled (false)
     , mInterfaceAddress (QString::null)
     , mInterfaceMask (QString::null)
@@ -51,11 +52,12 @@ void NetworkItem::getFromInterface (const CHostNetworkInterface &aInterface)
 {
     /* Initialization */
     mInterface = aInterface;
+    mName = mInterface.GetName();
     CDHCPServer dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName (mInterface.GetNetworkName());
     if (dhcp.isNull()) vboxGlobal().virtualBox().CreateDHCPServer (mInterface.GetNetworkName());
     dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName (mInterface.GetNetworkName());
     AssertMsg (!dhcp.isNull(), ("DHCP Server creation failed!\n"));
-    setText (0, mInterface.GetName());
+    setText (0, VBoxGLSettingsNetwork::tr ("%1 network", "<adapter name> network").arg (mName));
 
     /* Host-only Interface settings */
     mDhcpClientEnabled = mInterface.GetDhcpEnabled();
@@ -159,7 +161,7 @@ bool NetworkItem::revalidate (QString &aWarning, QString & /* aTitle */)
         if (QHostAddress (mDhcpServerMask) == QHostAddress::Any ||
             QHostAddress (mDhcpServerMask).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            aWarning = VBoxGLSettingsNetwork::tr ("DHCP server mask of <b>%1</b> is wrong").arg (text (0));
+            aWarning = VBoxGLSettingsNetwork::tr ("DHCP server network mask of <b>%1</b> is wrong").arg (text (0));
             return false;
         }
         if (QHostAddress (mDhcpLowerAddress) == QHostAddress::Any ||
@@ -188,7 +190,7 @@ QString NetworkItem::updateInfo()
     QString data, tip, buffer;
 
     /* Host-only Interface information */
-    buffer = hdr.arg (VBoxGLSettingsNetwork::tr ("Host Interface"))
+    buffer = hdr.arg (VBoxGLSettingsNetwork::tr ("Adapter"))
                 .arg (mDhcpClientEnabled ? VBoxGLSettingsNetwork::tr ("Automatically configured", "interface")
                                          : VBoxGLSettingsNetwork::tr ("Manually configured", "interface"));
     data += buffer;
@@ -199,7 +201,7 @@ QString NetworkItem::updateInfo()
         buffer = sub.arg (VBoxGLSettingsNetwork::tr ("IPv4 Address"))
                     .arg (mInterfaceAddress.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "address")
                                                       : mInterfaceAddress) +
-                 sub.arg (VBoxGLSettingsNetwork::tr ("IPv4 Mask"))
+                 sub.arg (VBoxGLSettingsNetwork::tr ("IPv4 Network Mask"))
                     .arg (mInterfaceMask.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "mask")
                                                    : mInterfaceMask);
         tip += buffer;
@@ -209,7 +211,7 @@ QString NetworkItem::updateInfo()
             buffer = sub.arg (VBoxGLSettingsNetwork::tr ("IPv6 Address"))
                         .arg (mInterfaceAddress6.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "address")
                                                            : mInterfaceAddress6) +
-                     sub.arg (VBoxGLSettingsNetwork::tr ("IPv6 Mask Length"))
+                     sub.arg (VBoxGLSettingsNetwork::tr ("IPv6 Network Mask Length"))
                         .arg (mInterfaceMaskLength6.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "length")
                                                               : mInterfaceMaskLength6);
             tip += buffer;
@@ -228,7 +230,7 @@ QString NetworkItem::updateInfo()
         buffer = sub.arg (VBoxGLSettingsNetwork::tr ("Address"))
                     .arg (mDhcpServerAddress.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "address")
                                                        : mDhcpServerAddress) +
-                 sub.arg (VBoxGLSettingsNetwork::tr ("Mask"))
+                 sub.arg (VBoxGLSettingsNetwork::tr ("Network Mask"))
                     .arg (mDhcpServerMask.isEmpty() ? VBoxGLSettingsNetwork::tr ("Not set", "mask")
                                                     : mDhcpServerMask) +
                  sub.arg (VBoxGLSettingsNetwork::tr ("Lower Bound"))
@@ -427,7 +429,7 @@ void VBoxGLSettingsNetwork::remInterface()
     /* Check interface presence & name */
     NetworkItem *item = static_cast <NetworkItem*> (mTwInterfaces->currentItem());
     AssertMsg (item, ("Current item should be selected!\n"));
-    QString name (item->text (0));
+    QString name (item->name());
 
     /* Asking user about deleting selected network interface */
     if (vboxProblem().confirmDeletingHostInterface (name, this) ==

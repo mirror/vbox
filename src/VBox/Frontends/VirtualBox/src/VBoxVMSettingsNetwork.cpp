@@ -201,8 +201,8 @@ void VBoxVMSettingsNetwork::updateAttachmentInfo()
         case KNetworkAttachmentType_HostOnly:
         {
             QString name (mDetails->currentName (type));
-            info += line.arg (tr ("Interface", "network"))
-                        .arg (name.isEmpty() ? tr ("Not selected", "interface") : name);
+            info += line.arg (tr ("Adapter", "network"))
+                        .arg (name.isEmpty() ? tr ("Not selected", "adapter") : name);
             break;
         }
         default:
