@@ -43,26 +43,26 @@
      </property>
      <widget class="QWidget" name="mTabInterface" >
       <attribute name="title" >
-       <string>Host-only &amp;Interface</string>
+       <string>&amp;Adapter</string>
       </attribute>
       <layout class="QGridLayout" >
        <item row="0" column="0" colspan="3" >
         <widget class="QCheckBox" name="mCbManual" >
          <property name="text" >
-          <string>&amp;Manual Configuration</string>
+          <string>Manual &amp;Configuration</string>
          </property>
          <property name="checked" >
           <bool>true</bool>
          </property>
          <property name="toolTip" >
-          <string>Use manual configuration for this host-only network interface.</string>
+          <string>Use manual configuration for this host-only network adapter.</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1" >
         <widget class="QLabel" name="mLbIPv4" >
          <property name="text" >
-          <string>IPv4 &amp;Address:</string>
+          <string>&amp;IPv4 Address:</string>
          </property>
          <property name="alignment" >
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -81,14 +81,14 @@
           </sizepolicy>
          </property>
          <property name="toolTip" >
-          <string>Displays the host IPv4 address for this interface.</string>
+          <string>Displays the host IPv4 address for this adapter.</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1" >
         <widget class="QLabel" name="mLbNMv4" >
          <property name="text" >
-          <string>IPv4 Network Ma&amp;sk:</string>
+          <string>IPv4 Network &amp;Mask:</string>
          </property>
          <property name="alignment" >
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -107,14 +107,14 @@
           </sizepolicy>
          </property>
          <property name="toolTip" >
-          <string>Displays the host IPv4 network mask for this interface.</string>
+          <string>Displays the host IPv4 network mask for this adapter.</string>
          </property>
         </widget>
        </item>
        <item row="3" column="1" >
         <widget class="QLabel" name="mLbIPv6" >
          <property name="text" >
-          <string>IPv6 Add&amp;ress:</string>
+          <string>I&amp;Pv6 Address:</string>
          </property>
          <property name="alignment" >
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -133,14 +133,14 @@
           </sizepolicy>
          </property>
          <property name="toolTip" >
-          <string>Displays the host IPv6 address for this interface if IPv6 protocol is supported.</string>
+          <string>Displays the host IPv6 address for this adapter if IPv6 is supported.</string>
          </property>
         </widget>
        </item>
        <item row="4" column="1" >
         <widget class="QLabel" name="mLbNMv6" >
          <property name="text" >
-          <string>IPv6 Network Mask L&amp;ength:</string>
+          <string>IPv6 Network Mask &amp;Length:</string>
          </property>
          <property name="alignment" >
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -159,7 +159,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip" >
-          <string>Displays the host IPv6 network mask prefix length for this interface if IPv6 protocol is supported.</string>
+          <string>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</string>
          </property>
         </widget>
        </item>
@@ -196,7 +196,7 @@
        <item row="1" column="1" >
         <widget class="QLabel" name="mLbDhcpAddress" >
          <property name="text" >
-          <string>Server &amp;Address:</string>
+          <string>Server Add&amp;ress:</string>
          </property>
          <property name="alignment" >
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -215,7 +215,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip" >
-          <string>Displays the address of DHCP server for internal network based on this host-only interface.</string>
+          <string>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</string>
          </property>
         </widget>
        </item>
@@ -241,7 +241,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip" >
-          <string>Displays the network mask of DHCP server for internal network based on this host-only interface.</string>
+          <string>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</string>
          </property>
         </widget>
        </item>
@@ -267,7 +267,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip" >
-          <string>Displays the lower address presented by DHCP server for internal network based on this host-only interface.</string>
+          <string>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</string>
          </property>
         </widget>
        </item>
@@ -293,7 +293,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip" >
-          <string>Displays the upper address presented by DHCP server for internal network based on this host-only interface.</string>
+          <string>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</string>
          </property>
         </widget>
        </item>

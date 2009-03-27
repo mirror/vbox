@@ -47,7 +47,7 @@
    <item row="0" column="1" colspan="3">
     <widget class="QLabel" name="mLbPageName">
      <property name="text">
-      <string>&amp;Host-only Networks List:</string>
+      <string>&amp;Host-only Networks:</string>
      </property>
      <property name="buddy">
       <cstring>mTwInterfaces</cstring>

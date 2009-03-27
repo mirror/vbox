@@ -166,7 +166,7 @@ bool VBoxVMSettingsNetworkDetails::revalidate (KNetworkAttachmentType aType, QSt
         case KNetworkAttachmentType_HostOnly:
             if (currentName (aType).isNull())
             {
-                aWarning = tr ("no host-only interface is selected");
+                aWarning = tr ("no host-only adapter is selected");
                 return false;
             }
             break;

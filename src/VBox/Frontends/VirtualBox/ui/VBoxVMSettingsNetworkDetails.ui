@@ -98,7 +98,7 @@
    <item row="3" column="1" >
     <widget class="QLabel" name="mLbHOI" >
      <property name="text" >
-      <string>Host-only &amp;Network Interface:</string>
+      <string>Host-only &amp;Network Adapter:</string>
      </property>
      <property name="alignment" >
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -117,7 +117,7 @@
       </sizepolicy>
      </property>
      <property name="toolTip" >
-      <string>Displays the name of the VirtualBox network interface selected for host-only networking.</string>
+      <string>Displays the name of the VirtualBox network adapter selected for host-only networking.</string>
      </property>
     </widget>
    </item>
