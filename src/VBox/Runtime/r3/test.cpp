@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Test Support
+ * IPRT - Testcase Framework.
  */
 
 /*
