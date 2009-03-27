@@ -1293,11 +1293,11 @@ void VBoxSelectorWnd::retranslateUi()
     mFileMediaMgrAction->setStatusTip (tr ("Display the Virtual Media Manager dialog"));
 
     mFileApplianceImportAction->setText (tr ("&Import Appliance..."));
-    mFileApplianceImportAction->setShortcut (QKeySequence ("Ctrl+K"));
+    mFileApplianceImportAction->setShortcut (QKeySequence ("Ctrl+I"));
     mFileApplianceImportAction->setStatusTip (tr ("Import an appliance into VirtualBox"));
 
     mFileApplianceExportAction->setText (tr ("&Export Appliance..."));
-    mFileApplianceExportAction->setShortcut (QKeySequence ("Ctrl+J"));
+    mFileApplianceExportAction->setShortcut (QKeySequence ("Ctrl+E"));
     mFileApplianceExportAction->setStatusTip (tr ("Export an appliance out of VM's from VirtualBox"));
 
 #ifdef Q_WS_MAC
