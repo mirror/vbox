@@ -567,7 +567,7 @@ HRESULT HostNetworkInterface::setVirtualBox(VirtualBox *pVBox)
         {
             hrc = mVBox->GetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPV6PrefixLen", mInterfaceName.raw())), tmpPrefixLen.asOutParam());
             if (SUCCEEDED(hrc) && !tmpPrefixLen.isEmpty())
-                m.IPV6NetworkMaskPrefixLength = atol(Utf8Str(tmpPrefixLen).raw());
+                m.IPV6NetworkMaskPrefixLength = Utf8Str(tmpPrefixLen).toUInt32();
             else
                 m.IPV6NetworkMaskPrefixLength = 64;
         }
