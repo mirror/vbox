@@ -125,9 +125,7 @@ public:
                                   IProgress **aProgress);
     STDMETHOD(MergeTo) (IN_GUID aTargetId, IProgress **aProgress);
     STDMETHOD(CloneTo) (IHardDisk *aTarget, HardDiskVariant_T aVariant,
-                        IProgress **aProgress);
-    STDMETHOD(FlattenTo) (IHardDisk *aTarget, HardDiskVariant_T aVariant,
-                          IProgress **aProgress);
+                        IHardDisk *aParent, IProgress **aProgress);
     STDMETHOD(Compact) (IProgress **aProgress);
     STDMETHOD(Reset) (IProgress **aProgress);
 

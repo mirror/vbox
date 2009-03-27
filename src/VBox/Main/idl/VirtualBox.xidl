@@ -8800,7 +8800,7 @@
 
   <interface
     name="IHardDisk" extends="IMedium"
-    uuid="3498d065-dee6-48bf-bcc5-47018fee4f42"
+    uuid="91648dc6-bb19-46bf-9e1c-4bf5b960c8e2"
     wsmap="managed"
   >
     <desc>
@@ -9534,7 +9534,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <!-- clone methods -->
+    <!-- clone method -->
 
     <method name="cloneTo">
       <desc>
@@ -9544,17 +9544,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The target hard disk must be in <link to="MediaState_NotCreated"/>
         state (i.e. must not have an existing storage unit). Upon successful
         completion, the cloned hard disk will contain exactly the same sector
-        data as the hard disk being cloned, except that a new UUID for the clone
-        will be randomly generated.
+        data as the hard disk being cloned, except that a new UUID for the
+        clone will be randomly generated.
+
+        The @a parent argument defines which hard disk will be the parent
+        of the clone. Passing a NULL reference indicates that the clone will
+        be a base image, i.e. completely independent. It is possible to specify
+        an arbitrary hard disk for this parameter, including the parent of the
+        hard disk which is being cloned. Even cloning to a child of the source
+        hard disk is possible.
 
         After the returned progress object reports that the operation is
         successfully complete, the target hard disk gets remembered by this
         VirtualBox installation and may be attached to virtual machines.
 
-        <note>
-          If the cloned hard disk is a differencing hard disk, it will inherit
-          parent dependency of the original hard disk.
-        </note>
         <note>
           This hard disk will be placed to <link to="MediaState_LockedRead"/>
           state for the duration of this operation.
@@ -9566,41 +9569,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="variant" type="HardDiskVariant" dir="in">
         <desc>Exact image variant which should be created.</desc>
       </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
-    <method name="flattenTo">
-      <desc>
-        Starts creating a deep (independent) clone of this hard disk in the
-        format and at the location defined by the @a target argument.
-
-        This operation is similar to <link to="#cloneTo"/> except that when
-        applied to a differencing hard disk, it will also copy missing hard disk
-        data from all parent hard disks it is linked to. This will make the
-        created clone an independent base hard disk that contains all hard disk
-        data and does not need any other hard disks to operate.
-
-        After the returned progress object reports that the operation is
-        successfully complete, the target hard disk gets remembered by this
-        VirtualBox installation and may be attached to virtual machines.
-
-        <note>
-          For base hard disks, this operation is identical to
-          <link to="#cloneTo"/>.
-        </note>
-        <note>
-          This hard disk and all its parent hard disks will be placed to <link
-          to="MediaState_LockedRead"/> state for the duration of this
-          operation.
-        </note>
-      </desc>
-      <param name="target" type="IHardDisk" dir="in">
-        <desc>Target hard disk.</desc>
-      </param>
-      <param name="variant" type="HardDiskVariant" dir="in">
-        <desc>Exact image variant which should be created.</desc>
+      <param name="parent" type="IHardDisk" dir="in">
+        <desc>Parent of the cloned hard disk.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
