@@ -241,6 +241,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxFilePathSelectorWidget.h \
 	include/VBoxOSTypeSelectorButton.h \
 	include/VBoxOSTypeSelectorWidget.h \
+	include/VBoxLineTextEdit.h \
 	include/VBoxUtils.h \
 	include/VBoxGlobalSettings.h \
 	include/VBoxGlobal.h \
@@ -290,8 +291,10 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxSettingsDialogSpecific.h \
 	include/VBoxSettingsPage.h \
 	include/VBoxSettingsSelector.h \
+	include/VBoxApplianceEditorWgt.h \
 	include/VBoxImportApplianceWgt.h \
 	include/VBoxImportApplianceWzd.h \
+	include/VBoxExportApplianceWgt.h \
 	include/VBoxExportApplianceWzd.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
@@ -326,6 +329,7 @@ VirtualBox_SOURCES = \
 	src/VBoxFilePathSelectorWidget.cpp \
 	src/VBoxOSTypeSelectorButton.cpp \
 	src/VBoxOSTypeSelectorWidget.cpp \
+	src/VBoxLineTextEdit.cpp \
 	src/VBoxDefs.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxGlobal.cpp \
@@ -376,8 +380,10 @@ VirtualBox_SOURCES = \
 	src/VBoxSettingsSelector.cpp \
 	src/VBoxMediaManagerDlg.cpp \
 	src/VBoxMedium.cpp \
+	src/VBoxApplianceEditorWgt.cpp \
 	src/VBoxImportApplianceWgt.cpp \
 	src/VBoxImportApplianceWzd.cpp \
+	src/VBoxExportApplianceWgt.cpp \
 	src/VBoxExportApplianceWzd.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11

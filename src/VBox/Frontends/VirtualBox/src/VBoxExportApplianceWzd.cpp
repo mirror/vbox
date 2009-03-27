@@ -81,6 +81,10 @@ VBoxExportApplianceWzd::VBoxExportApplianceWzd (QWidget *aParent /* = NULL */, c
     mFileSelector->setEditable (false);
 #endif /* Q_WS_MAC */
 
+    /* Connect the restore button with the settings widget */
+    connect (mBtnRestore, SIGNAL (clicked()),
+             mExportSettingsWgt, SLOT (restoreDefaults()));
+
     /* Validator for the file selector page */
     mWValFileSelector = new QIWidgetValidator (mFileSelectPage, this);
     connect (mWValFileSelector, SIGNAL (validityChanged (const QIWidgetValidator *)),
@@ -130,41 +134,42 @@ void VBoxExportApplianceWzd::enableNext (const QIWidgetValidator *aWval)
 
 void VBoxExportApplianceWzd::accept()
 {
-    CAppliance appliance;
-    /* Prepare the export of the VM's. */
-    if (prepareForExportVMs (appliance))
+    CAppliance *appliance = mExportSettingsWgt->appliance();
+    QFileInfo fi (mFileSelector->path());
+    QStringList files;
+    files << mFileSelector->path();
+    /* We need to know every filename which will be created, so that we can
+     * ask the user for confirmation of overwriting. For that we iterating
+     * over all virtual systems & fetch all descriptions of the type
+     * HardDiskImage. */
+    CVirtualSystemDescriptionVector vsds = appliance->GetVirtualSystemDescriptions();
+    for (int i=0; i < vsds.size(); ++i)
     {
-        QFileInfo fi (mFileSelector->path());
-        QStringList files;
-        files << mFileSelector->path();
-        /* We need to know every filename which will be created, so that we can
-         * ask the user for confirmation of overwriting. For that we iterating
-         * over all virtual systems & fetch all descriptions of the type
-         * HardDiskImage. */
-        CVirtualSystemDescriptionVector vsds = appliance.GetVirtualSystemDescriptions();
-        for (int i=0; i < vsds.size(); ++i)
-        {
-            QVector<KVirtualSystemDescriptionType> types;
-            QVector<QString> refs, origValues, configValues, extraConfigValues;
+        QVector<KVirtualSystemDescriptionType> types;
+        QVector<QString> refs, origValues, configValues, extraConfigValues;
 
-            vsds[i].GetDescriptionByType (KVirtualSystemDescriptionType_HardDiskImage, types, refs, origValues, configValues, extraConfigValues);
-            foreach (const QString &s, origValues)
-                files << QString ("%1/%2").arg (fi.absolutePath()).arg (s);
-        }
-        /* Check if the file exists already, if yes get confirmation for
-         * overwriting from the user. */
-        if (!vboxProblem().askForOverridingFilesIfExists (files, this))
-            return;
-        /* Export the VMs, on success we are finished */
-        if (exportVMs(appliance))
-            QIAbstractWizard::accept();
+        vsds[i].GetDescriptionByType (KVirtualSystemDescriptionType_HardDiskImage, types, refs, origValues, configValues, extraConfigValues);
+        foreach (const QString &s, origValues)
+            files << QString ("%1/%2").arg (fi.absolutePath()).arg (s);
     }
+    /* Check if the file exists already, if yes get confirmation for
+     * overwriting from the user. */
+    if (!vboxProblem().askForOverridingFilesIfExists (files, this))
+        return;
+    /* Export the VMs, on success we are finished */
+    if (exportVMs(*appliance))
+        QIAbstractWizard::accept();
 }
 
 void VBoxExportApplianceWzd::showNextPage()
 {
     /* We propose a filename the first time the second page is displayed */
     if (sender() == mBtnNext1)
+    {
+        prepareSettingsWidget();
+    }
+    else if (sender() == mBtnNext2)
+    {
         if (mFileSelector->path().isEmpty())
         {
             /* Set the default filename */
@@ -177,6 +182,8 @@ void VBoxExportApplianceWzd::showNextPage()
                                                                                    .arg (name)));
             mWValFileSelector->revalidate();
         }
+        mExportSettingsWgt->prepareExport();
+    }
 
     QIAbstractWizard::showNextPage();
 }
@@ -235,12 +242,11 @@ void VBoxExportApplianceWzd::addListViewVMItems (const QString& aSelectName)
         mVMListWidget->setCurrentItem (list.first());
 }
 
-bool VBoxExportApplianceWzd::prepareForExportVMs (CAppliance &aAppliance)
+bool VBoxExportApplianceWzd::prepareSettingsWidget()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    /* Create a appliance object */
-    aAppliance = vbox.CreateAppliance();
-    bool fResult = aAppliance.isOk();
+    CAppliance *appliance = mExportSettingsWgt->init();
+    bool fResult = appliance->isOk();
     if (fResult)
     {
         /* Iterate over all selected items */
@@ -255,20 +261,29 @@ bool VBoxExportApplianceWzd::prepareForExportVMs (CAppliance &aAppliance)
             if (fResult)
             {
                 /* Add the export description to our appliance object */
-                CVirtualSystemDescription vsd = m.Export (aAppliance);
+                CVirtualSystemDescription vsd = m.Export (*appliance);
                 fResult = m.isOk();
                 if (!fResult)
                 {
-                    vboxProblem().cannotExportAppliance (m, &aAppliance, this);
+                    vboxProblem().cannotExportAppliance (m, appliance, this);
                     return false;
                 }
+                /* Now add some new fields the user may change */
+                vsd.AddDescription (KVirtualSystemDescriptionType_Product, "", "");
+                vsd.AddDescription (KVirtualSystemDescriptionType_ProductUrl, "", "");
+                vsd.AddDescription (KVirtualSystemDescriptionType_Vendor, "", "");
+                vsd.AddDescription (KVirtualSystemDescriptionType_VendorUrl, "", "");
+                vsd.AddDescription (KVirtualSystemDescriptionType_Version, "", "");
+                vsd.AddDescription (KVirtualSystemDescriptionType_License, "", "");
             }
             else
                 break;
         }
+        /* Make sure the settings widget get the new descriptions */
+        mExportSettingsWgt->populate();
     }
     if (!fResult)
-        vboxProblem().cannotExportAppliance (&aAppliance, this);
+        vboxProblem().cannotExportAppliance (appliance, this);
     return fResult;
 }
 
