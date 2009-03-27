@@ -19,9 +19,9 @@
  * additional information or have any questions.
  */
 
-#include "clipboard-helper.h"
-#include "VBox/log.h"
 #include <iprt/assert.h>
+#include <VBox/log.h>
+#include <VBox/GuestHost/clipboard-helper.h>
 
 /** @todo use const where appropriate; delinuxifiy the code (*Lin* -> *Host*); use AssertLogRel*. */
 
