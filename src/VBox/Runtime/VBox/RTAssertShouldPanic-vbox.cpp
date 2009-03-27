@@ -52,7 +52,6 @@
 # include <iprt/path.h>
 # include <iprt/thread.h>
 # include <iprt/asm.h>
-# include <iprt/param.h>
 #endif
 
 
@@ -109,11 +108,14 @@ RTDECL(bool) RTAssertShouldPanic(void)
         }
 
         /* Try spawn the process. */
-        char szCmd[512];
-        char szExecName[RTPATH_MAX];
-        if (!RTProcGetExecutableName((szExecName), sizeof(szExecName)))
-            strcpy(szExecName, "");
-        RTStrPrintf(szCmd, sizeof(szCmd), "%s -p %d %s", pszGdb, RTProcSelf(), szExecName);
+        char    szCmd[512];
+        size_t  cch = RTStrPrintf(szCmd, sizeof(szCmd), "%s -p %d ", pszGdb, RTProcSelf());
+        if (cch < sizeof(szCmd))
+        {
+            char *pszExecName = &szCmd[cch];
+            if (!RTProcGetExecutableName(pszExecName, sizeof(szCmd) - cch))
+                *pszExecName = '\0';
+        }
         const char *apszArgs[] =
         {
             pszTerm,
