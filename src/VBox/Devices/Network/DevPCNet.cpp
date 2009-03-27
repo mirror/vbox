@@ -3746,14 +3746,17 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
     int         rc;
 
-    STAM_PROFILE_ADV_START(&pThis->StatTimer, a);
-    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
-
-    pcnetPollTimer(pThis);
-
-    PDMCritSectLeave(&pThis->CritSect);
-    STAM_PROFILE_ADV_STOP(&pThis->StatTimer, a);
+    /*
+     * Don't block if we cannot enter here.
+     */
+    rc = PDMR3CritSectTryEnter(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        STAM_PROFILE_ADV_START(&pThis->StatTimer, a);
+        pcnetPollTimer(pThis);
+        PDMCritSectLeave(&pThis->CritSect);
+        STAM_PROFILE_ADV_STOP(&pThis->StatTimer, a);
+    }
 }
 
 
