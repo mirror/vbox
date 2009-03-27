@@ -5759,18 +5759,19 @@ DECLASM(int) ASMBitNextClear(const volatile void *pvBitmap, uint32_t cBits, uint
 #else
 DECLINLINE(int) ASMBitNextClear(const volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev)
 {
-    int iBit = ++iBitPrev & 31;
-    pvBitmap = (const volatile char *)pvBitmap + ((iBitPrev >> 5) << 2);
-    cBits   -= iBitPrev & ~31;
+    const volatile uint32_t *pau32Bitmap = (const volatile uint32_t *)pvBitmap;
+    int                      iBit = ++iBitPrev & 31;
     if (iBit)
     {
-        /* inspect the first dword. */
-        uint32_t u32 = (~*(const volatile uint32_t *)pvBitmap) >> iBit;
+        /*
+         * Inspect the 32-bit word containing the unaligned bit.
+         */
+        uint32_t  u32 = ~pau32Bitmap[iBitPrev / 32] >> iBit;
+
 # if RT_INLINE_ASM_USES_INTRIN
         unsigned long ulBit = 0;
         if (_BitScanForward(&ulBit, u32))
             return ulBit + iBitPrev;
-        iBit = -1;
 # else
 #  if RT_INLINE_ASM_GNU_STYLE
         __asm__ __volatile__("bsf %1, %0\n\t"
@@ -5793,21 +5794,22 @@ DECLINLINE(int) ASMBitNextClear(const volatile void *pvBitmap, uint32_t cBits, u
         if (iBit >= 0)
             return iBit + iBitPrev;
 # endif
-        /* Search the rest of the bitmap, if there is anything. */
-        if (cBits > 32)
-        {
-            iBit = ASMBitFirstClear((const volatile char *)pvBitmap + sizeof(uint32_t), cBits - 32);
-            if (iBit >= 0)
-                return iBit + (iBitPrev & ~31) + 32;
-        }
+
+        /*
+         * Skip ahead and see if there is anything left to search.
+         */
+        iBitPrev |= 31;
+        iBitPrev++;
+        if (cBits <= (uint32_t)iBitPrev)
+            return -1;
     }
-    else
-    {
-        /* Search the rest of the bitmap. */
-        iBit = ASMBitFirstClear(pvBitmap, cBits);
-        if (iBit >= 0)
-            return iBit + (iBitPrev & ~31);
-    }
+
+    /*
+     * 32-bit aligned search, let ASMBitFirstClear do the dirty work.
+     */
+    iBit = ASMBitFirstClear(&pau32Bitmap[iBitPrev / 32], cBits - iBitPrev);
+    if (iBit >= 0)
+        iBit += iBitPrev;
     return iBit;
 }
 #endif
@@ -5911,18 +5913,19 @@ DECLASM(int) ASMBitNextSet(const volatile void *pvBitmap, uint32_t cBits, uint32
 #else
 DECLINLINE(int) ASMBitNextSet(const volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev)
 {
-    int iBit = ++iBitPrev & 31;
-    pvBitmap = (const volatile char *)pvBitmap + ((iBitPrev >> 5) << 2);
-    cBits   -= iBitPrev & ~31;
+    const volatile uint32_t *pau32Bitmap = (const volatile uint32_t *)pvBitmap;
+    int                      iBit = ++iBitPrev & 31;
     if (iBit)
     {
-        /* inspect the first dword. */
-        uint32_t u32 = *(const volatile uint32_t *)pvBitmap >> iBit;
+        /*
+         * Inspect the 32-bit word containing the unaligned bit.
+         */
+        uint32_t  u32 = pau32Bitmap[iBitPrev / 32] >> iBit;
+
 # if RT_INLINE_ASM_USES_INTRIN
         unsigned long ulBit = 0;
         if (_BitScanForward(&ulBit, u32))
             return ulBit + iBitPrev;
-        iBit = -1;
 # else
 #  if RT_INLINE_ASM_GNU_STYLE
         __asm__ __volatile__("bsf %1, %0\n\t"
@@ -5934,7 +5937,7 @@ DECLINLINE(int) ASMBitNextSet(const volatile void *pvBitmap, uint32_t cBits, uin
 #  else
         __asm
         {
-            mov     edx, u32
+            mov     edx, [u32]
             bsf     eax, edx
             jnz     done
             mov     eax, 0ffffffffh
@@ -5945,22 +5948,22 @@ DECLINLINE(int) ASMBitNextSet(const volatile void *pvBitmap, uint32_t cBits, uin
         if (iBit >= 0)
             return iBit + iBitPrev;
 # endif
-        /* Search the rest of the bitmap, if there is anything. */
-        if (cBits > 32)
-        {
-            iBit = ASMBitFirstSet((const volatile char *)pvBitmap + sizeof(uint32_t), cBits - 32);
-            if (iBit >= 0)
-                return iBit + (iBitPrev & ~31) + 32;
-        }
 
+        /*
+         * Skip ahead and see if there is anything left to search.
+         */
+        iBitPrev |= 31;
+        iBitPrev++;
+        if (cBits <= (uint32_t)iBitPrev)
+            return -1;
     }
-    else
-    {
-        /* Search the rest of the bitmap. */
-        iBit = ASMBitFirstSet(pvBitmap, cBits);
-        if (iBit >= 0)
-            return iBit + (iBitPrev & ~31);
-    }
+
+    /*
+     * 32-bit aligned search, let ASMBitFirstClear do the dirty work.
+     */
+    iBit = ASMBitFirstSet(&pau32Bitmap[iBitPrev / 32], cBits - iBitPrev);
+    if (iBit >= 0)
+        iBit += iBitPrev;
     return iBit;
 }
 #endif
