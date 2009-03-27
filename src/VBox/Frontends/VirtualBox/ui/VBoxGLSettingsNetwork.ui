@@ -82,10 +82,19 @@
     </widget>
    </item>
    <item row="1" column="3">
-    <widget class="VBoxToolBar" name="mTbActions">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
+    <widget class="QWidget" name="mWtActions">
+     <layout class="QHBoxLayout">
+      <property name="spacing" >
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="VBoxToolBar" name="mTbActions">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item row="2" column="1">
