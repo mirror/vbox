@@ -7820,12 +7820,12 @@
 
   <interface
      name="IProgress" extends="$unknown"
-     uuid="ee1aa091-fda8-47a9-8f1c-4bba002a3229"
+     uuid="c4f94e6b-2273-446b-9539-4c05bb416fe7"
      wsmap="managed"
      >
     <desc>
-        The IProgress interface allows for monitoring the progress of
-        an asynchronous tasks within VirtualBox.
+        The IProgress interface is used to track and control
+        asynchronous tasks within VirtualBox.
 
         An instance of this is returned every time VirtualBox starts
         an asynchronous task (in other words, a separate thread) which
@@ -7843,8 +7843,8 @@
         progress and, if <link to="#cancelable" /> is true,
         cancel the task by calling <link to="#cancel" />.
 
-        A task represented by IProgress can consist of one or more
-        sub-operations that run sequentially, one by one (see
+        A task represented by IProgress consists of either one or
+        several sub-operations that run sequentially, one by one (see
         <link to="#operation" /> and <link to="#operationCount" />).
         Every operation is identified by a number (starting from 0)
         and has a separate description.
@@ -7853,6 +7853,7 @@
         operation in <link to="#operationPercent" /> and the
         percentage of completion of the task as a whole
         in <link to="#percent" />.
+
         Similarly, you can wait for the completion of a particular
         operation via <link to="#waitForOperationCompletion" /> or
         for the completion of the whole task via
@@ -7881,6 +7882,23 @@
         This value depends on how many operations are already complete.
         Returns 100 if <link to="#completed" /> is true.
       </desc>
+    </attribute>
+
+    <attribute name="timeRemaining" type="long" readonly="yes">
+        <desc>
+            Estimated remaining time until the operation completes, in
+            seconds.
+
+            Returns 0 if the task is complete.
+
+            Returns -1 if the time cannot be computed, in
+            particular if the current progress is 0.
+
+            The estimate will be unreliable for low progress
+            values. It will become more reliable as the task progresses;
+            it is not recommended to display an ETA before 10% of
+            a task have completed.
+        </desc>
     </attribute>
 
     <attribute name="completed" type="boolean" readonly="yes">

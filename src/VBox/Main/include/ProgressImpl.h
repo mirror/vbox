@@ -72,6 +72,7 @@ public:
     // IProgress properties
     STDMETHOD(COMGETTER(Cancelable)) (BOOL *aCancelable);
     STDMETHOD(COMGETTER(Percent)) (ULONG *aPercent);
+    STDMETHOD(COMGETTER(TimeRemaining)) (LONG *aTimeRemaining);
     STDMETHOD(COMGETTER(Completed)) (BOOL *aCompleted);
     STDMETHOD(COMGETTER(Canceled)) (BOOL *aCanceled);
     STDMETHOD(COMGETTER(ResultCode)) (HRESULT *aResultCode);
@@ -90,6 +91,7 @@ public:
 
     BOOL completed() const { return mCompleted; }
     HRESULT resultCode() const { return mResultCode; }
+    double calcTotalPercent();
 
 protected:
 
@@ -102,6 +104,8 @@ protected:
 
     const Guid mId;
     const Bstr mDescription;
+
+    uint64_t m_ullTimestamp;                        // progress object creation timestamp, for ETA computation
 
     /* The fields below are to be properly initalized by subclasses */
 

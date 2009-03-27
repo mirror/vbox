@@ -66,6 +66,9 @@ HRESULT ProgressBase::FinalConstruct()
     m_ulCurrentOperationWeight =
     m_ulOperationPercent = 0;
 
+    // get creation timestamp
+    m_ullTimestamp = RTTimeMilliTS();
+
     return S_OK;
 }
 
@@ -257,6 +260,61 @@ STDMETHODIMP ProgressBase::COMGETTER(Cancelable) (BOOL *aCancelable)
     return S_OK;
 }
 
+/**
+ * Internal helper to compute the total percent value based on the member values and
+ * returns it as a "double". This is used both by GetPercent (which returns it as a
+ * rounded ULONG) and GetTimeRemaining().
+ *
+ * Requires locking by the caller!
+ *
+ * @return fractional percentage as a double value.
+ */
+double ProgressBase::calcTotalPercent()
+{
+    // avoid division by zero
+    if (m_ulTotalOperationsWeight == 0)
+        return 0;
+
+    double dPercent = (    (double)m_ulOperationsCompletedWeight                                              // weight of operations that have been completed
+                         + ((double)m_ulOperationPercent * (double)m_ulCurrentOperationWeight / (double)100)  // plus partial weight of the current operation
+                      ) * (double)100 / (double)m_ulTotalOperationsWeight;
+
+    return dPercent;
+}
+
+STDMETHODIMP ProgressBase::COMGETTER(TimeRemaining)(LONG *aTimeRemaining)
+{
+    CheckComArgOutPointerValid(aTimeRemaining);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    if (mCompleted)
+        *aTimeRemaining = 0;
+    else
+    {
+        double dPercentDone = calcTotalPercent();
+        if (dPercentDone < 1)
+            *aTimeRemaining = -1;       // unreliable, or avoid division by 0 below
+        else
+        {
+            uint64_t ullTimeNow = RTTimeMilliTS();
+            uint64_t ullTimeElapsed = ullTimeNow - m_ullTimestamp;
+            uint64_t ullTimeTotal = (uint64_t)(ullTimeElapsed / dPercentDone * 100);
+            uint64_t ullTimeRemaining = ullTimeTotal - ullTimeElapsed;
+
+//             Log(("ProgressBase::GetTimeRemaining: dPercentDone %RI32, ullTimeNow = %RI64, ullTimeElapsed = %RI64, ullTimeTotal = %RI64, ullTimeRemaining = %RI64\n",
+//                         (uint32_t)dPercentDone, ullTimeNow, ullTimeElapsed, ullTimeTotal, ullTimeRemaining));
+
+            *aTimeRemaining = (LONG)(ullTimeRemaining / 1000);
+        }
+    }
+
+    return S_OK;
+}
+
 STDMETHODIMP ProgressBase::COMGETTER(Percent)(ULONG *aPercent)
 {
     CheckComArgOutPointerValid(aPercent);
@@ -270,10 +328,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Percent)(ULONG *aPercent)
         *aPercent = 100;
     else
     {
-        ULONG ulPercent = (ULONG)(    (    (double)m_ulOperationsCompletedWeight                                              // weight of operations that have been completed
-                                         + ((double)m_ulOperationPercent * (double)m_ulCurrentOperationWeight / (double)100)  // plus partial weight of the current operation
-                                      ) * (double)100 / (double)m_ulTotalOperationsWeight
-                                 );
+        ULONG ulPercent = (ULONG)calcTotalPercent();
         // do not report 100% until we're really really done with everything as the Qt GUI dismisses progress dialogs in that case
         if (    ulPercent == 100
              && (    m_ulOperationPercent < 100
