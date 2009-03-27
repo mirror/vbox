@@ -256,6 +256,7 @@ VBoxGLSettingsNetwork::VBoxGLSettingsNetwork()
         new QSpacerItem (0, 1, QSizePolicy::Expanding, QSizePolicy::Preferred);
     QGridLayout *mainLayout = static_cast <QGridLayout*> (layout());
     mainLayout->addItem (shiftSpacer, 1, 4, 2);
+    static_cast <QHBoxLayout*> (mWtActions->layout())->addStretch();
 #endif
 
     /* Setup tree-widget */
