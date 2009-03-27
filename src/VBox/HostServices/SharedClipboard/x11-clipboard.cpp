@@ -94,8 +94,44 @@ typedef struct {
     /** Offset from the beginning of this header to the actual image bits */
 } VBOXBITMAPFILEHEADER;
 
-/** Global clipboard context information */
+/** Global context information used by the host clipboard subsystem */
 struct _VBOXCLIPBOARDCONTEXT
+{
+    /** Since the clipboard data moves asynchronously, we use an event
+     * semaphore to wait for it.  When a function issues a request for
+     * clipboard data it must wait for this semaphore, which is triggered
+     * when the data arrives. */
+    RTSEMEVENT waitForData;
+    /** Who (if anyone) is currently waiting for data?  Used for sanity
+     * checks when data arrives. */
+    volatile uint32_t waiter;
+    /** This mutex is grabbed during any critical operations on the clipboard
+     * which might clash with others. */
+    /** @todo this is still used in X11 backend parts, disentangle it. */
+    RTSEMMUTEX clipboardMutex;
+
+    /** @todo both the VBox subsystem and the X11 backend need the following
+     * members, so we need to transfer them between the two contexts at
+     * an appropriate time */
+    /** Format which we are reading from the X11 clipboard (valid during a
+     * request for its contents) */
+    g_eClipboardFormats requestX11Format;
+    /** The buffer to write X11 clipboard data to (valid during a request
+     * for the clipboard contents) */
+    void *requestBuffer;
+    /** The size of the buffer to write X11 clipboard data to (valid during
+     * a request for the clipboard contents) */
+    unsigned requestBufferSize;
+    /** The size of the X11 clipboard data written to the buffer (valid
+     * during a request for the clipboard contents) */
+    uint32_t *requestActualSize;
+
+    /** Pointer to the client data structure */
+    VBOXCLIPBOARDCLIENTDATA *pClient;
+};
+
+/** Global context information used by the X11 clipboard backend */
+struct _VBOXCLIPBOARDCONTEXTX11
 {
     /** The X Toolkit application context structure */
     XtAppContext appContext;
@@ -126,56 +162,53 @@ struct _VBOXCLIPBOARDCONTEXT
         order we prefer to have them in. */
     std::vector<VBOXCLIPBOARDFORMAT> formatList;
 
-    /** Does the host or the guest currently own the clipboard? */
+    /** Does VBox or X11 currently own the clipboard? */
     volatile enum g_eOwner eOwner;
 
-    /** What is the best text format the host has to offer?  INVALID for none. */
-    g_eClipboardFormats hostTextFormat;
-    /** Atom corresponding to the host text format */
-    Atom atomHostTextFormat;
-    /** What is the best bitmap format the host has to offer?  INVALID for none. */
-    g_eClipboardFormats hostBitmapFormat;
-    /** Atom corresponding to the host Bitmap format */
-    Atom atomHostBitmapFormat;
-    /** What formats does the guest have on offer? */
-    int guestFormats;
-    /** Windows caches the clipboard data it receives.  Since we have no way of knowing whether
-        that data is still valid, we always send a "data changed" message after a successful
-        transfer to invalidate the cache. */
-    bool notifyGuest;
+    /** What is the best text format X11 has to offer?  INVALID for none. */
+    g_eClipboardFormats X11TextFormat;
+    /** Atom corresponding to the X11 text format */
+    Atom atomX11TextFormat;
+    /** What is the best bitmap format X11 has to offer?  INVALID for none. */
+    g_eClipboardFormats X11BitmapFormat;
+    /** Atom corresponding to the X11 Bitmap format */
+    Atom atomX11BitmapFormat;
+    /** What formats does VBox have on offer? */
+    int vboxFormats;
+    /** Windows hosts and guests cache the clipboard data they receive.
+     * Since we have no way of knowing whether their cache is still valid,
+     * we always send a "data changed" message after a successful transfer
+     * to invalidate it. */
+    bool notifyVBox;
 
-    /** Since the clipboard data moves asynchronously, we use an event semaphore to wait for
-        it.  When a function issues a request for clipboard data it must wait for this
-        semaphore, which is triggered when the data arrives. */
+    /** Since the clipboard data moves asynchronously, we use an event
+     * semaphore to wait for it.  When a function issues a request for
+     * clipboard data it must wait for this semaphore, which is triggered
+     * when the data arrives. */
     RTSEMEVENT waitForData;
-    /** Who (if anyone) is currently waiting for data?  Used for sanity checks
-     *  when data arrives. */
-    volatile uint32_t waiter;
-    /** This mutex is grabbed during any critical operations on the clipboard
-     * which might clash with others. */
-    RTSEMMUTEX clipboardMutex;
 
-    /** Format which we are reading from the host clipboard (valid during a request for the
-        host clipboard) */
-    g_eClipboardFormats requestHostFormat;
-    /** The guest buffer to write host clipboard data to (valid during a request for the host
-        clipboard) */
+    /** Format which we are reading from the X11 clipboard (valid during a
+     * request for its contents) */
+    g_eClipboardFormats requestX11Format;
+    /** The buffer to write X11 clipboard data to (valid during a request
+     * for the clipboard contents) */
     void *requestBuffer;
-    /** The size of the guest buffer to write host clipboard data to (valid during a request for
-        the host clipboard) */
+    /** The size of the buffer to write X11 clipboard data to (valid during
+     * a request for the clipboard contents) */
     unsigned requestBufferSize;
-    /** The size of the host clipboard data written to the guest buffer (valid during a request
-        for the host clipboard) */
+    /** The size of the X11 clipboard data written to the buffer (valid
+     * during a request for the clipboard contents) */
     uint32_t *requestActualSize;
-
-    /** Pointer to the client data structure */
-    VBOXCLIPBOARDCLIENTDATA *pClient;
 };
 
-/* Only one client is supported. There seems to be no need for more clients. */
-static VBOXCLIPBOARDCONTEXT g_ctx;
+typedef struct _VBOXCLIPBOARDCONTEXTX11 VBOXCLIPBOARDCONTEXTX11;
 
-/* Are we actually connected to the X11 servicer? */
+/* Only one client is supported. There seems to be no need for more clients. 
+ */
+static VBOXCLIPBOARDCONTEXT g_ctxHost;
+static VBOXCLIPBOARDCONTEXTX11 g_ctxX11;
+
+/* Are we actually connected to the X server? */
 static bool g_fHaveX11;
 
 
@@ -199,7 +232,8 @@ static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u
         /* This can legitimately happen if we disconnect during a request for
          * data from X11. */
         LogFunc(("host requested guest clipboard data after guest had disconnected.\n"));
-        pCtx->guestFormats = 0;
+        /** @todo call vboxClipboardFormatAnnounce to do this. */
+        g_ctxX11.vboxFormats = 0;  
         pCtx->waiter = NONE;
         return VERR_TIMEOUT;
     }
@@ -229,19 +263,20 @@ static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u
      * the clipboard mutex.  The HGCM thread will only deliver the data if we
      * are still waiting after it acquires the mutex.  After we release the
      * mutex, we finally do our check to see whether the data was delivered. */
-    RTSemMutexRequest(g_ctx.clipboardMutex, RT_INDEFINITE_WAIT);
+    RTSemMutexRequest(g_ctxHost.clipboardMutex, RT_INDEFINITE_WAIT);
     pCtx->waiter = NONE;
-    RTSemMutexRelease(g_ctx.clipboardMutex);
+    RTSemMutexRelease(g_ctxHost.clipboardMutex);
     AssertLogRelRCSuccess(rc);
     if (RT_FAILURE(rc))
     {
         /* I believe this should not happen.  Wait until the assertions arrive
          * to prove the contrary. */
         RTMemFree(pClient->data.pv);
-        g_ctx.pClient->data.pv = 0;
-        g_ctx.pClient->data.cb = 0;
-        g_ctx.pClient->data.u32Format = 0;
-        pCtx->guestFormats = 0;
+        g_ctxHost.pClient->data.pv = 0;
+        g_ctxHost.pClient->data.cb = 0;
+        g_ctxHost.pClient->data.u32Format = 0;
+        /** @todo call vboxClipboardFormatAnnounce to do this. */
+        g_ctxX11.vboxFormats = 0;
         return rc;
     }
     if (pClient->data.pv == NULL)
@@ -249,9 +284,9 @@ static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u
     LogFlowFunc(("wait completed.  Returning.\n"));
     *ppv = pClient->data.pv;
     *pcb = pClient->data.cb;
-    g_ctx.pClient->data.pv = 0;
-    g_ctx.pClient->data.cb = 0;
-    g_ctx.pClient->data.u32Format = 0;
+    g_ctxHost.pClient->data.pv = 0;
+    g_ctxHost.pClient->data.cb = 0;
+    g_ctxHost.pClient->data.u32Format = 0;
     return VINF_SUCCESS;
 }
 
@@ -297,7 +332,7 @@ static void vboxClipboardGetUtf16(XtPointer pValue, unsigned cwSrcLen, void *pv,
     }
     /* We need to do this whether we succeed or fail. */
     XtFree(reinterpret_cast<char *>(pValue));
-    RTSemEventSignal(g_ctx.waitForData);
+    RTSemEventSignal(g_ctxX11.waitForData);
     LogFlowFunc(("Returning.  Status is %Rrc\n", rc));
 }
 
@@ -349,7 +384,7 @@ static void vboxClipboardGetUtf8FromX11(XtPointer pValue, unsigned cbSrcLen,
     }
     XtFree(reinterpret_cast<char *>(pValue));
     RTUtf16Free(pu16SrcText);
-    RTSemEventSignal(g_ctx.waitForData);
+    RTSemEventSignal(g_ctxX11.waitForData);
     LogFlowFunc(("Returning.  Status is %Rrc", rc));
 }
 
@@ -383,13 +418,13 @@ static void vboxClipboardGetCTextFromX11(XtPointer pValue, unsigned cbSrcLen,
     *pcbActual = 0;  /* Only set this to the right value on success. */
     /* First convert the compound text to Utf8 */
     property.value = reinterpret_cast<unsigned char *>(pValue);
-    property.encoding = g_ctx.atomCText;
+    property.encoding = g_ctxX11.atomCText;
     property.format = 8;
     property.nitems = cbSrcLen;
 #ifdef RT_OS_SOLARIS
-    int xrc = XmbTextPropertyToTextList(XtDisplay(g_ctx.widget), &property, &ppu8SrcText, &cProps);
+    int xrc = XmbTextPropertyToTextList(XtDisplay(g_ctxX11.widget), &property, &ppu8SrcText, &cProps);
 #else
-    int xrc = Xutf8TextPropertyToTextList(XtDisplay(g_ctx.widget), &property, &ppu8SrcText, &cProps);
+    int xrc = Xutf8TextPropertyToTextList(XtDisplay(g_ctxX11.widget), &property, &ppu8SrcText, &cProps);
 #endif
     XtFree(reinterpret_cast<char *>(pValue));
     if (xrc < 0)
@@ -431,7 +466,7 @@ static void vboxClipboardGetCTextFromX11(XtPointer pValue, unsigned cbSrcLen,
         XFreeStringList(ppu8SrcText);
     RTUtf16Free(pu16SrcText);
     LogFlowFunc(("Returning.  Status is %Rrc\n", rc));
-    RTSemEventSignal(g_ctx.waitForData);
+    RTSemEventSignal(g_ctxX11.waitForData);
 }
 
 /**
@@ -485,7 +520,7 @@ static void vboxClipboardGetLatin1FromX11(XtPointer pValue, unsigned cbSourceLen
         LogFlowFunc (("converted text is %.*ls\n", cwDestLen, pu16DestText));
     }
     XtFree(reinterpret_cast<char *>(pValue));
-    RTSemEventSignal(g_ctx.waitForData);
+    RTSemEventSignal(g_ctxX11.waitForData);
     LogFlowFunc(("Returning.  Status is %Rrc\n", rc));
 }
 
@@ -502,8 +537,8 @@ static void vboxClipboardGetDataFromX11(Widget, XtPointer pClientData,
                                         int *piFormat)
 {
     LogFlowFunc(("pClientData=%p, *pcLen=%lu, *piFormat=%d\n", pClientData, *pcLen, *piFormat));
-    LogFlowFunc(("g_ctx.requestHostFormat=%d, g_ctx.requestBufferSize=%d\n",
-                 g_ctx.requestHostFormat, g_ctx.requestBufferSize));
+    LogFlowFunc(("g_ctxHost.requestX11Format=%d, g_ctxHost.requestBufferSize=%d\n",
+                 g_ctxHost.requestX11Format, g_ctxHost.requestBufferSize));
     unsigned cTextLen = (*pcLen) * (*piFormat) / 8;
     /* The X Toolkit may have failed to get the clipboard selection for us. */
     if (*atomType == XT_CONVERT_FAIL)
@@ -513,26 +548,26 @@ static void vboxClipboardGetDataFromX11(Widget, XtPointer pClientData,
         return;
     /* We grab this mutex whenever an asynchronous clipboard operation completes and while
        disconnecting a client from the clipboard to stop these operations colliding. */
-    RTSemMutexRequest(g_ctx.clipboardMutex, RT_INDEFINITE_WAIT);
-    if (reinterpret_cast<VBOXCLIPBOARDCLIENTDATA *>(pClientData) != g_ctx.pClient)
+    RTSemMutexRequest(g_ctxHost.clipboardMutex, RT_INDEFINITE_WAIT);
+    if (reinterpret_cast<VBOXCLIPBOARDCLIENTDATA *>(pClientData) != g_ctxHost.pClient)
     {
         /* If the client is no longer connected, just return. */
         XtFree(reinterpret_cast<char *>(pValue));
         LogFlowFunc(("client is no longer connected, returning\n"));
-        RTSemMutexRelease(g_ctx.clipboardMutex);
+        RTSemMutexRelease(g_ctxHost.clipboardMutex);
         return;
     }
 
     /* In which format did we request the clipboard data? */
-    switch (g_ctx.requestHostFormat)
+    switch (g_ctxHost.requestX11Format)
     {
     case UTF16:
-        vboxClipboardGetUtf16(pValue, cTextLen / 2, g_ctx.requestBuffer, g_ctx.requestBufferSize,
-                              g_ctx.requestActualSize);
+        vboxClipboardGetUtf16(pValue, cTextLen / 2, g_ctxHost.requestBuffer, g_ctxHost.requestBufferSize,
+                              g_ctxHost.requestActualSize);
         break;
     case CTEXT:
-        vboxClipboardGetCTextFromX11(pValue, cTextLen, g_ctx.requestBuffer, g_ctx.requestBufferSize,
-                              g_ctx.requestActualSize);
+        vboxClipboardGetCTextFromX11(pValue, cTextLen, g_ctxHost.requestBuffer, g_ctxHost.requestBufferSize,
+                              g_ctxHost.requestActualSize);
         break;
     case UTF8:
     {
@@ -540,28 +575,28 @@ static void vboxClipboardGetDataFromX11(Widget, XtPointer pClientData,
         size_t cStringLen;
         char *pu8SourceText = reinterpret_cast<char *>(pValue);
 
-        if ((g_ctx.requestHostFormat == UTF8)
+        if ((g_ctxHost.requestX11Format == UTF8)
             && (RTStrUniLenEx(pu8SourceText, *pcLen, &cStringLen) == VINF_SUCCESS))
         {
-            vboxClipboardGetUtf8FromX11(pValue, cTextLen, g_ctx.requestBuffer, g_ctx.requestBufferSize,
-                                 g_ctx.requestActualSize);
+            vboxClipboardGetUtf8FromX11(pValue, cTextLen, g_ctxHost.requestBuffer, g_ctxHost.requestBufferSize,
+                                 g_ctxHost.requestActualSize);
             break;
         }
         else
         {
-            vboxClipboardGetLatin1FromX11(pValue, cTextLen, g_ctx.requestBuffer, g_ctx.requestBufferSize,
-                                   g_ctx.requestActualSize);
+            vboxClipboardGetLatin1FromX11(pValue, cTextLen, g_ctxHost.requestBuffer, g_ctxHost.requestBufferSize,
+                                   g_ctxHost.requestActualSize);
             break;
         }
     }
     default:
         LogFunc (("bad target format\n"));
         XtFree(reinterpret_cast<char *>(pValue));
-        RTSemMutexRelease(g_ctx.clipboardMutex);
+        RTSemMutexRelease(g_ctxHost.clipboardMutex);
         return;
     }
-    g_ctx.notifyGuest = true;
-    RTSemMutexRelease(g_ctx.clipboardMutex);
+    g_ctxX11.notifyVBox = true;
+    RTSemMutexRelease(g_ctxHost.clipboardMutex);
 }
 
 /**
@@ -590,30 +625,30 @@ static void vboxClipboardGetTargetsFromX11(Widget, XtPointer pClientData,
     }
     /* We grab this mutex whenever an asynchronous clipboard operation completes and while
        disconnecting a client from the clipboard to stop these operations colliding. */
-    RTSemMutexRequest(g_ctx.clipboardMutex, RT_INDEFINITE_WAIT);
-    if (reinterpret_cast<VBOXCLIPBOARDCLIENTDATA *>(pClientData) != g_ctx.pClient)
+    RTSemMutexRequest(g_ctxHost.clipboardMutex, RT_INDEFINITE_WAIT);
+    if (reinterpret_cast<VBOXCLIPBOARDCLIENTDATA *>(pClientData) != g_ctxHost.pClient)
     {
         /* If the client is no longer connected, just return. */
         LogFlowFunc(("client is no longer connected, returning\n"));
-        RTSemMutexRelease(g_ctx.clipboardMutex);
+        RTSemMutexRelease(g_ctxHost.clipboardMutex);
         return;
     }
 
     for (unsigned i = 0; i < cAtoms; ++i)
     {
-        for (unsigned j = 0; j != g_ctx.formatList.size(); ++j)
-            if (g_ctx.formatList[j].atom == atomTargets[i])
+        for (unsigned j = 0; j != g_ctxX11.formatList.size(); ++j)
+            if (g_ctxX11.formatList[j].atom == atomTargets[i])
             {
-                if (eBestTarget < g_ctx.formatList[j].format)
+                if (eBestTarget < g_ctxX11.formatList[j].format)
                 {
-                    eBestTarget = g_ctx.formatList[j].format;
-                    atomBestTarget = g_ctx.formatList[j].atom;
+                    eBestTarget = g_ctxX11.formatList[j].format;
+                    atomBestTarget = g_ctxX11.formatList[j].atom;
                 }
                 break;
             }
         if (g_debugClipboard)
         {
-            char *szAtomName = XGetAtomName(XtDisplay(g_ctx.widget), atomTargets[i]);
+            char *szAtomName = XGetAtomName(XtDisplay(g_ctxX11.widget), atomTargets[i]);
             if (szAtomName != 0)
             {
                 Log2 (("%s: the host offers target %s\n", __PRETTY_FUNCTION__,
@@ -622,15 +657,15 @@ static void vboxClipboardGetTargetsFromX11(Widget, XtPointer pClientData,
             }
         }
     }
-    g_ctx.atomHostTextFormat = atomBestTarget;
-    if ((eBestTarget != g_ctx.hostTextFormat) || (g_ctx.notifyGuest == true))
+    g_ctxX11.atomX11TextFormat = atomBestTarget;
+    if ((eBestTarget != g_ctxX11.X11TextFormat) || (g_ctxX11.notifyVBox == true))
     {
         uint32_t u32Formats = 0;
         if (g_debugClipboard)
         {
             if (atomBestTarget != None)
             {
-                char *szAtomName = XGetAtomName(XtDisplay(g_ctx.widget), atomBestTarget);
+                char *szAtomName = XGetAtomName(XtDisplay(g_ctxX11.widget), atomBestTarget);
                 Log2 (("%s: switching to host text target %s.  Available targets are:\n",
                        __PRETTY_FUNCTION__, szAtomName));
                 XFree(szAtomName);
@@ -640,7 +675,7 @@ static void vboxClipboardGetTargetsFromX11(Widget, XtPointer pClientData,
                       __PRETTY_FUNCTION__));
             for (unsigned i = 0; i < cAtoms; ++i)
             {
-                char *szAtomName = XGetAtomName(XtDisplay(g_ctx.widget), atomTargets[i]);
+                char *szAtomName = XGetAtomName(XtDisplay(g_ctxX11.widget), atomTargets[i]);
                 if (szAtomName != 0)
                 {
                     Log2 (("%s:     %s\n", __PRETTY_FUNCTION__, szAtomName));
@@ -648,15 +683,15 @@ static void vboxClipboardGetTargetsFromX11(Widget, XtPointer pClientData,
                 }
             }
         }
-        g_ctx.hostTextFormat = eBestTarget;
+        g_ctxX11.X11TextFormat = eBestTarget;
         if (eBestTarget != INVALID)
             u32Formats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
-        vboxSvcClipboardReportMsg (g_ctx.pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS,
+        vboxSvcClipboardReportMsg (g_ctxHost.pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS,
                                    u32Formats);
-        g_ctx.notifyGuest = false;
+        g_ctxX11.notifyVBox = false;
     }
     XtFree(reinterpret_cast<char *>(pValue));
-    RTSemMutexRelease(g_ctx.clipboardMutex);
+    RTSemMutexRelease(g_ctxHost.clipboardMutex);
 }
 
 /**
@@ -669,16 +704,16 @@ static void vboxClipboardPollX11ForTargets(XtPointer /* pUserData */, XtInterval
 {
     Log3 (("%s: called\n", __PRETTY_FUNCTION__));
     /* Get the current clipboard contents */
-    if (g_ctx.eOwner == X11 && g_ctx.pClient != 0)
+    if (g_ctxX11.eOwner == X11 && g_ctxHost.pClient != 0)
     {
         Log3 (("%s: requesting the targets that the host clipboard offers\n",
                __PRETTY_FUNCTION__));
-        XtGetSelectionValue(g_ctx.widget, g_ctx.atomClipboard, g_ctx.atomTargets,
-                            vboxClipboardGetTargetsFromX11, reinterpret_cast<XtPointer>(g_ctx.pClient),
+        XtGetSelectionValue(g_ctxX11.widget, g_ctxX11.atomClipboard, g_ctxX11.atomTargets,
+                            vboxClipboardGetTargetsFromX11, reinterpret_cast<XtPointer>(g_ctxHost.pClient),
                             CurrentTime);
     }
     /* Re-arm our timer */
-    XtAppAddTimeOut(g_ctx.appContext, 200 /* ms */, vboxClipboardPollX11ForTargets, 0);
+    XtAppAddTimeOut(g_ctxX11.appContext, 200 /* ms */, vboxClipboardPollX11ForTargets, 0);
 }
 
 /** We store information about the target formats we can handle in a global vector for internal
@@ -688,11 +723,11 @@ static void vboxClipboardAddFormat(const char *pszName, g_eClipboardFormats eFor
 {
     VBOXCLIPBOARDFORMAT sFormat;
     /* Get an atom from the X server for that target format */
-    Atom atomFormat = XInternAtom(XtDisplay(g_ctx.widget), pszName, false);
+    Atom atomFormat = XInternAtom(XtDisplay(g_ctxX11.widget), pszName, false);
     sFormat.atom   = atomFormat;
     sFormat.format = eFormat;
     sFormat.guestFormat = guestFormat;
-    g_ctx.formatList.push_back(sFormat);
+    g_ctxX11.formatList.push_back(sFormat);
     LogFlow (("vboxClipboardAddFormat: added format %s (%d)\n", pszName, eFormat));
 }
 
@@ -705,10 +740,10 @@ static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
     LogRel(("Shared clipboard: starting host clipboard thread\n"));
 
     /* Set up a timer to poll the host clipboard */
-    XtAppAddTimeOut(g_ctx.appContext, 200 /* ms */, vboxClipboardPollX11ForTargets, 0);
+    XtAppAddTimeOut(g_ctxX11.appContext, 200 /* ms */, vboxClipboardPollX11ForTargets, 0);
 
-    XtAppMainLoop(g_ctx.appContext);
-    g_ctx.formatList.clear();
+    XtAppMainLoop(g_ctxX11.appContext);
+    g_ctxX11.formatList.clear();
     LogRel(("Shared clipboard: host clipboard thread terminated successfully\n"));
     return VINF_SUCCESS;
 }
@@ -729,9 +764,9 @@ int vboxClipboardInitX11 (void)
        directly instead of calling XtOpenApplication() so that we can fail gracefully if we
        can't get an X11 display. */
     XtToolkitInitialize();
-    g_ctx.appContext = XtCreateApplicationContext();
-    // XtAppSetFallbackResources(g_ctx.appContext, szFallbackResources);
-    pDisplay = XtOpenDisplay(g_ctx.appContext, 0, 0, "VBoxClipboard", 0, 0, &cArgc, &pcArgv);
+    g_ctxX11.appContext = XtCreateApplicationContext();
+    // XtAppSetFallbackResources(g_ctxX11.appContext, szFallbackResources);
+    pDisplay = XtOpenDisplay(g_ctxX11.appContext, 0, 0, "VBoxClipboard", 0, 0, &cArgc, &pcArgv);
     if (NULL == pDisplay)
     {
         LogRel(("Shared clipboard: failed to connect to the host clipboard - the window system may not be running.\n"));
@@ -739,9 +774,9 @@ int vboxClipboardInitX11 (void)
     }
     if (RT_SUCCESS(rc))
     {
-        g_ctx.widget = XtVaAppCreateShell(0, "VBoxClipboard", applicationShellWidgetClass, pDisplay,
+        g_ctxX11.widget = XtVaAppCreateShell(0, "VBoxClipboard", applicationShellWidgetClass, pDisplay,
                                           XtNwidth, 1, XtNheight, 1, NULL);
-        if (NULL == g_ctx.widget)
+        if (NULL == g_ctxX11.widget)
         {
             LogRel(("Shared clipboard: failed to construct the X11 window for the host clipboard manager.\n"));
             rc = VERR_NO_MEMORY;
@@ -749,20 +784,20 @@ int vboxClipboardInitX11 (void)
     }
     if (RT_SUCCESS(rc))
     {
-        XtSetMappedWhenManaged(g_ctx.widget, false);
-        XtRealizeWidget(g_ctx.widget);
+        XtSetMappedWhenManaged(g_ctxX11.widget, false);
+        XtRealizeWidget(g_ctxX11.widget);
 
         /* Get hold of the atoms which we need */
-        g_ctx.atomClipboard = XInternAtom(XtDisplay(g_ctx.widget), "CLIPBOARD", false /* only_if_exists */);
-        g_ctx.atomPrimary   = XInternAtom(XtDisplay(g_ctx.widget), "PRIMARY",   false);
-        g_ctx.atomTargets   = XInternAtom(XtDisplay(g_ctx.widget), "TARGETS",   false);
-        g_ctx.atomMultiple  = XInternAtom(XtDisplay(g_ctx.widget), "MULTIPLE",  false);
-        g_ctx.atomTimestamp = XInternAtom(XtDisplay(g_ctx.widget), "TIMESTAMP", false);
-        g_ctx.atomUtf16     = XInternAtom(XtDisplay(g_ctx.widget),
+        g_ctxX11.atomClipboard = XInternAtom(XtDisplay(g_ctxX11.widget), "CLIPBOARD", false /* only_if_exists */);
+        g_ctxX11.atomPrimary   = XInternAtom(XtDisplay(g_ctxX11.widget), "PRIMARY",   false);
+        g_ctxX11.atomTargets   = XInternAtom(XtDisplay(g_ctxX11.widget), "TARGETS",   false);
+        g_ctxX11.atomMultiple  = XInternAtom(XtDisplay(g_ctxX11.widget), "MULTIPLE",  false);
+        g_ctxX11.atomTimestamp = XInternAtom(XtDisplay(g_ctxX11.widget), "TIMESTAMP", false);
+        g_ctxX11.atomUtf16     = XInternAtom(XtDisplay(g_ctxX11.widget),
                                           "text/plain;charset=ISO-10646-UCS-2", false);
-        g_ctx.atomUtf8      = XInternAtom(XtDisplay(g_ctx.widget), "UTF_STRING", false);
+        g_ctxX11.atomUtf8      = XInternAtom(XtDisplay(g_ctxX11.widget), "UTF_STRING", false);
         /* And build up the vector of supported formats */
-        g_ctx.atomCText     = XInternAtom(XtDisplay(g_ctx.widget), "COMPOUND_TEXT", false);
+        g_ctxX11.atomCText     = XInternAtom(XtDisplay(g_ctxX11.widget), "COMPOUND_TEXT", false);
         /* And build up the vector of supported formats */
         if (!g_testUtf8 && !g_testCText)
             vboxClipboardAddFormat("text/plain;charset=ISO-10646-UCS-2", UTF16,
@@ -834,20 +869,22 @@ int vboxClipboardInit (void)
     g_fHaveX11 = true;
 
     LogRel(("Initializing host clipboard service\n"));
-    RTSemEventCreate(&g_ctx.waitForData);
-    RTSemMutexCreate(&g_ctx.clipboardMutex);
+    RTSemEventCreate(&g_ctxHost.waitForData);
+    RTSemEventCreate(&g_ctxX11.waitForData);
+    RTSemMutexCreate(&g_ctxHost.clipboardMutex);
     rc = vboxClipboardInitX11();
     if (RT_SUCCESS(rc))
     {
-        rc = RTThreadCreate(&g_ctx.thread, vboxClipboardThread, 0, 0,
+        rc = RTThreadCreate(&g_ctxX11.thread, vboxClipboardThread, 0, 0,
                             RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
         if (RT_FAILURE(rc))
             LogRel(("Failed to start the host shared clipboard thread.\n"));
     }
     if (RT_FAILURE(rc))
     {
-        RTSemEventDestroy(g_ctx.waitForData);
-        RTSemMutexDestroy(g_ctx.clipboardMutex);
+        RTSemEventDestroy(g_ctxHost.waitForData);
+        RTSemEventDestroy(g_ctxX11.waitForData);
+        RTSemMutexDestroy(g_ctxHost.clipboardMutex);
     }
     return rc;
 }
@@ -874,28 +911,28 @@ void vboxClipboardDestroy (void)
     /* Drop the reference to the client, in case it is still there.  This will
      * cause any outstanding clipboard data requests from X11 to fail
      * immediately. */
-    g_ctx.pClient = NULL;
-    if (g_ctx.eOwner == VB)
+    g_ctxHost.pClient = NULL;
+    if (g_ctxX11.eOwner == VB)
         /* X11 may be waiting for data from VBox.  At this point it is no
          * longer going to arrive, and we must release it to allow the event
          * loop to terminate.  In this case the buffer where VBox would have
          * written the clipboard data will still be empty and we will just
          * return "no data" to X11.  Any subsequent attempts to get the data
          * from VBox will fail immediately as the client reference is gone. */
-        RTSemEventSignal(g_ctx.waitForData);
+        RTSemEventSignal(g_ctxHost.waitForData);
     /* Set the termination flag.  This has been observed to block if it was set
      * during a request for clipboard data coming from X11, so only we do it
      * after releasing any such requests. */
-    XtAppSetExitFlag(g_ctx.appContext);
+    XtAppSetExitFlag(g_ctxX11.appContext);
     /* Wake up the event loop */
     memset(&ev, 0, sizeof(ev));
     ev.xclient.type = ClientMessage;
     ev.xclient.format = 8;
-    XSendEvent(XtDisplay(g_ctx.widget), XtWindow(g_ctx.widget), false, 0, &ev);
-    XFlush(XtDisplay(g_ctx.widget));
+    XSendEvent(XtDisplay(g_ctxX11.widget), XtWindow(g_ctxX11.widget), false, 0, &ev);
+    XFlush(XtDisplay(g_ctxX11.widget));
     do
     {
-        rc = RTThreadWait(g_ctx.thread, 1000, &rcThread);
+        rc = RTThreadWait(g_ctxX11.thread, 1000, &rcThread);
         ++count;
         Assert(RT_SUCCESS(rc) || ((VERR_TIMEOUT == rc) && (count != 5)));
     } while ((VERR_TIMEOUT == rc) && (count < 300));
@@ -909,13 +946,14 @@ void vboxClipboardDestroy (void)
          *      Not possible, as we checked that the X11 event thread exited
          *      successfully.
          */
-        RTSemEventDestroy(g_ctx.waitForData);
-        RTSemMutexDestroy(g_ctx.clipboardMutex);
+        RTSemEventDestroy(g_ctxHost.waitForData);
+        RTSemEventDestroy(g_ctxX11.waitForData);
+        RTSemMutexDestroy(g_ctxHost.clipboardMutex);
         AssertRC(rcThread);
     }
     else
         LogRel(("vboxClipboardDestroy: rc=%Rrc\n", rc));
-    XtCloseDisplay(XtDisplay(g_ctx.widget));
+    XtCloseDisplay(XtDisplay(g_ctxX11.widget));
     LogFlowFunc(("returning.\n"));
 }
 
@@ -938,12 +976,12 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
     LogFlow(("vboxClipboardConnect\n"));
 
     /* Only one client is supported for now */
-    AssertLogRelReturn(g_ctx.pClient == 0, VERR_NOT_SUPPORTED);
+    AssertLogRelReturn(g_ctxHost.pClient == 0, VERR_NOT_SUPPORTED);
 
-    pClient->pCtx = &g_ctx;
+    pClient->pCtx = &g_ctxHost;
     pClient->pCtx->pClient = pClient;
-    g_ctx.eOwner = X11;
-    g_ctx.notifyGuest = true;
+    g_ctxX11.eOwner = X11;
+    g_ctxX11.notifyVBox = true;
     return VINF_SUCCESS;
 }
 
@@ -965,8 +1003,8 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
        we have no way of reliably telling when the host clipboard data changes.  So instead
        of synchronising, we tell the guest to empty its clipboard, and we set the cached
        flag so that we report formats to the guest next time we poll for them. */
-    vboxSvcClipboardReportMsg (g_ctx.pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, 0);
-    g_ctx.notifyGuest = true;
+    vboxSvcClipboardReportMsg (g_ctxHost.pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, 0);
+    g_ctxX11.notifyVBox = true;
 
     return VINF_SUCCESS;
 }
@@ -986,12 +1024,12 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *)
 
     LogFlow(("vboxClipboardDisconnect\n"));
 
-    RTSemMutexRequest(g_ctx.clipboardMutex, RT_INDEFINITE_WAIT);
-    g_ctx.pClient = NULL;
-    g_ctx.eOwner = NONE;
-    g_ctx.hostTextFormat = INVALID;
-    g_ctx.hostBitmapFormat = INVALID;
-    RTSemMutexRelease(g_ctx.clipboardMutex);
+    RTSemMutexRequest(g_ctxHost.clipboardMutex, RT_INDEFINITE_WAIT);
+    g_ctxHost.pClient = NULL;
+    g_ctxX11.eOwner = NONE;
+    g_ctxX11.X11TextFormat = INVALID;
+    g_ctxX11.X11BitmapFormat = INVALID;
+    RTSemMutexRelease(g_ctxHost.clipboardMutex);
 }
 
 /**
@@ -1010,28 +1048,28 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *)
 static Boolean vboxClipboardConvertTargetsForX11(Atom *atomTypeReturn, XtPointer *pValReturn,
                                                  unsigned long *pcLenReturn, int *piFormatReturn)
 {
-    unsigned uListSize = g_ctx.formatList.size();
+    unsigned uListSize = g_ctxX11.formatList.size();
     Atom *atomTargets = reinterpret_cast<Atom *>(XtMalloc((uListSize + 3) * sizeof(Atom)));
     unsigned cTargets = 0;
 
     LogFlowFunc (("called\n"));
     for (unsigned i = 0; i < uListSize; ++i)
     {
-        if (   ((g_ctx.guestFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT) != 0)
-            && (g_ctx.formatList[i].guestFormat == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT))
+        if (   ((g_ctxX11.vboxFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT) != 0)
+            && (g_ctxX11.formatList[i].guestFormat == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT))
         {
-            atomTargets[cTargets] = g_ctx.formatList[i].atom;
+            atomTargets[cTargets] = g_ctxX11.formatList[i].atom;
             ++cTargets;
         }
     }
-    atomTargets[cTargets] = g_ctx.atomTargets;
-    atomTargets[cTargets + 1] = g_ctx.atomMultiple;
-    atomTargets[cTargets + 2] = g_ctx.atomTimestamp;
+    atomTargets[cTargets] = g_ctxX11.atomTargets;
+    atomTargets[cTargets + 1] = g_ctxX11.atomMultiple;
+    atomTargets[cTargets + 2] = g_ctxX11.atomTimestamp;
     if (g_debugClipboard)
     {
         for (unsigned i = 0; i < cTargets + 3; i++)
         {
-            char *szAtomName = XGetAtomName(XtDisplay(g_ctx.widget), atomTargets[i]);
+            char *szAtomName = XGetAtomName(XtDisplay(g_ctxX11.widget), atomTargets[i]);
             if (szAtomName != 0)
             {
                 Log2 (("%s: returning target %s\n", __PRETTY_FUNCTION__,
@@ -1053,7 +1091,7 @@ static Boolean vboxClipboardConvertTargetsForX11(Atom *atomTypeReturn, XtPointer
 }
 
 /**
- * Satisfy a request from VBox to convert the clipboard text to Utf16.  We return non-zero
+ * Satisfy a request from X11 to convert the clipboard text to Utf16.  We return non-zero
  * terminated text.
  *
  * @returns true if we successfully convert the data to the format requested, false otherwise.
@@ -1074,7 +1112,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
     int rc;
 
     LogFlowFunc (("called\n"));
-    rc = vboxClipboardReadDataFromVBox(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
+    rc = vboxClipboardReadDataFromVBox(&g_ctxHost, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
     if ((RT_FAILURE(rc)) || (cbVBox == 0))
     {
         /* If vboxClipboardReadDataFromVBox fails then pClient may be invalid */
@@ -1117,7 +1155,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
     }
     LogFlowFunc (("converted string is %.*ls. Returning.\n", cwDestLen, pu16DestText));
     RTMemFree(pvVBox);
-    *atomTypeReturn = g_ctx.atomUtf16;
+    *atomTypeReturn = g_ctxX11.atomUtf16;
     *pValReturn = reinterpret_cast<XtPointer>(pu16DestText);
     *pcLenReturn = cwDestLen;
     *piFormatReturn = 16;
@@ -1125,7 +1163,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
 }
 
 /**
- * Satisfy a request from the host to convert the clipboard text to Utf8.
+ * Satisfy a request from X11 to convert the clipboard text to Utf8.
  *
  * @returns true if we successfully convert the data to the format requested, false otherwise.
  *
@@ -1151,7 +1189,7 @@ static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
 
     LogFlowFunc (("called\n"));
     /* Read the clipboard data from the guest. */
-    rc = vboxClipboardReadDataFromVBox(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
+    rc = vboxClipboardReadDataFromVBox(&g_ctxHost, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
     if ((rc != VINF_SUCCESS) || (cbVBox == 0))
     {
         /* If vboxClipboardReadDataFromVBox fails then pClient may be invalid */
@@ -1215,7 +1253,7 @@ static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
     }
     LogFlowFunc (("converted string is %.*s. Returning.\n", cbDestLen, pu8DestText));
     RTMemFree(pvVBox);
-    *atomTypeReturn = g_ctx.atomUtf8;
+    *atomTypeReturn = g_ctxX11.atomUtf8;
     *pValReturn = reinterpret_cast<XtPointer>(pu8DestText);
     *pcLenReturn = cbDestLen;
     *piFormatReturn = 8;
@@ -1223,7 +1261,7 @@ static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
 }
 
 /**
- * Satisfy a request from the host to convert the clipboard text to COMPOUND_TEXT.
+ * Satisfy a request from X11 to convert the clipboard text to COMPOUND_TEXT.
  *
  * @returns true if we successfully convert the data to the format requested, false otherwise.
  *
@@ -1250,7 +1288,7 @@ static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
 
     LogFlowFunc (("called\n"));
     /* Read the clipboard data from the guest. */
-    rc = vboxClipboardReadDataFromVBox(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
+    rc = vboxClipboardReadDataFromVBox(&g_ctxHost, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
     if ((rc != VINF_SUCCESS) || (cbVBox == 0))
     {
         /* If vboxClipboardReadDataFromVBox fails then pClient may be invalid */
@@ -1302,10 +1340,10 @@ static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
     }
     /* And finally (!) convert the Utf8 text to compound text. */
 #ifdef RT_OS_SOLARIS
-    rc = XmbTextListToTextProperty(XtDisplay(g_ctx.widget), &pu8DestText, 1,
+    rc = XmbTextListToTextProperty(XtDisplay(g_ctxX11.widget), &pu8DestText, 1,
                                      XCompoundTextStyle, &property);
 #else
-    rc = Xutf8TextListToTextProperty(XtDisplay(g_ctx.widget), &pu8DestText, 1,
+    rc = Xutf8TextListToTextProperty(XtDisplay(g_ctxX11.widget), &pu8DestText, 1,
                                      XCompoundTextStyle, &property);
 #endif
     RTMemFree(pu8DestText);
@@ -1357,10 +1395,10 @@ static Boolean vboxClipboardConvertForX11(Widget, Atom *atomSelection,
 
     LogFlowFunc(("\n"));
     /* Drop requests that we receive too late. */
-    if (g_ctx.eOwner != VB)
+    if (g_ctxX11.eOwner != VB)
         return false;
-    if (   (*atomSelection != g_ctx.atomClipboard)
-        && (*atomSelection != g_ctx.atomPrimary)
+    if (   (*atomSelection != g_ctxX11.atomClipboard)
+        && (*atomSelection != g_ctxX11.atomPrimary)
        )
     {
         LogFlowFunc(("rc = false\n"));
@@ -1368,7 +1406,7 @@ static Boolean vboxClipboardConvertForX11(Widget, Atom *atomSelection,
     }
     if (g_debugClipboard)
     {
-        char *szAtomName = XGetAtomName(XtDisplay(g_ctx.widget), *atomTarget);
+        char *szAtomName = XGetAtomName(XtDisplay(g_ctxX11.widget), *atomTarget);
         if (szAtomName != 0)
         {
             Log2 (("%s: request for format %s\n", __PRETTY_FUNCTION__, szAtomName));
@@ -1379,17 +1417,17 @@ static Boolean vboxClipboardConvertForX11(Widget, Atom *atomSelection,
             LogFunc (("request for invalid target atom %d!\n", *atomTarget));
         }
     }
-    if (*atomTarget == g_ctx.atomTargets)
+    if (*atomTarget == g_ctxX11.atomTargets)
     {
         eFormat = TARGETS;
     }
     else
     {
-        for (unsigned i = 0; i != g_ctx.formatList.size(); ++i)
+        for (unsigned i = 0; i != g_ctxX11.formatList.size(); ++i)
         {
-            if (g_ctx.formatList[i].atom == *atomTarget)
+            if (g_ctxX11.formatList[i].atom == *atomTarget)
             {
-                eFormat = g_ctx.formatList[i].format;
+                eFormat = g_ctxX11.formatList[i].format;
                 break;
             }
         }
@@ -1423,8 +1461,8 @@ static Boolean vboxClipboardConvertForX11(Widget, Atom *atomSelection,
 static void vboxClipboardReturnToX11(Widget, Atom *)
 {
     LogFlowFunc (("called, giving VBox clipboard ownership\n"));
-    g_ctx.eOwner = X11;
-    g_ctx.notifyGuest = true;
+    g_ctxX11.eOwner = X11;
+    g_ctxX11.notifyVBox = true;
 }
 
 /**
@@ -1443,7 +1481,7 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32
     if (!g_fHaveX11)
         return;
 
-    pClient->pCtx->guestFormats = u32Formats;
+    g_ctxX11.vboxFormats = u32Formats;
     LogFlowFunc (("u32Formats=%d\n", u32Formats));
     if (u32Formats == 0)
     {
@@ -1451,7 +1489,7 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32
         LogFlowFunc(("returning\n"));
         return;
     }
-    if (g_ctx.eOwner == VB)
+    if (g_ctxX11.eOwner == VB)
     {
         /* We already own the clipboard, so no need to grab it, especially as that can lead
            to races due to the asynchronous nature of the X11 clipboard.  This event may also
@@ -1460,19 +1498,19 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32
         return;
     }
     Log2 (("%s: giving the guest clipboard ownership\n", __PRETTY_FUNCTION__));
-    g_ctx.eOwner = VB;
-    g_ctx.hostTextFormat = INVALID;
-    g_ctx.hostBitmapFormat = INVALID;
-    if (XtOwnSelection(g_ctx.widget, g_ctx.atomClipboard, CurrentTime, vboxClipboardConvertForX11,
+    g_ctxX11.eOwner = VB;
+    g_ctxX11.X11TextFormat = INVALID;
+    g_ctxX11.X11BitmapFormat = INVALID;
+    if (XtOwnSelection(g_ctxX11.widget, g_ctxX11.atomClipboard, CurrentTime, vboxClipboardConvertForX11,
                        vboxClipboardReturnToX11, 0) != True)
     {
         Log2 (("%s: returning clipboard ownership to the host\n", __PRETTY_FUNCTION__));
         /* We set this so that the guest gets notified when we take the clipboard, even if no
           guest formats are found which we understand. */
-        g_ctx.notifyGuest = true;
-        g_ctx.eOwner = X11;
+        g_ctxX11.notifyVBox = true;
+        g_ctxX11.eOwner = X11;
     }
-    XtOwnSelection(g_ctx.widget, g_ctx.atomPrimary, CurrentTime, vboxClipboardConvertForX11,
+    XtOwnSelection(g_ctxX11.widget, g_ctxX11.atomPrimary, CurrentTime, vboxClipboardConvertForX11,
                    NULL, 0);
     LogFlowFunc(("returning\n"));
 
@@ -1509,7 +1547,7 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
      */
     if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
     {
-        if (g_ctx.hostTextFormat == INVALID)
+        if (g_ctxX11.X11TextFormat == INVALID)
         {
             /* No data available. */
             *pcbActual = 0;
@@ -1518,28 +1556,28 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
         /* No one else (VBox or X11) should currently be waiting.  The first because
          * requests from VBox are serialised and the second because X11 previously
          * grabbed the clipboard, so it should not be waiting for data from us. */
-        AssertLogRelReturn (ASMAtomicCmpXchgU32(&g_ctx.waiter, VB, NONE), VERR_DEADLOCK);
-        g_ctx.requestHostFormat = g_ctx.hostTextFormat;
-        g_ctx.requestBuffer = pv;
-        g_ctx.requestBufferSize = cb;
-        g_ctx.requestActualSize = pcbActual;
+        AssertLogRelReturn (ASMAtomicCmpXchgU32(&g_ctxHost.waiter, VB, NONE), VERR_DEADLOCK);
+        g_ctxHost.requestX11Format = g_ctxX11.X11TextFormat;
+        g_ctxHost.requestBuffer = pv;
+        g_ctxHost.requestBufferSize = cb;
+        g_ctxHost.requestActualSize = pcbActual;
         /* Initially set the size of the data read to zero in case we fail
          * somewhere. */
         *pcbActual = 0;
         /* Send out a request for the data to the current clipboard owner */
-        XtGetSelectionValue(g_ctx.widget, g_ctx.atomClipboard, g_ctx.atomHostTextFormat,
-                            vboxClipboardGetDataFromX11, reinterpret_cast<XtPointer>(g_ctx.pClient),
+        XtGetSelectionValue(g_ctxX11.widget, g_ctxX11.atomClipboard, g_ctxX11.atomX11TextFormat,
+                            vboxClipboardGetDataFromX11, reinterpret_cast<XtPointer>(g_ctxHost.pClient),
                             CurrentTime);
         /* When the data arrives, the vboxClipboardGetDataFromX11 callback will be called.  The
            callback will signal the event semaphore when it has processed the data for us. */
 
-        int rc = RTSemEventWait(g_ctx.waitForData, RT_INDEFINITE_WAIT);
+        int rc = RTSemEventWait(g_ctxX11.waitForData, RT_INDEFINITE_WAIT);
         if (RT_FAILURE(rc))
         {
-            g_ctx.waiter = NONE;
+            g_ctxHost.waiter = NONE;
             return rc;
         }
-        g_ctx.waiter = NONE;
+        g_ctxHost.waiter = NONE;
     }
     else
     {
@@ -1573,8 +1611,8 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_
 
     /* Grab the mutex and check that X11 is still waiting for the data before
      * delivering it.  See the explanation in vboxClipboardReadDataFromVBox. */
-    RTSemMutexRequest(g_ctx.clipboardMutex, RT_INDEFINITE_WAIT);
-    if (g_ctx.waiter == X11 && cb > 0)
+    RTSemMutexRequest(g_ctxHost.clipboardMutex, RT_INDEFINITE_WAIT);
+    if (g_ctxHost.waiter == X11 && cb > 0)
     {
         pClient->data.pv = RTMemAlloc (cb);
 
@@ -1585,8 +1623,8 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_
             pClient->data.u32Format = u32Format;
         }
     }
-    RTSemMutexRelease(g_ctx.clipboardMutex);
+    RTSemMutexRelease(g_ctxHost.clipboardMutex);
 
-    RTSemEventSignal(g_ctx.waitForData);
+    RTSemEventSignal(g_ctxHost.waitForData);
 }
 
