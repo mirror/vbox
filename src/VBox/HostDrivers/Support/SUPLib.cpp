@@ -292,15 +292,15 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
                          */
                         Assert(!g_pSUPGlobalInfoPage);
                         SUPGIPMAP GipMapReq;
-                        GipMapReq.Hdr.u32Cookie = g_u32Cookie;
-                        GipMapReq.Hdr.u32SessionCookie = g_u32SessionCookie;
-                        GipMapReq.Hdr.cbIn = SUP_IOCTL_GIP_MAP_SIZE_IN;
-                        GipMapReq.Hdr.cbOut = SUP_IOCTL_GIP_MAP_SIZE_OUT;
-                        GipMapReq.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
-                        GipMapReq.Hdr.rc = VERR_INTERNAL_ERROR;
-                        GipMapReq.u.Out.HCPhysGip = NIL_RTHCPHYS;
-                        GipMapReq.u.Out.pGipR0 = NIL_RTR0PTR;
-                        GipMapReq.u.Out.pGipR3 = NULL;
+                        GipMapReq.Hdr.u32Cookie         = CookieReq.u.Out.u32Cookie;
+                        GipMapReq.Hdr.u32SessionCookie  = CookieReq.u.Out.u32SessionCookie;
+                        GipMapReq.Hdr.cbIn              = SUP_IOCTL_GIP_MAP_SIZE_IN;
+                        GipMapReq.Hdr.cbOut             = SUP_IOCTL_GIP_MAP_SIZE_OUT;
+                        GipMapReq.Hdr.fFlags            = SUPREQHDR_FLAGS_DEFAULT;
+                        GipMapReq.Hdr.rc                = VERR_INTERNAL_ERROR;
+                        GipMapReq.u.Out.HCPhysGip       = NIL_RTHCPHYS;
+                        GipMapReq.u.Out.pGipR0          = NIL_RTR0PTR;
+                        GipMapReq.u.Out.pGipR3          = NULL;
                         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_GIP_MAP, &GipMapReq, SUP_IOCTL_GIP_MAP_SIZE);
                         if (RT_SUCCESS(rc))
                             rc = GipMapReq.Hdr.rc;
