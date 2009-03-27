@@ -20,6 +20,7 @@
  * additional information or have any questions.
  */
 
+/* VBox includes */
 #include "VBoxImportApplianceWzd.h"
 #include "VBoxGlobal.h"
 #include "QIWidgetValidator.h"
@@ -69,9 +70,9 @@ VBoxImportLicenseViewer::VBoxImportLicenseViewer (QWidget *aParent /* = NULL */)
 }
 
 void VBoxImportLicenseViewer::setContent (const QString &aName, const QString &aText)
-{ 
-    mName = aName; 
-    mText = aText; 
+{
+    mName = aName;
+    mText = aText;
     mCaption->setText (tr ("<b>To continue importing the Appliance you must agree to the terms of the software license agreement for the Virtual System \"%1\".</b><br /><br />Click <b>Agree</b> to continue or click <b>Disagree</b> to cancel the import.").arg (mName));
     mLicenseText->setText (mText);
 
@@ -92,7 +93,7 @@ void VBoxImportLicenseViewer::print()
 {
     QPrinter printer;
     QPrintDialog pd (&printer, this);
-    if (pd.exec() == QDialog::Accepted) 
+    if (pd.exec() == QDialog::Accepted)
         mLicenseText->print (&printer);
 }
 
@@ -102,7 +103,7 @@ void VBoxImportLicenseViewer::save()
     if (!fileName.isEmpty())
     {
         QFile file (fileName);
-        if (file.open(QFile::WriteOnly | QFile::Truncate)) 
+        if (file.open(QFile::WriteOnly | QFile::Truncate))
         {
             QTextStream out (&file);
             out << mLicenseText->toPlainText();

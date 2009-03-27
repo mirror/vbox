@@ -41,16 +41,9 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxImportApplianceWgt
 
-int VBoxImportApplianceWgt::mMinGuestRAM = -1;
-int VBoxImportApplianceWgt::mMaxGuestRAM = -1;
-int VBoxImportApplianceWgt::mMinGuestCPUCount = -1;
-int VBoxImportApplianceWgt::mMaxGuestCPUCount = -1;
-
 VBoxImportApplianceWgt::VBoxImportApplianceWgt (QWidget *aParent)
     : VBoxApplianceEditorWgt (aParent)
 {
-    /* Make sure all static content is properly initialized */
-    initSystemSettings();
 }
 
 bool VBoxImportApplianceWgt::setFile (const QString& aFile)
@@ -172,20 +165,5 @@ QList < QPair<QString, QString> > VBoxImportApplianceWgt::licenseAgreements() co
     }
 
     return list;
-}
-
-/* static */
-void VBoxImportApplianceWgt::initSystemSettings()
-{
-    if (mMinGuestRAM == -1)
-    {
-        /* We need some global defaults from the current VirtualBox
-           installation */
-        CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
-        mMinGuestRAM = sp.GetMinGuestRAM();
-        mMaxGuestRAM = sp.GetMaxGuestRAM();
-        mMinGuestCPUCount = sp.GetMinGuestCPUCount();
-        mMaxGuestCPUCount = sp.GetMaxGuestCPUCount();
-    }
 }
 

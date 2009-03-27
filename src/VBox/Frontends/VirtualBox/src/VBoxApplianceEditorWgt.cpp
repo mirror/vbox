@@ -22,10 +22,8 @@
 
 /* VBox includes */
 #include "VBoxApplianceEditorWgt.h"
-#include "VBoxImportApplianceWzd.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
-#include "VBoxFilePathSelectorWidget.h"
 #include "VBoxOSTypeSelectorButton.h"
 #include "VBoxLineTextEdit.h"
 
@@ -99,7 +97,7 @@ QVariant VirtualSystemItem::data (int aColumn, int aRole) const
     QVariant v;
     if (aColumn == DescriptionSection &&
         aRole == Qt::DisplayRole)
-        v = VBoxImportApplianceWgt::tr ("Virtual System %1").arg (mNumber + 1);
+        v = VBoxApplianceEditorWgt::tr ("Virtual System %1").arg (mNumber + 1);
     return v;
 }
 
@@ -179,27 +177,27 @@ QVariant HardwareItem::data (int aColumn, int aRole) const
                 {
                     switch (mType)
                     {
-                        case KVirtualSystemDescriptionType_Name: v = VBoxImportApplianceWgt::tr ("Name"); break;
-                        case KVirtualSystemDescriptionType_Product: v = VBoxImportApplianceWgt::tr ("Product"); break;
-                        case KVirtualSystemDescriptionType_ProductUrl: v = VBoxImportApplianceWgt::tr ("Product-URL"); break;
-                        case KVirtualSystemDescriptionType_Vendor: v = VBoxImportApplianceWgt::tr ("Vendor"); break;
-                        case KVirtualSystemDescriptionType_VendorUrl: v = VBoxImportApplianceWgt::tr ("Vendor-URL"); break;
-                        case KVirtualSystemDescriptionType_Version: v = VBoxImportApplianceWgt::tr ("Version"); break;
-                        case KVirtualSystemDescriptionType_Description: v = VBoxImportApplianceWgt::tr ("Description"); break;
-                        case KVirtualSystemDescriptionType_License: v = VBoxImportApplianceWgt::tr ("License"); break;
-                        case KVirtualSystemDescriptionType_OS: v = VBoxImportApplianceWgt::tr ("Guest OS Type"); break;
-                        case KVirtualSystemDescriptionType_CPU: v = VBoxImportApplianceWgt::tr ("CPU"); break;
-                        case KVirtualSystemDescriptionType_Memory: v = VBoxImportApplianceWgt::tr ("RAM"); break;
-                        case KVirtualSystemDescriptionType_HardDiskControllerIDE: v = VBoxImportApplianceWgt::tr ("Hard Disk Controller IDE"); break;
-                        case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = VBoxImportApplianceWgt::tr ("Hard Disk Controller SATA"); break;
-                        case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = VBoxImportApplianceWgt::tr ("Hard Disk Controller SCSI"); break;
-                        case KVirtualSystemDescriptionType_CDROM: v = VBoxImportApplianceWgt::tr ("DVD"); break;
-                        case KVirtualSystemDescriptionType_Floppy: v = VBoxImportApplianceWgt::tr ("Floppy"); break;
-                        case KVirtualSystemDescriptionType_NetworkAdapter: v = VBoxImportApplianceWgt::tr ("Network Adapter"); break;
-                        case KVirtualSystemDescriptionType_USBController: v = VBoxImportApplianceWgt::tr ("USB Controller"); break;
-                        case KVirtualSystemDescriptionType_SoundCard: v = VBoxImportApplianceWgt::tr ("Sound Card"); break;
-                        case KVirtualSystemDescriptionType_HardDiskImage: v = VBoxImportApplianceWgt::tr ("Virtual Disk Image"); break;
-                        default: v = VBoxImportApplianceWgt::tr ("Unknown Hardware Item"); break;
+                        case KVirtualSystemDescriptionType_Name: v = VBoxApplianceEditorWgt::tr ("Name"); break;
+                        case KVirtualSystemDescriptionType_Product: v = VBoxApplianceEditorWgt::tr ("Product"); break;
+                        case KVirtualSystemDescriptionType_ProductUrl: v = VBoxApplianceEditorWgt::tr ("Product-URL"); break;
+                        case KVirtualSystemDescriptionType_Vendor: v = VBoxApplianceEditorWgt::tr ("Vendor"); break;
+                        case KVirtualSystemDescriptionType_VendorUrl: v = VBoxApplianceEditorWgt::tr ("Vendor-URL"); break;
+                        case KVirtualSystemDescriptionType_Version: v = VBoxApplianceEditorWgt::tr ("Version"); break;
+                        case KVirtualSystemDescriptionType_Description: v = VBoxApplianceEditorWgt::tr ("Description"); break;
+                        case KVirtualSystemDescriptionType_License: v = VBoxApplianceEditorWgt::tr ("License"); break;
+                        case KVirtualSystemDescriptionType_OS: v = VBoxApplianceEditorWgt::tr ("Guest OS Type"); break;
+                        case KVirtualSystemDescriptionType_CPU: v = VBoxApplianceEditorWgt::tr ("CPU"); break;
+                        case KVirtualSystemDescriptionType_Memory: v = VBoxApplianceEditorWgt::tr ("RAM"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerIDE: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller IDE"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller SATA"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller SCSI"); break;
+                        case KVirtualSystemDescriptionType_CDROM: v = VBoxApplianceEditorWgt::tr ("DVD"); break;
+                        case KVirtualSystemDescriptionType_Floppy: v = VBoxApplianceEditorWgt::tr ("Floppy"); break;
+                        case KVirtualSystemDescriptionType_NetworkAdapter: v = VBoxApplianceEditorWgt::tr ("Network Adapter"); break;
+                        case KVirtualSystemDescriptionType_USBController: v = VBoxApplianceEditorWgt::tr ("USB Controller"); break;
+                        case KVirtualSystemDescriptionType_SoundCard: v = VBoxApplianceEditorWgt::tr ("Sound Card"); break;
+                        case KVirtualSystemDescriptionType_HardDiskImage: v = VBoxApplianceEditorWgt::tr ("Virtual Disk Image"); break;
+                        default: v = VBoxApplianceEditorWgt::tr ("Unknown Hardware Item"); break;
                     }
                 }
                 else if (aColumn == OriginalValueSection)
@@ -218,7 +216,7 @@ QVariant HardwareItem::data (int aColumn, int aRole) const
                                 v = tmp; break;
                             }
                         case KVirtualSystemDescriptionType_OS: v = vboxGlobal().vmGuestOSTypeDescription (mConfigValue); break;
-                        case KVirtualSystemDescriptionType_Memory: v = mConfigValue + " " + VBoxImportApplianceWgt::tr ("MB"); break;
+                        case KVirtualSystemDescriptionType_Memory: v = mConfigValue + " " + VBoxApplianceEditorWgt::tr ("MB"); break;
                         case KVirtualSystemDescriptionType_SoundCard: v = vboxGlobal().toString (static_cast<KAudioControllerType> (mConfigValue.toInt())); break;
                         case KVirtualSystemDescriptionType_NetworkAdapter: v = vboxGlobal().toString (static_cast<KNetworkAdapterType> (mConfigValue.toInt())); break;
                         default: v = mConfigValue; break;
@@ -231,7 +229,7 @@ QVariant HardwareItem::data (int aColumn, int aRole) const
                 if (aColumn == ConfigValueSection)
                 {
                     if (!mOrigValue.isEmpty())
-                        v = VBoxImportApplianceWgt::tr ("<b>Original Value:</b> %1").arg (mOrigValue);
+                        v = VBoxApplianceEditorWgt::tr ("<b>Original Value:</b> %1").arg (mOrigValue);
                 }
                 break;
             }
@@ -381,15 +379,15 @@ QWidget * HardwareItem::createEditor (QWidget *aParent, const QStyleOptionViewIt
             case KVirtualSystemDescriptionType_CPU:
                 {
                     QSpinBox *e = new QSpinBox (aParent);
-                    e->setRange (VBoxImportApplianceWgt::minGuestCPUCount(), VBoxImportApplianceWgt::maxGuestCPUCount());
+                    e->setRange (VBoxApplianceEditorWgt::minGuestCPUCount(), VBoxApplianceEditorWgt::maxGuestCPUCount());
                     editor = e;
                     break;
                 }
             case KVirtualSystemDescriptionType_Memory:
                 {
                     QSpinBox *e = new QSpinBox (aParent);
-                    e->setRange (VBoxImportApplianceWgt::minGuestRAM(), VBoxImportApplianceWgt::maxGuestRAM());
-                    e->setSuffix (" " + VBoxImportApplianceWgt::tr ("MB"));
+                    e->setRange (VBoxApplianceEditorWgt::minGuestRAM(), VBoxApplianceEditorWgt::maxGuestRAM());
+                    e->setSuffix (" " + VBoxApplianceEditorWgt::tr ("MB"));
                     editor = e;
                     break;
                 }
@@ -776,8 +774,8 @@ QVariant VirtualSystemModel::headerData (int aSection, Qt::Orientation aOrientat
     QString title;
     switch (aSection)
     {
-        case DescriptionSection: title = VBoxImportApplianceWgt::tr ("Description"); break;
-        case ConfigValueSection: title = VBoxImportApplianceWgt::tr ("Configuration"); break;
+        case DescriptionSection: title = VBoxApplianceEditorWgt::tr ("Description"); break;
+        case ConfigValueSection: title = VBoxApplianceEditorWgt::tr ("Configuration"); break;
     }
     return title;
 }
@@ -959,11 +957,19 @@ bool VirtualSystemSortProxyModel::lessThan (const QModelIndex &aLeft, const QMod
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxApplianceEditorWgt
 
+int VBoxApplianceEditorWgt::mMinGuestRAM = -1;
+int VBoxApplianceEditorWgt::mMaxGuestRAM = -1;
+int VBoxApplianceEditorWgt::mMinGuestCPUCount = -1;
+int VBoxApplianceEditorWgt::mMaxGuestCPUCount = -1;
+
 VBoxApplianceEditorWgt::VBoxApplianceEditorWgt (QWidget *aParent /* = NULL */)
     : QIWithRetranslateUI<QWidget> (aParent)
     , mAppliance (NULL)
     , mModel (NULL)
 {
+    /* Make sure all static content is properly initialized */
+    initSystemSettings();
+
     /* Apply UI decorations */
     Ui::VBoxApplianceEditorWgt::setupUi (this);
 
@@ -988,4 +994,18 @@ void VBoxApplianceEditorWgt::retranslateUi()
     Ui::VBoxApplianceEditorWgt::retranslateUi (this);
 }
 
+/* static */
+void VBoxApplianceEditorWgt::initSystemSettings()
+{
+    if (mMinGuestRAM == -1)
+    {
+        /* We need some global defaults from the current VirtualBox
+           installation */
+        CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
+        mMinGuestRAM = sp.GetMinGuestRAM();
+        mMaxGuestRAM = sp.GetMaxGuestRAM();
+        mMinGuestCPUCount = sp.GetMinGuestCPUCount();
+        mMaxGuestCPUCount = sp.GetMaxGuestCPUCount();
+    }
+}
 

@@ -38,20 +38,6 @@ public:
     bool import();
 
     QList < QPair <QString, QString> > licenseAgreements() const;
-
-    static int minGuestRAM() { return mMinGuestRAM; }
-    static int maxGuestRAM() { return mMaxGuestRAM; }
-    static int minGuestCPUCount() { return mMinGuestCPUCount; }
-    static int maxGuestCPUCount() { return mMaxGuestCPUCount; }
-
-private:
-    static void initSystemSettings();
-
-    /* Private member vars */
-    static int mMinGuestRAM;
-    static int mMaxGuestRAM;
-    static int mMinGuestCPUCount;
-    static int mMaxGuestCPUCount;
 };
 
 #endif /* __VBoxImportApplianceWgt_h__ */
