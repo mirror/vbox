@@ -3264,8 +3264,8 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bst
     ULONG ulTotalOperationsWeight;
     if (ulTotalMB)
     {
-        ulTotalOperationsWeight = (ULONG)((double)ulTotalMB * 99 / 100);    // use 99% of the progress for the disks
         m->ulWeightPerOperation = (ULONG)((double)ulTotalMB * 1  / 100);    // use 1% of the progress for the XML
+        ulTotalOperationsWeight = ulTotalMB + m->ulWeightPerOperation;
     }
     else
     {
