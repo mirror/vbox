@@ -318,7 +318,7 @@ bool VBoxProblemReporter::askForOverridingFilesIfExists (const QStringList& aPat
         /* If it is only one file use the single question versions above */
         return askForOverridingFileIfExists (existingFiles.at (0), aParent);
     else if (existingFiles.size() > 1)
-        return messageYesNo (aParent, Question, tr ("The following files exists already:<br /><br />%1<br /><br />Are you sure you want to replace them? Replacing them will overwrite their contents.").arg (existingFiles.join ("<br />")));
+        return messageYesNo (aParent, Question, tr ("The following files already exist:<br /><br />%1<br /><br />Are you sure you want to replace them? Replacing them will overwrite their contents.").arg (existingFiles.join ("<br />")));
     else
         return true;
 }
@@ -337,8 +337,8 @@ void VBoxProblemReporter::showBETAWarning()
 {
     message
         (0, Warning,
-         tr ("You're running a prerelease version of VirtualBox. "
-             "This version is not designed for production use."));
+         tr ("You are running a prerelease version of VirtualBox. "
+             "This version is not suitable for production use."));
 }
 
 #ifdef Q_WS_X11
@@ -751,8 +751,8 @@ bool VBoxProblemReporter::warnAboutVirtNotEnabled()
 {
     return messageOkCancel (mainWindowShown(), Error,
         tr ("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
-            "not operational. Your 64 bits guest will fail to detect a 64 "
-            "bits CPU and will not be able to boot.</p><p>Please check if you "
+            "not operational. Your 64 bit guest will fail to detect a 64 "
+            "bit CPU and will not be able to boot.</p><p>Please check if you "
             "have enabled VT-x/AMD-V properly in the BIOS of your host "
             "computer.</p>"),
         0 /* aAutoConfirmId */,
@@ -1049,7 +1049,7 @@ int VBoxProblemReporter::confirmDetachAddControllerSlots (QWidget *aParent) cons
         tr ("<p>There are hard disks attached to ports of the additional controller. "
             "If you disable the additional controller, all these hard disks "
             "will be automatically detached.</p>"
-            "<p>Are you sure that you want to "
+            "<p>Are you sure you want to "
             "disable the additional controller?</p>"),
         0 /* aAutoConfirmId */,
         tr ("Disable", "hard disk"));
@@ -1061,7 +1061,7 @@ int VBoxProblemReporter::confirmChangeAddControllerSlots (QWidget *aParent) cons
         tr ("<p>There are hard disks attached to ports of the additional controller. "
             "If you change the additional controller, all these hard disks "
             "will be automatically detached.</p>"
-            "<p>Are you sure that you want to "
+            "<p>Are you sure you want to "
             "change the additional controller?</p>"),
         0 /* aAutoConfirmId */,
         tr ("Change", "hard disk"));
@@ -2009,7 +2009,7 @@ void VBoxProblemReporter::cannotExportAppliance (CAppliance *aAppliance, QWidget
     {
         message (aParent ? aParent : mainWindowShown(),
                  Error,
-                 tr ("Failed to create an appliance."));
+                 tr ("Failed to create appliance."));
     }else
     {
         /* Preserve the current error info before calling the object again */

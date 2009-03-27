@@ -99,7 +99,7 @@ void VBoxImportLicenseViewer::print()
 
 void VBoxImportLicenseViewer::save()
 {
-    QString fileName = vboxGlobal().getSaveFileName (vboxGlobal().documentsPath(), tr("Text (*.txt)"), this, tr("Select a file to save into..."));
+    QString fileName = vboxGlobal().getSaveFileName (vboxGlobal().documentsPath(), tr("Text (*.txt)"), this, tr("Save license to file..."));
     if (!fileName.isEmpty())
     {
         QFile file (fileName);
