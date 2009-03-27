@@ -33,242 +33,270 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/asm.h>
+#include <iprt/test.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/test.h>
+#include <iprt/initterm.h>
 
 
 int main()
 {
+    /*
+     * Init the runtime and stuff.
+     */
+    RTTEST hTest;
+    if (    RT_FAILURE(RTR3Init())
+        ||  RT_FAILURE(RTTestCreate("tstBitOperations", &hTest)))
+    {
+        RTPrintf("tstBitOperation: fatal initialization error\n");
+        return 1;
+    }
+    RTTestBanner(hTest);
+
     int rcRet = 0;
     int i;
     int j;
     int k;
-    RTPrintf("tstBitOperations: TESTING\n");
-
 
     /*
      * Tests
      */
-    uint32_t au32[4];
-    #define MAP_CLEAR(a) memset(&a,    0, sizeof(a));
-    #define MAP_SET(a)   memset(&a, 0xff, sizeof(a));
-    #define DUMP()       RTPrintf("au32={%08x,%08x,%08x,%08x}\n", au32[0], au32[1], au32[2], au32[3])
-    #define CHECK(expr)  do { if (!(expr)) { RTPrintf("tstBitOperations: error line %d: %s\n", __LINE__, #expr); DUMP(); rcRet++; } } while (0)
-    #define CHECK_BIT(expr,  b1)            do { if (!(expr)) { RTPrintf("tstBitOperations: error line %d, b1=%d: %s\n", __LINE__, b1, #expr); rcRet++; } } while (0)
-    #define CHECK_BIT2(expr, b1, b2)        do { if (!(expr)) { RTPrintf("tstBitOperations: error line %d, b1=%d b2=%d: %s\n", __LINE__, b1, b2, #expr); rcRet++; } } while (0)
-    #define CHECK_BIT3(expr, b1, b2, b3)    do { if (!(expr)) { RTPrintf("tstBitOperations: error line %d, b1=%d b2=%d b3=%d: %s\n", __LINE__, b1, b2, b3, #expr); rcRet++; } } while (0)
+    struct TestMap
+    {
+        uint32_t au32[4];
+    };
+#if 0
+    struct TestMap sTest;
+    struct TestMap *p = &sTest;
+#else
+    struct TestMap *p = (struct TestMap *)RTTestGuardedAllocTail(hTest, sizeof(*p));
+#endif
+#define DUMP()          RTTestPrintf(hTest, "au32={%08x,%08x,%08x,%08x}", p->au32[0], p->au32[1], p->au32[2], p->au32[3])
+#define CHECK(expr)     do { if (!(expr)) { RTTestFailed(hTest, "line %d: %s", __LINE__, #expr); DUMP(); } CHECK_GUARD(s); } while (0)
+#define CHECK_BIT(expr,  b1)            do { if (!(expr)) { RTTestFailed(hTest, "line %d, b1=%d: %s", __LINE__, b1, #expr); } CHECK_GUARD(s); } while (0)
+#define CHECK_BIT2(expr, b1, b2)        do { if (!(expr)) { RTTestFailed(hTest, "line %d, b1=%d b2=%d: %s", __LINE__, b1, b2, #expr); } CHECK_GUARD(s); } while (0)
+#define CHECK_BIT3(expr, b1, b2, b3)    do { if (!(expr)) { RTTestFailed(hTest, "line %d, b1=%d b2=%d b3=%d: %s", __LINE__, b1, b2, b3, #expr); } CHECK_GUARD(s); } while (0)
+
+#define GUARD_MAP(p)    do {  } while (0)
+#define CHECK_GUARD(p)  do {  } while (0)
+#define MAP_CLEAR(p)    do { memset(p,    0, sizeof(*(p))); GUARD_MAP(p); } while (0)
+#define MAP_SET(p)      do { memset(p, 0xff, sizeof(*(p))); GUARD_MAP(p); } while (0)
+
+    /* self check. */
+    MAP_CLEAR(p);
+    CHECK_GUARD(p);
 
     /* set */
-    MAP_CLEAR(au32);
-    ASMBitSet(&au32[0], 0);
-    ASMBitSet(&au32[0], 31);
-    ASMBitSet(&au32[0], 65);
-    CHECK(au32[0] == 0x80000001U);
-    CHECK(au32[2] == 0x00000002U);
-    CHECK(ASMBitTestAndSet(&au32[0], 0)   && au32[0] == 0x80000001U);
-    CHECK(!ASMBitTestAndSet(&au32[0], 16) && au32[0] == 0x80010001U);
-    CHECK(ASMBitTestAndSet(&au32[0], 16)  && au32[0] == 0x80010001U);
-    CHECK(!ASMBitTestAndSet(&au32[0], 80) && au32[2] == 0x00010002U);
+    MAP_CLEAR(p);
+    ASMBitSet(&p->au32[0], 0);
+    ASMBitSet(&p->au32[0], 31);
+    ASMBitSet(&p->au32[0], 65);
+    CHECK(p->au32[0] == 0x80000001U);
+    CHECK(p->au32[2] == 0x00000002U);
+    CHECK(ASMBitTestAndSet(&p->au32[0], 0)   && p->au32[0] == 0x80000001U);
+    CHECK(!ASMBitTestAndSet(&p->au32[0], 16) && p->au32[0] == 0x80010001U);
+    CHECK(ASMBitTestAndSet(&p->au32[0], 16)  && p->au32[0] == 0x80010001U);
+    CHECK(!ASMBitTestAndSet(&p->au32[0], 80) && p->au32[2] == 0x00010002U);
 
-    MAP_CLEAR(au32);
-    ASMAtomicBitSet(&au32[0], 0);
-    ASMAtomicBitSet(&au32[0], 30);
-    ASMAtomicBitSet(&au32[0], 64);
-    CHECK(au32[0] == 0x40000001U);
-    CHECK(au32[2] == 0x00000001U);
-    CHECK(ASMAtomicBitTestAndSet(&au32[0], 0)   && au32[0] == 0x40000001U);
-    CHECK(!ASMAtomicBitTestAndSet(&au32[0], 16) && au32[0] == 0x40010001U);
-    CHECK(ASMAtomicBitTestAndSet(&au32[0], 16)  && au32[0] == 0x40010001U);
-    CHECK(!ASMAtomicBitTestAndSet(&au32[0], 80) && au32[2] == 0x00010001U);
+    MAP_CLEAR(p);
+    ASMAtomicBitSet(&p->au32[0], 0);
+    ASMAtomicBitSet(&p->au32[0], 30);
+    ASMAtomicBitSet(&p->au32[0], 64);
+    CHECK(p->au32[0] == 0x40000001U);
+    CHECK(p->au32[2] == 0x00000001U);
+    CHECK(ASMAtomicBitTestAndSet(&p->au32[0], 0)   && p->au32[0] == 0x40000001U);
+    CHECK(!ASMAtomicBitTestAndSet(&p->au32[0], 16) && p->au32[0] == 0x40010001U);
+    CHECK(ASMAtomicBitTestAndSet(&p->au32[0], 16)  && p->au32[0] == 0x40010001U);
+    CHECK(!ASMAtomicBitTestAndSet(&p->au32[0], 80) && p->au32[2] == 0x00010001U);
 
     /* clear */
-    MAP_SET(au32);
-    ASMBitClear(&au32[0], 0);
-    ASMBitClear(&au32[0], 31);
-    ASMBitClear(&au32[0], 65);
-    CHECK(au32[0] == ~0x80000001U);
-    CHECK(au32[2] == ~0x00000002U);
-    CHECK(!ASMBitTestAndClear(&au32[0], 0)   && au32[0] == ~0x80000001U);
-    CHECK(ASMBitTestAndClear(&au32[0], 16)   && au32[0] == ~0x80010001U);
-    CHECK(!ASMBitTestAndClear(&au32[0], 16)  && au32[0] == ~0x80010001U);
-    CHECK(ASMBitTestAndClear(&au32[0], 80)   && au32[2] == ~0x00010002U);
+    MAP_SET(p);
+    ASMBitClear(&p->au32[0], 0);
+    ASMBitClear(&p->au32[0], 31);
+    ASMBitClear(&p->au32[0], 65);
+    CHECK(p->au32[0] == ~0x80000001U);
+    CHECK(p->au32[2] == ~0x00000002U);
+    CHECK(!ASMBitTestAndClear(&p->au32[0], 0)   && p->au32[0] == ~0x80000001U);
+    CHECK(ASMBitTestAndClear(&p->au32[0], 16)   && p->au32[0] == ~0x80010001U);
+    CHECK(!ASMBitTestAndClear(&p->au32[0], 16)  && p->au32[0] == ~0x80010001U);
+    CHECK(ASMBitTestAndClear(&p->au32[0], 80)   && p->au32[2] == ~0x00010002U);
 
-    MAP_SET(au32);
-    ASMAtomicBitClear(&au32[0], 0);
-    ASMAtomicBitClear(&au32[0], 30);
-    ASMAtomicBitClear(&au32[0], 64);
-    CHECK(au32[0] == ~0x40000001U);
-    CHECK(au32[2] == ~0x00000001U);
-    CHECK(!ASMAtomicBitTestAndClear(&au32[0], 0)   && au32[0] == ~0x40000001U);
-    CHECK(ASMAtomicBitTestAndClear(&au32[0], 16)   && au32[0] == ~0x40010001U);
-    CHECK(!ASMAtomicBitTestAndClear(&au32[0], 16)  && au32[0] == ~0x40010001U);
-    CHECK(ASMAtomicBitTestAndClear(&au32[0], 80)   && au32[2] == ~0x00010001U);
+    MAP_SET(p);
+    ASMAtomicBitClear(&p->au32[0], 0);
+    ASMAtomicBitClear(&p->au32[0], 30);
+    ASMAtomicBitClear(&p->au32[0], 64);
+    CHECK(p->au32[0] == ~0x40000001U);
+    CHECK(p->au32[2] == ~0x00000001U);
+    CHECK(!ASMAtomicBitTestAndClear(&p->au32[0], 0)   && p->au32[0] == ~0x40000001U);
+    CHECK(ASMAtomicBitTestAndClear(&p->au32[0], 16)   && p->au32[0] == ~0x40010001U);
+    CHECK(!ASMAtomicBitTestAndClear(&p->au32[0], 16)  && p->au32[0] == ~0x40010001U);
+    CHECK(ASMAtomicBitTestAndClear(&p->au32[0], 80)   && p->au32[2] == ~0x00010001U);
 
     /* toggle */
-    MAP_SET(au32);
-    ASMBitToggle(&au32[0], 0);
-    ASMBitToggle(&au32[0], 31);
-    ASMBitToggle(&au32[0], 65);
-    ASMBitToggle(&au32[0], 47);
-    ASMBitToggle(&au32[0], 47);
-    CHECK(au32[0] == ~0x80000001U);
-    CHECK(au32[2] == ~0x00000002U);
-    CHECK(!ASMBitTestAndToggle(&au32[0], 0)   && au32[0] == ~0x80000000U);
-    CHECK(ASMBitTestAndToggle(&au32[0], 0)    && au32[0] == ~0x80000001U);
-    CHECK(ASMBitTestAndToggle(&au32[0], 16)   && au32[0] == ~0x80010001U);
-    CHECK(!ASMBitTestAndToggle(&au32[0], 16)  && au32[0] == ~0x80000001U);
-    CHECK(ASMBitTestAndToggle(&au32[0], 80)   && au32[2] == ~0x00010002U);
+    MAP_SET(p);
+    ASMBitToggle(&p->au32[0], 0);
+    ASMBitToggle(&p->au32[0], 31);
+    ASMBitToggle(&p->au32[0], 65);
+    ASMBitToggle(&p->au32[0], 47);
+    ASMBitToggle(&p->au32[0], 47);
+    CHECK(p->au32[0] == ~0x80000001U);
+    CHECK(p->au32[2] == ~0x00000002U);
+    CHECK(!ASMBitTestAndToggle(&p->au32[0], 0)   && p->au32[0] == ~0x80000000U);
+    CHECK(ASMBitTestAndToggle(&p->au32[0], 0)    && p->au32[0] == ~0x80000001U);
+    CHECK(ASMBitTestAndToggle(&p->au32[0], 16)   && p->au32[0] == ~0x80010001U);
+    CHECK(!ASMBitTestAndToggle(&p->au32[0], 16)  && p->au32[0] == ~0x80000001U);
+    CHECK(ASMBitTestAndToggle(&p->au32[0], 80)   && p->au32[2] == ~0x00010002U);
 
-    MAP_SET(au32);
-    ASMAtomicBitToggle(&au32[0], 0);
-    ASMAtomicBitToggle(&au32[0], 30);
-    ASMAtomicBitToggle(&au32[0], 64);
-    ASMAtomicBitToggle(&au32[0], 47);
-    ASMAtomicBitToggle(&au32[0], 47);
-    CHECK(au32[0] == ~0x40000001U);
-    CHECK(au32[2] == ~0x00000001U);
-    CHECK(!ASMAtomicBitTestAndToggle(&au32[0], 0)   && au32[0] == ~0x40000000U);
-    CHECK(ASMAtomicBitTestAndToggle(&au32[0], 0)    && au32[0] == ~0x40000001U);
-    CHECK(ASMAtomicBitTestAndToggle(&au32[0], 16)   && au32[0] == ~0x40010001U);
-    CHECK(!ASMAtomicBitTestAndToggle(&au32[0], 16)  && au32[0] == ~0x40000001U);
-    CHECK(ASMAtomicBitTestAndToggle(&au32[0], 80)   && au32[2] == ~0x00010001U);
+    MAP_SET(p);
+    ASMAtomicBitToggle(&p->au32[0], 0);
+    ASMAtomicBitToggle(&p->au32[0], 30);
+    ASMAtomicBitToggle(&p->au32[0], 64);
+    ASMAtomicBitToggle(&p->au32[0], 47);
+    ASMAtomicBitToggle(&p->au32[0], 47);
+    CHECK(p->au32[0] == ~0x40000001U);
+    CHECK(p->au32[2] == ~0x00000001U);
+    CHECK(!ASMAtomicBitTestAndToggle(&p->au32[0], 0)   && p->au32[0] == ~0x40000000U);
+    CHECK(ASMAtomicBitTestAndToggle(&p->au32[0], 0)    && p->au32[0] == ~0x40000001U);
+    CHECK(ASMAtomicBitTestAndToggle(&p->au32[0], 16)   && p->au32[0] == ~0x40010001U);
+    CHECK(!ASMAtomicBitTestAndToggle(&p->au32[0], 16)  && p->au32[0] == ~0x40000001U);
+    CHECK(ASMAtomicBitTestAndToggle(&p->au32[0], 80)   && p->au32[2] == ~0x00010001U);
 
     /* test bit. */
     for (i = 0; i < 128; i++)
     {
-        MAP_SET(au32);
-        CHECK_BIT(ASMBitTest(&au32[0], i), i);
-        ASMBitToggle(&au32[0], i);
-        CHECK_BIT(!ASMBitTest(&au32[0], i), i);
-        CHECK_BIT(!ASMBitTestAndToggle(&au32[0], i), i);
-        CHECK_BIT(ASMBitTest(&au32[0], i), i);
-        CHECK_BIT(ASMBitTestAndToggle(&au32[0], i), i);
-        CHECK_BIT(!ASMBitTest(&au32[0], i), i);
+        MAP_SET(p);
+        CHECK_BIT(ASMBitTest(&p->au32[0], i), i);
+        ASMBitToggle(&p->au32[0], i);
+        CHECK_BIT(!ASMBitTest(&p->au32[0], i), i);
+        CHECK_BIT(!ASMBitTestAndToggle(&p->au32[0], i), i);
+        CHECK_BIT(ASMBitTest(&p->au32[0], i), i);
+        CHECK_BIT(ASMBitTestAndToggle(&p->au32[0], i), i);
+        CHECK_BIT(!ASMBitTest(&p->au32[0], i), i);
 
-        MAP_SET(au32);
-        CHECK_BIT(ASMBitTest(&au32[0], i), i);
-        ASMAtomicBitToggle(&au32[0], i);
-        CHECK_BIT(!ASMBitTest(&au32[0], i), i);
-        CHECK_BIT(!ASMAtomicBitTestAndToggle(&au32[0], i), i);
-        CHECK_BIT(ASMBitTest(&au32[0], i), i);
-        CHECK_BIT(ASMAtomicBitTestAndToggle(&au32[0], i), i);
-        CHECK_BIT(!ASMBitTest(&au32[0], i), i);
-
+        MAP_SET(p);
+        CHECK_BIT(ASMBitTest(&p->au32[0], i), i);
+        ASMAtomicBitToggle(&p->au32[0], i);
+        CHECK_BIT(!ASMBitTest(&p->au32[0], i), i);
+        CHECK_BIT(!ASMAtomicBitTestAndToggle(&p->au32[0], i), i);
+        CHECK_BIT(ASMBitTest(&p->au32[0], i), i);
+        CHECK_BIT(ASMAtomicBitTestAndToggle(&p->au32[0], i), i);
+        CHECK_BIT(!ASMBitTest(&p->au32[0], i), i);
     }
 
     /* bit searching */
-    MAP_SET(au32);
-    CHECK(ASMBitFirstClear(&au32[0], sizeof(au32) * 8) == -1);
-    CHECK(ASMBitFirstSet(&au32[0], sizeof(au32) * 8) == 0);
+    MAP_SET(p);
+    CHECK(ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8) == -1);
+    CHECK(ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8) == 0);
 
-    ASMBitClear(&au32[0], 1);
-    CHECK(ASMBitFirstClear(&au32[0], sizeof(au32) * 8) == 1);
-    CHECK(ASMBitFirstSet(&au32[0], sizeof(au32) * 8) == 0);
+    ASMBitClear(&p->au32[0], 1);
+    CHECK(ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8) == 1);
+    CHECK(ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8) == 0);
 
-    MAP_SET(au32);
-    ASMBitClear(&au32[0], 95);
-    CHECK(ASMBitFirstClear(&au32[0], sizeof(au32) * 8) == 95);
-    CHECK(ASMBitFirstSet(&au32[0], sizeof(au32) * 8) == 0);
+    MAP_SET(p);
+    ASMBitClear(&p->au32[0], 95);
+    CHECK(ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8) == 95);
+    CHECK(ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8) == 0);
 
-    MAP_SET(au32);
-    ASMBitClear(&au32[0], 127);
-    CHECK(ASMBitFirstClear(&au32[0], sizeof(au32) * 8) == 127);
-    CHECK(ASMBitFirstSet(&au32[0], sizeof(au32) * 8) == 0);
-    CHECK(ASMBitNextSet(&au32[0], sizeof(au32) * 8, 0) == 1);
-    CHECK(ASMBitNextSet(&au32[0], sizeof(au32) * 8, 1) == 2);
-    CHECK(ASMBitNextSet(&au32[0], sizeof(au32) * 8, 2) == 3);
+    MAP_SET(p);
+    ASMBitClear(&p->au32[0], 127);
+    CHECK(ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8) == 127);
+    CHECK(ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8) == 0);
+    CHECK(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, 0) == 1);
+    CHECK(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, 1) == 2);
+    CHECK(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, 2) == 3);
 
 
-    MAP_SET(au32);
-    CHECK(ASMBitNextClear(&au32[0], sizeof(au32) * 8, 0) == -1);
-    ASMBitClear(&au32[0], 32);
-    CHECK(ASMBitNextClear(&au32[0], sizeof(au32) * 8, 32) == -1);
-    ASMBitClear(&au32[0], 88);
-    CHECK(ASMBitNextClear(&au32[0], sizeof(au32) * 8,  57) ==  88);
+    MAP_SET(p);
+    CHECK(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8, 0) == -1);
+    ASMBitClear(&p->au32[0], 32);
+    CHECK(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8, 32) == -1);
+    ASMBitClear(&p->au32[0], 88);
+    CHECK(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8,  57) ==  88);
 
-    MAP_SET(au32);
-    ASMBitClear(&au32[0], 31);
-    ASMBitClear(&au32[0], 57);
-    ASMBitClear(&au32[0], 88);
-    ASMBitClear(&au32[0], 101);
-    ASMBitClear(&au32[0], 126);
-    ASMBitClear(&au32[0], 127);
-    CHECK(ASMBitFirstClear(&au32[0], sizeof(au32) * 8) == 31);
-    CHECK(ASMBitNextClear(&au32[0], sizeof(au32) * 8,  31) ==  57);
-    CHECK(ASMBitNextClear(&au32[0], sizeof(au32) * 8,  57) ==  88);
-    CHECK(ASMBitNextClear(&au32[0], sizeof(au32) * 8,  88) == 101);
-    CHECK(ASMBitNextClear(&au32[0], sizeof(au32) * 8, 101) == 126);
-    CHECK(ASMBitNextClear(&au32[0], sizeof(au32) * 8, 126) == 127);
-    CHECK(ASMBitNextClear(&au32[0], sizeof(au32) * 8, 127) == -1);
+    MAP_SET(p);
+    ASMBitClear(&p->au32[0], 31);
+    ASMBitClear(&p->au32[0], 57);
+    ASMBitClear(&p->au32[0], 88);
+    ASMBitClear(&p->au32[0], 101);
+    ASMBitClear(&p->au32[0], 126);
+    ASMBitClear(&p->au32[0], 127);
+    CHECK(ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8) == 31);
+    CHECK(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8,  31) ==  57);
+    CHECK(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8,  57) ==  88);
+    CHECK(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8,  88) == 101);
+    CHECK(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8, 101) == 126);
+    CHECK(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8, 126) == 127);
+    CHECK(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8, 127) == -1);
 
-    CHECK(ASMBitNextSet(&au32[0], sizeof(au32) * 8, 29) == 30);
-    CHECK(ASMBitNextSet(&au32[0], sizeof(au32) * 8, 30) == 32);
+    CHECK(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, 29) == 30);
+    CHECK(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, 30) == 32);
 
-    MAP_CLEAR(au32);
+    MAP_CLEAR(p);
     for (i = 1; i < 128; i++)
-        CHECK_BIT(ASMBitNextClear(&au32[0], sizeof(au32) * 8, i - 1) == i, i);
+        CHECK_BIT(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8, i - 1) == i, i);
     for (i = 0; i < 128; i++)
     {
-        MAP_SET(au32);
-        ASMBitClear(&au32[0], i);
-        CHECK_BIT(ASMBitFirstClear(&au32[0], sizeof(au32) * 8) == i, i);
+        MAP_SET(p);
+        ASMBitClear(&p->au32[0], i);
+        CHECK_BIT(ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8) == i, i);
         for (j = 0; j < i; j++)
-            CHECK_BIT(ASMBitNextClear(&au32[0], sizeof(au32) * 8, j) == i, i);
+            CHECK_BIT(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8, j) == i, i);
         for (j = i; j < 128; j++)
-            CHECK_BIT(ASMBitNextClear(&au32[0], sizeof(au32) * 8, j) == -1, i);
+            CHECK_BIT(ASMBitNextClear(&p->au32[0], sizeof(p->au32) * 8, j) == -1, i);
     }
 
     /* clear range. */
-    MAP_SET(au32);
-    ASMBitClearRange(&au32, 0, 128);
-    CHECK(!au32[0] && !au32[1] && !au32[2] && !au32[3]);
+    MAP_SET(p);
+    ASMBitClearRange(&p->au32, 0, 128);
+    CHECK(!p->au32[0] && !p->au32[1] && !p->au32[2] && !p->au32[3]);
     for (i = 0; i < 128; i++)
     {
         for (j = i + 1; j <= 128; j++)
         {
-            MAP_SET(au32);
-            ASMBitClearRange(&au32, i, j);
+            MAP_SET(p);
+            ASMBitClearRange(&p->au32, i, j);
             for (k = 0; k < i; k++)
-                CHECK_BIT3(ASMBitTest(&au32[0], k), i, j, k);
+                CHECK_BIT3(ASMBitTest(&p->au32[0], k), i, j, k);
             for (k = i; k < j; k++)
-                CHECK_BIT3(!ASMBitTest(&au32[0], k), i, j, k);
+                CHECK_BIT3(!ASMBitTest(&p->au32[0], k), i, j, k);
             for (k = j; k < 128; k++)
-                CHECK_BIT3(ASMBitTest(&au32[0], k), i, j, k);
+                CHECK_BIT3(ASMBitTest(&p->au32[0], k), i, j, k);
         }
     }
 
     /* searching for set bits. */
-    MAP_CLEAR(au32);
-    CHECK(ASMBitFirstSet(&au32[0], sizeof(au32) * 8) == -1);
+    MAP_CLEAR(p);
+    CHECK(ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8) == -1);
 
-    ASMBitSet(&au32[0], 65);
-    CHECK(ASMBitFirstSet(&au32[0], sizeof(au32) * 8) == 65);
-    CHECK(ASMBitNextSet(&au32[0], sizeof(au32) * 8, 65) == -1);
+    ASMBitSet(&p->au32[0], 65);
+    CHECK(ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8) == 65);
+    CHECK(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, 65) == -1);
     for (i = 0; i < 65; i++)
-        CHECK(ASMBitNextSet(&au32[0], sizeof(au32) * 8, i) == 65);
+        CHECK(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, i) == 65);
     for (i = 65; i < 128; i++)
-        CHECK(ASMBitNextSet(&au32[0], sizeof(au32) * 8, i) == -1);
+        CHECK(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, i) == -1);
 
-    ASMBitSet(&au32[0], 17);
-    CHECK(ASMBitFirstSet(&au32[0], sizeof(au32) * 8) == 17);
-    CHECK(ASMBitNextSet(&au32[0], sizeof(au32) * 8, 17) == 65);
+    ASMBitSet(&p->au32[0], 17);
+    CHECK(ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8) == 17);
+    CHECK(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, 17) == 65);
     for (i = 0; i < 16; i++)
-        CHECK(ASMBitNextSet(&au32[0], sizeof(au32) * 8, i) == 17);
+        CHECK(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, i) == 17);
     for (i = 17; i < 65; i++)
-        CHECK(ASMBitNextSet(&au32[0], sizeof(au32) * 8, i) == 65);
+        CHECK(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, i) == 65);
 
-    MAP_SET(au32);
+    MAP_SET(p);
     for (i = 1; i < 128; i++)
-        CHECK_BIT(ASMBitNextSet(&au32[0], sizeof(au32) * 8, i - 1) == i, i);
+        CHECK_BIT(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, i - 1) == i, i);
     for (i = 0; i < 128; i++)
     {
-        MAP_CLEAR(au32);
-        ASMBitSet(&au32[0], i);
-        CHECK_BIT(ASMBitFirstSet(&au32[0], sizeof(au32) * 8) == i, i);
+        MAP_CLEAR(p);
+        ASMBitSet(&p->au32[0], i);
+        CHECK_BIT(ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8) == i, i);
         for (j = 0; j < i; j++)
-            CHECK_BIT(ASMBitNextSet(&au32[0], sizeof(au32) * 8, j) == i, i);
+            CHECK_BIT(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, j) == i, i);
         for (j = i; j < 128; j++)
-            CHECK_BIT(ASMBitNextSet(&au32[0], sizeof(au32) * 8, j) == -1, i);
+            CHECK_BIT(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, j) == -1, i);
     }
 
 
@@ -291,9 +319,5 @@ int main()
     /*
      * Summary
      */
-    if (!rcRet)
-        RTPrintf("tstBitOperations: SUCCESS\n");
-    else
-        RTPrintf("tstBitOperations: FAILURE - %d errors\n", rcRet);
-    return rcRet;
+    return RTTestSummaryAndDestroy(hTest);
 }
