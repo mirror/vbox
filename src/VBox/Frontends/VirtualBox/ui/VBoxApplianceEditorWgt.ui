@@ -17,8 +17,8 @@
  Clara, CA 95054 USA or visit http://www.sun.com if you need
  additional information or have any questions.
  </comment>
- <class>VBoxImportApplianceWgt</class>
- <widget class="QWidget" name="VBoxImportApplianceWgt">
+ <class>VBoxApplianceEditorWgt</class>
+ <widget class="QWidget" name="VBoxApplianceEditorWgt">
   <property name="geometry">
    <rect>
     <x>0</x>

@@ -52,7 +52,7 @@ private slots:
 
 private:
     void addListViewVMItems (const QString& aSelectName);
-    bool prepareForExportVMs (CAppliance &aAppliance);
+    bool prepareSettingsWidget();
     bool exportVMs (CAppliance &aAppliance);
 
     /* Private member vars */
