@@ -23,8 +23,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>550</width>
-    <height>380</height>
+    <width>547</width>
+    <height>430</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,7 +37,7 @@
    <item>
     <widget class="QStackedWidget" name="mPageStack">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="mFileSelectPage">
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -115,6 +115,9 @@ p, li { white-space: pre-wrap; }
            </property>
           </widget>
          </item>
+         <item row="1" column="1">
+          <widget class="VBoxEmptyFileSelector" name="mFileSelector" native="true"/>
+         </item>
          <item row="2" column="1">
           <spacer name="spacer">
            <property name="orientation">
@@ -122,14 +125,11 @@ p, li { white-space: pre-wrap; }
            </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>408</width>
-             <height>258</height>
+             <width>406</width>
+             <height>68</height>
             </size>
            </property>
           </spacer>
-         </item>
-         <item row="1" column="1">
-          <widget class="VBoxFilePathSelectorWidget" name="mFileSelector"/>
          </item>
         </layout>
        </item>
@@ -377,14 +377,15 @@ p, li { white-space: pre-wrap; }
    <header>QILabel.h</header>
   </customwidget>
   <customwidget>
-   <class>VBoxFilePathSelectorWidget</class>
-   <extends>QComboBox</extends>
-   <header>VBoxFilePathSelectorWidget.h</header>
-  </customwidget>
-  <customwidget>
    <class>VBoxImportApplianceWgt</class>
    <extends>QWidget</extends>
    <header>VBoxImportApplianceWgt.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>VBoxEmptyFileSelector</class>
+   <extends>QWidget</extends>
+   <header>VBoxFilePathSelectorWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
