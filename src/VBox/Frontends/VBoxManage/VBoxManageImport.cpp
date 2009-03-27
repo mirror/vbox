@@ -103,6 +103,8 @@ int handleImportAppliance(HandlerArg *a)
              || (strThisArg == "-n")
            )
             fExecute = false;
+        else if (strThisArg == "--detailed-progress")
+            g_fDetailedProgress = true;
         else if (strThisArg == "-vsys")
         {
             if (++i < a->argc)

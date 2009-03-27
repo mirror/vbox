@@ -66,8 +66,109 @@ typedef int (*PFNHANDLER)(HandlerArg *a);
 
 #endif /* !VBOX_ONLY_DOCS */
 
-// funcs
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//
+// global variables
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/*extern*/ bool g_fDetailedProgress = false;
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// functions
+//
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef VBOX_ONLY_DOCS
+/**
+ * Print out progress on the console
+ */
+void showProgress(ComPtr<IProgress> progress)
+{
+    BOOL fCompleted;
+    ULONG ulCurrentPercent;
+    ULONG ulLastPercent = 0;
+
+    ULONG ulCurrentOperationPercent;
+    ULONG ulLastOperationPercent;
+
+    ULONG ulLastOperation = (ULONG)-1;
+    Bstr bstrOperationDescription;
+
+    ULONG cOperations;
+    progress->COMGETTER(OperationCount)(&cOperations);
+
+    if (!g_fDetailedProgress)
+    {
+        RTPrintf("0%%...");
+        RTStrmFlush(g_pStdOut);
+    }
+
+    while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+    {
+        ULONG ulOperation;
+        progress->COMGETTER(Operation)(&ulOperation);
+
+        progress->COMGETTER(Percent(&ulCurrentPercent));
+        progress->COMGETTER(OperationPercent(&ulCurrentOperationPercent));
+
+        if (g_fDetailedProgress)
+        {
+            if (ulLastOperation != ulOperation)
+            {
+                progress->COMGETTER(OperationDescription(bstrOperationDescription.asOutParam()));
+                ulLastPercent = (ULONG)-1;        // force print
+                ulLastOperation = ulOperation;
+            }
+
+            if (    (ulCurrentPercent != ulLastPercent)
+                 || (ulCurrentOperationPercent != ulLastOperationPercent)
+               )
+            {
+                RTPrintf("(%ld/%ld) %ls %ld%% => %ld%%\n", ulOperation + 1, cOperations, bstrOperationDescription.raw(), ulCurrentOperationPercent, ulCurrentPercent);
+                ulLastPercent = ulCurrentPercent;
+                ulLastOperationPercent = ulCurrentOperationPercent;
+            }
+        }
+        else
+        {
+            /* did we cross a 10% mark? */
+            if (((ulCurrentPercent / 10) > (ulLastPercent / 10)))
+            {
+                /* make sure to also print out missed steps */
+                for (ULONG curVal = (ulLastPercent / 10) * 10 + 10; curVal <= (ulCurrentPercent / 10) * 10; curVal += 10)
+                {
+                    if (curVal < 100)
+                    {
+                        RTPrintf("%ld%%...", curVal);
+                        RTStrmFlush(g_pStdOut);
+                    }
+                }
+                ulLastPercent = (ulCurrentPercent / 10) * 10;
+            }
+        }
+        if (fCompleted)
+            break;
+
+        /* make sure the loop is not too tight */
+        progress->WaitForCompletion(100);
+    }
+
+    /* complete the line. */
+    HRESULT rc;
+    if (SUCCEEDED(progress->COMGETTER(ResultCode)(&rc)))
+    {
+        if (SUCCEEDED(rc))
+            RTPrintf("100%%\n");
+        else
+            RTPrintf("FAILED\n");
+    }
+    else
+        RTPrintf("\n");
+    RTStrmFlush(g_pStdOut);
+}
+#endif /* !VBOX_ONLY_DOCS */
 
 void showLogo(void)
 {
