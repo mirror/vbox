@@ -129,9 +129,9 @@
  * This file is part of a free software library; you can redistribute
  * it and/or modify it under the terms of the GNU Lesser General
  * Public License version 2.1 as published by the Free Software
- * Foundation Foundation and shipped in the the "COPYING" file with
- * this library. The library is distributed in the hope that it will
- * be useful, but WITHOUT ANY WARRANTY of any kind.
+ * Foundation and shipped in the "COPYING" file with this library.
+ * The library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY of any kind.
  *
  * Sun LGPL Disclaimer: For the avoidance of doubt, except that if
  * any license choice other than GPL or LGPL is available it will
