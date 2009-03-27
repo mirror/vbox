@@ -182,8 +182,13 @@ struct VirtualSystem
     Utf8Str             strSoundCardType;       // if not empty, then the system wants a soundcard; this then specifies the hardware;
                                                 // VMware Workstation 6.5 uses "ensoniq1371" for example
 
-    Utf8Str             strLicenseInfo;         // license info if any; receives contents of VirtualSystem/EulaSection/Info
     Utf8Str             strLicenseText;         // license info if any; receives contents of VirtualSystem/EulaSection/License
+
+    Utf8Str             strProduct;             // product info if any; receives contents of VirtualSystem/ProductSection/Product
+    Utf8Str             strVendor;              // product info if any; receives contents of VirtualSystem/ProductSection/Vendor
+    Utf8Str             strVersion;             // product info if any; receives contents of VirtualSystem/ProductSection/Version
+    Utf8Str             strProductUrl;          // product info if any; receives contents of VirtualSystem/ProductSection/ProductUrl
+    Utf8Str             strVendorUrl;           // product info if any; receives contents of VirtualSystem/ProductSection/VendorUrl
 
     VirtualSystem()
         : ullMemorySize(0), cCPUs(1), fHasFloppyDrive(false), fHasCdromDrive(false), fHasUsbController(false)
@@ -637,14 +642,37 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                 <License ovf:msgid="1">License terms can go in here.</License>
             </EulaSection> */
 
-            const xml::ElementNode *pelmInfo, *pelmLicense;
-            if (    ((pelmInfo = pelmThis->findChildElement("Info")))
-                 && ((pelmLicense = pelmThis->findChildElement("License")))
-               )
-            {
-                vsys.strLicenseInfo = pelmInfo->getValue();
+            const xml::ElementNode *pelmLicense;
+            if ((pelmLicense = pelmThis->findChildElement("License")))
                 vsys.strLicenseText = pelmLicense->getValue();
-            }
+        }
+        if (    (!strcmp(pcszElemName, "ProductSection"))
+             || (!strcmp(pcszTypeAttr, "ovf:ProductSection_Type"))
+           )
+        {
+            /* <Section ovf:required="false" xsi:type="ovf:ProductSection_Type">
+                <Info>Meta-information about the installed software</Info>
+                <Product>VAtest</Product>
+                <Vendor>SUN Microsystems</Vendor>
+                <Version>10.0</Version>
+                <ProductUrl>http://blogs.sun.com/VirtualGuru</ProductUrl>
+                <VendorUrl>http://www.sun.com</VendorUrl>
+               </Section> */
+            const xml::ElementNode *pelmProduct;
+            if ((pelmProduct = pelmThis->findChildElement("Product")))
+                vsys.strProduct = pelmProduct->getValue();
+            const xml::ElementNode *pelmVendor;
+            if ((pelmVendor = pelmThis->findChildElement("Vendor")))
+                vsys.strVendor = pelmVendor->getValue();
+            const xml::ElementNode *pelmVersion;
+            if ((pelmVersion = pelmThis->findChildElement("Version")))
+                vsys.strVersion = pelmVersion->getValue();
+            const xml::ElementNode *pelmProductUrl;
+            if ((pelmProductUrl = pelmThis->findChildElement("ProductUrl")))
+                vsys.strProductUrl = pelmProductUrl->getValue();
+            const xml::ElementNode *pelmVendorUrl;
+            if ((pelmVendorUrl = pelmThis->findChildElement("VendorUrl")))
+                vsys.strVendorUrl = pelmVendorUrl->getValue();
         }
         else if (    (!strcmp(pcszElemName, "VirtualHardwareSection"))
                   || (!strcmp(pcszTypeAttr, "ovf:VirtualHardwareSection_Type"))
@@ -1259,6 +1287,41 @@ STDMETHODIMP Appliance::Interpret()
                                "",
                                vsysThis.strName,
                                nameVBox);
+
+            /* VM Product */
+            if (!vsysThis.strProduct.isEmpty())
+                pNewDesc->addEntry(VirtualSystemDescriptionType_Product,
+                                    "",
+                                    vsysThis.strProduct,
+                                    vsysThis.strProduct);
+
+            /* VM Vendor */
+            if (!vsysThis.strVendor.isEmpty())
+                pNewDesc->addEntry(VirtualSystemDescriptionType_Vendor,
+                                    "",
+                                    vsysThis.strVendor,
+                                    vsysThis.strVendor);
+
+            /* VM Version */
+            if (!vsysThis.strVersion.isEmpty())
+                pNewDesc->addEntry(VirtualSystemDescriptionType_Version,
+                                    "",
+                                    vsysThis.strVersion,
+                                    vsysThis.strVersion);
+
+            /* VM ProductUrl */
+            if (!vsysThis.strProductUrl.isEmpty())
+                pNewDesc->addEntry(VirtualSystemDescriptionType_ProductUrl,
+                                    "",
+                                    vsysThis.strProductUrl,
+                                    vsysThis.strProductUrl);
+
+            /* VM VendorUrl */
+            if (!vsysThis.strVendorUrl.isEmpty())
+                pNewDesc->addEntry(VirtualSystemDescriptionType_VendorUrl,
+                                    "",
+                                    vsysThis.strVendorUrl,
+                                    vsysThis.strVendorUrl);
 
             /* VM description */
             if (!vsysThis.strDescription.isEmpty())
@@ -2471,6 +2534,40 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                 throw setError(VBOX_E_NOT_SUPPORTED,
                                tr("Missing VM name"));
             pelmVirtualSystem->setAttribute("ovf:id", llName.front()->strVbox);
+
+            // product info
+            std::list<VirtualSystemDescriptionEntry*> llProduct = vsdescThis->findByType(VirtualSystemDescriptionType_Product);
+            std::list<VirtualSystemDescriptionEntry*> llProductUrl = vsdescThis->findByType(VirtualSystemDescriptionType_ProductUrl);
+            std::list<VirtualSystemDescriptionEntry*> llVendor = vsdescThis->findByType(VirtualSystemDescriptionType_Vendor);
+            std::list<VirtualSystemDescriptionEntry*> llVendorUrl = vsdescThis->findByType(VirtualSystemDescriptionType_VendorUrl);
+            std::list<VirtualSystemDescriptionEntry*> llVersion = vsdescThis->findByType(VirtualSystemDescriptionType_Version);
+            if (llProduct.size() ||
+                llProductUrl.size() ||
+                llVendor.size() ||
+                llVendorUrl.size() ||
+                llVersion.size())
+            {
+                /* <Section ovf:required="false" xsi:type="ovf:ProductSection_Type">
+                    <Info>Meta-information about the installed software</Info>
+                    <Product>VAtest</Product>
+                    <Vendor>SUN Microsystems</Vendor>
+                    <Version>10.0</Version>
+                    <ProductUrl>http://blogs.sun.com/VirtualGuru</ProductUrl>
+                    <VendorUrl>http://www.sun.com</VendorUrl>
+                   </Section> */
+                xml::ElementNode *pelmAnnotationSection = pelmVirtualSystem->createChild("ProductSection");
+                pelmAnnotationSection->createChild("Info")->addContent("Meta-information about the installed software");
+                if (llProduct.size() && !llProduct.front()->strVbox.isEmpty())
+                    pelmAnnotationSection->createChild("Product")->addContent(llProduct.front()->strVbox);
+                if (llVendor.size() && !llVendor.front()->strVbox.isEmpty())
+                    pelmAnnotationSection->createChild("Vendor")->addContent(llVendor.front()->strVbox);
+                if (llVersion.size() && !llVersion.front()->strVbox.isEmpty())
+                    pelmAnnotationSection->createChild("Version")->addContent(llVersion.front()->strVbox);
+                if (llProductUrl.size() && !llProductUrl.front()->strVbox.isEmpty())
+                    pelmAnnotationSection->createChild("ProductUrl")->addContent(llProductUrl.front()->strVbox);
+                if (llVendorUrl.size() && !llVendorUrl.front()->strVbox.isEmpty())
+                    pelmAnnotationSection->createChild("VendorUrl")->addContent(llVendorUrl.front()->strVbox);
+            }
 
             // description
             std::list<VirtualSystemDescriptionEntry*> llDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
