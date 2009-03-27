@@ -137,8 +137,7 @@ public:
                           const QString &aCancelText = QString::null) const
     {
         return messageOkCancel (aParent, aType, aMessage, QString::null,
-                                aAutoConfirmId, aOkText, aCancelText);
-    }
+                                aAutoConfirmId, aOkText, aCancelText); }
 
     bool showModalProgressDialog (CProgress &aProgress, const QString &aTitle,
                                   QWidget *aParent, int aMinDuration = 2000);
@@ -147,7 +146,9 @@ public:
 
     /* Generic problem handlers */
     bool askForOverridingFileIfExists (const QString& path, QWidget *aParent = NULL) const;
-    bool askForOverridingFilesIfExists (const QStringList& aPaths, QWidget *aParent /* = NULL */) const;
+    bool askForOverridingFilesIfExists (const QStringList& aPaths, QWidget *aParent = NULL) const;
+
+    void cannotDeleteFile (const QString& path, QWidget *aParent = NULL) const;
 
     /* Special problem handlers */
     void showBETAWarning();
