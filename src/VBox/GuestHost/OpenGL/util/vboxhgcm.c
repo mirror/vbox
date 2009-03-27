@@ -718,20 +718,20 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
         if (info.result == VINF_SUCCESS)
         {
             conn->u32ClientID = info.u32ClientID;
-            crDebug("HGCM connect was successful: client id =%x\n", conn->u32ClientID);
+            crDebug("HGCM connect was successful: client id =0x%x\n", conn->u32ClientID);
         }
         else
         {
-            crDebug("HGCM connect failed with rc=%x\n", info.result);
+            crDebug("HGCM connect failed with rc=0x%x\n", info.result);
             return FALSE;
         }
     }
     else
     {
 #ifdef RT_OS_WINDOWS
-        crDebug("HGCM connect failed with rc=%x\n", GetLastError());
+        crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", GetLastError());
 #else
-        crDebug("HGCM connect failed with rc=%x\n", errno);
+        crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", errno);
 #endif
         return FALSE;
     }
