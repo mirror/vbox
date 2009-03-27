@@ -368,7 +368,9 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     addr = addresses;
     while(addr != NULL)
     {
+#if 1
         size_t buff_size;
+#endif
         if (addr->OperStatus != IfOperStatusUp)
             goto next;
         dns = addr->FirstDnsServerAddress;
@@ -404,18 +406,18 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         wcstombs(suffix, addr->DnsSuffix, buff_size);
         suffix[buff_size] = '\0';
         LogRel(("NAT: adding %s to DNS suffix list\n", suffix));
-#else
-        /*Probably more correct way but not working */
-        buff_size = WideCharToMultiByte(CP_ACP, 0, addr->DnsSuffix, -1, NULL, 0, NULL, NULL);
-        suffix = RTMemAllocZ(buff_size);
-        WideCharToMultiByte(CP_ACP, 0, addr->DnsSuffix, -1, suffix, buff_size, NULL, NULL);
+        *ppszDomain = suffix; /* may leak memory */
+#else /** @todo r=bird: try this (no time to test for BETA2). Btw. what happend to suffix 'adding', the code above doesn't do what the LogRel() says... */
+        /* add the first one only. */
+        if (ppszDomain && !*ppszDomain)
+            RTUtf16ToUtf8(addr->DnsSuffix, ppszDomain);
 #endif
-        *ppszDomain = suffix;
     next:
         addr = addr->Next;
     }
-    /*@todo add dns suffix if required */
-    LogRel(("NAT: adding dns suffix %s to the list \n", ppszDomain));
+    /** @todo add dns suffix if required */
+    if (ppszDomain && *ppszDomain)
+        LogRel(("NAT: DNS suffix %s\n", *ppszDomain));
     return 0;
 }
 # endif /* VBOX_WITH_MULTI_DNS */
