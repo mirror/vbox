@@ -40,6 +40,90 @@
 #include <iprt/initterm.h>
 
 
+/*
+ * Test 2 - ID allocation using a bitmap.
+ */
+
+#define NIL_TEST2_ID    0
+#define TEST2_ID_LAST   (RT_BIT_32(28) - 1 >> 8)
+
+struct TestMap2
+{
+    uint32_t    idNil;
+    uint32_t    idLast;
+    uint32_t    idChunkPrev;
+    uint32_t    bmChunkId[(TEST2_ID_LAST + 1 + 31) / 32];
+};
+
+static uint32_t test2AllocId(struct TestMap2 *p2)
+{
+    /*
+     * Scan sequentially from the last one + 1.
+     */
+    int32_t idChunk = ++p2->idChunkPrev;
+    if (    (uint32_t)idChunk < TEST2_ID_LAST
+        &&  idChunk > NIL_TEST2_ID)
+    {
+        idChunk = ASMBitNextClear(&p2->bmChunkId[0], TEST2_ID_LAST + 1, idChunk);
+        if (idChunk > NIL_TEST2_ID)
+        {
+            if (ASMAtomicBitTestAndSet(&p2->bmChunkId[0], idChunk))
+            {
+                RTTestFailed(NIL_RTTEST, "line %d: idChunk=%#x", __LINE__, idChunk);
+                return NIL_TEST2_ID;
+            }
+            return p2->idChunkPrev = idChunk;
+        }
+    }
+
+    /*
+     * Ok, scan from the start.
+     */
+    idChunk = ASMBitFirstClear(&p2->bmChunkId[0], TEST2_ID_LAST + 1);
+    if (idChunk <= NIL_TEST2_ID)
+    {
+        RTTestFailed(NIL_RTTEST, "line %d: idChunk=%#x", __LINE__, idChunk);
+        return NIL_TEST2_ID;
+    }
+    if (ASMAtomicBitTestAndSet(&p2->bmChunkId[0], idChunk))
+    {
+        RTTestFailed(NIL_RTTEST, "line %d: idChunk=%#x", __LINE__, idChunk);
+        return NIL_TEST2_ID;
+    }
+
+    return p2->idChunkPrev = idChunk;
+}
+
+
+static void test2(RTTEST hTest)
+{
+    struct TestMap2 *p2 = (struct TestMap2 *)RTTestGuardedAllocTail(hTest, sizeof(TestMap2));
+    p2->idNil  = NIL_TEST2_ID;
+    p2->idLast = TEST2_ID_LAST;
+
+    /* Some simple tests first. */
+    memset(&p2->bmChunkId[0],    0, sizeof(p2->bmChunkId));
+    RTTEST_CHECK(hTest, ASMBitFirstSet(&p2->bmChunkId[0], TEST2_ID_LAST + 1) == -1);
+    for (uint32_t iBit = 0; iBit <= TEST2_ID_LAST; iBit++)
+        RTTEST_CHECK(hTest, !ASMBitTest(&p2->bmChunkId[0], iBit));
+
+    memset(&p2->bmChunkId[0], 0xff, sizeof(p2->bmChunkId));
+    RTTEST_CHECK(hTest, ASMBitFirstClear(&p2->bmChunkId[0], TEST2_ID_LAST + 1) == -1);
+    for (uint32_t iBit = 0; iBit <= TEST2_ID_LAST; iBit++)
+        RTTEST_CHECK(hTest, ASMBitTest(&p2->bmChunkId[0], iBit));
+
+    /* The real test. */
+    p2->idChunkPrev = 0;
+    memset(&p2->bmChunkId[0],    0, sizeof(p2->bmChunkId));
+    ASMBitSet(p2->bmChunkId, NIL_TEST2_ID);
+    uint32_t cLeft = TEST2_ID_LAST;
+    while (cLeft-- > 0)
+        test2AllocId(p2);
+
+    RTTEST_CHECK(hTest, ASMBitFirstClear(&p2->bmChunkId[0], TEST2_ID_LAST + 1) == -1);
+}
+
+
 int main()
 {
     /*
@@ -317,7 +401,13 @@ int main()
         CHECK(ASMBitFirstSetU32(1 << i) == (unsigned)i + 1);
 
     /*
+     * Special tests.
+     */
+    test2(hTest);
+
+    /*
      * Summary
      */
     return RTTestSummaryAndDestroy(hTest);
 }
+
