@@ -22,6 +22,7 @@
 
 #include "VBoxFilePathSelectorWidget.h"
 #include "VBoxGlobal.h"
+#include "QILabel.h"
 
 /* Qt includes */
 #include <QAction>
@@ -31,6 +32,10 @@
 #include <QFileIconProvider>
 #include <QLineEdit>
 #include <QTimer>
+#include <QPushButton>
+
+////////////////////////////////////////////////////////////////////////////////
+// VBoxFilePathSelectorWidget
 
 enum
 {
@@ -387,7 +392,7 @@ void VBoxFilePathSelectorWidget::selectPath()
             path = VBoxGlobal::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); break;
         case Mode_File_Save:
             {
-                path = VBoxGlobal::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); 
+                path = VBoxGlobal::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
                 if (!path.isEmpty() && QFileInfo (path).suffix().isEmpty())
                     path = QString ("%1.%2").arg (path).arg (mDefaultSaveExt);
                 break;
@@ -550,3 +555,91 @@ void VBoxFilePathSelectorWidget::refreshText()
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// VBoxEmptyFileSelector
+
+VBoxEmptyFileSelector::VBoxEmptyFileSelector (QWidget *aParent /* = NULL */)
+    : QIWithRetranslateUI<QWidget> (aParent)
+    , mHomeDir (QDir::current().absolutePath())
+      , mIsModified (false)
+{
+    QHBoxLayout *mainLayout = new QHBoxLayout (this);
+    mainLayout->setMargin (0);
+
+    mSelectButton = new QPushButton (this);
+    mainLayout->addWidget (mSelectButton);
+
+    mLabel = new QILabel (this);
+    mLabel->setWordWrap (true);
+    mainLayout->addWidget (mLabel, 2);
+
+    connect (mSelectButton, SIGNAL (clicked()),
+             this, SLOT (choose()));
+
+    retranslateUi();
+}
+
+void VBoxEmptyFileSelector::setPath (const QString& aPath)
+{
+    mLabel->setText (QString ("<compact elipsis=\"start\">%1</compact>").arg (aPath));
+    mPath = aPath;
+}
+
+QString VBoxEmptyFileSelector::path() const
+{
+    return mPath;
+}
+
+void VBoxEmptyFileSelector::setFileDialogTitle (const QString& aTitle)
+{
+    mFileDialogTitle = aTitle;
+}
+
+QString VBoxEmptyFileSelector::fileDialogTitle() const
+{
+    return mFileDialogTitle;
+}
+
+void VBoxEmptyFileSelector::setFileFilters (const QString& aFilters)
+{
+    mFileFilters = aFilters;
+}
+
+QString VBoxEmptyFileSelector::fileFilters() const
+{
+    return mFileFilters;
+}
+
+void VBoxEmptyFileSelector::setHomeDir (const QString& aDir)
+{
+    mHomeDir = aDir;
+}
+
+QString VBoxEmptyFileSelector::homeDir() const
+{
+    return mHomeDir;
+}
+
+void VBoxEmptyFileSelector::retranslateUi()
+{
+    mSelectButton->setText (tr ("&Choose..."));
+}
+
+void VBoxEmptyFileSelector::choose()
+{
+    QString path = mPath;
+
+    /* Preparing initial directory. */
+    QString initDir = path.isNull() ? mHomeDir :
+        VBoxGlobal::getFirstExistingDir (path);
+    if (initDir.isNull())
+        initDir = mHomeDir;
+
+    path = VBoxGlobal::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
+    if (!path.isEmpty())
+    {
+        setPath (path);
+        mIsModified = true;
+        emit pathChanged (path);
+    }
+}
