@@ -78,6 +78,8 @@
 #define RTSPINLOCK_MAGIC            0x19480428
 /** The value of RTSTREAM::u32Magic for a valid stream. */
 #define RTSTREAM_MAGIC              0xe44e44ee
+/** RTTESTINT::u32Magic value. (Daniel Kehlmann) */
+#define RTTESTINT_MAGIC             0x19750113
 /** RTTHREADINT::u32Magic value. (Gilbert Keith Chesterton) */
 #define RTTHREADINT_MAGIC           0x18740529
 /** RTTHREADINT::u32Magic value for a dead thread. */
