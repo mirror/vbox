@@ -512,9 +512,9 @@ typedef struct GMM
      * Used as a hint to avoid scanning the whole bitmap. */
     uint32_t            idChunkPrev;
     /** Chunk ID allocation bitmap.
-     * Bits of allocated IDs are set, free ones are cleared.
+     * Bits of allocated IDs are set, free ones are clear.
      * The NIL id (0) is marked allocated. */
-    uint32_t            bmChunkId[(GMM_CHUNKID_LAST + 32) >> 10];
+    uint32_t            bmChunkId[(GMM_CHUNKID_LAST + 1 + 31) / 32];
 } GMM;
 /** Pointer to the GMM instance. */
 typedef GMM *PGMM;
@@ -1372,7 +1372,7 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
         idChunk = ASMBitNextClear(&pGMM->bmChunkId[0], GMM_CHUNKID_LAST + 1, idChunk);
         if (idChunk > NIL_GMM_CHUNKID)
         {
-            AssertMsgReturn(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk), NIL_GVM_HANDLE);
+            AssertMsgReturn(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk), NIL_GMM_CHUNKID);
             return pGMM->idChunkPrev = idChunk;
         }
     }
@@ -1383,7 +1383,7 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
      */
     idChunk = ASMBitFirstClear(&pGMM->bmChunkId[0], GMM_CHUNKID_LAST + 1);
     AssertMsgReturn(idChunk > NIL_GMM_CHUNKID, ("%#x\n", idChunk), NIL_GVM_HANDLE);
-    AssertMsgReturn(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk), NIL_GVM_HANDLE);
+    AssertMsgReturn(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk), NIL_GMM_CHUNKID);
 
     return pGMM->idChunkPrev = idChunk;
 }
