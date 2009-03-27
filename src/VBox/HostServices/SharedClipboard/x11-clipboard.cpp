@@ -178,28 +178,18 @@ static VBOXCLIPBOARDCONTEXT g_ctx;
 /* Are we actually connected to the X11 servicer? */
 static bool g_fHaveX11;
 
-/**
- * Reset the contents of the buffer used to pass clipboard data from VBox to X11.
- * This must be done after every clipboard transfer.
- */
-static void vboxClipboardEmptyGuestBuffer(void)
-{
-    if (g_ctx.pClient->data.pv != 0)
-        RTMemFree(g_ctx.pClient->data.pv);
-    g_ctx.pClient->data.pv = 0;
-    g_ctx.pClient->data.cb = 0;
-    g_ctx.pClient->data.u32Format = 0;
-}
 
 /**
  * Send a request to VBox to transfer the contents of its clipboard to X11.
  *
  * @param  pCtx      Pointer to the host clipboard structure
  * @param  u32Format The format in which the data should be transfered
- * @thread clipboard X11 event thread
- * @note   called by vboxClipboardConvert*
+ * @param  ppv       On success and if pcb > 0, this will point to a buffer
+ *                   to be freed with RTMemFree containing the data read.
+ * @param  pcb       On success, this contains the number of bytes of data
+ *                   returned
  */
-static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format)
+static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
     volatile VBOXCLIPBOARDCLIENTDATA *pClient = pCtx->pClient;
 
@@ -247,13 +237,21 @@ static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u
     {
         /* I believe this should not happen.  Wait until the assertions arrive
          * to prove the contrary. */
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pClient->data.pv);
+        g_ctx.pClient->data.pv = 0;
+        g_ctx.pClient->data.cb = 0;
+        g_ctx.pClient->data.u32Format = 0;
         pCtx->guestFormats = 0;
         return rc;
     }
     if (pClient->data.pv == NULL)
         return VERR_TIMEOUT;
     LogFlowFunc(("wait completed.  Returning.\n"));
+    *ppv = pClient->data.pv;
+    *pcb = pClient->data.cb;
+    g_ctx.pClient->data.pv = 0;
+    g_ctx.pClient->data.cb = 0;
+    g_ctx.pClient->data.u32Format = 0;
     return VINF_SUCCESS;
 }
 
@@ -1055,7 +1053,7 @@ static Boolean vboxClipboardConvertTargetsForX11(Atom *atomTypeReturn, XtPointer
 }
 
 /**
- * Satisfy a request from the host to convert the clipboard text to Utf16.  We return non-zero
+ * Satisfy a request from VBox to convert the clipboard text to Utf16.  We return non-zero
  * terminated text.
  *
  * @returns true if we successfully convert the data to the format requested, false otherwise.
@@ -1070,40 +1068,42 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
                                          unsigned long *pcLenReturn, int *piFormatReturn)
 {
     PRTUTF16 pu16SrcText, pu16DestText;
+    void *pvVBox;
+    uint32_t cbVBox;
     size_t cwSrcLen, cwDestLen;
     int rc;
 
     LogFlowFunc (("called\n"));
-    rc = vboxClipboardReadDataFromVBox(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    if ((RT_FAILURE(rc)) || (g_ctx.pClient->data.cb == 0))
+    rc = vboxClipboardReadDataFromVBox(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
+    if ((RT_FAILURE(rc)) || (cbVBox == 0))
     {
         /* If vboxClipboardReadDataFromVBox fails then pClient may be invalid */
         LogRelFunc (("vboxClipboardReadDataFromVBox returned %Rrc%s\n", rc,
-                    RT_SUCCESS(rc) ? ", g_ctx.pClient->data.cb == 0" :  ""));
-        vboxClipboardEmptyGuestBuffer();
+                    RT_SUCCESS(rc) ? ", cbVBox == 0" :  ""));
+        RTMemFree(pvVBox);
         return false;
     }
-    pu16SrcText = reinterpret_cast<PRTUTF16>(g_ctx.pClient->data.pv);
-    cwSrcLen = g_ctx.pClient->data.cb / 2;
+    pu16SrcText = reinterpret_cast<PRTUTF16>(pvVBox);
+    cwSrcLen = cbVBox / 2;
     /* How long will the converted text be? */
     rc = vboxClipboardUtf16GetLinSize(pu16SrcText, cwSrcLen, &cwDestLen);
     if (RT_FAILURE(rc))
     {
         LogRel(("vboxClipboardConvertUtf16: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Rrc.  Abandoning.\n", rc));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         AssertRCReturn(rc, false);
     }
     if (cwDestLen == 0)
     {
         LogFlowFunc(("received empty clipboard data from the guest, returning false.\n"));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     pu16DestText = reinterpret_cast<PRTUTF16>(XtMalloc(cwDestLen * 2));
     if (pu16DestText == 0)
     {
         LogRel(("vboxClipboardConvertUtf16: failed to allocate %d bytes\n", cwDestLen * 2));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     /* Convert the text. */
@@ -1112,11 +1112,11 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
     {
         LogRel(("vboxClipboardConvertUtf16: clipboard conversion failed.  vboxClipboardUtf16WinToLin returned %Rrc.  Abandoning.\n", rc));
         XtFree(reinterpret_cast<char *>(pu16DestText));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     LogFlowFunc (("converted string is %.*ls. Returning.\n", cwDestLen, pu16DestText));
-    vboxClipboardEmptyGuestBuffer();
+    RTMemFree(pvVBox);
     *atomTypeReturn = g_ctx.atomUtf16;
     *pValReturn = reinterpret_cast<XtPointer>(pu16DestText);
     *pcLenReturn = cwDestLen;
@@ -1144,41 +1144,43 @@ static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
 {
     PRTUTF16 pu16SrcText, pu16DestText;
     char *pu8DestText;
+    void *pvVBox;
+    uint32_t cbVBox;
     size_t cwSrcLen, cwDestLen, cbDestLen;
     int rc;
 
     LogFlowFunc (("called\n"));
     /* Read the clipboard data from the guest. */
-    rc = vboxClipboardReadDataFromVBox(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    if ((rc != VINF_SUCCESS) || (g_ctx.pClient->data.cb == 0))
+    rc = vboxClipboardReadDataFromVBox(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
+    if ((rc != VINF_SUCCESS) || (cbVBox == 0))
     {
         /* If vboxClipboardReadDataFromVBox fails then pClient may be invalid */
         LogRelFunc (("vboxClipboardReadDataFromVBox returned %Rrc%s\n", rc,
-                     RT_SUCCESS(rc) ? ", g_ctx.pClient->data.cb == 0" :  ""));
-        vboxClipboardEmptyGuestBuffer();
+                     RT_SUCCESS(rc) ? ", cbVBox == 0" :  ""));
+        RTMemFree(pvVBox);
         return false;
     }
-    pu16SrcText = reinterpret_cast<PRTUTF16>(g_ctx.pClient->data.pv);
-    cwSrcLen = g_ctx.pClient->data.cb / 2;
+    pu16SrcText = reinterpret_cast<PRTUTF16>(pvVBox);
+    cwSrcLen = cbVBox / 2;
     /* How long will the converted text be? */
     rc = vboxClipboardUtf16GetLinSize(pu16SrcText, cwSrcLen, &cwDestLen);
     if (RT_FAILURE(rc))
     {
         LogRelFunc (("clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Rrc.  Abandoning.\n", rc));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         AssertRCReturn(rc, false);
     }
     if (cwDestLen == 0)
     {
         LogFlowFunc(("received empty clipboard data from the guest, returning false.\n"));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     pu16DestText = reinterpret_cast<PRTUTF16>(RTMemAlloc(cwDestLen * 2));
     if (pu16DestText == 0)
     {
         LogRelFunc (("failed to allocate %d bytes\n", cwDestLen * 2));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     /* Convert the text. */
@@ -1187,7 +1189,7 @@ static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
     {
         LogRelFunc (("clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Rrc.  Abandoning.\n", rc));
         RTMemFree(reinterpret_cast<void *>(pu16DestText));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     /* Allocate enough space, as RTUtf16ToUtf8Ex may fail if the
@@ -1197,7 +1199,7 @@ static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
     {
         LogRelFunc (("failed to allocate %d bytes\n", cwDestLen * 4));
         RTMemFree(reinterpret_cast<void *>(pu16DestText));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     /* Convert the Utf16 string to Utf8. */
@@ -1208,11 +1210,11 @@ static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
     {
         LogRelFunc (("clipboard conversion failed.  RTUtf16ToUtf8Ex() returned %Rrc.  Abandoning.\n", rc));
         XtFree(pu8DestText);
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     LogFlowFunc (("converted string is %.*s. Returning.\n", cbDestLen, pu8DestText));
-    vboxClipboardEmptyGuestBuffer();
+    RTMemFree(pvVBox);
     *atomTypeReturn = g_ctx.atomUtf8;
     *pValReturn = reinterpret_cast<XtPointer>(pu8DestText);
     *pcLenReturn = cbDestLen;
@@ -1239,6 +1241,8 @@ static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
                                                  int *piFormatReturn)
 {
     PRTUTF16 pu16SrcText, pu16DestText;
+    void *pvVBox;
+    uint32_t cbVBox;
     char *pu8DestText = 0;
     size_t cwSrcLen, cwDestLen, cbDestLen;
     XTextProperty property;
@@ -1246,36 +1250,36 @@ static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
 
     LogFlowFunc (("called\n"));
     /* Read the clipboard data from the guest. */
-    rc = vboxClipboardReadDataFromVBox(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    if ((rc != VINF_SUCCESS) || (g_ctx.pClient->data.cb == 0))
+    rc = vboxClipboardReadDataFromVBox(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
+    if ((rc != VINF_SUCCESS) || (cbVBox == 0))
     {
         /* If vboxClipboardReadDataFromVBox fails then pClient may be invalid */
         LogRelFunc (("vboxClipboardReadDataFromVBox returned %Rrc%s\n", rc,
-                      RT_SUCCESS(rc) ? ", g_ctx.pClient->data.cb == 0" :  ""));
-        vboxClipboardEmptyGuestBuffer();
+                      RT_SUCCESS(rc) ? ", cbVBox == 0" :  ""));
+        RTMemFree(pvVBox);
         return false;
     }
-    pu16SrcText = reinterpret_cast<PRTUTF16>(g_ctx.pClient->data.pv);
-    cwSrcLen = g_ctx.pClient->data.cb / 2;
+    pu16SrcText = reinterpret_cast<PRTUTF16>(pvVBox);
+    cwSrcLen = cbVBox / 2;
     /* How long will the converted text be? */
     rc = vboxClipboardUtf16GetLinSize(pu16SrcText, cwSrcLen, &cwDestLen);
     if (RT_FAILURE(rc))
     {
         LogRelFunc (("clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Rrc.  Abandoning.\n", rc));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         AssertRCReturn(rc, false);
     }
     if (cwDestLen == 0)
     {
         LogFlowFunc(("received empty clipboard data from the guest, returning false.\n"));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     pu16DestText = reinterpret_cast<PRTUTF16>(RTMemAlloc(cwDestLen * 2));
     if (pu16DestText == 0)
     {
         LogRelFunc (("failed to allocate %d bytes\n", cwDestLen * 2));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     /* Convert the text. */
@@ -1284,7 +1288,7 @@ static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
     {
         LogRelFunc (("clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Rrc.  Abandoning.\n", rc));
         RTMemFree(reinterpret_cast<void *>(pu16DestText));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     /* Convert the Utf16 string to Utf8. */
@@ -1293,7 +1297,7 @@ static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
     if (RT_FAILURE(rc))
     {
         LogRelFunc (("clipboard conversion failed.  RTUtf16ToUtf8Ex() returned %Rrc.  Abandoning.\n", rc));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     /* And finally (!) convert the Utf8 text to compound text. */
@@ -1324,11 +1328,11 @@ static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
         }
         LogRelFunc (("Xutf8TextListToTextProperty failed.  Reason: %s\n",
                 pcReason));
-        vboxClipboardEmptyGuestBuffer();
+        RTMemFree(pvVBox);
         return false;
     }
     LogFlowFunc (("converted string is %s. Returning.\n", property.value));
-    vboxClipboardEmptyGuestBuffer();
+    RTMemFree(pvVBox);
     *atomTypeReturn = property.encoding;
     *pValReturn = reinterpret_cast<XtPointer>(property.value);
     *pcLenReturn = property.nitems;
