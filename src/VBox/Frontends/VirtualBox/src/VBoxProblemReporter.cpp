@@ -751,10 +751,10 @@ bool VBoxProblemReporter::warnAboutVirtNotEnabled()
 {
     return messageOkCancel (mainWindowShown(), Error,
         tr ("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
-            "not operational. Your 64 bit guest will fail to detect a 64 "
-            "bit CPU and will not be able to boot.</p><p>Please check if you "
-            "have enabled VT-x/AMD-V properly in the BIOS of your host "
-            "computer.</p>"),
+            "not operational. Your 64-bit guest will fail to detect a "
+            "64-bit CPU and will not be able to boot.</p><p>Please ensure "
+            "that you have enabled VT-x/AMD-V properly in the BIOS of your "
+            "host computer.</p>"),
         0 /* aAutoConfirmId */,
         tr ("Close VM"), tr ("Continue"));
 }
