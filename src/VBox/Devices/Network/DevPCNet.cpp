@@ -803,6 +803,8 @@ DECLINLINE(int) pcnetRmdLoad(PCNetState *pThis, RMD *rmd, RTGCPHYS32 addr, bool 
     return !!rmd->rmd1.own;
 }
 
+#ifdef IN_RING3
+
 /**
  * Store receive message descriptor and hand it over to the host (the VM guest).
  * Make sure that all data are transmitted before we clear the own flag.
@@ -851,6 +853,8 @@ DECLINLINE(void) pcnetRmdStorePassHost(PCNetState *pThis, RMD *rmd, RTGCPHYS32 a
         PDMDevHlpPhysWrite(pDevIns, addr+7, (uint8_t*)rda + 7, 1);
     }
 }
+
+#endif /* IN_RING3 */
 
 /** Checks if it's a bad (as in invalid) RMD.*/
 #define IS_RMD_BAD(rmd)      ((rmd).rmd1.ones != 15 || (rmd).rmd2.zeros != 0)
@@ -1548,6 +1552,13 @@ static void pcnetInit(PCNetState *pThis)
         /* At this time it is not guaranteed that the buffers are already initialized. */
         if (pcnetRmdLoad(pThis, &rmd, PHYSADDR(pThis, addr), false))
             cbRxBuffers += 4096-rmd.rmd1.bcnt;
+        /* Hack: Make sure that all receive buffers are touched when the
+         * device is initialized. */
+        static char aBuf[4096];
+        RTGCPHYS32 rbadr = PHYSADDR(pThis, rmd.rmd0.rbadr);
+        /* don't change the content */
+        PDMDevHlpPhysRead(pDevIns, rbadr, aBuf, RT_MIN(sizeof(aBuf), 4096U-rmd.rmd1.bcnt));
+        PDMDevHlpPhysWrite(pDevIns, rbadr, aBuf, RT_MIN(sizeof(aBuf), 4096U-rmd.rmd1.bcnt));
     }
 
     /*
@@ -3746,19 +3757,14 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
     int         rc;
 
-    /*
-     * Don't block if we cannot enter here.
-     */
-    rc = PDMR3CritSectTryEnter(&pThis->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        STAM_PROFILE_ADV_START(&pThis->StatTimer, a);
-        pcnetPollTimer(pThis);
-        PDMCritSectLeave(&pThis->CritSect);
-        STAM_PROFILE_ADV_STOP(&pThis->StatTimer, a);
-    }
-    else
-        pcnetPollTimerStart(pThis);
+    STAM_PROFILE_ADV_START(&pThis->StatTimer, a);
+    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    AssertReleaseRC(rc);
+
+    pcnetPollTimer(pThis);
+
+    PDMCritSectLeave(&pThis->CritSect);
+    STAM_PROFILE_ADV_STOP(&pThis->StatTimer, a);
 }
 
 
