@@ -257,12 +257,16 @@ void VBoxGLSettingsLanguage::reload (const QString &aLangId)
 
     /* Adjust selector list */
 #ifdef Q_WS_MAC
-    mTwLanguage->setFixedWidth (static_cast<QAbstractItemView*> (mTwLanguage)
+    int width = qMax (static_cast<QAbstractItemView*> (mTwLanguage)
+        ->sizeHintForColumn (0) + 2 * mTwLanguage->frameWidth() +
+        QApplication::style()->pixelMetric (QStyle::PM_ScrollBarExtent),
+        220);
+    mTwLanguage->setFixedWidth (width);
 #else /* Q_WS_MAC */
     mTwLanguage->setMinimumWidth (static_cast<QAbstractItemView*> (mTwLanguage)
-#endif /* Q_WS_MAC */
         ->sizeHintForColumn (0) + 2 * mTwLanguage->frameWidth() +
         QApplication::style()->pixelMetric (QStyle::PM_ScrollBarExtent));
+#endif /* Q_WS_MAC */
     mTwLanguage->resizeColumnToContents (0);
 
     /* Search for necessary language */

@@ -336,7 +336,7 @@ void VBoxGLSettingsNetwork::getFrom (const CSystemProperties &, const VBoxGlobal
     int width = qMax (static_cast<QAbstractItemView*> (mTwInterfaces)
         ->sizeHintForColumn (0) + 2 * mTwInterfaces->frameWidth() +
         QApplication::style()->pixelMetric (QStyle::PM_ScrollBarExtent),
-        160);
+        220);
     mTwInterfaces->setFixedWidth (width);
     mTwInterfaces->resizeColumnToContents (0);
 #endif /* Q_WS_MAC */
