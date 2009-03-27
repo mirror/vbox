@@ -28,7 +28,7 @@
 #define LOG_GROUP LOG_GROUP_HGCM
 #include "VBox/log.h"
 #include "VBox/HostServices/VBoxClipboardSvc.h"
-#include "clipboard-helper.h"
+#include "VBox/GuestHost/clipboard-helper.h"
 
 /* For debugging */
 //#define SHOW_CLIPBOARD_CONTENT
