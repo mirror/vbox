@@ -1005,6 +1005,7 @@ struct NetworkInterfaceHelperClientData
     /* for SVCHlpMsg::CreateHostOnlyNetworkInterface */
     Bstr name;
     ComObjPtr <HostNetworkInterface> iface;
+    ComObjPtr <VirtualBox> vBox;
     /* for SVCHlpMsg::RemoveHostOnlyNetworkInterface */
     Guid guid;
 
@@ -1081,6 +1082,14 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                         /* initialize the object returned to the caller by
                          * CreateHostOnlyNetworkInterface() */
                         rc = d->iface->init (Bstr(name), guid, HostNetworkInterfaceType_HostOnly);
+                        if(SUCCEEDED(rc))
+                        {
+                            rc = d->iface->setVirtualBox(d->vBox);
+                            if(SUCCEEDED(rc))
+                            {
+                                rc = d->iface->updateConfig();
+                            }
+                        }
                         endLoop = true;
                         break;
                     }
@@ -2413,6 +2422,7 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox,
             d->msgCode = SVCHlpMsg::CreateHostOnlyNetworkInterface;
 //            d->name = aName;
             d->iface = iface;
+            d->vBox = pVBox;
 
             rc = pVBox->startSVCHelperClient (
                 IsUACEnabled() == TRUE /* aPrivileged */,
