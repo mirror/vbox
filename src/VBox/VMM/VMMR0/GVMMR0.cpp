@@ -584,8 +584,8 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppV
                         /*
                          * Allocate the shared VM structure and associated page array.
                          */
-                        const size_t cbVM   = RT_UOFFSETOF(VM, aCpus[cCPUs]);
-                        const size_t cPages = RT_ALIGN(cbVM, PAGE_SIZE) >> PAGE_SHIFT;
+                        const uint32_t  cbVM   = RT_UOFFSETOF(VM, aCpus[cCPUs]);
+                        const uint32_t  cPages = RT_ALIGN_32(cbVM, PAGE_SIZE) >> PAGE_SHIFT;
                         rc = RTR0MemObjAllocLow(&pGVM->gvmm.s.VMMemObj, cPages << PAGE_SHIFT, false /* fExecutable */);
                         if (RT_SUCCESS(rc))
                         {
@@ -603,7 +603,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppV
                             if (RT_SUCCESS(rc))
                             {
                                 PSUPPAGE paPages = (PSUPPAGE)RTR0MemObjAddress(pGVM->gvmm.s.VMPagesMemObj); AssertPtr(paPages);
-                                for (size_t iPage = 0; iPage < cPages; iPage++)
+                                for (uint32_t iPage = 0; iPage < cPages; iPage++)
                                 {
                                     paPages[iPage].uReserved = 0;
                                     paPages[iPage].Phys = RTR0MemObjGetPagePhysAddr(pGVM->gvmm.s.VMMemObj, iPage);
