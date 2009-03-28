@@ -50,7 +50,7 @@ typedef struct _VBOXHGCMLINPTR
     int iParm;
 
     /* Offset in the first physical page of the region. */
-    size_t cbOffsetFirstPage;
+    uint32_t offFirstPage;
 
     /* How many pages. */
     uint32_t cPages;
@@ -230,10 +230,10 @@ static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
 
     Log(("vmmdevHGCMSaveLinPtr: parm %d: %RGv %d = %d pages\n", iParm, GCPtr, u32Size, cPages));
 
-    pLinPtr->iParm             = iParm;
-    pLinPtr->cbOffsetFirstPage = (RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK;
-    pLinPtr->cPages            = cPages;
-    pLinPtr->paPages           = *ppPages;
+    pLinPtr->iParm          = iParm;
+    pLinPtr->offFirstPage   = GCPtr & PAGE_OFFSET_MASK;
+    pLinPtr->cPages         = cPages;
+    pLinPtr->paPages        = *ppPages;
 
     *ppPages += cPages;
 
@@ -281,7 +281,7 @@ static int vmmdevHGCMWriteLinPtr (PPDMDEVINS pDevIns,
 
     AssertRelease (u32Size > 0 && iParm == (uint32_t)pLinPtr->iParm);
 
-    RTGCPHYS GCPhysDst = pLinPtr->paPages[0] + pLinPtr->cbOffsetFirstPage;
+    RTGCPHYS GCPhysDst = pLinPtr->paPages[0] + pLinPtr->offFirstPage;
     uint8_t *pu8Src    = (uint8_t *)pvHost;
 
     Log(("vmmdevHGCMWriteLinPtr: parm %d: size %d, cPages = %d\n", iParm, u32Size, pLinPtr->cPages));
@@ -291,9 +291,9 @@ static int vmmdevHGCMWriteLinPtr (PPDMDEVINS pDevIns,
     while (iPage < pLinPtr->cPages)
     {
         /* copy */
-        size_t cbWrite = iPage == 0?
-                             PAGE_SIZE - pLinPtr->cbOffsetFirstPage:
-                             PAGE_SIZE;
+        uint32_t cbWrite = iPage == 0?
+                               PAGE_SIZE - pLinPtr->offFirstPage:
+                               PAGE_SIZE;
 
         Log(("vmmdevHGCMWriteLinPtr: page %d: dst %RGp, src %p, cbWrite %d\n", iPage, GCPhysDst, pu8Src, cbWrite));
 
