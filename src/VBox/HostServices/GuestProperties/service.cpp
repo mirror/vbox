@@ -527,7 +527,6 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     const char *pcszName;
     char *pchBuf;
     uint32_t cchName, cchBuf;
-    uint32_t cchFlags, cchBufActual;
     char szFlags[MAX_FLAGS_LEN];
 
     /*
@@ -539,7 +538,7 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         || RT_FAILURE (paParms[1].getPointer ((void **) &pchBuf, &cchBuf))    /* buffer */
        )
         rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc))
+    else
         rc = validateName(pcszName, cchName);
 
     /*
@@ -548,43 +547,41 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 
     /* Get the value size */
     PropertyList::const_iterator it;
-    bool found = false;
     if (RT_SUCCESS(rc))
+    {
+        rc = VERR_NOT_FOUND;
         for (it = mProperties.begin(); it != mProperties.end(); ++it)
             if (it->mName.compare(pcszName) == 0)
             {
-                found = true;
+                rc = VINF_SUCCESS;
                 break;
             }
-    if (RT_SUCCESS(rc) && !found)
-        rc = VERR_NOT_FOUND;
+    }
     if (RT_SUCCESS(rc))
         rc = writeFlags(it->mFlags, szFlags);
     if (RT_SUCCESS(rc))
-        cchFlags = strlen(szFlags);
-    /* Check that the buffer is big enough */
-    if (RT_SUCCESS(rc))
     {
-        cchBufActual = it->mValue.size() + 1 + cchFlags;
-        paParms[3].setUInt32 (cchBufActual);
-    }
-    if (RT_SUCCESS(rc) && (cchBufActual > cchBuf))
-        rc = VERR_BUFFER_OVERFLOW;
-    /* Write the value, flags and timestamp */
-    if (RT_SUCCESS(rc))
-    {
-        it->mValue.copy(pchBuf, cchBuf, 0);
-        pchBuf[it->mValue.size()] = '\0'; /* Terminate the value */
-        strcpy(pchBuf + it->mValue.size() + 1, szFlags);
-        paParms[2].setUInt64 (it->mTimestamp);
+        /* Check that the buffer is big enough */
+        size_t cchBufActual = it->mValue.size() + 1 + strlen(szFlags);
+        paParms[3].setUInt32 ((uint32_t)cchBufActual);
+        if (cchBufActual <= cchBuf)
+        {
+            /* Write the value, flags and timestamp */
+            it->mValue.copy(pchBuf, cchBuf, 0);
+            pchBuf[it->mValue.size()] = '\0'; /* Terminate the value */
+            strcpy(pchBuf + it->mValue.size() + 1, szFlags);
+            paParms[2].setUInt64 (it->mTimestamp);
+
+            /*
+             * Done!  Do exit logging and return.
+             */
+            Log2(("Queried string %s, value=%s, timestamp=%lld, flags=%s\n",
+                  pcszName, it->mValue.c_str(), it->mTimestamp, szFlags));
+        }
+        else
+            rc = VERR_BUFFER_OVERFLOW;
     }
 
-    /*
-     * Done!  Do exit logging and return.
-     */
-    if (RT_SUCCESS(rc))
-        Log2(("Queried string %s, value=%s, timestamp=%lld, flags=%s\n",
-              pcszName, it->mValue.c_str(), it->mTimestamp, szFlags));
     LogFlowThisFunc(("rc = %Rrc\n", rc));
     return rc;
 }
@@ -838,7 +835,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
      */
     if (RT_SUCCESS(rc))
     {
-        paParms[2].setUInt32 (buffer.size());
+        paParms[2].setUInt32 ((uint32_t)buffer.size());
         /* Copy the memory if it fits into the guest buffer */
         if (buffer.size() <= cchBuf)
             buffer.copy(pchBuf, cchBuf);
@@ -907,7 +904,7 @@ int Service::getNotificationWriteOut(VBOXHGCMSVCPARM paParms[], Property prop)
     if (RT_SUCCESS(rc))
     {
         paParms[1].setUInt64(u64Timestamp);
-        paParms[3].setUInt32(buffer.size());
+        paParms[3].setUInt32((uint32_t)buffer.size());
         if (buffer.size() <= cchBuf)
             buffer.copy(pchBuf, cchBuf);
         else
@@ -1365,3 +1362,4 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
+
