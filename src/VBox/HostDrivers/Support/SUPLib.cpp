@@ -746,13 +746,13 @@ SUPR3DECL(int) SUPR3CallR0Service(const char *pszService, size_t cchService, uin
  */
 static int supR3LoggerSettings(SUPLOGGER enmWhich, uint32_t fWhat, const char *pszFlags, const char *pszGroups, const char *pszDest)
 {
-    size_t const cchFlags  = pszFlags  ? strlen(pszFlags)  : 0;
-    size_t const cchGroups = pszGroups ? strlen(pszGroups) : 0;
-    size_t const cchDest   = pszDest   ? strlen(pszDest)   : 0;
-    size_t const cbStrTab  = cchFlags  + !!cchFlags
-                           + cchGroups + !!cchGroups
-                           + cchDest   + !!cchDest
-                           + (!cchFlags && !cchGroups && !cchDest);
+    uint32_t const cchFlags  = pszFlags  ? (uint32_t)strlen(pszFlags)  : 0;
+    uint32_t const cchGroups = pszGroups ? (uint32_t)strlen(pszGroups) : 0;
+    uint32_t const cchDest   = pszDest   ? (uint32_t)strlen(pszDest)   : 0;
+    uint32_t const cbStrTab  = cchFlags  + !!cchFlags
+                             + cchGroups + !!cchGroups
+                             + cchDest   + !!cchDest
+                             + (!cchFlags && !cchGroups && !cchDest);
 
     PSUPLOGGERSETTINGS pReq  = (PSUPLOGGERSETTINGS)alloca(SUP_IOCTL_LOGGER_SETTINGS_SIZE(cbStrTab));
     pReq->Hdr.u32Cookie = g_u32Cookie;
