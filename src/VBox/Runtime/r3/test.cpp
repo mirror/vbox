@@ -197,7 +197,7 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest)
     pTest->u32Magic = RTTESTINT_MAGIC;
     pTest->cbGuard  = PAGE_SIZE * 7;
     pTest->pszTest  = RTStrDup(pszTest);
-    pTest->cchTest  = strlen(pszTest);
+    pTest->cchTest  = (unsigned)strlen(pszTest);
     pTest->pOutStrm = g_pStdOut;
     pTest->fNewLine = true;
 
@@ -303,7 +303,7 @@ RTR3DECL(int) RTTestGuardedAlloc(RTTEST hTest, size_t cb, uint32_t cbAlign, bool
     PRTTESTGUARDEDMEM   pMem = (PRTTESTGUARDEDMEM)RTMemAlloc(sizeof(*pMem));
     if (RT_LIKELY(pMem))
     {
-        uint32_t const  cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
+        size_t const    cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
         pMem->aGuards[0].cb = pMem->aGuards[1].cb = pTest->cbGuard;
         pMem->cbAlloc       = pMem->aGuards[0].cb + pMem->aGuards[1].cb + cbAligned;
         pMem->pvAlloc       = RTMemPageAlloc(pMem->cbAlloc);
@@ -511,7 +511,7 @@ static DECLCALLBACK(size_t) rtTestPrintfOutput(void *pvArg, const char *pachChar
  */
 static int rtTestPrintfV(PRTTESTINT pTest, const char *pszFormat, va_list va)
 {
-    return RTStrFormatV(rtTestPrintfOutput, pTest, NULL, NULL, pszFormat, va);
+    return (int)RTStrFormatV(rtTestPrintfOutput, pTest, NULL, NULL, pszFormat, va);
 }
 
 
