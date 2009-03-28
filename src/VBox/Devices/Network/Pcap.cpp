@@ -84,10 +84,10 @@ static pcaprec_hdr_init const s_Hdr =
 static void pcapCalcHeader(struct pcaprec_hdr *pHdr, uint64_t StartNanoTS, size_t cbFrame, size_t cbMax)
 {
     uint64_t u64TS = RTTimeNanoTS() - StartNanoTS;
-    pHdr->ts_sec = (uint32_t)(u64TS / 1000000000);
-    pHdr->ts_usec = (uint32_t)((u64TS / 1000) % 1000000);
-    pHdr->incl_len = RT_MIN(cbFrame, cbMax);
-    pHdr->orig_len = cbFrame;
+    pHdr->ts_sec   = (uint32_t)(u64TS / 1000000000);
+    pHdr->ts_usec  = (uint32_t)((u64TS / 1000) % 1000000);
+    pHdr->incl_len = (uint32_t)RT_MIN(cbFrame, cbMax);
+    pHdr->orig_len = (uint32_t)cbFrame;
 }
 
 
