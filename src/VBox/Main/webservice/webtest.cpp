@@ -166,9 +166,8 @@ int main(int argc, char* argv[])
                                                                 &req,
                                                                 &resp)))
             {
-                unsigned int i,
-                            c = resp.returnval.size();
-                for (i = 0;
+                size_t c = resp.returnval.size();
+                for (size_t i = 0;
                      i < c;
                      ++i)
                 {
@@ -231,11 +230,10 @@ int main(int argc, char* argv[])
                                                            &req,
                                                            &resp)))
         {
-            unsigned int i,
-                         c = resp.returnval.size();
-            for(i = 0;
-                i < c;
-                ++i)
+            size_t c = resp.returnval.size();
+            for (size_t i = 0;
+                 i < c;
+                 ++i)
             {
                 std::cout << "DVD drive " << i << ": objref " << resp.returnval[i] << "\n";
             }
