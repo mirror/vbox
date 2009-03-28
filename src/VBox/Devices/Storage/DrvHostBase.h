@@ -177,7 +177,7 @@ void DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis);
 DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns);
 #ifdef RT_OS_DARWIN
 DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMBLOCKTXDIR enmTxDir,
-                                     void *pvBuf, size_t *pcbBuf, uint8_t *pbSense, size_t cbSense, uint32_t cTimeoutMillies);
+                                     void *pvBuf, uint32_t *pcbBuf, uint8_t *pbSense, size_t cbSense, uint32_t cTimeoutMillies);
 #endif
 
 
