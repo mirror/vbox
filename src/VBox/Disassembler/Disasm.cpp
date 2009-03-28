@@ -306,24 +306,20 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
 //*****************************************************************************
 char *DbgBytesToString(PDISCPUSTATE pCpu, RTUINTPTR pBytes, int size, char *pszOutput)
 {
-    char szByte[4];
-    int len = strlen(pszOutput);
-    int i;
+    char   *psz = strchr(pszOutput, '\0');
+    size_t  len;
+    int     i;
 
-    for(i = len; i < 40; i++)
-    {
-        strcat(pszOutput, " ");
-    }
-    strcat(pszOutput, " [");
-    for(i = 0; i < size; i++)
-    {
-        RTStrPrintf(szByte, sizeof(szByte), "%02X ", DISReadByte(pCpu, pBytes+i));
-        RTStrPrintf(&pszOutput[strlen(pszOutput)], 64, szByte);
-    }
-    len = strlen(pszOutput);
-    pszOutput[len - 1] = 0;  //cut off last space
+    for(len = psz - pszOutput; len < 40; len++)
+        *psz++ = ' ';
+    *psz++ = ' ';
+    *psz++ = '[';
 
-    strcat(pszOutput, "]");
+    for(i = 0; (int)i < size; i++)
+        psz += RTStrPrintf(psz, 64, "%02X ", DISReadByte(pCpu, pBytes+i));
+
+    psz[-1] = ']';  // replaces space
+
     return pszOutput;
 }
 //*****************************************************************************
