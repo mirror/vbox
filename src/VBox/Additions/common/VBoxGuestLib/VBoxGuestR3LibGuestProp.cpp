@@ -123,9 +123,9 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, 
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = SET_PROP_VALUE;
         Msg.hdr.cParms = 3;
-        VbglHGCMParmPtrSet(&Msg.name, const_cast<char *>(pszName), strlen(pszName) + 1);
-        VbglHGCMParmPtrSet(&Msg.value, const_cast<char *>(pszValue), strlen(pszValue) + 1);
-        VbglHGCMParmPtrSet(&Msg.flags, const_cast<char *>(pszFlags), strlen(pszFlags) + 1);
+        VbglHGCMParmPtrSetString(&Msg.name,  pszName);
+        VbglHGCMParmPtrSetString(&Msg.value, pszValue);
+        VbglHGCMParmPtrSetString(&Msg.flags, pszFlags);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
             rc = Msg.hdr.result;
@@ -138,7 +138,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, 
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = DEL_PROP;
         Msg.hdr.cParms = 1;
-        VbglHGCMParmPtrSet(&Msg.name, const_cast<char *>(pszName), strlen(pszName) + 1);
+        VbglHGCMParmPtrSetString(&Msg.name, pszName);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
             rc = Msg.hdr.result;
@@ -172,8 +172,8 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszN
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = SET_PROP_VALUE;
         Msg.hdr.cParms = 2;
-        VbglHGCMParmPtrSet(&Msg.name, const_cast<char *>(pszName), strlen(pszName) + 1);
-        VbglHGCMParmPtrSet(&Msg.value, const_cast<char *>(pszValue), strlen(pszValue) + 1);
+        VbglHGCMParmPtrSetString(&Msg.name, pszName);
+        VbglHGCMParmPtrSetString(&Msg.value, pszValue);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
             rc = Msg.hdr.result;
@@ -186,7 +186,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszN
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = DEL_PROP;
         Msg.hdr.cParms = 1;
-        VbglHGCMParmPtrSet(&Msg.name, const_cast<char *>(pszName), strlen(pszName) + 1);
+        VbglHGCMParmPtrSetString(&Msg.name, pszName);
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
             rc = Msg.hdr.result;
@@ -280,7 +280,7 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GET_PROP;
     Msg.hdr.cParms = 4;
-    VbglHGCMParmPtrSet(&Msg.name, const_cast<char *>(pszName), strlen(pszName) + 1);
+    VbglHGCMParmPtrSetString(&Msg.name, pszName);
     VbglHGCMParmPtrSet(&Msg.buffer, pvBuf, cbBuf);
     VbglHGCMParmUInt64Set(&Msg.timestamp, 0);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
@@ -441,21 +441,21 @@ VBGLR3DECL(int) VbglR3GuestPropReadValue(uint32_t u32ClientId, const char *pszNa
                                          char *pszValue, uint32_t cchValue,
                                          uint32_t *pcchValueActual)
 {
-    char *pcBuf = NULL;
-    int rc = VbglR3GuestPropReadValueAlloc(u32ClientId, pszName, &pcBuf);
+    char *pszBuf = NULL;
+    int rc = VbglR3GuestPropReadValueAlloc(u32ClientId, pszName, &pszBuf);
     if (RT_SUCCESS(rc))
     {
-        uint32_t cchValueActual = strlen(pcBuf) + 1;
-        if (cchValueActual > cchValue)
+        size_t cchValueActual = strlen(pszBuf) + 1;
+        if (cchValueActual <= cchValue)
+            memcpy(pszValue, pszBuf, cchValueActual);
+        else
         {
             if (pcchValueActual != NULL)
-                *pcchValueActual = cchValueActual;
+                *pcchValueActual = (uint32_t)cchValueActual;
             rc = VERR_BUFFER_OVERFLOW;
         }
-        if (RT_SUCCESS(rc))
-            strcpy(pszValue, pcBuf);
     }
-    VbglR3GuestPropReadValueFree(pcBuf);
+    VbglR3GuestPropReadValueFree(pszBuf);
     return rc;
 }
 
@@ -494,14 +494,13 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
     Msg.hdr.u32Function = ENUM_PROPS;
     Msg.hdr.cParms = 3;
     /* Get the length of the patterns array... */
-    uint32_t cchPatterns = 0;
-    for (uint32_t cchCurrent = strlen(pszzPatterns); cchCurrent != 0;
+    size_t cchPatterns = 0;
+    for (size_t cchCurrent = strlen(pszzPatterns); cchCurrent != 0;
          cchCurrent = strlen(pszzPatterns + cchPatterns))
         cchPatterns += cchCurrent + 1;
     /* ...including the terminator. */
     ++cchPatterns;
-    VbglHGCMParmPtrSet(&Msg.patterns, const_cast<char *>(pszzPatterns),
-                       cchPatterns);
+    VbglHGCMParmPtrSet(&Msg.patterns, (char *)pszzPatterns, (uint32_t)cchPatterns);
     VbglHGCMParmPtrSet(&Msg.strings, pcBuf, cbBuf);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
@@ -569,21 +568,21 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
         return VERR_NO_MEMORY;
 
     /* Get the length of the pattern string, including the final terminator. */
-    uint32_t cchPatterns = 1;
-    for (unsigned i = 0; i < cPatterns; ++i)
+    size_t cchPatterns = 1;
+    for (uint32_t i = 0; i < cPatterns; ++i)
         cchPatterns += strlen(papszPatterns[i]) + 1;
 
     /* Pack the pattern array */
     RTMemAutoPtr<char> Patterns;
     Patterns = (char *)RTMemAlloc(cchPatterns);
-    uint32_t iOffs = 0;
+    size_t off = 0;
     for (uint32_t i = 0; i < cPatterns; ++i)
     {
-        uint32_t cb = strlen(papszPatterns[i]) + 1;
-        memcpy(&Patterns[iOffs], papszPatterns[i], cb);
-        iOffs += cb;
+        size_t cb = strlen(papszPatterns[i]) + 1;
+        memcpy(&Patterns[off], papszPatterns[i], cb);
+        off += cb;
     }
-    Patterns[iOffs] = '\0';
+    Patterns[off] = '\0';
 
     /* Randomly chosen initial size for the buffer to hold the enumeration
      * information. */
@@ -840,8 +839,7 @@ VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
     Msg.hdr.info.u32ClientID = u32ClientId;
     Msg.hdr.info.u32Function = GET_NOTIFICATION;
     Msg.hdr.info.cParms = 4;
-    Msg.patterns.SetPtr(const_cast<char *>(pszPatterns),
-                        strlen(pszPatterns) + 1);
+    VbglHGCMParmPtrSetString(&Msg.patterns, pszPatterns);
     Msg.buffer.SetPtr(pvBuf, cbBuf);
     Msg.timestamp.SetUInt64(u64Timestamp);
     Msg.size.SetUInt32(0);

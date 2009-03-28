@@ -80,6 +80,18 @@ DECLINLINE(void) VbglHGCMParmPtrSet(HGCMFunctionParameter *pParm, void *pv, uint
     pParm->u.Pointer.u.linearAddr  = (uintptr_t)pv;
 }
 
+
+#ifdef ___iprt_string_h
+
+DECLINLINE(void) VbglHGCMParmPtrSetString(HGCMFunctionParameter *pParm, const char *psz)
+{
+    pParm->type                    = VMMDevHGCMParmType_LinAddr;
+    pParm->u.Pointer.size          = (uint32_t)strlen(psz) + 1;
+    pParm->u.Pointer.u.linearAddr  = (uintptr_t)psz;
+}
+
+#endif /* ___iprt_string_h */
+
 __END_DECLS
 
 #endif
