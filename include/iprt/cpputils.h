@@ -251,8 +251,8 @@ protected:
 class exception_trap_base
 {
 public:
-
     virtual void rethrow() = 0;
+    virtual ~exception_trap_base() {}
 };
 
 /**
