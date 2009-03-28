@@ -441,7 +441,7 @@ static int zipErrConvertFromZlib(int rc)
 static DECLCALLBACK(int) rtZipZlibCompress(PRTZIPCOMP pZip, const void *pvBuf, size_t cbBuf)
 {
     pZip->u.Zlib.next_in  = (Bytef *)pvBuf;
-    pZip->u.Zlib.avail_in = cbBuf;
+    pZip->u.Zlib.avail_in = (uInt)cbBuf;                    Assert(pZip->u.Zlib.avail_in == cbBuf);
     while (pZip->u.Zlib.avail_in > 0)
     {
         /*
@@ -552,7 +552,7 @@ static DECLCALLBACK(int) rtZipZlibCompInit(PRTZIPCOMP pZip, RTZIPLEVEL enmLevel)
 static DECLCALLBACK(int) rtZipZlibDecompress(PRTZIPDECOMP pZip, void *pvBuf, size_t cbBuf, size_t *pcbWritten)
 {
     pZip->u.Zlib.next_out = (Bytef *)pvBuf;
-    pZip->u.Zlib.avail_out = cbBuf;
+    pZip->u.Zlib.avail_out = (uInt)cbBuf;                   Assert(pZip->u.Zlib.avail_out == cbBuf);
     int rc = Z_OK;
     /* Be greedy reading input, even if no output buffer is left. It's possible
      * that it's just the end of stream marker which needs to be read. Happens
@@ -568,7 +568,7 @@ static DECLCALLBACK(int) rtZipZlibDecompress(PRTZIPDECOMP pZip, void *pvBuf, siz
             int rc = pZip->pfnIn(pZip->pvUser, &pZip->abBuffer[0], sizeof(pZip->abBuffer), &cb);
             if (RT_FAILURE(rc))
                 return rc;
-            pZip->u.Zlib.avail_in = cb;
+            pZip->u.Zlib.avail_in = (uInt)cb;               Assert(pZip->u.Zlib.avail_in == cb);
             pZip->u.Zlib.next_in = &pZip->abBuffer[0];
         }
 
