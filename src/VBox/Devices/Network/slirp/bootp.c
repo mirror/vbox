@@ -132,7 +132,9 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     struct mbuf *m;
     struct bootp_t *rbp;
     struct sockaddr_in saddr, daddr;
+#ifndef VBOX_WITH_MULTI_DNS
     struct in_addr dns_addr_dhcp;
+#endif
     int dhcp_msg_type, val;
     uint8_t *q;
     struct in_addr requested_ip; /* the requested IP in DHCPREQUEST */
@@ -284,7 +286,7 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &dns_addr_dhcp.s_addr);
 #else
 # ifdef VBOX_WITH_SLIRP_DNS_PROXY
-        if (pData->use_dns_proxy) 
+        if (pData->use_dns_proxy)
         {
             uint32_t addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
             FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &addr);
