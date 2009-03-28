@@ -1828,7 +1828,7 @@ static bool atapiPassthroughSS(ATADevState *s)
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     int rc = VINF_SUCCESS;
     uint8_t abATAPISense[ATAPI_SENSE_SIZE];
-    size_t cbTransfer;
+    uint32_t cbTransfer;
     PSTAMPROFILEADV pProf = NULL;
 
     cbTransfer = s->cbElementaryTransfer;
@@ -1861,8 +1861,7 @@ static bool atapiPassthroughSS(ATADevState *s)
          * us to handle commands with up to 128KB of data. The usual
          * imbalance of powers. */
         uint8_t aATAPICmd[ATAPI_PACKET_SIZE];
-        uint32_t iATAPILBA, cSectors, cReqSectors;
-        size_t cbCurrTX;
+        uint32_t iATAPILBA, cSectors, cReqSectors, cbCurrTX;
         uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
 
         switch (s->aATAPICmd[0])
