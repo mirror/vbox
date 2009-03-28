@@ -313,7 +313,7 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemor
     pHeapInt = (PRTHEAPSIMPLEINTERNAL)pvMemory;
     if ((uintptr_t)pvMemory & 31)
     {
-        const unsigned off = 32 - ((uintptr_t)pvMemory & 31);
+        const uintptr_t off = 32 - ((uintptr_t)pvMemory & 31);
         cbMemory -= off;
         pHeapInt = (PRTHEAPSIMPLEINTERNAL)((uintptr_t)pvMemory + off);
     }
