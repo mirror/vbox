@@ -1174,7 +1174,7 @@ static void intnetR0TrunkIfSnoopDhcp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
      * temporary buffer if necessary.
      */
     PCRTNETIPV4 pIpHdr = (PCRTNETIPV4)((PCRTNETETHERHDR)pSG->aSegs[0].pv + 1);
-    size_t cbPacket = pSG->cbTotal - sizeof(RTNETETHERHDR);
+    uint32_t cbPacket = pSG->cbTotal - sizeof(RTNETETHERHDR);
     if (pSG->cSegsUsed > 1)
     {
         cbPacket = RT_MIN(cbPacket, INTNETNETWORK_TMP_SIZE);
@@ -1193,7 +1193,7 @@ static void intnetR0TrunkIfSnoopDhcp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
         Log(("intnetR0TrunkIfSnoopDhcp: bad ip header\n"));
         return;
     }
-    size_t cbIpHdr = pIpHdr->ip_hl * 4;
+    uint32_t cbIpHdr = pIpHdr->ip_hl * 4;
 
     /*
      * Hand it over to the common DHCP snooper.
@@ -1224,7 +1224,7 @@ static void intnetR0TrunkIfSnoopArp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
     /*
      * Copy to temporary buffer if necessary.
      */
-    size_t cbPacket = RT_MIN(pSG->cbTotal, sizeof(RTNETARPIPV4));
+    uint32_t cbPacket = RT_MIN(pSG->cbTotal, sizeof(RTNETARPIPV4));
     PCRTNETARPIPV4 pArpIPv4 = (PCRTNETARPIPV4)((uintptr_t)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR));
     if (    pSG->cSegsUsed != 1
         &&  pSG->aSegs[0].cb < cbPacket)
@@ -1978,7 +1978,7 @@ static void intnetR0NetworkEditDhcpFromIntNet(PINTNETNETWORK pNetwork, PINTNETSG
      * temporary buffer if necessary.
      */
     PCRTNETIPV4 pIpHdr = (PCRTNETIPV4)((PCRTNETETHERHDR)pSG->aSegs[0].pv + 1);
-    size_t cbPacket = pSG->cbTotal - sizeof(RTNETETHERHDR);
+    uint32_t cbPacket = pSG->cbTotal - sizeof(RTNETETHERHDR);
     if (pSG->cSegsUsed > 1)
     {
         cbPacket = RT_MIN(cbPacket, INTNETNETWORK_TMP_SIZE);
@@ -2034,13 +2034,13 @@ static void intnetR0NetworkEditDhcpFromIntNet(PINTNETNETWORK pNetwork, PINTNETSG
             {
                 /* Patch flags */
                 uint16_t uFlags = pDhcp->bp_flags | RT_H2BE_U16_C(RTNET_DHCP_FLAG_BROADCAST);
-                intnetR0SgWritePart(pSG, (uint8_t*)&pDhcp->bp_flags - (uint8_t*)pIpHdr + sizeof(RTNETETHERHDR), sizeof(uFlags), &uFlags);
+                intnetR0SgWritePart(pSG, (uintptr_t)&pDhcp->bp_flags - (uintptr_t)pIpHdr + sizeof(RTNETETHERHDR), sizeof(uFlags), &uFlags);
                 /* Patch UDP checksum */
                 uint32_t uChecksum = (uint32_t)~pUdpHdr->uh_sum + RT_H2BE_U16_C(RTNET_DHCP_FLAG_BROADCAST);
                 while (uChecksum >> 16)
                     uChecksum = (uChecksum >> 16) + (uChecksum & 0xFFFF);
                 uChecksum = ~uChecksum;
-                intnetR0SgWritePart(pSG, (uint8_t*)&pUdpHdr->uh_sum - (uint8_t*)pIpHdr + sizeof(RTNETETHERHDR), sizeof(pUdpHdr->uh_sum), &uChecksum);
+                intnetR0SgWritePart(pSG, (uintptr_t)&pUdpHdr->uh_sum - (uintptr_t)pIpHdr + sizeof(RTNETETHERHDR), sizeof(pUdpHdr->uh_sum), &uChecksum);
             }
             break;
     }
