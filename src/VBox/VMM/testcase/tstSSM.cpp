@@ -258,7 +258,7 @@ DECLCALLBACK(int) Item02Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Put the size.
      */
-    size_t cb = sizeof(gabBigMem);
+    uint32_t cb = sizeof(gabBigMem);
     int rc = SSMR3PutU32(pSSM, cb);
     if (RT_FAILURE(rc))
     {
@@ -270,7 +270,7 @@ DECLCALLBACK(int) Item02Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
      * Put 8MB of memory to the file in 3 chunks.
      */
     uint8_t *pbMem = &gabBigMem[0];
-    size_t cbChunk = cb / 47;
+    uint32_t cbChunk = cb / 47;
     rc = SSMR3PutMem(pSSM, pbMem, cbChunk);
     if (RT_FAILURE(rc))
     {
@@ -335,7 +335,7 @@ DECLCALLBACK(int) Item02Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Ve
      */
     uint8_t    *pbMem = &gabBigMem[0];
     char        achTmp[16383];
-    size_t      cbChunk = sizeof(achTmp);
+    uint32_t    cbChunk = sizeof(achTmp);
     while (cb > 0)
     {
         cbChunk -= 7;
@@ -378,7 +378,7 @@ DECLCALLBACK(int) Item03Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Put the size.
      */
-    size_t cb = 512*_1M;
+    uint32_t cb = 512*_1M;
     int rc = SSMR3PutU32(pSSM, cb);
     if (RT_FAILURE(rc))
     {
@@ -480,7 +480,7 @@ DECLCALLBACK(int) Item04Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Put the size.
      */
-    size_t cb = 512*_1M;
+    uint32_t cb = 512*_1M;
     int rc = SSMR3PutU32(pSSM, cb);
     if (RT_FAILURE(rc))
     {
