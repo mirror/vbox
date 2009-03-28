@@ -421,7 +421,7 @@ protected:
      * @{  */
     int32_t             m_cVerbosity;
     uint8_t             m_uCurMsgType;
-    uint16_t            m_cbCurMsg;
+    size_t              m_cbCurMsg;
     PCRTNETBOOTP        m_pCurMsg;
     VBOXNETUDPHDRS      m_CurHdrs;
     /** @} */
@@ -1394,7 +1394,7 @@ public:
         /* Emit the option header. */
         m_pOpt = (PRTNETDHCPOPT)m_pbCur;
         m_pOpt->dhcp_opt = uOption;
-        m_pOpt->dhcp_len = cb;
+        m_pOpt->dhcp_len = (uint8_t)cb;
         m_pbCur += 2;
         return true;
     }
@@ -2068,6 +2068,8 @@ int WINAPI WinMain(          HINSTANCE hInstance,
         RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: RTR3InitAndSupLib failed, rc=%Rrc\n", rc);
         return 1;
     }
+
+/** @todo r=bird: crt0.c is already doing all this stuff for us. It's available thru stdlib.h __argv and __argc IIRC. */
 
     LPWSTR lpwCmd = GetCommandLineW();
     size_t size = wcslen(lpwCmd);
