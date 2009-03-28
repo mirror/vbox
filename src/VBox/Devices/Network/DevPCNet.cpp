@@ -1868,7 +1868,7 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t siz
                 /* FCS at end of packet */
             }
             size += 4;
-            pkt_size = size;
+            pkt_size = (int)size;                           Assert((size_t)pkt_size == size);
 
 #ifdef PCNET_DEBUG_MATCH
             PRINT_PKTHDR(buf);
