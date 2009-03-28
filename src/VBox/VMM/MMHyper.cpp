@@ -722,7 +722,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
      */
     const uint32_t  cbAligned = RT_ALIGN_32(cb, PAGE_SIZE);
     AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
-    uint32_t const  cPages = cb >> PAGE_SHIFT;
+    uint32_t const  cPages = cbAligned >> PAGE_SHIFT;
     PSUPPAGE        paPages = (PSUPPAGE)MMR3HeapAlloc(pVM, MM_TAG_MM, cPages * sizeof(paPages[0]));
     if (!paPages)
         return VERR_NO_MEMORY;
