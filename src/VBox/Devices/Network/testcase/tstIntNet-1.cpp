@@ -294,7 +294,7 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
      * Don't bother with dealing with overflows like DrvIntNet does, because
      * it's not supposed to happen here in this testcase.
      */
-    int rc = tstIntNetWriteFrame(pBuf, &pBuf->Send, pvFrame, cbFrame);
+    int rc = tstIntNetWriteFrame(pBuf, &pBuf->Send, pvFrame, (uint32_t)cbFrame);
     if (RT_SUCCESS(rc))
     {
         if (pFileRaw)
@@ -420,9 +420,9 @@ static void doXmitTest(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF p
 }
 
 
-static uint16_t icmpChecksum(PRTNETICMPV4HDR pHdr, int cbHdr)
+static uint16_t icmpChecksum(PRTNETICMPV4HDR pHdr, size_t cbHdr)
 {
-    int cbLeft = cbHdr;
+    size_t cbLeft = cbHdr;
     uint16_t *pbSrc = (uint16_t *)pHdr;
     uint16_t oddByte = 0;
     int cSum = 0;
@@ -480,7 +480,7 @@ static void doPingTest(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF p
     pIpHdr->ip_v = 4;
     pIpHdr->ip_hl = sizeof(*pIpHdr) / sizeof(uint32_t);
     pIpHdr->ip_tos = 0;
-    pIpHdr->ip_len = RT_H2BE_U16(sizeof(*pIcmpEcho) + cbPad + sizeof(*pIpHdr));
+    pIpHdr->ip_len = RT_H2BE_U16((uint16_t)(sizeof(*pIcmpEcho) + cbPad + sizeof(*pIpHdr)));
     pIpHdr->ip_id = (uint16_t)RTRandU32();
     pIpHdr->ip_off = 0;
     pIpHdr->ip_ttl = 255;
