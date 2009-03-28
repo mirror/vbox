@@ -45,8 +45,7 @@ VBoxBFEHardened_NAME = VBoxBFE
 #
 # VBoxBFE
 #
-VBoxBFE_TEMPLATE =
-VBoxBFE_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBOXR3NP,VBOXR3NPEXE)
+VBoxBFE_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXR3NP,VBOXR3NPEXE)
 #ifdef VBOX_WITH_SECURELABEL
 #VBoxBFE_DEFS += VBOX_SECURELABEL
 #endif
@@ -152,14 +151,13 @@ VBoxBFE_LIBS.darwin = \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
 VBoxBFE_LDFLAGS.darwin = -framework Foundation -framework AppKit
 
-VBoxBFE_CXXFLAGS.win = \
-	-EHsc
+VBoxBFE_CXXFLAGS.l4 += -fno-rtti -nostdinc -Wno-non-virtual-dtor \
+	$(addprefix -I,$(VBOX_L4_GCC3_INCS) $(L4_INCDIR))
+## @todo why is it all this cool stuff here only for linux? If it's important, -fshort-wchar would apply to all GCC platforms.
 VBoxBFE_DEFS.linux = \
 	NDEBUG TRIMMED
 VBoxBFE_CXXFLAGS.linux =  \
 	-fno-rtti -fno-exceptions -fshort-wchar -pthread
-VBoxBFE_CXXFLAGS.l4 += -fno-rtti -nostdinc -Wno-non-virtual-dtor \
-	$(addprefix -I,$(VBOX_L4_GCC3_INCS) $(L4_INCDIR))
 
 VBoxBFE_CLEAN = $(PATH_VBoxBFE)/Ico64x01.h
 VBoxBFE_SDLConsole.cpp_DEPS = $(PATH_VBoxBFE)/Ico64x01.h

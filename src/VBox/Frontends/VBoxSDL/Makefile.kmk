@@ -161,11 +161,15 @@ endif
 tstSDL_LDFLAGS.darwin = \
 	-framework Foundation -framework AppKit
 
-tstSDL_CXXFLAGS.win = \
-	-EHsc
-tstSDL_CXXFLAGS.linux = \
-	-DNDEBUG -DTRIMMED -O -Wall -fno-rtti -fno-exceptions \
-	-Wno-non-virtual-dtor -Wno-long-long -fshort-wchar -pthread -pipe
+## @todo What was this stuff doing here? The exception config is saying two different things, and why just -O for release builds?
+#tstSDL_CXXFLAGS.win = \
+#	-EHsc
+#tstSDL_CXXFLAGS.linux = \
+#	-DNDEBUG -DTRIMMED -O -Wall -fno-rtti -fno-exceptions \
+#	-Wno-non-virtual-dtor -Wno-long-long -fshort-wchar -pthread -pipe
+# Is this what's intended? Why -fshort-wchar?
+tstSDL_DEFS.linux = NDEBUG TRIMMED
+tstSDL_CXXFLAGS.linux = -O -Wall -Wno-non-virtual-dtor -Wno-long-long -fshort-wchar
 
 
 endif # !VBOX_WITH_HARDENING || "$(KBUILD_TARGET)" != "darwin"

@@ -31,11 +31,6 @@ endif
 LIBRARIES              += DisasmR3
 DisasmR3_TEMPLATE       = VBOXR3
 DisasmR3_DEFS           = IN_DIS
-ifeq ($(KBUILD_TARGET),win)
-DisasmR3_CXXFLAGS      += -EHa
-else ifneq ($(KBUILD_TARGET),l4)
-DisasmR3_CXXFLAGS      += -fexceptions
-endif
 DisasmR3_SOURCES        = \
 	Disasm.cpp \
 	DisasmCore.cpp \
