@@ -891,9 +891,10 @@ VMMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MM
     /*
      * Allocate the pages and map them into HMA space.
      */
-    cb = RT_ALIGN(cb, PAGE_SIZE);
-    uint32_t const  cPages = cb >> PAGE_SHIFT;
-    PSUPPAGE        paPages = (PSUPPAGE)RTMemTmpAlloc(cPages * sizeof(paPages[0]));
+    uint32_t const  cbAligned = RT_ALIGN_32(cb, PAGE_SIZE);
+    AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
+    uint32_t const  cPages    = cbAligned >> PAGE_SHIFT;
+    PSUPPAGE        paPages   = (PSUPPAGE)RTMemTmpAlloc(cPages * sizeof(paPages[0]));
     if (!paPages)
         return VERR_NO_TMP_MEMORY;
     void           *pvPages;
@@ -915,7 +916,7 @@ VMMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MM
 #else
         pvR0 = (uintptr_t)pvPages;
 #endif
-        memset(pvPages, 0, cb);
+        memset(pvPages, 0, cbAligned);
 
         RTGCPTR GCPtr;
         rc = MMR3HyperMapPages(pVM,
@@ -928,12 +929,12 @@ VMMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MM
         if (RT_SUCCESS(rc))
         {
             *ppv = pvPages;
-            Log2(("MMR3HyperAllocOnceNoRel: cb=%#x uAlignment=%#x returns VINF_SUCCESS and *ppv=%p\n",
-                  cb, uAlignment, *ppv));
+            Log2(("MMR3HyperAllocOnceNoRel: cbAligned=%#x uAlignment=%#x returns VINF_SUCCESS and *ppv=%p\n",
+                  cbAligned, uAlignment, *ppv));
             MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
             return rc;
         }
-        AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cb, rc));
+        AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cbAligned, rc));
         SUPR3PageFreeEx(pvPages, cPages);
 
 
@@ -942,7 +943,7 @@ VMMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MM
          * out during vga/vmmdev mmio2 allocation with certain ram sizes.
          */
         /** @todo make a proper fix for this so we will never end up in this kind of situation! */
-        Log(("MMR3HyperAllocOnceNoRel: MMR3HyperMapHCRam failed with rc=%Rrc, try MMHyperAlloc(,%#d,,) instead\n",  rc, cb));
+        Log(("MMR3HyperAllocOnceNoRel: MMR3HyperMapHCRam failed with rc=%Rrc, try MMHyperAlloc(,%#x,,) instead\n",  rc, cb));
         int rc2 = MMHyperAlloc(pVM, cb, uAlignment, enmTag, ppv);
         if (RT_SUCCESS(rc2))
         {
@@ -952,7 +953,7 @@ VMMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MM
         }
     }
     else
-        AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cb, rc));
+        AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cbAligned, rc));
 
     if (rc == VERR_NO_MEMORY)
         rc = VERR_MM_HYPER_NO_MEMORY;
