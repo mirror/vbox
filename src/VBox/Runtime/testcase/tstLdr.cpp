@@ -340,7 +340,7 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[argi], "-64"))
             g_cBits = 64;
         else if (!strcmp(argv[argi], "-kernel"))
-            g_fKernel = 64;
+            g_fKernel = true;
         else
         {
             RTPrintf("tstLdr: TESTING '%s'...\n", argv[argi]);
