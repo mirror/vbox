@@ -71,6 +71,39 @@ char *strpbrk(const char *pszStr, const char *pszChars);
 __END_DECLS
 #endif
 
+/**
+ * Byte zero the specified object.
+ *
+ * This will use sizeof(Obj) to figure the size and will call memset, bzero
+ * or some compiler intrinsic to perform the actual zeroing.
+ *
+ * @param   Obj     The object to zero. Make sure to dereference pointers.
+ *
+ * @remarks Because the macro may use memset it has been placed in string.h
+ *          instead of cdefs.h to avoid build issues because someone forgot
+ *          to include this header.
+ *
+ * @ingroup grp_rt_cdefs
+ */
+#define RT_ZERO(Obj)        RT_BZERO(&(Obj), sizeof(Obj))
+
+/**
+ * Byte zero the specified memory area.
+ *
+ * This will call memset, bzero or some compiler intrinsic to clear the
+ * specified bytes of memory.
+ *
+ * @param   pv          Pointer to the memory.
+ * @param   cb          The number of bytes to clear. Please, don't pass 0.
+ *
+ * @remarks Because the macro may use memset it has been placed in string.h
+ *          instead of cdefs.h to avoid build issues because someone forgot
+ *          to include this header.
+ *
+ * @ingroup grp_rt_cdefs
+ */
+#define RT_BZERO(pv, cb)    do { memset((pv), 0, cb); } while (0)
+
 
 /** @defgroup grp_rt_str    RTStr - String Manipulation
  * Mostly UTF-8 related helpers where the standard string functions won't do.
