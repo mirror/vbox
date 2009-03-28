@@ -654,7 +654,7 @@ int avlrogcphys(void)
 
         /* negative. */
         AVLROGCPHYSNODECORE Node = *pNode;
-        for (j = i + 3; j >= 0 && j > i - 32; j--)
+        for (j = i + 3; j > i - 32; j--)
         {
             for (k = i; k < i + 32; k++)
             {
