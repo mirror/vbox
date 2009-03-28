@@ -44,8 +44,8 @@ size_t disFormatBytes(PCDISCPUSTATE pCpu, char *pszDst, size_t cchDst, uint32_t 
     /*
      * Read the bytes first.
      */
-    uint8_t ab[16];
-    size_t  cb = pCpu->opsize;
+    uint8_t     ab[16];
+    uint32_t    cb = pCpu->opsize;
     Assert(cb <= 16);
     if (cb > 16)
         cb = 16;
@@ -55,7 +55,7 @@ size_t disFormatBytes(PCDISCPUSTATE pCpu, char *pszDst, size_t cchDst, uint32_t 
         int rc = pCpu->pfnReadBytes(pCpu->opaddr, &ab[0], cb, (void *)pCpu);
         if (RT_FAILURE(rc))
         {
-            for (size_t i = 0; i < cb; i++)
+            for (uint32_t i = 0; i < cb; i++)
             {
                 int rc2 = pCpu->pfnReadBytes(pCpu->opaddr + i, &ab[i], 1, (void *)pCpu);
                 if (RT_FAILURE(rc2))
@@ -66,7 +66,7 @@ size_t disFormatBytes(PCDISCPUSTATE pCpu, char *pszDst, size_t cchDst, uint32_t 
     else
     {
         uint8_t const *pabSrc = (uint8_t const *)(uintptr_t)pCpu->opaddr;
-        for (size_t i = 0; i < cb; i++)
+        for (uint32_t i = 0; i < cb; i++)
             ab[i] = pabSrc[i];
     }
 
@@ -98,7 +98,7 @@ size_t disFormatBytes(PCDISCPUSTATE pCpu, char *pszDst, size_t cchDst, uint32_t 
     if (fFlags & DIS_FMT_FLAGS_BYTES_BRACKETS)
         PUT_C('[');
 
-    for (size_t i = 0; i < cb; i++)
+    for (uint32_t i = 0; i < cb; i++)
     {
         if (i != 0 && (fFlags & DIS_FMT_FLAGS_BYTES_SPACED))
             PUT_NUM(3, " %02x", ab[i]);
