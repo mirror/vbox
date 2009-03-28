@@ -99,11 +99,11 @@ typedef struct DRVNAMEDPIPE
 
 
 /** @copydoc PDMISTREAM::pfnRead */
-static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, size_t *cbRead)
+static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, size_t *pcbRead)
 {
     int rc = VINF_SUCCESS;
     PDRVNAMEDPIPE pThis = PDMISTREAM_2_DRVNAMEDPIPE(pInterface);
-    LogFlow(("%s: pvBuf=%p cbRead=%#x (%s)\n", __FUNCTION__, pvBuf, cbRead, pThis->pszLocation));
+    LogFlow(("%s: pvBuf=%p *pcbRead=%#x (%s)\n", __FUNCTION__, pvBuf, *pcbRead, pThis->pszLocation));
 
     Assert(pvBuf);
 #ifdef RT_OS_WINDOWS
@@ -112,7 +112,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         DWORD cbReallyRead;
         pThis->OverlappedRead.Offset     = 0;
         pThis->OverlappedRead.OffsetHigh = 0;
-        if (!ReadFile(pThis->NamedPipe, pvBuf, *cbRead, &cbReallyRead, &pThis->OverlappedRead))
+        if (!ReadFile(pThis->NamedPipe, pvBuf, (DWORD)*pcbRead, &cbReallyRead, &pThis->OverlappedRead))
         {
             DWORD uError = GetLastError();
 
@@ -163,13 +163,13 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
             }
             cbReallyRead = 0;
         }
-        *cbRead = (size_t)cbReallyRead;
+        *pcbRead = (size_t)cbReallyRead;
     }
 #else /* !RT_OS_WINDOWS */
     if (pThis->LocalSocket != NIL_RTSOCKET)
     {
         ssize_t cbReallyRead;
-        cbReallyRead = recv(pThis->LocalSocket, pvBuf, *cbRead, 0);
+        cbReallyRead = recv(pThis->LocalSocket, pvBuf, *pcbRead, 0);
         if (cbReallyRead == 0)
         {
             RTSOCKET tmp = pThis->LocalSocket;
@@ -181,59 +181,56 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
             cbReallyRead = 0;
             rc = RTErrConvertFromErrno(errno);
         }
-        *cbRead = cbReallyRead;
+        *pcbRead = cbReallyRead;
     }
 #endif /* !RT_OS_WINDOWS */
     else
     {
         RTThreadSleep(100);
-        *cbRead = 0;
+        *pcbRead = 0;
     }
 
-    LogFlow(("%s: cbRead=%d returns %Rrc\n", __FUNCTION__, *cbRead, rc));
+    LogFlow(("%s: *pcbRead=%zu returns %Rrc\n", __FUNCTION__, *pcbRead, rc));
     return rc;
 }
 
 
 /** @copydoc PDMISTREAM::pfnWrite */
-static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *pvBuf, size_t *cbWrite)
+static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *pvBuf, size_t *pcbWrite)
 {
     int rc = VINF_SUCCESS;
     PDRVNAMEDPIPE pThis = PDMISTREAM_2_DRVNAMEDPIPE(pInterface);
-    LogFlow(("%s: pvBuf=%p cbWrite=%#x (%s)\n", __FUNCTION__, pvBuf, cbWrite, pThis->pszLocation));
+    LogFlow(("%s: pvBuf=%p *pcbWrite=%#x (%s)\n", __FUNCTION__, pvBuf, *pcbWrite, pThis->pszLocation));
 
     Assert(pvBuf);
 #ifdef RT_OS_WINDOWS
     if (pThis->NamedPipe != INVALID_HANDLE_VALUE)
     {
-        unsigned cbWritten;
+        DWORD cbWritten = (DWORD)*pcbWrite;
         pThis->OverlappedWrite.Offset     = 0;
         pThis->OverlappedWrite.OffsetHigh = 0;
-        if (!WriteFile(pThis->NamedPipe, pvBuf, *cbWrite, NULL, &pThis->OverlappedWrite))
+        if (!WriteFile(pThis->NamedPipe, pvBuf, cbWritten, NULL, &pThis->OverlappedWrite))
         {
             DWORD uError = GetLastError();
 
             if (   uError == ERROR_PIPE_LISTENING
                 || uError == ERROR_PIPE_NOT_CONNECTED)
             {
-                /* No connection yet/anymore; just discard the write. */
-                cbWritten = *cbWrite;
+                /* No connection yet/anymore; just discard the write (pretening everything was written). */;
             }
-            else
-            if (uError != ERROR_IO_PENDING)
+            else if (uError != ERROR_IO_PENDING)
             {
                 rc = RTErrConvertFromWin32(uError);
                 Log(("drvNamedPipeWrite: WriteFile returned %d (%Rrc)\n", uError, rc));
+                cbWritten = 0;
             }
             else
             {
                 /* Wait for the write to complete. */
-                if (GetOverlappedResult(pThis->NamedPipe, &pThis->OverlappedWrite, (DWORD *)&cbWritten, TRUE) == FALSE)
-                    uError = GetLastError();
+                if (GetOverlappedResult(pThis->NamedPipe, &pThis->OverlappedWrite, &cbWritten, TRUE /*bWait*/) == FALSE)
+                    rc = RTErrConvertFromWin32(uError = GetLastError());
             }
         }
-        else
-            cbWritten = *cbWrite;
 
         if (RT_FAILURE(rc))
         {
@@ -252,13 +249,13 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
             }
             cbWritten = 0;
         }
-        *cbWrite = cbWritten;
+        *pcbWrite = cbWritten;
     }
 #else /* !RT_OS_WINDOWS */
     if (pThis->LocalSocket != NIL_RTSOCKET)
     {
         ssize_t cbWritten;
-        cbWritten = send(pThis->LocalSocket, pvBuf, *cbWrite, 0);
+        cbWritten = send(pThis->LocalSocket, pvBuf, *pcbWrite, 0);
         if (cbWritten == 0)
         {
             RTSOCKET tmp = pThis->LocalSocket;
@@ -270,7 +267,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
             cbWritten = 0;
             rc = RTErrConvertFromErrno(errno);
         }
-        *cbWrite = cbWritten;
+        *pcbWrite = cbWritten;
     }
 #endif /* !RT_OS_WINDOWS */
 
