@@ -132,19 +132,19 @@ int rtDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSO
     case 1:
         if (iDirFile == RT_ELEMENTS(pszDirListC))
             return VERR_NO_MORE_FILES;
-        pDirEntry->cbName = strlen(pszDirListC[iDirFile]);
+        pDirEntry->cbName = (uint16_t)strlen(pszDirListC[iDirFile]);
         strcpy(pDirEntry->szName, pszDirListC[iDirFile++]);
         break;
     case 2:
         if (iDirFile == RT_ELEMENTS(pszDirListTestdir))
             return VERR_NO_MORE_FILES;
-        pDirEntry->cbName = strlen(pszDirListTestdir[iDirFile]);
+        pDirEntry->cbName = (uint16_t)strlen(pszDirListTestdir[iDirFile]);
         strcpy(pDirEntry->szName, pszDirListTestdir[iDirFile++]);
         break;
     case 3:
         if (iDirFile == RT_ELEMENTS(pszDirListSUBDIR))
             return VERR_NO_MORE_FILES;
-        pDirEntry->cbName = strlen(pszDirListSUBDIR[iDirFile]);
+        pDirEntry->cbName = (uint16_t)strlen(pszDirListSUBDIR[iDirFile]);
         strcpy(pDirEntry->szName, pszDirListSUBDIR[iDirFile++]);
         break;
     }
@@ -191,7 +191,8 @@ int rtPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD e
 static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
 {
     PRTDIRENTRYEX  pDirEntry = NULL;
-    uint32_t       cbDirEntry, cbComponent;
+    uint32_t       cbDirEntry;
+    size_t         cbComponent;
     int            rc = VERR_FILE_NOT_FOUND;
     PRTDIR         hSearch = 0;
     char           szWildCard[4];
@@ -273,7 +274,7 @@ int testCase(char *pszFullPath, bool fWildCard = false)
     if (fWildCard)
     {
         /* strip off the last path component, that contains the wildcard(s) */
-        uint32_t len = strlen(pszFullPath);
+        size_t   len = strlen(pszFullPath);
         char    *src = pszFullPath + len - 1;
 
         while(src > pszFullPath)
@@ -310,7 +311,7 @@ int testCase(char *pszFullPath, bool fWildCard = false)
     rc = RTPathQueryInfo(pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
     if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
     {
-        uint32_t len = strlen(pszFullPath);
+        size_t   len = strlen(pszFullPath);
         char    *src = pszFullPath + len - 1;
 
         Log(("Handle case insenstive guest fs on top of host case sensitive fs for %s\n", pszFullPath));
