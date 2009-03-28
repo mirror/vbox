@@ -1601,7 +1601,7 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
             if (pReq->u.In.u32MagicCookie != SUPDRVIDCREQ_CONNECT_MAGIC_COOKIE)
             {
                 OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: u32MagicCookie=%#x expected %#x!\n",
-                            pReq->u.In.u32MagicCookie, SUPDRVIDCREQ_CONNECT_MAGIC_COOKIE));
+                            (unsigned)pReq->u.In.u32MagicCookie, (unsigned)SUPDRVIDCREQ_CONNECT_MAGIC_COOKIE));
                 return pReqHdr->rc = VERR_INVALID_PARAMETER;
             }
             if (    pReq->u.In.uMinVersion > pReq->u.In.uReqVersion
@@ -1620,7 +1620,7 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
                 ||  (pReq->u.In.uMinVersion & 0xffff0000) != (SUPDRV_IDC_VERSION & 0xffff0000))
             {
                 OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: Version mismatch. Requested: %#x  Min: %#x  Current: %#x\n",
-                            pReq->u.In.uReqVersion, pReq->u.In.uMinVersion, SUPDRV_IDC_VERSION));
+                            pReq->u.In.uReqVersion, pReq->u.In.uMinVersion, (unsigned)SUPDRV_IDC_VERSION));
                 pReq->u.Out.pSession        = NULL;
                 pReq->u.Out.uSessionVersion = 0xffffffff;
                 pReq->u.Out.uDriverVersion  = SUPDRV_IDC_VERSION;
@@ -3305,6 +3305,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     PSUPDRVLDRIMAGE pImage;
     unsigned        cb;
     void           *pv;
+    size_t          cchName = strlen(pReq->u.In.szName); /* (caller checked < 32). */
     LogFlow(("supdrvIOCtl_LdrOpen: szName=%s cbImage=%d\n", pReq->u.In.szName, pReq->u.In.cbImage));
 
     /*
@@ -3313,7 +3314,8 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     RTSemFastMutexRequest(pDevExt->mtxLdr);
     for (pImage = pDevExt->pLdrImages; pImage; pImage = pImage->pNext)
     {
-        if (!strcmp(pImage->szName, pReq->u.In.szName))
+        if (    pImage->szName[cchName] == '\0'
+            &&  !memcmp(pImage->szName, pReq->u.In.szName, cchName))
         {
             pImage->cUsage++;
             pReq->u.Out.pvImageBase   = pImage->pvImage;
@@ -3348,7 +3350,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pImage->pfnServiceReqHandler = NULL;
     pImage->uState          = SUP_IOCTL_LDR_OPEN;
     pImage->cUsage          = 1;
-    strcpy(pImage->szName, pReq->u.In.szName);
+    memcpy(pImage->szName, pReq->u.In.szName, cchName + 1);
 
     pImage->pNext           = pDevExt->pLdrImages;
     pDevExt->pLdrImages     = pImage;
