@@ -174,11 +174,11 @@ static int vboxnetudpSend(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBU
 
     /* the IP header */
     RTNETIPV4 IpHdr;
-    size_t cbIdHdr = RT_UOFFSETOF(RTNETIPV4, ip_options);
+    unsigned  cbIdHdr = RT_UOFFSETOF(RTNETIPV4, ip_options);
     IpHdr.ip_v          = 4;
-    IpHdr.ip_hl         = cbIdHdr / sizeof(uint32_t);
+    IpHdr.ip_hl         = cbIdHdr >> 2;
     IpHdr.ip_tos        = 0;
-    IpHdr.ip_len        = RT_H2BE_U16(cbData + sizeof(RTNETUDP) + cbIdHdr);
+    IpHdr.ip_len        = RT_H2BE_U16((uint16_t)(cbData + sizeof(RTNETUDP) + cbIdHdr));
     IpHdr.ip_id         = (uint16_t)RTRandU32();
     IpHdr.ip_off        = 0;
     IpHdr.ip_ttl        = 255;
@@ -197,7 +197,7 @@ static int vboxnetudpSend(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBU
     RTNETUDP UdpHdr;
     UdpHdr.uh_sport     = RT_H2BE_U16(uSrcPort);
     UdpHdr.uh_dport     = RT_H2BE_U16(uDstPort);
-    UdpHdr.uh_ulen      = RT_H2BE_U16(cbData + sizeof(RTNETUDP));
+    UdpHdr.uh_ulen      = RT_H2BE_U16((uint16_t)(cbData + sizeof(RTNETUDP)));
 #if 0
     UdpHdr.uh_sum       = 0; /* pretend checksumming is disabled */
 #else
@@ -210,7 +210,7 @@ static int vboxnetudpSend(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBU
 
     /* the payload */
     aSegs[3].pv   = (void *)pvData;
-    aSegs[3].cb   = cbData;
+    aSegs[3].cb   = (uint32_t)cbData;
     aSegs[3].Phys = NIL_RTHCPHYS;
 
 
