@@ -497,7 +497,7 @@ bool Phy::readMDIO(PPHY pPhy)
             break;
         case MDIO_READ:
             /* Bits are shifted out in MSB to LSB order */
-            fPin = !!(pPhy->u16Acc & 0x8000);
+            fPin = (pPhy->u16Acc & 0x8000) != 0;
             pPhy->u16Acc <<= 1;
             if (--pPhy->u16Cnt == 0)
                 pPhy->u16State = MDIO_IDLE;
