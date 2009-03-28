@@ -560,7 +560,7 @@ static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, ui
                 {
                     memcpy(pbDst, pState->pbNext, pState->cbLeft);
                     pbDst += pState->cbLeft;
-                    cbRead -= pState->cbLeft;
+                    cbRead -= (uint32_t)pState->cbLeft;
                     pState->pbNext += pState->cbLeft;
                     pState->uNextAddr += pState->cbLeft;
                     pState->cbLeft = 0;
