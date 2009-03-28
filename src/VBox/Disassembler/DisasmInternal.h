@@ -86,8 +86,6 @@ extern PFNDISPARSE  pfnFullDisasm[IDX_ParseMax];
 extern PFNDISPARSE  pfnCalcSize[IDX_ParseMax];
 
 
-__BEGIN_DECLS
-
 unsigned ParseInstruction(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, PDISCPUSTATE pCpu);
 
 unsigned ParseIllegal(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
@@ -176,8 +174,6 @@ uint64_t DISReadQWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
 #endif
 
 size_t disFormatBytes(PCDISCPUSTATE pCpu, char *pszDst, size_t cchDst, uint32_t fFlags);
-
-__END_DECLS
 
 #endif /* !___DisasmInternal_h___ */
 

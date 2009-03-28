@@ -33,8 +33,6 @@ tstGuestPropSvc_TEMPLATE = VBOXR3TSTEXE
 tstGuestPropSvc_DEFS     = VBOX_WITH_HGCM VBOX_GUEST_PROP_TEST_NOTHREAD
 tstGuestPropSvc_SOURCES  = tstGuestPropSvc.cpp ../service.cpp
 tstGuestPropSvc_LIBS     = $(LIB_RUNTIME)
-# For now!
-tstGuestPropSvc_CXXFLAGS.win = -EHsc
 
 # Set this in LocalConfig.kmk if you are working on the guest property service
 # to automatically run the testcase at build time.
