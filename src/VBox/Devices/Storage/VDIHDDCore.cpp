@@ -1425,7 +1425,7 @@ static int vdiGetComment(void *pBackendData, char *pszComment,
     if (pImage)
     {
         char *pszTmp = getImageComment(&pImage->Header);
-        unsigned cb = strlen(pszTmp);
+        size_t cb = strlen(pszTmp);
         if (cb < cbComment)
         {
             /* memcpy is much better than strncpy. */
