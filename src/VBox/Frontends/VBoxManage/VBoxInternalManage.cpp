@@ -587,7 +587,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
         if (PARTTYPE_IS_EXTENDED(p[4]))
         {
             if (uExtended == (unsigned)-1)
-                uExtended = pCP - pPart->aPartitions;
+                uExtended = (unsigned)(pCP - pPart->aPartitions);
             else
             {
                 RTPrintf("More than one extended partition. Aborting\n");
