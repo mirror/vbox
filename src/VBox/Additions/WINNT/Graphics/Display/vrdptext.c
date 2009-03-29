@@ -77,60 +77,60 @@
  * The VRDPORDERTEXT consists of the string info and glyph infos.
  *
  */
- 
+
 static BOOL vboxReportGlyph (GLYPHPOS *pGlyphPos, uint8_t **ppu8Ptr, uint8_t *pu8End)
 {
     uint32_t cbOrder;
     uint32_t cbBitmap;
-    
+
     VRDPORDERGLYPH *pOrder = (VRDPORDERGLYPH *)*ppu8Ptr;
-    
+
     GLYPHBITS *pgb = pGlyphPos->pgdf->pgb;
-    
+
     /* BYTE-aligned 1BPP bitmap of the glyph. The array includes padding at the end to DWORD-align. */
     cbBitmap = (pgb->sizlBitmap.cx + 7) / 8; /* Line size in bytes. */
     cbBitmap *= pgb->sizlBitmap.cy;          /* Size of bitmap. */
     cbBitmap = (cbBitmap + 3) & ~3;          /* DWORD align. */
-    
-    cbOrder = (uint8_t *)&pOrder->au8Bitmap - (uint8_t *)pOrder;
-    
+
+    cbOrder = (uint32_t)((uint8_t *)&pOrder->au8Bitmap - (uint8_t *)pOrder);
+
     cbOrder += cbBitmap;
-    
+
     if (*ppu8Ptr + cbOrder > pu8End)
     {
         return FALSE;
     }
-    
+
     pOrder->o32NextGlyph = cbOrder;
-    
+
     pOrder->u64Handle = RTCrc64Start ();
     pOrder->u64Handle = RTCrc64Process(pOrder->u64Handle, pgb->aj, cbBitmap);
     pOrder->u64Handle = RTCrc64Process(pOrder->u64Handle, &pgb->ptlOrigin, sizeof (pgb->ptlOrigin));
     pOrder->u64Handle = RTCrc64Finish(pOrder->u64Handle);
-    
+
     pOrder->x = (int16_t)pGlyphPos->ptl.x;
     pOrder->y = (int16_t)pGlyphPos->ptl.y;
-    
+
     pOrder->w = (uint16_t)pgb->sizlBitmap.cx;
     pOrder->h = (uint16_t)pgb->sizlBitmap.cy;
 
     pOrder->xOrigin = (int16_t)pgb->ptlOrigin.x;
     pOrder->yOrigin = (int16_t)pgb->ptlOrigin.y;
-    
+
     /* 1BPP bitmap. Rows are byte aligned. Size is (((w + 7)/8) * h + 3) & ~3. */
     memcpy (pOrder->au8Bitmap, pgb->aj, cbBitmap);
-    
+
     *ppu8Ptr += cbOrder;
-    
+
     return TRUE;
 }
 
 static uint32_t vboxSizeofTextOrder (ULONG cGlyphs, ULONG cbMaxGlyph)
 {
     uint32_t cb = sizeof (VRDPORDERTEXT);
-    
+
     cb += cGlyphs * (sizeof (VRDPORDERGLYPH) + cbMaxGlyph);
-    
+
     return cb;
 }
 
@@ -149,10 +149,10 @@ BOOL vboxReportText (PPDEV ppdev,
     BOOL fResult;
     uint8_t *pu8GlyphPtr;
     uint8_t *pu8GlyphEnd;
-    
+
     DISPDBG((1, "VRDP::vrdpReportText: ppdev %p, pClipRects %p, pstro %p, pfo %p, prclOpaque %p, ulForeRGB %x, ulBackRGB %x\n",
                 ppdev, pClipRects, pstro, pfo, prclOpaque, ulForeRGB, ulBackRGB));
-    
+
     if (pstro->ulCharInc > 0xFF)
     {
         return FALSE;
@@ -168,9 +168,9 @@ BOOL vboxReportText (PPDEV ppdev,
     }
 
     memset (&fi, 0, sizeof (fi));
-    
+
     FONTOBJ_vGetInfo (pfo, sizeof (fi), &fi);
-    
+
     if (   fi.cjMaxGlyph1 == 0
         || fi.cjMaxGlyph1 > VRDP_TEXT_MAX_GLYPH_SIZE)
     {
@@ -178,22 +178,22 @@ BOOL vboxReportText (PPDEV ppdev,
         DISPDBG((1, "VRDP::vrdpReportText: fi.cjMaxGlyph1 = %x. Return FALSE\n", fi.cjMaxGlyph1));
         return FALSE;
     }
-    
+
     cbOrderMax = vboxSizeofTextOrder (pstro->cGlyphs, fi.cjMaxGlyph1);
-    
+
     DISPDBG((1, "VRDP::vrdpReportText: pstro->cGlyphs = %d, fi.cjMaxGlyph1 = 0x%x, cbOrderMax = 0x%x.\n", pstro->cGlyphs, fi.cjMaxGlyph1, cbOrderMax));
-        
+
     pOrder = (VRDPORDERTEXT *)EngAllocMem (0, cbOrderMax, ALLOC_TAG);
-    
+
     if (!pOrder)
     {
         DISPDBG((1, "VRDP::vrdpReportText: pOrder = %x. Return FALSE\n", pOrder));
         return FALSE;
     }
-    
+
     pu8GlyphPtr = (uint8_t *)&pOrder[1]; /* Follows the order header. */
     pu8GlyphEnd = (uint8_t *)pOrder + cbOrderMax;
-    
+
     pOrder->xBkGround = (int16_t)pstro->rclBkGround.left;
     pOrder->yBkGround = (int16_t)pstro->rclBkGround.top;
     pOrder->wBkGround = (uint16_t)(pstro->rclBkGround.right - pstro->rclBkGround.left);
@@ -213,45 +213,45 @@ BOOL vboxReportText (PPDEV ppdev,
         pOrder->wOpaque = 0;
         pOrder->hOpaque = 0;
     }
-    
+
     pOrder->u16MaxGlyph = (uint16_t)fi.cjMaxGlyph1;
-    
+
     pOrder->u8Glyphs = (uint8_t)pstro->cGlyphs;
-    
+
     pOrder->u8Flags = (uint8_t)pstro->flAccel;
-    
+
     pOrder->u8CharInc = (uint8_t)pstro->ulCharInc;
-    
+
     pOrder->u32FgRGB = ulForeRGB;
     pOrder->u32BgRGB = ulBackRGB;
-    
+
     DISPDBG((1, "VRDP::vrdpReportText: pstro->pgp %p.\n", pstro->pgp));
-    
+
     /* Enumerate glyphs. */
     STROBJ_vEnumStart (pstro);
-    
+
     fResult = TRUE;
-    
+
     for (;;)
     {
         ULONG i;
         ULONG cGlyphs = 0;
         GLYPHPOS *pGlyphPos = NULL;
-        
+
         BOOL fMore = STROBJ_bEnum (pstro, &cGlyphs, &pGlyphPos);
-        
+
         DISPDBG((1, "VRDP::vrdpReportText: cGlyphs %d.\n", cGlyphs));
-    
+
         for (i = 0; i < cGlyphs; i++)
         {
             fResult = vboxReportGlyph (&pGlyphPos[i], &pu8GlyphPtr, pu8GlyphEnd);
-            
+
             if (!fResult)
             {
                 break;
             }
         }
-        
+
         if (!fMore || !fResult)
         {
             break;
@@ -259,15 +259,15 @@ BOOL vboxReportText (PPDEV ppdev,
     }
 
     DISPDBG((1, "VRDP::vrdpReportText: fResult %d.\n", fResult));
-    
+
     if (fResult)
     {
-        pOrder->cbOrder = pu8GlyphPtr - (uint8_t *)pOrder;
+        pOrder->cbOrder = (uint32_t)(pu8GlyphPtr - (uint8_t *)pOrder);
 
         vrdpReportOrderGeneric (ppdev, pClipRects, pOrder, pOrder->cbOrder, VRDP_ORDER_TEXT);
     }
-    
+
     EngFreeMem (pOrder);
-    
+
     return fResult;
 }
