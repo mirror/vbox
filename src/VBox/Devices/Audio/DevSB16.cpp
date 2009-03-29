@@ -1360,10 +1360,11 @@ static int write_audio (SB16State *s, int nchan, int dma_pos,
         int left = dma_len - dma_pos;
 #ifndef VBOX
         int copied;
+        size_t to_copy;
 #else
         uint32_t copied;
+        uint32_t to_copy;
 #endif
-        size_t to_copy;
 
         to_copy = audio_MIN (temp, left);
         if (to_copy > sizeof (tmpbuf)) {
