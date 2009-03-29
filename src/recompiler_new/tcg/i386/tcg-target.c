@@ -881,6 +881,7 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
 # else
     int bias1 = 0, bias3 = 0;
 # endif
+    NOREF(bias3);
 #endif
 
     data_reg = *args++;
