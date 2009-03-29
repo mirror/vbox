@@ -890,7 +890,7 @@ DECLINLINE(int) vmdkFileDeflateAt(PVMDKFILE pVmdkFile,
         VMDKDEFLATESTATE DeflateState;
 
         Marker.uSector = RT_H2LE_U64(uLBA);
-        Marker.cbSize = RT_H2LE_U32(cbToWrite);
+        Marker.cbSize = RT_H2LE_U32((uint32_t)cbToWrite);
         if (uMarker == VMDK_MARKER_IGNORE)
         {
             /* Compressed grain marker. Data follows immediately. */
@@ -5703,8 +5703,8 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
     int rc = VINF_SUCCESS;
     unsigned cTasksToSubmit = 0;
     PPDMDATASEG paSegCurrent = paSeg;
-    unsigned cbLeftInCurrentSegment = paSegCurrent->cbSeg;
-    unsigned uOffsetInCurrentSegment = 0;
+    size_t cbLeftInCurrentSegment = paSegCurrent->cbSeg;
+    size_t uOffsetInCurrentSegment = 0;
 
     AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
@@ -5719,7 +5719,7 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
 
     while (cbRead && cSeg)
     {
-        unsigned cbToRead;
+        size_t cbToRead;
         uint64_t uSectorExtentRel;
 
         rc = vmdkFindExtent(pImage, VMDK_BYTE2SECTOR(uOffset),
@@ -5746,9 +5746,9 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
                 /* Setup new task. */
                 void *pTask;
                 rc = pImage->pInterfaceAsyncIOCallbacks->pfnPrepareRead(pImage->pInterfaceAsyncIO->pvUser, pExtent->pFile->pStorage,
-                                                                       VMDK_SECTOR2BYTE(uSectorExtentRel),
-                                                                       (uint8_t *)paSegCurrent->pvSeg + uOffsetInCurrentSegment,
-                                                                       cbToRead, &pTask);
+                                                                        VMDK_SECTOR2BYTE(uSectorExtentRel),
+                                                                        (uint8_t *)paSegCurrent->pvSeg + uOffsetInCurrentSegment,
+                                                                        cbToRead, &pTask);
                 if (RT_FAILURE(rc))
                 {
                     AssertMsgFailed(("Preparing read failed rc=%Rrc\n", rc));
@@ -5839,8 +5839,8 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
     int rc = VINF_SUCCESS;
     unsigned cTasksToSubmit = 0;
     PPDMDATASEG paSegCurrent = paSeg;
-    unsigned cbLeftInCurrentSegment = paSegCurrent->cbSeg;
-    unsigned uOffsetInCurrentSegment = 0;
+    size_t cbLeftInCurrentSegment = paSegCurrent->cbSeg;
+    size_t uOffsetInCurrentSegment = 0;
 
     AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
@@ -5855,7 +5855,7 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
 
     while (cbWrite && cSeg)
     {
-        unsigned cbToWrite;
+        size_t cbToWrite;
         uint64_t uSectorExtentRel;
 
         rc = vmdkFindExtent(pImage, VMDK_BYTE2SECTOR(uOffset),
