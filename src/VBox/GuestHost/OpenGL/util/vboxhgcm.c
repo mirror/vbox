@@ -768,11 +768,13 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
 /*@todo same, replace DeviceIoControl with vbglR3DoIOCtl */
 static void crVBoxHGCMDoDisconnect( CRConnection *conn )
 {
+#ifdef IN_GUEST
     VBoxGuestHGCMDisconnectInfo info;
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
     DWORD cbReturned;
-#endif
+# endif
     int i;
+#endif
 
     if (conn->pHostBuffer)
     {
@@ -801,13 +803,13 @@ static void crVBoxHGCMDoDisconnect( CRConnection *conn )
     }
 
 #ifndef IN_GUEST
-#else
+#else /* IN_GUEST */
     if (conn->u32ClientID)
     {
         memset (&info, 0, sizeof (info));
         info.u32ClientID = conn->u32ClientID;
 
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
         if ( !DeviceIoControl(g_crvboxhgcm.hGuestDrv,
                                VBOXGUEST_IOCTL_HGCM_DISCONNECT,
                                &info, sizeof (info),
@@ -817,21 +819,21 @@ static void crVBoxHGCMDoDisconnect( CRConnection *conn )
         {
             crDebug("Disconnect failed with %x\n", GetLastError());
         }
-#elif defined(RT_OS_SOLARIS)
+# elif defined(RT_OS_SOLARIS)
         VBGLBIGREQ Hdr;
         Hdr.u32Magic = VBGLBIGREQ_MAGIC;
         Hdr.cbData = sizeof(info);
         Hdr.pvDataR3 = &info;
-# if HC_ARCH_BITS == 32
+#  if HC_ARCH_BITS == 32
         Hdr.u32Padding = 0;
-# endif
+#  endif
         if (ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Hdr) >= 0)
-#else
+# else
         if (ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &info, sizeof (info)) < 0)
         {
             crDebug("Disconnect failed with %x\n", errno);
         }
-#endif
+# endif
 
         conn->u32ClientID = 0;
     }
@@ -844,15 +846,15 @@ static void crVBoxHGCMDoDisconnect( CRConnection *conn )
     /* close guest additions driver*/
     if (i>=g_crvboxhgcm.num_conns)
     {
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
         CloseHandle(g_crvboxhgcm.hGuestDrv);
         g_crvboxhgcm.hGuestDrv = INVALID_HANDLE_VALUE;
-#else
+# else
         close(g_crvboxhgcm.iGuestDrv);
         g_crvboxhgcm.iGuestDrv = INVALID_HANDLE_VALUE;
-#endif
+# endif
     }
-#endif
+#endif /* IN_GUEST */
 }
 
 static void crVBoxHGCMInstantReclaim(CRConnection *conn, CRMessage *mess)
