@@ -1653,7 +1653,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
         int rows = 2; /* including section header and footer */
 
         CHardDiskAttachmentVector vec = aMachine.GetHardDiskAttachments();
-        for (size_t i = 0; i < (size_t) vec.size(); ++ i)
+        for (int i = 0; i < vec.size(); ++ i)
         {
             CHardDiskAttachment hda = vec [i];
             CHardDisk hd = hda.GetHardDisk();
