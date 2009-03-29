@@ -277,7 +277,7 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
         case VHD_PLATFORM_CODE_WI2R:
             /* Update plain relative name. */
             cb = (uint32_t)strlen(pszFilename);
-            if (cb > cbMaxLen) /** @todo r=bird: shoudln't this be cb >= cbMaxLen, or rather strlen() + 1? I don't dare update this without testing. */
+            if (cb > cbMaxLen)
             {
                 rc = VERR_FILENAME_TOO_LONG;
                 goto out;
