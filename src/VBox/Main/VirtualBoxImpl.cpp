@@ -4174,7 +4174,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser
             /* release the caller to let uninit() ever proceed */
             autoCaller.release();
 
-            DWORD rc = ::WaitForMultipleObjects (1 + cnt + cntSpawned,
+            DWORD rc = ::WaitForMultipleObjects ((DWORD)(1 + cnt + cntSpawned),
                                                  handles, FALSE, INFINITE);
 
             /* Restore the caller before using VirtualBox. If it fails, this
