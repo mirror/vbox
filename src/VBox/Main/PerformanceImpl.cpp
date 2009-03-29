@@ -438,7 +438,7 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (IN_BSTR, metricNames),
         retScales[i] = (*it)->getScale();
         retSequenceNumbers[i] = sequenceNumber;
         retLengths[i] = length;
-        retIndices[i] = flatIndex;
+        retIndices[i] = (ULONG)flatIndex;
         flatIndex += length;
     }
 
