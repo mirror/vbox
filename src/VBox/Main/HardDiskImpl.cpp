@@ -3858,9 +3858,9 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                     that->mm.vdProgress = task->progress;
 
                     unsigned start = chain->isForward() ?
-                        0 : chain->size() - 1;
+                        0 : (unsigned)chain->size() - 1;
                     unsigned end = chain->isForward() ?
-                        chain->size() - 1 : 0;
+                        (unsigned)chain->size() - 1 : 0;
 #if 0
                     LogFlow (("*** MERGE from %d to %d\n", start, end));
 #endif
