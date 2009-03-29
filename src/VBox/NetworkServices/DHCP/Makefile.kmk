@@ -54,15 +54,8 @@ VBoxNetDHCP_SOURCES = \
 	../NetLib/VBoxNetARP.cpp
 VBoxNetDHCP_LIBS = \
 	$(LIB_RUNTIME)
-	
-#ifeq ($(KBUILD_TYPE),release)
- VBoxNetDHCP_LDFLAGS.win  += /SUBSYSTEM:windows
-#else
-# VBoxNetDHCP_LDFLAGS.win += /SUBSYSTEM:console
-#endif
+VBoxNetDHCP_LDFLAGS.win = /SUBSYSTEM:windows
 
 
 include $(KBUILD_PATH)/subfooter.kmk
-
-
 
