@@ -325,7 +325,7 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
         KIRQL oldIrql;
         KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
-        int rc = supdrvIOCtlFast(ulCmd, (uintptr_t)pIrp->UserBuffer /* VMCPU id */, pDevExt, pSession);
+        int rc = supdrvIOCtlFast(ulCmd, (unsigned)(uintptr_t)pIrp->UserBuffer /* VMCPU id */, pDevExt, pSession);
         KeLowerIrql(oldIrql);
 
         /* Complete the I/O request. */
