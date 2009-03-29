@@ -1399,12 +1399,12 @@ STDMETHODIMP Appliance::Interpret()
 #endif /* VBOX_WITH_USB */
 
             /* Network Controller */
-            uint32_t cEthernetAdapters = vsysThis.llEthernetAdapters.size();
+            size_t cEthernetAdapters = vsysThis.llEthernetAdapters.size();
             if (cEthernetAdapters > 0)
             {
                 /* Check for the constrains */
                 if (cEthernetAdapters > SchemaDefs::NetworkAdapterCount)
-                    addWarning(tr("The virtual system \"%s\" claims support for %u network adapters, but VirtualBox has support for max %u network adapter only."),
+                    addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox has support for max %u network adapter only."),
                                   vsysThis.strName.c_str(), cEthernetAdapters, SchemaDefs::NetworkAdapterCount);
 
                 /* Get the default network adapter type for the selected guest OS */
