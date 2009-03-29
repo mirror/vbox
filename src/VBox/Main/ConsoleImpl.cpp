@@ -1056,7 +1056,7 @@ HRESULT Console::doEnumerateGuestProperties (CBSTR aPatterns,
     Utf8Str utf8Patterns(aPatterns);
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     parm[0].u.pointer.addr = utf8Patterns.mutableRaw();
-    parm[0].u.pointer.size = utf8Patterns.length() + 1;
+    parm[0].u.pointer.size = (uint32_t)utf8Patterns.length() + 1;
 
     /*
      * Now things get slightly complicated.  Due to a race with the guest adding
@@ -1075,7 +1075,7 @@ HRESULT Console::doEnumerateGuestProperties (CBSTR aPatterns,
             return E_OUTOFMEMORY;
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
         parm[1].u.pointer.addr = Utf8Buf.mutableRaw();
-        parm[1].u.pointer.size = cchBuf + 1024;
+        parm[1].u.pointer.size = (uint32_t)cchBuf + 1024;
         vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", ENUM_PROPS_HOST, 3,
                                      &parm[0]);
         if (parm[2].type != VBOX_HGCM_SVC_PARM_32BIT)
@@ -3674,7 +3674,7 @@ HRESULT Console::getGuestProperty (IN_BSTR aName, BSTR *aValue,
     /* To save doing a const cast, we use the mutableRaw() member. */
     parm[0].u.pointer.addr = Utf8Name.mutableRaw();
     /* The + 1 is the null terminator */
-    parm[0].u.pointer.size = Utf8Name.length() + 1;
+    parm[0].u.pointer.size = (uint32_t)Utf8Name.length() + 1;
     parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
     parm[1].u.pointer.addr = pszBuffer;
     parm[1].u.pointer.size = sizeof(pszBuffer);
@@ -3739,7 +3739,7 @@ HRESULT Console::setGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags
     /* To save doing a const cast, we use the mutableRaw() member. */
     parm[0].u.pointer.addr = Utf8Name.mutableRaw();
     /* The + 1 is the null terminator */
-    parm[0].u.pointer.size = Utf8Name.length() + 1;
+    parm[0].u.pointer.size = (uint32_t)Utf8Name.length() + 1;
     Utf8Str Utf8Value = aValue;
     if (aValue != NULL)
     {
@@ -3747,7 +3747,7 @@ HRESULT Console::setGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags
         /* To save doing a const cast, we use the mutableRaw() member. */
         parm[1].u.pointer.addr = Utf8Value.mutableRaw();
         /* The + 1 is the null terminator */
-        parm[1].u.pointer.size = Utf8Value.length() + 1;
+        parm[1].u.pointer.size = (uint32_t)Utf8Value.length() + 1;
     }
     Utf8Str Utf8Flags = aFlags;
     if (aFlags != NULL)
@@ -3756,7 +3756,7 @@ HRESULT Console::setGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags
         /* To save doing a const cast, we use the mutableRaw() member. */
         parm[2].u.pointer.addr = Utf8Flags.mutableRaw();
         /* The + 1 is the null terminator */
-        parm[2].u.pointer.size = Utf8Flags.length() + 1;
+        parm[2].u.pointer.size = (uint32_t)Utf8Flags.length() + 1;
     }
     if ((aValue != NULL) && (aFlags != NULL))
         vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", SET_PROP_HOST,
@@ -4550,7 +4550,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
      * number of "advance percent count" comments in this method! */
     enum { StepCount = 7 };
     /* current step */
-    size_t step = 0;
+    ULONG step = 0;
 
     HRESULT rc = S_OK;
     int vrc = VINF_SUCCESS;
