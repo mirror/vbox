@@ -32,9 +32,11 @@
 #   define _InterlockedExchangeAdd        _InterlockedExchangeAdd_StupidDDKvsCompilerCrap
 #   define _InterlockedCompareExchange    _InterlockedCompareExchange_StupidDDKvsCompilerCrap
 #   define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKvsCompilerCrap
+#   pragma warning(disable : 4163)
     __BEGIN_DECLS
 #   include <ntddk.h>
     __END_DECLS
+#   pragma warning(default : 4163)
 #   undef  _InterlockedExchange
 #   undef  _InterlockedExchangeAdd
 #   undef  _InterlockedCompareExchange
