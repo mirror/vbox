@@ -167,7 +167,7 @@ int SVCHlpClient::write (const void *aVal, size_t aLen)
         return VERR_WRONG_ORDER;
 
     DWORD written = 0;
-    BOOL ok = WriteFile (mWriteEnd, aVal, aLen, &written, NULL);
+    BOOL ok = WriteFile (mWriteEnd, aVal, (ULONG)aLen, &written, NULL);
     AssertReturn (!ok || written == aLen, VERR_GENERAL_FAILURE);
     return ok ? VINF_SUCCESS : rtErrConvertFromWin32OnFailure();
 }
@@ -209,7 +209,7 @@ int SVCHlpClient::read (void *aVal, size_t aLen)
         return VERR_WRONG_ORDER;
 
     DWORD read = 0;
-    BOOL ok = ReadFile (mReadEnd, aVal, aLen, &read, NULL);
+    BOOL ok = ReadFile (mReadEnd, aVal, (ULONG)aLen, &read, NULL);
     AssertReturn (!ok || read == aLen, VERR_GENERAL_FAILURE);
     return ok ? VINF_SUCCESS : rtErrConvertFromWin32OnFailure();
 }
