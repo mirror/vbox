@@ -160,7 +160,7 @@ static DECLCALLBACK(int) drvblockWrite(PPDMIBLOCK pInterface, uint64_t off, cons
 #ifdef VBOX_PERIODIC_FLUSH
     if (pThis->cbFlushInterval)
     {
-        pThis->cbDataWritten += cbWrite;
+        pThis->cbDataWritten += (uint32_t)cbWrite;
         if (pThis->cbDataWritten > pThis->cbFlushInterval)
         {
             pThis->cbDataWritten = 0;
