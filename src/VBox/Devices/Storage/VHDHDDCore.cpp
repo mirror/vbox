@@ -248,7 +248,7 @@ static int vhdFilenameToUtf16(const char *pszFilename, void *pvBuf, uint32_t cbB
     }
     memcpy(pvBuf, tmp16, cTmp16Len * sizeof(*tmp16));
     if (pcbActualSize)
-        *pcbActualSize = cTmp16Len * sizeof(*tmp16);
+        *pcbActualSize = (uint32_t)(cTmp16Len * sizeof(*tmp16));
 
 out:
     if (tmp16)
@@ -276,8 +276,8 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
     {
         case VHD_PLATFORM_CODE_WI2R:
             /* Update plain relative name. */
-            cb = strlen(pszFilename);
-            if (cb > cbMaxLen)
+            cb = (uint32_t)strlen(pszFilename);
+            if (cb > cbMaxLen) /** @todo r=bird: shoudln't this be cb >= cbMaxLen, or rather strlen() + 1? I don't dare update this without testing. */
             {
                 rc = VERR_FILENAME_TOO_LONG;
                 goto out;
@@ -290,7 +290,7 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
             rc = RTPathAbs(pszFilename, (char *)pvBuf, cbMaxLen);
             if (RT_FAILURE(rc))
                 goto out;
-            pLocator->u32DataLength = RT_H2BE_U32(strlen((char *)pvBuf));
+            pLocator->u32DataLength = RT_H2BE_U32((uint32_t)strlen((const char *)pvBuf));
             break;
         case VHD_PLATFORM_CODE_W2RU:
             /* Update unicode relative name. */
