@@ -49,6 +49,11 @@
 #include <vector>
 #include <string>
 
+#ifdef RT_OS_WINDOWS /* WinMain */
+# include <Windows.h>
+# include <stdlib.h>
+#endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -2036,7 +2041,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 }
 
 
-
 #ifndef VBOX_WITH_HARDENING
 
 int main(int argc, char **argv, char **envp)
@@ -2052,76 +2056,13 @@ int main(int argc, char **argv, char **envp)
 }
 
 # ifdef RT_OS_WINDOWS
-
-#include <windows.h>
-#include <iprt/mem.h>
-
-int WINAPI WinMain(          HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine,
-    int nCmdShow
-)
+/** (We don't want a console usually.) */
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    int rc = RTR3InitAndSUPLib();
-    if (RT_FAILURE(rc))
-    {
-        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: RTR3InitAndSupLib failed, rc=%Rrc\n", rc);
-        return 1;
-    }
-
-/** @todo r=bird: crt0.c is already doing all this stuff for us. It's available thru stdlib.h __argv and __argc IIRC. */
-
-    LPWSTR lpwCmd = GetCommandLineW();
-    size_t size = wcslen(lpwCmd);
-    size++; /* for null terminator */
-
-    int argc;
-    int ret = 1;
-
-    LPWSTR * pwArgs = CommandLineToArgvW(lpwCmd,&argc);
-    if(pwArgs)
-    {
-        size+=argc-1; /* null terminators */
-        char **argv = (char**)RTMemTmpAlloc(size + argc*sizeof(char*));
-        if(argv)
-        {
-            char *pBuf = (char*)(argv+argc);
-            int i;
-            for(i = 0; i < argc; i++)
-            {
-                argv[i] = pBuf;
-
-                int num = WideCharToMultiByte(
-                        CP_ACP, /*UINT CodePage*/
-                        0, /*DWORD dwFlags*/
-                        pwArgs[i],
-                        -1, /*int cchWideChar */
-                        argv[i], /*LPSTR lpMultiByteStr*/
-                        size, /*int cbMultiByte*/
-                        NULL, /*LPCSTR lpDefaultChar*/
-                        FALSE/*LPBOOL lpUsedDefaultChar*/
-                    );
-                if(num <= 0)
-                    break;
-
-                size-=num;
-                pBuf+=num;
-            }
-
-            if(i == argc)
-            {
-                ret = TrustedMain(argc, argv, NULL);
-            }
-            RTMemFree(argv);
-        }
-
-        LocalFree(pwArgs);
-    }
-
-    return ret;
+    NOREF(hInstance); NOREF(hPrevInstance); NOREF(lpCmdLine); NOREF(nCmdShow);
+    return main(__argc, __argv, environ);
 }
-
-# endif
+# endif /* RT_OS_WINDOWS */
 
 #endif /* !VBOX_WITH_HARDENING */
 
