@@ -321,7 +321,7 @@ ULONG Snapshot::descendantCount()
 
     AutoWriteLock chLock (childrenLock ());
 
-    ULONG count = children().size();
+    ULONG count = (ULONG)children().size();
 
     for (SnapshotList::const_iterator it = children().begin();
          it != children().end(); ++ it)
