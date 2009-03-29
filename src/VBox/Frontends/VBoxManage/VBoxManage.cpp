@@ -91,7 +91,7 @@ void showProgress(ComPtr<IProgress> progress)
     ULONG ulLastPercent = 0;
 
     ULONG ulCurrentOperationPercent;
-    ULONG ulLastOperationPercent;
+    ULONG ulLastOperationPercent = (ULONG)-1;
 
     ULONG ulLastOperation = (ULONG)-1;
     Bstr bstrOperationDescription;
