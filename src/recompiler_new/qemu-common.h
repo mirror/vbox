@@ -4,23 +4,33 @@
 
 #ifdef VBOX
 
-#include <string.h>
+# include <string.h>
+# if !defined(_MSC_VER)
+#  include <inttypes.h>
+# endif
 
 void pstrcpy(char *buf, int buf_size, const char *str);
 char *pstrcat(char *buf, int buf_size, const char *s);
-#define snprintf RTStrPrintf
-#ifndef PRId32
-#define PRId32 "I32d"
-#define PRIx32 "I32x"
-#define PRIu32 "I32u"
-#define PRIo32 "I32o"
-#define PRId64 "I64d"
-#define PRIx64 "I64x"
-#define PRIu64 "I64u"
-#define PRIo64 "I64o"
-#endif
+# define snprintf RTStrPrintf
 
-#else
+# ifdef _MSC_VER
+#  define PRId32 "d"
+#  define PRIx32 "x"
+#  define PRIu32 "u"
+#  define PRIo32 "o"
+#  ifdef DEBUG_TMP_LOGGING
+#   define PRId64 "I64d"
+#   define PRIx64 "I64x"
+#   define PRIu64 "I64u"
+#   define PRIo64 "I64o"
+#  else
+#   define PRId64 "RI64"
+#   define PRIx64 "RX64"
+#   define PRIu64 "RU64"
+#  endif
+# endif /* _MSC_VER */
+
+#else /* !VBOX */
 /* we put basic includes here to avoid repeating them in device drivers */
 #include <stdlib.h>
 #include <stdio.h>
@@ -160,6 +170,6 @@ int cpu_load(QEMUFile *f, void *opaque, int version_id);
 
 /* Force QEMU to stop what it's doing and service IO */
 void qemu_service_io(void);
-#endif // !VBOX
+#endif /* !VBOX */
 
 #endif
