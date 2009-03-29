@@ -221,7 +221,7 @@ int handleImportAppliance(HandlerArg *a)
             uint32_t ulVsys = it->first;
             if (ulVsys >= cVirtualSystemDescriptions)
                 return errorSyntax(USAGE_IMPORTAPPLIANCE,
-                                   "Invalid index %RI32 with -vsys option; the OVF contains only %RI32 virtual system(s).",
+                                   "Invalid index %RI32 with -vsys option; the OVF contains only %zu virtual system(s).",
                                    ulVsys, cVirtualSystemDescriptions);
         }
 
