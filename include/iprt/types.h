@@ -1135,7 +1135,7 @@ typedef RTENV                                      *PRTENV;
  * @remarks This doesn't have to correspond to the APIC ID (intel/amd). Nor
  *          does it have to correspond to the bits in the affinity mask, at
  *          least not until we've sorted out Windows NT. */
-typedef RTHCUINTPTR                                 RTCPUID;
+typedef uint32_t                                    RTCPUID;
 /** Pointer to a CPU identifier. */
 typedef RTCPUID                                    *PRTCPUID;
 /** Pointer to a const CPU identifier. */
@@ -1144,7 +1144,8 @@ typedef RTCPUID const                              *PCRTCPUID;
 #define NIL_RTCPUID                                 ((RTCPUID)~0)
 
 /** A CPU set.
- * Treat this as an opaque type and always use RTCpuSet* for manupulating it. */
+ * Treat this as an opaque type and always use RTCpuSet* for manupulating it.
+ * @remarks Subject to change. */
 typedef uint64_t                                    RTCPUSET;
 /** Pointer to a CPU set. */
 typedef RTCPUSET                                   *PRTCPUSET;
