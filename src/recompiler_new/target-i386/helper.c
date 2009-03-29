@@ -45,6 +45,7 @@
 
 static int cpu_x86_register (CPUX86State *env, const char *cpu_model);
 
+#ifndef VBOX
 static void add_flagname_to_bitmaps(char *flagname, uint32_t *features,
                                     uint32_t *ext_features,
                                     uint32_t *ext2_features,
@@ -101,6 +102,7 @@ static void add_flagname_to_bitmaps(char *flagname, uint32_t *features,
         }
     fprintf(stderr, "CPU feature %s not found\n", flagname);
 }
+#endif /* !VBOX */
 #ifndef VBOX
 CPUX86State *cpu_x86_init(const char *cpu_model)
 {
