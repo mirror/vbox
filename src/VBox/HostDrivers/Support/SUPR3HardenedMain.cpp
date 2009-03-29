@@ -393,7 +393,7 @@ DECLHIDDEN(int) supR3HardenedPathProgram(char *pszPath, size_t cchPath)
     /*
      * Calc the length and check if there is space before copying.
      */
-    unsigned cch = strlen(g_szSupLibHardenedDirPath) + 1;
+    size_t cch = strlen(g_szSupLibHardenedDirPath) + 1;
     if (cch <= cchPath)
     {
         memcpy(pszPath, g_szSupLibHardenedDirPath, cch + 1);
