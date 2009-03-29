@@ -389,6 +389,8 @@ GlobalLock::~GlobalLock()
 {
     if (m->pOldLoader)
         xmlSetExternalEntityLoader(m->pOldLoader);
+    delete m;
+    m = NULL;
 }
 
 void GlobalLock::setExternalEntityLoader(PFNEXTERNALENTITYLOADER pLoader)
@@ -1101,6 +1103,8 @@ XmlFileParser::XmlFileParser()
 
 XmlFileParser::~XmlFileParser()
 {
+    delete m;
+    m = NULL;
 }
 
 struct IOContext
