@@ -9066,7 +9066,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     ComObjPtr <Progress> serverProgress;
     serverProgress.createObject();
     {
-        ULONG opCount = 1 + mHDData->mAttachments.size();
+        ULONG opCount = 1 + (ULONG)mHDData->mAttachments.size();
         if (mData->mMachineState == MachineState_Saved)
             opCount ++;
         if (takingSnapshotOnline)
@@ -9216,7 +9216,7 @@ STDMETHODIMP SessionMachine::DiscardSnapshot (
                          Bstr (Utf8StrFmt (tr ("Discarding snapshot '%ls'"),
                              snapshot->data().mName.raw())),
                          FALSE /* aCancelable */,
-                         1 + snapshot->data().mMachine->mHDData->mAttachments.size() +
+                         1 + (ULONG)snapshot->data().mMachine->mHDData->mAttachments.size() +
                          (snapshot->stateFilePath().isNull() ? 0 : 1),
                          Bstr (tr ("Preparing to discard snapshot")));
     AssertComRCReturn (rc, rc);
@@ -9271,8 +9271,8 @@ STDMETHODIMP SessionMachine::DiscardCurrentState (
     ComObjPtr <Progress> progress;
     progress.createObject();
     {
-        ULONG opCount = 1 + mData->mCurrentSnapshot->data()
-                                .mMachine->mHDData->mAttachments.size();
+        ULONG opCount = 1 + (ULONG)mData->mCurrentSnapshot->data()
+                                       .mMachine->mHDData->mAttachments.size();
         if (mData->mCurrentSnapshot->stateFilePath())
             ++ opCount;
         progress->init (mParent, aInitiator,
@@ -9348,8 +9348,8 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
         ULONG opCount = 1;
         if (prevSnapshot)
         {
-            opCount += curSnapshot->data().mMachine->mHDData->mAttachments.size();
-            opCount += prevSnapshot->data().mMachine->mHDData->mAttachments.size();
+            opCount += (ULONG)curSnapshot->data().mMachine->mHDData->mAttachments.size();
+            opCount += (ULONG)prevSnapshot->data().mMachine->mHDData->mAttachments.size();
             if (prevSnapshot->stateFilePath())
                 ++ opCount;
             if (curSnapshot->stateFilePath())
@@ -9358,7 +9358,7 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
         else
         {
             opCount +=
-                curSnapshot->data().mMachine->mHDData->mAttachments.size() * 2;
+                (ULONG)curSnapshot->data().mMachine->mHDData->mAttachments.size() * 2;
             if (curSnapshot->stateFilePath())
                 opCount += 2;
         }
