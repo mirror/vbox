@@ -1331,15 +1331,14 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             }
             gHostKeyDisabledCombinations = argv[curArg];
-            unsigned i, cStr = strlen(gHostKeyDisabledCombinations);
-            for (i=0; i<cStr; i++)
+            size_t cch = strlen(gHostKeyDisabledCombinations);
+            for (size_t i = 0; i < cch; i++)
             {
                 if (!strchr("fhnpqrs", gHostKeyDisabledCombinations[i]))
                 {
                     RTPrintf("Error: <hostkey> + '%c' is not a valid combination\n",
-                            gHostKeyDisabledCombinations[i]);
+                             gHostKeyDisabledCombinations[i]);
                     rc = E_FAIL;
-                    i = cStr;
                     break;
                 }
             }
@@ -2585,10 +2584,10 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                  * Decode event parameters.
                  */
                 ASMAtomicDecS32(&g_cNotifyUpdateEventsPending);
-                #define DECODEX(event) ((intptr_t)(event).user.data1 >> 16)
-                #define DECODEY(event) ((intptr_t)(event).user.data1 & 0xFFFF)
-                #define DECODEW(event) ((intptr_t)(event).user.data2 >> 16)
-                #define DECODEH(event) ((intptr_t)(event).user.data2 & 0xFFFF)
+                #define DECODEX(event) (int)((intptr_t)(event).user.data1 >> 16)
+                #define DECODEY(event) (int)((intptr_t)(event).user.data1 & 0xFFFF)
+                #define DECODEW(event) (int)((intptr_t)(event).user.data2 >> 16)
+                #define DECODEH(event) (int)((intptr_t)(event).user.data2 & 0xFFFF)
                 int x = DECODEX(event);
                 int y = DECODEY(event);
                 int w = DECODEW(event);
