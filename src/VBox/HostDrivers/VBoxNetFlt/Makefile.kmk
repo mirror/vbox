@@ -33,9 +33,9 @@ VBoxNetFlt_INST = $(INST_VBOXNETFLT)$(if $(eq $(KBUILD_TARGET),darwin),Contents/
 if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
  VBoxNetFlt_NOINST = true
 endif
-VBoxNetFlt_DEFS = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
+VBoxNetFlt_DEFS = IN_RT_R0 IN_SUP_STATIC
 VBoxNetFlt_SDKS.win = W2K3DDK WINPSDKINCS
-VBoxNetFlt_INCS := $(PATH_SUB_CURRENT)
+VBoxNetFlt_INCS = .
 VBoxNetFlt_SOURCES.darwin = \
 	darwin/VBoxNetFlt-darwin.cpp
 #VBoxNetFlt_SOURCES.darwin += \
@@ -63,6 +63,8 @@ VBoxNetFlt_LIBS.win = \
 	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 VBoxNetFlt_LIBS = \
 	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+
+darwin/VBoxNetFlt-darwin.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
 
 # Darwin extras.
@@ -222,7 +224,7 @@ VBoxNetAdp_TEMPLATE = VBOXR0DRV
 if defined(VBOX_SIGNING_MODE)
  VBoxNetAdp_NOINST = true
 endif
-VBoxNetAdp_DEFS = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
+VBoxNetAdp_DEFS = IN_RT_R0 IN_SUP_STATIC
 VBoxNetAdp_SDKS = W2K3DDK WINPSDKINCS
 VBoxNetAdp_INCS := $(PATH_SUB_CURRENT)
 VBoxNetAdp_SOURCES = \
@@ -271,7 +273,7 @@ $(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.cat: \
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
  endif #  ifdef VBOX_SIGNING_MODE
- 
+
 else if1of ($(KBUILD_TARGET), linux solaris) ## @todo merge this with the mixed case stuff.
 #
 # vboxnetflt(.ko/.o/) - The lower case driver.
@@ -283,18 +285,17 @@ vboxnetflt_TEMPLATE      = VBOXR0DRV
 vboxnetflt_NAME.solaris  = vboxflt
 vboxnetflt_DEFS.linux    = KBUILD_MODNAME=KBUILD_STR\(vboxnetflt\) KBUILD_BASENAME=KBUILD_STR\(vboxnetflt\) MODULE
 vboxnetflt_DEFS          = IN_RT_R0
-vboxnetflt_DEFS.solaris  += VBOX_SVN_REV=$(VBOX_SVN_REV)
-vboxnetflt_DEPS.solaris  += $(VBOX_SVN_REV_KMK)
+vboxnetflt_DEPS.solaris += $(VBOX_SVN_REV_KMK)
 vboxnetflt_NOINST.linux  = true
 vboxnetflt_INCS.linux   := \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
 vboxnetflt_INCS         := \
 	$(PATH_SUB_CURRENT)
 vboxnetflt_LDFLAGS.solaris += -N drv/vboxdrv
-ifdef VBOXNETFLT_SOLARIS_USE_NETINFO
- vboxnetflt_DEFS.solaris += VBOXNETFLT_SOLARIS_USE_NETINFO
- vboxnetflt_LDFLAGS.solaris += -N misc/neti
-endif
+  ifdef VBOXNETFLT_SOLARIS_USE_NETINFO
+vboxnetflt_DEFS.solaris += VBOXNETFLT_SOLARIS_USE_NETINFO
+vboxnetflt_LDFLAGS.solaris += -N misc/neti
+  endif
 vboxnetflt_LIBS = \
 	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 ## @todo vboxflt should resolves all the IPRT bits from vboxdrv.
@@ -305,6 +306,7 @@ vboxnetflt_SOURCES.solaris = solaris/VBoxNetFlt-solaris.c
 vboxnetflt_SOURCES = VBoxNetFlt.c
  endif
 
+solaris/VBoxNetFlt-solaris.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 endif
 
 ifeq ($(KBUILD_TARGET),linux)
