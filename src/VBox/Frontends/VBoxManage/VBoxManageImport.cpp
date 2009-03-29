@@ -175,7 +175,7 @@ int handleImportAppliance(HandlerArg *a)
         com::SafeArray<BSTR> aWarnings;
         if (SUCCEEDED(pAppliance->GetWarnings(ComSafeArrayAsOutParam(aWarnings))))
         {
-            unsigned cWarnings = aWarnings.size();
+            size_t cWarnings = aWarnings.size();
             for (unsigned i = 0; i < cWarnings; ++i)
             {
                 Bstr bstrWarning(aWarnings[i]);
@@ -209,7 +209,7 @@ int handleImportAppliance(HandlerArg *a)
         CHECK_ERROR_BREAK(pAppliance,
                           COMGETTER(VirtualSystemDescriptions)(ComSafeArrayAsOutParam(aVirtualSystemDescriptions)));
 
-        uint32_t cVirtualSystemDescriptions = aVirtualSystemDescriptions.size();
+        size_t cVirtualSystemDescriptions = aVirtualSystemDescriptions.size();
 
         // match command line arguments with virtual system descriptions;
         // this is only to sort out invalid indices at this time
