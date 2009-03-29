@@ -32,6 +32,11 @@
 
 #include <iprt/types.h>
 
+#define PRId32 "RI32"
+#define PRIx32 "RX32"
+#define PRIu32 "RU32"
+#define PRIo32 huh? anyone using this? great!
+
 #define PRId64 "RI64"
 #define PRIx64 "RX64"
 #define PRIu64 "RU64"
