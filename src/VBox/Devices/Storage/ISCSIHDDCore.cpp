@@ -945,7 +945,7 @@ restart:
                                 |   ISCSI_MY_VERSION            /* Minimum version. */
                                 |   (ISCSI_MY_VERSION << 8)     /* Maximum version. */
                                 |   ISCSIOP_LOGIN_REQ);     /* C=0 */
-        aReqBHS[1] = RT_H2N_U32(cbBuf);     /* TotalAHSLength=0 */
+        aReqBHS[1] = RT_H2N_U32((uint32_t)cbBuf);     /* TotalAHSLength=0 */
         aReqBHS[2] = RT_H2N_U32(isid_tsih >> 32);
         aReqBHS[3] = RT_H2N_U32(isid_tsih & 0xffffffff);
         aReqBHS[4] = itt;
@@ -1347,9 +1347,9 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
      */
     cbData = 0;
     if (pRequest->enmXfer == SCSIXFER_FROM_TARGET)
-        cbData = pRequest->cbT2IData;
+        cbData = (uint32_t)pRequest->cbT2IData;
     else
-        cbData = pRequest->cbI2TData;
+        cbData = (uint32_t)pRequest->cbI2TData;
 
     RTSemMutexRequest(pImage->Mutex, RT_INDEFINITE_WAIT);
 
@@ -1357,7 +1357,7 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
     memset(aReqBHS, 0, sizeof(aReqBHS));
     aReqBHS[0] = RT_H2N_U32(    ISCSI_FINAL_BIT | ISCSI_TASK_ATTR_ORDERED | ISCSIOP_SCSI_CMD
                             |   (pRequest->enmXfer << 21)); /* I=0,F=1,Attr=Ordered */
-    aReqBHS[1] = RT_H2N_U32(0x00000000 | (pRequest->cbI2TData & 0xffffff)); /* TotalAHSLength=0 */
+    aReqBHS[1] = RT_H2N_U32(0x00000000 | ((uint32_t)pRequest->cbI2TData & 0xffffff)); /* TotalAHSLength=0 */
     aReqBHS[2] = RT_H2N_U32(pImage->LUN >> 32);
     aReqBHS[3] = RT_H2N_U32(pImage->LUN & 0xffffffff);
     aReqBHS[4] = itt;
@@ -2703,7 +2703,7 @@ static int iscsiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToRead=%zu pcbActuallyRead=%#p\n", pBackendData, uOffset, pvBuf, cbToRead, pcbActuallyRead));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
     uint64_t lba;
-    size_t tls;
+    uint16_t tls;
     int rc;
 
     Assert(pImage);
@@ -2721,7 +2721,7 @@ static int iscsiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     }
 
     lba = uOffset / pImage->cbSector;
-    tls = cbToRead / pImage->cbSector;
+    tls = (uint16_t)(cbToRead / pImage->cbSector);
     SCSIREQ sr;
     uint8_t cdb[10];
     uint8_t sense[32];
@@ -2765,7 +2765,7 @@ static int iscsiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
      LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n", pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
     uint64_t lba;
-    size_t tls;
+    uint16_t tls;
     int rc;
 
     Assert(pImage);
@@ -2785,7 +2785,7 @@ static int iscsiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     *pcbPostRead = 0;
 
     lba = uOffset / pImage->cbSector;
-    tls = cbToWrite / pImage->cbSector;
+    tls = (uint16_t)(cbToWrite / pImage->cbSector);
     SCSIREQ sr;
     uint8_t cdb[10];
     uint8_t sense[32];
