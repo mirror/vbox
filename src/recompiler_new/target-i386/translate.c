@@ -477,7 +477,9 @@ DECLINLINE(void) gen_op_mov_v_reg(int ot, TCGv t0, int reg)
         }
         break;
     default:
+#ifndef VBOX
     std_case:
+#endif
         tcg_gen_ld_tl(t0, cpu_env, offsetof(CPUState, regs[reg]));
         break;
     }
@@ -885,8 +887,8 @@ DECLINLINE(void) gen_op_st_T1_A0(int idx)
 static void gen_check_external_event()
 {
 #if 1
-    /** @todo: once TCG codegen improves, we may want to use version 
-        from else version */ 
+    /** @todo: once TCG codegen improves, we may want to use version
+        from else version */
     tcg_gen_helper_0_0(helper_check_external_event);
 #else
     int skip_label;
@@ -913,10 +915,12 @@ static void gen_check_external_event()
 #endif
 }
 
+#if 0 /* unused code? */
 static void gen_check_external_event2()
 {
     tcg_gen_helper_0_0(helper_check_external_event);
 }
+#endif
 
 #endif
 
