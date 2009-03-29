@@ -268,7 +268,7 @@ int File::read (char *aBuf, int aLen)
     size_t len = aLen;
     int vrc = RTFileRead (m->handle, aBuf, len, &len);
     if (RT_SUCCESS (vrc))
-        return len;
+        return (int)len;
 
     throw EIPRTFailure (vrc);
 }
@@ -278,7 +278,7 @@ int File::write (const char *aBuf, int aLen)
     size_t len = aLen;
     int vrc = RTFileWrite (m->handle, aBuf, len, &len);
     if (RT_SUCCESS (vrc))
-        return len;
+        return (int)len;
 
     throw EIPRTFailure (vrc);
 
@@ -359,7 +359,7 @@ int MemoryBuf::read (char *aBuf, int aLen)
     memcpy (aBuf, m->buf + m->pos, len);
     m->pos += len;
 
-    return len;
+    return (int)len;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
