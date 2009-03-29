@@ -1044,7 +1044,7 @@ static int enumGuestProperty(int argc, char *argv[])
      * arguments.
      */
     char const * const *papszPatterns = NULL;
-    size_t cPatterns = 0;
+    uint32_t cPatterns = 0;
     if (    argc > 1
         && !strcmp(argv[0], "-patterns"))
     {
