@@ -1,3 +1,8 @@
+/* $Id$ */
+/** @file
+ * Windows resource file for VirtualBox.exe.
+ */
+
 /*
  * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
@@ -52,3 +57,4 @@ END
 
 /* Creates the application icon. */
 #include "VirtualBox-icon.rc"
+
