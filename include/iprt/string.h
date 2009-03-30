@@ -985,6 +985,7 @@ RTDECL(char *) RTStrToLower(char *psz);
  */
 RTDECL(char *) RTStrToUpper(char *psz);
 
+
 /** @defgroup rt_str_conv   String To/From Number Conversions
  * @ingroup grp_rt_str
  * @{ */
