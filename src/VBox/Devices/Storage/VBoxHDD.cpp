@@ -1123,7 +1123,6 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         else
         {
             /* Make sure the LCHS geometry is properly clipped. */
-            pDisk->LCHSGeometry.cCylinders = RT_MIN(pDisk->LCHSGeometry.cCylinders, 1024);
             pDisk->LCHSGeometry.cHeads = RT_MIN(pDisk->LCHSGeometry.cHeads, 255);
             pDisk->LCHSGeometry.cSectors = RT_MIN(pDisk->LCHSGeometry.cSectors, 63);
         }
@@ -1182,7 +1181,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
  * @param   pPCHSGeometry   Pointer to physical disk geometry <= (16383,16,63). Not NULL.
- * @param   pLCHSGeometry   Pointer to logical disk geometry <= (1024,255,63). Not NULL.
+ * @param   pLCHSGeometry   Pointer to logical disk geometry <= (x,255,63). Not NULL.
  * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pVDIfsImage     Pointer to the per-image VD interface list.
@@ -1245,7 +1244,6 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                            rc = VERR_INVALID_PARAMETER);
         /* The LCHS geometry fields may be 0 to leave it to later autodetection. */
         AssertMsgBreakStmt(   VALID_PTR(pLCHSGeometry)
-                           && pLCHSGeometry->cCylinders <= 1024
                            && pLCHSGeometry->cHeads <= 255
                            && pLCHSGeometry->cSectors <= 63,
                            ("pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pLCHSGeometry,
@@ -1361,7 +1359,6 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
             else
             {
                 /* Make sure the CHS geometry is properly clipped. */
-                pDisk->LCHSGeometry.cCylinders = RT_MIN(pDisk->LCHSGeometry.cCylinders, 1024);
                 pDisk->LCHSGeometry.cHeads = RT_MIN(pDisk->LCHSGeometry.cHeads, 255);
                 pDisk->LCHSGeometry.cSectors = RT_MIN(pDisk->LCHSGeometry.cSectors, 63);
             }
@@ -2196,7 +2193,6 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
         else
         {
             /* Make sure the LCHS geometry is properly clipped. */
-            pDisk->LCHSGeometry.cCylinders = RT_MIN(pDisk->LCHSGeometry.cCylinders, 1024);
             pDisk->LCHSGeometry.cHeads = RT_MIN(pDisk->LCHSGeometry.cHeads, 255);
             pDisk->LCHSGeometry.cSectors = RT_MIN(pDisk->LCHSGeometry.cSectors, 63);
         }
@@ -2591,7 +2587,6 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                 else
                 {
                     /* Make sure the CHS geometry is properly clipped. */
-                    pDisk->PCHSGeometry.cCylinders = RT_MIN(pDisk->PCHSGeometry.cCylinders, 1024);
                     pDisk->PCHSGeometry.cHeads = RT_MIN(pDisk->PCHSGeometry.cHeads, 255);
                     pDisk->PCHSGeometry.cSectors = RT_MIN(pDisk->PCHSGeometry.cSectors, 63);
                 }
@@ -2700,7 +2695,6 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
 
         /* Check arguments. */
         AssertMsgBreakStmt(   VALID_PTR(pLCHSGeometry)
-                           && pLCHSGeometry->cCylinders <= 1024
                            && pLCHSGeometry->cHeads <= 255
                            && pLCHSGeometry->cSectors <= 63,
                            ("pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pLCHSGeometry,
@@ -2737,7 +2731,6 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                 else
                 {
                     /* Make sure the CHS geometry is properly clipped. */
-                    pDisk->LCHSGeometry.cCylinders = RT_MIN(pDisk->LCHSGeometry.cCylinders, 1024);
                     pDisk->LCHSGeometry.cHeads = RT_MIN(pDisk->LCHSGeometry.cHeads, 255);
                     pDisk->LCHSGeometry.cSectors = RT_MIN(pDisk->LCHSGeometry.cSectors, 63);
                 }

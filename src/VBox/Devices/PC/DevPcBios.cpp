@@ -409,7 +409,6 @@ static int setLogicalDiskGeometry(PPDMIBASE pBase, PPDMIBLOCKBIOS pHardDisk, PPD
     rc = pHardDisk->pfnGetLCHSGeometry(pHardDisk, &LCHSGeometry);
     if (   rc == VERR_PDM_GEOMETRY_NOT_SET
         || LCHSGeometry.cCylinders == 0
-        || LCHSGeometry.cCylinders > 1024
         || LCHSGeometry.cHeads == 0
         || LCHSGeometry.cHeads > 255
         || LCHSGeometry.cSectors == 0
