@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -213,61 +213,76 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
 #endif
 }
 
+
 /**
- * Creates a pidfile and returns the open file descriptor.
- * On Unix-y systems, this call also places an advisory lock on the open
- * file.  It will overwrite any existing pidfiles without a lock on them,
- * on the assumption that they are stale files which an old process did not
- * properly clean up.
+ * Creates a PID File and returns the open file descriptor.
  *
- * @returns iprt status code
- * @param   pszPath  the path and filename to create the pidfile under
- * @param   pFile    where to store the file descriptor of the open
- *                   (and locked on Unix-y systems) pidfile.
- *                   On failure, or if another process owns the pidfile,
- *                   this will be set to NIL_RTFILE.
+ * On DOS based system, file sharing (deny write) is used for locking the PID
+ * file.
+ *
+ * On Unix-y systems, an exclusive advisory lock is used for locking the PID
+ * file since the file sharing support is usually missing there.
+ *
+ * This API will overwrite any existing PID Files without a lock on them, on the
+ * assumption that they are stale files which an old process did not properly
+ * clean up.
+ *
+ * @returns IPRT status code.
+ * @param   pszPath  The path and filename to create the PID File under
+ * @param   phFile   Where to store the file descriptor of the open (and locked
+ *                   on Unix-y systems) PID File. On failure, or if another
+ *                   process owns the PID File, this will be set to NIL_RTFILE.
  */
-VBGLR3DECL(int) VbglR3PidFile(const char *pszPath, PRTFILE pFile)
+VBGLR3DECL(int) VbglR3PidFile(const char *pszPath, PRTFILE phFile)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-    RTFILE hPidFile = NIL_RTFILE;
+    AssertPtrReturn(phFile, VERR_INVALID_PARAMETER);
+    *phFile = NIL_RTFILE;
+
+    RTFILE hPidFile;
     int rc = RTFileOpen(&hPidFile, pszPath,
-                          RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE
+                        RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE
                         | (0644 << RTFILE_O_CREATE_MODE_SHIFT));
     if (RT_SUCCESS(rc))
+    {
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
         /** @todo using size 0 for locking means lock all on Posix.
          * We should adopt this as our convention too, or something
          * similar. */
         rc = RTFileLock(hPidFile, RTFILE_LOCK_WRITE, 0, 0);
-    if (RT_SUCCESS(rc))
-    {
-        char szBuf[256];
-        size_t cbPid = RTStrPrintf(szBuf, sizeof(szBuf), "%d\n",
-                                   RTProcSelf());
-        RTFileWrite(hPidFile, szBuf, cbPid, NULL);
+        if (RT_FAILURE(rc))
+            RTFileClose(hPidFile);
+        else
+#endif
+        {
+            char szBuf[256];
+            size_t cbPid = RTStrPrintf(szBuf, sizeof(szBuf), "%d\n",
+                                       RTProcSelf());
+            RTFileWrite(hPidFile, szBuf, cbPid, NULL);
+            *phFile = hPidFile;
+        }
     }
-    *pFile = hPidFile;
     return rc;
-#else  /* !RT_OS_LINUX and !RT_OS_SOLARIS */
-# error portme
-#endif  /* !RT_OS_LINUX and !RT_OS_SOLARIS */
 }
 
+
 /**
- * Close and remove an open pidfile.
- * @param  pszPath  the path to the pidfile
- * @param  File     the open file descriptor
+ * Close and remove an open PID File.
+ *
+ * @param  pszPath  The path to the PID File,
+ * @param  hFile    The handle for the file. NIL_RTFILE is ignored as usual.
  */
-VBGLR3DECL(void) VbglR3ClosePidFile(const char *pszPath, RTFILE File)
+VBGLR3DECL(void) VbglR3ClosePidFile(const char *pszPath, RTFILE hFile)
 {
     AssertPtrReturnVoid(pszPath);
-    AssertReturnVoid(File != NIL_RTFILE);
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-    RTFileDelete(pszPath);
-    RTFileClose(File);
-#else  /* !RT_OS_LINUX and !RT_OS_SOLARIS */
-# error portme
-#endif  /* !RT_OS_LINUX and !RT_OS_SOLARIS */
+    if (hFile != NIL_RTFILE)
+    {
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+        RTFileWriteAt(hFile, 0, "-1", 2, NULL);
+#else
+        RTFileDelete(pszPath);
+#endif
+        RTFileClose(hFile);
+    }
 }
+
