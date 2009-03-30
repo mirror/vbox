@@ -969,6 +969,22 @@ RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPat
                                           const char *pszString, size_t cchString,
                                           size_t *poffPattern);
 
+/**
+ * Converts the string to lower case.
+ *
+ * @returns Pointer to the converted string.
+ * @param   psz     The string to convert.
+ */
+RTDECL(char *) RTStrToLower(char *psz);
+
+/**
+ * Converts the string to upper case.
+ *
+ * @returns Pointer to the converted string.
+ * @param   psz     The string to convert.
+ */
+RTDECL(char *) RTStrToUpper(char *psz);
+
 /** @defgroup rt_str_conv   String To/From Number Conversions
  * @ingroup grp_rt_str
  * @{ */
