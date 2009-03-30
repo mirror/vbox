@@ -850,7 +850,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
             }
 
             if (!context->hRC) {
-                context->hRC = render_spu.ws.wglCreateContext( context->visual->device_context );
+                context->hRC = render_spu.ws.wglCreateContext(window->device_context);
                 if (!context->hRC)
                 {
                     crError( "Render SPU: (MakeCurrent) Couldn't create the context for the window (error 0x%x)", GetLastError() );
@@ -866,9 +866,21 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
                 if ((err==ERROR_INVALID_PIXEL_FORMAT) && (!context->everCurrent))
                 {
                     crDebug("Trying to resetup pixel format");
+
+                    render_spu.ws.wglDeleteContext(context->hRC);
+                    DeleteDC(window->device_context);
+                    window->device_context = GetDC(window->hWnd);
+                    crDebug("Render SPU: MakeCurrent made new window DC: 0x%x", window->device_context);
+                    
                     if (!bSetupPixelFormatNormal(window->device_context, context->visual->visAttribs))
                     {
                         crWarning("Failed to resetup pixel format");
+                    }
+
+                    context->hRC = render_spu.ws.wglCreateContext(window->device_context);
+                    if (!context->hRC)
+                    {
+                        crError("Render SPU: (MakeCurrent) Couldn't create the context for the window (error 0x%x)", GetLastError());
                     }
 
                     if (!render_spu.ws.wglMakeCurrent(window->device_context, context->hRC))
