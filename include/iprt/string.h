@@ -883,19 +883,19 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2);
 RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax);
 
 /**
- * Locates a case insensitive substring.
+ * Locates a case sensitive substring.
  *
  * If any of the two strings are NULL, then NULL is returned. If the needle is
  * an empty string, then the haystack is returned (i.e. matches anything).
  *
- * @returns Pointer to the first occurance of the substring if found, NULL if
+ * @returns Pointer to the first occurrence of the substring if found, NULL if
  *          not.
  *
  * @param   pszHaystack The string to search.
  * @param   pszNeedle   The substring to search for.
  *
  * @remarks The difference between this and strstr is the handling of NULL
- *          pointers.s
+ *          pointers.
  */
 RTDECL(char *) RTStrStr(const char *pszHaystack, const char *pszNeedle);
 
@@ -905,7 +905,7 @@ RTDECL(char *) RTStrStr(const char *pszHaystack, const char *pszNeedle);
  * If any of the two strings are NULL, then NULL is returned. If the needle is
  * an empty string, then the haystack is returned (i.e. matches anything).
  *
- * @returns Pointer to the first occurance of the substring if found, NULL if
+ * @returns Pointer to the first assurance of the substring if found, NULL if
  *          not.
  *
  * @param   pszHaystack The string to search.
