@@ -52,11 +52,17 @@
 #  pragma intrinsic(__readmsr)
 #  pragma intrinsic(__writemsr)
 #  pragma intrinsic(__outbyte)
+#  pragma intrinsic(__outbytestring)
 #  pragma intrinsic(__outword)
+#  pragma intrinsic(__outwordstring)
 #  pragma intrinsic(__outdword)
+#  pragma intrinsic(__outdwordstring)
 #  pragma intrinsic(__inbyte)
+#  pragma intrinsic(__inbytestring)
 #  pragma intrinsic(__inword)
+#  pragma intrinsic(__inwordstring)
 #  pragma intrinsic(__indword)
+#  pragma intrinsic(__indwordstring)
 #  pragma intrinsic(__invlpg)
 #  pragma intrinsic(__stosd)
 #  pragma intrinsic(__stosw)
@@ -2113,7 +2119,7 @@ DECLINLINE(void) ASMCompilerBarrier(void)
 /**
  * Writes a 8-bit unsigned integer to an I/O port, ordered.
  *
- * @param   Port    I/O port to read from.
+ * @param   Port    I/O port to write to.
  * @param   u8      8-bit integer to write.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
@@ -2142,7 +2148,7 @@ DECLINLINE(void) ASMOutU8(RTIOPORT Port, uint8_t u8)
 
 
 /**
- * Gets a 8-bit unsigned integer from an I/O port, ordered.
+ * Reads a 8-bit unsigned integer from an I/O port, ordered.
  *
  * @returns 8-bit integer.
  * @param   Port    I/O port to read from.
@@ -2177,7 +2183,7 @@ DECLINLINE(uint8_t) ASMInU8(RTIOPORT Port)
 /**
  * Writes a 16-bit unsigned integer to an I/O port, ordered.
  *
- * @param   Port    I/O port to read from.
+ * @param   Port    I/O port to write to.
  * @param   u16     16-bit integer to write.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
@@ -2206,7 +2212,7 @@ DECLINLINE(void) ASMOutU16(RTIOPORT Port, uint16_t u16)
 
 
 /**
- * Gets a 16-bit unsigned integer from an I/O port, ordered.
+ * Reads a 16-bit unsigned integer from an I/O port, ordered.
  *
  * @returns 16-bit integer.
  * @param   Port    I/O port to read from.
@@ -2241,7 +2247,7 @@ DECLINLINE(uint16_t) ASMInU16(RTIOPORT Port)
 /**
  * Writes a 32-bit unsigned integer to an I/O port, ordered.
  *
- * @param   Port    I/O port to read from.
+ * @param   Port    I/O port to write to.
  * @param   u32     32-bit integer to write.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
@@ -2270,7 +2276,7 @@ DECLINLINE(void) ASMOutU32(RTIOPORT Port, uint32_t u32)
 
 
 /**
- * Gets a 32-bit unsigned integer from an I/O port, ordered.
+ * Reads a 32-bit unsigned integer from an I/O port, ordered.
  *
  * @returns 32-bit integer.
  * @param   Port    I/O port to read from.
@@ -2301,7 +2307,221 @@ DECLINLINE(uint32_t) ASMInU32(RTIOPORT Port)
 }
 #endif
 
-/** @todo string i/o */
+
+/**
+ * Writes a string of 8-bit unsigned integer items to an I/O port, ordered.
+ *
+ * @param   Port    I/O port to write to.
+ * @param   pau8    Pointer to the string buffer.
+ * @param   c       The number of items to write.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMOutStrU8(RTIOPORT Port, uint8_t const *pau8, size_t c);
+#else
+DECLINLINE(void) ASMOutStrU8(RTIOPORT Port, uint8_t const *pau8, size_t c)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("rep; outsb\n\t"
+                         : "+S" (pau8),
+                           "+c" (c)
+                         : "d" (Port));
+
+# elif RT_INLINE_ASM_USES_INTRIN
+    __outbytestring(Port, (unsigned char *)pau8, (unsigned long)c);
+
+# else
+    __asm
+    {
+        mov     dx, [Port]
+        mov     ecx, [c]
+        mov     eax, [pau8]
+        xchg    esi, eax
+        rep outsb
+        xchg    esi, eax
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Reads a string of 8-bit unsigned integer items from an I/O port, ordered.
+ *
+ * @param   Port    I/O port to read from.
+ * @param   pau8    Pointer to the string buffer (output).
+ * @param   c       The number of items to read.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMInStrU8(RTIOPORT Port, uint8_t *pau8, size_t c);
+#else
+DECLINLINE(void) ASMInStrU8(RTIOPORT Port, uint8_t *pau8, size_t c)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("rep; insb\n\t"
+                         : "+D" (pau8),
+                           "+c" (c)
+                         : "d" (Port));
+
+# elif RT_INLINE_ASM_USES_INTRIN
+    __inbytestring(Port, pau8, (unsigned long)c);
+
+# else
+    __asm
+    {
+        mov     dx, [Port]
+        mov     ecx, [c]
+        mov     eax, [pau8]
+        xchg    edi, eax
+        rep insb
+        xchg    edi, eax
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Writes a string of 16-bit unsigned integer items to an I/O port, ordered.
+ *
+ * @param   Port    I/O port to write to.
+ * @param   pau16   Pointer to the string buffer.
+ * @param   c       The number of items to write.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMOutStrU16(RTIOPORT Port, uint16_t const *pau16, size_t c);
+#else
+DECLINLINE(void) ASMOutStrU16(RTIOPORT Port, uint16_t const *pau16, size_t c)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("rep; outsw\n\t"
+                         : "+S" (pau16),
+                           "+c" (c)
+                         : "d" (Port));
+
+# elif RT_INLINE_ASM_USES_INTRIN
+    __outwordstring(Port, (unsigned short *)pau16, (unsigned long)c);
+
+# else
+    __asm
+    {
+        mov     dx, [Port]
+        mov     ecx, [c]
+        mov     eax, [pau16]
+        xchg    esi, eax
+        rep outsw
+        xchg    esi, eax
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Reads a string of 16-bit unsigned integer items from an I/O port, ordered.
+ *
+ * @param   Port    I/O port to read from.
+ * @param   pau16   Pointer to the string buffer (output).
+ * @param   c       The number of items to read.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMInStrU16(RTIOPORT Port, uint16_t *pau16, size_t c);
+#else
+DECLINLINE(void) ASMInStrU16(RTIOPORT Port, uint16_t *pau16, size_t c)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("rep; insw\n\t"
+                         : "+D" (pau16),
+                           "+c" (c)
+                         : "d" (Port));
+
+# elif RT_INLINE_ASM_USES_INTRIN
+    __inwordstring(Port, pau16, (unsigned long)c);
+
+# else
+    __asm
+    {
+        mov     dx, [Port]
+        mov     ecx, [c]
+        mov     eax, [pau16]
+        xchg    edi, eax
+        rep insw
+        xchg    edi, eax
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Writes a string of 32-bit unsigned integer items to an I/O port, ordered.
+ *
+ * @param   Port    I/O port to write to.
+ * @param   pau32   Pointer to the string buffer.
+ * @param   c       The number of items to write.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMOutStrU32(RTIOPORT Port, uint32_t const *pau32, size_t c);
+#else
+DECLINLINE(void) ASMOutStrU32(RTIOPORT Port, uint32_t const *pau32, size_t c)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("rep; outsl\n\t"
+                         : "+S" (pau32),
+                           "+c" (c)
+                         : "d" (Port));
+
+# elif RT_INLINE_ASM_USES_INTRIN
+    __outdwordstring(Port, (unsigned long *)pau32, (unsigned long)c);
+
+# else
+    __asm
+    {
+        mov     dx, [Port]
+        mov     ecx, [c]
+        mov     eax, [pau32]
+        xchg    esi, eax
+        rep outsd
+        xchg    esi, eax
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Reads a string of 32-bit unsigned integer items from an I/O port, ordered.
+ *
+ * @param   Port    I/O port to read from.
+ * @param   pau32   Pointer to the string buffer (output).
+ * @param   c       The number of items to read.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMInStrU32(RTIOPORT Port, uint32_t *pau32, size_t c);
+#else
+DECLINLINE(void) ASMInStrU32(RTIOPORT Port, uint32_t *pau32, size_t c)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("rep; insl\n\t"
+                         : "+D" (pau32),
+                           "+c" (c)
+                         : "d" (Port));
+
+# elif RT_INLINE_ASM_USES_INTRIN
+    __indwordstring(Port, (unsigned long *)pau32, (unsigned long)c);
+
+# else
+    __asm
+    {
+        mov     dx, [Port]
+        mov     ecx, [c]
+        mov     eax, [pau32]
+        xchg    edi, eax
+        rep insd
+        xchg    edi, eax
+    }
+# endif
+}
+#endif
 
 
 /**
