@@ -306,7 +306,7 @@ struct osTypePattern
     const char *pcszVbox;
 };
 
-/* This are the 32-Bit ones. They are sorted by priority. */
+/* These are the 32-Bit ones. They are sorted by priority. */
 static const osTypePattern g_osTypesPattern[] =
 {
     {"Windows*NT",    SchemaDefs_OSTypeId_WindowsNT4},
@@ -337,7 +337,7 @@ static const osTypePattern g_osTypesPattern[] =
     {"OS2",           SchemaDefs_OSTypeId_OS2}
 };
 
-/* This are the 64-Bit ones. They are sorted by priority. */
+/* These are the 64-Bit ones. They are sorted by priority. */
 static const osTypePattern g_osTypesPattern64[] =
 {
     {"Windows*XP",    SchemaDefs_OSTypeId_WindowsXP_64},
