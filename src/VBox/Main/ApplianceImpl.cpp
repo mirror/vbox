@@ -367,11 +367,11 @@ static const osTypePattern g_osTypesPattern64[] =
  */
 static void convertCIMOSType2VBoxOSType(Utf8Str &strType, CIMOSType_T c, const Utf8Str &cStr)
 {
-    /* First */
+    /* First check if the type is other/other_64 */
     if (c == CIMOSType_CIMOS_Other)
     {
         for (size_t i=0; i < RT_ELEMENTS(g_osTypesPattern); ++i)
-            if (cStr.contains (g_osTypesPattern[i].pcszPattern))
+            if (cStr.contains (g_osTypesPattern[i].pcszPattern, Utf8Str::CaseInsensitive))
             {
                 strType = g_osTypesPattern[i].pcszVbox;
                 return;
@@ -380,7 +380,7 @@ static void convertCIMOSType2VBoxOSType(Utf8Str &strType, CIMOSType_T c, const U
     else if (c == CIMOSType_CIMOS_Other_64)
     {
         for (size_t i=0; i < RT_ELEMENTS(g_osTypesPattern64); ++i)
-            if (cStr.contains (g_osTypesPattern64[i].pcszPattern))
+            if (cStr.contains (g_osTypesPattern64[i].pcszPattern, Utf8Str::CaseInsensitive))
             {
                 strType = g_osTypesPattern64[i].pcszVbox;
                 return;
