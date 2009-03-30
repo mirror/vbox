@@ -46,6 +46,17 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/** @def PDM_DEVHLP_DEADLOCK_DETECTION
+ * Define this to enable the deadlock detection when accessing physical memory.
+ */
+#if defined(DEBUG_bird) || defined(DOXYGEN_RUNNING)
+# define PDM_DEVHLP_DEADLOCK_DETECTION
+#endif
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /** @name R3 DevHlp
  * @{
  */
@@ -2027,15 +2038,24 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhy
     LogFlow(("pdmR3DevHlp_PhysRead: caller='%s'/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
 
-    int rc;
 #ifdef VBOX_WITH_NEW_PHYS_CODE
+#if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
+    if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
+    {
+        char szNames[128];
+        uint32_t cLocks = PDMR3CritSectCountOwned(pVM, szNames, sizeof(szNames));
+        AssertMsg(cLocks == 0, ("cLocks=%u %s\n", cLocks, szNames));
+    }
+#endif
+
+    int rc;
     if (VM_IS_EMT(pVM))
         rc = PGMPhysRead(pVM, GCPhys, pvBuf, cbRead);
     else
         rc = PGMR3PhysReadExternal(pVM, GCPhys, pvBuf, cbRead);
 #else
     PGMPhysRead(pVM, GCPhys, pvBuf, cbRead);
-    rc = VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
 #endif
     Log(("pdmR3DevHlp_PhysRead: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
@@ -2050,15 +2070,24 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPh
     LogFlow(("pdmR3DevHlp_PhysWrite: caller='%s'/%d: GCPhys=%RGp pvBuf=%p cbWrite=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, pvBuf, cbWrite));
 
-    int rc;
 #ifdef VBOX_WITH_NEW_PHYS_CODE
+#if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
+    if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
+    {
+        char szNames[128];
+        uint32_t cLocks = PDMR3CritSectCountOwned(pVM, szNames, sizeof(szNames));
+        AssertMsg(cLocks == 0, ("cLocks=%u %s\n", cLocks, szNames));
+    }
+#endif
+
+    int rc;
     if (VM_IS_EMT(pVM))
         rc = PGMPhysWrite(pVM, GCPhys, pvBuf, cbWrite);
     else
         rc = PGMR3PhysWriteExternal(pVM, GCPhys, pvBuf, cbWrite);
 #else
     PGMPhysWrite(pVM, GCPhys, pvBuf, cbWrite);
-    rc = VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
 #endif
     Log(("pdmR3DevHlp_PhysWrite: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
@@ -2073,6 +2102,17 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtr(PPDMDEVINS pDevIns, RTGCPH
     LogFlow(("pdmR3DevHlp_PhysGCPhys2CCPtr: caller='%s'/%d: GCPhys=%RGp fFlags=%#x ppv=%p pLock=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, fFlags, ppv, pLock));
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+#if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
+    if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
+    {
+        char szNames[128];
+        uint32_t cLocks = PDMR3CritSectCountOwned(pVM, szNames, sizeof(szNames));
+        AssertMsg(cLocks == 0, ("cLocks=%u %s\n", cLocks, szNames));
+    }
+#endif
+#endif
 
     int rc = PGMR3PhysGCPhys2CCPtrExternal(pVM, GCPhys, ppv, pLock);
 
@@ -2089,6 +2129,17 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns
     LogFlow(("pdmR3DevHlp_PhysGCPhys2CCPtrReadOnly: caller='%s'/%d: GCPhys=%RGp fFlags=%#x ppv=%p pLock=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, fFlags, ppv, pLock));
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+#if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
+    if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
+    {
+        char szNames[128];
+        uint32_t cLocks = PDMR3CritSectCountOwned(pVM, szNames, sizeof(szNames));
+        AssertMsg(cLocks == 0, ("cLocks=%u %s\n", cLocks, szNames));
+    }
+#endif
+#endif
 
     int rc = PGMR3PhysGCPhys2CCPtrReadOnlyExternal(pVM, GCPhys, ppv, pLock);
 
@@ -2122,6 +2173,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pv
 
     if (!VM_IS_EMT(pVM))
         return VERR_ACCESS_DENIED;
+#if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
+    /** @todo SMP. */
+#endif
 
     int rc = PGMPhysSimpleReadGCPtr(pVM, pvDst, GCVirtSrc, cb);
 
@@ -2142,6 +2196,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR
 
     if (!VM_IS_EMT(pVM))
         return VERR_ACCESS_DENIED;
+#if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
+    /** @todo SMP. */
+#endif
 
     int rc = PGMPhysSimpleWriteGCPtr(pVM, GCVirtDst, pvSrc, cb);
 
@@ -2162,6 +2219,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPT
 
     if (!VM_IS_EMT(pVM))
         return VERR_ACCESS_DENIED;
+#if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
+    /** @todo SMP. */
+#endif
 
     int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, pGCPhys);
 
