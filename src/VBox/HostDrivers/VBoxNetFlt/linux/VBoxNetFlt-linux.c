@@ -205,13 +205,14 @@ struct net_device_stats *vboxTapGetStats(struct net_device *pNetDev)
     return &pPriv->Stats;
 }
 
+/* Currently not referenced in vboxTapNetDevInit
 static int vboxTapValidateAddr(struct net_device *dev)
 {
     Log(("vboxTapValidateAddr: %02x:%02x:%02x:%02x:%02x:%02x\n",
          dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2],
          dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5]));
     return -EADDRNOTAVAIL;
-}
+} */
 
 static void vboxTapNetDevInit(struct net_device *pNetDev)
 {
