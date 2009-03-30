@@ -1369,32 +1369,42 @@ RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax)
     return RTStrNCmp(psz1, psz2, cchMax);
 }
 
+
 RTDECL(char *) RTStrToLower(char *psz)
 {
-    char *pszTmp = psz;
-    while(*pszTmp)
+    /*
+     * Loop the code points in the string, converting them one by one.
+     * ASSUMES that the code points for upper and lower case are encoded
+     *         with the exact same length.
+     */
+    /** @todo Handled bad encodings correctly+quietly, remove assumption,
+     *        optimize. */
+    char *pszCur = psz;
+    while (*pszCur)
     {
-        /* Get the codepoints */
-        RTUNICP cp = RTStrGetCp(pszTmp);
-        /* To lower */
+        RTUNICP cp = RTStrGetCp(pszCur);
         cp = RTUniCpToLower(cp);
-        /* Put the converted codepoint back */
-        pszTmp = RTStrPutCp(pszTmp, cp);
+        pszCur = RTStrPutCp(pszCur, cp);
     }
     return psz;
 }
 
+
 RTDECL(char *) RTStrToUpper(char *psz)
 {
-    char *pszTmp = psz;
-    while(*pszTmp)
+    /*
+     * Loop the code points in the string, converting them one by one.
+     * ASSUMES that the code points for upper and lower case are encoded
+     *         with the exact same length.
+     */
+    /** @todo Handled bad encodings correctly+quietly, remove assumption,
+     *        optimize. */
+    char *pszCur = psz;
+    while(*pszCur)
     {
-        /* Get the codepoints */
-        RTUNICP cp = RTStrGetCp(pszTmp);
-        /* To lower */
+        RTUNICP cp = RTStrGetCp(pszCur);
         cp = RTUniCpToUpper(cp);
-        /* Put the converted codepoint back */
-        pszTmp = RTStrPutCp(pszTmp, cp);
+        pszCur = RTStrPutCp(pszCur, cp);
     }
     return psz;
 }
