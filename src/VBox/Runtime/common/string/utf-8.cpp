@@ -1369,3 +1369,33 @@ RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax)
     return RTStrNCmp(psz1, psz2, cchMax);
 }
 
+RTDECL(char *) RTStrToLower(char *psz)
+{
+    char *pszTmp = psz;
+    while(*pszTmp)
+    {
+        /* Get the codepoints */
+        RTUNICP cp = RTStrGetCp(pszTmp);
+        /* To lower */
+        cp = RTUniCpToLower(cp);
+        /* Put the converted codepoint back */
+        pszTmp = RTStrPutCp(pszTmp, cp);
+    }
+    return psz;
+}
+
+RTDECL(char *) RTStrToUpper(char *psz)
+{
+    char *pszTmp = psz;
+    while(*pszTmp)
+    {
+        /* Get the codepoints */
+        RTUNICP cp = RTStrGetCp(pszTmp);
+        /* To lower */
+        cp = RTUniCpToUpper(cp);
+        /* Put the converted codepoint back */
+        pszTmp = RTStrPutCp(pszTmp, cp);
+    }
+    return psz;
+}
+
