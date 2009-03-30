@@ -54,7 +54,7 @@ typedef void (*PGLXFUNC_CopyContext)(Display *dpy, GLXContext src, GLXContext ds
 typedef void (*PGLXFUNC_UseXFont)(Font font, int first, int count, int listBase);
 typedef CR_GLXFuncPtr (*PGLXFUNC_GetProcAddress)(const GLubyte *name);
 typedef Bool (*PGLXFUNC_QueryExtension)(Display *dpy, int *errorBase, int *eventBase);
-typedef Bool (*PGLXFUNC_glXIsDirect)(Display *dpy, GLXContext ctx);
+typedef Bool (*PGLXFUNC_IsDirect)(Display *dpy, GLXContext ctx);
 typedef GLXPixmap (*PGLXFUNC_CreateGLXPixmap)(Display *dpy, XVisualInfo *vis, Pixmap pixmap);
 typedef void (*PGLXFUNC_SwapBuffers)(Display *dpy, GLXDrawable drawable);
 typedef GLXDrawable (*PGLXFUNC_GetCurrentDrawable)(void);
