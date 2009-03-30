@@ -503,6 +503,50 @@ public:
             return ::RTStrNICmp(str, that.str, l2) == 0;
     }
 
+    bool contains (const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const
+    {
+        if (isNull() || that.isNull())
+            return false;
+
+        char *pszString = ::RTStrDup(str);
+        char *pszTmp;
+
+        /* Create the generic pattern */
+        ::RTStrAPrintf(&pszTmp, "*%s*", that.str);
+        /* We have to duplicate the strings as long as there is no case
+         * insensitive version of RTStrSimplePatternMatch. */
+        if (cs == CaseInsensitive)
+        {
+            pszTmp = ::RTStrToLower(pszTmp);
+            pszString = ::RTStrToLower(pszString);
+        }
+        bool fResult = ::RTStrSimplePatternMatch(pszTmp, pszString);
+        RTStrFree(pszTmp);
+        RTStrFree(pszString);
+
+        return fResult;
+    }
+
+    Utf8Str& toLower()
+    {
+        if (isEmpty())
+            return *this;
+
+        ::RTStrToLower(str);
+
+        return *this;
+    }
+
+    Utf8Str& toUpper()
+    {
+        if (isEmpty())
+            return *this;
+
+        ::RTStrToUpper(str);
+
+        return *this;
+    }
+
     bool isNull() const { return str == NULL; }
     operator bool() const { return !isNull(); }
 
