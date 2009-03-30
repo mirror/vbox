@@ -883,6 +883,54 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2);
 RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax);
 
 /**
+ * Locates a case insensitive substring.
+ *
+ * If any of the two strings are NULL, then NULL is returned. If the needle is
+ * an empty string, then the haystack is returned (i.e. matches anything).
+ *
+ * @returns Pointer to the first occurance of the substring if found, NULL if
+ *          not.
+ *
+ * @param   pszHaystack The string to search.
+ * @param   pszNeedle   The substring to search for.
+ *
+ * @remarks The difference between this and strstr is the handling of NULL
+ *          pointers.s
+ */
+RTDECL(char *) RTStrStr(const char *pszHaystack, const char *pszNeedle);
+
+/**
+ * Locates a case insensitive substring.
+ *
+ * If any of the two strings are NULL, then NULL is returned. If the needle is
+ * an empty string, then the haystack is returned (i.e. matches anything).
+ *
+ * @returns Pointer to the first occurance of the substring if found, NULL if
+ *          not.
+ *
+ * @param   pszHaystack The string to search.
+ * @param   pszNeedle   The substring to search for.
+ *
+ */
+RTDECL(char *) RTStrIStr(const char *pszHaystack, const char *pszNeedle);
+
+/**
+ * Converts the string to lower case.
+ *
+ * @returns Pointer to the converted string.
+ * @param   psz     The string to convert.
+ */
+RTDECL(char *) RTStrToLower(char *psz);
+
+/**
+ * Converts the string to upper case.
+ *
+ * @returns Pointer to the converted string.
+ * @param   psz     The string to convert.
+ */
+RTDECL(char *) RTStrToUpper(char *psz);
+
+/**
  * Find the length of a zero-terminated byte string, given
  * a max string length.
  *
@@ -968,22 +1016,6 @@ RTDECL(bool) RTStrSimplePatternNMatch(const char *pszPattern, size_t cchPattern,
 RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPatterns,
                                           const char *pszString, size_t cchString,
                                           size_t *poffPattern);
-
-/**
- * Converts the string to lower case.
- *
- * @returns Pointer to the converted string.
- * @param   psz     The string to convert.
- */
-RTDECL(char *) RTStrToLower(char *psz);
-
-/**
- * Converts the string to upper case.
- *
- * @returns Pointer to the converted string.
- * @param   psz     The string to convert.
- */
-RTDECL(char *) RTStrToUpper(char *psz);
 
 
 /** @defgroup rt_str_conv   String To/From Number Conversions
