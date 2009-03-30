@@ -905,7 +905,7 @@ RTDECL(char *) RTStrStr(const char *pszHaystack, const char *pszNeedle);
  * If any of the two strings are NULL, then NULL is returned. If the needle is
  * an empty string, then the haystack is returned (i.e. matches anything).
  *
- * @returns Pointer to the first assurance of the substring if found, NULL if
+ * @returns Pointer to the first occurrence of the substring if found, NULL if
  *          not.
  *
  * @param   pszHaystack The string to search.
