@@ -47,7 +47,7 @@ __BEGIN_DECLS
 typedef union PDMCRITSECT
 {
     /** Padding. */
-    uint8_t padding[HC_ARCH_BITS == 64 ? 0xb8 : 0x88];
+    uint8_t padding[HC_ARCH_BITS == 64 ? 0xb8 : 0xa8];
 #ifdef PDMCRITSECTINT_DECLARED
     /** The internal structure (not normally visible). */
     struct PDMCRITSECTINT s;
@@ -69,6 +69,7 @@ VMMR3DECL(int)  PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVEN
 VMMR3DECL(int)  PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
 VMMDECL(int)    PDMR3CritSectTerm(PVM pVM);
 VMMR3DECL(void) PDMR3CritSectFF(PVM pVM);
+VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNames);
 
 /** @} */
 
