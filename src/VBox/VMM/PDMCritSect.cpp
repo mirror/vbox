@@ -34,6 +34,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/thread.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************
@@ -113,17 +114,18 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
     int rc = RTCritSectInit(&pCritSect->Core);
     if (RT_SUCCESS(rc))
     {
-        pCritSect->pVMR3 = pVM;
-        pCritSect->pVMR0 = pVM->pVMR0;
-        pCritSect->pVMRC = pVM->pVMRC;
-        pCritSect->pvKey = pvKey;
+        pCritSect->pVMR3         = pVM;
+        pCritSect->pVMR0         = pVM->pVMR0;
+        pCritSect->pVMRC         = pVM->pVMRC;
+        pCritSect->pvKey         = pvKey;
         pCritSect->EventToSignal = NIL_RTSEMEVENT;
-        pCritSect->pNext = pVM->pdm.s.pCritSects;
+        pCritSect->pNext         = pVM->pdm.s.pCritSects;
+        pCritSect->pszName       = RTStrDup(pszName);
         pVM->pdm.s.pCritSects = pCritSect;
-#ifdef VBOX_WITH_STATISTICS
         STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLock,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLock", pszName);
         STAMR3RegisterF(pVM, &pCritSect->StatContentionRZUnlock,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZUnlock", pszName);
         STAMR3RegisterF(pVM, &pCritSect->StatContentionR3,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionR3", pszName);
+#ifdef VBOX_WITH_STATISTICS
         STAMR3RegisterF(pVM, &pCritSect->StatLocked,        STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/Locked", pszName);
 #endif
     }
@@ -188,20 +190,22 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PPDMCRITSECTINT pCritSect, PPDMCRITSE
         pVM->pdm.s.pCritSects = pCritSect->pNext;
 
     /* delete */
-    pCritSect->pNext = NULL;
-    pCritSect->pvKey = NULL;
-    pCritSect->pVMR3 = NULL;
-    pCritSect->pVMR0 = NIL_RTR0PTR;
-    pCritSect->pVMRC = NIL_RTRCPTR;
-#ifdef VBOX_WITH_STATISTICS
+    pCritSect->pNext   = NULL;
+    pCritSect->pvKey   = NULL;
+    pCritSect->pVMR3   = NULL;
+    pCritSect->pVMR0   = NIL_RTR0PTR;
+    pCritSect->pVMRC   = NIL_RTRCPTR;
+    RTStrFree((char *)pCritSect->pszName);
+    pCritSect->pszName = NULL;
     if (!fFinal)
     {
         STAMR3Deregister(pVM, &pCritSect->StatContentionRZLock);
         STAMR3Deregister(pVM, &pCritSect->StatContentionRZUnlock);
         STAMR3Deregister(pVM, &pCritSect->StatContentionR3);
+#ifdef VBOX_WITH_STATISTICS
         STAMR3Deregister(pVM, &pCritSect->StatLocked);
-    }
 #endif
+    }
     return RTCritSectDelete(&pCritSect->Core);
 }
 
@@ -333,7 +337,7 @@ VMMR3DECL(int) PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect)
  * @returns VERR_NOT_OWNER if we're not the critsect owner.
  * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
  * @param   pCritSect       The critical section.
- * @param   EventToSignal     The semapore that should be signalled.
+ * @param   EventToSignal   The semapore that should be signalled.
  */
 VMMR3DECL(int) PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal)
 {
@@ -349,3 +353,88 @@ VMMR3DECL(int) PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT
     return VERR_TOO_MANY_SEMAPHORES;
 }
 
+
+/**
+ * Counts the critical sections owned by the calling thread, optionally
+ * returning a comma separated list naming them.
+ *
+ * This is for diagnostic purposes only.
+ *
+ * @returns Lock count.
+ *
+ * @param   pVM             The VM handle.
+ * @param   pszNames        Where to return the critical section names.
+ * @param   cbNames         The size of the buffer.
+ */
+VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNames)
+{
+    /*
+     * Init the name buffer.
+     */
+    size_t cchLeft = cbNames;
+    if (cchLeft)
+    {
+        cchLeft--;
+        pszNames[0] = pszNames[cchLeft] = '\0';
+    }
+
+    /*
+     * Iterate the critical sections.
+     */
+    /* This is unsafe, but wtf. */
+    RTNATIVETHREAD const    hNativeThread = RTThreadNativeSelf();
+    uint32_t                cCritSects = 0;
+    for (PPDMCRITSECTINT pCur = pVM->pdm.s.pCritSects;
+         pCur;
+         pCur = pCur->pNext)
+    {
+        /* Same as RTCritSectIsOwner(). */
+        if (pCur->Core.NativeThreadOwner == hNativeThread)
+        {
+            cCritSects++;
+
+            /*
+             * Copy the name if there is space. Fun stuff.
+             */
+            if (cchLeft)
+            {
+                /* try add comma. */
+                if (cCritSects != 1)
+                {
+                    *pszNames++ = ',';
+                    if (--cchLeft)
+                    {
+                        *pszNames++ = ' ';
+                        cchLeft--;
+                    }
+                }
+
+                /* try copy the name. */
+                if (cchLeft)
+                {
+                    size_t const cchName = strlen(pCur->pszName);
+                    if (cchName < cchLeft)
+                    {
+                        memcpy(pszNames, pCur->pszName, cchName);
+                        pszNames += cchName;
+                        cchLeft -= cchName;
+                    }
+                    else
+                    {
+                        if (cchLeft > 2)
+                        {
+                            memcpy(pszNames, pCur->pszName, cchLeft - 2);
+                            pszNames += cchLeft - 2;
+                            cchLeft = 2;
+                        }
+                        while (cchLeft-- > 0)
+                            *pszNames++ = '+';
+                    }
+                }
+                *pszNames = '\0';
+            }
+        }
+    }
+
+    return cCritSects;
+}

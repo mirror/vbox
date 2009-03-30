@@ -56,7 +56,8 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
 #ifdef IN_RING3
     NOREF(rcBusy);
 
-    STAM_STATS({ if (pCritSect->s.Core.cLockers >= 0 && !RTCritSectIsOwner(&pCritSect->s.Core)) STAM_COUNTER_INC(&pCritSect->s.StatContentionR3); });
+    STAM_REL_STATS({if (pCritSect->s.Core.cLockers >= 0 && !RTCritSectIsOwner(&pCritSect->s.Core))
+                        STAM_COUNTER_INC(&pCritSect->s.StatContentionR3); });
     int rc = RTCritSectEnter(&pCritSect->s.Core);
     STAM_STATS({ if (pCritSect->s.Core.cNestings == 1) STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l); });
     return rc;
@@ -94,7 +95,7 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
      * Failed.
      */
     LogFlow(("PDMCritSectEnter: locked => R3 (%Rrc)\n", rcBusy));
-    STAM_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
+    STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
     return rcBusy;
 #endif /* !IN_RING3 */
 }
@@ -202,8 +203,8 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     pVM->pdm.s.apQueuedCritSectsLeaves[i] = MMHyperCCToR3(pVM, pCritSect);
     VM_FF_SET(pVM, VM_FF_PDM_CRITSECT);
     VM_FF_SET(pVM, VM_FF_TO_R3);
-    STAM_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
-    STAM_COUNTER_INC(&pCritSect->s.StatContentionRZUnlock);
+    STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
+    STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZUnlock);
 #endif /* !IN_RING3 */
 }
 
