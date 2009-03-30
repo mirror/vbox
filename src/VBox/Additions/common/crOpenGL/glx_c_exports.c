@@ -20,6 +20,7 @@
  * additional information or have any questions.
  */
 
+#include "stub.h"
 #include "dri_glx.h"
 #include "fakedri_drv.h"
 

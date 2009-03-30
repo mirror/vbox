@@ -20,8 +20,8 @@
  * additional information or have any questions.
  */
 
-#ifndef ___CROPENGL_DRI_GLX_H
-#define ___CROPENGL_DRI_GLX_H
+#ifndef ___CROPENGL_GLX_PROTO_H
+#define ___CROPENGL_GLX_PROTO_H
 
 #include "chromium.h"
 #include "stub.h"
@@ -50,12 +50,7 @@ typedef GLXPixmap (*PGLXFUNC_CreateGLXPixmapMESA)(Display *dpy, XVisualInfo *vis
 #endif
 
 /*Common glX functions*/
-typedef void (*PGLXFUNC_CopyContext)( Display *dpy, GLXContext src, GLXContext dst, 
-#if defined(SunOS)
-unsigned long mask);
-#else
-unsigned long mask);
-#endif
+typedef void (*PGLXFUNC_CopyContext)(Display *dpy, GLXContext src, GLXContext dst,unsigned long mask);
 typedef void (*PGLXFUNC_UseXFont)(Font font, int first, int count, int listBase);
 typedef CR_GLXFuncPtr (*PGLXFUNC_GetProcAddress)(const GLubyte *name);
 typedef Bool (*PGLXFUNC_QueryExtension)(Display *dpy, int *errorBase, int *eventBase);
@@ -157,4 +152,4 @@ typedef void (*PGLXFUNC_ReleaseTexImageEXT)(Display *dpy, GLXDrawable draw, int 
 
 #endif /* GLX_EXTRAS */
 
-#endif //___CROPENGL_DRI_GLX_H
+#endif //___CROPENGL_GLX_PROTO_H
