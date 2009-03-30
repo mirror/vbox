@@ -94,7 +94,8 @@ typedef struct {
     /** Offset from the beginning of this header to the actual image bits */
 } VBOXBITMAPFILEHEADER;
 
-/** Global context information used by the host clipboard subsystem */
+/** Global context information used by the host glue for the X11 clipboard
+ * backend */
 struct _VBOXCLIPBOARDCONTEXT
 {
     /** Since the clipboard data moves asynchronously, we use an event
@@ -107,24 +108,7 @@ struct _VBOXCLIPBOARDCONTEXT
     volatile uint32_t waiter;
     /** This mutex is grabbed during any critical operations on the clipboard
      * which might clash with others. */
-    /** @todo this is still used in X11 backend parts, disentangle it. */
     RTSEMMUTEX clipboardMutex;
-
-    /** @todo both the VBox subsystem and the X11 backend need the following
-     * members, so we need to transfer them between the two contexts at
-     * an appropriate time */
-    /** Format which we are reading from the X11 clipboard (valid during a
-     * request for its contents) */
-    g_eClipboardFormats requestX11Format;
-    /** The buffer to write X11 clipboard data to (valid during a request
-     * for the clipboard contents) */
-    void *requestBuffer;
-    /** The size of the buffer to write X11 clipboard data to (valid during
-     * a request for the clipboard contents) */
-    unsigned requestBufferSize;
-    /** The size of the X11 clipboard data written to the buffer (valid
-     * during a request for the clipboard contents) */
-    uint32_t *requestActualSize;
 
     /** Pointer to the client data structure */
     VBOXCLIPBOARDCLIENTDATA *pClient;
@@ -186,22 +170,26 @@ struct _VBOXCLIPBOARDCONTEXTX11
      * clipboard data it must wait for this semaphore, which is triggered
      * when the data arrives. */
     RTSEMEVENT waitForData;
-
-    /** Format which we are reading from the X11 clipboard (valid during a
-     * request for its contents) */
-    g_eClipboardFormats requestX11Format;
-    /** The buffer to write X11 clipboard data to (valid during a request
-     * for the clipboard contents) */
-    void *requestBuffer;
-    /** The size of the buffer to write X11 clipboard data to (valid during
-     * a request for the clipboard contents) */
-    unsigned requestBufferSize;
-    /** The size of the X11 clipboard data written to the buffer (valid
-     * during a request for the clipboard contents) */
-    uint32_t *requestActualSize;
 };
 
 typedef struct _VBOXCLIPBOARDCONTEXTX11 VBOXCLIPBOARDCONTEXTX11;
+
+/** A structure containing information about where to store a request
+ * for the X11 clipboard contents. */
+struct _VBOXCLIPBOARDREQUEST 
+{
+    /** The buffer to write X11 clipboard data to (valid during a request
+     * for the clipboard contents) */
+    void *pv;
+    /** The size of the buffer to write X11 clipboard data to (valid during
+     * a request for the clipboard contents) */
+    unsigned cb;
+    /** The size of the X11 clipboard data written to the buffer (valid
+     * during a request for the clipboard contents) */
+    uint32_t *pcbActual;
+};
+
+typedef struct _VBOXCLIPBOARDREQUEST VBOXCLIPBOARDREQUEST;
 
 /* Only one client is supported. There seems to be no need for more clients. 
  */
@@ -221,6 +209,7 @@ static bool g_fHaveX11;
  *                   to be freed with RTMemFree containing the data read.
  * @param  pcb       On success, this contains the number of bytes of data
  *                   returned
+ * @note   Host glue code.
  */
 static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
@@ -289,9 +278,9 @@ static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u
 }
 
 /**
- * Convert the UTF-16 text returned from the X11 clipboard to UTF-16LE with Windows EOLs
- * and place it in the global g_pcClipboardText variable.  We are reading the host clipboard to
- * make it available to the guest.
+ * Convert the UTF-16 text obtained from the X11 clipboard to UTF-16LE with
+ * Windows EOLs, place it in the buffer supplied and signal that data has
+ * arrived.
  *
  * @param pValue      Source UTF-16 text
  * @param cwSourceLen Length in 16-bit words of the source text
@@ -299,8 +288,11 @@ static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u
  * @param cb          Length in bytes of the buffer pointed to by cb
  * @param pcbActual   Where to store the size of the converted data
  * @param pClient     Pointer to the client context structure
+ * @note  X11 backend code, called from the Xt callback when we wish to read
+ *        the X11 clipboard.
  */
-static void vboxClipboardGetUtf16(XtPointer pValue, unsigned cwSrcLen, void *pv, unsigned cb,
+static void vboxClipboardGetUtf16(XtPointer pValue, unsigned cwSrcLen,
+                                  void *pv, unsigned cb,
                                   uint32_t *pcbActual)
 {
     size_t cwDestLen;
@@ -335,8 +327,9 @@ static void vboxClipboardGetUtf16(XtPointer pValue, unsigned cwSrcLen, void *pv,
 }
 
 /**
- * Convert the UTF-8 text returned from the X11 clipboard to UTF-16LE with Windows EOLS.
- * We are reading the X11 clipboard to make it available to VBox.
+ * Convert the UTF-8 text obtained from the X11 clipboard to UTF-16LE with
+ * Windows EOLs, place it in the buffer supplied and signal that data has
+ * arrived.
  *
  * @param pValue      Source UTF-8 text
  * @param cbSourceLen Length in 8-bit bytes of the source text
@@ -344,8 +337,8 @@ static void vboxClipboardGetUtf16(XtPointer pValue, unsigned cwSrcLen, void *pv,
  * @param cb          Length in bytes of the buffer pointed to by pv
  * @param pcbActual   Where to store the size of the converted data
  * @param pClient     Pointer to the client context structure
- * @thread clipboard X11 event thread
- * @note   called by vboxClipboardGetDataFromX11
+ * @note  X11 backend code, called from the Xt callback when we wish to read
+ *        the X11 clipboard.
  */
 static void vboxClipboardGetUtf8FromX11(XtPointer pValue, unsigned cbSrcLen,
                                         void *pv, unsigned cb,
@@ -387,17 +380,18 @@ static void vboxClipboardGetUtf8FromX11(XtPointer pValue, unsigned cbSrcLen,
 }
 
 /**
- * Convert the COMPOUND_TEXT text returned from the X11 clipboard to UTF-16LE with Windows
- * EOLS.  We are reading the X11 clipboard to make it available to VBox.
+ * Convert the COMPOUND_TEXT obtained from the X11 clipboard to UTF-16LE with
+ * Windows EOLs, place it in the buffer supplied and signal that data has
+ * arrived.
  *
- * @param pValue      Source COMPOUND_TEXT text
+ * @param pValue      Source COMPOUND_TEXT
  * @param cbSourceLen Length in 8-bit bytes of the source text
  * @param pv          Where to store the converted data
  * @param cb          Length in bytes of the buffer pointed to by pv
  * @param pcbActual   Where to store the size of the converted data
  * @param pClient     Pointer to the client context structure
- * @thread clipboard X11 event thread
- * @note   called by vboxClipboardGetDataFromX11
+ * @note  X11 backend code, called from the Xt callback when we wish to read
+ *        the X11 clipboard.
  */
 static void vboxClipboardGetCTextFromX11(XtPointer pValue, unsigned cbSrcLen,
                                          void *pv, unsigned cb,
@@ -468,9 +462,9 @@ static void vboxClipboardGetCTextFromX11(XtPointer pValue, unsigned cbSrcLen,
 }
 
 /**
- * Convert the Latin1 text returned from the X11 clipboard to UTF-16LE with Windows EOLS
- * and place it in the global g_pcClipboardText variable.  We are reading the X11 clipboard to
- * make it available to VBox.
+ * Convert the Latin1 text obtained from the X11 clipboard to UTF-16LE with
+ * Windows EOLs, place it in the buffer supplied and signal that data has
+ * arrived.
  *
  * @param pValue      Source Latin1 text
  * @param cbSourceLen Length in 8-bit bytes of the source text
@@ -478,11 +472,12 @@ static void vboxClipboardGetCTextFromX11(XtPointer pValue, unsigned cbSrcLen,
  * @param cb          Length in bytes of the buffer pointed to by cb
  * @param pcbActual   Where to store the size of the converted data
  * @param pClient     Pointer to the client context structure
- * @thread clipboard X11 event thread
- * @note   called by vboxClipboardGetDataFromX11
+ * @note  X11 backend code, called from the Xt callback when we wish to read
+ *        the X11 clipboard.
  */
-static void vboxClipboardGetLatin1FromX11(XtPointer pValue, unsigned cbSourceLen, void *pv, unsigned cb,
-                                   uint32_t *pcbActual)
+static void vboxClipboardGetLatin1FromX11(XtPointer pValue,
+                                          unsigned cbSourceLen, void *pv,
+                                          unsigned cb, uint32_t *pcbActual)
 {
     unsigned cwDestLen = cbSourceLen + 1;
     char *pu8SourceText = reinterpret_cast<char *>(pValue);
@@ -523,20 +518,24 @@ static void vboxClipboardGetLatin1FromX11(XtPointer pValue, unsigned cbSourceLen
 }
 
 /**
- * Convert the clipboard text from the current format to Utf-16 with Windows line breaks.
- * We are reading the X11 clipboard to make it available to VBox.
- * @thread  clipboard X11 event thread
- * @note    Callback for XtGetSelectionValue, called from vboxClipboardReadData
+ * Convert the text obtained from the X11 clipboard to UTF-16LE with Windows
+ * EOLs, place it in the buffer supplied and signal that data has arrived.
+ * @note  X11 backend code, callback for XtGetSelectionValue, for use when
+ *        the X11 clipboard contains a text format we understand.
  */
 static void vboxClipboardGetDataFromX11(Widget, XtPointer pClientData,
-                                        Atom * /* selection */, Atom *atomType,
+                                        Atom * /* selection */,
+                                        Atom *atomType,
                                         XtPointer pValue,
                                         long unsigned int *pcLen,
                                         int *piFormat)
 {
-    LogFlowFunc(("pClientData=%p, *pcLen=%lu, *piFormat=%d\n", pClientData, *pcLen, *piFormat));
-    LogFlowFunc(("g_ctxHost.requestX11Format=%d, g_ctxHost.requestBufferSize=%d\n",
-                 g_ctxHost.requestX11Format, g_ctxHost.requestBufferSize));
+    VBOXCLIPBOARDREQUEST *pRequest
+        = reinterpret_cast<VBOXCLIPBOARDREQUEST *>(pClientData);
+    LogFlowFunc(("pClientData=%p, *pcLen=%lu, *piFormat=%d\n", pClientData,
+                 *pcLen, *piFormat));
+    LogFlowFunc(("g_ctxX11.X11TextFormat=%d, pRequest->cb=%d\n",
+                 g_ctxX11.X11TextFormat, pRequest->cb));
     unsigned cTextLen = (*pcLen) * (*piFormat) / 8;
     /* The X Toolkit may have failed to get the clipboard selection for us. */
     if (*atomType == XT_CONVERT_FAIL)
@@ -544,28 +543,16 @@ static void vboxClipboardGetDataFromX11(Widget, XtPointer pClientData,
     /* The clipboard selection may have changed before we could get it. */
     if (NULL == pValue)
         return;
-    /* We grab this mutex whenever an asynchronous clipboard operation completes and while
-       disconnecting a client from the clipboard to stop these operations colliding. */
-    RTSemMutexRequest(g_ctxHost.clipboardMutex, RT_INDEFINITE_WAIT);
-    if (reinterpret_cast<VBOXCLIPBOARDCLIENTDATA *>(pClientData) != g_ctxHost.pClient)
-    {
-        /* If the client is no longer connected, just return. */
-        XtFree(reinterpret_cast<char *>(pValue));
-        LogFlowFunc(("client is no longer connected, returning\n"));
-        RTSemMutexRelease(g_ctxHost.clipboardMutex);
-        return;
-    }
-
-    /* In which format did we request the clipboard data? */
-    switch (g_ctxHost.requestX11Format)
+    /* In which format is the clipboard data? */
+    switch (g_ctxX11.X11TextFormat)
     {
     case UTF16:
-        vboxClipboardGetUtf16(pValue, cTextLen / 2, g_ctxHost.requestBuffer, g_ctxHost.requestBufferSize,
-                              g_ctxHost.requestActualSize);
+        vboxClipboardGetUtf16(pValue, cTextLen / 2, pRequest->pv,
+                              pRequest->cb, pRequest->pcbActual);
         break;
     case CTEXT:
-        vboxClipboardGetCTextFromX11(pValue, cTextLen, g_ctxHost.requestBuffer, g_ctxHost.requestBufferSize,
-                              g_ctxHost.requestActualSize);
+        vboxClipboardGetCTextFromX11(pValue, cTextLen, pRequest->pv,
+                                     pRequest->cb, pRequest->pcbActual);
         break;
     case UTF8:
     {
@@ -573,37 +560,39 @@ static void vboxClipboardGetDataFromX11(Widget, XtPointer pClientData,
         size_t cStringLen;
         char *pu8SourceText = reinterpret_cast<char *>(pValue);
 
-        if ((g_ctxHost.requestX11Format == UTF8)
+        if ((g_ctxX11.X11TextFormat == UTF8)
             && (RTStrUniLenEx(pu8SourceText, *pcLen, &cStringLen) == VINF_SUCCESS))
         {
-            vboxClipboardGetUtf8FromX11(pValue, cTextLen, g_ctxHost.requestBuffer, g_ctxHost.requestBufferSize,
-                                 g_ctxHost.requestActualSize);
+            vboxClipboardGetUtf8FromX11(pValue, cTextLen, pRequest->pv,
+                                     pRequest->cb, pRequest->pcbActual);
             break;
         }
         else
         {
-            vboxClipboardGetLatin1FromX11(pValue, cTextLen, g_ctxHost.requestBuffer, g_ctxHost.requestBufferSize,
-                                   g_ctxHost.requestActualSize);
+            vboxClipboardGetLatin1FromX11(pValue, cTextLen, pRequest->pv,
+                                     pRequest->cb, pRequest->pcbActual);
             break;
         }
     }
     default:
         LogFunc (("bad target format\n"));
         XtFree(reinterpret_cast<char *>(pValue));
-        RTSemMutexRelease(g_ctxHost.clipboardMutex);
         return;
     }
     g_ctxX11.notifyVBox = true;
-    RTSemMutexRelease(g_ctxHost.clipboardMutex);
 }
 
 /**
- * Find out what targets the current X11 clipboard holder can handle.  We are
- * reading the X11 clipboard to make it available to VBox.
- * @thread  clipboard X11 event thread
- * @note    Callback for XtGetSelectionValue, called from vboxClipboardPollX11ForTargets
+ * Notify the host clipboard about the data formats we support, based on the
+ * "targets" (available data formats) information obtained from the X11
+ * clipboard.
+ * @note  X11 backend code, callback for XtGetSelectionValue, called when we
+ *        poll for available targets.
+ * @todo  This function still references host-specific data and calls host
+ *        frontend APIs.  Fix.
  */
-static void vboxClipboardGetTargetsFromX11(Widget, XtPointer pClientData,
+static void vboxClipboardGetTargetsFromX11(Widget,
+                                           XtPointer /* pClientData */,
                                            Atom * /* selection */,
                                            Atom *atomType,
                                            XtPointer pValue,
@@ -619,16 +608,6 @@ static void vboxClipboardGetTargetsFromX11(Widget, XtPointer pClientData,
     if (*atomType == XT_CONVERT_FAIL)
     {
         LogFunc (("reading clipboard from host, X toolkit failed to convert the selection\n"));
-        return;
-    }
-    /* We grab this mutex whenever an asynchronous clipboard operation completes and while
-       disconnecting a client from the clipboard to stop these operations colliding. */
-    RTSemMutexRequest(g_ctxHost.clipboardMutex, RT_INDEFINITE_WAIT);
-    if (reinterpret_cast<VBOXCLIPBOARDCLIENTDATA *>(pClientData) != g_ctxHost.pClient)
-    {
-        /* If the client is no longer connected, just return. */
-        LogFlowFunc(("client is no longer connected, returning\n"));
-        RTSemMutexRelease(g_ctxHost.clipboardMutex);
         return;
     }
 
@@ -689,14 +668,16 @@ static void vboxClipboardGetTargetsFromX11(Widget, XtPointer pClientData,
         g_ctxX11.notifyVBox = false;
     }
     XtFree(reinterpret_cast<char *>(pValue));
-    RTSemMutexRelease(g_ctxHost.clipboardMutex);
 }
 
 /**
- * This callback is called every 200ms to check the contents of the X11 clipboard.
- * @thread  clipboard X11 event thread
- * @note    Callback for XtAppAddTimeOut, called from vboxClipboardThread and
- *          recursively retriggered
+ * This timer callback is called every 200ms to check the contents of the X11
+ * clipboard.
+ * @note  X11 backend code, callback for XtAppAddTimeOut, recursively
+ *        re-armed.
+ * @todo  This function still references host-specific data.  Fix.
+ * @todo  Use the XFIXES extension to check for new clipboard data when
+ *        available.
  */
 static void vboxClipboardPollX11ForTargets(XtPointer /* pUserData */, XtIntervalId * /* hTimerId */)
 {
@@ -714,8 +695,10 @@ static void vboxClipboardPollX11ForTargets(XtPointer /* pUserData */, XtInterval
     XtAppAddTimeOut(g_ctxX11.appContext, 200 /* ms */, vboxClipboardPollX11ForTargets, 0);
 }
 
-/** We store information about the target formats we can handle in a global vector for internal
-    use. */
+/** We store information about the target formats we can handle in a global
+ * vector for internal use.
+ * @note  X11 backend code.
+ */
 static void vboxClipboardAddFormat(const char *pszName, g_eClipboardFormats eFormat,
                                    unsigned guestFormat)
 {
@@ -731,7 +714,7 @@ static void vboxClipboardAddFormat(const char *pszName, g_eClipboardFormats eFor
 
 /**
  * The main loop of our clipboard reader.
- * @thread  clipboard X11 event thread
+ * @note  X11 backend code.
  */
 static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
 {
@@ -746,7 +729,9 @@ static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
     return VINF_SUCCESS;
 }
 
-/** X11 specific initialisation for the shared clipboard. */
+/** X11 specific initialisation for the shared clipboard.
+ * @note  X11 backend code.
+ */
 int vboxClipboardInitX11 (void)
 {
     /* Create a window and make it a clipboard viewer. */
@@ -824,8 +809,8 @@ int vboxClipboardInitX11 (void)
 
 /**
  * Initialise the host side of the shared clipboard.
- * @note    Called by the HGCM clipboard service
- * @thread  HGCM clipboard service thread
+ * @todo  This mixes host glue and X11 backend code, separate into two
+ *        functions.
  */
 int vboxClipboardInit (void)
 {
@@ -889,8 +874,8 @@ int vboxClipboardInit (void)
 
 /**
  * Terminate the host side of the shared clipboard.
- * @note    Called by the HGCM clipboard service
- * @thread  HGCM clipboard service thread
+ * @todo  This mixes host glue and X11 backend code, separate into two
+ *        functions.
  */
 void vboxClipboardDestroy (void)
 {
@@ -957,11 +942,8 @@ void vboxClipboardDestroy (void)
 
 /**
  * Connect a guest the shared clipboard.
- *
- * @param   pClient Structure containing context information about the guest system
- * @returns RT status code
- * @note    Called by the HGCM clipboard service
- * @thread  HGCM clipboard service thread
+ * @todo  This mixes host glue and X11 backend code, separate into two
+ *        functions.
  */
 int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
@@ -986,8 +968,8 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 /**
  * Synchronise the contents of the host clipboard with the guest, called
  * after a save and restore of the guest.
- * @note    Called by the HGCM clipboard service
- * @thread  HGCM clipboard service thread
+ * @todo  This mixes host glue and X11 backend code and calls host frontend
+ *        APIs.  Separate into two functions.
  */
 int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
@@ -1009,8 +991,8 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 
 /**
  * Shut down the shared clipboard service and "disconnect" the guest.
- * @note    Called by the HGCM clipboard service
- * @thread  HGCM clipboard service thread
+ * @todo  This mixes host glue and X11 backend code, separate into two
+ *        functions.
  */
 void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *)
 {
@@ -1033,18 +1015,22 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *)
 /**
  * Satisfy a request from X11 for clipboard targets supported by VBox.
  *
- * @returns true if we successfully convert the data to the format requested, false otherwise.
+ * @returns true if we successfully convert the data to the format
+ *          requested, false otherwise.
  *
  * @param  atomTypeReturn The type of the data we are returning
- * @param  pValReturn     A pointer to the data we are returning.  This should be to memory
- *                        allocated by XtMalloc, which will be freed by the toolkit later
+ * @param  pValReturn     A pointer to the data we are returning.  This
+ *                        should be set to memory allocated by XtMalloc,
+ *                        which will be freed later by the Xt toolkit.
  * @param  pcLenReturn    The length of the data we are returning
- * @param  piFormatReturn The format (8bit, 16bit, 32bit) of the data we are returning
- * @thread  clipboard X11 event thread
- * @note    called by vboxClipboardConvertForX11
+ * @param  piFormatReturn The format (8bit, 16bit, 32bit) of the data we are
+ *                        returning
+ * @note  X11 backend code, called by the XtOwnSelection callback.
  */
-static Boolean vboxClipboardConvertTargetsForX11(Atom *atomTypeReturn, XtPointer *pValReturn,
-                                                 unsigned long *pcLenReturn, int *piFormatReturn)
+static Boolean vboxClipboardConvertTargetsForX11(Atom *atomTypeReturn,
+                                                 XtPointer *pValReturn,
+                                                 unsigned long *pcLenReturn,
+                                                 int *piFormatReturn)
 {
     unsigned uListSize = g_ctxX11.formatList.size();
     Atom *atomTargets = reinterpret_cast<Atom *>(XtMalloc((uListSize + 3) * sizeof(Atom)));
@@ -1089,19 +1075,31 @@ static Boolean vboxClipboardConvertTargetsForX11(Atom *atomTypeReturn, XtPointer
 }
 
 /**
- * Satisfy a request from X11 to convert the clipboard text to Utf16.  We return non-zero
- * terminated text.
+ * Satisfy a request from X11 to convert the clipboard text to Utf16.  We
+ * return non-zero terminated text.
+ * @todo that works, but it is bad.  Change it to return zero-terminated
+ *       text.
  *
- * @returns true if we successfully convert the data to the format requested, false otherwise.
+ * @returns true if we successfully convert the data to the format
+ * requested, false otherwise.
  *
- * @retval atomTypeReturn The type of the data we are returning
- * @retval pValReturn     A pointer to the data we are returning.  This should be to memory
- *                       allocated by XtMalloc, which will be freed by the toolkit later
- * @retval pcLenReturn    The length of the data we are returning
- * @retval piFormatReturn The format (8bit, 16bit, 32bit) of the data we are returning
+ * @param  atomTypeReturn  Where to store the atom for the type of the data
+ *                         we are returning
+ * @param  pValReturn      Where to store the pointer to the data we are
+ *                         returning.  This should be to memory allocated by
+ *                         XtMalloc, which will be freed by the Xt toolkit
+ *                         later.
+ * @param  pcLenReturn     Where to store the length of the data we are
+ *                         returning
+ * @param  piFormatReturn  Where to store the bit width (8, 16, 32) of the
+ *                         data we are returning
+ * @note  X11 backend code, called by the callback for XtOwnSelection.
+ * @todo  this function uses host-specific data and APIs.  Fix.
  */
-static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValReturn,
-                                         unsigned long *pcLenReturn, int *piFormatReturn)
+static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn,
+                                         XtPointer *pValReturn,
+                                         unsigned long *pcLenReturn,
+                                         int *piFormatReturn)
 {
     PRTUTF16 pu16SrcText, pu16DestText;
     void *pvVBox;
@@ -1161,17 +1159,26 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
 }
 
 /**
- * Satisfy a request from X11 to convert the clipboard text to Utf8.
+ * Satisfy a request from X11 to convert the clipboard text to Utf8.  We
+ * return non-zero terminated text.
+ * @todo that works, but it is bad.  Change it to return zero-terminated
+ *       text.
  *
- * @returns true if we successfully convert the data to the format requested, false otherwise.
+ * @returns true if we successfully convert the data to the format
+ * requested, false otherwise.
  *
- * @param  atomTypeReturn The type of the data we are returning
- * @param  pValReturn     A pointer to the data we are returning.  This should be to memory
- *                        allocated by XtMalloc, which will be freed by the toolkit later
- * @param  pcLenReturn    The length of the data we are returning
- * @param  piFormatReturn The format (8bit, 16bit, 32bit) of the data we are returning
- * @thread  clipboard X11 event thread
- * @note    called by vboxClipboardConvertForX11
+ * @param  atomTypeReturn  Where to store the atom for the type of the data
+ *                         we are returning
+ * @param  pValReturn      Where to store the pointer to the data we are
+ *                         returning.  This should be to memory allocated by
+ *                         XtMalloc, which will be freed by the Xt toolkit
+ *                         later.
+ * @param  pcLenReturn     Where to store the length of the data we are
+ *                         returning
+ * @param  piFormatReturn  Where to store the bit width (8, 16, 32) of the
+ *                         data we are returning
+ * @note  X11 backend code, called by the callback for XtOwnSelection.
+ * @todo  this function uses host-specific data and APIs.  Fix.
  */
 static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
                                                 XtPointer *pValReturn,
@@ -1259,17 +1266,26 @@ static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
 }
 
 /**
- * Satisfy a request from X11 to convert the clipboard text to COMPOUND_TEXT.
+ * Satisfy a request from X11 to convert the clipboard text to
+ * COMPOUND_TEXT.  We return non-zero terminated text.
+ * @todo that works, but it is bad.  Change it to return zero-terminated
+ *       text.
  *
- * @returns true if we successfully convert the data to the format requested, false otherwise.
+ * @returns true if we successfully convert the data to the format
+ * requested, false otherwise.
  *
- * @param  atomTypeReturn The type of the data we are returning
- * @param  pValReturn     A pointer to the data we are returning.  This should be to memory
- *                        allocated by XtMalloc, which will be freed by the toolkit later
- * @param  pcLenReturn    The length of the data we are returning
- * @param  piFormatReturn The format (8bit, 16bit, 32bit) of the data we are returning
- * @thread  clipboard X11 event thread
- * @note    called by vboxClipboardConvertForX11
+ * @param  atomTypeReturn  Where to store the atom for the type of the data
+ *                         we are returning
+ * @param  pValReturn      Where to store the pointer to the data we are
+ *                         returning.  This should be to memory allocated by
+ *                         XtMalloc, which will be freed by the Xt toolkit
+ *                         later.
+ * @param  pcLenReturn     Where to store the length of the data we are
+ *                         returning
+ * @param  piFormatReturn  Where to store the bit width (8, 16, 32) of the
+ *                         data we are returning
+ * @note  X11 backend code, called by the callback for XtOwnSelection.
+ * @todo  this function uses host-specific data and APIs.  Fix.
  */
 static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
                                                  XtPointer *pValReturn,
@@ -1377,10 +1393,8 @@ static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
 }
 
 /**
- * Callback to request VBox's clipboard data for an X11 client.  Called by the
- * X Toolkit.
- * @thread  clipboard X11 event thread
- * @note    callback for XtOwnSelection, called by vboxClipboardFormatAnnounce
+ * Return VBox's clipboard data for an X11 client.
+ * @note  X11 backend code, callback for XtOwnSelection
  */
 static Boolean vboxClipboardConvertForX11(Widget, Atom *atomSelection,
                                           Atom *atomTarget,
@@ -1452,9 +1466,9 @@ static Boolean vboxClipboardConvertForX11(Widget, Atom *atomSelection,
 
 /**
  * This is called by the X toolkit intrinsics to let us know that another
- * X11 client has taken the clipboard.
- * @note    callback for XtOwnSelection, called from vboxClipboardFormatAnnounce
- * @thread  clipboard X11 event thread
+ * X11 client has taken the clipboard.  In this case we notify VBox that
+ * we want ownership of the clipboard.
+ * @note  X11 backend code, callback for XtOwnSelection
  */
 static void vboxClipboardReturnToX11(Widget, Atom *)
 {
@@ -1517,17 +1531,19 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32
 /**
  * Called when VBox wants to read the X11 clipboard.
  *
- * @param pClient   Context information about the guest VM
- * @param u32Format The format that the guest would like to receive the data in
- * @param pv        Where to write the data to
- * @param cb        The size of the buffer to write the data to
- * @param pcbActual Where to write the actual size of the written data
- * @note    Called by the HGCM clipboard service
- * @thread  HGCM clipboard service thread
+ * @param  pClient   Context information about the guest VM
+ * @param  u32Format The format that the guest would like to receive the data in
+ * @param  pv        Where to write the data to
+ * @param  cb        The size of the buffer to write the data to
+ * @param  pcbActual Where to write the actual size of the written data
+ * @note   Host glue code
+ * @todo   Separate this into a host and an X11-specific function
  */
-int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, void *pv,
-                           uint32_t cb, uint32_t *pcbActual)
+int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
+                           uint32_t u32Format, void *pv, uint32_t cb,
+                           uint32_t *pcbActual)
 {
+    VBOXCLIPBOARDREQUEST request;
     /*
      * Immediately return if we are not connected to the host X server.
      */
@@ -1555,16 +1571,17 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
          * requests from VBox are serialised and the second because X11 previously
          * grabbed the clipboard, so it should not be waiting for data from us. */
         AssertLogRelReturn (ASMAtomicCmpXchgU32(&g_ctxHost.waiter, VB, NONE), VERR_DEADLOCK);
-        g_ctxHost.requestX11Format = g_ctxX11.X11TextFormat;
-        g_ctxHost.requestBuffer = pv;
-        g_ctxHost.requestBufferSize = cb;
-        g_ctxHost.requestActualSize = pcbActual;
+        request.pv = pv;
+        request.cb = cb;
+        request.pcbActual = pcbActual;
         /* Initially set the size of the data read to zero in case we fail
          * somewhere. */
         *pcbActual = 0;
         /* Send out a request for the data to the current clipboard owner */
-        XtGetSelectionValue(g_ctxX11.widget, g_ctxX11.atomClipboard, g_ctxX11.atomX11TextFormat,
-                            vboxClipboardGetDataFromX11, reinterpret_cast<XtPointer>(g_ctxHost.pClient),
+        XtGetSelectionValue(g_ctxX11.widget, g_ctxX11.atomClipboard,
+                            g_ctxX11.atomX11TextFormat,
+                            vboxClipboardGetDataFromX11,
+                            reinterpret_cast<XtPointer>(&request),
                             CurrentTime);
         /* When the data arrives, the vboxClipboardGetDataFromX11 callback will be called.  The
            callback will signal the event semaphore when it has processed the data for us. */
@@ -1587,12 +1604,11 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
 /**
  * Called when we have requested data from VBox and that data has arrived.
  *
- * @param pClient   Context information about the guest VM
- * @param pv        Buffer to which the data was written
- * @param cb        The size of the data written
- * @param u32Format The format of the data written
- * @note    Called by the HGCM clipboard service
- * @thread  HGCM clipboard service thread
+ * @param  pClient   Context information about the guest VM
+ * @param  pv        Buffer to which the data was written
+ * @param  cb        The size of the data written
+ * @param  u32Format The format of the data written
+ * @note   Host glue code
  */
 void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format)
 {
