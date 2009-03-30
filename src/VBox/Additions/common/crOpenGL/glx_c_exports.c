@@ -76,14 +76,14 @@ int VBOXGLXENTRYTAG(glXQueryContextInfoEXT)(Display *dpy, GLXContext ctx)
 
 void * VBOXGLXENTRYTAG(glXAllocateMemoryMESA)(Display *dpy, int scrn,
                                                        size_t size, float readFreq,
-                                                       float writeFreq, float priority);
+                                                       float writeFreq, float priority)
 {
     return glxim.AllocateMemoryMESA(dpy, scrn, size, readFreq, writeFreq, priority);
 }
 
 GLuint VBOXGLXENTRYTAG(glXGetMemoryOffsetMESA)(Display *dpy, int scrn, const void *pointer )
 {
-    return glxim.GetMemoryOffsetMESA(dpy, scr, pointer);
+    return glxim.GetMemoryOffsetMESA(dpy, scrn, pointer);
 }
 
 
@@ -96,12 +96,12 @@ GLXPixmap VBOXGLXENTRYTAG(glXCreateGLXPixmapMESA)(Display *dpy, XVisualInfo *vis
 /*Common glX functions*/
 void VBOXGLXENTRYTAG(glXCopyContext)( Display *dpy, GLXContext src, GLXContext dst, 
 #if defined(SunOS)
-unsigned long mask);
+unsigned long mask)
 #else
-unsigned long mask);
+unsigned long mask)
 #endif
 {
-    return glxim.CopyContext(dpy,. src, dst, mask);
+    return glxim.CopyContext(dpy, src, dst, mask);
 }
 
 
@@ -329,7 +329,7 @@ GLXDrawable VBOXGLXENTRYTAG(glXGetCurrentReadDrawable)(void)
 
 int VBOXGLXENTRYTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig config, int attribute, int *value)
 {
-    return glxim.GetFBConfigAttrib(dp, config, attribute, value);
+    return glxim.GetFBConfigAttrib(dpy, config, attribute, value);
 }
 
 GLXFBConfig * VBOXGLXENTRYTAG(glXGetFBConfigs)(Display *dpy, int screen, int *nelements)
@@ -349,7 +349,7 @@ XVisualInfo * VBOXGLXENTRYTAG(glXGetVisualFromFBConfig)(Display *dpy, GLXFBConfi
 
 Bool VBOXGLXENTRYTAG(glXMakeContextCurrent)(Display *display, GLXDrawable draw, GLXDrawable read, GLXContext ctx)
 {
-    return glxim.MakeContextCurrent(disaply, draw, read, ctx);
+    return glxim.MakeContextCurrent(display, draw, read, ctx);
 }
 
 int VBOXGLXENTRYTAG(glXQueryContext)(Display *dpy, GLXContext ctx, int attribute, int *value)
@@ -367,6 +367,7 @@ void VBOXGLXENTRYTAG(glXSelectEvent)(Display *dpy, GLXDrawable draw, unsigned lo
     return glxim.SelectEvent(dpy, draw, event_mask);
 }
 
+/*
 #ifdef CR_EXT_texture_from_pixmap
 void VBOXGLXENTRYTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, int buffer, const int *attrib_list)
 {
@@ -378,6 +379,7 @@ void VBOXGLXENTRYTAG(glXReleaseTexImageEXT)(Display *dpy, GLXDrawable draw, int 
     return glxim.ReleaseTexImageEXT(dpy, draw, buffer);
 }
 #endif
+*/
 
 #endif /* GLX_EXTRAS */
 
