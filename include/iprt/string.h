@@ -1599,7 +1599,8 @@ RTDECL(PRTUTF16) RTUtf16ToUpper(PRTUTF16 pwsz);
  *
  * @returns iprt status code.
  * @param   pwszString      UTF-16 string to convert.
- * @param   ppszString      Receives pointer of allocated UTF-8 string.
+ * @param   ppszString      Receives pointer of allocated UTF-8 string on
+ *                          success, and is always set to NULL on failure.
  *                          The returned pointer must be freed using RTStrFree().
  */
 RTDECL(int)  RTUtf16ToUtf8(PCRTUTF16 pwszString, char **ppszString);
