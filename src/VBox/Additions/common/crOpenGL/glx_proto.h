@@ -26,10 +26,6 @@
 #include "chromium.h"
 #include "stub.h"
 
-#ifndef VBOX_OGL_GLX_USE_CSTUBS
-# error VBOX_OGL_GLX_USE_CSTUBS not defined.
-#endif
-
 #ifdef VBOXOGL_FAKEDRI
 typedef const char * (*PGLXFUNC_GetDriverConfig)(const char *driverName);
 typedef void (*PGLXFUNC_FreeMemoryMESA)(Display *dpy, int scrn, void *pointer);
