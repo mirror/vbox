@@ -158,6 +158,7 @@ struct VirtualSystem
     Utf8Str             strDescription;         // copy of VirtualSystem/Info content
 
     CIMOSType_T         cimos;
+    Utf8Str             strCimosDesc;           // readable description of the cimos type in the case of cimos = 0/1/102
     Utf8Str             strVirtualSystemType;   // generic hardware description; OVF says this can be something like "vmx-4" or "xen";
                                                 // VMware Workstation 6.5 is "vmx-07"
 
@@ -298,14 +299,94 @@ static const struct
         { CIMOSType_CIMOS_Linux_64,                             SchemaDefs_OSTypeId_Linux26_64 }
 };
 
+/* Pattern structure for matching the os type description field */
+struct osTypePattern
+{
+    const char *pcszPattern;
+    const char *pcszVbox;
+};
+
+/* This are the 32-Bit ones. They are sorted by priority. */
+static const osTypePattern g_osTypesPattern[] =
+{
+    {"Windows*NT",    SchemaDefs_OSTypeId_WindowsNT4},
+    {"Windows*XP",    SchemaDefs_OSTypeId_WindowsXP},
+    {"Windows*2000",  SchemaDefs_OSTypeId_Windows2000},
+    {"Windows*2003",  SchemaDefs_OSTypeId_Windows2003},
+    {"Windows*Vista", SchemaDefs_OSTypeId_WindowsVista},
+    {"Windows*2008",  SchemaDefs_OSTypeId_Windows2008},
+    {"SUSE",          SchemaDefs_OSTypeId_OpenSUSE},
+    {"Novell",        SchemaDefs_OSTypeId_OpenSUSE},
+    {"Red*Hat",       SchemaDefs_OSTypeId_RedHat},
+    {"Mandriva",      SchemaDefs_OSTypeId_Mandriva},
+    {"Ubuntu",        SchemaDefs_OSTypeId_Ubuntu},
+    {"Debian",        SchemaDefs_OSTypeId_Debian},
+    {"QNX",           SchemaDefs_OSTypeId_QNX},
+    {"Linux*2.4",     SchemaDefs_OSTypeId_Linux24},
+    {"Linux*2.6",     SchemaDefs_OSTypeId_Linux26},
+    {"Linux",         SchemaDefs_OSTypeId_Linux},
+    {"OpenSolaris",   SchemaDefs_OSTypeId_OpenSolaris},
+    {"Solaris",       SchemaDefs_OSTypeId_OpenSolaris},
+    {"FreeBSD",       SchemaDefs_OSTypeId_FreeBSD},
+    {"NetBSD",        SchemaDefs_OSTypeId_NetBSD},
+    {"Windows*95",    SchemaDefs_OSTypeId_Windows95},
+    {"Windows*98",    SchemaDefs_OSTypeId_Windows98},
+    {"Windows*Me",    SchemaDefs_OSTypeId_WindowsMe},
+    {"Windows*3.",    SchemaDefs_OSTypeId_Windows31},
+    {"DOS",           SchemaDefs_OSTypeId_DOS},
+    {"OS2",           SchemaDefs_OSTypeId_OS2}
+};
+
+/* This are the 64-Bit ones. They are sorted by priority. */
+static const osTypePattern g_osTypesPattern64[] =
+{
+    {"Windows*XP",    SchemaDefs_OSTypeId_WindowsXP_64},
+    {"Windows*2003",  SchemaDefs_OSTypeId_Windows2003_64},
+    {"Windows*Vista", SchemaDefs_OSTypeId_WindowsVista_64},
+    {"Windows*2008",  SchemaDefs_OSTypeId_Windows2008_64},
+    {"SUSE",          SchemaDefs_OSTypeId_OpenSUSE_64},
+    {"Novell",        SchemaDefs_OSTypeId_OpenSUSE_64},
+    {"Red*Hat",       SchemaDefs_OSTypeId_RedHat_64},
+    {"Mandriva",      SchemaDefs_OSTypeId_Mandriva_64},
+    {"Ubuntu",        SchemaDefs_OSTypeId_Ubuntu_64},
+    {"Debian",        SchemaDefs_OSTypeId_Debian_64},
+    {"Linux*2.4",     SchemaDefs_OSTypeId_Linux24_64},
+    {"Linux*2.6",     SchemaDefs_OSTypeId_Linux26_64},
+    {"Linux",         SchemaDefs_OSTypeId_Linux26_64},
+    {"OpenSolaris",   SchemaDefs_OSTypeId_OpenSolaris_64},
+    {"Solaris",       SchemaDefs_OSTypeId_OpenSolaris_64},
+    {"FreeBSD",       SchemaDefs_OSTypeId_FreeBSD_64},
+};
+
 /**
  * Private helper func that suggests a VirtualBox guest OS type
  * for the given OVF operating system type.
  * @param osTypeVBox
  * @param c
+ * @param cStr
  */
-static void convertCIMOSType2VBoxOSType(Utf8Str &strType, CIMOSType_T c)
+static void convertCIMOSType2VBoxOSType(Utf8Str &strType, CIMOSType_T c, const Utf8Str &cStr)
 {
+    /* First */
+    if (c == CIMOSType_CIMOS_Other)
+    {
+        for (size_t i=0; i < RT_ELEMENTS(g_osTypesPattern); ++i)
+            if (cStr.contains (g_osTypesPattern[i].pcszPattern))
+            {
+                strType = g_osTypesPattern[i].pcszVbox;
+                return;
+            }
+    }
+    else if (c == CIMOSType_CIMOS_Other_64)
+    {
+        for (size_t i=0; i < RT_ELEMENTS(g_osTypesPattern64); ++i)
+            if (cStr.contains (g_osTypesPattern64[i].pcszPattern))
+            {
+                strType = g_osTypesPattern64[i].pcszVbox;
+                return;
+            }
+    }
+
     for (size_t i = 0; i < RT_ELEMENTS(g_osTypes); ++i)
     {
         if (c == g_osTypes[i].cim)
@@ -1041,6 +1122,9 @@ HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
                                 pelmThis->getLineNumber());
 
             vsys.cimos = (CIMOSType_T)cimos64;
+            const xml::ElementNode *pelmCIMOSDescription;
+            if ((pelmCIMOSDescription = pelmThis->findChildElement("Description")))
+                vsys.strCimosDesc = pelmCIMOSDescription->getValue();
         }
         else if (    (!strcmp(pcszElemName, "AnnotationSection"))
                   || (!strcmp(pcszTypeAttr, "ovf:AnnotationSection_Type"))
@@ -1270,7 +1354,7 @@ STDMETHODIMP Appliance::Interpret()
             /* Guest OS type */
             Utf8Str strOsTypeVBox,
                     strCIMOSType = Utf8StrFmt("%RI32", (uint32_t)vsysThis.cimos);
-            convertCIMOSType2VBoxOSType(strOsTypeVBox, vsysThis.cimos);
+            convertCIMOSType2VBoxOSType(strOsTypeVBox, vsysThis.cimos, vsysThis.strCimosDesc);
             pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
                                "",
                                strCIMOSType,
