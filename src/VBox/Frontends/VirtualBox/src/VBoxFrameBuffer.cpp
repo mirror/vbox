@@ -51,6 +51,7 @@ VBoxFrameBuffer::VBoxFrameBuffer (VBoxConsoleView *aView)
 #endif
 {
     AssertMsg (mView, ("VBoxConsoleView must not be null\n"));
+    mWinId = (mView && mView->viewport()) ? (ULONG64) mView->viewport()->winId() : 0;
 }
 
 VBoxFrameBuffer::~VBoxFrameBuffer()
@@ -141,7 +142,7 @@ STDMETHODIMP VBoxFrameBuffer::COMGETTER(WinId) (ULONG64 *winId)
 {
     if (!winId)
         return E_POINTER;
-    *winId = (mView && mView->viewport()) ? (ULONG64) mView->viewport()->winId() : 0;
+    *winId = mWinId;
     return S_OK;
 }
 

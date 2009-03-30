@@ -59,7 +59,7 @@ public:
                      ulong aBitsPerPixel, ulong aBytesPerLine,
                      ulong aWidth, ulong aHeight) :
         QEvent ((QEvent::Type) VBoxDefs::ResizeEventType),
-	    mPixelFormat (aPixelFormat), mVRAM (aVRAM), mBitsPerPixel (aBitsPerPixel),
+        mPixelFormat (aPixelFormat), mVRAM (aVRAM), mBitsPerPixel (aBitsPerPixel),
         mBytesPerLine (aBytesPerLine), mWidth (aWidth), mHeight (aHeight) {}
     ulong pixelFormat() { return mPixelFormat; }
     uchar *VRAM() { return mVRAM; }
@@ -256,6 +256,7 @@ protected:
     QMutex *mMutex;
     int mWdt;
     int mHgt;
+    uint64_t mWinId;
 
 #if defined (Q_OS_WIN32)
 private:
