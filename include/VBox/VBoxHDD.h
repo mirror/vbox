@@ -1166,7 +1166,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
  * @param   pPCHSGeometry   Pointer to physical disk geometry <= (16383,16,63). Not NULL.
- * @param   pLCHSGeometry   Pointer to logical disk geometry <= (1024,255,63). Not NULL.
+ * @param   pLCHSGeometry   Pointer to logical disk geometry <= (x,255,63). Not NULL.
  * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pVDIfsImage     Pointer to the per-image VD interface list.
