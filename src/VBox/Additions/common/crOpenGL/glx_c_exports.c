@@ -94,12 +94,7 @@ GLXPixmap VBOXGLXENTRYTAG(glXCreateGLXPixmapMESA)(Display *dpy, XVisualInfo *vis
 #endif
 
 /*Common glX functions*/
-void VBOXGLXENTRYTAG(glXCopyContext)( Display *dpy, GLXContext src, GLXContext dst, 
-#if defined(SunOS)
-unsigned long mask)
-#else
-unsigned long mask)
-#endif
+void VBOXGLXENTRYTAG(glXCopyContext)( Display *dpy, GLXContext src, GLXContext dst, unsigned long mask)
 {
     return glxim.CopyContext(dpy, src, dst, mask);
 }
