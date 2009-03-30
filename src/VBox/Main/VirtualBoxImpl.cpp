@@ -96,7 +96,7 @@ static const char gDefaultGlobalConfig [] =
     "       <DHCPServers>"RTFILE_LINEFEED
     "          <DHCPServer "
 #ifdef RT_OS_WINDOWS
-                          "networkName=\"HostInterfaceNetworking-VirtualBox Host-Only Network Adapter\" "
+                          "networkName=\"HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter\" "
 #else
                           "networkName=\"HostInterfaceNetworking-vboxnet0\" "
 #endif

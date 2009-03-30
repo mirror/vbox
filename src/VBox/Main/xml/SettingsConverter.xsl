@@ -859,7 +859,7 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
            <DHCPServers>
               <xsl:choose>
                 <xsl:when test="substring-after(../@version,'-')='windows'">
-                   <DHCPServer networkName="HostInterfaceNetworking-VirtualBox Host-Only Network Adapter" 
+                   <DHCPServer networkName="HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter" 
                         IPAddress="192.168.56.100" networkMask="255.255.255.0"
                         lowerIP="192.168.56.101" upperIP="192.168.56.254"
                         enabled="1"/>
