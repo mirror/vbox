@@ -90,7 +90,7 @@ RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
     if (cb > 1)
         ASMOutStrU8(RTLOG_DEBUG_PORT, pau8, cb);
     else if (cb)
-        ASMOutU8(RTLOG_DEBUG_PORT, *pu8);
+        ASMOutU8(RTLOG_DEBUG_PORT, *pau8);
 }
 
 # if defined(RT_OS_LINUX) && defined(IN_MODULE)
