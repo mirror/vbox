@@ -1713,6 +1713,7 @@ static int createNetworkInterface (SVCHlpClient *aClient,
         INetCfg              *pNc;
         INetCfgComponent     *pMpNcc;
         LPWSTR               lpszApp;
+        WCHAR ConnectoinName[128];
 
         HRESULT hr = VBoxNetCfgWinQueryINetCfg( FALSE,
                            VBOX_APP_NAME,
@@ -1732,14 +1733,9 @@ static int createNetworkInterface (SVCHlpClient *aClient,
                 {
                     Bstr str(name);
                     str.detachTo(pName);
-                    WCHAR ConnectoinName[128];
                     ULONG cbBuf = sizeof(ConnectoinName);
 
                     hr = VBoxNetCfgWinGenHostonlyConnectionName (name, ConnectoinName, &cbBuf);
-                    if(hr == S_OK)
-                    {
-                        hr = VBoxNetCfgWinRenameConnection ((GUID*)aGUID.raw(), ConnectoinName);
-                    }
 
                     CoTaskMemFree (name);
                 }
@@ -1747,6 +1743,11 @@ static int createNetworkInterface (SVCHlpClient *aClient,
                 VBoxNetCfgWinReleaseRef(pMpNcc);
             }
             VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
+        }
+
+        if(hr == S_OK)
+        {
+            hr = VBoxNetCfgWinRenameConnection ((GUID*)aGUID.raw(), ConnectoinName);
         }
 
         if(hr != S_OK)
