@@ -39,6 +39,11 @@
  * Otherwise defined as 0.
  */
 
+/* Solaris 10 header ugliness */
+#ifdef u
+#undef u
+#endif
+
 #ifdef _MSC_VER
 # if _MSC_VER >= 1400
 #  define RT_INLINE_ASM_USES_INTRIN 1
