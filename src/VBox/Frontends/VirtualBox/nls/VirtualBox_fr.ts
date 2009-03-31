@@ -634,7 +634,7 @@ Version %1</source>
     </message>
     <message>
         <source>Network Adapter</source>
-        <translation type="unfinished">Adaptateur réseau</translation>
+        <translation>Carte réseau</translation>
     </message>
     <message>
         <source>USB Controller</source>
@@ -946,12 +946,12 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
-        <translation>&amp;Adaptateur réseau</translation>
+        <translation>&amp;Cartes réseau</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation>Adaptateur %1</translation>
+        <translation>Carte %1</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
@@ -965,11 +965,11 @@ Version %1</source>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
-        <translation>Déconnecter le cable de l&apos;adaptateur réseau virtuel</translation>
+        <translation>Déconnecter le cable de la carte réseau virtuel</translation>
     </message>
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
-        <translation>Connecter le cable de l&apos;adaptateur virtuel réseau sélectionné</translation>
+        <translation>Connecter le cable de la carte virtuel réseau sélectionné</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
@@ -1041,7 +1041,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptateur %1 (%2)&lt;/b&gt;&amp;nbsp;: cable %3&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Carte %1 (%2)&lt;/b&gt;&amp;nbsp;: cable %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
@@ -1056,7 +1056,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tous les adaptateurs réseau sont désactivés&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tous les cartes réseau sont désactivés&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -1716,7 +1716,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">Adaptateur</translation>
+        <translation>Carte</translation>
     </message>
     <message>
         <source>Automatically configured</source>
@@ -2097,7 +2097,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation>Adaptateur %1</translation>
+        <translation>Carte %1</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -2694,7 +2694,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation>Adaptateur %1</translation>
+        <translation>Carte %1</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
@@ -3827,7 +3827,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Échec de suppression de l&apos;adaptateur réseau &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Échec de suppression de la carte réseau &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -4445,7 +4445,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Désirez-vous éliminer l&apos;interface réseau &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt; sélectionné ?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note :&lt;/b&gt; cet interface pourait être utilisé par un ou plusieurs adaptateurs réseau de cette ou d&apos;autres machines virtuelles. Si vous éliminez cet interface, les adapteurs virtuels ne fonctionneront plus jusqu&apos;à ce que vous les reconfigurez avec un autre nom d&apos;interface ou un autre type d&apos;accès.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Désirez-vous éliminer l&apos;interface réseau &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt; sélectionné ?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note :&lt;/b&gt; cet interface pourait être utilisé par un ou plusieurs cartes réseau de cette ou d&apos;autres machines virtuelles. Si vous éliminez cet interface, les adapteurs virtuels ne fonctionneront plus jusqu&apos;à ce que vous les reconfigurez avec un autre nom d&apos;interface ou un autre type d&apos;accès.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
@@ -5325,7 +5325,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network Adapter Statistics</source>
-        <translation>Statistiques adaptateur réseau</translation>
+        <translation>Statistiques carte réseau</translation>
     </message>
     <message>
         <source>Version %1.%2</source>
@@ -5360,7 +5360,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No Network Adapters</source>
-        <translation>Pas d&apos;adaptateurs réseau</translation>
+        <translation>Pas de cartes réseau</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5967,11 +5967,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation>Si cette case est cochée, insère l&apos;adaptateur de réseau virtuel dans la machine virtuelle.</translation>
+        <translation>Si cette case est cochée, insère la carte réseau virtuel dans la machine virtuelle.</translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation>&amp;Activer l&apos;adapteur de Réseau</translation>
+        <translation>&amp;Activer la carte réseau</translation>
     </message>
     <message>
         <source>A&amp;dapter Type:</source>
@@ -5987,7 +5987,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>Contrôle la façon dont l&apos;adaptateur virtuel accède au réseau physique de l&apos;ordinateur principal. </translation>
+        <translation>Contrôle la façon dont la carte virtuel accède au réseau physique de l&apos;ordinateur principal. </translation>
     </message>
     <message>
         <source>&amp;Network Name:</source>
@@ -5995,7 +5995,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">Affiche le nom du réseau interne affecté à cet adaptateur.</translation>
+        <translation type="obsolete">Affiche le nom du réseau interne affecté à cet carte.</translation>
     </message>
     <message>
         <source>&amp;MAC Address:</source>
@@ -6105,7 +6105,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
-        <translation>&amp;Type d&apos;adaptateur :</translation>
+        <translation>&amp;Type de carte :</translation>
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
@@ -6114,7 +6114,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation type="unfinished">Adaptateur</translation>
+        <translation>Carte</translation>
     </message>
     <message>
         <source>Network</source>
@@ -6169,7 +6169,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation>aucun adaptateur réseau pour accès par pont n&apos;a été sélectionné</translation>
+        <translation>aucune carte réseau pour accès par pont n&apos;a été sélectionné</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
@@ -6222,11 +6222,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Bridged Network Adapter:</source>
-        <translation>Adaptateur réseau pour l&apos;accès par &amp;pont :</translation>
+        <translation>Carte réseau pour l&apos;accès par &amp;pont :</translation>
     </message>
     <message>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation>Affiche le nom de l&apos;adaptateur réseau hôte séléctionné pour l&apos;accès réseau par pont.</translation>
+        <translation>Affiche le nom de la carte réseau hôte séléctionné pour l&apos;accès réseau par pont.</translation>
     </message>
     <message>
         <source>Internal &amp;Network:</source>
@@ -6234,7 +6234,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation>Affiche le nom du réseau interne affecté à cet adaptateur.</translation>
+        <translation>Affiche le nom du réseau interne affecté à cete carte.</translation>
     </message>
     <message>
         <source>Host-only &amp;Network Interface:</source>
@@ -6314,7 +6314,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation>Affiche l&apos;adresse MAC de cet adaptateur. Il comprend exactement 12 caractères choisis entre {0-9,A-F}. Veuillez noter que le second caractère doit être un nombre pair.</translation>
+        <translation>Affiche l&apos;adresse MAC de cette carte. Il comprend exactement 12 caractères choisis entre {0-9,A-F}. Veuillez noter que le second caractère doit être un nombre pair.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
