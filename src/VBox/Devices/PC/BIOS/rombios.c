@@ -1625,30 +1625,27 @@ put_luint(action, val, width, neg)
   send(action, val - (nval * 10) + '0');
 }
 
-#ifdef VBOX
-void put_str(action, s)
+void put_str(action, segment, offset)
   Bit16u action;
-  Bit8u *s;
+  Bit16u segment;
+  Bit16u offset;
 {
   Bit8u c;
-  if (!s)
-    s = "<NULL>";
 
-  while (c = read_byte(get_CS(), s)) {
+  while (c = read_byte(segment, offset)) {
     send(action, c);
-    s++;
+    offset++;
   }
 }
-#endif /* VBOX */
+
 
 //--------------------------------------------------------------------------
 // bios_printf()
-//   A compact variable argument printf function which prints its output via
-//   an I/O port so that it can be logged by Bochs/Plex.
-//   Currently, only %x is supported (or %02x, %04x, etc).
+//   A compact variable argument printf function.
 //
-//   Supports %[format_width][format]
-//   where format can be d,x,c,s
+//   Supports %[format_width][length]format
+//   where format can be x,X,u,d,s,S,c
+//   and the optional length modifier is l (ell)
 //--------------------------------------------------------------------------
   void
 bios_printf(action, s)
@@ -1659,7 +1656,7 @@ bios_printf(action, s)
   bx_bool  in_format;
   short i;
   Bit16u  *arg_ptr;
-  Bit16u   arg_seg, arg, nibble, hibyte, shift_count, format_width;
+  Bit16u   arg_seg, arg, nibble, hibyte, shift_count, format_width, hexadd;
 
   arg_ptr = &s;
   arg_seg = get_SS();
@@ -1686,12 +1683,16 @@ bios_printf(action, s)
       else {
         arg_ptr++; // increment to next arg
         arg = read_word(arg_seg, arg_ptr);
-        if (c == 'x') {
+        if (c == 'x' || c == 'X') {
           if (format_width == 0)
             format_width = 4;
+          if (c == 'x')
+            hexadd = 'a';
+          else
+            hexadd = 'A';
           for (i=format_width-1; i>=0; i--) {
             nibble = (arg >> (4 * i)) & 0x000f;
-            send (action, (nibble<=9)? (nibble+'0') : (nibble-10+'A'));
+            send (action, (nibble<=9)? (nibble+'0') : (nibble-10+hexadd));
             }
           }
         else if (c == 'u') {
@@ -1699,9 +1700,31 @@ bios_printf(action, s)
           }
         else if (c == 'l') {
           s++;
+          c = read_byte(get_CS(), s); /* is it ld,lx,lu? */
           arg_ptr++; /* increment to next arg */
           hibyte = read_word(arg_seg, arg_ptr);
-          put_luint(action, ((Bit32u) hibyte << 16) | arg, format_width, 0);
+          if (c == 'd') {
+            if (hibyte & 0x8000)
+              put_luint(action, 0L-(((Bit32u) hibyte << 16) | arg), format_width-1, 1);
+            else
+              put_luint(action, ((Bit32u) hibyte << 16) | arg, format_width, 0);
+           }
+          else if (c == 'u') {
+            put_luint(action, ((Bit32u) hibyte << 16) | arg, format_width, 0);
+           }
+          else if (c == 'x' || c == 'X')
+           {
+            if (format_width == 0)
+              format_width = 8;
+            if (c == 'x')
+              hexadd = 'a';
+            else
+              hexadd = 'A';
+            for (i=format_width-1; i>=0; i--) {
+              nibble = ((((Bit32u) hibyte <<16) | arg) >> (4 * i)) & 0x000f;
+              send (action, (nibble<=9)? (nibble+'0') : (nibble-10+hexadd));
+              }
+           }
           }
         else if (c == 'd') {
           if (arg & 0x8000)
@@ -1710,11 +1733,13 @@ bios_printf(action, s)
             put_int(action, arg, format_width, 0);
           }
         else if (c == 's') {
-#ifndef VBOX
-          bios_printf(action & (~BIOS_PRINTF_HALT), arg);
-#else /* VBOX */
-          put_str(action, arg);
-#endif /* VBOX */
+          put_str(action, get_CS(), arg);
+          }
+        else if (c == 'S') {
+          hibyte = arg;
+          arg_ptr++;
+          arg = read_word(arg_seg, arg_ptr);
+          put_str(action, hibyte, arg);
           }
         else if (c == 'c') {
           send(action, arg);
