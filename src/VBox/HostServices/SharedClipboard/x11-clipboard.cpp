@@ -117,6 +117,8 @@ struct _VBOXCLIPBOARDCONTEXT
 /** Global context information used by the X11 clipboard backend */
 struct _VBOXCLIPBOARDCONTEXTX11
 {
+    /** Opaque data structure describing the front-end. */
+    VBOXCLIPBOARDCONTEXT *pFrontend;
     /** The X Toolkit application context structure */
     XtAppContext appContext;
 
@@ -199,6 +201,8 @@ static VBOXCLIPBOARDCONTEXTX11 g_ctxX11;
 /* Are we actually connected to the X server? */
 static bool g_fHaveX11;
 
+/** @todo this is a temporary declaration. */
+static void vboxClipboardFormatAnnounceBackend (uint32_t u32Formats);
 
 /**
  * Send a request to VBox to transfer the contents of its clipboard to X11.
@@ -221,7 +225,7 @@ static int vboxClipboardReadDataFromVBox (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u
         /* This can legitimately happen if we disconnect during a request for
          * data from X11. */
         LogFunc(("host requested guest clipboard data after guest had disconnected.\n"));
-        vboxClipboardFormatAnnounce(NULL, 0);
+        vboxClipboardFormatAnnounceBackend(0);
         pCtx->waiter = NONE;
         return VERR_TIMEOUT;
     }
@@ -583,13 +587,26 @@ static void vboxClipboardGetDataFromX11(Widget, XtPointer pClientData,
 }
 
 /**
+ * Report formats available in the X11 clipboard to VBox.
+ * @param  pCtx        Opaque context pointer for the glue code
+ * @param  u32Formats  The formats available
+ * @note  Host glue code
+ */
+void VBoxX11ClipboardReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
+                                      uint32_t u32Formats)
+{
+    vboxSvcClipboardReportMsg(pCtx->pClient,
+                              VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS,
+                              u32Formats);
+}
+
+
+/**
  * Notify the host clipboard about the data formats we support, based on the
  * "targets" (available data formats) information obtained from the X11
  * clipboard.
  * @note  X11 backend code, callback for XtGetSelectionValue, called when we
  *        poll for available targets.
- * @todo  This function still references host-specific data and calls host
- *        frontend APIs.  Fix.
  */
 static void vboxClipboardGetTargetsFromX11(Widget,
                                            XtPointer /* pClientData */,
@@ -663,8 +680,7 @@ static void vboxClipboardGetTargetsFromX11(Widget,
         g_ctxX11.X11TextFormat = eBestTarget;
         if (eBestTarget != INVALID)
             u32Formats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
-        vboxSvcClipboardReportMsg (g_ctxHost.pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS,
-                                   u32Formats);
+        VBoxX11ClipboardReportX11Formats(g_ctxX11.pFrontend, u32Formats);
         g_ctxX11.notifyVBox = false;
     }
     XtFree(reinterpret_cast<char *>(pValue));
@@ -675,7 +691,6 @@ static void vboxClipboardGetTargetsFromX11(Widget,
  * clipboard.
  * @note  X11 backend code, callback for XtAppAddTimeOut, recursively
  *        re-armed.
- * @todo  This function still references host-specific data.  Fix.
  * @todo  Use the XFIXES extension to check for new clipboard data when
  *        available.
  */
@@ -683,16 +698,18 @@ static void vboxClipboardPollX11ForTargets(XtPointer /* pUserData */, XtInterval
 {
     Log3 (("%s: called\n", __PRETTY_FUNCTION__));
     /* Get the current clipboard contents */
-    if (g_ctxX11.eOwner == X11 && g_ctxHost.pClient != 0)
+    if (g_ctxX11.eOwner == X11)
     {
         Log3 (("%s: requesting the targets that the host clipboard offers\n",
                __PRETTY_FUNCTION__));
-        XtGetSelectionValue(g_ctxX11.widget, g_ctxX11.atomClipboard, g_ctxX11.atomTargets,
-                            vboxClipboardGetTargetsFromX11, reinterpret_cast<XtPointer>(g_ctxHost.pClient),
+        XtGetSelectionValue(g_ctxX11.widget, g_ctxX11.atomClipboard,
+                            g_ctxX11.atomTargets,
+                            vboxClipboardGetTargetsFromX11, NULL,
                             CurrentTime);
     }
     /* Re-arm our timer */
-    XtAppAddTimeOut(g_ctxX11.appContext, 200 /* ms */, vboxClipboardPollX11ForTargets, 0);
+    XtAppAddTimeOut(g_ctxX11.appContext, 200 /* ms */,
+                    vboxClipboardPollX11ForTargets, 0);
 }
 
 /** We store information about the target formats we can handle in a global
@@ -811,7 +828,7 @@ int vboxClipboardInitX11 (void)
  * Initialise the X11 backend of the shared clipboard.
  * @note  X11 backend code
  */
-int vboxClipboardInitBackend (void)
+int vboxClipboardInitBackend (VBOXCLIPBOARDCONTEXT *pFrontend)
 {
     int rc;
 
@@ -851,6 +868,7 @@ int vboxClipboardInitBackend (void)
     g_fHaveX11 = true;
 
     LogRel(("Initializing X11 clipboard backend\n"));
+    g_ctxX11.pFrontend = pFrontend;
     RTSemEventCreate(&g_ctxX11.waitForData);
     rc = vboxClipboardInitX11();
     if (RT_SUCCESS(rc))
@@ -875,7 +893,7 @@ int vboxClipboardInit (void)
     LogRel(("Initializing host clipboard service\n"));
     RTSemEventCreate(&g_ctxHost.waitForData);
     RTSemMutexCreate(&g_ctxHost.clipboardMutex);
-    rc = vboxClipboardInitBackend();
+    rc = vboxClipboardInitBackend(&g_ctxHost);
     if (RT_FAILURE(rc))
     {
         RTSemEventDestroy(g_ctxHost.waitForData);
@@ -961,8 +979,6 @@ void vboxClipboardDestroy (void)
         /* We can safely destroy these as the backend has exited
          * successfully and no other calls from the host code should be
          * forthcoming. */
-        /** @todo  move these two into a frontend proxy object that the 
-         * backend can call. */
         /** @todo  can the backend fail to exit successfully?  What then? */
         RTSemEventDestroy(g_ctxHost.waitForData);
         RTSemMutexDestroy(g_ctxHost.clipboardMutex);
@@ -987,7 +1003,9 @@ int vboxClipboardConnectBackend (enum g_eOwner owner)
         g_ctxX11.notifyVBox = true;
     else
     {
-        /** @todo take ownership of the X11 clipboard. */
+        /** @todo Check whether the guest gets a format announcement at
+          *       startup. */
+        vboxClipboardFormatAnnounceBackend(0);
     }
     return VINF_SUCCESS;
 }
@@ -1049,9 +1067,8 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 }
 
 /**
- * Shut down the shared clipboard service and "disconnect" the guest.
- * @todo  This mixes host glue and X11 backend code, separate into two
- *        functions.
+ * Shut down the shared clipboard X11 backend.
+ * @note  X11 backend code
  */
 void vboxClipboardDisconnectBackend (void)
 {
@@ -1068,8 +1085,7 @@ void vboxClipboardDisconnectBackend (void)
 
 /**
  * Shut down the shared clipboard service and "disconnect" the guest.
- * @todo  This mixes host glue and X11 backend code, separate into two
- *        functions.
+ * @note  Host glue code
  */
 void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *)
 {
@@ -1163,7 +1179,6 @@ static Boolean vboxClipboardConvertTargetsForX11(Atom *atomTypeReturn,
  * @param  piFormatReturn  Where to store the bit width (8, 16, 32) of the
  *                         data we are returning
  * @note  X11 backend code, called by the callback for XtOwnSelection.
- * @todo  this function uses host-specific data and APIs.  Fix.
  */
 static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn,
                                          XtPointer *pValReturn,
@@ -1177,7 +1192,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn,
     int rc;
 
     LogFlowFunc (("called\n"));
-    rc = vboxClipboardReadDataFromVBox(&g_ctxHost, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
+    rc = vboxClipboardReadDataFromVBox(g_ctxX11.pFrontend, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
     if ((RT_FAILURE(rc)) || (cbVBox == 0))
     {
         /* If vboxClipboardReadDataFromVBox fails then pClient may be invalid */
@@ -1247,7 +1262,6 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn,
  * @param  piFormatReturn  Where to store the bit width (8, 16, 32) of the
  *                         data we are returning
  * @note  X11 backend code, called by the callback for XtOwnSelection.
- * @todo  this function uses host-specific data and APIs.  Fix.
  */
 static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
                                                 XtPointer *pValReturn,
@@ -1263,7 +1277,7 @@ static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
 
     LogFlowFunc (("called\n"));
     /* Read the clipboard data from the guest. */
-    rc = vboxClipboardReadDataFromVBox(&g_ctxHost, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
+    rc = vboxClipboardReadDataFromVBox(g_ctxX11.pFrontend, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
     if ((rc != VINF_SUCCESS) || (cbVBox == 0))
     {
         /* If vboxClipboardReadDataFromVBox fails then pClient may be invalid */
@@ -1354,7 +1368,6 @@ static Boolean vboxClipboardConvertToUtf8ForX11(Atom *atomTypeReturn,
  * @param  piFormatReturn  Where to store the bit width (8, 16, 32) of the
  *                         data we are returning
  * @note  X11 backend code, called by the callback for XtOwnSelection.
- * @todo  this function uses host-specific data and APIs.  Fix.
  */
 static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
                                                  XtPointer *pValReturn,
@@ -1371,7 +1384,7 @@ static Boolean vboxClipboardConvertToCTextForX11(Atom *atomTypeReturn,
 
     LogFlowFunc (("called\n"));
     /* Read the clipboard data from the guest. */
-    rc = vboxClipboardReadDataFromVBox(&g_ctxHost, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
+    rc = vboxClipboardReadDataFromVBox(g_ctxX11.pFrontend, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &pvVBox, &cbVBox);
     if ((rc != VINF_SUCCESS) || (cbVBox == 0))
     {
         /* If vboxClipboardReadDataFromVBox fails then pClient may be invalid */
