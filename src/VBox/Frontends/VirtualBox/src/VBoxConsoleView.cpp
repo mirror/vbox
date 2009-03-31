@@ -765,8 +765,10 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     EventTypeSpec eventTypes[] =
     {
         { kEventClassVBox, kEventVBoxShowWindow },
+        { kEventClassVBox, kEventVBoxHideWindow },
         { kEventClassVBox, kEventVBoxMoveWindow },
         { kEventClassVBox, kEventVBoxResizeWindow },
+        { kEventClassVBox, kEventVBoxDisposeWindow },
         { kEventClassVBox, kEventVBoxUpdateDock }
     };
 

@@ -234,6 +234,15 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
             SelectWindow (w);
             return noErr;
         }
+        if (eventKind == kEventVBoxHideWindow)
+        {
+//            printf ("HideWindow requested\n");
+            WindowPtr w;
+            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
+                return noErr;
+            HideWindow (w);
+            return noErr;
+        }
         if (eventKind == kEventVBoxMoveWindow)
         {
 //            printf ("MoveWindow requested\n");
@@ -245,6 +254,7 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
                 return noErr;
             ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
             QPoint p1 = view->mapToGlobal (QPoint (p.x, p.y));
+//            printf ("Pos: %d %d\n", p1.x(), p1.y());
             MoveWindow (w, p1.x(), p1.y(), true);
             ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether, 0);
             return noErr;
@@ -259,8 +269,18 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
             if (GetEventParameter (aInEvent, kEventParamDimensions, typeHISize, NULL, sizeof (s), NULL, &s) != noErr)
                 return noErr;
             ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
+//            printf ("Size: %f %f\n", s.width, s.height);
             SizeWindow (w, s.width, s.height, true);
             ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether, 0);
+            return noErr;
+        }
+        if (eventKind == kEventVBoxDisposeWindow)
+        {
+//            printf ("DisposeWindow requested\n");
+            WindowPtr w;
+            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
+                return noErr;
+            DisposeWindow (w);
             return noErr;
         }
         if (eventKind == kEventVBoxUpdateDock)
