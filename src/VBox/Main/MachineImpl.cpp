@@ -2741,6 +2741,7 @@ STDMETHODIMP Machine::DeleteSettings()
             tr ("Cannot delete settings of a registered machine"));
 
     /* delete the settings only when the file actually exists */
+    lockConfig();
     if (isConfigLocked())
     {
         unlockConfig();
