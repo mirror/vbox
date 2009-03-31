@@ -37,7 +37,7 @@
 /** @defgroup grp_rt_assert     Assert - Assertions
  * @ingroup grp_rt
  *
- * Assertions are generally used to check precoditions and other
+ * Assertions are generally used to check preconditions and other
  * assumptions. Sometimes it is also used to catch odd errors or errors
  * that one would like to inspect in the debugger. They should not be
  * used for errors that happen frequently.
@@ -56,18 +56,18 @@
  *      - Return        - Return the specific rc on failure.
  *      - ReturnVoid    - Return (void) on failure.
  *      - Break         - Break (out of switch/loop) on failure.
- *      - Stmt          - Execute the specified statment(s) on failure.
+ *      - Stmt          - Execute the specified statement(s) on failure.
  *      - RC            - Assert RT_SUCCESS.
  *      - RCSuccess     - Assert VINF_SUCCESS.
  *
- * In additions there is a very special familiy AssertCompile that can be
- * used for some limited compile checking. Like structure sizes and member
+ * In addition there is a very special family AssertCompile that can be
+ * used for some limited compile-time checking, like structure sizes and member
  * alignment. This family doesn't have the same variations.
  *
  *
- * @remarks As you might've noticed, the macros doesn't follow the
+ * @remarks As you might have noticed, the macros don't follow the
  * coding guidelines wrt to macros supposedly being all uppercase
- * and  underscored. For various  reasons they don't, and it nobody
+ * and underscored. For various  reasons they don't, and nobody
  * has complained yet. Wonder why... :-)
  *
  * @remarks Each project has its own specific guidelines on how to use
@@ -133,7 +133,7 @@ RTR0DECL(void)  RTR0AssertPanicSystem(void);
  * @returns true if the breakpoint should be hit, false if it should be ignored.
  *
  * @remark  The RTDECL() makes this a bit difficult to override on Windows. So,
- *          you'll have ot use RTASSERT_HAVE_SHOULD_PANIC or
+ *          you'll have to use RTASSERT_HAVE_SHOULD_PANIC or
  *          RTASSERT_HAVE_SHOULD_PANIC_PRIVATE there to control the kind of
  *          prototype.
  */
@@ -189,7 +189,7 @@ __END_DECLS
 
 /** @name Compile time assertions.
  *
- * These assertions are used to check structure sizes, memember/size alignments
+ * These assertions are used to check structure sizes, member/size alignments
  * and similar compile time expressions.
  *
  * @{
@@ -304,7 +304,7 @@ __END_DECLS
 /** @name Assertions
  *
  * These assertions will only trigger when RT_STRICT is defined. When it is
- * undefined they will all be noops and generate no code.
+ * undefined they will all be no-ops and generate no code.
  *
  * @{
  */
@@ -388,7 +388,7 @@ __END_DECLS
  * Assert that an expression is true, if it isn't execute the given statement
  * and return rc.
  *
- * In RT_STRICT mode it will hit a breakpoint before executing the statment and
+ * In RT_STRICT mode it will hit a breakpoint before executing the statement and
  * returning.
  *
  * @param   expr    Expression which should be true.
@@ -952,7 +952,7 @@ __END_DECLS
  * These assertions will work like normal strict assertion when RT_STRICT is
  * defined and LogRel statements when RT_STRICT is undefined. Typically used for
  * things which shouldn't go wrong, but when it does you'd like to know one way
- * or ther other.
+ * or the other.
  *
  * @{
  */
@@ -1285,7 +1285,7 @@ __END_DECLS
 
 
 
-/** @name Release Asserions
+/** @name Release Assertions
  *
  * These assertions are always enabled.
  * @{
@@ -1316,7 +1316,7 @@ __END_DECLS
     } while (0)
 
 /** @def AssertReleaseReturn
- * Assert that an expression is true, hit a breakpoing and return if it isn't.
+ * Assert that an expression is true, hit a breakpoint and return if it isn't.
  *
  * @param   expr    Expression which should be true.
  * @param   rc      What is to be presented to return.
@@ -1332,7 +1332,7 @@ __END_DECLS
     } while (0)
 
 /** @def AssertReleaseReturnVoid
- * Assert that an expression is true, hit a breakpoing and return if it isn't.
+ * Assert that an expression is true, hit a breakpoint and return if it isn't.
  *
  * @param   expr    Expression which should be true.
  */
@@ -1348,7 +1348,7 @@ __END_DECLS
 
 
 /** @def AssertReleaseBreak
- * Assert that an expression is true, hit a breakpoing and break if it isn't.
+ * Assert that an expression is true, hit a breakpoint and break if it isn't.
  *
  * @param   expr    Expression which should be true.
  */
@@ -1363,7 +1363,7 @@ __END_DECLS
     } else do {} while (0)
 
 /** @def AssertReleaseBreakStmt
- * Assert that an expression is true, hit a breakpoing and break if it isn't.
+ * Assert that an expression is true, hit a breakpoint and break if it isn't.
  *
  * @param   expr    Expression which should be true.
  * @param   stmt    Statement to execute before break in case of a failed assertion.
@@ -1446,7 +1446,7 @@ __END_DECLS
     } else do {} while (0)
 
 /** @def AssertReleaseMsgBreakStmt
- * Assert that an expression is true, print the message and hit a breakpoing and break if it isn't.
+ * Assert that an expression is true, print the message and hit a breakpoint and break if it isn't.
  *
  * @param   expr    Expression which should be true.
  * @param   a       printf argument list (in parenthesis).
@@ -2018,7 +2018,7 @@ __END_DECLS
  * Asserts a iprt status code successful.
  *
  * On failure a custom message is printed, a breakpoint is hit, and finally
- * returning from the function if the breakpoint is showhow ignored.
+ * returning from the function if the breakpoint is somehow ignored.
  *
  * @param   rc      iprt status code.
  * @param   msg     printf argument list (in parenthesis).
@@ -2031,7 +2031,7 @@ __END_DECLS
  * Asserts a iprt status code successful.
  *
  * On failure a custom message is printed, a breakpoint is hit, and finally
- * returning from the function if the breakpoint is showhow ignored.
+ * returning from the function if the breakpoint is somehow ignored.
  *
  * @param   rc      iprt status code.
  * @param   msg     printf argument list (in parenthesis).
@@ -2043,7 +2043,7 @@ __END_DECLS
  * Asserts a iprt status code successful.
  *
  * On failure a custom message is printed, a breakpoint is hit, and finally
- * breaking the current status if the breakpoint is showhow ignored.
+ * breaking the current status if the breakpoint is somehow ignored.
  *
  * @param   rc      iprt status code.
  * @param   msg     printf argument list (in parenthesis).
@@ -2055,7 +2055,7 @@ __END_DECLS
  * Asserts a iprt status code successful.
  *
  * On failure a custom message is printed, a breakpoint is hit, and finally
- * the brean statement is issued if the breakpoint is showhow ignored.
+ * the break statement is issued if the breakpoint is somehow ignored.
  *
  * @param   rc      iprt status code.
  * @param   msg     printf argument list (in parenthesis).
