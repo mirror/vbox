@@ -1,4 +1,4 @@
-: Config.kmk 43241 2009-02-23 16:18:14Z bird $
+# $Id$
 ## @file
 # The global build configuration file for VBox.
 #
