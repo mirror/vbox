@@ -134,8 +134,6 @@ struct _VBOXCLIPBOARDCONTEXTX11
     RTSEMEVENT waitForData;
 };
 
-typedef struct _VBOXCLIPBOARDCONTEXTX11 VBOXCLIPBOARDCONTEXTX11;
-
 /* Only one client is supported. There seems to be no need for more clients. 
  */
 static VBOXCLIPBOARDCONTEXTX11 g_ctxX11;
@@ -675,7 +673,8 @@ static int vboxClipboardInitX11 (void)
  * Initialise the X11 backend of the shared clipboard.
  * @note  X11 backend code
  */
-int VBoxX11ClipboardInitX11 (VBOXCLIPBOARDCONTEXT *pFrontend)
+int VBoxX11ClipboardInitX11(VBOXCLIPBOARDCONTEXT *pFrontend,
+                            VBOXCLIPBOARDCONTEXTX11 **ppBackend)
 {
     int rc;
 
@@ -734,7 +733,7 @@ int VBoxX11ClipboardInitX11 (VBOXCLIPBOARDCONTEXT *pFrontend)
  * Terminate the shared clipboard X11 backend.
  * @note  X11 backend code
  */
-int VBoxX11ClipboardTermX11 (void)
+int VBoxX11ClipboardTermX11(VBOXCLIPBOARDCONTEXTX11 *pBackend)
 {
     int rc, rcThread;
     unsigned count = 0;
@@ -782,7 +781,8 @@ int VBoxX11ClipboardTermX11 (void)
  * Announce to the X11 backend that we are ready to start.
  * @param  owner who is the initial clipboard owner
  */
-int VBoxX11ClipboardStartX11 (enum g_eOwner owner)
+int VBoxX11ClipboardStartX11(VBOXCLIPBOARDCONTEXTX11 *pBackend,
+                             enum g_eOwner owner)
 {
     LogFlowFunc(("\n"));
     /*
@@ -798,7 +798,7 @@ int VBoxX11ClipboardStartX11 (enum g_eOwner owner)
     {
         /** @todo Check whether the guest gets a format announcement at
           *       startup. */
-        VBoxX11ClipboardAnnounceVBoxFormat(0);
+        VBoxX11ClipboardAnnounceVBoxFormat(pBackend, 0);
     }
     return VINF_SUCCESS;
 }
@@ -807,7 +807,7 @@ int VBoxX11ClipboardStartX11 (enum g_eOwner owner)
  * Called when the VBox may have fallen out of sync with the backend.
  * @note  X11 backend code
  */
-void VBoxX11ClipboardRequestSyncX11 (void)
+void VBoxX11ClipboardRequestSyncX11(VBOXCLIPBOARDCONTEXTX11 *pBackend)
 {
     /*
      * Immediately return if we are not connected to the host X server.
@@ -821,7 +821,7 @@ void VBoxX11ClipboardRequestSyncX11 (void)
  * Shut down the shared clipboard X11 backend.
  * @note  X11 backend code
  */
-void VBoxX11ClipboardStopX11 (void)
+void VBoxX11ClipboardStopX11(VBOXCLIPBOARDCONTEXTX11 *pBackend)
 {
     /*
      * Immediately return if we are not connected to the host X server.
@@ -1302,7 +1302,8 @@ static void vboxClipboardReturnToX11(Widget, Atom *)
  * @param u32Formats Clipboard formats the guest is offering
  * @note  X11 backend code
  */
-void VBoxX11ClipboardAnnounceVBoxFormat (uint32_t u32Formats)
+void VBoxX11ClipboardAnnounceVBoxFormat(VBOXCLIPBOARDCONTEXTX11 *pBackend,
+                                        uint32_t u32Formats)
 {
     /*
      * Immediately return if we are not connected to the host X server.
@@ -1355,8 +1356,9 @@ void VBoxX11ClipboardAnnounceVBoxFormat (uint32_t u32Formats)
  * @param  pcbActual Where to write the actual size of the written data
  * @note   X11 backend code
  */
-int VBoxX11ClipboardReadX11Data (uint32_t u32Format,
-                                  VBOXCLIPBOARDREQUEST *pRequest)
+int VBoxX11ClipboardReadX11Data(VBOXCLIPBOARDCONTEXTX11 *pBackend,
+                                uint32_t u32Format,
+                                VBOXCLIPBOARDREQUEST *pRequest)
 {
     /*
      * Immediately return if we are not connected to the host X server.
