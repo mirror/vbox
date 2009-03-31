@@ -335,7 +335,7 @@ typedef unsigned long  Bit32u;
       push di
 
       mov  cx, 10[bp] ; count
-      cmp  cx, #0x00
+      test cx, cx
       je   memsetb_end
       mov  ax, 4[bp] ; segment
       mov  es, ax
@@ -425,7 +425,7 @@ typedef unsigned long  Bit32u;
       push si
 
       mov  cx, 12[bp] ; count
-      cmp  cx, #0x0000
+      test cx, cx
       je   memcpyd_end
       mov  ax, 4[bp] ; dsegment
       mov  es, ax
@@ -472,8 +472,7 @@ typedef unsigned long  Bit32u;
       mov  ds, ax
       mov  bx, 6[bp] ; offset
       mov  ax, [bx]
-      inc  bx
-      inc  bx
+      add  bx, #2
       mov  dx, [bx]
       ;; ax = return value (word)
       ;; dx = return value (word)
@@ -502,8 +501,7 @@ typedef unsigned long  Bit32u;
       mov  bx, 6[bp] ; offset
       mov  ax, 8[bp] ; data word
       mov  [bx], ax  ; write data word
-      inc  bx
-      inc  bx
+      add  bx, #2
       mov  ax, 10[bp] ; data word
       mov  [bx], ax  ; write data word
       pop  ds
@@ -540,7 +538,7 @@ typedef unsigned long  Bit32u;
   lcmpul:
     and eax, #0x0000FFFF
     shl ebx, #16
-    add eax, ebx
+    or  eax, ebx
     shr ebx, #16
     SEG SS
       cmp eax, dword ptr [di]
@@ -560,7 +558,7 @@ typedef unsigned long  Bit32u;
   lmulul:
     and eax, #0x0000FFFF
     shl ebx, #16
-    add eax, ebx
+    or  eax, ebx
     SEG SS
     mul eax, dword ptr [di]
     mov ebx, eax
@@ -595,7 +593,7 @@ typedef unsigned long  Bit32u;
   ltstul:
     and eax, #0x0000FFFF
     shl ebx, #16
-    add eax, ebx
+    or  eax, ebx
     shr ebx, #16
     test eax, eax
     ret
@@ -606,7 +604,7 @@ typedef unsigned long  Bit32u;
     jcxz lsr_exit
     and  eax, #0x0000FFFF
     shl  ebx, #16
-    add  eax, ebx
+    or   eax, ebx
   lsr_loop:
     shr  eax, #1
     loop lsr_loop
@@ -622,7 +620,7 @@ typedef unsigned long  Bit32u;
     jcxz lsl_exit
     and  eax, #0x0000FFFF
     shl  ebx, #16
-    add  eax, ebx
+    or   eax, ebx
   lsl_loop:
     shl  eax, #1
     loop lsl_loop
@@ -644,7 +642,7 @@ typedef unsigned long  Bit32u;
   ldivul:
     and  eax, #0x0000FFFF
     shl  ebx, #16
-    add  eax, ebx
+    or   eax, ebx
     xor  edx, edx
     SEG SS
     mov  bx,  2[di]
@@ -706,8 +704,7 @@ typedef struct {
     Bit8u  device;       // Detected type of attached devices (hd/cd/none)
     Bit8u  removable;    // Removable device flag
     Bit8u  lock;         // Locks for removable devices
-    // Bit8u  lba_capable;  // LBA capable flag - always yes for bochs devices
-    Bit8u  mode;         // transfert mode : PIO 16/32 bits - IRQ - ISADMA - PCIDMA
+    Bit8u  mode;         // transfer mode : PIO 16/32 bits - IRQ - ISADMA - PCIDMA
     Bit16u blksize;      // block size
 
     Bit8u  translation;  // type of translation
@@ -2420,7 +2417,6 @@ void ata_detect( )
       outb(iobase1+ATA_CB_DH, slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0);
       sc = inb(iobase1+ATA_CB_SC);
       sn = inb(iobase1+ATA_CB_SN);
-
       if ((sc==0x01) && (sn==0x01)) {
         cl = inb(iobase1+ATA_CB_CL);
         ch = inb(iobase1+ATA_CB_CH);
@@ -2677,7 +2673,7 @@ void ata_detect( )
           for(i=0;i<20;i++){
             write_byte(get_SS(),model+(i*2),read_byte(get_SS(),buffer+(i*2)+54+1));
             write_byte(get_SS(),model+(i*2)+1,read_byte(get_SS(),buffer+(i*2)+54));
-            }
+          }
 
           // Reformat
           write_byte(get_SS(),model+40,0x00);
@@ -3755,7 +3751,7 @@ cdrom_boot()
     case 0x04:  // Harddrive
       write_word(ebda_seg,&EbdaData->cdemu.vdevice.spt,read_byte(boot_segment,446+6)&0x3f);
       write_word(ebda_seg,&EbdaData->cdemu.vdevice.cylinders,
-	      (read_byte(boot_segment,446+6)<<2) + read_byte(boot_segment,446+7) + 1);
+              (read_byte(boot_segment,446+6)<<2) + read_byte(boot_segment,446+7) + 1);
       write_word(ebda_seg,&EbdaData->cdemu.vdevice.heads,read_byte(boot_segment,446+5) + 1);
       break;
    }
@@ -4589,7 +4585,7 @@ BX_DEBUG_INT15("returning cf = %u, ah = %02x\n", (unsigned)GET_CF(), (unsigned)r
       break;
     }
 }
-#endif
+#endif // BX_USE_PS2_MOUSE
 
 
 void set_e820_range(ES, DI, start, end, extra_start, extra_end, type)
@@ -4597,8 +4593,8 @@ void set_e820_range(ES, DI, start, end, extra_start, extra_end, type)
      Bit16u DI;
      Bit32u start;
      Bit32u end;
-     Bit8u  extra_start;
-     Bit8u  extra_end;
+     Bit8u extra_start;
+     Bit8u extra_end;
      Bit16u type;
 {
     write_word(ES, DI, start);
@@ -4818,10 +4814,10 @@ ASM_END
                 regs.u.r32.eax = 0x534D4150;
                 regs.u.r32.ecx = 0x14;
                 CLEAR_CF();
-	    } else {
-	      // if DX != 0x534D4150)
-	      goto int15_unimplemented;
-	    }
+            } else {
+              // if DX != 0x534D4150)
+              goto int15_unimplemented;
+            }
             break;
 
         case 0x01:
@@ -4853,8 +4849,8 @@ ASM_END
           regs.u.r16.ax = regs.u.r16.cx;
           regs.u.r16.bx = regs.u.r16.dx;
           break;
-	default:  /* AH=0xE8?? but not implemented */
-	  goto int15_unimplemented;
+        default:  /* AH=0xE8?? but not implemented */
+          goto int15_unimplemented;
        }
        break;
     int15_unimplemented:
@@ -4965,7 +4961,7 @@ ASM_END
               kbd_code |= (inb(0x60) << 8);
             }
           } while (--count>0);
-	}
+        }
       }
       BX=kbd_code;
       break;
@@ -5008,7 +5004,7 @@ ASM_END
 
     case 0x6F:
       if (GET_AL() == 0x08)
-	SET_AH(0x02); // unsupported, aka normal keyboard
+        SET_AH(0x02); // unsupported, aka normal keyboard
 
     default:
       BX_INFO("KBD: unsupported int 16h function %02x\n", GET_AH());
@@ -5235,7 +5231,7 @@ int09_function(DI, SI, BP, SP, BX, DX, CX, AX)
 
     default:
       if (scancode & 0x80) {
-          break; /* toss key releases ... */
+        break; /* toss key releases ... */
       }
       if (scancode > MAX_SCAN_CODE) {
         BX_INFO("KBD: int09h_handler(): unknown scancode read: 0x%02x!\n", scancode);
@@ -5422,7 +5418,7 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
       /* SCSI controller does not need a reset. */
       if (!VBOX_IS_SCSI_DEVICE(device))
 #endif
-        ata_reset (device);
+      ata_reset (device);
       goto int13_success;
       break;
 
@@ -6095,7 +6091,7 @@ int13_cdrom(EHBX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
         mov  bp, sp
 
         mov ah, #0x52
-        int 15
+        int #0x15
         mov _int13_cdrom.status + 2[bp], ah
         jnc int13_cdrom_rme_end
         mov _int13_cdrom.status, #1
@@ -7164,7 +7160,7 @@ get_hd_geometry(drive, hd_cylinders, hd_heads, hd_sectors)
     hd_type = inb_cmos(0x12) & 0x0f;
     if (hd_type != 0x0f)
       BX_INFO(panic_msg_reg12h,1);
-    hd_type = inb_cmos(0x1a); // HD0: extended type
+    hd_type = inb_cmos(0x1a); // HD1: extended type
     if (hd_type != 47)
       BX_INFO(panic_msg_reg19h,0,0x1a);
     iobase = 0x24;
@@ -7183,6 +7179,7 @@ get_hd_geometry(drive, hd_cylinders, hd_heads, hd_sectors)
 
 #endif //else BX_USE_ATADRV
 
+#if BX_SUPPORT_FLOPPY
 
 //////////////////////
 // FLOPPY functions //
@@ -7463,7 +7460,6 @@ floppy_drive_exists(drive)
     return(1);
 }
 
-#if BX_SUPPORT_FLOPPY
   void
 int13_diskette_function(DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
   Bit16u DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS;
@@ -8763,9 +8759,9 @@ int1a_function(regs, ds, iret_addr)
         BX_INFO("bad PCI vendor ID %04x\n", regs.u.r16.dx);
       } else if (regs.u.r8.bl == 0x86) {
         if (regs.u.r8.al == 0x02) {
-        BX_INFO("PCI device %04x:%04x not found at index %d\n", regs.u.r16.dx, regs.u.r16.cx, regs.u.r16.si);
+          BX_INFO("PCI device %04x:%04x not found at index %d\n", regs.u.r16.dx, regs.u.r16.cx, regs.u.r16.si);
         } else {
-        BX_INFO("no PCI device with class code 0x%02x%04x found at index %d\n", regs.u.r8.cl, regs.u.r16.dx, regs.u.r16.si);
+          BX_INFO("no PCI device with class code 0x%02x%04x found at index %d\n", regs.u.r8.cl, regs.u.r16.dx, regs.u.r16.si);
         }
       }
       regs.u.r8.ah = regs.u.r8.bl;
@@ -9069,7 +9065,6 @@ int13_out:
   popa
   iret
 
-
 ;----------
 ;- INT18h -
 ;----------
@@ -9102,7 +9097,7 @@ bios_initiated_boot:
 #endif /* VBOX */
 
   ;; int19 was beginning to be really complex, so now it
-  ;; just calls an C function, that does the work
+  ;; just calls a C function that does the work
   ;; it returns in BL the boot drive, and in AX the boot segment
   ;; the boot segment will be 0x0000 if something has failed
 
@@ -9716,6 +9711,7 @@ int76_handler:
   pop   ds
   pop   ax
   iret
+
 
 ;--------------------
 #ifdef VBOX
@@ -10784,8 +10780,7 @@ pcibios_init_irqs:
   mov  dx, #0x0cfc
   mov  ax, #0x8080
   out  dx, ax ;; reset PIRQ route control
-  inc  dx
-  inc  dx
+  add  dx, #2
   out  dx, ax
   mov  ax, [si+6]
   sub  ax, #0x20
@@ -10862,7 +10857,7 @@ pci_init_end:
   pop  bp
   pop  ds
   ret
-#endif // BX_ROMBIOS32
+#endif // !BX_ROMBIOS32
 #endif // BX_PCIBIOS
 
 #if BX_ROMBIOS32
@@ -10974,7 +10969,7 @@ rombios32_gdt:
   dw 0xffff, 0, 0x9300, 0x00cf ; 32 bit flat data segment (0x18)
   dw 0xffff, 0, 0x9b0f, 0x0000 ; 16 bit code segment base=0xf0000 limit=0xffff
   dw 0xffff, 0, 0x9300, 0x0000 ; 16 bit data segment base=0x0 limit=0xffff
-#endif
+#endif // BX_ROMBIOS32
 
 
 ; parallel port detection: base address in DX, index in BX, timeout in CL
@@ -11244,11 +11239,9 @@ memory_cleared:
 
 post_default_ints:
   mov  [bx], ax
-  inc  bx
-  inc  bx
+  add  bx, #2
   mov  [bx], dx
-  inc  bx
-  inc  bx
+  add  bx, #2
   loop post_default_ints
 
   ;; set vector 0x79 to zero
@@ -11473,7 +11466,6 @@ post_default_ints:
 
   sti        ;; enable interrupts
   int  #0x19
-
 
 .org 0xe2c3 ; NMI Handler Entry Point
 nmi:
@@ -11707,7 +11699,7 @@ int09_handler:
   mov  BYTE [0x496], al
   jmp int09_done
 
-int09_check_pause:  ;; check for pause key
+int09_check_pause: ;; check for pause key
   cmp  al, #0xe1
   jne int09_process_key
   xor  ax, ax
