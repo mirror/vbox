@@ -1379,7 +1379,7 @@ RTDECL(char *) RTStrStr(const char *pszHaystack, const char *pszNeedle)
         return NULL;
 
     /* The rest is CRT. */
-    return strstr(pszHaystack, pszNeedle);
+    return (char *)strstr(pszHaystack, pszNeedle);
 }
 
 
