@@ -32,6 +32,12 @@
 #include <VBox/log.h>
 #include <VBox/version.h>
 
+#ifdef DEBUG_ramshankar
+# undef LogFlow
+# undef Log
+# define LogFlow LogRel
+# define Log     LogRel
+#endif
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -68,28 +74,7 @@ static void vboxVideoSolarisConfigure(drm_driver_t *pDriver);
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-/**
- * cb_ops: for drivers that support char/block entry points
- */
-static struct cb_ops g_VBoxVideoSolarisCbOps =
-{
-    nodev,                  /* c open */
-    nodev,                  /* c close */
-    nodev,                  /* b strategy */
-    nodev,                  /* b dump */
-    nodev,                  /* b print */
-    nodev,                  /* c read */
-    nodev,                  /* c write*/
-    nodev,                  /* ioctl */
-    nodev,                  /* c devmap */
-    nodev,                  /* c mmap */
-    nodev,                  /* c segmap */
-    nochpoll,               /* c poll */
-    ddi_prop_op,            /* property ops */
-    NULL,                   /* streamtab  */
-    D_NEW | D_MP,           /* compat. flag */
-    CB_REV                  /* revision */
-};
+extern struct cb_ops drm_cb_ops;
 
 /**
  * dev_ops: for driver device operations
@@ -104,9 +89,9 @@ static struct dev_ops g_VBoxVideoSolarisDevOps =
     VBoxVideoSolarisAttach,
     VBoxVideoSolarisDetach,
     nodev,                  /* reset */
-    &g_VBoxVideoSolarisCbOps,
-    (struct bus_ops *)0,
-    nodev                   /* power */
+    &drm_cb_ops,
+    NULL,                   /* dev bus ops*/
+    NULL                    /* power */
 };
 
 /**
@@ -148,16 +133,16 @@ static dev_info_t *g_pDip;
 /** Soft state. */
 static void *g_pVBoxVideoSolarisState;
 
-/** GCC C++ hack. */
-unsigned __gxx_personality_v0 = 0xdecea5ed;
-
 
 /**
  * Kernel entry points
  */
 int _init(void)
 {
-    LogFlow((DEVICE_NAME ":_init\n"));
+    LogFlow((DEVICE_NAME ":_init flow\n"));
+    cmn_err(CE_NOTE, DEVICE_NAME ":_init\n");
+
+    vboxVideoSolarisConfigure(&g_VBoxVideoSolarisDRMDriver);
     int rc = ddi_soft_state_init(&g_pVBoxVideoSolarisState, sizeof(drm_device_t), DRM_MAX_INSTANCES);
     if (!rc)
         return mod_install(&g_VBoxVideoSolarisModLinkage);
@@ -168,7 +153,8 @@ int _init(void)
 
 int _fini(void)
 {
-    LogFlow((DEVICE_NAME ":_fini\n"));
+    LogFlow((DEVICE_NAME ":_fini flow\n"));
+    cmn_err(CE_NOTE, DEVICE_NAME ":_fini\n");
     int rc = mod_remove(&g_VBoxVideoSolarisModLinkage);
     ddi_soft_state_fini(&g_pVBoxVideoSolarisState);
     return rc;
@@ -177,7 +163,8 @@ int _fini(void)
 
 int _info(struct modinfo *pModInfo)
 {
-    LogFlow((DEVICE_NAME ":_info\n"));
+    LogFlow((DEVICE_NAME ":_info flow\n"));
+    cmn_err(CE_NOTE, DEVICE_NAME ":_info\n");
     return mod_info(&g_VBoxVideoSolarisModLinkage, pModInfo);
 }
 
@@ -193,6 +180,7 @@ int _info(struct modinfo *pModInfo)
 static int VBoxVideoSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 {
     LogFlow((DEVICE_NAME ":VBoxVideoSolarisAttach pDip=%p enmCmd=%d\n", pDip, enmCmd));
+    cmn_err(CE_NOTE, DEVICE_NAME ":attach\n");
 
     int rc = -1;
     switch (enmCmd)
@@ -207,7 +195,7 @@ static int VBoxVideoSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                 pState = ddi_get_soft_state(g_pVBoxVideoSolarisState, Instance);
                 pState->dip = pDip;
                 pState->driver = &g_VBoxVideoSolarisDRMDriver;
-                
+
                 /*
                  * Register using the DRM module which will create the minor nodes
                  */
@@ -215,7 +203,7 @@ static int VBoxVideoSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                 if (pDRMHandle)
                 {
                     pState->drm_handle = pDRMHandle;
-                    
+
                     /*
                      * Probe with our pci-id.
                      * -XXX- is probing really required???
@@ -332,7 +320,7 @@ static int VBoxVideoSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void
                 rc = DDI_SUCCESS;
             }
             else
-            {            
+            {
                 LogRel((DEVICE_NAME ":VBoxGuestSolarisGetInfo state or state's devinfo invalid.\n"));
                 rc = DDI_FAILURE;
             }
