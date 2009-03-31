@@ -53,7 +53,7 @@ endif
 # OpenSSL for VRDP.
 if defined(VBOX_WITH_VRDP) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK) \
  && "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_DEFAULT_INCS)"
- include $(PATH_SUB_CURRENT)/openssl-0.9.8j/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/openssl-0.9.8k/Makefile.kmk
 endif
 
 
