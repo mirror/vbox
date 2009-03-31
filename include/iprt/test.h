@@ -51,6 +51,27 @@ typedef RTTEST const *PCRTTEST;
 /** A NIL Test handle. */
 #define NIL_RTTEST  ((RTTEST)0)
 
+/**
+ * Test message importance level.
+ */
+typedef enum RTTESTLVL
+{
+    /** Invalid 0. */
+    RTTESTLVL_INVALID = 0,
+    /** Message should always be printed. */
+    RTTESTLVL_ALWAYS,
+    /** Failure message. */
+    RTTESTLVL_FAILURE,
+    /** Sub-test banner. */
+    RTTESTLVL_SUB_TEST,
+    /** Info message. */
+    RTTESTLVL_INFO,
+    /** Debug message. */
+    RTTESTLVL_DEBUG,
+    /** The last (invalid). */
+    RTTESTLVL_END
+} RTTESTLVL;
+
 
 /**
  * Creates a test instance.
@@ -120,10 +141,11 @@ RTR3DECL(int) RTTestGuardedFree(RTTEST hTest, void *pv);
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
+ * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   va          Arguments.
  */
-RTR3DECL(int) RTTestPrintfNlV(RTTEST hTest, const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestPrintfNlV(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, va_list va);
 
 /**
  * Test printf making sure the output starts on a new line.
@@ -131,10 +153,11 @@ RTR3DECL(int) RTTestPrintfNlV(RTTEST hTest, const char *pszFormat, va_list va);
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
+ * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   ...         Arguments.
  */
-RTR3DECL(int) RTTestPrintfNl(RTTEST hTest, const char *pszFormat, ...);
+RTR3DECL(int) RTTestPrintfNl(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, ...);
 
 /**
  * Test vprintf, makes sure lines are prefixed and so forth.
@@ -142,10 +165,11 @@ RTR3DECL(int) RTTestPrintfNl(RTTEST hTest, const char *pszFormat, ...);
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
+ * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   va          Arguments.
  */
-RTR3DECL(int) RTTestPrintfV(RTTEST hTest, const char *pszFormat, va_list va);
+RTR3DECL(int) RTTestPrintfV(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, va_list va);
 
 /**
  * Test printf, makes sure lines are prefixed and so forth.
@@ -153,10 +177,11 @@ RTR3DECL(int) RTTestPrintfV(RTTEST hTest, const char *pszFormat, va_list va);
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
+ * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   ...         Arguments.
  */
-RTR3DECL(int) RTTestPrintf(RTTEST hTest, const char *pszFormat, ...);
+RTR3DECL(int) RTTestPrintf(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, ...);
 
 /**
  * Prints the test banner.
@@ -175,6 +200,28 @@ RTR3DECL(int) RTTestBanner(RTTEST hTest);
  *                      associated with the calling thread.
  */
 RTR3DECL(int) RTTestSummaryAndDestroy(RTTEST hTest);
+
+/**
+ * Starts a sub-test.
+ *
+ * This will perform an implicit RTTestSubDone() call if that has not been done
+ * since the last RTTestSub call.
+ *
+ * @returns Number of chars printed.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszSubTest  The sub-test name
+ */
+RTR3DECL(int) RTTestSub(RTTEST hTest, const char *pszSubTest);
+
+/**
+ * Completes a sub-test.
+ *
+ * @returns Number of chars printed.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ */
+RTR3DECL(int) RTTestSubDone(RTTEST hTest);
 
 /**
  * Increments the error counter.
@@ -218,6 +265,52 @@ RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...);
  */
 #define RTTEST_CHECK(hTest, expr) \
     do { if (!(expr)) { RTTestFailed((hTest), "line %u: %s", __LINE__, #expr); } } while (0)
+
+/** @def RTTEST_CHECK_MSG
+ * Check whether a boolean expression holds true.
+ *
+ * If the expression is false, call RTTestFailed giving the line number and expression.
+ *
+ * @param   hTest           The test handle.
+ * @param   expr            The expression to evaluate.
+ * @param   TestPrintfArgs  Argument list for RTTestPrintf, including
+ *                          parenthesis.
+ */
+#define RTTEST_CHECK_MSG(hTest, expr, TestPrintfArgs) \
+    do { if (!(expr)) { \
+            RTTestFailed((hTest), "line %u: %s", __LINE__, #expr); \
+            RTTestPrintf TestPrintfArgs; \
+         } \
+    } while (0)
+
+
+/**
+ * Prints an extended PASSED message, optional.
+ *
+ * This does not conclude the sub-test, it could be used to report the passing
+ * of a sub-sub-to-the-power-of-N-test.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   va          The arguments.
+ */
+RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va);
+
+/**
+ * Prints an extended PASSED message, optional.
+ *
+ * This does not conclude the sub-test, it could be used to report the passing
+ * of a sub-sub-to-the-power-of-N-test.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   ...         The arguments.
+ */
+RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...);
 
 
 /** @}  */
