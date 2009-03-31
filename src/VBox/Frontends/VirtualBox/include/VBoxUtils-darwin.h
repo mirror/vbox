@@ -221,12 +221,14 @@ OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
 enum
 {
     /* Event classes */
-    kEventClassVBox        = 'vbox',
+    kEventClassVBox         = 'vbox',
     /* Event kinds */
-    kEventVBoxShowWindow   = 'swin',
-    kEventVBoxMoveWindow   = 'mwin',
-    kEventVBoxResizeWindow = 'rwin',
-    kEventVBoxUpdateDock   = 'udck'
+    kEventVBoxShowWindow    = 'swin',
+    kEventVBoxHideWindow    = 'hwin',
+    kEventVBoxMoveWindow    = 'mwin',
+    kEventVBoxResizeWindow  = 'rwin',
+    kEventVBoxDisposeWindow = 'dwin',
+    kEventVBoxUpdateDock    = 'udck'
 };
 OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 
