@@ -54,6 +54,9 @@ enum
 #ifdef DEBUG_poetzsch
 #define DEBUG_MSG_POETZSCH(text) \
     printf text
+#else
+#define DEBUG_MSG_POETZSCH(text) \
+    do {} while (0)
 #endif
 
 #define DEBUG_MSG_RESULT(result, text) \
