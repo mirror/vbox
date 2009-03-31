@@ -873,6 +873,15 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
         goto out;
     }
 
+    /* Check size. Maximum 2PB-3M (to be on the safe side). No tricks with
+     * adjusting the 1M block size so far, which would extend the size. */
+    if (    !cbSize
+        ||  cbSize >= _1P * 2 - _1M * 3)
+    {
+        rc = VERR_VD_INVALID_SIZE;
+        goto out;
+    }
+
     /* Check remaining arguments. */
     if (   !VALID_PTR(pszFilename)
         || !*pszFilename
