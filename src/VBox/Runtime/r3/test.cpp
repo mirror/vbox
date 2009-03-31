@@ -85,14 +85,12 @@ typedef struct RTTESTINT
     /** The test name. */
     const char         *pszTest;
     /** The length of the test name.  */
-    unsigned            cchTest;
+    size_t              cchTest;
     /** The size of a guard. Multiple of PAGE_SIZE. */
     uint32_t            cbGuard;
+    /** The verbosity level. */
+    RTTESTLVL           enmMaxLevel;
 
-    /** Critical section seralizing access to the members following it. */
-    RTCRITSECT          Lock;
-    /** The list of guarded memory allocations. */
-    PRTTESTGUARDEDMEM   pGuardedMem;
 
     /** Critical section seralizing output. */
     RTCRITSECT          OutputLock;
@@ -100,6 +98,27 @@ typedef struct RTTESTINT
     PRTSTREAM           pOutStrm;
     /** Whether we're currently at a newline. */
     bool                fNewLine;
+
+
+    /** Critical section seralizing access to the members following it. */
+    RTCRITSECT          Lock;
+
+    /** The list of guarded memory allocations. */
+    PRTTESTGUARDEDMEM   pGuardedMem;
+
+    /** The current sub-test. */
+    const char         *pszSubTest;
+    /** The lenght of the sub-test name. */
+    size_t              cchSubTest;
+    /** Whether we've reported the sub-test result or not. */
+    bool                fSubTestReported;
+    /** The start error count of the current subtest. */
+    uint32_t            cSubTestAtErrors;
+
+    /** The number of sub tests. */
+    uint32_t            cSubTests;
+    /** The number of sub tests that failed. */
+    uint32_t            cSubTestsFailed;
 
 } RTTESTINT;
 /** Pointer to a test instance. */
@@ -194,12 +213,23 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest)
     PRTTESTINT pTest = (PRTTESTINT)RTMemAllocZ(sizeof(*pTest));
     if (!pTest)
         return VERR_NO_MEMORY;
-    pTest->u32Magic = RTTESTINT_MAGIC;
-    pTest->cbGuard  = PAGE_SIZE * 7;
-    pTest->pszTest  = RTStrDup(pszTest);
-    pTest->cchTest  = (unsigned)strlen(pszTest);
-    pTest->pOutStrm = g_pStdOut;
-    pTest->fNewLine = true;
+    pTest->u32Magic         = RTTESTINT_MAGIC;
+    pTest->pszTest          = RTStrDup(pszTest);
+    pTest->cchTest          = strlen(pszTest);
+    pTest->cbGuard          = PAGE_SIZE * 7;
+    pTest->enmMaxLevel      = RTTESTLVL_SUB_TEST;
+
+    pTest->pOutStrm         = g_pStdOut;
+    pTest->fNewLine         = true;
+
+    pTest->pGuardedMem      = NULL;
+
+    pTest->pszSubTest       = NULL;
+    pTest->cchSubTest       = 0;
+    pTest->fSubTestReported = true;
+    pTest->cSubTestAtErrors = 0;
+    pTest->cSubTests        = 0;
+    pTest->cSubTestsFailed  = 0;
 
     rc = RTCritSectInit(&pTest->Lock);
     if (RT_SUCCESS(rc))
@@ -268,6 +298,8 @@ RTR3DECL(int) RTTestDestroy(RTTEST hTest)
         rtTestGuardedFreeOne(pFree);
     }
 
+    RTStrFree((char *)pTest->pszSubTest);
+    pTest->pszSubTest = NULL;
     RTStrFree((char *)pTest->pszTest);
     pTest->pszTest = NULL;
     RTMemFree(pTest);
@@ -543,10 +575,11 @@ static int rtTestPrintf(PRTTESTINT pTest, const char *pszFormat, ...)
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
+ * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   va          Arguments.
  */
-RTR3DECL(int) RTTestPrintfNlV(RTTEST hTest, const char *pszFormat, va_list va)
+RTR3DECL(int) RTTestPrintfNlV(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, va_list va)
 {
     PRTTESTINT pTest = hTest;
     RTTEST_GET_VALID_RETURN_RC(pTest, -1);
@@ -554,9 +587,12 @@ RTR3DECL(int) RTTestPrintfNlV(RTTEST hTest, const char *pszFormat, va_list va)
     RTCritSectEnter(&pTest->OutputLock);
 
     int cch = 0;
-    if (!pTest->fNewLine)
-        cch += rtTestPrintf(pTest, "\n");
-    cch += rtTestPrintfV(pTest, pszFormat, va);
+    if (enmLevel <= pTest->enmMaxLevel)
+    {
+        if (!pTest->fNewLine)
+            cch += rtTestPrintf(pTest, "\n");
+        cch += rtTestPrintfV(pTest, pszFormat, va);
+    }
 
     RTCritSectLeave(&pTest->OutputLock);
 
@@ -570,15 +606,16 @@ RTR3DECL(int) RTTestPrintfNlV(RTTEST hTest, const char *pszFormat, va_list va)
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
+ * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   ...         Arguments.
  */
-RTR3DECL(int) RTTestPrintfNl(RTTEST hTest, const char *pszFormat, ...)
+RTR3DECL(int) RTTestPrintfNl(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, ...)
 {
     va_list va;
 
     va_start(va, pszFormat);
-    int cch = RTTestPrintfNlV(hTest, pszFormat, va);
+    int cch = RTTestPrintfNlV(hTest, enmLevel, pszFormat, va);
     va_end(va);
 
     return cch;
@@ -591,16 +628,19 @@ RTR3DECL(int) RTTestPrintfNl(RTTEST hTest, const char *pszFormat, ...)
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
+ * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   va          Arguments.
  */
-RTR3DECL(int) RTTestPrintfV(RTTEST hTest, const char *pszFormat, va_list va)
+RTR3DECL(int) RTTestPrintfV(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, va_list va)
 {
     PRTTESTINT pTest = hTest;
     RTTEST_GET_VALID_RETURN_RC(pTest, -1);
 
     RTCritSectEnter(&pTest->OutputLock);
-    int cch = rtTestPrintfV(pTest, pszFormat, va);
+    int cch = 0;
+    if (enmLevel <= pTest->enmMaxLevel)
+        cch += rtTestPrintfV(pTest, pszFormat, va);
     RTCritSectLeave(&pTest->OutputLock);
 
     return cch;
@@ -613,15 +653,16 @@ RTR3DECL(int) RTTestPrintfV(RTTEST hTest, const char *pszFormat, va_list va)
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
+ * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   ...         Arguments.
  */
-RTR3DECL(int) RTTestPrintf(RTTEST hTest, const char *pszFormat, ...)
+RTR3DECL(int) RTTestPrintf(RTTEST hTest, RTTESTLVL enmLevel, const char *pszFormat, ...)
 {
     va_list va;
 
     va_start(va, pszFormat);
-    int cch = RTTestPrintfV(hTest, pszFormat, va);
+    int cch = RTTestPrintfV(hTest, enmLevel, pszFormat, va);
     va_end(va);
 
     return cch;
@@ -637,7 +678,58 @@ RTR3DECL(int) RTTestPrintf(RTTEST hTest, const char *pszFormat, ...)
  */
 RTR3DECL(int) RTTestBanner(RTTEST hTest)
 {
-    return RTTestPrintfNl(hTest, "TESTING...\n");
+    return RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "TESTING...\n");
+}
+
+
+/**
+ * Prints the result of a sub-test if necessary.
+ *
+ * @returns Number of chars printed.
+ * @param   pTest       The test instance.
+ * @remarks Caller own the test Lock.
+ */
+static int rtTestSubTestReport(PRTTESTINT pTest)
+{
+    int cch = 0;
+    if (    !pTest->fSubTestReported
+        &&  pTest->pszSubTest)
+    {
+        pTest->fSubTestReported = true;
+        uint32_t cErrors = ASMAtomicUoReadU32(&pTest->cErrors) - pTest->cSubTestAtErrors;
+        if (!cErrors)
+            cch += RTTestPrintf(pTest, RTTESTLVL_SUB_TEST, "%-50s: PASSED\n", pTest->pszSubTest);
+        else
+        {
+            pTest->cSubTestsFailed++;
+            cch += RTTestPrintf(pTest, RTTESTLVL_SUB_TEST, "%-50s: FAILED (%u errors)\n",
+                                pTest->pszSubTest, cErrors);
+        }
+    }
+    return cch;
+}
+
+
+/**
+ * RTTestSub and RTTestSubDone worker that cleans up the current (if any)
+ * sub test.
+ *
+ * @returns Number of chars printed.
+ * @param   pTest       The test instance.
+ * @remarks Caller own the test Lock.
+ */
+static int rtTestSubCleanup(PRTTESTINT pTest)
+{
+    int cch = 0;
+    if (pTest->pszSubTest)
+    {
+        cch += rtTestSubTestReport(pTest);
+
+        RTStrFree((char *)pTest->pszSubTest);
+        pTest->pszSubTest = NULL;
+        pTest->fSubTestReported = true;
+    }
+    return cch;
 }
 
 
@@ -653,20 +745,83 @@ RTR3DECL(int) RTTestSummaryAndDestroy(RTTEST hTest)
     PRTTESTINT pTest = hTest;
     RTTEST_GET_VALID_RETURN_RC(pTest, 2);
 
+    RTCritSectEnter(&pTest->Lock);
+    rtTestSubTestReport(pTest);
+    RTCritSectLeave(&pTest->Lock);
+
     int rc;
     if (!pTest->cErrors)
     {
-        RTTestPrintfNl(hTest, "SUCCESS\n", pTest->cErrors);
+        RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "SUCCESS\n", pTest->cErrors);
         rc = 0;
     }
     else
     {
-        RTTestPrintfNl(hTest, "FAILURE - %u errors\n", pTest->cErrors);
+        RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "FAILURE - %u errors\n", pTest->cErrors);
         rc = 1;
     }
 
+
     RTTestDestroy(pTest);
     return rc;
+}
+
+
+/**
+ * Starts a sub-test.
+ *
+ * This will perform an implicit RTTestSubDone() call if that has not been done
+ * since the last RTTestSub call.
+ *
+ * @returns Number of chars printed.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszSubTest  The sub-test name
+ */
+RTR3DECL(int) RTTestSub(RTTEST hTest, const char *pszSubTest)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN_RC(pTest, -1);
+
+    RTCritSectEnter(&pTest->Lock);
+
+    /* Cleanup, reporting if necessary previous sub test. */
+    rtTestSubCleanup(pTest);
+
+    /* Start new sub test. */
+    pTest->cSubTests++;
+    pTest->cSubTestAtErrors = ASMAtomicUoReadU32(&pTest->cErrors);
+    pTest->pszSubTest = RTStrDup(pszSubTest);
+    pTest->cchSubTest = strlen(pszSubTest);
+    pTest->fSubTestReported = false;
+
+    int cch = 0;
+    if (pTest->enmMaxLevel >= RTTESTLVL_DEBUG)
+        cch = RTTestPrintfNl(hTest, RTTESTLVL_DEBUG, "debug: Starting sub-test '%s'\n", pszSubTest);
+
+    RTCritSectLeave(&pTest->Lock);
+
+    return cch;
+}
+
+
+/**
+ * Completes a sub-test.
+ *
+ * @returns Number of chars printed.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ */
+RTR3DECL(int) RTTestSubDone(RTTEST hTest)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN_RC(pTest, -1);
+
+    RTCritSectEnter(&pTest->Lock);
+    int cch = rtTestSubCleanup(pTest);
+    RTCritSectLeave(&pTest->Lock);
+
+    return cch;
 }
 
 
@@ -681,7 +836,9 @@ RTR3DECL(int) RTTestErrorInc(RTTEST hTest)
 {
     PRTTESTINT pTest = hTest;
     RTTEST_GET_VALID_RETURN(pTest);
+
     ASMAtomicIncU32(&pTest->cErrors);
+
     return VINF_SUCCESS;
 }
 
@@ -700,17 +857,20 @@ RTR3DECL(int) RTTestFailedV(RTTEST hTest, const char *pszFormat, va_list va)
     PRTTESTINT pTest = hTest;
     RTTEST_GET_VALID_RETURN_RC(pTest, -1);
 
-    va_list va2;
-    va_copy(va2, va);
+    RTTestErrorInc(pTest);
 
-    RTCritSectEnter(&pTest->OutputLock);
-    ASMAtomicIncU32(&pTest->cErrors);
+    int cch = 0;
+    if (pTest->enmMaxLevel >= RTTESTLVL_FAILURE)
+    {
+        va_list va2;
+        va_copy(va2, va);
 
-    int cch = rtTestPrintf(pTest, "FAILED - %N\n", pszFormat, &va2);
+        RTCritSectEnter(&pTest->OutputLock);
+        cch += rtTestPrintf(pTest, "%N\n", pszFormat, &va2);
+        RTCritSectLeave(&pTest->OutputLock);
 
-    RTCritSectLeave(&pTest->OutputLock);
-
-    va_end(va2);
+        va_end(va2);
+    }
 
     return cch;
 }
@@ -731,6 +891,64 @@ RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...)
 
     va_start(va, pszFormat);
     int cch = RTTestFailedV(hTest, pszFormat, va);
+    va_end(va);
+
+    return cch;
+}
+
+
+/**
+ * Prints an extended PASSED message, optional.
+ *
+ * This does not conclude the sub-test, it could be used to report the passing
+ * of a sub-sub-to-the-power-of-N-test.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   va          The arguments.
+ */
+RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN_RC(pTest, -1);
+
+    int cch = 0;
+    if (pTest->enmMaxLevel >= RTTESTLVL_INFO)
+    {
+        va_list va2;
+        va_copy(va2, va);
+
+        RTCritSectEnter(&pTest->OutputLock);
+        cch += rtTestPrintf(pTest, "%N\n", pszFormat, &va2);
+        RTCritSectLeave(&pTest->OutputLock);
+
+        va_end(va2);
+    }
+
+    return cch;
+}
+
+
+/**
+ * Prints an extended PASSED message, optional.
+ *
+ * This does not conclude the sub-test, it could be used to report the passing
+ * of a sub-sub-to-the-power-of-N-test.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   ...         The arguments.
+ */
+RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...)
+{
+    va_list va;
+
+    va_start(va, pszFormat);
+    int cch = RTTestPassedV(hTest, pszFormat, va);
     va_end(va);
 
     return cch;

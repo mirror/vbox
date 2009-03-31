@@ -156,7 +156,7 @@ int main()
 #else
     struct TestMap *p = (struct TestMap *)RTTestGuardedAllocTail(hTest, sizeof(*p));
 #endif
-#define DUMP()          RTTestPrintf(hTest, "au32={%08x,%08x,%08x,%08x}", p->au32[0], p->au32[1], p->au32[2], p->au32[3])
+#define DUMP()          RTTestPrintf(hTest, RTTESTLVL_INFO, "au32={%08x,%08x,%08x,%08x}", p->au32[0], p->au32[1], p->au32[2], p->au32[3])
 #define CHECK(expr)     do { if (!(expr)) { RTTestFailed(hTest, "line %d: %s", __LINE__, #expr); DUMP(); } CHECK_GUARD(s); } while (0)
 #define CHECK_BIT(expr,  b1)            do { if (!(expr)) { RTTestFailed(hTest, "line %d, b1=%d: %s", __LINE__, b1, #expr); } CHECK_GUARD(s); } while (0)
 #define CHECK_BIT2(expr, b1, b2)        do { if (!(expr)) { RTTestFailed(hTest, "line %d, b1=%d b2=%d: %s", __LINE__, b1, b2, #expr); } CHECK_GUARD(s); } while (0)
