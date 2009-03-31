@@ -53,6 +53,8 @@ struct _VBOXCLIPBOARDCONTEXT
      * which might clash with others. */
     RTSEMMUTEX clipboardMutex;
 
+    /** Pointer to the opaque X11 backend structure */
+    VBOXCLIPBOARDCONTEXTX11 *pBackend;
     /** Pointer to the client data structure */
     VBOXCLIPBOARDCLIENTDATA *pClient;
 };
@@ -84,7 +86,7 @@ int VBoxX11ClipboardReadVBoxData (VBOXCLIPBOARDCONTEXT *pCtx,
         /* This can legitimately happen if we disconnect during a request for
          * data from X11. */
         LogFunc(("host requested guest clipboard data after guest had disconnected.\n"));
-        VBoxX11ClipboardAnnounceVBoxFormat(0);
+        VBoxX11ClipboardAnnounceVBoxFormat(pCtx->pBackend, 0);
         pCtx->waiter = NONE;
         return VERR_TIMEOUT;
     }
@@ -161,16 +163,20 @@ void VBoxX11ClipboardReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
 int vboxClipboardInit (void)
 {
     int rc = VINF_SUCCESS;
+    VBOXCLIPBOARDCONTEXTX11 *pBackend = NULL;
+
     LogRel(("Initializing host clipboard service\n"));
     RTSemEventCreate(&g_ctxHost.waitForData);
     RTSemMutexCreate(&g_ctxHost.clipboardMutex);
-    rc = VBoxX11ClipboardInitX11(&g_ctxHost);
+    rc = VBoxX11ClipboardInitX11(&g_ctxHost, &pBackend);
     if (RT_FAILURE(rc))
     {
         RTSemEventDestroy(g_ctxHost.waitForData);
         RTSemMutexDestroy(g_ctxHost.clipboardMutex);
         LogRel(("Failed to start the host shared clipboard service.\n"));
     }
+    else
+        g_ctxHost.pBackend = pBackend;
     return rc;
 }
 
@@ -196,7 +202,7 @@ void vboxClipboardDestroy (void)
     /** @note  This has been made unconditional, as it should do no harm
      *         even if we are not waiting. */
     RTSemEventSignal(g_ctxHost.waitForData);
-    rc = VBoxX11ClipboardTermX11();
+    rc = VBoxX11ClipboardTermX11(g_ctxHost.pBackend);
     if (RT_SUCCESS(rc))
     {
         /* We can safely destroy these as the backend has exited
@@ -224,7 +230,8 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
     pClient->pCtx->pClient = pClient;
     /** The pClient pointer is a dummy anyway, as we only support a single
      * client at a time. */
-    rc = VBoxX11ClipboardStartX11(X11 /* initial owner */);
+    rc = VBoxX11ClipboardStartX11(g_ctxHost.pBackend,
+                                  X11 /* initial owner */);
     return rc;
 }
 
@@ -245,7 +252,7 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
      *         X11 is not available. */
     vboxSvcClipboardReportMsg (g_ctxHost.pClient,
                                VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, 0);
-    VBoxX11ClipboardRequestSyncX11();
+    VBoxX11ClipboardRequestSyncX11(g_ctxHost.pBackend);
 
     return VINF_SUCCESS;
 }
@@ -260,7 +267,7 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *)
 
     RTSemMutexRequest(g_ctxHost.clipboardMutex, RT_INDEFINITE_WAIT);
     g_ctxHost.pClient = NULL;
-    VBoxX11ClipboardStopX11();
+    VBoxX11ClipboardStopX11(g_ctxHost.pBackend);
     RTSemMutexRelease(g_ctxHost.clipboardMutex);
 }
 
@@ -273,7 +280,7 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *)
  */
 void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
 {
-    VBoxX11ClipboardAnnounceVBoxFormat (u32Formats);
+    VBoxX11ClipboardAnnounceVBoxFormat (g_ctxHost.pBackend, u32Formats);
 }
 
 /**
@@ -301,7 +308,7 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
     request.pv = pv;
     request.cb = cb;
     request.pcbActual = pcbActual;
-    rc = VBoxX11ClipboardReadX11Data(u32Format, &request);
+    rc = VBoxX11ClipboardReadX11Data(g_ctxHost.pBackend, u32Format, &request);
     g_ctxHost.waiter = NONE;
     return rc;
 }
@@ -315,7 +322,8 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
  * @param  u32Format The format of the data written
  * @note   Host glue code
  */
-void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format)
+void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient,
+                             void *pv, uint32_t cb, uint32_t u32Format)
 {
 /* Assume that if this gets called at all then the X11 backend is running. */
 #if 0
