@@ -3688,11 +3688,13 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
 
     AutoWriteLock alock(this);
 
-    com::SafeArray<IN_BSTR> aVboxValues(ComSafeArrayInArg(argVboxValues));
-    com::SafeArray<IN_BSTR> aExtraConfigValues(ComSafeArrayInArg(argExtraConfigValues));
+    com::SafeArray<BOOL> sfaEnabled(ComSafeArrayInArg(aEnabled));
+    com::SafeArray<IN_BSTR> sfaVboxValues(ComSafeArrayInArg(argVboxValues));
+    com::SafeArray<IN_BSTR> sfaExtraConfigValues(ComSafeArrayInArg(argExtraConfigValues));
 
-    if (    (aVboxValues.size() != m->llDescriptions.size())
-         || (aExtraConfigValues.size() != m->llDescriptions.size())
+    if (    (sfaEnabled.size() != m->llDescriptions.size())
+         || (sfaVboxValues.size() != m->llDescriptions.size())
+         || (sfaExtraConfigValues.size() != m->llDescriptions.size())
        )
         return E_INVALIDARG;
 
@@ -3704,10 +3706,10 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
     {
         VirtualSystemDescriptionEntry& vsde = *it;
 
-        if (aEnabled[i])
+        if (sfaEnabled[i])
         {
-            vsde.strVbox = aVboxValues[i];
-            vsde.strExtraConfig = aExtraConfigValues[i];
+            vsde.strVbox = sfaVboxValues[i];
+            vsde.strExtraConfig = sfaExtraConfigValues[i];
         }
         else
             vsde.type = VirtualSystemDescriptionType_Ignore;
@@ -4192,8 +4194,8 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
         // finally, add the virtual system to the appliance
         Appliance *pAppliance = static_cast<Appliance*>(aAppliance);
-        AutoCaller autoCaller(pAppliance);
-        if (FAILED(rc)) throw rc;
+        AutoCaller autoCaller1(pAppliance);
+        CheckComRCReturnRC(autoCaller1.rc());
 
         /* We return the new description to the caller */
         ComPtr<IVirtualSystemDescription> copy(pNewDesc);
