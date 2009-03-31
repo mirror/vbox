@@ -808,11 +808,10 @@ int vboxClipboardInitX11 (void)
 }
 
 /**
- * Initialise the host side of the shared clipboard.
- * @todo  This mixes host glue and X11 backend code, separate into two
- *        functions.
+ * Initialise the X11 backend of the shared clipboard.
+ * @note  X11 backend code
  */
-int vboxClipboardInit (void)
+int vboxClipboardInitBackend (void)
 {
     int rc;
 
@@ -823,7 +822,7 @@ int vboxClipboardInit (void)
          * connected to an X11 server. Don't actually try to do this then, just fail
          * silently and report success on every call. This is important for VBoxHeadless.
          */
-        LogRelFunc(("no X11 detected -- host clipboard disabled\n"));
+        LogRelFunc(("X11 DISPLAY variable not set -- disabling shared clipboard\n"));
         g_fHaveX11 = false;
         return VINF_SUCCESS;
     }
@@ -851,33 +850,46 @@ int vboxClipboardInit (void)
 
     g_fHaveX11 = true;
 
-    LogRel(("Initializing host clipboard service\n"));
-    RTSemEventCreate(&g_ctxHost.waitForData);
+    LogRel(("Initializing X11 clipboard backend\n"));
     RTSemEventCreate(&g_ctxX11.waitForData);
-    RTSemMutexCreate(&g_ctxHost.clipboardMutex);
     rc = vboxClipboardInitX11();
     if (RT_SUCCESS(rc))
     {
         rc = RTThreadCreate(&g_ctxX11.thread, vboxClipboardThread, 0, 0,
                             RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
         if (RT_FAILURE(rc))
-            LogRel(("Failed to start the host shared clipboard thread.\n"));
+            LogRel(("Failed to initialise the shared clipboard X11 backend.\n"));
     }
+    if (RT_FAILURE(rc))
+        RTSemEventDestroy(g_ctxX11.waitForData);
+    return rc;
+}
+
+/**
+ * Initialise the host side of the shared clipboard.
+ * @note  Host glue code
+ */
+int vboxClipboardInit (void)
+{
+    int rc = VINF_SUCCESS;
+    LogRel(("Initializing host clipboard service\n"));
+    RTSemEventCreate(&g_ctxHost.waitForData);
+    RTSemMutexCreate(&g_ctxHost.clipboardMutex);
+    rc = vboxClipboardInitBackend();
     if (RT_FAILURE(rc))
     {
         RTSemEventDestroy(g_ctxHost.waitForData);
-        RTSemEventDestroy(g_ctxX11.waitForData);
         RTSemMutexDestroy(g_ctxHost.clipboardMutex);
+        LogRel(("Failed to start the host shared clipboard service.\n"));
     }
     return rc;
 }
 
 /**
- * Terminate the host side of the shared clipboard.
- * @todo  This mixes host glue and X11 backend code, separate into two
- *        functions.
+ * Terminate the shared clipboard X11 backend.
+ * @note  X11 backend code
  */
-void vboxClipboardDestroy (void)
+int vboxClipboardDestroyBackend (void)
 {
     int rc, rcThread;
     unsigned count = 0;
@@ -887,22 +899,10 @@ void vboxClipboardDestroy (void)
      * Immediately return if we are not connected to the host X server.
      */
     if (!g_fHaveX11)
-        return;
+        return VINF_SUCCESS;
 
-    LogRel(("vboxClipboardDestroy: shutting down host clipboard\n"));
+    LogRelFunc(("shutting down the shared clipboard X11 backend\n"));
 
-    /* Drop the reference to the client, in case it is still there.  This will
-     * cause any outstanding clipboard data requests from X11 to fail
-     * immediately. */
-    g_ctxHost.pClient = NULL;
-    if (g_ctxX11.eOwner == VB)
-        /* X11 may be waiting for data from VBox.  At this point it is no
-         * longer going to arrive, and we must release it to allow the event
-         * loop to terminate.  In this case the buffer where VBox would have
-         * written the clipboard data will still be empty and we will just
-         * return "no data" to X11.  Any subsequent attempts to get the data
-         * from VBox will fail immediately as the client reference is gone. */
-        RTSemEventSignal(g_ctxHost.waitForData);
     /* Set the termination flag.  This has been observed to block if it was set
      * during a request for clipboard data coming from X11, so only we do it
      * after releasing any such requests. */
@@ -921,70 +921,129 @@ void vboxClipboardDestroy (void)
     } while ((VERR_TIMEOUT == rc) && (count < 300));
     if (RT_SUCCESS(rc))
     {
-        /*
-         * No one should be waiting on this by now.  Justification:
-         *  - Case 1: VBox is waiting for data from X11:
-         *      Not possible, as it would be waiting on this thread.
-         *  - Case 2: X11 is waiting for data from VBox:
-         *      Not possible, as we checked that the X11 event thread exited
-         *      successfully.
-         */
-        RTSemEventDestroy(g_ctxHost.waitForData);
+        /* We can safely destroy this now, as only this thread ever waits
+         * for it. */
         RTSemEventDestroy(g_ctxX11.waitForData);
-        RTSemMutexDestroy(g_ctxHost.clipboardMutex);
         AssertRC(rcThread);
     }
     else
         LogRel(("vboxClipboardDestroy: rc=%Rrc\n", rc));
     XtCloseDisplay(XtDisplay(g_ctxX11.widget));
-    LogFlowFunc(("returning.\n"));
+    LogFlowFunc(("returning %Rrc.\n", rc));
+    return rc;
 }
 
 /**
- * Connect a guest the shared clipboard.
- * @todo  This mixes host glue and X11 backend code, separate into two
- *        functions.
+ * Terminate the host side of the shared clipboard.
+ * @note  host glue code
  */
-int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
+void vboxClipboardDestroy (void)
 {
+    int rc = VINF_SUCCESS;
+    LogRelFunc(("shutting down host clipboard\n"));
+    /* Drop the reference to the client, in case it is still there.  This
+     * will cause any outstanding clipboard data requests from X11 to fail
+     * immediately. */
+    g_ctxHost.pClient = NULL;
+    /* The backend may be waiting for data from VBox.  At this point it is no
+     * longer going to arrive, and we must release it to allow the event
+     * loop to terminate.  In this case the buffer where VBox would have
+     * written the clipboard data will still be empty and we will just
+     * return "no data" to the backend.  Any subsequent attempts to get the
+     * data from VBox will fail immediately as the client reference is gone.
+     */
+    /** @note  This has been made unconditional, as it should do no harm
+     *         even if we are not waiting. */
+    RTSemEventSignal(g_ctxHost.waitForData);
+    rc = vboxClipboardDestroyBackend();
+    if (RT_SUCCESS(rc))
+    {
+        /* We can safely destroy these as the backend has exited
+         * successfully and no other calls from the host code should be
+         * forthcoming. */
+        /** @todo  move these two into a frontend proxy object that the 
+         * backend can call. */
+        /** @todo  can the backend fail to exit successfully?  What then? */
+        RTSemEventDestroy(g_ctxHost.waitForData);
+        RTSemMutexDestroy(g_ctxHost.clipboardMutex);
+    }
+}
+
+/**
+ * Announce to the X11 backend that we are ready to start.
+ * @param  owner who is the initial clipboard owner
+ */
+int vboxClipboardConnectBackend (enum g_eOwner owner)
+{
+    LogFlowFunc(("\n"));
     /*
      * Immediately return if we are not connected to the host X server.
      */
     if (!g_fHaveX11)
         return VINF_SUCCESS;
 
-    LogFlow(("vboxClipboardConnect\n"));
+    g_ctxX11.eOwner = owner;
+    if (owner == X11)
+        g_ctxX11.notifyVBox = true;
+    else
+    {
+        /** @todo take ownership of the X11 clipboard. */
+    }
+    return VINF_SUCCESS;
+}
 
+/**
+ * Connect a guest to the shared clipboard.
+ * @note  host glue code
+ * @note  on the host, we assume that some other application already owns
+ *        the clipboard and leave ownership to X11.
+ */
+int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
+{
+    int rc = VINF_SUCCESS;
+    LogFlowFunc(("\n"));
     /* Only one client is supported for now */
     AssertLogRelReturn(g_ctxHost.pClient == 0, VERR_NOT_SUPPORTED);
-
     pClient->pCtx = &g_ctxHost;
     pClient->pCtx->pClient = pClient;
-    g_ctxX11.eOwner = X11;
+    /** The pClient pointer is a dummy anyway, as we only support a single
+     * client at a time. */
+    rc = vboxClipboardConnectBackend(X11 /* initial owner */);
+    return rc;
+}
+
+/**
+ * Called when the VBox may have fallen out of sync with the backend.
+ * @note  X11 backend code
+ */
+void vboxClipboardRequestSync (void)
+{
+    /*
+     * Immediately return if we are not connected to the host X server.
+     */
+    if (!g_fHaveX11)
+        return;
     g_ctxX11.notifyVBox = true;
-    return VINF_SUCCESS;
 }
 
 /**
  * Synchronise the contents of the host clipboard with the guest, called
  * after a save and restore of the guest.
- * @todo  This mixes host glue and X11 backend code and calls host frontend
- *        APIs.  Separate into two functions.
+ * @note  Host glue code
  */
 int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
-    /*
-     * Immediately return if we are not connected to the host X server.
-     */
-    if (!g_fHaveX11)
-        return VINF_SUCCESS;
 
-    /* On a Linux host, the guest should never synchronise/cache its clipboard contents, as
-       we have no way of reliably telling when the host clipboard data changes.  So instead
-       of synchronising, we tell the guest to empty its clipboard, and we set the cached
-       flag so that we report formats to the guest next time we poll for them. */
-    vboxSvcClipboardReportMsg (g_ctxHost.pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, 0);
-    g_ctxX11.notifyVBox = true;
+    /* On a Linux host, the guest should never synchronise/cache its
+     * clipboard contents, as we have no way of reliably telling when the
+     * host clipboard data changes.  So instead of synchronising, we tell
+     * the guest to empty its clipboard, and we set the cached flag so that
+     * we report formats to the guest next time we poll for them. */
+    /** @note  This has been changed so that the message is sent even if
+     *         X11 is not available. */
+    vboxSvcClipboardReportMsg (g_ctxHost.pClient,
+                               VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, 0);
+    vboxClipboardRequestSync();
 
     return VINF_SUCCESS;
 }
@@ -994,7 +1053,7 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
  * @todo  This mixes host glue and X11 backend code, separate into two
  *        functions.
  */
-void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *)
+void vboxClipboardDisconnectBackend (void)
 {
     /*
      * Immediately return if we are not connected to the host X server.
@@ -1002,13 +1061,23 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *)
     if (!g_fHaveX11)
         return;
 
+    g_ctxX11.eOwner = NONE;
+    g_ctxX11.X11TextFormat = INVALID;
+    g_ctxX11.X11BitmapFormat = INVALID;
+}
+
+/**
+ * Shut down the shared clipboard service and "disconnect" the guest.
+ * @todo  This mixes host glue and X11 backend code, separate into two
+ *        functions.
+ */
+void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *)
+{
     LogFlow(("vboxClipboardDisconnect\n"));
 
     RTSemMutexRequest(g_ctxHost.clipboardMutex, RT_INDEFINITE_WAIT);
     g_ctxHost.pClient = NULL;
-    g_ctxX11.eOwner = NONE;
-    g_ctxX11.X11TextFormat = INVALID;
-    g_ctxX11.X11BitmapFormat = INVALID;
+    vboxClipboardDisconnectBackend();
     RTSemMutexRelease(g_ctxHost.clipboardMutex);
 }
 
@@ -1480,12 +1549,10 @@ static void vboxClipboardReturnToX11(Widget, Atom *)
 /**
  * VBox is taking possession of the shared clipboard.
  *
- * @param pClient    Context data for the guest system
  * @param u32Formats Clipboard formats the guest is offering
- * @note    Called by the HGCM clipboard service
- * @thread  HGCM clipboard service thread
+ * @note  X11 backend code
  */
-void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
+void vboxClipboardFormatAnnounceBackend (uint32_t u32Formats)
 {
     /*
      * Immediately return if we are not connected to the host X server.
@@ -1529,6 +1596,18 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32
 }
 
 /**
+ * VBox is taking possession of the shared clipboard.
+ *
+ * @param pClient    Context data for the guest system
+ * @param u32Formats Clipboard formats the guest is offering
+ * @note  Host glue code
+ */
+void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
+{
+    vboxClipboardFormatAnnounceBackend (u32Formats);
+}
+
+/**
  * Called when VBox wants to read the X11 clipboard.
  *
  * @param  pClient   Context information about the guest VM
@@ -1536,25 +1615,22 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32
  * @param  pv        Where to write the data to
  * @param  cb        The size of the buffer to write the data to
  * @param  pcbActual Where to write the actual size of the written data
- * @note   Host glue code
- * @todo   Separate this into a host and an X11-specific function
+ * @note   X11 backend code
  */
-int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
-                           uint32_t u32Format, void *pv, uint32_t cb,
-                           uint32_t *pcbActual)
+int vboxClipboardReadDataBackend (uint32_t u32Format,
+                                  VBOXCLIPBOARDREQUEST *pRequest)
 {
-    VBOXCLIPBOARDREQUEST request;
     /*
      * Immediately return if we are not connected to the host X server.
      */
     if (!g_fHaveX11)
     {
         /* no data available */
-        *pcbActual = 0;
+        *pRequest->pcbActual = 0;
         return VINF_SUCCESS;
     }
 
-    LogFlowFunc (("u32Format = %d, cb = %d\n", u32Format, cb));
+    LogFlowFunc (("u32Format = %d, cb = %d\n", u32Format, pRequest->cb));
 
     /*
      * The guest wants to read data in the given format.
@@ -1564,41 +1640,60 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
         if (g_ctxX11.X11TextFormat == INVALID)
         {
             /* No data available. */
-            *pcbActual = 0;
+            *pRequest->pcbActual = 0;
             return VERR_NO_DATA;  /* The guest thinks we have data and we don't */
         }
-        /* No one else (VBox or X11) should currently be waiting.  The first because
-         * requests from VBox are serialised and the second because X11 previously
-         * grabbed the clipboard, so it should not be waiting for data from us. */
-        AssertLogRelReturn (ASMAtomicCmpXchgU32(&g_ctxHost.waiter, VB, NONE), VERR_DEADLOCK);
-        request.pv = pv;
-        request.cb = cb;
-        request.pcbActual = pcbActual;
         /* Initially set the size of the data read to zero in case we fail
          * somewhere. */
-        *pcbActual = 0;
+        *pRequest->pcbActual = 0;
         /* Send out a request for the data to the current clipboard owner */
         XtGetSelectionValue(g_ctxX11.widget, g_ctxX11.atomClipboard,
                             g_ctxX11.atomX11TextFormat,
                             vboxClipboardGetDataFromX11,
-                            reinterpret_cast<XtPointer>(&request),
+                            reinterpret_cast<XtPointer>(pRequest),
                             CurrentTime);
         /* When the data arrives, the vboxClipboardGetDataFromX11 callback will be called.  The
            callback will signal the event semaphore when it has processed the data for us. */
 
         int rc = RTSemEventWait(g_ctxX11.waitForData, RT_INDEFINITE_WAIT);
         if (RT_FAILURE(rc))
-        {
-            g_ctxHost.waiter = NONE;
             return rc;
-        }
-        g_ctxHost.waiter = NONE;
     }
     else
     {
         return VERR_NOT_IMPLEMENTED;
     }
     return VINF_SUCCESS;
+}
+
+/**
+ * Called when VBox wants to read the X11 clipboard.
+ *
+ * @param  pClient   Context information about the guest VM
+ * @param  u32Format The format that the guest would like to receive the data in
+ * @param  pv        Where to write the data to
+ * @param  cb        The size of the buffer to write the data to
+ * @param  pcbActual Where to write the actual size of the written data
+ * @note   Host glue code
+ */
+int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
+                           uint32_t u32Format, void *pv, uint32_t cb,
+                           uint32_t *pcbActual)
+{
+    int rc = VINF_SUCCESS;
+    VBOXCLIPBOARDREQUEST request;
+    /* No one else (VBox or X11) should currently be waiting.  The first
+     * because requests from VBox are serialised and the second because X11
+     * previously grabbed the clipboard, so it should not be waiting for
+     * data from us. */
+    AssertLogRelReturn (ASMAtomicCmpXchgU32(&g_ctxHost.waiter, VB, NONE),
+                        VERR_DEADLOCK);
+    request.pv = pv;
+    request.cb = cb;
+    request.pcbActual = pcbActual;
+    rc = vboxClipboardReadDataBackend(u32Format, &request);
+    g_ctxHost.waiter = NONE;
+    return rc;
 }
 
 /**
