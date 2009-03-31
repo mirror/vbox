@@ -1392,7 +1392,7 @@ RTDECL(char *) RTStrIStr(const char *pszHaystack, const char *pszNeedle)
         return NULL;
 
     /* The empty string matches everything. */
-    if (*pszNeedle)
+    if (!*pszNeedle)
         return (char *)pszHaystack;
 
     /*
