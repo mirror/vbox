@@ -1081,6 +1081,8 @@
 #define VINF_VD_ASYNC_IO_FINISHED                   3209
 /** Asynchronous I/O is not finished yet. */
 #define VERR_VD_ASYNC_IO_IN_PROGRESS                (-3210)
+/** The image is too small or too large for this format. */
+#define VERR_VD_INVALID_SIZE                        (-3211)
 /** Generic: Invalid image file header. Use this for plugins. */
 #define VERR_VD_GEN_INVALID_HEADER                  (-3220)
 /** VDI: Invalid image file header. */

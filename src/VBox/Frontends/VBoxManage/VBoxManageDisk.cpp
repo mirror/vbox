@@ -84,6 +84,8 @@ static int parseDiskVariant(const char *psz, HardDiskVariant_T *pDiskVariant)
             else if (   !RTStrNICmp(psz, "stream", len)
                      || !RTStrNICmp(psz, "streamoptimized", len))
                 DiskVariant |= HardDiskVariant_VmdkStreamOptimized;
+            else if (!RTStrNICmp(psz, "esx", len))
+                DiskVariant |= HardDiskVariant_VmdkESX;
             else
                 rc = VERR_PARSE_ERROR;
         }

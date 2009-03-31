@@ -8745,7 +8745,7 @@
 
   <enum
     name="HardDiskVariant"
-    uuid="99334b63-7ed0-4f61-8a7e-7ec3e20dd912"
+    uuid="eb7fc6b3-ae23-4c5d-a1f6-e3522dd1efb0"
    >
     <desc>
       Virtual hard disk image variant. More than one flag may be set.
@@ -8768,12 +8768,17 @@
         read-only/append-only.
       </desc>
     </const>
-    <const name="Fixed" value="0x1000">
+    <const name="VmdkESX" value="0x08">
+      <desc>
+        VMDK format variant used on ESX products.
+      </desc>
+    </const>
+    <const name="Fixed" value="0x10000">
       <desc>
         Fixed image. Only allowed for base images.
       </desc>
     </const>
-    <const name="Diff" value="0x2000">
+    <const name="Diff" value="0x20000">
       <desc>
         Fixed image. Only allowed for base images.
       </desc>

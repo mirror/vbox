@@ -83,12 +83,16 @@ __BEGIN_DECLS
 #define VD_VMDK_IMAGE_FLAGS_RAWDISK             (0x0002)
 /** VMDK: stream optimized image, read only. */
 #define VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED    (0x0004)
+/** VMDK: ESX variant, use in addition to other flags. */
+#define VD_VMDK_IMAGE_FLAGS_ESX                 (0x0008)
 /** VDI: Fill new blocks with zeroes while expanding image file. Only valid
  * for newly created images, never set for opened existing images. */
 #define VD_VDI_IMAGE_FLAGS_ZERO_EXPAND          (0x0100)
 
 /** Mask of valid image flags for VMDK. */
-#define VD_VMDK_IMAGE_FLAGS_MASK            (VD_IMAGE_FLAGS_FIXED | VD_IMAGE_FLAGS_DIFF | VD_IMAGE_FLAGS_NONE | VD_VMDK_IMAGE_FLAGS_SPLIT_2G | VD_VMDK_IMAGE_FLAGS_RAWDISK | VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+#define VD_VMDK_IMAGE_FLAGS_MASK            (   VD_IMAGE_FLAGS_FIXED | VD_IMAGE_FLAGS_DIFF | VD_IMAGE_FLAGS_NONE \
+                                             |  VD_VMDK_IMAGE_FLAGS_SPLIT_2G | VD_VMDK_IMAGE_FLAGS_RAWDISK \
+                                             | VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED | VD_VMDK_IMAGE_FLAGS_ESX)
 
 /** Mask of valid image flags for VDI. */
 #define VD_VDI_IMAGE_FLAGS_MASK             (VD_IMAGE_FLAGS_FIXED | VD_IMAGE_FLAGS_DIFF | VD_IMAGE_FLAGS_NONE | VD_VDI_IMAGE_FLAGS_ZERO_EXPAND)
