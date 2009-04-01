@@ -85,11 +85,11 @@ HRESULT HostNetworkInterface::updateConfig ()
     int rc = NetIfGetConfig(this, &info);
     if(RT_SUCCESS(rc))
     {
-        m.IPAddress = info.IPAddress.u;
-        m.networkMask = info.IPNetMask.u;
+        m.realIPAddress = m.IPAddress = info.IPAddress.u;
+        m.realNetworkMask = m.networkMask = info.IPNetMask.u;
         m.dhcpEnabled = info.bDhcpEnabled;
-        m.IPV6Address = composeIPv6Address(&info.IPv6Address);
-        m.IPV6NetworkMaskPrefixLength = composeIPv6PrefixLenghFromAddress(&info.IPv6NetMask);
+        m.realIPV6Address = m.IPV6Address = composeIPv6Address(&info.IPv6Address);
+        m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = composeIPv6PrefixLenghFromAddress(&info.IPv6NetMask);
         m.hardwareAddress = composeHardwareAddress(&info.MACAddress);
 #ifdef RT_OS_WINDOWS
         m.mediumType = (HostNetworkInterfaceMediumType)info.enmMediumType;
@@ -128,10 +128,10 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceTyp
     unconst (mGuid) = pIf->Uuid;
     mIfType = ifType;
 
-    m.IPAddress = pIf->IPAddress.u;
-    m.networkMask = pIf->IPNetMask.u;
-    m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
-    m.IPV6NetworkMaskPrefixLength = composeIPv6PrefixLenghFromAddress(&pIf->IPv6NetMask);
+    m.realIPAddress = m.IPAddress = pIf->IPAddress.u;
+    m.realNetworkMask = m.networkMask = pIf->IPNetMask.u;
+    m.realIPV6Address = m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
+    m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = composeIPv6PrefixLenghFromAddress(&pIf->IPv6NetMask);
     m.dhcpEnabled = pIf->bDhcpEnabled;
     m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
 #ifdef RT_OS_WINDOWS
@@ -420,6 +420,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
             int rc = NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, 0, 0);
             if (RT_SUCCESS(rc))
             {
+                m.realIPAddress = 0;
                 if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw())), Bstr(""))))
                     return E_FAIL;
                 if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw())), Bstr(""))))
@@ -441,11 +442,13 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
             mask = inet_addr(Utf8Str(aNetMask).raw());
         if(mask != INADDR_NONE)
         {
-            if (m.IPAddress == ip && m.networkMask == mask)
+            if (m.realIPAddress == ip && m.realNetworkMask == mask)
                 return S_OK;
             int rc = NetIfEnableStaticIpConfig(mVBox, this, m.IPAddress, ip, mask);
             if (RT_SUCCESS(rc))
             {
+                m.realIPAddress   = ip;
+                m.realNetworkMask = mask;
                 if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw())), Bstr(aIPAddress))))
                     return E_FAIL;
                 if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw())), Bstr(aNetMask))))
@@ -478,7 +481,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
     CheckComRCReturnRC (autoCaller.rc());
 
     int rc = S_OK;
-    if (m.IPV6Address != aIPV6Address || m.IPV6NetworkMaskPrefixLength != aIPV6MaskPrefixLength)
+    if (m.realIPV6Address != aIPV6Address || m.realIPV6PrefixLength != aIPV6MaskPrefixLength)
     {
         if (aIPV6MaskPrefixLength == 0)
             aIPV6MaskPrefixLength = 64;
@@ -490,6 +493,8 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
         }
         else
         {
+            m.realIPV6Address = aIPV6Address;
+            m.realIPV6PrefixLength = aIPV6MaskPrefixLength;
             if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPV6Address", mInterfaceName.raw())), Bstr(aIPV6Address))))
                 return E_FAIL;
             if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPV6NetMask", mInterfaceName.raw())), 
