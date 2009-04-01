@@ -3255,16 +3255,6 @@ static int emR3ForcedActions(PVM pVM, int rc)
         Assert(!(VM_FF_NORMAL_PRIORITY_MASK & ~(VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY)));
     }
 
-#if 1 /** @todo this is all dead now, remove after the no-memory changes has been committed. */
-    /*
-     * Execute polling function ever so often.
-     * THIS IS A HACK, IT WILL BE *REPLACED* BY PROPER ASYNC NETWORKING "SOON"!
-     */
-    static unsigned cLast = 0;
-    if (!((++cLast) % 4))
-        PDMR3Poll(pVM);
-#endif
-
     /*
      * High priority pre execution chunk last.
      * (Executed in ascending priority order.)

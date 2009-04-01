@@ -1313,17 +1313,6 @@ VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
 
 
 /**
- * Call polling function.
- *
- * @param   pVM             VM handle.
- */
-VMMR3DECL(void) PDMR3Poll(PVM pVM)
-{
-    /** @todo remove after committing other EM changes. */
-}
-
-
-/**
  * Service a VMMCALLHOST_PDM_LOCK call.
  *
  * @returns VBox status code.
