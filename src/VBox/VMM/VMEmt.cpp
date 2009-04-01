@@ -357,9 +357,6 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVM pUVM, const uint32_t fMask, uint
          * The poll call gives us the ticks left to the next event in
          * addition to perhaps set an FF.
          */
-        STAM_REL_PROFILE_START(&pUVM->vm.s.StatHaltPoll, a);
-        PDMR3Poll(pVM);
-        STAM_REL_PROFILE_STOP(&pUVM->vm.s.StatHaltPoll, a);
         STAM_REL_PROFILE_START(&pUVM->vm.s.StatHaltTimers, b);
         TMR3TimerQueuesDo(pVM);
         STAM_REL_PROFILE_STOP(&pUVM->vm.s.StatHaltTimers, b);
@@ -554,9 +551,6 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVM pUVM, const uint32_t fMask, ui
         /*
          * Work the timers and check if we can exit.
          */
-        STAM_REL_PROFILE_START(&pUVM->vm.s.StatHaltPoll, a);
-        PDMR3Poll(pVM);
-        STAM_REL_PROFILE_STOP(&pUVM->vm.s.StatHaltPoll, a);
         STAM_REL_PROFILE_START(&pUVM->vm.s.StatHaltTimers, b);
         TMR3TimerQueuesDo(pVM);
         STAM_REL_PROFILE_STOP(&pUVM->vm.s.StatHaltTimers, b);
@@ -671,9 +665,6 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVM pUVM, const uint32_t fMask, ui
         /*
          * Work the timers and check if we can exit.
          */
-        STAM_REL_PROFILE_START(&pUVM->vm.s.StatHaltPoll, a);
-        PDMR3Poll(pVM);
-        STAM_REL_PROFILE_STOP(&pUVM->vm.s.StatHaltPoll, a);
         STAM_REL_PROFILE_START(&pUVM->vm.s.StatHaltTimers, b);
         TMR3TimerQueuesDo(pVM);
         STAM_REL_PROFILE_STOP(&pUVM->vm.s.StatHaltTimers, b);
