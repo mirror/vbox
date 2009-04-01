@@ -683,7 +683,6 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
         STAM_REL_REG(pVM, &pUVM->vm.s.StatHaltYield, STAMTYPE_PROFILE,     "/PROF/VM/Halt/Yield",    STAMUNIT_TICKS_PER_CALL,    "Profiling halted state yielding.");
         STAM_REL_REG(pVM, &pUVM->vm.s.StatHaltBlock, STAMTYPE_PROFILE,     "/PROF/VM/Halt/Block",    STAMUNIT_TICKS_PER_CALL,    "Profiling halted state blocking.");
         STAM_REL_REG(pVM, &pUVM->vm.s.StatHaltTimers,STAMTYPE_PROFILE,     "/PROF/VM/Halt/Timers",   STAMUNIT_TICKS_PER_CALL,    "Profiling halted state timer tasks.");
-        STAM_REL_REG(pVM, &pUVM->vm.s.StatHaltPoll,  STAMTYPE_PROFILE,     "/PROF/VM/Halt/Poll",     STAMUNIT_TICKS_PER_CALL,    "Profiling halted state poll tasks.");
 
         STAM_REG(pVM, &pUVM->vm.s.StatReqAllocNew,   STAMTYPE_COUNTER,     "/VM/Req/AllocNew",       STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc returning a new packet.");
         STAM_REG(pVM, &pUVM->vm.s.StatReqAllocRaces, STAMTYPE_COUNTER,     "/VM/Req/AllocRaces",     STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc causing races.");
@@ -2318,7 +2317,7 @@ VMMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevIns, PFNVMATRESET
     {
         if (    pCur->enmType == VMATRESETTYPE_DEV
             &&  pCur->u.Dev.pDevIns == pDevIns
-            &&  (   !pfnCallback 
+            &&  (   !pfnCallback
                  || pCur->u.Dev.pfnCallback == pfnCallback))
         {
             pCur = vmr3AtResetFreeU(pVM->pUVM, pCur, pPrev);
