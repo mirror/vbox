@@ -181,13 +181,16 @@ typedef struct PhysPageDesc {
  */
 #define L1_BITS (TARGET_VIRT_ADDR_SPACE_BITS - L2_BITS - TARGET_PAGE_BITS)
 #else
-# ifdef VBOX /* > 4GB please. */
-#define L1_BITS (TARGET_PHYS_ADDR_SPACE_BITS - L2_BITS - TARGET_PAGE_BITS)
-# else
 #define L1_BITS (32 - L2_BITS - TARGET_PAGE_BITS)
-# endif
+#endif
+#ifdef VBOX
+/* Note: Not for PhysPageDesc, only to speed up page_flush_tb. */
+#define L0_BITS (TARGET_PHYS_ADDR_SPACE_BITS - 32)
 #endif
 
+#ifdef VBOX
+#define L0_SIZE (1 << L0_BITS)
+#endif
 #define L1_SIZE (1 << L1_BITS)
 #define L2_SIZE (1 << L2_BITS)
 
@@ -199,7 +202,12 @@ unsigned long qemu_host_page_size;
 unsigned long qemu_host_page_mask;
 
 /* XXX: for system emulation, it could just be an array */
+#ifndef VBOX
 static PageDesc *l1_map[L1_SIZE];
+#else
+static l0_map_max_used = 0;
+static PageDesc **l0_map[L0_SIZE];
+#endif
 static PhysPageDesc **l1_phys_map;
 
 #if !defined(CONFIG_USER_ONLY)
@@ -352,21 +360,32 @@ static inline PageDesc **page_l1_map(target_ulong index)
 DECLINLINE(PageDesc **) page_l1_map(target_ulong index)
 #endif
 {
+#ifndef VBOX
 #if TARGET_LONG_BITS > 32
     /* Host memory outside guest VM.  For 32-bit targets we have already
        excluded high addresses.  */
-# ifndef VBOX
     if (index > ((target_ulong)L2_SIZE * L1_SIZE))
         return NULL;
-# else  /* VBOX */
-    AssertMsgReturn(index < (target_ulong)L2_SIZE * L1_SIZE,
-                    ("index=%RGp >= %RGp; L1_SIZE=%#x L2_SIZE=%#x\n",
-                     (RTGCPHYS)index, (RTGCPHYS)L2_SIZE * L1_SIZE, L1_SIZE, L2_SIZE),
-                    NULL);
-# endif /* VBOX */
-
 #endif
     return &l1_map[index >> L2_BITS];
+#else  /* VBOX */
+    PageDesc **l1_map;
+    AssertMsgReturn(index < (target_ulong)L2_SIZE * L1_SIZE * L0_SIZE,
+                    ("index=%RGp >= %RGp; L1_SIZE=%#x L2_SIZE=%#x L0_SIZE=%#x\n",
+                     (RTGCPHYS)index, (RTGCPHYS)L2_SIZE * L1_SIZE, L1_SIZE, L2_SIZE, L0_SIZE),
+                    NULL);
+    l1_map = l0_map[index >> (L1_BITS + L2_BITS)];
+    if (RT_UNLIKELY(!l1_map))
+    {
+        unsigned i0 = index >> (L1_BITS + L2_BITS);
+        l0_map[i0] = l1_map = qemu_mallocz(sizeof(PageDesc *) * L1_SIZE);
+        if (RT_UNLIKELY(!l1_map))
+            return NULL;
+        if (i0 >= l0_map_max_used)
+            l0_map_max_used = i0 + 1;
+    }
+    return &l1_map[(index >> L2_BITS) & (L1_SIZE - 1)];
+#endif /* VBOX */
 }
 
 #ifndef VBOX
@@ -702,17 +721,30 @@ static void page_flush_tb(void)
 {
     int i, j;
     PageDesc *p;
+#ifdef VBOX
+    int k;
+#endif
 
-    for(i = 0; i < L1_SIZE; i++) {
-        p = l1_map[i];
-        if (p) {
-            for(j = 0; j < L2_SIZE; j++) {
-                p->first_tb = NULL;
-                invalidate_page_bitmap(p);
-                p++;
+#ifdef VBOX
+    k = l0_map_max_used;
+    while (k-- > 0) {
+        PageDesc **l1_map = l0_map[k];
+        if (l1_map) {
+#endif
+            for(i = 0; i < L1_SIZE; i++) {
+                p = l1_map[i];
+                if (p) {
+                    for(j = 0; j < L2_SIZE; j++) {
+                        p->first_tb = NULL;
+                        invalidate_page_bitmap(p);
+                        p++;
+                    }
+                }
             }
+#ifdef VBOX
         }
     }
+#endif
 }
 
 /* flush all the translation blocks */
@@ -720,6 +752,9 @@ static void page_flush_tb(void)
 void tb_flush(CPUState *env1)
 {
     CPUState *env;
+#ifdef VBOX
+    STAM_PROFILE_START(&env1->StatTbFlush, a);
+#endif
 #if defined(DEBUG_FLUSH)
     printf("qemu: flush code_size=%ld nb_tbs=%d avg_tb_size=%ld\n",
            (unsigned long)(code_gen_ptr - code_gen_buffer),
@@ -742,6 +777,9 @@ void tb_flush(CPUState *env1)
     /* XXX: flush processor icache at this point if cache flush is
        expensive */
     tb_flush_count++;
+#ifdef VBOX
+    STAM_PROFILE_STOP(&env1->StatTbFlush, a);
+#endif
 }
 
 #ifdef DEBUG_TB_CHECK

@@ -61,6 +61,7 @@
 # include <iprt/assert.h>
 # include <iprt/asm.h>
 # include <VBox/vmm.h>
+# include <VBox/stam.h>
 #endif /* VBOX */
 
 #define R_EAX 0
@@ -676,6 +677,8 @@ typedef struct CPUX86State {
     struct APICState *apic_state;
 #else
     uint32_t alignment2[3];
+    /** Profiling tb_flush. */
+    STAMPROFILE StatTbFlush;
 #endif
 } CPUX86State;
 
