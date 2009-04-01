@@ -28,12 +28,6 @@
  * additional information or have any questions.
  */
 
-/*
- * Note: This file is also compiled with a C compiler so it must not
- *       use genuine C++ features. On Linux it is compiled with
- *       gcc -Wdeclaration-after-statement, so avoid those if you can.
- */
-
 /** @page pg_rtlog      Runtime - Logging
  *
  * VBox uses the IPRT logging system which supports group level flags and multiple
@@ -408,7 +402,8 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
          * that do differ (like Darwin), STDOUT is the kernel log.
          */
 # if 0 /*defined(DEBUG_bird) && !defined(IN_GUEST)*/
-        RTLogGroupSettings(pLogger, "all=~0 -default.l6.l5.l4.l3");
+        //RTLogGroupSettings(pLogger, "all=~0 -default.l6.l5.l4.l3");
+        RTLogGroupSettings(pLogger, "all=0 pgm*=~0 gmm=~0");
         RTLogFlags(pLogger, "enabled unbuffered pid tid");
         pLogger->fDestFlags |= RTLOGDEST_DEBUGGER | RTLOGDEST_STDOUT;
 # endif
