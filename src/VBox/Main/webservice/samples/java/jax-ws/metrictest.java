@@ -18,10 +18,11 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-import com.sun.xml.ws.commons.virtualbox.*;
+import com.sun.xml.ws.commons.virtualbox{VBOX_API_SUFFIX}.*;
+import org.virtualbox{VBOX_API_SUFFIX}.*;
+
 import java.util.*;
 import javax.xml.ws.Holder;
-import org.virtualbox.*;
 
 class PerformanceData
 {

@@ -453,8 +453,8 @@ $(VBOXWEB_WS_PERL): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(REDIRECT) -C $(@D) -- $(VBOX_STUBMAKER) file://$(VBOXWEBSERVICE_WSDL)
 # Ugly, ugly, ugly, make me right once
-	$(QUIET)perl -ne "s#http://www.virtualbox.org/Service#http://www.virtualbox.org/#; print" < $(VBOXWEB_WS_PERL) > $(VBOXWEB_WS_PERL).tmp
-	$(QUIET)mv $(VBOXWEB_WS_PERL).tmp $(VBOXWEB_WS_PERL)
+	$(QUIET)$(SED) -e "s+http://www.virtualbox.org/Service+http://www.virtualbox.org/+" < $(VBOXWEB_WS_PERL) > $(VBOXWEB_WS_PERL).tmp
+	$(QUIET)$(MV) $(VBOXWEB_WS_PERL).tmp $(VBOXWEB_WS_PERL)
 	$(QUIET)$(APPEND) $@ ''
 
 endif # VBOX_ONLY_SDK
@@ -579,11 +579,11 @@ $(VBOXWEB_AXISSAMPLE): $(VBOX_PATH_WEBSERVICE)/samples/java/axis/clienttest.java
 
 $(VBOXWEB_JAXWSSAMPLE): $(VBOX_PATH_WEBSERVICE)/samples/java/jax-ws/clienttest.java
 	$(QUIET)$(MKDIR) -p $(VBOXWEB_SAMPLES_JAXWS_DIR)
-	$(QUIET)$(CP) -f $< $@
+	$(QUIET)$(SED) -e 's/{VBOX_API_SUFFIX}/$(VBOX_API_SUFFIX)/' <  $< >  $@
 
 $(VBOXWEB_METRICSAMPLE): $(VBOX_PATH_WEBSERVICE)/samples/java/jax-ws/metrictest.java
 	$(QUIET)$(MKDIR) -p $(VBOXWEB_SAMPLES_JAXWS_DIR)
-	$(QUIET)$(CP) -f $< $@
+	$(QUIET)$(SED) -e 's/{VBOX_API_SUFFIX}/$(VBOX_API_SUFFIX)/' <  $< >  $@
 
 $(VBOXWEB_PERLSAMPLE): $(VBOX_PATH_WEBSERVICE)/samples/perl/clienttest.pl
 	$(QUIET)$(MKDIR) -p $(VBOXWEB_SAMPLES_PERL_DIR)
