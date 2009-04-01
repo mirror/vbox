@@ -334,7 +334,7 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
     /*
      * Initialize sub compontents.
      */
-    rc = pdmR3CritSectInit(pVM);
+    int rc = pdmR3CritSectInit(pVM);
     if (RT_SUCCESS(rc))
     {
         rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, "PDM");
