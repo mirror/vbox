@@ -78,10 +78,10 @@ static void test1(RTTEST hTest)
      */
     RTTestSub(hTest, "Feeding bad UTF-8 to RTStrToUtf16");
     rc = RTStrToUtf16(s_szBadString1, &pwsz);
-    RTTEST_CHECK_MSG(hTest, rc == rc != VERR_NO_TRANSLATION || rc == VERR_INVALID_UTF8_ENCODING,
+    RTTEST_CHECK_MSG(hTest, rc == VERR_NO_TRANSLATION || rc == VERR_INVALID_UTF8_ENCODING,
                      (hTest, RTTESTLVL_FAILURE, "Conversion of first bad UTF-8 string to UTF-16 apparantly succeeded. It shouldn't. rc=%Rrc\n", rc));
     rc = RTStrToUtf16(s_szBadString2, &pwsz);
-    RTTEST_CHECK_MSG(hTest, rc == rc != VERR_NO_TRANSLATION || rc == VERR_INVALID_UTF8_ENCODING,
+    RTTEST_CHECK_MSG(hTest, rc == VERR_NO_TRANSLATION || rc == VERR_INVALID_UTF8_ENCODING,
                      (hTest, RTTESTLVL_FAILURE, "Conversion of second bad UTF-8 strings to UTF-16 apparantly succeeded. It shouldn't. rc=%Rrc\n", rc));
 
     /*
@@ -862,10 +862,9 @@ static void testStrStr(RTTEST hTest)
 #define CHECK(expr, expect) \
     do { \
         const char *pszRet = expr; \
-        if (    pszRet != expect \
-            &&  (   (expect) == NULL  \
-                 || pszRet == NULL \
-                 || strcmp(pszRet, (expect)) ) \
+        if (   (pszRet != NULL && (expect) == NULL) \
+            || (pszRet == NULL && (expect) != NULL) \
+            || strcmp(pszRet, (expect)) \
             ) \
             RTTestFailed(hTest, "%d: %#x -> %s expected %s", __LINE__, #expr, pszRet, (expect)); \
     } while (0)
