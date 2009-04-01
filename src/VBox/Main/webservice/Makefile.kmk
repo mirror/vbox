@@ -365,6 +365,9 @@ ifdef VBOX_ONLY_SDK
   $(error Failed to autodetect VBOX_WSIMPORT16, please set it manually)
  endif
  VBOX_JAR                      = jar
+ # Keep in sync with G_virtualBoxPackage and G_virtualBoxPackage2 in glue-jaxws.xsl
+ # Bump up once incompatible API version takes place
+ VBOX_JAVA_PACKAGE             = org.virtualbox22
 
  VBOXWEB_OTHERS               += \
  	$(VBOXWEB_GLUE_JAVA_TMP) \
@@ -621,7 +624,7 @@ $(VBOXWEB_JAVA15_JAR): $(VBOXWEB_GLUE_JAVA_TMP) $(VBOXWEB_WSDL) $(VBOXWEBSERVICE
 	$(QUIET)$(RM) -Rf $(VBOXWEB_JAVALIB)/gen15
 	$(QUIET)$(MKDIR) -p $(VBOXWEB_JAVALIB)/gen15
 	$(call MSG_GENERATE,,$@,JAX-WS for Java 1.5 bindings using $(VBOXWEBSERVICE_WSDL))
-	$(QUIET)$(VBOX_WSIMPORT15) -d $(VBOXWEB_JAVALIB)/gen15 $(VBOXWEBSERVICE_WSDL)
+	$(QUIET)$(VBOX_WSIMPORT15) -p $(VBOX_JAVA_PACKAGE) -d $(VBOXWEB_JAVALIB)/gen15 $(VBOXWEBSERVICE_WSDL)
 	$(call MSG_L1,Compiling bridge code)
 	$(QUIET)$(VBOX_JAVAC15) -cp \
 		$(VBOXWEB_JAVALIB)/gen15:$(VBOX_JAXWS_LIBDIR)/jaxws-api.jar:$(VBOX_JAXWS_LIBDIR)/lib/jaxb-api.jar:$(VBOX_JAXWS_LIBDIR)/jsr181-api.jar \
@@ -636,7 +639,7 @@ $(VBOXWEB_JAVA16_JAR): $(VBOXWEB_GLUE_JAVA_TMP) $(VBOXWEB_WSDL) $(VBOXWEBSERVICE
 	$(QUIET)$(RM) -Rf $(VBOXWEB_JAVALIB)/gen16
 	$(MKDIR) -p $(VBOXWEB_JAVALIB)/gen16
 	$(call MSG_GENERATE,,$@,JAX-WS for Java 1.6 bindings using $(VBOXWEBSERVICE_WSDL))
-	$(QUIET)$(VBOX_WSIMPORT16) -d $(VBOXWEB_JAVALIB)/gen16 $(VBOXWEBSERVICE_WSDL)
+	$(QUIET)$(VBOX_WSIMPORT16) -p $(VBOX_JAVA_PACKAGE)  -d $(VBOXWEB_JAVALIB)/gen16 $(VBOXWEBSERVICE_WSDL)
 	$(call MSG_L1,Compiling bridge code)
 	$(QUIET)$(VBOX_JAVAC16) -cp $(VBOXWEB_JAVALIB)/gen16 \
 		$(VBOXWEB_PATH_SDK_GLUE_JAVA)/*.java  -d  $(VBOXWEB_JAVALIB)/gen16
