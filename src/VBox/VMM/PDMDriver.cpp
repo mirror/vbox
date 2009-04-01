@@ -828,28 +828,8 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMQueueCreate(PPDMDRVINS pDrvIns, RTUINT c
 static DECLCALLBACK(int) pdmR3DrvHlp_PDMPollerRegister(PPDMDRVINS pDrvIns, PFNPDMDRVPOLLER pfnPoller)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    LogFlow(("pdmR3DrvHlp_PDMPollerRegister: caller='%s'/%d: pfnPoller=%p\n",
-             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pfnPoller));
-    VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
-
-    int rc = VINF_SUCCESS;
-    PVM pVM = pDrvIns->Internal.s.pVM;
-    if (pVM->pdm.s.cPollers < RT_ELEMENTS(pVM->pdm.s.apfnPollers))
-    {
-        pVM->pdm.s.apfnPollers[pVM->pdm.s.cPollers] = pfnPoller;
-        pVM->pdm.s.aDrvInsPollers[pVM->pdm.s.cPollers] = pDrvIns;
-        pVM->pdm.s.cPollers++;
-        if (pVM->pdm.s.cPollers == 1)
-            TMTimerSetMillies(pVM->pdm.s.pTimerPollers, 5);
-    }
-    else
-    {
-        AssertMsgFailed(("Too many pollers!\n"));
-        rc = VERR_INTERNAL_ERROR;
-    }
-
-    LogFlow(("pdmR3DrvHlp_PDMPollerRegister: caller='%s'/%d: returns %Rrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
-    return rc;
+    AssertLogRelMsgFailedReturn(("pdmR3DrvHlp_PDMPollerRegister: caller='%s'/%d: pfnPoller=%p -> VERR_NOT_SUPPORTED\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pfnPoller),
+                                VERR_NOT_SUPPORTED);
 }
 
 
