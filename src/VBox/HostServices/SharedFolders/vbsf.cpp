@@ -562,6 +562,8 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
         case SHFL_CF_ACCESS_ATTR_NONE:
         {
             fOpen |= RTFILE_O_ACCESS_ATTR_DEFAULT;
+            /** @todo for posix guests we should allow passing the mode. */
+            fOpen |= 0666 << RTFILE_O_CREATE_MODE_SHIFT;
             Log(("FLAG: SHFL_CF_ACCESS_ATTR_NONE\n"));
             break;
         }
@@ -569,6 +571,10 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
         case SHFL_CF_ACCESS_ATTR_READ:
         {
             fOpen |= RTFILE_O_ACCESS_ATTR_READ;
+            /** @todo for posix guests we should allow passing the mode.
+             * Additionally this esoteric case - new file with only read
+             * access - should be tested with apps depending on this. */
+            fOpen |= 0444 << RTFILE_O_CREATE_MODE_SHIFT;
             Log(("FLAG: SHFL_CF_ACCESS_ATTR_READ\n"));
             break;
         }
@@ -576,6 +582,10 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
         case SHFL_CF_ACCESS_ATTR_WRITE:
         {
             fOpen |= RTFILE_O_ACCESS_ATTR_WRITE;
+            /** @todo for posix guests we should allow passing the mode.
+             * Additionally this esoteric case - new file with only write
+             * access - should be tested with apps depending on this. */
+            fOpen |= 0222 << RTFILE_O_CREATE_MODE_SHIFT;
             Log(("FLAG: SHFL_CF_ACCESS_ATTR_WRITE\n"));
             break;
         }
@@ -583,6 +593,8 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
         case SHFL_CF_ACCESS_ATTR_READWRITE:
         {
             fOpen |= RTFILE_O_ACCESS_ATTR_READWRITE;
+            /** @todo for posix guests we should allow passing the mode. */
+            fOpen |= 0666 << RTFILE_O_CREATE_MODE_SHIFT;
             Log(("FLAG: SHFL_CF_ACCESS_ATTR_READWRITE\n"));
             break;
         }
