@@ -38,10 +38,9 @@
  - - - - - - - - - - - - - - - - - - - - - - -->
 
 <xsl:variable name="G_xsltFilename" select="'glue-jaxws.xsl'" />
-
 <!-- Keep in sync with VBOX_JAVA_PACKAGE in webservices/Makefile.kmk -->
-<xsl:variable name="G_virtualBoxPackage" select="'org.virtualbox22'" />
-<xsl:variable name="G_virtualBoxPackage2" select="'com.sun.xml.ws.commons.virtualbox22'" />
+<xsl:variable name="G_virtualBoxPackage" select="concat('org.virtualbox',$G_vboxApiSuffix)" />
+<xsl:variable name="G_virtualBoxPackage2" select="concat('com.sun.xml.ws.commons.virtualbox',$G_vboxApiSuffix)" />
 
 <xsl:include href="websrv-shared.inc.xsl" />
 
@@ -350,10 +349,15 @@ import javax.xml.ws.WebServiceException;
  - - - - - - - - - - - - - - - - - - - - - - -->
 
 <xsl:template match="/idl">
+ <xsl:if test="not($G_vboxApiSuffix)">
+  <xsl:call-template name="fatalError">
+    <xsl:with-param name="msg" select="'G_vboxApiSuffix must be given'" />
+  </xsl:call-template>
+ </xsl:if>
  <xsl:call-template name="startFile">
   <xsl:with-param name="file" select="'IUnknown.java'" />
  </xsl:call-template>
-
+ 
  <xsl:text><![CDATA[
 public class IUnknown
 {
