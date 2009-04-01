@@ -224,11 +224,15 @@ static int log_append = 0;
 #endif
 
 /* statistics */
+#ifndef VBOX
 static int tlb_flush_count;
 static int tb_flush_count;
-#ifndef VBOX
 static int tb_phys_invalidate_count;
-#endif /* !VBOX */
+#else  /* VBOX - Resettable U32 stats, see VBoxRecompiler.c. */
+uint32_t tlb_flush_count;
+uint32_t tb_flush_count;
+uint32_t tb_phys_invalidate_count;
+#endif /* VBOX */
 
 #define SUBPAGE_IDX(addr) ((addr) & ~TARGET_PAGE_MASK)
 typedef struct subpage_t {
@@ -933,9 +937,7 @@ void tb_phys_invalidate(TranslationBlock *tb, target_ulong page_addr)
     }
     tb->jmp_first = (TranslationBlock *)((long)tb | 2); /* fail safe */
 
-#ifndef VBOX
     tb_phys_invalidate_count++;
-#endif
 }
 
 
