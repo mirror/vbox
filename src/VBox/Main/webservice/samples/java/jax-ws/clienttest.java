@@ -18,10 +18,10 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-import com.sun.xml.ws.commons.virtualbox.*;
+import com.sun.xml.ws.commons.virtualbox22.*;
 import java.util.*;
 import javax.xml.ws.Holder;
-import org.virtualbox.*;
+import org.virtualbox22.*;
 
 public class clienttest
 {
@@ -120,7 +120,7 @@ public class clienttest
         try
         {
             int i = 0;
-            for (IMachine m : vbox.getMachines2())
+            for (IMachine m : vbox.getMachines())
             {
                 System.out.println("Machine " + (i++) + ": " + " [" + m.getId() + "]" + " - " + m.getName());
             }
