@@ -466,7 +466,7 @@ static PhysPageDesc *phys_page_find_alloc(target_phys_addr_t index, int alloc)
     }
 #endif
 #else  /* VBOX */
-    /* level 0 lookup and lazy allocation. */
+    /* level 0 lookup and lazy allocation of level 1 map. */
     if (RT_UNLIKELY(index >= (target_ulong)L2_SIZE * L1_SIZE * L0_SIZE))
         return NULL;
     p = l0_phys_map[index >> (L1_BITS + L2_BITS)];
@@ -478,7 +478,7 @@ static PhysPageDesc *phys_page_find_alloc(target_phys_addr_t index, int alloc)
         l0_phys_map[index >> (L1_BITS + L2_BITS)] = (PhysPageDesc **)p;
     }
 
-    /* level 1 lookup and lazy allocation. */
+    /* level 1 lookup and lazy allocation of level 2 map. */
 #endif /* VBOX */
     lp = p + ((index >> L2_BITS) & (L1_SIZE - 1));
     pd = *lp;
