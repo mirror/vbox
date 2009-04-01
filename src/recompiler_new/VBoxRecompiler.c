@@ -142,11 +142,11 @@ static STAMCOUNTER    gStatREMTRChange;
 static STAMCOUNTER    gStatSelOutOfSync[6];
 static STAMCOUNTER    gStatSelOutOfSyncStateBack[6];
 static STAMCOUNTER    gStatFlushTBs;
+#endif
 /* in exec.c */
 extern uint32_t       tlb_flush_count;
 extern uint32_t       tb_flush_count;
 extern uint32_t       tb_phys_invalidate_count;
-#endif
 
 /*
  * Global stuff.
