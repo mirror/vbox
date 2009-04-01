@@ -3379,7 +3379,8 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
  *
  * @remarks The VINF_EM_NO_MEMORY status is for the benefit of the FF processing
  *          in EM.cpp and shouldn't be propagated outside TRPM, HWACCM, EM and
- *          pgmPhysEnsureHandyPage.
+ *          pgmPhysEnsureHandyPage. There is one exception to this in the \#PF
+ *          handler.
  */
 VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
 {
