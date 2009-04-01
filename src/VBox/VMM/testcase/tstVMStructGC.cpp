@@ -337,10 +337,6 @@ int main()
     GEN_CHECK_OFF(PDM, pQueueFlushRC);
     GEN_CHECK_OFF(PDM, pThreads);
     GEN_CHECK_OFF(PDM, pThreadsTail);
-    GEN_CHECK_OFF(PDM, cPollers);
-    GEN_CHECK_OFF(PDM, apfnPollers);
-    GEN_CHECK_OFF(PDM, aDrvInsPollers);
-    GEN_CHECK_OFF(PDM, pTimerPollers);
     GEN_CHECK_OFF(PDM, CritSect);
     GEN_CHECK_OFF(PDM, StatQueuedCritSectLeaves);
     GEN_CHECK_SIZE(PDMDEVINSINT);

@@ -891,18 +891,6 @@ typedef struct PDM
     RTGCPHYS                        GCPhysVMMDevHeap;
     /** @} */
 
-    /** TEMPORARY HACKS FOR NETWORK POLLING.
-     * @todo fix NAT and kill this!
-     * @{ */
-    RTUINT                          cPollers;
-#if HC_ARCH_BITS == 64
-    RTUINT                          padding1;
-#endif
-    R3PTRTYPE(PFNPDMDRVPOLLER)      apfnPollers[16];
-    R3PTRTYPE(PPDMDRVINS)           aDrvInsPollers[16];
-    PTMTIMERR3                      pTimerPollers;
-    /** @} */
-
     /** The PDM lock.
      * This is used to protect everything that deals with interrupts, i.e.
      * the PIC, APIC, IOAPIC and PCI devices pluss some PDM functions. */
