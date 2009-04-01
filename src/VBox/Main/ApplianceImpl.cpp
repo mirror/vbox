@@ -2625,11 +2625,16 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
             std::list<VirtualSystemDescriptionEntry*> llVendor = vsdescThis->findByType(VirtualSystemDescriptionType_Vendor);
             std::list<VirtualSystemDescriptionEntry*> llVendorUrl = vsdescThis->findByType(VirtualSystemDescriptionType_VendorUrl);
             std::list<VirtualSystemDescriptionEntry*> llVersion = vsdescThis->findByType(VirtualSystemDescriptionType_Version);
-            if (llProduct.size() ||
-                llProductUrl.size() ||
-                llVendor.size() ||
-                llVendorUrl.size() ||
-                llVersion.size())
+            bool fProduct = llProduct.size() && !llProduct.front()->strVbox.isEmpty();
+            bool fProductUrl = llProductUrl.size() && !llProductUrl.front()->strVbox.isEmpty();
+            bool fVendor = llVendor.size() && !llVendor.front()->strVbox.isEmpty();
+            bool fVendorUrl = llVendorUrl.size() && !llVendorUrl.front()->strVbox.isEmpty();
+            bool fVersion = llVersion.size() && !llVersion.front()->strVbox.isEmpty();
+            if (fProduct ||
+                fProductUrl ||
+                fVersion ||
+                fVendorUrl ||
+                fVersion)
             {
                 /* <Section ovf:required="false" xsi:type="ovf:ProductSection_Type">
                     <Info>Meta-information about the installed software</Info>
@@ -2641,21 +2646,22 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                    </Section> */
                 xml::ElementNode *pelmAnnotationSection = pelmVirtualSystem->createChild("ProductSection");
                 pelmAnnotationSection->createChild("Info")->addContent("Meta-information about the installed software");
-                if (llProduct.size() && !llProduct.front()->strVbox.isEmpty())
+                if (fProduct)
                     pelmAnnotationSection->createChild("Product")->addContent(llProduct.front()->strVbox);
-                if (llVendor.size() && !llVendor.front()->strVbox.isEmpty())
+                if (fVendor)
                     pelmAnnotationSection->createChild("Vendor")->addContent(llVendor.front()->strVbox);
-                if (llVersion.size() && !llVersion.front()->strVbox.isEmpty())
+                if (fVersion)
                     pelmAnnotationSection->createChild("Version")->addContent(llVersion.front()->strVbox);
-                if (llProductUrl.size() && !llProductUrl.front()->strVbox.isEmpty())
+                if (fProductUrl)
                     pelmAnnotationSection->createChild("ProductUrl")->addContent(llProductUrl.front()->strVbox);
-                if (llVendorUrl.size() && !llVendorUrl.front()->strVbox.isEmpty())
+                if (fVendorUrl)
                     pelmAnnotationSection->createChild("VendorUrl")->addContent(llVendorUrl.front()->strVbox);
             }
 
             // description
             std::list<VirtualSystemDescriptionEntry*> llDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
-            if (llDescription.size())
+            if (llDescription.size() &&
+                !llDescription.front()->strVbox.isEmpty())
             {
                 /*  <Section ovf:required="false" xsi:type="ovf:AnnotationSection_Type">
                         <Info>A human-readable annotation</Info>
@@ -2668,7 +2674,8 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
 
             // license
             std::list<VirtualSystemDescriptionEntry*> llLicense = vsdescThis->findByType(VirtualSystemDescriptionType_License);
-            if (llLicense.size())
+            if (llLicense.size() &&
+                !llLicense.front()->strVbox.isEmpty())
             {
                 /* <EulaSection>
                    <Info ovf:msgid="6">License agreement for the Virtual System.</Info>
