@@ -593,9 +593,9 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     int rc;
     RTUINT cb1;
 
-    /* cBasePages */
+    /* cBasePages (ignored) */
     uint64_t cPages;
-    if (u32Version != 1)
+    if (u32Version >= 2)
         rc = SSMR3GetU64(pSSM, &cPages);
     else
     {
@@ -604,15 +604,6 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     }
     if (RT_FAILURE(rc))
         return rc;
-#ifdef VBOX_WITH_NEW_PHYS_CODE
-    AssertLogRelMsgReturn(cPages <= pVM->mm.s.cBasePages, /* shadowed rom is counted twice, exact match here isn't really important. */
-                          ("Memory configuration has changed. cPages=%#RX64 saved=%#RX64\n", pVM->mm.s.cBasePages, cPages),
-                          VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH);
-#else
-    AssertLogRelMsgReturn(cPages == pVM->mm.s.cBasePages,
-                          ("Memory configuration has changed. cPages=%#RX64 saved=%#RX64\n", pVM->mm.s.cBasePages, cPages),
-                          VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH);
-#endif
 
     /* cbRamBase */
     uint64_t cb;
@@ -625,7 +616,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     }
     if (RT_FAILURE(rc))
         return rc;
-    AssertLogRelMsgReturn(cb == pVM->mm.s.cbRamBase, 
+    AssertLogRelMsgReturn(cb == pVM->mm.s.cbRamBase,
                           ("Memory configuration has changed. cbRamBase=%#RX64 save=%#RX64\n", pVM->mm.s.cbRamBase, cb),
                           VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH);
 
