@@ -459,15 +459,16 @@ RTDECL(void *) RTHeapSimpleAllocZ(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignme
  */
 static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt, size_t cb, size_t uAlignment)
 {
-    /*
-     * Search for a fitting block from the lower end of the heap.
-     */
     PRTHEAPSIMPLEBLOCK  pRet = NULL;
     PRTHEAPSIMPLEFREE   pFree;
+
 #ifdef RTHEAPSIMPLE_STRICT
     rtHeapSimpleAssertAll(pHeapInt);
 #endif
 
+    /*
+     * Search for a fitting block from the lower end of the heap.
+     */
     for (pFree = pHeapInt->pFreeHead;
          pFree;
          pFree = pFree->pNext)
@@ -674,17 +675,19 @@ RTDECL(void) RTHeapSimpleFree(RTHEAPSIMPLE Heap, void *pv)
 static void rtHeapSimpleFreeBlock(PRTHEAPSIMPLEINTERNAL pHeapInt, PRTHEAPSIMPLEBLOCK pBlock)
 {
     PRTHEAPSIMPLEFREE   pFree = (PRTHEAPSIMPLEFREE)pBlock;
+    PRTHEAPSIMPLEFREE   pLeft;
+    PRTHEAPSIMPLEFREE   pRight;
+
+#ifdef RTHEAPSIMPLE_STRICT
+    rtHeapSimpleAssertAll(pHeapInt);
+#endif
 
     /*
      * Look for the closest free list blocks by walking the blocks right
      * of us (both lists are sorted by address).
      */
-    PRTHEAPSIMPLEFREE   pLeft = NULL;
-    PRTHEAPSIMPLEFREE   pRight = NULL;
-#ifdef RTHEAPSIMPLE_STRICT
-    rtHeapSimpleAssertAll(pHeapInt);
-#endif
-
+    pLeft = NULL;
+    pRight = NULL;
     if (pHeapInt->pFreeTail)
     {
         pRight = (PRTHEAPSIMPLEFREE)pFree->Core.pNext;
