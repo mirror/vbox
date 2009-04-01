@@ -1492,6 +1492,10 @@ int handleModifyVM(HandlerArg *a)
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82543GC), 1);
                 }
+                else if (strcmp(nictype[n], "82545EM") == 0)
+                {
+                    CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82545EM), 1);
+                }
 #endif
                 else
                 {

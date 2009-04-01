@@ -3195,7 +3195,8 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
             rc = aNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
             AssertComRC(rc);
             if (adapterType == NetworkAdapterType_I82540EM ||
-                adapterType == NetworkAdapterType_I82543GC)
+                adapterType == NetworkAdapterType_I82543GC ||
+                adapterType == NetworkAdapterType_I82545EM)
                 cszAdapterName = "e1000";
 #endif
             int vrc = PDMR3QueryDeviceLun (mpVM, cszAdapterName,

@@ -208,6 +208,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
 #ifdef VBOX_WITH_E1000
         case NetworkAdapterType_I82540EM:
         case NetworkAdapterType_I82543GC:
+        case NetworkAdapterType_I82545EM:
 #endif
             break;
         default:
@@ -882,6 +883,8 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         mData->mAdapterType = NetworkAdapterType_I82540EM;
     else if (strcmp (adapterType, "82543GC") == 0)
         mData->mAdapterType = NetworkAdapterType_I82543GC;
+    else if (strcmp (adapterType, "82545EM") == 0)
+        mData->mAdapterType = NetworkAdapterType_I82545EM;
     else
         ComAssertMsgFailedRet (("Invalid adapter type '%s'", adapterType),
                                E_FAIL);
@@ -1011,6 +1014,9 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
             break;
         case NetworkAdapterType_I82543GC:
             typeStr = "82543GC";
+            break;
+        case NetworkAdapterType_I82545EM:
+            typeStr = "82545EM";
             break;
         default:
             ComAssertMsgFailedRet (("Invalid network adapter type: %d",
@@ -1162,7 +1168,8 @@ void NetworkAdapter::applyDefaults (GuestOSType *aOsType)
 
     /* Set default network adapter for this OS type */
     if (defaultType == NetworkAdapterType_I82540EM ||
-        defaultType == NetworkAdapterType_I82543GC)
+        defaultType == NetworkAdapterType_I82543GC ||
+        defaultType == NetworkAdapterType_I82545EM)
     {
         if (e1000enabled) mData->mAdapterType = defaultType;
     }

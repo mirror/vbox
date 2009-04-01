@@ -2912,6 +2912,8 @@ void VBoxGlobal::retranslateUi()
         tr ("Intel PRO/1000 MT Desktop (82540EM)", "NetworkAdapterType");
     mNetworkAdapterTypes [KNetworkAdapterType_I82543GC] =
         tr ("Intel PRO/1000 T Server (82543GC)", "NetworkAdapterType");
+    mNetworkAdapterTypes [KNetworkAdapterType_I82545EM] =
+        tr ("Intel PRO/1000 MT Server (82545EM)", "NetworkAdapterType");
 
     mNetworkAttachmentTypes [KNetworkAttachmentType_Null] =
         tr ("Not attached", "NetworkAttachmentType");

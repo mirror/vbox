@@ -762,6 +762,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 case NetworkAdapterType_I82543GC:
                     strNICType = "82543GC";
                     break;
+                case NetworkAdapterType_I82545EM:
+                    strNICType = "82545EM";
+                    break;
 #endif
                 default:
                     strNICType = "unknown";

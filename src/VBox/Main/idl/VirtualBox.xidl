@@ -10911,6 +10911,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="Am79C973"              value="2"/>
     <const name="I82540EM"              value="3"/>
     <const name="I82543GC"              value="4"/>
+    <const name="I82545EM"              value="5"/>
   </enum>
 
   <interface

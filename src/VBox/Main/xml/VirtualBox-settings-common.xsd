@@ -214,6 +214,7 @@
     <xsd:enumeration value="Am79C973"/>
     <xsd:enumeration value="82540EM"/>
     <xsd:enumeration value="82543GC"/>
+    <xsd:enumeration value="82545EM"/>
   </xsd:restriction>
 </xsd:simpleType>
 
