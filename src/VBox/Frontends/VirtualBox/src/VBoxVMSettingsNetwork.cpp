@@ -292,6 +292,12 @@ void VBoxVMSettingsNetwork::populateComboboxes()
         KNetworkAdapterType_I82543GC);
     mCbAdapterType->setItemData (3,
         mCbAdapterType->itemText (3), Qt::ToolTipRole);
+    mCbAdapterType->insertItem (4,
+        vboxGlobal().toString (KNetworkAdapterType_I82545EM));
+    mCbAdapterType->setItemData (4,
+        KNetworkAdapterType_I82545EM);
+    mCbAdapterType->setItemData (4,
+        mCbAdapterType->itemText (4), Qt::ToolTipRole);
 #endif /* VBOX_WITH_E1000 */
 
     /* Set the old value */

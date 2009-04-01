@@ -128,22 +128,40 @@ do { \
 
 /*****************************************************************************/
 
-typedef uint32_t E1KCHIP;
-#define E1K_CHIP_82540EM 0
-#define E1K_CHIP_82543GC 1
-
 /* Intel */
 #define E1K_VENDOR_ID            0x8086
 /* 82540EM-A (Desktop) */
 #define E1K_DEVICE_ID_82540EM    0x100E
+/* 82545EM-A (Server) */
+#define E1K_DEVICE_ID_82545EM    0x100F
 /* 82543GC (Server) */
 #define E1K_DEVICE_ID_82543GC    0x1004
 /* Intel */
 #define E1K_SUBSYSTEM_VENDOR_ID  0x8086
 /* PRO/1000 MT Desktop Ethernet */
 #define E1K_SUBSYSTEM_ID_82540EM 0x001E
+/* PRO/1000 MT Server Ethernet */
+#define E1K_SUBSYSTEM_ID_82545EM 0x1001
 /* PRO/1000 T Server Ethernet */
 #define E1K_SUBSYSTEM_ID_82543GC 0x1004
+
+typedef uint32_t E1KCHIP;
+#define E1K_CHIP_82540EM 0
+#define E1K_CHIP_82543GC 1
+#define E1K_CHIP_82545EM 2
+
+struct E1kChips
+{
+    uint16_t uPCIDeviceId;
+    uint16_t uPCISubsystemId;
+    const char *pcszName;
+} g_Chips[] =
+{
+    { E1K_DEVICE_ID_82540EM, E1K_SUBSYSTEM_ID_82540EM, "82540EM" },
+    { E1K_DEVICE_ID_82543GC, E1K_SUBSYSTEM_ID_82543GC, "82543GC" },
+    { E1K_DEVICE_ID_82545EM, E1K_SUBSYSTEM_ID_82545EM, "82545EM" }
+};
+
 
 /* The size of register area mapped to I/O space */
 #define E1K_IOPORT_SIZE                 0x8
@@ -4557,15 +4575,12 @@ DECLINLINE(void) e1kPCICfgSetU32(PCIDEVICE& refPciDev, uint32_t uOffset, uint32_
  */
 static DECLCALLBACK(void) e1kConfigurePCI(PCIDEVICE& pci, E1KCHIP eChip)
 {
+    Assert(eChip < RT_ELEMENTS(g_Chips));
     /* Configure PCI Device, assume 32-bit mode ******************************/
     PCIDevSetVendorId(&pci, E1K_VENDOR_ID);
-    PCIDevSetDeviceId(&pci, eChip == E1K_CHIP_82540EM ?
-                      E1K_DEVICE_ID_82540EM:
-                      E1K_DEVICE_ID_82543GC);
+    PCIDevSetDeviceId(&pci, g_Chips[eChip].uPCIDeviceId);
     e1kPCICfgSetU16(pci, VBOX_PCI_SUBSYSTEM_VENDOR_ID, E1K_SUBSYSTEM_VENDOR_ID);
-    e1kPCICfgSetU16(pci, VBOX_PCI_SUBSYSTEM_ID, eChip == E1K_CHIP_82540EM ?
-                    E1K_SUBSYSTEM_ID_82540EM:
-                    E1K_SUBSYSTEM_ID_82543GC);
+    e1kPCICfgSetU16(pci, VBOX_PCI_SUBSYSTEM_ID, g_Chips[eChip].uPCISubsystemId);
 
     e1kPCICfgSetU16(pci, VBOX_PCI_COMMAND,            0x0000);
     /* DEVSEL Timing (medium device), 66 MHz Capable, New capabilities */
@@ -4666,10 +4681,9 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'AdapterType'"));
-    Assert(pState->eChip == E1K_CHIP_82540EM ||
-           pState->eChip == E1K_CHIP_82543GC);
+    Assert(pState->eChip <= E1K_CHIP_82545EM);
 
-    E1kLog(("%s Chip=%s\n", INSTANCE(pState), pState->eChip == E1K_CHIP_82540EM ? "82540EM" : "82543GC"));
+    E1kLog(("%s Chip=%s\n", INSTANCE(pState), g_Chips[pState->eChip].pcszName));
 
     /* Initialize state structure */
     pState->fR0Enabled   = true;

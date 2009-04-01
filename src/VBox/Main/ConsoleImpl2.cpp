@@ -1202,6 +1202,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #ifdef VBOX_WITH_E1000
             case NetworkAdapterType_I82540EM:
             case NetworkAdapterType_I82543GC:
+            case NetworkAdapterType_I82545EM:
                 pDev = pDevE1000;
                 break;
 #endif
@@ -1255,6 +1256,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             case NetworkAdapterType_I82543GC:
                 rc = CFGMR3InsertInteger(pCfg, "AdapterType", 1);                   RC_CHECK();
+                break;
+            case NetworkAdapterType_I82545EM:
+                rc = CFGMR3InsertInteger(pCfg, "AdapterType", 2);                   RC_CHECK();
                 break;
         }
 

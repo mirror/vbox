@@ -407,6 +407,7 @@ QWidget * HardwareItem::createEditor (QWidget *aParent, const QStyleOptionViewIt
 #ifdef VBOX_WITH_E1000
                     e->addItem (vboxGlobal().toString (KNetworkAdapterType_I82540EM), KNetworkAdapterType_I82540EM);
                     e->addItem (vboxGlobal().toString (KNetworkAdapterType_I82543GC), KNetworkAdapterType_I82543GC);
+                    e->addItem (vboxGlobal().toString (KNetworkAdapterType_I82545EM), KNetworkAdapterType_I82545EM);
 #endif /* VBOX_WITH_E1000 */
                     editor = e;
                     break;

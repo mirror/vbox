@@ -261,6 +261,7 @@ void VBoxVMInformationDlg::retranslateUi()
         {
             case KNetworkAdapterType_I82540EM:
             case KNetworkAdapterType_I82543GC:
+            case KNetworkAdapterType_I82545EM:
                 name = "E1k";
                 break;
             default:
