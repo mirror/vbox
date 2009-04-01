@@ -228,7 +228,8 @@ enum
     kEventVBoxMoveWindow    = 'mwin',
     kEventVBoxResizeWindow  = 'rwin',
     kEventVBoxDisposeWindow = 'dwin',
-    kEventVBoxUpdateDock    = 'udck'
+    kEventVBoxUpdateDock    = 'udck',
+    kEventVBoxUpdateContext = 'uctx'
 };
 OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 

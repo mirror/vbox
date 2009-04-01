@@ -208,6 +208,33 @@ OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
     return status;
 }
 
+
+#define DEBUG_MSG_RESULT(result, text) \
+        printf(text" (%d; %s:%d)", (int)(result), __FILE__, __LINE__)
+
+#define CHECK_CARBON_RC_RETURN(result, text, ret) \
+    if((result) != noErr) \
+    { \
+        DEBUG_MSG_RESULT(result, text); \
+        return ret; \
+    }
+
+#define CHECK_CARBON_RC_RETURN_VOID(result, text) \
+    CHECK_CARBON_RC_RETURN(result, text,)
+
+void PostUpdateContext (WindowRef window, void *wp)
+{
+    EventRef evt;
+    OSStatus status = CreateEvent(NULL, kEventClassVBox, kEventVBoxUpdateContext, 0, kEventAttributeNone, &evt);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (PostUpdateContext): CreateEvent Failed");
+    status = SetEventParameter(evt, kEventParamWindowRef, typeWindowRef, sizeof (window), &window);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (PostUpdateContext): SetEventParameter Failed");
+    status = SetEventParameter(evt, kEventParamUserData, typeVoidPtr, sizeof (wp), &wp);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (PostUpdateContext): SetEventParameter Failed");
+    status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (PostUpdateContext): PostEventToQueue Failed");
+}
+
 OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
 {
     if (!aInUserData)
@@ -226,17 +253,26 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
     {
         if (eventKind == kEventVBoxShowWindow)
         {
-//            printf ("ShowWindow requested\n");
+            //printf ("ShowWindow requested\n");
             WindowRef w;
             if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
                 return noErr;
+            void *wp; 
+            if (GetEventParameter (aInEvent, kEventParamUserData, typeVoidPtr, NULL, sizeof (wp), NULL, &wp) != noErr)
+                return noErr;
             ShowWindow (w);
-            SelectWindow (w);
+            /* We have to make sure that newly created windows are on top of
+               all other windows. This fixes issues with compiz & additional
+               created OpenGL windows. */
+            ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether | kWindowGroupAttrLayerTogether);
+            BringToFront (w);
+            ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether | kWindowGroupAttrLayerTogether, 0);
+            PostUpdateContext(w, wp);
             return noErr;
         }
         if (eventKind == kEventVBoxHideWindow)
         {
-//            printf ("HideWindow requested\n");
+            //printf ("HideWindow requested\n");
             WindowPtr w;
             if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
                 return noErr;
@@ -245,38 +281,46 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
         }
         if (eventKind == kEventVBoxMoveWindow)
         {
-//            printf ("MoveWindow requested\n");
+            //printf ("MoveWindow requested\n");
             WindowPtr w;
             if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
                 return noErr;
             HIPoint p;
             if (GetEventParameter (aInEvent, kEventParamOrigin, typeHIPoint, NULL, sizeof (p), NULL, &p) != noErr)
                 return noErr;
+            void *wp; 
+            if (GetEventParameter (aInEvent, kEventParamUserData, typeVoidPtr, NULL, sizeof (wp), NULL, &wp) != noErr)
+                return noErr;
             ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
             QPoint p1 = view->mapToGlobal (QPoint (p.x, p.y));
-//            printf ("Pos: %d %d\n", p1.x(), p1.y());
+            //printf ("Pos: %d %d\n", p1.x(), p1.y());
             MoveWindow (w, p1.x(), p1.y(), true);
             ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether, 0);
+            PostUpdateContext(w, wp);
             return noErr;
         }
         if (eventKind == kEventVBoxResizeWindow)
         {
-//            printf ("ResizeWindow requested\n");
+            //printf ("ResizeWindow requested\n");
             WindowPtr w;
             if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
                 return noErr;
             HISize s;
             if (GetEventParameter (aInEvent, kEventParamDimensions, typeHISize, NULL, sizeof (s), NULL, &s) != noErr)
                 return noErr;
+            void *wp; 
+            if (GetEventParameter (aInEvent, kEventParamUserData, typeVoidPtr, NULL, sizeof (wp), NULL, &wp) != noErr)
+                return noErr;
             ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
-//            printf ("Size: %f %f\n", s.width, s.height);
+            //printf ("Size: %f %f\n", s.width, s.height);
             SizeWindow (w, s.width, s.height, true);
             ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether, 0);
+            PostUpdateContext(w, wp);
             return noErr;
         }
         if (eventKind == kEventVBoxDisposeWindow)
         {
-//            printf ("DisposeWindow requested\n");
+            //printf ("DisposeWindow requested\n");
             WindowPtr w;
             if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
                 return noErr;
@@ -285,7 +329,7 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
         }
         if (eventKind == kEventVBoxUpdateDock)
         {
-//            printf ("UpdateDock requested\n");
+            //printf ("UpdateDock requested\n");
             view->updateDockIcon();
             return noErr;
         }
