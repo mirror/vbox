@@ -467,15 +467,15 @@ static PhysPageDesc *phys_page_find_alloc(target_phys_addr_t index, int alloc)
 #endif
 #else  /* VBOX */
     /* level 0 lookup and lazy allocation of level 1 map. */
-    if (RT_UNLIKELY(index >= (target_ulong)L2_SIZE * L1_SIZE * L0_SIZE))
+    if (RT_UNLIKELY(index >= (target_phys_addr_t)L2_SIZE * L1_SIZE * L0_SIZE))
         return NULL;
     p = l0_phys_map[index >> (L1_BITS + L2_BITS)];
     if (RT_UNLIKELY(!p)) {
         if (!alloc)
             return NULL;
-        p = qemu_vmalloc(sizeof(PhysPageDesc **) * L0_SIZE);
-        memset(p, 0, sizeof(PhysPageDesc **) * L0_SIZE);
-        l0_phys_map[index >> (L1_BITS + L2_BITS)] = (PhysPageDesc **)p;
+        p = qemu_vmalloc(sizeof(void **) * L0_SIZE);
+        memset(p, 0, sizeof(void **) * L0_SIZE);
+        l0_phys_map[index >> (L1_BITS + L2_BITS)] = p;
     }
 
     /* level 1 lookup and lazy allocation of level 2 map. */
