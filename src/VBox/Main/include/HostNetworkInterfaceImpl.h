@@ -107,6 +107,10 @@ private:
         ULONG networkMask;
         Bstr IPV6Address;
         ULONG IPV6NetworkMaskPrefixLength;
+        ULONG realIPAddress;
+        ULONG realNetworkMask;
+        Bstr  realIPV6Address;
+        ULONG realIPV6PrefixLength;
         BOOL dhcpEnabled;
         Bstr hardwareAddress;
         HostNetworkInterfaceMediumType_T mediumType;
