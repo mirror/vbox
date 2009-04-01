@@ -754,6 +754,7 @@ static int emR3Debug(PVM pVM, int rc)
                 case VINF_EM_TERMINATE:
                 case VINF_EM_OFF:
                 case VINF_EM_RESET:
+                case VINF_EM_NO_MEMORY:
                 case VINF_EM_RAW_STALE_SELECTOR:
                 case VINF_EM_RAW_IRET_TRAP:
                 case VERR_TRPM_PANIC:
@@ -1015,7 +1016,7 @@ static int emR3RawStep(PVM pVM)
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pCtx);
-            if (RT_FAILURE(rc))
+            if (rc != VINF_SUCCESS)
                 return rc;
         }
 
@@ -1089,7 +1090,7 @@ static int emR3HwAccStep(PVM pVM, RTCPUID idCpu)
     if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
     {
         rc = emR3RawForcedActions(pVM, pCtx);
-        if (RT_FAILURE(rc))
+        if (rc != VINF_SUCCESS)
             return rc;
     }
     /*
@@ -1124,44 +1125,48 @@ static int emR3HwAccStep(PVM pVM, RTCPUID idCpu)
 }
 
 
-void emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
+int emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
 {
-    EMSTATE  enmOldState = pVM->em.s.enmState;
-
-    pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_RAW;
+    int     rc          = VINF_SUCCESS;
+    EMSTATE enmOldState = pVM->em.s.enmState;
+    pVM->em.s.enmState  = EMSTATE_DEBUG_GUEST_RAW;
 
     Log(("Single step BEGIN:\n"));
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVM);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
-        emR3RawStep(pVM);
+        rc = emR3RawStep(pVM);
+        if (rc != VINF_SUCCESS)
+            break;
     }
-    Log(("Single step END:\n"));
+    Log(("Single step END: rc=%Rrc\n", rc));
     CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
     pVM->em.s.enmState = enmOldState;
+    return rc;
 }
 
 
 static int emR3SingleStepExecHwAcc(PVM pVM, RTCPUID idCpu, uint32_t cIterations)
 {
-    EMSTATE  enmOldState = pVM->em.s.enmState;
-
-    pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_HWACC;
+    int     rc          = VINF_SUCCESS;
+    EMSTATE enmOldState = pVM->em.s.enmState;
+    pVM->em.s.enmState  = EMSTATE_DEBUG_GUEST_HWACC;
 
     Log(("Single step BEGIN:\n"));
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVM);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
-        emR3HwAccStep(pVM, idCpu);
-        if (!HWACCMR3CanExecuteGuest(pVM, pVM->em.s.pCtx))
+        rc = emR3HwAccStep(pVM, idCpu);
+        if (    rc != VINF_SUCCESS
+            ||  !HWACCMR3CanExecuteGuest(pVM, pVM->em.s.pCtx))
             break;
     }
-    Log(("Single step END:\n"));
+    Log(("Single step END: rc=%Rrc\n", rc));
     CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
     pVM->em.s.enmState = enmOldState;
-    return VINF_EM_RESCHEDULE_REM;
+    return rc == VINF_SUCCESS ? VINF_EM_RESCHEDULE_REM : rc;
 }
 
 
@@ -2425,6 +2430,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
         case VINF_EM_SUSPEND:
         case VINF_EM_HALT:
         case VINF_EM_RESUME:
+        case VINF_EM_NO_MEMORY:
         case VINF_EM_RESCHEDULE:
         case VINF_EM_RESCHEDULE_REM:
             break;
@@ -2478,7 +2484,8 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
 /**
  * Check for pending raw actions
  *
- * @returns VBox status code.
+ * @returns VBox status code. May return VINF_EM_NO_MEMORY but none of the other
+ *          EM statuses.
  * @param   pVM         The VM to operate on.
  */
 VMMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM)
@@ -2492,8 +2499,8 @@ VMMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM)
  *
  * This function is called when any FFs in the VM_FF_HIGH_PRIORITY_PRE_RAW_MASK is pending.
  *
- * @returns VBox status code.
- *          Only the normal success/failure stuff, no VINF_EM_*.
+ * @returns VBox status code. May return VINF_EM_NO_MEMORY but none of the other
+ *          EM statuses.
  * @param   pVM         The VM handle.
  * @param   pCtx        The guest CPUM register context.
  */
@@ -2518,7 +2525,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
     /*
      * Sync IDT.
      */
-    if (VM_FF_ISSET(pVM, VM_FF_TRPM_SYNC_IDT))
+    if (VM_FF_ISPENDING(pVM, VM_FF_TRPM_SYNC_IDT))
     {
         int rc = TRPMR3SyncIDT(pVM);
         if (RT_FAILURE(rc))
@@ -2528,7 +2535,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
     /*
      * Sync TSS.
      */
-    if (VM_FF_ISSET(pVM, VM_FF_SELM_SYNC_TSS))
+    if (VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_TSS))
     {
         int rc = SELMR3SyncTSS(pVM);
         if (RT_FAILURE(rc))
@@ -2554,7 +2561,10 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
         if (rc != VINF_SUCCESS)
         {
             if (rc != VINF_PGM_SYNC_CR3)
+            {
+                AssertLogRelMsgReturn(RT_FAILURE(rc), ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
                 return rc;
+            }
             rc = PGMSyncCR3(pVM, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
             if (RT_FAILURE(rc))
                 return rc;
@@ -2566,12 +2576,22 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
     /*
      * Allocate handy pages (just in case the above actions have consumed some pages).
      */
-    if (VM_FF_ISSET(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
+    if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_PGM_NEED_HANDY_PAGES, VM_FF_PGM_NO_MEMORY))
     {
         int rc = PGMR3PhysAllocateHandyPages(pVM);
         if (RT_FAILURE(rc))
             return rc;
     }
+
+    /*
+     * Check whether we're out of memory now.
+     *
+     * This may stem from some of the above actions or operations that has been executed
+     * since we ran FFs. The allocate handy pages must for instance always be followed by
+     * this check.
+     */
+    if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        return VINF_EM_NO_MEMORY;
 
     return VINF_SUCCESS;
 }
@@ -2635,7 +2655,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pCtx);
-            if (RT_FAILURE(rc))
+            if (rc != VINF_SUCCESS)
                 break;
         }
 
@@ -2664,7 +2684,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
             if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
             {
                 rc = emR3RawForcedActions(pVM, pCtx);
-                if (RT_FAILURE(rc))
+                if (rc != VINF_SUCCESS)
                     break;
             }
         }
@@ -2775,7 +2795,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
         TMTimerPoll(pVM);
 #endif
         STAM_PROFILE_ADV_STOP(&pVM->em.s.StatRAWTail, d);
-        if (VM_FF_ISPENDING(pVM, ~VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+        if (VM_FF_ISPENDING(pVM, ~VM_FF_HIGH_PRIORITY_PRE_RAW_MASK | VM_FF_PGM_NO_MEMORY))
         {
             Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) != 1);
 
@@ -2842,17 +2862,13 @@ static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
         STAM_PROFILE_ADV_START(&pVM->em.s.StatHwAccEntry, a);
 
         /*
-         * Check various preconditions.
-         */
-        VM_FF_CLEAR(pVM, (VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
-
-        /*
          * Process high priority pre-execution raw-mode FFs.
          */
+        VM_FF_CLEAR(pVM, (VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS)); /* not relevant in HWACCM mode; shouldn't be set really. */
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pCtx);
-            if (RT_FAILURE(rc))
+            if (rc != VINF_SUCCESS)
                 break;
         }
 
@@ -3084,11 +3100,18 @@ static EMSTATE emR3Reschedule(PVM pVM, PCPUMCTX pCtx)
  */
 static int emR3HighPriorityPostForcedActions(PVM pVM, int rc)
 {
-    if (VM_FF_ISSET(pVM, VM_FF_PDM_CRITSECT))
+    if (VM_FF_ISPENDING(pVM, VM_FF_PDM_CRITSECT))
         PDMR3CritSectFF(pVM);
 
-    if (VM_FF_ISSET(pVM, VM_FF_CSAM_PENDING_ACTION))
+    if (VM_FF_ISPENDING(pVM, VM_FF_CSAM_PENDING_ACTION))
         CSAMR3DoPendingAction(pVM);
+
+    if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+    {
+        if (    rc > VINF_EM_NO_MEMORY
+            &&  rc <= VINF_EM_LAST)
+            rc = VINF_EM_NO_MEMORY;
+    }
 
     return rc;
 }
@@ -3136,7 +3159,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
         /*
          * Termination request.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_TERMINATE))
+        if (VM_FF_ISPENDING(pVM, VM_FF_TERMINATE))
         {
             Log2(("emR3ForcedActions: returns VINF_EM_TERMINATE\n"));
             STAM_REL_PROFILE_STOP(&pVM->em.s.StatForcedActions, a);
@@ -3146,7 +3169,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
         /*
          * Debugger Facility polling.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_DBGF))
+        if (VM_FF_ISPENDING(pVM, VM_FF_DBGF))
         {
             rc2 = DBGFR3VMMForcedAction(pVM);
             UPDATE_RC();
@@ -3155,7 +3178,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
         /*
          * Postponed reset request.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_RESET))
+        if (VM_FF_ISPENDING(pVM, VM_FF_RESET))
         {
             rc2 = VMR3Reset(pVM);
             UPDATE_RC();
@@ -3165,7 +3188,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
         /*
          * CSAM page scanning.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_CSAM_SCAN_PAGE))
+        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_CSAM_SCAN_PAGE, VM_FF_PGM_NO_MEMORY))
         {
             PCPUMCTX pCtx = pVM->em.s.pCtx;
 
@@ -3176,32 +3199,43 @@ static int emR3ForcedActions(PVM pVM, int rc)
             VM_FF_CLEAR(pVM, VM_FF_CSAM_SCAN_PAGE);
         }
 
+        /*
+         * Out of memory? Putting this after CSAM as it may in theory cause us to run out of memory.
+         */
+        if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        {
+            rc2 = VINF_EM_NO_MEMORY;
+            UPDATE_RC();
+            if (rc == VINF_EM_NO_MEMORY)
+                return rc;
+        }
+
         /* check that we got them all  */
-        Assert(!(VM_FF_NORMAL_PRIORITY_POST_MASK & ~(VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_CSAM_SCAN_PAGE)));
+        Assert(!(VM_FF_NORMAL_PRIORITY_POST_MASK & ~(VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_CSAM_SCAN_PAGE | VM_FF_PGM_NO_MEMORY)));
     }
 
     /*
      * Normal priority then.
      * (Executed in no particular order.)
      */
-    if (VM_FF_ISPENDING(pVM, VM_FF_NORMAL_PRIORITY_MASK))
+    if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_NORMAL_PRIORITY_MASK, VM_FF_PGM_NO_MEMORY))
     {
         /*
          * PDM Queues are pending.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_PDM_QUEUES))
+        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_PDM_QUEUES, VM_FF_PGM_NO_MEMORY))
             PDMR3QueueFlushAll(pVM);
 
         /*
          * PDM DMA transfers are pending.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_PDM_DMA))
+        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_PDM_DMA, VM_FF_PGM_NO_MEMORY))
             PDMR3DmaRun(pVM);
 
         /*
          * Requests from other threads.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_REQUEST))
+        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_REQUEST, VM_FF_PGM_NO_MEMORY))
         {
             rc2 = VMR3ReqProcessU(pVM->pUVM, VMREQDEST_ANY);
             if (rc2 == VINF_EM_OFF || rc2 == VINF_EM_TERMINATE)
@@ -3214,13 +3248,14 @@ static int emR3ForcedActions(PVM pVM, int rc)
         }
 
         /* Replay the handler notification changes. */
-        if (VM_FF_ISSET(pVM, VM_FF_REM_HANDLER_NOTIFY))
+        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_REM_HANDLER_NOTIFY, VM_FF_PGM_NO_MEMORY))
             REMR3ReplayHandlerNotifications(pVM);
 
         /* check that we got them all  */
         Assert(!(VM_FF_NORMAL_PRIORITY_MASK & ~(VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY)));
     }
 
+#if 1 /** @todo this is all dead now, remove after the no-memory changes has been committed. */
     /*
      * Execute polling function ever so often.
      * THIS IS A HACK, IT WILL BE *REPLACED* BY PROPER ASYNC NETWORKING "SOON"!
@@ -3228,6 +3263,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
     static unsigned cLast = 0;
     if (!((++cLast) % 4))
         PDMR3Poll(pVM);
+#endif
 
     /*
      * High priority pre execution chunk last.
@@ -3238,13 +3274,13 @@ static int emR3ForcedActions(PVM pVM, int rc)
         /*
          * Timers before interrupts.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_TIMER))
+        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_TIMER, VM_FF_PGM_NO_MEMORY))
             TMR3TimerQueuesDo(pVM);
 
         /*
          * The instruction following an emulated STI should *always* be executed!
          */
-        if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
+        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_INHIBIT_INTERRUPTS, VM_FF_PGM_NO_MEMORY))
         {
             Log(("VM_FF_EMULATED_STI at %RGv successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVM), EMGetInhibitInterruptsPC(pVM)));
             if (CPUMGetGuestEIP(pVM) != EMGetInhibitInterruptsPC(pVM))
@@ -3267,7 +3303,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
         /*
          * Interrupts.
          */
-        if (    !VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS)
+        if (    !VM_FF_ISPENDING(pVM, VM_FF_INHIBIT_INTERRUPTS | VM_FF_PGM_NO_MEMORY)
             &&  (!rc || rc >= VINF_EM_RESCHEDULE_HWACC)
             &&  !TRPMHasTrap(pVM) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             &&  PATMAreInterruptsEnabled(pVM)
@@ -3294,7 +3330,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
         /*
          * Allocate handy pages.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
+        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_PGM_NEED_HANDY_PAGES, VM_FF_PGM_NO_MEMORY))
         {
             rc2 = PGMR3PhysAllocateHandyPages(pVM);
             UPDATE_RC();
@@ -3303,7 +3339,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
         /*
          * Debugger Facility request.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_DBGF))
+        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_DBGF, VM_FF_PGM_NO_MEMORY))
         {
             rc2 = DBGFR3VMMForcedAction(pVM);
             UPDATE_RC();
@@ -3312,18 +3348,32 @@ static int emR3ForcedActions(PVM pVM, int rc)
         /*
          * Termination request.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_TERMINATE))
+        if (VM_FF_ISPENDING(pVM, VM_FF_TERMINATE))
         {
             Log2(("emR3ForcedActions: returns VINF_EM_TERMINATE\n"));
             STAM_REL_PROFILE_STOP(&pVM->em.s.StatForcedActions, a);
             return VINF_EM_TERMINATE;
         }
 
+        /*
+         * Out of memory? Since most of our fellow high priority actions may cause us
+         * to run out of memory, we're employing VM_FF_IS_PENDING_EXCEPT and putting this
+         * at the end rather than the start. Also, VM_FF_TERMINATE has higher priority
+         * than us since we can terminate without allocating more memory.
+         */
+        if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        {
+            rc2 = VINF_EM_NO_MEMORY;
+            UPDATE_RC();
+            if (rc == VINF_EM_NO_MEMORY)
+                return rc;
+        }
+
 #ifdef DEBUG
         /*
          * Debug, pause the VM.
          */
-        if (VM_FF_ISSET(pVM, VM_FF_DEBUG_SUSPEND))
+        if (VM_FF_ISPENDING(pVM, VM_FF_DEBUG_SUSPEND))
         {
             VM_FF_CLEAR(pVM, VM_FF_DEBUG_SUSPEND);
             Log(("emR3ForcedActions: returns VINF_EM_SUSPEND\n"));
@@ -3332,7 +3382,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
 
 #endif
         /* check that we got them all  */
-        Assert(!(VM_FF_HIGH_PRIORITY_PRE_MASK & ~(VM_FF_TIMER | VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_DBGF | VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_SELM_SYNC_TSS | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_INHIBIT_INTERRUPTS | VM_FF_PGM_NEED_HANDY_PAGES)));
+        Assert(!(VM_FF_HIGH_PRIORITY_PRE_MASK & ~(VM_FF_TIMER | VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_DBGF | VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_SELM_SYNC_TSS | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_INHIBIT_INTERRUPTS | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY)));
     }
 
 #undef UPDATE_RC
@@ -3529,6 +3579,17 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                     TMCpuTickPause(pVM);
                     STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
                     return rc;
+
+
+                /*
+                 * Out of memory, suspend the VM and stuff.
+                 */
+                case VINF_EM_NO_MEMORY:
+                    /** @todo Take the out of memory fun from here and up. May have to add another
+                     *        VM state, but hope not for 2.2 ... */
+                    Log2(("EMR3ExecuteVM: VINF_EM_NO_MEMORY: %d -> %d\n", pVM->em.s.enmState, EMSTATE_SUSPENDED));
+                    pVM->em.s.enmState = EMSTATE_SUSPENDED;
+                    break;
 
                 /*
                  * Guest debug events.

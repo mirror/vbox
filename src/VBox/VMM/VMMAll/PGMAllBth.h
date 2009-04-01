@@ -74,6 +74,7 @@ __END_DECLS
  * #PF Handler for raw-mode guest execution.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
+ *
  * @param   pVM         VM Handle.
  * @param   uErr        The trap error code.
  * @param   pRegFrame   Trap register frame.
@@ -763,6 +764,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                             AssertMsg(rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("%Rrc\n", rc));
                             return rc;
                         }
+                        if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
+                            return VINF_EM_NO_MEMORY;
                     }
                     /// @todo count the above case; else
 #   endif /* VBOX_WITH_NEW_PHYS_CODE */
@@ -1714,7 +1717,9 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                 {
 # ifdef PGM_SYNC_N_PAGES
                     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
-                    if (cPages > 1 && !(uErr & X86_TRAP_PF_P))
+                    if (    cPages > 1
+                        &&  !(uErr & X86_TRAP_PF_P)
+                        &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
                     {
                         /*
                          * This code path is currently only taken when the caller is PGMTrap0eHandler
@@ -1952,7 +1957,9 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
     PSHWPT pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
 
     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
-    if (cPages > 1 && !(uErr & X86_TRAP_PF_P))
+    if (    cPages > 1
+        &&  !(uErr & X86_TRAP_PF_P)
+        &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
     {
         /*
          * This code path is currently only taken when the caller is PGMTrap0eHandler
@@ -1992,6 +1999,9 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                       (uint64_t)PteSrc.u,
                       (uint64_t)pPTDst->a[iPTDst].u,
                       pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
+
+                if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
+                    break;
             }
             else
                 Log4(("%RGv iPTDst=%x pPTDst->a[iPTDst] %RX64\n", (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT), iPTDst, pPTDst->a[iPTDst].u));
@@ -2676,7 +2686,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                   GCPhys, PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
             PPGMRAMRANGE    pRam   = pVM->pgm.s.CTX_SUFF(pRamRanges);
             unsigned        iPTDst = 0;
-            while (iPTDst < RT_ELEMENTS(pPTDst->a))
+            while (     iPTDst < RT_ELEMENTS(pPTDst->a)
+                   &&   !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
             {
                 /* Advance ram range list. */
                 while (pRam && GCPhys > pRam->GCPhysLast)
@@ -2699,6 +2710,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                         {
                             rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, GCPhys);
                             AssertRCReturn(rc, rc);
+                            if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+                                break;
                         }
 #  endif
 # else  /* !VBOX_WITH_NEW_PHYS_CODE */

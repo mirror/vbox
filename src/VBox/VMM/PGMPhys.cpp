@@ -3366,11 +3366,20 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
 /**
  * Response to VM_FF_PGM_NEED_HANDY_PAGES and VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES.
  *
+ * This function will also work the VM_FF_PGM_NO_MEMORY force action flag, to
+ * signal and clear the out of memory condition. When contracted, this API is
+ * used to try clear the condition when the user wants to resume.
+ *
  * @returns The following VBox status codes.
- * @retval  VINF_SUCCESS on success. FF cleared.
- * @retval  VINF_EM_NO_MEMORY if we're out of memory. The FF is not cleared in this case.
+ * @retval  VINF_SUCCESS on success. FFs cleared.
+ * @retval  VINF_EM_NO_MEMORY if we're out of memory. The FF is not cleared in
+ *          this case and it gets accompanied by VM_FF_PGM_NO_MEMORY.
  *
  * @param   pVM         The VM handle.
+ *
+ * @remarks The VINF_EM_NO_MEMORY status is for the benefit of the FF processing
+ *          in EM.cpp and shouldn't be propagated outside TRPM, HWACCM, EM and
+ *          pgmPhysEnsureHandyPage.
  */
 VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
 {
@@ -3399,11 +3408,16 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
             rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
     }
 
-    /*
-     * Clear the pages.
-     */
     if (RT_SUCCESS(rc))
     {
+        AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+        Assert(pVM->pgm.s.cHandyPages > 0);
+        VM_FF_CLEAR(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
+        VM_FF_CLEAR(pVM, VM_FF_PGM_NO_MEMORY);
+
+        /*
+         * Clear the pages.
+         */
         while (iClear < pVM->pgm.s.cHandyPages)
         {
             PGMMPAGEDESC pPage = &pVM->pgm.s.aHandyPages[iClear];
@@ -3414,11 +3428,16 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
             iClear++;
             Log3(("PGMR3PhysAllocateHandyPages: idPage=%#x HCPhys=%RGp\n", pPage->idPage, pPage->HCPhysGCPhys));
         }
-
-        VM_FF_CLEAR(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
     }
     else
     {
+        /*
+         * We should never get here unless there is a genuine shortage of
+         * memory (or some internal error). Flag the error so the VM can be
+         * suspended ASAP and the user informed. If we're totally out of
+         * handy pages we will return failure.
+         */
+        /* Report the failure. */
         LogRel(("PGM: Failed to procure handy pages; rc=%Rrc rcAlloc=%Rrc rcSeed=%Rrc cHandyPages=%#x\n"
                 "     cAllPages=%#x cPrivatePages=%#x cSharedPages=%#x cZeroPages=%#x\n",
                 rc, rcSeed, rcAlloc,
@@ -3427,39 +3446,40 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
                 pVM->pgm.s.cPrivatePages,
                 pVM->pgm.s.cSharedPages,
                 pVM->pgm.s.cZeroPages));
-#if 1
-        for (uint32_t i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
+        if (    rc != VERR_NO_MEMORY
+            &&  rc != VERR_LOCK_FAILED)
         {
-            LogRel(("PGM: aHandyPages[#%#04x] = {.HCPhysGCPhys=%RHp, .idPage=%#08x, .idSharedPage=%#08x}\n",
-                    i, pVM->pgm.s.aHandyPages[i].HCPhysGCPhys, pVM->pgm.s.aHandyPages[i].idPage,
-                    pVM->pgm.s.aHandyPages[i].idSharedPage));
-            uint32_t const idPage = pVM->pgm.s.aHandyPages[i].idPage;
-            if (idPage != NIL_GMM_PAGEID)
+            for (uint32_t i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
             {
-                for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3;
-                     pRam;
-                     pRam = pRam->pNextR3)
+                LogRel(("PGM: aHandyPages[#%#04x] = {.HCPhysGCPhys=%RHp, .idPage=%#08x, .idSharedPage=%#08x}\n",
+                        i, pVM->pgm.s.aHandyPages[i].HCPhysGCPhys, pVM->pgm.s.aHandyPages[i].idPage,
+                        pVM->pgm.s.aHandyPages[i].idSharedPage));
+                uint32_t const idPage = pVM->pgm.s.aHandyPages[i].idPage;
+                if (idPage != NIL_GMM_PAGEID)
                 {
-                    uint32_t const cPages = pRam->cb >> PAGE_SHIFT;
-                    for (uint32_t iPage = 0; iPage < cPages; iPage++)
-                        if (PGM_PAGE_GET_PAGEID(&pRam->aPages[iPage]) == idPage)
-                            LogRel(("PGM: Used by %RGp %R[pgmpage] (%s)\n",
-                                    pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pRam->aPages[iPage], pRam->pszDesc));
+                    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3;
+                         pRam;
+                         pRam = pRam->pNextR3)
+                    {
+                        uint32_t const cPages = pRam->cb >> PAGE_SHIFT;
+                        for (uint32_t iPage = 0; iPage < cPages; iPage++)
+                            if (PGM_PAGE_GET_PAGEID(&pRam->aPages[iPage]) == idPage)
+                                LogRel(("PGM: Used by %RGp %R[pgmpage] (%s)\n",
+                                        pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pRam->aPages[iPage], pRam->pszDesc));
+                    }
                 }
             }
         }
-#endif
-        rc = VERR_EM_NO_MEMORY;
-        //rc = VINF_EM_NO_MEMORY;
-        //VM_FF_SET(pVM, VM_FF_PGM_WE_ARE_SCREWED?);
+
+        /* Set the FFs and adjust rc. */
+        VM_FF_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
+        VM_FF_SET(pVM, VM_FF_PGM_NO_MEMORY);
+        if (    rc == VERR_NO_MEMORY
+            ||  rc == VERR_LOCK_FAILED)
+            rc = VINF_EM_NO_MEMORY;
     }
 
-/** @todo Do proper VERR_EM_NO_MEMORY reporting. */
-    AssertMsg(   pVM->pgm.s.cHandyPages == RT_ELEMENTS(pVM->pgm.s.aHandyPages)
-              || rc != VINF_SUCCESS, ("%d rc=%Rrc\n", pVM->pgm.s.cHandyPages, rc));
-
     pgmUnlock(pVM);
-    Assert(rc == VINF_SUCCESS || rc == VINF_EM_NO_MEMORY || rc == VERR_EM_NO_MEMORY);
     return rc;
 }
 
@@ -3519,8 +3539,7 @@ static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPa
     /*
      * Make sure it's not in the handy page array.
      */
-    uint32_t i = pVM->pgm.s.cHandyPages;
-    while (i < RT_ELEMENTS(pVM->pgm.s.aHandyPages))
+    for (uint32_t i = pVM->pgm.s.cHandyPages; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
     {
         if (pVM->pgm.s.aHandyPages[i].idPage == idPage)
         {
@@ -3532,7 +3551,6 @@ static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPa
             pVM->pgm.s.aHandyPages[i].idSharedPage = NIL_GMM_PAGEID;
             break;
         }
-        i++;
     }
 
     /*

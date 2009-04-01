@@ -1465,6 +1465,8 @@ static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet)
         if (RT_FAILURE(rc))
             RTR0MemObjFree(MemObj, false /* fFreeMappings */);
     }
+    /** @todo Check that RTR0MemObjAllocPhysNC always returns VERR_NO_MEMORY on
+     *        allocation failure. */
     return rc;
 }
 
