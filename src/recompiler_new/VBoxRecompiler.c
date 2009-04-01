@@ -142,6 +142,10 @@ static STAMCOUNTER    gStatREMTRChange;
 static STAMCOUNTER    gStatSelOutOfSync[6];
 static STAMCOUNTER    gStatSelOutOfSyncStateBack[6];
 static STAMCOUNTER    gStatFlushTBs;
+/* in exec.c */
+extern uint32_t       tlb_flush_count;
+extern uint32_t       tb_flush_count;
+extern uint32_t       tb_phys_invalidate_count;
 #endif
 
 /*
@@ -213,6 +217,9 @@ static const DBGCCMD    g_aCmds[] =
 };
 #endif
 
+/** Prologue code, must be in lower 4G to simplify jumps to/from generated code. */
+uint8_t *code_gen_prologue;
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -230,9 +237,6 @@ AssertCompile(RT_SIZEOFMEMB(REM, Env) <= REM_ENV_SIZE);
 AssertCompile(RT_SIZEOFMEMB(REM, Env) <= REM_ENV_SIZE);
 #endif
 
-
-/** Prologue code, must be in lower 4G to simplify jumps to/from generated code. */
-uint8_t *code_gen_prologue;
 
 /**
  * Initializes the REM.
@@ -379,16 +383,18 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     STAM_REG(pVM, &gStatSelOutOfSync[4],    STAMTYPE_COUNTER, "/REM/State/SelOutOfSync/FS",        STAMUNIT_OCCURENCES,     "FS out of sync");
     STAM_REG(pVM, &gStatSelOutOfSync[5],    STAMTYPE_COUNTER, "/REM/State/SelOutOfSync/GS",        STAMUNIT_OCCURENCES,     "GS out of sync");
 
-    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[0],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/ES",        STAMUNIT_OCCURENCES,     "ES out of sync");
-    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[1],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/CS",        STAMUNIT_OCCURENCES,     "CS out of sync");
-    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[2],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/SS",        STAMUNIT_OCCURENCES,     "SS out of sync");
-    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[3],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/DS",        STAMUNIT_OCCURENCES,     "DS out of sync");
-    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[4],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/FS",        STAMUNIT_OCCURENCES,     "FS out of sync");
-    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[5],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/GS",        STAMUNIT_OCCURENCES,     "GS out of sync");
+    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[0],   STAMTYPE_COUNTER,   "/REM/StateBack/SelOutOfSync/ES",   STAMUNIT_OCCURENCES, "ES out of sync");
+    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[1],   STAMTYPE_COUNTER,   "/REM/StateBack/SelOutOfSync/CS",   STAMUNIT_OCCURENCES, "CS out of sync");
+    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[2],   STAMTYPE_COUNTER,   "/REM/StateBack/SelOutOfSync/SS",   STAMUNIT_OCCURENCES, "SS out of sync");
+    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[3],   STAMTYPE_COUNTER,   "/REM/StateBack/SelOutOfSync/DS",   STAMUNIT_OCCURENCES, "DS out of sync");
+    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[4],   STAMTYPE_COUNTER,   "/REM/StateBack/SelOutOfSync/FS",   STAMUNIT_OCCURENCES, "FS out of sync");
+    STAM_REG(pVM, &gStatSelOutOfSyncStateBack[5],   STAMTYPE_COUNTER,   "/REM/StateBack/SelOutOfSync/GS",   STAMUNIT_OCCURENCES, "GS out of sync");
+#endif /* VBOX_WITH_STATISTICS */
 
-    /** @todo missing /REM/Tb*Count stats */
+    STAM_REL_REG(pVM, &tb_flush_count,              STAMTYPE_U32_RESET, "/REM/TbFlushCount",                STAMUNIT_OCCURENCES, "tb_flush() calls");
+    STAM_REL_REG(pVM, &tb_phys_invalidate_count,    STAMTYPE_U32_RESET, "/REM/TbPhysInvldCount",            STAMUNIT_OCCURENCES, "tb_phys_invalidate() calls");
+    STAM_REL_REG(pVM, &tlb_flush_count,             STAMTYPE_U32_RESET, "/REM/TlbFlushCount",               STAMUNIT_OCCURENCES, "tlb_flush() calls");
 
-#endif
 
 #ifdef DEBUG_ALL_LOGGING
     loglevel = ~0;
@@ -536,11 +542,12 @@ REMR3DECL(void) REMR3Reset(PVM pVM)
  */
 static DECLCALLBACK(int) remR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
+    PREM pRem = &pVM->rem.s;
+
     /*
      * Save the required CPU Env bits.
      * (Not much because we're never in REM when doing the save.)
      */
-    PREM pRem = &pVM->rem.s;
     LogFlow(("remR3Save:\n"));
     Assert(!pRem->fInREM);
     SSMR3PutU32(pSSM,   pRem->Env.hflags);
