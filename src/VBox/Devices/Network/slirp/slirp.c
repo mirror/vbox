@@ -364,6 +364,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     if (ret != ERROR_SUCCESS)
     {
         LogRel(("NAT: error %lu occured on fetching adapters info\n", ret));
+        RTMemFree(addresses);
         return -1;
     }
     addr = addresses;
@@ -383,6 +384,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             if (da == NULL)
             {
                 LogRel(("NAT: Can't allocate buffer for DNS entry\n"));
+                RTMemFree(addresses);
                 return VERR_NO_MEMORY;
             }
             LogRel(("NAT: adding %R[IP4] to DNS server list\n", &((struct sockaddr_in *)saddr)->sin_addr));
@@ -401,23 +403,26 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             /*uniq*/
             RTUtf16ToUtf8(addr->DnsSuffix, &suffix);
             found = 0;
-            LIST_FOREACH(dd, &pData->dns_domain_list_head, dd_list) 
+            LIST_FOREACH(dd, &pData->dns_domain_list_head, dd_list)
             {
-                if (   dd->dd_pszDomain != NULL 
-                    && strcmp(dd->dd_pszDomain, suffix) == 0) 
+                if (   dd->dd_pszDomain != NULL
+                    && strcmp(dd->dd_pszDomain, suffix) == 0)
                 {
                     found = 1;
+                    RTStrFree(suffix);
                     break;
                 }
             }
-            if (found == 0) 
+            if (found == 0)
             {
                 dd = RTMemAllocZ(sizeof(struct dns_domain_entry));
                 if (dd == NULL)
                 {
-                    LogRel(("NAT: not enought memory\n"));
+                    LogRel(("NAT: not enough memory\n"));
+                    RTStrFree(suffix);
+                    RTMemFree(addresses);
                     return VERR_NO_MEMORY;
-                }    
+                }
                 dd->dd_pszDomain = suffix;
                 LogRel(("NAT: adding domain name %s to search list\n", dd->dd_pszDomain));
                 LIST_INSERT_HEAD(&pData->dns_domain_list_head, dd, dd_list);
@@ -428,6 +433,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     next:
         addr = addr->Next;
     }
+    RTMemFree(addresses);
     return 0;
 }
 # endif /* VBOX_WITH_MULTI_DNS */
@@ -544,7 +550,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             tok = strtok_r(&buff[6], " \t\n", &saveptr);
             LIST_FOREACH(dd, &pData->dns_domain_list_head, dd_list)
             {
-                if(    tok != NULL 
+                if(    tok != NULL
                     && strcmp(tok, dd->dd_pszDomain) == 0)
                 {
                     found = 1;
@@ -557,7 +563,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                 {
                     LogRel(("NAT: not enought memory to add domain list\n"));
                     return VERR_NO_MEMORY;
-                }    
+                }
                 dd->dd_pszDomain = RTStrDup(tok);
                 LogRel(("NAT: adding domain name %s to search list\n", dd->dd_pszDomain));
                 LIST_INSERT_HEAD(&pData->dns_domain_list_head, dd, dd_list);
@@ -588,14 +594,14 @@ static void slirp_release_dns_list(PNATState pData)
         dd = LIST_FIRST(&pData->dns_domain_list_head);
         LIST_REMOVE(dd, dd_list);
         if (dd->dd_pszDomain != NULL)
-            RTStrFree(dd->dd_pszDomain); 
+            RTStrFree(dd->dd_pszDomain);
         RTMemFree(dd);
     }
     while(!LIST_EMPTY(&pData->dns_domain_list_head)) {
         dd = LIST_FIRST(&pData->dns_domain_list_head);
         LIST_REMOVE(dd, dd_list);
         if (dd->dd_pszDomain != NULL)
-            RTStrFree(dd->dd_pszDomain); 
+            RTStrFree(dd->dd_pszDomain);
         RTMemFree(dd);
     }
 }
