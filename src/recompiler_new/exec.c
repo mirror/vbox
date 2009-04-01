@@ -184,7 +184,6 @@ typedef struct PhysPageDesc {
 #define L1_BITS (32 - L2_BITS - TARGET_PAGE_BITS)
 #endif
 #ifdef VBOX
-/* Note: Not for PhysPageDesc, only to speed up page_flush_tb. */
 #define L0_BITS (TARGET_PHYS_ADDR_SPACE_BITS - 32)
 #endif
 
@@ -204,11 +203,12 @@ unsigned long qemu_host_page_mask;
 /* XXX: for system emulation, it could just be an array */
 #ifndef VBOX
 static PageDesc *l1_map[L1_SIZE];
-#else
-static l0_map_max_used = 0;
-static PageDesc **l0_map[L0_SIZE];
-#endif
 static PhysPageDesc **l1_phys_map;
+#else
+static unsigned l0_map_max_used = 0;
+static PageDesc **l0_map[L0_SIZE];
+static void **l0_phys_map[L0_SIZE];
+#endif
 
 #if !defined(CONFIG_USER_ONLY)
 static void io_mem_init(void);
@@ -319,8 +319,10 @@ static void page_init(void)
 #endif
         qemu_host_page_bits++;
     qemu_host_page_mask = ~(qemu_host_page_size - 1);
+#ifndef VBOX
     l1_phys_map = qemu_vmalloc(L1_SIZE * sizeof(void *));
     memset(l1_phys_map, 0, L1_SIZE * sizeof(void *));
+#endif
 #ifdef VBOX
     /* We use other means to set reserved bit on our pages */
 #else
@@ -445,6 +447,7 @@ static PhysPageDesc *phys_page_find_alloc(target_phys_addr_t index, int alloc)
     void **lp, **p;
     PhysPageDesc *pd;
 
+#ifndef VBOX
     p = (void **)l1_phys_map;
 #if TARGET_PHYS_ADDR_SPACE_BITS > 32
 
@@ -462,6 +465,21 @@ static PhysPageDesc *phys_page_find_alloc(target_phys_addr_t index, int alloc)
         *lp = p;
     }
 #endif
+#else  /* VBOX */
+    /* level 0 lookup and lazy allocation. */
+    if (RT_UNLIKELY(index >= (target_ulong)L2_SIZE * L1_SIZE * L0_SIZE))
+        return NULL;
+    p = l0_phys_map[index >> (L1_BITS + L2_BITS)];
+    if (RT_UNLIKELY(!p)) {
+        if (!alloc)
+            return NULL;
+        p = qemu_vmalloc(sizeof(PhysPageDesc **) * L0_SIZE);
+        memset(p, 0, sizeof(PhysPageDesc **) * L0_SIZE);
+        l0_phys_map[index >> (L1_BITS + L2_BITS)] = (PhysPageDesc **)p;
+    }
+
+    /* level 1 lookup and lazy allocation. */
+#endif /* VBOX */
     lp = p + ((index >> L2_BITS) & (L1_SIZE - 1));
     pd = *lp;
     if (!pd) {
