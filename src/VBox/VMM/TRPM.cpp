@@ -1415,16 +1415,18 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
             if (pVM->trpm.s.aGuestTrapHandler[u8Interrupt] != TRPM_INVALID_HANDLER)
             {
                 /* Must check pending forced actions as our IDT or GDT might be out of sync */
-                EMR3CheckRawForcedActions(pVM);
-
-                /* There's a handler -> let's execute it in raw mode */
-                rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, enmEvent, -1);
-                if (rc == VINF_SUCCESS /* Don't use RT_SUCCESS */)
+                rc = EMR3CheckRawForcedActions(pVM);
+                if (rc == VINF_SUCCESS)
                 {
-                    Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
+                    /* There's a handler -> let's execute it in raw mode */
+                    rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, enmEvent, -1);
+                    if (rc == VINF_SUCCESS /* Don't use RT_SUCCESS */)
+                    {
+                        Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
 
-                    STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
-                    return VINF_EM_RESCHEDULE_RAW;
+                        STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
+                        return VINF_EM_RESCHEDULE_RAW;
+                    }
                 }
             }
             else

@@ -125,7 +125,8 @@ __END_DECLS
  * Will reset the trap if it's not a guest trap or the trap
  * is already handled. Will process resume guest FFs.
  *
- * @returns rc.
+ * @returns rc, can be adjusted if its VINF_SUCCESS or something really bad
+ *          happened.
  * @param   pVM         VM handle.
  * @param   rc          The VBox status code to return.
  * @param   pRegFrame   Pointer to the register frame for the trap.
@@ -181,10 +182,14 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
      * Or pending (A)PIC interrupt? Windows XP will crash if we delay APIC interrupts.
      */
     if (    rc == VINF_SUCCESS
-        &&  VM_FF_ISPENDING(pVM, VM_FF_TO_R3 | VM_FF_TIMER | VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_REQUEST))
+        &&  VM_FF_ISPENDING(pVM, VM_FF_TO_R3 | VM_FF_TIMER | VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_REQUEST
+                               | VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_PGM_NO_MEMORY))
     {
+        /* The out of memory condition naturally outrang the others. */
+        if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
+            rc = VINF_EM_NO_MEMORY;
         /* Pending Ring-3 action. */
-        if (VM_FF_ISPENDING(pVM, VM_FF_TO_R3))
+        else if (VM_FF_ISPENDING(pVM, VM_FF_TO_R3))
         {
             VM_FF_CLEAR(pVM, VM_FF_TO_R3);
             rc = VINF_EM_RAW_TO_R3;
@@ -902,6 +907,7 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         case VINF_IOM_HC_MMIO_READ:
         case VINF_IOM_HC_MMIO_READ_WRITE:
         case VINF_PATM_PATCH_INT3:
+        case VINF_EM_NO_MEMORY:
         case VINF_EM_RAW_TO_R3:
         case VINF_EM_RAW_TIMER_PENDING:
         case VINF_EM_PENDING_REQUEST:
@@ -943,43 +949,44 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 
     switch (rc)
     {
-    case VINF_EM_RAW_EMULATE_INSTR:
-    case VINF_EM_RAW_EMULATE_INSTR_PD_FAULT:
-    case VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT:
-    case VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT:
-    case VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT:
-    case VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT:
-        if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
-            rc = VINF_PATCH_EMULATE_INSTR;
-        break;
+        case VINF_EM_RAW_EMULATE_INSTR:
+        case VINF_EM_RAW_EMULATE_INSTR_PD_FAULT:
+        case VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT:
+        case VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT:
+        case VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT:
+        case VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT:
+            if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
+                rc = VINF_PATCH_EMULATE_INSTR;
+            break;
 
-    case VINF_EM_RAW_GUEST_TRAP:
-        if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
-            return VINF_PATM_PATCH_TRAP_PF;
+        case VINF_EM_RAW_GUEST_TRAP:
+            if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
+                return VINF_PATM_PATCH_TRAP_PF;
 
-        rc = TRPMForwardTrap(pVM, pRegFrame, 0xE, 0, TRPM_TRAP_HAS_ERRORCODE, TRPM_TRAP, 0xe);
-        Assert(rc == VINF_EM_RAW_GUEST_TRAP);
-        break;
+            rc = TRPMForwardTrap(pVM, pRegFrame, 0xE, 0, TRPM_TRAP_HAS_ERRORCODE, TRPM_TRAP, 0xe);
+            Assert(rc == VINF_EM_RAW_GUEST_TRAP);
+            break;
 
-    case VINF_EM_RAW_INTERRUPT_PENDING:
-        Assert(TRPMHasTrap(pVM));
-        /* no break; */
-    case VINF_IOM_HC_MMIO_READ:
-    case VINF_IOM_HC_MMIO_WRITE:
-    case VINF_IOM_HC_MMIO_READ_WRITE:
-    case VINF_PATM_HC_MMIO_PATCH_READ:
-    case VINF_PATM_HC_MMIO_PATCH_WRITE:
-    case VINF_SUCCESS:
-    case VINF_EM_RAW_TO_R3:
-    case VINF_EM_PENDING_REQUEST:
-    case VINF_EM_RAW_TIMER_PENDING:
-    case VINF_CSAM_PENDING_ACTION:
-    case VINF_PGM_SYNC_CR3: /** @todo Check this with Sander. */
-        break;
+        case VINF_EM_RAW_INTERRUPT_PENDING:
+            Assert(TRPMHasTrap(pVM));
+            /* no break; */
+        case VINF_IOM_HC_MMIO_READ:
+        case VINF_IOM_HC_MMIO_WRITE:
+        case VINF_IOM_HC_MMIO_READ_WRITE:
+        case VINF_PATM_HC_MMIO_PATCH_READ:
+        case VINF_PATM_HC_MMIO_PATCH_WRITE:
+        case VINF_SUCCESS:
+        case VINF_EM_RAW_TO_R3:
+        case VINF_EM_PENDING_REQUEST:
+        case VINF_EM_RAW_TIMER_PENDING:
+        case VINF_EM_NO_MEMORY:
+        case VINF_CSAM_PENDING_ACTION:
+        case VINF_PGM_SYNC_CR3: /** @todo Check this with Sander. */
+            break;
 
-    default:
-        AssertMsg(PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip) == false, ("Patch address for return code %d. eip=%08x\n", rc, pRegFrame->eip));
-        break;
+        default:
+            AssertMsg(PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip) == false, ("Patch address for return code %d. eip=%08x\n", rc, pRegFrame->eip));
+            break;
     }
     return trpmGCExitTrap(pVM, rc, pRegFrame);
 }

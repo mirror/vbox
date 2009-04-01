@@ -261,7 +261,7 @@ VMMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
  *
  * This will also take the appropriate actions when reaching water-marks.
  *
- * @returns The following VBox status codes.
+ * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_EM_NO_MEMORY if we're really out of memory.
  *
@@ -272,67 +272,70 @@ VMMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
  */
 static int pgmPhysEnsureHandyPage(PVM pVM)
 {
-    /** @remarks
-     * low-water mark logic for R0 & GC:
-     *      - 75%: Set FF.
-     *      - 50%: Force return to ring-3 ASAP.
-     *
-     * For ring-3 there is a little problem wrt to the recompiler, so:
-     *      - 75%: Set FF.
-     *      - 50%: Try allocate pages; on failure we'll force REM to quite ASAP.
-     *
-     * The basic idea is that we should be able to get out of any situation with
-     * only 50% of handy pages remaining.
-     *
-     * At the moment we'll not adjust the number of handy pages relative to the
-     * actual VM RAM committment, that's too much work for now.
-     */
-    Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
     AssertMsg(pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), ("%d\n", pVM->pgm.s.cHandyPages));
-    if (    !pVM->pgm.s.cHandyPages
+
+    /*
+     * Do we need to do anything special?
+     */
 #ifdef IN_RING3
-        ||   pVM->pgm.s.cHandyPages - 1 <= RT_ELEMENTS(pVM->pgm.s.aHandyPages) / 2 /* 50% */
+    if (pVM->pgm.s.cHandyPages <= RT_MAX(PGM_HANDY_PAGES_SET_FF, PGM_HANDY_PAGES_R3_ALLOC))
+#else
+    if (pVM->pgm.s.cHandyPages <= RT_MAX(PGM_HANDY_PAGES_SET_FF, PGM_HANDY_PAGES_RZ_TO_R3))
 #endif
-       )
     {
-        Log(("PGM: cHandyPages=%u out of %u -> allocate more\n", pVM->pgm.s.cHandyPages, RT_ELEMENTS(pVM->pgm.s.aHandyPages)));
+        /*
+         * Allocate pages only if we're out of them, or in ring-3, almost out.
+         */
 #ifdef IN_RING3
-        int rc = PGMR3PhysAllocateHandyPages(pVM);
+        if (pVM->pgm.s.cHandyPages <= PGM_HANDY_PAGES_R3_ALLOC)
+#else
+        if (pVM->pgm.s.cHandyPages <= PGM_HANDY_PAGES_RZ_ALLOC)
+#endif
+        {
+            Log(("PGM: cHandyPages=%u out of %u -> allocate more; VM_FF_PGM_NO_MEMORY=%RTbool\n",
+                 pVM->pgm.s.cHandyPages, RT_ELEMENTS(pVM->pgm.s.aHandyPages), VM_FF_ISSET(pVM, VM_FF_PGM_NO_MEMORY) ));
+#ifdef IN_RING3
+            int rc = PGMR3PhysAllocateHandyPages(pVM);
 #elif defined(IN_RING0)
-        int rc = VMMR0CallHost(pVM, VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES, 0);
+            int rc = VMMR0CallHost(pVM, VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES, 0);
 #else
-        int rc = VMMGCCallHost(pVM, VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES, 0);
+            int rc = VMMGCCallHost(pVM, VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES, 0);
 #endif
-        if (RT_UNLIKELY(rc != VINF_SUCCESS))
-        {
-            AssertMsg(rc == VINF_EM_NO_MEMORY || rc == VERR_EM_NO_MEMORY, ("%Rrc\n", rc));
-            if (!pVM->pgm.s.cHandyPages)
+            if (RT_UNLIKELY(rc != VINF_SUCCESS))
             {
-                LogRel(("PGM: no more handy pages!\n"));
-                return VERR_EM_NO_MEMORY;
-            }
-            Assert(VM_FF_ISSET(pVM, VM_FF_PGM_NEED_HANDY_PAGES));
+                if (RT_FAILURE(rc))
+                    return rc;
+                AssertMsgReturn(rc == VINF_EM_NO_MEMORY, ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
+                if (!pVM->pgm.s.cHandyPages)
+                {
+                    LogRel(("PGM: no more handy pages!\n"));
+                    return VERR_EM_NO_MEMORY;
+                }
+                Assert(VM_FF_ISSET(pVM, VM_FF_PGM_NEED_HANDY_PAGES));
+                Assert(VM_FF_ISSET(pVM, VM_FF_PGM_NO_MEMORY));
 #ifdef IN_RING3
-            REMR3NotifyFF(pVM);
+                REMR3NotifyFF(pVM);
 #else
-            VM_FF_SET(pVM, VM_FF_TO_R3);
+                VM_FF_SET(pVM, VM_FF_TO_R3); /* paranoia */
 #endif
+            }
+            AssertMsgReturn(    pVM->pgm.s.cHandyPages > 0
+                            &&  pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages),
+                            ("%u\n", pVM->pgm.s.cHandyPages),
+                            VERR_INTERNAL_ERROR);
         }
-        AssertMsgReturn(    pVM->pgm.s.cHandyPages > 0
-                        &&  pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages),
-                        ("%u\n", pVM->pgm.s.cHandyPages),
-                        VERR_INTERNAL_ERROR);
-    }
-    else if (pVM->pgm.s.cHandyPages - 1 <= (RT_ELEMENTS(pVM->pgm.s.aHandyPages) / 4) * 3) /* 75% */
-    {
-        VM_FF_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
-#ifndef IN_RING3
-        if (pVM->pgm.s.cHandyPages - 1 <= RT_ELEMENTS(pVM->pgm.s.aHandyPages) / 2)
+        else
         {
-            Log(("PGM: VM_FF_TO_R3 - cHandyPages=%u out of %u\n", pVM->pgm.s.cHandyPages - 1, RT_ELEMENTS(pVM->pgm.s.aHandyPages)));
-            VM_FF_SET(pVM, VM_FF_TO_R3);
-        }
+            if (pVM->pgm.s.cHandyPages <= PGM_HANDY_PAGES_SET_FF)
+                VM_FF_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
+#ifndef IN_RING3
+            if (pVM->pgm.s.cHandyPages <= PGM_HANDY_PAGES_RZ_TO_R3)
+            {
+                Log(("PGM: VM_FF_TO_R3 - cHandyPages=%u out of %u\n", pVM->pgm.s.cHandyPages, RT_ELEMENTS(pVM->pgm.s.aHandyPages)));
+                VM_FF_SET(pVM, VM_FF_TO_R3);
+            }
 #endif
+        }
     }
 
     return VINF_SUCCESS;

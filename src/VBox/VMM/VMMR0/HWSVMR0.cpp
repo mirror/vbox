@@ -893,12 +893,12 @@ ResumeExecution:
     if (!DBGFIsStepping(pVM))
 #endif
     {
-        if (VM_FF_ISPENDING(pVM, VM_FF_TO_R3 | VM_FF_TIMER | VM_FF_PGM_NEED_HANDY_PAGES))
+        if (VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK))
         {
             VM_FF_CLEAR(pVM, VM_FF_TO_R3);
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchToR3);
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
-            rc = VINF_EM_RAW_TO_R3;
+            rc = RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
             goto end;
         }
     }

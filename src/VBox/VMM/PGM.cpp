@@ -639,9 +639,10 @@ static void               pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE e
 static PGMMODE            pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher);
 
 #ifdef VBOX_WITH_DEBUGGER
-/** @todo all but the two last commands must be converted to 'info'. */
+/** @todo Convert the first two commands to 'info' items. */
 static DECLCALLBACK(int)  pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int)  pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int)  pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int)  pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 # ifdef VBOX_STRICT
@@ -654,17 +655,26 @@ static DECLCALLBACK(int)  pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 *   Global Variables                                                           *
 *******************************************************************************/
 #ifdef VBOX_WITH_DEBUGGER
+/** Argument descriptors for '.pgmerror' and '.pgmerroroff'. */
+static const DBGCVARDESC g_aPgmErrorArgs[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "where",        "Error injection location." },
+};
+
 /** Command descriptors. */
 static const DBGCCMD    g_aCmds[] =
 {
-    /* pszCmd,      cArgsMin, cArgsMax, paArgDesc,          cArgDescs,                  pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
-    { "pgmram",     0,        0,        NULL,               0,                          NULL,               0,          pgmR3CmdRam,        "",                     "Display the ram ranges." },
-    { "pgmmap",     0,        0,        NULL,               0,                          NULL,               0,          pgmR3CmdMap,        "",                     "Display the mapping ranges." },
-    { "pgmsync",    0,        0,        NULL,               0,                          NULL,               0,          pgmR3CmdSync,       "",                     "Sync the CR3 page." },
+    /* pszCmd,  cArgsMin, cArgsMax, paArgDesc,          cArgDescs,                  pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
+    { "pgmram",        0, 0,        NULL,               0,                          NULL,               0,          pgmR3CmdRam,        "",                     "Display the ram ranges." },
+    { "pgmmap",        0, 0,        NULL,               0,                          NULL,               0,          pgmR3CmdMap,        "",                     "Display the mapping ranges." },
+    { "pgmsync",       0, 0,        NULL,               0,                          NULL,               0,          pgmR3CmdSync,       "",                     "Sync the CR3 page." },
+    { "pgmerror",      0, 1,        &g_aPgmErrorArgs[0],1,                          NULL,               0,          pgmR3CmdError,      "",                     "Enables inject runtime of errors into parts of PGM." },
+    { "pgmerroroff",   0, 1,        &g_aPgmErrorArgs[0],1,                          NULL,               0,          pgmR3CmdError,      "",                     "Disables inject runtime errors into parts of PGM." },
 #ifdef VBOX_STRICT
-    { "pgmassertcr3",  0,     0,        NULL,               0,                          NULL,               0,          pgmR3CmdAssertCR3,  "",                     "Check the shadow CR3 mapping." },
+    { "pgmassertcr3",  0, 0,        NULL,               0,                          NULL,               0,          pgmR3CmdAssertCR3,  "",                     "Check the shadow CR3 mapping." },
 #endif
-    { "pgmsyncalways", 0,     0,        NULL,               0,                          NULL,               0,          pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
+    { "pgmsyncalways", 0, 0,        NULL,               0,                          NULL,               0,          pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
 };
 #endif
 
@@ -1282,7 +1292,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     }
     if (RT_SUCCESS(rc))
     {
-        pVM->pgm.s.pvZeroPgGC = MMHyperR3ToRC(pVM, pVM->pgm.s.pvZeroPgR3);
+        pVM->pgm.s.pvZeroPgRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pvZeroPgR3);
         pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
         pVM->pgm.s.HCPhysZeroPg = MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvZeroPgR3);
         AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);
@@ -4686,6 +4696,52 @@ static DECLCALLBACK(int) pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
             return rc;
     }
 
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * The '.pgmerror' and '.pgmerroroff' commands.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /*
+     * Validate input.
+     */
+    if (!pVM)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
+    AssertReturn(cArgs == 0 || (cArgs == 1 && paArgs[0].enmType == DBGCVAR_TYPE_STRING),
+                 pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Hit bug in the parser.\n"));
+
+    if (!cArgs)
+    {
+        /*
+         * Print the list of error injection locations with status.
+         */
+        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "PGM error inject locations:\n");
+        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "  handy - %RTbool\n", pVM->pgm.s.fErrInjHandyPages);
+    }
+    else
+    {
+
+        /*
+         * String switch on where to inject the error.
+         */
+        bool const  fNewState = !strcmp(pCmd->pszCmd, "pgmerror");
+        const char *pszWhere = paArgs[0].u.pszString;
+        if (!strcmp(pszWhere, "handy"))
+            ASMAtomicWriteBool(&pVM->pgm.s.fErrInjHandyPages, fNewState);
+        else
+            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid 'where' value: %s.\n", pszWhere);
+        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "done\n");
+    }
     return VINF_SUCCESS;
 }
 
