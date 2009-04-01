@@ -10898,7 +10898,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="NetworkAdapterType"
-    uuid="156b17b9-5d61-4d54-be90-62e37dda848d"
+    uuid="50c3dfd8-07ac-4a31-baac-519c828fbf97"
   >
     <desc>
       Network adapter type.
