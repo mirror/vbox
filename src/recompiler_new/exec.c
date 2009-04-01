@@ -473,8 +473,8 @@ static PhysPageDesc *phys_page_find_alloc(target_phys_addr_t index, int alloc)
     if (RT_UNLIKELY(!p)) {
         if (!alloc)
             return NULL;
-        p = qemu_vmalloc(sizeof(void **) * L0_SIZE);
-        memset(p, 0, sizeof(void **) * L0_SIZE);
+        p = qemu_vmalloc(sizeof(void **) * L1_SIZE);
+        memset(p, 0, sizeof(void **) * L1_SIZE);
         l0_phys_map[index >> (L1_BITS + L2_BITS)] = p;
     }
 
