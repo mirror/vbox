@@ -192,9 +192,8 @@ void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_
  * errors and error-like conditions that happen at an arbitrary point during VM
  * execution (like "host memory low" or "out of host disk space").
  *
- * @returns VBox status code. For some flags the status code needs to be
- *          propagated up the stack, but this may depend on where the call was
- *          made.
+ * @returns VBox status code. For some flags the status code <b>must</b> be
+ *          propagated up the stack.
  *
  * @param   pVM             The VM handle.
  *
@@ -229,10 +228,8 @@ VMMDECL(int) VMSetRuntimeError(PVM pVM, uint32_t fFlags, const char *pszErrorId,
 /**
  * va_list version of VMSetRuntimeError.
  *
- * @returns VBox status code. For some flags the status code needs to be
- *          propagated up the stack, but this may depend on where the call was
- *          made. For most actions, there is a force action flag mopping up if
- *          the status code can't be propagated.
+ * @returns VBox status code. For some flags the status code <b>must</b> be
+ *          propagated up the stack.
  *
  * @param   pVM             The VM handle.
  * @param   fFlags          Flags indicating which actions to take. See
