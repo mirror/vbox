@@ -3228,7 +3228,7 @@ void VBoxConsoleView::doRefresh()
 void VBoxConsoleView::resizeEvent (QResizeEvent *)
 {
     updateSliders();
-#ifdef Q_WS_MAC
+#if defined(Q_WS_MAC) && !defined(QT_MAC_USE_COCOA)
     QRect r = frameGeometry();
 //    printf ("qt resize: %d %d %d %d\n", r.x(), r.y(), r.width(), r.height());
     PostBoundsChanged (r);
@@ -3237,7 +3237,7 @@ void VBoxConsoleView::resizeEvent (QResizeEvent *)
 
 void VBoxConsoleView::moveEvent (QMoveEvent *)
 {
-#ifdef Q_WS_MAC
+#if defined(Q_WS_MAC) && !defined(QT_MAC_USE_COCOA)
     QRect r = frameGeometry();
 //    printf ("qt resize: %d %d %d %d\n", r.x(), r.y(), r.width(), r.height());
     PostBoundsChanged (r);
