@@ -98,20 +98,15 @@ VMMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
         pszModRC = VMMGC_MAIN_MODULE_NAME;
     if (!pszModR0)
         pszModR0 = VMMR0_MAIN_MODULE_NAME;
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     AssertPtrReturn(pfnHandlerR3, VERR_INVALID_POINTER);
     AssertPtrReturn(pszHandlerR0, VERR_INVALID_POINTER);
     AssertPtrReturn(pszHandlerRC, VERR_INVALID_POINTER);
-#endif
 
     /*
      * Resolve the R0 handler.
      */
     R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0 = NIL_RTR0PTR;
     int rc = VINF_SUCCESS;
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-  if (pszHandlerR0)
-#endif
     rc = PDMR3LdrGetSymbolR0Lazy(pVM, pszModR0, pszHandlerR0, &pfnHandlerR0);
     if (RT_SUCCESS(rc))
     {
@@ -119,11 +114,7 @@ VMMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
          * Resolve the GC handler.
          */
         RTRCPTR pfnHandlerRC = NIL_RTRCPTR;
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-      if (pszHandlerRC)
-#endif
         rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModRC, pszHandlerRC, &pfnHandlerRC);
-
         if (RT_SUCCESS(rc))
             return PGMHandlerPhysicalRegisterEx(pVM, enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3,
                                                 pfnHandlerR0, pvUserR0, pfnHandlerRC, pvUserRC, pszDesc);

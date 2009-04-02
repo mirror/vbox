@@ -332,9 +332,6 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetPGMChangeMode;
     STAMCOUNTER                 StatRZRetEmulHlt;
     STAMCOUNTER                 StatRZRetPendingRequest;
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-    STAMCOUNTER                 StatRZCallPGMGrowRAM;
-#endif
     STAMCOUNTER                 StatRZCallPDMLock;
     STAMCOUNTER                 StatRZCallLogFlush;
     STAMCOUNTER                 StatRZCallPDMQueueFlush;

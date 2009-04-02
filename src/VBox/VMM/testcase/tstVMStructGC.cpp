@@ -466,7 +466,6 @@ int main()
     GEN_CHECK_OFF(PGM, pRomRangesR3);
     GEN_CHECK_OFF(PGM, pRomRangesR0);
     GEN_CHECK_OFF(PGM, pRomRangesRC);
-    GEN_CHECK_OFF(PGM, cbRamSize);
     GEN_CHECK_OFF(PGM, pTreesR3);
     GEN_CHECK_OFF(PGM, pTreesR0);
     GEN_CHECK_OFF(PGM, pTreesRC);

@@ -54,42 +54,8 @@
  */
 VMMR3DECL(int) PGMR3DbgR3Ptr2GCPhys(PVM pVM, RTR3PTR R3Ptr, PRTGCPHYS pGCPhys)
 {
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     *pGCPhys = NIL_RTGCPHYS;
     return VERR_NOT_IMPLEMENTED;
-
-#else
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
-    {
-        if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-        {
-            for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
-            {
-                if (pRam->paChunkR3Ptrs[iChunk])
-                {
-                    RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - pRam->paChunkR3Ptrs[iChunk];
-                    if (off < PGM_DYNAMIC_CHUNK_SIZE)
-                    {
-                        *pGCPhys = pRam->GCPhys + iChunk*PGM_DYNAMIC_CHUNK_SIZE + off;
-                        return VINF_SUCCESS;
-                    }
-                }
-            }
-        }
-        else if (pRam->pvR3)
-        {
-            RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pRam->pvR3;
-            if (off < pRam->cb)
-            {
-                *pGCPhys = pRam->GCPhys + off;
-                return VINF_SUCCESS;
-            }
-        }
-    }
-    return VERR_INVALID_POINTER;
-#endif
 }
 
 
@@ -109,50 +75,8 @@ VMMR3DECL(int) PGMR3DbgR3Ptr2GCPhys(PVM pVM, RTR3PTR R3Ptr, PRTGCPHYS pGCPhys)
  */
 VMMR3DECL(int) PGMR3DbgR3Ptr2HCPhys(PVM pVM, RTR3PTR R3Ptr, PRTHCPHYS pHCPhys)
 {
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     *pHCPhys = NIL_RTHCPHYS;
     return VERR_NOT_IMPLEMENTED;
-
-#else
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
-    {
-        if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-        {
-            for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
-            {
-                if (pRam->paChunkR3Ptrs[iChunk])
-                {
-                    RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - pRam->paChunkR3Ptrs[iChunk];
-                    if (off < PGM_DYNAMIC_CHUNK_SIZE)
-                    {
-                        PPGMPAGE pPage = &pRam->aPages[off >> PAGE_SHIFT];
-                        if (PGM_PAGE_IS_RESERVED(pPage))
-                            return VERR_PGM_PHYS_PAGE_RESERVED;
-                        *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage)
-                                 | (off & PAGE_OFFSET_MASK);
-                        return VINF_SUCCESS;
-                    }
-                }
-            }
-        }
-        else if (pRam->pvR3)
-        {
-            RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pRam->pvR3;
-            if (off < pRam->cb)
-            {
-                PPGMPAGE pPage = &pRam->aPages[off >> PAGE_SHIFT];
-                if (PGM_PAGE_IS_RESERVED(pPage))
-                    return VERR_PGM_PHYS_PAGE_RESERVED;
-                *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage)
-                         | (off & PAGE_OFFSET_MASK);
-                return VINF_SUCCESS;
-            }
-        }
-    }
-    return VERR_INVALID_POINTER;
-#endif
 }
 
 
@@ -581,13 +505,8 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
             for (uint32_t iPage = off >> PAGE_SHIFT; iPage < cPages; iPage++)
             {
                 PPGMPAGE pPage = &pRam->aPages[iPage];
-#ifdef VBOX_WITH_NEW_PHYS_CODE
                 if (    !PGM_PAGE_IS_ZERO(pPage)
                     &&  !PGM_PAGE_IS_MMIO(pPage))
-#else
-                if (    /** @todo !PGM_PAGE_IS_ZERO(pPage)
-                    &&*/  !PGM_PAGE_IS_MMIO(pPage))
-#endif
                 {
                     void const *pvPage;
                     PGMPAGEMAPLOCK Lock;
