@@ -38,6 +38,7 @@ using namespace com;
 #ifdef VBOX_WITH_VRDP
 # include <VBox/vrdpapi.h>
 #endif
+#include <iprt/ctype.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/ldr.h>
@@ -69,7 +70,7 @@ using namespace com;
 #define LogError(m,rc) \
     do { \
         Log (("VBoxHeadless: ERROR: " m " [rc=0x%08X]\n", rc)); \
-        RTPrintf ("%s", m); \
+        RTPrintf ("%s\n", m); \
     } while (0)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -513,11 +514,6 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /* fFlags */);
     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
-        if (ch < 0)
-        {
-            show_usage();
-            exit(-1);
-        }
         switch(ch)
         {
             case 's':
@@ -579,11 +575,25 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
                 break;
 #endif /* VBOX_FFMPEG defined */
             case VINF_GETOPT_NOT_OPTION:
-                /* ignore */
-                break;
-            default: /* comment */
-                /** @todo If we would not ignore this, that would be really really nice... */
-                break;
+                RTPrintf("Invalid parameter '%s'\n\n", ValueUnion.psz);
+                show_usage();
+                return -1;
+            default:
+                if (ch > 0)
+                {
+                    if (RT_C_IS_PRINT(ch))
+                        RTPrintf("Invalid option -%c\n\n", ch);
+                    else
+                        RTPrintf("Invalid option case %i", ch);
+                }
+                else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
+                    RTPrintf("Unknown option: %s\n\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    RTPrintf("%s: %Rrs\n\n", ValueUnion.pDef->pszLong, ch);
+                else
+                    RTPrintf("Error: %Rrs", ch);
+                show_usage();
+                return -1;
         }
     }
 
