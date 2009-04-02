@@ -24,7 +24,10 @@
 
 /* Qt includes */
 #include <QStyleOptionFrame>
+
+#if defined (Q_WS_WIN32)
 #include <QWindowsVistaStyle>
+#endif
 
 void QILineEdit::setFixedWidthByText (const QString &aText)
 {
@@ -41,12 +44,14 @@ void QILineEdit::setFixedWidthByText (const QString &aText)
               fontMetrics().xHeight()     + 2*1);
     QSize sa = style()->sizeFromContents (QStyle::CT_LineEdit, &sof, sc, this);
 
+#if defined (Q_WS_WIN32)
     /* Vista l&f style has a bug where the last parameter of sizeFromContents
      * function ('widget' what corresponds to 'this' in our class) is ignored.
      * Due to it QLineEdit processed as QComboBox and size calculation includes
      * non-existing combo-box button of 23 pix in width. So fixing it here: */
     if (qobject_cast <QWindowsVistaStyle*> (style()))
         sa -= QSize (23, 0);
+#endif
 
     setMaximumWidth (sa.width());
     setMinimumWidth (sa.width());
