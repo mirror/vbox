@@ -248,11 +248,7 @@ typedef union {
  */
 
 #ifdef VBOX
-void remAbort(int rc, const char *pszTip) __attribute__((__noreturn__));
-
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-void     remR3GrowDynRange(unsigned long physaddr);
-#endif
+void        remAbort(int rc, const char *pszTip) __attribute__((__noreturn__));
 
 void        remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb);
 RTCCUINTREG remR3PhysReadU8(RTGCPHYS SrcGCPhys);
@@ -1205,9 +1201,6 @@ extern uint8_t *phys_ram_dirty;
 #define IO_MEM_ROM         (1 << IO_MEM_SHIFT) /* hardcoded offset */
 #define IO_MEM_UNASSIGNED  (2 << IO_MEM_SHIFT)
 #define IO_MEM_NOTDIRTY    (3 << IO_MEM_SHIFT)
-#if defined(VBOX) && !defined(VBOX_WITH_NEW_PHYS_CODE)
-#define IO_MEM_RAM_MISSING (5 << IO_MEM_SHIFT) /* used internally, never use directly */
-#endif
 
 /* Acts like a ROM when read and like a device when written.  */
 #define IO_MEM_ROMD        (1)
