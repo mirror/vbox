@@ -1165,99 +1165,100 @@ INCLUDE_FILE_PATTERNS  =
 # undefined via #undef or recursively expanded use the := operator
 # instead of the = operator.
 
-PREDEFINED             = __DOXYGEN__ \
-                         __END_DECLS \
-                         __BEGIN_DECLS
+PREDEFINED             = __DOXYGEN__ __END_DECLS __BEGIN_DECLS
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then
 # this tag can be used to specify a list of macro names that should be expanded.
 # The macro definition that is found in the sources will be used.
 # Use the PREDEFINED tag if you want to use a different macro definition.
 
-EXPAND_AS_DEFINED      = GCTYPE \
-                         DECLEXPORT \
-                         DECLIMPORT \
-                         DECLASM \
-                         DECLASMTYPE \
-                         DECLCALLBACK \
-                         ASMINLINE \
-                         VMMR3DECL \
-                         VMMR0DECL \
-                         VMMGCDECL \
-                         VMMDECL \
-                         DISDECL \
-                         SUPR3DECL \
-                         SUPR0DECL \
-                         SUPDECL \
-                         PDMR3DECL \
-                         PDMR0DECL \
-                         PDMGCDECL \
-                         PDMDECL \
-                         IOMR3DECL \
-                         IOMR0DECL \
-                         IOMGCDECL \
-                         IOMDECL \
-                         IDER3DECL \
-                         IDER0DECL \
-                         IDEGCDECL \
-                         IDEDECL \
-                         CFGMR3DECL \
-                         CFGMR0DECL \
-                         CFGMGCDECL \
-                         CFGMDECL \
-                         EMR3DECL \
-                         EMR0DECL \
-                         EMGCDECL \
-                         EMDECL \
-                         RTR3DECL \
-                         RTR0DECL \
-                         RTGCDECL \
-                         RTDECL \
-                         TRPMR3DECL \
-                         TRPMR0DECL \
-                         TRPMGCDECL \
-                         TRPMDECL \
-                         PGMR3DECL \
-                         PGMR0DECL \
-                         PGMGCDECL \
-                         PGMDECL \
-                         MMR3DECL \
-                         MMR0DECL \
-                         MMGCDECL \
-                         MMDECL \
-                         SELMR3DECL \
-                         SELMR0DECL \
-                         SELMGCDECL \
-                         SELMDECL \
-                         PATMR3DECL \
-                         PATMR0DECL \
-                         PATMGCDECL \
-                         PATMDECL \
-                         STAMR3DECL \
-                         STAMR0DECL \
-                         STAMGCDECL \
-                         STAMDECL \
-                         VGAR3DECL \
-                         VGAR0DECL \
-                         VGAGCDECL \
-                         VGADECL \
-                         DBGFR3DECL \
-                         DBGFR0DECL \
-                         DBGFGCDECL \
-                         DBGFDECL \
-                         DBGCR3DECL \
-                         DBGR0DECL \
-                         DBGGCDECL \
-                         DBGDECL \
-                         CPUMR3DECL \
-                         CPUMR0DECL \
-                         CPUMGCDECL \
-                         CPUMDECL \
-                         VMDECL \
-                         VMR3DECL \
-                         VMR0DECL \
-                         VMGCDECL \
-                         VMDECL
+EXPAND_AS_DEFINED      = \
+    GCTYPE \
+    DECLEXPORT \
+    DECLIMPORT \
+    DECLASM \
+    DECLASMTYPE \
+    DECLCALLBACK \
+    ASMINLINE \
+    VMMR3DECL \
+    VMMR0DECL \
+    VMMGCDECL \
+    VMMDECL \
+    DISDECL \
+    SUPR3DECL \
+    SUPR0DECL \
+    SUPDECL \
+    PDMR3DECL \
+    PDMR0DECL \
+    PDMGCDECL \
+    PDMDECL \
+    IOMR3DECL \
+    IOMR0DECL \
+    IOMGCDECL \
+    IOMDECL \
+    IDER3DECL \
+    IDER0DECL \
+    IDEGCDECL \
+    IDEDECL \
+    CFGMR3DECL \
+    CFGMR0DECL \
+    CFGMGCDECL \
+    CFGMDECL \
+    EMR3DECL \
+    EMR0DECL \
+    EMGCDECL \
+    EMDECL \
+    RTR3DECL \
+    RTR0DECL \
+    RTGCDECL \
+    RTDECL \
+    TRPMR3DECL \
+    TRPMR0DECL \
+    TRPMGCDECL \
+    TRPMDECL \
+    PGMR3DECL \
+    PGMR0DECL \
+    PGMGCDECL \
+    PGMDECL \
+    MMR3DECL \
+    MMR0DECL \
+    MMGCDECL \
+    MMDECL \
+    SELMR3DECL \
+    SELMR0DECL \
+    SELMGCDECL \
+    SELMDECL \
+    PATMR3DECL \
+    PATMR0DECL \
+    PATMGCDECL \
+    PATMDECL \
+    STAMR3DECL \
+    STAMR0DECL \
+    STAMGCDECL \
+    STAMDECL \
+    VGAR3DECL \
+    VGAR0DECL \
+    VGAGCDECL \
+    VGADECL \
+    DBGFR3DECL \
+    DBGFR0DECL \
+    DBGFGCDECL \
+    DBGFDECL \
+    DBGCR3DECL \
+    DBGR0DECL \
+    DBGGCDECL \
+    DBGDECL \
+    CPUMR3DECL \
+    CPUMR0DECL \
+    CPUMGCDECL \
+    CPUMDECL \
+    VMDECL \
+    VMR3DECL \
+    VMR0DECL \
+    VMGCDECL \
+    VMDECL \
+
+
 
 # If the SKIP_FUNCTION_MACROS tag is set to YES (the default) then
 # doxygen's preprocessor will remove all function-like macros that are alone
