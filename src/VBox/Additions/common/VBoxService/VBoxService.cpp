@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -95,7 +95,9 @@ static int VBoxServiceUsage(void)
         RTPrintf("           %s\n", g_aServices[j].pDesc->pszUsage);
     RTPrintf("\n"
              "Options:\n"
+#if !defined(RT_OS_WINDOWS)
              "    -f | --foreground   Don't daemonzie the program. For debugging.\n"
+#endif
              "    -v | --verbose      Increment the verbosity level. For debugging.\n"
              "    -i | --interval     The default interval.\n"
              "    -h | -? | --help    Show this message and exit with status 1.\n");
@@ -106,7 +108,7 @@ static int VBoxServiceUsage(void)
         RTPrintf("%s", g_aServices[j].pDesc->pszOptions);
     }
     RTPrintf("\n"
-             " Copyright (C) 2008 Sun Microsystems, Inc.\n");
+             " Copyright (C) 2009 Sun Microsystems, Inc.\n");
 
     return 1;
 }
@@ -367,6 +369,7 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return VBoxServiceError("VbglR3Init failed with rc=%Rrc.\n", rc);
 
+#if !defined(RT_OS_WINDOWS)
     /*
      * Daemonize if requested.
      */
@@ -378,6 +381,7 @@ int main(int argc, char **argv)
             return VBoxServiceError("daemon failed: %Rrc\n", rc);
         /* in-child */
     }
+#endif
 
 /** @todo Make the main thread responsive to signal so it can shutdown/restart the threads on non-SIGKILL signals. */
 
