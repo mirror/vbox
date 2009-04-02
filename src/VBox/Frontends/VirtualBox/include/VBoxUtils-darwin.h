@@ -229,8 +229,11 @@ enum
     kEventVBoxResizeWindow  = 'rwin',
     kEventVBoxDisposeWindow = 'dwin',
     kEventVBoxUpdateDock    = 'udck',
-    kEventVBoxUpdateContext = 'uctx'
+    kEventVBoxUpdateContext = 'uctx',
+    kEventVBoxBoundsChanged = 'bchg'
 };
+
+void PostBoundsChanged (const QRect& rect);
 OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 
 bool darwinIsMenuOpen (void);

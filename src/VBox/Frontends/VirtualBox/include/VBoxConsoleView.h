@@ -199,6 +199,7 @@ private:
     void doRefresh();
 
     void resizeEvent (QResizeEvent *);
+    void moveEvent (QMoveEvent *);
     void paintEvent (QPaintEvent *);
 
     void captureKbd (bool aCapture, bool aEmitSignal = true);

@@ -235,6 +235,21 @@ void PostUpdateContext (WindowRef window, void *wp)
     CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (PostUpdateContext): PostEventToQueue Failed");
 }
 
+void PostBoundsChanged (const QRect& rect)
+{
+    EventRef evt;
+    OSStatus status = CreateEvent(NULL, kEventClassVBox, kEventVBoxBoundsChanged, 0, kEventAttributeNone, &evt);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (PostUpdateContext): CreateEvent Failed");
+    HIPoint p = CGPointMake (rect.x(), rect.y());
+    status = SetEventParameter(evt, kEventParamOrigin, typeHIPoint, sizeof (p), &p);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (PostUpdateContext): SetEventParameter Failed");
+    HISize s = CGSizeMake (rect.width(), rect.height());
+    status = SetEventParameter(evt, kEventParamDimensions, typeHISize, sizeof (s), &s);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (PostUpdateContext): SetEventParameter Failed");
+    status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (PostUpdateContext): PostEventToQueue Failed");
+}
+
 OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
 {
     if (!aInUserData)
@@ -257,7 +272,7 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
             WindowRef w;
             if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
                 return noErr;
-            void *wp; 
+            void *wp;
             if (GetEventParameter (aInEvent, kEventParamUserData, typeVoidPtr, NULL, sizeof (wp), NULL, &wp) != noErr)
                 return noErr;
             ShowWindow (w);
@@ -288,7 +303,7 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
             HIPoint p;
             if (GetEventParameter (aInEvent, kEventParamOrigin, typeHIPoint, NULL, sizeof (p), NULL, &p) != noErr)
                 return noErr;
-            void *wp; 
+            void *wp;
             if (GetEventParameter (aInEvent, kEventParamUserData, typeVoidPtr, NULL, sizeof (wp), NULL, &wp) != noErr)
                 return noErr;
             ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
@@ -308,7 +323,7 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
             HISize s;
             if (GetEventParameter (aInEvent, kEventParamDimensions, typeHISize, NULL, sizeof (s), NULL, &s) != noErr)
                 return noErr;
-            void *wp; 
+            void *wp;
             if (GetEventParameter (aInEvent, kEventParamUserData, typeVoidPtr, NULL, sizeof (wp), NULL, &wp) != noErr)
                 return noErr;
             ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
