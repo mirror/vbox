@@ -52,16 +52,16 @@ static int g_cErrors = 0;
 /**
  * Testings va_list passing in VMSetRuntimeError.
  */
-static DECLCALLBACK(void) MyAtRuntimeError(PVM pVM, void *pvUser, bool fFatal, const char *pszErrorId, const char *pszFormat, va_list va)
+static DECLCALLBACK(void) MyAtRuntimeError(PVM pVM, void *pvUser, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
     if (strcmp((const char *)pvUser, "user argument"))
     {
         RTPrintf(TESTCASE ": pvUser=%p:{%s}!\n", pvUser, (const char *)pvUser);
         g_cErrors++;
     }
-    if (fFatal)
+    if (fFlags)
     {
-        RTPrintf(TESTCASE ": fFatal=%d!\n", fFatal);
+        RTPrintf(TESTCASE ": fFlags=%#x!\n", fFlags);
         g_cErrors++;
     }
     if (strcmp(pszErrorId, "enum"))
@@ -286,7 +286,7 @@ int main(int argc, char **argv)
         RTPrintf(TESTCASE ": va_list argument test...\n");
         PassVA(pVM, "hello %s", "world");
         VMR3AtRuntimeErrorRegister(pVM, MyAtRuntimeError, (void *)"user argument");
-        VMSetRuntimeError(pVM, false, "enum", "some %s string", "error");
+        VMSetRuntimeError(pVM, 0 /*fFlags*/, "enum", "some %s string", "error");
 
         /*
          * Cleanup.

@@ -386,7 +386,9 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         polls[0].revents = 0;
 
         int cChangedFDs = poll(polls, nFDs + 1, ms ? ms : -1);
+#ifndef RT_OS_LINUX /* 2.6.23 + gdb -> hitting all the time. probably a bug in poll/ptrace/whatever. */
         AssertRelease(cChangedFDs >= 0);
+#endif
         if (cChangedFDs >= 0)
         {
             slirp_select_poll(pThis->pNATState, &polls[1], nFDs);
@@ -396,13 +398,13 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                 char ch[1];
                 size_t cbRead;
                 int counter = 0;
-                /* 
-                 * drvNATSend decoupled so we don't know how many times 
+                /*
+                 * drvNATSend decoupled so we don't know how many times
                  * device's thread sends before we've entered multiplex,
                  * so to avoid false alarm drain pipe here to the very end
                  *
-                 * @todo: Probably we should counter drvNATSend to count how 
-                 * deep pipe has been filed before drain. 
+                 * @todo: Probably we should counter drvNATSend to count how
+                 * deep pipe has been filed before drain.
                  *
                  * XXX:Make it reading exactly we need to drain the pipe.
                  */
@@ -563,7 +565,7 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
     {
         cDroppedPackets++;
     }
-    else 
+    else
     {
         LogRel(("NAT: %d messages suppressed about dropping package (couldn't allocate queue item)\n", cDroppedPackets));
         cDroppedPackets = 0;

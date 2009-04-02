@@ -39,6 +39,10 @@
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/param.h>
+#if 0 /* enable to play with lots of memory. */
+# include <iprt/env.h>
+# include <iprt/string.h>
+#endif
 
 #include <VBox/vmapi.h>
 #include <VBox/err.h>
@@ -191,7 +195,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ULONG cRamMBs;
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                H();
 #if 0 /* enable to play with lots of memory. */
-    cRamMBs = 512 * 1024;
+    if (RTEnvExist("VBOX_RAM_SIZE"))
+        cRamMBs = RTStrToUInt64(RTEnvGet("VBOX_RAM_SIZE")) * 1024;
 #endif
     uint64_t const cbRam = cRamMBs * (uint64_t)_1M;
     uint32_t const cbRamHole = MM_RAM_HOLE_SIZE_DEFAULT;

@@ -180,11 +180,11 @@ typedef struct VMRUNTIMEERROR
      * after the end of the buffer. */
     uint32_t                        off;
     /** Offset from the start of this structure to the error ID. */
-    uint32_t                        offErrorID;
+    uint32_t                        offErrorId;
     /** Offset from the start of this structure to the formatted message text. */
     uint32_t                        offMessage;
-    /** Whether the error is fatal or not */
-    bool                            fFatal;
+    /** Error flags. */
+    uint32_t                        fFlags;
 } VMRUNTIMEERROR, *PVMRUNTIMEERROR;
 
 /** The halt method. */
@@ -545,15 +545,19 @@ typedef struct VMINTUSERPERVMCPU
 /** Pointer to the VM internal data kept in the UVM. */
 typedef VMINTUSERPERVMCPU *PVMINTUSERPERVMCPU;
 
+__BEGIN_DECLS
+
 DECLCALLBACK(int)   vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArg);
 int                 vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod);
 DECLCALLBACK(int)   vmR3Destroy(PVM pVM);
 DECLCALLBACK(void)  vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list *args);
 void                vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args);
-DECLCALLBACK(void)  vmR3SetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list *args);
-void                vmSetRuntimeErrorCopy(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list args);
+DECLCALLBACK(int)   vmR3SetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list *pVa);
+void                vmSetRuntimeErrorCopy(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va);
 void                vmR3DestroyFinalBitFromEMT(PUVM pUVM);
 void                vmR3SetState(PVM pVM, VMSTATE enmStateNew);
+
+__END_DECLS
 
 
 /** @} */

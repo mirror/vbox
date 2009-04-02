@@ -1835,7 +1835,7 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
         AUD_close_out(&s->card, s->voice);
         s->voice = NULL;
         AUD_init_null();
-        PDMDevHlpVMSetRuntimeError(pDevIns, false, "HostAudioNotResponding",
+        PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
             N_("No audio devices could be opened. Selecting the NULL audio backend "
                "with the consequence that no sound is audible"));
     }

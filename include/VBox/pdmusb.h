@@ -554,12 +554,12 @@ typedef struct PDMUSBHLP
      *
      * @returns VBox status code.
      * @param   pUsbIns             The USB device instance.
-     * @param   fFatal              Whether it is a fatal error or not.
-     * @param   pszErrorID          Error ID string.
+     * @param   fFlags              The action flags. See VMSETRTERR_FLAGS_*.
+     * @param   pszErrorId          Error ID string.
      * @param   pszFormat           Error message format string.
      * @param   va                  Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMUSBINS pUsbIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va));
+    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMUSBINS pUsbIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va));
 
     /**
      * Gets the VM state.
@@ -659,16 +659,18 @@ typedef struct PDMUSBINS
 #endif
 
 /** @def PDMUSB_SET_ERROR
- * Set the VM error. See PDMDevHlpVMSetError() for printf like message formatting.
+ * Set the VM error. See PDMUsbHlpVMSetError() for printf like message
+ * formatting.
  */
 #define PDMUSB_SET_ERROR(pUsbIns, rc, pszError) \
-    PDMDevHlpVMSetError(pUsbIns, rc, RT_SRC_POS, "%s", pszError)
+    PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, "%s", pszError)
 
 /** @def PDMUSB_SET_RUNTIME_ERROR
- * Set the VM runtime error. See PDMDevHlpVMSetRuntimeError() for printf like message formatting.
+ * Set the VM runtime error. See PDMUsbHlpVMSetRuntimeError() for printf like
+ * message formatting.
  */
-#define PDMUSB_SET_RUNTIME_ERROR(pUsbIns, fFatal, pszErrorID, pszError) \
-    PDMDevHlpVMSetRuntimeError(pUsbIns, fFatal, pszErrorID, "%s", pszError)
+#define PDMUSB_SET_RUNTIME_ERROR(pUsbIns, fFlags, pszErrorId, pszError) \
+    PDMUsbHlpVMSetRuntimeError(pUsbIns, fFlags, pszErrorId, "%s", pszError)
 
 
 #ifdef IN_RING3

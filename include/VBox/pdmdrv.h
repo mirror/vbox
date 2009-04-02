@@ -452,24 +452,24 @@ typedef struct PDMDRVHLP
      *
      * @returns VBox status code.
      * @param   pDrvIns         Driver instance.
-     * @param   fFatal          Whether it is a fatal error or not.
-     * @param   pszErrorID      Error ID string.
+     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
+     * @param   pszErrorId      Error ID string.
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDRVINS pDrvIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...));
+    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...));
 
     /**
      * Set the VM runtime error message
      *
      * @returns VBox status code.
      * @param   pDrvIns         Driver instance.
-     * @param   fFatal          Whether it is a fatal error or not.
-     * @param   pszErrorID      Error ID string.
+     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
+     * @param   pszErrorId      Error ID string.
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDRVINS pDrvIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va));
+    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va));
 
     /**
      * Create a queue.
@@ -768,12 +768,12 @@ DECLINLINE(int) PDMDrvHlpVMSetError(PPDMDRVINS pDrvIns, const int rc, RT_SRC_POS
 /**
  * @copydoc PDMDRVHLP::pfnVMSetRuntimeError
  */
-DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...)
+DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
 {
     va_list va;
     int rc;
     va_start(va, pszFormat);
-    rc = pDrvIns->pDrvHlp->pfnVMSetRuntimeErrorV(pDrvIns, fFatal, pszErrorID, pszFormat, va);
+    rc = pDrvIns->pDrvHlp->pfnVMSetRuntimeErrorV(pDrvIns, fFlags, pszErrorId, pszFormat, va);
     va_end(va);
     return rc;
 }
@@ -781,8 +781,8 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, bool fFatal, cons
 /** @def PDMDRV_SET_RUNTIME_ERROR
  * Set the VM runtime error. See PDMDrvHlpVMSetRuntimeError() for printf like message formatting.
  */
-#define PDMDRV_SET_RUNTIME_ERROR(pDrvIns, fFatal, pszErrorID, pszError)  \
-    PDMDrvHlpVMSetRuntimeError(pDrvIns, fFatal, pszErrorID, "%s", pszError)
+#define PDMDRV_SET_RUNTIME_ERROR(pDrvIns, fFlags, pszErrorId, pszError)  \
+    PDMDrvHlpVMSetRuntimeError(pDrvIns, fFlags, pszErrorId, "%s", pszError)
 
 #endif /* IN_RING3 */
 

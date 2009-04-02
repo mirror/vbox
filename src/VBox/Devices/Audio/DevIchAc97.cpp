@@ -1679,7 +1679,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
         AUD_init_null ();
         ac97Reset (pDevIns);
 
-        PDMDevHlpVMSetRuntimeError (pDevIns, false, "HostAudioNotResponding",
+        PDMDevHlpVMSetRuntimeError (pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
             N_ ("No audio devices could be opened. Selecting the NULL audio backend "
                 "with the consequence that no sound is audible"));
     }
@@ -1695,7 +1695,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
         if (!s->voice_mc)
             len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_mic" : "PCM_mic");
 
-        PDMDevHlpVMSetRuntimeError (pDevIns, false, "HostAudioNotResponding",
+        PDMDevHlpVMSetRuntimeError (pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
             N_ ("Some audio devices (%s) could not be opened. Guest applications generating audio "
                 "output or depending on audio input may hang. Make sure your host audio device "
                 "is working properly. Check the logfile for error messages of the audio "

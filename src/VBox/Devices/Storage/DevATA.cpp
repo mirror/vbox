@@ -1369,9 +1369,8 @@ static void ataWarningDiskFull(PPDMDEVINS pDevIns)
 {
     int rc;
     LogRel(("PIIX3 ATA: Host disk full\n"));
-    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
-                           false, "DevATA_DISKFULL",
-                           N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
+    rc = PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "DevATA_DISKFULL",
+                                    N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
     AssertRC(rc);
 }
 
@@ -1379,9 +1378,8 @@ static void ataWarningFileTooBig(PPDMDEVINS pDevIns)
 {
     int rc;
     LogRel(("PIIX3 ATA: File too big\n"));
-    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
-                           false, "DevATA_FILETOOBIG",
-                           N_("Host system reported that the file size limit of the host file system has been exceeded. VM execution is suspended. You need to move your virtual hard disk to a filesystem which allows bigger files"));
+    rc = PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "DevATA_FILETOOBIG",
+                                    N_("Host system reported that the file size limit of the host file system has been exceeded. VM execution is suspended. You need to move your virtual hard disk to a filesystem which allows bigger files"));
     AssertRC(rc);
 }
 
@@ -1389,9 +1387,8 @@ static void ataWarningISCSI(PPDMDEVINS pDevIns)
 {
     int rc;
     LogRel(("PIIX3 ATA: iSCSI target unavailable\n"));
-    rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
-                           false, "DevATA_ISCSIDOWN",
-                           N_("The iSCSI target has stopped responding. VM execution is suspended. You can resume when it is available again"));
+    rc = PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "DevATA_ISCSIDOWN",
+                                    N_("The iSCSI target has stopped responding. VM execution is suspended. You can resume when it is available again"));
     AssertRC(rc);
 }
 
@@ -5238,9 +5235,8 @@ static DECLCALLBACK(void)  ataReset(PPDMDEVINS pDevIns)
         ataAsyncIOPutRequest(&pThis->aCts[i], &ataResetCRequest);
         if (!ataWaitForAsyncIOIsIdle(&pThis->aCts[i], 30000))
         {
-            VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
-                              false, "DevATA_ASYNCBUSY",
-                              N_("The IDE async I/O thread remained busy after a reset, usually a host filesystem performance problem\n"));
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "DevATA_ASYNCBUSY",
+                                       N_("The IDE async I/O thread remained busy after a reset, usually a host filesystem performance problem\n"));
             AssertMsgFailed(("Async I/O thread busy after reset\n"));
         }
 

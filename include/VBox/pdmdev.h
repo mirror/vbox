@@ -2112,24 +2112,24 @@ typedef struct PDMDEVHLPR3
      *
      * @returns VBox status code.
      * @param   pDevIns             Device instance.
-     * @param   fFatal              Whether it is a fatal error or not.
-     * @param   pszErrorID          Error ID string.
+     * @param   fFlags              The action flags. See VMSETRTERR_FLAGS_*.
+     * @param   pszErrorId          Error ID string.
      * @param   pszFormat           Error message format string.
      * @param   ...                 Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...));
+    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...));
 
     /**
      * Set the VM runtime error message
      *
      * @returns VBox status code.
      * @param   pDevIns             Device instance.
-     * @param   fFatal              Whether it is a fatal error or not.
-     * @param   pszErrorID          Error ID string.
+     * @param   fFlags              The action flags. See VMSETRTERR_FLAGS_*.
+     * @param   pszErrorId          Error ID string.
      * @param   pszFormat           Error message format string.
      * @param   va                  Error message arguments.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va));
+    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va));
 
     /**
      * Assert that the current thread is the emulation thread.
@@ -2949,24 +2949,24 @@ typedef struct PDMDEVHLPRC
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance.
-     * @param   fFatal          Whether it is a fatal error or not.
-     * @param   pszErrorID      Error ID string.
+     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
+     * @param   pszErrorId      Error ID string.
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...));
+    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...));
 
     /**
      * Set the VM runtime error message
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance.
-     * @param   fFatal          Whether it is a fatal error or not.
-     * @param   pszErrorID      Error ID string.
+     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
+     * @param   pszErrorId      Error ID string.
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va));
+    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va));
 
     /**
      * Set parameters for pending MMIO patch operation
@@ -3087,24 +3087,24 @@ typedef struct PDMDEVHLPR0
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance.
-     * @param   fFatal          Whether it is a fatal error or not.
-     * @param   pszErrorID      Error ID string.
+     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
+     * @param   pszErrorId      Error ID string.
      * @param   pszFormat       Error message format string.
      * @param   ...             Error message arguments.
      */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...));
+    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...));
 
     /**
      * Set the VM runtime error message
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance.
-     * @param   fFatal          Whether it is a fatal error or not.
-     * @param   pszErrorID      Error ID string.
+     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
+     * @param   pszErrorId      Error ID string.
      * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va));
+    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va));
 
     /**
      * Set parameters for pending MMIO patch operation
@@ -3240,8 +3240,8 @@ typedef struct PDMDEVINS
 /** @def PDMDEV_SET_RUNTIME_ERROR
  * Set the VM runtime error. See PDMDevHlpVMSetRuntimeError() for printf like message formatting.
  */
-#define PDMDEV_SET_RUNTIME_ERROR(pDevIns, fFatal, pszErrorID, pszError) \
-    PDMDevHlpVMSetRuntimeError(pDevIns, fFatal, pszErrorID, "%s", pszError)
+#define PDMDEV_SET_RUNTIME_ERROR(pDevIns, fFlags, pszErrorId, pszError) \
+    PDMDevHlpVMSetRuntimeError(pDevIns, fFlags, pszErrorId, "%s", pszError)
 
 /** @def PDMDEVINS_2_RCPTR
  * Converts a PDM Device instance pointer a RC PDM Device instance pointer.
@@ -3826,12 +3826,12 @@ DECLINLINE(int) PDMDevHlpVMSetError(PPDMDEVINS pDevIns, const int rc, RT_SRC_POS
 /**
  * @copydoc PDMDEVHLPR3::pfnVMSetRuntimeError
  */
-DECLINLINE(int) PDMDevHlpVMSetRuntimeError(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...)
+DECLINLINE(int) PDMDevHlpVMSetRuntimeError(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
 {
     va_list va;
     int rc;
     va_start(va, pszFormat);
-    rc = pDevIns->CTX_SUFF(pDevHlp)->pfnVMSetRuntimeErrorV(pDevIns, fFatal, pszErrorID, pszFormat, va);
+    rc = pDevIns->CTX_SUFF(pDevHlp)->pfnVMSetRuntimeErrorV(pDevIns, fFlags, pszErrorId, pszFormat, va);
     va_end(va);
     return rc;
 }
