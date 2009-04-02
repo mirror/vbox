@@ -2573,8 +2573,13 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
 
         pelmRoot->setAttribute("ovf:version", (task->enFormat == TaskWriteOVF::OVF_1_0) ? "1.0" : "0.9");
         pelmRoot->setAttribute("xml:lang", "en-US");
-        pelmRoot->setAttribute("xmlns", "http://schemas.dmtf.org/ovf/envelope/1");
-        pelmRoot->setAttribute("xmlns:ovf", "http://schemas.dmtf.org/ovf/envelope/1");
+
+        Utf8Str strNamespace = (TaskWriteOVF::OVF_0_9)
+            ? "http://www.vmware.com/schema/ovf/1/envelope"     // 0.9
+            : "http://schemas.dmtf.org/ovf/envelope/1";         // 1.0
+        pelmRoot->setAttribute("xmlns", strNamespace);
+        pelmRoot->setAttribute("xmlns:ovf", strNamespace);
+
 //         pelmRoot->setAttribute("xmlns:ovfstr", "http://schema.dmtf.org/ovf/strings/1");
         pelmRoot->setAttribute("xmlns:rasd", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData");
         pelmRoot->setAttribute("xmlns:vssd", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData");
@@ -2630,16 +2635,22 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                 // we fill this later below when we iterate over the networks
 
         // and here come the virtual systems:
-        xml::ElementNode *pelmVirtualSystemCollection;
-        if (task->enFormat == TaskWriteOVF::OVF_0_9)
+
+        // write a collection if we have more than one virtual system _and_ we're
+        // writing OVF 1.0; otherwise fail since ovftool can't import more than
+        // one machine, it seems
+        xml::ElementNode *pelmToAddVirtualSystemsTo;
+        if (pAppliance->m->virtualSystemDescriptions.size() > 1)
         {
-            // <Section xsi:type="ovf:NetworkSection_Type">
-            pelmVirtualSystemCollection = pelmRoot->createChild("Content");
-            pelmVirtualSystemCollection->setAttribute("xsi:type", "ovf:VirtualSystemCollection_Type");
+            if (task->enFormat == TaskWriteOVF::OVF_0_9)
+                return setError(VBOX_E_FILE_ERROR,
+                                tr("Cannot export more than one virtual system with OVF 0.9, use OVF 1.0"));
+
+            pelmToAddVirtualSystemsTo = pelmRoot->createChild("VirtualSystemCollection");
+            /* xml::AttributeNode *pattrVirtualSystemCollectionId = */ pelmToAddVirtualSystemsTo->setAttribute("ovf:name", "ExportedVirtualBoxMachines");      // whatever
         }
         else
-            pelmVirtualSystemCollection = pelmRoot->createChild("VirtualSystemCollection");
-        /* xml::AttributeNode *pattrVirtualSystemCollectionId = */ pelmVirtualSystemCollection->setAttribute("ovf:id", "ExportedVirtualBoxMachines");      // whatever
+            pelmToAddVirtualSystemsTo = pelmRoot;       // add virtual system directly under root element
 
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
         /* Iterate through all virtual systems of that appliance */
@@ -2653,11 +2664,11 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
             if (task->enFormat == TaskWriteOVF::OVF_0_9)
             {
                 // <Section xsi:type="ovf:NetworkSection_Type">
-                pelmVirtualSystem = pelmVirtualSystemCollection->createChild("Content");
+                pelmVirtualSystem = pelmToAddVirtualSystemsTo->createChild("Content");
                 pelmVirtualSystem->setAttribute("xsi:type", "ovf:VirtualSystem_Type");
             }
             else
-                pelmVirtualSystem = pelmVirtualSystemCollection->createChild("VirtualSystem");
+                pelmVirtualSystem = pelmToAddVirtualSystemsTo->createChild("VirtualSystem");
 
             /*xml::ElementNode *pelmVirtualSystemInfo =*/ pelmVirtualSystem->createChild("Info")->addContent("A virtual machine");
 
@@ -2810,7 +2821,11 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
             // <vssd:VirtualSystemIdentifier>VAtest</vssd:VirtualSystemIdentifier>
             pelmSystem->createChild("vssd:VirtualSystemIdentifier")->addContent(strVMName);
             // <vssd:VirtualSystemType>vmx-4</vssd:VirtualSystemType>
-            pelmSystem->createChild("vssd:VirtualSystemType")->addContent("virtualbox-2.2");            // instead of vmx-7?
+            const char *pcszHardware = "virtualbox-2.2";
+            if (task->enFormat == TaskWriteOVF::OVF_0_9)
+                // pretend to be vmware compatible then
+                pcszHardware = "vmx-6";
+            pelmSystem->createChild("vssd:VirtualSystemType")->addContent(pcszHardware);
 
             // loop thru all description entries twice; once to write out all
             // devices _except_ disk images, and a second time to assign the
@@ -2897,6 +2912,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                                 desc.strVbox.toInt(uTemp);
                                 lVirtualQuantity = (int32_t)(uTemp / _1M);
                                 strAllocationUnits = "MegaBytes";
+                                strCaption = Utf8StrFmt("%d MB of memory", lVirtualQuantity);     // without this ovftool won't eat the item
                             }
                         break;
 
@@ -3153,32 +3169,43 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
 
                         pItem = pelmVirtualHardwareSection->createChild("Item");
 
-                        if (!strDescription.isEmpty())
-                            pItem->createChild("rasd:Description")->addContent(strDescription);
+                        // NOTE: do not change the order of these items without good reason! While we don't care
+                        // about ordering, VMware's ovftool does and fails if the items are not written in
+                        // exactly this order, as stupid as it seems.
+
                         if (!strCaption.isEmpty())
                             pItem->createChild("rasd:Caption")->addContent(strCaption);
-
-                        if (!strAllocationUnits.isEmpty())
-                            pItem->createChild("rasd:AllocationUnits")->addContent(strAllocationUnits);
-
-                        if (lAutomaticAllocation != -1)
-                            pItem->createChild("rasd:AutomaticAllocation")->addContent( (lAutomaticAllocation) ? "true" : "false" );
-
-                        if (!strConnection.isEmpty())
-                            pItem->createChild("rasd:Connection")->addContent(strConnection);
+                        if (!strDescription.isEmpty())
+                            pItem->createChild("rasd:Description")->addContent(strDescription);
 
                         // <rasd:InstanceID>1</rasd:InstanceID>
-                        pItem->createChild("rasd:InstanceID")->addContent(Utf8StrFmt("%d", ulInstanceID));
-                        ++ulInstanceID;
+                        xml::ElementNode *pelmInstanceID;
+                        if (task->enFormat == TaskWriteOVF::OVF_0_9)
+                            pelmInstanceID = pItem->createChild("rasd:InstanceId");
+                        else
+                            pelmInstanceID = pItem->createChild("rasd:InstanceID");      // capitalization changed...
+                        pelmInstanceID->addContent(Utf8StrFmt("%d", ulInstanceID++));
 
                         // <rasd:ResourceType>3</rasd:ResourceType>
                         pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type));
                         if (!strResourceSubType.isEmpty())
                             pItem->createChild("rasd:ResourceSubType")->addContent(strResourceSubType);
 
+                        if (!strHostResource.isEmpty())
+                            pItem->createChild("rasd:HostResource")->addContent(strHostResource);
+
+                        if (!strAllocationUnits.isEmpty())
+                            pItem->createChild("rasd:AllocationUnits")->addContent(strAllocationUnits);
+
                         // <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
                         if (lVirtualQuantity != -1)
                             pItem->createChild("rasd:VirtualQuantity")->addContent(Utf8StrFmt("%d", lVirtualQuantity));
+
+                        if (lAutomaticAllocation != -1)
+                            pItem->createChild("rasd:AutomaticAllocation")->addContent( (lAutomaticAllocation) ? "true" : "false" );
+
+                        if (!strConnection.isEmpty())
+                            pItem->createChild("rasd:Connection")->addContent(strConnection);
 
                         if (lAddress != -1)
                             pItem->createChild("rasd:Address")->addContent(Utf8StrFmt("%d", lAddress));
@@ -3190,9 +3217,6 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                             pItem->createChild("rasd:Parent")->addContent(Utf8StrFmt("%d", ulParent));
                         if (lAddressOnParent != -1)
                             pItem->createChild("rasd:AddressOnParent")->addContent(Utf8StrFmt("%d", lAddressOnParent));
-
-                        if (!strHostResource.isEmpty())
-                            pItem->createChild("rasd:HostResource")->addContent(strHostResource);
                     }
                 }
             } // for (size_t uLoop = 0; ...
@@ -3306,7 +3330,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
             pelmDisk->setAttribute("ovf:capacity", Utf8StrFmt("%RI64", cbCapacity).c_str());
             pelmDisk->setAttribute("ovf:diskId", strDiskID);
             pelmDisk->setAttribute("ovf:fileRef", strFileRef);
-            pelmDisk->setAttribute("ovf:format", "http://www.vmware.com/specifications/vmdk.html#compressed");
+            pelmDisk->setAttribute("ovf:format", "http://www.vmware.com/specifications/vmdk.html#sparse");      // must be sparse or ovftool chokes
         }
 
         // now go write the XML
