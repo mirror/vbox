@@ -231,12 +231,12 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                 if (RTTimeSpecGetMilli(&AbsDrift) > MinAdjust)
                 {
                     /*
-                     * The drift is to big, we have to make adjustments. :-/
+                     * The drift is too big, we have to make adjustments. :-/
                      * If we've got adjtime around, try that first - most
                      * *NIX systems have it. Fall back on settimeofday.
                      */
 #ifdef RT_OS_WINDOWS
-                    /* just make sure it compiles for now, but later:
+                    /* Just make sure it compiles for now, but later:
                      SetSystemTimeAdjustment and fall back on SetSystemTime.
                      */
                     AssertFatalFailed();
