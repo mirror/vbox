@@ -48,7 +48,9 @@ endif
 
 if1of ($(KBUILD_TARGET),linux solaris)
  #VBoxOGL_DRI = 1
- VBoxOGL_FAKEDRI = 1
+ ifneq ($(KBUILD_TARGET),solaris)   # No DRI on Solaris yet
+  VBoxOGL_FAKEDRI = 1
+ endif
  VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
 
  # Only Solaris right now needs C stubs because I can't figure out how to
