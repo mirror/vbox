@@ -3205,7 +3205,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
          */
         if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
         {
-            rc2 = VINF_EM_NO_MEMORY;
+            rc2 = PGMR3PhysAllocateHandyPages(pVM);
             UPDATE_RC();
             if (rc == VINF_EM_NO_MEMORY)
                 return rc;
@@ -3354,7 +3354,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
          */
         if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
         {
-            rc2 = VINF_EM_NO_MEMORY;
+            rc2 = PGMR3PhysAllocateHandyPages(pVM);
             UPDATE_RC();
             if (rc == VINF_EM_NO_MEMORY)
                 return rc;
