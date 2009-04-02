@@ -655,7 +655,7 @@ int handleExportAppliance(HandlerArg *a)
             break;
 
         ComPtr<IProgress> progress;
-        CHECK_ERROR_BREAK(pAppliance, Write(Bstr(strOutputFile), progress.asOutParam()));
+        CHECK_ERROR_BREAK(pAppliance, Write(Bstr("ovf-0.9"), Bstr(strOutputFile), progress.asOutParam()));
 
         showProgress(progress);
 

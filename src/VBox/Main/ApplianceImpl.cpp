@@ -2458,15 +2458,19 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
 struct Appliance::TaskWriteOVF
 {
     TaskWriteOVF(Appliance *aThat, Progress *aProgress)
-        : pAppliance(aThat)
-        , progress(aProgress)
-        , rc(S_OK)
+        : pAppliance(aThat),
+          enFormat(unspecified),
+          progress(aProgress),
+          rc(S_OK)
     {}
     ~TaskWriteOVF() {}
 
     HRESULT startThread();
 
     Appliance *pAppliance;
+    enum { unspecified, OVF_0_9, OVF_1_0 }
+        enFormat;
+
     ComObjPtr<Progress> progress;
     HRESULT rc;
 };
@@ -2482,7 +2486,7 @@ HRESULT Appliance::TaskWriteOVF::startThread()
     return S_OK;
 }
 
-STDMETHODIMP Appliance::Write(IN_BSTR path, IProgress **aProgress)
+STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgress)
 {
     HRESULT rc = S_OK;
 
@@ -2510,6 +2514,15 @@ STDMETHODIMP Appliance::Write(IN_BSTR path, IProgress **aProgress)
         /* Initialize our worker task */
         std::auto_ptr<TaskWriteOVF> task(new TaskWriteOVF(this, progress));
         //AssertComRCThrowRC (task->autoCaller.rc());
+
+        Utf8Str strFormat(format);
+        if (strFormat == "ovf-0.9")
+            task->enFormat = TaskWriteOVF::OVF_0_9;
+        else if (strFormat == "ovf-1.0")
+            task->enFormat = TaskWriteOVF::OVF_1_0;
+        else
+            return setError(VBOX_E_FILE_ERROR,
+                            tr("Invalid format \"%s\" specified"), strFormat.c_str());
 
         rc = task->startThread();
         CheckComRCThrowRC(rc);
@@ -2558,25 +2571,34 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
         xml::Document doc;
         xml::ElementNode *pelmRoot = doc.createRootElement("Envelope");
 
-        pelmRoot->setAttribute("ovf:version", "1.0");
+        pelmRoot->setAttribute("ovf:version", (task->enFormat == TaskWriteOVF::OVF_1_0) ? "1.0" : "0.9");
         pelmRoot->setAttribute("xml:lang", "en-US");
         pelmRoot->setAttribute("xmlns", "http://schemas.dmtf.org/ovf/envelope/1");
         pelmRoot->setAttribute("xmlns:ovf", "http://schemas.dmtf.org/ovf/envelope/1");
-        pelmRoot->setAttribute("xmlns:ovfstr", "http://schema.dmtf.org/ovf/strings/1");
+//         pelmRoot->setAttribute("xmlns:ovfstr", "http://schema.dmtf.org/ovf/strings/1");
         pelmRoot->setAttribute("xmlns:rasd", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData");
         pelmRoot->setAttribute("xmlns:vssd", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData");
         pelmRoot->setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-        pelmRoot->setAttribute("xsi:schemaLocation", "http://schemas.dmtf.org/ovf/envelope/1 ../ovf-envelope.xsd");
+//         pelmRoot->setAttribute("xsi:schemaLocation", "http://schemas.dmtf.org/ovf/envelope/1 ../ovf-envelope.xsd");
 
         // <Envelope>/<References>
-        xml::ElementNode *pelmReferences = pelmRoot->createChild("References");
+        xml::ElementNode *pelmReferences = pelmRoot->createChild("References");     // 0.9 and 1.0
 
         /* <Envelope>/<DiskSection>:
             <DiskSection>
                 <Info>List of the virtual disks used in the package</Info>
                 <Disk ovf:capacity="4294967296" ovf:diskId="lamp" ovf:format="http://www.vmware.com/specifications/vmdk.html#compressed" ovf:populatedSize="1924967692"/>
             </DiskSection> */
-        xml::ElementNode *pelmDiskSection = pelmRoot->createChild("DiskSection");
+        xml::ElementNode *pelmDiskSection;
+        if (task->enFormat == TaskWriteOVF::OVF_0_9)
+        {
+            // <Section xsi:type="ovf:DiskSection_Type">
+            pelmDiskSection = pelmRoot->createChild("Section");
+            pelmDiskSection->setAttribute("xsi:type", "ovf:DiskSection_Type");
+        }
+        else
+            pelmDiskSection = pelmRoot->createChild("DiskSection");
+
         xml::ElementNode *pelmDiskSectionInfo = pelmDiskSection->createChild("Info");
         pelmDiskSectionInfo->addContent("List of the virtual disks used in the package");
         // for now, set up a map so we have a list of unique disk names (to make
@@ -2590,7 +2612,16 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                     <Description>The network that the LAMP Service will be available on</Description>
                 </Network>
             </NetworkSection> */
-        xml::ElementNode *pelmNetworkSection = pelmRoot->createChild("NetworkSection");
+        xml::ElementNode *pelmNetworkSection;
+        if (task->enFormat == TaskWriteOVF::OVF_0_9)
+        {
+            // <Section xsi:type="ovf:NetworkSection_Type">
+            pelmNetworkSection = pelmRoot->createChild("Section");
+            pelmNetworkSection->setAttribute("xsi:type", "ovf:NetworkSection_Type");
+        }
+        else
+            pelmNetworkSection = pelmRoot->createChild("NetworkSection");
+
         xml::ElementNode *pelmNetworkSectionInfo = pelmNetworkSection->createChild("Info");
         pelmNetworkSectionInfo->addContent("Logical networks used in the package");
         // for now, set up a map so we have a list of unique network names (to make
@@ -2599,7 +2630,15 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                 // we fill this later below when we iterate over the networks
 
         // and here come the virtual systems:
-        xml::ElementNode *pelmVirtualSystemCollection = pelmRoot->createChild("VirtualSystemCollection");
+        xml::ElementNode *pelmVirtualSystemCollection;
+        if (task->enFormat == TaskWriteOVF::OVF_0_9)
+        {
+            // <Section xsi:type="ovf:NetworkSection_Type">
+            pelmVirtualSystemCollection = pelmRoot->createChild("Content");
+            pelmVirtualSystemCollection->setAttribute("xsi:type", "ovf:VirtualSystemCollection_Type");
+        }
+        else
+            pelmVirtualSystemCollection = pelmRoot->createChild("VirtualSystemCollection");
         /* xml::AttributeNode *pattrVirtualSystemCollectionId = */ pelmVirtualSystemCollection->setAttribute("ovf:id", "ExportedVirtualBoxMachines");      // whatever
 
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
@@ -2610,7 +2649,15 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
         {
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
 
-            xml::ElementNode *pelmVirtualSystem = pelmVirtualSystemCollection->createChild("VirtualSystem");
+            xml::ElementNode *pelmVirtualSystem;
+            if (task->enFormat == TaskWriteOVF::OVF_0_9)
+            {
+                // <Section xsi:type="ovf:NetworkSection_Type">
+                pelmVirtualSystem = pelmVirtualSystemCollection->createChild("Content");
+                pelmVirtualSystem->setAttribute("xsi:type", "ovf:VirtualSystem_Type");
+            }
+            else
+                pelmVirtualSystem = pelmVirtualSystemCollection->createChild("VirtualSystem");
 
             /*xml::ElementNode *pelmVirtualSystemInfo =*/ pelmVirtualSystem->createChild("Info")->addContent("A virtual machine");
 
@@ -2618,7 +2665,8 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
             if (llName.size() != 1)
                 throw setError(VBOX_E_NOT_SUPPORTED,
                                tr("Missing VM name"));
-            pelmVirtualSystem->setAttribute("ovf:id", llName.front()->strVbox);
+            Utf8Str &strVMName = llName.front()->strVbox;
+            pelmVirtualSystem->setAttribute("ovf:id", strVMName);
 
             // product info
             std::list<VirtualSystemDescriptionEntry*> llProduct = vsdescThis->findByType(VirtualSystemDescriptionType_Product);
@@ -2644,8 +2692,17 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                     <Version>10.0</Version>
                     <ProductUrl>http://blogs.sun.com/VirtualGuru</ProductUrl>
                     <VendorUrl>http://www.sun.com</VendorUrl>
-                   </Section> */
-                xml::ElementNode *pelmAnnotationSection = pelmVirtualSystem->createChild("ProductSection");
+                </Section> */
+                xml::ElementNode *pelmAnnotationSection;
+                if (task->enFormat == TaskWriteOVF::OVF_0_9)
+                {
+                    // <Section ovf:required="false" xsi:type="ovf:ProductSection_Type">
+                    pelmAnnotationSection = pelmVirtualSystem->createChild("Section");
+                    pelmAnnotationSection->setAttribute("xsi:type", "ovf:ProductSection_Type");
+                }
+                else
+                    pelmAnnotationSection = pelmVirtualSystem->createChild("ProductSection");
+
                 pelmAnnotationSection->createChild("Info")->addContent("Meta-information about the installed software");
                 if (fProduct)
                     pelmAnnotationSection->createChild("Product")->addContent(llProduct.front()->strVbox);
@@ -2668,7 +2725,16 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                         <Info>A human-readable annotation</Info>
                         <Annotation>Plan 9</Annotation>
                     </Section> */
-                xml::ElementNode *pelmAnnotationSection = pelmVirtualSystem->createChild("AnnotationSection");
+                xml::ElementNode *pelmAnnotationSection;
+                if (task->enFormat == TaskWriteOVF::OVF_0_9)
+                {
+                    // <Section ovf:required="false" xsi:type="ovf:AnnotationSection_Type">
+                    pelmAnnotationSection = pelmVirtualSystem->createChild("Section");
+                    pelmAnnotationSection->setAttribute("xsi:type", "ovf:AnnotationSection_Type");
+                }
+                else
+                    pelmAnnotationSection = pelmVirtualSystem->createChild("AnnotationSection");
+
                 pelmAnnotationSection->createChild("Info")->addContent("A human-readable annotation");
                 pelmAnnotationSection->createChild("Annotation")->addContent(llDescription.front()->strVbox);
             }
@@ -2682,9 +2748,17 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                    <Info ovf:msgid="6">License agreement for the Virtual System.</Info>
                    <License ovf:msgid="1">License terms can go in here.</License>
                    </EulaSection> */
-                xml::ElementNode *pelmAnnotationSection = pelmVirtualSystem->createChild("EulaSection");
-                pelmAnnotationSection->createChild("Info")->addContent("License agreement for the Virtual System.");
-                pelmAnnotationSection->createChild("License")->addContent(llLicense.front()->strVbox);
+                xml::ElementNode *pelmEulaSection;
+                if (task->enFormat == TaskWriteOVF::OVF_0_9)
+                {
+                    pelmEulaSection = pelmVirtualSystem->createChild("Section");
+                    pelmEulaSection->setAttribute("xsi:type", "ovf:EulaSection_Type");
+                }
+                else
+                    pelmEulaSection = pelmVirtualSystem->createChild("EulaSection");
+
+                pelmEulaSection->createChild("Info")->addContent("License agreement for the virtual system");
+                pelmEulaSection->createChild("License")->addContent(llLicense.front()->strVbox);
             }
 
             // operating system
@@ -2696,13 +2770,31 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                     <Info>Guest Operating System</Info>
                     <Description>Linux 2.6.x</Description>
                 </OperatingSystemSection> */
-            xml::ElementNode *pelmOperatingSystemSection = pelmVirtualSystem->createChild("OperatingSystemSection");
+            xml::ElementNode *pelmOperatingSystemSection;
+            if (task->enFormat == TaskWriteOVF::OVF_0_9)
+            {
+                pelmOperatingSystemSection = pelmVirtualSystem->createChild("Section");
+                pelmOperatingSystemSection->setAttribute("xsi:type", "ovf:OperatingSystemSection_Type");
+            }
+            else
+                pelmOperatingSystemSection = pelmVirtualSystem->createChild("OperatingSystemSection");
+
             pelmOperatingSystemSection->setAttribute("ovf:id", llOS.front()->strOvf);
-//             pelmOperatingSystemSection->createChild("Info")->addContent("blah");        // @todo
-//             pelmOperatingSystemSection->createChild("Description")->addContent("blah");        // @todo
+            pelmOperatingSystemSection->createChild("Info")->addContent("The kind of installed guest operating system");
+//             pelmOperatingSystemSection->createChild("Description")->addContent("blah"); // @todo
 
             // <VirtualHardwareSection ovf:id="hw1" ovf:transport="iso">
-            xml::ElementNode *pelmVirtualHardwareSection = pelmVirtualSystem->createChild("VirtualHardwareSection");
+            xml::ElementNode *pelmVirtualHardwareSection;
+            if (task->enFormat == TaskWriteOVF::OVF_0_9)
+            {
+                // <Section xsi:type="ovf:VirtualHardwareSection_Type">
+                pelmVirtualHardwareSection = pelmVirtualSystem->createChild("Section");
+                pelmVirtualHardwareSection->setAttribute("xsi:type", "ovf:VirtualHardwareSection_Type");
+            }
+            else
+                pelmVirtualHardwareSection = pelmVirtualSystem->createChild("VirtualHardwareSection");
+
+            pelmVirtualHardwareSection->createChild("Info")->addContent("Virtual hardware requirements for a virtual machine");
 
             /*  <System>
                     <vssd:Description>Description of the virtual hardware section.</vssd:Description>
@@ -2713,9 +2805,12 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                 </System> */
             xml::ElementNode *pelmSystem = pelmVirtualHardwareSection->createChild("System");
 
+            // <vssd:InstanceId>0</vssd:InstanceId>
+            pelmSystem->createChild("vssd:InstanceId")->addContent("0");
+            // <vssd:VirtualSystemIdentifier>VAtest</vssd:VirtualSystemIdentifier>
+            pelmSystem->createChild("vssd:VirtualSystemIdentifier")->addContent(strVMName);
             // <vssd:VirtualSystemType>vmx-4</vssd:VirtualSystemType>
-            xml::ElementNode *pelmVirtualSystemType = pelmSystem->createChild("VirtualSystemType");
-            pelmVirtualSystemType->addContent("virtualbox-2.2");            // instead of vmx-7?
+            pelmSystem->createChild("vssd:VirtualSystemType")->addContent("virtualbox-2.2");            // instead of vmx-7?
 
             // loop thru all description entries twice; once to write out all
             // devices _except_ disk images, and a second time to assign the
