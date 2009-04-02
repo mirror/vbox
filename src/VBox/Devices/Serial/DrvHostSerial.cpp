@@ -973,7 +973,7 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
         if (rc < 0)
         {
 ioctl_error:
-            PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
+            PDMDrvHlpVMSetRuntimeError(pDrvIns, 0 /*fFlags*/, "DrvHostSerialFail",
                                        N_("Ioctl failed for serial host device '%s' (%Rrc). The device will not work properly"),
                                        pThis->pszDevicePath, RTErrConvertFromErrno(errno));
             break;
@@ -989,7 +989,7 @@ ioctl_error:
         rc = ioctl(pThis->DeviceFile, TIOCMGET, &statusLines);
         if (rc < 0)
         {
-            PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
+            PDMDrvHlpVMSetRuntimeError(pDrvIns, 0 /*fFlags*/, "DrvHostSerialFail",
                                        N_("Ioctl failed for serial host device '%s' (%Rrc). The device will not work properly"),
                                        pThis->pszDevicePath, RTErrConvertFromErrno(errno));
             break;
@@ -1091,7 +1091,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PP
         return VINF_SUCCESS;
 
 ioctl_error:
-    PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
+    PDMDrvHlpVMSetRuntimeError(pDrvIns, 0 /*fFlags*/, "DrvHostSerialFail",
                                 N_("Ioctl failed for serial host device '%s' (%Rrc). The device will not work properly"),
                                 pThis->pszDevicePath, RTErrConvertFromErrno(errno));
 #  endif
@@ -1111,7 +1111,7 @@ ioctl_error:
 
     rc = RTThreadPoke(pThread->Thread);
     if (RT_FAILURE(rc))
-        PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
+        PDMDrvHlpVMSetRuntimeError(pDrvIns, 0 /*fFlags*/, "DrvHostSerialFail",
                                     N_("Suspending serial monitor thread failed for serial device '%s' (%Rrc). The shutdown may take longer than expected"),
                                     pThis->pszDevicePath, RTErrConvertFromErrno(rc));
 

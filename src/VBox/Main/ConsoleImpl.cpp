@@ -5988,29 +5988,30 @@ Console::setVMErrorCallback (PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
  *
  * @param   pVM             The VM handle.
  * @param   pvUser          The user argument.
- * @param   fFatal          Whether it is a fatal error or not.
- * @param   pszErrorID      Error ID string.
+ * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
+ * @param   pszErrorId      Error ID string.
  * @param   pszFormat       Error message format string.
- * @param   args            Error message arguments.
+ * @param   va              Error message arguments.
  * @thread EMT.
  */
 /* static */ DECLCALLBACK(void)
-Console::setVMRuntimeErrorCallback (PVM pVM, void *pvUser, bool fFatal,
-                                    const char *pszErrorID,
-                                    const char *pszFormat, va_list args)
+Console::setVMRuntimeErrorCallback (PVM pVM, void *pvUser, uint32_t fFlags,
+                                    const char *pszErrorId,
+                                    const char *pszFormat, va_list va)
 {
+    bool const fFatal = !!(fFlags & VMSETRTERR_FLAGS_FATAL);
     LogFlowFuncEnter();
 
     Console *that = static_cast <Console *> (pvUser);
     AssertReturnVoid (that);
 
-    Utf8Str message = Utf8StrFmtVA (pszFormat, args);
+    Utf8Str message = Utf8StrFmtVA (pszFormat, va);
 
     LogRel (("Console: VM runtime error: fatal=%RTbool, "
              "errorID=%s message=\"%s\"\n",
-             fFatal, pszErrorID, message.raw()));
+             fFatal, pszErrorId, message.raw()));
 
-    that->onRuntimeError (BOOL (fFatal), Bstr (pszErrorID), Bstr (message));
+    that->onRuntimeError (BOOL (fFatal), Bstr (pszErrorId), Bstr (message));
 
     LogFlowFuncLeave();
 }

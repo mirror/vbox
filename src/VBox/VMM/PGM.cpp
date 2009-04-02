@@ -3728,7 +3728,9 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
  * Performs the actual mode change.
  * This is called by PGMChangeMode and pgmR3InitPaging().
  *
- * @returns VBox status code.
+ * @returns VBox status code. May suspend or power off the VM on error, but this
+ *          will trigger using FFs and not status codes.
+ *
  * @param   pVM             VM handle.
  * @param   enmGuestMode    The new guest mode. This is assumed to be different from
  *                          the current mode.
@@ -3927,16 +3929,9 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
 
             CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
             if (!(u32Features & X86_CPUID_FEATURE_EDX_PAE))
-            {
-                /* Pause first, then inform Main. */
-                rc = VMR3SuspendNoSave(pVM);
-                AssertRC(rc);
+                return VMSetRuntimeError(pVM, VMSETRTERR_FLAGS_FATAL, "PAEmode",
+                                         N_("The guest is trying to switch to the PAE mode which is currently disabled by default in VirtualBox. PAE support can be enabled using the VM settings (General/Advanced)"));
 
-                VMSetRuntimeError(pVM, true, "PAEmode",
-                                  N_("The guest is trying to switch to the PAE mode which is currently disabled by default in VirtualBox. PAE support can be enabled using the VM settings (General/Advanced)"));
-                /* we must return VINF_SUCCESS here otherwise the recompiler will assert */
-                return VINF_SUCCESS;
-            }
             GCPhysCR3 = CPUMGetGuestCR3(pVM) & X86_CR3_PAE_PAGE_MASK;
             rc = PGM_GST_NAME_PAE(Enter)(pVM, GCPhysCR3);
             switch (pVM->pgm.s.enmShadowMode)

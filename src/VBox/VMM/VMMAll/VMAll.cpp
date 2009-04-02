@@ -29,9 +29,13 @@
 #include <VBox/mm.h>
 #include <VBox/vm.h>
 #include <VBox/err.h>
+#include <VBox/log.h>
 
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#ifndef IN_RC
+# include <iprt/thread.h>
+#endif
 
 
 /**
@@ -183,54 +187,41 @@ void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_
 
 /**
  * Sets the runtime error message.
+ *
  * As opposed VMSetError(), this method is intended to inform the VM user about
  * errors and error-like conditions that happen at an arbitrary point during VM
  * execution (like "host memory low" or "out of host disk space").
  *
- * The @a fFatal parameter defines whether the error is fatal or not. If it is
- * true, then it is expected that the caller has already paused the VM execution
- * before calling this method. The VM user is supposed to power off the VM
- * immediately after it has received the runtime error notification via the
- * FNVMATRUNTIMEERROR callback.
+ * @returns VBox status code. For some flags the status code needs to be
+ *          propagated up the stack, but this may depend on where the call was
+ *          made.
  *
- * If @a fFatal is false, then the paused state of the VM defines the kind of
- * the error. If the VM is paused before calling this method, it means that
- * the VM user may try to fix the error condition (i.e. free more host memory)
- * and then resume the VM execution. If the VM is not paused before calling
- * this method, it means that the given error is a warning about an error
- * condition that may happen soon but that doesn't directly affect the
- * VM execution by the time of the call.
+ * @param   pVM             The VM handle.
  *
- * The @a pszErrorID parameter defines an unique error identificator.
- * It is used by the front-ends to show a proper message to the end user
- * containig possible actions (for example, Retry/Ignore). For this reason,
- * an error ID assigned once to some particular error condition should not
- * change in the future. The format of this parameter is "someErrorCondition".
+ * @param   fFlags          Flags indicating which actions to take.
+ *                          See VMSETRTERR_FLAGS_* for details on each flag.
  *
- * @param   pVM             VM handle. Must be non-NULL.
- * @param   fFatal          Whether it is a fatal error or not.
- * @param   pszErrorID      Error ID string.
+ * @param   pszErrorId      Unique error identificator string. This is used by
+ *                          the frontends and maybe other devices or drivers, so
+ *                          once an ID has been selected it's essentially
+ *                          unchangable. Employ camelcase when constructing the
+ *                          string, leave out spaces.
+ *
+ *                          The registered runtime error callbacks should string
+ *                          switch on this and handle the ones it knows
+ *                          specifically and the unknown ones generically.
+ *
  * @param   pszFormat       Error message format string.
  * @param   ...             Error message arguments.
  *
- * @return  VBox status code (whether the error has been successfully set
- *          and delivered to callbacks or not).
- *
  * @thread  Any
- * @todo    r=bird: The pausing/suspending of the VM should be done here, we'll just end
- *                  up duplicating code all over the place otherwise. In the case of
- *                  devices/drivers/etc they might not be trusted to pause/suspend the
- *                  vm even. Change fFatal to fFlags and define action flags and a fatal flag.
- *
- *                  Also, why a string ID and not an enum?
  */
-VMMDECL(int) VMSetRuntimeError(PVM pVM, bool fFatal, const char *pszErrorID,
-                               const char *pszFormat, ...)
+VMMDECL(int) VMSetRuntimeError(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
 {
-    va_list args;
-    va_start(args, pszFormat);
-    int rc = VMSetRuntimeErrorV(pVM, fFatal, pszErrorID, pszFormat, args);
-    va_end(args);
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = VMSetRuntimeErrorV(pVM, fFlags, pszErrorId, pszFormat, va);
+    va_end(va);
     return rc;
 }
 
@@ -238,65 +229,94 @@ VMMDECL(int) VMSetRuntimeError(PVM pVM, bool fFatal, const char *pszErrorID,
 /**
  * va_list version of VMSetRuntimeError.
  *
- * @param   pVM             VM handle. Must be non-NULL.
- * @param   fFatal          Whether it is a fatal error or not.
- * @param   pszErrorID      Error ID string.
- * @param   pszFormat       Error message format string.
- * @param   args            Error message arguments.
+ * @returns VBox status code. For some flags the status code needs to be
+ *          propagated up the stack, but this may depend on where the call was
+ *          made. For most actions, there is a force action flag mopping up if
+ *          the status code can't be propagated.
  *
- * @return  VBox status code (whether the error has been successfully set
- *          and delivered to callbacks or not).
+ * @param   pVM             The VM handle.
+ * @param   fFlags          Flags indicating which actions to take. See
+ *                          VMSETRTERR_FLAGS_*.
+ * @param   pszErrorId      Error ID string.
+ * @param   pszFormat       Error message format string.
+ * @param   va              Error message arguments.
  *
  * @thread  Any
  */
-VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID,
-                               const char *pszFormat, va_list args)
+VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
+    Log(("VMSetRuntimeErrorV: fFlags=%#x pszErrorId=%s\n", fFlags, pszErrorId));
+
+    /*
+     * Relaxed parameter validation.
+     */
+    AssertPtr(pVM);
+    AssertMsg(fFlags & ~(VMSETRTERR_FLAGS_NO_WAIT | VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_FATAL), ("%#x\n", fFlags));
+    Assert(!(fFlags & VMSETRTERR_FLAGS_NO_WAIT) || !VM_IS_EMT(pVM));
+    Assert(!(fFlags & VMSETRTERR_FLAGS_SUSPEND) || !(fFlags & VMSETRTERR_FLAGS_FATAL));
+    AssertPtr(pszErrorId);
+    Assert(*pszErrorId);
+    Assert(memchr(pszErrorId, '\0', 128) != NULL);
+    AssertPtr(pszFormat);
+    Assert(memchr(pszFormat, '\0', 512) != NULL);
+
 #ifdef IN_RING3
     /*
      * Switch to EMT.
      */
     va_list va2;
-    va_copy(va2, args); /* Have to make a copy here or GCC will break. */
+    va_copy(va2, va); /* Have to make a copy here or GCC will break. */
+    int rc;
     PVMREQ pReq;
-    VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3SetRuntimeErrorV, 5,
-                pVM, fFatal, pszErrorID, pszFormat, &va2);
+    if (    !(fFlags & VMSETRTERR_FLAGS_NO_WAIT)
+        ||  VM_IS_EMT(pVM))
+    {
+        rc = VMR3ReqCallU(pVM->pUVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
+                          (PFNRT)vmR3SetRuntimeErrorV, 5, pVM, fFlags, pszErrorId, pszFormat, &va2);
+        if (RT_SUCCESS(rc))
+            rc = pReq->iStatus;
+    }
+    else
+        rc = VMR3ReqCallU(pVM->pUVM, VMREQDEST_ANY, &pReq, 0, VMREQFLAGS_VBOX_STATUS | VMREQFLAGS_NO_WAIT,
+                          (PFNRT)vmR3SetRuntimeErrorV, 5, pVM, fFlags, pszErrorId, pszFormat, &va2);
     VMR3ReqFree(pReq);
     va_end(va2);
 
 #else
     /*
-     * We're already on the EMT thread and can safely create a VMRUNTIMEERROR chunk.
+     * We're already on the EMT and can safely create a VMRUNTIMEERROR chunk.
      */
-    vmSetRuntimeErrorCopy(pVM, fFatal, pszErrorID, pszFormat, args);
+    AssertReleaseMsgFailed(("Congratulations! You will have the pleasure of debugging the RC/R0 path.\n"));
+    vmSetRuntimeErrorCopy(pVM, fFlags, pszErrorId, pszFormat, va);
 
 # ifdef IN_RC
-    VMMGCCallHost(pVM, VMMCALLHOST_VM_SET_RUNTIME_ERROR, 0);
-# elif defined(IN_RING0)
-    VMMR0CallHost(pVM, VMMCALLHOST_VM_SET_RUNTIME_ERROR, 0);
+    int rc = VMMGCCallHost(pVM, VMMCALLHOST_VM_SET_RUNTIME_ERROR, 0);
 # else
+    int rc = VMMR0CallHost(pVM, VMMCALLHOST_VM_SET_RUNTIME_ERROR, 0);
 # endif
 #endif
-    return VINF_SUCCESS;
+
+    Log(("VMSetRuntimeErrorV: returns %Rrc (pszErrorId=%s)\n", rc, pszErrorId));
+    return rc;
 }
 
 
 /**
  * Copies the error to a VMRUNTIMEERROR structure.
  *
- * This is mainly intended for Ring-0 and GC where the error must be copied to
+ * This is mainly intended for Ring-0 and RC where the error must be copied to
  * memory accessible from ring-3. But it's just possible that we might add
  * APIs for retrieving the VMRUNTIMEERROR copy later.
  *
  * @param   pVM             VM handle. Must be non-NULL.
- * @param   fFatal          Whether it is a fatal error or not.
- * @param   pszErrorID      Error ID string.
+ * @param   fFlags          The error flags.
+ * @param   pszErrorId      Error ID string.
  * @param   pszFormat       Error message format string.
- * @param   args            Error message arguments.
+ * @param   va              Error message arguments. This is of course spoiled
+ *                          by this call.
  * @thread  EMT
  */
-void vmSetRuntimeErrorCopy(PVM pVM, bool fFatal, const char *pszErrorID,
-                           const char *pszFormat, va_list args)
+void vmSetRuntimeErrorCopy(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
 #if 0 /// @todo implement Ring-0 and GC VMSetError
     /*
@@ -307,7 +327,7 @@ void vmSetRuntimeErrorCopy(PVM pVM, bool fFatal, const char *pszErrorID,
     pVM->vm.s.pRuntimeErrorR3 = NULL;
 
     /* calc reasonable start size. */
-    size_t cchErrorID = pszErrorID ? strlen(pszErrorID) : 0;
+    size_t cchErrorID = pszErrorId ? strlen(pszErrorId) : 0;
     size_t cchFormat = strlen(pszFormat);
     size_t cb = sizeof(VMRUNTIMEERROR)
               + cchErrorID + 1
@@ -321,13 +341,14 @@ void vmSetRuntimeErrorCopy(PVM pVM, bool fFatal, const char *pszErrorID,
         /* initialize it. */
         PVMRUNTIMEERROR pErr = (PVMRUNTIMEERROR)pv;
         pErr->cbAllocated = cb;
+        pErr->fFlags = fFlags;
         pErr->off = sizeof(PVMRUNTIMEERROR);
-        pErr->offErrorID = = 0;
+        pErr->offErrorID = 0;
 
         if (cchErrorID)
         {
             pErr->offErrorID = pErr->off;
-            memcpy((uint8_t *)pErr + pErr->off, pszErrorID, cchErrorID + 1);
+            memcpy((uint8_t *)pErr + pErr->off, pszErrorId, cchErrorID + 1);
             pErr->off += cchErrorID + 1;
         }
 

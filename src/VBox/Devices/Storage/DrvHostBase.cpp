@@ -1972,8 +1972,8 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
             {
                 if (pThis->fAttachFailError)
                     return rc;
-                int erc = PDMDrvHlpVMSetRuntimeError(pDrvIns,
-                                                     false, "DrvHost_MOUNTFAIL",
+                int erc = PDMDrvHlpVMSetRuntimeError(pDrvIns, 0 /*fFlags*/,
+                                                     "DrvHost_MOUNTFAIL",
                                                      N_("Cannot attach to host device '%s'"), pszDevice);
                 AssertRC(erc);
                 src = rc;

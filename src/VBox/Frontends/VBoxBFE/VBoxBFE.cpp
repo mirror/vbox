@@ -1106,19 +1106,22 @@ DECLCALLBACK(void) setVMErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_
  *
  * @param   pVM         The VM handle.
  * @param   pvUser      The user argument.
- * @param   fFata       Wheather it is a fatal error or not.
+ * @param   fFlags      The action flags. See VMSETRTERR_FLAGS_*.
  * @param   pszErrorId  Error ID string.
  * @param   pszError    Error message format string.
- * @param   args        Error message arguments.
+ * @param   va          Error message arguments.
  * @thread EMT.
  */
-DECLCALLBACK(void) setVMRuntimeErrorCallback(PVM pVM, void *pvUser, bool fFatal,
+DECLCALLBACK(void) setVMRuntimeErrorCallback(PVM pVM, void *pvUser, uint32_t fFlags,
                                              const char *pszErrorId,
-                                             const char *pszFormat, va_list args)
+                                             const char *pszFormat, va_list va)
 {
     va_list va2;
-    va_copy(va2, args); /* Have to make a copy here or GCC will break. */
-    RTPrintf("%s: %s!\n%N!\n", fFatal ? "Error" : "Warning", pszErrorId, pszFormat, &va2);
+    va_copy(va2, va); /* Have to make a copy here or GCC/AMD64 will break. */
+    RTPrintf("%s: %s!\n%N!\n",
+             fFlags & VMSETRTERR_FLAGS_FATAL ? "Error" : "Warning",
+             pszErrorId, pszFormat, &va2);
+    RTStrmFlush(g_pStdErr);
     va_end(va2);
 }
 

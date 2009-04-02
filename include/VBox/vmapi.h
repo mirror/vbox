@@ -130,23 +130,42 @@ VMMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat
 
 /**
  * VM runtime error callback function.
+ *
  * See VMSetRuntimeError for the detailed description of parameters.
  *
  * @param   pVM             The VM handle.
  * @param   pvUser          The user argument.
- * @param   fFatal          Whether it is a fatal error or not.
- * @param   pszErrorID      Error ID string.
+ * @param   fFlags          The error flags.
+ * @param   pszErrorId      Error ID string.
  * @param   pszFormat       Error message format string.
- * @param   args            Error message arguments.
+ * @param   va              Error message arguments.
  */
-typedef DECLCALLBACK(void) FNVMATRUNTIMEERROR(PVM pVM, void *pvUser, bool fFatal,
-                                              const char *pszErrorID,
-                                              const char *pszFormat, va_list args);
+typedef DECLCALLBACK(void) FNVMATRUNTIMEERROR(PVM pVM, void *pvUser, uint32_t fFlags, const char *pszErrorId,
+                                              const char *pszFormat, va_list va);
 /** Pointer to a VM runtime error callback. */
 typedef FNVMATRUNTIMEERROR *PFNVMATRUNTIMEERROR;
 
-VMMDECL(int) VMSetRuntimeError(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, ...);
-VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list args);
+VMMDECL(int) VMSetRuntimeError(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...);
+VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list args);
+
+/** @name VMSetRuntimeError fFlags
+ * When no flags are given the VM will continue running and it's up to the front
+ * end to take action on the error condition.
+ *
+ * @{ */
+/** The error is fatal.
+ * The VM is not in a state where it can be saved and will enter a state
+ * where it can no longer execute code. The caller must propagate status
+ * codes. */
+#define VMSETRTERR_FLAGS_FATAL      RT_BIT_32(0)
+/** Suspend the VM after, or if possible before, raising the error on EMT. The
+ * caller must propagate status codes. */
+#define VMSETRTERR_FLAGS_SUSPEND    RT_BIT_32(1)
+/** Don't wait for the EMT to handle the request.
+ * Only valid when on a worker thread and there is a high risk of a dead
+ * lock. Be careful not to flood the user with errors. */
+#define VMSETRTERR_FLAGS_NO_WAIT    RT_BIT_32(2)
+/** @} */
 
 
 /**
@@ -397,7 +416,7 @@ VMMR3DECL(int)  VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pv
 VMMR3DECL(void) VMR3SetErrorWorker(PVM pVM);
 VMMR3DECL(int)  VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
 VMMR3DECL(int)  VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
-VMMR3DECL(void) VMR3SetRuntimeErrorWorker(PVM pVM);
+VMMR3DECL(int)  VMR3SetRuntimeErrorWorker(PVM pVM);
 VMMR3DECL(int)  VMR3ReqCall(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
 VMMR3DECL(int)  VMR3ReqCallVoidU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
 VMMR3DECL(int)  VMR3ReqCallVoid(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
