@@ -22,6 +22,12 @@
 #ifndef ___VBoxServiceInternal_h
 #define ___VBoxServiceInternal_h
 
+#if defined(RT_OS_WINDOWS)
+    #include <windows.h>
+    #include <tchar.h>
+    #include <process.h>
+#endif
+
 /** Name of this program. */
 #if !defined(RT_OS_WINDOWS)
     #define VBOXSERVICE_NAME "VBoxService"
@@ -113,6 +119,12 @@ extern int VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi,
 extern VBOXSERVICE g_TimeSync;
 extern VBOXSERVICE g_Clipboard;
 extern VBOXSERVICE g_Control;
+
+/** Windows SCM stuff. */
+#if defined(RT_OS_WINDOWS)
+    extern DWORD                 g_vboxServiceStatusCode;
+    extern SERVICE_STATUS_HANDLE g_vboxServiceStatusHandle;
+#endif
 
 __END_DECLS
 

@@ -47,7 +47,7 @@ char *g_pszProgName = "";
 int g_cVerbosity = 0;
 /** The default service interval (the -i | --interval) option). */
 uint32_t g_DefaultInterval = 0;
-/** Shutdown the main thread. (later, for signals) */
+/** Shutdown the main thread. (later, for signals). */
 bool volatile g_fShutdown;
 
 /**
@@ -241,7 +241,21 @@ static DECLCALLBACK(int) VBoxServiceThread(RTTHREAD ThreadSelf, void *pvUser)
 
 int main(int argc, char **argv)
 {
-    int rc;
+    int rc = 0;
+
+#if defined(RT_OS_WINDOWS)
+    /* Do not use a global namespace ("Global\\") for mutex name here, will blow up NT4 compatibility! */
+    HANDLE hMutexAppRunning = CreateMutex (NULL, FALSE, VBOXSERVICE_NAME);
+    if (   (hMutexAppRunning != NULL)
+        && (GetLastError() == ERROR_ALREADY_EXISTS))
+    {
+        VBoxServiceError("%s is already running! Terminating.", g_pszProgName);
+
+        /* Close the mutex for this application instance. */
+        CloseHandle(hMutexAppRunning);
+        hMutexAppRunning = NULL;
+    }
+#endif
 
     /*
      * Init globals and such.
