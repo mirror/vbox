@@ -155,11 +155,11 @@ VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId
  * @{ */
 /** The error is fatal.
  * The VM is not in a state where it can be saved and will enter a state
- * where it can no longer execute code. The caller must propagate status
+ * where it can no longer execute code. The caller <b>must</b> propagate status
  * codes. */
 #define VMSETRTERR_FLAGS_FATAL      RT_BIT_32(0)
 /** Suspend the VM after, or if possible before, raising the error on EMT. The
- * caller must propagate status codes. */
+ * caller <b>must</b> propagate status codes. */
 #define VMSETRTERR_FLAGS_SUSPEND    RT_BIT_32(1)
 /** Don't wait for the EMT to handle the request.
  * Only valid when on a worker thread and there is a high risk of a dead
