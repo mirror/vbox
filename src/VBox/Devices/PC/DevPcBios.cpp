@@ -1223,7 +1223,6 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     if (pThis->u8IOAPIC)
         pcbiosPlantMPStable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE, pThis->cCpus);
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     /*
      * Re-shadow the LAN ROM image and make it RAM/RAM.
      *
@@ -1257,7 +1256,6 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
         GCPhys += PAGE_SIZE;
         cPages--;
     }
-#endif
 }
 
 
@@ -1766,7 +1764,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
 
         rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, pu8LanBootBinary,
                                   PGMPHYS_ROM_FLAGS_SHADOWED, "Net Boot ROM");
-#ifdef VBOX_WITH_NEW_PHYS_CODE
         if (RT_SUCCESS(rc))
         {
             rc = PDMDevHlpROMProtectShadow(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, PGMROMPROT_READ_RAM_WRITE_RAM);
@@ -1774,7 +1771,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             rc = PDMDevHlpPhysWrite(pDevIns, VBOX_LANBOOT_SEG << 4, pu8LanBootBinary, cbLanBootBinary);
             AssertRCReturn(rc, rc);
         }
-#endif
     }
 
     rc = CFGMR3QueryU8Def(pCfgHandle, "DelayBoot", &pThis->uBootDelay, 0);
