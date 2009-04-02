@@ -219,7 +219,7 @@
                <number>4</number>
               </property>
               <item>
-               <widget class="QLineEdit" name="mLeRam" >
+               <widget class="QILineEdit" name="mLeRam" >
                 <property name="sizePolicy" >
                  <sizepolicy vsizetype="Fixed" hsizetype="Maximum" >
                   <horstretch>0</horstretch>
@@ -394,7 +394,7 @@
                <number>4</number>
               </property>
               <item>
-               <widget class="QLineEdit" name="mLeVideo" >
+               <widget class="QILineEdit" name="mLeVideo" >
                 <property name="sizePolicy" >
                  <sizepolicy vsizetype="Fixed" hsizetype="Maximum" >
                   <horstretch>0</horstretch>
@@ -982,6 +982,11 @@
    <class>QILabelSeparator</class>
    <extends>QLabel</extends>
    <header>QILabelSeparator.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QILineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>QILineEdit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
