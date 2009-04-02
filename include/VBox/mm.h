@@ -43,64 +43,6 @@ __BEGIN_DECLS
  * @{
  */
 
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-/** @name RAM Page Flags
- * Since internal ranges have a byte granularity it's possible for a
- * page be flagged for several uses. The access virtualization in PGM
- * will choose the most restricted one and use EM to emulate access to
- * the less restricted areas of the page.
- *
- * Bits 0-11 only since they are fitted into the offset part of a physical memory address.
- * @{
- */
-/** Reserved - Not RAM, ROM nor MMIO2.
- * If this bit is cleared the memory is assumed to be some kind of RAM.
- * Normal MMIO may set it but that depends on whether the RAM range was
- * created specially for the MMIO or not.
- *
- * @remarks The current implementation will always reserve backing
- *          memory for reserved  ranges to simplify things.
- */
-#define MM_RAM_FLAGS_RESERVED           RT_BIT(0)
-/** ROM - Read Only Memory.
- * The page have a HC physical address which contains the BIOS code. All write
- * access is trapped and ignored.
- *
- * HACK: Writable shadow ROM is indicated by both ROM and MMIO2 being
- *       set. (We're out of bits.)
- */
-#define MM_RAM_FLAGS_ROM                RT_BIT(1)
-/** MMIO - Memory Mapped I/O.
- * All access is trapped and emulated. No physical backing is required, but
- * might for various reasons be present.
- */
-#define MM_RAM_FLAGS_MMIO               RT_BIT(2)
-/** MMIO2 - Memory Mapped I/O, variation 2.
- * The virtualization is performed using real memory and only catching
- * a few accesses for like keeping track for dirty pages.
- * @remark Involved in the shadow ROM hack.
- */
-#define MM_RAM_FLAGS_MMIO2              RT_BIT(3)
-
-/** Physical backing memory is allocated dynamically. Not set implies a one time static allocation. */
-#define MM_RAM_FLAGS_DYNAMIC_ALLOC      RT_BIT(11)
-/** @} */
-
-/** @name MMR3PhysRegisterEx registration type
- * @{
- */
-typedef enum
-{
-    /** Normal physical region (flags specify exact page type) */
-    MM_PHYS_TYPE_NORMAL               = 0,
-    /** Allocate part of a dynamically allocated physical region */
-    MM_PHYS_TYPE_DYNALLOC_CHUNK,
-
-    MM_PHYS_TYPE_32BIT_HACK = 0x7fffffff
-} MMPHYSREG;
-/** @} */
-#endif /* !VBOX_WITH_NEW_PHYS_CODE */
-
 /**
  * Memory Allocation Tags.
  * For use with MMHyperAlloc(), MMR3HeapAlloc(), MMR3HeapAllocEx(),
@@ -331,14 +273,9 @@ VMMR3DECL(int)      MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, siz
 
 
 /** @defgroup grp_mm_phys   Guest Physical Memory Manager
+ * @todo retire this group, elimintating or moving MMR3PhysGetRamSize to PGMPhys.
  * @ingroup grp_mm_r3
  * @{ */
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-VMMR3DECL(int)      MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, MMPHYSREG enmType, const char *pszDesc);
-VMMR3DECL(int)      MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc);
-VMMR3DECL(int)      MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
-VMMR3DECL(int)      MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
-#endif
 VMMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM);
 /** @} */
 

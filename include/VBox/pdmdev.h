@@ -40,9 +40,6 @@
 #include <VBox/ssm.h>
 #include <VBox/cfgm.h>
 #include <VBox/dbgf.h>
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-# include <VBox/mm.h>
-#endif
 #include <VBox/err.h>
 #include <VBox/pci.h>
 #include <iprt/stdarg.h>
