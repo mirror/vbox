@@ -37,7 +37,8 @@ enum
     kEventVBoxResizeWindow  = 'rwin',
     kEventVBoxDisposeWindow = 'dwin',
     kEventVBoxUpdateDock    = 'udck',
-    kEventVBoxUpdateContext = 'uctx'
+    kEventVBoxUpdateContext = 'uctx',
+    kEventVBoxBoundsChanged = 'bchg'
 };
 
 #ifdef __LP64__ /** @todo port to 64-bit darwin. */
@@ -85,6 +86,36 @@ enum
         DEBUG_MSG_RESULT(result, text); \
     }
 
+/* In some case (like compiz which doesn't provide us with clipping regions) we
+ * have to make sure that *all* open OpenGL windows are clipped to the main
+ * application window. This is done here when called from the event handler
+ * which monitor bounding changes of the main window. */
+static void crClipRootHelper(unsigned long key, void *data1, void *data2)
+{
+    /* The window with id zero is the base window, which isn't displayed at
+     * all. So ignore it. */
+    if (key > 0)
+    {
+        /* Fetch the actually window info & the user data */
+        WindowInfo *pWin = (WindowInfo *) data1;
+        /* We need to assign the context with this window */
+        ContextInfo *context = renderspuGetWindowContext(pWin);
+        if (context &&
+            context->context)
+        {
+            OSStatus result = render_spu.ws.aglSetCurrentContext(context->context);
+            CHECK_AGL_RC (result, "Render SPU (renderspuWindowAttachContext): SetCurrentContext Failed");
+            result = render_spu.ws.aglUpdateContext(context->context);
+            CHECK_AGL_RC (result, "Render SPU (renderspuWindowAttachContext): UpdateContext Failed");
+            /* Update the clipping region */
+            renderspu_SystemWindowApplyVisibleRegion(pWin);
+            /* Make sure that the position is updated relative to the Qt main
+             * view */
+            renderspu_SystemWindowPosition(pWin, pWin->x, pWin->y);
+        }
+    }
+}
+
 /* Window event handler */
 static pascal OSStatus
 windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData)
@@ -96,55 +127,11 @@ windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData)
 
     GetEventParameter(event, kEventParamDirectObject, typeWindowRef,
                       NULL, sizeof(WindowRef), NULL, &window);
-    /*
-    Rect rectPort = { 0, 0, 0, 0 };
-    if( window )
-        GetWindowPortBounds( window, &rectPort );
-    */
-
-    switch (class) 
+    switch (class)
     {
-        case kEventClassWindow:
-        {
-            WindowInfo *wi = (WindowInfo*)userData;
-            switch (kind) 
-            {
-#ifndef __LP64__ /* not available for 64-bit processes? */
-                case kEventWindowDrawContent:
-                {
-                    break;
-                }
-#endif
-#ifndef __LP64__ /** @todo port to 64-bit darwin! Need to cehck if this event is generated or not (it probably isn't). */
-                case kEventWindowShown:
-                {
-                //InvalWindowRect( window, &rectPort );
-                    break;
-                }
-#endif
-                case kEventWindowBoundsChanged:
-                {
-                    GLboolean result = true;
-                    ContextInfo *context = renderspuGetWindowContext(wi);
-
-                    if (context &&
-                        context->context)
-                    {
-                        DEBUG_MSG_POETZSCH (("kEventWindowBoundsChanged %x %x\n", wi->window, context->context));
-                        //result = render_spu.ws.aglSetCurrentContext(context->context);
-                        //result = render_spu.ws.aglUpdateContext(context->context);
-                        //CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): UpdateContext Failed");
-                        //render_spu.self.Flush();
-                    }
-                    //InvalWindowRect (window, &rectPort);
-                    break;
-                }
-            };
-            break;
-        }
         case kEventClassVBox:
         {
-            switch (kind) 
+            switch (kind)
             {
                 case kEventVBoxUpdateContext:
                 {
@@ -164,6 +151,26 @@ windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData)
                         //glFlush();
                     }
                     result = noErr;
+#endif
+                    break;
+                }
+                case kEventVBoxBoundsChanged:
+                {
+#ifndef __LP64__ /** @todo port to 64-bit darwin! Need to cehck if this event is generated or not (it probably isn't). */
+                    HIPoint p;
+                    GetEventParameter(event, kEventParamOrigin, typeHIPoint,
+                                      NULL, sizeof(p), NULL, &p);
+                    HISize s;
+                    GetEventParameter(event, kEventParamDimensions, typeHISize,
+                                      NULL, sizeof(s), NULL, &s);
+                    HIRect r = CGRectMake (0, 0, s.width, s.height);
+                    DEBUG_MSG_POETZSCH (("kEventVBoxBoundsChanged %f %f %f %f\n", p.x, p.y, s.width, s.height));
+                    GLint l[4] = { 0,
+                                   0,
+                                   r.size.width,
+                                   r.size.height };
+                    renderspu_SystemSetRootVisibleRegion(1, &l);
+                    crHashtableWalk(render_spu.windowTable, crClipRootHelper, NULL);
 #endif
                     break;
                 }
@@ -309,7 +316,7 @@ renderspuWindowAttachContext(WindowInfo *wi, WindowRef window,
     if(!context || !wi)
         return render_spu.ws.aglSetCurrentContext( NULL );
 
-    DEBUG_MSG_POETZSCH (("WindowAttachContext %d\n", wi->id));
+/*    DEBUG_MSG_POETZSCH (("WindowAttachContext %d\n", wi->id));*/
 
     /* Flush old context first */
     if (context->currentWindow->window != window)
@@ -407,7 +414,6 @@ renderspu_SystemDestroyWindow(WindowInfo *window)
         CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemDestroyWindow): CreateEvent Failed");
         status = SetEventParameter(evt, kEventParamWindowRef, typeWindowRef, sizeof (window->window), &window->window);
         CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemDestroyWindow): SetEventParameter Failed");
-        //status = SendEventToEventTarget (evt, GetWindowEventTarget (HIViewGetWindow ((HIViewRef)render_spu_parent_window_id)));
         status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
         CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemDestroyWindow): PostEventToQueue Failed");
     }
@@ -451,32 +457,9 @@ renderspu_SystemWindowSize(WindowInfo *window, GLint w, GLint h)
     CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowSize): SetEventParameter Failed");
     status = SetEventParameter(evt, kEventParamUserData, typeVoidPtr, sizeof (window), &window);
     CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowSize): SetEventParameter Failed");
-    //status = SendEventToEventTarget (evt, GetWindowEventTarget (HIViewGetWindow ((HIViewRef)render_spu_parent_window_id)));
     status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
     CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowSize): SendEventToEventTarget Failed");
 
-    /* We are tracking the position of the overlay window ourself. If the user
-       switch to fullscreen/seamless there is no hint that the position has
-       changed. (In the guest point of view it hasn't changed when the pos is
-       at (0, 0). So to be on the save side we post an additional pos event if
-       this is the case. */
-    if (window->x == 0 &&
-        window->y == 0)
-        renderspu_SystemWindowPosition (window, 0, 0);
-    else
-    {
-        /* Update the context. If the above position call is done this isn't
-           necessary cause its already done there. */
-        GLboolean result = true;
-        ContextInfo *context = renderspuGetWindowContext(window);
-        if (context &&
-            context->context)
-        {
-            //result = render_spu.ws.aglUpdateContext(context->context);
-            //CHECK_AGL_RC (result, "Render SPU (renderspu_SystemWindowSize): UpdateContext Failed");
-            //glFlush();
-        }
-    }
     DEBUG_MSG_POETZSCH (("Size %d visible %d\n", window->id, IsWindowVisible (window->window)));
     /* save the new size */
     window->width = w;
@@ -542,21 +525,9 @@ renderspu_SystemWindowPosition(WindowInfo *window,
     CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): SetEventParameter Failed");
     status = SetEventParameter(evt, kEventParamUserData, typeVoidPtr, sizeof (window), &window);
     CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): SetEventParameter Failed");
-    //status = SendEventToEventTarget (evt, GetWindowEventTarget (HIViewGetWindow ((HIViewRef)render_spu_parent_window_id)));
     status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
     CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): PostEventToQueue Failed");
 
-    /* Update the context */
-    GLboolean result = true;
-    ContextInfo *context = renderspuGetWindowContext(window);
-    if (context &&
-        context->context)
-    {
-        DEBUG_MSG_POETZSCH (("Position %d context %x visible %d\n", window->id, context->context, IsWindowVisible (window->window)));
-        //result = render_spu.ws.aglUpdateContext(context->context);
-        //CHECK_AGL_RC (result, "Render SPU (renderspu_SystemWindowPosition): UpdateContext Failed");
-        //glFlush();
-    }
     /* save the new pos */
     window->x = x;
     window->y = y;
@@ -597,21 +568,8 @@ renderspu_SystemShowWindow(WindowInfo *window, GLboolean showIt)
         CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemShowWindow): CreateEvent Failed");
         status = SetEventParameter(evt, kEventParamWindowRef, typeWindowRef, sizeof (window->window), &window->window);
         CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemShowWindow): SetEventParameter Failed");
-        //status = SendEventToEventTarget (evt, GetWindowEventTarget (HIViewGetWindow ((HIViewRef)render_spu_parent_window_id)));
         status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
         CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemShowWindow): PostEventToQueue Failed");
-    }
-
-    /* Update the context */
-    GLboolean result = true;
-    ContextInfo *context = renderspuGetWindowContext(window);
-    if (context &&
-        context->context)
-    {
-        DEBUG_MSG_POETZSCH (("Showed %d context %x visible %d\n", window->id, context->context, IsWindowVisible (window->window)));
-        result = render_spu.ws.aglUpdateContext(context->context);
-        CHECK_AGL_RC (result, "Render SPU (renderspu_SystemShowWindow): UpdateContext Failed");
-        glFlush();
     }
 
     window->visible = showIt;
@@ -622,7 +580,7 @@ renderspu_SystemMakeCurrent(WindowInfo *window, GLint nativeWindow,
                             ContextInfo *context)
 {
     Boolean result;
-    DEBUG_MSG_POETZSCH (("makecurrent %d: \n", window->id));
+/*    DEBUG_MSG_POETZSCH (("makecurrent %d: \n", window->id));*/
 
     CRASSERT(render_spu.ws.aglSetCurrentContext);
     //crDebug( "renderspu_SystemMakeCurrent( %x, %i, %x )", window, nativeWindow, context );
@@ -726,6 +684,8 @@ void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint
             SetRectRgn (tmpRgn,
                         pRects[4*i]  , pRects[4*i+1],
                         pRects[4*i+2], pRects[4*i+3]);
+            DEBUG_MSG_POETZSCH (("visible rect %d %d %d %d\n", pRects[4*i]  , pRects[4*i+1],
+                                 pRects[4*i+2], pRects[4*i+3]));
             UnionRgn (rgn, tmpRgn, rgn);
         }
         DisposeRgn (tmpRgn);
@@ -821,7 +781,6 @@ renderspu_SystemVBoxCreateWindow(VisualInfo *visual, GLboolean showIt,
         CHECK_CARBON_RC_RETURN (status, "Render SPU (renderspu_SystemVBoxCreateWindow): CreateEvent Failed", false);
         status = SetEventParameter(evt, kEventParamWindowRef, typeWindowRef, sizeof (window->window), &window->window);
         CHECK_CARBON_RC_RETURN (status, "Render SPU (renderspu_SystemVBoxCreateWindow): SetEventParameter Failed", false);
-        //status = SendEventToEventTarget (evt, GetWindowEventTarget (HIViewGetWindow ((HIViewRef)render_spu_parent_window_id)));
         status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
         CHECK_CARBON_RC_RETURN (status, "Render SPU (renderspu_SystemVBoxCreateWindow): PostEventToQueue Failed", false);
     }
@@ -870,12 +829,12 @@ renderspu_SystemVBoxCreateWindow(VisualInfo *visual, GLboolean showIt,
         {
             /* Install the event handlers */
             EventTypeSpec eventList[] =
-            { 
-                {kEventClassVBox, kEventVBoxUpdateContext} 
+            {
+                {kEventClassVBox, kEventVBoxUpdateContext}, /* Update the context after show/size/move events */
+                {kEventClassVBox, kEventVBoxBoundsChanged}  /* Clip/Pos the OpenGL windows when the main window is changed in pos/size */
             };
 
             gParentEventHandler = NewEventHandlerUPP(windowEvtHndlr);
-
             InstallApplicationEventHandler (gParentEventHandler,
                                             GetEventTypeCount(eventList), eventList,
                                             NULL, NULL);
@@ -883,22 +842,6 @@ renderspu_SystemVBoxCreateWindow(VisualInfo *visual, GLboolean showIt,
     }
     /* Add the new window to the master group */
     SetWindowGroup(window->window, gMasterGroup);
-
-    /* Own handler needed? */
-    {
-        /* Even though there are still issues with the windows themselves,
-           install the event handlers */
-        EventTypeSpec event_list[] = { {kEventClassWindow, kEventWindowBoundsChanged} };
-
-        window->event_handler = NewEventHandlerUPP( windowEvtHndlr );
-
-        /*
-        InstallWindowEventHandler(window->window, window->event_handler,
-                                  GetEventTypeCount(event_list), event_list,
-                                  window, NULL);
-                                  */
-    }
-
 
     /* This will be initialized on the first attempt to attach the global
      * context to this new window */
