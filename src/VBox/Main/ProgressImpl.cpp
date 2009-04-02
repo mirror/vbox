@@ -136,7 +136,7 @@ HRESULT ProgressBase::protectedInit (AutoInitSpan &aAutoInitSpan,
         mId.cloneTo (aId);
 
 #if !defined (VBOX_COM_INPROC)
-    /* add to the global colleciton of progess operations (note: after
+    /* add to the global collection of progress operations (note: after
      * creating mId) */
     mParent->addProgress (this);
 #endif
@@ -718,10 +718,10 @@ void Progress::uninit()
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * @note XPCOM: when this method is called not on the main XPCOM thread, it it
+ * @note XPCOM: when this method is not called on the main XPCOM thread, it
  *       simply blocks the thread until mCompletedSem is signalled. If the
  *       thread has its own event queue (hmm, what for?) that it must run, then
- *       calling this method will definitey freese event processing.
+ *       calling this method will definitely freeze event processing.
  */
 STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
 {
@@ -779,10 +779,10 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
 }
 
 /**
- * @note XPCOM: when this method is called not on the main XPCOM thread, it it
+ * @note XPCOM: when this method is not called on the main XPCOM thread, it
  *       simply blocks the thread until mCompletedSem is signalled. If the
  *       thread has its own event queue (hmm, what for?) that it must run, then
- *       calling this method will definitey freese event processing.
+ *       calling this method will definitely freeze event processing.
  */
 STDMETHODIMP Progress::WaitForOperationCompletion(ULONG aOperation, LONG aTimeout)
 {
@@ -1027,7 +1027,7 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode)
  * *, const char *, ...) for more info.
  *
  * @param aResultCode   Operation result (error) code, must not be S_OK.
- * @param aIID          IID of the intrface that defines the error.
+ * @param aIID          IID of the interface that defines the error.
  * @param aComponent    Name of the component that generates the error.
  * @param aText         Error message (must not be null), an RTStrPrintf-like
  *                      format string in UTF-8 encoding.
@@ -1051,11 +1051,11 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode, const GUID &aIID,
  * See com::SupportErrorInfoImpl::setError(HRESULT, const GUID &, const wchar_t
  * *, const char *, ...) for more info.
  *
- * This method is preferred iy you have a ready (translated and formatted) Bstr
+ * This method is preferred if you have a ready (translated and formatted) Bstr
  * string, because it omits an extra conversion Utf8Str -> Bstr.
  *
  * @param aResultCode   Operation result (error) code, must not be S_OK.
- * @param aIID          IID of the intrface that defines the error.
+ * @param aIID          IID of the interface that defines the error.
  * @param aComponent    Name of the component that generates the error.
  * @param aText         Error message (must not be null).
  */
@@ -1398,10 +1398,10 @@ STDMETHODIMP CombinedProgress::COMGETTER(OperationPercent)(ULONG *aOperationPerc
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * @note XPCOM: when this method is called not on the main XPCOM thread, it it
+ * @note XPCOM: when this method is called not on the main XPCOM thread, it
  *       simply blocks the thread until mCompletedSem is signalled. If the
  *       thread has its own event queue (hmm, what for?) that it must run, then
- *       calling this method will definitey freese event processing.
+ *       calling this method will definitely freeze event processing.
  */
 STDMETHODIMP CombinedProgress::WaitForCompletion (LONG aTimeout)
 {
@@ -1453,10 +1453,10 @@ STDMETHODIMP CombinedProgress::WaitForCompletion (LONG aTimeout)
 }
 
 /**
- * @note XPCOM: when this method is called not on the main XPCOM thread, it it
+ * @note XPCOM: when this method is called not on the main XPCOM thread, it
  *       simply blocks the thread until mCompletedSem is signalled. If the
  *       thread has its own event queue (hmm, what for?) that it must run, then
- *       calling this method will definitey freese event processing.
+ *       calling this method will definitely freeze event processing.
  */
 STDMETHODIMP CombinedProgress::WaitForOperationCompletion (ULONG aOperation, LONG aTimeout)
 {
@@ -1560,7 +1560,7 @@ STDMETHODIMP CombinedProgress::Cancel()
 
 /**
  * Fetches the properties of the current progress object and, if it is
- * successfully completed, advances to the next uncompleted or unsucessfully
+ * successfully completed, advances to the next uncompleted or unsuccessfully
  * completed object in the vector of combined progress objects.
  *
  * @note Must be called from under this object's write lock!
