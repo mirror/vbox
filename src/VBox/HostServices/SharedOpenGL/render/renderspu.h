@@ -69,6 +69,7 @@ typedef struct {
     EventHandlerUPP event_handler;
     GLint bufferName;
     AGLContext dummyContext;
+    RgnHandle hVisibleRegion;
     /* unsigned long context_ptr; */
 #elif defined(GLX)
     Window window;
@@ -195,6 +196,10 @@ typedef struct {
     DWORD dwWinThreadId;
     HANDLE hWinThreadReadyEvent;
 #endif
+
+#ifdef DARWIN
+    RgnHandle hRootVisibleRegion;
+#endif
 } RenderSPU;
 
 #ifdef RT_OS_WINDOWS
@@ -244,6 +249,10 @@ extern void renderspu_SystemGetWindowGeometry( WindowInfo *window, GLint *x, GLi
 extern void renderspu_SystemGetMaxWindowSize( WindowInfo *window, GLint *w, GLint *h );
 extern void renderspu_SystemWindowPosition( WindowInfo *window, GLint x, GLint y );
 extern void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint* pRects);
+extern void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window);
+#ifdef RT_OS_DARWIN
+extern void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *pRects);
+#endif
 extern void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt );
 extern void renderspu_SystemMakeCurrent( WindowInfo *window, GLint windowInfor, ContextInfo *context );
 extern void renderspu_SystemSwapBuffers( WindowInfo *window, GLint flags );
@@ -259,6 +268,7 @@ extern void RENDER_APIENTRY renderspuSwapBuffers( GLint window, GLint flags );
 extern "C" {
 #endif
 DECLEXPORT(void) renderspuSetWindowId(unsigned int winId);
+DECLEXPORT(void) renderspuSetRootVisibleRegion(GLint cRects, GLint *pRects);
 #ifdef __cplusplus
 }
 #endif

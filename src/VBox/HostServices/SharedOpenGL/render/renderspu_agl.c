@@ -424,6 +424,12 @@ renderspu_SystemDestroyWindow(WindowInfo *window)
     window->bufferName = -1;
     window->visual = NULL;
     window->window = NULL;
+
+    if (window->hVisibleRegion)
+    {
+        DisposeRgn(window->hVisibleRegion);
+        window->hVisibleRegion = 0;
+    }
 }
 
 void
@@ -701,10 +707,14 @@ void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint
     CRASSERT(window->window);
 
     DEBUG_MSG_POETZSCH (("Visible region \n"));
-    ContextInfo *c;
-    c = renderspuGetWindowContext (window);
-    if (c &&
-        c->context)
+
+    if (window->hVisibleRegion)
+    {
+        DisposeRgn(window->hVisibleRegion);
+        window->hVisibleRegion = 0;
+    }
+
+    if (cRects>0)
     {
         int i;
         /* Create some temporary regions */
@@ -719,16 +729,74 @@ void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint
             UnionRgn (rgn, tmpRgn, rgn);
         }
         DisposeRgn (tmpRgn);
-
-        GLboolean result = true;
-        /* Set the clip region to the context */
-        result = render_spu.ws.aglSetInteger(c->context, AGL_CLIP_REGION, (const GLint*)rgn);
-        CHECK_AGL_RC (result, "Render SPU (renderspu_SystemWindowVisibleRegion): SetInteger Failed");
-        result = render_spu.ws.aglEnable(c->context, AGL_CLIP_REGION);
-        CHECK_AGL_RC (result, "Render SPU (renderspu_SystemWindowVisibleRegion): Enable Failed");
-        /* Clear the region structure */
-        DisposeRgn (rgn);
+        window->hVisibleRegion = rgn;
     }
+
+    renderspu_SystemWindowApplyVisibleRegion(window);
+}
+
+void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *pRects)
+{
+    if (render_spu.hRootVisibleRegion)
+    {
+        DisposeRgn(render_spu.hRootVisibleRegion);
+        render_spu.hRootVisibleRegion = 0;
+    }
+
+    if (cRects>0)
+    {
+        int i;
+        render_spu.hRootVisibleRegion = NewRgn();
+        SetEmptyRgn (render_spu.hRootVisibleRegion);
+        RgnHandle tmpRgn = NewRgn();
+        for (i=0; i<cRects; ++i)
+        {
+            SetRectRgn (tmpRgn,
+                        pRects[4*i]  , pRects[4*i+1],
+                        pRects[4*i+2], pRects[4*i+3]);
+            UnionRgn (render_spu.hRootVisibleRegion, tmpRgn, render_spu.hRootVisibleRegion);
+        }
+        DisposeRgn (tmpRgn);
+    }
+}
+
+/*Assumes that all regions are in the guest coordinates system*/
+void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window)
+{
+    ContextInfo *c = renderspuGetWindowContext(window);
+    RgnHandle rgn;
+    GLboolean result = true;
+
+    if (!c || !c->context) return;
+
+    rgn = NewRgn();
+    SetEmptyRgn (rgn);
+
+    if (render_spu.hRootVisibleRegion)
+    {
+        CopyRgn(render_spu.hRootVisibleRegion, rgn);
+    }
+    else /*@todo create tmp region rect with size of underlying framebuffer */
+    {
+        /* SetRectRgn(0,0,fb->width,fb->height); */
+        SetRectRgn(rgn,0,0,4000,4000);
+    }
+
+    if (window->hVisibleRegion)
+    {
+        SectRgn(rgn, window->hVisibleRegion, rgn);
+    }
+
+    /* If we'd need to set clip region in host screen coordinates, than shift it*/
+    /* OffsetRgn(rgn, fb->hostleft, fb->hosttop); */
+
+    /* Set the clip region to the context */
+    result = render_spu.ws.aglSetInteger(c->context, AGL_CLIP_REGION, (const GLint*)rgn);
+    CHECK_AGL_RC (result, "Render SPU (renderspu_SystemWindowVisibleRegion): SetInteger Failed");
+    result = render_spu.ws.aglEnable(c->context, AGL_CLIP_REGION);
+    CHECK_AGL_RC (result, "Render SPU (renderspu_SystemWindowVisibleRegion): Enable Failed");
+    /* Clear the region structure */
+    DisposeRgn (rgn);
 }
 
 GLboolean
