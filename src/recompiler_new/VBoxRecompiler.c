@@ -1513,9 +1513,10 @@ void remR3FlushTLB(CPUState *env, bool fGlobal)
  */
 void remR3ChangeCpuMode(CPUState *env)
 {
-    int rc;
-    PVM pVM = env->pVM;
-    PCPUMCTX pCtx;
+    PVM         pVM = env->pVM;
+    uint64_t    efer;
+    PCPUMCTX    pCtx;
+    int         rc;
 
     /*
      * When we're replaying loads or restoring a saved
@@ -1537,14 +1538,21 @@ void remR3ChangeCpuMode(CPUState *env)
     pCtx->cr4 = env->cr[4];
 
 #ifdef TARGET_X86_64
-    rc = PGMChangeMode(pVM, env->cr[0], env->cr[4], env->efer);
-    if (rc != VINF_SUCCESS)
-        cpu_abort(env, "PGMChangeMode(, %RX64, %RX64, %RX64) -> %Rrc\n", env->cr[0], env->cr[4], env->efer, rc);
+    efer = env->efer;
 #else
-    rc = PGMChangeMode(pVM, env->cr[0], env->cr[4], 0);
-    if (rc != VINF_SUCCESS)
-        cpu_abort(env, "PGMChangeMode(, %RX64, %RX64, %RX64) -> %Rrc\n", env->cr[0], env->cr[4], 0LL, rc);
+    efer = 0;
 #endif
+    rc = PGMChangeMode(pVM, env->cr[0], env->cr[4], efer);
+    if (rc != VINF_SUCCESS)
+    {
+        if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
+        {
+            Log(("PGMChangeMode(, %RX64, %RX64, %RX64) -> %Rrc -> remR3RaiseRC\n", env->cr[0], env->cr[4], efer, rc));
+            remR3RaiseRC(env->pVM, rc);
+        }
+        else
+            cpu_abort(env, "PGMChangeMode(, %RX64, %RX64, %RX64) -> %Rrc\n", env->cr[0], env->cr[4], efer, rc);
+    }
 }
 
 
