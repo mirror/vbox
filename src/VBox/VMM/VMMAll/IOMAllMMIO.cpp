@@ -296,12 +296,7 @@ DECLINLINE(int) iomRamWrite(PVM pVM, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, vo
     NOREF(pCtxCore);
     return MMGCRamWriteNoTrapHandler((void *)GCPtrDst, pvSrc, cb);
 #elif IN_RING0
-# ifdef VBOX_WITH_NEW_PHYS_CODE /* PGMPhysWriteGCPtr will fail, make sure we ignore handlers here. */
     return PGMPhysInterpretedWriteNoHandlers(pVM, pCtxCore, GCPtrDst, pvSrc, cb, false /*fRaiseTrap*/);
-# else
-    NOREF(pCtxCore);
-    return PGMPhysWriteGCPtr(pVM, GCPtrDst, pvSrc, cb);
-# endif
 #else
     NOREF(pCtxCore);
     return PGMPhysWriteGCPtr(pVM, GCPtrDst, pvSrc, cb);
@@ -1812,7 +1807,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
      *
      * Note: This is a NOP in the EPT case; we'll just let it fault again to resync the page.
      */
-#ifndef VBOX_WITH_NEW_PHYS_CODE /* The assertion is wrong for the PGM_SYNC_CLEAR_PGM_POOL and VINF_PGM_HANDLER_ALREADY_ALIASED cases. */
+#if 0 /* The assertion is wrong for the PGM_SYNC_CLEAR_PGM_POOL and VINF_PGM_HANDLER_ALREADY_ALIASED cases. */
 # ifdef VBOX_STRICT
     uint64_t fFlags;
     RTHCPHYS HCPhys;

@@ -2649,7 +2649,6 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
     const uint16_t u16 = PGM_PAGE_GET_TRACKING(pPhysPage);
     if (u16)
     {
-# ifdef VBOX_WITH_NEW_PHYS_CODE
         /*
          * The zero page is currently screwing up the tracking and we'll
          * have to flush the whole shebang. Unless VBOX_WITH_NEW_LAZY_PAGE_ALLOC
@@ -2659,7 +2658,6 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
         if (PGM_PAGE_IS_ZERO(pPhysPage))
             rc = VINF_PGM_GCPHYS_ALIASED;
         else
-# endif
         {
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
             /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow and
@@ -2686,11 +2684,9 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
     }
 
 #elif defined(PGMPOOL_WITH_CACHE)
-# ifdef VBOX_WITH_NEW_PHYS_CODE
     if (PGM_PAGE_IS_ZERO(pPhysPage))
         rc = VINF_PGM_GCPHYS_ALIASED;
     else
-# endif
     {
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow kill the pool otherwise. */
