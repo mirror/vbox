@@ -251,7 +251,7 @@ VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId
      * Relaxed parameter validation.
      */
     AssertPtr(pVM);
-    AssertMsg(fFlags & ~(VMSETRTERR_FLAGS_NO_WAIT | VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_FATAL), ("%#x\n", fFlags));
+    AssertMsg(!(fFlags & ~(VMSETRTERR_FLAGS_NO_WAIT | VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_FATAL)), ("%#x\n", fFlags));
     Assert(!(fFlags & VMSETRTERR_FLAGS_NO_WAIT) || !VM_IS_EMT(pVM));
     Assert(!(fFlags & VMSETRTERR_FLAGS_SUSPEND) || !(fFlags & VMSETRTERR_FLAGS_FATAL));
     AssertPtr(pszErrorId);
