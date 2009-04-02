@@ -283,11 +283,7 @@ $$(PATH_VBoxREMImp)/VBoxREMOS2.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MA
 		$<
 
 $$(PATH_VBoxREMImp)/VBoxREMWin.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MAKEFILE_CURRENT) | $$(dir $$@)
-ifdef VBOX_WITH_NEW_PHYS_CODE
-	$(SED) -e '/REMR3NotifyPhysRamChunkRegister/d'	--output $@ $<
-else
 	$(CP) -f $< $@
-endif
 
 
 #
@@ -304,3 +300,4 @@ testmath_SOURCES        = Sun/testmath.c
 
 
 include $(KBUILD_PATH)/subfooter.kmk
+
