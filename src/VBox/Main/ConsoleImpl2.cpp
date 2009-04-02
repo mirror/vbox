@@ -244,11 +244,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         fHWVirtExEnabled = (hwVirtExEnabled == TSBool_True);
 #ifdef RT_OS_DARWIN
     rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHWVirtExEnabled);      RC_CHECK();
-#elif defined(VBOX_WITH_NEW_PHYS_CODE)
+#else
     /* With more than 4GB PGM will use different RAMRANGE sizes for raw mode and hv mode to optimize lookup times. */
     rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHWVirtExEnabled && cbRam > (_4G - cbRamHole)); RC_CHECK();
-#else
-    rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      0);                     RC_CHECK();
 #endif
 
     PCFGMNODE pHWVirtExt;
