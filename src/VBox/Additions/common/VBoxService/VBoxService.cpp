@@ -278,9 +278,11 @@ int main(int argc, char **argv)
         const char *psz = argv[i];
         if(    (*psz != '-')
 #if defined(RT_OS_WINDOWS)
-            && (*psz != '/'))
+            && (*psz != '/')
 #endif
+        )
             return VBoxServiceSyntax("Unknown argument '%s'\n", psz);
+
         psz++;
 
         /* translate long argument to short */
