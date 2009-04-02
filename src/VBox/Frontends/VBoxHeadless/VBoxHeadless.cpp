@@ -578,20 +578,23 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
                 RTPrintf("Invalid parameter '%s'\n\n", ValueUnion.psz);
                 show_usage();
                 return -1;
+            case OPT_COMMENT:
+                /* nothing to do */
+                break;
             default:
                 if (ch > 0)
                 {
                     if (RT_C_IS_PRINT(ch))
                         RTPrintf("Invalid option -%c\n\n", ch);
                     else
-                        RTPrintf("Invalid option case %i", ch);
+                        RTPrintf("Invalid option case %i\n\n", ch);
                 }
                 else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
                     RTPrintf("Unknown option: %s\n\n", ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     RTPrintf("%s: %Rrs\n\n", ValueUnion.pDef->pszLong, ch);
                 else
-                    RTPrintf("Error: %Rrs", ch);
+                    RTPrintf("Error: %Rrs\n\n", ch);
                 show_usage();
                 return -1;
         }
