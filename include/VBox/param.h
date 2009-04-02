@@ -62,7 +62,7 @@
 /** The minimum guest RAM size in bytes. */
 #define MM_RAM_MIN                  UINT32_C(0x00400000)
 /** The maximum guest RAM size in bytes. */
-#if HC_ARCH_BITS == 64 && defined(VBOX_WITH_NEW_PHYS_CODE)
+#if HC_ARCH_BITS == 64
 # define MM_RAM_MAX                 UINT64_C(0x400000000)
 #else
 # define MM_RAM_MAX                 UINT64_C(0x0E0000000)
@@ -70,7 +70,7 @@
 /** The minimum guest RAM size in MBs. */
 #define MM_RAM_MIN_IN_MB            UINT32_C(4)
 /** The maximum guest RAM size in MBs. */
-#if HC_ARCH_BITS == 64 && defined(VBOX_WITH_NEW_PHYS_CODE)
+#if HC_ARCH_BITS == 64
 # define MM_RAM_MAX_IN_MB           UINT32_C(16384)
 #else
 # define MM_RAM_MAX_IN_MB           UINT32_C(3584)
