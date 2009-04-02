@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,15 @@
 
 #ifndef ___VBoxServiceInternal_h
 #define ___VBoxServiceInternal_h
+
+/** Name of this program. */
+#if !defined(RT_OS_WINDOWS)
+    #define VBOXSERVICE_NAME "VBoxService"
+    #define VBOXSERVICE_FRIENDLY_NAME "VBoxService"
+#else
+    #define VBOXSERVICE_NAME _T("VBoxService")
+    #define VBOXSERVICE_FRIENDLY_NAME _T("VBoxService")
+#endif
 
 /**
  * A service descriptor.
@@ -95,6 +104,11 @@ extern int VBoxServiceSyntax(const char *pszFormat, ...);
 extern int VBoxServiceError(const char *pszFormat, ...);
 extern void VBoxServiceVerbose(int iLevel, const char *pszFormat, ...);
 extern int VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32_t *pu32, uint32_t u32Min, uint32_t u32Max);
+
+#if defined(RT_OS_WINDOWS)
+    extern int VBoxServiceWinInstall ();
+    extern int VBoxServiceWinUninstall ();
+#endif
 
 extern VBOXSERVICE g_TimeSync;
 extern VBOXSERVICE g_Clipboard;

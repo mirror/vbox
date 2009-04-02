@@ -38,7 +38,6 @@
 #include <VBox/VBoxGuest.h>
 #include "VBoxServiceInternal.h"
 
-
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -89,18 +88,34 @@ static struct
  */
 static int VBoxServiceUsage(void)
 {
-    RTPrintf("usage: %s [-f|--foreground] [-v|--verbose] [-i|--interval <seconds>]\n"
-             "           [--disable-<service>] [--enable-<service>] [-h|-?|--help]\n", g_pszProgName);
+    RTPrintf("usage: %s [-f|--foreground] [-i|--interval <seconds>]"
+             " [--disable-<service>] [--enable-<service>] [-h|-?|--help] [-v|--verbose]", g_pszProgName);
+
+#if defined(RT_OS_WINDOWS)
+    RTPrintf(" [-r|--register] [-u|--unregister]");
+#endif
+
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
-        RTPrintf("           %s\n", g_aServices[j].pDesc->pszUsage);
+        RTPrintf(" %s\n", g_aServices[j].pDesc->pszUsage);
+
     RTPrintf("\n"
              "Options:\n"
 #if !defined(RT_OS_WINDOWS)
-             "    -f | --foreground   Don't daemonzie the program. For debugging.\n"
+             "    -h | -? | --help         Show this message and exit with status 1.\n"
+#else
+             "    -h | -? | /? | --help    Show this message and exit with status 1.\n"
 #endif
-             "    -v | --verbose      Increment the verbosity level. For debugging.\n"
-             "    -i | --interval     The default interval.\n"
-             "    -h | -? | --help    Show this message and exit with status 1.\n");
+             "    -i | --interval          The default interval.\n"
+#if !defined(RT_OS_WINDOWS)
+             "    -f | --foreground        Don't daemonzie the program. For debugging.\n"
+#else
+             "    -r | --register          Installs the service.\n"
+             "    -u | --unregister        Uninstall service.\n"
+#endif
+             "    -v | --verbose           Increment the verbosity level. For debugging.\n");
+
+    RTPrintf("\n"
+             "Service specific options:\n");
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
     {
         RTPrintf("    --enable-%-10s Enables the %s service. (default)\n", g_aServices[j].pDesc->pszName, g_aServices[j].pDesc->pszName);
@@ -248,7 +263,10 @@ int main(int argc, char **argv)
     for (int i = 1; i < argc; i++)
     {
         const char *psz = argv[i];
-        if (*psz != '-')
+        if(    (*psz != '-')
+#if defined(RT_OS_WINDOWS)
+            && (*psz != '/'))
+#endif
             return VBoxServiceSyntax("Unknown argument '%s'\n", psz);
         psz++;
 
@@ -267,6 +285,12 @@ int main(int argc, char **argv)
                 psz = "h";
             else if (MATCHES("interval"))
                 psz = "i";
+#if defined(RT_OS_WINDOWS)
+            else if (MATCHES("register"))
+                psz = "r";
+            else if (MATCHES("unregister"))
+                psz = "u";
+#endif
             else if (MATCHES("daemonized"))
             {
                 fDaemonzied = true;
@@ -324,7 +348,18 @@ int main(int argc, char **argv)
                     g_cVerbosity++;
                     break;
 
+#if defined(RT_OS_WINDOWS)
+                case 'r':
+                    return VBoxServiceWinInstall();
+
+                case 'u':
+                    return VBoxServiceWinUninstall();
+#endif
+
                 case 'h':
+#if defined(RT_OS_WINDOWS)
+                case '?':
+#endif
                     return VBoxServiceUsage();
 
                 default:
