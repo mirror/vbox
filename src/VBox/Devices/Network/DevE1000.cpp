@@ -128,23 +128,6 @@ do { \
 
 /*****************************************************************************/
 
-/* Intel */
-#define E1K_VENDOR_ID            0x8086
-/* 82540EM-A (Desktop) */
-#define E1K_DEVICE_ID_82540EM    0x100E
-/* 82545EM-A (Server) */
-#define E1K_DEVICE_ID_82545EM    0x100F
-/* 82543GC (Server) */
-#define E1K_DEVICE_ID_82543GC    0x1004
-/* Intel */
-#define E1K_SUBSYSTEM_VENDOR_ID  0x8086
-/* PRO/1000 MT Desktop Ethernet */
-#define E1K_SUBSYSTEM_ID_82540EM 0x001E
-/* PRO/1000 MT Server Ethernet */
-#define E1K_SUBSYSTEM_ID_82545EM 0x1001
-/* PRO/1000 T Server Ethernet */
-#define E1K_SUBSYSTEM_ID_82543GC 0x1004
-
 typedef uint32_t E1KCHIP;
 #define E1K_CHIP_82540EM 0
 #define E1K_CHIP_82543GC 1
@@ -152,14 +135,17 @@ typedef uint32_t E1KCHIP;
 
 struct E1kChips
 {
+    uint16_t uPCIVendorId;
     uint16_t uPCIDeviceId;
+    uint16_t uPCISubsystemVendorId;
     uint16_t uPCISubsystemId;
     const char *pcszName;
 } g_Chips[] =
 {
-    { E1K_DEVICE_ID_82540EM, E1K_SUBSYSTEM_ID_82540EM, "82540EM" },
-    { E1K_DEVICE_ID_82543GC, E1K_SUBSYSTEM_ID_82543GC, "82543GC" },
-    { E1K_DEVICE_ID_82545EM, E1K_SUBSYSTEM_ID_82545EM, "82545EM" }
+    /* Vendor Device SSVendor SubSys  Name */
+    { 0x8086, 0x100E, 0x8086, 0x001E, "82540EM" }, /* Intel 82540EM-A in Intel PRO/1000 MT Desktop */
+    { 0x8086, 0x1004, 0x8086, 0x1004, "82543GC" }, /* Intel 82543GC   in Intel PRO/1000 T  Server */
+    { 0x8086, 0x100F, 0x15AD, 0x0750, "82545EM" }  /* Intel 82545EM-A in VMWare Network Adapter */
 };
 
 
@@ -4577,9 +4563,9 @@ static DECLCALLBACK(void) e1kConfigurePCI(PCIDEVICE& pci, E1KCHIP eChip)
 {
     Assert(eChip < RT_ELEMENTS(g_Chips));
     /* Configure PCI Device, assume 32-bit mode ******************************/
-    PCIDevSetVendorId(&pci, E1K_VENDOR_ID);
+    PCIDevSetVendorId(&pci, g_Chips[eChip].uPCIVendorId);
     PCIDevSetDeviceId(&pci, g_Chips[eChip].uPCIDeviceId);
-    e1kPCICfgSetU16(pci, VBOX_PCI_SUBSYSTEM_VENDOR_ID, E1K_SUBSYSTEM_VENDOR_ID);
+    e1kPCICfgSetU16(pci, VBOX_PCI_SUBSYSTEM_VENDOR_ID, g_Chips[eChip].uPCISubsystemVendorId);
     e1kPCICfgSetU16(pci, VBOX_PCI_SUBSYSTEM_ID, g_Chips[eChip].uPCISubsystemId);
 
     e1kPCICfgSetU16(pci, VBOX_PCI_COMMAND,            0x0000);
