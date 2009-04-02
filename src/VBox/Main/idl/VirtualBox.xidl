@@ -3233,11 +3233,17 @@
           disk images, which can take a long time, this method operates asynchronously and
           returns an IProgress object to allow the caller to monitor the progress.
       </desc>
-      <param name="path" type="wstring" dir="in">
+      <param name="format" type="wstring" dir="in">
         <desc>
-          Name of appliance file to open (either with an <tt>.ovf</tt> or <tt>.ova</tt> extension, depending
-          on whether the appliance is distributed as a set of files or as a single file, respectively).
+            Output format, as a string. Currently supported formats are "ovf-0.9" and "ovf-1.0";
+            future versions of VirtualBox may support additional formats.
         </desc>
+      </param>
+      <param name="path" type="wstring" dir="in">
+          <desc>
+              Name of appliance file to open (either with an <tt>.ovf</tt> or <tt>.ova</tt> extension, depending
+              on whether the appliance is distributed as a set of files or as a single file, respectively).
+          </desc>
       </param>
       <param name="aProgress" type="IProgress" dir="return">
           <desc></desc>
