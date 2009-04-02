@@ -301,7 +301,8 @@ bool VBoxExportApplianceWzd::prepareSettingsWidget()
 bool VBoxExportApplianceWzd::exportVMs (CAppliance &aAppliance)
 {
     /* Write the appliance */
-    CProgress progress = aAppliance.Write ("ovf-0.9", mFileSelector->path());
+    QString version = mSelectOVF09->isChecked() ? "ovf-0.9" : "ovf-1.0";
+    CProgress progress = aAppliance.Write (version, mFileSelector->path());
     bool fResult = aAppliance.isOk();
     if (fResult)
     {
