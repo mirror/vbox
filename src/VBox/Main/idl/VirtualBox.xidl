@@ -3126,7 +3126,7 @@
       <desc>
         Array of virtual disk definitions. One such description exists for each
         disk definition in the OVF; each string array item represents one such piece of
-        disk information, with the information fields separated by tab (\t) characters.
+        disk information, with the information fields separated by tab (\\t) characters.
 
         The caller should be prepared for additional fields being appended to
         this string in future versions of VirtualBox and therefore check for
@@ -7328,7 +7328,7 @@
         Searches for a USB device with the given UUID.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
-          Given @id does not correspond to any USB device.
+          Given @c id does not correspond to any USB device.
         </result>
 
         <see>IHostUSBDevice::id</see>
@@ -7961,6 +7961,9 @@
       </desc>
 
       <param name="timeout" type="long" dir="in">
+        <desc>
+          Maximum time in milliseconds to wait or -1 to wait indefinitely.
+        </desc>
       </param>
     </method>
 
@@ -7981,6 +7984,9 @@
         </desc>
       </param>
       <param name="timeout" type="long" dir="in">
+        <desc>
+          Maximum time in milliseconds to wait or -1 to wait indefinitely.
+        </desc>
       </param>
     </method>
 
