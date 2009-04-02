@@ -741,7 +741,7 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
      * request has been serviced.
      */
     if (    pGVM->gmm.s.enmPolicy > GMMOCPOLICY_INVALID
-        ||  pGVM->gmm.s.enmPolicy < GMMOCPOLICY_END)
+        &&  pGVM->gmm.s.enmPolicy < GMMOCPOLICY_END)
     {
         /*
          * If it's the last VM around, we can skip walking all the chunk looking
