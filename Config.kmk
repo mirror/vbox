@@ -490,8 +490,6 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
   VBOX_WITH_NETADP = 1
  endif
 endif
-# Use the new physical memory management code in the VMM.
-VBOX_WITH_NEW_PHYS_CODE = 1
 ## Use the new version of liblzf. Remove with the old liblzf.
 #VBOX_WITH_NEW_LIBLZF = 1
 
@@ -1068,9 +1066,6 @@ ifdef LOG_ENABLED
 endif
 ifdef VBOX_OSE
  DEFS += VBOX_OSE
-endif
-ifdef VBOX_WITH_NEW_PHYS_CODE
- DEFS += VBOX_WITH_NEW_PHYS_CODE
 endif
 ifdef VBOX_WITH_64_BITS_GUESTS
  DEFS += VBOX_WITH_64_BITS_GUESTS
