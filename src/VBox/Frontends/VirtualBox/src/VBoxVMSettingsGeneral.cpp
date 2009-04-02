@@ -109,9 +109,7 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
     mSlRam->setMinimum ((MinRAM / mSlRam->pageStep()) * mSlRam->pageStep());
     mSlRam->setMaximum (MaxRAM);
     /* Limit min/max. size of QLineEdit */
-    mLeRam->setMaximumSize (mLeRam->fontMetrics().width ("99999"),
-                            mLeRam->minimumSizeHint().height());
-    mLeRam->setMinimumSize (mLeRam->maximumSize());
+    mLeRam->setFixedWidthByText (QString().fill ('9', 5));
     /* Ensure mLeRam value and validation is updated */
     valueChangedRAM (mSlRam->value());
 
@@ -122,9 +120,7 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
     mSlVideo->setMinimum ((MinVRAM / mSlVideo->pageStep()) * mSlVideo->pageStep());
     mSlVideo->setMaximum (MaxVRAM);
     /* Limit min/max. size of QLineEdit */
-    mLeVideo->setMaximumSize (mLeVideo->fontMetrics().width ("99999"),
-                              mLeVideo->minimumSizeHint().height());
-    mLeVideo->setMinimumSize (mLeVideo->maximumSize());
+    mLeVideo->setFixedWidthByText (QString().fill ('9', 5));
     /* Ensure mLeVideo value and validation is updated */
     valueChangedVRAM (mSlVideo->value());
 
