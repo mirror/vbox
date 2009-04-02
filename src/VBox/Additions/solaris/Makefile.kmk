@@ -54,6 +54,19 @@ OTHER_CLEAN += $(PACKING)
 # If we are doing a combined package (x86+amd64) include the binaries from both
 # architectures otherwise use the one from $(PATH_BIN)/additions
 #
+VBOX_CROGL_FILES = \
+	VBoxOGL.so \
+	VBoxOGLcrutil.so \
+	VBoxOGLfeedbackspu.so \
+	VBoxOGLpassthroughspu.so \
+	VBoxOGLarrayspu.so \
+	VBoxOGLerrorspu.so \
+	VBoxOGLpackspu.so
+VBOX_CROGL_FILES_32  = $(addprefix $(SOLARIS_ADD_BIN_32)/,$(VBOX_CROGL_FILES))
+VBOX_CROGL_FILES_64  = $(addprefix $(SOLARIS_ADD_BIN_64)/,$(VBOX_CROGL_FILES))
+VBOX_CROGL_FILES_ISA = $(addprefix $(SOLARIS_ADD_BIN)/,$(VBOX_CROGL_FILES))
+VBOX_WITH_CROGL=1
+
 ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
  SOLARIS_ADD_BIN_64     := $(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions
  SOLARIS_ADD_BIN_32     := $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions
@@ -91,6 +104,12 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(SOLARIS_ADD_BIN_32)/vboxmouse_drv_15.so \
 	$(SOLARIS_ADD_BIN_32)/vboxmouse_drv_70.so \
 	$(SOLARIS_ADD_BIN_32)/vboxmouse_drv_71.so
+ ifdef VBOX_WITH_CROGL
+ $(error herere)
+  VBOX_SOLPACKFILES += \
+	$(VBOX_CROGL_FILES_32) \
+	$(VBOX_CROGL_FILES_64)
+ endif
 else
  SOLARIS_ADD_BIN        := $(PATH_BIN)/additions
  ifeq ($(KBUILD_TARGET_ARCH),x86)
@@ -117,6 +136,10 @@ else
 	$(SOLARIS_ADD_BIN)/vboxmouse_drv_16.so \
 	$(SOLARIS_ADD_BIN)/vboxmouse_drv_70.so \
 	$(SOLARIS_ADD_BIN)/vboxmouse_drv_71.so
+ ifdef VBOX_WITH_CROGL
+  VBOX_SOLPACKFILES += \
+	$(VBOX_CROGL_FILES_ISA)
+ endif
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk
@@ -172,8 +195,8 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf  $(SOLARIS_ADD_INST_DIR)/vboxguest.conf
 ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxguest                                          $(SOLARIS_ADD_INST_DIR_64)/vboxguest
-	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxfs                                            $(SOLARIS_ADD_INST_DIR_64)/vboxfs
-	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxfs_s10                      $(SOLARIS_ADD_INST_DIR_64)/vboxfs_s10)
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxfs                                             $(SOLARIS_ADD_INST_DIR_64)/vboxfs
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_64)/vboxfs_s10                       $(SOLARIS_ADD_INST_DIR_64)/vboxfs_s10)
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxClient                                      $(SOLARIS_ADD_INST_DIR_64)/VBoxClient
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxService                                     $(SOLARIS_ADD_INST_DIR_64)/VBoxService
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxControl                                     $(SOLARIS_ADD_INST_DIR_64)/VBoxControl
@@ -188,10 +211,17 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxmouse_drv_16.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxmouse_drv_16.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxmouse_drv_70.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_64)/vboxmouse_drv_71.so                                       $(SOLARIS_ADD_INST_DIR_64)/vboxmouse_drv_71.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGL.so                                      $(SOLARIS_ADD_INST_DIR_64)/VBoxOGL.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGLcrutil.so                                $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLcrutil.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGLfeedbackspu.so                           $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLfeedbackspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxOGLpassthroughspu.so                        $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLpassthroughspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGLarrayspu.so                              $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLarrayspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGLerrorspu.so                              $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLerrorspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGLpackspu.so                               $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLpackspu.so
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxguest                                          $(SOLARIS_ADD_INST_DIR_32)/vboxguest
-	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxfs                                            $(SOLARIS_ADD_INST_DIR_32)/vboxfs
-	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxfs_s10                      $(SOLARIS_ADD_INST_DIR_32)/vboxfs_s10)
-	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_ADD_BIN_32)/vboxfsmount                                       $(SOLARIS_ADD_INST_DIR_32)/vboxfsmount
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxfs                                             $(SOLARIS_ADD_INST_DIR_32)/vboxfs
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN_32)/vboxfs_s10                       $(SOLARIS_ADD_INST_DIR_32)/vboxfs_s10)
+	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_ADD_BIN_32)/vboxfsmount                                        $(SOLARIS_ADD_INST_DIR_32)/vboxfsmount
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxClient                                      $(SOLARIS_ADD_INST_DIR_32)/VBoxClient
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxService                                     $(SOLARIS_ADD_INST_DIR_32)/VBoxService
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxControl                                     $(SOLARIS_ADD_INST_DIR_32)/VBoxControl
@@ -206,6 +236,13 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxmouse_drv_16.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxmouse_drv_16.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxmouse_drv_70.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxmouse_drv_71.so                                       $(SOLARIS_ADD_INST_DIR_32)/vboxmouse_drv_71.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxOGL.so                                      $(SOLARIS_ADD_INST_DIR_32)/VBoxOGL.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxOGLcrutil.so                                $(SOLARIS_ADD_INST_DIR_32)/VBoxOGLcrutil.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxOGLfeedbackspu.so                           $(SOLARIS_ADD_INST_DIR_32)/VBoxOGLfeedbackspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxOGLpassthroughspu.so                        $(SOLARIS_ADD_INST_DIR_32)/VBoxOGLpassthroughspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxOGLarrayspu.so                              $(SOLARIS_ADD_INST_DIR_32)/VBoxOGLarrayspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxOGLerrorspu.so                              $(SOLARIS_ADD_INST_DIR_32)/VBoxOGLerrorspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxOGLpackspu.so                               $(SOLARIS_ADD_INST_DIR_32)/VBoxOGLpackspu.so
  ifdef VBOX_COMPRESS
  # 	Compress binaries as we distribute uncompressed pkgs
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_64)/VBoxClient
@@ -256,6 +293,13 @@ else  # !VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_16.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_16.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_70.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_71.so                                          $(SOLARIS_ADD_INST_DIR_ISA)/vboxmouse_drv_71.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxOGL.so                                         $(SOLARIS_ADD_INST_DIR_ISA)/VBoxOGL.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxOGLcrutil.so                                   $(SOLARIS_ADD_INST_DIR_ISA)/VBoxOGLcrutil.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxOGLfeedbackspu.so                              $(SOLARIS_ADD_INST_DIR_ISA)/VBoxOGLfeedbackspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxOGLpassthroughspu.so                           $(SOLARIS_ADD_INST_DIR_ISA)/VBoxOGLpassthroughspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxOGLarrayspu.so                                 $(SOLARIS_ADD_INST_DIR_ISA)/VBoxOGLarrayspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxOGLerrorspu.so                                 $(SOLARIS_ADD_INST_DIR_ISA)/VBoxOGLerrorspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxOGLpackspu.so                                  $(SOLARIS_ADD_INST_DIR_ISA)/VBoxOGLpackspu.so
  ifdef VBOX_COMPRESS
  # 	Compress binaries as we distribute uncompressed pkgs
 	$(QUIET)$(VBOX_COMPRESS) $(SOLARIS_ADD_INST_DIR_ISA)/VBoxClient
