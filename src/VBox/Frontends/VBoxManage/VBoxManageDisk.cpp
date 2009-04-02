@@ -212,6 +212,8 @@ int handleCreateHardDisk(HandlerArg *a)
                     else
                         return errorSyntax(USAGE_CREATEHD, "Invalid option case %i", c);
                 }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_CREATEHD, "unknown option: %s\n", ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     return errorSyntax(USAGE_CREATEHD, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
@@ -647,6 +649,8 @@ int handleConvertFromRaw(int argc, char *argv[])
                     else
                         return errorSyntax(USAGE_CONVERTFROMRAW, "Invalid option case %i", c);
                 }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_CREATEHD, "unknown option: %s\n", ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     return errorSyntax(USAGE_CONVERTFROMRAW, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
