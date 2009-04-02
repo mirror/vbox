@@ -2301,8 +2301,9 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VINF_PGM_CHANGE_MODE:
             rc = PGMChangeMode(pVM, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
-            if (RT_SUCCESS(rc))
+            if (rc == VINF_SUCCESS)
                 rc = VINF_EM_RESCHEDULE;
+            AssertMsg(RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST), ("%Rrc\n", rc));
             break;
 
         /*
@@ -3575,11 +3576,25 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  * Out of memory, suspend the VM and stuff.
                  */
                 case VINF_EM_NO_MEMORY:
-                    /** @todo Take the out of memory fun from here and up. May have to add another
-                     *        VM state, but hope not for 2.2 ... */
                     Log2(("EMR3ExecuteVM: VINF_EM_NO_MEMORY: %d -> %d\n", pVM->em.s.enmState, EMSTATE_SUSPENDED));
                     pVM->em.s.enmState = EMSTATE_SUSPENDED;
-                    break;
+                    TMVirtualPause(pVM);
+                    TMCpuTickPause(pVM);
+                    VMMR3Unlock(pVM);
+                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+
+                    rc = VMSetRuntimeError(pVM, VMSETRTERR_FLAGS_SUSPEND, "HostMemoryLow",
+                                           N_("Unable to allocate and lock memory. The virtual machine will be paused. Please close applications to free up memory or close the VM"));
+                    if (rc != VINF_EM_SUSPEND)
+                    {
+                        if (RT_SUCCESS_NP(rc))
+                        {
+                            AssertLogRelMsgFailed(("%Rrc\n", rc));
+                            rc = VERR_EM_INTERNAL_ERROR;
+                        }
+                        pVM->em.s.enmState = EMSTATE_GURU_MEDITATION;
+                    }
+                    return rc;
 
                 /*
                  * Guest debug events.
@@ -3627,7 +3642,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  * included in this.
                  */
                 default:
-                    if (RT_SUCCESS(rc))
+                    if (RT_SUCCESS_NP(rc))
                     {
                         AssertMsgFailed(("Unexpected warning or informational status code %Rra!\n", rc));
                         rc = VERR_EM_INTERNAL_ERROR;
