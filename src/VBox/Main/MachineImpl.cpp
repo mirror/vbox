@@ -7444,6 +7444,10 @@ void Machine::fixupHardDisks(bool aCommit, bool aOnline /*= false*/)
                 {
                     rc = hd->LockWrite (NULL);
                     AssertComRC (rc);
+                    
+                    mData->mSession.mLockedMedia.push_back (
+                        Data::Session::LockedMedia::value_type (
+                            ComPtr <IHardDisk> (hd), true));
 
                     /* also, relock the old hard disk which is a base for the
                      * new diff for reading if the VM is online */
@@ -7455,6 +7459,14 @@ void Machine::fixupHardDisks(bool aCommit, bool aOnline /*= false*/)
                     AssertComRC (rc);
                     rc = parent->LockRead (NULL);
                     AssertComRC (rc);
+
+                    /* XXX actually we should replace the old entry in that
+                     * vector (write lock => read lock) but this would take
+                     * some effort. So lets just ignore the error code in
+                     * SessionMachine::unlockMedia(). */
+                    mData->mSession.mLockedMedia.push_back (
+                        Data::Session::LockedMedia::value_type (
+                            ComPtr <IHardDisk> (parent), false));
                 }
 
                 continue;
@@ -11075,12 +11087,15 @@ void SessionMachine::unlockMedia()
          it = mData->mSession.mLockedMedia.begin();
          it != mData->mSession.mLockedMedia.end(); ++ it)
     {
+        MediaState_T state;
         if (it->second)
-            rc = it->first->UnlockWrite (NULL);
+            rc = it->first->UnlockWrite (&state);
         else
-            rc = it->first->UnlockRead (NULL);
+            rc = it->first->UnlockRead (&state);
 
-        AssertComRC (rc);
+        /* the latter can happen if an object was re-locked in
+         * Machine::fixupHardDisks() */
+        Assert (SUCCEEDED (rc) || state == MediaState_LockedRead);
     }
 
     mData->mSession.mLockedMedia.clear();
