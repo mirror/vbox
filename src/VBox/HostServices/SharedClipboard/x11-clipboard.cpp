@@ -20,17 +20,12 @@
  * additional information or have any questions.
  */
 
-/** @todo create a clipboard log group */
-#define LOG_GROUP LOG_GROUP_HGCM
-
 #include <string.h>
 
 #include <iprt/asm.h>        /* For atomic operations */
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
-
-#include <VBox/log.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
@@ -308,6 +303,7 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
     request.pv = pv;
     request.cb = cb;
     request.pcbActual = pcbActual;
+    request.pCtx = g_ctxHost.pBackend;
     rc = VBoxX11ClipboardReadX11Data(g_ctxHost.pBackend, u32Format, &request);
     g_ctxHost.waiter = NONE;
     return rc;

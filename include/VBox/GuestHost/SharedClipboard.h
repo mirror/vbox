@@ -54,12 +54,13 @@ struct _VBOXCLIPBOARDREQUEST
     /** The size of the X11 clipboard data written to the buffer (valid
      * during a request for the clipboard contents) */
     uint32_t *pcbActual;
+    /** The clipboard context this request is associated with */
+    VBOXCLIPBOARDCONTEXTX11 *pCtx;
 };
 
 typedef struct _VBOXCLIPBOARDREQUEST VBOXCLIPBOARDREQUEST;
 
 /* APIs exported by the X11 backend */
-extern void VBoxX11ClipboardAnnounceVBoxFormat(uint32_t u32Formats);
 extern int VBoxX11ClipboardInitX11(VBOXCLIPBOARDCONTEXT *pFrontend,
                                    VBOXCLIPBOARDCONTEXTX11 **ppBackend);
 extern int VBoxX11ClipboardTermX11(VBOXCLIPBOARDCONTEXTX11 *pBackend);
