@@ -105,7 +105,6 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(SOLARIS_ADD_BIN_32)/vboxmouse_drv_70.so \
 	$(SOLARIS_ADD_BIN_32)/vboxmouse_drv_71.so
  ifdef VBOX_WITH_CROGL
- $(error herere)
   VBOX_SOLPACKFILES += \
 	$(VBOX_CROGL_FILES_32) \
 	$(VBOX_CROGL_FILES_64)
