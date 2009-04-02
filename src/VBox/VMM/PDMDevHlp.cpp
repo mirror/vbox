@@ -353,12 +353,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GC
     LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: GCPhysStart=%RGp cbRange=%#x pvBinary=%p fFlags=%#RX32 pszDesc=%p:{%s}\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, pvBinary, fFlags, pszDesc, pszDesc));
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     int rc = PGMR3PhysRomRegister(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvBinary, fFlags, pszDesc);
-#else
-    int rc = MMR3PhysRomRegister(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvBinary,
-                                 !!(fFlags & PGMPHYS_ROM_FLAGS_SHADOWED), pszDesc);
-#endif
 
     LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
@@ -2038,7 +2033,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhy
     LogFlow(("pdmR3DevHlp_PhysRead: caller='%s'/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
 #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
     if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
     {
@@ -2053,10 +2047,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhy
         rc = PGMPhysRead(pVM, GCPhys, pvBuf, cbRead);
     else
         rc = PGMR3PhysReadExternal(pVM, GCPhys, pvBuf, cbRead);
-#else
-    PGMPhysRead(pVM, GCPhys, pvBuf, cbRead);
-    int rc = VINF_SUCCESS;
-#endif
+
     Log(("pdmR3DevHlp_PhysRead: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -2070,7 +2061,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPh
     LogFlow(("pdmR3DevHlp_PhysWrite: caller='%s'/%d: GCPhys=%RGp pvBuf=%p cbWrite=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, pvBuf, cbWrite));
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
 #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
     if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
     {
@@ -2085,10 +2075,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPh
         rc = PGMPhysWrite(pVM, GCPhys, pvBuf, cbWrite);
     else
         rc = PGMR3PhysWriteExternal(pVM, GCPhys, pvBuf, cbWrite);
-#else
-    PGMPhysWrite(pVM, GCPhys, pvBuf, cbWrite);
-    int rc = VINF_SUCCESS;
-#endif
+
     Log(("pdmR3DevHlp_PhysWrite: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -2103,7 +2090,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtr(PPDMDEVINS pDevIns, RTGCPH
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, fFlags, ppv, pLock));
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
 #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
     if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
     {
@@ -2111,7 +2097,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtr(PPDMDEVINS pDevIns, RTGCPH
         uint32_t cLocks = PDMR3CritSectCountOwned(pVM, szNames, sizeof(szNames));
         AssertMsg(cLocks == 0, ("cLocks=%u %s\n", cLocks, szNames));
     }
-#endif
 #endif
 
     int rc = PGMR3PhysGCPhys2CCPtrExternal(pVM, GCPhys, ppv, pLock);
@@ -2130,7 +2115,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, fFlags, ppv, pLock));
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
 #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
     if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
     {
@@ -2138,7 +2122,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns
         uint32_t cLocks = PDMR3CritSectCountOwned(pVM, szNames, sizeof(szNames));
         AssertMsg(cLocks == 0, ("cLocks=%u %s\n", cLocks, szNames));
     }
-#endif
 #endif
 
     int rc = PGMR3PhysGCPhys2CCPtrReadOnlyExternal(pVM, GCPhys, ppv, pLock);
@@ -2556,11 +2539,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPH
     LogFlow(("pdmR3DevHlp_ROMProtectShadow: caller='%s'/%d: GCPhysStart=%RGp cbRange=%#x enmProt=%d\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, enmProt));
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     int rc = PGMR3PhysRomProtect(pDevIns->Internal.s.pVMR3, GCPhysStart, cbRange, enmProt);
-#else
-    int rc = MMR3PhysRomProtect(pDevIns->Internal.s.pVMR3, GCPhysStart, cbRange);
-#endif
 
     LogFlow(("pdmR3DevHlp_ROMProtectShadow: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;

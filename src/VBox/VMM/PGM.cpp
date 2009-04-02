@@ -609,11 +609,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** Saved state data unit version. */
-#ifdef VBOX_WITH_NEW_PHYS_CODE
-# define PGM_SAVED_STATE_VERSION                7
-#else
-# define PGM_SAVED_STATE_VERSION                6
-#endif
+#define PGM_SAVED_STATE_VERSION                 7
 /** Saved state data unit version. */
 #define PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE   6
 
@@ -1228,13 +1224,12 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     uint64_t    cbRam;
     rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        cbRam = pVM->pgm.s.cbRamSize = 0;
+        cbRam = 0;
     else if (RT_SUCCESS(rc))
     {
         if (cbRam < PAGE_SIZE)
             cbRam = 0;
         cbRam = RT_ALIGN_64(cbRam, PAGE_SIZE);
-        pVM->pgm.s.cbRamSize = (RTUINT)cbRam; /* pointless legacy, remove after enabling the new phys code. */
     }
     else
     {
@@ -1267,14 +1262,12 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     PGMPhysInvalidatePageR0MapTLB(pVM);
     PGMPhysInvalidatePageGCMapTLB(pVM);
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     /*
      * For the time being we sport a full set of handy pages in addition to the base
      * memory to simplify things.
      */
-    rc = MMR3ReserveHandyPages(pVM, RT_ELEMENTS(pVM->pgm.s.aHandyPages));
+    rc = MMR3ReserveHandyPages(pVM, RT_ELEMENTS(pVM->pgm.s.aHandyPages)); /** @todo this should be changed to PGM_HANDY_PAGES_MIN but this needs proper testing... */
     AssertRCReturn(rc, rc);
-#endif
 
     /*
      * Trees
@@ -1578,10 +1571,6 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatR3ResolveConflict,             STAMTYPE_PROFILE, "/PGM/R3/ResolveConflict",            STAMUNIT_TICKS_PER_CALL, "pgmR3SyncPTResolveConflict() profiling (includes the entire relocation).");
     STAM_REG(pVM, &pPGM->StatR3GuestPDWrite,                STAMTYPE_COUNTER, "/PGM/R3/PDWrite",                    STAMUNIT_OCCURENCES,     "The total number of times pgmHCGuestPDWriteHandler() was called.");
     STAM_REG(pVM, &pPGM->StatR3GuestPDWriteConflict,        STAMTYPE_COUNTER, "/PGM/R3/PDWriteConflict",            STAMUNIT_OCCURENCES,     "The number of times pgmHCGuestPDWriteHandler() detected a conflict.");
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-    STAM_REG(pVM, &pPGM->StatR3DynRamTotal,                 STAMTYPE_COUNTER, "/PGM/DynAlloc/TotalAlloc",           STAMUNIT_MEGABYTES,      "Allocated MBs of guest ram.");
-    STAM_REG(pVM, &pPGM->StatR3DynRamGrow,                  STAMTYPE_COUNTER, "/PGM/DynAlloc/Grow",                 STAMUNIT_OCCURENCES,     "Nr of pgmr3PhysGrowRange calls.");
-#endif
 
     /* R0 only: */
     STAM_REG(pVM, &pPGM->StatR0DynMapMigrateInvlPg,         STAMTYPE_COUNTER, "/PGM/R0/DynMapMigrateInvlPg",        STAMUNIT_OCCURENCES,     "invlpg count in PGMDynMapMigrateAutoSet.");
@@ -2100,12 +2089,10 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
     rc = pgmR3PhysRamReset(pVM);
     if (RT_SUCCESS(rc))
     {
-#ifdef VBOX_WITH_NEW_PHYS_CODE
         /*
          * Reset (zero) shadow ROM pages.
          */
         rc = pgmR3PhysRomReset(pVM);
-#endif
         if (RT_SUCCESS(rc))
         {
             /*
@@ -2162,7 +2149,6 @@ VMMR3DECL(int) PGMR3TermCPU(PVM pVM)
     return 0;
 }
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
 
 /**
  * Find the ROM tracking structure for the given page.
@@ -2255,7 +2241,6 @@ static SSMFIELD s_aPGMFields[] =
     SSMFIELD_ENTRY(         PGM, enmGuestMode),
     SSMFIELD_ENTRY_TERM()
 };
-#endif /* VBOX_WITH_NEW_PHYS_CODE */
 
 
 /**
@@ -2273,27 +2258,13 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Lock PGM and set the no-more-writes indicator.
      */
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     pgmLock(pVM);
-#endif
     pVM->pgm.s.fNoMorePhysWrites = true;
 
     /*
      * Save basic data (required / unaffected by relocation).
      */
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     SSMR3PutStruct(pSSM, pPGM, &s_aPGMFields[0]);
-#else
-    SSMR3PutBool(  pSSM, pPGM->fMappingsFixed);
-    SSMR3PutGCPtr( pSSM, pPGM->GCPtrMappingFixed);
-    SSMR3PutU32(   pSSM, pPGM->cbMappingFixed);
-    SSMR3PutUInt(  pSSM, pPGM->cbRamSize);
-    SSMR3PutGCPhys(pSSM, pPGM->GCPhysA20Mask);
-    SSMR3PutUInt(  pSSM, pPGM->fA20Enabled);
-    SSMR3PutUInt(  pSSM, pPGM->fSyncFlags);
-    SSMR3PutUInt(  pSSM, pPGM->enmGuestMode);
-    SSMR3PutU32(   pSSM, ~0);      /* Separator. */
-#endif
 
     /*
      * The guest mappings.
@@ -2322,7 +2293,6 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutGCPhys(pSSM,    pRam->GCPhysLast);
         SSMR3PutGCPhys(pSSM,    pRam->cb);
         SSMR3PutU8(pSSM,        !!pRam->pvR3);      /* Boolean indicating memory or not. */
-#ifdef VBOX_WITH_NEW_PHYS_CODE
         SSMR3PutStrZ(pSSM,      pRam->pszDesc);     /* This is the best unique id we have... */
 
         /*
@@ -2353,47 +2323,12 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
         }
         if (RT_FAILURE(rc))
             break;
-
-#else  /* !VBOX_WITH_NEW_PHYS_CODE */
-        /* Flags. */
-        const unsigned cPages = pRam->cb >> PAGE_SHIFT;
-        for (unsigned iPage = 0; iPage < cPages; iPage++)
-            SSMR3PutU16(pSSM, (uint16_t)(pRam->aPages[iPage].HCPhys & ~X86_PTE_PAE_PG_MASK)); /** @todo PAGE FLAGS */
-
-        /* Any memory associated with the range. */
-        if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-        {
-            for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
-            {
-                if (pRam->paChunkR3Ptrs[iChunk])
-                {
-                    SSMR3PutU8(pSSM, 1);    /* chunk present */
-                    SSMR3PutMem(pSSM, (void *)pRam->paChunkR3Ptrs[iChunk], PGM_DYNAMIC_CHUNK_SIZE);
-                }
-                else
-                    SSMR3PutU8(pSSM, 0);    /* no chunk present */
-            }
-        }
-        else if (pRam->pvR3)
-        {
-            rc = SSMR3PutMem(pSSM, pRam->pvR3, pRam->cb);
-            if (RT_FAILURE(rc))
-            {
-                Log(("pgmR3Save: SSMR3PutMem(, %p, %#x) -> %Rrc\n", pRam->pvR3, pRam->cb, rc));
-                return rc;
-            }
-        }
-#endif /* !VBOX_WITH_NEW_PHYS_CODE */
     }
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     pgmUnlock(pVM);
-#endif
     return SSMR3PutU32(pSSM, ~0); /* terminator. */
 }
 
-
-#ifdef VBOX_WITH_NEW_PHYS_CODE
 
 /**
  * Load an ignored page.
@@ -2551,7 +2486,6 @@ static int pgmR3LoadShadowedRomPage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RT
     return rc;
 }
 
-#endif  /* VBOX_WITH_NEW_PHYS_CODE */
 
 /**
  * Worker for pgmR3Load.
@@ -2571,25 +2505,21 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Load basic data (required / unaffected by relocation).
      */
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     if (u32Version >= PGM_SAVED_STATE_VERSION)
     {
         rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFields[0]);
         AssertLogRelRCReturn(rc, rc);
     }
     else
-#endif
     {
         SSMR3GetBool(pSSM,      &pPGM->fMappingsFixed);
         SSMR3GetGCPtr(pSSM,     &pPGM->GCPtrMappingFixed);
         SSMR3GetU32(pSSM,       &pPGM->cbMappingFixed);
 
-        RTUINT cbRamSize;
-        rc = SSMR3GetU32(pSSM, &cbRamSize);
+        uint32_t cbRamSizeIgnored;
+        rc = SSMR3GetU32(pSSM, &cbRamSizeIgnored);
         if (RT_FAILURE(rc))
             return rc;
-        AssertLogRelMsgReturn(cbRamSize == pPGM->cbRamSize, ("%#x != %#x\n", cbRamSize, pPGM->cbRamSize),
-                              VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH);
         SSMR3GetGCPhys(pSSM,    &pPGM->GCPhysA20Mask);
 
         uint32_t u32 = 0;
@@ -2700,14 +2630,12 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         }
         char szDesc[256];
         szDesc[0] = '\0';
-#ifdef VBOX_WITH_NEW_PHYS_CODE
         if (u32Version >= PGM_SAVED_STATE_VERSION)
         {
             rc = SSMR3GetStrZ(pSSM, szDesc, sizeof(szDesc));
             if (RT_FAILURE(rc))
                 return rc;
         }
-#endif
 
         /*
          * Match it up with the current range.
@@ -2719,13 +2647,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         if (    (   GCPhys     != pRam->GCPhys
                  || GCPhysLast != pRam->GCPhysLast
                  || cb         != pRam->cb
-#ifdef VBOX_WITH_NEW_PHYS_CODE
-                 ||  (szDesc[0] && strcmp(szDesc, pRam->pszDesc))
-#else
-                 ||  fHaveBits  != !!pRam->pvR3
-#endif
-                 )
-#ifdef VBOX_WITH_NEW_PHYS_CODE
+                 ||  (szDesc[0] && strcmp(szDesc, pRam->pszDesc)) )
                 /* Hack for PDMDevHlpPhysReserve(pDevIns, 0xfff80000, 0x80000, "High ROM Region"); */
             &&  (   u32Version != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE
                  || GCPhys     != UINT32_C(0xfff80000)
@@ -2733,7 +2655,6 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                  || pRam->GCPhysLast != GCPhysLast
                  || pRam->GCPhys     <  GCPhys
                  || !fHaveBits)
-#endif
            )
         {
             LogRel(("Ram range: %RGp-%RGp %RGp bytes %s %s\n"
@@ -2748,26 +2669,11 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                 ||  GCPhys < 8 * _1M)
                 AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
-            if (u32Version > PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE)
-                AssertMsgFailed(("debug skipping not implemented, sorry\n"));
-            else
-#else
-            {
-                RTGCPHYS cPages = ((GCPhysLast - GCPhys) + 1) >> PAGE_SHIFT;
-                while (cPages-- > 0)
-                {
-                    uint16_t u16Ignore;
-                    SSMR3GetU16(pSSM, &u16Ignore);
-                }
-            }
-#endif
+            AssertMsgFailed(("debug skipping not implemented, sorry\n"));
             continue;
         }
 
         uint32_t cPages = (GCPhysLast - GCPhys + 1) >> PAGE_SHIFT;
-
-#ifdef VBOX_WITH_NEW_PHYS_CODE
         if (u32Version >= PGM_SAVED_STATE_VERSION)
         {
             /*
@@ -2901,57 +2807,6 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                 }
             }
         }
-
-#else  /* !VBOX_WITH_NEW_PHYS_CODE */
-        /* Flags. */
-        for (uint32_t iPage = 0; iPage < cPages; iPage++)
-        {
-            uint16_t    u16 = 0;
-            SSMR3GetU16(pSSM, &u16);
-            u16 &= PAGE_OFFSET_MASK & ~(  RT_BIT(4) | RT_BIT(5) | RT_BIT(6)
-                                        | RT_BIT(7) | RT_BIT(8) | RT_BIT(9) | RT_BIT(10) );
-                   // &= MM_RAM_FLAGS_DYNAMIC_ALLOC | MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2
-            pRam->aPages[iPage].HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) | (RTHCPHYS)u16; /** @todo PAGE FLAGS */
-        }
-
-        /* any memory associated with the range. */
-        if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-        {
-            for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
-            {
-                uint8_t fValidChunk;
-
-                rc = SSMR3GetU8(pSSM, &fValidChunk);
-                if (RT_FAILURE(rc))
-                    return rc;
-                if (fValidChunk > 1)
-                    return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-
-                if (fValidChunk)
-                {
-                    if (!pRam->paChunkR3Ptrs[iChunk])
-                    {
-                        rc = pgmr3PhysGrowRange(pVM, pRam->GCPhys + iChunk * PGM_DYNAMIC_CHUNK_SIZE);
-                        if (RT_FAILURE(rc))
-                            return rc;
-                    }
-                    Assert(pRam->paChunkR3Ptrs[iChunk]);
-
-                    SSMR3GetMem(pSSM, (void *)pRam->paChunkR3Ptrs[iChunk], PGM_DYNAMIC_CHUNK_SIZE);
-                }
-                /* else nothing to do */
-            }
-        }
-        else if (pRam->pvR3)
-        {
-            rc = SSMR3GetMem(pSSM, pRam->pvR3, pRam->cb);
-            if (RT_FAILURE(rc))
-            {
-                Log(("pgmR3Save: SSMR3GetMem(, %p, %#x) -> %Rrc\n", pRam->pvR3, pRam->cb, rc));
-                return rc;
-            }
-        }
-#endif /* !VBOX_WITH_NEW_PHYS_CODE */
     }
 
     return rc;
@@ -2975,10 +2830,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
      * Validate version.
      */
     if (    u32Version != PGM_SAVED_STATE_VERSION
-#ifdef VBOX_WITH_NEW_PHYS_CODE
-        &&  u32Version != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE
-#endif
-       )
+        &&  u32Version != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE)
     {
         AssertMsgFailed(("pgmR3Load: Invalid version u32Version=%d (current %d)!\n", u32Version, PGM_SAVED_STATE_VERSION));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;

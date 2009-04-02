@@ -411,7 +411,6 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     /*
      * Setup the base ram (PGM).
      */
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     if (cbRam > offRamHole)
     {
         rc = PGMR3PhysRegisterRam(pVM, 0, offRamHole, "Base RAM");
@@ -426,32 +425,13 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
         /** @todo RamPreAlloc should be handled at the very end of the VM creation. (lazy bird) */
         return VM_SET_ERROR(pVM, VERR_NOT_IMPLEMENTED, "TODO: RamPreAlloc");
     }
-#else
-    rc = PGMR3PhysRegisterRam(pVM, 0, cbRam, "Base RAM");
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Allocate the first chunk, as we'll map ROM ranges there.
-         * If requested, allocated the rest too.
-         */
-        RTGCPHYS GCPhys = (RTGCPHYS)0;
-        rc = PGM3PhysGrowRange(pVM, &GCPhys);
-        if (RT_SUCCESS(rc) && fPreAlloc)
-            for (GCPhys = PGM_DYNAMIC_CHUNK_SIZE;
-                 GCPhys < cbRam && RT_SUCCESS(rc);
-                 GCPhys += PGM_DYNAMIC_CHUNK_SIZE)
-                rc = PGM3PhysGrowRange(pVM, &GCPhys);
-    }
-#endif
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     /*
      * Enabled mmR3UpdateReservation here since we don't want the
      * PGMR3PhysRegisterRam calls above mess things up.
      */
     pVM->mm.s.fDoneMMR3InitPaging = true;
     AssertMsg(pVM->mm.s.cBasePages == cBasePages || RT_FAILURE(rc), ("%RX64 != %RX64\n", pVM->mm.s.cBasePages, cBasePages));
-#endif
 
     LogFlow(("MMR3InitPaging: returns %Rrc\n", rc));
     return rc;
@@ -535,16 +515,11 @@ VMMR3DECL(void) MMR3TermUVM(PUVM pUVM)
 /**
  * Reset notification.
  *
- * MM will reload shadow ROMs into RAM at this point and make
- * the ROM writable.
- *
  * @param   pVM             The VM handle.
  */
 VMMR3DECL(void) MMR3Reset(PVM pVM)
 {
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-    mmR3PhysRomReset(pVM);
-#endif
+    /* nothing to do anylonger. */
 }
 
 
