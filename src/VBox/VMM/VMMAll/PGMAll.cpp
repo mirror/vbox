@@ -1919,9 +1919,13 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool 
  * Called whenever CR0 or CR4 in a way which may change
  * the paging mode.
  *
- * @returns VBox status code fit for scheduling in GC and R0.
+ * @returns VBox status code, with the following informational code for
+ *          VM scheduling.
  * @retval  VINF_SUCCESS if the was no change, or it was successfully dealt with.
- * @retval  VINF_PGM_CHANGE_MODE if we're in GC or R0 and the mode changes.
+ * @retval  VINF_PGM_CHANGE_MODE if we're in RC or R0 and the mode changes.
+ *          (I.e. not in R3.)
+ * @retval  VINF_EM_SUSPEND or VINF_EM_OFF on a fatal runtime error. (R3 only)
+ *
  * @param   pVM         VM handle.
  * @param   cr0         The new cr0.
  * @param   cr4         The new cr4.
