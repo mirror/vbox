@@ -291,14 +291,7 @@ static PhysPageDesc *phys_page_find_alloc(target_phys_addr_t index, int alloc)
         for (i = 0; i < L2_SIZE; i++)
           pd[i].phys_offset = IO_MEM_UNASSIGNED;
     }
-#if defined(VBOX) && !defined(VBOX_WITH_NEW_PHYS_CODE)
-    pd = ((PhysPageDesc *)pd) + (index & (L2_SIZE - 1));
-    if (RT_UNLIKELY((pd->phys_offset & ~TARGET_PAGE_MASK) == IO_MEM_RAM_MISSING))
-        remR3GrowDynRange(pd->phys_offset & TARGET_PAGE_MASK);
-    return pd;
-#else
     return ((PhysPageDesc *)pd) + (index & (L2_SIZE - 1));
-#endif
 }
 
 static inline PhysPageDesc *phys_page_find(target_phys_addr_t index)
@@ -1971,15 +1964,8 @@ void cpu_register_physical_memory(target_phys_addr_t start_addr,
     for(addr = start_addr; addr != end_addr; addr += TARGET_PAGE_SIZE) {
         p = phys_page_find_alloc(addr >> TARGET_PAGE_BITS, 1);
         p->phys_offset = phys_offset;
-#if !defined(VBOX) || defined(VBOX_WITH_NEW_PHYS_CODE)
         if ((phys_offset & ~TARGET_PAGE_MASK) <= IO_MEM_ROM ||
             (phys_offset & IO_MEM_ROMD))
-#else
-        if (   (phys_offset & ~TARGET_PAGE_MASK) <= IO_MEM_ROM
-            || (phys_offset & IO_MEM_ROMD)
-            || (phys_offset & ~TARGET_PAGE_MASK) == IO_MEM_RAM_MISSING)
-#endif
-
             phys_offset += TARGET_PAGE_SIZE;
     }
 
@@ -2181,12 +2167,7 @@ static void io_mem_init(void)
     cpu_register_io_memory(IO_MEM_ROM >> IO_MEM_SHIFT, error_mem_read, unassigned_mem_write, NULL);
     cpu_register_io_memory(IO_MEM_UNASSIGNED >> IO_MEM_SHIFT, unassigned_mem_read, unassigned_mem_write, NULL);
     cpu_register_io_memory(IO_MEM_NOTDIRTY >> IO_MEM_SHIFT, error_mem_read, notdirty_mem_write, NULL);
-#if defined(VBOX) && !defined(VBOX_WITH_NEW_PHYS_CODE)
-    cpu_register_io_memory(IO_MEM_RAM_MISSING >> IO_MEM_SHIFT, unassigned_mem_read, unassigned_mem_write, NULL);
-    io_mem_nb = 6;
-#else
     io_mem_nb = 5;
-#endif
 
 #ifndef VBOX /* VBOX: we do this later when the RAM is allocated. */
     /* alloc dirty bits array */
