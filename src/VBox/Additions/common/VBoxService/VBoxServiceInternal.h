@@ -124,6 +124,7 @@ extern VBOXSERVICE g_Control;
 #if defined(RT_OS_WINDOWS)
     extern DWORD                 g_vboxServiceStatusCode;
     extern SERVICE_STATUS_HANDLE g_vboxServiceStatusHandle;
+    extern SERVICE_TABLE_ENTRY const gs_serviceTable[];
 #endif
 
 __END_DECLS

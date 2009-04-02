@@ -106,9 +106,8 @@ static int VBoxServiceUsage(void)
              "    -h | -? | /? | --help    Show this message and exit with status 1.\n"
 #endif
              "    -i | --interval          The default interval.\n"
-#if !defined(RT_OS_WINDOWS)
              "    -f | --foreground        Don't daemonzie the program. For debugging.\n"
-#else
+#if defined(RT_OS_WINDOWS)
              "    -r | --register          Installs the service.\n"
              "    -u | --unregister        Uninstall service.\n"
 #endif
@@ -418,19 +417,24 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return VBoxServiceError("VbglR3Init failed with rc=%Rrc.\n", rc);
 
-#if !defined(RT_OS_WINDOWS)
     /*
      * Daemonize if requested.
      */
     if (fDaemonize && !fDaemonzied)
     {
         VBoxServiceVerbose(1, "Daemonizing...\n");
+#if defined(RT_OS_WINDOWS)
+        /** @todo Replace StartServiceCtrlDispatcher() with
+                  VbglR3Daemonize() once this has been ported
+                  to Windows later. */
+        StartServiceCtrlDispatcher (gs_serviceTable);
+#else
         rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
         if (RT_FAILURE(rc))
             return VBoxServiceError("daemon failed: %Rrc\n", rc);
         /* in-child */
-    }
 #endif
+    }
 
 /** @todo Make the main thread responsive to signal so it can shutdown/restart the threads on non-SIGKILL signals. */
 
