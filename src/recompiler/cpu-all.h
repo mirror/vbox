@@ -204,9 +204,6 @@ void     remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val);
 void     remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val);
 void     remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val);
 
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-void     remR3GrowDynRange(unsigned long physaddr);
-#endif
 #if 0 /*defined(RT_ARCH_AMD64) && defined(VBOX_STRICT)*/
 # define VBOX_CHECK_ADDR(ptr) do { if ((uintptr_t)(ptr) >= _4G) __asm__("int3"); } while (0)
 #else
@@ -1007,9 +1004,6 @@ extern uint8_t *phys_ram_dirty;
 #define IO_MEM_ROM         (1 << IO_MEM_SHIFT) /* hardcoded offset */
 #define IO_MEM_UNASSIGNED  (2 << IO_MEM_SHIFT)
 #define IO_MEM_NOTDIRTY    (4 << IO_MEM_SHIFT) /* used internally, never use directly */
-#if defined(VBOX) && !defined(VBOX_WITH_NEW_PHYS_CODE)
-#define IO_MEM_RAM_MISSING (5 << IO_MEM_SHIFT) /* used internally, never use directly */
-#endif
 /* acts like a ROM when read and like a device when written. As an
    exception, the write memory callback gets the ram offset instead of
    the physical address */
