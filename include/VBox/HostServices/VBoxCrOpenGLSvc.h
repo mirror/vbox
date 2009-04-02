@@ -37,6 +37,7 @@
 
 /* crOpenGL host functions */
 #define SHCRGL_HOST_FN_SET_FRAMEBUFFER (1)
+#define SHCRGL_HOST_FN_SET_VISIBLE_REGION (5)
 /* crOpenGL guest functions */
 #define SHCRGL_GUEST_FN_WRITE       (2)
 #define SHCRGL_GUEST_FN_READ        (3)
@@ -44,6 +45,7 @@
 
 /* Parameters count */
 #define SHCRGL_CPARMS_SET_FRAMEBUFFER (1)
+#define SHCRGL_CPARMS_SET_VISIBLE_REGION (2)
 #define SHCRGL_CPARMS_WRITE      (1)
 #define SHCRGL_CPARMS_READ       (2)
 #define SHCRGL_CPARMS_WRITE_READ (3)

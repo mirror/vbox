@@ -208,6 +208,10 @@ renderSPUInit( int id, SPU *child, SPU *self,
     }
 #endif
 
+#ifdef DARWIN
+    render_spu.hRootVisibleRegion = 0;
+#endif
+
     /*
      * Create the default window and context.  Their indexes are zero and
      * a client can use them without calling CreateContext or WindowCreate.
@@ -325,6 +329,14 @@ static int renderSPUCleanup(void)
     crFreeHashtable(render_spu.barrierHash, crFree);
     render_spu.barrierHash = NULL;
 
+#ifdef RT_OS_DARWIN
+    if (render_spu.hRootVisibleRegion)
+    {
+        DisposeRgn(render_spu.hRootVisibleRegion);
+        render_spu.hRootVisibleRegion = 0;
+    }
+#endif
+
 #ifdef RT_OS_WINDOWS
     if (render_spu.dwWinThreadId)
     {
@@ -356,7 +368,30 @@ int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
     return 1;
 }
 
-void renderspuSetWindowId(unsigned int winId)
+DECLEXPORT(void) renderspuSetWindowId(unsigned int winId)
 {
     render_spu_parent_window_id = winId;
 }
+
+static void renderspuWindowVisibleRegionCB(unsigned long key, void *data1, void *data2)
+{
+    WindowInfo *window = (WindowInfo *) data1;
+    CRASSERT(window);
+
+    renderspu_SystemWindowApplyVisibleRegion(window);
+}
+
+DECLEXPORT(void) renderspuSetRootVisibleRegion(GLint cRects, GLint *pRects)
+{
+#ifdef RT_OS_DARWIN
+    renderspu_SystemSetRootVisibleRegion(cRects, pRects);
+
+    crHashtableWalk(render_spu.windowTable, renderspuWindowVisibleRegionCB, NULL);
+#endif
+}
+
+#ifndef RT_OS_DARWIN
+void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window)
+{
+}
+#endif

@@ -35,6 +35,9 @@
 #ifdef VBOX_WITH_HGCM
 #include "hgcm/HGCM.h"
 #include "hgcm/HGCMObjects.h"
+# if defined(RT_OS_DARWIN) && defined(VBOX_WITH_CROGL)
+#  include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+# endif
 #endif
 
 //
@@ -349,7 +352,30 @@ DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32
         return VERR_INVALID_PARAMETER;
     IFramebuffer *framebuffer = pDrv->pVMMDev->getParent()->getDisplay()->getFramebuffer();
     if (framebuffer)
+    {
         framebuffer->SetVisibleRegion((BYTE *)pRect, cRect);
+#if defined(RT_OS_DARWIN) && defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+        {
+            BOOL is3denabled;
+
+            pDrv->pVMMDev->getParent()->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+
+            if (is3denabled)
+            {
+                VBOXHGCMSVCPARM parms[2];
+
+                parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+                parms[0].u.pointer.addr = pRect;
+                parms[0].u.pointer.size = 0;  /* We don't actually care. */
+                parms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
+                parms[1].u.uint32 = cRect;
+
+                int rc = pDrv->pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VISIBLE_REGION, 2, &parms[0]);
+                return rc;
+            }
+        }
+#endif
+    }
 
     return VINF_SUCCESS;
 }
