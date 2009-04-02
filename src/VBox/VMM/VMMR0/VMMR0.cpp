@@ -457,11 +457,6 @@ static void vmmR0RecordRC(PVM pVM, int rc)
                 case VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMAllocHandy);
                     break;
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-                case VMMCALLHOST_PGM_RAM_GROW_RANGE:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMGrowRAM);
-                    break;
-#endif
                 case VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallRemReplay);
                     break;

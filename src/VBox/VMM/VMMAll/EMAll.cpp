@@ -317,20 +317,7 @@ DECLINLINE(int) emRamRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCPTR G
      * instruction and it either flushed the TLB or the CPU reused it.
      */
 #endif
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     return PGMPhysInterpretedReadNoHandlers(pVM, pCtxCore, pvDst, GCPtrSrc, cb, /*fMayTrap*/ false);
-#else
-    NOREF(pCtxCore);
-# ifdef IN_RC
-    RTGCPHYS GCPhys;
-    rc = PGMPhysGCPtr2GCPhys(pVM, GCPtrSrc, &GCPhys);
-    AssertRCReturn(rc, rc);
-    PGMPhysRead(pVM, GCPhys, pvDst, cb);
-    return VINF_SUCCESS;
-# else
-    return PGMPhysReadGCPtr(pVM, pvDst, GCPtrSrc, cb);
-# endif
-#endif
 }
 
 
@@ -348,26 +335,7 @@ DECLINLINE(int) emRamWrite(PVM pVM, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, con
      * access doesn't cost us much (see PGMPhysGCPtr2GCPhys()).
      */
 #endif
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     return PGMPhysInterpretedWriteNoHandlers(pVM, pCtxCore, GCPtrDst, pvSrc, cb, /*fMayTrap*/ false);
-#else
-    NOREF(pCtxCore);
-# ifdef IN_RC
-    uint64_t fFlags;
-    RTGCPHYS GCPhys;
-    rc = PGMGstGetPage(pVM, GCPtrDst, &fFlags, &GCPhys);
-    if (RT_FAILURE(rc))
-        return rc;
-    if (    !(fFlags & X86_PTE_RW)
-        &&  (CPUMGetGuestCR0(pVM) & X86_CR0_WP))
-        return VERR_ACCESS_DENIED;
-
-    PGMPhysWrite(pVM, GCPhys + ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK), pvSrc, cb);
-    return VINF_SUCCESS;
-# else
-    return PGMPhysWriteGCPtr(pVM, GCPtrDst, pvSrc, cb);
-# endif
-#endif
 }
 
 
@@ -1349,11 +1317,7 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
     {
         LogFlow(("emInterpretStosWD dest=%04X:%RGv (%RGv) cbSize=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize));
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
         rc = emRamWrite(pVM, pRegFrame, GCDest, &pRegFrame->rax, cbSize);
-#else
-        rc = PGMPhysWriteGCPtr(pVM, GCDest, &pRegFrame->rax, cbSize);
-#endif
         if (RT_FAILURE(rc))
             return VERR_EM_INTERPRETER;
         Assert(rc == VINF_SUCCESS);
@@ -1410,11 +1374,7 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
         /* REP case */
         while (cTransfers)
         {
-#ifdef VBOX_WITH_NEW_PHYS_CODE
             rc = emRamWrite(pVM, pRegFrame, GCDest, &pRegFrame->rax, cbSize);
-#else
-            rc = PGMPhysWriteGCPtr(pVM, GCDest, &pRegFrame->rax, cbSize);
-#endif
             if (RT_FAILURE(rc))
             {
                 rc = VERR_EM_INTERPRETER;

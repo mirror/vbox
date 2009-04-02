@@ -753,7 +753,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                  */
                 if (RT_SUCCESS(rc) && (uErr & X86_TRAP_PF_RW))
                 {
-#   ifdef VBOX_WITH_NEW_PHYS_CODE
                     if (PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
                     {
                         Log(("PGM #PF: Make writable: %RGp %R[pgmpage] pvFault=%RGp uErr=%#x\n",
@@ -768,7 +767,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                             return VINF_EM_NO_MEMORY;
                     }
                     /// @todo count the above case; else
-#   endif /* VBOX_WITH_NEW_PHYS_CODE */
                     if (uErr & X86_TRAP_PF_US)
                         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncUser));
                     else /* supervisor */
@@ -1425,8 +1423,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
         int rc = pgmPhysGetPageEx(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK, &pPage);
         if (RT_SUCCESS(rc))
         {
-#ifdef VBOX_WITH_NEW_PHYS_CODE
-# ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
+#ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
             /* Try make the page writable if necessary. */
             if (    PteSrc.n.u1Write
                 &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
@@ -1435,7 +1432,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                 rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, PteSrc.u & GST_PTE_PG_MASK);
                 AssertRC(rc);
             }
-# endif
 #endif
 
             /** @todo investiage PWT, PCD and PAT. */
@@ -1511,7 +1507,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                 }
             }
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
             /*
              * Make sure only allocated pages are mapped writable.
              */
@@ -1522,7 +1517,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                 PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet. */
                 Log3(("SyncPageWorker: write-protecting %RGp pPage=%R[pgmpage]at iPTDst=%d\n", (RTGCPHYS)(PteSrc.u & X86_PTE_PAE_PG_MASK), pPage, iPTDst));
             }
-#endif
 
 #ifdef PGMPOOL_WITH_USER_TRACKING
             /*
@@ -1806,8 +1800,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                 int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
                 if (RT_SUCCESS(rc))
                 {
-# ifdef VBOX_WITH_NEW_PHYS_CODE
-#  ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
+# ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
                     /* Try make the page writable if necessary. */
                     if (    PdeSrc.n.u1Write
                         &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
@@ -1816,7 +1809,6 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                         rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, GCPhys);
                         AssertRC(rc);
                     }
-#  endif
 # endif
 
                     /*
@@ -1837,7 +1829,6 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                     if (PteDst.n.u1Present && !pPTDst->a[iPTDst].n.u1Present)
                         PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPTDst);
 # endif
-# ifdef VBOX_WITH_NEW_PHYS_CODE
                     /* Make sure only allocated pages are mapped writable. */
                     if (    PteDst.n.u1Write
                         &&  PteDst.n.u1Present
@@ -1846,7 +1837,6 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
                         PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet... */
                         Log3(("SyncPage: write-protecting %RGp pPage=%R[pgmpage] at %RGv\n", GCPhys, pPage, GCPtrPage));
                     }
-# endif
 
                     pPTDst->a[iPTDst] = PteDst;
 
@@ -2701,8 +2691,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                         PPGMPAGE    pPage = &pRam->aPages[iHCPage];
                         SHWPTE      PteDst;
 
-# ifdef VBOX_WITH_NEW_PHYS_CODE
-#  ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
+# ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
                         /* Try make the page writable if necessary. */
                         if (    PteDstBase.n.u1Write
                             &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
@@ -2713,23 +2702,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                             if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
                                 break;
                         }
-#  endif
-# else  /* !VBOX_WITH_NEW_PHYS_CODE */
-                        /* Make sure the RAM has already been allocated. */
-                        if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)  /** @todo PAGE FLAGS */
-                        {
-                            if (RT_UNLIKELY(!PGM_PAGE_GET_HCPHYS(pPage)))
-                            {
-#  ifdef IN_RING3
-                                int rc = pgmr3PhysGrowRange(pVM, GCPhys);
-#  else
-                                int rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
-#  endif
-                                if (rc != VINF_SUCCESS)
-                                    return rc;
-                            }
-                        }
-# endif /* !VBOX_WITH_NEW_PHYS_CODE */
+# endif
 
                         if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                         {
@@ -2754,7 +2727,6 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                         else
                             PteDst.u = PGM_PAGE_GET_HCPHYS(pPage) | PteDstBase.u;
 
-# ifdef VBOX_WITH_NEW_PHYS_CODE
                         /* Only map writable pages writable. */
                         if (    PteDst.n.u1Write
                             &&  PteDst.n.u1Present
@@ -2763,7 +2735,6 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
                             PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet... */
                             Log3(("SyncPT: write-protecting %RGp pPage=%R[pgmpage] at %RGv\n", GCPhys, pPage, (RTGCPTR)(GCPtr | (iPTDst << SHW_PT_SHIFT))));
                         }
-# endif
 
 # ifdef PGMPOOL_WITH_USER_TRACKING
                         if (PteDst.n.u1Present)
@@ -4151,22 +4122,18 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
      */
     RTHCPTR     HCPtrGuestCR3;
     RTHCPHYS    HCPhysGuestCR3;
-# ifdef VBOX_WITH_NEW_PHYS_CODE
     pgmLock(pVM);
     PPGMPAGE    pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysCR3);
     AssertReturn(pPage, VERR_INTERNAL_ERROR_2);
     HCPhysGuestCR3 = PGM_PAGE_GET_HCPHYS(pPage);
     /** @todo this needs some reworking wrt. locking.  */
-#  if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     HCPtrGuestCR3 = NIL_RTHCPTR;
     int rc = VINF_SUCCESS;
-#  else
+# else
     int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhysCR3 & GST_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3);
-#  endif
+# endif
     pgmUnlock(pVM);
-# else  /* !VBOX_WITH_NEW_PHYS_CODE */
-    int rc = pgmRamGCPhys2HCPtrAndHCPhys(&pVM->pgm.s, GCPhysCR3 & GST_CR3_PAGE_MASK, &HCPtrGuestCR3, &HCPhysGuestCR3);
-# endif /* !VBOX_WITH_NEW_PHYS_CODE */
     if (RT_SUCCESS(rc))
     {
         rc = PGMMap(pVM, (RTGCPTR)pVM->pgm.s.GCPtrCR3Mapping, HCPhysGuestCR3, PAGE_SIZE, 0);
@@ -4203,21 +4170,17 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                     RTHCPTR     HCPtr;
                     RTHCPHYS    HCPhys;
                     RTGCPHYS    GCPhys = pGuestPDPT->a[i].u & X86_PDPE_PG_MASK;
-#  ifdef VBOX_WITH_NEW_PHYS_CODE
                     pgmLock(pVM);
                     PPGMPAGE    pPage  = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
                     AssertReturn(pPage, VERR_INTERNAL_ERROR_2);
                     HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
-#   if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#  if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
                     HCPtr = NIL_RTHCPTR;
                     int rc2 = VINF_SUCCESS;
-#   else
+#  else
                     int rc2 = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, (void **)&HCPtr);
-#   endif
+#  endif
                     pgmUnlock(pVM);
-#  else  /* !VBOX_WITH_NEW_PHYS_CODE */
-                    int rc2 = pgmRamGCPhys2HCPtrAndHCPhys(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
-#  endif /* !VBOX_WITH_NEW_PHYS_CODE */
                     if (RT_SUCCESS(rc2))
                     {
                         rc = PGMMap(pVM, GCPtr, HCPhys, PAGE_SIZE, 0);
