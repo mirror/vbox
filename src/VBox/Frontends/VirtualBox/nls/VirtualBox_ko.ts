@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="ko">
+<!DOCTYPE TS><TS version="1.1" language="ko">
 <defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
@@ -69,38 +68,38 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 커널 드라이버에서 충분한 메모리를 할당할 수 없었거나, 일부 매핑 동작이 실패한 것 같습니다.&lt;br /&gt;&lt;br /&gt;리눅스 커널 2.6.29에는 알려진 문제가 있습니다. 리눅스 커널 2.6.29를 사용하신다면, /usr/src/vboxdrv-*/Makefile을 편집하시고, &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;을 추가하십시오. 그 다음 루트 권한으로 이 명령어를 내려서 커널 모듈을 다시 컴파일하십시오.&lt;br /&gt;&lt;br /&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br /&gt;&lt;br /&gt;.</translation>
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 리눅스 커널 드라이버(vboxdrv)가 불러와지지 않았거나 /dev/vobxdrv에 접근할 수 없습니다. 루트 권한으로 다음 명령어를 실행시켜서 커널 모듈을 다시 설정하십시오.&lt;br /&gt;&lt;br /&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br /&gt;&lt;br /&gt;우분투, 페도라, 맨드리바 사용자들께서는 DKMS 패키지를 설치하는 것을 추천합니다. 이 패키지를 사용하면 리눅스 커널이 바뀌었을 때 자동으로 커널 모듈을 다시 컴파일합니다.</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>커널 모듈이 제대로 불러와져 있는지 확인하십시오.</translation>
     </message>
     <message>
         <source>VirtualBox - Runtime Error</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - 런타임 오류</translation>
     </message>
     <message>
         <source>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;커널 드라이버에 접근할 수 없습니다!&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;</translation>
     </message>
     <message>
         <source>Unknown %2 error during initialization of the Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>런타임을 초기화하는 중 알 수 없슨 %2 오류가 발생했습니다</translation>
     </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
     <message>
         <source>&amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>이전(&amp;B)</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished">다음(&amp;N)</translation>
+        <translation>다음(&amp;N)</translation>
     </message>
 </context>
 <context>
@@ -331,11 +330,11 @@
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">자세한 정보(&amp;D)</translation>
+        <translation>자세한 정보(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Details (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>자세한 정보 (%2 중 %1)(&amp;D)</translation>
     </message>
 </context>
 <context>
@@ -424,107 +423,107 @@
     <name>VBoxApplianceEditorWgt</name>
     <message>
         <source>Virtual System %1</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 %1</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">이름</translation>
+        <translation>이름</translation>
     </message>
     <message>
         <source>Product</source>
-        <translation type="unfinished"></translation>
+        <translation>제품</translation>
     </message>
     <message>
         <source>Product-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>제품 URL</translation>
     </message>
     <message>
         <source>Vendor</source>
-        <translation type="unfinished"></translation>
+        <translation>제조사</translation>
     </message>
     <message>
         <source>Vendor-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>제조사 URL</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="unfinished"></translation>
+        <translation>버전</translation>
     </message>
     <message>
         <source>Description</source>
-        <translation type="unfinished"></translation>
+        <translation>설명</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>라이선스</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished">게스트 운영체제 종류</translation>
+        <translation>게스트 운영체제 종류</translation>
     </message>
     <message>
         <source>CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU</translation>
     </message>
     <message>
         <source>RAM</source>
-        <translation type="unfinished"></translation>
+        <translation>RAM</translation>
     </message>
     <message>
         <source>Hard Disk Controller IDE</source>
-        <translation type="unfinished"></translation>
+        <translation>IDE 하드 디스크 컨트롤러</translation>
     </message>
     <message>
         <source>Hard Disk Controller SATA</source>
-        <translation type="unfinished"></translation>
+        <translation>SATA 하드 디스크 컨트롤러</translation>
     </message>
     <message>
         <source>Hard Disk Controller SCSI</source>
-        <translation type="unfinished"></translation>
+        <translation>SCSI 하드 디스크 컨트롤러</translation>
     </message>
     <message>
         <source>DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>DVD</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation type="unfinished">플로피 디스크</translation>
+        <translation>플로피 디스크</translation>
     </message>
     <message>
         <source>Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 어댑터</translation>
     </message>
     <message>
         <source>USB Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 컨트롤러</translation>
     </message>
     <message>
         <source>Sound Card</source>
-        <translation type="unfinished"></translation>
+        <translation>사운드 카드</translation>
     </message>
     <message>
         <source>Virtual Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 디스크 이미지</translation>
     </message>
     <message>
         <source>Unknown Hardware Item</source>
-        <translation type="unfinished"></translation>
+        <translation>알 수 없는 하드웨어 종류</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;원래 값:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>설정</translation>
     </message>
     <message>
         <source>Warnings:</source>
-        <translation type="unfinished"></translation>
+        <translation>경고:</translation>
     </message>
 </context>
 <context>
@@ -926,10 +925,6 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;공유 폴더 없음&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>세션 정보 대화상자(&amp;N)</translation>
     </message>
@@ -974,7 +969,7 @@
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
 </context>
 <context>
@@ -988,34 +983,34 @@
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
-        <translation type="unfinished"></translation>
+        <translation>선택(&amp;C)...</translation>
     </message>
 </context>
 <context>
     <name>VBoxExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
-        <translation type="unfinished"></translation>
+        <translation>내보낼 파일 선택하기</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>열린 가상화 형식 (%1)</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 내보내는 중...</translation>
     </message>
     <message>
         <source>Appliance Export Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 내보내기 마법사</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 내보내기 마법사에 오신 것을 환영합니다!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -1025,39 +1020,45 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will you guide to the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;이 마법사를 사용하면 가상 시스템을 내보낼 수 있습니다.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;다음&lt;/span&gt; 단추를 누르면 마법사의 다음 쪽으로 갈 수 있으며, &lt;span style=&quot; font-weight:600;&quot;&gt;이전&lt;/span&gt; 단추를 누르면 마법사의 이전 쪽으로 갑니다.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;가상 시스템으로 내보낼 가상 머신을 선택하십시오. 한 번에 하나 이상을 선택할 수 있습니다. 가상 머신을 내보내려면 전원을 꺼야 합니다.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; 이전(&amp;B)</translation>
+        <translation>&lt; 이전(&amp;B)</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">다음(&amp;N) &gt;</translation>
+        <translation>다음(&amp;N) &gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 내보내기 설정</translation>
     </message>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 가상 머신의 추가 설정값을 변경할 수 있습니다. 대부분 항목은 두 번 누르면 편집할 수 있습니다.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>기본값 복원</translation>
     </message>
     <message>
         <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 정보를 쓸 파일 이름을 입력하십시오. 현재 VirtualBox에서는 열린 가상화 형식(OVF)을 지원합니다.</translation>
     </message>
     <message>
         <source>&amp;Export &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>내보내기(&amp;E) &gt;</translation>
     </message>
 </context>
 <context>
@@ -1143,7 +1144,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">네트워크</translation>
+        <translation>네트워크</translation>
     </message>
 </context>
 <context>
@@ -1182,11 +1183,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 독 아이콘에 가상 머신의 내용을 실시간으로 나타냅니다.</translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>실시간으로 독 아이콘 갱신하기(&amp;D)</translation>
     </message>
 </context>
 <context>
@@ -1268,239 +1269,239 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 네트워크</translation>
     </message>
     <message>
         <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt;의 호스트 IPv4 주소가 잘못되었습니다</translation>
     </message>
     <message>
         <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt;의 호스트 IPv4 서브넷 마스크가 잘못되었습니다</translation>
     </message>
     <message>
         <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt;의 호스트 IPv6 주소가 잘못되었습니다</translation>
     </message>
     <message>
         <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt;의 DHCP 서버 주소가 잘못되었습니다</translation>
     </message>
     <message>
         <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt;의 DHCP 서버 네트워크 마스크가 잘못되었습니다</translation>
     </message>
     <message>
         <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt;의 DHCP 최저 주소가 잘못되었습니다</translation>
     </message>
     <message>
         <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt;의 DHCP 최고 주소가 잘못되었습니다</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>어댑터</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>자동 설정됨</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>수동 설정됨</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 주소</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation>설정되지 않음</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 서브넷 마스크</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished"></translation>
+        <translation>설정되지 않음</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 주소</translation>
     </message>
     <message>
         <source>IPv6 Network Mask Length</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 네트워크 마스크 길이</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished"></translation>
+        <translation>설정되지 않음</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 서버</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished">사용함</translation>
+        <translation>사용함</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished">사용 안함</translation>
+        <translation>사용 안함</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished"></translation>
+        <translation>주소</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>서브넷 마스크</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>최저 주소</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished"></translation>
+        <translation>설정되지 않음</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>최고 주소</translation>
     </message>
     <message>
         <source>&amp;Add host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 추가하기(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Remove host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 삭제하기(&amp;R)</translation>
     </message>
     <message>
         <source>&amp;Edit host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 편집하기(&amp;E)</translation>
     </message>
     <message>
         <source>Performing</source>
         <comment>creating/removing host-only network</comment>
-        <translation type="unfinished"></translation>
+        <translation>실행 중</translation>
     </message>
     <message>
         <source>&amp;Host-only Networks:</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크(&amp;H):</translation>
     </message>
     <message>
         <source>Lists all available host-only networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크의 목록을 표시합니다.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">이름</translation>
+        <translation>이름</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 정보</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>어댑터(&amp;A)</translation>
     </message>
     <message>
         <source>Manual &amp;Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>수동 설정(&amp;C)</translation>
     </message>
     <message>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 호스트 전용 네트워크 어댑터를 수동으로 설정합니다.</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 주소(&amp;I):</translation>
     </message>
     <message>
         <source>Displays the host IPv4 address for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 어댑터의 호스트 IPv4 주소를 표시합니다.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 서브넷 마스크(&amp;M):</translation>
     </message>
     <message>
         <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 어댑터의 호스트 IPv4 서브넷 마스크를 표시합니다.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 주소(&amp;P):</translation>
     </message>
     <message>
         <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 주소를 표시합니다.</translation>
     </message>
     <message>
         <source>IPv6 Network Mask &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 네트워크 마스크 길이(&amp;L):</translation>
     </message>
     <message>
         <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 네트워크 마스크 접두사를 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 서버(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished"></translation>
+        <translation>서버 사용함(&amp;E)</translation>
     </message>
     <message>
         <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신을 시작할 때 DHCP 서버를 사용할 지 여부입니다.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished"></translation>
+        <translation>서버 주소(&amp;R):</translation>
     </message>
     <message>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 호스트 전용 어댑터에 연결된 DHCP 서버 주소를 표시합니다.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>서버 마스크(&amp;M):</translation>
     </message>
     <message>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 호스트 전용 어댑터에 연결된 DHCP 서버의 네트워크 마스크를 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>최저 주소 한계(&amp;L):</translation>
     </message>
     <message>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최저 주소입니다.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>최고 주소 한계(&amp;U):</translation>
     </message>
     <message>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최고 주소입니다.</translation>
     </message>
 </context>
 <context>
@@ -1714,11 +1715,6 @@ p, li { white-space: pre-wrap; }
         <translation>VRDP 서버 포트</translation>
     </message>
     <message>
-        <source>%1</source>
-        <comment>details report (VRDP)</comment>
-        <translation type="obsolete">%1</translation>
-    </message>
-    <message>
         <source>Disabled</source>
         <comment>details report (VRDP)</comment>
         <translation>사용 안함</translation>
@@ -1727,10 +1723,6 @@ p, li { white-space: pre-wrap; }
         <source>Remote Display</source>
         <comment>details report</comment>
         <translation>원격 디스플레이</translation>
-    </message>
-    <message>
-        <source>Opening URLs is not implemented yet.</source>
-        <translation type="obsolete">URL 열기는 구현되지 않았습니다.</translation>
     </message>
     <message>
         <source>Powered Off</source>
@@ -1840,7 +1832,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Writethrough</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷 미포함</translation>
     </message>
     <message>
         <source>Null</source>
@@ -1906,11 +1898,6 @@ p, li { white-space: pre-wrap; }
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
         <translation>NAT</translation>
-    </message>
-    <message>
-        <source>Host Interface</source>
-        <comment>NetworkAttachmentType</comment>
-        <translation type="obsolete">호스트 인터페이스</translation>
     </message>
     <message>
         <source>Internal Network</source>
@@ -1999,11 +1986,6 @@ p, li { white-space: pre-wrap; }
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
         <translation>공유 폴더</translation>
-    </message>
-    <message>
-        <source>%1</source>
-        <comment>details report (shadef folders)</comment>
-        <translation type="obsolete">%1</translation>
     </message>
     <message>
         <source>None</source>
@@ -2176,16 +2158,6 @@ p, li { white-space: pre-wrap; }
         <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
-        <source>PIIX3</source>
-        <comment>IDEControllerType</comment>
-        <translation type="obsolete">PIIX3</translation>
-    </message>
-    <message>
-        <source>PIIX4</source>
-        <comment>IDEControllerType</comment>
-        <translation type="obsolete">PIIX4</translation>
-    </message>
-    <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Intel PRO/1000 T Server (82543GC)</translation>
@@ -2229,16 +2201,6 @@ p, li { white-space: pre-wrap; }
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;상태: %1&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>host interface, %1</source>
-        <comment>details report (network)</comment>
-        <translation type="obsolete">호스트 인터페이스, %1</translation>
-    </message>
-    <message>
-        <source>internal network, &apos;%1&apos;</source>
-        <comment>details report (network)</comment>
-        <translation type="obsolete">내부 네트워크, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -2321,77 +2283,77 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">네스티드 페이징</translation>
+        <translation>네스티드 페이징</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished">사용함</translation>
+        <translation>사용함</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished">사용 안함</translation>
+        <translation>사용 안함</translation>
     </message>
     <message>
         <source>Bridged network, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>브리지 네트워크, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>내부 네트워크, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SCSI</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SCSI</translation>
     </message>
     <message>
         <source>Bridged Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>브리지 네트워크</translation>
     </message>
     <message>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX3</translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX4</translation>
+        <translation>PIIX4</translation>
     </message>
     <message>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH6</translation>
     </message>
     <message>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>AHCI</translation>
     </message>
     <message>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>LSI 로직</translation>
     </message>
     <message>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>버스로직</translation>
     </message>
 </context>
 <context>
@@ -2413,26 +2375,26 @@ p, li { white-space: pre-wrap; }
     <name>VBoxImportApplianceWgt</name>
     <message>
         <source>Importing Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 가져오는 중...</translation>
     </message>
 </context>
 <context>
     <name>VBoxImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation type="unfinished"></translation>
+        <translation>가져올 가상 시스템 선택하기</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>열린 가상화 형식 (%1)</translation>
     </message>
     <message>
         <source>Appliance Import Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 가져오기 마법사</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 가져오기 마법사에 오신 것을 환영합니다!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -2442,70 +2404,76 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an appliance, you have to select a file describing the appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;이 마법사를 사용하면 가상 시스템을 가져올 수 있습니다.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;다음&lt;/span&gt; 단추를 누르면 마법사의 다음 쪽으로 갈 수 있으며, &lt;span style=&quot; font-weight:600;&quot;&gt;이전&lt;/span&gt; 단추를 누르면 마법사의 이전 쪽으로 갑니다.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;가상 시스템을 가져오려면 파일을 지정해야 합니다. 현재 VirtualBox는 열린 가상화 형식(OVF)를 지원합니다. 계속 진행하려면 아래에서 가져올 파일을 선택하십시오:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; 이전(&amp;B)</translation>
+        <translation>&lt; 이전(&amp;B)</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">다음(&amp;N) &gt;</translation>
+        <translation>다음(&amp;N) &gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 가져오기 설정</translation>
     </message>
     <message>
         <source>These are the virtual machines as described in the appliance with their suggested mappings for importing into VirtualBox. You can change many of the shown properties by double-clicking on the items and disable others by using the check boxes below.</source>
-        <translation type="unfinished"></translation>
+        <translation>아래 목록은 가상 시스템 설명 파일에 나와 있는 가상 머신이며, 이를 VirtualBox로 가져왔을 때의 형태입니다. 보여져 있는 속성을 두 번 누르면 변경할 수도 있으며, 체크 상자를 사용해서 비활성화시킬 수도 있습니다.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>기본값 복원</translation>
     </message>
     <message>
         <source>&amp;Import &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>가져오기(&amp;I) &gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;가상 시스템 &quot;%1&quot;을(를) 사용하려면 아래의 라이선스 조항에 동의해야 합니다.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;&lt;b&gt;동의합니다&lt;/b&gt; 단추를 누르면 계속 진행하며, &lt;b&gt;동의하지 않습니다&lt;/b&gt; 단추를 누르면 가져오지 않습니다.</translation>
     </message>
     <message>
         <source>Software License Agreement</source>
-        <translation type="unfinished"></translation>
+        <translation>소프트웨어 라이선스 조항</translation>
     </message>
     <message>
         <source>&amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>동의하지 않습니다(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>동의합니다(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Print...</source>
-        <translation type="unfinished"></translation>
+        <translation>인쇄(&amp;P)...</translation>
     </message>
     <message>
         <source>&amp;Save...</source>
-        <translation type="unfinished"></translation>
+        <translation>저장(&amp;S)...</translation>
     </message>
     <message>
         <source>Text (*.txt)</source>
-        <translation type="unfinished"></translation>
+        <translation>텍스트 (*.txt)</translation>
     </message>
     <message>
         <source>Save license to file...</source>
-        <translation type="unfinished"></translation>
+        <translation>라이선스를 파일로 저장하기...</translation>
     </message>
 </context>
 <context>
@@ -2527,7 +2495,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxLineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>편집(&amp;E)</translation>
     </message>
 </context>
 <context>
@@ -2721,41 +2689,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNIList</name>
-    <message>
-        <source>VirtualBox Host Interface %1</source>
-        <translation type="obsolete">VirtualBox 호스트 인터페이스 %1</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;선택한 호스트 네트워크 인터페이스 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를) 삭제하시겠습니까?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;주의:&lt;/b&gt; 이 가상 머신 또는 다른 가상 머신의 하나 이상의 네트워크 어댑터에서 이 인터페이스를 사용할 수도 있습니다. 인터페이스를 삭제하면 이 인터페이스를 사용하는 가상 머신의 네트워크 어댑터 설정을 수정하여 다른 인터페이스 이름이나 다른 어댑터 종류를 선택하지 않는 한 인터페이스를 사용했던 어댑터들은 작동하지 않을 것입니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Host &amp;Interfaces</source>
-        <translation type="obsolete">호스트 인터페이스(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Lists all available host interfaces.</source>
-        <translation type="obsolete">사용 가능한 호스트 인터페이스를 표시합니다.</translation>
-    </message>
-    <message>
-        <source>A&amp;dd New Host Interface</source>
-        <translation type="obsolete">새 호스트 인터페이스 추가하기(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Selected Host Interface</source>
-        <translation type="obsolete">선택한 호스트 인터페이스 삭제하기(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Adds a new host interface.</source>
-        <translation type="obsolete">새 호스트 인터페이스를 추가합니다.</translation>
-    </message>
-    <message>
-        <source>Removes the selected host interface.</source>
-        <translation type="obsolete">선택한 호스트 인터페이스를 삭제합니다.</translation>
-    </message>
-</context>
-<context>
     <name>VBoxNewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
@@ -2909,14 +2842,6 @@ p, li { white-space: pre-wrap; }
         <translation>메모리</translation>
     </message>
     <message>
-        <source>N&amp;ew...</source>
-        <translation type="obsolete">새로 만들기(&amp;N)...</translation>
-    </message>
-    <message>
-        <source>E&amp;xisting...</source>
-        <translation type="obsolete">기존 디스크 사용(&amp;X)...</translation>
-    </message>
-    <message>
         <source>Virtual Hard Disk</source>
         <translation>가상 하드디스크</translation>
     </message>
@@ -2999,11 +2924,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>새 가상 디스크 만들기(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>기존 하드 디스크 사용하기(&amp;U)</translation>
     </message>
 </context>
 <context>
@@ -3156,10 +3081,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 세션을 열 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">호스트 네트워크 인터페이스 &lt;b&gt;%1&lt;/b&gt;을(를) 생성할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -3361,10 +3282,6 @@ p, li { white-space: pre-wrap; }
         <source>Discard</source>
         <comment>saved state</comment>
         <translation>삭제</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;이 가상 머신의 SATA 포트에 연결된 하드디스크가 있습니다. SATA 컨트롤러를 비활성화시키면 연결된 하드디스크의 연결이 자동으로 끊깁니다.&lt;/p&gt;&lt;p&gt;SATA 컨트롤러를 끄시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Disable</source>
@@ -3676,111 +3593,111 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>파일 &lt;b&gt;%1&lt;/b&gt;이(가) 이미 있습니다. 새 파일로 덮어쓰시겠습니까?&lt;br /&gt;&lt;br /&gt;파일이 이미 &quot;%2&quot;에 존재합니다. 파일을 덮어 쓰면 내용이 바뀔 것입니다.</translation>
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>다음 파일이 이미 존재합니다:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;새 파일로 덮어쓰시겠습니까? 파일을 덮어 쓰면 내용이 바뀔 것입니다.</translation>
     </message>
     <message>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove that file yourself &amp; try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>파일 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하는 데 실패했습니다.&lt;br /&gt;&lt;br /&gt;파일을 수동으로 삭제한 다음 다시 시도해 보십시오.</translation>
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox의 개발 버전을 사용하고 있습니다. 이 버전은 안정적이지 않습니다.</translation>
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 시스템의 USB에 접근할 수 없습니다. 게스트 시스템에서 USB를 사용하려면 USB 파일 시스템(usbfs), D-Bus/HAL 서비스 둘 중 하나를 활성화한 다음 VirtualBox를 다시 시작하십시오.</translation>
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 시스템을 ACPI를 통해서 종료하려고 하고 있습니다. 게스트 운영 체제에서 ACPI를 사용하지 않으므로 작동하지 않을 것입니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V 하드웨어 가속 기능이 활성화되었지만, 현재 작동하지 않습니다. 64비트 게스트 운영체제에서 64비트 CPU를 인식할 수 없어서 부팅할 수 없습니다.&lt;/p&gt;&lt;p&gt;컴퓨터 바이오스에서 VT-x/AMD-V를 활성화했는지 확인해 보십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 닫기</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished">계속</translation>
+        <translation>계속</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;선택한 스냅샷과 저장된 상태를 삭제하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">삭제</translation>
+        <translation>삭제</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;추가 컨트롤러의 포트에 연결된 하드 디스크가 있습니다. 추가 컨트롤러를 비활성화시키면 이 컨트롤러에 연결된 모든 하드 디스크의 연결이 해제됩니다.&lt;/p&gt;&lt;p&gt;추가 컨트롤러를 비활성화시키시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;추가 컨트롤러의 포트에 연결된 하드 디스크가 있습니다. 추가 컨트롤러를 바꾸면 이 컨트롤러에 연결된 모든 하드 디스크의 연결이 해제됩니다.&lt;/p&gt;&lt;p&gt;추가 컨트롤러를 바꾸시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>바꾸기</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;선택한 호스트 네트워크 인터페이스 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를) 삭제하시겠습니까?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;주의:&lt;/b&gt; 이 가상 머신 또는 다른 가상 머신의 하나 이상의 네트워크 어댑터에서 이 인터페이스를 사용할 수도 있습니다. 인터페이스를 삭제하면 이 인터페이스를 사용하는 가상 머신의 네트워크 어댑터 설정을 수정하여 다른 인터페이스 이름이나 다른 어댑터 종류를 선택하지 않는 한 인터페이스를 사용했던 어댑터들은 작동하지 않을 것입니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;선택한 호스트 네트워크 인터페이스 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를) 삭제하시겠습니까?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;주의:&lt;/b&gt; 이 가상 머신 또는 다른 가상 머신의 하나 이상의 네트워크 어댑터에서 이 인터페이스를 사용할 수도 있습니다. 인터페이스를 삭제하면 이 인터페이스를 사용하는 가상 머신의 네트워크 어댑터 설정을 수정하여 다른 인터페이스 이름이나 다른 어댑터 종류를 선택하지 않는 한 인터페이스를 사용했던 어댑터들은 작동하지 않을 것입니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 인터페이스를 만들 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;기존 VirtualBox 설정 파일이 예전 형식에서 새 형식으로 변환될 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;확인&lt;/b&gt; 단추를 누르면 변환 작업을 시작하며, &lt;b&gt;종료&lt;/b&gt; 단추를 누르면 변환하지 않고 VirtualBox를 종료합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템을 열 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 열거나 처리할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템을 만들 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 내보내는 준비를 할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템을 만들 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 내보낼 수 없습니다.</translation>
     </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>취소(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -3901,10 +3818,6 @@ p, li { white-space: pre-wrap; }
         <translation>가상 머신의 저장된 상태를 삭제합니다</translation>
     </message>
     <message>
-        <source>&amp;Refresh</source>
-        <translation type="obsolete">새로 고침(&amp;R)</translation>
-    </message>
-    <message>
         <source>Refresh the accessibility state of the selected virtual machine</source>
         <translation>선택한 가상 머신의 접근성 상태를 새로 고칩니다</translation>
     </message>
@@ -3957,10 +3870,6 @@ p, li { white-space: pre-wrap; }
         <translation>선택한 가상 머신의 로그 파일을 표시합니다</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>R&amp;esume</source>
         <translation>다시 시작(&amp;E)</translation>
     </message>
@@ -3995,27 +3904,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 가져오기(&amp;I)...</translation>
     </message>
     <message>
         <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox로 가상 시스템 가져오기</translation>
     </message>
     <message>
         <source>&amp;Export Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 내보내기(&amp;E)...</translation>
     </message>
     <message>
         <source>Export an appliance out of VM&apos;s from VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox의 가상 시스템 내보내기</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">새로 고침(&amp;F)</translation>
+        <translation>새로 고침(&amp;F)</translation>
     </message>
 </context>
 <context>
@@ -4038,7 +3947,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished">&lt;b&gt;%1&lt;/b&gt; 페이지의 %2</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 페이지의 %2</translation>
     </message>
 </context>
 <context>
@@ -4201,23 +4110,23 @@ p, li { white-space: pre-wrap; }
     <name>VBoxTextEditor</name>
     <message>
         <source>Edit text</source>
-        <translation type="unfinished"></translation>
+        <translation>텍스트 편집하기</translation>
     </message>
     <message>
         <source>&amp;Replace...</source>
-        <translation type="unfinished"></translation>
+        <translation>바꾸기(&amp;R)...</translation>
     </message>
     <message>
         <source>Replaces the current text with the content of a given file.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 텍스트의 내용을 주어진 파일의 내용으로 바꿉니다.</translation>
     </message>
     <message>
         <source>Text (*.txt);;All (*.*)</source>
-        <translation type="unfinished"></translation>
+        <translation>텍스트 (*.txt);;모든 파일 (*.*)</translation>
     </message>
     <message>
         <source>Select a file to open...</source>
-        <translation type="unfinished"></translation>
+        <translation>열 파일을 선택하십시오...</translation>
     </message>
 </context>
 <context>
@@ -4829,10 +4738,6 @@ p, li { white-space: pre-wrap; }
         <source>%1 - %2</source>
         <translation>%1 - %2</translation>
     </message>
-    <message>
-        <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; 페이지의 %2</translation>
-    </message>
 </context>
 <context>
     <name>VBoxVMSettingsFD</name>
@@ -5044,14 +4949,6 @@ p, li { white-space: pre-wrap; }
         <translation>마운트된 미디어 기억하기(&amp;R)</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="obsolete">컴퓨터의 메모리(&lt;b&gt;%1&lt;/b&gt;)의 &lt;b&gt;75%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족합니다. 좀 더 적은 양을 선택하십시오.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="obsolete">컴퓨터의 메모리(&lt;b&gt;%1&lt;/b&gt;)의 &lt;b&gt;50%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족해질 수도 있습니다. 실행하는 동안 주의하십시오.</translation>
-    </message>
-    <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>가상 머신의 비디오 메모리가 전체 화면이나 심리스 모드로 전환하기 위해 필요한 것(&lt;b&gt;%1&lt;/b&gt;)보다 부족합니다.</translation>
     </message>
@@ -5069,23 +4966,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>컴퓨터의 메모리(&lt;b&gt;%2&lt;/b&gt;)의 &lt;b&gt;%1%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족합니다. 좀 더 적은 양을 선택하십시오.</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>컴퓨터의 메모리(&lt;b&gt;%2&lt;/b&gt;)의 &lt;b&gt;%1%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족해질 수도 있습니다. 실행하는 동안 주의하십시오.</translation>
     </message>
     <message>
         <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신에 64비트 운영 체제를 설치하려면 하드웨어 가상화 기술(VT-x/AMD/V)을 사용해야 합니다. 하드웨어 가상화 기술이 없으면 64비트 CPU를 인식하지 못하고 부팅할 수 없을 것입니다. 따라서 확인 단추를 누르면 하드웨어 가상화 기술을 사용하게 됩니다.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 가상 머신에서 인텔 VT-x 및 AMD-V의 네스티드 페이징을 사용할 것입니다.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished"></translation>
+        <translation>네스티드 페이징 사용하기(&amp;G)</translation>
     </message>
 </context>
 <context>
@@ -5119,14 +5016,6 @@ p, li { white-space: pre-wrap; }
         <translation>하드디스크의 연결을 끊습니다.</translation>
     </message>
     <message>
-        <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
-        <translation type="obsolete">선택하면 이 가상 머신의 가상 SATA 컨트롤러를 사용합니다. SATA 컨트롤러를 사용할 때에만 SATA 포트에 하드디스크를 연결할 수 있습니다.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable SATA Controller</source>
-        <translation type="obsolete">SATA 컨트롤러 사용하기(&amp;E)</translation>
-    </message>
-    <message>
         <source>&amp;Attachments</source>
         <translation>연결(&amp;A)</translation>
     </message>
@@ -5148,23 +5037,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 이 가상 머신에 추가 가상 컨트롤러(SATA/SCSI)를 연결합니다.</translation>
     </message>
     <message>
         <source>&amp;Enable Additional Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>추가 컨트롤러 사용하기(&amp;A)</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetwork</name>
-    <message>
-        <source>Select TAP setup application</source>
-        <translation type="obsolete">TAP 설정 프로그램 선택</translation>
-    </message>
-    <message>
-        <source>Select TAP terminate application</source>
-        <translation type="obsolete">TAP 종료 프로그램 선택</translation>
-    </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation>선택하면 가상 네트워크 어댑터를 가상 머신에 설치합니다.</translation>
@@ -5172,10 +5053,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Enable Network Adapter</source>
         <translation>네트워크 어댑터 사용하기(&amp;E)</translation>
-    </message>
-    <message>
-        <source>A&amp;dapter Type:</source>
-        <translation type="obsolete">어댑터 종류(&amp;T):</translation>
     </message>
     <message>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
@@ -5190,221 +5067,142 @@ p, li { white-space: pre-wrap; }
         <translation>이 어댑터가 호스트 운영체제의 실제 네트워크에 어떻게 연결되어 있는지를 제어합니다.</translation>
     </message>
     <message>
-        <source>&amp;Network Name:</source>
-        <translation type="obsolete">네트워크 이름(&amp;N):</translation>
-    </message>
-    <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">이 어댑터가 연결된 내부 네트워크의 이름을 표시합니다.</translation>
-    </message>
-    <message>
-        <source>&amp;MAC Address:</source>
-        <translation type="obsolete">MAC 주소(&amp;M):</translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="obsolete">이 어댑터의 MAC 주소를 표시합니다. {0-9,A-F} 사이의 글자만 사용해서 총 12글자입니다. 두 번째 숫자는 짝수여야 합니다.</translation>
-    </message>
-    <message>
-        <source>Generates a new random MAC address.</source>
-        <translation type="obsolete">새 무작위적 MAC 주소를 생성합니다.</translation>
-    </message>
-    <message>
-        <source>&amp;Generate</source>
-        <translation type="obsolete">생성(&amp;G)</translation>
-    </message>
-    <message>
-        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="obsolete">가상 네트워크 케이블이 머신 시작 시 연결되거나 연결되지 않음을 표시합니다.</translation>
-    </message>
-    <message>
-        <source>Ca&amp;ble Connected</source>
-        <translation type="obsolete">케이블 연결됨(&amp;B)</translation>
-    </message>
-    <message>
-        <source>&amp;Interface Name:</source>
-        <translation type="obsolete">인터페이스 이름(&amp;I):</translation>
-    </message>
-    <message>
-        <source>Displays the TAP interface name.</source>
-        <translation type="obsolete">TAP 인터페이스 이름을 표시합니다.</translation>
-    </message>
-    <message>
-        <source>&amp;Setup Application:</source>
-        <translation type="obsolete">설정 프로그램(&amp;S):</translation>
-    </message>
-    <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
-        <translation type="obsolete">TAP 인터페이스를 설정하기 위한 명령어를 표시합니다.</translation>
-    </message>
-    <message>
-        <source>Selects the setup application.</source>
-        <translation type="obsolete">설정 프로그램을 선택합니다.</translation>
-    </message>
-    <message>
-        <source>&amp;Terminate Application:</source>
-        <translation type="obsolete">종료 프로그램(&amp;T):</translation>
-    </message>
-    <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="obsolete">TAP 인터페이스를 종료하기 위한 명령어를 표시합니다.</translation>
-    </message>
-    <message>
-        <source>Selects the terminate application.</source>
-        <translation type="obsolete">종료 프로그램을 선택합니다.</translation>
-    </message>
-    <message>
-        <source>Host Interface Settings</source>
-        <translation type="obsolete">호스트 인터페이스 설정</translation>
-    </message>
-    <message>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation type="unfinished"></translation>
+        <translation>어댑터</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>adapter</comment>
-        <translation type="unfinished"></translation>
+        <translation>선택하지 않음</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>internal</comment>
-        <translation type="unfinished">네트워크</translation>
+        <translation>네트워크</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>network</comment>
-        <translation type="unfinished"></translation>
+        <translation>선택하지 않음</translation>
     </message>
     <message>
         <source>MAC Address</source>
-        <translation type="unfinished"></translation>
+        <translation>MAC 주소</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation>선택하지 않음</translation>
     </message>
     <message>
         <source>Cable</source>
-        <translation type="unfinished"></translation>
+        <translation>케이블</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>cable</comment>
-        <translation type="unfinished"></translation>
+        <translation>연결됨</translation>
     </message>
     <message>
         <source>Not connected</source>
         <comment>cable</comment>
-        <translation type="unfinished"></translation>
+        <translation>연결되지 않음</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>어댑터 종류(&amp;T):</translation>
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 연결 종류의 고급 설정 대화 상자를 표시합니다.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>브리지 네트워크 어댑터가 선택되지 않았음</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation type="unfinished"></translation>
+        <translation>내부 네트워크 이름이 지정되지 않았음</translation>
     </message>
     <message>
         <source>no host-only adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 어댑터가 선택되지 않았음</translation>
     </message>
     <message>
         <source>Basic Details</source>
-        <translation type="unfinished"></translation>
+        <translation>기본 정보</translation>
     </message>
     <message>
         <source>Bridged Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>브리지 네트워크 정보</translation>
     </message>
     <message>
         <source>Internal Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>내부 네트워크 정보</translation>
     </message>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 정보</translation>
     </message>
     <message>
         <source>Not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하지 않음</translation>
     </message>
     <message>
         <source>Host Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 설정</translation>
     </message>
     <message>
         <source>&amp;Bridged Network Adapter:</source>
-        <translation type="unfinished"></translation>
+        <translation>브리지 네트워크 어댑터(&amp;B):</translation>
     </message>
     <message>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation type="unfinished"></translation>
+        <translation>브리지 네트워킹에 사용할 호스트 네트워크 어댑터를 선택합니다.</translation>
     </message>
     <message>
         <source>Internal &amp;Network:</source>
-        <translation type="unfinished"></translation>
+        <translation>내부 네트워크(&amp;N):</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished">이 어댑터가 연결된 내부 네트워크의 이름을 표시합니다.</translation>
+        <translation>이 어댑터가 연결된 내부 네트워크의 이름을 표시합니다.</translation>
     </message>
     <message>
         <source>Host-only &amp;Network Adapter:</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 어댑터(&amp;N):</translation>
     </message>
     <message>
         <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워킹에 사용할 VirtualBox 네트워크 어댑터의 이름을 표시합니다.</translation>
     </message>
     <message>
         <source>Guest Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 설정</translation>
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 MAC 주소(&amp;A):</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">이 어댑터의 MAC 주소를 표시합니다. {0-9,A-F} 사이의 글자만 사용해서 총 12글자입니다. 두 번째 숫자는 짝수여야 합니다.</translation>
+        <translation>이 어댑터의 MAC 주소를 표시합니다. {0-9,A-F} 사이의 글자만 사용해서 총 12글자입니다. 두 번째 숫자는 짝수여야 합니다.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">새 무작위적 MAC 주소를 생성합니다.</translation>
+        <translation>새 무작위적 MAC 주소를 생성합니다.</translation>
     </message>
     <message>
         <source>&amp;Cable connected</source>
-        <translation type="unfinished"></translation>
+        <translation>케이블 연결됨(&amp;C)</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">가상 네트워크 케이블이 머신 시작 시 연결되거나 연결되지 않음을 표시합니다.</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxVMSettingsNetworkPage</name>
-    <message>
-        <source>No host network interface is selected</source>
-        <translation type="obsolete">호스트 네트워크 인터페이스가 선택되지 않았습니다</translation>
-    </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">내부 네트워크 이름이 설정되지 않았습니다</translation>
+        <translation>가상 네트워크 케이블이 머신 시작 시 연결되거나 연결되지 않음을 표시합니다.</translation>
     </message>
 </context>
 <context>

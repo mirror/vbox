@@ -2245,7 +2245,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     <message>
         <location filename="../src/gui/dialogs/qmessagebox.cpp" line="1644"/>
         <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt; Ten program używa QT Open Source Edition wersja %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition jest przeznaczone dla pisania aplikacji open source&apos;owych. W przypadku aplikacji zamkniętych (bez kodu źródłowego) wymagane jest licencja komercyjna Qt.&lt;/p&gt;&lt;p&gt;Sprawdź  &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; opisujący sposób licencjonowania Qt.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt; Ten program używa Qt Open Source Edition wersja %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition jest przeznaczona dla pisania aplikacji typu open source. W przypadku aplikacji zamkniętych (bez kodu źródłowego) wymagana jest licencja komercyjna Qt.&lt;/p&gt;&lt;p&gt;Sprawdź  &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; opisujący sposób licencjonowania Qt.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qmessagebox.cpp" line="1636"/>
@@ -2998,12 +2998,12 @@ Proszę wybrać inną nazwę pliku.</translation>
     <message>
         <location filename="../src/corelib/tools/qregexp.cpp" line="33"/>
         <source>bad char class syntax</source>
-        <translation type="unfinished">niepoprawny znak składni klasy</translation>
+        <translation>niepoprawna składnia klasy znaku</translation>
     </message>
     <message>
         <location filename="../src/corelib/tools/qregexp.cpp" line="34"/>
         <source>bad lookahead syntax</source>
-        <translation type="unfinished">niepoprawna składnia widoku</translation>
+        <translation>niepoprawna składnia wyprzedzenia</translation>
     </message>
     <message>
         <location filename="../src/corelib/tools/qregexp.cpp" line="35"/>
