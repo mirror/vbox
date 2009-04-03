@@ -216,11 +216,13 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncInit(void)
     /* Nothing to do here yet. */
 #endif
 
+#if defined(RT_OS_WINDOWS)
     if (RT_FAILURE(rc))
     {
         CloseHandle (g_hTokenProcess);
         g_hTokenProcess = NULL;
     }
+#endif
 
     return rc;
 }
