@@ -1530,11 +1530,12 @@ STDMETHODIMP Appliance::Interpret()
                     {
                         /* If the default adapter is already one of the three
                          * E1000 adapters use the default one. If not use the
-                         * I82540EM as fallback. */
-                        if (!(defaultAdapterVBox == NetworkAdapterType_I82540EM ||
-                              defaultAdapterVBox == NetworkAdapterType_I82543GC ||
-                              defaultAdapterVBox == NetworkAdapterType_I82545EM))
-                            nwAdapterVBox = NetworkAdapterType_I82540EM;
+                         * I82545EM as fallback. */
+//                         if (!(defaultAdapterVBox == NetworkAdapterType_I82540EM ||
+//                               defaultAdapterVBox == NetworkAdapterType_I82543GC ||
+//                               defaultAdapterVBox == NetworkAdapterType_I82545EM))
+                        // always use this one since it's what VMware uses
+                        nwAdapterVBox = NetworkAdapterType_I82545EM;
                     }
 #endif /* VBOX_WITH_E1000 */
 
