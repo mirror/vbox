@@ -467,76 +467,6 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (ComSafeArrayOut (IHostFloppyDrive *,
     return rc;
 }
 
-#ifdef RT_OS_WINDOWS
-/**
- * Windows helper function for Host::COMGETTER(NetworkInterfaces).
- *
- * @returns true / false.
- *
- * @param   guid        The GUID.
- */
-static bool IsTAPDevice(const char *guid)
-{
-    HKEY hNetcard;
-    LONG status;
-    DWORD len;
-    int i = 0;
-    bool ret = false;
-
-    status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}", 0, KEY_READ, &hNetcard);
-    if (status != ERROR_SUCCESS)
-        return false;
-
-    for (;;)
-    {
-        char szEnumName[256];
-        char szNetCfgInstanceId[256];
-        DWORD dwKeyType;
-        HKEY  hNetCardGUID;
-
-        len = sizeof(szEnumName);
-        status = RegEnumKeyExA(hNetcard, i, szEnumName, &len, NULL, NULL, NULL, NULL);
-        if (status != ERROR_SUCCESS)
-            break;
-
-        status = RegOpenKeyExA(hNetcard, szEnumName, 0, KEY_READ, &hNetCardGUID);
-        if (status == ERROR_SUCCESS)
-        {
-            len = sizeof(szNetCfgInstanceId);
-            status = RegQueryValueExA(hNetCardGUID, "NetCfgInstanceId", NULL, &dwKeyType, (LPBYTE)szNetCfgInstanceId, &len);
-            if (status == ERROR_SUCCESS && dwKeyType == REG_SZ)
-            {
-                char szNetProductName[256];
-                char szNetProviderName[256];
-
-                szNetProductName[0] = 0;
-                len = sizeof(szNetProductName);
-                status = RegQueryValueExA(hNetCardGUID, "ProductName", NULL, &dwKeyType, (LPBYTE)szNetProductName, &len);
-
-                szNetProviderName[0] = 0;
-                len = sizeof(szNetProviderName);
-                status = RegQueryValueExA(hNetCardGUID, "ProviderName", NULL, &dwKeyType, (LPBYTE)szNetProviderName, &len);
-
-                if (   !strcmp(szNetCfgInstanceId, guid)
-                    && !strcmp(szNetProductName, "VirtualBox TAP Adapter")
-                    && (   (!strcmp(szNetProviderName, "innotek GmbH"))
-                        || (!strcmp(szNetProviderName, "Sun Microsystems, Inc."))))
-                {
-                    ret = true;
-                    RegCloseKey(hNetCardGUID);
-                    break;
-                }
-            }
-            RegCloseKey(hNetCardGUID);
-        }
-        ++i;
-    }
-
-    RegCloseKey(hNetcard);
-    return ret;
-}
-#endif /* RT_OS_WINDOWS */
-
 #ifdef RT_OS_SOLARIS
 static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, void *pvHostNetworkInterfaceList)
 {
@@ -880,61 +810,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut (IHostNetworkIn
 
 # elif defined RT_OS_WINDOWS
 #  ifndef VBOX_WITH_NETFLT
-    static const char *NetworkKey = "SYSTEM\\CurrentControlSet\\Control\\Network\\"
-                                    "{4D36E972-E325-11CE-BFC1-08002BE10318}";
-    HKEY hCtrlNet;
-    LONG status;
-    DWORD len;
-    status = RegOpenKeyExA (HKEY_LOCAL_MACHINE, NetworkKey, 0, KEY_READ, &hCtrlNet);
-    if (status != ERROR_SUCCESS)
-        return setError (E_FAIL, tr("Could not open registry key \"%s\""), NetworkKey);
-
-    for (int i = 0;; ++ i)
-    {
-        char szNetworkGUID [256];
-        HKEY hConnection;
-        char szNetworkConnection [256];
-
-        len = sizeof (szNetworkGUID);
-        status = RegEnumKeyExA (hCtrlNet, i, szNetworkGUID, &len, NULL, NULL, NULL, NULL);
-        if (status != ERROR_SUCCESS)
-            break;
-
-        if (!IsTAPDevice(szNetworkGUID))
-            continue;
-
-        RTStrPrintf (szNetworkConnection, sizeof (szNetworkConnection),
-                     "%s\\Connection", szNetworkGUID);
-        status = RegOpenKeyExA (hCtrlNet, szNetworkConnection, 0, KEY_READ,  &hConnection);
-        if (status == ERROR_SUCCESS)
-        {
-            DWORD dwKeyType;
-            status = RegQueryValueExW (hConnection, TEXT("Name"), NULL,
-                                       &dwKeyType, NULL, &len);
-            if (status == ERROR_SUCCESS && dwKeyType == REG_SZ)
-            {
-                size_t uniLen = (len + sizeof (OLECHAR) - 1) / sizeof (OLECHAR);
-                Bstr name (uniLen + 1 /* extra zero */);
-                status = RegQueryValueExW (hConnection, TEXT("Name"), NULL,
-                                           &dwKeyType, (LPBYTE) name.mutableRaw(), &len);
-                if (status == ERROR_SUCCESS)
-                {
-                    LogFunc(("Connection name %ls\n", name.mutableRaw()));
-                    /* put a trailing zero, just in case (see MSDN) */
-                    name.mutableRaw() [uniLen] = 0;
-                    /* create a new object and add it to the list */
-                    ComObjPtr <HostNetworkInterface> iface;
-                    iface.createObject();
-                    /* remove the curly bracket at the end */
-                    szNetworkGUID [strlen(szNetworkGUID) - 1] = '\0';
-                    if (SUCCEEDED (iface->init (name, Guid (szNetworkGUID + 1), HostNetworkInterfaceType_Bridged)))
-                        list.push_back (iface);
-                }
-            }
-            RegCloseKey (hConnection);
-        }
-    }
-    RegCloseKey (hCtrlNet);
+    hr = E_NOTIMPL;
 #  else /* #  if defined VBOX_WITH_NETFLT */
     INetCfg              *pNc;
     INetCfgComponent     *pMpNcc;
