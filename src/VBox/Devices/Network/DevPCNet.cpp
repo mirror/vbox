@@ -1548,9 +1548,9 @@ static void pcnetInit(PCNetState *pThis)
     for (int i = CSR_RCVRL(pThis); i >= 1; i--)
     {
         RMD        rmd;
-        RTGCPHYS32 addr = pcnetRdraAddr(pThis, i);
+        RTGCPHYS32 rdaddr = PHYSADDR(pThis, pcnetRdraAddr(pThis, i));
         /* At this time it is not guaranteed that the buffers are already initialized. */
-        if (pcnetRmdLoad(pThis, &rmd, PHYSADDR(pThis, addr), false))
+        if (pcnetRmdLoad(pThis, &rmd, rdaddr, false))
         {
             /* Hack: Make sure that all RX buffers are touched when the
              * device is initialized. */
@@ -1562,17 +1562,18 @@ static void pcnetInit(PCNetState *pThis)
             PDMDevHlpPhysWrite(pDevIns, rbadr, aBuf, RT_MIN(sizeof(aBuf), cbBuf));
             cbRxBuffers += cbBuf;
         }
-        PDMDevHlpPhysWrite(pDevIns, addr, (void*)&rmd, sizeof(rmd));
+        PDMDevHlpPhysWrite(pDevIns, rdaddr, (void*)&rmd, sizeof(rmd));
     }
 
     for (int i = CSR_XMTRL(pThis); i >= 1; i--)
     {
         TMD        tmd;
-        RTGCPHYS32 addr = pcnetRdraAddr(pThis, i);
-        if (pcnetTmdLoad(pThis, &tmd, PHYSADDR(pThis, addr), false))
+        RTGCPHYS32 tdaddr = PHYSADDR(pThis, pcnetTdraAddr(pThis, i));
+        if (pcnetTmdLoad(pThis, &tmd, tdaddr, false))
         {
             /* Hack: Make sure that all TX buffers are touched when the
-             * device is initialized. */
+             * device is initialized. Of course it is unlikely that the
+             * TX buffers are already owned by the device right now. */
             static char aBuf[4096];
             uint32_t cbBuf = 4096U-tmd.tmd1.bcnt;
             RTGCPHYS32 tbadr = PHYSADDR(pThis, tmd.tmd0.tbadr);
@@ -1580,7 +1581,7 @@ static void pcnetInit(PCNetState *pThis)
             PDMDevHlpPhysRead(pDevIns, tbadr, aBuf, RT_MIN(sizeof(aBuf), cbBuf));
             PDMDevHlpPhysWrite(pDevIns, tbadr, aBuf, RT_MIN(sizeof(aBuf), cbBuf));
         }
-        PDMDevHlpPhysWrite(pDevIns, addr, (void*)&tmd, sizeof(tmd));
+        PDMDevHlpPhysWrite(pDevIns, tdaddr, (void*)&tmd, sizeof(tmd));
     }
 
     /*
