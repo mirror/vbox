@@ -262,7 +262,7 @@ void VBoxDockIconPreview::updateDockPreviewImpl (CGContextRef aContext, CGImageR
     /* Draw the VM content */
     CGContextDrawImage (aContext, flipRect (iconRect), aVMImage);
 
-#ifndef QT_MAC_USE_COCOA
+#if 0 // ndef QT_MAC_USE_COCOA
     /* Process the content of any external OpenGL window. */
     WindowRef w = darwinToNativeWindow (mMainWnd);
     WindowGroupRef g = GetWindowGroup (w);
