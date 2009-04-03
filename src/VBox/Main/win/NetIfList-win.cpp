@@ -1435,7 +1435,9 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
 
 #define SetErrBreak(strAndArgs) \
     if (1) { \
-        aErrMsg = Utf8StrFmt strAndArgs; vrc = VERR_GENERAL_FAILURE; break; \
+        aErrMsg = Utf8StrFmt strAndArgs; vrc = VERR_GENERAL_FAILURE; \
+        Assert(0);\
+        break; \
     } else do {} while (0)
 
 /* static */
@@ -1457,7 +1459,8 @@ static int createNetworkInterface (SVCHlpClient *aClient,
     BOOL found = FALSE;
     BOOL registered = FALSE;
     BOOL destroyList = FALSE;
-    TCHAR pCfgGuidString [50];
+    WCHAR pWCfgGuidString [50];
+    WCHAR DevName[256];
 
     do
     {
@@ -1671,11 +1674,41 @@ static int createNetworkInterface (SVCHlpClient *aClient,
             SetErrBreak (("SetupDiOpenDevRegKey failed (0x%08X)",
                           GetLastError()));
 
-        cbSize = sizeof (pCfgGuidString);
+        cbSize = sizeof (pWCfgGuidString);
         DWORD ret;
-        ret = RegQueryValueEx (hkey, _T("NetCfgInstanceId"), NULL,
-                               &dwValueType, (LPBYTE) pCfgGuidString, &cbSize);
+        ret = RegQueryValueExW (hkey, L"NetCfgInstanceId", NULL,
+                               &dwValueType, (LPBYTE) pWCfgGuidString, &cbSize);
+
         RegCloseKey (hkey);
+
+        if(!SetupDiGetDeviceRegistryPropertyW(hDeviceInfo, &DeviceInfoData,
+                SPDRP_FRIENDLYNAME , /* IN DWORD  Property,*/
+                  NULL, /*OUT PDWORD  PropertyRegDataType,  OPTIONAL*/
+                  (PBYTE)DevName, /*OUT PBYTE  PropertyBuffer,*/
+                  sizeof(DevName), /* IN DWORD  PropertyBufferSize,*/
+                  NULL /*OUT PDWORD  RequiredSize  OPTIONAL*/
+                ))
+        {
+            int err = GetLastError();
+            if(err != ERROR_INVALID_DATA)
+            {
+                SetErrBreak (("SetupDiGetDeviceRegistryProperty failed (0x%08X)",
+                              err));
+            }
+
+            if(!SetupDiGetDeviceRegistryPropertyW(hDeviceInfo, &DeviceInfoData,
+                              SPDRP_DEVICEDESC  , /* IN DWORD  Property,*/
+                              NULL, /*OUT PDWORD  PropertyRegDataType,  OPTIONAL*/
+                              (PBYTE)DevName, /*OUT PBYTE  PropertyBuffer,*/
+                              sizeof(DevName), /* IN DWORD  PropertyBufferSize,*/
+                              NULL /*OUT PDWORD  RequiredSize  OPTIONAL*/
+                            ))
+            {
+                err = GetLastError();
+                SetErrBreak (("SetupDiGetDeviceRegistryProperty failed (0x%08X)",
+                                              err));
+            }
+        }
     }
     while (0);
 
@@ -1702,59 +1735,25 @@ static int createNetworkInterface (SVCHlpClient *aClient,
     /* return the network connection GUID on success */
     if (RT_SUCCESS (vrc))
     {
-        /* remove the curly bracket at the end */
-        pCfgGuidString [_tcslen (pCfgGuidString) - 1] = '\0';
-        LogFlowFunc (("Network connection GUID string = {%ls}\n", pCfgGuidString + 1));
+        Bstr str(DevName);
+        str.detachTo(pName);
 
-        aGUID = Guid (Utf8Str (pCfgGuidString + 1));
+        WCHAR ConnectoinName[128];
+        ULONG cbName = sizeof(ConnectoinName);
+
+        HRESULT hr = VBoxNetCfgWinGenHostonlyConnectionName (DevName, ConnectoinName, &cbName);
+        if(hr == S_OK)
+        {
+            hr = VBoxNetCfgWinRenameConnection (pWCfgGuidString, ConnectoinName);
+        }
+
+        /* remove the curly bracket at the end */
+        pWCfgGuidString [wcslen (pWCfgGuidString) - 1] = L'\0';
+        LogFlowFunc (("Network connection GUID string = {%ls}\n", pWCfgGuidString + 1));
+
+        aGUID = Guid (Utf8Str (pWCfgGuidString + 1));
         LogFlowFunc (("Network connection GUID = {%RTuuid}\n", aGUID.raw()));
         Assert (!aGUID.isEmpty());
-
-        INetCfg              *pNc;
-        INetCfgComponent     *pMpNcc;
-        LPWSTR               lpszApp;
-        WCHAR ConnectoinName[128];
-
-        HRESULT hr = VBoxNetCfgWinQueryINetCfg( FALSE,
-                           VBOX_APP_NAME,
-                           &pNc,
-                           &lpszApp );
-        if(hr == S_OK)
-        {
-            hr = VBoxNetCfgWinGetComponentByGuid(pNc,
-                                            &GUID_DEVCLASS_NET,
-                                            aGUID.asOutParam(),
-                                            &pMpNcc);
-            if(hr == S_OK)
-            {
-                LPWSTR name;
-                hr = pMpNcc->GetDisplayName(&name);
-                if(hr == S_OK)
-                {
-                    Bstr str(name);
-                    str.detachTo(pName);
-                    ULONG cbBuf = sizeof(ConnectoinName);
-
-                    hr = VBoxNetCfgWinGenHostonlyConnectionName (name, ConnectoinName, &cbBuf);
-
-                    CoTaskMemFree (name);
-                }
-
-                VBoxNetCfgWinReleaseRef(pMpNcc);
-            }
-            VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
-        }
-
-        if(hr == S_OK)
-        {
-            hr = VBoxNetCfgWinRenameConnection ((GUID*)aGUID.raw(), ConnectoinName);
-        }
-
-        if(hr != S_OK)
-        {
-            vrc = VERR_GENERAL_FAILURE;
-        }
-
     }
 
     LogFlowFunc (("vrc=%Rrc\n", vrc));
