@@ -163,12 +163,13 @@ int vboxClipboardInit (void)
     LogRel(("Initializing host clipboard service\n"));
     RTSemEventCreate(&g_ctxHost.waitForData);
     RTSemMutexCreate(&g_ctxHost.clipboardMutex);
-    rc = VBoxX11ClipboardInitX11(&g_ctxHost, &pBackend);
-    if (RT_FAILURE(rc))
+    pBackend = VBoxX11ClipboardConstructX11(&g_ctxHost);
+    if (pBackend == NULL)
     {
         RTSemEventDestroy(g_ctxHost.waitForData);
         RTSemMutexDestroy(g_ctxHost.clipboardMutex);
-        LogRel(("Failed to start the host shared clipboard service.\n"));
+        LogRel(("Failed to start the host shared clipboard service, out of memory.\n"));
+        rc = VERR_NO_MEMORY;
     }
     else
         g_ctxHost.pBackend = pBackend;
@@ -197,16 +198,12 @@ void vboxClipboardDestroy (void)
     /** @note  This has been made unconditional, as it should do no harm
      *         even if we are not waiting. */
     RTSemEventSignal(g_ctxHost.waitForData);
-    rc = VBoxX11ClipboardTermX11(g_ctxHost.pBackend);
-    if (RT_SUCCESS(rc))
-    {
-        /* We can safely destroy these as the backend has exited
-         * successfully and no other calls from the host code should be
-         * forthcoming. */
-        /** @todo  can the backend fail to exit successfully?  What then? */
-        RTSemEventDestroy(g_ctxHost.waitForData);
-        RTSemMutexDestroy(g_ctxHost.clipboardMutex);
-    }
+    VBoxX11ClipboardDestructX11(g_ctxHost.pBackend);
+    /* We can safely destroy these as the backend has exited
+     * successfully and no other calls from the host code should be
+     * forthcoming. */
+    RTSemEventDestroy(g_ctxHost.waitForData);
+    RTSemMutexDestroy(g_ctxHost.clipboardMutex);
 }
 
 /**
@@ -226,7 +223,7 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
     /** The pClient pointer is a dummy anyway, as we only support a single
      * client at a time. */
     rc = VBoxX11ClipboardStartX11(g_ctxHost.pBackend,
-                                  X11 /* initial owner */);
+                                  true /* fOwnClipboard */);
     return rc;
 }
 
@@ -262,7 +259,9 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *)
 
     RTSemMutexRequest(g_ctxHost.clipboardMutex, RT_INDEFINITE_WAIT);
     g_ctxHost.pClient = NULL;
-    VBoxX11ClipboardStopX11(g_ctxHost.pBackend);
+    /** @todo handle this slightly more reasonably, or be really sure
+     *        it won't go wrong. */
+    AssertRC(VBoxX11ClipboardStopX11(g_ctxHost.pBackend));
     RTSemMutexRelease(g_ctxHost.clipboardMutex);
 }
 

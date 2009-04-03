@@ -693,30 +693,31 @@ static int vboxClipboardInitX11 (VBOXCLIPBOARDCONTEXTX11 *pCtx)
 }
 
 /**
- * Initialise the X11 backend of the shared clipboard.
+ * Construct the X11 backend of the shared clipboard.
  * @note  X11 backend code
  */
-int VBoxX11ClipboardInitX11(VBOXCLIPBOARDCONTEXT *pFrontend,
-                            VBOXCLIPBOARDCONTEXTX11 **ppBackend)
+VBOXCLIPBOARDCONTEXTX11 *VBoxX11ClipboardConstructX11
+                                 (VBOXCLIPBOARDCONTEXT *pFrontend)
 {
     int rc;
 
     VBOXCLIPBOARDCONTEXTX11 *pCtx = &g_ctxX11;
     /** @todo we still only support one backend at a time, because the X
-     * toolkit intrinsics don't support user data in XtOwnSelection.  Not
-     * a big problem, but not clean either. */
-    AssertReturn(g_pCtx == NULL, VERR_NOT_SUPPORTED);
+     * toolkit intrinsics don't support user data in XtOwnSelection.
+     * This function should not fail like this. */
+    AssertReturn(g_pCtx == NULL, NULL);
     g_pCtx = &g_ctxX11;
     if (!RTEnvGet("DISPLAY"))
     {
         /*
-         * If we don't find the DISPLAY environment variable we assume that we are not
-         * connected to an X11 server. Don't actually try to do this then, just fail
-         * silently and report success on every call. This is important for VBoxHeadless.
+         * If we don't find the DISPLAY environment variable we assume that
+         * we are not connected to an X11 server. Don't actually try to do
+         * this then, just fail silently and report success on every call.
+         * This is important for VBoxHeadless.
          */
         LogRelFunc(("X11 DISPLAY variable not set -- disabling shared clipboard\n"));
         g_fHaveX11 = false;
-        return VINF_SUCCESS;
+        return pCtx;
     }
 
     if (RTEnvGet("VBOX_CBTEST_UTF16"))
@@ -745,6 +746,39 @@ int VBoxX11ClipboardInitX11(VBOXCLIPBOARDCONTEXT *pFrontend,
     LogRel(("Initializing X11 clipboard backend\n"));
     pCtx->pFrontend = pFrontend;
     RTSemEventCreate(&pCtx->waitForData);
+    return pCtx;
+}
+
+/**
+ * Destruct the shared clipboard X11 backend.
+ * @note  X11 backend code
+ */
+void VBoxX11ClipboardDestructX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
+{
+    /*
+     * Immediately return if we are not connected to the host X server.
+     */
+    if (!g_fHaveX11)
+        return;
+
+    RTSemEventDestroy(pCtx->waitForData);
+}
+
+/**
+ * Announce to the X11 backend that we are ready to start.
+ * @param  owner who is the initial clipboard owner
+ */
+int VBoxX11ClipboardStartX11(VBOXCLIPBOARDCONTEXTX11 *pCtx,
+                             bool fOwnsClipboard)
+{
+    int rc = VINF_SUCCESS;
+    LogFlowFunc(("\n"));
+    /*
+     * Immediately return if we are not connected to the host X server.
+     */
+    if (!g_fHaveX11)
+        return VINF_SUCCESS;
+
     rc = vboxClipboardInitX11(pCtx);
     if (RT_SUCCESS(rc))
     {
@@ -753,84 +787,22 @@ int VBoxX11ClipboardInitX11(VBOXCLIPBOARDCONTEXT *pFrontend,
         if (RT_FAILURE(rc))
             LogRel(("Failed to initialise the shared clipboard X11 backend.\n"));
     }
-    if (RT_FAILURE(rc))
-        RTSemEventDestroy(pCtx->waitForData);
-    *ppBackend = pCtx;
-    return rc;
-}
-
-/**
- * Terminate the shared clipboard X11 backend.
- * @note  X11 backend code
- */
-int VBoxX11ClipboardTermX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
-{
-    int rc, rcThread;
-    unsigned count = 0;
-    XEvent ev;
-
-    /*
-     * Immediately return if we are not connected to the host X server.
-     */
-    if (!g_fHaveX11)
-        return VINF_SUCCESS;
-
-    LogRelFunc(("shutting down the shared clipboard X11 backend\n"));
-
-    /* Set the termination flag.  This has been observed to block if it was set
-     * during a request for clipboard data coming from X11, so only we do it
-     * after releasing any such requests. */
-    XtAppSetExitFlag(pCtx->appContext);
-    /* Wake up the event loop */
-    memset(&ev, 0, sizeof(ev));
-    ev.xclient.type = ClientMessage;
-    ev.xclient.format = 8;
-    XSendEvent(XtDisplay(pCtx->widget), XtWindow(pCtx->widget), false, 0, &ev);
-    XFlush(XtDisplay(pCtx->widget));
-    do
-    {
-        rc = RTThreadWait(pCtx->thread, 1000, &rcThread);
-        ++count;
-        Assert(RT_SUCCESS(rc) || ((VERR_TIMEOUT == rc) && (count != 5)));
-    } while ((VERR_TIMEOUT == rc) && (count < 300));
     if (RT_SUCCESS(rc))
     {
-        /* We can safely destroy this now, as only this thread ever waits
-         * for it. */
-        RTSemEventDestroy(pCtx->waitForData);
-        AssertRC(rcThread);
+        if (fOwnsClipboard)
+        {
+            pCtx->eOwner = X11;
+            pCtx->notifyVBox = true;
+        }
+        else
+        {
+            /** @todo Check whether the guest gets a format announcement at
+              *       startup. */
+            pCtx->eOwner = VB;
+            VBoxX11ClipboardAnnounceVBoxFormat(pCtx, 0);
+        }
     }
-    else
-        LogRel(("vboxClipboardDestroy: rc=%Rrc\n", rc));
-    XtCloseDisplay(XtDisplay(pCtx->widget));
-    LogFlowFunc(("returning %Rrc.\n", rc));
     return rc;
-}
-
-/**
- * Announce to the X11 backend that we are ready to start.
- * @param  owner who is the initial clipboard owner
- */
-int VBoxX11ClipboardStartX11(VBOXCLIPBOARDCONTEXTX11 *pCtx,
-                             enum g_eOwner owner)
-{
-    LogFlowFunc(("\n"));
-    /*
-     * Immediately return if we are not connected to the host X server.
-     */
-    if (!g_fHaveX11)
-        return VINF_SUCCESS;
-
-    pCtx->eOwner = owner;
-    if (owner == X11)
-        pCtx->notifyVBox = true;
-    else
-    {
-        /** @todo Check whether the guest gets a format announcement at
-          *       startup. */
-        VBoxX11ClipboardAnnounceVBoxFormat(pCtx, 0);
-    }
-    return VINF_SUCCESS;
 }
 
 /**
@@ -851,17 +823,45 @@ void VBoxX11ClipboardRequestSyncX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
  * Shut down the shared clipboard X11 backend.
  * @note  X11 backend code
  */
-void VBoxX11ClipboardStopX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
+int VBoxX11ClipboardStopX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
 {
+    int rc, rcThread;
+    unsigned count = 0;
+    XEvent ev;
     /*
      * Immediately return if we are not connected to the host X server.
      */
     if (!g_fHaveX11)
-        return;
+        return VINF_SUCCESS;
 
     pCtx->eOwner = NONE;
     pCtx->X11TextFormat = INVALID;
     pCtx->X11BitmapFormat = INVALID;
+    LogRelFunc(("stopping the shared clipboard X11 backend\n"));
+
+    /* Set the termination flag.  This has been observed to block if it was set
+     * during a request for clipboard data coming from X11, so only we do it
+     * after releasing any such requests. */
+    XtAppSetExitFlag(pCtx->appContext);
+    /* Wake up the event loop */
+    memset(&ev, 0, sizeof(ev));
+    ev.xclient.type = ClientMessage;
+    ev.xclient.format = 8;
+    XSendEvent(XtDisplay(pCtx->widget), XtWindow(pCtx->widget), false, 0, &ev);
+    XFlush(XtDisplay(pCtx->widget));
+    do
+    {
+        rc = RTThreadWait(pCtx->thread, 1000, &rcThread);
+        ++count;
+        Assert(RT_SUCCESS(rc) || ((VERR_TIMEOUT == rc) && (count != 5)));
+    } while ((VERR_TIMEOUT == rc) && (count < 300));
+    if (RT_SUCCESS(rc))
+        AssertRC(rcThread);
+    else
+        LogRelFunc(("rc=%Rrc\n", rc));
+    XtCloseDisplay(XtDisplay(pCtx->widget));
+    LogFlowFunc(("returning %Rrc.\n", rc));
+    return rc;
 }
 
 /**
