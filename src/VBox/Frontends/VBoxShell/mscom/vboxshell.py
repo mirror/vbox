@@ -38,7 +38,8 @@ except Exception,e:
     traceback.print_exc()
     sys.exit(1)
 
-ctx = {'mgr':mgr, 'vb':vbox, 'ifaces':win32com.client.constants, 'remote':False}
+ctx = {'mgr':mgr, 'vb':vbox, 'ifaces':win32com.client.constants, 
+       'remote':False, 'perf':PerfCollector(vbox) }
 
 interpret(ctx)
 
