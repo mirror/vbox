@@ -7,9 +7,11 @@
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxVMM.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxREM.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxXPCOM.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxXPCOMC.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSharedFolders.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSharedClipboard.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxGuestPropSvc.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxNetDHCP.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxVRDP.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VRDPAuth.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxSVCM.so
