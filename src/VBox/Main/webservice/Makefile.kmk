@@ -589,12 +589,11 @@ $(VBOXWEB_PERLSAMPLE): $(VBOX_PATH_WEBSERVICE)/samples/perl/clienttest.pl
 	$(QUIET)$(MKDIR) -p $(VBOXWEB_SAMPLES_PERL_DIR)
 	$(QUIET)$(CP) -f $< $@
 
-$(VBOXWEB_PYTHONWSSAMPLE): $(VBOX_PATH_WEBSERVICE)/samples/python/vboxshell.py
+$(VBOXWEB_PYTHONWSSAMPLE): $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/ws/vboxshell.py
 	$(QUIET)$(MKDIR) -p $(VBOXWEB_SAMPLES_PYTHONWS_DIR)
 	$(QUIET)$(CP) -f $< $@
 
-# somewhat hackish rule
-$(VBOXWEB_SHELLCOMMON): $(PATH_ROOT)/src/libs/xpcom18a4/python/sample/shellcommon.py $(VBOXWEB_PYTHONWSSAMPLE)
+$(VBOXWEB_SHELLCOMMON): $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/shellcommon.py $(VBOXWEB_PYTHONWSSAMPLE)
 	$(QUIET)$(CP) -f $< $@
 
 # generate jax-ws wrapper for java client code

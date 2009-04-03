@@ -1465,9 +1465,8 @@ VBoxPython-inst-py-xpcom_SOURCES = \
 # Python Client Module - a sample script.
 VBoxPython-inst-sample_INST = $(INST_SDK)bindings/xpcom/python/sample/
 VBoxPython-inst-sample_SOURCES = \
-	python/sample/vboxshell.py \
-	python/sample/shellcommon.py
-
+	$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/xpcom/vboxshell.py \
+	$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/shellcommon.py
 
 #
 # testcases
