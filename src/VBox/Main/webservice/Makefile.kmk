@@ -368,7 +368,7 @@ ifdef VBOX_ONLY_SDK
  # Keep in sync with G_virtualBoxPackage in glue-jaxws.xsl
  # Changed with every new version, so beware!
  VBOX_API_SUFFIX               = _$(VBOX_VERSION_MAJOR)_$(VBOX_VERSION_MINOR)
- VBOX_JAVA_PACKAGE             = org.virtualbox$(VBOX_API_SUFFIX) 
+ VBOX_JAVA_PACKAGE             = org.virtualbox$(VBOX_API_SUFFIX)
 
  VBOXWEB_OTHERS               += \
  	$(VBOXWEB_GLUE_JAVA_TMP) \
@@ -607,6 +607,7 @@ $(VBOXWEB_GLUE_JAVA_TMP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/glue-jaxws.
 	$(RM) -R -f $(VBOXWEB_PATH_SDK_GLUE_JAVA)
 	$(QUIET)$(MKDIR) -p $(VBOXWEB_PATH_SDK_GLUE_JAVA)
 	$(QUIET)$(TARGET_filesplitter) $@ $(VBOXWEB_PATH_SDK_GLUE_JAVA)
+	$(QUIET)$(CP) -f $(VBOX_PATH_WEBSERVICE)/../../../../COPYING.LIB $(VBOXWEB_PATH_SDK_GLUE_JAVA)
 
 # likely those 4 rules can be changed to INSTALLS
 $(VBOXWEB_PATH_SDK_GLUE_JAVA)/Makefile: $(VBOX_PATH_WEBSERVICE)/samples/java/jax-ws/Makefile.glue  $(VBOXWEB_GLUE_JAVA_TMP)

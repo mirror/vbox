@@ -1,22 +1,32 @@
 /*
  * Sample of performance API usage, written in Java.
  *
- * Don't forget to run VBOX webserver 
- * with 'vboxwebsrv -t 1000' command, to calm down watchdog thread. 
- * 
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Don't forget to run VBOX webserver
+ * with 'vboxwebsrv -t 1000' command, to calm down watchdog thread.
  *
- * This file is part of VirtualBox Open Source Edition (OSE), as
- * available from http://www.virtualbox.org. This file is free software;
- * you can redistribute it and/or modify it under the terms of the GNU
- * General Public License (GPL) as published by the Free Software
- * Foundation, in version 2 as it comes in the "COPYING" file of the
- * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
- * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
- * Clara, CA 95054 USA or visit http://www.sun.com if you need
- * additional information or have any questions.
+ * The following license applies to this file only:
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
  */
 import com.sun.xml.ws.commons.virtualbox{VBOX_API_SUFFIX}.*;
 import org.virtualbox{VBOX_API_SUFFIX}.*;
@@ -99,7 +109,7 @@ class PerformanceCollector
         Holder<List<Long>> sequenceNumbers =  new Holder<List<Long>>();
         Holder<List<Long>> indices =  new Holder<List<Long>>();
         Holder<List<Long>> lengths =  new Holder<List<Long>>();
-        List<Integer> values = 
+        List<Integer> values =
             _collector.queryMetricsData(filterMetrics, filterObjects,
                                         names, objects, units, scales, sequenceNumbers, indices, lengths);
         List<PerformanceData> data = new ArrayList<PerformanceData>(names.value.size());
@@ -164,7 +174,7 @@ public class metrictest implements Runnable
             List<IUnknown> allObjects = new ArrayList<IUnknown>();
             List<PerformanceData> metricData = perf.query(Arrays.asList(new String[]{"*"}),
                                                           allObjects);
-            for (PerformanceData md : metricData) 
+            for (PerformanceData md : metricData)
             {
                 System.out.println("(" + getObjectName(md.object) + ") " +
                                    md.name + " " + md.getFormattedSamples());
@@ -199,7 +209,7 @@ public class metrictest implements Runnable
             e.printStackTrace();
         }
     }
-    
+
     public static void main(String[] args) throws InterruptedException
     {
         metrictest c = new metrictest();

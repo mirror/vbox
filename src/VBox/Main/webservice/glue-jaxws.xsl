@@ -53,22 +53,30 @@
 <xsl:template name="fileheader">
   <xsl:param name="name" />
   <xsl:text>/**
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
- * This file is part of VirtualBox Open Source Edition (OSE), as
- * available from http://www.virtualbox.org. This file is free software;
- * you can redistribute it and/or modify it under the terms of the GNU
- * General Public License (GPL) as published by the Free Software
- * Foundation, in version 2 as it comes in the "COPYING" file of the
- * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
- * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ * This file is part of a free software library; you can redistribute
+ * it and/or modify it under the terms of the GNU Lesser General
+ * Public License version 2.1 as published by the Free Software
+ * Foundation and shipped in the "COPYING.LIB" file with this library.
+ * The library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY of any kind.
+ *
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if
+ * any license choice other than GPL or LGPL is available it will
+ * apply instead, Sun elects to use only the Lesser General Public
+ * License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the
+ * language indicating that LGPLv2 or any later version may be used,
+ * or where a choice of which version of the LGPL is applied is
+ * otherwise unspecified.
  *
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  *
 </xsl:text>
-  <xsl:value-of select="concat(' * ',$name)"/> 
+  <xsl:value-of select="concat(' * ',$name)"/>
 <xsl:text>
  *
  * DO NOT EDIT! This is a generated file.
@@ -325,7 +333,7 @@
 
 <xsl:template name="startFile">
   <xsl:param name="file" />
-  
+
   <xsl:value-of select="concat('&#10;// ##### BEGINFILE &quot;', $file, '&quot;&#10;&#10;')" />
   <xsl:call-template name="fileheader">
     <xsl:with-param name="name" select="$file" />
@@ -357,7 +365,7 @@ import javax.xml.ws.WebServiceException;
  <xsl:call-template name="startFile">
   <xsl:with-param name="file" select="'IUnknown.java'" />
  </xsl:call-template>
- 
+
  <xsl:text><![CDATA[
 public class IUnknown
 {
@@ -726,7 +734,7 @@ public class IWebsessionManager {
     <xsl:call-template name="endFile">
       <xsl:with-param name="file" select="concat($filename, '.java')" />
     </xsl:call-template>
-    
+
   </xsl:for-each>
 
   <xsl:text>// ######## ENUMS&#10;&#10;</xsl:text>
@@ -805,7 +813,7 @@ public class IWebsessionManager {
       <xsl:text>import java.util.List;&#10;</xsl:text>
       <xsl:text>import java.util.UUID;&#10;</xsl:text>
       <xsl:text>import javax.xml.ws.Holder;&#10;</xsl:text>
-      <xsl:text>import javax.xml.ws.WebServiceException;&#10;</xsl:text>      
+      <xsl:text>import javax.xml.ws.WebServiceException;&#10;</xsl:text>
 
       <xsl:choose>
         <xsl:when test="$wsmap='struct'">
