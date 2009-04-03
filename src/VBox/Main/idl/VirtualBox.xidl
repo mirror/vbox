@@ -3295,7 +3295,7 @@
     name="VirtualSystemDescriptionValueType"
     uuid="56d9403f-3425-4118-9919-36f2a9b8c77c"
   >
-    <desc>Used with <link to="GetValuesByType" /> to describe the value
+    <desc>Used with <link to="getValuesByType" /> to describe the value
     type to fetch.</desc>
 
     <const name="Reference" value="1" />
@@ -4295,9 +4295,6 @@
       <desc>
         Associated USB controller object.
 
-        <note>
-          This method may set a @ref com_warnings "warning result code".
-        </note>
         <note>
           If USB functionality is not available in the given edition of
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
@@ -6990,9 +6987,6 @@
         it appears in this list and remains there until detached.
 
         <note>
-          This method may set a @ref com_warnings "warning result code".
-        </note>
-        <note>
           If USB functionality is not available in the given edition of
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
         </note>
@@ -7012,9 +7006,6 @@
         currently running virtual machines
         (<link to="IUSBController::deviceFilters"/>) are applied to it.
 
-        <note>
-          This method may set a @ref com_warnings "warning result code".
-        </note>
         <note>
           If USB functionality is not available in the given edition of
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
@@ -7184,11 +7175,7 @@
 
         <note>
           Duplicates are not allowed, so an attempt to insert a
-          filter that is already in the list, will return an
-          error.
-        </note>
-        <note>
-          This method may set a @ref com_warnings "warning result code".
+          filter already in the list is an error.
         </note>
         <note>
           If USB functionality is not available in the given edition of
@@ -7222,9 +7209,6 @@
         position equal to or greater than the number of elements in
         the list will produce an error.
 
-        <note>
-          This method may set a @ref com_warnings "warning result code".
-        </note>
         <note>
           If USB functionality is not available in the given edition of
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
