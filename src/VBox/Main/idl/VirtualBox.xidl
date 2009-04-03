@@ -3036,7 +3036,7 @@
 
   <interface
      name="IAppliance" extends="$unknown"
-     uuid="a7a71c1f-20d3-4483-95c0-7357dda77f50"
+     uuid="30bfa6b8-9eda-4b0a-b218-a86813248ccd"
      wsmap="managed"
      >
     <desc>
