@@ -792,7 +792,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                         pRequestHeader->rc = PGMR3MappingsFix(pVM, hypervisorInfo->hypervisorStart,
                                                               hypervisorInfo->hypervisorSize);
                         LogRel(("Guest reported fixed hypervisor window at 0x%p (size = 0x%x, rc = %Rrc)\n",
-                                hypervisorInfo->hypervisorStart,
+                                (uintptr_t)hypervisorInfo->hypervisorStart,
                                 hypervisorInfo->hypervisorSize,
                                 pRequestHeader->rc));
                     }
