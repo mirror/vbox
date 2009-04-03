@@ -451,7 +451,7 @@
       being executed (such as <link to="IMachine::attachHardDisk"/>).
 
       <pre>
-    +-----------------------------------(same sate as before the call)------+
+    +----------------------------------(same state as before the call)------+
     |                                                                       |
     +-&gt; PoweredOff --+                                                      |
     |                |                                                      |
@@ -465,7 +465,7 @@
       operations, respectively.
 
       <pre>
-    +-----------------------------------(same sate as before the call)------+
+    +----------------------------------(same state as before the call)------+
     |                                                                       |
     +-&gt; PoweredOff --+                                                      |
     |                +--&gt;[takeSnapshot()] -------------------&gt; Saving ------+
@@ -500,7 +500,7 @@
     </desc>
 
     <const name="Null"                  value="0">
-      <desc>Null value (nver used by the API).</desc>
+      <desc>Null value (never used by the API).</desc>
     </const>
     <const name="PoweredOff"            value="1">
       <desc>
@@ -1652,7 +1652,7 @@
         saved to disk (and therefore no settings file is created)
         until <link to="IMachine::saveSettings"/> is called. If the
         specified settings file already exists, this method
-        will fail with <link to="VBOX_E_FILE_ERROR"/>..
+        will fail with <link to="VBOX_E_FILE_ERROR"/>.
 
         See <link to="#createMachine"/> for more information.
 
@@ -2756,13 +2756,13 @@
     <method name="saveSettingsWithBackup">
       <desc>
         Creates a backup copy of the global settings file
-        (<link to="#settingsFilePath"/>) in case of auto-conversion, and then
-        calls <link to="#saveSettings"/>.
+        (<link to="IVirtualBox::settingsFilePath"/>) in case of auto-conversion,
+        and then calls <link to="IVirtualBox::saveSettings"/>.
 
         Note that the backup copy is created <b>only</b> if the settings file
         auto-conversion took place (see <link to="#settingsFileVersion"/> for
         details). Otherwise, this call is fully equivalent to
-        <link to="#saveSettings"/> and no backup copying is done.
+        <link to="IVirtualBox::saveSettings"/> and no backup copying is done.
 
         The backup copy is created in the same directory where the original
         settings file is located. It is given the following file name:
@@ -3295,7 +3295,7 @@
     name="VirtualSystemDescriptionValueType"
     uuid="56d9403f-3425-4118-9919-36f2a9b8c77c"
   >
-    <desc>Used with <link to="getValuesByType" /> to describe the value
+    <desc>Used with <link to="IVirtualSystemDescription::getValuesByType" /> to describe the value
     type to fetch.</desc>
 
     <const name="Reference" value="1" />
@@ -3442,7 +3442,7 @@
     </method>
 
     <method name="getDescriptionByType">
-      <desc>This is the same as <link to="getDescription" /> except that you can specify which types
+      <desc>This is the same as <link to="#getDescription" /> except that you can specify which types
       should be returned.</desc>
 
       <param name="aType" type="VirtualSystemDescriptionType" dir="in">
@@ -3472,7 +3472,7 @@
     </method>
 
     <method name="getValuesByType">
-      <desc>This is the same as <link to="getDescriptionByType" /> except that you can specify which
+      <desc>This is the same as <link to="#getDescriptionByType" /> except that you can specify which
       value types should be returned. See <link to="VirtualSystemDescriptionValueType" /> for possible
       values.</desc>
 
@@ -3493,7 +3493,7 @@
     <method name="setFinalValues">
       <desc>
         This method allows the appliance's user to change the configuration for the virtual
-        system descriptions. For each array item returned from <link to="getDescription" />,
+        system descriptions. For each array item returned from <link to="#getDescription" />,
         you must pass in one boolean value and one configuration value.
 
         Each item in the boolean array determines whether the particular configuration item
@@ -4319,7 +4319,7 @@
     <attribute name="settingsFileVersion" type="wstring" readonly="yes">
       <desc>
         Current version of the format of the settings file of this machine
-        (<link to="#settingsFilePath"/>).
+        (<link to="IMachine::settingsFilePath"/>).
 
         The version string has the following format:
         <pre>
@@ -4767,7 +4767,7 @@
         machine and returns it as an instance of
         <link to="IStorageController" />.
 
-        @a name identifies the controller with subsequent calls such as
+        @a name identifies the controller for subsequent calls such as
         <link to="#getStorageControllerByName" /> or
         <link to="#removeStorageController" /> or
         <link to="#attachHardDisk" />.
@@ -4973,13 +4973,13 @@
     <method name="saveSettingsWithBackup">
       <desc>
         Creates a backup copy of the machine settings file (<link
-        to="#settingsFilePath"/>) in case of auto-conversion, and then calls
-        <link to="#saveSettings"/>.
+        to="IMachine::settingsFilePath"/>) in case of auto-conversion, and then calls
+        <link to="IMachine::saveSettings"/>.
 
         Note that the backup copy is created <b>only</b> if the settings file
         auto-conversion took place (see <link to="#settingsFileVersion"/> for
         details). Otherwise, this call is fully equivalent to
-        <link to="#saveSettings"/> and no backup copying is done.
+        <link to="IMachine::saveSettings"/> and no backup copying is done.
 
         The backup copy is created in the same directory where the original
         settings file is located. It is given the following file name:
@@ -5606,8 +5606,8 @@
     <method name="onStorageControllerChange">
       <desc>
         Notification when a property of one of the
-        virtual <link to="IMachine::getStorageControllers">storage controllers</link>
-        changes. Interested callees should use query the corresponding collections
+        virtual <link to="IMachine::storageControllers">storage controllers</link>
+        changes. Interested callees should query the corresponding collections
         to find out what has changed.
       </desc>
     </method>
@@ -6605,7 +6605,7 @@
 
     <method name="discardCurrentState">
       <desc>
-        This operation is similar to <link to="#discardSnapshot"/> but
+        This operation is similar to <link to="IConsole::discardSnapshot"/> but
         affects the current machine state. This means that the state stored in
         the current snapshot will become a new current state, and all current
         settings of the machine and changes stored in differencing hard disks
@@ -6645,7 +6645,7 @@
         This method is equivalent to
         doing <link to="IConsole::discardSnapshot">discardSnapshot</link>
         (currentSnapshot.id(), progress) followed by
-        <link to="#discardCurrentState"/>.
+        <link to="IConsole::discardCurrentState"/>.
 
         As a result, the machine will be fully restored from the
         snapshot preceding the current snapshot, while both the current
@@ -6656,8 +6656,8 @@
         discarded <b>before</b> discarding the snapshot. In other words, the
         machine will be restored from its last snapshot, before discarding
         it. This differs from performing a single
-        <link to="#discardSnapshot"/> call (note that no
-        <link to="#discardCurrentState"/> will be possible after it)
+        <link to="IConsole::discardSnapshot"/> call (note that no
+        <link to="IConsole::discardCurrentState"/> will be possible after it)
         to the effect that the latter will preserve the current state instead of
         discarding it.
 
@@ -11146,12 +11146,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="path" type="wstring">
       <desc>
-        Path to the serial port's pipe on the host when <link to="#hostMode"/> is
+        Path to the serial port's pipe on the host when <link to="ISerialPort::hostMode"/> is
         PortMode_HostPipe, or the host serial device name when
-        <link to="#hostMode"/> is PortMode_HostDevice. In either of the above
-        cases, setting a @c  null or an empty string as the attribute's value
-        will result into an error. Otherwise, the value of this property is
-        ignored.
+        <link to="ISerialPort::hostMode"/> is PortMode_HostDevice. For both
+        cases, setting a @c null or empty string as the attribute's value
+        is an error. Otherwise, the value of this property is ignored.
       </desc>
     </attribute>
 
@@ -12730,15 +12729,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="minPortCount" type="unsigned long" readonly="yes">
       <desc>
-        Minimum number of ports which can be set with
-        <link to="IStorageController::SetPortCount"/>.
+        Minimum number of ports that <link to="IStorageController::portCount"/> can be set to.
       </desc>
     </attribute>
 
     <attribute name="maxPortCount" type="unsigned long" readonly="yes">
       <desc>
-        Maximum number of ports which can be set with
-        <link to="IStorageController::SetPortCount"/>.
+        Maximum number of ports that <link to="IStorageController::portCount"/> can be set to.
       </desc>
     </attribute>
 
@@ -12751,9 +12748,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="portCount" type="unsigned long">
       <desc>
         The number of currently usable ports on the controller.
-        The minimum and maximum number of ports for one controller type can
-        be determined with <link to="IStorageController::GetMinPortCount"/>
-        and <link to="IStorageController::GetMaxPortCount"/>..
+        The minimum and maximum number of ports for one controller are
+        stored in <link to="IStorageController::minPortCount"/>
+        and <link to="IStorageController::maxPortCount"/>.
       </desc>
     </attribute>
 
