@@ -159,12 +159,12 @@ static void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
             {
                 /* Atomically set the flag. */
                 InterlockedExchange (&g_ctx.fVBGLInited, TRUE);
-                dprintf(("VBoxMouse::vboxDeviceStarted: guest library initialization OK\n"));
+                dprintf(("VBoxMouse::vboxDeviceAdded: Guest library initialization OK\n"));
             }
             else
             {
                 InterlockedExchange (&g_ctx.fVBGLInitFailed, TRUE);
-                dprintf(("VBoxMouse::vboxDeviceStarted: guest library initialization failed\n"));
+                dprintf(("VBoxMouse::vboxDeviceAdded: Guest library initialization failed\n"));
             }
         }
     }
@@ -190,7 +190,7 @@ static void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
 
             CM_RESOURCE_LIST *pResourceList = (CM_RESOURCE_LIST *)&Property[0];
 
-            dprintf(("Configuration: descriptors %d\n",
+            dprintf(("VBoxMouse::vboxDeviceAdded: Configuration: descriptors %d\n",
                       pResourceList->Count));
 
             ULONG iDescriptor = 0;
@@ -198,7 +198,7 @@ static void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
             {
                 CM_FULL_RESOURCE_DESCRIPTOR *pFullDescriptor = &pResourceList->List[iDescriptor];
 
-                dprintf(("Descriptor %d: InterfaceType %d, BusType %d, list ver %d, list rev %d, count %d\n",
+                dprintf(("VBoxMouse::vboxDeviceAdded: Descriptor %d: InterfaceType %d, BusType %d, list ver %d, list rev %d, count %d\n",
                          iDescriptor,
                          pFullDescriptor->InterfaceType,
                          pFullDescriptor->BusNumber,
@@ -211,7 +211,7 @@ static void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
                 {
                     CM_PARTIAL_RESOURCE_DESCRIPTOR *pPartialDescriptor = &pFullDescriptor->PartialResourceList.PartialDescriptors[iPartialDescriptor];
 
-                    dprintf(("  PartialDescriptor %d: type %d, ShareDisposition %d, Flags 0x%04X, Start 0x%llx, length 0x%x\n",
+                    dprintf(("VBoxMouse::vboxDeviceAdded: PartialDescriptor %d: type %d, ShareDisposition %d, Flags 0x%04X, Start 0x%llx, length 0x%x\n",
                              iPartialDescriptor,
                              pPartialDescriptor->Type, pPartialDescriptor->ShareDisposition, pPartialDescriptor->Flags,
                              pPartialDescriptor->u.Generic.Start.QuadPart, pPartialDescriptor->u.Generic.Length));
@@ -426,7 +426,7 @@ VBoxMouse_AddDevice(
     device->Flags |= (DO_BUFFERED_IO | DO_POWER_PAGABLE);
     device->Flags &= ~DO_DEVICE_INITIALIZING;
 
-    dprintf(("DevExt = %p, returning from AddDevice with rc = 0x%x\n", devExt, status));
+    dprintf(("VBoxMouse::AddDevice: DevExt = %p, returning from AddDevice with rc = 0x%x\n", devExt, status));
     return status;
 }
 
@@ -490,12 +490,12 @@ Routine Description:
 
     switch (irpStack->MajorFunction) {
     case IRP_MJ_CREATE:
-        dprintf(("IRP_MJ_CREATE\n"));
+        dprintf(("VBoxMouse::CreateClose: IRP_MJ_CREATE\n"));
         if (NULL == devExt->UpperConnectData.ClassService) {
             //
             // No Connection yet.  How can we be enabled?
             //
-            dprintf(("VBoxMouse: Not connected, returning STATUS_INVALID_DEVICE_STATE\n"));
+            dprintf(("VBoxMouse::CreateClose: Not connected, returning STATUS_INVALID_DEVICE_STATE\n"));
             status = STATUS_INVALID_DEVICE_STATE;
         }
         else if ( 1 >= InterlockedIncrement(&devExt->EnableCount)) {
@@ -513,7 +513,7 @@ Routine Description:
 
     case IRP_MJ_CLOSE:
 
-        dprintf(("IRP_MJ_CLOSE\n"));
+        dprintf(("VBoxMouse::CreateClose: IRP_MJ_CLOSE\n"));
         ASSERT(0 < devExt->EnableCount);
 
         if (0 >= InterlockedDecrement(&devExt->EnableCount)) {
@@ -800,7 +800,7 @@ Return Value:
     switch (irpStack->MinorFunction) {
     case IRP_MN_START_DEVICE: {
 
-        dprintf(("IRP_MN_START_DEVICE\n"));
+        dprintf(("VBoxMouse_PnP: IRP_MN_START_DEVICE\n"));
 
         //
         // The device is starting.
@@ -832,7 +832,7 @@ Return Value:
                NULL); // No timeout
         }
 
-        dprintf(("status: %x, irp status: %x\n", Irp->IoStatus.Status));
+        dprintf(("VBoxMouse_PnP: Status: %x, irp status: %x\n", Irp->IoStatus.Status));
 
         if (NT_SUCCESS(status) && NT_SUCCESS(Irp->IoStatus.Status)) {
             devExt->Started = TRUE;
@@ -853,7 +853,7 @@ Return Value:
 
     case IRP_MN_SURPRISE_REMOVAL:
 
-        dprintf(("IRP_MN_SURPRISE_REMOVAL\n"));
+        dprintf(("VBoxMouse_PnP: IRP_MN_SURPRISE_REMOVAL\n"));
 
         //
         // Same as a remove device, but don't call IoDetach or IoDeleteDevice
@@ -868,7 +868,7 @@ Return Value:
 
     case IRP_MN_REMOVE_DEVICE:
     {
-        dprintf(("IRP_MN_REMOVE_DEVICE\n"));
+        dprintf(("VBoxMouse_PnP: IRP_MN_REMOVE_DEVICE\n"));
 // VBOX start
         vboxDeviceRemoved (devExt);
 // VBOX end
