@@ -10903,11 +10903,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="Null"                  value="0">
       <desc>Null value (never used by the API).</desc>
     </const>
-    <const name="Am79C970A"             value="1"/>
-    <const name="Am79C973"              value="2"/>
-    <const name="I82540EM"              value="3"/>
-    <const name="I82543GC"              value="4"/>
-    <const name="I82545EM"              value="5"/>
+    <const name="Am79C970A"             value="1">
+        <desc>AMD PCNet-PCI II network card (Am79C970A).</desc>
+    </const>
+    <const name="Am79C973"              value="2">
+        <desc>AMD PCNet-FAST III network card (Am79C973).</desc>
+    </const>
+    <const name="I82540EM"              value="3">
+        <desc>Intel PRO/1000 MT Desktop network card (82540EM).</desc>
+    </const>
+    <const name="I82543GC"              value="4">
+        <desc>Intel PRO/1000 T Server network card (82543GC).</desc>
+    </const>
+    <const name="I82545EM"              value="5">
+        <desc>Intel PRO/1000 MT Server network card (82545EM).</desc>
+    </const>
   </enum>
 
   <interface
