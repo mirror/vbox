@@ -1038,7 +1038,7 @@ static char bios_cvs_version_string[] = "$Revision: 1.176 $ $Date: 2006/12/30 17
 #  define BX_DEBUG(format, p...)
 #endif
 #ifdef VBOX
-#define BX_INFO(format, p...)   do { put_str(BIOS_PRINTF_INFO, bios_prefix_string); bios_printf(BIOS_PRINTF_INFO, format, ##p); } while (0)
+#define BX_INFO(format, p...)   do { put_str(BIOS_PRINTF_INFO, get_CS(), bios_prefix_string); bios_printf(BIOS_PRINTF_INFO, format, ##p); } while (0)
 #else /* !VBOX */
 #define BX_INFO(format, p...)   bios_printf(BIOS_PRINTF_INFO, format, ##p)
 #endif /* !VBOX */
