@@ -1243,9 +1243,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         if (iPciDeviceNo == 3 && adapterType == NetworkAdapterType_I82545EM)
         {
-            iPciDeviceNo = 11;
+            iPciDeviceNo = 0x11;
             fSwapSlots3and11 = true;
         }
+        else if (iPciDeviceNo == 0x11 && fSwapSlots3and11)
+            iPciDeviceNo = 3;
 #endif
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo", iPciDeviceNo);               RC_CHECK();
         Assert(!afPciDeviceNo[iPciDeviceNo]);
@@ -2320,22 +2322,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertNode(pDev,     "0", &pInst);                           RC_CHECK();
                 rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                       RC_CHECK();
                 rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* bool */  RC_CHECK();
-#ifdef VMWARE_NET_IN_SLOT_11
-                /* 
-                 * Dirty hack for PCI slot compatibility with VMWare,
-                 * it assigns slot 11 to the first network controller.
-                 */
-                unsigned iPciDeviceNo = 11;
-                if (fSwapSlots3and11)
-                    iPciDeviceNo = 3;
-                rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          iPciDeviceNo);  RC_CHECK();
-                Assert(!afPciDeviceNo[iPciDeviceNo]);
-                afPciDeviceNo[iPciDeviceNo] = true;
-#else
                 rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          11);            RC_CHECK();
                 Assert(!afPciDeviceNo[11]);
                 afPciDeviceNo[11] = true;
-#endif
                 rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);             RC_CHECK();
 
                 rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                      RC_CHECK();
