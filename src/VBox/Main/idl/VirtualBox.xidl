@@ -3277,17 +3277,18 @@
     <const name="VendorUrl" value="8" />
     <const name="Description" value="9" />
     <const name="License" value="10" />
-    <const name="CPU" value="11" />
-    <const name="Memory" value="12" />
-    <const name="HardDiskControllerIDE" value="13" />
-    <const name="HardDiskControllerSATA" value="14" />
-    <const name="HardDiskControllerSCSI" value="15" />
-    <const name="HardDiskImage" value="16" />
-    <const name="Floppy" value="17" />
-    <const name="CDROM" value="18" />
-    <const name="NetworkAdapter" value="19" />
-    <const name="USBController" value="20" />
-    <const name="SoundCard" value="21" />
+    <const name="Miscellaneous" value="11" />
+    <const name="CPU" value="12" />
+    <const name="Memory" value="13" />
+    <const name="HardDiskControllerIDE" value="14" />
+    <const name="HardDiskControllerSATA" value="15" />
+    <const name="HardDiskControllerSCSI" value="16" />
+    <const name="HardDiskImage" value="17" />
+    <const name="Floppy" value="18" />
+    <const name="CDROM" value="19" />
+    <const name="NetworkAdapter" value="20" />
+    <const name="USBController" value="21" />
+    <const name="SoundCard" value="22" />
 
   </enum>
 
@@ -3354,6 +3355,9 @@
       <li>
           "License": the EULA section from the OVF, if present. It is the responsibility of the calling
           code to display such a license for agreement; the Main API does not enforce any such policy.
+      </li>
+      <li>
+          Miscellaneous: reserved for future use.
       </li>
       <li>
         "CPU": the number of CPUs. There can be at most one such item, which will presently be ignored.
