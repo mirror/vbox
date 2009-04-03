@@ -314,7 +314,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
         maFramebuffers[uScreenId].pendingResize.cbLine      = cbLine;
         maFramebuffers[uScreenId].pendingResize.w           = w;
         maFramebuffers[uScreenId].pendingResize.h           = h;
-        
+
         return VINF_VGA_RESIZE_IN_PROGRESS;
     }
 
@@ -375,7 +375,7 @@ void Display::handleResizeCompletedEMT (void)
         /* Check whether a resize is pending for this framebuffer. */
         if (pFBInfo->pendingResize.fPending)
         {
-            /* Reset the condition, call the display resize with saved data and continue. 
+            /* Reset the condition, call the display resize with saved data and continue.
              *
              * Note: handleDisplayResize can call handleResizeCompletedEMT back,
              *       but infinite recursion is not possible, because when the handleResizeCompletedEMT
@@ -2327,7 +2327,7 @@ DECLCALLBACK(void) Display::displayProcessAdapterDataCallback(PPDMIDISPLAYCONNEC
 
                  break;
              }
-             else
+             else if (pHdr->u8Type != VBOX_VIDEO_INFO_TYPE_NV_HEAP) /** @todo why is Additions/WINNT/Graphics/Miniport/VBoxVideo.cpp pushing this to us? */
              {
                  LogRel(("Guest adapter information contains unsupported type %d. The block has been skipped.\n", pHdr->u8Type));
              }
