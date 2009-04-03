@@ -115,15 +115,7 @@ uint32_t g_TimeSyncInterval = 0;
 #ifdef RT_OS_OS2
 static uint32_t g_TimeSyncMinAdjust = 1000;
 #else
- #if RT_OS_WINDOWS
-  /** Process token. */
-  static HANDLE g_hTokenProcess = NULL;
-  /* Old token privileges. */
-  static TOKEN_PRIVILEGES g_tpOld;
-  static uint32_t g_TimeSyncMinAdjust = 100;
- #else
-  static uint32_t g_TimeSyncMinAdjust = 100;
- #endif
+static uint32_t g_TimeSyncMinAdjust = 100;
 #endif
 /** @see pg_vboxservice_timesync */
 static uint32_t g_TimeSyncLatencyFactor = 8;
@@ -132,6 +124,14 @@ static uint32_t g_TimeSyncMaxLatency = 250;
 
 /** The semaphore we're blocking on. */
 static RTSEMEVENTMULTI g_TimeSyncEvent = NIL_RTSEMEVENTMULTI;
+
+#ifdef RT_OS_WINDOWS
+/** Process token. */
+static HANDLE g_hTokenProcess = NULL;
+/** Old token privileges. */
+static TOKEN_PRIVILEGES g_OldTokenPrivileges;
+#endif
+
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
 static DECLCALLBACK(int) VBoxServiceTimeSyncPreInit(void)
@@ -165,8 +165,6 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncOption(const char **ppszShort, int a
 /** @copydoc VBOXSERVICE::pfnInit */
 static DECLCALLBACK(int) VBoxServiceTimeSyncInit(void)
 {
-    int rc = VINF_SUCCESS;
-
     /*
      * If not specified, find the right interval default.
      * Then create the event sem to block on.
@@ -176,53 +174,52 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncInit(void)
     if (!g_TimeSyncInterval)
         g_TimeSyncInterval = 10 * 1000;
 
-    rc = RTSemEventMultiCreate(&g_TimeSyncEvent);
+    int rc = RTSemEventMultiCreate(&g_TimeSyncEvent);
     AssertRC(rc);
-
-#if defined(RT_OS_WINDOWS)
-    /* Adjust priviledges of this process to adjust the time. */
-    TOKEN_PRIVILEGES tp; /* Token provileges. */
-    DWORD dwSize = sizeof (TOKEN_PRIVILEGES);
-    LUID luid = {0};
-
-    if (!OpenProcessToken(GetCurrentProcess(),
-                          TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &g_hTokenProcess))
+#ifdef RT_OS_WINDOWS
+    if (RT_SUCCESS(rc))
     {
-        VBoxServiceError("Opening process token (SE_SYSTEMTIME_NAME) failed with code %ld!\n", GetLastError());
-        rc = VERR_PERMISSION_DENIED;
-    }
-    else
-    {
-        if(!::LookupPrivilegeValue(NULL, SE_SYSTEMTIME_NAME, &luid))
+        /*
+         * Adjust priviledges of this process so we can make system time adjustments.
+         */
+        if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &g_hTokenProcess))
         {
-            VBoxServiceError("Looking up token privileges (SE_SYSTEMTIME_NAME) failed with code %ld!\n", GetLastError());
-            rc = VERR_PERMISSION_DENIED;
+            TOKEN_PRIVILEGES Tp;
+            RT_ZERO(Tp);
+            tp.PrivilegeCount = 1;
+            tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+            if (LookupPrivilegeValue(NULL, SE_SYSTEMTIME_NAME, &tp.Privileges[0].Luid))
+            {
+                DWORD cbRet = sizeof(g_OldTokenPrivileges);
+                if (!AdjustTokenPrivileges(g_hTokenProcess, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), &g_OldTokenPrivileges, &cbRet))
+                {
+                    DWORD dwErr = GetLastError();
+                    rc = RTErrConvertFromWin32(dwErr);
+                    VBoxServiceError("Adjusting token privileges (SE_SYSTEMTIME_NAME) failed with status code %u/%Rrc!\n", dwErr, rc);
+                }
+            }
+            else
+            {
+                DWORD dwErr = GetLastError();
+                rc = RTErrConvertFromWin32(dwErr);
+                VBoxServiceError("Looking up token privileges (SE_SYSTEMTIME_NAME) failed with status code %u/%Rrc!\n", dwErr, rc);
+            }
+
+            if (RT_FAILURE(rc))
+            {
+                CloseHandle(g_hTokenProcess);
+                g_hTokenProcess = NULL;
+            }
         }
-
-        ZeroMemory (&tp, sizeof (tp));
-        tp.PrivilegeCount = 1;
-        tp.Privileges[0].Luid = luid;
-        tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-
-        /* Adjust Token privileges. */
-        if (!::AdjustTokenPrivileges(g_hTokenProcess, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
-                 &g_tpOld, &dwSize))
+        else
         {
-           VBoxServiceError("Adjusting token privileges (SE_SYSTEMTIME_NAME) failed with code %ld!\n", GetLastError());
-           rc = VERR_PERMISSION_DENIED;
+            DWORD dwErr = GetLastError();
+            rc = RTErrConvertFromWin32(dwErr);
+            VBoxServiceError("Opening process token (SE_SYSTEMTIME_NAME) failed with status code %u/%Rrc!\n", dwErr, rc);
+            g_hTokenProcess = NULL;
         }
     }
-#else
-    /* Nothing to do here yet. */
-#endif
-
-#if defined(RT_OS_WINDOWS)
-    if (RT_FAILURE(rc))
-    {
-        CloseHandle (g_hTokenProcess);
-        g_hTokenProcess = NULL;
-    }
-#endif
+#endif /* RT_OS_WINDOWS */
 
     return rc;
 }
@@ -290,16 +287,14 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                      * If we've got adjtime around, try that first - most
                      * *NIX systems have it. Fall back on settimeofday.
                      */
-#if defined(RT_OS_WINDOWS)
-
-
+#ifdef RT_OS_WINDOWS
                     /* Just make sure it compiles for now, but later:
                      SetSystemTimeAdjustment and fall back on SetSystemTime.
                      */
                     //AssertFatalFailed();
-#else
+#else  /* !RT_OS_WINDOWS */
                     struct timeval tv;
-#if !defined(RT_OS_OS2) /* PORTME */
+# if !defined(RT_OS_OS2) /* PORTME */
                     RTTimeSpecGetTimeval(&Drift, &tv);
                     if (adjtime(&tv, NULL) == 0)
                     {
@@ -308,7 +303,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                         cErrors = 0;
                     }
                     else
-#endif
+# endif
                     {
                         errno = 0;
                         if (!gettimeofday(&tv, NULL))
@@ -320,11 +315,11 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                                 if (g_cVerbosity >= 1)
                                     VBoxServiceVerbose(1, "settimeofday to %s\n",
                                                        RTTimeToString(RTTimeExplode(&Time, &Tmp), sz, sizeof(sz)));
-#ifdef DEBUG
+# ifdef DEBUG
                                 if (g_cVerbosity >= 3)
                                     VBoxServiceVerbose(2, "       new time %s\n",
                                                        RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&Tmp)), sz, sizeof(sz)));
-#endif
+# endif
                                 cErrors = 0;
                             }
                             else if (cErrors++ < 10)
@@ -376,15 +371,27 @@ static DECLCALLBACK(void) VBoxServiceTimeSyncStop(void)
 /** @copydoc VBOXSERVICE::pfnTerm */
 static DECLCALLBACK(void) VBoxServiceTimeSyncTerm(void)
 {
-#if defined(RT_OS_WINDOWS)
-    /* Disable SE_SYSTEMTIME_NAME again. */
-    DWORD dwSize = sizeof (TOKEN_PRIVILEGES);
-    if (g_hTokenProcess && !::AdjustTokenPrivileges(g_hTokenProcess, FALSE, &g_tpOld, dwSize, NULL, NULL))
-        VBoxServiceError("Adjusting back token privileges (SE_SYSTEMTIME_NAME) failed with code %ld!\n", GetLastError());
+#ifdef RT_OS_WINDOWS
+    /*
+     * Restore the SE_SYSTEMTIME_NAME token privileges (if init succeeded).
+     */
+    if (g_hTokenProcess)
+    {
+        if (!AdjustTokenPrivileges(g_hTokenProcess, FALSE, &g_tpOld, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
+        {
+            DWORD dwErr = GetLastError();
+            VBoxServiceError("Restoring token privileges (SE_SYSTEMTIME_NAME) failed with code %u!\n", dwErr);
+        }
+        CloseHandle(g_hTokenProcess);
+        g_hTokenProcess = NULL;
+    }
 #endif
 
-    RTSemEventMultiDestroy(g_TimeSyncEvent);
-    g_TimeSyncEvent = NIL_RTSEMEVENTMULTI;
+    if (g_TimeSyncEvent != NIL_RTSEMEVENTMULTI)
+    {
+        RTSemEventMultiDestroy(g_TimeSyncEvent);
+        g_TimeSyncEvent = NIL_RTSEMEVENTMULTI;
+    }
 }
 
 
