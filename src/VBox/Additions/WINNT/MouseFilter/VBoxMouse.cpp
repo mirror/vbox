@@ -185,12 +185,12 @@ static void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
 
         if (status == STATUS_SUCCESS)
         {
-            /* Check whether the device claims the IO port 0x60. */
-            BOOLEAN bPort60h = FALSE;
+            /* Check whether the device claims the IO port 0x60 or interrupt 12. */
+            BOOLEAN bDetected = FALSE;
 
             CM_RESOURCE_LIST *pResourceList = (CM_RESOURCE_LIST *)&Property[0];
 
-            dprintf(("VBoxMouse::vboxDeviceAdded: Configuration: descriptors %d\n",
+            dprintf(("VBoxMouse::vboxDeviceAdded: Configuration: Number of descriptors = %d\n",
                       pResourceList->Count));
 
             ULONG iDescriptor = 0;
@@ -216,24 +216,41 @@ static void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
                              pPartialDescriptor->Type, pPartialDescriptor->ShareDisposition, pPartialDescriptor->Flags,
                              pPartialDescriptor->u.Generic.Start.QuadPart, pPartialDescriptor->u.Generic.Length));
 
-                    if (pPartialDescriptor->Type == CmResourceTypePort)
+                    switch(pPartialDescriptor->Type)
                     {
+
+                    case CmResourceTypePort:
+
+                        dprintf(("VBoxMouse::vboxDeviceAdded: PartialDescriptor %d: Port 0x%x\n", iPartialDescriptor, pPartialDescriptor->u.Port.Start.QuadPart));
                         if (pPartialDescriptor->u.Port.Start.QuadPart == 0x60)
                         {
-                            bPort60h = TRUE;
+                            bDetected = TRUE;
                         }
+                        break;
+
+                    case CmResourceTypeInterrupt:
+
+                        dprintf(("VBoxMouse::vboxDeviceAdded: PartialDescriptor %d: Int %ld\n", iPartialDescriptor, pPartialDescriptor->u.Interrupt.Vector));
+                        if (pPartialDescriptor->u.Interrupt.Vector == 0x12)
+                        {
+                            bDetected = TRUE;
+                        }
+                        break;
+
+                    default:
+                        break;
                     }
                 }
             }
 
-            if (bPort60h)
+            if (bDetected)
             {
                 /* It's the emulated 8042 PS/2 mouse/kbd device, so mark it as the Host one.
                  * For this device the filter will query absolute mouse coords from the host.
                  */
                 InterlockedExchange (&g_ctx.fHostMouseFound, TRUE);
                 devExt->HostMouse = TRUE;
-                dprintf(("VBoxMouse::vboxDeviceAdded: host mouse found.\n"));
+                dprintf(("VBoxMouse::vboxDeviceAdded: Host mouse found.\n"));
             }
         }
     }
@@ -273,7 +290,7 @@ static void vboxDeviceRemoved (PDEVICE_EXTENSION devExt)
         {
             dprintf(("VBoxMouse::vboxDeviceRemoved: the request allocation has failed.\n"));
         }
-    
+
         InterlockedExchange (&g_ctx.fHostInformed, FALSE);
     }
 
@@ -302,7 +319,7 @@ static void vboxDeviceRemoved (PDEVICE_EXTENSION devExt)
 
 static void vboxInformHost (PDEVICE_EXTENSION devExt)
 {
-    dprintf (("VBoxMouse::vboxInformHost: %p\n", devExt));
+    dprintf (("VBoxMouse::vboxInformHost: DevExt=%p, HostMouse=%d\n", devExt, devExt->HostMouse));
 
     if (vboxIsVBGLInited ())
     {
