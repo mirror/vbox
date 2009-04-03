@@ -1725,41 +1725,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #  endif
 # endif
 
-#elif defined(RT_OS_WINDOWS)
-                    if (fSniffer)
-                    {
-                        rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);   RC_CHECK();
-                    }
-                    else
-                    {
-                        rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);             RC_CHECK();
-                    }
-                    Bstr hostInterfaceName;
-                    hrc = networkAdapter->COMGETTER(HostInterface)(hostInterfaceName.asOutParam()); H();
-                    ComPtr<IHostNetworkInterface> hostInterface;
-                    rc = host->FindHostNetworkInterfaceByName(hostInterfaceName, hostInterface.asOutParam());
-                    if (!SUCCEEDED(rc))
-                    {
-                        AssertMsgFailed(("Cannot get GUID for host interface '%ls'\n", hostInterfaceName));
-                        hrc = networkAdapter->Detach();                             H();
-                    }
-                    else
-                    {
-# ifdef VBOX_WITH_NETFLT
-                        rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");                            RC_CHECK();
-                        rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                                 RC_CHECK();
-                        rc = CFGMR3InsertString(pCfg, "Trunk", Utf8Str(hostInterfaceName));             RC_CHECK();
-                        rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);           RC_CHECK();
-# endif
-                        Guid hostIFGuid;
-                        hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());                    H();
-                        char szDriverGUID[256] = {0};
-                        /* add curly brackets */
-                        szDriverGUID[0] = '{';
-                        strcpy(szDriverGUID + 1, hostIFGuid.toString().raw());
-                        strcat(szDriverGUID, "}");
-                        rc = CFGMR3InsertBytes(pCfg, "GUID", szDriverGUID, sizeof(szDriverGUID));       RC_CHECK();
-                    }
+#elif defined(RT_OS_WINDOWS) /* not defined NetFlt */
+                    /* NOTHING TO DO HERE */
 #elif defined(RT_OS_LINUX)
 /// @todo aleksey: is there anything to be done here?
 #elif defined(RT_OS_FREEBSD)
@@ -1970,7 +1937,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 networkName = Bstr(szNetwork);
                 trunkName   = Bstr(pszTrunk);
                 trunkType   = TRUNKTYPE_NETADP;
-# endif /* definedd VBOX_WITH_NETFLT*/
+# endif /* defined VBOX_WITH_NETFLT*/
 #elif defined(RT_OS_DARWIN)
                 rc = CFGMR3InsertString(pCfg, "Trunk", "vboxnet0");             RC_CHECK();
                 rc = CFGMR3InsertString(pCfg, "Network", "HostInterfaceNetworking-vboxnet0"); RC_CHECK();
