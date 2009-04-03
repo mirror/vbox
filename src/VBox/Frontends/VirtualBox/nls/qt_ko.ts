@@ -4011,7 +4011,7 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/gui/widgets/qtextedit.cpp" line="2595"/>
         <source>PDF Pop directional formatting</source>
-        <translation type="unfinished">PDF Pop 방향 포매팅</translation>
+        <translation>PDF Pop 방향 포매팅</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qtextedit.cpp" line="2601"/>
