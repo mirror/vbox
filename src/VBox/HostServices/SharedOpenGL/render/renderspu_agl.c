@@ -170,7 +170,18 @@ windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData)
                                    r.size.width,
                                    r.size.height };
                     renderspu_SystemSetRootVisibleRegion(1, &l);
+
+                    /* Temporary save the current active context */
+                    AGLContext tmpContext = render_spu.ws.aglGetCurrentContext();
                     crHashtableWalk(render_spu.windowTable, crClipRootHelper, NULL);
+                    /* Reapply the last active context */
+                    if (tmpContext)
+                    {
+                        OSStatus result = render_spu.ws.aglSetCurrentContext(tmpContext);
+                        CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): SetCurrentContext Failed");
+                        result = render_spu.ws.aglUpdateContext(tmpContext);
+                        CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): UpdateContext Failed");
+                    }
 #endif
                     break;
                 }
@@ -636,7 +647,8 @@ renderspu_SystemSwapBuffers(WindowInfo *window, GLint flags)
         crError("Render SPU (renderspu_SystemSwapBuffers): SwapBuffers got a null context from the window");
 
 //    DEBUG_MSG_POETZSCH (("Swapped %d context %x visible: %d\n", window->id, context->context, IsWindowVisible (window->window)));
-    if (context->visual->visAttribs & CR_DOUBLE_BIT)
+    if (context->visual &&
+        context->visual->visAttribs & CR_DOUBLE_BIT)
         render_spu.ws.aglSwapBuffers(context->context);
     else
         glFlush();
