@@ -1049,64 +1049,6 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
 }
 
 
-#if 0/**@todo delete this. */
-/**
- * Turns access monitoring of a page within a monitored
- * physical write/all page access handler regio back on.
- *
- * The caller must do required page table modifications.
- *
- * @returns VBox status code.
- * @param   pVM         VM Handle
- * @param   GCPhys      Start physical address earlier passed to PGMR3HandlerPhysicalRegister().
- *                      This must be a fully page aligned range or we risk messing up other
- *                      handlers installed for the start and end pages.
- * @param   GCPhysPage  Physical address of the page to turn on access monitoring for.
- */
-VMMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
-{
-    /*
-     * Validate the range.
-     */
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
-    if (RT_LIKELY(pCur))
-    {
-        if (RT_LIKELY(    GCPhysPage >= pCur->Core.Key
-                      &&  GCPhysPage <= pCur->Core.KeyLast))
-        {
-            Assert(!(pCur->Core.Key & PAGE_OFFSET_MASK));
-            Assert((pCur->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
-
-            AssertReturn(   pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
-                         || pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_ALL
-                         || pCur->enmType == PGMPHYSHANDLERTYPE_MMIO,
-                         VERR_ACCESS_DENIED);
-
-            /*
-             * Change the page status.
-             */
-            PPGMPAGE pPage;
-            int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPage, &pPage);
-            AssertRCReturn(rc, rc);
-            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, pgmHandlerPhysicalCalcState(pCur));
-
-#ifndef IN_RC
-            HWACCMInvalidatePhysPage(pVM, GCPhysPage);
-#endif
-            return VINF_SUCCESS;
-        }
-
-        AssertMsgFailed(("The page %#x is outside the range %#x-%#x\n",
-                         GCPhysPage, pCur->Core.Key, pCur->Core.KeyLast));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    AssertMsgFailed(("Specified physical handler start address %#x is invalid.\n", GCPhys));
-    return VERR_PGM_HANDLER_NOT_FOUND;
-}
-#endif
-
-
 /**
  * Checks if a physical range is handled
  *
