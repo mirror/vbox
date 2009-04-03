@@ -106,15 +106,42 @@ static int parseDiskType(const char *psz, HardDiskType_T *pDiskType)
     HardDiskType_T DiskType = HardDiskType_Normal;
     if (!RTStrICmp(psz, "normal"))
         DiskType = HardDiskType_Normal;
-    else if (RTStrICmp(psz, "immutable"))
+    else if (!RTStrICmp(psz, "immutable"))
         DiskType = HardDiskType_Immutable;
-    else if (RTStrICmp(psz, "writethrough"))
+    else if (!RTStrICmp(psz, "writethrough"))
         DiskType = HardDiskType_Writethrough;
     else
         rc = VERR_PARSE_ERROR;
 
     if (RT_SUCCESS(rc))
         *pDiskType = DiskType;
+    return rc;
+}
+
+static int parseBool(const char *psz, bool *pb)
+{
+    int rc = VINF_SUCCESS;
+    if (    !RTStrICmp(psz, "on")
+        ||  !RTStrICmp(psz, "yes")
+        ||  !RTStrICmp(psz, "true")
+        ||  !RTStrICmp(psz, "1")
+        ||  !RTStrICmp(psz, "enable")
+        ||  !RTStrICmp(psz, "enabled"))
+    {
+        *pb = true;
+    }
+    else if (   !RTStrICmp(psz, "off")
+             || !RTStrICmp(psz, "no")
+             || !RTStrICmp(psz, "false")
+             || !RTStrICmp(psz, "0")
+             || !RTStrICmp(psz, "disable")
+             || !RTStrICmp(psz, "disabled"))
+    {
+        *pb = false;
+    }
+    else
+        rc = VERR_PARSE_ERROR;
+
     return rc;
 }
 
@@ -223,7 +250,7 @@ int handleCreateHardDisk(HandlerArg *a)
 
     /* check the outcome */
     if (!filename || (sizeMB == 0))
-        return errorSyntax(USAGE_CREATEHD, "Parameters -filename and -size are required");
+        return errorSyntax(USAGE_CREATEHD, "Parameters --filename and --size are required");
 
     ComPtr<IHardDisk> hardDisk;
     CHECK_ERROR(a->virtualBox, CreateHardDisk(format, filename, hardDisk.asOutParam()));
@@ -295,131 +322,134 @@ static DECLCALLBACK(int) hardDiskProgressCallback(PVM pVM, unsigned uPercent, vo
 }
 #endif
 
+static const RTGETOPTDEF g_aModifyHardDiskOptions[] =
+{
+    { "--type",         't', RTGETOPT_REQ_STRING },
+    { "-type",          't', RTGETOPT_REQ_STRING },     // deprecated
+    { "settype",        't', RTGETOPT_REQ_STRING },     // deprecated
+    { "--autoreset",    'z', RTGETOPT_REQ_STRING },
+    { "-autoreset",     'z', RTGETOPT_REQ_STRING },     // deprecated
+    { "autoreset",      'z', RTGETOPT_REQ_STRING },     // deprecated
+    { "--compact",      'c', RTGETOPT_REQ_NOTHING },
+    { "-compact",       'c', RTGETOPT_REQ_NOTHING },    // deprecated
+    { "compact",        'c', RTGETOPT_REQ_NOTHING },    // deprecated
+};
 
 int handleModifyHardDisk(HandlerArg *a)
 {
     HRESULT rc;
-
-    /* The uuid/filename and a command */
-    if (a->argc < 2)
-        return errorSyntax(USAGE_MODIFYHD, "Incorrect number of parameters");
-
     ComPtr<IHardDisk> hardDisk;
-    Bstr filepath;
+    HardDiskType_T DiskType;
+    bool AutoReset = false;
+    bool fModifyDiskType = false, fModifyAutoReset = false, fModifyCompact = false;;
+    const char *FilenameOrUuid = NULL;
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aModifyHardDiskOptions, RT_ELEMENTS(g_aModifyHardDiskOptions), 0, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 't':   // --type
+                rc = parseDiskType(ValueUnion.psz, &DiskType);
+                if (RT_FAILURE(rc))
+                    return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
+                fModifyDiskType = true;
+                break;
+
+            case 'z':   // --autoreset
+                rc = parseBool(ValueUnion.psz, &AutoReset);
+                if (RT_FAILURE(rc))
+                    return errorArgument("Invalid autoreset parameter '%s'", ValueUnion.psz);
+                fModifyAutoReset = true;
+                break;
+
+            case 'c':   // --compact
+                fModifyCompact = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!FilenameOrUuid)
+                    FilenameOrUuid = ValueUnion.psz;
+                else
+                    return errorSyntax(USAGE_CREATEHD, "Invalid parameter '%s'", ValueUnion.psz);
+                break;
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_MODIFYHD, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_MODIFYHD, "Invalid option case %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_MODIFYHD, "unknown option: %s\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_MODIFYHD, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_MODIFYHD, "error: %Rrs", c);
+        }
+    }
+
+    if (!FilenameOrUuid)
+        return errorSyntax(USAGE_MODIFYHD, "Disk name or UUID required");
+
+    if (!fModifyDiskType && !fModifyAutoReset && !fModifyCompact)
+        return errorSyntax(USAGE_MODIFYHD, "No operation specified");
 
     /* first guess is that it's a UUID */
-    Guid uuid(a->argv[0]);
+    Guid uuid(FilenameOrUuid);
     rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
     /* no? then it must be a filename */
     if (!hardDisk)
     {
-        filepath = a->argv[0];
-        CHECK_ERROR(a->virtualBox, FindHardDisk(filepath, hardDisk.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(FilenameOrUuid), hardDisk.asOutParam()));
         if (FAILED(rc))
             return 1;
     }
 
-    /* let's find out which command */
-    if (strcmp(a->argv[1], "settype") == 0)
+    if (fModifyDiskType)
     {
         /* hard disk must be registered */
         if (SUCCEEDED(rc) && hardDisk)
         {
-            char *type = NULL;
-
-            if (a->argc <= 2)
-                return errorArgument("Missing argument for settype");
-
-            type = a->argv[2];
-
             HardDiskType_T hddType;
             CHECK_ERROR(hardDisk, COMGETTER(Type)(&hddType));
 
-            if (strcmp(type, "normal") == 0)
-            {
-                if (hddType != HardDiskType_Normal)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Normal));
-            }
-            else if (strcmp(type, "writethrough") == 0)
-            {
-                if (hddType != HardDiskType_Writethrough)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Writethrough));
-
-            }
-            else if (strcmp(type, "immutable") == 0)
-            {
-                if (hddType != HardDiskType_Immutable)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Immutable));
-            }
-            else
-            {
-                return errorArgument("Invalid hard disk type '%s' specified", Utf8Str(type).raw());
-            }
+            if (hddType != DiskType)
+                CHECK_ERROR(hardDisk, COMSETTER(Type)(DiskType));
         }
         else
             return errorArgument("Hard disk image not registered");
     }
-    else if (strcmp(a->argv[1], "autoreset") == 0)
+
+    if (fModifyAutoReset)
     {
-        char *onOff = NULL;
-
-        if (a->argc <= 2)
-            return errorArgument("Missing argument for autoreset");
-
-        onOff = a->argv[2];
-
-        if (strcmp(onOff, "on") == 0)
-        {
-            CHECK_ERROR(hardDisk, COMSETTER(AutoReset)(TRUE));
-        }
-        else if (strcmp(onOff, "off") == 0)
-        {
-            CHECK_ERROR(hardDisk, COMSETTER(AutoReset)(FALSE));
-        }
-        else
-        {
-            return errorArgument("Invalid autoreset argument '%s' specified",
-                                 Utf8Str(onOff).raw());
-        }
+        CHECK_ERROR(hardDisk, COMSETTER(AutoReset)(AutoReset));
     }
-    else if (strcmp(a->argv[1], "compact") == 0)
+
+    if (fModifyCompact)
     {
 #if 1
-        RTPrintf("Error: Shrink hard disk operation is not implemented!\n");
+        RTPrintf("Error: Compact hard disk operation is not implemented!\n");
+        RTPrintf("The functionality will be restored later.\n");
         return 1;
 #else
         /* the hard disk image might not be registered */
         if (!hardDisk)
         {
-            a->virtualBox->OpenHardDisk(Bstr(a->argv[0]), AccessMode_ReadWrite, hardDisk.asOutParam());
+            a->virtualBox->OpenHardDisk(Bstr(FilenameOrUuid), AccessMode_ReadWrite, hardDisk.asOutParam());
             if (!hardDisk)
                 return errorArgument("Hard disk image not found");
         }
 
-        Bstr format;
-        hardDisk->COMGETTER(Format)(format.asOutParam());
-        if (format != "VDI")
-            return errorArgument("Invalid hard disk type. The command only works on VDI files\n");
-
-        Bstr fileName;
-        hardDisk->COMGETTER(Location)(fileName.asOutParam());
-
-        /* make sure the object reference is released */
-        hardDisk = NULL;
-
-        unsigned uProcent;
-
-        RTPrintf("Shrinking '%lS': 0%%", fileName.raw());
-        int vrc = VDIShrinkImage(Utf8Str(fileName).raw(), hardDiskProgressCallback, &uProcent);
-        if (RT_FAILURE(vrc))
-        {
-            RTPrintf("Error while shrinking hard disk image: %Rrc\n", vrc);
-            rc = E_FAIL;
-        }
+        /** @todo implement compacting of images. */
 #endif
     }
-    else
-        return errorSyntax(USAGE_MODIFYHD, "Invalid parameter '%s'", Utf8Str(a->argv[1]).raw());
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -770,6 +800,30 @@ out:
     return RT_FAILURE(rc);
 }
 
+static const RTGETOPTDEF g_aAddiSCSIDiskOptions[] =
+{
+    { "--server",       's', RTGETOPT_REQ_STRING },
+    { "-server",        's', RTGETOPT_REQ_STRING },     // deprecated
+    { "--target",       'T', RTGETOPT_REQ_STRING },
+    { "-target",        'T', RTGETOPT_REQ_STRING },     // deprecated
+    { "--port",         'p', RTGETOPT_REQ_STRING },
+    { "-port",          'p', RTGETOPT_REQ_STRING },     // deprecated
+    { "--lun",          'l', RTGETOPT_REQ_STRING },
+    { "-lun",           'l', RTGETOPT_REQ_STRING },     // deprecated
+    { "--encodedlun",   'L', RTGETOPT_REQ_STRING },
+    { "-encodedlun",    'L', RTGETOPT_REQ_STRING },     // deprecated
+    { "--username",     'u', RTGETOPT_REQ_STRING },
+    { "-username",      'u', RTGETOPT_REQ_STRING },     // deprecated
+    { "--password",     'P', RTGETOPT_REQ_STRING },
+    { "-password",      'P', RTGETOPT_REQ_STRING },     // deprecated
+    { "--type",         't', RTGETOPT_REQ_STRING },
+    { "-type",          't', RTGETOPT_REQ_STRING },     // deprecated
+    { "--comment",      'c', RTGETOPT_REQ_STRING },
+    { "-comment",       'c', RTGETOPT_REQ_STRING },     // deprecated
+    { "--intnet",       'I', RTGETOPT_REQ_NOTHING },
+    { "-intnet",        'I', RTGETOPT_REQ_NOTHING },    // deprecated
+};
+
 int handleAddiSCSIDisk(HandlerArg *a)
 {
     HRESULT rc;
@@ -781,96 +835,98 @@ int handleAddiSCSIDisk(HandlerArg *a)
     Bstr password;
     Bstr comment;
     bool fIntNet = false;
+    HardDiskType_T DiskType = HardDiskType_Normal;
 
-    /* at least server and target */
-    if (a->argc < 4)
-        return errorSyntax(USAGE_ADDISCSIDISK, "Not enough parameters");
-
-    /* let's have a closer look at the arguments */
-    for (int i = 0; i < a->argc; i++)
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aAddiSCSIDiskOptions, RT_ELEMENTS(g_aAddiSCSIDiskOptions), 0, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
-        if (strcmp(a->argv[i], "-server") == 0)
+        switch (c)
         {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            server = a->argv[i];
+            case 's':   // --server
+                server = ValueUnion.psz;
+                break;
+
+            case 'T':   // --target
+                target = ValueUnion.psz;
+                break;
+
+            case 'p':   // --port
+                port = ValueUnion.psz;
+                break;
+
+            case 'l':   // --lun
+                lun = ValueUnion.psz;
+                break;
+
+            case 'L':   // --encodedlun
+                lun = BstrFmt("enc%s", ValueUnion.psz);
+                break;
+
+            case 'u':   // --username
+                username = ValueUnion.psz;
+                break;
+
+            case 'P':   // --password
+                password = ValueUnion.psz;
+                break;
+
+            case 't':   // --type
+                rc = parseDiskType(ValueUnion.psz, &DiskType);
+                if (RT_FAILURE(rc))
+                    return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
+                break;
+
+            case 'c':   // --comment
+                comment = ValueUnion.psz;
+                break;
+
+            case 'I':   // --intnet
+                fIntNet = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                return errorSyntax(USAGE_ADDISCSIDISK, "Invalid parameter '%s'", ValueUnion.psz);
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_ADDISCSIDISK, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_ADDISCSIDISK, "Invalid option case %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_ADDISCSIDISK, "unknown option: %s\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_ADDISCSIDISK, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_ADDISCSIDISK, "error: %Rrs", c);
         }
-        else if (strcmp(a->argv[i], "-target") == 0)
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            target = a->argv[i];
-        }
-        else if (strcmp(a->argv[i], "-port") == 0)
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            port = a->argv[i];
-        }
-        else if (strcmp(a->argv[i], "-lun") == 0)
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            lun = a->argv[i];
-        }
-        else if (strcmp(a->argv[i], "-encodedlun") == 0)
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            lun = BstrFmt("enc%s", a->argv[i]);
-        }
-        else if (strcmp(a->argv[i], "-username") == 0)
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            username = a->argv[i];
-        }
-        else if (strcmp(a->argv[i], "-password") == 0)
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            password = a->argv[i];
-        }
-        else if (strcmp(a->argv[i], "-comment") == 0)
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            comment = a->argv[i];
-        }
-        else if (strcmp(a->argv[i], "-intnet") == 0)
-        {
-            i++;
-            fIntNet = true;
-        }
-        else
-            return errorSyntax(USAGE_ADDISCSIDISK, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
     }
 
     /* check for required options */
     if (!server || !target)
-        return errorSyntax(USAGE_ADDISCSIDISK, "Parameters -server and -target are required");
+        return errorSyntax(USAGE_ADDISCSIDISK, "Parameters --server and --target are required");
 
     do
     {
         ComPtr<IHardDisk> hardDisk;
         /** @todo move the location stuff to Main, which can use pfnComposeName
-         * from the disk backends to construct the location properly. */
+         * from the disk backends to construct the location properly. Also do
+         * not use slashes to separate the parts, as otherwise only the last
+         * element comtaining information will be shown. */
         CHECK_ERROR_BREAK (a->virtualBox,
             CreateHardDisk(Bstr ("iSCSI"),
-                           BstrFmt ("%ls/%ls/%ls", server.raw(), target.raw(), lun.raw()),
+                           BstrFmt ("%ls|%ls|%ls", server.raw(), target.raw(), lun.raw()),
                            hardDisk.asOutParam()));
         CheckComRCBreakRC (rc);
 
         if (!comment.isNull())
-            CHECK_ERROR_BREAK(hardDisk, COMSETTER(Description)(comment));
+            CHECK_ERROR(hardDisk, COMSETTER(Description)(comment));
 
         if (!port.isNull())
             server = BstrFmt ("%ls:%ls", server.raw(), port.raw());
@@ -899,11 +955,11 @@ int handleAddiSCSIDisk(HandlerArg *a)
             password.detachTo (values.appendedRaw());
         }
 
-        /// @todo add -initiator option
+        /// @todo add --initiator option
         Bstr ("InitiatorName").detachTo (names.appendedRaw());
         Bstr ("iqn.2008-04.com.sun.virtualbox.initiator").detachTo (values.appendedRaw());
 
-        /// @todo add -targetName and -targetPassword options
+        /// @todo add --targetName and --targetPassword options
 
         if (fIntNet)
         {
@@ -915,6 +971,11 @@ int handleAddiSCSIDisk(HandlerArg *a)
             SetProperties (ComSafeArrayAsInParam (names),
                            ComSafeArrayAsInParam (values)));
 
+        if (DiskType != HardDiskType_Normal)
+        {
+            CHECK_ERROR(hardDisk, COMSETTER(Type)(DiskType));
+        }
+
         Guid guid;
         CHECK_ERROR(hardDisk, COMGETTER(Id)(guid.asOutParam()));
         RTPrintf("iSCSI disk created. UUID: %s\n", guid.toString().raw());
@@ -924,31 +985,65 @@ int handleAddiSCSIDisk(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static const RTGETOPTDEF g_aShowHardDiskInfoOptions[] =
+{
+};
 
 int handleShowHardDiskInfo(HandlerArg *a)
 {
     HRESULT rc;
+    const char *FilenameOrUuid = NULL;
 
-    if (a->argc != 1)
-        return errorSyntax(USAGE_SHOWHDINFO, "Incorrect number of parameters");
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aShowHardDiskInfoOptions, RT_ELEMENTS(g_aShowHardDiskInfoOptions), 0, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case VINF_GETOPT_NOT_OPTION:
+                if (!FilenameOrUuid)
+                    FilenameOrUuid = ValueUnion.psz;
+                else
+                    return errorSyntax(USAGE_SHOWHDINFO, "Invalid parameter '%s'", ValueUnion.psz);
+                break;
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_SHOWHDINFO, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_SHOWHDINFO, "Invalid option case %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_SHOWHDINFO, "unknown option: %s\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_SHOWHDINFO, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_SHOWHDINFO, "error: %Rrs", c);
+        }
+    }
+
+    /* check for required options */
+    if (!FilenameOrUuid)
+        return errorSyntax(USAGE_SHOWHDINFO, "Disk name or UUID required");
 
     ComPtr<IHardDisk> hardDisk;
-    Bstr filepath;
-
     bool unknown = false;
-
     /* first guess is that it's a UUID */
-    Guid uuid(a->argv[0]);
+    Guid uuid(FilenameOrUuid);
     rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
     /* no? then it must be a filename */
     if (FAILED (rc))
     {
-        filepath = a->argv[0];
-        rc = a->virtualBox->FindHardDisk(filepath, hardDisk.asOutParam());
+        rc = a->virtualBox->FindHardDisk(Bstr(FilenameOrUuid), hardDisk.asOutParam());
         /* no? well, then it's an unkwnown image */
         if (FAILED (rc))
         {
-            CHECK_ERROR(a->virtualBox, OpenHardDisk(filepath, AccessMode_ReadWrite, hardDisk.asOutParam()));
+            CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(FilenameOrUuid), AccessMode_ReadWrite, hardDisk.asOutParam()));
             if (SUCCEEDED (rc))
             {
                 unknown = true;
@@ -1061,82 +1156,209 @@ int handleShowHardDiskInfo(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static const RTGETOPTDEF g_aOpenMediumOptions[] =
+{
+    { "disk",           'd', RTGETOPT_REQ_NOTHING },
+    { "dvd",            'D', RTGETOPT_REQ_NOTHING },
+    { "floppy",         'f', RTGETOPT_REQ_NOTHING },
+    { "--type",         't', RTGETOPT_REQ_STRING },
+    { "-type",          't', RTGETOPT_REQ_STRING },     // deprecated
+};
+
 int handleOpenMedium(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT rc = S_OK;
+    enum {
+        CMD_NONE,
+        CMD_DISK,
+        CMD_DVD,
+        CMD_FLOPPY
+    } cmd = CMD_NONE;
+    const char *Filename = NULL;
+    HardDiskType_T DiskType = HardDiskType_Normal;
+    bool fDiskType = false;
 
-    if (a->argc < 2)
-        return errorSyntax(USAGE_REGISTERIMAGE, "Not enough parameters");
-
-    Bstr filepath(a->argv[1]);
-
-    if (strcmp(a->argv[0], "disk") == 0)
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aOpenMediumOptions, RT_ELEMENTS(g_aOpenMediumOptions), 0, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
-        const char *type = NULL;
-        /* there can be a type parameter */
-        if ((a->argc > 2) && (a->argc != 4))
-            return errorSyntax(USAGE_REGISTERIMAGE, "Incorrect number of parameters");
-        if (a->argc == 4)
+        switch (c)
         {
-            if (strcmp(a->argv[2], "-type") != 0)
-                return errorSyntax(USAGE_REGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(a->argv[2]).raw());
-            if (   (strcmp(a->argv[3], "normal") != 0)
-                && (strcmp(a->argv[3], "immutable") != 0)
-                && (strcmp(a->argv[3], "writethrough") != 0))
-                return errorArgument("Invalid hard disk type '%s' specified", Utf8Str(a->argv[3]).raw());
-            type = a->argv[3];
-        }
+            case 'd':   // disk
+                if (cmd != CMD_NONE)
+                    return errorSyntax(USAGE_OPENMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                cmd = CMD_DISK;
+                break;
 
+            case 'D':   // DVD
+                if (cmd != CMD_NONE)
+                    return errorSyntax(USAGE_OPENMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                cmd = CMD_DVD;
+                break;
+
+            case 'f':   // floppy
+                if (cmd != CMD_NONE)
+                    return errorSyntax(USAGE_OPENMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                cmd = CMD_FLOPPY;
+                break;
+
+            case 't':   // --type
+                rc = parseDiskType(ValueUnion.psz, &DiskType);
+                if (RT_FAILURE(rc))
+                    return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
+                fDiskType = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!Filename)
+                    Filename = ValueUnion.psz;
+                else
+                    return errorSyntax(USAGE_OPENMEDIUM, "Invalid parameter '%s'", ValueUnion.psz);
+                break;
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_OPENMEDIUM, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_OPENMEDIUM, "Invalid option case %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_OPENMEDIUM, "unknown option: %s\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_OPENMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_OPENMEDIUM, "error: %Rrs", c);
+        }
+    }
+
+    /* check for required options */
+    if (cmd == CMD_NONE)
+        return errorSyntax(USAGE_OPENMEDIUM, "Command variant disk/dvd/floppy required");
+    if (!Filename)
+        return errorSyntax(USAGE_OPENMEDIUM, "Disk name required");
+
+    if (cmd == CMD_DISK)
+    {
         ComPtr<IHardDisk> hardDisk;
-        CHECK_ERROR(a->virtualBox, OpenHardDisk(filepath, AccessMode_ReadWrite, hardDisk.asOutParam()));
+        CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(Filename), AccessMode_ReadWrite, hardDisk.asOutParam()));
         if (SUCCEEDED(rc) && hardDisk)
         {
             /* change the type if requested */
-            if (type)
+            if (DiskType != HardDiskType_Normal)
             {
-                if (strcmp(type, "normal") == 0)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Normal));
-                else if (strcmp(type, "immutable") == 0)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Immutable));
-                else if (strcmp(type, "writethrough") == 0)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Writethrough));
+                CHECK_ERROR(hardDisk, COMSETTER(Type)(DiskType));
             }
         }
     }
-    else if (strcmp(a->argv[0], "dvd") == 0)
+    else if (cmd == CMD_DVD)
     {
+        if (fDiskType)
+            return errorSyntax(USAGE_OPENMEDIUM, "Invalid option for DVD images");
         ComPtr<IDVDImage> dvdImage;
-        CHECK_ERROR(a->virtualBox, OpenDVDImage(filepath, Guid(), dvdImage.asOutParam()));
+        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(Filename), Guid(), dvdImage.asOutParam()));
     }
-    else if (strcmp(a->argv[0], "floppy") == 0)
+    else if (cmd == CMD_FLOPPY)
     {
+        if (fDiskType)
+            return errorSyntax(USAGE_OPENMEDIUM, "Invalid option for DVD images");
         ComPtr<IFloppyImage> floppyImage;
-        CHECK_ERROR(a->virtualBox, OpenFloppyImage(filepath, Guid(), floppyImage.asOutParam()));
+        CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(Filename), Guid(), floppyImage.asOutParam()));
     }
-    else
-        return errorSyntax(USAGE_REGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(a->argv[1]).raw());
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static const RTGETOPTDEF g_aCloseMediumOptions[] =
+{
+    { "disk",           'd', RTGETOPT_REQ_NOTHING },
+    { "dvd",            'D', RTGETOPT_REQ_NOTHING },
+    { "floppy",         'f', RTGETOPT_REQ_NOTHING },
+};
+
 int handleCloseMedium(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT rc = S_OK;
+    enum {
+        CMD_NONE,
+        CMD_DISK,
+        CMD_DVD,
+        CMD_FLOPPY
+    } cmd = CMD_NONE;
+    const char *FilenameOrUuid = NULL;
 
-    if (a->argc != 2)
-        return errorSyntax(USAGE_UNREGISTERIMAGE, "Incorrect number of parameters");
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aCloseMediumOptions, RT_ELEMENTS(g_aCloseMediumOptions), 0, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'd':   // disk
+                if (cmd != CMD_NONE)
+                    return errorSyntax(USAGE_CLOSEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                cmd = CMD_DISK;
+                break;
+
+            case 'D':   // DVD
+                if (cmd != CMD_NONE)
+                    return errorSyntax(USAGE_CLOSEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                cmd = CMD_DVD;
+                break;
+
+            case 'f':   // floppy
+                if (cmd != CMD_NONE)
+                    return errorSyntax(USAGE_CLOSEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                cmd = CMD_FLOPPY;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!FilenameOrUuid)
+                    FilenameOrUuid = ValueUnion.psz;
+                else
+                    return errorSyntax(USAGE_CLOSEMEDIUM, "Invalid parameter '%s'", ValueUnion.psz);
+                break;
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_CLOSEMEDIUM, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_CLOSEMEDIUM, "Invalid option case %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_CLOSEMEDIUM, "unknown option: %s\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_CLOSEMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_CLOSEMEDIUM, "error: %Rrs", c);
+        }
+    }
+
+    /* check for required options */
+    if (cmd == CMD_NONE)
+        return errorSyntax(USAGE_CLOSEMEDIUM, "Command variant disk/dvd/floppy required");
+    if (!FilenameOrUuid)
+        return errorSyntax(USAGE_CLOSEMEDIUM, "Disk name or UUID required");
 
     /* first guess is that it's a UUID */
-    Guid uuid(a->argv[1]);
+    Guid uuid(FilenameOrUuid);
 
-    if (strcmp(a->argv[0], "disk") == 0)
+    if (cmd == CMD_DISK)
     {
         ComPtr<IHardDisk> hardDisk;
         rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
         if (!hardDisk)
         {
-            CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(a->argv[1]), hardDisk.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(FilenameOrUuid), hardDisk.asOutParam()));
         }
         if (SUCCEEDED(rc) && hardDisk)
         {
@@ -1144,14 +1366,14 @@ int handleCloseMedium(HandlerArg *a)
         }
     }
     else
-    if (strcmp(a->argv[0], "dvd") == 0)
+    if (cmd == CMD_DVD)
     {
         ComPtr<IDVDImage> dvdImage;
         rc = a->virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
         if (!dvdImage)
         {
-            CHECK_ERROR(a->virtualBox, FindDVDImage(Bstr(a->argv[1]), dvdImage.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindDVDImage(Bstr(FilenameOrUuid), dvdImage.asOutParam()));
         }
         if (SUCCEEDED(rc) && dvdImage)
         {
@@ -1159,22 +1381,20 @@ int handleCloseMedium(HandlerArg *a)
         }
     }
     else
-    if (strcmp(a->argv[0], "floppy") == 0)
+    if (cmd == CMD_FLOPPY)
     {
         ComPtr<IFloppyImage> floppyImage;
         rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
         if (!floppyImage)
         {
-            CHECK_ERROR(a->virtualBox, FindFloppyImage(Bstr(a->argv[1]), floppyImage.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindFloppyImage(Bstr(FilenameOrUuid), floppyImage.asOutParam()));
         }
         if (SUCCEEDED(rc) && floppyImage)
         {
             CHECK_ERROR(floppyImage, Close());
         }
     }
-    else
-        return errorSyntax(USAGE_UNREGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(a->argv[1]).raw());
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
