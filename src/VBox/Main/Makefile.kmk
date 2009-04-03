@@ -87,15 +87,20 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
         $(VBOX_IDL_FILE.MSCOM) \
         $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
         $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
-        $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c
+        $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
+        $(VBOX_PATH_SDK)/bindings/mscom/python/samples/vboxshell.py   \
+        $(VBOX_PATH_SDK)/bindings/mscom/python/samples/shellcommon.py
  OTHER_CLEAN    += \
 	$(VBOX_IDL_FILE.MSCOM) \
 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
-	$(PATH_VBoxCOM)/VirtualBox.h \
+	$(PATH_VBoxCOM)/VirtualBox.h   \
 	$(PATH_VBoxCOM)/VirtualBox_i.c \
-	$(PATH_VBoxCOM)/VirtualBox.tlb
+	$(PATH_VBoxCOM)/VirtualBox.tlb \
+        $(VBOX_PATH_SDK)/bindings/mscom/python/samples/vboxshell.py   \
+        $(VBOX_PATH_SDK)/bindings/mscom/python/samples/shellcommon.py
+
  VBOX_MAIN_PREREQS += $(PATH_VBoxCOM)/VirtualBox_i.c
  BLDDIRS += $(VBOX_PATH_SDK)/bindings/mscom/idl
 endif
@@ -716,6 +721,14 @@ $(PATH_VBoxCOM)/VirtualBox_i.c \
 	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/lib
 	$(CP) $(PATH_VBoxCOM)/VirtualBox.tlb $(VBOX_PATH_SDK)/bindings/mscom/lib
 	$(CP) $(PATH_VBoxCOM)/VirtualBox_i.c $(VBOX_PATH_SDK)/bindings/mscom/lib
+
+
+$(VBOX_PATH_SDK)/bindings/mscom/python/samples/shellcommon.py $(VBOX_PATH_SDK)/bindings/mscom/python/samples/vboxshell.py: \
+           $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/shellcommon.py     \
+           $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/mscom/vboxshell.py
+	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/python/samples
+	$(CP) $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/shellcommon.py $(VBOX_PATH_SDK)/bindings/mscom/python/samples/shellcommon.py
+	$(CP) $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/mscom/vboxshell.py $(VBOX_PATH_SDK)/bindings/mscom/python/samples/shellcommon.py
 
 #
 # Translation stuff
