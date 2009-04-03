@@ -235,6 +235,8 @@ void VBoxNewVMWzd::hdTypeChanged()
     mTbVmm->setEnabled (mExistRadio->isChecked());
     if (mExistRadio->isChecked())
         mHDCombo->setFocus();
+    
+    mWvalHDD->revalidate();
 }
 
 void VBoxNewVMWzd::revalidate (QIWidgetValidator *aWval)
@@ -255,8 +257,12 @@ void VBoxNewVMWzd::revalidate (QIWidgetValidator *aWval)
     else if (aWval->widget() == mPageHDD)
     {
         valid = true;
-        if (mGbHDA->isChecked() && mHDCombo->id().isNull())
+        if (    (mGbHDA->isChecked()) 
+            &&  (mHDCombo->id().isNull())
+            &&  (mExistRadio->isChecked()))
+        {
             valid = false;
+        }
     }
 
     aWval->setOtherValid (valid);
