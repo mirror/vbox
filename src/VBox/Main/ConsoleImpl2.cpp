@@ -92,6 +92,8 @@
 
 #include <VBox/param.h>
 
+/* Comment out the following line to remove VMWare compatibility hack. */
+#define VMWARE_NET_IN_SLOT_11
 
 /**
  * Translate IDE StorageControllerType_T to string representation.
@@ -1176,6 +1178,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /*
      * Network adapters
      */
+#ifdef VMWARE_NET_IN_SLOT_11
+    bool fSwapSlots3and11 = false;
+#endif
     PCFGMNODE pDevPCNet = NULL;          /* PCNet-type devices */
     rc = CFGMR3InsertNode(pDevices, "pcnet", &pDevPCNet);                           RC_CHECK();
 #ifdef VBOX_WITH_E1000
@@ -1231,6 +1236,17 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             else
                 iPciDeviceNo = ulInstance - 4 + 16;
         }
+#ifdef VMWARE_NET_IN_SLOT_11
+        /* 
+         * Dirty hack for PCI slot compatibility with VMWare,
+         * it assigns slot 11 to the first network controller.
+         */
+        if (iPciDeviceNo == 3 && adapterType == NetworkAdapterType_I82545EM)
+        {
+            iPciDeviceNo = 11;
+            fSwapSlots3and11 = true;
+        }
+#endif
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo", iPciDeviceNo);               RC_CHECK();
         Assert(!afPciDeviceNo[iPciDeviceNo]);
         afPciDeviceNo[iPciDeviceNo] = true;
@@ -2337,9 +2353,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertNode(pDev,     "0", &pInst);                           RC_CHECK();
                 rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                       RC_CHECK();
                 rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* bool */  RC_CHECK();
+#ifdef VMWARE_NET_IN_SLOT_11
+                /* 
+                 * Dirty hack for PCI slot compatibility with VMWare,
+                 * it assigns slot 11 to the first network controller.
+                 */
+                unsigned iPciDeviceNo = 11;
+                if (fSwapSlots3and11)
+                    iPciDeviceNo = 3;
+                rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          iPciDeviceNo);  RC_CHECK();
+                Assert(!afPciDeviceNo[iPciDeviceNo]);
+                afPciDeviceNo[iPciDeviceNo] = true;
+#else
                 rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          11);            RC_CHECK();
                 Assert(!afPciDeviceNo[11]);
                 afPciDeviceNo[11] = true;
+#endif
                 rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);             RC_CHECK();
 
                 rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                      RC_CHECK();
