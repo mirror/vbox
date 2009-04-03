@@ -1599,6 +1599,15 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
                  * try to restart by re-sending the original request (if any).
                  * This also handles the connection reestablishment (login etc.). */
                 RTThreadSleep(500);
+                if (   pImage->state != ISCSISTATE_IN_LOGIN
+                    && pImage->state != ISCSISTATE_IN_LOGOUT)
+                {
+                    /* Attempt to re-login when a connection fails, but only when not
+                     * currently logging in or logging out. */
+                    rc = iscsiAttach(pImage);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
                 if (pImage->paCurrReq != NULL)
                 {
                     rc = iscsiSendPDU(pImage, pImage->paCurrReq, pImage->cnCurrReq);
@@ -1695,6 +1704,34 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
                 for (i++; i < cnRes; i++)
                     paRes[i].cbSeg = 0;
                 break;
+            }
+            else if (   cmd == ISCSIOP_NOP_IN
+                     && RT_N2H_U32(pcvResSeg[5]) != ISCSI_TASK_TAG_RSVD)
+            {
+                const uint32_t *pcvResSeg = (const uint32_t *)aResBuf.pvSeg;
+                uint32_t cnISCSIReq;
+                ISCSIREQ aISCSIReq[4];
+                uint32_t aReqBHS[12];
+
+                aReqBHS[0] = RT_H2N_U32(ISCSI_IMMEDIATE_DELIVERY_BIT | ISCSI_FINAL_BIT | ISCSIOP_NOP_OUT);
+                aReqBHS[1] = RT_H2N_U32(0); /* TotalAHSLength=0,DataSementLength=0 */
+                aReqBHS[2] = pcvResSeg[2];	/* copy LUN from NOP-In */
+                aReqBHS[3] = pcvResSeg[3];	/* copy LUN from NOP-In */
+                aReqBHS[4] = RT_H2N_U32(ISCSI_TASK_TAG_RSVD); /* ITT, reply */
+                aReqBHS[5] = pcvResSeg[5];	/* copy TTT from NOP-In */
+                aReqBHS[6] = RT_H2N_U32(pImage->CmdSN);
+                aReqBHS[7] = RT_H2N_U32(pImage->ExpStatSN);
+                aReqBHS[8] = 0;             /* reserved */
+                aReqBHS[9] = 0;             /* reserved */
+                aReqBHS[10] = 0;            /* reserved */
+                aReqBHS[11] = 0;            /* reserved */
+
+                cnISCSIReq = 0;
+                aISCSIReq[cnISCSIReq].pcvSeg = aReqBHS;
+                aISCSIReq[cnISCSIReq].cbSeg = sizeof(aReqBHS);
+                cnISCSIReq++;
+
+                iscsiSendPDU(pImage, aISCSIReq, cnISCSIReq);
             }
         }
     }
