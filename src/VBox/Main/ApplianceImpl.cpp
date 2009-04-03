@@ -1840,7 +1840,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
     ComPtr<IVirtualBox> pVirtualBox(pAppliance->mVirtualBox);
 
     // rollback for errors:
-    // 1) a list of images that we created/imported
+    // a list of images that we created/imported
     list<MyHardDiskAttachment> llHardDiskAttachments;
     list< ComPtr<IHardDisk> > llHardDisksCreated;
     list<Guid> llMachinesRegistered;
@@ -1921,6 +1921,25 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             /* Set the VRAM */
             rc = pNewMachine->COMSETTER(VRAMSize)(vramVBox);
             if (FAILED(rc)) throw rc;
+
+            /* I/O APIC: so far we have no setting for this. Enable it if we
+              import a Windows VM because if if Windows was installed without IOAPIC,
+              it will not mind finding an one later on, but if Windows was installed
+              _with_ an IOAPIC, it will bluescreen if it's not found */
+            Bstr bstrFamilyId;
+            rc = osType->COMGETTER(FamilyId)(bstrFamilyId.asOutParam());
+            if (FAILED(rc)) throw rc;
+
+            Utf8Str strFamilyId(bstrFamilyId);
+            if (strFamilyId == "Windows")
+            {
+                ComPtr<IBIOSSettings> pBIOSSettings;
+                rc = pNewMachine->COMGETTER(BIOSSettings)(pBIOSSettings.asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                rc = pBIOSSettings->COMSETTER(IOAPICEnabled)(TRUE);
+                if (FAILED(rc)) throw rc;
+            }
 
             /* Audio Adapter */
             std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->findByType(VirtualSystemDescriptionType_SoundCard);
