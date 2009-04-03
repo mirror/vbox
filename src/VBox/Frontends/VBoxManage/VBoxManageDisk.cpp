@@ -987,6 +987,7 @@ int handleAddiSCSIDisk(HandlerArg *a)
 
 static const RTGETOPTDEF g_aShowHardDiskInfoOptions[] =
 {
+    { "--dummy",    '\0', RTGETOPT_REQ_NOTHING },   // placeholder for C++
 };
 
 int handleShowHardDiskInfo(HandlerArg *a)
