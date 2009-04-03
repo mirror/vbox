@@ -429,6 +429,7 @@ HDSettings::HDSettings (QWidget *aParent, AttachmentsModel *aWatched)
     : QObject (aParent)
     , mModel (aWatched)
     , mAddCount (0)
+    , mAddBus (KStorageBus_Null)
     , mShowDiffs (false)
 {
     makeIDEList();
