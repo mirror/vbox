@@ -3262,7 +3262,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="68537dd6-78e6-4863-a1cd-20be54761891"
+    uuid="aacc58de-5b45-4f82-ae2e-dd9a824fc3b5"
   >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
