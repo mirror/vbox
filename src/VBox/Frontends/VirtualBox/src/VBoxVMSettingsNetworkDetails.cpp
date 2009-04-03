@@ -223,7 +223,7 @@ void VBoxVMSettingsNetworkDetails::retranslateUi()
     }
 
     /* Translate empty items */
-    mNotSelected = tr ("Not selected");
+    mNotSelected = tr ("Not selected", "Host-only Network Details, network adapter chooser");
     populateComboboxes();
 }
 
