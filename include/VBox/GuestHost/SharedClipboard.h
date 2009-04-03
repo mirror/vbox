@@ -39,6 +39,7 @@ struct _VBOXCLIPBOARDCONTEXTX11;
 typedef struct _VBOXCLIPBOARDCONTEXTX11 VBOXCLIPBOARDCONTEXTX11;
 
 /** Does X11 or VBox currently own the clipboard? */
+/** @todo This is ugly, get rid of it. */
 enum g_eOwner { NONE = 0, X11, VB };
 
 /** A structure containing information about where to store a request
@@ -61,13 +62,13 @@ struct _VBOXCLIPBOARDREQUEST
 typedef struct _VBOXCLIPBOARDREQUEST VBOXCLIPBOARDREQUEST;
 
 /* APIs exported by the X11 backend */
-extern int VBoxX11ClipboardInitX11(VBOXCLIPBOARDCONTEXT *pFrontend,
-                                   VBOXCLIPBOARDCONTEXTX11 **ppBackend);
-extern int VBoxX11ClipboardTermX11(VBOXCLIPBOARDCONTEXTX11 *pBackend);
+extern VBOXCLIPBOARDCONTEXTX11 *VBoxX11ClipboardConstructX11
+                                        (VBOXCLIPBOARDCONTEXT *pFrontend);
+extern void VBoxX11ClipboardDestructX11(VBOXCLIPBOARDCONTEXTX11 *pBackend);
 extern int VBoxX11ClipboardStartX11(VBOXCLIPBOARDCONTEXTX11 *pBackend,
-                                    enum g_eOwner owner);
+                                    bool fOwnsClipboard);
+extern int VBoxX11ClipboardStopX11(VBOXCLIPBOARDCONTEXTX11 *pBackend);
 extern void VBoxX11ClipboardRequestSyncX11(VBOXCLIPBOARDCONTEXTX11 *pBackend);
-extern void VBoxX11ClipboardStopX11(VBOXCLIPBOARDCONTEXTX11 *pBackend);
 extern void VBoxX11ClipboardAnnounceVBoxFormat(VBOXCLIPBOARDCONTEXTX11
                                                *pBackend, uint32_t u32Formats);
 extern int VBoxX11ClipboardReadX11Data(VBOXCLIPBOARDCONTEXTX11 *pBackend,
