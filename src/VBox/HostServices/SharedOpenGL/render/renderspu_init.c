@@ -12,6 +12,10 @@
 #include "renderspu.h"
 #include <stdio.h>
 
+#ifdef RT_OS_DARWIN
+# include <iprt/semaphore.h>
+#endif /* RT_OS_DARWIN */
+
 static SPUNamedFunctionTable _cr_render_table[1000];
 
 SPUFunctions render_functions = {
@@ -209,8 +213,33 @@ renderSPUInit( int id, SPU *child, SPU *self,
 #endif
 
 #ifdef DARWIN
+# ifndef __LP64__ /** @todo port to 64-bit darwin. */
     render_spu.hRootVisibleRegion = 0;
-#endif
+    render_spu.currentBufferName = 1;
+    render_spu.uiDockUpdateTS = 0;
+    /* Create a mutex for syncronizing events from the main Qt thread & this
+       thread */
+    RTSemFastMutexCreate(&render_spu.syncMutex);
+    /* Create our window groups */
+    CreateWindowGroup(kWindowGroupAttrMoveTogether | kWindowGroupAttrLayerTogether | kWindowGroupAttrSharedActivation | kWindowGroupAttrHideOnCollapse | kWindowGroupAttrFixedLevel, &render_spu.pMasterGroup);
+    CreateWindowGroup(kWindowGroupAttrMoveTogether | kWindowGroupAttrLayerTogether | kWindowGroupAttrSharedActivation | kWindowGroupAttrHideOnCollapse | kWindowGroupAttrFixedLevel, &render_spu.pParentGroup);
+    /* Make the correct z-layering */
+    SendWindowGroupBehind (render_spu.pParentGroup, render_spu.pMasterGroup);
+    /* and set the gParentGroup as parent for gMasterGroup. */
+    SetWindowGroupParent (render_spu.pMasterGroup, render_spu.pParentGroup);
+    /* Install the event handlers */
+    EventTypeSpec eventList[] =
+    {
+        {kEventClassVBox, kEventVBoxUpdateContext}, /* Update the context after show/size/move events */
+        {kEventClassVBox, kEventVBoxBoundsChanged}  /* Clip/Pos the OpenGL windows when the main window is changed in pos/size */
+    };
+    /* We need to process events from our main window */
+    render_spu.hParentEventHandler = NewEventHandlerUPP(windowEvtHndlr);
+    InstallApplicationEventHandler (render_spu.hParentEventHandler,
+                                    GetEventTypeCount(eventList), eventList,
+                                    NULL, NULL);
+# endif /* !__LP64__ */
+#endif /* DARWIN */
 
     /*
      * Create the default window and context.  Their indexes are zero and
@@ -330,12 +359,18 @@ static int renderSPUCleanup(void)
     render_spu.barrierHash = NULL;
 
 #ifdef RT_OS_DARWIN
+    DisposeEventHandlerUPP(render_spu.hParentEventHandler);
+    ReleaseWindowGroup(render_spu.pMasterGroup);
+    ReleaseWindowGroup(render_spu.pParentGroup);
     if (render_spu.hRootVisibleRegion)
     {
         DisposeRgn(render_spu.hRootVisibleRegion);
         render_spu.hRootVisibleRegion = 0;
     }
-#endif
+    render_spu.currentBufferName = 1;
+    render_spu.uiDockUpdateTS = 0;
+    RTSemFastMutexDestroy(render_spu.syncMutex);
+#endif /* RT_OS_DARWIN */
 
 #ifdef RT_OS_WINDOWS
     if (render_spu.dwWinThreadId)

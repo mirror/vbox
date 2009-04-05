@@ -10,6 +10,7 @@
 
 #include <iprt/time.h>
 #include <iprt/assert.h>
+#include <iprt/semaphore.h>
 
 #include <stdio.h>
 
@@ -18,28 +19,6 @@
 #include "cr_string.h"
 #include "cr_mem.h"
 #include "renderspu.h"
-
-/* Some necessary global defines */
-WindowGroupRef gParentGroup = NULL;
-WindowGroupRef gMasterGroup = NULL;
-GLint gCurrentBufferName = 1;
-uint64_t gDockUpdateTS = 0;
-static EventHandlerUPP gParentEventHandler = NULL;
-
-enum
-{
-    /* Event classes */
-    kEventClassVBox         = 'vbox',
-    /* Event kinds */
-    kEventVBoxShowWindow    = 'swin',
-    kEventVBoxHideWindow    = 'hwin',
-    kEventVBoxMoveWindow    = 'mwin',
-    kEventVBoxResizeWindow  = 'rwin',
-    kEventVBoxDisposeWindow = 'dwin',
-    kEventVBoxUpdateDock    = 'udck',
-    kEventVBoxUpdateContext = 'uctx',
-    kEventVBoxBoundsChanged = 'bchg'
-};
 
 #ifdef __LP64__ /** @todo port to 64-bit darwin. */
 # define renderspuSetWindowContext(w, c) \
@@ -103,12 +82,17 @@ static void crClipRootHelper(unsigned long key, void *data1, void *data2)
         if (context &&
             context->context)
         {
-            OSStatus result = render_spu.ws.aglSetCurrentContext(context->context);
-            CHECK_AGL_RC (result, "Render SPU (renderspuWindowAttachContext): SetCurrentContext Failed");
-            result = render_spu.ws.aglUpdateContext(context->context);
-            CHECK_AGL_RC (result, "Render SPU (renderspuWindowAttachContext): UpdateContext Failed");
-            /* Update the clipping region */
-            renderspu_SystemWindowApplyVisibleRegion(pWin);
+            RTSemFastMutexRequest(render_spu.syncMutex);
+            GLboolean result = render_spu.ws.aglSetCurrentContext(context->context);
+            CHECK_AGL_RC (result, "Render SPU (crClipRootHelper): SetCurrentContext Failed");
+            if (result)
+            {
+                result = render_spu.ws.aglUpdateContext(context->context);
+                CHECK_AGL_RC (result, "Render SPU (crClipRootHelper): UpdateContext Failed");
+                /* Update the clipping region */
+                renderspu_SystemWindowApplyVisibleRegion(pWin);
+            }
+            RTSemFastMutexRelease(render_spu.syncMutex);
             /* Make sure that the position is updated relative to the Qt main
              * view */
             renderspu_SystemWindowPosition(pWin, pWin->x, pWin->y);
@@ -117,14 +101,15 @@ static void crClipRootHelper(unsigned long key, void *data1, void *data2)
 }
 
 /* Window event handler */
-static pascal OSStatus
+pascal OSStatus
 windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData)
 {
     WindowRef   window = NULL;
-    OSStatus    result = eventNotHandledErr;
+    OSStatus    eventResult = eventNotHandledErr;
     UInt32      class = GetEventClass (event);
     UInt32      kind = GetEventKind (event);
 
+    /* Fetch the sender of the event */
     GetEventParameter(event, kEventParamDirectObject, typeWindowRef,
                       NULL, sizeof(WindowRef), NULL, &window);
     switch (class)
@@ -135,28 +120,44 @@ windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData)
             {
                 case kEventVBoxUpdateContext:
                 {
-#ifndef __LP64__ /** @todo port to 64-bit darwin! Need to cehck if this event is generated or not (it probably isn't). */
+#ifndef __LP64__ /** @todo port to 64-bit darwin! Need to check if this event is generated or not (it probably isn't). */
                     WindowInfo *wi1;
                     GetEventParameter(event, kEventParamUserData, typeVoidPtr,
                                       NULL, sizeof(wi1), NULL, &wi1);
                     ContextInfo *context = renderspuGetWindowContext(wi1);
-                    GLboolean result1 = true;
                     if (context &&
                         context->context)
                     {
-                        DEBUG_MSG_POETZSCH (("kEventVBoxUpdateContext %x %x\n", window, context->context));
-                        result1 = render_spu.ws.aglSetCurrentContext(context->context);
-                        result1 = render_spu.ws.aglUpdateContext(context->context);
-                        CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): UpdateContext Failed");
-                        //glFlush();
+                        AGLContext tmpContext = render_spu.ws.aglGetCurrentContext();
+                        DEBUG_MSG_POETZSCH (("kEventVBoxUpdateContext %x %x\n", wi1, context->context));
+                        RTSemFastMutexRequest(render_spu.syncMutex);
+                        GLboolean result = render_spu.ws.aglSetCurrentContext(context->context);
+                        if (result)
+                        {
+                            result = render_spu.ws.aglUpdateContext(context->context);
+                            CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): UpdateContext Failed");
+                            renderspu_SystemWindowApplyVisibleRegion(wi1);
+                            /* Reapply the last active context */
+                            if (tmpContext)
+                            {
+                                result = render_spu.ws.aglSetCurrentContext(tmpContext);
+                                CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): SetCurrentContext Failed");
+                                if (result)
+                                {
+                                    result = render_spu.ws.aglUpdateContext(tmpContext);
+                                    CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): UpdateContext Failed");
+                                }
+                            }
+                        }
+                        RTSemFastMutexRelease(render_spu.syncMutex);
                     }
-                    result = noErr;
+                    eventResult = noErr;
 #endif
                     break;
                 }
                 case kEventVBoxBoundsChanged:
                 {
-#ifndef __LP64__ /** @todo port to 64-bit darwin! Need to cehck if this event is generated or not (it probably isn't). */
+#ifndef __LP64__ /** @todo port to 64-bit darwin! Need to check if this event is generated or not (it probably isn't). */
                     HIPoint p;
                     GetEventParameter(event, kEventParamOrigin, typeHIPoint,
                                       NULL, sizeof(p), NULL, &p);
@@ -169,19 +170,25 @@ windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData)
                                    0,
                                    r.size.width,
                                    r.size.height };
-                    renderspu_SystemSetRootVisibleRegion(1, &l);
-
+                    /* Update the root window clip region */
+                    renderspu_SystemSetRootVisibleRegion(1, l);
                     /* Temporary save the current active context */
                     AGLContext tmpContext = render_spu.ws.aglGetCurrentContext();
                     crHashtableWalk(render_spu.windowTable, crClipRootHelper, NULL);
                     /* Reapply the last active context */
                     if (tmpContext)
                     {
-                        OSStatus result = render_spu.ws.aglSetCurrentContext(tmpContext);
+                        RTSemFastMutexRequest(render_spu.syncMutex);
+                        GLboolean result = render_spu.ws.aglSetCurrentContext(tmpContext);
                         CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): SetCurrentContext Failed");
-                        result = render_spu.ws.aglUpdateContext(tmpContext);
-                        CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): UpdateContext Failed");
+                        if (result)
+                        {
+                            result = render_spu.ws.aglUpdateContext(tmpContext);
+                            CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): UpdateContext Failed");
+                        }
+                        RTSemFastMutexRelease(render_spu.syncMutex);
                     }
+                    eventResult = noErr;
 #endif
                     break;
                 }
@@ -191,7 +198,7 @@ windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData)
         break;
     };
 
-    return result;
+    return eventResult;
 }
 
 GLboolean
@@ -359,7 +366,7 @@ renderspuWindowAttachContext(WindowInfo *wi, WindowRef window,
         drawable = (AGLDrawable) GetWindowPort(window);
 #endif
         /* New global buffer name */
-        wi->bufferName = gCurrentBufferName++;
+        wi->bufferName = render_spu.currentBufferName++;
         /* Set the new buffer name to the dummy context. This enable the
          * sharing of the same hardware buffer afterwards. */
         result = render_spu.ws.aglSetInteger(wi->dummyContext, AGL_BUFFER_NAME, &wi->bufferName);
@@ -378,6 +385,7 @@ renderspuWindowAttachContext(WindowInfo *wi, WindowRef window,
 #else
     newDrawable = (AGLDrawable) GetWindowPort(window);
 #endif
+    RTSemFastMutexRequest(render_spu.syncMutex);
     /* Only switch the context if the drawable has changed */
     if (oldDrawable != newDrawable)
     {
@@ -395,12 +403,13 @@ renderspuWindowAttachContext(WindowInfo *wi, WindowRef window,
         result = render_spu.ws.aglSetDrawable(context->context, newDrawable);
 #endif
         CHECK_AGL_RC (result, "Render SPU (renderspuWindowAttachContext): SetDrawable Failed");
-        renderspuSetWindowContext( window, context );
+        renderspuSetWindowContext(window, context);
     }
     result = render_spu.ws.aglSetCurrentContext(context->context);
     CHECK_AGL_RC (result, "Render SPU (renderspuWindowAttachContext): SetCurrentContext Failed");
     result = render_spu.ws.aglUpdateContext(context->context);
     CHECK_AGL_RC (result, "Render SPU (renderspuWindowAttachContext): UpdateContext Failed");
+    RTSemFastMutexRelease(render_spu.syncMutex);
 
     return result;
 }
@@ -447,6 +456,34 @@ renderspu_SystemDestroyWindow(WindowInfo *window)
         DisposeRgn(window->hVisibleRegion);
         window->hVisibleRegion = 0;
     }
+}
+
+void
+renderspu_SystemWindowPosition(WindowInfo *window,
+                               GLint x, GLint y)
+{
+    CRASSERT(window);
+    CRASSERT(window->window);
+
+    OSStatus status = noErr;
+    /* Send a event to the main thread, cause some function of Carbon aren't
+     * thread safe */
+    EventRef evt;
+    status = CreateEvent(NULL, kEventClassVBox, kEventVBoxMoveWindow, 0, kEventAttributeNone, &evt);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): CreateEvent Failed");
+    status = SetEventParameter(evt, kEventParamWindowRef, typeWindowRef, sizeof(window->window), &window->window);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): SetEventParameter Failed");
+    HIPoint p = CGPointMake (x, y);
+    status = SetEventParameter(evt, kEventParamOrigin, typeHIPoint, sizeof (p), &p);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): SetEventParameter Failed");
+    status = SetEventParameter(evt, kEventParamUserData, typeVoidPtr, sizeof (window), &window);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): SetEventParameter Failed");
+    status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
+    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): PostEventToQueue Failed");
+
+    /* save the new pos */
+    window->x = x;
+    window->y = y;
 }
 
 void
@@ -516,34 +553,6 @@ renderspu_SystemGetMaxWindowSize(WindowInfo *window,
     *h = s.height;
 }
 
-void
-renderspu_SystemWindowPosition(WindowInfo *window,
-                               GLint x, GLint y)
-{
-    CRASSERT(window);
-    CRASSERT(window->window);
-
-    OSStatus status = noErr;
-    /* Send a event to the main thread, cause some function of Carbon aren't
-     * thread safe */
-    EventRef evt;
-    status = CreateEvent(NULL, kEventClassVBox, kEventVBoxMoveWindow, 0, kEventAttributeNone, &evt);
-    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): CreateEvent Failed");
-    status = SetEventParameter(evt, kEventParamWindowRef, typeWindowRef, sizeof(window->window), &window->window);
-    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): SetEventParameter Failed");
-    HIPoint p = CGPointMake (x, y);
-    status = SetEventParameter(evt, kEventParamOrigin, typeHIPoint, sizeof (p), &p);
-    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): SetEventParameter Failed");
-    status = SetEventParameter(evt, kEventParamUserData, typeVoidPtr, sizeof (window), &window);
-    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): SetEventParameter Failed");
-    status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
-    CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemWindowPosition): PostEventToQueue Failed");
-
-    /* save the new pos */
-    window->x = x;
-    window->y = y;
-}
-
 /* Either show or hide the render SPU's window. */
 void
 renderspu_SystemShowWindow(WindowInfo *window, GLboolean showIt)
@@ -582,7 +591,7 @@ renderspu_SystemShowWindow(WindowInfo *window, GLboolean showIt)
         status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
         CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemShowWindow): PostEventToQueue Failed");
     }
-
+    /* Save the new value */
     window->visible = showIt;
 }
 
@@ -630,6 +639,8 @@ renderspu_SystemMakeCurrent(WindowInfo *window, GLint nativeWindow,
                 render_spu.self.WindowPos2iARB(0, 0);
             }
         }
+        /* Reapply the visible regions */
+        renderspu_SystemWindowApplyVisibleRegion(window);
     }
     else
         renderspuWindowAttachContext (0, 0, 0);
@@ -646,17 +657,19 @@ renderspu_SystemSwapBuffers(WindowInfo *window, GLint flags)
     if(!context)
         crError("Render SPU (renderspu_SystemSwapBuffers): SwapBuffers got a null context from the window");
 
+    RTSemFastMutexRequest(render_spu.syncMutex);
 //    DEBUG_MSG_POETZSCH (("Swapped %d context %x visible: %d\n", window->id, context->context, IsWindowVisible (window->window)));
     if (context->visual &&
         context->visual->visAttribs & CR_DOUBLE_BIT)
         render_spu.ws.aglSwapBuffers(context->context);
     else
         glFlush();
+    RTSemFastMutexRelease(render_spu.syncMutex);
 
     /* This method seems called very often. To prevent the dock using all free
      * resources we update the dock only two times per second. */
     uint64_t curTS = RTTimeMilliTS();
-    if ((curTS - gDockUpdateTS) > 500)
+    if ((curTS - render_spu.uiDockUpdateTS) > 500)
     {
         OSStatus status = noErr;
         /* Send a event to the main thread, cause some function of Carbon aren't
@@ -667,7 +680,7 @@ renderspu_SystemSwapBuffers(WindowInfo *window, GLint flags)
         status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
         CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemSwapBuffers): PostEventToQueue Failed");
 
-        gDockUpdateTS = curTS;
+        render_spu.uiDockUpdateTS = curTS;
     }
 }
 
@@ -676,8 +689,7 @@ void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint
     CRASSERT(window);
     CRASSERT(window->window);
 
-    DEBUG_MSG_POETZSCH (("Visible region \n"));
-
+    /* Remember any additional clipping stuff e.g. seamless regions */
     if (window->hVisibleRegion)
     {
         DisposeRgn(window->hVisibleRegion);
@@ -696,8 +708,8 @@ void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint
             SetRectRgn (tmpRgn,
                         pRects[4*i]  , pRects[4*i+1],
                         pRects[4*i+2], pRects[4*i+3]);
-            DEBUG_MSG_POETZSCH (("visible rect %d %d %d %d\n", pRects[4*i]  , pRects[4*i+1],
-                                 pRects[4*i+2], pRects[4*i+3]));
+            //DEBUG_MSG_POETZSCH (("visible rect %d %d %d %d\n", pRects[4*i]  , pRects[4*i+1],
+            //                     pRects[4*i+2], pRects[4*i+3]));
             UnionRgn (rgn, tmpRgn, rgn);
         }
         DisposeRgn (tmpRgn);
@@ -709,6 +721,7 @@ void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint
 
 void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *pRects)
 {
+    /* Remember the visible region of the root window if there is one */
     if (render_spu.hRootVisibleRegion)
     {
         DisposeRgn(render_spu.hRootVisibleRegion);
@@ -739,28 +752,40 @@ void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window)
     RgnHandle rgn;
     GLboolean result = true;
 
+    DEBUG_MSG_POETZSCH (("ApplyVisibleRegion %x\n", window));
+
     if (!c || !c->context) return;
 
     rgn = NewRgn();
-    SetEmptyRgn (rgn);
+    SetEmptyRgn(rgn);
 
     if (render_spu.hRootVisibleRegion)
     {
-        CopyRgn(render_spu.hRootVisibleRegion, rgn);
+        /* The render_spu.hRootVisibleRegion has coordinates from the root
+         * window. We intersect it with the rect of the OpenGL window we
+         * currently process. */
+        SetRectRgn(rgn,
+                   window->x, window->y,
+                   window->x + window->width,
+                   window->y + window->height);
+        SectRgn(render_spu.hRootVisibleRegion, rgn, rgn);
+        /* Because the clipping is done in the coodinate space of the OpenGL
+         * window we have to remove the x/y position from the newly created
+         * region. */
+        OffsetRgn (rgn, -window->x, -window->y);
     }
-    else /*@todo create tmp region rect with size of underlying framebuffer */
+    else
     {
-        /* SetRectRgn(0,0,fb->width,fb->height); */
-        SetRectRgn(rgn,0,0,4000,4000);
+        /* If there is not root clipping region is available, create a base
+         * region with the size of the target window. This covers all
+         * needed/possible space. */
+        SetRectRgn(rgn, 0, 0, window->width, window->height);
     }
 
+    /* Now intersect the window clipping region with a additional region e.g.
+     * for the seamless mode. */
     if (window->hVisibleRegion)
-    {
         SectRgn(rgn, window->hVisibleRegion, rgn);
-    }
-
-    /* If we'd need to set clip region in host screen coordinates, than shift it*/
-    /* OffsetRgn(rgn, fb->hostleft, fb->hosttop); */
 
     /* Set the clip region to the context */
     result = render_spu.ws.aglSetInteger(c->context, AGL_CLIP_REGION, (const GLint*)rgn);
@@ -812,53 +837,23 @@ renderspu_SystemVBoxCreateWindow(VisualInfo *visual, GLboolean showIt,
     SetWindowTitleWithCFString(window->window, title_string);
     CFRelease(title_string);
 
-    /* We need grouping so create a master group for this & all following
-     * windows & one group for the parent. */
-    if(!gMasterGroup || !gParentGroup)
-    {
-        status = CreateWindowGroup(kWindowGroupAttrMoveTogether | kWindowGroupAttrLayerTogether | kWindowGroupAttrSharedActivation | kWindowGroupAttrHideOnCollapse | kWindowGroupAttrFixedLevel, &gMasterGroup);
-        CHECK_CARBON_RC_RETURN (status, "Render SPU (renderspu_SystemVBoxCreateWindow): CreateWindowGroup Failed", GL_FALSE);
-        status = CreateWindowGroup(kWindowGroupAttrMoveTogether | kWindowGroupAttrLayerTogether | kWindowGroupAttrSharedActivation | kWindowGroupAttrHideOnCollapse | kWindowGroupAttrFixedLevel, &gParentGroup);
-        CHECK_CARBON_RC_RETURN (status, "Render SPU (renderspu_SystemVBoxCreateWindow): CreateWindowGroup Failed", GL_FALSE);
-        /* Make the correct z-layering */
-        SendWindowGroupBehind (gParentGroup, gMasterGroup);
-        /* and set the gParentGroup as parent for gMasterGroup. */
-#ifdef __LP64__ /** @todo port to 64-bit darwin. */
-#else
-        SetWindowGroupParent (gMasterGroup, gParentGroup);
-#endif
-    }
-
     /* The parent has to be in its own group */
     WindowRef parent = NULL;
     if (render_spu_parent_window_id)
     {
         parent = HIViewGetWindow ((HIViewRef)render_spu_parent_window_id);
-        SetWindowGroup (parent, gParentGroup);
+        SetWindowGroup (parent, render_spu.pParentGroup);
 
-        /* We need to process events from our main window */
-        if(!gParentEventHandler)
-        {
-            /* Install the event handlers */
-            EventTypeSpec eventList[] =
-            {
-                {kEventClassVBox, kEventVBoxUpdateContext}, /* Update the context after show/size/move events */
-                {kEventClassVBox, kEventVBoxBoundsChanged}  /* Clip/Pos the OpenGL windows when the main window is changed in pos/size */
-            };
-
-            gParentEventHandler = NewEventHandlerUPP(windowEvtHndlr);
-            InstallApplicationEventHandler (gParentEventHandler,
-                                            GetEventTypeCount(eventList), eventList,
-                                            NULL, NULL);
-        }
     }
+
     /* Add the new window to the master group */
-    SetWindowGroup(window->window, gMasterGroup);
+    SetWindowGroup(window->window, render_spu.pMasterGroup);
 
     /* This will be initialized on the first attempt to attach the global
      * context to this new window */
     window->bufferName = -1;
     window->dummyContext = NULL;
+    window->hVisibleRegion = 0;
 
     if(showIt)
         renderspu_SystemShowWindow(window, GL_TRUE);
