@@ -359,6 +359,7 @@ static int renderSPUCleanup(void)
     render_spu.barrierHash = NULL;
 
 #ifdef RT_OS_DARWIN
+# ifndef __LP64__ /** @todo port to 64-bit darwin. */
     DisposeEventHandlerUPP(render_spu.hParentEventHandler);
     ReleaseWindowGroup(render_spu.pMasterGroup);
     ReleaseWindowGroup(render_spu.pParentGroup);
@@ -370,6 +371,7 @@ static int renderSPUCleanup(void)
     render_spu.currentBufferName = 1;
     render_spu.uiDockUpdateTS = 0;
     RTSemFastMutexDestroy(render_spu.syncMutex);
+# endif /* __LP64__ */
 #endif /* RT_OS_DARWIN */
 
 #ifdef RT_OS_WINDOWS
