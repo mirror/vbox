@@ -492,78 +492,6 @@ typedef MMPPLOOKUPHCPHYS *PMMPPLOOKUPHCPHYS;
 /** @} */
 
 
-
-/**
- * Type of memory that's locked.
- */
-typedef enum MMLOCKEDTYPE
-{
-    /** Hypervisor: Ring-3 memory locked by MM. */
-    MM_LOCKED_TYPE_HYPER,
-    /** Hypervisor: Ring-3 memory locked by MM that shouldn't be freed up. */
-    MM_LOCKED_TYPE_HYPER_NOFREE,
-    /** Hypervisor: Pre-locked ring-3 pages. */
-    MM_LOCKED_TYPE_HYPER_PAGES,
-    /** Guest: Physical VM memory (RAM & MMIO2). */
-    MM_LOCKED_TYPE_PHYS
-} MMLOCKEDTYPE;
-/** Pointer to memory type. */
-typedef MMLOCKEDTYPE *PMMLOCKEDTYPE;
-
-
-/**
- * Converts a SUPPAGE pointer to a MMLOCKEDMEM pointer.
- * @returns Pointer to the MMLOCKEDMEM record the range is associated with.
- * @param   pSupPage    Pointer to SUPPAGE structure managed by MM.
- */
-#define MM_SUPRANGE_TO_MMLOCKEDMEM(pSupPage) ((PMMLOCKEDMEM)pSupPage->uReserved)
-
-
-/**
- * Locked memory record.
- */
-typedef struct MMLOCKEDMEM
-{
-    /** Address (host mapping). */
-    void                   *pv;
-    /** Size. */
-    size_t                  cb;
-    /** Next record. */
-    struct MMLOCKEDMEM     *pNext;
-    /** Record type. */
-    MMLOCKEDTYPE            eType;
-    /** Type specific data. */
-    union
-    {
-        /** Data for MM_LOCKED_TYPE_HYPER, MM_LOCKED_TYPE_HYPER_NOFREE and MM_LOCKED_TYPE_HYPER_PAGES. */
-        struct
-        {
-            unsigned        uNothing;
-        } hyper;
-
-        /** Data for MM_LOCKED_TYPE_PHYS. */
-        struct
-        {
-            /** The GC physical address.
-             * (Assuming that this is a linear range of GC physical pages.)
-             */
-            RTGCPHYS        GCPhys;
-        } phys;
-    } u;
-
-    /** Physical Page Array. (Variable length.)
-     * The uReserved field contains pointer to the MMLOCKMEM record.
-     * Use the macro MM_SUPPAGE_TO_MMLOCKEDMEM() to convert.
-     *
-     * For MM_LOCKED_TYPE_PHYS the low 12 bits of the pvPhys member
-     * are bits (MM_RAM_FLAGS_*) and not part of the physical address.
-     */
-    SUPPAGE                 aPhysPages[1];
-} MMLOCKEDMEM;
-/** Pointer to locked memory. */
-typedef MMLOCKEDMEM *PMMLOCKEDMEM;
-
-
 /**
  * Hypervisor memory mapping type.
  */
@@ -608,8 +536,8 @@ typedef struct MMLOOKUPHYPER
             R3PTRTYPE(void *)       pvR3;
             /** Host context ring-0 pointer. Optional. */
             RTR0PTR                 pvR0;
-            /** Pointer to the locked mem record. */
-            R3PTRTYPE(PMMLOCKEDMEM) pLockedMem;
+            /** Pointer to an array containing the physical address of each page. */
+            R3PTRTYPE(PRTHCPHYS)    paHCPhysPages;
         } Locked;
 
         /** Contiguous physical memory. */
@@ -711,8 +639,6 @@ typedef struct MM
     R3PTRTYPE(PMMPAGEPOOL)      pPagePoolR3;
     /** Page pool pages in low memory R3 Ptr. */
     R3PTRTYPE(PMMPAGEPOOL)      pPagePoolLowR3;
-    /** List of memory locks. (HC only) */
-    R3PTRTYPE(PMMLOCKEDMEM)     pLockedMem;
 
     /** Pointer to the dummy page.
      * The dummy page is a paranoia thingy used for instance for pure MMIO RAM ranges
@@ -767,9 +693,6 @@ void mmR3HeapDestroy(PMMHEAP pHeap);
 
 int  mmR3HyperInit(PVM pVM);
 int  mmR3HyperInitPaging(PVM pVM);
-
-int  mmR3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *ppLockedMem, bool fSilentFailure);
-int  mmR3MapLocked(PVM pVM, PMMLOCKEDMEM pLockedMem, RTGCPTR Addr, unsigned iPage, size_t cPages, unsigned fFlags);
 
 const char *mmR3GetTagName(MMTAG enmTag);
 

@@ -183,12 +183,19 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
     for (;;)
     {
         RTGCPTR     GCPtr = pVM->mm.s.pvHyperAreaGC + pLookup->off;
-        unsigned    cPages = pLookup->cb >> PAGE_SHIFT;
+        uint32_t    cPages = pLookup->cb >> PAGE_SHIFT;
         switch (pLookup->enmType)
         {
             case MMLOOKUPHYPERTYPE_LOCKED:
-                rc = mmR3MapLocked(pVM, pLookup->u.Locked.pLockedMem, GCPtr, 0, cPages, 0);
+            {
+                PCRTHCPHYS paHCPhysPages = pLookup->u.Locked.paHCPhysPages;
+                for (uint32_t i = 0; i < cPages; i++)
+                {
+                    rc = PGMMap(pVM, GCPtr + (i << PAGE_SHIFT), paHCPhysPages[i], PAGE_SIZE, 0);
+                    AssertRCReturn(rc, rc);
+                }
                 break;
+            }
 
             case MMLOOKUPHYPERTYPE_HCPHYS:
                 rc = PGMMap(pVM, GCPtr, pLookup->u.HCPhys.HCPhys, pLookup->cb, 0);
@@ -197,8 +204,8 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
             case MMLOOKUPHYPERTYPE_GCPHYS:
             {
                 const RTGCPHYS  GCPhys = pLookup->u.GCPhys.GCPhys;
-                const size_t    cb = pLookup->cb;
-                for (unsigned off = 0; off < cb; off += PAGE_SIZE)
+                const uint32_t  cb = pLookup->cb;
+                for (uint32_t off = 0; off < cb; off += PAGE_SIZE)
                 {
                     RTHCPHYS HCPhys;
                     rc = PGMPhysGCPhys2HCPhys(pVM, GCPhys + off, &HCPhys);
@@ -564,31 +571,31 @@ VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPage
     if (RT_SUCCESS(rc))
     {
         /*
-         * Create a locked memory record and tell PGM about this.
+         * Copy the physical page addresses and tell PGM about them.
          */
-        PMMLOCKEDMEM pLockedMem = (PMMLOCKEDMEM)MMR3HeapAlloc(pVM, MM_TAG_MM, RT_OFFSETOF(MMLOCKEDMEM, aPhysPages[cPages]));
-        if (pLockedMem)
+        PRTHCPHYS paHCPhysPages = (PRTHCPHYS)MMR3HeapAlloc(pVM, MM_TAG_MM, sizeof(RTHCPHYS) * cPages);
+        if (paHCPhysPages)
         {
-            pLockedMem->pv      = pvR3;
-            pLockedMem->cb      = cPages << PAGE_SHIFT;
-            pLockedMem->eType   = MM_LOCKED_TYPE_HYPER_PAGES;
-            memset(&pLockedMem->u, 0, sizeof(pLockedMem->u));
             for (size_t i = 0; i < cPages; i++)
             {
                 AssertReleaseReturn(paPages[i].Phys != 0 && paPages[i].Phys != NIL_RTHCPHYS && !(paPages[i].Phys & PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR);
-                pLockedMem->aPhysPages[i].Phys = paPages[i].Phys;
-                pLockedMem->aPhysPages[i].uReserved = (RTHCUINTPTR)pLockedMem;
+                paHCPhysPages[i] = paPages[i].Phys;
             }
 
-            /* map the stuff into guest address space. */
             if (pVM->mm.s.fPGMInitialized)
-                rc = mmR3MapLocked(pVM, pLockedMem, GCPtr, 0, ~(size_t)0, 0);
+            {
+                for (size_t i = 0; i < cPages; i++)
+                {
+                    rc = PGMMap(pVM, GCPtr + (i << PAGE_SHIFT), paHCPhysPages[i], PAGE_SIZE, 0);
+                    AssertRCReturn(rc, rc);
+                }
+            }
             if (RT_SUCCESS(rc))
             {
                 pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
-                pLookup->u.Locked.pvR3       = pvR3;
-                pLookup->u.Locked.pvR0       = pvR0;
-                pLookup->u.Locked.pLockedMem = pLockedMem;
+                pLookup->u.Locked.pvR3          = pvR3;
+                pLookup->u.Locked.pvR0          = pvR0;
+                pLookup->u.Locked.paHCPhysPages = paHCPhysPages;
 
                 /* done. */
                 *pGCPtr   = GCPtr;
@@ -980,7 +987,7 @@ VMMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvR3)
             {
                 unsigned off = (uint8_t *)pvR3 - (uint8_t *)pLookup->u.Locked.pvR3;
                 if (off < pLookup->cb)
-                    return (pLookup->u.Locked.pLockedMem->aPhysPages[off >> PAGE_SHIFT].Phys & X86_PTE_PAE_PG_MASK) | (off & PAGE_OFFSET_MASK);
+                    return pLookup->u.Locked.paHCPhysPages[off >> PAGE_SHIFT] | (off & PAGE_OFFSET_MASK);
                 break;
             }
 
@@ -1094,12 +1101,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 pLookup->u.Locked.pvR3,
                                 pLookup->u.Locked.pvR0,
-                                sizeof(RTHCPTR) * 2,
-                                pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER_NOFREE  ? "nofree"
-                                : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER       ? "autofree"
-                                : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER_PAGES ? "pages"
-                                : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_PHYS        ? "gstphys"
-                                : "??",
+                                sizeof(RTHCPTR) * 2, "",
                                 pLookup->pszDesc);
                 break;
 
