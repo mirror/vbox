@@ -313,10 +313,14 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 #ifdef VBOX_STRICT
                 else if (pShwPaePd->a[iPaePde].u & PGM_PDFLAGS_MAPPING)
                 {
-                    Assert(PGMGetGuestMode(pVM) >= PGMMODE_PAE);
-                    AssertFatalMsg((pShwPaePd->a[iPaePde].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT0, ("%RX64 vs %RX64\n", pShwPaePd->a[iPaePde+1].u & X86_PDE_PG_MASK, pMap->aPTs[i].HCPhysPaePT0));
+                    Assert(PGMGetGuestMode(pVM) >= PGMMODE_PAE); /** @todo We may hit this during reset, will fix later. */
+                    AssertFatalMsg(   (pShwPaePd->a[iPaePde].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT0
+                                   || !PGMMODE_WITH_PAGING(PGMGetGuestMode(pVM)),
+                                   ("%RX64 vs %RX64\n", pShwPaePd->a[iPaePde+1].u & X86_PDE_PG_MASK, pMap->aPTs[i].HCPhysPaePT0));
                     Assert(pShwPaePd->a[iPaePde+1].u & PGM_PDFLAGS_MAPPING);
-                    AssertFatalMsg((pShwPaePd->a[iPaePde+1].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT1, ("%RX64 vs %RX64\n", pShwPaePd->a[iPaePde+1].u & X86_PDE_PG_MASK, pMap->aPTs[i].HCPhysPaePT1));
+                    AssertFatalMsg(   (pShwPaePd->a[iPaePde+1].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT1
+                                   || !PGMMODE_WITH_PAGING(PGMGetGuestMode(pVM)),
+                                   ("%RX64 vs %RX64\n", pShwPaePd->a[iPaePde+1].u & X86_PDE_PG_MASK, pMap->aPTs[i].HCPhysPaePT1));
                 }
 #endif
 
