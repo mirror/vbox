@@ -20,20 +20,6 @@
  */
 
 /*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-/** @def PGM_IGNORE_RAM_FLAGS_RESERVED
- * Don't respect the MM_RAM_FLAGS_RESERVED flag when converting to HC addresses.
- *
- * Since this flag is currently incorrectly kept set for ROM regions we will
- * have to ignore it for now so we don't break stuff.
- *
- * @todo this has been fixed now I believe, remove this hack.
- */
-#define PGM_IGNORE_RAM_FLAGS_RESERVED
-
-
-/*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PGM_PHYS
@@ -194,11 +180,6 @@ VMMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
     int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
     if (RT_FAILURE(rc))
         return rc;
-
-#ifndef PGM_IGNORE_RAM_FLAGS_RESERVED
-    if (RT_UNLIKELY(pPage->HCPhys & MM_RAM_FLAGS_RESERVED)) /** @todo PAGE FLAGS */
-        return VERR_PGM_PHYS_PAGE_RESERVED;
-#endif
 
     *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK);
     return VINF_SUCCESS;
