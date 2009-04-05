@@ -1197,6 +1197,7 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
             && !vga_is_dirty(s, addr))
         {
             /** @todo only allow read access (doesn't work now) */
+            STAM_COUNTER_INC(&s->StatMapPage);
             IOMMMIOMapMMIO2Page(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), GCPhys, s->GCPhysVRAM + addr, X86_PTE_RW|X86_PTE_P);
             /* Set as dirty as write accesses won't be noticed now. */
             vga_set_dirty(s, addr);
@@ -1329,6 +1330,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
             if (   (s->sr[2] & 3) == 3
                 && !vga_is_dirty(s, addr))
             {
+                STAM_COUNTER_INC(&s->StatMapPage);
                 IOMMMIOMapMMIO2Page(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), GCPhys, s->GCPhysVRAM + addr, X86_PTE_RW | X86_PTE_P);
                 s->fRemappedVGA = true;
             }
@@ -1385,8 +1387,8 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #ifdef IN_RING0
         if (((++s->cLatchAccesses) & s->uMaskLatchAccess) == s->uMaskLatchAccess)
         {
-            static uint32_t aMask[5]  = {0x3ff, 0x1ff, 0x7f, 0x3f, 0x1f};
-            static uint64_t aDelta[5]  = {10000000, 5000000, 2500000, 1250000, 625000};
+            static uint32_t const s_aMask[5]  = {   0x3ff,   0x1ff,    0x7f,    0x3f,   0x1f};
+            static uint64_t const s_aDelta[5] = {10000000, 5000000, 2500000, 1250000, 625000};
             if (PDMDevHlpCanEmulateIoBlock(s->CTX_SUFF(pDevIns)))
             {
                 uint64_t u64CurTime = RTTimeSystemNanoTS();
@@ -1394,20 +1396,20 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
                 /* About 1000 (or more) accesses per 10 ms will trigger a reschedule
                 * to the recompiler
                 */
-                if (u64CurTime - s->u64LastLatchedAccess < aDelta[s->iMask])
+                if (u64CurTime - s->u64LastLatchedAccess < s_aDelta[s->iMask])
                 {
                     s->u64LastLatchedAccess = 0;
-                    s->iMask                = RT_MIN(s->iMask + 1, RT_ELEMENTS(aMask) - 1);
-                    s->uMaskLatchAccess     = aMask[s->iMask];
+                    s->iMask                = RT_MIN(s->iMask + 1U, RT_ELEMENTS(s_aMask) - 1U);
+                    s->uMaskLatchAccess     = s_aMask[s->iMask];
                     s->cLatchAccesses       = s->uMaskLatchAccess - 1;
                     return VINF_EM_RAW_EMULATE_IO_BLOCK;
                 }
                 if (s->u64LastLatchedAccess)
                 {
-                    Log2(("Reset mask (was %d) delta %RX64 (limit %x)\n", s->iMask, u64CurTime - s->u64LastLatchedAccess, aDelta[s->iMask]));
+                    Log2(("Reset mask (was %d) delta %RX64 (limit %x)\n", s->iMask, u64CurTime - s->u64LastLatchedAccess, s_aDelta[s->iMask]));
                     if (s->iMask)
                         s->iMask--;
-                    s->uMaskLatchAccess     = aMask[s->iMask];
+                    s->uMaskLatchAccess     = s_aMask[s->iMask];
                 }
                 s->u64LastLatchedAccess = u64CurTime;
             }
@@ -1415,7 +1417,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
             {
                 s->u64LastLatchedAccess = 0;
                 s->iMask                = 0;
-                s->uMaskLatchAccess     = aMask[s->iMask];
+                s->uMaskLatchAccess     = s_aMask[s->iMask];
                 s->cLatchAccesses       = 0;
             }
         }
@@ -6184,6 +6186,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     STAM_REG(pVM, &pThis->StatR3MemoryRead,     STAMTYPE_PROFILE, "/Devices/VGA/R3/MMIO-Read",  STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryRead() body.");
     STAM_REG(pVM, &pThis->StatRZMemoryWrite,    STAMTYPE_PROFILE, "/Devices/VGA/RZ/MMIO-Write", STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryWrite() body.");
     STAM_REG(pVM, &pThis->StatR3MemoryWrite,    STAMTYPE_PROFILE, "/Devices/VGA/R3/MMIO-Write", STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryWrite() body.");
+    STAM_REG(pVM, &pThis->StatMapPage,          STAMTYPE_COUNTER, "/Devices/VGA/MapPageCalls",  STAMUNIT_OCCURENCES,     "Calls to IOMMMIOMapMMIO2Page.");
 
     /* Init latched access mask. */
     pThis->uMaskLatchAccess = 0x3ff;
