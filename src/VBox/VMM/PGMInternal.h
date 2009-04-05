@@ -1609,6 +1609,8 @@ typedef struct PGMPOOLPAGE
     /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages). */
     bool                fLocked;
 } PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
+/** Pointer to a const pool page. */
+typedef PGMPOOLPAGE const *PCPGMPOOLPAGE;
 
 
 #ifdef PGMPOOL_WITH_CACHE
