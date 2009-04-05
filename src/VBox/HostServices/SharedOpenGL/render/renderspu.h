@@ -27,6 +27,24 @@
 
 #define MAX_VISUALS 32
 
+#ifdef RT_OS_DARWIN
+enum
+{
+    /* Event classes */
+    kEventClassVBox         = 'vbox',
+    /* Event kinds */
+    kEventVBoxShowWindow    = 'swin',
+    kEventVBoxHideWindow    = 'hwin',
+    kEventVBoxMoveWindow    = 'mwin',
+    kEventVBoxResizeWindow  = 'rwin',
+    kEventVBoxDisposeWindow = 'dwin',
+    kEventVBoxUpdateDock    = 'udck',
+    kEventVBoxUpdateContext = 'uctx',
+    kEventVBoxBoundsChanged = 'bchg'
+};
+pascal OSStatus windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData);
+#endif /* RT_OS_DARWIN */
+
 /**
  * Visual info
  */
@@ -197,9 +215,15 @@ typedef struct {
     HANDLE hWinThreadReadyEvent;
 #endif
 
-#ifdef DARWIN
+#ifdef RT_OS_DARWIN
     RgnHandle hRootVisibleRegion;
-#endif
+    RTSEMFASTMUTEX syncMutex;
+    EventHandlerUPP hParentEventHandler;
+    WindowGroupRef pParentGroup;
+    WindowGroupRef pMasterGroup;
+    GLint currentBufferName;
+    uint64_t uiDockUpdateTS;
+#endif /* RT_OS_DARWIN */
 } RenderSPU;
 
 #ifdef RT_OS_WINDOWS
