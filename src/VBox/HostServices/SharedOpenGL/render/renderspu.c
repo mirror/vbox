@@ -1000,6 +1000,18 @@ renderspuGetString(GLenum pname)
 }
 
 
+#if defined(DARWIN)
+void renderspuFlush()
+{
+    render_spu.self.Flush();
+}
+
+void renderspuFinish()
+{
+    render_spu.self.Finish();
+}
+#endif
+
 #define FILLIN( NAME, FUNC ) \
   table[i].name = crStrdup(NAME); \
   table[i].fn = (SPUGenericFunction) FUNC; \
@@ -1036,5 +1048,9 @@ renderspuCreateFunctions(SPUNamedFunctionTable table[])
     FILLIN( "ChromiumParametervCR", renderspuChromiumParametervCR );
     FILLIN( "GetChromiumParametervCR", renderspuGetChromiumParametervCR );
     FILLIN( "GetString", renderspuGetString );
+#if defined(DARWIN)
+    FILLIN( "Finish", renderspuFinish );
+    FILLIN( "Flush", renderspuFlush );
+#endif
     return i;
 }
