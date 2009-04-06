@@ -159,7 +159,11 @@ static void drvvdErrorCallback(void *pvUser, int rc, RT_SRC_POS_DECL,
     PPDMDRVINS pDrvIns = (PPDMDRVINS)pvUser;
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     if (pThis->fErrorUseRuntime)
-        pDrvIns->pDrvHlp->pfnVMSetRuntimeErrorV(pDrvIns, VMSETRTERR_FLAGS_FATAL, "DrvVD", pszFormat, va);
+        /* We must not pass VMSETRTERR_FLAGS_FATAL as it could lead to a
+         * deadlock: We are probably executed in a thread context != EMT
+         * and the EM thread would wait until every thread is suspended
+         * but we would wait for the EM thread ... */
+        pDrvIns->pDrvHlp->pfnVMSetRuntimeErrorV(pDrvIns, /* fFlags=*/ 0, "DrvVD", pszFormat, va);
     else
         pDrvIns->pDrvHlp->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
 }
