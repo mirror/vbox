@@ -186,6 +186,7 @@ static BOOL gfGuestNumLockPressed = FALSE;
 static BOOL gfGuestCapsLockPressed = FALSE;
 static BOOL gfGuestScrollLockPressed = FALSE;
 static BOOL gfACPITerm = FALSE;
+static BOOL gfXCursorEnabled = TRUE;
 static int  gcGuestNumLockAdaptions = 2;
 static int  gcGuestCapsLockAdaptions = 2;
 static uint32_t gmGuestNormalXRes;
@@ -2142,16 +2143,19 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     SDL_VERSION(&gSdlInfo.version);
     if (!SDL_GetWMInfo(&gSdlInfo))
     {
-        RTPrintf("Error: could not get SDL Window Manager info!\n");
-        goto leave;
+        RTPrintf("Error: could not get SDL Window Manager info -- no Xcursor support!\n");
+        gfXCursorEnabled = FALSE;
     }
 
 # if !defined(VBOX_WITHOUT_XCURSOR)
     /* SDL uses its own (plain) default cursor. Use the left arrow cursor instead which might look
      * much better if a mouse cursor theme is installed. */
-    gpDefaultOrigX11Cursor = *(Cursor*)gpDefaultCursor->wm_cursor;
-    *(Cursor*)gpDefaultCursor->wm_cursor = XCreateFontCursor(gSdlInfo.info.x11.display, XC_left_ptr);
-    SDL_SetCursor(gpDefaultCursor);
+    if (gfXCursorEnabled)
+    {
+        gpDefaultOrigX11Cursor = *(Cursor*)gpDefaultCursor->wm_cursor;
+        *(Cursor*)gpDefaultCursor->wm_cursor = XCreateFontCursor(gSdlInfo.info.x11.display, XC_left_ptr);
+        SDL_SetCursor(gpDefaultCursor);
+    }
 # endif
 #endif /* VBOXSDL_WITH_X11 */
 
@@ -2846,8 +2850,9 @@ leave:
 #endif /* VBOXSDL_WITH_X11 */
         SDL_SetCursor(gpDefaultCursor);
 #if defined(VBOXSDL_WITH_X11) && !defined(VBOX_WITHOUT_XCURSOR)
-        XFreeCursor(gSdlInfo.info.x11.display, pDefaultTempX11Cursor);
-#endif /* VBOXSDL_WITH_X11 */
+        if (gfXCursorEnabled)
+            XFreeCursor(gSdlInfo.info.x11.display, pDefaultTempX11Cursor);
+#endif /* VBOXSDL_WITH_X11 && !VBOX_WITHOUT_XCURSOR */
     }
 
     if (gpCustomCursor)
@@ -2860,8 +2865,9 @@ leave:
 #if defined (RT_OS_WINDOWS)
             ::DestroyCursor(*(HCURSOR *) pCustomTempWMCursor);
 #elif defined (VBOXSDL_WITH_X11) && !defined (VBOX_WITHOUT_XCURSOR)
-            XFreeCursor(gSdlInfo.info.x11.display, *(Cursor *) pCustomTempWMCursor);
-#endif
+            if (gfXCursorEnabled)
+                XFreeCursor(gSdlInfo.info.x11.display, *(Cursor *) pCustomTempWMCursor);
+#endif /* VBOXSDL_WITH_X11 && !VBOX_WITHOUT_XCURSOR */
             free(pCustomTempWMCursor);
         }
     }
@@ -4457,80 +4463,82 @@ static void SetPointerShape (const PointerShapeChangeData *data)
 
 #elif defined (VBOXSDL_WITH_X11) && !defined (VBOX_WITHOUT_XCURSOR)
 
-        XcursorImage *img = XcursorImageCreate (data->width, data->height);
-        Assert (img);
-        if (img)
+        if (gfXCursorEnabled)
         {
-            img->xhot = data->xHot;
-            img->yhot = data->yHot;
-
-            XcursorPixel *dstShapePtr = img->pixels;
-
-            for (uint32_t y = 0; y < data->height; y ++)
+            XcursorImage *img = XcursorImageCreate (data->width, data->height);
+            Assert (img);
+            if (img)
             {
-                memcpy (dstShapePtr, srcShapePtr, srcShapePtrScan);
+                img->xhot = data->xHot;
+                img->yhot = data->yHot;
 
-                if (!data->alpha)
+                XcursorPixel *dstShapePtr = img->pixels;
+
+                for (uint32_t y = 0; y < data->height; y ++)
                 {
-                    // convert AND mask to the alpha channel
-                    uint8_t byte = 0;
-                    for (uint32_t x = 0; x < data->width; x ++)
+                    memcpy (dstShapePtr, srcShapePtr, srcShapePtrScan);
+
+                    if (!data->alpha)
                     {
-                        if (!(x % 8))
-                            byte = *(srcAndMaskPtr ++);
-                        else
-                            byte <<= 1;
-
-                        if (byte & 0x80)
+                        // convert AND mask to the alpha channel
+                        uint8_t byte = 0;
+                        for (uint32_t x = 0; x < data->width; x ++)
                         {
-                            // Linux doesn't support inverted pixels (XOR ops,
-                            // to be exact) in cursor shapes, so we detect such
-                            // pixels and always replace them with black ones to
-                            // make them visible at least over light colors
-                            if (dstShapePtr [x] & 0x00FFFFFF)
-                                dstShapePtr [x] = 0xFF000000;
+                            if (!(x % 8))
+                                byte = *(srcAndMaskPtr ++);
                             else
-                                dstShapePtr [x] = 0x00000000;
+                                byte <<= 1;
+
+                            if (byte & 0x80)
+                            {
+                                // Linux doesn't support inverted pixels (XOR ops,
+                                // to be exact) in cursor shapes, so we detect such
+                                // pixels and always replace them with black ones to
+                                // make them visible at least over light colors
+                                if (dstShapePtr [x] & 0x00FFFFFF)
+                                    dstShapePtr [x] = 0xFF000000;
+                                else
+                                    dstShapePtr [x] = 0x00000000;
+                            }
+                            else
+                                dstShapePtr [x] |= 0xFF000000;
                         }
-                        else
-                            dstShapePtr [x] |= 0xFF000000;
                     }
+
+                    srcShapePtr += srcShapePtrScan;
+                    dstShapePtr += data->width;
                 }
 
-                srcShapePtr += srcShapePtrScan;
-                dstShapePtr += data->width;
-            }
-
-            Cursor cur = XcursorImageLoadCursor (gSdlInfo.info.x11.display, img);
-            Assert (cur);
-            if (cur)
-            {
-                // here we do a dirty trick by substituting a Window Manager's
-                // cursor handle with the handle we created
-
-                WMcursor *pCustomTempWMCursor = gpCustomCursor->wm_cursor;
-
-                // see SDL12/src/video/x11/SDL_x11mouse.c
-                void *wm_cursor = malloc (sizeof (Cursor));
-                *(Cursor *) wm_cursor = cur;
-
-                gpCustomCursor->wm_cursor = (WMcursor *) wm_cursor;
-                SDL_SetCursor (gpCustomCursor);
-                SDL_ShowCursor (SDL_ENABLE);
-
-                if (pCustomTempWMCursor)
+                Cursor cur = XcursorImageLoadCursor (gSdlInfo.info.x11.display, img);
+                Assert (cur);
+                if (cur)
                 {
-                    XFreeCursor (gSdlInfo.info.x11.display, *(Cursor *) pCustomTempWMCursor);
-                    free (pCustomTempWMCursor);
+                    // here we do a dirty trick by substituting a Window Manager's
+                    // cursor handle with the handle we created
+
+                    WMcursor *pCustomTempWMCursor = gpCustomCursor->wm_cursor;
+
+                    // see SDL12/src/video/x11/SDL_x11mouse.c
+                    void *wm_cursor = malloc (sizeof (Cursor));
+                    *(Cursor *) wm_cursor = cur;
+
+                    gpCustomCursor->wm_cursor = (WMcursor *) wm_cursor;
+                    SDL_SetCursor (gpCustomCursor);
+                    SDL_ShowCursor (SDL_ENABLE);
+
+                    if (pCustomTempWMCursor)
+                    {
+                        XFreeCursor (gSdlInfo.info.x11.display, *(Cursor *) pCustomTempWMCursor);
+                        free (pCustomTempWMCursor);
+                    }
+
+                    ok = true;
                 }
-
-                ok = true;
             }
-
             XcursorImageDestroy (img);
         }
 
-#endif
+#endif /* VBOXSDL_WITH_X11 && !VBOX_WITHOUT_XCURSOR */
 
         if (!ok)
         {
