@@ -251,7 +251,8 @@ static int handleMetricsSetup(int argc, char *argv[],
 
     for (i = 1; i < argc; i++)
     {
-        if (strcmp(argv[i], "-period") == 0)
+        if (   !strcmp(argv[i], "--period")
+            || !strcmp(argv[i], "-period"))
         {
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
@@ -259,7 +260,8 @@ static int handleMetricsSetup(int argc, char *argv[],
                 || !period)
                 return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
         }
-        else if (strcmp(argv[i], "-samples") == 0)
+        else if (   !strcmp(argv[i], "--samples")
+                 || !strcmp(argv[i], "-samples"))
         {
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
@@ -267,7 +269,8 @@ static int handleMetricsSetup(int argc, char *argv[],
                 || !samples)
                 return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
         }
-        else if (strcmp(argv[i], "-list") == 0)
+        else if (   !strcmp(argv[i], "--list")
+                 || !strcmp(argv[i], "-list"))
             listMatches = true;
         else
             break; /* The rest of params should define the filter */
@@ -416,7 +419,8 @@ static int handleMetricsCollect(int argc, char *argv[],
     int i;
     for (i = 1; i < argc; i++)
     {
-        if (strcmp(argv[i], "-period") == 0)
+        if (   !strcmp(argv[i], "--period")
+            || !strcmp(argv[i], "-period"))
         {
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
@@ -424,7 +428,8 @@ static int handleMetricsCollect(int argc, char *argv[],
                 || !period)
                 return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
         }
-        else if (strcmp(argv[i], "-samples") == 0)
+        else if (   !strcmp(argv[i], "--samples")
+                 || !strcmp(argv[i], "-samples"))
         {
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
@@ -432,9 +437,11 @@ static int handleMetricsCollect(int argc, char *argv[],
                 || !samples)
                 return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
         }
-        else if (strcmp(argv[i], "-list") == 0)
+        else if (   !strcmp(argv[i], "--list")
+                 || !strcmp(argv[i], "-list"))
             listMatches = true;
-        else if (strcmp(argv[i], "-detach") == 0)
+        else if (   !strcmp(argv[i], "--detach")
+                 || !strcmp(argv[i], "-detach"))
             isDetached = true;
         else
             break; /* The rest of params should define the filter */
