@@ -761,6 +761,10 @@ void VBoxX11ClipboardDestructX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
     if (!g_fHaveX11)
         return;
 
+    /* We set this to NULL when the event thread exits.  It really should
+     * have exited at this point, when we are about to unload the code from
+     * memory. */
+    Assert(pCtx->widget == NULL);
     RTSemEventDestroy(pCtx->waitForData);
 }
 
@@ -822,6 +826,10 @@ void VBoxX11ClipboardRequestSyncX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
 /**
  * Shut down the shared clipboard X11 backend.
  * @note  X11 backend code
+ * @note  Any requests from this object to get clipboard data from VBox
+ *        *must* have completed or aborted before we are called, as
+ *        otherwise the X11 event loop will still be waiting for the request
+ *        to return and will not be able to terminate.
  */
 int VBoxX11ClipboardStopX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
 {
@@ -834,14 +842,16 @@ int VBoxX11ClipboardStopX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
     if (!g_fHaveX11)
         return VINF_SUCCESS;
 
+    /* This might mean that we are getting stopped twice. */
+    AssertReturn(pCtx->widget != NULL, VERR_WRONG_ORDER);
     pCtx->eOwner = NONE;
     pCtx->X11TextFormat = INVALID;
     pCtx->X11BitmapFormat = INVALID;
     LogRelFunc(("stopping the shared clipboard X11 backend\n"));
 
-    /* Set the termination flag.  This has been observed to block if it was set
-     * during a request for clipboard data coming from X11, so only we do it
-     * after releasing any such requests. */
+    /* Set the termination flag to tell the Xt event loop to exit.  We
+     * reiterate that any outstanding requests from the X11 event loop to
+     * the VBox part *must* have returned before we do this. */
     XtAppSetExitFlag(pCtx->appContext);
     /* Wake up the event loop */
     memset(&ev, 0, sizeof(ev));
@@ -860,6 +870,7 @@ int VBoxX11ClipboardStopX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
     else
         LogRelFunc(("rc=%Rrc\n", rc));
     XtCloseDisplay(XtDisplay(pCtx->widget));
+    pCtx->widget = NULL;  /* For sanity assertions. */
     LogFlowFunc(("returning %Rrc.\n", rc));
     return rc;
 }
