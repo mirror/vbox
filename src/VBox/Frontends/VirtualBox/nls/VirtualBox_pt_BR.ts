@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="pt">
+<!DOCTYPE TS><TS version="1.1" language="pt">
 <defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
@@ -110,38 +109,38 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation type="unfinished"></translation>
+        <translation>Este erro significa que o driver do kernel não pôde alocar memória suficiente, ou que uma operação de mapeamento de memória falhou.&lt;br/&gt;&lt;br/&gt;Existem problemas conhecidos com o kernel Linux2.6.29. Se você está utilizando esta versão de kernel, edite o arquivo /usr/src/vboxdrv-*/Makefile e habilite a opção &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Em seguida, recompile o módulo do kernel executando o comando&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;como root.</translation>
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation type="unfinished"></translation>
+        <translation>O driver de kernel para Linux do VirtualBox (vboxdrv) não está carregado, ou existe um problema de permissões no arquivo /dev/vboxdrv. Compile novamente o módulo de kernel executando o comando&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;como root. Usuários de Ubuntu, Fedora ou Mandriva devem instalar o pacote DKMS primeiro. Este pacote monitora as mudanças no kernel Linux e recompila o módulo vboxdrv automaticamente se for necessário.</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifique se o módulo de kernel foi carregado com sucesso.</translation>
     </message>
     <message>
         <source>VirtualBox - Runtime Error</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Erro de Execução</translation>
     </message>
     <message>
         <source>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Não foi possível acessar o módulo do kernel!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <source>Unknown %2 error during initialization of the Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro desconhecido %2 durante a inicialização do Runtime</translation>
     </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
     <message>
         <source>&amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Voltar (&amp;B)</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished">Próximo(&amp;N)</translation>
+        <translation>Próximo(&amp;N)</translation>
     </message>
 </context>
 <context>
@@ -372,11 +371,11 @@
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Detalhes</translation>
+        <translation>&amp;Detalhes</translation>
     </message>
     <message>
         <source>&amp;Details (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Detalhes (%1 de %2)</translation>
     </message>
 </context>
 <context>
@@ -554,107 +553,107 @@ Versão %1</translation>
     <name>VBoxApplianceEditorWgt</name>
     <message>
         <source>Virtual System %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistema Virtual %1</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nome</translation>
+        <translation>Nome</translation>
     </message>
     <message>
         <source>Product</source>
-        <translation type="unfinished"></translation>
+        <translation>Produto</translation>
     </message>
     <message>
         <source>Product-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL do Produto</translation>
     </message>
     <message>
         <source>Vendor</source>
-        <translation type="unfinished"></translation>
+        <translation>Fabricante</translation>
     </message>
     <message>
         <source>Vendor-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL do Fabricante</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Versão</translation>
     </message>
     <message>
         <source>Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Descrição</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>Licença</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished">Tipo de Sistema Operacional Convidado</translation>
+        <translation>Tipo de Sistema Operacional Convidado</translation>
     </message>
     <message>
         <source>CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU</translation>
     </message>
     <message>
         <source>RAM</source>
-        <translation type="unfinished"></translation>
+        <translation>Memória RAM</translation>
     </message>
     <message>
         <source>Hard Disk Controller IDE</source>
-        <translation type="unfinished"></translation>
+        <translation>Controladora de Disco Rígido IDE</translation>
     </message>
     <message>
         <source>Hard Disk Controller SATA</source>
-        <translation type="unfinished"></translation>
+        <translation>Controladora de Disco Rígido SATA</translation>
     </message>
     <message>
         <source>Hard Disk Controller SCSI</source>
-        <translation type="unfinished"></translation>
+        <translation>Controladora de Disco Rígido SCSI</translation>
     </message>
     <message>
         <source>DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>DVD</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation type="unfinished">Disquete</translation>
+        <translation>Disquete</translation>
     </message>
     <message>
         <source>Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Placa de Rede</translation>
     </message>
     <message>
         <source>USB Controller</source>
-        <translation type="unfinished">Controladora USB</translation>
+        <translation>Controladora USB</translation>
     </message>
     <message>
         <source>Sound Card</source>
-        <translation type="unfinished"></translation>
+        <translation>Placa de Som</translation>
     </message>
     <message>
         <source>Virtual Disk Image</source>
-        <translation type="unfinished">Imagem de Disco Virtual</translation>
+        <translation>Imagem de Disco Virtual</translation>
     </message>
     <message>
         <source>Unknown Hardware Item</source>
-        <translation type="unfinished"></translation>
+        <translation>Dispositivo de Hardware Desconhecido</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Valor Original:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Configuração</translation>
     </message>
     <message>
         <source>Warnings:</source>
-        <translation type="unfinished"></translation>
+        <translation>Avisos:</translation>
     </message>
 </context>
 <context>
@@ -1145,11 +1144,11 @@ Versão %1</translation>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
-        <translation>Desconectar o cabo do adaptador de rede virtual selecionado</translation>
+        <translation>Desconectar o cabo da placa de rede virtual selecionada</translation>
     </message>
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
-        <translation>Conectar o cabo ao adaptador de rede virtual selecionado</translation>
+        <translation>Conectar o cabo à placa de rede virtual selecionado</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
@@ -1336,7 +1335,7 @@ Versão %1</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
 </context>
 <context>
@@ -1692,34 +1691,34 @@ Versão %1</translation>
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
-        <translation type="unfinished"></translation>
+        <translation>Es&amp;colher...</translation>
     </message>
 </context>
 <context>
     <name>VBoxExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecione um arquivo de destino para exportar</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Formato Open Virtualization (%1)</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished"></translation>
+        <translation>Appliance</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Exportando Appliance ...</translation>
     </message>
     <message>
         <source>Appliance Export Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Assistente de Exportação de Appliance</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Bem-vindo ao Assistente de Exportação de Appliance!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -1729,39 +1728,45 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will you guide to the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Este assistente irá guiá-lo durante o processo de exportação de um &lt;i&gt;appliance&lt;/i&gt;. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Utilize o botão &lt;span style=&quot; font-weight:600;&quot;&gt;Próximo&lt;/span&gt; para ir para a próxima página do assistente e o botão &lt;span style=&quot; font-weight:600;&quot;&gt;Voltar&lt;/span&gt; para retornar para à página anterior.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Selecione as máquinas virtuais que deverão ser exportadas para o &lt;i&gt;appliance&lt;/i&gt;. Você pode selecionar mais de uma, mas as máquinas devem ter sido obrigatoriamente desligadas para que possam ser exportadas.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; Voltar (&amp;B)</translation>
+        <translation>&lt; Voltar (&amp;B)</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">Próximo(&amp;N) &gt;</translation>
+        <translation>Próximo(&amp;N) &gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurações de Exportação de Appliance</translation>
     </message>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aqui você pode alterar parâmetros de configuração adicionais para as máquinas virtuais selecionadas. Você pode alterar a maioria das propriedades exibidas clicando duas vezes em cada item.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>Restaurar Valores Padrão</translation>
     </message>
     <message>
         <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
-        <translation type="unfinished"></translation>
+        <translation>Especifique um nome para o arquivo onde serão gravadas as informações do &lt;i&gt;appliance&lt;/i&gt;. No momento o VirtualBox suporta apenas o formato de arquivo Open Virtualization Format (OVF).</translation>
     </message>
     <message>
         <source>&amp;Export &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Exportar &gt;</translation>
     </message>
 </context>
 <context>
@@ -1847,7 +1852,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Rede</translation>
+        <translation>Rede</translation>
     </message>
 </context>
 <context>
@@ -1890,11 +1895,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando esta opção estiver selecionada, o ícone da Barra de Notificação irá refletir o conteúdo da janela da VM em tempo real.</translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Atualização em Tempo Real do Ícone da Barra (&amp;D)</translation>
     </message>
 </context>
 <context>
@@ -1976,239 +1981,239 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
-        <translation type="unfinished"></translation>
+        <translation>rede %1</translation>
     </message>
     <message>
         <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>o endereço IPv4 do host &lt;b&gt;%1&lt;/b&gt; está incorreto</translation>
     </message>
     <message>
         <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>a máscara de rede IPv4 do host &lt;b&gt;%1&lt;/b&gt; está incorreta</translation>
     </message>
     <message>
         <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>a máscara de rede IPv6 do host &lt;b&gt;%1&lt;/b&gt; está incorreta</translation>
     </message>
     <message>
         <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>o endereço do servidor DHCP de &lt;b&gt;%1&lt;/b&gt; está incorreto</translation>
     </message>
     <message>
         <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>a máscara de rede do servidor DHCP de &lt;b&gt;%1&lt;/b&gt; está incorreta</translation>
     </message>
     <message>
         <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>a faixa inferior de endereçamento do DHCP de &lt;b&gt;%1&lt;/b&gt; está incorreta</translation>
     </message>
     <message>
         <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>a faixa superior de endereçamento do DHCP de &lt;b&gt;%1&lt;/b&gt; está incorreta</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">Adaptador</translation>
+        <translation>Placa</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>Configurada automaticamente</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>Configurada manualmente</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Endereço IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation>não definido</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Máscara de Rede IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished"></translation>
+        <translation>não definida</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Endereço IPv6</translation>
     </message>
     <message>
         <source>IPv6 Network Mask Length</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamanho da Máscara de Rede IPv6</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished"></translation>
+        <translation>não definido</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Servidor DHCP</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished">Habilitado</translation>
+        <translation>Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>Desabilitado</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Endereço</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Máscara de Rede</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>Faixa Inferior</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished"></translation>
+        <translation>não definida</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>Faixa Superior</translation>
     </message>
     <message>
         <source>&amp;Add host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Adicionar rede exclusiva de hospedeiro (host-only)</translation>
     </message>
     <message>
         <source>&amp;Remove host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Remover rede exclusiva de hospedeiro (host-only)</translation>
     </message>
     <message>
         <source>&amp;Edit host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Editar rede exclusiva de hospedeiro (host-only)</translation>
     </message>
     <message>
         <source>Performing</source>
         <comment>creating/removing host-only network</comment>
-        <translation type="unfinished"></translation>
+        <translation>Configurando</translation>
     </message>
     <message>
         <source>&amp;Host-only Networks:</source>
-        <translation type="unfinished"></translation>
+        <translation>Redes Exclusivas de &amp;Hospedeiro:</translation>
     </message>
     <message>
         <source>Lists all available host-only networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lista todas as redes exclusivas de hospedeiro.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nome</translation>
+        <translation>Nome</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalhes de Rede Exclusiva de Hospedeiro (host-only)</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Pl&amp;aca</translation>
     </message>
     <message>
         <source>Manual &amp;Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Configuração Manual</translation>
     </message>
     <message>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Utilizar configuração manual para esta placa de rede exclusiva de hospedeiro.</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Endereço &amp;IPv4:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 address for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibe o endereço IPv4 para esta placa.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Máscara de Rede IPv4:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibe a máscara de rede IPv4 para esta placa.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Endereço I&amp;Pv6:</translation>
     </message>
     <message>
         <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibe o endereço IPv6 para esta placa se IPv6 for suportado.</translation>
     </message>
     <message>
         <source>IPv6 Network Mask &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamanho da Máscara de Rede IPv6 (&amp;L):</translation>
     </message>
     <message>
         <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibe o tamanho do prefixo da máscara de rede IPv6 para esta placa se IPv6 for suportado.</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Servidor &amp;DHCP</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilitar S&amp;ervidor</translation>
     </message>
     <message>
         <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Indica se o Servidor DHCP está habilitado durante a inicialização da máquina ou não.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished"></translation>
+        <translation>Endereço do Se&amp;rvidor:</translation>
     </message>
     <message>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibe o endereço do servidor DHCP que está servindo à rede associada a esta placa exclusiva de hospedeiro.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Máscara do Servidor:</translation>
     </message>
     <message>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibe a máscara de rede do servidor DHCP que está servindo à rede associada a esta placa exclusiva de hospedeiro.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>Faixa Inferior de Endereçamento (&amp;L):</translation>
     </message>
     <message>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibe a faixa inferior de endereçamento oferecido pelo servidor DHCP que está servindo à rede associada com esta placa exclusiva de hospedeiro.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>Faixa S&amp;uperior de Endereçamento:</translation>
     </message>
     <message>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibe a faixa superior de endereçamento oferecido pelo servidor DHCP que está servindo à rede associada com esta placa exclusiva de hospedeiro.</translation>
     </message>
 </context>
 <context>
@@ -3104,77 +3109,77 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Paginação Aninhada</translation>
+        <translation>Paginação Aninhada</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished">Habilitado</translation>
+        <translation>Habilitada</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Desabilitada</translation>
     </message>
     <message>
         <source>Bridged network, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rede em modo Bridge, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rede interna, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rede exclusiva de hospedeiro (host-only), &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SCSI</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SCSI</translation>
     </message>
     <message>
         <source>Bridged Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rede em modo Bridge</translation>
     </message>
     <message>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rede Exclusiva de Hospedeiro (Host-only)</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX3</translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX4</translation>
+        <translation>PIIX4</translation>
     </message>
     <message>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH6</translation>
     </message>
     <message>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>AHCI</translation>
     </message>
     <message>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lsi Logic</translation>
     </message>
     <message>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>BusLogic</translation>
     </message>
 </context>
 <context>
@@ -3750,26 +3755,26 @@ to the system default language.&lt;/qt&gt;
     <name>VBoxImportApplianceWgt</name>
     <message>
         <source>Importing Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Importando Appliance ...</translation>
     </message>
 </context>
 <context>
     <name>VBoxImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecione um &lt;i&gt;appliance&lt;/i&gt; para importar</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Formato Open Virtualization (%1)</translation>
     </message>
     <message>
         <source>Appliance Import Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Assistente de Importação de Appliance</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Bem-vindo ao Assistente de Importação de Appliance!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -3779,70 +3784,76 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an appliance, you have to select a file describing the appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Este assistente irá guiá-lo durante o processo de importação de um appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Utilize o botão &lt;span style=&quot; font-weight:600;&quot;&gt;Próximo&lt;/span&gt; para avançar para página seguinte do assistente e o botão &lt;span style=&quot; font-weight:600;&quot;&gt;Voltar&lt;/span&gt; para retornar à página anterior.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Para importar um appliance, você precisa selecionar um arquivo que descreve o appliance primeiro. Por enquanto o VirtualBox suporta o formato de arquivo Open Virtualization Format (OVF). Para continuar, selecione o arquivo a ser importado abaixo:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; Voltar (&amp;B)</translation>
+        <translation>&lt; Voltar (&amp;B)</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">Próximo(&amp;N) &gt;</translation>
+        <translation>Próximo(&amp;N) &gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurações de Importação de Appliance</translation>
     </message>
     <message>
         <source>These are the virtual machines as described in the appliance with their suggested mappings for importing into VirtualBox. You can change many of the shown properties by double-clicking on the items and disable others by using the check boxes below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Estas são as máquinas virtuais descritas no appliance com seus mapeamentos sugeridos para importação no VirtualBox. Você pode alterar a maioria das propriedades exibidas clicando duas vezes nos itens e desabilitar outras utilizando as caixas de seleção abaixo.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>Restaurar Valores Padrão</translation>
     </message>
     <message>
         <source>&amp;Import &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Importar &gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;O sistema virtual &quot;%1&quot; exige que você concorde com os termos e condições da licença de uso exibida abaixo antes de continuar.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Clique em &lt;b&gt;Concordo&lt;/b&gt; para continuar ou clique em &lt;b&gt;Discordo&lt;/b&gt; para cancelar a importação.</translation>
     </message>
     <message>
         <source>Software License Agreement</source>
-        <translation type="unfinished"></translation>
+        <translation>Acordo de Licença de Uso de Software</translation>
     </message>
     <message>
         <source>&amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Discordo</translation>
     </message>
     <message>
         <source>&amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>Concordo (&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Print...</source>
-        <translation type="unfinished"></translation>
+        <translation>Im&amp;primir...</translation>
     </message>
     <message>
         <source>&amp;Save...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Salvar...</translation>
     </message>
     <message>
         <source>Text (*.txt)</source>
-        <translation type="unfinished"></translation>
+        <translation>Texto (*.txt)</translation>
     </message>
     <message>
         <source>Save license to file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvar licença no arquivo...</translation>
     </message>
 </context>
 <context>
@@ -3864,7 +3875,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxLineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Editar</translation>
     </message>
 </context>
 <context>
@@ -4582,11 +4593,11 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Criar novo disco rígido</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Utilizar disco rígido existente</translation>
     </message>
 </context>
 <context>
@@ -5428,111 +5439,111 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um arquivo chamado &lt;b&gt;%1&lt;/b&gt; já existe. Tem certeza de que deseja substituí-lo?&lt;br /&gt;&lt;br /&gt;O arquivo já existe em &quot;%2&quot;. Substituí-lo irá sobrescrever seu conteúdo.</translation>
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Os seguintes arquivos já existem:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Tem certeza de que deseja substituí-los? Substituí-los irá sobrescrever seu conteúdo.</translation>
     </message>
     <message>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove that file yourself &amp; try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao remover o arquivo &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Remova o arquivo manualmente e tente novamente.</translation>
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Você está utilizando uma versão de testes do VirtualBox. Esta versão não é adequada para uso em produção.</translation>
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível acessar a USB no sistema hospedeiro, pois nem o sistema de arquivos USB (usbfs) nem os serviços DBus e hal estão disponíveis. Se você deseja utilizar dispositivos USB dentre de sistemas convidados, corrija as configurações e reinicie o VirtualBox.</translation>
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
-        <translation type="unfinished"></translation>
+        <translation>Você está tentando desligar o sistema convidado com o botão de desligar ACPI. Isto não será possível porque o sistema convidado não suporta a utilização do sub-sistema ACPI.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;a aceleração de hardware VT-x/AMD-V hardware acceleration foi habilitada, mas não está operacional. O sistema operacional convidado de 64 bits irá falhar ao tentar detectar uma CPU 64 bits e não conseguirá iniciar.&lt;/p&gt;&lt;p&gt;Verifique se você habilitou as opções de VT-x/AMD-V na BIOS da máquina hospedeira.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="unfinished"></translation>
+        <translation>Fechar VM</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished">Continuar</translation>
+        <translation>Continuar</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Você tem certeza de que deseja apagar o snapshot selecionado e o estado atual?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">Descartar</translation>
+        <translation>Descartar</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Existem discos rígidos conectados às portas da controladora adicional. Se você desabilitar a controladora adicional, todos estes discos serão automaticamente desconectados.&lt;/p&gt;&lt;p&gt;Você tem certeza de que deseja desabilitar a controladora adicional?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Existem discos rígidos conectados às portas da controladora adicional. Se você desabilitar a controladora adicional, todos estes discos serão automaticamente desconectados.&lt;/p&gt;&lt;p&gt;Você tem certeza de que deseja alterar a controladora adicional?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Alterar</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Você deseja remover a placa de rede do hospedeiro &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; Esta placa pode estar em uso por uma ou mais placas de rede virtuais desta ou de outras VMs. Após a remoção, estas placas virtuais não irão mais funcionar até que você corrija as configurações correspondentes e as associe a outro nome ou tipo de placa de rede virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao criar a placa de rede exclusiva de hospedeiro.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Os arquivos de configuração do VirtualBox existentes serão automaticamente convertidos do formato antigo para o novo formato necessário para esta versão do VirtualBox.&lt;/p&gt;&lt;p&gt;Pressione &lt;b&gt;OK&lt;/b&gt; para iniciar o VirtualBox agora ou pressione o botão  &lt;b&gt;Sair&lt;/b&gt; se você deseja terminar a execução do VirtualBox sem tomar nenhuma ação.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao abrir o appliance.</translation>
     </message>
     <message>
         <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao abrir/interpretar o appliance &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao importar o appliance &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao criar o appliance.</translation>
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao preparar a exportação do appliance &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao criar o appliance.</translation>
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao exportar o appliance &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Cancelar</translation>
     </message>
 </context>
 <context>
@@ -5915,27 +5926,27 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Importar Appliance...</translation>
     </message>
     <message>
         <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa um &lt;i&gt;appliance&lt;/i&gt; no VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Export Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Exportar Appliance...</translation>
     </message>
     <message>
         <source>Export an appliance out of VM&apos;s from VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporta um &lt;i&gt;appliance&lt;/i&gt; a partir de uma ou mais VMs do VirtualBox</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">Atualizar (&amp;F)</translation>
+        <translation>Atualizar (&amp;F)</translation>
     </message>
 </context>
 <context>
@@ -5958,7 +5969,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished">Na página &lt;b&gt;%1&lt;/b&gt;, %2</translation>
+        <translation>Na página &lt;b&gt;%1&lt;/b&gt;, %2</translation>
     </message>
 </context>
 <context>
@@ -6368,23 +6379,23 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     <name>VBoxTextEditor</name>
     <message>
         <source>Edit text</source>
-        <translation type="unfinished"></translation>
+        <translation>Editar texto</translation>
     </message>
     <message>
         <source>&amp;Replace...</source>
-        <translation type="unfinished"></translation>
+        <translation>Substitui&amp;r</translation>
     </message>
     <message>
         <source>Replaces the current text with the content of a given file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Substitui o texto selecionado com o conteúdo de um arquivo.</translation>
     </message>
     <message>
         <source>Text (*.txt);;All (*.*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Texto (*.txt);;Todos os arquivos (*.*)</translation>
     </message>
     <message>
         <source>Select a file to open...</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecione um arquivo para abrir...</translation>
     </message>
 </context>
 <context>
@@ -8796,23 +8807,23 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>você configurou mais de &lt;b&gt;%1%&lt;/b&gt; da memória de seu computador (&lt;b&gt;%2&lt;/b&gt;) para a máquina virtual. Desta forma, não haverá memória suficiente para o sistema operacional nativo. Por favor escolha um valor menor.</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>você configurou mais de &lt;b&gt;%1%&lt;/b&gt; da memória de seu computador (&lt;b&gt;%2&lt;/b&gt;) para a máquina virtual. É possível que não haverá memória suficiente para o sistema operacional nativo. Continue por sua conta e risco.</translation>
     </message>
     <message>
         <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>o tipo do sistema operacional Convidado desta VM está definido como 64 bits, o que requer que o recurso de virtualização do processador correspondente (VT-x/AMD-V) esteja habilitado. Caso não esteja, o sistema Convidado irá falhar ao tentar detectar uma CPU de 64 bits e não conseguirá iniciar. Logo, este recurso será habilitado automaticamente quando você pressionar o botão OK no diálogo de configuração de VM.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando selecionado, a máquina virtual irá tentar utilizar a extensão de Paginação Aninhada (Nested Paging)  da CPU do hospedeiro, parte do Intel VT-x e AMD-V.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilitar Pa&amp;ginação Aninhada</translation>
     </message>
 </context>
 <context>
@@ -8879,11 +8890,11 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
     <message>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando selecionado, habilita uma controladora virtual adicional (SATA ou SCSI) para esta máquina.</translation>
     </message>
     <message>
         <source>&amp;Enable Additional Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilitar Controladora Adicional (&amp;E)</translation>
     </message>
 </context>
 <context>
@@ -8898,7 +8909,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation>Quando selecionado, conecta este adaptador de rede virtual na máquina virtual.</translation>
+        <translation>Quando selecionado, conecta esta placa de rede virtual na máquina virtual.</translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
@@ -8991,140 +9002,140 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     <message>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation type="unfinished">Adaptador</translation>
+        <translation>Placa</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>adapter</comment>
-        <translation type="unfinished"></translation>
+        <translation>Não selecionada</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>internal</comment>
-        <translation type="unfinished">Rede</translation>
+        <translation>Rede</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>network</comment>
-        <translation type="unfinished"></translation>
+        <translation>Não selecionada</translation>
     </message>
     <message>
         <source>MAC Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Endereço MAC</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation>Não selecionado</translation>
     </message>
     <message>
         <source>Cable</source>
-        <translation type="unfinished"></translation>
+        <translation>Cabo</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>cable</comment>
-        <translation type="unfinished"></translation>
+        <translation>Conectado</translation>
     </message>
     <message>
         <source>Not connected</source>
         <comment>cable</comment>
-        <translation type="unfinished"></translation>
+        <translation>Não conectado</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tipo de Placa:</translation>
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Abre o diálogo de configurações estendidas para o tipo de conexão selecionado.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>nenhuma placa de rede em modo bridge foi selecionada</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation type="unfinished"></translation>
+        <translation>nenhum nome para a rede interna foi especificado</translation>
     </message>
     <message>
         <source>no host-only adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>nenhuma placa de rede exclusiva do hospedeiro foi selecionada</translation>
     </message>
     <message>
         <source>Basic Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalhes Básicos</translation>
     </message>
     <message>
         <source>Bridged Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalhes da Rede em Modo Bridge</translation>
     </message>
     <message>
         <source>Internal Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalhes da Rede Interna</translation>
     </message>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalhes da Rede Exclusiva de Hospedeiro (host-only)</translation>
     </message>
     <message>
         <source>Not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Não selecionada</translation>
     </message>
     <message>
         <source>Host Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurações do Hospedeiro</translation>
     </message>
     <message>
         <source>&amp;Bridged Network Adapter:</source>
-        <translation type="unfinished"></translation>
+        <translation>Placa de Rede em Modo &amp;Bridge:</translation>
     </message>
     <message>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibe o nome da placa de rede do hospedeiro selecionada para rede em modo bridge.</translation>
     </message>
     <message>
         <source>Internal &amp;Network:</source>
-        <translation type="unfinished"></translation>
+        <translation>Rede Inter&amp;na:</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished">Exibe o nome da rede interna selecionada para esta placa.</translation>
+        <translation>Exibe o nome da rede interna selecionada para esta placa.</translation>
     </message>
     <message>
         <source>Host-only &amp;Network Adapter:</source>
-        <translation type="unfinished"></translation>
+        <translation>Placa de Rede Exclusiva do Hospedeiro (&amp;N):</translation>
     </message>
     <message>
         <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibe o nome da placa de rede do VirtualBox selecionada para rede exclusiva do hospedeiro.</translation>
     </message>
     <message>
         <source>Guest Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurações do Convidado</translation>
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Endereço &amp;MAC do Convidado:</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">Exibe o endereço MAC desta placa. O endereço contém exatamente 12 caracteres escolhidos de {0-9,A-F}. O segundo caractere deve ser um dígito par.</translation>
+        <translation>Exibe o endereço MAC desta placa. O endereço contém exatamente 12 caracteres escolhidos de {0-9,A-F}. O segundo caractere deve ser um dígito par.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Gera um novo endereço MAC aleatório.</translation>
+        <translation>Gera um novo endereço MAC aleatório.</translation>
     </message>
     <message>
         <source>&amp;Cable connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Ca&amp;bo conectado</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">Indica se o cabo de rede virtual será conectado na inicialização da máquina ou não.</translation>
+        <translation>Indica se o cabo de rede virtual será conectado na inicialização da máquina ou não.</translation>
     </message>
 </context>
 <context>
