@@ -1652,9 +1652,7 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
     RTLogFlags(NULL, "nodisabled nobuffered");
 #endif
 #ifdef VBOX_WITH_STATISTICS
-# ifndef DEBUG_dmik
     STAMR3Dump(pVM, "*");
-# endif
 #else
     LogRel(("************************* Statistics *************************\n"));
     STAMR3DumpToReleaseLog(pVM, "*");
@@ -2474,7 +2472,8 @@ void vmR3SetState(PVM pVM, VMSTATE enmStateNew)
     for (PVMATSTATE pCur = pVM->pUVM->vm.s.pAtState; pCur; pCur = pCur->pNext)
     {
         pCur->pfnAtState(pVM, enmStateNew, enmStateOld, pCur->pvUser);
-        if (pVM->enmVMState == VMSTATE_DESTROYING)
+        if (    pVM->enmVMState != enmStateNew
+            &&  pVM->enmVMState == VMSTATE_DESTROYING)
             break;
         AssertMsg(pVM->enmVMState == enmStateNew,
                   ("You are not allowed to change the state while in the change callback, except "
