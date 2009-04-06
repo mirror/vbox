@@ -359,7 +359,6 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
 
         suplibOsTerm(&g_supLibData);
     }
-    AssertMsgFailed(("SUPR3Init() failed rc=%Rrc\n", rc));
     g_cInits--;
 
     return rc;
