@@ -3825,10 +3825,10 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 
         Utf8Str idStr = mData->mUuid.toString();
 # ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
-        const char * args[] = {path, "-startvm", idStr, 0 };
+        const char * args[] = {path, "--startvm", idStr, 0 };
 # else
         Utf8Str name = mUserData->mName;
-        const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
+        const char * args[] = {path, "--comment", name, "--startvm", idStr, 0 };
 # endif
         vrc = RTProcCreate (path, args, env, 0, &pid);
     }
@@ -3836,6 +3836,29 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     if (0)
         ;
 #endif /* VBOX_WITH_QTGUI */
+
+    else
+
+#ifdef VBOX_WITH_VBOXSDL
+    if (type == "sdl" || type == "GUI/SDL")
+    {
+        const char VBoxSDL_exe[] = "VBoxSDL" HOSTSUFF_EXE;
+        Assert (sz >= sizeof (VBoxSDL_exe));
+        strcpy (cmd, VBoxSDL_exe);
+
+        Utf8Str idStr = mData->mUuid.toString();
+# ifdef RT_OS_WINDOWS
+        const char * args[] = {path, "--startvm", idStr, 0 };
+# else
+        Utf8Str name = mUserData->mName;
+        const char * args[] = {path, "--comment", name, "--startvm", idStr, 0 };
+# endif
+        vrc = RTProcCreate (path, args, env, 0, &pid);
+    }
+#else /* !VBOX_WITH_VBOXSDL */
+    if (0)
+        ;
+#endif /* !VBOX_WITH_VBOXSDL */
 
     else
 
@@ -3848,10 +3871,10 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 
         Utf8Str idStr = mData->mUuid.toString();
 # ifdef RT_OS_WINDOWS
-        const char * args[] = {path, "-startvm", idStr, 0 };
+        const char * args[] = {path, "--startvm", idStr, 0 };
 # else
         Utf8Str name = mUserData->mName;
-        const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
+        const char * args[] = {path, "--comment", name, "--startvm", idStr, 0 };
 # endif
         vrc = RTProcCreate (path, args, env, 0, &pid);
     }
@@ -3871,10 +3894,10 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 
         Utf8Str idStr = mData->mUuid.toString();
 # ifdef RT_OS_WINDOWS
-        const char * args[] = {path, "-startvm", idStr, "-capture", 0 };
+        const char * args[] = {path, "--startvm", idStr, "--capture", 0 };
 # else
         Utf8Str name = mUserData->mName;
-        const char * args[] = {path, "-comment", name, "-startvm", idStr, "-capture", 0 };
+        const char * args[] = {path, "--comment", name, "--startvm", idStr, "--capture", 0 };
 # endif
         vrc = RTProcCreate (path, args, env, 0, &pid);
     }
