@@ -54,9 +54,10 @@ public:
         ProxyAuthenticationRequiredError = QHttp::ProxyAuthenticationRequiredError,
 
         /* Advanced QHttp errors */
-        TimeoutError,         /* MaxWaitTime time passed with no response */
-        PageNotFoundError,    /* Corresponds to 404 == not found header */
-        MovedTemporarilyError /* Corresponds to 302 == moved temporarily response */
+        TimeoutError,          /* MaxWaitTime time passed with no response */
+        PageNotFoundError,     /* Corresponds to 404 == not found header */
+        MovedPermanentlyError, /* Corresponds to 301 == moved permanently response */
+        MovedTemporarilyError  /* Corresponds to 302 == moved temporarily response */
     };
 
     QIHttp (QObject *aParent, const QString &aHostName, quint16 aPort = 80)
@@ -91,6 +92,7 @@ public:
             case PageNotFoundError:
                 return tr ("Could not locate the file on "
                            "the server (response: %1)").arg (mStatusCode);
+            case MovedPermanentlyError:
             case MovedTemporarilyError:
                 return QString::null; /* should be redirected anyway */
             default:
@@ -133,6 +135,9 @@ private slots:
         mStatusCode = aResponse.statusCode();
         switch (mStatusCode)
         {
+            case 301:
+                mErrorCode = MovedPermanentlyError;
+                return abort();
             case 302:
                 mErrorCode = MovedTemporarilyError;
                 return abort();

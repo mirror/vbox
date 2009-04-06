@@ -104,6 +104,7 @@ void VBoxDownloaderWgt::acknowledgeFinished (bool aError)
                 QTimer::singleShot (0, this, SLOT (suicide()));
             break;
         }
+        case QIHttp::MovedPermanentlyError:
         case QIHttp::MovedTemporarilyError:
         {
             /* Restart downloading at new location */
