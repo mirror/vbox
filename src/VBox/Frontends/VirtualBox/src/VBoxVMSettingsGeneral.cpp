@@ -433,7 +433,7 @@ bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle *
             "(<b>%2</b>) to the virtual machine. Not enough memory is left "
             "for your host operating system. Please select a smaller amount.")
             .arg ((unsigned)(maxPct * 100))
-            .arg (vboxGlobal().formatSize (fullSize * _1M));
+            .arg (vboxGlobal().formatSize ((uint64_t)fullSize * _1M));
         return false;
     }
     if (mSlRam->value() + mSlVideo->value() > warnPct * fullSize)
@@ -443,7 +443,7 @@ bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle *
             "(<b>%2</b>) to the virtual machine. Not enough memory might be "
             "left for your host operating system. Continue at your own risk.")
             .arg ((unsigned)(warnPct * 100))
-            .arg (vboxGlobal().formatSize (fullSize * _1M));
+            .arg (vboxGlobal().formatSize ((uint64_t)fullSize * _1M));
         return true;
     }
     if ((quint64) mSlVideo->value() * _1M < needBytes)
