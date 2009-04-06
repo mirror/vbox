@@ -453,7 +453,7 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("wrmsr",              0,              0,          0,          OP_WRMSR,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED),
     OP("rdtsc",              0,              0,          0,          OP_RDTSC,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_POTENTIALLY_DANGEROUS),
     OP("rdmsr",              0,              0,          0,          OP_RDMSR,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_PRIVILEGED),
-    OP("rdpmc",              0,              0,          0,          OP_RPPMC,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_PRIVILEGED),
+    OP("rdpmc",              0,              0,          0,          OP_RDPMC,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_PRIVILEGED),
     OP("sysenter",           0,              0,          0,          OP_SYSENTER,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW),
     OP("sysexit",            0,              0,          0,          OP_SYSEXIT, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW),
     INVALID_OPCODE,

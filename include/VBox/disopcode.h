@@ -187,7 +187,7 @@
 #define OP_WRMSR        140
 #define OP_RDTSC        141
 #define OP_RDMSR        142
-#define OP_RPPMC        143
+#define OP_RDPMC        143
 #define OP_SYSENTER     144
 #define OP_SYSEXIT      145
 #define OP_PAUSE        146
