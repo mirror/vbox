@@ -211,8 +211,8 @@ static int handleRegisterVM(HandlerArg *a)
 
 static const RTGETOPTDEF g_aUnregisterVMOptions[] =
 {
-    { "--delete",       'd', RTGETOPT_REQ_STRING },
-    { "-delete",        'd', RTGETOPT_REQ_STRING },     // deprecated
+    { "--delete",       'd', RTGETOPT_REQ_NOTHING },
+    { "-delete",        'd', RTGETOPT_REQ_NOTHING },    // deprecated
 };
 
 static int handleUnregisterVM(HandlerArg *a)
