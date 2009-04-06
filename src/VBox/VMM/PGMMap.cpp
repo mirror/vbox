@@ -689,6 +689,7 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
     pVM->pgm.s.fMappingsFixed    = false;
     pVM->pgm.s.GCPtrMappingFixed = 0;
     pVM->pgm.s.cbMappingFixed    = 0;
+    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
     return VINF_SUCCESS;
 }
 
