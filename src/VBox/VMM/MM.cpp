@@ -201,7 +201,16 @@ VMMR3DECL(int) MMR3InitUVM(PUVM pUVM)
     /*
      * Init the heap.
      */
-    return mmR3HeapCreateU(pUVM, &pUVM->mm.s.pHeap);
+    int rc = mmR3HeapCreateU(pUVM, &pUVM->mm.s.pHeap);
+    if (RT_SUCCESS(rc))
+    {
+        rc = mmR3UkHeapCreateU(pUVM, &pUVM->mm.s.pUkHeap);
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
+        mmR3HeapDestroy(pUVM->mm.s.pHeap);
+        pUVM->mm.s.pHeap = NULL;
+    }
+    return rc;
 }
 
 
@@ -463,6 +472,13 @@ VMMR3DECL(int) MMR3Term(PVM pVM)
     pVM->mm.s.pHyperHeapRC   = NIL_RTRCPTR; /* freed above. */
     pVM->mm.s.offVM          = 0;           /* init assertion on this */
 
+    /*
+     * Destroy the User-kernel heap here since the support driver session
+     * may have been terminated by the time we get to MMR3TermUVM.
+     */
+    mmR3UkHeapDestroy(pVM->pUVM->mm.s.pUkHeap);
+    pVM->pUVM->mm.s.pUkHeap = NULL;
+
     return VINF_SUCCESS;
 }
 
@@ -479,8 +495,13 @@ VMMR3DECL(int) MMR3Term(PVM pVM)
 VMMR3DECL(void) MMR3TermUVM(PUVM pUVM)
 {
     /*
-     * Destroy the heap.
+     * Destroy the heaps.
      */
+    if (pUVM->mm.s.pUkHeap)
+    {
+        mmR3UkHeapDestroy(pUVM->mm.s.pUkHeap);
+        pUVM->mm.s.pUkHeap = NULL;
+    }
     mmR3HeapDestroy(pUVM->mm.s.pHeap);
     pUVM->mm.s.pHeap = NULL;
 }

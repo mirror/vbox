@@ -37,9 +37,15 @@
  * @{
  */
 
-/** @name VM Ring-3 Heap Internals
+
+/** @name MMR3Heap - VM Ring-3 Heap Internals
  * @{
  */
+
+/** @def MMR3HEAP_SIZE_ALIGNMENT
+ * The allocation size alignment of the MMR3Heap.
+ */
+#define MMR3HEAP_SIZE_ALIGNMENT     16
 
 /** @def MMR3HEAP_WITH_STATISTICS
  * Enable MMR3Heap statistics.
@@ -47,11 +53,6 @@
 #if !defined(MMR3HEAP_WITH_STATISTICS) && defined(VBOX_WITH_STATISTICS)
 # define MMR3HEAP_WITH_STATISTICS
 #endif
-
-/** @def MMR3HEAP_SIZE_ALIGNMENT
- * The allocation size alignment of the MMR3Heap.
- */
-#define MMR3HEAP_SIZE_ALIGNMENT     16
 
 /**
  * Heap statistics record.
@@ -122,6 +123,89 @@ typedef struct MMHEAP
 } MMHEAP;
 /** Pointer to MM Heap structure. */
 typedef MMHEAP *PMMHEAP;
+
+/** @} */
+
+
+/** @name MMUkHeap - VM User-kernel Heap Internals
+ * @{
+ */
+
+/** @def MMUKHEAP_SIZE_ALIGNMENT
+ * The allocation size alignment of the MMR3UkHeap.
+ */
+#define MMUKHEAP_SIZE_ALIGNMENT   16
+
+/** @def MMUKHEAP_WITH_STATISTICS
+ * Enable MMUkHeap statistics.
+ */
+#if !defined(MMUKHEAP_WITH_STATISTICS) && defined(VBOX_WITH_STATISTICS)
+# define MMUKHEAP_WITH_STATISTICS
+#endif
+
+
+/**
+ * Heap statistics record.
+ * There is one global and one per allocation tag.
+ */
+typedef struct MMUKHEAPSTAT
+{
+    /** Core avl node, key is the tag. */
+    AVLULNODECORE           Core;
+    /** Number of allocation. */
+    uint64_t                cAllocations;
+    /** Number of reallocations. */
+    uint64_t                cReallocations;
+    /** Number of frees. */
+    uint64_t                cFrees;
+    /** Failures. */
+    uint64_t                cFailures;
+    /** Number of bytes allocated (sum). */
+    uint64_t                cbAllocated;
+    /** Number of bytes freed. */
+    uint64_t                cbFreed;
+    /** Number of bytes currently allocated. */
+    size_t                  cbCurAllocated;
+} MMUKHEAPSTAT;
+/** Pointer to heap statistics record. */
+typedef MMUKHEAPSTAT *PMMUKHEAPSTAT;
+
+/**
+ * Sub heap tracking record.
+ */
+typedef struct MMUKHEAPSUB
+{
+    /** Pointer to the next sub-heap. */
+    struct MMUKHEAPSUB     *pNext;
+    /** The base address of the sub-heap. */
+    void                   *pv;
+    /** The size of the sub-heap.  */
+    size_t                  cb;
+    /** The handle of the simple block pointer. */
+    RTHEAPSIMPLE            hSimple;
+    /** The ring-0 address corresponding to MMUKHEAPSUB::pv. */
+    RTR0PTR                 pvR0;
+} MMUKHEAPSUB;
+/** Pointer to a sub-heap tracking record. */
+typedef MMUKHEAPSUB *PMMUKHEAPSUB;
+
+
+/** MM User-kernel Heap structure. */
+typedef struct MMUKHEAP
+{
+    /** Lock protecting the heap. */
+    RTCRITSECT              Lock;
+    /** Head of the sub-heap LIFO. */
+    PMMUKHEAPSUB            pSubHeapHead;
+    /** Heap per tag statistics tree. */
+    PAVLULNODECORE          pStatTree;
+    /** The VM handle. */
+    PUVM                    pUVM;
+    /** Heap global statistics. */
+    MMUKHEAPSTAT            Stat;
+} MMUKHEAP;
+/** Pointer to MM Heap structure. */
+typedef MMUKHEAP *PMMUKHEAP;
 
 /** @} */
 
@@ -675,6 +759,8 @@ typedef struct MMUSERPERVM
 {
     /** Pointer to the MM R3 Heap. */
     R3PTRTYPE(PMMHEAP)          pHeap;
+    /** Pointer to the MM Uk Heap. */
+    R3PTRTYPE(PMMUKHEAP)        pUkHeap;
 } MMUSERPERVM;
 /** Pointer to the MM data kept in the UVM. */
 typedef MMUSERPERVM *PMMUSERPERVM;
@@ -690,6 +776,10 @@ void mmR3PagePoolTerm(PVM pVM);
 
 int  mmR3HeapCreateU(PUVM pUVM, PMMHEAP *ppHeap);
 void mmR3HeapDestroy(PMMHEAP pHeap);
+
+void mmR3UkHeapDestroy(PMMUKHEAP pHeap);
+int  mmR3UkHeapCreateU(PUVM pUVM, PMMUKHEAP *ppHeap);
+
 
 int  mmR3HyperInit(PVM pVM);
 int  mmR3HyperInitPaging(PVM pVM);

@@ -2780,11 +2780,16 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
 int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
 {
     int rc;
+
     /*
      * Allocate a new tracking structure first.
      */
-#if 0 /* for later when we've got a separate mapping method for ring-0. */
+#if 1 /* disable on regression */
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)MMR3HeapAlloc(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk));
+# else
+    PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)MMR3UkHeapAlloc(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk), NULL);
+# endif
     AssertReturn(pChunk, VERR_NO_MEMORY);
 #else
     PPGMCHUNKR3MAP pChunk;
