@@ -526,7 +526,7 @@ int main (int argc, char **argv, char **envp)
         QApplication a (argc, &argv[0]);
         QString msgTitle = QApplication::tr ("VirtualBox - Runtime Error");
         QString msgText = "<html>";
-        
+
         switch (rc)
         {
             case VERR_VM_DRIVER_NOT_INSTALLED:
@@ -541,6 +541,11 @@ int main (int argc, char **argv, char **envp)
 # ifdef RT_OS_LINUX
             case VERR_NO_MEMORY:
                 msgText += g_QStrHintLinuxNoMemory;
+                break;
+# endif
+# if 0 /** @todo Enable after 2.2.0 (/ NLS unfreeze). */
+            case VERR_VM_DRIVER_NOT_ACCESSIBLE:
+                msgText += QApplication::tr ("Kernel driver not accessible");
                 break;
 # endif
             default:
