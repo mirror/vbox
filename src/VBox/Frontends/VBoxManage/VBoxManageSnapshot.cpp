@@ -67,7 +67,7 @@ int handleSnapshot(HandlerArg *a)
         CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
 
         /* switch based on the command */
-        if (strcmp(a->argv[1], "take") == 0)
+        if (!strcmp(a->argv[1], "take"))
         {
             /* there must be a name */
             if (a->argc < 3)
@@ -77,7 +77,10 @@ int handleSnapshot(HandlerArg *a)
                 break;
             }
             Bstr name(a->argv[2]);
-            if ((a->argc > 3) && ((a->argc != 5) || (strcmp(a->argv[3], "-desc") != 0)))
+            if ((a->argc > 3) && (   (a->argc != 5)
+                                  || (   strcmp(a->argv[3], "--description")
+                                      && strcmp(a->argv[3], "-description")
+                                      && strcmp(a->argv[3], "-desc"))))
             {
                 errorSyntax(USAGE_SNAPSHOT, "Incorrect description format");
                 rc = E_FAIL;
@@ -100,7 +103,7 @@ int handleSnapshot(HandlerArg *a)
                     RTPrintf("Error: failed to take snapshot. No error message available!\n");
             }
         }
-        else if (strcmp(a->argv[1], "discard") == 0)
+        else if (!strcmp(a->argv[1], "discard"))
         {
             /* exactly one parameter: snapshot name */
             if (a->argc != 3)
@@ -140,18 +143,21 @@ int handleSnapshot(HandlerArg *a)
                     RTPrintf("Error: failed to discard snapshot. No error message available!\n");
             }
         }
-        else if (strcmp(a->argv[1], "discardcurrent") == 0)
+        else if (!strcmp(a->argv[1], "discardcurrent"))
         {
             if (   (a->argc != 3)
-                || (   (strcmp(a->argv[2], "-state") != 0)
-                    && (strcmp(a->argv[2], "-all") != 0)))
+                || (   strcmp(a->argv[2], "--state")
+                    && strcmp(a->argv[2], "-state")
+                    && strcmp(a->argv[2], "--all")
+                    && strcmp(a->argv[2], "-all")))
             {
                 errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[2]).raw());
                 rc = E_FAIL;
                 break;
             }
             bool fAll = false;
-            if (strcmp(a->argv[2], "-all") == 0)
+            if (   !strcmp(a->argv[2], "--all")
+                || !strcmp(a->argv[2], "-all"))
                 fAll = true;
 
             ComPtr<IProgress> progress;
@@ -177,7 +183,7 @@ int handleSnapshot(HandlerArg *a)
             }
 
         }
-        else if (strcmp(a->argv[1], "edit") == 0)
+        else if (!strcmp(a->argv[1], "edit"))
         {
             if (a->argc < 3)
             {
@@ -188,7 +194,8 @@ int handleSnapshot(HandlerArg *a)
 
             ComPtr<ISnapshot> snapshot;
 
-            if (strcmp(a->argv[2], "-current") == 0)
+            if (   !strcmp(a->argv[2], "--current")
+                || !strcmp(a->argv[2], "-current"))
             {
                 CHECK_ERROR_BREAK(machine, COMGETTER(CurrentSnapshot)(snapshot.asOutParam()));
             }
@@ -210,7 +217,9 @@ int handleSnapshot(HandlerArg *a)
             /* parse options */
             for (int i = 3; i < a->argc; i++)
             {
-                if (strcmp(a->argv[i], "-newname") == 0)
+                if (   !strcmp(a->argv[i], "--name")
+                    || !strcmp(a->argv[i], "-name")
+                    || !strcmp(a->argv[i], "-newname"))
                 {
                     if (a->argc <= i + 1)
                     {
@@ -221,7 +230,9 @@ int handleSnapshot(HandlerArg *a)
                     i++;
                     snapshot->COMSETTER(Name)(Bstr(a->argv[i]));
                 }
-                else if (strcmp(a->argv[i], "-newdesc") == 0)
+                else if (   !strcmp(a->argv[i], "--description")
+                         || !strcmp(a->argv[i], "-description")
+                         || !strcmp(a->argv[i], "-newdesc"))
                 {
                     if (a->argc <= i + 1)
                     {
@@ -241,7 +252,7 @@ int handleSnapshot(HandlerArg *a)
             }
 
         }
-        else if (strcmp(a->argv[1], "showvminfo") == 0)
+        else if (!strcmp(a->argv[1], "showvminfo"))
         {
             /* exactly one parameter: snapshot name */
             if (a->argc != 3)
