@@ -1638,6 +1638,22 @@ ResumeExecution:
         break;
     }
 
+    case SVM_EXIT_RDPMC:                /* Guest software attempted to execute RDPMC. */
+    {
+        Log2(("SVM: Rdpmc %x\n", pCtx->ecx));
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitRdpmc);
+        rc = EMInterpretRdpmc(pVM, CPUMCTX2CORE(pCtx));
+        if (rc == VINF_SUCCESS)
+        {
+            /* Update EIP and continue execution. */
+            pCtx->rip += 2;             /* Note! hardcoded opcode size! */
+            goto ResumeExecution;
+        }
+        AssertMsgFailed(("EMU: rdpmc failed with %Rrc\n", rc));
+        rc = VINF_EM_RAW_EMULATE_INSTR;
+        break;
+    }
+
     case SVM_EXIT_RDTSCP:                /* Guest software attempted to execute RDTSCP. */
     {
         Log2(("SVM: Rdtscp\n"));
@@ -2047,7 +2063,6 @@ ResumeExecution:
     }
 
     case SVM_EXIT_MONITOR:
-    case SVM_EXIT_RDPMC:
     case SVM_EXIT_PAUSE:
     case SVM_EXIT_MWAIT_UNCOND:
     case SVM_EXIT_MWAIT_ARMED:
