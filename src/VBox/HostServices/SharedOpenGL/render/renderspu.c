@@ -19,14 +19,14 @@ DoSync(void)
     CRMessage *in, out;
 
     out.header.type = CR_MESSAGE_OOB;
-    
+
     if (render_spu.is_swap_master)
     {
         int a;
-    
+
         for (a = 0; a < render_spu.num_swap_clients; a++)
         {
-            crNetGetMessage( render_spu.swap_conns[a], &in );           
+            crNetGetMessage( render_spu.swap_conns[a], &in );
             crNetFree( render_spu.swap_conns[a], in);
         }
 
@@ -37,7 +37,7 @@ DoSync(void)
     {
         crNetSend( render_spu.swap_conns[0], NULL, &out, sizeof(CRMessage));
 
-        crNetGetMessage( render_spu.swap_conns[0], &in );           
+        crNetGetMessage( render_spu.swap_conns[0], &in );
         crNetFree( render_spu.swap_conns[0], in);
     }
 }
@@ -673,7 +673,7 @@ static void RENDER_APIENTRY renderspuChromiumParameteriCR(GLenum target, GLint v
 
 
 #if 0
-    switch (target) 
+    switch (target)
     {
         default:
             crWarning("Unhandled target in renderspuChromiumParameteriCR()");
@@ -712,7 +712,7 @@ renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
         case GL_GATHER_CONNECT_CR:
             if (render_spu.gather_userbuf_size)
                 privbuf = (unsigned char *)crAlloc(1024*768*4);
-        
+
             port = ((GLint *) values)[0];
 
             if (render_spu.gather_conns == NULL)
@@ -727,22 +727,22 @@ renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
                 switch (render_spu.server->clients[client_num]->conn->type)
                 {
                     case CR_TCPIP:
-                        crDebug("Render SPU: AcceptClient from %s on %d", 
+                        crDebug("Render SPU: AcceptClient from %s on %d",
                             render_spu.server->clients[client_num]->conn->hostname, render_spu.gather_port);
-                        render_spu.gather_conns[client_num] = 
+                        render_spu.gather_conns[client_num] =
                                 crNetAcceptClient("tcpip", NULL, port, 1024*1024,  1);
                         break;
-                    
+
                     case CR_GM:
-                        render_spu.gather_conns[client_num] = 
+                        render_spu.gather_conns[client_num] =
                                 crNetAcceptClient("gm", NULL, port, 1024*1024,  1);
                         break;
-                        
+
                     default:
                         crError("Render SPU: Unknown Network Type to Open Gather Connection");
                 }
 
-        
+
                 if (render_spu.gather_userbuf_size)
                 {
                     render_spu.gather_conns[client_num]->userbuf = privbuf;
@@ -767,7 +767,7 @@ renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
 
         for (client_num=0; client_num< render_spu.server->numClients; client_num++)
         {
-            crNetGetMessage(render_spu.gather_conns[client_num], &msg); 
+            crNetGetMessage(render_spu.gather_conns[client_num], &msg);
             if (msg->header.type == CR_MESSAGE_GATHER)
             {
                 crNetFree(render_spu.gather_conns[client_num], msg);
@@ -779,13 +779,13 @@ renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
             }
         }
 
-        /* 
-         * We're only hitting the case if we're not actually calling 
+        /*
+         * We're only hitting the case if we're not actually calling
          * child.SwapBuffers from readback, so a switch about which
          * call to DoSync() we really want [this one, or the one
          * in SwapBuffers above] is not necessary -- karl
          */
-        
+
         if (render_spu.swap_master_url)
             DoSync();
 
@@ -794,8 +794,8 @@ renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
                                         sizeof(CRMessageHeader));
 
         render_spu.self.RasterPos2i(((GLint *)values)[0], ((GLint *)values)[1]);
-        render_spu.self.DrawPixels(  ((GLint *)values)[2], ((GLint *)values)[3], 
-                                        ((GLint *)values)[4], ((GLint *)values)[5], 
+        render_spu.self.DrawPixels(  ((GLint *)values)[2], ((GLint *)values)[3],
+                                        ((GLint *)values)[4], ((GLint *)values)[5],
                                     render_spu.gather_conns[0]->userbuf);
 
 
@@ -1003,12 +1003,12 @@ renderspuGetString(GLenum pname)
 #if defined(DARWIN)
 void renderspuFlush()
 {
-    render_spu.self.Flush();
+    glFlush();
 }
 
 void renderspuFinish()
 {
-    render_spu.self.Finish();
+    glFinish();
 }
 #endif
 
