@@ -186,6 +186,8 @@ typedef struct RTGETOPTSTATE
     /** The next short option.
      * (For parsing ls -latrT4 kind of option lists.) */
     const char     *pszNextShort;
+    /** The option definition which matched. NULL otherwise. */
+    PCRTGETOPTDEF   pDef;
     /* More members will be added later for dealing with initial
        call, optional sorting, '--' and so on. */
 } RTGETOPTSTATE;
@@ -296,6 +298,8 @@ int main(int argc, char **argv)
    @endcode
  *
  * @returns 0 when done parsing.
+ * @returns the iShort value of the option. pState->pDef points to the option
+ *          definition which matched.
  * @returns IPRT error status on parse error.
  * @returns VINF_GETOPT_NOT_OPTION when encountering a non-option argument and
  *          RTGETOPT_FLAG_SORT was not specified. pValueUnion->psz points to the
