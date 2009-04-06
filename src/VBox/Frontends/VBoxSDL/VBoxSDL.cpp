@@ -207,7 +207,9 @@ static VBoxSDLFB  *gpFrameBuffer = NULL;
 static SDL_Cursor *gpDefaultCursor = NULL;
 #ifdef VBOXSDL_WITH_X11
 static Cursor      gpDefaultOrigX11Cursor;
+#ifdef RT_OS_LINUX
 static BOOL        guseEvdevKeymap = FALSE;
+#endif
 #endif
 static SDL_Cursor *gpCustomCursor = NULL;
 static WMcursor   *gpCustomOrigWMcursor = NULL;
@@ -676,7 +678,7 @@ static void show_usage()
              "  --detecthostkey          Get the hostkey identifier and modifier state\n"
              "  --hostkey <key> {<key2>} <mod> Set the host key to the values obtained using --detecthostkey\n"
              "  --termacpi               Send an ACPI power button event when closing the window\n"
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) /** @todo UNIXISH_TAP stuff out of main and up to Config.kmk! */
+#if defined(RT_OS_LINUX)
              "  --evdevkeymap            Use evdev keycode map\n"
 #endif
 #ifdef VBOX_WITH_VRDP
@@ -1449,7 +1451,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             }
         }
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) && defined(VBOXSDL_WITH_X11)
         else if (   !strcmp(argv[curArg], "--evdevkeymap")
                  || !strcmp(argv[curArg], "-evdevkeymap"))
         {
@@ -3270,11 +3272,13 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
         // just an offset (Xorg MIN_KEYCODE)
         keycode -= 8;
     }
+#ifdef RT_OS_LINUX
     else if (keycode < 158 && guseEvdevKeymap)
     {
         // apply EVDEV conversion table
         keycode = evdev_keycode_to_pc_keycode[keycode - 97];
     }
+#endif
     else if (keycode < 158)
     {
         // apply conversion table
