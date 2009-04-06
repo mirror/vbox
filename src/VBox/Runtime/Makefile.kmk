@@ -1017,8 +1017,12 @@ RuntimeR0Drv_SOURCES    = \
 	common/misc/handletable.cpp \
 	common/misc/handletablectx.cpp \
 	common/misc/handletablesimple.cpp \
+	common/misc/once.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
+	common/rand/rand.cpp \
+	common/rand/randadv.cpp \
+	common/rand/randparkmiller.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
@@ -1027,6 +1031,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/table/avlpv.cpp \
 	generic/RTLogWriteStdErr-stub-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
+	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/uuid-generic.cpp \
 	r0drv/alloc-r0drv.cpp \
 	r0drv/initterm-r0drv.cpp \
@@ -1257,15 +1262,10 @@ RuntimeR0Drv_SOURCES.solaris = \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/err/RTErrConvertToErrno.cpp \
 	common/misc/thread.cpp \
-	common/misc/once.cpp \
 	common/string/memchr.asm \
-	common/rand/rand.cpp \
-	common/rand/randadv.cpp \
-	common/rand/randparkmiller.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/mppresent-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
