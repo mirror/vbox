@@ -156,7 +156,6 @@ $(PATH_TARGET)/docs.Main: \
 	$(QUIET)$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) "===> Please fix above doxygen errors/warnings listed in"
 	$(QUIET)$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) "===> $(PATH_TARGET)/Main.err"
 	$(QUIET)$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) "===> **************************************************"
-	$(QUIET)$(TEST) '!' -s "$(PATH_TARGET)/Main.err"
 	-$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe $(subst /,\\,$(VBOX_MAIN_DOC_DIR)/html/index.hhp)
 	$(APPEND) $(PATH_TARGET)/docs.Main
 # aliases
