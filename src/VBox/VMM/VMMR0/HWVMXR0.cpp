@@ -2932,7 +2932,6 @@ ResumeExecution:
             pCtx->rip += cbInstr;
             goto ResumeExecution;
         }
-        AssertMsgFailed(("EMU: rdpmc failed with %Rrc\n", rc));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }
@@ -2949,7 +2948,6 @@ ResumeExecution:
             pCtx->rip += cbInstr;
             goto ResumeExecution;
         }
-        AssertMsgFailed(("EMU: rdtsc failed with %Rrc\n", rc));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }

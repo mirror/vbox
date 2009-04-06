@@ -1633,7 +1633,6 @@ ResumeExecution:
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
-        AssertMsgFailed(("EMU: rdtsc failed with %Rrc\n", rc));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }
@@ -1649,7 +1648,6 @@ ResumeExecution:
             pCtx->rip += 2;             /* Note! hardcoded opcode size! */
             goto ResumeExecution;
         }
-        AssertMsgFailed(("EMU: rdpmc failed with %Rrc\n", rc));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }
