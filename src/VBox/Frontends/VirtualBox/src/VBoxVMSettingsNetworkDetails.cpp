@@ -23,6 +23,7 @@
 /* VBox Includes */
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include "VBoxVMSettingsNetwork.h"
 #include "VBoxVMSettingsNetworkDetails.h"
 
 /* Qt Includes */
@@ -223,7 +224,6 @@ void VBoxVMSettingsNetworkDetails::retranslateUi()
     }
 
     /* Translate empty items */
-    mNotSelected = tr ("Not selected", "Host-only Network Details, network adapter chooser");
     populateComboboxes();
 }
 
@@ -287,18 +287,38 @@ void VBoxVMSettingsNetworkDetails::genMACClicked()
 
 void VBoxVMSettingsNetworkDetails::populateComboboxes()
 {
-    /* Append || retranslate <Not Selected> item */
-    QList <QComboBox*> list;
-    list << mCbBRG << mCbINT << mCbHOI;
-
-    foreach (QComboBox *cb, list)
-    {
-        int pos = cb->findData (emptyItemCode);
+    {   /* Bridged adapters combo-box */
+        int pos = mCbBRG->findData (emptyItemCode);
         if (pos == -1)
-            cb->insertItem (0, mNotSelected, emptyItemCode);
+            mCbBRG->insertItem (0,
+                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"),
+                emptyItemCode);
         else
-            cb->setItemText (pos, mNotSelected);
-    }
+            mCbBRG->setItemText (pos,
+                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"));
+    }   /* Bridged adapters combo-box */
+
+    {   /* Internal networks combo-box */
+        int pos = mCbINT->findData (emptyItemCode);
+        if (pos == -1)
+            mCbINT->insertItem (0,
+                VBoxVMSettingsNetwork::tr ("Not selected", "network"),
+                emptyItemCode);
+        else
+            mCbINT->setItemText (pos,
+                VBoxVMSettingsNetwork::tr ("Not selected", "network"));
+    }   /* Internal networks combo-box */
+
+    {   /* Host-only adapters combo-box */
+        int pos = mCbHOI->findData (emptyItemCode);
+        if (pos == -1)
+            mCbHOI->insertItem (0,
+                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"),
+                emptyItemCode);
+        else
+            mCbHOI->setItemText (pos,
+                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"));
+    }   /* Host-only adapters combo-box */
 }
 
 QComboBox* VBoxVMSettingsNetworkDetails::comboBox() const

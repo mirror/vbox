@@ -64,7 +64,6 @@ private:
 
     KNetworkAttachmentType mType;
     CNetworkAdapter mAdapter;
-    QString mNotSelected;
 };
 
 #endif // __VBoxVMSettingsNetworkDetails_h__
