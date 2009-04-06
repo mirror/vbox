@@ -506,10 +506,7 @@ int main (int argc, char **argv, char **envp)
     for (int i = 1; i < argc; i++)
     {
         if (    !::strcmp(argv[i], "--startvm")
-            ||  !::strcmp(argv[i], "-startvm")
-            ||  !::strcmp(argv[i], "-s")
-            ||  !::strcmp(argv[i], "--vm")
-            ||  !::strcmp(argv[i], "-vm"))
+            ||  !::strcmp(argv[i], "-startvm"))
         {
             fInitSUPLib = true;
             break;
