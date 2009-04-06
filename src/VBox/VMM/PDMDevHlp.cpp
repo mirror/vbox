@@ -49,7 +49,7 @@
 /** @def PDM_DEVHLP_DEADLOCK_DETECTION
  * Define this to enable the deadlock detection when accessing physical memory.
  */
-#if defined(DEBUG_bird) || defined(DOXYGEN_RUNNING)
+#if /*defined(DEBUG_bird) ||*/ defined(DOXYGEN_RUNNING)
 # define PDM_DEVHLP_DEADLOCK_DETECTION
 #endif
 
