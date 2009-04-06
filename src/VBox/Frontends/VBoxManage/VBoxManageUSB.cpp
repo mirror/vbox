@@ -183,15 +183,15 @@ int handleUSBFilter (HandlerArg *a)
     HRESULT rc = S_OK;
     USBFilterCmd cmd;
 
-    /* at least: 0: command, 1: index, 2: -target, 3: <target value> */
+    /* at least: 0: command, 1: index, 2: --target, 3: <target value> */
     if (a->argc < 4)
         return errorSyntax(USAGE_USBFILTER, "Not enough parameters");
 
     /* which command? */
     cmd.mAction = USBFilterCmd::Invalid;
-    if      (strcmp (a->argv [0], "add") == 0)     cmd.mAction = USBFilterCmd::Add;
-    else if (strcmp (a->argv [0], "modify") == 0)  cmd.mAction = USBFilterCmd::Modify;
-    else if (strcmp (a->argv [0], "remove") == 0)  cmd.mAction = USBFilterCmd::Remove;
+    if      (!strcmp(a->argv[0], "add"))     cmd.mAction = USBFilterCmd::Add;
+    else if (!strcmp(a->argv[0], "modify"))  cmd.mAction = USBFilterCmd::Modify;
+    else if (!strcmp(a->argv[0], "remove"))  cmd.mAction = USBFilterCmd::Remove;
 
     if (cmd.mAction == USBFilterCmd::Invalid)
         return errorSyntax(USAGE_USBFILTER, "Invalid parameter '%s'", a->argv[0]);
@@ -205,7 +205,7 @@ int handleUSBFilter (HandlerArg *a)
         case USBFilterCmd::Add:
         case USBFilterCmd::Modify:
         {
-            /* at least: 0: command, 1: index, 2: -target, 3: <target value>, 4: -name, 5: <name value> */
+            /* at least: 0: command, 1: index, 2: --target, 3: <target value>, 4: --name, 5: <name value> */
             if (a->argc < 6)
             {
                 if (cmd.mAction == USBFilterCmd::Add)
@@ -222,12 +222,13 @@ int handleUSBFilter (HandlerArg *a)
 
             for (int i = 2; i < a->argc; i++)
             {
-                if  (strcmp(a->argv [i], "-target") == 0)
+                if (   !strcmp(a->argv[i], "--target")
+                    || !strcmp(a->argv[i], "-target"))
                 {
                     if (a->argc <= i + 1 || !*a->argv[i+1])
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    if (strcmp (a->argv [i], "global") == 0)
+                    if (!strcmp(a->argv[i], "global"))
                         cmd.mGlobal = true;
                     else
                     {
@@ -240,75 +241,85 @@ int handleUSBFilter (HandlerArg *a)
                         }
                     }
                 }
-                else if (strcmp(a->argv [i], "-name") == 0)
+                else if (   !strcmp(a->argv[i], "--name")
+                         || !strcmp(a->argv[i], "-name"))
                 {
                     if (a->argc <= i + 1 || !*a->argv[i+1])
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mName = a->argv [i];
+                    cmd.mFilter.mName = a->argv[i];
                 }
-                else if (strcmp(a->argv [i], "-active") == 0)
+                else if (   !strcmp(a->argv[i], "--active")
+                         || !strcmp(a->argv[i], "-active"))
                 {
                     if (a->argc <= i + 1)
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    if (strcmp (a->argv [i], "yes") == 0)
+                    if (!strcmp(a->argv[i], "yes"))
                         cmd.mFilter.mActive = true;
-                    else if (strcmp (a->argv [i], "no") == 0)
+                    else if (!strcmp(a->argv[i], "no"))
                         cmd.mFilter.mActive = false;
                     else
-                        return errorArgument("Invalid -active argument '%s'", a->argv[i]);
+                        return errorArgument("Invalid --active argument '%s'", a->argv[i]);
                 }
-                else if (strcmp(a->argv [i], "-vendorid") == 0)
+                else if (   !strcmp(a->argv[i], "--vendorid")
+                         || !strcmp(a->argv[i], "-vendorid"))
                 {
                     if (a->argc <= i + 1)
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mVendorId = a->argv [i];
+                    cmd.mFilter.mVendorId = a->argv[i];
                 }
-                else if (strcmp(a->argv [i], "-productid") == 0)
+                else if (   !strcmp(a->argv[i], "--productid")
+                         || !strcmp(a->argv[i], "-productid"))
                 {
                     if (a->argc <= i + 1)
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mProductId = a->argv [i];
+                    cmd.mFilter.mProductId = a->argv[i];
                 }
-                else if (strcmp(a->argv [i], "-revision") == 0)
+                else if (   !strcmp(a->argv[i], "--revision")
+                         || !strcmp(a->argv[i], "-revision"))
                 {
                     if (a->argc <= i + 1)
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mRevision = a->argv [i];
+                    cmd.mFilter.mRevision = a->argv[i];
                 }
-                else if (strcmp(a->argv [i], "-manufacturer") == 0)
+                else if (   !strcmp(a->argv[i], "--manufacturer")
+                         || !strcmp(a->argv[i], "-manufacturer"))
                 {
                     if (a->argc <= i + 1)
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mManufacturer = a->argv [i];
+                    cmd.mFilter.mManufacturer = a->argv[i];
                 }
-                else if (strcmp(a->argv [i], "-product") == 0)
+                else if (   !strcmp(a->argv[i], "--product")
+                         || !strcmp(a->argv[i], "-product"))
                 {
                     if (a->argc <= i + 1)
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mProduct = a->argv [i];
+                    cmd.mFilter.mProduct = a->argv[i];
                 }
-                else if (strcmp(a->argv [i], "-remote") == 0)
+                else if (   !strcmp(a->argv[i], "--remote")
+                         || !strcmp(a->argv[i], "-remote"))
                 {
                     if (a->argc <= i + 1)
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
                     cmd.mFilter.mRemote = a->argv[i];
                 }
-                else if (strcmp(a->argv [i], "-serialnumber") == 0)
+                else if (   !strcmp(a->argv[i], "--serialnumber")
+                         || !strcmp(a->argv[i], "-serialnumber"))
                 {
                     if (a->argc <= i + 1)
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    cmd.mFilter.mSerialNumber = a->argv [i];
+                    cmd.mFilter.mSerialNumber = a->argv[i];
                 }
-                else if (strcmp(a->argv [i], "-maskedinterfaces") == 0)
+                else if (   !strcmp(a->argv[i], "--maskedinterfaces")
+                         || !strcmp(a->argv[i], "-maskedinterfaces"))
                 {
                     if (a->argc <= i + 1)
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
@@ -316,17 +327,18 @@ int handleUSBFilter (HandlerArg *a)
                     uint32_t u32;
                     rc = RTStrToUInt32Full(a->argv[i], 0, &u32);
                     if (RT_FAILURE(rc))
-                        return errorArgument("Failed to convert the -maskedinterfaces value '%s' to a number, rc=%Rrc", a->argv[i], rc);
+                        return errorArgument("Failed to convert the --maskedinterfaces value '%s' to a number, rc=%Rrc", a->argv[i], rc);
                     cmd.mFilter.mMaskedInterfaces = u32;
                 }
-                else if (strcmp(a->argv [i], "-action") == 0)
+                else if (   !strcmp(a->argv[i], "--action")
+                         || !strcmp(a->argv[i], "-action"))
                 {
                     if (a->argc <= i + 1)
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    if (strcmp (a->argv [i], "ignore") == 0)
+                    if (!strcmp(a->argv[i], "ignore"))
                         cmd.mFilter.mAction = USBDeviceFilterAction_Ignore;
-                    else if (strcmp (a->argv [i], "hold") == 0)
+                    else if (!strcmp(a->argv[i], "hold"))
                         cmd.mFilter.mAction = USBDeviceFilterAction_Hold;
                     else
                         return errorArgument("Invalid USB filter action '%s'", a->argv[i]);
@@ -358,18 +370,19 @@ int handleUSBFilter (HandlerArg *a)
 
         case USBFilterCmd::Remove:
         {
-            /* at least: 0: command, 1: index, 2: -target, 3: <target value> */
+            /* at least: 0: command, 1: index, 2: --target, 3: <target value> */
             if (a->argc < 4)
                 return errorSyntax(USAGE_USBFILTER_REMOVE, "Not enough parameters");
 
             for (int i = 2; i < a->argc; i++)
             {
-                if  (strcmp(a->argv [i], "-target") == 0)
+                if (   !strcmp(a->argv[i], "--target")
+                    || !strcmp(a->argv[i], "-target"))
                 {
                     if (a->argc <= i + 1 || !*a->argv[i+1])
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
-                    if (strcmp (a->argv [i], "global") == 0)
+                    if (!strcmp(a->argv[i], "global"))
                         cmd.mGlobal = true;
                     else
                     {
