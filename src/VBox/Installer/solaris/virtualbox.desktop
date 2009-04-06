@@ -9,3 +9,4 @@ TryExec=VirtualBox
 Icon=VBox.png
 Categories=Application;System;Emulator;
 Comment=Run several virtual systems on a single host computer
+Comment[pl]=Uruchamianie wielu systemów wirtualnych na jednym komputerze gospodarza
