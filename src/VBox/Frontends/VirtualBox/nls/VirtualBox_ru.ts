@@ -1061,6 +1061,14 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Export &gt;</source>
         <translation>&amp;Экспорт &gt;</translation>
     </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation>Сохранить в формате OVF 0.9 для совместимости с остальными продуктами виртуализации.</translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation>&amp;Сохранить в формате OVF 0.9</translation>
+    </message>
 </context>
 <context>
     <name>VBoxFilePathSelectorWidget</name>
@@ -2045,12 +2053,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation></translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation></translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -2115,7 +2123,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>SATA</source>
         <comment>StorageBus</comment>
-        <translation></translation>
+        <translation>SATA</translation>
     </message>
     <message>
         <source>Primary</source>
@@ -2145,42 +2153,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
-        <translation></translation>
+        <translation>Solaris Audio</translation>
     </message>
     <message>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
-        <translation></translation>
+        <translation>PulseAudio</translation>
     </message>
     <message>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
-        <translation></translation>
+        <translation>ICH AC97</translation>
     </message>
     <message>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
-        <translation></translation>
+        <translation>SoundBlaster 16</translation>
     </message>
     <message>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
-        <translation></translation>
+        <translation>PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
-        <translation></translation>
+        <translation>PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation></translation>
+        <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation></translation>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
@@ -2385,6 +2393,11 @@ p, li { white-space: pre-wrap; }
         <comment>StorageControllerType</comment>
         <translation>BusLogic</translation>
     </message>
+    <message>
+        <source>Intel PRO/1000 MT Server (82545EM)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation>Intel PRO/1000 MT Server (82545EM)</translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -2412,7 +2425,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation>Укажите конфигурацию для импорта</translation>
+        <translation>Укажите файл конфигурации для импорта</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
@@ -3674,7 +3687,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation>Файл по имени &lt;b&gt;%1&lt;/b&gt; уже существует. Вы уверены, что хотите его заменить?&lt;br /&gt;&lt;br /&gt;Данный файл расположен в &quot;%2&quot;. Замена приведёт к перезаписи его содержимого.</translation>
+        <translation>Файл с именем &lt;b&gt;%1&lt;/b&gt; уже существует. Вы уверены, что хотите его заменить?&lt;br /&gt;&lt;br /&gt;Данный файл расположен в &quot;%2&quot;. Замена приведёт к перезаписи его содержимого.</translation>
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
@@ -5330,7 +5343,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Not selected</source>
-        <translation>Не выбрано</translation>
+        <translation type="obsolete">Не выбрано</translation>
     </message>
     <message>
         <source>Host Settings</source>
