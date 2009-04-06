@@ -3699,6 +3699,15 @@ void helper_rdtscp(void)
 
 void helper_rdpmc(void)
 {
+#ifdef VBOX
+    /* If X86_CR4_PCE is *not* set, then CPL must be zero. */
+    if (!(env->cr[4] & CR4_PCE_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
+        raise_exception(EXCP0D_GPF);
+    }
+    /* Just return zero here; rather tricky to properly emulate this, especially as the specs are a mess. */
+    EAX = 0;
+    EDX = 0;
+#else
     if ((env->cr[4] & CR4_PCE_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
         raise_exception(EXCP0D_GPF);
     }
@@ -3706,6 +3715,7 @@ void helper_rdpmc(void)
 
     /* currently unimplemented */
     raise_exception_err(EXCP06_ILLOP, 0);
+#endif
 }
 
 #if defined(CONFIG_USER_ONLY)

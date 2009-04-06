@@ -2558,6 +2558,40 @@ static int emInterpretRdtsc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
     return EMInterpretRdtsc(pVM, pRegFrame);
 }
 
+/**
+ * Interpret RDPMC
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   The register frame.
+ *
+ */
+VMMDECL(int) EMInterpretRdpmc(PVM pVM, PCPUMCTXCORE pRegFrame)
+{
+    unsigned uCR4 = CPUMGetGuestCR4(pVM);
+
+    /* If X86_CR4_PCE is not set, then CPL must be zero. */
+    if (    !(uCR4 & X86_CR4_PCE)
+        ||  CPUMGetGuestCPL(pVM, pRegFrame) != 0)
+    {
+        Assert(CPUMGetGuestCR0(pVM) & X86_CR0_PE);
+        return VERR_EM_INTERPRETER; /* genuine #GP */
+    }
+
+    /* Just return zero here; rather tricky to properly emulate this, especially as the specs are a mess. */
+    pRegFrame->rax = 0;
+    pRegFrame->rdx = 0;
+    /* @todo We should trigger a #GP here if the cpu doesn't support the index in ecx. */
+    return VINF_SUCCESS;
+}
+
+/**
+ * RDPMC Emulation
+ */
+static int emInterpretRdpmc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    return EMInterpretRdpmc(pVM, pRegFrame);
+}
 
 /**
  * MONITOR Emulation.
@@ -3187,6 +3221,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE_EX_LOCK_PARAM2(OP_BTR,Btr, BitTest, EMEmulateBtr, EMEmulateLockBtr);
         INTERPRET_CASE_EX_PARAM2(OP_BTS,Bts, BitTest, EMEmulateBts);
         INTERPRET_CASE_EX_PARAM2(OP_BTC,Btc, BitTest, EMEmulateBtc);
+        INTERPRET_CASE(OP_RDPMC,Rdpmc);
         INTERPRET_CASE(OP_RDTSC,Rdtsc);
         INTERPRET_CASE(OP_CMPXCHG, CmpXchg);
 #ifdef IN_RC

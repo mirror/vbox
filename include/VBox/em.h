@@ -125,6 +125,7 @@ VMMDECL(int)        EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGC
 VMMDECL(int)        EMInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize);
 VMMDECL(int)        EMInterpretCpuId(PVM pVM, PCPUMCTXCORE pRegFrame);
 VMMDECL(int)        EMInterpretRdtsc(PVM pVM, PCPUMCTXCORE pRegFrame);
+VMMDECL(int)        EMInterpretRdpmc(PVM pVM, PCPUMCTXCORE pRegFrame);
 VMMDECL(int)        EMInterpretRdtscp(PVM pVM, PCPUMCTX pCtx);
 VMMDECL(int)        EMInterpretInvlpg(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC);
 VMMDECL(int)        EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame);

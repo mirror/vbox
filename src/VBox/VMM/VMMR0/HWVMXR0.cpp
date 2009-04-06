@@ -2920,6 +2920,23 @@ ResumeExecution:
         break;
     }
 
+    case VMX_EXIT_RDPMC:                /* 15 Guest software attempted to execute RDPMC. */
+    {
+        Log2(("VMX: Rdpmc %x\n", pCtx->ecx));
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitRdpmc);
+        rc = EMInterpretRdpmc(pVM, CPUMCTX2CORE(pCtx));
+        if (rc == VINF_SUCCESS)
+        {
+            /* Update EIP and continue execution. */
+            Assert(cbInstr == 2);
+            pCtx->rip += cbInstr;
+            goto ResumeExecution;
+        }
+        AssertMsgFailed(("EMU: rdpmc failed with %Rrc\n", rc));
+        rc = VINF_EM_RAW_EMULATE_INSTR;
+        break;
+    }
+
     case VMX_EXIT_RDTSC:                /* 16 Guest software attempted to execute RDTSC. */
     {
         Log2(("VMX: Rdtsc\n"));
@@ -3360,6 +3377,7 @@ ResumeExecution:
     case VMX_EXIT_CRX_MOVE:             /* 28 Control-register accesses. */
     case VMX_EXIT_DRX_MOVE:             /* 29 Debug-register accesses. */
     case VMX_EXIT_PORT_IO:              /* 30 I/O instruction. */
+    case VMX_EXIT_RDPMC:                /* 15 Guest software attempted to execute RDPMC. */
         /* already handled above */
         AssertMsg(   rc == VINF_PGM_CHANGE_MODE
                   || rc == VINF_EM_RAW_INTERRUPT
@@ -3381,7 +3399,6 @@ ResumeExecution:
         rc = VERR_EM_INTERPRETER;
         break;
 
-    case VMX_EXIT_RDPMC:                /* 15 Guest software attempted to execute RDPMC. */
     case VMX_EXIT_MWAIT:                /* 36 Guest software executed MWAIT. */
     case VMX_EXIT_MONITOR:              /* 39 Guest software attempted to execute MONITOR. */
     case VMX_EXIT_PAUSE:                /* 40 Guest software attempted to execute PAUSE. */

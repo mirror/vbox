@@ -209,6 +209,8 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG_USED(pVM, &pStats->StatR3Pop,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Pop",       STAMUNIT_OCCURENCES,    "The number of times POP was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZRdtsc,                STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Rdtsc",     STAMUNIT_OCCURENCES,    "The number of times RDTSC was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatR3Rdtsc,                STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Rdtsc",     STAMUNIT_OCCURENCES,    "The number of times RDTSC was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatRZRdpmc,                STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Rdpmc",     STAMUNIT_OCCURENCES,    "The number of times RDPMC was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatR3Rdpmc,                STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Rdpmc",     STAMUNIT_OCCURENCES,    "The number of times RDPMC was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZSti,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Sti",       STAMUNIT_OCCURENCES,    "The number of times STI was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatR3Sti,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Sti",       STAMUNIT_OCCURENCES,    "The number of times STI was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZXchg,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Xchg",      STAMUNIT_OCCURENCES,    "The number of times XCHG was successfully interpreted.");
@@ -287,6 +289,8 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG_USED(pVM, &pStats->StatR3FailedMWait,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/MWait",      STAMUNIT_OCCURENCES,    "The number of times MONITOR was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZFailedRdtsc,          STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Rdtsc",      STAMUNIT_OCCURENCES,    "The number of times RDTSC was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatR3FailedRdtsc,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Rdtsc",      STAMUNIT_OCCURENCES,    "The number of times RDTSC was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatRZFailedRdpmc,          STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Rdpmc",      STAMUNIT_OCCURENCES,    "The number of times RDPMC was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatR3FailedRdpmc,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Rdpmc",      STAMUNIT_OCCURENCES,    "The number of times RDPMC was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZFailedRdmsr,          STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Rdmsr",      STAMUNIT_OCCURENCES,    "The number of times RDMSR was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatR3FailedRdmsr,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Rdmsr",      STAMUNIT_OCCURENCES,    "The number of times RDMSR was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZFailedWrmsr,          STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Wrmsr",      STAMUNIT_OCCURENCES,    "The number of times WRMSR was not interpreted.");
