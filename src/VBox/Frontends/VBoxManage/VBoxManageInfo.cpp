@@ -37,6 +37,8 @@
 #include <iprt/stream.h>
 #include <iprt/time.h>
 #include <iprt/string.h>
+#include <iprt/getopt.h>
+#include <iprt/ctype.h>
 
 #include "VBoxManage.h"
 using namespace com;
@@ -1840,24 +1842,83 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 # pragma optimize("", on)
 #endif
 
+static const RTGETOPTDEF g_aShowVMInfoOptions[] =
+{
+    { "--details",          'D', RTGETOPT_REQ_NOTHING },
+    { "-details",           'D', RTGETOPT_REQ_NOTHING },    // deprecated
+    { "--statistics",       'S', RTGETOPT_REQ_NOTHING },
+    { "-statistics",        'S', RTGETOPT_REQ_NOTHING },    // deprecated
+    { "--machinereadable",  'M', RTGETOPT_REQ_NOTHING },
+    { "-machinereadable",   'M', RTGETOPT_REQ_NOTHING },    // deprecated
+};
+
 int handleShowVMInfo(HandlerArg *a)
 {
     HRESULT rc;
+    const char *VMNameOrUuid = NULL;
+    bool fDetails = false;
+    bool fStatistics = false;
+    bool fMachinereadable = false;
 
-    /* at least one option: the UUID or name of the VM */
-    if (a->argc < 1)
-        return errorSyntax(USAGE_SHOWVMINFO, "Incorrect number of parameters");
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aShowVMInfoOptions, RT_ELEMENTS(g_aShowVMInfoOptions), 0, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'V':   // --details
+                fDetails = true;
+                break;
+
+            case 'S':   // --statistics
+                fStatistics = true;
+                break;
+
+            case 'M':   // --machinereadable
+                fMachinereadable = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!VMNameOrUuid)
+                    VMNameOrUuid = ValueUnion.psz;
+                else
+                    return errorSyntax(USAGE_SHOWVMINFO, "Invalid parameter '%s'", ValueUnion.psz);
+                break;
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_SHOWVMINFO, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_SHOWVMINFO, "Invalid option case %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_SHOWVMINFO, "unknown option: %s\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_SHOWVMINFO, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_SHOWVMINFO, "error: %Rrs", c);
+        }
+    }
+
+    /* check for required options */
+    if (!VMNameOrUuid)
+        return errorSyntax(USAGE_SHOWVMINFO, "VM name or UUID required");
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Guid uuid (a->argv[0]);
+    Guid uuid (VMNameOrUuid);
     if (!uuid.isEmpty())
     {
         CHECK_ERROR (a->virtualBox, GetMachine (uuid, machine.asOutParam()));
     }
     else
     {
-        CHECK_ERROR (a->virtualBox, FindMachine (Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR (a->virtualBox, FindMachine (Bstr(VMNameOrUuid), machine.asOutParam()));
         if (SUCCEEDED (rc))
             machine->COMGETTER(Id) (uuid.asOutParam());
     }
@@ -1866,19 +1927,6 @@ int handleShowVMInfo(HandlerArg *a)
 
     /* 2nd option can be -details, -statistics or -argdump */
     VMINFO_DETAILS details = VMINFO_NONE;
-    bool fDetails = false;
-    bool fStatistics = false;
-    bool fMachinereadable = false;
-    for (int i=1;i<a->argc;i++)
-    {
-        if (!strcmp(a->argv[i], "-details"))
-            fDetails = true;
-        else
-        if (!strcmp(a->argv[i], "-statistics"))
-            fStatistics = true;
-        if (!strcmp(a->argv[1], "-machinereadable"))
-            fMachinereadable = true;
-    }
     if (fMachinereadable)
         details = VMINFO_MACHINEREADABLE;
     else
