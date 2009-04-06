@@ -1759,6 +1759,7 @@ void slirp_set_dhcp_next_server(PNATState pData, const char *next_server)
 #ifdef VBOX_WITH_SLIRP_DNS_PROXY
 void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
 {
+    Log2(("NAT: DNS proxy switched %s\n", (fDNSProxy ? "on" : "off")));
     pData->use_dns_proxy = fDNSProxy;
 }
 #endif

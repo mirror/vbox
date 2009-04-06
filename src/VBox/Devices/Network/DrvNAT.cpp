@@ -844,10 +844,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"NextServer\" string failed"), pDrvIns->iInstance);
 #ifdef VBOX_WITH_SLIRP_DNS_PROXY
-    bool fDNSProxy;
-    rc = CFGMR3QueryBool(pCfgHandle, "DNSProxy", &fDNSProxy);
+    int fDNSProxy;
+    rc = CFGMR3QueryS32(pCfgHandle, "DNSProxy", &fDNSProxy);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fDNSProxy = false;
+        fDNSProxy = 0;
 #endif
 
     /*
