@@ -149,6 +149,13 @@ $(PATH_TARGET)/docs.Main: \
 	$(VBOX_XSLTPROC) -o $(PATH_TARGET)/VirtualBox.idl $(VBOX_PATH_MAIN_SRC)/idl/doxygen.xsl $(VBOX_XIDL_FILE_SRC)
 	$(REDIRECT) -E 'DOCDIR=$(VBOX_MAIN_DOC_DIR)' -E 'PATH_TARGET=$(PATH_TARGET)' -E 'PATH_CHM=$(subst /,\,$(VBOX_MAIN_DOC_DIR)/VirtualBoxAPI.chm)' \
 		-- doxygen $(VBOX_PATH_MAIN_SRC)/Doxyfile.Main
+	@$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) ">>>>>>>>>>>>>>>>>>>> Main.err: >>>>>>>>>>>>>>>>>>>>>>>>"
+	@$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(CAT) "$(PATH_TARGET)/Main.err"
+	@$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) "<<<<<<<<<<<<<<<<<<<< Main.err <<<<<<<<<<<<<<<<<<<<<<<<<"
+	@$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) "===> **************************************************"
+	@$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) "===> Please fix above doxygen errors/warnings listed in"
+	@$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) "===> $(PATH_TARGET)/Main.err"
+	@$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) "===> **************************************************"
 	-$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe $(subst /,\\,$(VBOX_MAIN_DOC_DIR)/html/index.hhp)
 	$(APPEND) $(PATH_TARGET)/docs.Main
 # aliases
