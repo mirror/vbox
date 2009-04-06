@@ -957,8 +957,9 @@ int pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppP
     {
         pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
-
         Assert((pPdpe->u & X86_PDPE_PG_MASK) == pShwPage->Core.Key);
+
+        pgmPoolCacheUsed(pPool, pShwPage);
     }
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;
@@ -1052,6 +1053,8 @@ int pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86P
     {
         pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+
+        pgmPoolCacheUsed(pPool, pShwPage);
     }
     /* The PDPT was cached or created; hook it up now. */
     pPml4e->u |= pShwPage->Core.Key
@@ -1090,6 +1093,8 @@ int pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86P
     {
         pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+
+        pgmPoolCacheUsed(pPool, pShwPage);
     }
     /* The PD was cached or created; hook it up now. */
     pPdpe->u |= pShwPage->Core.Key
@@ -1180,6 +1185,8 @@ int pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
     {
         pShwPage = pgmPoolGetPage(pPool, pPml4e->u & EPT_PML4E_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+
+        pgmPoolCacheUsed(pPool, pShwPage);
     }
     /* The PDPT was cached or created; hook it up now and fill with the default value. */
     pPml4e->u           = pShwPage->Core.Key;
@@ -1207,6 +1214,8 @@ int pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
     {
         pShwPage = pgmPoolGetPage(pPool, pPdpe->u & EPT_PDPTE_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+
+        pgmPoolCacheUsed(pPool, pShwPage);
     }
     /* The PD was cached or created; hook it up now and fill with the default value. */
     pPdpe->u            = pShwPage->Core.Key;
