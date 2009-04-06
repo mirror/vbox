@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxManage - Implementation of -modifyvm command.
+ * VBoxManage - Implementation of modifyvm command.
  */
 
 /*
@@ -140,166 +140,186 @@ int handleModifyVM(HandlerArg *a)
 
     for (int i = 1; i < a->argc; i++)
     {
-        if (strcmp(a->argv[i], "-name") == 0)
+        if (   !strcmp(a->argv[i], "--name")
+            || !strcmp(a->argv[i], "-name"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             name = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-ostype") == 0)
+        else if (   !strcmp(a->argv[i], "--ostype")
+                 || !strcmp(a->argv[i], "-ostype"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             ostype = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-memory") == 0)
+        else if (   !strcmp(a->argv[i], "--memory")
+                 || !strcmp(a->argv[i], "-memory"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             memorySize = RTStrToUInt32(a->argv[i]);
         }
-        else if (strcmp(a->argv[i], "-vram") == 0)
+        else if (   !strcmp(a->argv[i], "--vram")
+                 || !strcmp(a->argv[i], "-vram"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             vramSize = RTStrToUInt32(a->argv[i]);
         }
-        else if (strcmp(a->argv[i], "-acpi") == 0)
+        else if (   !strcmp(a->argv[i], "--acpi")
+                 || !strcmp(a->argv[i], "-acpi"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             acpi = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-ioapic") == 0)
+        else if (   !strcmp(a->argv[i], "--ioapic")
+                 || !strcmp(a->argv[i], "-ioapic"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             ioapic = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-hwvirtex") == 0)
+        else if (   !strcmp(a->argv[i], "--hwvirtex")
+                 || !strcmp(a->argv[i], "-hwvirtex"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             hwvirtex = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-nestedpaging") == 0)
+        else if (   !strcmp(a->argv[i], "--nestedpaging")
+                 || !strcmp(a->argv[i], "-nestedpaging"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             nestedpaging = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-vtxvpid") == 0)
+        else if (   !strcmp(a->argv[i], "--vtxvpid")
+                 || !strcmp(a->argv[i], "-vtxvpid"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             vtxvpid = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-pae") == 0)
+        else if (   !strcmp(a->argv[i], "--pae")
+                 || !strcmp(a->argv[i], "-pae"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             pae = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-monitorcount") == 0)
+        else if (   !strcmp(a->argv[i], "--monitorcount")
+                 || !strcmp(a->argv[i], "-monitorcount"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             monitorcount = RTStrToUInt32(a->argv[i]);
         }
-        else if (strcmp(a->argv[i], "-accelerate3d") == 0)
+        else if (   !strcmp(a->argv[i], "--accelerate3d")
+                 || !strcmp(a->argv[i], "-accelerate3d"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             accelerate3d = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-bioslogofadein") == 0)
+        else if (   !strcmp(a->argv[i], "--bioslogofadein")
+                 || !strcmp(a->argv[i], "-bioslogofadein"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             bioslogofadein = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-bioslogofadeout") == 0)
+        else if (   !strcmp(a->argv[i], "--bioslogofadeout")
+                 || !strcmp(a->argv[i], "-bioslogofadeout"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             bioslogofadeout = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-bioslogodisplaytime") == 0)
+        else if (   !strcmp(a->argv[i], "--bioslogodisplaytime")
+                 || !strcmp(a->argv[i], "-bioslogodisplaytime"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             bioslogodisplaytime = RTStrToUInt32(a->argv[i]);
         }
-        else if (strcmp(a->argv[i], "-bioslogoimagepath") == 0)
+        else if (   !strcmp(a->argv[i], "--bioslogoimagepath")
+                 || !strcmp(a->argv[i], "-bioslogoimagepath"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             bioslogoimagepath = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-biosbootmenu") == 0)
+        else if (   !strcmp(a->argv[i], "--biosbootmenu")
+                 || !strcmp(a->argv[i], "-biosbootmenu"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             biosbootmenumode = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-biossystemtimeoffset") == 0)
+        else if (   !strcmp(a->argv[i], "--biossystemtimeoffset")
+                 || !strcmp(a->argv[i], "-biossystemtimeoffset"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             biossystemtimeoffset = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-biospxedebug") == 0)
+        else if (   !strcmp(a->argv[i], "--biospxedebug")
+                 || !strcmp(a->argv[i], "-biospxedebug"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             biospxedebug = a->argv[i];
         }
-        else if (strncmp(a->argv[i], "-boot", 5) == 0)
+        else if (   !strncmp(a->argv[i], "--boot", 6)
+                 || !strncmp(a->argv[i], "-boot", 5))
         {
             uint32_t n = 0;
-            if (!a->argv[i][5])
+            if (!a->argv[i][5 + (a->argv[i][1] == '-')])
                 return errorSyntax(USAGE_MODIFYVM, "Missing boot slot number in '%s'", a->argv[i]);
-            if (VINF_SUCCESS != RTStrToUInt32Full(&a->argv[i][5], 10, &n))
+            if (VINF_SUCCESS != RTStrToUInt32Full(&a->argv[i][5 + (a->argv[i][1] == '-')], 10, &n))
                 return errorSyntax(USAGE_MODIFYVM, "Invalid boot slot number in '%s'", a->argv[i]);
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(a->argv[i], "none") == 0)
+            if (!strcmp(a->argv[i], "none"))
             {
                 bootDevice[n - 1] = DeviceType_Null;
             }
-            else if (strcmp(a->argv[i], "floppy") == 0)
+            else if (!strcmp(a->argv[i], "floppy"))
             {
                 bootDevice[n - 1] = DeviceType_Floppy;
             }
-            else if (strcmp(a->argv[i], "dvd") == 0)
+            else if (!strcmp(a->argv[i], "dvd"))
             {
                 bootDevice[n - 1] = DeviceType_DVD;
             }
-            else if (strcmp(a->argv[i], "disk") == 0)
+            else if (!strcmp(a->argv[i], "disk"))
             {
                 bootDevice[n - 1] = DeviceType_HardDisk;
             }
-            else if (strcmp(a->argv[i], "net") == 0)
+            else if (!strcmp(a->argv[i], "net"))
             {
                 bootDevice[n - 1] = DeviceType_Network;
             }
@@ -308,79 +328,90 @@ int handleModifyVM(HandlerArg *a)
 
             bootDeviceChanged[n - 1] = true;
         }
-        else if (strcmp(a->argv[i], "-hda") == 0)
+        else if (   !strcmp(a->argv[i], "--hda")
+                 || !strcmp(a->argv[i], "-hda"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             hdds[0] = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-hdb") == 0)
+        else if (   !strcmp(a->argv[i], "--hdb")
+                 || !strcmp(a->argv[i], "-hdb"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             hdds[1] = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-hdd") == 0)
+        else if (   !strcmp(a->argv[i], "--hdd")
+                 || !strcmp(a->argv[i], "-hdd"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             hdds[2] = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-dvd") == 0)
+        else if (   !strcmp(a->argv[i], "--dvd")
+                 || !strcmp(a->argv[i], "-dvd"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             dvd = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-dvdpassthrough") == 0)
+        else if (   !strcmp(a->argv[i], "--dvdpassthrough")
+                 || !strcmp(a->argv[i], "-dvdpassthrough"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             dvdpassthrough = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-idecontroller") == 0)
+        else if (   !strcmp(a->argv[i], "--idecontroller")
+                 || !strcmp(a->argv[i], "-idecontroller"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             idecontroller = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-floppy") == 0)
+        else if (   !strcmp(a->argv[i], "--floppy")
+                 || !strcmp(a->argv[i], "-floppy"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             floppy = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-audio") == 0)
+        else if (   !strcmp(a->argv[i], "--audio")
+                 || !strcmp(a->argv[i], "-audio"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             audio = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-audiocontroller") == 0)
+        else if (   !strcmp(a->argv[i], "--audiocontroller")
+                 || !strcmp(a->argv[i], "-audiocontroller"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             audiocontroller = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-clipboard") == 0)
+        else if (   !strcmp(a->argv[i], "--clipboard")
+                 || !strcmp(a->argv[i], "-clipboard"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             clipboard = a->argv[i];
         }
-        else if (strncmp(a->argv[i], "-cableconnected", 15) == 0)
+        else if (   !strncmp(a->argv[i], "--cableconnected", 16)
+                 || !strncmp(a->argv[i], "-cableconnected", 15))
         {
-            unsigned n = parseNum(&a->argv[i][15], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][15 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
 
@@ -390,10 +421,11 @@ int handleModifyVM(HandlerArg *a)
             cableconnected[n - 1] = a->argv[i + 1];
             i++;
         }
-        /* watch for the right order of these -nic* comparisons! */
-        else if (strncmp(a->argv[i], "-nictracefile", 13) == 0)
+        /* watch for the right order of these --nic* comparisons! */
+        else if (   !strncmp(a->argv[i], "--nictracefile", 14)
+                 || !strncmp(a->argv[i], "-nictracefile", 13))
         {
-            unsigned n = parseNum(&a->argv[i][13], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][13 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -403,9 +435,10 @@ int handleModifyVM(HandlerArg *a)
             nictracefile[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(a->argv[i], "-nictrace", 9) == 0)
+        else if (   !strncmp(a->argv[i], "--nictrace", 10)
+                 || !strncmp(a->argv[i], "-nictrace", 9))
         {
-            unsigned n = parseNum(&a->argv[i][9], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][9 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -413,9 +446,10 @@ int handleModifyVM(HandlerArg *a)
             nictrace[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(a->argv[i], "-nictype", 8) == 0)
+        else if (   !strncmp(a->argv[i], "--nictype", 9)
+                 || !strncmp(a->argv[i], "-nictype", 8))
         {
-            unsigned n = parseNum(&a->argv[i][8], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][8 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -423,9 +457,10 @@ int handleModifyVM(HandlerArg *a)
             nictype[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(a->argv[i], "-nicspeed", 9) == 0)
+        else if (   !strncmp(a->argv[i], "--nicspeed", 10)
+                 || !strncmp(a->argv[i], "-nicspeed", 9))
         {
-            unsigned n = parseNum(&a->argv[i][9], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][9 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -433,9 +468,10 @@ int handleModifyVM(HandlerArg *a)
             nicspeed[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(a->argv[i], "-nic", 4) == 0)
+        else if (   !strncmp(a->argv[i], "--nic", 5)
+                 || !strncmp(a->argv[i], "-nic", 4))
         {
-            unsigned n = parseNum(&a->argv[i][4], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][4 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -443,9 +479,10 @@ int handleModifyVM(HandlerArg *a)
             nics[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(a->argv[i], "-hostifdev", 10) == 0) /* backward compatibility */
+        else if (   !strncmp(a->argv[i], "--hostifdev", 11)
+                 || !strncmp(a->argv[i], "-hostifdev", 10)) /* backward compatibility */
         {
-            unsigned n = parseNum(&a->argv[i][10], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][10 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -453,9 +490,10 @@ int handleModifyVM(HandlerArg *a)
             hostifdev[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (  strncmp(a->argv[i], "-bridgeadapter", 14) == 0)
+        else if (   !strncmp(a->argv[i], "--bridgeadapter", 15)
+                 || !strncmp(a->argv[i], "-bridgeadapter", 14))
         {
-            unsigned n = parseNum(&a->argv[i][14], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][14 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -464,9 +502,10 @@ int handleModifyVM(HandlerArg *a)
             i++;
         }
 #if defined(VBOX_WITH_NETFLT)
-        else if (strncmp(a->argv[i], "-hostonlyadapter", 16) == 0)
+        else if (   !strncmp(a->argv[i], "--hostonlyadapter", 17)
+                 || !strncmp(a->argv[i], "-hostonlyadapter", 16))
         {
-            unsigned n = parseNum(&a->argv[i][16], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][16 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -475,9 +514,10 @@ int handleModifyVM(HandlerArg *a)
             i++;
         }
 #endif
-        else if (strncmp(a->argv[i], "-intnet", 7) == 0)
+        else if (   !strncmp(a->argv[i], "--intnet", 8)
+                 || !strncmp(a->argv[i], "-intnet", 7))
         {
-            unsigned n = parseNum(&a->argv[i][7], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][7 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -485,9 +525,10 @@ int handleModifyVM(HandlerArg *a)
             intnet[n - 1] = a->argv[i + 1];
             i++;
         }
-        else if (strncmp(a->argv[i], "-natnet", 7) == 0)
+        else if (   !strncmp(a->argv[i], "--natnet", 8)
+                 || !strncmp(a->argv[i], "-natnet", 7))
         {
-            unsigned n = parseNum(&a->argv[i][7], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][7 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -508,9 +549,10 @@ int handleModifyVM(HandlerArg *a)
             }
             i++;
         }
-        else if (strncmp(a->argv[i], "-macaddress", 11) == 0)
+        else if (   !strncmp(a->argv[i], "--macaddress", 12)
+                 || !strncmp(a->argv[i], "-macaddress", 11))
         {
-            unsigned n = parseNum(&a->argv[i][11], NetworkAdapterCount, "NIC");
+            unsigned n = parseNum(&a->argv[i][11 + (a->argv[i][1] == '-')], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -519,45 +561,51 @@ int handleModifyVM(HandlerArg *a)
             i++;
         }
 #ifdef VBOX_WITH_VRDP
-        else if (strcmp(a->argv[i], "-vrdp") == 0)
+        else if (   !strcmp(a->argv[i], "--vrdp")
+                 || !strcmp(a->argv[i], "-vrdp"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             vrdp = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-vrdpport") == 0)
+        else if (   !strcmp(a->argv[i], "--vrdpport")
+                 || !strcmp(a->argv[i], "-vrdpport"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(a->argv[i], "default") == 0)
+            if (!strcmp(a->argv[i], "default"))
                 vrdpport = 0;
             else
                 vrdpport = RTStrToUInt16(a->argv[i]);
         }
-        else if (strcmp(a->argv[i], "-vrdpaddress") == 0)
+        else if (   !strcmp(a->argv[i], "--vrdpaddress")
+                 || !strcmp(a->argv[i], "-vrdpaddress"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             vrdpaddress = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-vrdpauthtype") == 0)
+        else if (   !strcmp(a->argv[i], "--vrdpauthtype")
+                 || !strcmp(a->argv[i], "-vrdpauthtype"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             vrdpauthtype = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-vrdpmulticon") == 0)
+        else if (   !strcmp(a->argv[i], "--vrdpmulticon")
+                 || !strcmp(a->argv[i], "-vrdpmulticon"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             vrdpmulticon = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-vrdpreusecon") == 0)
+        else if (   !strcmp(a->argv[i], "--vrdpreusecon")
+                 || !strcmp(a->argv[i], "-vrdpreusecon"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
@@ -565,55 +613,59 @@ int handleModifyVM(HandlerArg *a)
             vrdpreusecon = a->argv[i];
         }
 #endif /* VBOX_WITH_VRDP */
-        else if (strcmp(a->argv[i], "-usb") == 0)
+        else if (   !strcmp(a->argv[i], "--usb")
+                 || !strcmp(a->argv[i], "-usb"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(a->argv[i], "on") == 0 || strcmp(a->argv[i], "enable") == 0)
+            if (!strcmp(a->argv[i], "on") || !strcmp(a->argv[i], "enable"))
                 fUsbEnabled = 1;
-            else if (strcmp(a->argv[i], "off") == 0 || strcmp(a->argv[i], "disable") == 0)
+            else if (!strcmp(a->argv[i], "off") || !strcmp(a->argv[i], "disable"))
                 fUsbEnabled = 0;
             else
-                return errorArgument("Invalid -usb argument '%s'", a->argv[i]);
+                return errorArgument("Invalid --usb argument '%s'", a->argv[i]);
         }
-        else if (strcmp(a->argv[i], "-usbehci") == 0)
+        else if (   !strcmp(a->argv[i], "--usbehci")
+                 || !strcmp(a->argv[i], "-usbehci"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(a->argv[i], "on") == 0 || strcmp(a->argv[i], "enable") == 0)
+            if (!strcmp(a->argv[i], "on") || !strcmp(a->argv[i], "enable"))
                 fUsbEhciEnabled = 1;
-            else if (strcmp(a->argv[i], "off") == 0 || strcmp(a->argv[i], "disable") == 0)
+            else if (!strcmp(a->argv[i], "off") || !strcmp(a->argv[i], "disable"))
                 fUsbEhciEnabled = 0;
             else
-                return errorArgument("Invalid -usbehci argument '%s'", a->argv[i]);
+                return errorArgument("Invalid --usbehci argument '%s'", a->argv[i]);
         }
-        else if (strcmp(a->argv[i], "-snapshotfolder") == 0)
+        else if (   !strcmp(a->argv[i], "--snapshotfolder")
+                 || !strcmp(a->argv[i], "-snapshotfolder"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             snapshotFolder = a->argv[i];
         }
-        else if (strncmp(a->argv[i], "-uartmode", 9) == 0)
+        else if (   !strncmp(a->argv[i], "--uartmode", 10)
+                 || !strncmp(a->argv[i], "-uartmode", 9))
         {
-            unsigned n = parseNum(&a->argv[i][9], SerialPortCount, "UART");
+            unsigned n = parseNum(&a->argv[i][9 + (a->argv[i][1] == '-')], SerialPortCount, "UART");
             if (!n)
                 return 1;
             i++;
-            if (strcmp(a->argv[i], "disconnected") == 0)
+            if (!strcmp(a->argv[i], "disconnected"))
             {
                 uarts_mode[n - 1] = a->argv[i];
             }
             else
             {
-                if (strcmp(a->argv[i], "server") == 0 || strcmp(a->argv[i], "client") == 0)
+                if (!strcmp(a->argv[i], "server") || !strcmp(a->argv[i], "client"))
                 {
                     uarts_mode[n - 1] = a->argv[i];
                     i++;
 #ifdef RT_OS_WINDOWS
-                    if (strncmp(a->argv[i], "\\\\.\\pipe\\", 9))
+                    if (!strncmp(a->argv[i], "\\\\.\\pipe\\", 9))
                         return errorArgument("Uart pipe must start with \\\\.\\pipe\\");
 #endif
                 }
@@ -622,19 +674,20 @@ int handleModifyVM(HandlerArg *a)
                     uarts_mode[n - 1] = (char*)"device";
                 }
                 if (a->argc <= i)
-                    return errorArgument("Missing argument to -uartmode");
+                    return errorArgument("Missing argument to --uartmode");
                 uarts_path[n - 1] = a->argv[i];
             }
         }
-        else if (strncmp(a->argv[i], "-uart", 5) == 0)
+        else if (   !strncmp(a->argv[i], "--uart", 6)
+                 || !strncmp(a->argv[i], "-uart", 5))
         {
-            unsigned n = parseNum(&a->argv[i][5], SerialPortCount, "UART");
+            unsigned n = parseNum(&a->argv[i][5 + (a->argv[i][1] == '-')], SerialPortCount, "UART");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(a->argv[i], "off") == 0 || strcmp(a->argv[i], "disable") == 0)
+            if (!strcmp(a->argv[i], "off") || !strcmp(a->argv[i], "disable"))
             {
                 uarts_base[n - 1] = (ULONG)-1;
             }
@@ -656,7 +709,8 @@ int handleModifyVM(HandlerArg *a)
             }
         }
 #ifdef VBOX_WITH_MEM_BALLOONING
-        else if (strncmp(a->argv[i], "-guestmemoryballoon", 19) == 0)
+        else if (   !strcmp(a->argv[i], "--guestmemoryballoon")
+                 || !strcmp(a->argv[i], "-guestmemoryballoon"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
@@ -669,7 +723,8 @@ int handleModifyVM(HandlerArg *a)
             guestMemBalloonSize = uVal;
         }
 #endif
-        else if (strncmp(a->argv[i], "-gueststatisticsinterval", 24) == 0)
+        else if (   !strcmp(a->argv[i], "--gueststatisticsinterval")
+                 || !strcmp(a->argv[i], "-gueststatisticsinterval"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
@@ -681,19 +736,21 @@ int handleModifyVM(HandlerArg *a)
                 return errorArgument("Error parsing guest statistics interval '%s'", a->argv[i]);
             guestStatInterval = uVal;
         }
-        else if (strcmp(a->argv[i], "-sata") == 0)
+        else if (   !strcmp(a->argv[i], "--sata")
+                 || !strcmp(a->argv[i], "-sata"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(a->argv[i], "on") == 0 || strcmp(a->argv[i], "enable") == 0)
+            if (!strcmp(a->argv[i], "on") || !strcmp(a->argv[i], "enable"))
                 fSataEnabled = 1;
-            else if (strcmp(a->argv[i], "off") == 0 || strcmp(a->argv[i], "disable") == 0)
+            else if (!strcmp(a->argv[i], "off") || !strcmp(a->argv[i], "disable"))
                 fSataEnabled = 0;
             else
-                return errorArgument("Invalid -usb argument '%s'", a->argv[i]);
+                return errorArgument("Invalid --usb argument '%s'", a->argv[i]);
         }
-        else if (strcmp(a->argv[i], "-sataportcount") == 0)
+        else if (   !strcmp(a->argv[i], "--sataportcount")
+                 || !strcmp(a->argv[i], "-sataportcount"))
         {
             unsigned n;
 
@@ -706,9 +763,10 @@ int handleModifyVM(HandlerArg *a)
                 return 1;
             sataPortCount = n;
         }
-        else if (strncmp(a->argv[i], "-sataport", 9) == 0)
+        else if (   !strncmp(a->argv[i], "--sataport", 10)
+                 || !strncmp(a->argv[i], "-sataport", 9))
         {
-            unsigned n = parseNum(&a->argv[i][9], 30, "SATA");
+            unsigned n = parseNum(&a->argv[i][9 + (a->argv[i][1] == '-')], 30, "SATA");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -716,12 +774,13 @@ int handleModifyVM(HandlerArg *a)
             i++;
             hdds[n-1+4] = a->argv[i];
         }
-        else if (strncmp(a->argv[i], "-sataideemulation", 17) == 0)
+        else if (   !strncmp(a->argv[i], "--sataideemulation", 18)
+                 || !strncmp(a->argv[i], "-sataideemulation", 17))
         {
             unsigned bootDevicePos = 0;
             unsigned n;
 
-            bootDevicePos = parseNum(&a->argv[i][17], 4, "SATA");
+            bootDevicePos = parseNum(&a->argv[i][17 + (a->argv[i][1] == '-')], 4, "SATA");
             if (!bootDevicePos)
                 return 1;
             bootDevicePos--;
@@ -736,21 +795,23 @@ int handleModifyVM(HandlerArg *a)
 
             sataBootDevices[bootDevicePos] = n-1;
         }
-        else if (strcmp(a->argv[i], "-scsi") == 0)
+        else if (   !strcmp(a->argv[i], "--scsi")
+                 || !strcmp(a->argv[i], "-scsi"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(a->argv[i], "on") == 0 || strcmp(a->argv[i], "enable") == 0)
+            if (!strcmp(a->argv[i], "on") || !strcmp(a->argv[i], "enable"))
                 fScsiEnabled = 1;
-            else if (strcmp(a->argv[i], "off") == 0 || strcmp(a->argv[i], "disable") == 0)
+            else if (!strcmp(a->argv[i], "off") || !strcmp(a->argv[i], "disable"))
                 fScsiEnabled = 0;
             else
-                return errorArgument("Invalid -scsi argument '%s'", a->argv[i]);
+                return errorArgument("Invalid --scsi argument '%s'", a->argv[i]);
         }
-        else if (strncmp(a->argv[i], "-scsiport", 9) == 0)
+        else if (   !strncmp(a->argv[i], "--scsiport", 10)
+                 || !strncmp(a->argv[i], "-scsiport", 9))
         {
-            unsigned n = parseNum(&a->argv[i][9], 16, "SCSI");
+            unsigned n = parseNum(&a->argv[i][9 + (a->argv[i][1] == '-')], 16, "SCSI");
             if (!n)
                 return 1;
             if (a->argc <= i + 1)
@@ -758,17 +819,18 @@ int handleModifyVM(HandlerArg *a)
             i++;
             hdds[n-1+34] = a->argv[i];
         }
-        else if (strcmp(a->argv[i], "-scsitype") == 0)
+        else if (   !strcmp(a->argv[i], "--scsitype")
+                 || !strcmp(a->argv[i], "-scsitype"))
         {
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
-            if (strcmp(a->argv[i], "LsiLogic") == 0 )
+            if (!RTStrICmp(a->argv[i], "LsiLogic"))
                 fScsiLsiLogic = 1;
-            else if (strcmp(a->argv[i], "BusLogic") == 0)
+            else if (!RTStrICmp(a->argv[i], "BusLogic"))
                 fScsiLsiLogic = 0;
             else
-                return errorArgument("Invalid -scsitype argument '%s'", a->argv[i]);
+                return errorArgument("Invalid --scsitype argument '%s'", a->argv[i]);
         }
         else
             return errorSyntax(USAGE_MODIFYVM, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
@@ -824,106 +886,106 @@ int handleModifyVM(HandlerArg *a)
             CHECK_ERROR(machine, COMSETTER(VRAMSize)(vramSize));
         if (acpi)
         {
-            if (strcmp(acpi, "on") == 0)
+            if (!strcmp(acpi, "on"))
             {
                 CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(true));
             }
-            else if (strcmp(acpi, "off") == 0)
+            else if (!strcmp(acpi, "off"))
             {
                 CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(false));
             }
             else
             {
-                errorArgument("Invalid -acpi argument '%s'", acpi);
+                errorArgument("Invalid --acpi argument '%s'", acpi);
                 rc = E_FAIL;
                 break;
             }
         }
         if (ioapic)
         {
-            if (strcmp(ioapic, "on") == 0)
+            if (!strcmp(ioapic, "on"))
             {
                 CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(true));
             }
-            else if (strcmp(ioapic, "off") == 0)
+            else if (!strcmp(ioapic, "off"))
             {
                 CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(false));
             }
             else
             {
-                errorArgument("Invalid -ioapic argument '%s'", ioapic);
+                errorArgument("Invalid --ioapic argument '%s'", ioapic);
                 rc = E_FAIL;
                 break;
             }
         }
         if (hwvirtex)
         {
-            if (strcmp(hwvirtex, "on") == 0)
+            if (!strcmp(hwvirtex, "on"))
             {
                 CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TSBool_True));
             }
-            else if (strcmp(hwvirtex, "off") == 0)
+            else if (!strcmp(hwvirtex, "off"))
             {
                 CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TSBool_False));
             }
-            else if (strcmp(hwvirtex, "default") == 0)
+            else if (!strcmp(hwvirtex, "default"))
             {
                 CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TSBool_Default));
             }
             else
             {
-                errorArgument("Invalid -hwvirtex argument '%s'", hwvirtex);
+                errorArgument("Invalid --hwvirtex argument '%s'", hwvirtex);
                 rc = E_FAIL;
                 break;
             }
         }
         if (nestedpaging)
         {
-            if (strcmp(nestedpaging, "on") == 0)
+            if (!strcmp(nestedpaging, "on"))
             {
                 CHECK_ERROR(machine, COMSETTER(HWVirtExNestedPagingEnabled)(true));
             }
-            else if (strcmp(nestedpaging, "off") == 0)
+            else if (!strcmp(nestedpaging, "off"))
             {
                 CHECK_ERROR(machine, COMSETTER(HWVirtExNestedPagingEnabled)(false));
             }
             else
             {
-                errorArgument("Invalid -nestedpaging argument '%s'", ioapic);
+                errorArgument("Invalid --nestedpaging argument '%s'", ioapic);
                 rc = E_FAIL;
                 break;
             }
         }
         if (vtxvpid)
         {
-            if (strcmp(vtxvpid, "on") == 0)
+            if (!strcmp(vtxvpid, "on"))
             {
                 CHECK_ERROR(machine, COMSETTER(HWVirtExVPIDEnabled)(true));
             }
-            else if (strcmp(vtxvpid, "off") == 0)
+            else if (!strcmp(vtxvpid, "off"))
             {
                 CHECK_ERROR(machine, COMSETTER(HWVirtExVPIDEnabled)(false));
             }
             else
             {
-                errorArgument("Invalid -vtxvpid argument '%s'", ioapic);
+                errorArgument("Invalid --vtxvpid argument '%s'", ioapic);
                 rc = E_FAIL;
                 break;
             }
         }
         if (pae)
         {
-            if (strcmp(pae, "on") == 0)
+            if (!strcmp(pae, "on"))
             {
                 CHECK_ERROR(machine, COMSETTER(PAEEnabled)(true));
             }
-            else if (strcmp(pae, "off") == 0)
+            else if (!strcmp(pae, "off"))
             {
                 CHECK_ERROR(machine, COMSETTER(PAEEnabled)(false));
             }
             else
             {
-                errorArgument("Invalid -pae argument '%s'", ioapic);
+                errorArgument("Invalid --pae argument '%s'", ioapic);
                 rc = E_FAIL;
                 break;
             }
@@ -934,51 +996,51 @@ int handleModifyVM(HandlerArg *a)
         }
         if (accelerate3d)
         {
-            if (strcmp(accelerate3d, "on") == 0)
+            if (!strcmp(accelerate3d, "on"))
             {
                 CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(true));
             }
-            else if (strcmp(accelerate3d, "off") == 0)
+            else if (!strcmp(accelerate3d, "off"))
             {
                 CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(false));
             }
             else
             {
-                errorArgument("Invalid -accelerate3d argument '%s'", ioapic);
+                errorArgument("Invalid --accelerate3d argument '%s'", ioapic);
                 rc = E_FAIL;
                 break;
             }
         }
         if (bioslogofadein)
         {
-            if (strcmp(bioslogofadein, "on") == 0)
+            if (!strcmp(bioslogofadein, "on"))
             {
                 CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(true));
             }
-            else if (strcmp(bioslogofadein, "off") == 0)
+            else if (!strcmp(bioslogofadein, "off"))
             {
                 CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(false));
             }
             else
             {
-                errorArgument("Invalid -bioslogofadein argument '%s'", bioslogofadein);
+                errorArgument("Invalid --bioslogofadein argument '%s'", bioslogofadein);
                 rc = E_FAIL;
                 break;
             }
         }
         if (bioslogofadeout)
         {
-            if (strcmp(bioslogofadeout, "on") == 0)
+            if (!strcmp(bioslogofadeout, "on"))
             {
                 CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(true));
             }
-            else if (strcmp(bioslogofadeout, "off") == 0)
+            else if (!strcmp(bioslogofadeout, "off"))
             {
                 CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(false));
             }
             else
             {
-                errorArgument("Invalid -bioslogofadeout argument '%s'", bioslogofadeout);
+                errorArgument("Invalid --bioslogofadeout argument '%s'", bioslogofadeout);
                 rc = E_FAIL;
                 break;
             }
@@ -993,15 +1055,15 @@ int handleModifyVM(HandlerArg *a)
         }
         if (biosbootmenumode)
         {
-            if (strcmp(biosbootmenumode, "disabled") == 0)
+            if (!strcmp(biosbootmenumode, "disabled"))
                 CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_Disabled));
-            else if (strcmp(biosbootmenumode, "menuonly") == 0)
+            else if (!strcmp(biosbootmenumode, "menuonly"))
                 CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MenuOnly));
-            else if (strcmp(biosbootmenumode, "messageandmenu") == 0)
+            else if (!strcmp(biosbootmenumode, "messageandmenu"))
                 CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MessageAndMenu));
             else
             {
-                errorArgument("Invalid -biosbootmenu argument '%s'", biosbootmenumode);
+                errorArgument("Invalid --biosbootmenu argument '%s'", biosbootmenumode);
                 rc = E_FAIL;
                 break;
             }
@@ -1014,17 +1076,17 @@ int handleModifyVM(HandlerArg *a)
         }
         if (biospxedebug)
         {
-            if (strcmp(biospxedebug, "on") == 0)
+            if (!strcmp(biospxedebug, "on"))
             {
                 CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(true));
             }
-            else if (strcmp(biospxedebug, "off") == 0)
+            else if (!strcmp(biospxedebug, "off"))
             {
                 CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(false));
             }
             else
             {
-                errorArgument("Invalid -biospxedebug argument '%s'", biospxedebug);
+                errorArgument("Invalid --biospxedebug argument '%s'", biospxedebug);
                 rc = E_FAIL;
                 break;
             }
@@ -1036,7 +1098,7 @@ int handleModifyVM(HandlerArg *a)
         }
         if (hdds[0])
         {
-            if (strcmp(hdds[0], "none") == 0)
+            if (!strcmp(hdds[0], "none"))
             {
                 machine->DetachHardDisk(Bstr("IDE"), 0, 0);
             }
@@ -1069,7 +1131,7 @@ int handleModifyVM(HandlerArg *a)
         }
         if (hdds[1])
         {
-            if (strcmp(hdds[1], "none") == 0)
+            if (!strcmp(hdds[1], "none"))
             {
                 machine->DetachHardDisk(Bstr("IDE"), 0, 1);
             }
@@ -1102,7 +1164,7 @@ int handleModifyVM(HandlerArg *a)
         }
         if (hdds[2])
         {
-            if (strcmp(hdds[2], "none") == 0)
+            if (!strcmp(hdds[2], "none"))
             {
                 machine->DetachHardDisk(Bstr("IDE"), 1, 1);
             }
@@ -1140,12 +1202,12 @@ int handleModifyVM(HandlerArg *a)
             ASSERT(dvdDrive);
 
             /* unmount? */
-            if (strcmp(dvd, "none") == 0)
+            if (!strcmp(dvd, "none"))
             {
                 CHECK_ERROR(dvdDrive, Unmount());
             }
             /* host drive? */
-            else if (strncmp(dvd, "host:", 5) == 0)
+            else if (!strncmp(dvd, "host:", 5))
             {
                 ComPtr<IHost> host;
                 CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
@@ -1207,28 +1269,28 @@ int handleModifyVM(HandlerArg *a)
             machine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
             ASSERT(dvdDrive);
 
-            CHECK_ERROR(dvdDrive, COMSETTER(Passthrough)(strcmp(dvdpassthrough, "on") == 0));
+            CHECK_ERROR(dvdDrive, COMSETTER(Passthrough)(!strcmp(dvdpassthrough, "on")));
         }
         if (idecontroller)
         {
             ComPtr<IStorageController> storageController;
             CHECK_ERROR(machine, GetStorageControllerByName(Bstr("IDE"), storageController.asOutParam()));
 
-            if (RTStrICmp(idecontroller, "PIIX3") == 0)
+            if (RTStrICmp(idecontroller, "PIIX3"))
             {
                 CHECK_ERROR(storageController, COMSETTER(ControllerType)(StorageControllerType_PIIX3));
             }
-            else if (RTStrICmp(idecontroller, "PIIX4") == 0)
+            else if (RTStrICmp(idecontroller, "PIIX4"))
             {
                 CHECK_ERROR(storageController, COMSETTER(ControllerType)(StorageControllerType_PIIX4));
             }
-            else if (RTStrICmp(idecontroller, "ICH6") == 0)
+            else if (RTStrICmp(idecontroller, "ICH6"))
             {
                 CHECK_ERROR(storageController, COMSETTER(ControllerType)(StorageControllerType_ICH6));
             }
             else
             {
-                errorArgument("Invalid -idecontroller argument '%s'", idecontroller);
+                errorArgument("Invalid --idecontroller argument '%s'", idecontroller);
                 rc = E_FAIL;
                 break;
             }
@@ -1240,7 +1302,7 @@ int handleModifyVM(HandlerArg *a)
             ASSERT(floppyDrive);
 
             /* disable? */
-            if (strcmp(floppy, "disabled") == 0)
+            if (!strcmp(floppy, "disabled"))
             {
                 /* disable the controller */
                 CHECK_ERROR(floppyDrive, COMSETTER(Enabled)(false));
@@ -1251,12 +1313,12 @@ int handleModifyVM(HandlerArg *a)
                 CHECK_ERROR(floppyDrive, COMSETTER(Enabled)(true));
 
                 /* unmount? */
-                if (strcmp(floppy, "empty") == 0)
+                if (!strcmp(floppy, "empty"))
                 {
                     CHECK_ERROR(floppyDrive, Unmount());
                 }
                 /* host drive? */
-                else if (strncmp(floppy, "host:", 5) == 0)
+                else if (!strncmp(floppy, "host:", 5))
                 {
                     ComPtr<IHost> host;
                     CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
@@ -1309,44 +1371,44 @@ int handleModifyVM(HandlerArg *a)
             if (audio)
             {
                 /* disable? */
-                if (strcmp(audio, "none") == 0)
+                if (!strcmp(audio, "none"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(false));
                 }
-                else if (strcmp(audio, "null") == 0)
+                else if (!strcmp(audio, "null"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Null));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 #ifdef RT_OS_WINDOWS
 #ifdef VBOX_WITH_WINMM
-                else if (strcmp(audio, "winmm") == 0)
+                else if (!strcmp(audio, "winmm"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WinMM));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 #endif
-                else if (strcmp(audio, "dsound") == 0)
+                else if (!strcmp(audio, "dsound"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DirectSound));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_LINUX
-                else if (strcmp(audio, "oss") == 0)
+                else if (!strcmp(audio, "oss"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 # ifdef VBOX_WITH_ALSA
-                else if (strcmp(audio, "alsa") == 0)
+                else if (!strcmp(audio, "alsa"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSA));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 # endif
 # ifdef VBOX_WITH_PULSE
-                else if (strcmp(audio, "pulse") == 0)
+                else if (!strcmp(audio, "pulse"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Pulse));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
@@ -1354,7 +1416,7 @@ int handleModifyVM(HandlerArg *a)
 # endif
 #endif /* !RT_OS_LINUX */
 #ifdef RT_OS_SOLARIS
-                else if (strcmp(audio, "solaudio") == 0)
+                else if (!strcmp(audio, "solaudio"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_SolAudio));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
@@ -1362,7 +1424,7 @@ int handleModifyVM(HandlerArg *a)
 
 #endif /* !RT_OS_SOLARIS */
 #ifdef RT_OS_DARWIN
-                else if (strcmp(audio, "coreaudio") == 0)
+                else if (!strcmp(audio, "coreaudio"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudio));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
@@ -1371,20 +1433,20 @@ int handleModifyVM(HandlerArg *a)
 #endif /* !RT_OS_DARWIN */
                 else
                 {
-                    errorArgument("Invalid -audio argument '%s'", audio);
+                    errorArgument("Invalid --audio argument '%s'", audio);
                     rc = E_FAIL;
                     break;
                 }
             }
             if (audiocontroller)
             {
-                if (strcmp(audiocontroller, "sb16") == 0)
+                if (!strcmp(audiocontroller, "sb16"))
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_SB16));
-                else if (strcmp(audiocontroller, "ac97") == 0)
+                else if (!strcmp(audiocontroller, "ac97"))
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_AC97));
                 else
                 {
-                    errorArgument("Invalid -audiocontroller argument '%s'", audiocontroller);
+                    errorArgument("Invalid --audiocontroller argument '%s'", audiocontroller);
                     rc = E_FAIL;
                     break;
                 }
@@ -1397,25 +1459,25 @@ int handleModifyVM(HandlerArg *a)
             machine->COMGETTER(ClipboardMode)(clipboardMode.asOutParam());
             ASSERT(clipboardMode);
 */
-            if (strcmp(clipboard, "disabled") == 0)
+            if (!strcmp(clipboard, "disabled"))
             {
                 CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_Disabled));
             }
-            else if (strcmp(clipboard, "hosttoguest") == 0)
+            else if (!strcmp(clipboard, "hosttoguest"))
             {
                 CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_HostToGuest));
             }
-            else if (strcmp(clipboard, "guesttohost") == 0)
+            else if (!strcmp(clipboard, "guesttohost"))
             {
                 CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_GuestToHost));
             }
-            else if (strcmp(clipboard, "bidirectional") == 0)
+            else if (!strcmp(clipboard, "bidirectional"))
             {
                 CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_Bidirectional));
             }
             else
             {
-                errorArgument("Invalid -clipboard argument '%s'", clipboard);
+                errorArgument("Invalid --clipboard argument '%s'", clipboard);
                 rc = E_FAIL;
                 break;
             }
@@ -1431,33 +1493,33 @@ int handleModifyVM(HandlerArg *a)
             /* something about the NIC? */
             if (nics[n])
             {
-                if (strcmp(nics[n], "none") == 0)
+                if (!strcmp(nics[n], "none"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (FALSE), 1);
                 }
-                else if (strcmp(nics[n], "null") == 0)
+                else if (!strcmp(nics[n], "null"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
                     CHECK_ERROR_RET(nic, Detach(), 1);
                 }
-                else if (strcmp(nics[n], "nat") == 0)
+                else if (!strcmp(nics[n], "nat"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
                     CHECK_ERROR_RET(nic, AttachToNAT(), 1);
                 }
-                else if (  strcmp(nics[n], "bridged") == 0
-                        || strcmp(nics[n], "hostif") == 0) /* backward compatibility */
+                else if (  !strcmp(nics[n], "bridged")
+                        || !strcmp(nics[n], "hostif")) /* backward compatibility */
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
                     CHECK_ERROR_RET(nic, AttachToBridgedInterface(), 1);
                 }
-                else if (strcmp(nics[n], "intnet") == 0)
+                else if (!strcmp(nics[n], "intnet"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
                     CHECK_ERROR_RET(nic, AttachToInternalNetwork(), 1);
                 }
 #if defined(VBOX_WITH_NETFLT)
-                else if (strcmp(nics[n], "hostonly") == 0)
+                else if (!strcmp(nics[n], "hostonly"))
                 {
 
                     CHECK_ERROR_RET(nic, COMSETTER(Enabled) (TRUE), 1);
@@ -1475,24 +1537,24 @@ int handleModifyVM(HandlerArg *a)
             /* something about the NIC type? */
             if (nictype[n])
             {
-                if (strcmp(nictype[n], "Am79C970A") == 0)
+                if (!strcmp(nictype[n], "Am79C970A"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_Am79C970A), 1);
                 }
-                else if (strcmp(nictype[n], "Am79C973") == 0)
+                else if (!strcmp(nictype[n], "Am79C973"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_Am79C973), 1);
                 }
 #ifdef VBOX_WITH_E1000
-                else if (strcmp(nictype[n], "82540EM") == 0)
+                else if (!strcmp(nictype[n], "82540EM"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82540EM), 1);
                 }
-                else if (strcmp(nictype[n], "82543GC") == 0)
+                else if (!strcmp(nictype[n], "82543GC"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82543GC), 1);
                 }
-                else if (strcmp(nictype[n], "82545EM") == 0)
+                else if (!strcmp(nictype[n], "82545EM"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82545EM), 1);
                 }
@@ -1509,7 +1571,7 @@ int handleModifyVM(HandlerArg *a)
             if (macs[n])
             {
                 /* generate one? */
-                if (strcmp(macs[n], "auto") == 0)
+                if (!strcmp(macs[n], "auto"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(MACAddress)(NULL), 1);
                 }
@@ -1528,7 +1590,7 @@ int handleModifyVM(HandlerArg *a)
 
                 if (u32LineSpeed < 1000 || u32LineSpeed > 4000000)
                 {
-                    errorArgument("Invalid -nicspeed%lu argument '%s'", n + 1, nicspeed[n]);
+                    errorArgument("Invalid --nicspeed%lu argument '%s'", n + 1, nicspeed[n]);
                     rc = E_FAIL;
                     break;
                 }
@@ -1538,17 +1600,17 @@ int handleModifyVM(HandlerArg *a)
             /* the link status flag? */
             if (cableconnected[n])
             {
-                if (strcmp(cableconnected[n], "on") == 0)
+                if (!strcmp(cableconnected[n], "on"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(CableConnected)(TRUE), 1);
                 }
-                else if (strcmp(cableconnected[n], "off") == 0)
+                else if (!strcmp(cableconnected[n], "off"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(CableConnected)(FALSE), 1);
                 }
                 else
                 {
-                    errorArgument("Invalid -cableconnected%lu argument '%s'", n + 1, cableconnected[n]);
+                    errorArgument("Invalid --cableconnected%lu argument '%s'", n + 1, cableconnected[n]);
                     rc = E_FAIL;
                     break;
                 }
@@ -1557,17 +1619,17 @@ int handleModifyVM(HandlerArg *a)
             /* the trace flag? */
             if (nictrace[n])
             {
-                if (strcmp(nictrace[n], "on") == 0)
+                if (!strcmp(nictrace[n], "on"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(TraceEnabled)(TRUE), 1);
                 }
-                else if (strcmp(nictrace[n], "off") == 0)
+                else if (!strcmp(nictrace[n], "off"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(TraceEnabled)(FALSE), 1);
                 }
                 else
                 {
-                    errorArgument("Invalid -nictrace%lu argument '%s'", n + 1, nictrace[n]);
+                    errorArgument("Invalid --nictrace%lu argument '%s'", n + 1, nictrace[n]);
                     rc = E_FAIL;
                     break;
                 }
@@ -1583,7 +1645,7 @@ int handleModifyVM(HandlerArg *a)
             if (hostifdev[n])
             {
                 /* remove it? */
-                if (strcmp(hostifdev[n], "none") == 0)
+                if (!strcmp(hostifdev[n], "none"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(HostInterface)(NULL), 1);
                 }
@@ -1597,7 +1659,7 @@ int handleModifyVM(HandlerArg *a)
             if (intnet[n])
             {
                 /* remove it? */
-                if (strcmp(intnet[n], "none") == 0)
+                if (!strcmp(intnet[n], "none"))
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(InternalNetwork)(NULL), 1);
                 }
@@ -1638,19 +1700,19 @@ int handleModifyVM(HandlerArg *a)
             }
             if (uarts_mode[n])
             {
-                if (strcmp(uarts_mode[n], "disconnected") == 0)
+                if (!strcmp(uarts_mode[n], "disconnected"))
                 {
                     CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_Disconnected), 1);
                 }
                 else
                 {
                     CHECK_ERROR_RET(uart, COMSETTER(Path) (Bstr(uarts_path[n])), 1);
-                    if (strcmp(uarts_mode[n], "server") == 0)
+                    if (!strcmp(uarts_mode[n], "server"))
                     {
                         CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostPipe), 1);
                         CHECK_ERROR_RET(uart, COMSETTER(Server) (TRUE), 1);
                     }
-                    else if (strcmp(uarts_mode[n], "client") == 0)
+                    else if (!strcmp(uarts_mode[n], "client"))
                     {
                         CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostPipe), 1);
                         CHECK_ERROR_RET(uart, COMSETTER(Server) (FALSE), 1);
@@ -1675,17 +1737,17 @@ int handleModifyVM(HandlerArg *a)
             {
                 if (vrdp)
                 {
-                    if (strcmp(vrdp, "on") == 0)
+                    if (!strcmp(vrdp, "on"))
                     {
                         CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(true));
                     }
-                    else if (strcmp(vrdp, "off") == 0)
+                    else if (!strcmp(vrdp, "off"))
                     {
                         CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(false));
                     }
                     else
                     {
-                        errorArgument("Invalid -vrdp argument '%s'", vrdp);
+                        errorArgument("Invalid --vrdp argument '%s'", vrdp);
                         rc = E_FAIL;
                         break;
                     }
@@ -1700,55 +1762,55 @@ int handleModifyVM(HandlerArg *a)
                 }
                 if (vrdpauthtype)
                 {
-                    if (strcmp(vrdpauthtype, "null") == 0)
+                    if (!strcmp(vrdpauthtype, "null"))
                     {
                         CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Null));
                     }
-                    else if (strcmp(vrdpauthtype, "external") == 0)
+                    else if (!strcmp(vrdpauthtype, "external"))
                     {
                         CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_External));
                     }
-                    else if (strcmp(vrdpauthtype, "guest") == 0)
+                    else if (!strcmp(vrdpauthtype, "guest"))
                     {
                         CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Guest));
                     }
                     else
                     {
-                        errorArgument("Invalid -vrdpauthtype argument '%s'", vrdpauthtype);
+                        errorArgument("Invalid --vrdpauthtype argument '%s'", vrdpauthtype);
                         rc = E_FAIL;
                         break;
                     }
                 }
                 if (vrdpmulticon)
                 {
-                    if (strcmp(vrdpmulticon, "on") == 0)
+                    if (!strcmp(vrdpmulticon, "on"))
                     {
                         CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(true));
                     }
-                    else if (strcmp(vrdpmulticon, "off") == 0)
+                    else if (!strcmp(vrdpmulticon, "off"))
                     {
                         CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(false));
                     }
                     else
                     {
-                        errorArgument("Invalid -vrdpmulticon argument '%s'", vrdpmulticon);
+                        errorArgument("Invalid --vrdpmulticon argument '%s'", vrdpmulticon);
                         rc = E_FAIL;
                         break;
                     }
                 }
                 if (vrdpreusecon)
                 {
-                    if (strcmp(vrdpreusecon, "on") == 0)
+                    if (!strcmp(vrdpreusecon, "on"))
                     {
                         CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(true));
                     }
-                    else if (strcmp(vrdpreusecon, "off") == 0)
+                    else if (!strcmp(vrdpreusecon, "off"))
                     {
                         CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(false));
                     }
                     else
                     {
-                        errorArgument("Invalid -vrdpreusecon argument '%s'", vrdpreusecon);
+                        errorArgument("Invalid --vrdpreusecon argument '%s'", vrdpreusecon);
                         rc = E_FAIL;
                         break;
                     }
@@ -1784,7 +1846,7 @@ int handleModifyVM(HandlerArg *a)
 
         if (snapshotFolder)
         {
-            if (strcmp(snapshotFolder, "default") == 0)
+            if (!strcmp(snapshotFolder, "default"))
             {
                 CHECK_ERROR(machine, COMSETTER(SnapshotFolder)(NULL));
             }
@@ -1819,7 +1881,7 @@ int handleModifyVM(HandlerArg *a)
         {
             if (hdds[i])
             {
-                if (strcmp(hdds[i], "none") == 0)
+                if (!strcmp(hdds[i], "none"))
                 {
                     machine->DetachHardDisk(Bstr("SATA"), i-4, 0);
                 }
@@ -1883,7 +1945,7 @@ int handleModifyVM(HandlerArg *a)
             if (fScsiEnabled)
             {
                 ComPtr<IStorageController> ctl;
-                if (fScsiLsiLogic == 0)
+                if (!fScsiLsiLogic)
                 {
                     CHECK_ERROR(machine, AddStorageController(Bstr("BusLogic"), StorageBus_SCSI, ctl.asOutParam()));
                     CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_BusLogic));
@@ -1906,7 +1968,7 @@ int handleModifyVM(HandlerArg *a)
         {
             if (hdds[i])
             {
-                if (strcmp(hdds[i], "none") == 0)
+                if (!strcmp(hdds[i], "none"))
                 {
                     rc = machine->DetachHardDisk(Bstr("LsiLogic"), i-34, 0);
                     if (!SUCCEEDED(rc))
