@@ -377,7 +377,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         enmPriority = GMMPRIORITY_NORMAL;
     else
-        AssertMsgRCReturn(rc, ("Configuration error: Failed to query string \"MM/Priority\", rc=%Rrc.\n", rc), rc);
+        AssertMsgFailedReturn(("Configuration error: Failed to query string \"MM/Priority\", rc=%Rrc.\n", rc), rc);
 
     /*
      * Make the initial memory reservation with GMM.
