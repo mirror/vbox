@@ -6498,6 +6498,10 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                 HRESULT rc2 = console->powerDown();
                 AssertComRC (rc2);
             }
+
+            /* Deregister the VMSetError callback. */
+            VMR3AtErrorDeregister(pVM, task->mSetVMErrorCallback, task.get());
+            /** @todo register another VMSetError callback? */
         }
         else
         {
