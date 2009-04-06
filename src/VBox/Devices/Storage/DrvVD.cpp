@@ -115,6 +115,8 @@ typedef struct VBOXDISK
     PPDMDRVINS         pDrvIns;
     /** Flag whether suspend has changed image open mode to read only. */
     bool               fTempReadOnly;
+    /** Flag whether to use the runtime (true) or startup error facility. */
+    bool               fErrorUseRuntime;
     /** Pointer to list of VD interfaces. Per-disk. */
     PVDINTERFACE       pVDIfsDisk;
     /** Common structure for the supported error interface. */
@@ -155,7 +157,11 @@ static void drvvdErrorCallback(void *pvUser, int rc, RT_SRC_POS_DECL,
                                const char *pszFormat, va_list va)
 {
     PPDMDRVINS pDrvIns = (PPDMDRVINS)pvUser;
-    pDrvIns->pDrvHlp->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+    if (pThis->fErrorUseRuntime)
+        pDrvIns->pDrvHlp->pfnVMSetRuntimeErrorV(pDrvIns, VMSETRTERR_FLAGS_FATAL, "DrvVD", pszFormat, va);
+    else
+        pDrvIns->pDrvHlp->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
 }
 
 
@@ -1106,6 +1112,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             rc = RTCacheCreate(&pThis->pCache, 0, sizeof(DRVVDASYNCTASK), RTOBJCACHE_PROTECT_INSERT);
             AssertMsgRC(rc, ("Failed to create cache rc=%Rrc\n", rc));
         }
+
+        /* Switch to runtime error facility. */
+        pThis->fErrorUseRuntime = true;
     }
 
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
