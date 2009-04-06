@@ -118,6 +118,7 @@ static int parseDiskType(const char *psz, HardDiskType_T *pDiskType)
     return rc;
 }
 
+/** @todo move this into getopt, as getting bool values is generic */
 static int parseBool(const char *psz, bool *pb)
 {
     int rc = VINF_SUCCESS;
