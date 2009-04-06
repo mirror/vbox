@@ -505,6 +505,63 @@ static int remR3InitPhysRamSizeAndDirtyMap(PVM pVM, bool fGuarded)
  */
 REMR3DECL(int) REMR3Term(PVM pVM)
 {
+#ifdef VBOX_WITH_STATISTICS
+    /*
+     * Statistics.
+     */
+    STAM_DEREG(pVM, &gStatExecuteSingleInstr);
+    STAM_DEREG(pVM, &gStatCompilationQEmu);
+    STAM_DEREG(pVM, &gStatRunCodeQEmu);
+    STAM_DEREG(pVM, &gStatTotalTimeQEmu);
+    STAM_DEREG(pVM, &gStatTimers);
+    STAM_DEREG(pVM, &gStatTBLookup);
+    STAM_DEREG(pVM, &gStatIRQ);
+    STAM_DEREG(pVM, &gStatRawCheck);
+    STAM_DEREG(pVM, &gStatMemRead);
+    STAM_DEREG(pVM, &gStatMemWrite);
+    STAM_DEREG(pVM, &gStatHCVirt2GCPhys);
+    STAM_DEREG(pVM, &gStatGCPhys2HCVirt);
+
+    STAM_DEREG(pVM, &gStatCpuGetTSC);
+
+    STAM_DEREG(pVM, &gStatRefuseTFInhibit);
+    STAM_DEREG(pVM, &gStatRefuseVM86);
+    STAM_DEREG(pVM, &gStatRefusePaging);
+    STAM_DEREG(pVM, &gStatRefusePAE);
+    STAM_DEREG(pVM, &gStatRefuseIOPLNot0);
+    STAM_DEREG(pVM, &gStatRefuseIF0);
+    STAM_DEREG(pVM, &gStatRefuseCode16);
+    STAM_DEREG(pVM, &gStatRefuseWP0);
+    STAM_DEREG(pVM, &gStatRefuseRing1or2);
+    STAM_DEREG(pVM, &gStatRefuseCanExecute);
+    STAM_DEREG(pVM, &gStatFlushTBs);
+
+    STAM_DEREG(pVM, &gStatREMGDTChange);
+    STAM_DEREG(pVM, &gStatREMLDTRChange);
+    STAM_DEREG(pVM, &gStatREMIDTChange);
+    STAM_DEREG(pVM, &gStatREMTRChange);
+
+    STAM_DEREG(pVM, &gStatSelOutOfSync[0]);
+    STAM_DEREG(pVM, &gStatSelOutOfSync[1]);
+    STAM_DEREG(pVM, &gStatSelOutOfSync[2]);
+    STAM_DEREG(pVM, &gStatSelOutOfSync[3]);
+    STAM_DEREG(pVM, &gStatSelOutOfSync[4]);
+    STAM_DEREG(pVM, &gStatSelOutOfSync[5]);
+
+    STAM_DEREG(pVM, &gStatSelOutOfSyncStateBack[0]);
+    STAM_DEREG(pVM, &gStatSelOutOfSyncStateBack[1]);
+    STAM_DEREG(pVM, &gStatSelOutOfSyncStateBack[2]);
+    STAM_DEREG(pVM, &gStatSelOutOfSyncStateBack[3]);
+    STAM_DEREG(pVM, &gStatSelOutOfSyncStateBack[4]);
+    STAM_DEREG(pVM, &gStatSelOutOfSyncStateBack[5]);
+
+    STAM_DEREG(pVM, &pVM->rem.s.Env.StatTbFlush);
+#endif /* VBOX_WITH_STATISTICS */
+
+    STAM_REL_DEREG(pVM, &tb_flush_count);
+    STAM_REL_DEREG(pVM, &tb_phys_invalidate_count);
+    STAM_REL_DEREG(pVM, &tlb_flush_count);
+
     return VINF_SUCCESS;
 }
 
