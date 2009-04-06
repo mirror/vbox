@@ -790,6 +790,12 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /* Page Attribute Table. */
 #define MSR_IA32_CR_PAT                     0x277
 
+/** Performance counter MSRs. (Intel only) */
+#define MSR_IA32_PERFEVTSEL0                0x186
+#define MSR_IA32_PERFEVTSEL1                0x187
+#define MSR_IA32_PERF_STATUS                0x198
+#define MSR_IA32_PERF_CTL                   0x199
+
 /** MTRR Default Range. */
 #define MSR_IA32_MTRR_DEF_TYPE              0x2FF
 
@@ -862,6 +868,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** K6 PFIR - Page Flush/Invalidate Register. */
 #define MSR_K6_PFIR                         0xc0000088
 
+/** Performance counter MSRs. (AMD only) */
 #define MSR_K7_EVNTSEL0                     0xc0010000
 #define MSR_K7_EVNTSEL1                     0xc0010001
 #define MSR_K7_EVNTSEL2                     0xc0010002
