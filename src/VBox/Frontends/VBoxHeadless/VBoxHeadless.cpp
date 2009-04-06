@@ -975,7 +975,8 @@ int main (int argc, char **argv, char **envp)
     int rc = RTR3InitAndSUPLib();
     if (RT_FAILURE(rc))
     {
-        RTPrintf("VBoxHeadless: Runtime Error!\n");
+        RTPrintf("VBoxHeadless: Runtime Error:\n"
+                 " %Rrc -- %Rrf\n", rc, rc);
         switch (rc)
         {
             case VERR_VM_DRIVER_NOT_INSTALLED:
