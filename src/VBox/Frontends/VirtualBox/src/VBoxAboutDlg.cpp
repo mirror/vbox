@@ -61,13 +61,12 @@ void VBoxAboutDlg::paintEvent (QPaintEvent * /* aEvent */)
     QPainter painter (this);
     painter.drawPixmap (0, 0, mBgImage);
     painter.setFont (font());
-#if VBOX_OSE
     painter.setPen (Qt::white);
+#if VBOX_OSE
     painter.drawText (QRect (0, 400, 600, 32),
                       Qt::AlignCenter | Qt::AlignVCenter | Qt::TextWordWrap,
                       mAboutText);
 #else /* VBOX_OSE */
-    painter.setPen (QColor (153, 154, 158));
     painter.drawText (QRect (313, 370, 300, 72),
                       Qt::AlignLeft | Qt::AlignBottom | Qt::TextWordWrap,
                       mAboutText);
