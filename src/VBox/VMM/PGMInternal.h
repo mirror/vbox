@@ -4326,7 +4326,6 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
  *
  * @param   pPool       The pool.
  * @param   pPage       The cached page.
- * @todo inline in PGMInternal.h!
  */
 DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
