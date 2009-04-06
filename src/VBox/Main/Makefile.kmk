@@ -340,7 +340,7 @@ ifdef VBOX_WITH_NETFLT
  #       we're using the VCC since we're not using the DDK compiler/crt.
  #       Since this is potentially risky, restrict it to the source file
  #       needing it.
- win/NetIfList-win.cpp_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
+ win/NetIf-win.cpp_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
  VBoxSVC_LIBS.win += \
 	$(PATH_LIB)/WinNetConfig.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
@@ -370,11 +370,11 @@ ifdef VBOX_WITH_RESOURCE_USAGE_API
 endif
 
 ifdef VBOX_WITH_HOSTNETIF_API
- VBoxSVC_SOURCES.win     +=     win/NetIfList-win.cpp
- VBoxSVC_SOURCES.linux   +=   linux/NetIfList-linux.cpp
- VBoxSVC_SOURCES.os2     +=     os2/NetIfList-os2.cpp
- VBoxSVC_SOURCES.darwin  +=  darwin/NetIfList-darwin.cpp
- VBoxSVC_SOURCES.solaris += solaris/NetIfList-solaris.cpp
+ VBoxSVC_SOURCES.win     +=     win/NetIf-win.cpp
+ VBoxSVC_SOURCES.linux   +=   linux/NetIf-linux.cpp
+ VBoxSVC_SOURCES.os2     +=     os2/NetIf-os2.cpp
+ VBoxSVC_SOURCES.darwin  +=  darwin/NetIf-darwin.cpp
+ VBoxSVC_SOURCES.solaris += solaris/NetIf-solaris.cpp
  VBoxSVC_DEFS            += VBOX_WITH_HOSTNETIF_API
  if1of ($(KBUILD_TARGET), linux darwin solaris)
   VBoxSVC_SOURCES        += generic/NetIf-generic.cpp
