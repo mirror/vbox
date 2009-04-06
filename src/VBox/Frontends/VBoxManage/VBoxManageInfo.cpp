@@ -1869,7 +1869,7 @@ int handleShowVMInfo(HandlerArg *a)
     {
         switch (c)
         {
-            case 'V':   // --details
+            case 'D':   // --details
                 fDetails = true;
                 break;
 
