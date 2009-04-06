@@ -888,6 +888,11 @@ static const REMPARMDESC g_aArgsSTAMR3Register[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(STAMUNIT), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL }
 };
+static const REMPARMDESC g_aArgsSTAMR3Deregister[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
+};
 static const REMPARMDESC g_aArgsTRPMAssertTrap[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
@@ -1140,6 +1145,7 @@ static REMFNDESC g_aVMMImports[] =
     { "SSMR3PutUInt",                           (void *)(uintptr_t)&SSMR3PutUInt,                   &g_aArgsSSMR3PutUInt[0],                    RT_ELEMENTS(g_aArgsSSMR3PutUInt),                      REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "SSMR3RegisterInternal",                  (void *)(uintptr_t)&SSMR3RegisterInternal,          &g_aArgsSSMR3RegisterInternal[0],           RT_ELEMENTS(g_aArgsSSMR3RegisterInternal),             REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "STAMR3Register",                         (void *)(uintptr_t)&STAMR3Register,                 &g_aArgsSTAMR3Register[0],                  RT_ELEMENTS(g_aArgsSTAMR3Register),                    REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "STAMR3Deregister",                       (void *)(uintptr_t)&STAMR3Deregister,               &g_aArgsSTAMR3Deregister[0],                RT_ELEMENTS(g_aArgsSTAMR3Deregister),                  REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "TMCpuTickGet",                           (void *)(uintptr_t)&TMCpuTickGet,                   &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(uint64_t),   NULL },
     { "TMCpuTickPause",                         (void *)(uintptr_t)&TMCpuTickPause,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "TMCpuTickResume",                        (void *)(uintptr_t)&TMCpuTickResume,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
