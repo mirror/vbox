@@ -42,6 +42,7 @@
 #include <iprt/stream.h>
 #include <iprt/getopt.h>
 #include <iprt/ctype.h>
+#include <iprt/path.h>
 
 #include <VBox/log.h>
 
@@ -214,11 +215,12 @@ int handleImportAppliance(HandlerArg *a)
 
     do
     {
-        Bstr bstrOvfFilename(strOvfFilename);
         ComPtr<IAppliance> pAppliance;
         CHECK_ERROR_BREAK(a->virtualBox, CreateAppliance(pAppliance.asOutParam()));
 
-        CHECK_ERROR_BREAK(pAppliance, Read(bstrOvfFilename));
+        char *pszAbsFilePath = RTPathAbsDup(strOvfFilename.c_str());
+        CHECK_ERROR_BREAK(pAppliance, Read(Bstr(pszAbsFilePath)));
+        RTStrFree(pszAbsFilePath);
 
         // call interpret(); this can yield both warnings and errors, so we need
         // to tinker with the error info a bit
@@ -709,7 +711,9 @@ int handleExportAppliance(HandlerArg *a)
             break;
 
         ComPtr<IProgress> progress;
-        CHECK_ERROR_BREAK(pAppliance, Write(Bstr("ovf-0.9"), Bstr(strOutputFile), progress.asOutParam()));
+        char *pszAbsFilePath = RTPathAbsDup(strOutputFile.c_str());
+        CHECK_ERROR_BREAK(pAppliance, Write(Bstr("ovf-0.9"), Bstr(pszAbsFilePath), progress.asOutParam()));
+        RTStrFree(pszAbsFilePath);
 
         showProgress(progress);
 
