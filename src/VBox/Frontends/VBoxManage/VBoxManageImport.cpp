@@ -52,7 +52,7 @@ using namespace com;
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
 
-typedef std::map<Utf8Str, Utf8Str> ArgsMap;                 // pairs of strings like "-vmname" => "newvmname"
+typedef std::map<Utf8Str, Utf8Str> ArgsMap;                 // pairs of strings like "vmname" => "newvmname"
 typedef std::map<uint32_t, ArgsMap> ArgsMapsMap;            // map of maps, one for each virtual system, sorted by index
 
 typedef std::map<uint32_t, bool> IgnoresMap;                // pairs of numeric description entry indices
@@ -77,82 +77,136 @@ static bool findArgValue(Utf8Str &strOut,
     return false;
 }
 
+static const RTGETOPTDEF g_aImportApplianceOptions[] =
+{
+    { "--dry-run",              'n', RTGETOPT_REQ_NOTHING },
+    { "-dry-run",               'n', RTGETOPT_REQ_NOTHING },    // deprecated
+    { "--dryrun",               'n', RTGETOPT_REQ_NOTHING },
+    { "-dryrun",                'n', RTGETOPT_REQ_NOTHING },    // deprecated
+    { "--detailed-progress",    'P', RTGETOPT_REQ_NOTHING },
+    { "-detailed-progress",     'P', RTGETOPT_REQ_NOTHING },    // deprecated
+    { "--vsys",                 's', RTGETOPT_REQ_UINT32 },
+    { "-vsys",                  's', RTGETOPT_REQ_UINT32 },     // deprecated
+    { "--ostype",               'o', RTGETOPT_REQ_STRING },
+    { "-ostype",                'o', RTGETOPT_REQ_STRING },     // deprecated
+    { "--vmname",               'V', RTGETOPT_REQ_STRING },
+    { "-vmname",                'V', RTGETOPT_REQ_STRING },     // deprecated
+    { "--eula",                 'L', RTGETOPT_REQ_STRING },
+    { "-eula",                  'L', RTGETOPT_REQ_STRING },     // deprecated
+    { "--unit",                 'u', RTGETOPT_REQ_UINT32 },
+    { "-unit",                  'u', RTGETOPT_REQ_UINT32 },     // deprecated
+    { "--ignore",               'x', RTGETOPT_REQ_NOTHING },
+    { "-ignore",                'x', RTGETOPT_REQ_NOTHING },    // deprecated
+    { "--scsitype",             'T', RTGETOPT_REQ_UINT32 },
+    { "-scsitype",              'T', RTGETOPT_REQ_UINT32 },     // deprecated
+    { "--type",                 'T', RTGETOPT_REQ_UINT32 },     // deprecated
+    { "-type",                  'T', RTGETOPT_REQ_UINT32 },     // deprecated
+};
+
 int handleImportAppliance(HandlerArg *a)
 {
     HRESULT rc = S_OK;
 
     Utf8Str strOvfFilename;
     bool fExecute = true;                  // if true, then we actually do the import
-
     uint32_t ulCurVsys = (uint32_t)-1;
-
-    // for each -vsys X command, maintain a map of command line items
+    uint32_t ulCurUnit = (uint32_t)-1;
+    // for each --vsys X command, maintain a map of command line items
     // (we'll parse them later after interpreting the OVF, when we can
     // actually check whether they make sense semantically)
     ArgsMapsMap mapArgsMapsPerVsys;
     IgnoresMapsMap mapIgnoresMapsPerVsys;
 
-    for (int i = 0;
-         i < a->argc;
-         ++i)
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aImportApplianceOptions, RT_ELEMENTS(g_aImportApplianceOptions), 0, 0 /* fFlags */);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
-        bool fIsIgnore = false;
-        Utf8Str strThisArg(a->argv[i]);
-        if (    (strThisArg == "--dry-run")
-             || (strThisArg == "-dry-run")
-             || (strThisArg == "-n")
-           )
-            fExecute = false;
-        else if (strThisArg == "--detailed-progress")
-            g_fDetailedProgress = true;
-        else if (strThisArg == "-vsys")
+        switch (c)
         {
-            if (++i < a->argc)
-            {
-                uint32_t ulVsys;
-                if (VINF_SUCCESS != (rc = Utf8Str(a->argv[i]).toInt(ulVsys)))       // don't use SUCCESS() macro, fail even on warnings
-                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Argument to -vsys option must be a non-negative number.");
+            case 'n':   // --dry-run
+                fExecute = false;
+                break;
 
-                ulCurVsys = ulVsys;
-            }
-            else
-                return errorSyntax(USAGE_IMPORTAPPLIANCE, "Missing argument to -vsys option.");
-        }
-        else if (    (strThisArg == "-ostype")
-                  || (strThisArg == "-vmname")
-                  || (strThisArg == "-memory")
-                  || (strThisArg == "-eula")
-                  || (fIsIgnore = (strThisArg == "-ignore"))
-                  || (strThisArg.substr(0, 5) == "-type")
-                  || (strThisArg.substr(0, 11) == "-controller")
-                )
-        {
-            if (ulCurVsys == (uint32_t)-1)
-                return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding -vsys argument.", strThisArg.c_str());
+            case 'P':   // --detailed-progress
+                g_fDetailedProgress = true;
+                break;
 
-            if (++i < a->argc)
-                if (fIsIgnore)
-                {
-                    uint32_t ulItem;
-                    if (VINF_SUCCESS != Utf8Str(a->argv[i]).toInt(ulItem))
-                        return errorSyntax(USAGE_IMPORTAPPLIANCE, "Argument to -vsys option must be a non-negative number.");
+            case 's':   // --vsys
+                ulCurVsys = ValueUnion.u32;
+                ulCurUnit = (uint32_t)-1;
+                break;
 
-                    mapIgnoresMapsPerVsys[ulCurVsys][ulItem] = true;
-                }
+            case 'o':   // --ostype
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["ostype"] = ValueUnion.psz;
+                break;
+
+            case 'V':   // --vmname
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["vmname"] = ValueUnion.psz;
+                break;
+
+            case 'm':   // --memory
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["memory"] = ValueUnion.psz;
+                break;
+
+            case 'u':   // --unit
+                ulCurUnit = ValueUnion.u32;
+                break;
+
+            case 'x':   // --ignore
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                if (ulCurUnit == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --unit argument.", GetState.pDef->pszLong);
+                mapIgnoresMapsPerVsys[ulCurVsys][ulCurUnit] = true;
+                break;
+
+            case 'T':   // --scsitype
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                if (ulCurUnit == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --unit argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys][Utf8StrFmt("scsitype%u", ulCurUnit)] = ValueUnion.psz;
+                break;
+
+            case 'C':   // --controller
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                if (ulCurUnit == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --unit argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys][Utf8StrFmt("controller%u", ulCurUnit)] = ValueUnion.psz;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!strOvfFilename)
+                    strOvfFilename = ValueUnion.psz;
                 else
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Invalid parameter '%s'", ValueUnion.psz);
+                break;
+
+            default:
+                if (c > 0)
                 {
-                    // store both this arg and the next one in the strings map for later parsing
-                    mapArgsMapsPerVsys[ulCurVsys][strThisArg] = Utf8Str(a->argv[i]);
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_IMPORTAPPLIANCE, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_IMPORTAPPLIANCE, "Invalid option case %i", c);
                 }
-            else
-                return errorSyntax(USAGE_IMPORTAPPLIANCE, "Missing argument to \"%s\" option.", strThisArg.c_str());
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "unknown option: %s\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "error: %Rrs", c);
         }
-        else if (strThisArg[0] == '-')
-            return errorSyntax(USAGE_IMPORTAPPLIANCE, "Unknown option \"%s\".", strThisArg.c_str());
-        else if (!strOvfFilename)
-            strOvfFilename = strThisArg;
-        else
-            return errorSyntax(USAGE_IMPORTAPPLIANCE, "Too many arguments for \"import\" command.");
     }
 
     if (!strOvfFilename)
@@ -244,7 +298,7 @@ int handleImportAppliance(HandlerArg *a)
                                                  ComSafeArrayAsOutParam(aVboxValues),
                                                  ComSafeArrayAsOutParam(aExtraConfigValues)));
 
-                RTPrintf("Virtual system %i:\n", i);
+                RTPrintf("Virtual system %u:\n", i);
 
                 // look up the corresponding command line options, if any
                 ArgsMap *pmapArgs = NULL;
@@ -271,86 +325,86 @@ int handleImportAppliance(HandlerArg *a)
                     switch (t)
                     {
                         case VirtualSystemDescriptionType_Name:
-                            if (findArgValue(strOverride, pmapArgs, "-vmname"))
+                            if (findArgValue(strOverride, pmapArgs, "vmname"))
                             {
                                 bstrFinalValue = strOverride;
-                                RTPrintf("%2d: VM name specified with -vmname: \"%ls\"\n",
+                                RTPrintf("%2u: VM name specified with --vmname: \"%ls\"\n",
                                         a, bstrFinalValue.raw());
                             }
                             else
-                                RTPrintf("%2d: Suggested VM name \"%ls\""
-                                        "\n    (change with \"-vsys %d -vmname <name>\")\n",
+                                RTPrintf("%2u: Suggested VM name \"%ls\""
+                                        "\n    (change with \"--vsys %u --vmname <name>\")\n",
                                         a, bstrFinalValue.raw(), i);
                         break;
 
                         case VirtualSystemDescriptionType_OS:
-                            if (findArgValue(strOverride, pmapArgs, "-ostype"))
+                            if (findArgValue(strOverride, pmapArgs, "ostype"))
                             {
                                 bstrFinalValue = strOverride;
-                                RTPrintf("%2d: OS type specified with -ostype: \"%ls\"\n",
+                                RTPrintf("%2u: OS type specified with --ostype: \"%ls\"\n",
                                         a, bstrFinalValue.raw());
                             }
                             else
-                                RTPrintf("%2d: Suggested OS type: \"%ls\""
-                                        "\n    (change with \"-vsys %d -ostype <type>\"; use \"list ostypes\" to list all)\n",
+                                RTPrintf("%2u: Suggested OS type: \"%ls\""
+                                        "\n    (change with \"--vsys %u --ostype <type>\"; use \"list ostypes\" to list all)\n",
                                         a, bstrFinalValue.raw(), i);
                         break;
 
                         case VirtualSystemDescriptionType_Description:
-                            RTPrintf("%2d: Description: \"%ls\"\n",
+                            RTPrintf("%2u: Description: \"%ls\"\n",
                                      a, bstrFinalValue.raw());
                         break;
 
                         case VirtualSystemDescriptionType_License:
                             ++cLicensesInTheWay;
-                            if (findArgValue(strOverride, pmapArgs, "-eula"))
+                            if (findArgValue(strOverride, pmapArgs, "eula"))
                             {
                                 if (strOverride == "show")
                                 {
-                                    RTPrintf("%2d: End-user license agreement"
-                                             "\n    (accept with \"-vsys %d -eula accept\"):"
+                                    RTPrintf("%2u: End-user license agreement"
+                                             "\n    (accept with \"--vsys %u --eula accept\"):"
                                              "\n\n%ls\n\n",
                                              a, i, bstrFinalValue.raw());
                                 }
                                 else if (strOverride == "accept")
                                 {
-                                    RTPrintf("%2d: End-user license agreement (accepted)\n",
+                                    RTPrintf("%2u: End-user license agreement (accepted)\n",
                                              a);
                                     --cLicensesInTheWay;
                                 }
                                 else
                                     return errorSyntax(USAGE_IMPORTAPPLIANCE,
-                                                       "Argument to -eula must be either \"show\" or \"accept\".");
+                                                       "Argument to --eula must be either \"show\" or \"accept\".");
                             }
                             else
-                                RTPrintf("%2d: End-user license agreement"
-                                        "\n    (display with \"-vsys %d -eula show\";"
-                                        "\n    accept with \"-vsys %d -eula accept\")\n",
+                                RTPrintf("%2u: End-user license agreement"
+                                        "\n    (display with \"--vsys %u -eula show\";"
+                                        "\n    accept with \"--vsys %u -eula accept\")\n",
                                         a, i, i);
                         break;
 
                         case VirtualSystemDescriptionType_CPU:
-                            RTPrintf("%2d: Number of CPUs (ignored): %ls\n",
+                            RTPrintf("%2u: Number of CPUs (ignored): %ls\n",
                                      a, aVboxValues[a]);
                         break;
 
                         case VirtualSystemDescriptionType_Memory:
                         {
-                            if (findArgValue(strOverride, pmapArgs, "-memory"))
+                            if (findArgValue(strOverride, pmapArgs, "memory"))
                             {
                                 uint32_t ulMemMB;
                                 if (VINF_SUCCESS == strOverride.toInt(ulMemMB))
                                 {
                                     bstrFinalValue = strOverride;
-                                    RTPrintf("%2d: Guest memory specified with -memory: %ls MB\n",
+                                    RTPrintf("%2u: Guest memory specified with --memory: %ls MB\n",
                                              a, bstrFinalValue.raw());
                                 }
                                 else
                                     return errorSyntax(USAGE_IMPORTAPPLIANCE,
-                                                       "Argument to -memory option must be a non-negative number.");
+                                                       "Argument to --memory option must be a non-negative number.");
                             }
                             else
-                                RTPrintf("%2d: Guest memory: %ls MB\n    (change with \"-vsys %d -memory <MB>\")\n",
+                                RTPrintf("%2u: Guest memory: %ls MB\n    (change with \"--vsys %u --memory <MB>\")\n",
                                          a, bstrFinalValue.raw(), i);
                         }
                         break;
@@ -358,14 +412,14 @@ int handleImportAppliance(HandlerArg *a)
                         case VirtualSystemDescriptionType_HardDiskControllerIDE:
                             if (fIgnoreThis)
                             {
-                                RTPrintf("%2d: IDE controller, type %ls -- disabled\n",
+                                RTPrintf("%2u: IDE controller, type %ls -- disabled\n",
                                          a,
                                          aVboxValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
-                                RTPrintf("%2d: IDE controller, type %ls"
-                                         "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                RTPrintf("%2u: IDE controller, type %ls"
+                                         "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                          a,
                                          aVboxValues[a],
                                          i, a);
@@ -374,14 +428,14 @@ int handleImportAppliance(HandlerArg *a)
                         case VirtualSystemDescriptionType_HardDiskControllerSATA:
                             if (fIgnoreThis)
                             {
-                                RTPrintf("%2d: SATA controller, type %ls -- disabled\n",
+                                RTPrintf("%2u: SATA controller, type %ls -- disabled\n",
                                          a,
                                          aVboxValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
-                                RTPrintf("%2d: SATA controller, type %ls"
-                                        "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                RTPrintf("%2u: SATA controller, type %ls"
+                                        "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                         a,
                                         aVboxValues[a],
                                         i, a);
@@ -390,26 +444,26 @@ int handleImportAppliance(HandlerArg *a)
                         case VirtualSystemDescriptionType_HardDiskControllerSCSI:
                             if (fIgnoreThis)
                             {
-                                RTPrintf("%2d: SCSI controller, type %ls -- disabled\n",
+                                RTPrintf("%2u: SCSI controller, type %ls -- disabled\n",
                                          a,
                                          aVboxValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
                             {
-                                Utf8StrFmt strTypeArg("-type%RI16", a);
+                                Utf8StrFmt strTypeArg("scsitype%u", a);
                                 if (findArgValue(strOverride, pmapArgs, strTypeArg))
                                 {
                                     bstrFinalValue = strOverride;
-                                    RTPrintf("%2d: SCSI controller, type set with -type%d: %ls\n",
+                                    RTPrintf("%2u: SCSI controller, type set with --unit %u --scsitype: \"%ls\"\n",
                                             a,
                                             a,
                                             bstrFinalValue.raw());
                                 }
                                 else
-                                    RTPrintf("%2d: SCSI controller, type %ls"
-                                            "\n    (change with \"-vsys %d -type%d {BusLogic|LsiLogic}\";"
-                                            "\n    disable with \"-vsys %d -ignore %d\")\n",
+                                    RTPrintf("%2u: SCSI controller, type %ls"
+                                            "\n    (change with \"--vsys %u --unit %u --scsitype {BusLogic|LsiLogic}\";"
+                                            "\n    disable with \"--vsys %u --unit %u --ignore\")\n",
                                             a,
                                             aVboxValues[a],
                                             i, a, i, a);
@@ -419,14 +473,14 @@ int handleImportAppliance(HandlerArg *a)
                         case VirtualSystemDescriptionType_HardDiskImage:
                             if (fIgnoreThis)
                             {
-                                RTPrintf("%2d: Hard disk image: source image=%ls -- disabled\n",
+                                RTPrintf("%2u: Hard disk image: source image=%ls -- disabled\n",
                                          a,
                                          aOvfValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
                             {
-                                Utf8StrFmt strTypeArg("-controller%RI16", a);
+                                Utf8StrFmt strTypeArg("controller%u", a);
                                 if (findArgValue(strOverride, pmapArgs, strTypeArg))
                                 {
                                     // strOverride now has the controller index as a number, but we
@@ -434,16 +488,16 @@ int handleImportAppliance(HandlerArg *a)
                                     strOverride = Utf8StrFmt("controller=%s", strOverride.c_str());
                                     Bstr bstrExtraConfigValue = strOverride;
                                     bstrExtraConfigValue.detachTo(&aExtraConfigValues[a]);
-                                    RTPrintf("%2d: Hard disk image: source image=%ls, target path=%ls, %ls\n",
+                                    RTPrintf("%2u: Hard disk image: source image=%ls, target path=%ls, %ls\n",
                                             a,
                                             aOvfValues[a],
                                             aVboxValues[a],
                                             aExtraConfigValues[a]);
                                 }
                                 else
-                                    RTPrintf("%2d: Hard disk image: source image=%ls, target path=%ls, %ls"
-                                            "\n    (change controller with \"-vsys %d -controller%d <id>\";"
-                                            "\n    disable with \"-vsys %d -ignore %d\")\n",
+                                    RTPrintf("%2u: Hard disk image: source image=%ls, target path=%ls, %ls"
+                                            "\n    (change controller with \"--vsys %u --unit %u --controller <id>\";"
+                                            "\n    disable with \"--vsys %u --unit %u --ignore\")\n",
                                             a,
                                             aOvfValues[a],
                                             aVboxValues[a],
@@ -455,31 +509,31 @@ int handleImportAppliance(HandlerArg *a)
                         case VirtualSystemDescriptionType_CDROM:
                             if (fIgnoreThis)
                             {
-                                RTPrintf("%2d: CD-ROM -- disabled\n",
+                                RTPrintf("%2u: CD-ROM -- disabled\n",
                                          a);
                                 aEnabled[a] = false;
                             }
                             else
-                                RTPrintf("%2d: CD-ROM"
-                                        "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                RTPrintf("%2u: CD-ROM"
+                                        "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                         a, i, a);
                         break;
 
                         case VirtualSystemDescriptionType_Floppy:
                             if (fIgnoreThis)
                             {
-                                RTPrintf("%2d: Floppy -- disabled\n",
+                                RTPrintf("%2u: Floppy -- disabled\n",
                                          a);
                                 aEnabled[a] = false;
                             }
                             else
-                                RTPrintf("%2d: Floppy"
-                                        "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                RTPrintf("%2u: Floppy"
+                                        "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                         a, i, a);
                         break;
 
                         case VirtualSystemDescriptionType_NetworkAdapter:
-                            RTPrintf("%2d: Network adapter: orig %ls, config %ls, extra %ls\n",   // @todo implement once we have a plan for the back-end
+                            RTPrintf("%2u: Network adapter: orig %ls, config %ls, extra %ls\n",   // @todo implement once we have a plan for the back-end
                                      a,
                                      aOvfValues[a],
                                      aVboxValues[a],
@@ -489,27 +543,27 @@ int handleImportAppliance(HandlerArg *a)
                         case VirtualSystemDescriptionType_USBController:
                             if (fIgnoreThis)
                             {
-                                RTPrintf("%2d: USB controller -- disabled\n",
+                                RTPrintf("%2u: USB controller -- disabled\n",
                                          a);
                                 aEnabled[a] = false;
                             }
                             else
-                                RTPrintf("%2d: USB controller"
-                                        "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                RTPrintf("%2u: USB controller"
+                                        "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                         a, i, a);
                         break;
 
                         case VirtualSystemDescriptionType_SoundCard:
                             if (fIgnoreThis)
                             {
-                                RTPrintf("%2d: Sound card \"%ls\" -- disabled\n",
+                                RTPrintf("%2u: Sound card \"%ls\" -- disabled\n",
                                          a,
                                          aOvfValues[a]);
                                 aEnabled[a] = false;
                             }
                             else
-                                RTPrintf("%2d: Sound card (appliance expects \"%ls\", can change on import)"
-                                        "\n    (disable with \"-vsys %d -ignore %d\")\n",
+                                RTPrintf("%2u: Sound card (appliance expects \"%ls\", can change on import)"
+                                        "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                         a,
                                         aOvfValues[a],
                                         i,
