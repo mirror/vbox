@@ -2572,7 +2572,7 @@ VMMDECL(int) EMInterpretRdpmc(PVM pVM, PCPUMCTXCORE pRegFrame)
 
     /* If X86_CR4_PCE is not set, then CPL must be zero. */
     if (    !(uCR4 & X86_CR4_PCE)
-        ||  CPUMGetGuestCPL(pVM, pRegFrame) != 0)
+        &&  CPUMGetGuestCPL(pVM, pRegFrame) != 0)
     {
         Assert(CPUMGetGuestCR0(pVM) & X86_CR0_PE);
         return VERR_EM_INTERPRETER; /* genuine #GP */
