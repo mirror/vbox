@@ -5367,7 +5367,11 @@ void VBoxGlobal::init()
     while (i < argc)
     {
         const char *arg = qApp->argv() [i];
-        if (       !::strcmp (arg, "-startvm"))
+        if (    !::strcmp (arg, "--startvm")
+            ||  !::strcmp (arg, "-startvm")
+            ||  !::strcmp (arg, "-s")
+            ||  !::strcmp (arg, "--vm")
+            ||  !::strcmp (arg, "-vm"))
         {
             if (++i < argc)
             {
@@ -5390,16 +5394,16 @@ void VBoxGlobal::init()
             }
         }
 #ifdef VBOX_GUI_WITH_SYSTRAY
-        else if (!::strcmp (arg, "-systray"))
+        else if (!::strcmp (arg, "-systray") || !::strcmp (arg, "--systray"))
         {
             mIsTrayMenu = true;
         }
 #endif
-        else if (!::strcmp (arg, "-comment"))
+        else if (!::strcmp (arg, "-comment") || !::strcmp (arg, "--comment"))
         {
             ++i;
         }
-        else if (!::strcmp (arg, "-rmode"))
+        else if (!::strcmp (arg, "-rmode") || !::strcmp (arg, "--rmode"))
         {
             if (++i < argc)
                 vm_render_mode_str = qApp->argv() [i];
@@ -5409,7 +5413,7 @@ void VBoxGlobal::init()
         {
             mDbgEnabled = true;
         }
-        else if (!::strcmp( arg, "-debug") || !::strcmp( arg, "--debug"))
+        else if (!::strcmp( arg, "-debug") || !::strcmp (arg, "--debug"))
         {
             mDbgEnabled = true;
             mDbgAutoShow = true;
