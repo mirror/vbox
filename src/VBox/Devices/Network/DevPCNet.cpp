@@ -854,6 +854,27 @@ DECLINLINE(void) pcnetRmdStorePassHost(PCNetState *pThis, RMD *rmd, RTGCPHYS32 a
     }
 }
 
+/**
+ * Read+Write a TX/RX descriptor to prevent PDMDevHlpPhysWrite() allocating
+ * pages later when we shouldn't schedule to EMT. Temporarily hack.
+ */
+static void pcnetDescTouch(PCNetState *pThis, RTGCPHYS32 addr)
+{
+    PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
+
+    if (!pThis->fPrivIfEnabled)
+    {
+        uint8_t aBuf[16];
+        size_t cbDesc;
+        if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
+            cbDesc = 8;
+        else
+            cbDesc = 16;
+        PDMDevHlpPhysRead(pDevIns, addr, aBuf, cbDesc);
+        PDMDevHlpPhysWrite(pDevIns, addr, aBuf, cbDesc);
+    }
+}
+
 #endif /* IN_RING3 */
 
 /** Checks if it's a bad (as in invalid) RMD.*/
@@ -1549,6 +1570,8 @@ static void pcnetInit(PCNetState *pThis)
     {
         RMD        rmd;
         RTGCPHYS32 rdaddr = PHYSADDR(pThis, pcnetRdraAddr(pThis, i));
+
+        pcnetDescTouch(pThis, rdaddr);
         /* At this time it is not guaranteed that the buffers are already initialized. */
         if (pcnetRmdLoad(pThis, &rmd, rdaddr, false))
         {
@@ -1562,13 +1585,14 @@ static void pcnetInit(PCNetState *pThis)
             PDMDevHlpPhysWrite(pDevIns, rbadr, aBuf, RT_MIN(sizeof(aBuf), cbBuf));
             cbRxBuffers += cbBuf;
         }
-        PDMDevHlpPhysWrite(pDevIns, rdaddr, (void*)&rmd, sizeof(rmd));
     }
 
     for (int i = CSR_XMTRL(pThis); i >= 1; i--)
     {
         TMD        tmd;
         RTGCPHYS32 tdaddr = PHYSADDR(pThis, pcnetTdraAddr(pThis, i));
+
+        pcnetDescTouch(pThis, tdaddr);
         if (pcnetTmdLoad(pThis, &tmd, tdaddr, false))
         {
             /* Hack: Make sure that all TX buffers are touched when the
@@ -1581,7 +1605,6 @@ static void pcnetInit(PCNetState *pThis)
             PDMDevHlpPhysRead(pDevIns, tbadr, aBuf, RT_MIN(sizeof(aBuf), cbBuf));
             PDMDevHlpPhysWrite(pDevIns, tbadr, aBuf, RT_MIN(sizeof(aBuf), cbBuf));
         }
-        PDMDevHlpPhysWrite(pDevIns, tdaddr, (void*)&tmd, sizeof(tmd));
     }
 
     /*
