@@ -201,16 +201,16 @@ NS_IMPL_ISUPPORTS1_CI(GuestPropertyCallback, IVirtualBoxCallback)
 void usageGuestProperty(void)
 {
     RTPrintf("VBoxManage guestproperty    get <vmname>|<uuid>\n"
-             "                            <property> [-verbose]\n"
+             "                            <property> [--verbose]\n"
              "\n");
     RTPrintf("VBoxManage guestproperty    set <vmname>|<uuid>\n"
-             "                            <property> [<value> [-flags <flags>]]\n"
+             "                            <property> [<value> [--flags <flags>]]\n"
              "\n");
     RTPrintf("VBoxManage guestproperty    enumerate <vmname>|<uuid>\n"
-             "                            [-patterns <patterns>]\n"
+             "                            [--patterns <patterns>]\n"
              "\n");
     RTPrintf("VBoxManage guestproperty    wait <vmname>|<uuid> <patterns>\n"
-             "                            [-timeout <timeout>]\n"
+             "                            [--timeout <timeout>]\n"
              "\n");
 }
 
@@ -220,7 +220,8 @@ static int handleGetGuestProperty(HandlerArg *a)
 
     bool verbose = false;
     if (    a->argc == 3
-        &&  strcmp(a->argv[2], "-verbose") == 0)
+        &&  (   !strcmp(a->argv[2], "--verbose")
+             || !strcmp(a->argv[2], "-verbose")))
         verbose = true;
     else if (a->argc != 2)
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
@@ -282,7 +283,8 @@ static int handleSetGuestProperty(HandlerArg *a)
     else if (a->argc == 5)
     {
         pszValue = a->argv[2];
-        if (strcmp(a->argv[3], "-flags") != 0)
+        if (   !strcmp(a->argv[3], "--flags")
+            || !strcmp(a->argv[3], "-flags"))
             usageOK = false;
         pszFlags = a->argv[4];
     }
@@ -343,7 +345,8 @@ static int handleEnumGuestProperty(HandlerArg *a)
     if (    a->argc < 1
         ||  a->argc == 2
         ||  (   a->argc > 3
-             && strcmp(a->argv[1], "-patterns") != 0))
+             && strcmp(a->argv[1], "--patterns")
+             && strcmp(a->argv[1], "-patterns")))
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 
     /*
@@ -427,7 +430,8 @@ static int handleWaitGuestProperty(HandlerArg *a)
         usageOK = false;
     for (int i = 2; usageOK && i < a->argc; ++i)
     {
-        if (strcmp(a->argv[i], "-timeout") == 0)
+        if (   !strcmp(a->argv[i], "--timeout")
+            || !strcmp(a->argv[i], "-timeout"))
         {
             if (   i + 1 >= a->argc
                 || RTStrToUInt32Full(a->argv[i + 1], 10, &u32Timeout)
