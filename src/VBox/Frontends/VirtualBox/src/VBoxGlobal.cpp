@@ -1897,13 +1897,13 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                      * this name instead */
                     if (type == KNetworkAttachmentType_Bridged)
                         attType = attType.arg (tr ("Bridged network, %1",
-                            "details report (network)").arg (adapter.GetHostInterface()));
+                            "details report (network)").arg (adapter.GetBridgedInterface()));
                     else if (type == KNetworkAttachmentType_Internal)
                         attType = attType.arg (tr ("Internal network, '%1'",
                             "details report (network)").arg (adapter.GetInternalNetwork()));
                     else if (type == KNetworkAttachmentType_HostOnly)
                         attType = attType.arg (tr ("Host-only network, '%1'",
-                            "details report (network)").arg (adapter.GetHostInterface()));
+                            "details report (network)").arg (adapter.GetHostOnlyInterface()));
                     else
                         attType = attType.arg (vboxGlobal().toString (type));
 

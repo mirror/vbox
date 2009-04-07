@@ -43,7 +43,8 @@ public:
             : mSlot (0), mEnabled (FALSE)
             , mAttachmentType (NetworkAttachmentType_Null)
             ,  mCableConnected (TRUE), mLineSpeed (0), mTraceEnabled (FALSE)
-            , mHostInterface ("") /* cannot be null */
+            , mHostOnlyInterface ("") /* cannot be null */
+            , mBridgedInterface ("") /* cannot be null */
         {}
 
         bool operator== (const Data &that) const
@@ -56,7 +57,8 @@ public:
                     mCableConnected == that.mCableConnected &&
                     mLineSpeed == that.mLineSpeed &&
                     mTraceEnabled == that.mTraceEnabled &&
-                    mHostInterface == that.mHostInterface &&
+                    mHostOnlyInterface == that.mHostOnlyInterface &&
+                    mBridgedInterface == that.mBridgedInterface &&
                     mInternalNetwork == that.mInternalNetwork &&
                     mNATNetwork == that.mNATNetwork);
         }
@@ -70,7 +72,8 @@ public:
         ULONG mLineSpeed;
         BOOL mTraceEnabled;
         Bstr mTraceFile;
-        Bstr mHostInterface;
+        Bstr mHostOnlyInterface;
+        Bstr mBridgedInterface;
         Bstr mInternalNetwork;
         Bstr mNATNetwork;
     };
@@ -108,8 +111,10 @@ public:
     STDMETHOD(COMGETTER(MACAddress)) (BSTR *aMACAddress);
     STDMETHOD(COMSETTER(MACAddress)) (IN_BSTR aMACAddress);
     STDMETHOD(COMGETTER(AttachmentType)) (NetworkAttachmentType_T *aAttachmentType);
-    STDMETHOD(COMGETTER(HostInterface)) (BSTR *aHostInterface);
-    STDMETHOD(COMSETTER(HostInterface)) (IN_BSTR aHostInterface);
+    STDMETHOD(COMGETTER(HostOnlyInterface)) (BSTR *aHostInterface);
+    STDMETHOD(COMSETTER(HostOnlyInterface)) (IN_BSTR aHostInterface);
+    STDMETHOD(COMGETTER(BridgedInterface)) (BSTR *aHostInterface);
+    STDMETHOD(COMSETTER(BridgedInterface)) (IN_BSTR aHostInterface);
     STDMETHOD(COMGETTER(InternalNetwork)) (BSTR *aInternalNetwork);
     STDMETHOD(COMSETTER(InternalNetwork)) (IN_BSTR aInternalNetwork);
     STDMETHOD(COMGETTER(NATNetwork)) (BSTR *aNATNetwork);
