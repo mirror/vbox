@@ -38,7 +38,7 @@ static void swapsyncConnect(void)
 
     crNetInit(NULL, NULL);
 
-    if (!crParseURL( render_spu.swap_master_url, protocol, hostname, 
+    if (!crParseURL( render_spu.swap_master_url, protocol, hostname,
                     &port, 9876))
         crError( "Bad URL: %s", render_spu.swap_master_url );
 
@@ -73,7 +73,7 @@ static DWORD WINAPI renderSPUWindowThreadProc(void* unused)
 
     (void) unused;
 
-    /* Force system to create the message queue. 
+    /* Force system to create the message queue.
      * Else, there's a chance that render spu will issue PostThreadMessage
      * before this thread calls GetMessage for first time.
      */
@@ -101,7 +101,7 @@ static DWORD WINAPI renderSPUWindowThreadProc(void* unused)
                 phWnd = pCS->lpCreateParams;
 
                 *phWnd = CreateWindowEx(pCS->dwExStyle, pCS->lpszName, pCS->lpszClass, pCS->style,
-                                        pCS->x, pCS->y, pCS->cx, pCS->cy, 
+                                        pCS->x, pCS->y, pCS->cx, pCS->cy,
                                         pCS->hwndParent, pCS->hMenu, pCS->hInstance, &render_spu);
 
                 SetEvent(render_spu.hWinThreadReadyEvent);
@@ -116,7 +116,7 @@ static DWORD WINAPI renderSPUWindowThreadProc(void* unused)
             }
             else
             {
-                TranslateMessage(&msg); 
+                TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
         }
@@ -238,6 +238,7 @@ renderSPUInit( int id, SPU *child, SPU *self,
     InstallApplicationEventHandler (render_spu.hParentEventHandler,
                                     GetEventTypeCount(eventList), eventList,
                                     NULL, NULL);
+    render_spu.fInit = true;
 # endif /* !__LP64__ */
 #endif /* DARWIN */
 
@@ -268,7 +269,7 @@ renderSPUInit( int id, SPU *child, SPU *self,
 
     /*
      * Get the OpenGL extension functions.
-     * SIGH -- we have to wait until the very bitter end to load the 
+     * SIGH -- we have to wait until the very bitter end to load the
      * extensions, because the context has to be bound before
      * wglGetProcAddress will work correctly.  No such issue with GLX though.
      */
@@ -284,23 +285,23 @@ renderSPUInit( int id, SPU *child, SPU *self,
      * Grrr, NVIDIA driver uses EXT for GetExtensionsStringEXT,
      * but ARB for others. Need furthur testing here....
      */
-    render_spu.ws.wglGetExtensionsStringEXT = 
-        (wglGetExtensionsStringEXTFunc_t) 
+    render_spu.ws.wglGetExtensionsStringEXT =
+        (wglGetExtensionsStringEXTFunc_t)
         render_spu.ws.wglGetProcAddress( "wglGetExtensionsStringEXT" );
-    render_spu.ws.wglChoosePixelFormatEXT = 
+    render_spu.ws.wglChoosePixelFormatEXT =
         (wglChoosePixelFormatEXTFunc_t)
         render_spu.ws.wglGetProcAddress( "wglChoosePixelFormatARB" );
-    render_spu.ws.wglGetPixelFormatAttribivEXT = 
+    render_spu.ws.wglGetPixelFormatAttribivEXT =
         (wglGetPixelFormatAttribivEXTFunc_t)
         render_spu.ws.wglGetProcAddress( "wglGetPixelFormatAttribivARB" );
-    render_spu.ws.wglGetPixelFormatAttribfvEXT = 
+    render_spu.ws.wglGetPixelFormatAttribfvEXT =
         (wglGetPixelFormatAttribfvEXTFunc_t)
         render_spu.ws.wglGetProcAddress( "wglGetPixelFormatAttribfvARB" );
 
     if (render_spu.ws.wglGetProcAddress("glTexImage3D"))
     {
         _cr_render_table[numFuncs].name = crStrdup("TexImage3D");
-        _cr_render_table[numFuncs].fn = (SPUGenericFunction) render_spu.ws.wglGetProcAddress("glTexImage3D");        
+        _cr_render_table[numFuncs].fn = (SPUGenericFunction) render_spu.ws.wglGetProcAddress("glTexImage3D");
         ++numFuncs;
         crDebug("Render SPU: Found glTexImage3D function");
     }
@@ -360,6 +361,7 @@ static int renderSPUCleanup(void)
 
 #ifdef RT_OS_DARWIN
 # ifndef __LP64__ /** @todo port to 64-bit darwin. */
+    render_spu.fInit = false;
     DisposeEventHandlerUPP(render_spu.hParentEventHandler);
     ReleaseWindowGroup(render_spu.pMasterGroup);
     ReleaseWindowGroup(render_spu.pParentGroup);
@@ -401,7 +403,7 @@ int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
     *cleanup = renderSPUCleanup;
     *options = renderSPUOptions;
     *flags = (SPU_NO_PACKER|SPU_IS_TERMINAL|SPU_MAX_SERVERS_ZERO);
-    
+
     return 1;
 }
 

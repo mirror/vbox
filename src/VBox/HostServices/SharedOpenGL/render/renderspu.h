@@ -223,6 +223,7 @@ typedef struct {
     WindowGroupRef pMasterGroup;
     GLint currentBufferName;
     uint64_t uiDockUpdateTS;
+    bool fInit;
 #endif /* RT_OS_DARWIN */
 } RenderSPU;
 
