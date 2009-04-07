@@ -34,7 +34,7 @@ static char *nsIDToString(nsID *guid);
 static void listVMs(IVirtualBox *virtualBox, ISession *session);
 static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id);
 
-int refcount = 0;
+int volatile g_refcount = 0;
 
 /**
  * Helper function to convert an nsID into a human readable string.
@@ -80,7 +80,7 @@ static const char *GetStateName(PRUint32 machineState)
     }
 }
 
-nsresult OnMousePointerShapeChange(
+static nsresult OnMousePointerShapeChange(
     IConsoleCallback *this_,
     PRBool visible,
     PRBool alpha,
@@ -94,7 +94,7 @@ nsresult OnMousePointerShapeChange(
     return 0;
 }
 
-nsresult OnMouseCapabilityChange(
+static nsresult OnMouseCapabilityChange(
     IConsoleCallback *this_,
     PRBool supportsAbsolute,
     PRBool needsHostCursor
@@ -103,7 +103,7 @@ nsresult OnMouseCapabilityChange(
     return 0;
 }
 
-nsresult OnKeyboardLedsChange(
+static nsresult OnKeyboardLedsChange(
     IConsoleCallback *this_,
     PRBool numLock,
     PRBool capsLock,
@@ -113,7 +113,7 @@ nsresult OnKeyboardLedsChange(
     return 0;
 }
 
-nsresult OnStateChange(
+static nsresult OnStateChange(
     IConsoleCallback *this_,
     PRUint32 state
 ) {
@@ -123,25 +123,25 @@ nsresult OnStateChange(
     return 0;
 }
 
-nsresult OnAdditionsStateChange(IConsoleCallback *this_ )
+static nsresult OnAdditionsStateChange(IConsoleCallback *this_ )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
-nsresult OnDVDDriveChange(IConsoleCallback *this_ )
+static nsresult OnDVDDriveChange(IConsoleCallback *this_ )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
-nsresult OnFloppyDriveChange(IConsoleCallback *this_ )
+static nsresult OnFloppyDriveChange(IConsoleCallback *this_ )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
-nsresult OnNetworkAdapterChange(
+static nsresult OnNetworkAdapterChange(
     IConsoleCallback *this_,
     INetworkAdapter * networkAdapter
 ) {
@@ -149,7 +149,7 @@ nsresult OnNetworkAdapterChange(
     return 0;
 }
 
-nsresult OnSerialPortChange(
+static nsresult OnSerialPortChange(
     IConsoleCallback *this_,
     ISerialPort * serialPort
 ) {
@@ -157,7 +157,7 @@ nsresult OnSerialPortChange(
     return 0;
 }
 
-nsresult OnParallelPortChange(
+static nsresult OnParallelPortChange(
     IConsoleCallback *this_,
     IParallelPort * parallelPort
 ) {
@@ -165,25 +165,25 @@ nsresult OnParallelPortChange(
     return 0;
 }
 
-nsresult OnStorageControllerChange(IConsoleCallback *this_ )
+static nsresult OnStorageControllerChange(IConsoleCallback *this_ )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
-nsresult OnVRDPServerChange(IConsoleCallback *this_ )
+static nsresult OnVRDPServerChange(IConsoleCallback *this_ )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
-nsresult OnUSBControllerChange(IConsoleCallback *this_ )
+static nsresult OnUSBControllerChange(IConsoleCallback *this_ )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
-nsresult OnUSBDeviceStateChange(
+static nsresult OnUSBDeviceStateChange(
     IConsoleCallback *this_,
     IUSBDevice * device,
     PRBool attached,
@@ -193,7 +193,7 @@ nsresult OnUSBDeviceStateChange(
     return 0;
 }
 
-nsresult OnSharedFolderChange(
+static nsresult OnSharedFolderChange(
     IConsoleCallback *this_,
     PRUint32 scope
 ) {
@@ -201,7 +201,7 @@ nsresult OnSharedFolderChange(
     return 0;
 }
 
-nsresult OnRuntimeError(
+static nsresult OnRuntimeError(
     IConsoleCallback *this_,
     PRBool fatal,
     PRUnichar * id,
@@ -211,7 +211,7 @@ nsresult OnRuntimeError(
     return 0;
 }
 
-nsresult OnCanShowWindow(
+static nsresult OnCanShowWindow(
     IConsoleCallback *this_,
     PRBool * canShow
 ) {
@@ -219,7 +219,7 @@ nsresult OnCanShowWindow(
     return 0;
 }
 
-nsresult OnShowWindow(
+static nsresult OnShowWindow(
     IConsoleCallback *this_,
     PRUint64 * winId
 ) {
@@ -228,25 +228,40 @@ nsresult OnShowWindow(
 }
 
 
-nsresult AddRef(IConsoleCallback *this_)
+static nsresult AddRef(nsISupports *this_)
 {
+    nsresult c;
+
     printf("AddRef\n");
-    refcount++;
-    return refcount;
+    c = g_refcount++;
+    return c;
 }
 
-nsresult Release(IConsoleCallback *this_)
+static nsresult Release(nsISupports *this_)
 {
+    nsresult c;
     printf("Release\n");
-    refcount--;
-    return refcount;
+
+    c = g_refcount--;
+    if (c == 0)
+    {
+        /* delete object */
+#if 0 /* test */
+        free(this_->vtbl);
+        free(this_);
+#endif
+    }
+    return c;
 }
 
-nsresult QueryInterface(IConsoleCallback *this_, const nsID *iid, void **resultp)
+static nsresult QueryInterface(nsISupports *this_, const nsID *iid, void **resultp)
 {
+    IConsoleCallback *that = (IConsoleCallback *)this_;
+
     printf("QueryInterface\n");
-    refcount++;
-    *resultp = this_;
+    /* match iid */
+    g_refcount++;
+    *resultp = that;
     return 0;
 }
 
@@ -286,21 +301,23 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, nsID *m
             consoleCallback->vtbl->OnRuntimeError = &OnRuntimeError;
             consoleCallback->vtbl->OnCanShowWindow = &OnCanShowWindow;
             consoleCallback->vtbl->OnShowWindow = &OnShowWindow;
+            g_refcount = 1;
 
             printf("%d here\n",__LINE__);
             console->vtbl->RegisterCallback(console, consoleCallback);
             printf("%d here\n",__LINE__);
 
-            int run = 10;
-            while (run-- > 0) {
-                sleep(1);
-                printf("waiting here:%d\n",run);
-                fflush(stdout);
+            {
+                int run = 10;
+                while (run-- > 0) {
+                    sleep(1);
+                    printf("waiting here:%d\n",run);
+                    fflush(stdout);
+                }
             }
             console->vtbl->UnregisterCallback(console, consoleCallback);
         }
-        //free(consoleCallback->vtbl);
-        //free(consoleCallback);
+        /*consoleCallback->vtbl->Release(consoleCallback);*/
     }
     session->vtbl->Close((void *)session);
 }
@@ -446,7 +463,7 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
             nsID  *iid = NULL;
 
             machine->vtbl->GetId(machine, &iid);
-            //startVM(virtualBox, session, iid);
+            /*startVM(virtualBox, session, iid);*/
             registerCallBack(virtualBox, session, iid);
 
             g_pVBoxFuncs->pfnComUnallocMem(iid);
@@ -463,7 +480,7 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
 
         if (machine)
         {
-            machine->vtbl->nsisupports.Release((void *)machine);
+            machine->vtbl->nsisupports.Release((nsISupports *)machine);
         }
     }
 }
