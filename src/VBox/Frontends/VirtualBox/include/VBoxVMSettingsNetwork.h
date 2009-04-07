@@ -80,8 +80,9 @@ public:
 
     VBoxVMSettingsNetworkPage();
 
-    QStringList netList() const;
-    QStringList intList (KHostNetworkInterfaceType aType) const;
+    QStringList intList (bool aRefresh = false);
+    QStringList brgList (bool aRefresh = false);
+    QStringList hoiList (bool aRefresh = false);
 
 protected:
 
@@ -97,6 +98,10 @@ private:
 
     QIWidgetValidator *mValidator;
     QTabWidget *mTwAdapters;
+
+    QStringList mIntList;
+    QStringList mBrgList;
+    QStringList mHoiList;
 };
 
 #endif // __VBoxVMSettingsNetwork_h__
