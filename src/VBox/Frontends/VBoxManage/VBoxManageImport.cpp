@@ -43,6 +43,7 @@
 #include <iprt/getopt.h>
 #include <iprt/ctype.h>
 #include <iprt/path.h>
+#include <iprt/file.h>
 
 #include <VBox/log.h>
 
@@ -92,6 +93,7 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
     { "-ostype",                'o', RTGETOPT_REQ_STRING },     // deprecated
     { "--vmname",               'V', RTGETOPT_REQ_STRING },
     { "-vmname",                'V', RTGETOPT_REQ_STRING },     // deprecated
+    { "--description",          'd', RTGETOPT_REQ_STRING },
     { "--eula",                 'L', RTGETOPT_REQ_STRING },
     { "-eula",                  'L', RTGETOPT_REQ_STRING },     // deprecated
     { "--unit",                 'u', RTGETOPT_REQ_UINT32 },
@@ -150,6 +152,18 @@ int handleImportAppliance(HandlerArg *a)
                 if (ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["vmname"] = ValueUnion.psz;
+                break;
+
+            case 'd':   // --description
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["description"] = ValueUnion.psz;
+                break;
+
+            case 'L':   // --eula
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["eula"] = ValueUnion.psz;
                 break;
 
             case 'm':   // --memory
@@ -326,6 +340,19 @@ int handleImportAppliance(HandlerArg *a)
 
                     switch (t)
                     {
+                        case VirtualSystemDescriptionType_OS:
+                            if (findArgValue(strOverride, pmapArgs, "ostype"))
+                            {
+                                bstrFinalValue = strOverride;
+                                RTPrintf("%2u: OS type specified with --ostype: \"%ls\"\n",
+                                        a, bstrFinalValue.raw());
+                            }
+                            else
+                                RTPrintf("%2u: Suggested OS type: \"%ls\""
+                                        "\n    (change with \"--vsys %u --ostype <type>\"; use \"list ostypes\" to list all possible values)\n",
+                                        a, bstrFinalValue.raw(), i);
+                        break;
+
                         case VirtualSystemDescriptionType_Name:
                             if (findArgValue(strOverride, pmapArgs, "vmname"))
                             {
@@ -339,22 +366,42 @@ int handleImportAppliance(HandlerArg *a)
                                         a, bstrFinalValue.raw(), i);
                         break;
 
-                        case VirtualSystemDescriptionType_OS:
-                            if (findArgValue(strOverride, pmapArgs, "ostype"))
-                            {
-                                bstrFinalValue = strOverride;
-                                RTPrintf("%2u: OS type specified with --ostype: \"%ls\"\n",
-                                        a, bstrFinalValue.raw());
-                            }
-                            else
-                                RTPrintf("%2u: Suggested OS type: \"%ls\""
-                                        "\n    (change with \"--vsys %u --ostype <type>\"; use \"list ostypes\" to list all)\n",
-                                        a, bstrFinalValue.raw(), i);
+                        case VirtualSystemDescriptionType_Product:
+                            RTPrintf("%2u: Product (ignored): %ls\n",
+                                     a, aVboxValues[a]);
+                        break;
+
+                        case VirtualSystemDescriptionType_ProductUrl:
+                            RTPrintf("%2u: ProductUrl (ignored): %ls\n",
+                                     a, aVboxValues[a]);
+                        break;
+
+                        case VirtualSystemDescriptionType_Vendor:
+                            RTPrintf("%2u: Vendor (ignored): %ls\n",
+                                     a, aVboxValues[a]);
+                        break;
+
+                        case VirtualSystemDescriptionType_VendorUrl:
+                            RTPrintf("%2u: VendorUrl (ignored): %ls\n",
+                                     a, aVboxValues[a]);
+                        break;
+
+                        case VirtualSystemDescriptionType_Version:
+                            RTPrintf("%2u: Version (ignored): %ls\n",
+                                     a, aVboxValues[a]);
                         break;
 
                         case VirtualSystemDescriptionType_Description:
-                            RTPrintf("%2u: Description: \"%ls\"\n",
-                                     a, bstrFinalValue.raw());
+                            if (findArgValue(strOverride, pmapArgs, "description"))
+                            {
+                                bstrFinalValue = strOverride;
+                                RTPrintf("%2u: Description specified with --description: \"%ls\"\n",
+                                        a, bstrFinalValue.raw());
+                            }
+                            else
+                                RTPrintf("%2u: Description \"%ls\""
+                                        "\n    (change with \"--vsys %u --description <desc>\")\n",
+                                        a, bstrFinalValue.raw(), i);
                         break;
 
                         case VirtualSystemDescriptionType_License:
@@ -380,8 +427,8 @@ int handleImportAppliance(HandlerArg *a)
                             }
                             else
                                 RTPrintf("%2u: End-user license agreement"
-                                        "\n    (display with \"--vsys %u -eula show\";"
-                                        "\n    accept with \"--vsys %u -eula accept\")\n",
+                                        "\n    (display with \"--vsys %u --eula show\";"
+                                        "\n    accept with \"--vsys %u --eula accept\")\n",
                                         a, i, i);
                         break;
 
@@ -619,6 +666,15 @@ int handleImportAppliance(HandlerArg *a)
 static const RTGETOPTDEF g_aExportOptions[]
     = {
         { "--output",             'o', RTGETOPT_REQ_STRING },
+        { "--legacy09",           'l', RTGETOPT_REQ_NOTHING },
+        { "--vsys",               's', RTGETOPT_REQ_UINT32 },
+        { "--product",            'p', RTGETOPT_REQ_STRING },
+        { "--producturl",         'P', RTGETOPT_REQ_STRING },
+        { "--vendor",             'd', RTGETOPT_REQ_STRING },
+        { "--vendorurl",          'D', RTGETOPT_REQ_STRING },
+        { "--version",            'v', RTGETOPT_REQ_STRING },
+        { "--eula",               'e', RTGETOPT_REQ_STRING },
+        { "--eulafile",           'E', RTGETOPT_REQ_STRING },
       };
 
 int handleExportAppliance(HandlerArg *a)
@@ -626,8 +682,12 @@ int handleExportAppliance(HandlerArg *a)
     HRESULT rc = S_OK;
 
     Utf8Str strOutputFile;
+    Utf8Str strOvfFormat("ovf-1.0"); // the default export version
     std::list< ComPtr<IMachine> > llMachines;
 
+    uint32_t ulCurVsys = (uint32_t)-1;
+    // for each --vsys X command, maintain a map of command line items
+    ArgsMapsMap mapArgsMapsPerVsys;
     do
     {
         int c;
@@ -637,6 +697,8 @@ int handleExportAppliance(HandlerArg *a)
         // start at 0 because main() has hacked both the argc and argv given to us
         RTGetOptInit(&GetState, a->argc, a->argv, g_aExportOptions,
                      RT_ELEMENTS(g_aExportOptions), 0, 0 /* fFlags */);
+
+        Utf8Str strProductUrl;
         while ((c = RTGetOpt(&GetState, &ValueUnion)))
         {
             switch (c)
@@ -646,6 +708,56 @@ int handleExportAppliance(HandlerArg *a)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can only specify --output once.");
                     else
                         strOutputFile = ValueUnion.psz;
+                break;
+
+                case 'l':   // --legacy09
+                     strOvfFormat = "ovf-0.9";
+                break;
+
+                case 's':   // --vsys
+                     ulCurVsys = ValueUnion.u32;
+                break;
+
+                case 'p':   // --product
+                     if (ulCurVsys == (uint32_t)-1)
+                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                     mapArgsMapsPerVsys[ulCurVsys]["product"] = ValueUnion.psz;
+                break;
+
+                case 'P':   // --producturl
+                     if (ulCurVsys == (uint32_t)-1)
+                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                     mapArgsMapsPerVsys[ulCurVsys]["producturl"] = ValueUnion.psz;
+                break;
+
+                case 'd':   // --vendor
+                     if (ulCurVsys == (uint32_t)-1)
+                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                     mapArgsMapsPerVsys[ulCurVsys]["vendor"] = ValueUnion.psz;
+                break;
+
+                case 'D':   // --vendorurl
+                     if (ulCurVsys == (uint32_t)-1)
+                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                     mapArgsMapsPerVsys[ulCurVsys]["vendorurl"] = ValueUnion.psz;
+                break;
+
+                case 'v':   // --version
+                     if (ulCurVsys == (uint32_t)-1)
+                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                     mapArgsMapsPerVsys[ulCurVsys]["version"] = ValueUnion.psz;
+                break;
+
+                case 'e':   // --eula
+                     if (ulCurVsys == (uint32_t)-1)
+                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                     mapArgsMapsPerVsys[ulCurVsys]["eula"] = ValueUnion.psz;
+                break;
+
+                case 'E':   // --eulafile
+                     if (ulCurVsys == (uint32_t)-1)
+                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                     mapArgsMapsPerVsys[ulCurVsys]["eulafile"] = ValueUnion.psz;
                 break;
 
                 case VINF_GETOPT_NOT_OPTION:
@@ -694,17 +806,78 @@ int handleExportAppliance(HandlerArg *a)
         if (!strOutputFile.length())
             return errorSyntax(USAGE_EXPORTAPPLIANCE, "Missing --output argument with export command.");
 
+        // match command line arguments with the machines count
+        // this is only to sort out invalid indices at this time
+        ArgsMapsMap::const_iterator it;
+        for (it = mapArgsMapsPerVsys.begin();
+             it != mapArgsMapsPerVsys.end();
+             ++it)
+        {
+            uint32_t ulVsys = it->first;
+            if (ulVsys >= llMachines.size())
+                return errorSyntax(USAGE_EXPORTAPPLIANCE,
+                                   "Invalid index %RI32 with -vsys option; you specified only %zu virtual system(s).",
+                                   ulVsys, llMachines.size());
+        }
+
         ComPtr<IAppliance> pAppliance;
         CHECK_ERROR_BREAK(a->virtualBox, CreateAppliance(pAppliance.asOutParam()));
 
         std::list< ComPtr<IMachine> >::iterator itM;
+        uint32_t i=0;
         for (itM = llMachines.begin();
              itM != llMachines.end();
-             ++itM)
+             ++itM, ++i)
         {
             ComPtr<IMachine> pMachine = *itM;
             ComPtr<IVirtualSystemDescription> pVSD;
             CHECK_ERROR_BREAK(pMachine, Export(pAppliance, pVSD.asOutParam()));
+            // Add additional info to the virtal system description if the user wants so
+            ArgsMap *pmapArgs = NULL;
+            ArgsMapsMap::iterator itm = mapArgsMapsPerVsys.find(i);
+            if (itm != mapArgsMapsPerVsys.end())
+                pmapArgs = &itm->second;
+            if (pmapArgs)
+            {
+                ArgsMap::iterator itD;
+                for (itD = pmapArgs->begin();
+                     itD != pmapArgs->end();
+                     ++itD)
+                {
+                    if (itD->first == "product")
+                        pVSD->AddDescription (VirtualSystemDescriptionType_Product, Bstr(itD->second), Bstr(itD->second));
+                    else if (itD->first == "producturl")
+                        pVSD->AddDescription (VirtualSystemDescriptionType_ProductUrl, Bstr(itD->second), Bstr(itD->second));
+                    else if (itD->first == "vendor")
+                        pVSD->AddDescription (VirtualSystemDescriptionType_Vendor, Bstr(itD->second), Bstr(itD->second));
+                    else if (itD->first == "vendorurl")
+                        pVSD->AddDescription (VirtualSystemDescriptionType_VendorUrl, Bstr(itD->second), Bstr(itD->second));
+                    else if (itD->first == "version")
+                        pVSD->AddDescription (VirtualSystemDescriptionType_Version, Bstr(itD->second), Bstr(itD->second));
+                    else if (itD->first == "eula")
+                        pVSD->AddDescription (VirtualSystemDescriptionType_License, Bstr(itD->second), Bstr(itD->second));
+                    else if (itD->first == "eulafile")
+                    {
+                        Utf8Str strContent;
+                        void *pvFile;
+                        size_t cbFile;
+                        int rc = RTFileReadAll(itD->second.c_str(), &pvFile, &cbFile);
+                        if (RT_SUCCESS(rc))
+                        {
+                            Bstr strContent((char*)pvFile);
+                            pVSD->AddDescription (VirtualSystemDescriptionType_License, strContent, strContent);
+                            RTFileReadAllFree(pvFile, cbFile);
+                        }
+                        else
+                        {
+                            RTPrintf("ERROR: Cannot read license file \"%s\" which should be included in the virtual system %u.\n",
+                                     itD->second.c_str(),
+                                     i);
+                            return 1;
+                        }
+                    }
+                }
+            }
         }
 
         if (FAILED(rc))
@@ -712,7 +885,7 @@ int handleExportAppliance(HandlerArg *a)
 
         ComPtr<IProgress> progress;
         char *pszAbsFilePath = RTPathAbsDup(strOutputFile.c_str());
-        CHECK_ERROR_BREAK(pAppliance, Write(Bstr("ovf-0.9"), Bstr(pszAbsFilePath), progress.asOutParam()));
+        CHECK_ERROR_BREAK(pAppliance, Write(Bstr(strOvfFormat), Bstr(pszAbsFilePath), progress.asOutParam()));
         RTStrFree(pszAbsFilePath);
 
         showProgress(progress);
