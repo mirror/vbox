@@ -451,7 +451,7 @@ struct nsISupports_vtbl {
    *                          instance, NS_NOINTERFACE if it is not.
    * NS_ERROR_INVALID_POINTER if aInstancePtr is NULL.
    */
-  nsresult (*QueryInterface)(nsISupports *this_, const nsID *iid, void **resultp);
+  nsresult (*QueryInterface)(nsISupports *pThis, const nsID *iid, void **resultp);
   /**
    * Increases the reference count for this interface.
    * The associated instance will not be deleted unless
@@ -459,7 +459,7 @@ struct nsISupports_vtbl {
    *
    * @return The resulting reference count.
    */
-  nsresult (*AddRef)(nsISupports *this_);
+  nsresult (*AddRef)(nsISupports *pThis);
 
   /**
    * Decreases the reference count for this interface.
@@ -468,7 +468,7 @@ struct nsISupports_vtbl {
    *
    * @return The resulting reference count.
    */
-  nsresult (*Release)(nsISupports *this_);
+  nsresult (*Release)(nsISupports *pThis);
 
 };
 
@@ -489,34 +489,34 @@ struct nsIException_vtbl {
   struct nsISupports_vtbl nsisupports;
 
   /* readonly attribute string message; */
-  nsresult (*GetMessage)(nsIException *this_, PRUnichar * *aMessage);
+  nsresult (*GetMessage)(nsIException *pThis, PRUnichar * *aMessage);
 
   /* readonly attribute nsresult (*result; */
-  nsresult (*GetResult)(nsIException *this_, nsresult *aResult);
+  nsresult (*GetResult)(nsIException *pThis, nsresult *aResult);
 
   /* readonly attribute string name; */
-  nsresult (*GetName)(nsIException *this_, PRUnichar * *aName);
+  nsresult (*GetName)(nsIException *pThis, PRUnichar * *aName);
 
   /* readonly attribute string filename; */
-  nsresult (*GetFilename)(nsIException *this_, PRUnichar * *aFilename);
+  nsresult (*GetFilename)(nsIException *pThis, PRUnichar * *aFilename);
 
   /* readonly attribute PRUint32 lineNumber; */
-  nsresult (*GetLineNumber)(nsIException *this_, PRUint32 *aLineNumber);
+  nsresult (*GetLineNumber)(nsIException *pThis, PRUint32 *aLineNumber);
 
   /* readonly attribute PRUint32 columnNumber; */
-  nsresult (*GetColumnNumber)(nsIException *this_, PRUint32 *aColumnNumber);
+  nsresult (*GetColumnNumber)(nsIException *pThis, PRUint32 *aColumnNumber);
 
   /* readonly attribute nsIStackFrame location; */
-  nsresult (*GetLocation)(nsIException *this_, nsIStackFrame * *aLocation);
+  nsresult (*GetLocation)(nsIException *pThis, nsIStackFrame * *aLocation);
 
   /* readonly attribute nsIException inner; */
-  nsresult (*GetInner)(nsIException *this_, nsIException * *aInner);
+  nsresult (*GetInner)(nsIException *pThis, nsIException * *aInner);
 
   /* readonly attribute nsISupports data; */
-  nsresult (*GetData)(nsIException *this_, nsISupports * *aData);
+  nsresult (*GetData)(nsIException *pThis, nsISupports * *aData);
 
   /* string toString (); */
-  nsresult (*ToString)(nsIException *this_, PRUnichar **_retval);
+  nsresult (*ToString)(nsIException *pThis, PRUnichar **_retval);
 };
 
 struct nsIException {
@@ -536,28 +536,28 @@ struct nsIStackFrame_vtbl {
   struct nsISupports_vtbl nsisupports;
 
   /* readonly attribute PRUint32 language; */
-  nsresult (*GetLanguage)(nsIStackFrame *this_, PRUint32 *aLanguage);
+  nsresult (*GetLanguage)(nsIStackFrame *pThis, PRUint32 *aLanguage);
 
   /* readonly attribute string languageName; */
-  nsresult (*GetLanguageName)(nsIStackFrame *this_, PRUnichar * *aLanguageName);
+  nsresult (*GetLanguageName)(nsIStackFrame *pThis, PRUnichar * *aLanguageName);
 
   /* readonly attribute string filename; */
-  nsresult (*GetFilename)(nsIStackFrame *this_, PRUnichar * *aFilename);
+  nsresult (*GetFilename)(nsIStackFrame *pThis, PRUnichar * *aFilename);
 
   /* readonly attribute string name; */
-  nsresult (*GetName)(nsIStackFrame *this_, PRUnichar * *aName);
+  nsresult (*GetName)(nsIStackFrame *pThis, PRUnichar * *aName);
 
   /* readonly attribute PRInt32 lineNumber; */
-  nsresult (*GetLineNumber)(nsIStackFrame *this_, PRInt32 *aLineNumber);
+  nsresult (*GetLineNumber)(nsIStackFrame *pThis, PRInt32 *aLineNumber);
 
   /* readonly attribute string sourceLine; */
-  nsresult (*GetSourceLine)(nsIStackFrame *this_, PRUnichar * *aSourceLine);
+  nsresult (*GetSourceLine)(nsIStackFrame *pThis, PRUnichar * *aSourceLine);
 
   /* readonly attribute nsIStackFrame caller; */
-  nsresult (*GetCaller)(nsIStackFrame *this_, nsIStackFrame * *aCaller);
+  nsresult (*GetCaller)(nsIStackFrame *pThis, nsIStackFrame * *aCaller);
 
   /* string toString (); */
-  nsresult (*ToString)(nsIStackFrame *this_, PRUnichar **_retval);
+  nsresult (*ToString)(nsIStackFrame *pThis, PRUnichar **_retval);
 };
 
 struct nsIStackFrame {
@@ -843,7 +843,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
       </xsl:call-template>
       <xsl:text>)(</xsl:text>
       <xsl:value-of select="../@name" />
-      <xsl:text> *this_, </xsl:text>
+      <xsl:text> *pThis, </xsl:text>
       <!-- array size -->
       <xsl:text>PRUint32 *</xsl:text>
       <xsl:value-of select="@name"/>
@@ -884,7 +884,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
         </xsl:call-template>
         <xsl:text>)(</xsl:text>
         <xsl:value-of select="../@name" />
-        <xsl:text> *this_, </xsl:text>
+        <xsl:text> *pThis, </xsl:text>
         <xsl:apply-templates select="@type" mode="forwarder"/>
         <xsl:text> *</xsl:text>
         <xsl:value-of select="@name"/>
@@ -900,7 +900,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
           </xsl:call-template>
           <xsl:text>)(</xsl:text>
           <xsl:value-of select="../@name" />
-          <xsl:text> *this_, </xsl:text>
+          <xsl:text> *pThis, </xsl:text>
           <xsl:apply-templates select="@type" mode="forwarder"/>
           <xsl:text> *</xsl:text>
           <xsl:value-of select="@name"/>
@@ -911,7 +911,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
           </xsl:call-template>
           <xsl:text>)(</xsl:text>
           <xsl:value-of select="../@name" />
-          <xsl:text> *this_, </xsl:text>
+          <xsl:text> *pThis, </xsl:text>
           <xsl:apply-templates select="@type" mode="forwarder"/>
           <xsl:text> </xsl:text>
           <xsl:value-of select="@name"/>
@@ -1095,7 +1095,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
     <xsl:text>)(&#x0A;</xsl:text>
     <xsl:text>        </xsl:text>
     <xsl:value-of select="../@name" />
-    <xsl:text> *this_,&#x0A;</xsl:text>
+    <xsl:text> *pThis,&#x0A;</xsl:text>
     <xsl:for-each select="param [position() != last()]">
       <xsl:text>        </xsl:text>
       <xsl:apply-templates select="."/>
@@ -1108,7 +1108,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   <xsl:if test="not(param)">
     <xsl:text>)(</xsl:text>
     <xsl:value-of select="../@name" />
-    <xsl:text> *this_ );&#x0A;</xsl:text>
+    <xsl:text> *pThis );&#x0A;</xsl:text>
   </xsl:if>
   <xsl:apply-templates select="@if" mode="end"/>
   <xsl:text>&#x0A;</xsl:text>
@@ -1306,11 +1306,11 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   <!-- attributes (properties) -->
   <xsl:text>    nsresult (*HasMore)(</xsl:text>
   <xsl:value-of select="@name" />
-  <xsl:text> *this_, PRBool *more);&#x0A;&#x0A;</xsl:text>
+  <xsl:text> *pThis, PRBool *more);&#x0A;&#x0A;</xsl:text>
   <!-- GetNext -->
   <xsl:text>    nsresult (*GetNext)(</xsl:text>
   <xsl:value-of select="@name" />
-  <xsl:text> *this_, </xsl:text>
+  <xsl:text> *pThis, </xsl:text>
   <xsl:apply-templates select="@type" mode="forwarder"/>
   <xsl:text> *next);&#x0A;&#x0A;</xsl:text>
   <xsl:text>};</xsl:text>
@@ -1370,17 +1370,17 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   <!-- Count -->
   <xsl:text>    nsresult (*GetCount)(</xsl:text>
   <xsl:value-of select="@name" />
-  <xsl:text> *this_, PRUint32 *aCount);&#x0A;&#x0A;</xsl:text>
+  <xsl:text> *pThis, PRUint32 *aCount);&#x0A;&#x0A;</xsl:text>
   <!-- GetItemAt -->
   <xsl:text>    nsresult (*GetItemAt)(</xsl:text>
   <xsl:value-of select="@name" />
-  <xsl:text> *this_, PRUint32 index, </xsl:text>
+  <xsl:text> *pThis, PRUint32 index, </xsl:text>
   <xsl:apply-templates select="@type" mode="forwarder"/>
   <xsl:text> **item);&#x0A;&#x0A;</xsl:text>
   <!-- Enumerate -->
   <xsl:text>    nsresult (*Enumerate)(</xsl:text>
   <xsl:value-of select="@name" />
-  <xsl:text> *this_, </xsl:text>
+  <xsl:text> *pThis, </xsl:text>
   <xsl:apply-templates select="@enumerator"/>
   <xsl:text> **enumerator);&#x0A;&#x0A;</xsl:text>
   <!-- other extra attributes (properties) -->

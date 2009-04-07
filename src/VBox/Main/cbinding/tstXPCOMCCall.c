@@ -32,7 +32,6 @@
 
 static char *nsIDToString(nsID *guid);
 static void listVMs(IVirtualBox *virtualBox, ISession *session);
-static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id);
 
 int volatile g_refcount = 0;
 
@@ -81,7 +80,7 @@ static const char *GetStateName(PRUint32 machineState)
 }
 
 static nsresult OnMousePointerShapeChange(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     PRBool visible,
     PRBool alpha,
     PRUint32 xHot,
@@ -95,7 +94,7 @@ static nsresult OnMousePointerShapeChange(
 }
 
 static nsresult OnMouseCapabilityChange(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     PRBool supportsAbsolute,
     PRBool needsHostCursor
 ) {
@@ -104,7 +103,7 @@ static nsresult OnMouseCapabilityChange(
 }
 
 static nsresult OnKeyboardLedsChange(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     PRBool numLock,
     PRBool capsLock,
     PRBool scrollLock
@@ -114,7 +113,7 @@ static nsresult OnKeyboardLedsChange(
 }
 
 static nsresult OnStateChange(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     PRUint32 state
 ) {
     printf("%d here\n",__LINE__);
@@ -123,26 +122,26 @@ static nsresult OnStateChange(
     return 0;
 }
 
-static nsresult OnAdditionsStateChange(IConsoleCallback *this_ )
+static nsresult OnAdditionsStateChange(IConsoleCallback *pThis )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
-static nsresult OnDVDDriveChange(IConsoleCallback *this_ )
+static nsresult OnDVDDriveChange(IConsoleCallback *pThis )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
-static nsresult OnFloppyDriveChange(IConsoleCallback *this_ )
+static nsresult OnFloppyDriveChange(IConsoleCallback *pThis )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
 static nsresult OnNetworkAdapterChange(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     INetworkAdapter * networkAdapter
 ) {
     printf("%d here\n",__LINE__);
@@ -150,7 +149,7 @@ static nsresult OnNetworkAdapterChange(
 }
 
 static nsresult OnSerialPortChange(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     ISerialPort * serialPort
 ) {
     printf("%d here\n",__LINE__);
@@ -158,33 +157,33 @@ static nsresult OnSerialPortChange(
 }
 
 static nsresult OnParallelPortChange(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     IParallelPort * parallelPort
 ) {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
-static nsresult OnStorageControllerChange(IConsoleCallback *this_ )
+static nsresult OnStorageControllerChange(IConsoleCallback *pThis )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
-static nsresult OnVRDPServerChange(IConsoleCallback *this_ )
+static nsresult OnVRDPServerChange(IConsoleCallback *pThis )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
-static nsresult OnUSBControllerChange(IConsoleCallback *this_ )
+static nsresult OnUSBControllerChange(IConsoleCallback *pThis )
 {
     printf("%d here\n",__LINE__);
     return 0;
 }
 
 static nsresult OnUSBDeviceStateChange(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     IUSBDevice * device,
     PRBool attached,
     IVirtualBoxErrorInfo * error
@@ -194,7 +193,7 @@ static nsresult OnUSBDeviceStateChange(
 }
 
 static nsresult OnSharedFolderChange(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     PRUint32 scope
 ) {
     printf("%d here\n",__LINE__);
@@ -202,7 +201,7 @@ static nsresult OnSharedFolderChange(
 }
 
 static nsresult OnRuntimeError(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     PRBool fatal,
     PRUnichar * id,
     PRUnichar * message
@@ -212,7 +211,7 @@ static nsresult OnRuntimeError(
 }
 
 static nsresult OnCanShowWindow(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     PRBool * canShow
 ) {
     printf("%d here\n",__LINE__);
@@ -220,7 +219,7 @@ static nsresult OnCanShowWindow(
 }
 
 static nsresult OnShowWindow(
-    IConsoleCallback *this_,
+    IConsoleCallback *pThis,
     PRUint64 * winId
 ) {
     printf("%d here\n",__LINE__);
@@ -228,7 +227,7 @@ static nsresult OnShowWindow(
 }
 
 
-static nsresult AddRef(nsISupports *this_)
+static nsresult AddRef(nsISupports *pThis)
 {
     nsresult c;
 
@@ -237,7 +236,7 @@ static nsresult AddRef(nsISupports *this_)
     return c;
 }
 
-static nsresult Release(nsISupports *this_)
+static nsresult Release(nsISupports *pThis)
 {
     nsresult c;
     printf("Release\n");
@@ -246,17 +245,17 @@ static nsresult Release(nsISupports *this_)
     if (c == 0)
     {
         /* delete object */
-#if 0 /* test */
-        free(this_->vtbl);
-        free(this_);
+#if 1 /* test */
+        free(pThis->vtbl);
+        free(pThis);
 #endif
     }
     return c;
 }
 
-static nsresult QueryInterface(nsISupports *this_, const nsID *iid, void **resultp)
+static nsresult QueryInterface(nsISupports *pThis, const nsID *iid, void **resultp)
 {
-    IConsoleCallback *that = (IConsoleCallback *)this_;
+    IConsoleCallback *that = (IConsoleCallback *)pThis;
 
     printf("QueryInterface\n");
     /* match iid */
