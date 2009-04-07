@@ -7467,7 +7467,7 @@ void Machine::fixupHardDisks(bool aCommit, bool aOnline /*= false*/)
                 {
                     rc = hd->LockWrite (NULL);
                     AssertComRC (rc);
-                    
+
                     mData->mSession.mLockedMedia.push_back (
                         Data::Session::LockedMedia::value_type (
                             ComPtr <IHardDisk> (hd), true));
@@ -7566,7 +7566,7 @@ HRESULT Machine::lockConfig()
         {
             mData->mHandleCfgFile = NIL_RTFILE;
 
-            rc = setError (E_FAIL,
+            rc = setError (VBOX_E_FILE_ERROR,
                 tr ("Could not lock the settings file '%ls' (%Rrc)"),
                 mData->mConfigFileFull.raw(), vrc);
         }
