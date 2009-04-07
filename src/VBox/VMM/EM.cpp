@@ -2690,7 +2690,10 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
             {
                 rc = emR3RawForcedActions(pVM, pCtx);
                 if (rc != VINF_SUCCESS)
+                {
+                    rc = CPUMRawLeave(pVM, NULL, rc);
                     break;
+                }
             }
         }
 
