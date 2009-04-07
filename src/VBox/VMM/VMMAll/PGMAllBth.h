@@ -4253,6 +4253,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  ifdef IN_RC
     /* NOTE: We can't deal with jumps to ring 3 here as we're now in an inconsistent state! */
     bool fLog = VMMGCLogDisable(pVM);
+    pgmLock(pVM);
 #  endif
 
     pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
@@ -4287,6 +4288,7 @@ PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     SELMShadowCR3Changed(pVM);
 
 #  ifdef IN_RC
+    pgmUnlock(pVM);
     VMMGCLogRestore(pVM, fLog);
 #  endif
 
@@ -4321,12 +4323,14 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
 
     int rc = VINF_SUCCESS;
 
-    /* Update guest paging info. */
+    /*
+     * Update guest paging info.
+     */
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
     pVM->pgm.s.pGst32BitPdR3 = 0;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->pgm.s.pGst32BitPdR0 = 0;
-#endif
+# endif
     pVM->pgm.s.pGst32BitPdRC = 0;
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
@@ -4356,7 +4360,9 @@ PGM_BTH_DECL(int, UnmapCR3)(PVM pVM)
 #endif
 
 #if !defined(IN_RC) /* In RC we rely on MapCR3 to do the shadow part for us at a safe time */
-    /* Update shadow paging info. */
+    /*
+     * Update shadow paging info.
+     */
 # if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT  \
            || PGM_SHW_TYPE == PGM_TYPE_PAE    \
            || PGM_SHW_TYPE == PGM_TYPE_AMD64))
