@@ -109,6 +109,11 @@ windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData)
     UInt32      class = GetEventClass (event);
     UInt32      kind = GetEventKind (event);
 
+    /* If we aren't initialized or even deinitialized already (as on VM
+     * shutdown) do nothing. */
+    if (!render_spu.fInit)
+        return eventNotHandledErr;
+
     /* Fetch the sender of the event */
     GetEventParameter(event, kEventParamDirectObject, typeWindowRef,
                       NULL, sizeof(WindowRef), NULL, &window);
