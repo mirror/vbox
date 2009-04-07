@@ -265,7 +265,7 @@ $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $
 		--output $@ \
 		$<
 
-$(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh | $$(dir $$@)
+$(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(QUIET)$(SED) \
 		-e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
 		-e "s;_BUILD_;$(date-utc );g" \
