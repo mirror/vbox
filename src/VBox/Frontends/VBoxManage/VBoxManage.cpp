@@ -200,7 +200,23 @@ static int handleRegisterVM(HandlerArg *a)
         return errorSyntax(USAGE_REGISTERVM, "Incorrect number of parameters");
 
     ComPtr<IMachine> machine;
-    CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(a->argv[0]), machine.asOutParam()));
+    /** @todo Ugly hack to get both the API interpretation of relative paths
+     * and the client's interpretation of relative paths. Remove after the API
+     * has been redesigned. */
+    rc = a->virtualBox->OpenMachine(Bstr(a->argv[0]), machine.asOutParam());
+    if (rc == VBOX_E_FILE_ERROR)
+    {
+        char szVMFileAbs[RTPATH_MAX] = "";
+        int vrc = RTPathAbs(a->argv[0], szVMFileAbs, sizeof(szVMFileAbs));
+        if (RT_FAILURE(vrc))
+        {
+            RTPrintf("Cannot convert filename \"%s\" to absolute path\n", a->argv[0]);
+            return 1;
+        }
+        CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(szVMFileAbs), machine.asOutParam()));
+    }
+    else
+        CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(a->argv[0]), machine.asOutParam()));
     if (SUCCEEDED(rc))
     {
         ASSERT(machine);
