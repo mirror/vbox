@@ -1890,10 +1890,9 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
             //desc.status.fIPE   = false;
             //desc.status.fTCPE  = false;
             /*
-             * We need to leave Rx critical section here, otherwise it will block EMT if
-             * it happens to enter e1kRegWriteRDT() while we storing the fragment. This
-             * will lead to a deadlock as writing to guest memory waits for EMT to hangle
-             * the request.
+             * We need to leave Rx critical section here or we risk deadlocking
+             * with EMT in e1kRegWriteRDT when the write is to an unallocated
+             * page or has an access handler associated with it.
              * Note that it is safe to leave the critical section here since e1kRegWriteRDT()
              * modifies RDT only.
              */
