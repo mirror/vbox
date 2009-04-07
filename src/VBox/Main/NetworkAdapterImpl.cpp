@@ -395,7 +395,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(AttachmentType)(
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMGETTER(HostOnlyInterface)(BSTR *aHostInterface)
+STDMETHODIMP NetworkAdapter::COMGETTER(HostInterface)(BSTR *aHostInterface)
 {
     CheckComArgOutPointerValid(aHostInterface);
 
@@ -404,12 +404,12 @@ STDMETHODIMP NetworkAdapter::COMGETTER(HostOnlyInterface)(BSTR *aHostInterface)
 
     AutoReadLock alock (this);
 
-    mData->mHostOnlyInterface.cloneTo (aHostInterface);
+    mData->mHostInterface.cloneTo (aHostInterface);
 
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMSETTER(HostOnlyInterface)(IN_BSTR aHostInterface)
+STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
 {
     /** @todo Validate input string length. r=dmik: do it in XML schema?*/
 
@@ -426,55 +426,10 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostOnlyInterface)(IN_BSTR aHostInterface
 
     AutoWriteLock alock (this);
 
-    if (mData->mHostOnlyInterface != aHostInterface)
+    if (mData->mHostInterface != aHostInterface)
     {
         mData.backup();
-        mData->mHostOnlyInterface = aHostInterface;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        mParent->onNetworkAdapterChange (this);
-    }
-
-    return S_OK;
-}
-
-STDMETHODIMP NetworkAdapter::COMGETTER(BridgedInterface)(BSTR *aHostInterface)
-{
-    CheckComArgOutPointerValid(aHostInterface);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReadLock alock (this);
-
-    mData->mBridgedInterface.cloneTo (aHostInterface);
-
-    return S_OK;
-}
-
-STDMETHODIMP NetworkAdapter::COMSETTER(BridgedInterface)(IN_BSTR aHostInterface)
-{
-    /** @todo Validate input string length. r=dmik: do it in XML schema?*/
-
-    /* we don't allow null strings for the host interface (because the @name
-     * attribute of <HostInterface> must be always present but can be empty). */
-    CheckComArgNotNull (aHostInterface);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
-
-    AutoWriteLock alock (this);
-
-    if (mData->mBridgedInterface != aHostInterface)
-    {
-        mData.backup();
-        mData->mBridgedInterface = aHostInterface;
+        mData->mHostInterface = aHostInterface;
 
         /* leave the lock before informing callbacks */
         alock.unlock();
@@ -970,7 +925,7 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         /* name can be empty, but not null */
         ComAssertRet (!name.isNull(), E_FAIL);
 
-        rc = COMSETTER(BridgedInterface) (name);
+        rc = COMSETTER(HostInterface) (name);
         CheckComRCReturnRC (rc);
 
         rc = AttachToBridgedInterface();
@@ -996,7 +951,7 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         /* name can be empty, but not null */
         ComAssertRet (!name.isNull(), E_FAIL);
 
-        rc = COMSETTER(HostOnlyInterface) (name);
+        rc = COMSETTER(HostInterface) (name);
         CheckComRCReturnRC (rc);
 #endif
 
@@ -1088,8 +1043,8 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
         case NetworkAttachmentType_Bridged:
         {
             Key attachmentNode = aAdapterNode.createKey ("BridgedInterface");
-            Assert (!mData->mBridgedInterface.isNull());
-            attachmentNode.setValue <Bstr> ("name", mData->mBridgedInterface);
+            Assert (!mData->mHostInterface.isNull());
+            attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
             break;
         }
         case NetworkAttachmentType_Internal:
@@ -1103,8 +1058,8 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
         {
             Key attachmentNode = aAdapterNode.createKey ("HostOnlyInterface");
 #if defined(VBOX_WITH_NETFLT)
-            Assert (!mData->mHostOnlyInterface.isNull());
-            attachmentNode.setValue <Bstr> ("name", mData->mHostOnlyInterface);
+            Assert (!mData->mHostInterface.isNull());
+            attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
 #endif
             break;
         }
@@ -1255,7 +1210,7 @@ void NetworkAdapter::detach()
         case NetworkAttachmentType_Bridged:
         {
             /* reset handle and device name */
-            mData->mBridgedInterface = "";
+            mData->mHostInterface = "";
             break;
         }
         case NetworkAttachmentType_Internal:
@@ -1267,7 +1222,7 @@ void NetworkAdapter::detach()
         {
 #if defined(VBOX_WITH_NETFLT)
             /* reset handle and device name */
-            mData->mHostOnlyInterface = "";
+            mData->mHostInterface = "";
 #endif
             break;
         }

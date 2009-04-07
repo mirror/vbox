@@ -75,17 +75,13 @@ void VBoxVMSettingsNetworkDetails::getFromAdapter (const CNetworkAdapter &aAdapt
     QString intName (mAdapter.GetInternalNetwork());
     if (!intName.isEmpty())
         setProperty ("INT_Name", QVariant (intName));
-    QString bridgedIfName (mAdapter.GetBridgedInterface());
-    CHostNetworkInterface bridgedIf =
-        vboxGlobal().virtualBox().GetHost().FindHostNetworkInterfaceByName (bridgedIfName);
-    if (!bridgedIf.isNull() && bridgedIf.GetInterfaceType() == KHostNetworkInterfaceType_Bridged)
-        setProperty ("BRG_Name", QVariant (bridgedIfName));
-
-    QString hostonlyIfName (mAdapter.GetHostOnlyInterface());
-    CHostNetworkInterface hostonlyIf =
-        vboxGlobal().virtualBox().GetHost().FindHostNetworkInterfaceByName (hostonlyIfName);
-    if (!hostonlyIf.isNull() && hostonlyIf.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
-        setProperty ("HOI_Name", QVariant (hostonlyIfName));
+    QString ifsName (mAdapter.GetHostInterface());
+    CHostNetworkInterface ifs =
+        vboxGlobal().virtualBox().GetHost().FindHostNetworkInterfaceByName (ifsName);
+    if (!ifs.isNull() && ifs.GetInterfaceType() == KHostNetworkInterfaceType_Bridged)
+        setProperty ("BRG_Name", QVariant (ifsName));
+    else if (!ifs.isNull() && ifs.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
+        setProperty ("HOI_Name", QVariant (ifsName));
 
     /* Load common settings */
     setProperty ("MAC_Address", QVariant (aAdapter.GetMACAddress()));
@@ -99,13 +95,13 @@ void VBoxVMSettingsNetworkDetails::putBackToAdapter()
     switch (mType)
     {
         case KNetworkAttachmentType_Bridged:
-            mAdapter.SetBridgedInterface (name);
+            mAdapter.SetHostInterface (name);
             break;
         case KNetworkAttachmentType_Internal:
             mAdapter.SetInternalNetwork (name);
             break;
         case KNetworkAttachmentType_HostOnly:
-            mAdapter.SetHostOnlyInterface (name);
+            mAdapter.SetHostInterface (name);
             break;
         default:
             break;

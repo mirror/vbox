@@ -4334,7 +4334,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
 #ifdef RT_OS_WINDOWS
                 /* a valid host interface must have been set */
                 Bstr hostif;
-                adapter->COMGETTER(BridgedInterface)(hostif.asOutParam());
+                adapter->COMGETTER(HostInterface)(hostif.asOutParam());
                 if (!hostif)
                 {
                     return setError (VBOX_E_HOST_ERROR,
@@ -5734,7 +5734,7 @@ HRESULT Console::attachToBridgedInterface(INetworkAdapter *networkAdapter)
         memset(&IfReq, 0, sizeof(IfReq));
         /* The name of the TAP interface we are using */
         Bstr tapDeviceName;
-        rc = networkAdapter->COMGETTER(BridgedInterface)(tapDeviceName.asOutParam());
+        rc = networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
         if (FAILED(rc))
             tapDeviceName.setNull();  /* Is this necessary? */
         if (tapDeviceName.isEmpty())
@@ -5855,7 +5855,7 @@ HRESULT Console::detachFromBridgedInterface(INetworkAdapter *networkAdapter)
          */
         Bstr tapDeviceName, tapTerminateApplication;
         bool isStatic = true;
-        rc = networkAdapter->COMGETTER(BridgedInterface)(tapDeviceName.asOutParam());
+        rc = networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
         if (FAILED(rc) || tapDeviceName.isEmpty())
         {
             /* If the name is empty, this is a dynamic TAP device, so close it now,
