@@ -32,6 +32,8 @@
 
 #include <iprt/asm.h>
 #include <iprt/file.h>
+#include <iprt/path.h>
+#include <iprt/param.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/ctype.h>
@@ -171,6 +173,7 @@ static const RTGETOPTDEF g_aCreateHardDiskOptions[] =
 int handleCreateHardDisk(HandlerArg *a)
 {
     HRESULT rc;
+    int vrc;
     Bstr filename;
     uint64_t sizeMB = 0;
     Bstr format = "VDI";
@@ -209,8 +212,8 @@ int handleCreateHardDisk(HandlerArg *a)
             }
 
             case 'm':   // --variant
-                rc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
-                if (RT_FAILURE(rc))
+                vrc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
+                if (RT_FAILURE(vrc))
                     return errorArgument("Invalid hard disk variant '%s'", ValueUnion.psz);
                 break;
 
@@ -223,8 +226,8 @@ int handleCreateHardDisk(HandlerArg *a)
                 break;
 
             case 't':   // --type
-                rc = parseDiskType(ValueUnion.psz, &DiskType);
-                if (    RT_FAILURE(rc)
+                vrc = parseDiskType(ValueUnion.psz, &DiskType);
+                if (    RT_FAILURE(vrc)
                     ||  (DiskType != HardDiskType_Normal && DiskType != HardDiskType_Writethrough))
                     return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
                 break;
@@ -339,6 +342,7 @@ static const RTGETOPTDEF g_aModifyHardDiskOptions[] =
 int handleModifyHardDisk(HandlerArg *a)
 {
     HRESULT rc;
+    int vrc;
     ComPtr<IHardDisk> hardDisk;
     HardDiskType_T DiskType;
     bool AutoReset = false;
@@ -355,15 +359,15 @@ int handleModifyHardDisk(HandlerArg *a)
         switch (c)
         {
             case 't':   // --type
-                rc = parseDiskType(ValueUnion.psz, &DiskType);
-                if (RT_FAILURE(rc))
+                vrc = parseDiskType(ValueUnion.psz, &DiskType);
+                if (RT_FAILURE(vrc))
                     return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
                 fModifyDiskType = true;
                 break;
 
             case 'z':   // --autoreset
-                rc = parseBool(ValueUnion.psz, &AutoReset);
-                if (RT_FAILURE(rc))
+                vrc = parseBool(ValueUnion.psz, &AutoReset);
+                if (RT_FAILURE(vrc))
                     return errorArgument("Invalid autoreset parameter '%s'", ValueUnion.psz);
                 fModifyAutoReset = true;
                 break;
@@ -473,13 +477,13 @@ static const RTGETOPTDEF g_aCloneHardDiskOptions[] =
 
 int handleCloneHardDisk(HandlerArg *a)
 {
+    HRESULT rc;
+    int vrc;
     Bstr src, dst;
     Bstr format;
     HardDiskVariant_T DiskVariant = HardDiskVariant_Standard;
     bool fRemember = false;
     HardDiskType_T DiskType = HardDiskType_Normal;
-
-    HRESULT rc;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -495,8 +499,8 @@ int handleCloneHardDisk(HandlerArg *a)
                 break;
 
             case 'm':   // --variant
-                rc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
-                if (RT_FAILURE(rc))
+                vrc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
+                if (RT_FAILURE(vrc))
                     return errorArgument("Invalid hard disk variant '%s'", ValueUnion.psz);
                 break;
 
@@ -505,8 +509,8 @@ int handleCloneHardDisk(HandlerArg *a)
                 break;
 
             case 't':   // --type
-                rc = parseDiskType(ValueUnion.psz, &DiskType);
-                if (RT_FAILURE(rc))
+                vrc = parseDiskType(ValueUnion.psz, &DiskType);
+                if (RT_FAILURE(vrc))
                     return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
                 break;
 
@@ -828,6 +832,7 @@ static const RTGETOPTDEF g_aAddiSCSIDiskOptions[] =
 int handleAddiSCSIDisk(HandlerArg *a)
 {
     HRESULT rc;
+    int vrc;
     Bstr server;
     Bstr target;
     Bstr port;
@@ -876,8 +881,8 @@ int handleAddiSCSIDisk(HandlerArg *a)
                 break;
 
             case 't':   // --type
-                rc = parseDiskType(ValueUnion.psz, &DiskType);
-                if (RT_FAILURE(rc))
+                vrc = parseDiskType(ValueUnion.psz, &DiskType);
+                if (RT_FAILURE(vrc))
                     return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
                 break;
 
@@ -1170,6 +1175,7 @@ static const RTGETOPTDEF g_aOpenMediumOptions[] =
 int handleOpenMedium(HandlerArg *a)
 {
     HRESULT rc = S_OK;
+    int vrc;
     enum {
         CMD_NONE,
         CMD_DISK,
@@ -1208,8 +1214,8 @@ int handleOpenMedium(HandlerArg *a)
                 break;
 
             case 't':   // --type
-                rc = parseDiskType(ValueUnion.psz, &DiskType);
-                if (RT_FAILURE(rc))
+                vrc = parseDiskType(ValueUnion.psz, &DiskType);
+                if (RT_FAILURE(vrc))
                     return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
                 fDiskType = true;
                 break;
@@ -1244,10 +1250,30 @@ int handleOpenMedium(HandlerArg *a)
     if (!Filename)
         return errorSyntax(USAGE_OPENMEDIUM, "Disk name required");
 
+    /** @todo remove this hack!
+     * First try opening the image as is (using the regular API semantics for
+     * images with relative path or without path), and if that fails with a
+     * file related error then try it again with what the client thinks the
+     * relative path would mean. Requires doing the command twice in certain
+     * cases. This is an ugly hack and needs to be removed whevever we have a
+     * chance to clean up the API semantics. */
     if (cmd == CMD_DISK)
     {
         ComPtr<IHardDisk> hardDisk;
-        CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(Filename), AccessMode_ReadWrite, hardDisk.asOutParam()));
+        rc = a->virtualBox->OpenHardDisk(Bstr(Filename), AccessMode_ReadWrite, hardDisk.asOutParam());
+        if (rc == VBOX_E_FILE_ERROR)
+        {
+            char szFilenameAbs[RTPATH_MAX] = "";
+            int vrc = RTPathAbs(Filename, szFilenameAbs, sizeof(szFilenameAbs));
+            if (RT_FAILURE(vrc))
+            {
+                RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Filename);
+                return 1;
+            }
+            CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(szFilenameAbs), AccessMode_ReadWrite, hardDisk.asOutParam()));
+        }
+        else
+            CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(Filename), AccessMode_ReadWrite, hardDisk.asOutParam()));
         if (SUCCEEDED(rc) && hardDisk)
         {
             /* change the type if requested */
@@ -1262,14 +1288,40 @@ int handleOpenMedium(HandlerArg *a)
         if (fDiskType)
             return errorSyntax(USAGE_OPENMEDIUM, "Invalid option for DVD images");
         ComPtr<IDVDImage> dvdImage;
-        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(Filename), Guid(), dvdImage.asOutParam()));
+        rc = a->virtualBox->OpenDVDImage(Bstr(Filename), Guid(), dvdImage.asOutParam());
+        if (rc == VBOX_E_FILE_ERROR)
+        {
+            char szFilenameAbs[RTPATH_MAX] = "";
+            int vrc = RTPathAbs(Filename, szFilenameAbs, sizeof(szFilenameAbs));
+            if (RT_FAILURE(vrc))
+            {
+                RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Filename);
+                return 1;
+            }
+            CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(szFilenameAbs), Guid(), dvdImage.asOutParam()));
+        }
+        else
+            CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(Filename), Guid(), dvdImage.asOutParam()));
     }
     else if (cmd == CMD_FLOPPY)
     {
         if (fDiskType)
             return errorSyntax(USAGE_OPENMEDIUM, "Invalid option for DVD images");
         ComPtr<IFloppyImage> floppyImage;
-        CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(Filename), Guid(), floppyImage.asOutParam()));
+         rc = a->virtualBox->OpenFloppyImage(Bstr(Filename), Guid(), floppyImage.asOutParam());
+        if (rc == VBOX_E_FILE_ERROR)
+        {
+            char szFilenameAbs[RTPATH_MAX] = "";
+            int vrc = RTPathAbs(Filename, szFilenameAbs, sizeof(szFilenameAbs));
+            if (RT_FAILURE(vrc))
+            {
+                RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Filename);
+                return 1;
+            }
+            CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(szFilenameAbs), Guid(), floppyImage.asOutParam()));
+        }
+        else
+            CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(Filename), Guid(), floppyImage.asOutParam()));
     }
 
     return SUCCEEDED(rc) ? 0 : 1;
