@@ -367,6 +367,11 @@ HRESULT Initialize()
 #ifdef RT_OS_LINUX
         "/usr/lib/virtualbox",
         "/opt/VirtualBox",
+#elif RT_OS_SOLARIS
+        "/opt/VirtualBox/amd64",
+        "/opt/VirtualBox/i386",
+#elif RT_OS_DARWIN
+        "/Application/VirtualBox.app/Contents/MacOS",
 #endif
     };
 
