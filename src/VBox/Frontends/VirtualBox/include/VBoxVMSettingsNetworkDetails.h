@@ -60,6 +60,7 @@ private slots:
 private:
 
     void populateComboboxes();
+    void saveAlternative();
     QComboBox* comboBox() const;
 
     KNetworkAttachmentType mType;

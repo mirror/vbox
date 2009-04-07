@@ -132,10 +132,11 @@ void VBoxVMSettingsNetworkDetails::loadList (KNetworkAttachmentType aType,
         mType != KNetworkAttachmentType_NAT)
     {
         comboBox()->clear();
-        populateComboboxes();
         comboBox()->insertItems (comboBox()->count(), aList);
+        populateComboboxes();
         int pos = comboBox()->findText (currentName());
         comboBox()->setCurrentIndex (pos == -1 ? 0 : pos);
+        saveAlternative();
     }
 
     /* Load common settings */
@@ -252,6 +253,58 @@ void VBoxVMSettingsNetworkDetails::showEvent (QShowEvent *aEvent)
 void VBoxVMSettingsNetworkDetails::accept()
 {
     /* Save temporary attributes as dynamic properties */
+    saveAlternative();
+    setProperty ("MAC_Address", QVariant (mLeMAC->text()));
+    setProperty ("Cable_Connected", QVariant (mCbCable->isChecked()));
+
+    QIDialog::accept();
+}
+
+void VBoxVMSettingsNetworkDetails::genMACClicked()
+{
+    mAdapter.SetMACAddress (QString::null);
+    mLeMAC->setText (mAdapter.GetMACAddress());
+}
+
+void VBoxVMSettingsNetworkDetails::populateComboboxes()
+{
+    if (mCbBRG->count() == 0)
+    {
+        /* Bridged adapters combo-box */
+        int pos = mCbBRG->findData (emptyItemCode);
+        if (pos == -1)
+            mCbBRG->insertItem (0,
+                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"),
+                emptyItemCode);
+        else
+            mCbBRG->setItemText (pos,
+                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"));
+    }
+
+    if (mCbINT->count() == 0)
+    {
+        /* Internal networks combo-box default value */
+        if (mCbINT->findText ("intnet") == -1)
+            mCbINT->insertItem (0, "intnet");
+    }
+
+    if (mCbHOI->count() == 0)
+    {
+        /* Host-only adapters combo-box */
+        int pos = mCbHOI->findData (emptyItemCode);
+        if (pos == -1)
+            mCbHOI->insertItem (0,
+                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"),
+                emptyItemCode);
+        else
+            mCbHOI->setItemText (pos,
+                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"));
+    }
+}
+
+void VBoxVMSettingsNetworkDetails::saveAlternative()
+{
+    /* Save alternative attributes as temporary dynamic properties */
     switch (mType)
     {
         case KNetworkAttachmentType_Bridged:
@@ -273,52 +326,6 @@ void VBoxVMSettingsNetworkDetails::accept()
         default:
             break;
     }
-    setProperty ("MAC_Address", QVariant (mLeMAC->text()));
-    setProperty ("Cable_Connected", QVariant (mCbCable->isChecked()));
-
-    QIDialog::accept();
-}
-
-void VBoxVMSettingsNetworkDetails::genMACClicked()
-{
-    mAdapter.SetMACAddress (QString::null);
-    mLeMAC->setText (mAdapter.GetMACAddress());
-}
-
-void VBoxVMSettingsNetworkDetails::populateComboboxes()
-{
-    {   /* Bridged adapters combo-box */
-        int pos = mCbBRG->findData (emptyItemCode);
-        if (pos == -1)
-            mCbBRG->insertItem (0,
-                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"),
-                emptyItemCode);
-        else
-            mCbBRG->setItemText (pos,
-                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"));
-    }   /* Bridged adapters combo-box */
-
-    {   /* Internal networks combo-box */
-        int pos = mCbINT->findData (emptyItemCode);
-        if (pos == -1)
-            mCbINT->insertItem (0,
-                VBoxVMSettingsNetwork::tr ("Not selected", "network"),
-                emptyItemCode);
-        else
-            mCbINT->setItemText (pos,
-                VBoxVMSettingsNetwork::tr ("Not selected", "network"));
-    }   /* Internal networks combo-box */
-
-    {   /* Host-only adapters combo-box */
-        int pos = mCbHOI->findData (emptyItemCode);
-        if (pos == -1)
-            mCbHOI->insertItem (0,
-                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"),
-                emptyItemCode);
-        else
-            mCbHOI->setItemText (pos,
-                VBoxVMSettingsNetwork::tr ("Not selected", "adapter"));
-    }   /* Host-only adapters combo-box */
 }
 
 QComboBox* VBoxVMSettingsNetworkDetails::comboBox() const

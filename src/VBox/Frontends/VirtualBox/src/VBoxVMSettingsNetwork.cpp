@@ -176,12 +176,30 @@ void VBoxVMSettingsNetwork::retranslateUi()
 
 void VBoxVMSettingsNetwork::updateAttachmentInfo()
 {
+    KNetworkAttachmentType type = attachmentType();
+
+    /* Reload alternate list */
+    switch (type)
+    {
+        case KNetworkAttachmentType_Bridged:
+            mDetails->loadList (type, mParent->brgList());
+            break;
+        case KNetworkAttachmentType_Internal:
+            mDetails->loadList (type, mParent->intList());
+            break;
+        case KNetworkAttachmentType_HostOnly:
+            mDetails->loadList (type, mParent->hoiList());
+            break;
+        default:
+            break;
+    }
+
+    /* Update information */
     QString line ("<tr><td><i><b><nobr><font color=grey>%1:&nbsp;</font></nobr></b></i></td>"
                   "<td><i><font color=grey>%2</font></i></td></tr>");
     QString info;
 
     /* Append alternative information */
-    KNetworkAttachmentType type = attachmentType();
     switch (type)
     {
         case KNetworkAttachmentType_Bridged:
@@ -233,27 +251,12 @@ void VBoxVMSettingsNetwork::detailsClicked()
 {
     /* Lock the button to avoid double-click bug */
     mTbDetails->setEnabled (false);
-    /* Reload alternate list */
-    KNetworkAttachmentType type = attachmentType();
-    QStringList list;
-    switch (type)
-    {
-        case KNetworkAttachmentType_Bridged:
-            list = mParent->intList (KHostNetworkInterfaceType_Bridged);
-            break;
-        case KNetworkAttachmentType_Internal:
-            list = mParent->netList();
-            break;
-        case KNetworkAttachmentType_HostOnly:
-            list = mParent->intList (KHostNetworkInterfaceType_HostOnly);
-            break;
-        default:
-            break;
-    }
-    mDetails->loadList (type, list);
+
+    /* Show details sub-dialog */
     mDetails->activateWindow();
     mDetails->exec();
     updateAttachmentInfo();
+
     /* Unlock the previously locked button */
     mTbDetails->setEnabled (true);
 }
@@ -366,28 +369,31 @@ VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage()
     mainLayout->addWidget (mTwAdapters);
 }
 
-QStringList VBoxVMSettingsNetworkPage::netList() const
+QStringList VBoxVMSettingsNetworkPage::intList (bool aRefresh)
 {
-    QStringList list;
-
-    /* Load total network list of all VMs */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    ulong count = qMin ((ULONG) 4, vbox.GetSystemProperties().GetNetworkAdapterCount());
-    CMachineVector vec =  vbox.GetMachines();
-    for (CMachineVector::ConstIterator m = vec.begin(); m != vec.end(); ++ m)
+    if (aRefresh)
     {
-        if (m->GetAccessible())
+        /* Load total network list of all VMs */
+        mIntList.clear();
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        ulong count = qMin ((ULONG) 4, vbox.GetSystemProperties().GetNetworkAdapterCount());
+        CMachineVector vec = vbox.GetMachines();
+        for (CMachineVector::ConstIterator m = vec.begin(); m != vec.end(); ++ m)
         {
-            for (ulong slot = 0; slot < count; ++ slot)
+            if (m->GetAccessible())
             {
-                QString name = m->GetNetworkAdapter (slot).GetInternalNetwork();
-                if (!name.isEmpty() && !list.contains (name))
-                    list << name;
+                for (ulong slot = 0; slot < count; ++ slot)
+                {
+                    QString name = m->GetNetworkAdapter (slot).GetInternalNetwork();
+                    if (!name.isEmpty() && !mIntList.contains (name))
+                        mIntList << name;
+                }
             }
         }
     }
 
     /* Append network list with names from all the pages */
+    QStringList list (mIntList);
     for (int index = 0; index < mTwAdapters->count(); ++ index)
     {
         VBoxVMSettingsNetwork *page =
@@ -403,21 +409,40 @@ QStringList VBoxVMSettingsNetworkPage::netList() const
     return list;
 }
 
-QStringList VBoxVMSettingsNetworkPage::intList (KHostNetworkInterfaceType aType) const
+QStringList VBoxVMSettingsNetworkPage::brgList (bool aRefresh)
 {
-    QStringList list;
-
-    /* Load total interfaces list */
-    CHostNetworkInterfaceVector interfaces =
-        vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces();
-    for (CHostNetworkInterfaceVector::ConstIterator it = interfaces.begin();
-         it != interfaces.end(); ++ it)
+    if (aRefresh)
     {
-        if (it->GetInterfaceType() == aType)
-            list << it->GetName();
+        mBrgList.clear();
+        CHostNetworkInterfaceVector interfaces =
+            vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces();
+        for (CHostNetworkInterfaceVector::ConstIterator it = interfaces.begin();
+             it != interfaces.end(); ++ it)
+        {
+            if (it->GetInterfaceType() == KHostNetworkInterfaceType_Bridged)
+                mBrgList << it->GetName();
+        }
     }
 
-    return list;
+    return mBrgList;
+}
+
+QStringList VBoxVMSettingsNetworkPage::hoiList (bool aRefresh)
+{
+    if (aRefresh)
+    {
+        mHoiList.clear();
+        CHostNetworkInterfaceVector interfaces =
+            vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces();
+        for (CHostNetworkInterfaceVector::ConstIterator it = interfaces.begin();
+             it != interfaces.end(); ++ it)
+        {
+            if (it->GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
+                mHoiList << it->GetName();
+        }
+    }
+
+    return mHoiList;
 }
 
 void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
@@ -426,6 +451,11 @@ void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
     Assert (mFirstWidget);
     setTabOrder (mFirstWidget, mTwAdapters->focusProxy());
     QWidget *lastFocusWidget = mTwAdapters->focusProxy();
+
+    /* Cache data */
+    intList (true);
+    brgList (true);
+    hoiList (true);
 
     /* Creating Tab Pages */
     CVirtualBox vbox = vboxGlobal().virtualBox();
