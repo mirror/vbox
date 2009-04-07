@@ -2663,8 +2663,8 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
         if (pAppliance->m->virtualSystemDescriptions.size() > 1)
         {
             if (task->enFormat == TaskWriteOVF::OVF_0_9)
-                return setError(VBOX_E_FILE_ERROR,
-                                tr("Cannot export more than one virtual system with OVF 0.9, use OVF 1.0"));
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Cannot export more than one virtual system with OVF 0.9, use OVF 1.0"));
 
             pelmToAddVirtualSystemsTo = pelmRoot->createChild("VirtualSystemCollection");
             /* xml::AttributeNode *pattrVirtualSystemCollectionId = */ pelmToAddVirtualSystemsTo->setAttribute("ovf:name", "ExportedVirtualBoxMachines");      // whatever
