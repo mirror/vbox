@@ -2784,18 +2784,12 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     /*
      * Allocate a new tracking structure first.
      */
-#if 1 /* disable on regression */
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)MMR3HeapAlloc(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk));
 # else
     PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)MMR3UkHeapAlloc(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk), NULL);
 # endif
     AssertReturn(pChunk, VERR_NO_MEMORY);
-#else
-    PPGMCHUNKR3MAP pChunk;
-    rc = MMHyperAlloc(pVM, sizeof(*pChunk), 0, MM_TAG_PGM_CHUNK_MAPPING, (void **)&pChunk);
-    AssertRCReturn(rc, rc);
-#endif
     pChunk->Core.Key = idChunk;
     pChunk->AgeCore.Key = pVM->pgm.s.ChunkR3Map.iNow;
     pChunk->iAge = 0;
