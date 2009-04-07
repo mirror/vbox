@@ -56,6 +56,8 @@ __END_DECLS
 #include <net/if_dl.h>
 #include <sys/errno.h>
 #include <sys/param.h>
+#include <sys/conf.h>
+#include <miscfs/devfs/devfs.h>
 
 #define VBOXNETADP_OS_SPECFIC 1
 #include "../VBoxNetAdpInternal.h"
@@ -73,6 +75,23 @@ __END_DECLS
 
 #define VBOXNETADP_FROM_IFACE(iface) ((PVBOXNETADP) ifnet_softc(iface))
 
+/* debug printf */
+#if defined(RT_OS_WINDOWS)
+# define OSDBGPRINT(a) DbgPrint a
+#elif defined(RT_OS_LINUX)
+# define OSDBGPRINT(a) printk a
+#elif defined(RT_OS_DARWIN)
+# define OSDBGPRINT(a) printf a
+#elif defined(RT_OS_OS2)
+# define OSDBGPRINT(a) SUPR0Printf a
+#elif defined(RT_OS_FREEBSD)
+# define OSDBGPRINT(a) printf a
+#elif defined(RT_OS_SOLARIS)
+# define OSDBGPRINT(a) SUPR0Printf a
+#else
+# define OSDBGPRINT(a)
+#endif
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -80,6 +99,10 @@ __BEGIN_DECLS
 static kern_return_t    VBoxNetAdpDarwinStart(struct kmod_info *pKModInfo, void *pvData);
 static kern_return_t    VBoxNetAdpDarwinStop(struct kmod_info *pKModInfo, void *pvData);
 __END_DECLS
+
+static int VBoxNetAdpDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
+static int VBoxNetAdpDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
+static int VBoxNetAdpDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -105,6 +128,30 @@ static VBOXNETADPGLOBALS g_VBoxNetAdpGlobals;
 
 #else /* !VBOXANETADP_DO_NOT_USE_NETFLT */
 
+static int   g_nCtlDev = -1; /* Major dev number */
+static void *g_hCtlDev = 0;  /* FS dev handle */
+
+/**
+ * The character device switch table for the driver.
+ */
+static struct cdevsw    g_ChDev =
+{
+    /*.d_open     = */VBoxNetAdpDarwinOpen,
+    /*.d_close    = */VBoxNetAdpDarwinClose,
+    /*.d_read     = */eno_rdwrt,
+    /*.d_write    = */eno_rdwrt,
+    /*.d_ioctl    = */VBoxNetAdpDarwinIOCtl,
+    /*.d_stop     = */eno_stop,
+    /*.d_reset    = */eno_reset,
+    /*.d_ttys     = */NULL,
+    /*.d_select   = */eno_select,
+    /*.d_mmap     = */eno_mmap,
+    /*.d_strategy = */eno_strat,
+    /*.d_getc     = */eno_getc,
+    /*.d_putc     = */eno_putc,
+    /*.d_type     = */0
+};
+
 /**
  * Generate a suitable MAC address.
  *
@@ -127,6 +174,7 @@ DECLHIDDEN(void) vboxNetAdpComposeMACAddress(PVBOXNETADP pThis, PRTMAC pMac)
     pMac->au8[4] = 0; /* pThis->uUnit >> 8; */
     pMac->au8[5] = pThis->uUnit;
 }
+
 #endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
 
 
@@ -618,9 +666,11 @@ int  vboxNetAdpOsConnectIt(PVBOXNETADP pThis)
     return VINF_SUCCESS;
 }
 #else /* !VBOXANETADP_DO_NOT_USE_NETFLT */
-VBOXNETADP g_vboxnet0;
+//VBOXNETADP g_vboxnet0;
+VBOXNETADP g_aAdapters[VBOXNETADP_MAX_INSTANCES];
 
 #endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
+
 
 
 int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
@@ -633,7 +683,10 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
     pThis->u.s.hEvtDetached = NIL_RTSEMEVENT;
     rc = RTSemEventCreate(&pThis->u.s.hEvtDetached);
     if (RT_FAILURE(rc))
+    {
+        OSDBGPRINT(("vboxNetAdpOsCreate: failed to create semaphore (rc=%d).\n", rc));
         return rc;
+    }
 
     mac.sdl_len = sizeof(mac);
     mac.sdl_family = AF_LINK;
@@ -687,6 +740,9 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
     else
         Log(("vboxNetAdpDarwinRegisterDevice: Failed to allocate interface (err=%d).\n", err));
 
+    RTSemEventDestroy(pThis->u.s.hEvtDetached);
+    pThis->u.s.hEvtDetached = NIL_RTSEMEVENT;
+
     return RTErrConvertFromErrno(err);
 }
 
@@ -726,11 +782,142 @@ void vboxNetAdpOsDestroy(PVBOXNETADP pThis)
     pThis->u.s.hEvtDetached = NIL_RTSEMEVENT;
 }
 
+int vboxNetAdpCreate (PVBOXNETADP *ppNew)
+{
+    int rc;
+    unsigned i;
+    for (i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
+    {
+        PVBOXNETADP pThis = &g_aAdapters[i];
+
+        if (ASMAtomicCmpXchgU32((uint32_t volatile *)&pThis->enmState, kVBoxNetAdpState_Transitional, kVBoxNetAdpState_Invalid))
+        {
+            /* Found an empty slot -- use it. */
+            Log(("vboxNetAdpCreate: found empty slot: %d\n", i));
+            RTMAC Mac;
+            vboxNetAdpComposeMACAddress(pThis, &Mac);
+            rc = vboxNetAdpOsCreate(pThis, &Mac);
+            if (RT_SUCCESS(rc))
+            {
+                *ppNew = pThis;
+                ASMAtomicWriteU32((uint32_t volatile *)&pThis->enmState, kVBoxNetAdpState_Active);
+            }
+            else
+            {
+                ASMAtomicWriteU32((uint32_t volatile *)&pThis->enmState, kVBoxNetAdpState_Invalid);
+                Log(("vboxNetAdpCreate: vboxNetAdpOsCreate failed with '%Rrc'.\n", rc));
+            }
+            return rc;
+        }
+    }
+    Log(("vboxNetAdpCreate: no empty slots!\n"));
+
+    /* All slots in adapter array are busy. */
+    return VERR_OUT_OF_RESOURCES;
+}
+
+int vboxNetAdpDestroy (PVBOXNETADP pThis)
+{
+    int rc = VINF_SUCCESS;
+
+    if (!ASMAtomicCmpXchgU32((uint32_t volatile *)&pThis->enmState, kVBoxNetAdpState_Transitional, kVBoxNetAdpState_Active))
+        return VERR_INTNET_FLT_IF_BUSY;
+
+    vboxNetAdpOsDestroy(pThis);
+
+    ASMAtomicWriteU32((uint32_t volatile *)&pThis->enmState, kVBoxNetAdpState_Invalid);
+
+    return rc;
+}
+
+/**
+ * Device open. Called on open /dev/vboxnetctl
+ *
+ * @param   pInode      Pointer to inode info structure.
+ * @param   pFilp       Associated file pointer.
+ */
+static int VBoxNetAdpDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
+{
+    char szName[128];
+    szName[0] = '\0';
+    proc_name(proc_pid(pProcess), szName, sizeof(szName));
+    Log(("VBoxNetAdpDarwinOpen: pid=%d '%s'\n", proc_pid(pProcess), szName));
+    return 0;
+}
+
+/**
+ * Close device.
+ */
+static int VBoxNetAdpDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
+{
+    Log(("VBoxNetAdpDarwinClose: pid=%d\n", proc_pid(pProcess)));
+    return 0;
+}
+
+/**
+ * Device I/O Control entry point.
+ *
+ * @returns Darwin for slow IOCtls and VBox status code for the fast ones.
+ * @param   Dev         The device number (major+minor).
+ * @param   iCmd        The IOCtl command.
+ * @param   pData       Pointer to the data (if any it's a SUPDRVIOCTLDATA (kernel copy)).
+ * @param   fFlags      Flag saying we're a character device (like we didn't know already).
+ * @param   pProcess    The process issuing this request.
+ */
+static int VBoxNetAdpDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess)
+{
+    int rc = VINF_SUCCESS;
+    uint32_t cbReq = IOCPARM_LEN(iCmd);
+    PVBOXNETADPREQ pReq = (PVBOXNETADPREQ)pData;
+
+    Log(("VBoxNetAdpDarwinIOCtl: param len %#x; iCmd=%#lx\n", cbReq, iCmd));
+    switch (IOCBASECMD(iCmd))
+    {
+        case IOCBASECMD(VBOXNETADP_CTL_ADD):
+            if ((IOC_DIRMASK & iCmd) == IOC_OUT)
+            {
+                PVBOXNETADP pNew;
+                rc = vboxNetAdpCreate(&pNew);
+                if (RT_SUCCESS(rc))
+                {
+                    if (cbReq < sizeof(VBOXNETADPREQ))
+                    {
+                        OSDBGPRINT(("VBoxNetAdpDarwinIOCtl: param len %#x < req size %#x; iCmd=%#lx\n", cbReq, sizeof(VBOXNETADPREQ), iCmd));
+                        return EINVAL;
+                    }
+                    strncpy(pReq->szName, pNew->szName, sizeof(pReq->szName));
+                }
+            }
+            break;
+
+        case IOCBASECMD(VBOXNETADP_CTL_REMOVE):
+            for (unsigned i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
+            {
+                PVBOXNETADP pThis = &g_aAdapters[i];
+                rc = VERR_NOT_FOUND;
+                if (strncmp(pThis->szName, pReq->szName, VBOXNETADP_MAX_NAME_LEN) == 0)
+                    if (ASMAtomicReadU32((uint32_t volatile *)&pThis->enmState) == kVBoxNetAdpState_Active)
+                    {
+                        rc = vboxNetAdpDestroy(pThis);
+                        break;
+                    }
+            }
+            break;
+        default:
+            OSDBGPRINT(("VBoxNetAdpDarwinIOCtl: unknown command %x.\n", IOCBASECMD(iCmd)));
+            rc = VERR_INVALID_PARAMETER;
+            break;
+    }
+
+    return RT_SUCCESS(rc) ? 0 : EINVAL;
+}
+
 int  vboxNetAdpOsInit(PVBOXNETADP pThis)
 {
     /*
      * Init the darwin specific members.
      */
+    pThis->enmState = kVBoxNetAdpState_Invalid;
     pThis->u.s.pIface = NULL;
     pThis->u.s.hEvtDetached = NIL_RTSEMEVENT;
     memset(pThis->u.s.aAttachedFamilies, 0, sizeof(pThis->u.s.aAttachedFamilies));
@@ -763,10 +950,34 @@ static kern_return_t    VBoxNetAdpDarwinStart(struct kmod_info *pKModInfo, void 
         memset(&g_VBoxNetAdpGlobals, 0, sizeof(g_VBoxNetAdpGlobals));
         rc = vboxNetAdpInitGlobals(&g_VBoxNetAdpGlobals);
 #else /* !VBOXANETADP_DO_NOT_USE_NETFLT */
-        RTMAC Mac;
-        vboxNetAdpOsInit(&g_vboxnet0);
-        vboxNetAdpComposeMACAddress(&g_vboxnet0, &Mac);
-        rc = vboxNetAdpOsCreate(&g_vboxnet0, &Mac);
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
+        {
+            g_aAdapters[i].uUnit = i;
+            vboxNetAdpOsInit(&g_aAdapters[i]);
+        }
+
+        PVBOXNETADP pVboxnet0;
+        rc = vboxNetAdpCreate(&pVboxnet0);
+        if (RT_SUCCESS(rc))
+        {
+            g_nCtlDev = cdevsw_add(-1, &g_ChDev);
+            if (g_nCtlDev < 0)
+            {
+                LogRel(("VBoxAdp: failed to register control device."));
+                rc = VERR_CANT_CREATE;
+            }
+            else
+            {
+                g_hCtlDev = devfs_make_node(makedev(g_nCtlDev, 0), DEVFS_CHAR,
+                                            UID_ROOT, GID_WHEEL, 0600, VBOXNETADP_CTL_DEV_NAME);
+                if (!g_hCtlDev)
+                {
+                    LogRel(("VBoxAdp: failed to create FS node for control device."));
+                    rc = VERR_CANT_CREATE;
+                }
+            }
+        }
+
 #endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
         if (RT_SUCCESS(rc))
         {
@@ -812,7 +1023,12 @@ static kern_return_t VBoxNetAdpDarwinStop(struct kmod_info *pKModInfo, void *pvD
      */
     memset(&g_VBoxNetAdpGlobals, 0, sizeof(g_VBoxNetAdpGlobals));
 #else /* !VBOXANETADP_DO_NOT_USE_NETFLT */
-    vboxNetAdpOsDestroy(&g_vboxnet0);
+    /* Remove virtual adapters */
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
+        vboxNetAdpDestroy(&g_aAdapters[i]);
+    /* Remove control device */
+    devfs_remove(g_hCtlDev);
+    cdevsw_remove(g_nCtlDev, &g_ChDev);
 #endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
 
     RTR0Term();

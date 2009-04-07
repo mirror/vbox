@@ -30,6 +30,25 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+
+/* @todo Error codes must be moved to some header file */
+#define ADPCTLERR_NO_CTL_DEV 3
+#define ADPCTLERR_IOCTL_FAILED 4
+
+/* @todo These are duplicates from src/VBox/HostDrivers/VBoxNetAdp/VBoxNetAdpInternal.h */
+#define VBOXNETADP_CTL_DEV_NAME    "/dev/vboxnetctl"
+#define VBOXNETADP_NAME            "vboxnet"
+#define VBOXNETADP_MAX_NAME_LEN    32
+#define VBOXNETADP_CTL_ADD    _IOR('v', 1, VBOXNETADPREQ)
+#define VBOXNETADP_CTL_REMOVE _IOW('v', 2, VBOXNETADPREQ)
+typedef struct VBoxNetAdpReq
+{
+    char szName[VBOXNETADP_MAX_NAME_LEN];
+} VBOXNETADPREQ;
+typedef VBOXNETADPREQ *PVBOXNETADPREQ;
+
 
 #define VBOXADPCTL_IFCONFIG_PATH "/sbin/ifconfig"
 
@@ -42,6 +61,8 @@
 static void showUsage(void)
 {
     fprintf(stderr, "Usage: VBoxNetAdpCtl <adapter> <address> ([netmask <address>] | remove)\n");
+    fprintf(stderr, "     | VBoxNetAdpCtl add\n");
+    fprintf(stderr, "     | VBoxNetAdpCtl <adapter> remove\n");
 }
 
 static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
@@ -130,6 +151,26 @@ static bool removeAddresses(const char *pszAdapterName)
     return true;
 }
 
+int doIOCtl(unsigned long uCmd, void *pData)
+{
+    int fd = open(VBOXNETADP_CTL_DEV_NAME, O_RDWR);
+    if (fd == -1)
+    {
+        perror("VBoxNetAdpCtl: failed to open " VBOXNETADP_CTL_DEV_NAME);
+        return ADPCTLERR_NO_CTL_DEV;
+    }
+
+    int rc = ioctl(fd, uCmd, pData);
+    if (rc == -1)
+    {
+        perror("VBoxNetAdpCtl: ioctl failed for " VBOXNETADP_CTL_DEV_NAME); 
+        rc = ADPCTLERR_IOCTL_FAILED;
+    }
+    
+    close(fd);
+ 
+    return rc;
+}
 
 int main(int argc, char *argv[])
 
@@ -140,6 +181,7 @@ int main(int argc, char *argv[])
     const char *pszOption = NULL;
     int rc = EXIT_SUCCESS;
     bool fRemove = false;
+    VBOXNETADPREQ Req;
 
     switch (argc)
     {
@@ -169,7 +211,21 @@ int main(int argc, char *argv[])
         case 3:
             pszAdapterName = argv[1];
             pszAddress = argv[2];
+            if (strcmp("remove", pszAddress) == 0)
+            {
+                strncpy(Req.szName, pszAdapterName, sizeof(Req.szName));
+                return doIOCtl(VBOXNETADP_CTL_REMOVE, &Req);
+            }
             break;
+        case 2:
+            if (strcmp("add", argv[1]) == 0)
+            {
+                rc = doIOCtl(VBOXNETADP_CTL_ADD, &Req);
+                if (rc == 0)
+                    puts(Req.szName);
+                return rc;
+            }
+            /* Fall through */
         default:
             fprintf(stderr, "Invalid number of arguments.\n\n");
             /* Fall through */
@@ -178,7 +234,7 @@ int main(int argc, char *argv[])
             return 1;
     }
 
-    if (strcmp("vboxnet0", pszAdapterName))
+    if (strncmp("vboxnet", pszAdapterName, 7))
     {
         fprintf(stderr, "Setting configuration for %s is not supported.\n", pszAdapterName);
         return 2;
