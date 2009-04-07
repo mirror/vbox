@@ -124,9 +124,10 @@ VBOX_STUBMAKER          = $(firstword $(which stubmaker stubmaker.pl) stubmaker_
 VBOX_WSDL2PY            = $(firstword $(which wsdl2py) wsdl2py_not_found)
 
 VBOX_PATH_GSOAP_IMPORT := $(strip $(if $(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP_IMPORT),$(VBOX_PATH_GSOAP)/import))
-VBOX_GSOAP_INCS        := $(strip $(if $(VBOX_GSOAP_INCS),       $(VBOX_GSOAP_INCS),       $(VBOX_PATH_GSOAP) $(VBOX_PATH_GSOAP_IMPORT) ))
-VBOX_GSOAP_CXX_SOURCES := $(strip $(if $(VBOX_GSOAP_CXX_SOURCES),$(VBOX_GSOAP_CXX_SOURCES),$(VBOX_PATH_GSOAP)/stdsoap2.cpp))
-VBOX_GSOAP_CXX_LIBS    := $(strip $(if $(VBOX_GSOAP_CXX_LIBS),   $(VBOX_GSOAP_CXX_LIBS),))
+VBOX_GSOAP_INCS        := $(strip $(if $(VBOX_GSOAP_INCS),$(VBOX_GSOAP_INCS),$(VBOX_PATH_GSOAP) $(VBOX_PATH_GSOAP_IMPORT) ))
+# note: $(if $(defined FOO)) does not work here!
+VBOX_GSOAP_CXX_SOURCES := $(strip $(if-expr "$(origin VBOX_GSOAP_CXX_SOURCES)" != "undefined",$(VBOX_GSOAP_CXX_SOURCES),$(VBOX_PATH_GSOAP)/stdsoap2.cpp))
+VBOX_GSOAP_CXX_LIBS    := $(strip $(if-expr "$(origin VBOX_GSOAP_CXX_LIBS)" != "undefined",$(VBOX_GSOAP_CXX_LIBS),))
 
 
 #
@@ -219,8 +220,6 @@ ifdef VBOX_GSOAP_INSTALLED
  vboxsoap_CLEAN := $(vboxsoap_SOURCES) # lazy bird
  vboxsoap_SOURCES += \
 	$(VBOX_GSOAP_CXX_SOURCES)
- vboxsoap_LIBS += \
-	$(VBOX_GSOAP_CXX_LIBS)
  vboxsoap_ORDERDEPS = \
 	$(VBOXWEB_IDL_SRC) \
 	$(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
@@ -255,7 +254,8 @@ endif
   vboxwebsrv_CXXFLAGS.win += -bigobj
  endif
  vboxwebsrv_LIBS += \
-     	$(PATH_LIB)/vboxsoap$(VBOX_SUFF_LIB)
+     	$(PATH_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
+	$(VBOX_GSOAP_CXX_LIBS)
  vboxwebsrv_LIBS.solaris += socket nsl
  vboxwebsrv_SOURCES = \
      	vboxweb.cpp \
@@ -283,7 +283,8 @@ endif
      $(VBOXWEB_OUT_DIR) \
      .
  webtest_LIBS += \
-     	$(PATH_LIB)/vboxsoap$(VBOX_SUFF_LIB)
+     	$(PATH_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
+	$(VBOX_GSOAP_CXX_LIBS)
  webtest_LIBS.solaris += nsl
  webtest_SOURCES = \
      webtest.cpp \
