@@ -516,7 +516,10 @@ RTR3DECL(int) RTStrmGetLine(PRTSTREAM pStream, char *pszString, size_t cchString
                         #else
                         if (feof(pStream->pFile))
                         #endif
+                        {
+                            rc = VERR_EOF;
                             break;
+                        }
                         #ifdef HAVE_FWRITE_UNLOCKED
                         if (ferror_unlocked(pStream->pFile))
                         #else
