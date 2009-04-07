@@ -129,8 +129,7 @@ int handleModifyVM(HandlerArg *a)
     std::vector <char *> nictrace (NetworkAdapterCount, 0);
     std::vector <char *> nictracefile (NetworkAdapterCount, 0);
     std::vector <char *> nicspeed (NetworkAdapterCount, 0);
-    std::vector <char *> bridgedifdev (NetworkAdapterCount, 0);
-    std::vector <char *> hostonlyifdev (NetworkAdapterCount, 0);
+    std::vector <char *> hostifdev (NetworkAdapterCount, 0);
     std::vector <const char *> intnet (NetworkAdapterCount, 0);
     std::vector <const char *> natnet (NetworkAdapterCount, 0);
     std::vector <char *> macs (NetworkAdapterCount, 0);
@@ -488,7 +487,7 @@ int handleModifyVM(HandlerArg *a)
                 return 1;
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
-            bridgedifdev[n - 1] = a->argv[i + 1];
+            hostifdev[n - 1] = a->argv[i + 1];
             i++;
         }
         else if (   !strncmp(a->argv[i], "--bridgeadapter", 15)
@@ -499,7 +498,7 @@ int handleModifyVM(HandlerArg *a)
                 return 1;
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
-            bridgedifdev[n - 1] = a->argv[i + 1];
+            hostifdev[n - 1] = a->argv[i + 1];
             i++;
         }
 #if defined(VBOX_WITH_NETFLT)
@@ -511,7 +510,7 @@ int handleModifyVM(HandlerArg *a)
                 return 1;
             if (a->argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
-            hostonlyifdev[n - 1] = a->argv[i + 1];
+            hostifdev[n - 1] = a->argv[i + 1];
             i++;
         }
 #endif
@@ -1643,29 +1642,16 @@ int handleModifyVM(HandlerArg *a)
             }
 
             /* the host interface device? */
-            if (hostonlyifdev[n])
+            if (hostifdev[n])
             {
                 /* remove it? */
-                if (!strcmp(hostonlyifdev[n], "none"))
+                if (!strcmp(hostifdev[n], "none"))
                 {
-                    CHECK_ERROR_RET(nic, COMSETTER(HostOnlyInterface)(NULL), 1);
+                    CHECK_ERROR_RET(nic, COMSETTER(HostInterface)(NULL), 1);
                 }
                 else
                 {
-                    CHECK_ERROR_RET(nic, COMSETTER(HostOnlyInterface)(Bstr(hostonlyifdev[n])), 1);
-                }
-            }
-
-            if (bridgedifdev[n])
-            {
-                /* remove it? */
-                if (!strcmp(bridgedifdev[n], "none"))
-                {
-                    CHECK_ERROR_RET(nic, COMSETTER(BridgedInterface)(NULL), 1);
-                }
-                else
-                {
-                    CHECK_ERROR_RET(nic, COMSETTER(BridgedInterface)(Bstr(bridgedifdev[n])), 1);
+                    CHECK_ERROR_RET(nic, COMSETTER(HostInterface)(Bstr(hostifdev[n])), 1);
                 }
             }
 

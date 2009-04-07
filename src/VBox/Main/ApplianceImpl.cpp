@@ -2035,7 +2035,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                                 rc = nwInterfaces[i]->COMGETTER(Name)(name.asOutParam());
                                 if (FAILED(rc)) throw rc;
                                 /* Set the interface name to attach to */
-                                pNetworkAdapter->COMSETTER(BridgedInterface)(name);
+                                pNetworkAdapter->COMSETTER(HostInterface)(name);
                                 if (FAILED(rc)) throw rc;
                                 break;
                             }
@@ -2066,7 +2066,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                                 rc = nwInterfaces[i]->COMGETTER(Name)(name.asOutParam());
                                 if (FAILED(rc)) throw rc;
                                 /* Set the interface name to attach to */
-                                pNetworkAdapter->COMSETTER(HostOnlyInterface)(name);
+                                pNetworkAdapter->COMSETTER(HostInterface)(name);
                                 if (FAILED(rc)) throw rc;
                                 break;
                             }

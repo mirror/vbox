@@ -1237,7 +1237,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 iPciDeviceNo = ulInstance - 4 + 16;
         }
 #ifdef VMWARE_NET_IN_SLOT_11
-        /*
+        /* 
          * Dirty hack for PCI slot compatibility with VMWare,
          * it assigns slot 11 to the first network controller.
          */
@@ -1445,7 +1445,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
 
                     Bstr HifName;
-                    hrc = networkAdapter->COMGETTER(BridgedInterface)(HifName.asOutParam());
+                    hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
                     if(FAILED(hrc))
                     {
                         LogRel(("NetworkAttachmentType_Bridged: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));
@@ -1807,7 +1807,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 H();
 # else
                 Bstr HifName;
-                hrc = networkAdapter->COMGETTER(HostOnlyInterface)(HifName.asOutParam());
+                hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
                 if(FAILED(hrc))
                 {
                     LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));
@@ -1957,7 +1957,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
 #if !defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
                 Bstr HifName;
-                hrc = networkAdapter->COMGETTER(HostOnlyInterface)(HifName.asOutParam());
+                hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
                 if(FAILED(hrc))
                 {
                     LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));

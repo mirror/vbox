@@ -693,7 +693,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     case NetworkAttachmentType_Bridged:
                     {
                         Bstr strBridgeAdp;
-                        nic->COMGETTER(BridgedInterface)(strBridgeAdp.asOutParam());
+                        nic->COMGETTER(HostInterface)(strBridgeAdp.asOutParam());
                         if (details == VMINFO_MACHINEREADABLE)
                         {
                             RTPrintf("bridgeadapter%d=\"%lS\"\n", currentNIC + 1, strBridgeAdp.raw());
@@ -720,7 +720,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     case NetworkAttachmentType_HostOnly:
                     {
                         Bstr strHostonlyAdp;
-                        nic->COMGETTER(HostOnlyInterface)(strHostonlyAdp.asOutParam());
+                        nic->COMGETTER(HostInterface)(strHostonlyAdp.asOutParam());
                         if (details == VMINFO_MACHINEREADABLE)
                         {
                             RTPrintf("hostonlyadapter%d=\"%lS\"\n", currentNIC + 1, strHostonlyAdp.raw());

@@ -10932,7 +10932,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="INetworkAdapter" extends="$unknown"
-     uuid="50F03B9E-FF02-4e07-9DA8-86FBF884D62E"
+     uuid="65607a27-2b73-4d43-b4cc-0ba2c817fbde"
      wsmap="managed"
      >
     <desc>
@@ -10981,18 +10981,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="attachmentType" type="NetworkAttachmentType" readonly="yes"/>
 
-    <attribute name="bridgedInterface" type="wstring">
+    <attribute name="hostInterface" type="wstring">
       <desc>
-        Name of the bridged network interface the VM is attached to.
+        Name of the host network interface the VM is attached to.
       </desc>
     </attribute>
-    
-    <attribute name="hostOnlyInterface" type="wstring">
-      <desc>
-        Name of the host only network interface the VM is attached to.
-      </desc>
-    </attribute>
-    
+
     <attribute name="internalNetwork" type="wstring">
       <desc>
         Name of the internal network the VM is attached to.
