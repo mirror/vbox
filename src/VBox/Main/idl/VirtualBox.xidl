@@ -1932,7 +1932,8 @@
         <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
 
         <result name="VBOX_E_FILE_ERROR">
-          Invalid hard disk storage file location.
+          Invalid hard disk storage file location or could not find the hard
+          disk at the specified location.
         </result>
         <result name="VBOX_E_IPRT_ERROR">
           Could not get hard disk storage format.
@@ -2035,6 +2036,10 @@
           Currently only ISO 9960 CD/DVD images are supported by VirtualBox.
         </note>
 
+        <result name="VBOX_E_FILE_ERROR">
+          Invalid CD/DVD image file location or could not find the CD/DVD
+          image at the specified location.
+        </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           CD/DVD image already exists in the media registry.
         </result>
@@ -2129,7 +2134,8 @@
         of the location string.
 
         <result name="VBOX_E_FILE_ERROR">
-          Floppy image specified by @a location not accessible.
+          Invalid floppy image file location or could not find the floppy
+          image at the specified location.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Floppy image already exists in the media registry.
