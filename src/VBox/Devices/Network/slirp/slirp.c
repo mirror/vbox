@@ -2,6 +2,9 @@
 #ifdef RT_OS_OS2
 # include <paths.h>
 #endif
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+#include "dnsproxy/dnsproxy.h"
+#endif
 
 #include <VBox/err.h>
 #include <VBox/pdmdrv.h>
