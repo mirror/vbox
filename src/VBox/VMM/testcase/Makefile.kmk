@@ -53,8 +53,7 @@ ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
  ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
   OTHERS += \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run \
-	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run \
-	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run
  endif
 endif
 
@@ -225,6 +224,17 @@ endif
 include	$(KBUILD_PATH)/subfooter.kmk
 
 
+#
+# Run rule for tstInstrEmul.
+#
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run: $$(INSTARGET_tstInstrEmul) | $$(dir $$@)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(REDIRECT) -E 'VBOX_LOG_FLAGS=disabled' -E 'VBOX_LOG_DEST=nofile' \
+		$(if $(eq $(KBUILD_TARGET),darwin), -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))') \
+		-- \
+		$(INSTARGET_tstInstrEmul)
+	$(QUIET)$(APPEND) "$@" "done"
+
 
 #
 # Some handcrafted support targets for tstAsmStructs.
@@ -341,13 +351,3 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run: $$(INSTARGET_tstVMStructSize) 
 run-struct-tests: $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run
 
 
-#
-# Run rule for tstInstrEmul.
-#
-$(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run: $$(INSTARGET_tstInstrEmul) | $$(dir $$@)
-	$(QUIET)$(RM) -f $@
-	$(QUIET)$(REDIRECT) -E 'VBOX_LOG_FLAGS=disabled' -E 'VBOX_LOG_DEST=nofile' \
-		$(if $(eq $(KBUILD_TARGET),darwin), -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))') \
-		-- \
-		$(INSTARGET_tstInstrEmul)
-	$(QUIET)$(APPEND) "$@" "done"
