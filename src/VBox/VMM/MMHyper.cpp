@@ -77,24 +77,9 @@ int mmR3HyperInit(PVM pVM)
     uint32_t cbHyperHeap;
     int rc = CFGMR3QueryU32(CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM"), "cbHyperHeap", &cbHyperHeap);
     if (rc == VERR_CFGM_NO_PARENT || rc == VERR_CFGM_VALUE_NOT_FOUND)
-    {
         cbHyperHeap = VMMIsHwVirtExtForced(pVM)
                     ? 640*_1K
                     : 1280*_1K;
-
-        /* Adjust for dynamic stuff like RAM mapping chunks. Try playing kind
-           of safe with existing configs here (HMA size must not change)... */
-        uint64_t cbRam;
-        CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRam, 0);
-#if 0 /* MMUkHeap takes care of this now...*/
-        if (cbRam > _2G)
-        {
-            cbRam = RT_MIN(cbRam, _1T);
-            cbHyperHeap += (cbRam - _1G) / _1M * 128; /* 128 is a quick guess */
-            cbHyperHeap = RT_ALIGN_32(cbHyperHeap, _64K);
-        }
-#endif
-    }
     else
         AssertLogRelRCReturn(rc, rc);
     cbHyperHeap = RT_ALIGN_32(cbHyperHeap, PAGE_SIZE);
