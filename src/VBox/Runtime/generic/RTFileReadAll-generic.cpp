@@ -38,6 +38,6 @@
 
 RTDECL(int) RTFileReadAll(const char *pszFilename, void **ppvFile, size_t *pcbFile)
 {
-    return RTFileReadAllEx(pszFilename, 0, -1, 0, ppvFile, pcbFile);
+    return RTFileReadAllEx(pszFilename, 0, RTFOFF_MAX, 0, ppvFile, pcbFile);
 }
 
