@@ -3373,7 +3373,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Dieser Assistent wird Ihnen helfen, eine neue virtuelle Festplatte für Ihre virtuelle Maschine zu erstellen.&lt;/p&gt;&lt;p&gt;Drücken Sie auf &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu wechseln bzw. auf &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Dieser Assistent wird Ihnen helfen, eine neue virtuelle Festplatte für Ihre virtuelle Maschine zu erstellen.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu wechseln bzw. &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
@@ -3403,7 +3403,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Drücken Sie &lt;b&gt;Auswählen&lt;/b&gt;, um den Speicherort der Daten auf der Festplatte auszuwählen oder tippen Sie den Namen in das Eingabefeld.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Klicken Sie auf &lt;b&gt;Auswählen&lt;/b&gt;, um den Speicherort der Daten auf der Festplatte auszuwählen oder tippen Sie den Namen in das Eingabefeld.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
@@ -3428,7 +3428,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="843"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation>Drücken Sie &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Festplatte erstellt.</translation>
+        <translation>Klicken Sie auf &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Festplatte erstellt.</translation>
     </message>
 </context>
 <context>
@@ -3501,7 +3501,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Dieser Dialog wird Sie durch die für die Erstellung einer virtuellen Maschine notwendigen Schritte führen.&lt;/p&gt;&lt;p&gt;Drücken Sie &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu gelangen und &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Dieser Dialog wird Sie durch die für die Erstellung einer virtuellen Maschine notwendigen Schritte führen.&lt;/p&gt;&lt;p&gt;Klicken Sie auf &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu gelangen bzw. auf &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1113"/>
@@ -3526,7 +3526,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1061"/>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Drücken Sie &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Maschine erzeugt.&lt;/p&gt;&lt;/p&gt;Sie können diese und andere Einstellungen der virtuellen Maschine jederzeit im Dialog &lt;b&gt;Einstellungen&lt;/b&gt; ausgehend vom Hauptfenster ändern.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Klicken Sie auf &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Maschine erzeugt.&lt;/p&gt;&lt;/p&gt;Sie können diese und andere Einstellungen der virtuellen Maschine jederzeit im Dialog &lt;b&gt;Einstellungen&lt;/b&gt; ausgehend vom Hauptfenster ändern.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1120"/>
@@ -3571,7 +3571,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="782"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wählen Sie ein Abbild einer Festplatte, die als Bootplatte der virtuellen Maschine dienen soll. Sie können entweder eine neue Festplatte durch Drücken von &lt;b&gt;Neu&lt;/b&gt; erstellen oder ein existierendes Abbild durch Betätigen von &lt;b&gt;Existierend&lt;/b&gt; auswählen (durch Aufruf des Managers virtueller Platten).&lt;/p&gt;&lt;p&gt;Falls die virtuelle Platte zusätzliche Parameter benötigt, kann dieser Schritt auch übersprungen werden und ein Abbild später über den VM-Einstellungs-Dialog angeschlossen werden.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Wählen Sie ein Abbild einer Festplatte, die als Bootplatte der virtuellen Maschine dienen soll. Sie können entweder eine neue Festplatte durch Klicken auf &lt;b&gt;Neu&lt;/b&gt; erstellen oder ein existierendes Abbild durch Klicken auf &lt;b&gt;Existierend&lt;/b&gt; auswählen (durch Aufruf des Managers virtueller Platten).&lt;/p&gt;&lt;p&gt;Falls die virtuelle Platte zusätzliche Parameter benötigt, kann dieser Schritt auch übersprungen werden und ein Abbild später über den VM-Einstellungs-Dialog angeschlossen werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="820"/>
@@ -4155,7 +4155,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="893"/>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Der Vollbildmodus konnte nicht aktiviert werden, weil dem Gast zu wenig Video-RAM zugewiesen wurde.&lt;/p&gt;&lt;p&gt;Sie sollten die VM so konfigurieren, dass ihr zumindest &lt;b&gt;%1&lt;/b&gt; Video-RAM zur Verfügung steht.&lt;/p&gt;&lt;p&gt;Drücken Sie &lt;b&gt;Ignorieren&lt;/b&gt; um dennoch in den Vollbildmodus zu wechseln oder betätigen Sie &lt;b&gt;Abbrechen&lt;/b&gt; um dies nicht zu tun.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Der Vollbildmodus konnte nicht aktiviert werden, weil dem Gast zu wenig Video-RAM zugewiesen wurde.&lt;/p&gt;&lt;p&gt;Sie sollten die VM so konfigurieren, dass ihr zumindest &lt;b&gt;%1&lt;/b&gt; Video-RAM zur Verfügung steht.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Ignorieren&lt;/b&gt; um dennoch in den Vollbildmodus zu wechseln oder betätigen Sie &lt;b&gt;Abbrechen&lt;/b&gt; um dies nicht zu tun.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1553"/>
@@ -4319,7 +4319,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1078"/>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Für diesen neuen Anschluss sind keine unbenutzten Plattenabbilder verfügbar.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Erzeugen&lt;/b&gt;, um eine neue virtuelle Platte zu erzeugen. Oder drücken Sie auf &lt;b&gt;Auswählen&lt;/b&gt;, um den &lt;i&gt;Manager für virtuelle Medien&lt;/i&gt; zu starten.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Für diesen neuen Anschluss sind keine unbenutzten Plattenabbilder verfügbar.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Erzeugen&lt;/b&gt;, um eine neue virtuelle Platte zu erzeugen. Betätigen Sie &lt;b&gt;Auswählen&lt;/b&gt;, um den &lt;i&gt;Manager für virtuelle Medien&lt;/i&gt; zu starten.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1093"/>
@@ -4412,7 +4412,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1919"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ein schwerwiegender Fehler ist aufgetreten, und die Ausführung der virtuellen Maschine wurde unterbrochen.&lt;/p&gt;&lt;p&gt;Zusätzliche Informationen zu diesem Fehler suchen Sie bitte in der Community-Sektion auf &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; bzw. handeln Sie gemäß Ihres Supportvertrages. Bitte geben Sie die Logdatei &lt;tt&gt;VBox.log&lt;/tt&gt;, den Screenshot &lt;tt&gt;VBox.png&lt;/tt&gt;, den Sie im Verzeichnis &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; finden können, sowie eine Beschreibung der Maßnahmen, die zu diesem Fehler führten, weiter. Sie können diese Dateien auch durch Auswahl von &lt;b&gt;Zeige Log...&lt;/b&gt; im Menü &lt;b&gt;Maschine&lt;/b&gt; des Hauptfensters finden.&lt;/p&gt;&lt;p&gt;Drücken Sie &lt;b&gt;OK&lt;/b&gt;, wenn Sie die virtuelle Maschine ausschalten wollen. Drücken Sie &lt;b&gt;Ignorieren&lt;/b&gt;, wenn Sie diese für Debugging offen lassen wollen. Zum Debuggen sind spezielle Kenntnisse und Tools notwendig, so dass die empfohlene Aktion hier &lt;b&gt;OK&lt;/b&gt; ist.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ein schwerwiegender Fehler ist aufgetreten, und die Ausführung der virtuellen Maschine wurde unterbrochen.&lt;/p&gt;&lt;p&gt;Zusätzliche Informationen zu diesem Fehler suchen Sie bitte in der Community-Sektion auf &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; bzw. handeln Sie gemäß Ihres Supportvertrages. Bitte geben Sie die Logdatei &lt;tt&gt;VBox.log&lt;/tt&gt;, den Screenshot &lt;tt&gt;VBox.png&lt;/tt&gt;, den Sie im Verzeichnis &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; finden können, sowie eine Beschreibung der Maßnahmen, die zu diesem Fehler führten, weiter. Sie können diese Dateien auch durch Auswahl von &lt;b&gt;Zeige Log...&lt;/b&gt; im Menü &lt;b&gt;Maschine&lt;/b&gt; des Hauptfensters finden.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;OK&lt;/b&gt;, wenn Sie die virtuelle Maschine ausschalten wollen. Wählen Sie &lt;b&gt;Ignorieren&lt;/b&gt;, wenn Sie diese für Debugging offen lassen wollen. Zum Debuggen sind spezielle Kenntnisse und Tools notwendig, so dass die empfohlene Aktion hier &lt;b&gt;OK&lt;/b&gt; ist.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2156"/>
@@ -4526,7 +4526,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1738"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die vorhandenen VirtualBox-Einstellungen werden automatisch aus dem alten Format in ein neues Format für die aktuelle Version von VirtualBox konvertiert.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;OK&lt;/b&gt;, um VirtualBox nun zu starten &lt;b&gt;Beenden&lt;/b&gt;, um VirtualBox ohne Speichern der Konvertierungen zu beenden.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Die vorhandenen VirtualBox-Einstellungen werden automatisch aus dem alten Format in ein neues Format für die aktuelle Version von VirtualBox konvertiert.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;OK&lt;/b&gt;, um VirtualBox nun zu starten oder &lt;b&gt;Beenden&lt;/b&gt;, um VirtualBox ohne Speichern der Konvertierungen zu beenden.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -4769,7 +4769,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1518"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Willkommen zu VirtualBox!&lt;/h3&gt;&lt;p&gt;Der linke Teil dieses Fensters zeigt eine Liste aller virtuellen Maschinen auf Ihrem Computer. Diese Liste ist momentan leer, da Sie noch keine virtuelle Maschine erstellt haben.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Um eine virtuelle Maschine anzulegen, drücken Sie &lt;b&gt;Neu&lt;/b&gt; in der Symbolleiste am oberen Rand des Fensters.&lt;/p&gt;&lt;p&gt;Die Taste &lt;b&gt;F1&lt;/b&gt; öffnet das Hilfefenster. Für aktuelle Produktinformationen aus dem Internet öffnen Sie &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Willkommen zu VirtualBox!&lt;/h3&gt;&lt;p&gt;Der linke Teil dieses Fensters zeigt eine Liste aller virtuellen Maschinen auf Ihrem Computer. Diese Liste ist momentan leer, da Sie noch keine virtuelle Maschine erstellt haben.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Um eine virtuelle Maschine anzulegen, wählen Sie &lt;b&gt;Neu&lt;/b&gt; in der Symbolleiste am oberen Rand des Fensters.&lt;/p&gt;&lt;p&gt;Die Taste &lt;b&gt;F1&lt;/b&gt; öffnet das Hilfefenster. Für aktuelle Produktinformationen aus dem Internet öffnen Sie &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1291"/>
@@ -5221,7 +5221,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="325"/>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Noch keine Beschreibung. Drücken Sie auf den Edit-Knopf um eine Beschreibung zu erstellen.</translation>
+        <translation>Noch keine Beschreibung. Betätigen Sie den Edit-Knopf um eine Beschreibung zu erstellen.</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="327"/>
@@ -5352,7 +5352,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="753"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wenn die Auswahl stimmt, drücken Sie bitte &lt;b&gt;Fertigstellen&lt;/b&gt;. Danach wird das ausgewählte Medium der virtuellen Maschine zugewiesen und die Ausführung der Maschine beginnt.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Wenn die Auswahl stimmt, wählen Sie bitte &lt;b&gt;Fertigstellen&lt;/b&gt;. Danach wird das ausgewählte Medium der virtuellen Maschine zugewiesen und die Ausführung der Maschine beginnt.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
@@ -5620,7 +5620,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="190"/>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Keine Log-Dateien gefunden. Drücken Sie &lt;b&gt;Aktualisieren&lt;/b&gt;, um erneut im Ordner &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; zu suchen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Keine Log-Dateien gefunden. Klicken Sie auf &lt;b&gt;Aktualisieren&lt;/b&gt;, um erneut im Ordner &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; zu suchen.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="222"/>
