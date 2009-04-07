@@ -635,6 +635,11 @@ public:
             case MachineState_Saved:               return "Saved";
             case MachineState_Aborted:             return "Aborted";
             case MachineState_Stopping:            return "Stopping";
+            case MachineState_Paused:              return "Paused";
+            case MachineState_Stuck:               return "Stuck";
+            case MachineState_Saving:              return "Saving";
+            case MachineState_Discarding:          return "Discarding";
+            case MachineState_SettingUp:           return "SettingUp";
             default:                               return "no idea";
         }
     }
