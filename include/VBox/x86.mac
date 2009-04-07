@@ -18,6 +18,7 @@
 %define X86_EFL_ID          RT_BIT(21)
 %define X86_EFL_IOPL_SHIFT  12
 %define X86_EFL_GET_IOPL(efl)   (((efl) >> X86_EFL_IOPL_SHIFT) & 3)
+%define X86_EFL_POPF_BITS       (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_AC | X86_EFL_ID)
 %define X86_CPUID_VENDOR_INTEL_EBX      0x756e6547      /* Genu */
 %define X86_CPUID_VENDOR_INTEL_ECX      0x6c65746e      /* ntel */
 %define X86_CPUID_VENDOR_INTEL_EDX      0x49656e69      /* ineI */
@@ -212,6 +213,10 @@
 %define MSR_IA32_MCP_STATUS                 0x17A
 %define MSR_IA32_MCP_CTRL                   0x17B
 %define MSR_IA32_CR_PAT                     0x277
+%define MSR_IA32_PERFEVTSEL0                0x186
+%define MSR_IA32_PERFEVTSEL1                0x187
+%define MSR_IA32_PERF_STATUS                0x198
+%define MSR_IA32_PERF_CTL                   0x199
 %define MSR_IA32_MTRR_DEF_TYPE              0x2FF
 %define MSR_IA32_MC0_CTL                    0x400
 %define MSR_IA32_MC0_STATUS                 0x401
@@ -295,6 +300,15 @@
 %define X86_PAGE_4M_OFFSET_MASK             0x003fffff
 %define X86_PAGE_4M_BASE_MASK               0xffffffffffc00000ULL
 %define X86_PAGE_4M_BASE_MASK_32            0xffc00000
+%define X86_PTE_BIT_P                       0
+%define X86_PTE_BIT_RW                      1
+%define X86_PTE_BIT_US                      2
+%define X86_PTE_BIT_PWT                     3
+%define X86_PTE_BIT_PCD                     4
+%define X86_PTE_BIT_A                       5
+%define X86_PTE_BIT_D                       6
+%define X86_PTE_BIT_PAT                     7
+%define X86_PTE_BIT_G                       8
 %define X86_PTE_P                           RT_BIT(0)
 %define X86_PTE_RW                          RT_BIT(1)
 %define X86_PTE_US                          RT_BIT(2)
