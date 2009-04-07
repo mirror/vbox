@@ -1889,18 +1889,40 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
             desc.status.fTCPCS = true;
             //desc.status.fIPE   = false;
             //desc.status.fTCPE  = false;
+            /*
+             * We need to leave Rx critical section here, otherwise it will block EMT if
+             * it happens to enter e1kRegWriteRDT() while we storing the fragment. This
+             * will lead to a deadlock as writing to guest memory waits for EMT to hangle
+             * the request.
+             * Note that it is safe to leave the critical section here since e1kRegWriteRDT()
+             * modifies RDT only.
+             */
             if(cb > pState->u16RxBSize)
             {
                 desc.status.fEOP = false;
+                e1kCsRxLeave(pState);
                 e1kStoreRxFragment(pState, &desc, ptr, pState->u16RxBSize);
+                rc = e1kCsRxEnter(pState, VERR_SEM_BUSY);
+                if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                    return rc;
                 ptr += pState->u16RxBSize;
                 cb -= pState->u16RxBSize;
             }
             else
             {
                 desc.status.fEOP = true;
+                e1kCsRxLeave(pState);
                 e1kStoreRxFragment(pState, &desc, ptr, cb);
-                break;
+#ifdef E1K_LEDS_WITH_MUTEX
+                if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
+                {
+#endif /* E1K_LEDS_WITH_MUTEX */
+                    pState->led.Actual.s.fReading = 0;
+#ifdef E1K_LEDS_WITH_MUTEX
+                    e1kCsLeave(pState);
+                }
+#endif /* E1K_LEDS_WITH_MUTEX */
+                return VINF_SUCCESS;
             }
             /* Note: RDH is advanced by e1kStoreRxFragment! */
         }
@@ -1923,9 +1945,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
     }
 #endif /* E1K_LEDS_WITH_MUTEX */
 
-#ifndef E1K_GLOBAL_MUTEX
-    PDMCritSectLeave(&pState->csRx);
-#endif
+    e1kCsRxLeave(pState);
 
     return VINF_SUCCESS;
 }
