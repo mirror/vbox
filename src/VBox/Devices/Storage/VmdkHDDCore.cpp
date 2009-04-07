@@ -1656,8 +1656,8 @@ static int vmdkDescExtInsert(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
     char szExt[1024];
     ssize_t cbDiff;
 
-    Assert((int)enmAccess < RT_ELEMENTS(apszAccess));
-    Assert((int)enmType < RT_ELEMENTS(apszType));
+    Assert((unsigned)enmAccess < RT_ELEMENTS(apszAccess));
+    Assert((unsigned)enmType < RT_ELEMENTS(apszType));
 
     /* Find last entry in extent description. */
     while (uStart)
