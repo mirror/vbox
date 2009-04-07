@@ -657,6 +657,8 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/tftp.c \
 	Network/slirp/udp.c
 
+VBOX_WITH_SLIRP_DNS_PROXY=1 
+
 ifdef VBOX_WITH_SLIRP_DNS_PROXY
 VBOX_SLIRP_SOURCES += \
 	Network/slirp/dnsproxy/hash.c \
