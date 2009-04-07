@@ -1508,6 +1508,7 @@ STDMETHODIMP Appliance::Interpret()
                     Utf8Str strNetwork = ea.strNetworkName;
                     // make sure it's one of these two
                     if (    (strNetwork.compare("Null", Utf8Str::CaseInsensitive))
+                         && (strNetwork.compare("NAT", Utf8Str::CaseInsensitive))
                          && (strNetwork.compare("Bridged", Utf8Str::CaseInsensitive))
                          && (strNetwork.compare("Internal", Utf8Str::CaseInsensitive))
                          && (strNetwork.compare("HostOnly", Utf8Str::CaseInsensitive))
