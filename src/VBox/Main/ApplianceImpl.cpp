@@ -2815,7 +2815,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
             pelmOperatingSystemSection->setAttribute("ovf:id", llOS.front()->strOvf);
             pelmOperatingSystemSection->createChild("Info")->addContent("The kind of installed guest operating system");
             Utf8Str strOSDesc;
-            convertCIMOSType2VBoxOSType(strOSDesc, llOS.front()->strOvf.toInt32(), "");
+            convertCIMOSType2VBoxOSType(strOSDesc, (CIMOSType_T)llOS.front()->strOvf.toInt32(), "");
             pelmOperatingSystemSection->createChild("Description")->addContent(strOSDesc);
 
             // <VirtualHardwareSection ovf:id="hw1" ovf:transport="iso">
