@@ -211,7 +211,7 @@ typedef struct VBOXNETFLTINS
 # if defined(VBOX_NETFLT_ONDEMAND_BIND)
         uint8_t abPadding[192];
 # elif defined(VBOXNETADP)
-        uint8_t abPadding[128];
+        uint8_t abPadding[256];
 # else
         uint8_t abPadding[1024];
 # endif
