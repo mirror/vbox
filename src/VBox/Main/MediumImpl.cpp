@@ -968,7 +968,7 @@ HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox, CBSTR aLocation
         /* if the image file is not accessible, it's not acceptable for the
          * newly opened media so convert this into an error */
         if (!m.lastAccessError.isNull())
-            rc = setError (E_FAIL, Utf8Str (m.lastAccessError));
+            rc = setError (VBOX_E_FILE_ERROR, Utf8Str (m.lastAccessError));
     }
 
     /* Confirm a successful initialization when it's the case */

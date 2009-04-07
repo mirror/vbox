@@ -2853,9 +2853,16 @@ HRESULT HardDisk::setLocation (CBSTR aLocation)
             }
 
             if (RT_FAILURE (vrc))
-                return setError (VBOX_E_IPRT_ERROR,
-                    tr ("Could not get the storage format of the hard disk "
-                        "'%s' (%Rrc)"), locationFull.raw(), vrc);
+            {
+                if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
+                    return setError (VBOX_E_FILE_ERROR,
+                        tr ("Could not find file for the hard disk "
+                            "'%s' (%Rrc)"), locationFull.raw(), vrc);
+                else
+                    return setError (VBOX_E_IPRT_ERROR,
+                        tr ("Could not get the storage format of the hard disk "
+                            "'%s' (%Rrc)"), locationFull.raw(), vrc);
+            }
 
             ComAssertRet (backendName != NULL && *backendName != '\0', E_FAIL);
 
