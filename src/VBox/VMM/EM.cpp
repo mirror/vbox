@@ -2511,10 +2511,10 @@ VMMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM)
  */
 static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
 {
-   /*
-    * Note that the order is *vitally* important!
-    * Also note that SELMR3UpdateFromCPUM may trigger VM_FF_SELM_SYNC_TSS.
-    */
+    /*
+     * Note that the order is *vitally* important!
+     * Also note that SELMR3UpdateFromCPUM may trigger VM_FF_SELM_SYNC_TSS.
+     */
 
 
     /*
@@ -2529,9 +2529,23 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
 
     /*
      * Sync IDT.
+     *
+     * The CSAMR3CheckGates call in TRPMR3SyncIDT may call PGMPrefetchPage
+     * and PGMShwModifyPage, so we're in for trouble if for instance a
+     * PGMSyncCR3+pgmPoolClearAll is pending.
+     */
      */
     if (VM_FF_ISPENDING(pVM, VM_FF_TRPM_SYNC_IDT))
     {
+        if (   VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3)
+            && EMIsRawRing0Enabled(pVM)
+            && CSAMIsEnabled(pVM))
+        {
+            int rc = PGMSyncCR3(pVM, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
         int rc = TRPMR3SyncIDT(pVM);
         if (RT_FAILURE(rc))
             return rc;
@@ -2558,7 +2572,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
 
         Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT));
 
-        /* Prefetch pages for EIP and ESP */
+        /* Prefetch pages for EIP and ESP. */
         /** @todo This is rather expensive. Should investigate if it really helps at all. */
         rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->rip));
         if (rc == VINF_SUCCESS)
