@@ -97,8 +97,12 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15.pl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15suse.pl \
+		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.include.header \
+		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.include.footer \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test.c \
+		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test.drm \
+		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test_drm.c \
 		$(PATH_BIN)/additions/vboxmouse_drv.o \
 		$(PATH_BIN)/additions/vboxmouse_drv_70.so \
 		$(PATH_BIN)/additions/vboxmouse_drv_71.so \
@@ -135,6 +139,11 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(MKDIR) -p $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test  $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test/Makefile
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test.c         $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test/
+	$(QUIET)$(MKDIR) -p $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.include.header  $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.include.footer  $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test.drm  $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm/Makefile
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test_drm.c     $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm/
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxadd-timesync           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxadd-timesync
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxClient                 $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxClient
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxControl                $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxControl
