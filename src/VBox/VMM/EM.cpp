@@ -2534,7 +2534,6 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
      * and PGMShwModifyPage, so we're in for trouble if for instance a
      * PGMSyncCR3+pgmPoolClearAll is pending.
      */
-     */
     if (VM_FF_ISPENDING(pVM, VM_FF_TRPM_SYNC_IDT))
     {
         if (   VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3)
