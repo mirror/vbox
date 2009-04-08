@@ -53,6 +53,15 @@
 %endif
 %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
  %define MAYBE_64_BIT
+%else
+ %ifdef RT_OS_DARWIN
+  %ifdef RT_ARCH_AMD64
+   ;;
+   ; Load the NULL selector into DS, ES, FS and GS on 64-bit darwin so we don't
+   ; risk loading a stale LDT value or something invalid.
+   %define HWACCM_64_BIT_USE_NULL_SEL
+  %endif
+ %endif
 %endif
 
 
@@ -147,46 +156,66 @@
 
 ; trashes, rax, rdx & rcx
 %macro MYPUSHSEGS64 2
+ %ifndef HWACCM_64_BIT_USE_NULL_SEL
    mov     %2, es
    push    %1
    mov     %2, ds
    push    %1
+ %endif
 
    ; Special case for FS; Windows and Linux either don't use it or restore it when leaving kernel mode, Solaris OTOH doesn't and we must save it.
    mov     ecx, MSR_K8_FS_BASE
    rdmsr
    push    rdx
    push    rax
+ %ifndef HWACCM_64_BIT_USE_NULL_SEL
    push    fs
+ %endif
 
    ; Special case for GS; OSes typically use swapgs to reset the hidden base register for GS on entry into the kernel. The same happens on exit
    mov     ecx, MSR_K8_GS_BASE
    rdmsr
    push    rdx
    push    rax
+ %ifndef HWACCM_64_BIT_USE_NULL_SEL
    push    gs
+ %endif
 %endmacro
 
 ; trashes, rax, rdx & rcx
 %macro MYPOPSEGS64 2
    ; Note: do not step through this code with a debugger!
+ %ifndef HWACCM_64_BIT_USE_NULL_SEL
+   xor     eax, eax
+   mov     ds, ax
+   mov     es, ax
+   mov     fs, ax
+   mov     gs, ax
+ %endif
+
+ %ifndef HWACCM_64_BIT_USE_NULL_SEL
    pop     gs
+ %endif
    pop     rax
    pop     rdx
    mov     ecx, MSR_K8_GS_BASE
    wrmsr
 
+ %ifndef HWACCM_64_BIT_USE_NULL_SEL
    pop     fs
+ %endif
    pop     rax
    pop     rdx
    mov     ecx, MSR_K8_FS_BASE
    wrmsr
    ; Now it's safe to step again
 
+ %ifndef HWACCM_64_BIT_USE_NULL_SEL
    pop     %1
    mov     ds, %2
    pop     %1
    mov     es, %2
+ %endif
 %endmacro
 
 %macro MYPUSHAD32 0
