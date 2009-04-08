@@ -824,6 +824,63 @@ RTR3DECL(int) RTTestSubDone(RTTEST hTest)
     return cch;
 }
 
+/**
+ * Prints an extended PASSED message, optional.
+ *
+ * This does not conclude the sub-test, it could be used to report the passing
+ * of a sub-sub-to-the-power-of-N-test.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   va          The arguments.
+ */
+RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN_RC(pTest, -1);
+
+    int cch = 0;
+    if (pTest->enmMaxLevel >= RTTESTLVL_INFO)
+    {
+        va_list va2;
+        va_copy(va2, va);
+
+        RTCritSectEnter(&pTest->OutputLock);
+        cch += rtTestPrintf(pTest, "%N\n", pszFormat, &va2);
+        RTCritSectLeave(&pTest->OutputLock);
+
+        va_end(va2);
+    }
+
+    return cch;
+}
+
+
+/**
+ * Prints an extended PASSED message, optional.
+ *
+ * This does not conclude the sub-test, it could be used to report the passing
+ * of a sub-sub-to-the-power-of-N-test.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   ...         The arguments.
+ */
+RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...)
+{
+    va_list va;
+
+    va_start(va, pszFormat);
+    int cch = RTTestPassedV(hTest, pszFormat, va);
+    va_end(va);
+
+    return cch;
+}
+
 
 /**
  * Increments the error counter.
@@ -898,59 +955,37 @@ RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...)
 
 
 /**
- * Prints an extended PASSED message, optional.
+ * Same as RTTestPrintfV with RTTESTLVL_FAILURE.
  *
- * This does not conclude the sub-test, it could be used to report the passing
- * of a sub-sub-to-the-power-of-N-test.
- *
- * @returns IPRT status code.
+ * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
- * @param   pszFormat   The message. No trailing newline.
- * @param   va          The arguments.
+ * @param   enmLevel    Message importance level.
+ * @param   pszFormat   The message.
+ * @param   va          Arguments.
  */
-RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va)
+RTR3DECL(int) RTTestFailureDetailsV(RTTEST hTest, const char *pszFormat, va_list va)
 {
-    PRTTESTINT pTest = hTest;
-    RTTEST_GET_VALID_RETURN_RC(pTest, -1);
-
-    int cch = 0;
-    if (pTest->enmMaxLevel >= RTTESTLVL_INFO)
-    {
-        va_list va2;
-        va_copy(va2, va);
-
-        RTCritSectEnter(&pTest->OutputLock);
-        cch += rtTestPrintf(pTest, "%N\n", pszFormat, &va2);
-        RTCritSectLeave(&pTest->OutputLock);
-
-        va_end(va2);
-    }
-
-    return cch;
+    return RTTestPrintfV(hTest, RTTESTLVL_FAILURE, pszFormat, va);
 }
 
 
 /**
- * Prints an extended PASSED message, optional.
+ * Same as RTTestPrintf with RTTESTLVL_FAILURE.
  *
- * This does not conclude the sub-test, it could be used to report the passing
- * of a sub-sub-to-the-power-of-N-test.
- *
- * @returns IPRT status code.
+ * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
- * @param   pszFormat   The message. No trailing newline.
- * @param   ...         The arguments.
+ * @param   enmLevel    Message importance level.
+ * @param   pszFormat   The message.
+ * @param   ...         Arguments.
  */
-RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...)
+RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...)
 {
     va_list va;
-
     va_start(va, pszFormat);
-    int cch = RTTestPassedV(hTest, pszFormat, va);
+    int cch = RTTestFailureDetailsV(hTest, pszFormat, va);
     va_end(va);
-
     return cch;
 }
 
