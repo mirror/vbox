@@ -212,7 +212,9 @@ QVariant HardwareItem::data (int aColumn, int aRole) const
                                 /* Shorten the big text if there is more than
                                  * one line */
                                 QString tmp (mConfigValue);
-                                tmp.replace (tmp.indexOf ('\n'), tmp.length(), "...");
+                                int i = tmp.indexOf ('\n');
+                                if (i > -1)
+                                    tmp.replace (i, tmp.length(), "...");
                                 v = tmp; break;
                             }
                         case KVirtualSystemDescriptionType_OS: v = vboxGlobal().vmGuestOSTypeDescription (mConfigValue); break;
