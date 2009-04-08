@@ -191,6 +191,7 @@ void VBoxVMSettingsNetwork::updateAttachmentInfo()
             mDetails->loadList (type, mParent->hoiList());
             break;
         default:
+            mDetails->loadList (type, QStringList());
             break;
     }
 
