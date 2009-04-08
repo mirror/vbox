@@ -112,9 +112,7 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     edx, ebx                    ; pJmpBuf -> edx (volatile reg)
 
     ;
-    ; Return like in the long jump.
-    ; (It is vital that we restore all registers since they might've changed
-    ;  by a long jump.)
+    ; Return like in the long jump but clear eip, no short cuts here.
     ;
 .proper_return:
     mov     ebx, [edx + VMMR0JMPBUF.ebx]
@@ -127,7 +125,7 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     jmp     ecx
 
 .entry_error:
-    mov     eax, VERR_INTERNAL_ERROR
+    mov     eax, VERR_INTERNAL_ERROR_2
     jmp     .proper_return
 
     ;
@@ -146,7 +144,7 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     edi, [edx + VMMR0JMPBUF.edi]
     mov     esi, [edx + VMMR0JMPBUF.esi]
     mov     ebx, [edx + VMMR0JMPBUF.ebx]
-    mov     eax, VERR_INTERNAL_ERROR    ; todo better return code!
+    mov     eax, VERR_INTERNAL_ERROR_3    ; todo better return code!
     ret
 
 .espCheck_ok:
@@ -231,7 +229,22 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     test    byte [rdx + VMMR0JMPBUF.fInRing3Call], 1
     jnz     .resume
 
-    mov     [rbp - 8], rdx              ; Save it and fix stack alignment (16).
+ %ifdef VMM_R0_SWITCH_STACK
+    mov     r15, [rdx + VMMR0JMPBUF.pvSavedStack]
+    test    r15, r15
+    jz      .entry_error
+  %ifdef VBOX_STRICT
+    mov     rdi, r15
+    mov     rcx, 1024
+    mov     rax, 00eeeeeeeffeeeeeeeh
+    repne stosq
+    mov     [rdi - 10h], rbx
+  %endif
+    lea     r15, [r15 + 8192 - 40h]
+    mov     rsp, r15                    ; Switch stack!
+ %endif ; VMM_R0_SWITCH_STACK
+
+    mov     r12, rdx                    ; Save pJmpBuf.
  %ifdef ASM_CALL64_MSC
     mov     rcx, r8                     ; pvUser -> arg0
     mov     rdx, r9
@@ -240,10 +253,12 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     rsi, r9
  %endif
     call    r11
-    mov     rdx, [rbp - 8]              ; pJmpBuf
+    mov     rdx, r12                    ; Restore pJmpBuf
 
-    ; restore the registers that we're not allowed to modify
-    ; otherwise a resume might restore the wrong values (from the previous run)
+    ;
+    ; Return like in the long jump but clear eip, no short cuts here.
+    ;
+.proper_return:
     mov     rbx, [rdx + VMMR0JMPBUF.rbx]
  %ifdef ASM_CALL64_MSC
     mov     rsi, [rdx + VMMR0JMPBUF.rsi]
@@ -253,30 +268,39 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     r13, [rdx + VMMR0JMPBUF.r13]
     mov     r14, [rdx + VMMR0JMPBUF.r14]
     mov     r15, [rdx + VMMR0JMPBUF.r15]
-
+    mov     rbp, [rdx + VMMR0JMPBUF.rbp]
+    mov     rcx, [rdx + VMMR0JMPBUF.rip]
     and     qword [rdx + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
-    leave
-    ret
+    mov     rsp, [rdx + VMMR0JMPBUF.rsp]
+    jmp     rcx
+
+.entry_error:
+    mov     eax, VERR_INTERNAL_ERROR_2
+    jmp     .proper_return
 
     ;
     ; Resume VMMR0CallHost the call.
     ;
 .resume:
+ %ifdef VMM_R0_SWITCH_STACK
+    ; Switch stack.
+    mov     rsp, [rdx + VMMR0JMPBUF.SpResume]
+ %else  ; !VMM_R0_SWITCH_STACK
     ; Sanity checks.
     cmp     r10, [rdx + VMMR0JMPBUF.SpCheck]
     je      .rspCheck_ok
 .bad:
     and     qword [rdx + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
     mov     rbx, [rdx + VMMR0JMPBUF.rbx]
- %ifdef ASM_CALL64_MSC
+  %ifdef ASM_CALL64_MSC
     mov     rsi, [rdx + VMMR0JMPBUF.rsi]
     mov     rdi, [rdx + VMMR0JMPBUF.rdi]
- %endif
+  %endif
     mov     r12, [rdx + VMMR0JMPBUF.r12]
     mov     r13, [rdx + VMMR0JMPBUF.r13]
     mov     r14, [rdx + VMMR0JMPBUF.r14]
     mov     r15, [rdx + VMMR0JMPBUF.r15]
-    mov     eax, VERR_INTERNAL_ERROR    ; todo better return code!
+    mov     eax, VERR_INTERNAL_ERROR_2
     leave
     ret
 
@@ -294,13 +318,14 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     ;
     ; Restore the stack.
     ;
-    mov     byte [rdx + VMMR0JMPBUF.fInRing3Call], 0
     mov     ecx, [rdx + VMMR0JMPBUF.cbSavedStack]
     shr     ecx, 3
     mov     rsi, [rdx + VMMR0JMPBUF.pvSavedStack]
     mov     rdi, [rdx + VMMR0JMPBUF.SpResume]
     mov     rsp, rdi
     rep movsq
+ %endif ; !VMM_R0_SWITCH_STACK
+    mov     byte [rdx + VMMR0JMPBUF.fInRing3Call], 0
 
     ;
     ; Continue where we left off.
@@ -414,7 +439,7 @@ BEGINPROC vmmR0CallHostLongJmp
     pop     ebx
     pop     esi
     pop     edi
-    mov     eax, VERR_INTERNAL_ERROR
+    mov     eax, VERR_INTERNAL_ERROR_4
     leave
     ret
 %endif ; RT_ARCH_X86
@@ -454,40 +479,31 @@ BEGINPROC vmmR0CallHostLongJmp
     je      .nok
 
     ;
-    ; Save the stack.
+    ; Sanity checks.
     ;
     mov     rdi, [rdx + VMMR0JMPBUF.pvSavedStack]
     test    rdi, rdi                    ; darwin may set this to 0.
     jz      .nok
     mov     [rdx + VMMR0JMPBUF.SpResume], rsp
+ %ifndef VMM_R0_SWITCH_STACK
     mov     rsi, rsp
     mov     rcx, [rdx + VMMR0JMPBUF.rsp]
     sub     rcx, rsi
 
     ; two sanity checks on the size.
     cmp     rcx, 8192                   ; check max size.
-    jbe     .ok
-.nok:
-    mov     eax, VERR_INTERNAL_ERROR
-    popf
-    pop     rbx
- %ifdef ASM_CALL64_MSC
-    pop     rsi
-    pop     rdi
- %endif
-    pop     r12
-    pop     r13
-    pop     r14
-    pop     r15
-    leave
-    ret
+    jnbe    .nok
 
-.ok:
+    ;
+    ; Copy the stack
+    ;
     test    ecx, 7                      ; check alignment
     jnz     .nok
     mov     [rdx + VMMR0JMPBUF.cbSavedStack], ecx
     shr     ecx, 3
     rep movsq
+
+ %endif ; !VMM_R0_SWITCH_STACK
 
     ; store the last pieces of info.
     mov     rcx, [rdx + VMMR0JMPBUF.rsp]
@@ -510,6 +526,25 @@ BEGINPROC vmmR0CallHostLongJmp
     mov     rcx, [rdx + VMMR0JMPBUF.rip]
     mov     rsp, [rdx + VMMR0JMPBUF.rsp]
     jmp     rcx
+
+    ;
+    ; Failure
+    ;
+.nok:
+    mov     eax, VERR_INTERNAL_ERROR_4
+    popf
+    pop     rbx
+ %ifdef ASM_CALL64_MSC
+    pop     rsi
+    pop     rdi
+ %endif
+    pop     r12
+    pop     r13
+    pop     r14
+    pop     r15
+    leave
+    ret
+
 %endif
 ENDPROC vmmR0CallHostLongJmp
 
