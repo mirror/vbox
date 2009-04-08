@@ -81,9 +81,9 @@ static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
     {
         com::ProgressErrorInfo info(progress);
         if (info.isBasicAvailable())
-            RTPrintf("Error: failed to remove the host-only adapter. Error message: %lS\n", info.getText().raw());
+            RTPrintf("Error: failed to create the host-only adapter. Error message: %lS\n", info.getText().raw());
         else
-            RTPrintf("Error: failed to remove the host-only adapter. No error message available, HRESULT code: 0x%x\n", hr);
+            RTPrintf("Error: failed to create the host-only adapter. No error message available, HRESULT code: 0x%x\n", hr);
 
         return 1;
     }
