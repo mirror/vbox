@@ -224,6 +224,35 @@ RTR3DECL(int) RTTestSub(RTTEST hTest, const char *pszSubTest);
 RTR3DECL(int) RTTestSubDone(RTTEST hTest);
 
 /**
+ * Prints an extended PASSED message, optional.
+ *
+ * This does not conclude the sub-test, it could be used to report the passing
+ * of a sub-sub-to-the-power-of-N-test.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   va          The arguments.
+ */
+RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va);
+
+/**
+ * Prints an extended PASSED message, optional.
+ *
+ * This does not conclude the sub-test, it could be used to report the passing
+ * of a sub-sub-to-the-power-of-N-test.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   ...         The arguments.
+ */
+RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...);
+
+
+/**
  * Increments the error counter.
  *
  * @returns IPRT status code.
@@ -254,6 +283,30 @@ RTR3DECL(int) RTTestFailedV(RTTEST hTest, const char *pszFormat, va_list va);
  */
 RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...);
 
+/**
+ * Same as RTTestPrintfV with RTTESTLVL_FAILURE.
+ *
+ * @returns Number of chars printed.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   enmLevel    Message importance level.
+ * @param   pszFormat   The message.
+ * @param   va          Arguments.
+ */
+RTR3DECL(int) RTTestFailureDetailsV(RTTEST hTest, const char *pszFormat, va_list va);
+
+/**
+ * Same as RTTestPrintf with RTTESTLVL_FAILURE.
+ *
+ * @returns Number of chars printed.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   enmLevel    Message importance level.
+ * @param   pszFormat   The message.
+ * @param   ...         Arguments.
+ */
+RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...);
+
 
 /** @def RTTEST_CHECK
  * Check whether a boolean expression holds true.
@@ -264,7 +317,10 @@ RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...);
  * @param   expr        The expression to evaluate.
  */
 #define RTTEST_CHECK(hTest, expr) \
-    do { if (!(expr)) { RTTestFailed((hTest), "line %u: %s", __LINE__, #expr); } } while (0)
+    do { if (!(expr)) { \
+            RTTestFailed((hTest), "line %u: %s", __LINE__, #expr); \
+         } \
+    } while (0)
 
 /** @def RTTEST_CHECK_MSG
  * Check whether a boolean expression holds true.
@@ -273,30 +329,111 @@ RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...);
  *
  * @param   hTest           The test handle.
  * @param   expr            The expression to evaluate.
- * @param   TestPrintfArgs  Argument list for RTTestPrintf, including
+ * @param   DetailsArgs     Argument list for RTTestFailureDetails, including
  *                          parenthesis.
  */
-#define RTTEST_CHECK_MSG(hTest, expr, TestPrintfArgs) \
+#define RTTEST_CHECK_MSG(hTest, expr, DetailsArgs) \
     do { if (!(expr)) { \
             RTTestFailed((hTest), "line %u: %s", __LINE__, #expr); \
-            RTTestPrintf TestPrintfArgs; \
+            RTTestFailureDetails DetailsArgs; \
+         } \
+    } while (0)
+
+/** @def RTTEST_CHECK_RET
+ * Check whether a boolean expression holds true, returns on false.
+ *
+ * If the expression is false, call RTTestFailed giving the line number and expression.
+ *
+ * @param   hTest       The test handle.
+ * @param   expr        The expression to evaluate.
+ * @param   rcRet       What to return on failure.
+ */
+#define RTTEST_CHECK_RET(hTest, expr, rc) \
+    do { if (!(expr)) { \
+            RTTestFailed((hTest), "line %u: %s", __LINE__, #expr); \
+            return (rcRet); \
+         } \
+    } while (0)
+
+/** @def RTTEST_CHECK_MSG_RET
+ * Check whether a boolean expression holds true, returns on false.
+ *
+ * If the expression is false, call RTTestFailed giving the line number and expression.
+ *
+ * @param   hTest           The test handle.
+ * @param   expr            The expression to evaluate.
+ * @param   DetailsArgs     Argument list for RTTestFailureDetails, including
+ *                          parenthesis.
+ * @param   rcRet           What to return on failure.
+ */
+#define RTTEST_CHECK_MSG_RET(hTest, expr, DetailsArgs, rcRet) \
+    do { if (!(expr)) { \
+            RTTestFailed((hTest), "line %u: %s", __LINE__, #expr); \
+            RTTestFailureDetails DetailsArgs; \
+            return (rcRet); \
+         } \
+    } while (0)
+
+/** @def RTTEST_CHECK_RETV
+ * Check whether a boolean expression holds true, returns void on false.
+ *
+ * If the expression is false, call RTTestFailed giving the line number and expression.
+ *
+ * @param   hTest       The test handle.
+ * @param   expr        The expression to evaluate.
+ */
+#define RTTEST_CHECK_RETV(hTest, expr) \
+    do { if (!(expr)) { \
+            RTTestFailed((hTest), "line %u: %s", __LINE__, #expr); \
+            return; \
+         } \
+    } while (0)
+
+/** @def RTTEST_CHECK_MSG_RET
+ * Check whether a boolean expression holds true, returns void on false.
+ *
+ * If the expression is false, call RTTestFailed giving the line number and expression.
+ *
+ * @param   hTest           The test handle.
+ * @param   expr            The expression to evaluate.
+ * @param   DetailsArgs     Argument list for RTTestFailureDetails, including
+ *                          parenthesis.
+ */
+#define RTTEST_CHECK_MSG_RETV(hTest, expr, DetailsArgs) \
+    do { if (!(expr)) { \
+            RTTestFailed((hTest), "line %u: %s", __LINE__, #expr); \
+            RTTestFailureDetails DetailsArgs; \
+            return; \
          } \
     } while (0)
 
 
-/**
- * Prints an extended PASSED message, optional.
- *
- * This does not conclude the sub-test, it could be used to report the passing
- * of a sub-sub-to-the-power-of-N-test.
- *
- * @returns IPRT status code.
- * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
- *                      associated with the calling thread.
- * @param   pszFormat   The message. No trailing newline.
- * @param   va          The arguments.
+
+
+/** @name Implicit Test Handle API Variation
+ * The test handle is retrieved from the test TLS entry of the calling thread.
+ * @{
  */
-RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va);
+
+/**
+ * Test vprintf, makes sure lines are prefixed and so forth.
+ *
+ * @returns Number of chars printed.
+ * @param   enmLevel    Message importance level.
+ * @param   pszFormat   The message.
+ * @param   va          Arguments.
+ */
+RTR3DECL(int) RTTestIPrintfV(RTTESTLVL enmLevel, const char *pszFormat, va_list va);
+
+/**
+ * Test printf, makes sure lines are prefixed and so forth.
+ *
+ * @returns Number of chars printed.
+ * @param   enmLevel    Message importance level.
+ * @param   pszFormat   The message.
+ * @param   ...         Arguments.
+ */
+RTR3DECL(int) RTTestIPrintf(RTTESTLVL enmLevel, const char *pszFormat, ...);
 
 /**
  * Prints an extended PASSED message, optional.
@@ -305,12 +442,168 @@ RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va);
  * of a sub-sub-to-the-power-of-N-test.
  *
  * @returns IPRT status code.
- * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
- *                      associated with the calling thread.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   va          The arguments.
+ */
+RTR3DECL(int) RTTestIPassedV(const char *pszFormat, va_list va);
+
+/**
+ * Prints an extended PASSED message, optional.
+ *
+ * This does not conclude the sub-test, it could be used to report the passing
+ * of a sub-sub-to-the-power-of-N-test.
+ *
+ * @returns IPRT status code.
  * @param   pszFormat   The message. No trailing newline.
  * @param   ...         The arguments.
  */
-RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...);
+RTR3DECL(int) RTTestIPassed(const char *pszFormat, ...);
+
+/**
+ * Increments the error counter.
+ *
+ * @returns IPRT status code.
+ */
+RTR3DECL(int) RTTestIErrorInc(void);
+
+/**
+ * Increments the error counter and prints a failure message.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   va          The arguments.
+ */
+RTR3DECL(int) RTTestIFailedV(const char *pszFormat, va_list va);
+
+/**
+ * Increments the error counter and prints a failure message.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   ...         The arguments.
+ */
+RTR3DECL(int) RTTestIFailed(const char *pszFormat, ...);
+
+/**
+ * Same as RTTestIPrintfV with RTTESTLVL_FAILURE.
+ *
+ * @returns Number of chars printed.
+ * @param   pszFormat   The message.
+ * @param   va          Arguments.
+ */
+RTR3DECL(int) RTTestIFailureDetailsV(const char *pszFormat, va_list va);
+
+/**
+ * Same as RTTestIPrintf with RTTESTLVL_FAILURE.
+ *
+ * @returns Number of chars printed.
+ * @param   pszFormat   The message.
+ * @param   ...         Arguments.
+ */
+RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
+
+
+/** @def RTTESTI_CHECK
+ * Check whether a boolean expression holds true.
+ *
+ * If the expression is false, call RTTestIFailed giving the line number and
+ * expression.
+ *
+ * @param   expr        The expression to evaluate.
+ */
+#define RTTESTI_CHECK(expr) \
+    do { if (!(expr)) { \
+            RTTestIFailed("line %u: %s", __LINE__, #expr); \
+         } \
+    } while (0)
+
+/** @def RTTESTI_CHECK_MSG
+ * Check whether a boolean expression holds true.
+ *
+ * If the expression is false, call RTTestIFailed giving the line number and
+ * expression.
+ *
+ * @param   expr            The expression to evaluate.
+ * @param   DetailsArgs     Argument list for RTTestIFailureDetails, including
+ *                          parenthesis.
+ */
+#define RTTESTI_CHECK_MSG(expr, DetailsArgs) \
+    do { if (!(expr)) { \
+            RTTestIFailed("line %u: %s", __LINE__, #expr); \
+            RTTestIFailureDetails DetailsArgs; \
+         } \
+    } while (0)
+
+/** @def RTTESTI_CHECK_RET
+ * Check whether a boolean expression holds true, returns on false.
+ *
+ * If the expression is false, call RTTestIFailed giving the line number and
+ * expression.
+ *
+ * @param   expr        The expression to evaluate.
+ * @param   rcRet       What to return on failure.
+ */
+#define RTTESTI_CHECK_RET(expr, rc) \
+    do { if (!(expr)) { \
+            RTTestIFailed("line %u: %s", __LINE__, #expr); \
+            return (rcRet); \
+         } \
+    } while (0)
+
+/** @def RTTESTI_CHECK_MSG_RET
+ * Check whether a boolean expression holds true, returns on false.
+ *
+ * If the expression is false, call RTTestIFailed giving the line number and
+ * expression.
+ *
+ * @param   expr            The expression to evaluate.
+ * @param   DetailsArgs     Argument list for RTTestIFailureDetails, including
+ *                          parenthesis.
+ * @param   rcRet           What to return on failure.
+ */
+#define RTTESTI_CHECK_MSG_RET(expr, DetailsArgs, rcRet) \
+    do { if (!(expr)) { \
+            RTTestIFailed("line %u: %s", __LINE__, #expr); \
+            RTTestIFailureDetails DetailsArgs; \
+            return (rcRet); \
+         } \
+    } while (0)
+
+/** @def RTTESTI_CHECK_RETV
+ * Check whether a boolean expression holds true, returns void on false.
+ *
+ * If the expression is false, call RTTestIFailed giving the line number and
+ * expression.
+ *
+ * @param   expr        The expression to evaluate.
+ */
+#define RTTESTI_CHECK_RETV(expr) \
+    do { if (!(expr)) { \
+            RTTestIFailed("line %u: %s", __LINE__, #expr); \
+            return; \
+         } \
+    } while (0)
+
+/** @def RTTESTI_CHECK_MSG_RET
+ * Check whether a boolean expression holds true, returns void on false.
+ *
+ * If the expression is false, call RTTestIFailed giving the line number and
+ * expression.
+ *
+ * @param   expr            The expression to evaluate.
+ * @param   DetailsArgs     Argument list for RTTestIFailureDetails, including
+ *                          parenthesis.
+ */
+#define RTTESTI_CHECK_MSG_RETV(expr, DetailsArgs) \
+    do { if (!(expr)) { \
+            RTTestIFailed("line %u: %s", __LINE__, #expr); \
+            RTTestIFailureDetails DetailsArgs; \
+            return; \
+         } \
+    } while (0)
+
+
+/** @} */
 
 
 /** @}  */

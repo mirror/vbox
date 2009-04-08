@@ -290,6 +290,7 @@ RuntimeR3_SOURCES       = \
 	r3/process.cpp \
 	r3/stream.cpp \
 	r3/test.cpp \
+	r3/testi.cpp \
 	r3/tcp.cpp
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
