@@ -490,10 +490,11 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
                         /*
                          * Fixup the absolute symbols.
                          *
-                         * Because of the table indexing assumptions we'll do #ifdef orgy here rather
-                         * than distributing this to OS specific files. At least for now.
+                         * Because of the table indexing assumptions we'll have a little #ifdef orgy
+                         * here rather than distributing this to OS specific files. At least for now.
                          */
 #ifdef RT_OS_DARWIN
+# if ARCH_BITS == 32
                         if (SUPR0GetPagingMode() >= SUPPAGINGMODE_AMD64)
                         {
                             g_aFunctions[0].pfn = (void *)1;                    /* SUPR0AbsIs64bit */
@@ -507,22 +508,37 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
                         g_aFunctions[5].pfn = (void *)0x10;                     /* SUPR0AbsKernelSS - KERNEL_DS, seg.h */
                         g_aFunctions[6].pfn = (void *)0x10;                     /* SUPR0AbsKernelDS - KERNEL_DS, seg.h */
                         g_aFunctions[7].pfn = (void *)0x10;                     /* SUPR0AbsKernelES - KERNEL_DS, seg.h */
-#else
+                        g_aFunctions[8].pfn = (void *)0x10;                     /* SUPR0AbsKernelFS - KERNEL_DS, seg.h */
+                        g_aFunctions[9].pfn = (void *)0x48;                     /* SUPR0AbsKernelGS - CPU_DATA_GS, seg.h */
+# else /* 64-bit darwin: */
+                        g_aFunctions[0].pfn = (void *)1;                        /* SUPR0AbsIs64bit */
+                        g_aFunctions[1].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0Abs64bitKernelCS */
+                        g_aFunctions[2].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0Abs64bitKernelSS */
+                        g_aFunctions[3].pfn = (void *)0;                        /* SUPR0Abs64bitKernelDS */
+                        g_aFunctions[4].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0AbsKernelCS */
+                        g_aFunctions[5].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0AbsKernelSS */
+                        g_aFunctions[6].pfn = (void *)0;                        /* SUPR0AbsKernelDS */
+                        g_aFunctions[7].pfn = (void *)0;                        /* SUPR0AbsKernelES */
+                        g_aFunctions[8].pfn = (void *)0;                        /* SUPR0AbsKernelFS */
+                        g_aFunctions[9].pfn = (void *)0;                        /* SUPR0AbsKernelGS */
+
+# endif
+#else  /* !RT_OS_DARWIN */
 # if ARCH_BITS == 64
                         g_aFunctions[0].pfn = (void *)1;                        /* SUPR0AbsIs64bit */
                         g_aFunctions[1].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0Abs64bitKernelCS */
                         g_aFunctions[2].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0Abs64bitKernelSS */
                         g_aFunctions[3].pfn = (void *)(uintptr_t)ASMGetDS();    /* SUPR0Abs64bitKernelDS */
-# elif ARCH_BITS == 32
+# else
                         g_aFunctions[0].pfn = g_aFunctions[1].pfn = g_aFunctions[2].pfn = g_aFunctions[4].pfn = (void *)0;
 # endif
                         g_aFunctions[4].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0AbsKernelCS */
                         g_aFunctions[5].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0AbsKernelSS */
                         g_aFunctions[6].pfn = (void *)(uintptr_t)ASMGetDS();    /* SUPR0AbsKernelDS */
                         g_aFunctions[7].pfn = (void *)(uintptr_t)ASMGetES();    /* SUPR0AbsKernelES */
-#endif
                         g_aFunctions[8].pfn = (void *)(uintptr_t)ASMGetFS();    /* SUPR0AbsKernelFS */
                         g_aFunctions[9].pfn = (void *)(uintptr_t)ASMGetGS();    /* SUPR0AbsKernelGS */
+#endif /* !RT_OS_DARWIN */
                         return VINF_SUCCESS;
                     }
 
