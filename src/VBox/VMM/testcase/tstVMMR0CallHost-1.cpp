@@ -26,6 +26,7 @@
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/alloca.h>
+#include <iprt/test.h>
 #include <VBox/err.h>
 
 #define IN_VMM_R0
@@ -33,6 +34,13 @@
 #include <VBox/vmm.h>
 #include "VMMInternal.h"
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#ifdef RT_OS_DARWIN
+# define VMM_R0_SWITCH_STACK
+#endif
 
 
 /*******************************************************************************
@@ -42,8 +50,6 @@
 static VMMR0JMPBUF          g_Jmp;
 /** The number of jumps we've done. */
 static unsigned volatile    g_cJmps;
-/** The saved stack. */
-static uint8_t              g_Stack[8192];
 
 
 int foo(int i, int iZero, int iMinusOne)
@@ -62,50 +68,50 @@ int foo(int i, int iZero, int iMinusOne)
             return i + 10000;
         return -1;
     }
+    NOREF(iMinusOne);
     return i;
 }
 
 
 DECLCALLBACK(int) tst2(intptr_t i, intptr_t i2)
 {
-    if (i < 0 || i > 8192)
-    {
-        RTPrintf("tstVMMR0CallHost-1: FAILURE - i=%d is out of range [0..8192]\n", i);
-        return 1;
-    }
-    if (i2 != 0)
-    {
-        RTPrintf("tstVMMR0CallHost-1: FAILURE - i2=%d is out of range [0]\n", i2);
-        return 1;
-    }
+    RTTESTI_CHECK_MSG_RET(i >= 0 && i <= 8192, ("i=%d is out of range [0..8192]\n", i),      1);
+    RTTESTI_CHECK_MSG_RET(i2 == 0,             ("i2=%d is out of range [0]\n", i2),          1);
     int iExpect = (i % 7) == 0 ? i + 10000 : i;
     int rc = foo(i, 0, -1);
-    if (rc != iExpect)
-    {
-        RTPrintf("tstVMMR0CallHost-1: FAILURE - i=%d rc=%d expected=%d\n", i, rc, iExpect);
-        return 1;
-    }
+    RTTESTI_CHECK_MSG_RET(rc == iExpect,       ("i=%d rc=%d expected=%d\n", i, rc, iExpect), 1);
     return 0;
 }
 
-int tst(int iFrom, int iTo, int iInc)
+
+void tst(int iFrom, int iTo, int iInc)
 {
+#ifdef VMM_R0_SWITCH_STACK
+    int const cIterations = iFrom > iTo ? iFrom - iTo : iTo - iFrom;
+    void   *pvPrev = alloca(1);
+#endif
+
     g_cJmps = 0;
-    for (int i = iFrom; i != iTo; i += iInc)
+    for (int i = iFrom, iItr = 0; i != iTo; i += iInc, iItr++)
     {
         int rc = vmmR0CallHostSetJmp(&g_Jmp, (PFNVMMR0SETJMP)tst2, (PVM)i, 0);
-        if (rc != 0 && rc != 42)
+        RTTESTI_CHECK_MSG_RETV(rc == 0 || rc == 42, ("i=%d rc=%d setjmp\n", i, rc));
+
+#ifdef VMM_R0_SWITCH_STACK
+        /* Make the stack pointer slide for the second half of the calls. */
+        if (iItr >= cIterations / 2)
         {
-            RTPrintf("tstVMMR0CallHost-1: FAILURE - i=%d rc=%d setjmp\n", i, rc);
-            return 1;
+            /* Note! gcc does funny rounding up of alloca(). */
+            void  *pv2 = alloca((i % 63) | 1);
+            size_t cb2 = (uintptr_t)pvPrev - (uintptr_t)pv2;
+            RTTESTI_CHECK_MSG(cb2 >= 16 && cb2 <= 128, ("cb2=%zu pv2=%p pvPrev=%p iAlloca=%d\n", cb2, pv2, pvPrev, iItr));
+            memset(pv2, 0xff, cb2);
+            memset(pvPrev, 0xee, 1);
+            pvPrev = pv2;
         }
+#endif
     }
-    if (!g_cJmps)
-    {
-        RTPrintf("tstVMMR0CallHost-1: FAILURE - no jumps!\n");
-        return 1;
-    }
-    return 0;
+    RTTESTI_CHECK_MSG_RETV(g_cJmps, ("No jumps!"));
 }
 
 
@@ -114,23 +120,25 @@ int main()
     /*
      * Init.
      */
-    RTR3Init();
-    g_Jmp.pvSavedStack = (RTR0PTR)&g_Stack[0];
+    RTTEST hTest;
+    int rc;
+    if (    RT_FAILURE(rc = RTR3Init())
+        ||  RT_FAILURE(rc = RTTestCreate("tstVMMR0CallHost-1", &hTest)))
+    {
+        RTStrmPrintf(g_pStdErr, "tstVMMR0CallHost-1: Fatal error during init: %Rrc\n", rc);
+        return 1;
+    }
+    RTTestBanner(hTest);
+
+    g_Jmp.pvSavedStack = (RTR0PTR)RTTestGuardedAllocTail(hTest, 8192);
 
     /*
-     * Try about 1000 long jumps with increasing stack size..
+     * Run two test with about 1000 long jumps each.
      */
-    RTPrintf("tstVMMR0CallHost-1: Testing 1\n");
-    int rc = tst(0, 7000, 1);
-    if (!rc)
-    {
-        RTPrintf("tstVMMR0CallHost-1: Testing 2\n");
-        rc = tst(7599, 0, -1);
-    }
+    RTTestSub(hTest, "Increasing stack usage");
+    tst(0, 7000, 1);
+    RTTestSub(hTest, "Decreasing stack usage");
+    tst(7599, 0, -1);
 
-    if (!rc)
-        RTPrintf("tstVMMR0CallHost-1: SUCCESS\n");
-    else
-        RTPrintf("tstVMMR0CallHost-1: FAILED\n");
-    return !!rc;
+    return RTTestSummaryAndDestroy(hTest);
 }
