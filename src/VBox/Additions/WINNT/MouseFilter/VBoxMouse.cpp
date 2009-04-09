@@ -231,7 +231,7 @@ static void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
                     case CmResourceTypeInterrupt:
 
                         dprintf(("VBoxMouse::vboxDeviceAdded: PartialDescriptor %d: Int %ld\n", iPartialDescriptor, pPartialDescriptor->u.Interrupt.Vector));
-                        if (pPartialDescriptor->u.Interrupt.Vector == 0x12)
+                        if (pPartialDescriptor->u.Interrupt.Vector == 0xC)
                         {
                             bDetected = TRUE;
                         }
