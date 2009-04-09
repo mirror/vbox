@@ -103,6 +103,10 @@
         <source>Unknown %2 error during initialization of the Runtime</source>
         <translation>Erreur inconnue %2 pendant l&apos;initialisation de l&apos;environnement d&apos;exécution</translation>
     </message>
+    <message>
+        <source>Kernel driver not accessible</source>
+        <translation type="unfinished">Pilote noyau non trouvé</translation>
+    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -6366,7 +6370,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not selected</source>
         <comment>Host-only Network Details, network adapter chooser</comment>
-        <translation>Non sélectionnée</translation>
+        <translation type="obsolete">Non sélectionnée</translation>
     </message>
 </context>
 <context>
