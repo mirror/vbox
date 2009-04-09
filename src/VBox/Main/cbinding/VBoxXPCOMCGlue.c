@@ -68,6 +68,8 @@ char g_szVBoxErrMsg[256];
 PCVBOXXPCOM g_pVBoxFuncs = NULL;
 /** Pointer to VBoxGetXPCOMCFunctions for the loaded VBoxXPCOMC so/dylib/dll. */
 PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions = NULL;
+/** boolean for checking if the VBOX_APP_HOME is already set by the users */
+int g_bVAHSet = 0;
 
 
 /**
@@ -102,7 +104,13 @@ static int tryLoadOne(const char *pszHome)
      * Try load it by that name, setting the VBOX_APP_HOME first (for now).
      * Then resolve and call the function table getter.
      */
-    setenv("VBOX_APP_HOME", pszHome, 0 /* no need to overwrite */);
+    if (!g_bVAHSet)
+    {
+        /* Override it as we know that user didn't set it
+         * and that we only did it in previous iteration
+         */
+        setenv("VBOX_APP_HOME", pszHome, 1);
+    }
     g_hVBoxXPCOMC = dlopen(szBuf, RTLD_NOW | RTLD_LOCAL);
     if (g_hVBoxXPCOMC)
     {
@@ -154,7 +162,10 @@ int VBoxCGlueInit(void)
      */
     const char *pszHome = getenv("VBOX_APP_HOME");
     if (pszHome)
+    {
+        g_bVAHSet = 1;
         return tryLoadOne(pszHome);
+    }
 
     /*
      * Try the known standard locations.
