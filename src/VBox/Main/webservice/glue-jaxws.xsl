@@ -41,6 +41,7 @@
 <!-- Keep in sync with VBOX_JAVA_PACKAGE in webservices/Makefile.kmk -->
 <xsl:variable name="G_virtualBoxPackage" select="concat('org.virtualbox',$G_vboxApiSuffix)" />
 <xsl:variable name="G_virtualBoxPackage2" select="concat('com.sun.xml.ws.commons.virtualbox',$G_vboxApiSuffix)" />
+<xsl:variable name="G_virtualBoxWsdl" select="concat(concat('&quot;vboxwebService',$G_vboxApiSuffix), '.wsdl&quot;')" />
 
 <xsl:include href="websrv-shared.inc.xsl" />
 
@@ -484,7 +485,7 @@ class Helper {
   <xsl:with-param name="file" select="'IWebsessionManager.java'" />
  </xsl:call-template>
 
- <xsl:text><![CDATA[
+
 import java.net.URL;
 import java.math.BigInteger;
 import java.util.List;
@@ -498,9 +499,12 @@ import javax.xml.ws.WebServiceException;
 
 class PortPool
 {
+    private final static String wsdlFile = <xsl:value-of select="$G_virtualBoxWsdl" />;
+
+ <xsl:text><![CDATA[
     private Map<VboxPortType, Integer> known;
     private boolean initStarted;
-    private VboxService svc;
+    private VboxService svc;    
 
     PortPool(boolean usePreinit)
     {
@@ -558,9 +562,9 @@ class PortPool
         if (port == null)
         {
             if (svc == null) {
-                URL wsdl = PortPool.class.getClassLoader().getResource("vboxwebService.wsdl");
+                URL wsdl = PortPool.class.getClassLoader().getResource(wsdlFile);
                 if (wsdl == null)
-                    throw new LinkageError("vboxwebService.wsdl not found, but it should have been in the jar");
+                    throw new LinkageError(wsdlFile+" not found, but it should have been in the jar");
                 svc = new VboxService(wsdl,
                                       new QName("http://www.virtualbox.org/Service",
                                                 "vboxService"));
