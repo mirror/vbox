@@ -405,6 +405,10 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
 
             /*uniq*/
             RTUtf16ToUtf8(addr->DnsSuffix, &suffix);
+            
+            if (strlen(suffix) == 0)
+                goto next_dns;
+
             found = 0;
             LIST_FOREACH(dd, &pData->dns_domain_list_head, dd_list)
             {
