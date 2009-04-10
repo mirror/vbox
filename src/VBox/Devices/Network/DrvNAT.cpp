@@ -350,6 +350,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     unsigned int cBreak = 0;
 # else /* RT_OS_WINDOWS */
     struct pollfd *polls = NULL;
+    unsigned int cPollNegRet;
 # endif /* !RT_OS_WINDOWS */
 
     LogFlow(("drvNATAsyncIoThread: pThis=%p\n", pThis));
@@ -386,9 +387,16 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         polls[0].revents = 0;
 
         int cChangedFDs = poll(polls, nFDs + 1, ms ? ms : -1);
-#ifndef RT_OS_LINUX /* 2.6.23 + gdb -> hitting all the time. probably a bug in poll/ptrace/whatever. */
-        AssertRelease(cChangedFDs >= 0);
-#endif
+        /* 2.6.23 + gdb -> hitting all the time. probably a bug in poll/ptrace/whatever. */
+        if (cChangedFDs < 0) 
+        {
+            if (cPollNegRet++ > 128)
+            {
+                cPollNegRet = 0;
+                LogRel(("Poll returns (%s) suppressed %d\n", strerror(errno), cPollNegRet));
+            }
+        }
+
         if (cChangedFDs >= 0)
         {
             slirp_select_poll(pThis->pNATState, &polls[1], nFDs);
