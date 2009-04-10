@@ -43,8 +43,13 @@ typedef struct VBOXNETADPGLOBALS *PVBOXNETADPGLOBALS;
 #endif
 
 #define VBOXNETADP_CTL_DEV_NAME    "vboxnetctl"
+#ifdef RT_OS_DARWIN
 #define VBOXNETADP_CTL_ADD    _IOR('v', 1, VBOXNETADPREQ)
 #define VBOXNETADP_CTL_REMOVE _IOW('v', 2, VBOXNETADPREQ)
+#else
+#define VBOXNETADP_CTL_ADD    1
+#define VBOXNETADP_CTL_REMOVE 2
+#endif
 
 typedef struct VBoxNetAdpReq
 {
