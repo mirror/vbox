@@ -50,8 +50,8 @@ rdesktop-vrdp_DEFS.linux = \
 # Solaris 10 doesn't have dirfd(), and as thus we go for the low tech solution.
 rdesktop-vrdp_DEFS.linux += \
 	HAVE_DIRFD=1 HAVE_DECL_DIRFD=1
-ifdef VBOX_WITHOUT_LINUX_COMPILER_H
- rdesktop-vrdp_DEFS.linux += VBOX_WITHOUT_LINUX_COMPILER_H
+ifdef VBOX_WITH_LINUX_COMPILER_H
+ rdesktop-vrdp_DEFS.linux += VBOX_WITH_LINUX_COMPILER_H
 endif
 # @todo once rdp proxy is available on Solaris, add WITH_RDPUSB=1
 rdesktop-vrdp_DEFS.solaris = \

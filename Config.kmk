@@ -641,6 +641,13 @@ ifdef VBOX_BRANDING_CFG
 endif
 
 #
+# Bitch about old settings.
+#
+ifdef VBOX_WITHOUT_LINUX_COMPILER_H
+ $(warning VBOX_WITHOUT_LINUX_COMPILER_H was renamed to VBOX_WITH_LINUX_COMPILER_H, the meaning is inverted.)
+endif
+
+#
 # Disable components that are not open sourced.
 #
 ifdef VBOX_OSE
