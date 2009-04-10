@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <sys/ioccom.h>
 #include <fcntl.h>
 
 /* @todo Error codes must be moved to some header file */
