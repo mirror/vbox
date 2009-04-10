@@ -42,6 +42,16 @@ typedef struct VBOXNETADPGLOBALS *PVBOXNETADPGLOBALS;
 # define VBOXNETADP_DETACH_TIMEOUT 500
 #endif
 
+#define VBOXNETADP_CTL_DEV_NAME    "vboxnetctl"
+#define VBOXNETADP_CTL_ADD    _IOR('v', 1, VBOXNETADPREQ)
+#define VBOXNETADP_CTL_REMOVE _IOW('v', 2, VBOXNETADPREQ)
+
+typedef struct VBoxNetAdpReq
+{
+    char szName[VBOXNETADP_MAX_NAME_LEN];
+} VBOXNETADPREQ;
+typedef VBOXNETADPREQ *PVBOXNETADPREQ;
+
 /**
  * Void entries mark vacant slots in adapter array. Valid entries are busy slots.
  * As soon as slot is being modified its state changes to transitional.
@@ -64,17 +74,18 @@ typedef struct VBOXNETADPGLOBALS *PVBOXNETADPGLOBALS;
      3) Destroy
 */
 
-#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
 enum VBoxNetAdpState
 {
     kVBoxNetAdpState_Invalid,
     kVBoxNetAdpState_Transitional,
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
     kVBoxNetAdpState_Available,
     kVBoxNetAdpState_Connected,
-    kVBoxNetAdpState_Active
+#endif /* VBOXANETADP_DO_NOT_USE_NETFLT */
+    kVBoxNetAdpState_Active,
+    kVBoxNetAdpState_U32Hack = 0xFFFFFFFF
 };
 typedef enum VBoxNetAdpState VBOXNETADPSTATE;
-#endif /* VBOXANETADP_DO_NOT_USE_NETFLT */
 
 struct VBoxNetAdapter
 {
@@ -84,8 +95,10 @@ struct VBoxNetAdapter
 
     /* --- Protected with spinlock. --- */
 
+#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
     /** Denotes availability of this slot in adapter array. */
     VBOXNETADPSTATE   enmState;
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
 
     /* --- Unprotected. Atomic access. --- */
 
