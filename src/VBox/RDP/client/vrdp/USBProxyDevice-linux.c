@@ -51,7 +51,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <ctype.h>
-#ifndef VBOX_WITHOUT_LINUX_COMPILER_H
+#ifdef VBOX_WITH_LINUX_COMPILER_H
 # include <linux/compiler.h>
 #endif
 #include <linux/usbdevice_fs.h>
