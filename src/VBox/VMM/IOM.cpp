@@ -1387,6 +1387,18 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     }
 
     /*
+     * For the 2nd+ instance, mangle the description string so it's unique.
+     * (PGM requires this.)
+     */
+    if (pDevIns->iInstance > 0)
+    {
+        pszDesc = MMR3HeapAPrintf(pVM, MM_TAG_IOM, "%s [%u]", pszDesc, pDevIns->iInstance);
+        if (!pszDesc)
+            return VERR_NO_MEMORY;
+    }
+
+
+    /*
      * Allocate new range record and initialize it.
      */
     PIOMMMIORANGE pRange;
@@ -1429,13 +1441,15 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
             if (RTAvlroGCPhysInsert(&pVM->iom.s.pTreesR3->MMIOTree, &pRange->Core))
                 return VINF_SUCCESS;
 
+            /* bail out */
             DBGFR3Info(pVM, "mmio", NULL, NULL);
             AssertMsgFailed(("This cannot happen!\n"));
             rc = VERR_INTERNAL_ERROR;
         }
         MMHyperFree(pVM, pRange);
     }
-
+    if (pDevIns->iInstance > 0)
+        MMR3HeapFree((void *)pszDesc);
     return rc;
 }
 
@@ -1613,6 +1627,8 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 
         /* advance and free. */
         GCPhys = pRange->Core.KeyLast + 1;
+        if (pDevIns->iInstance > 0)
+            MMR3HeapFree((void *)pRange->pszDesc);
         MMHyperFree(pVM, pRange);
     }
 
