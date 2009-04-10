@@ -31,8 +31,10 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
-#include <sys/ioccom.h>
 #include <fcntl.h>
+#ifdef RT_OS_SOLARIS
+# include <sys/ioccom.h>
+#endif
 
 /* @todo Error codes must be moved to some header file */
 #define ADPCTLERR_NO_CTL_DEV 3
