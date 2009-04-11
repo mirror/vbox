@@ -2832,10 +2832,10 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
             AssertRelease(pUnmappedChunk);
             pUnmappedChunk->pv = NULL;
             pUnmappedChunk->Core.Key = UINT32_MAX;
-#if 0 /* for later when we've got a separate mapping method for ring-0. */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
             MMR3HeapFree(pUnmappedChunk);
 #else
-            MMHyperFree(pVM, pUnmappedChunk);
+            MMR3UkHeapFree(pVM, pUnmappedChunk, MM_TAG_PGM_CHUNK_MAPPING);
 #endif
             pVM->pgm.s.ChunkR3Map.c--;
         }
@@ -2843,10 +2843,10 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     else
     {
         AssertRC(rc);
-#if 0 /* for later when we've got a separate mapping method for ring-0. */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         MMR3HeapFree(pChunk);
 #else
-        MMHyperFree(pVM, pChunk);
+        MMR3UkHeapFree(pVM, pChunk, MM_TAG_PGM_CHUNK_MAPPING);
 #endif
         pChunk = NULL;
     }
