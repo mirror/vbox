@@ -25,22 +25,20 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PGM_PHYS
 #include <VBox/pgm.h>
-#include <VBox/cpum.h>
 #include <VBox/iom.h>
-#include <VBox/sup.h>
 #include <VBox/mm.h>
 #include <VBox/stam.h>
 #include <VBox/rem.h>
-#include <VBox/csam.h>
+#include <VBox/pdmdev.h>
 #include "PGMInternal.h"
 #include <VBox/vm.h>
-#include <VBox/dbg.h>
+#include <VBox/sup.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
+#include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
-#include <VBox/log.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
 
@@ -1475,74 +1473,86 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
     AssertLogRelReturn(cPages <= INT32_MAX / 2, VERR_NO_MEMORY);
 
     /*
+     * For the 2nd+ instance, mangle the description string so it's unique.
+     */
+    if (pDevIns->iInstance > 0)
+    {
+        pszDesc = MMR3HeapAPrintf(pVM, MM_TAG_PGM_PHYS, "%s [%u]", pszDesc, pDevIns->iInstance);
+        if (!pszDesc)
+            return VERR_NO_MEMORY;
+    }
+
+    /*
      * Try reserve and allocate the backing memory first as this is what is
      * most likely to fail.
      */
     int rc = MMR3AdjustFixedReservation(pVM, cPages, pszDesc);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    void *pvPages;
-    PSUPPAGE paPages = (PSUPPAGE)RTMemTmpAlloc(cPages * sizeof(SUPPAGE));
     if (RT_SUCCESS(rc))
-        rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pvPages, NULL /*pR0Ptr*/, paPages);
-    if (RT_SUCCESS(rc))
-    {
-        memset(pvPages, 0, cPages * PAGE_SIZE);
-
-        /*
-         * Create the MMIO2 range record for it.
-         */
-        const size_t cbRange = RT_OFFSETOF(PGMMMIO2RANGE, RamRange.aPages[cPages]);
-        PPGMMMIO2RANGE pNew;
-        rc = MMR3HyperAllocOnceNoRel(pVM, cbRange, 0, MM_TAG_PGM_PHYS, (void **)&pNew);
-        AssertLogRelMsgRC(rc, ("cbRamRange=%zu\n", cbRange));
+    {    
+        void *pvPages;
+        PSUPPAGE paPages = (PSUPPAGE)RTMemTmpAlloc(cPages * sizeof(SUPPAGE));
+        if (RT_SUCCESS(rc))
+            rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pvPages, NULL /*pR0Ptr*/, paPages);
         if (RT_SUCCESS(rc))
         {
-            pNew->pDevInsR3             = pDevIns;
-            pNew->pvR3                  = pvPages;
-            //pNew->pNext               = NULL;
-            //pNew->fMapped             = false;
-            //pNew->fOverlapping        = false;
-            pNew->iRegion               = iRegion;
-            pNew->RamRange.pSelfR0      = MMHyperCCToR0(pVM, &pNew->RamRange);
-            pNew->RamRange.pSelfRC      = MMHyperCCToRC(pVM, &pNew->RamRange);
-            pNew->RamRange.GCPhys       = NIL_RTGCPHYS;
-            pNew->RamRange.GCPhysLast   = NIL_RTGCPHYS;
-            pNew->RamRange.pszDesc      = pszDesc;
-            pNew->RamRange.cb           = cb;
-            //pNew->RamRange.fFlags     = 0; /// @todo MMIO2 flag?
-
-            pNew->RamRange.pvR3         = pvPages;
-
-            uint32_t iPage = cPages;
-            while (iPage-- > 0)
-            {
-                PGM_PAGE_INIT(&pNew->RamRange.aPages[iPage],
-                              paPages[iPage].Phys & X86_PTE_PAE_PG_MASK, NIL_GMM_PAGEID,
-                              PGMPAGETYPE_MMIO2, PGM_PAGE_STATE_ALLOCATED);
-            }
-
-            /* update page count stats */
-            pVM->pgm.s.cAllPages     += cPages;
-            pVM->pgm.s.cPrivatePages += cPages;
-
+            memset(pvPages, 0, cPages * PAGE_SIZE);
+    
             /*
-             * Link it into the list.
-             * Since there is no particular order, just push it.
+             * Create the MMIO2 range record for it.
              */
-            pNew->pNextR3 = pVM->pgm.s.pMmio2RangesR3;
-            pVM->pgm.s.pMmio2RangesR3 = pNew;
-
-            *ppv = pvPages;
-            RTMemTmpFree(paPages);
-            return VINF_SUCCESS;
+            const size_t cbRange = RT_OFFSETOF(PGMMMIO2RANGE, RamRange.aPages[cPages]);
+            PPGMMMIO2RANGE pNew;
+            rc = MMR3HyperAllocOnceNoRel(pVM, cbRange, 0, MM_TAG_PGM_PHYS, (void **)&pNew);
+            AssertLogRelMsgRC(rc, ("cbRamRange=%zu\n", cbRange));
+            if (RT_SUCCESS(rc))
+            {
+                pNew->pDevInsR3             = pDevIns;
+                pNew->pvR3                  = pvPages;
+                //pNew->pNext               = NULL;
+                //pNew->fMapped             = false;
+                //pNew->fOverlapping        = false;
+                pNew->iRegion               = iRegion;
+                pNew->RamRange.pSelfR0      = MMHyperCCToR0(pVM, &pNew->RamRange);
+                pNew->RamRange.pSelfRC      = MMHyperCCToRC(pVM, &pNew->RamRange);
+                pNew->RamRange.GCPhys       = NIL_RTGCPHYS;
+                pNew->RamRange.GCPhysLast   = NIL_RTGCPHYS;
+                pNew->RamRange.pszDesc      = pszDesc;
+                pNew->RamRange.cb           = cb;
+                //pNew->RamRange.fFlags     = 0; /// @todo MMIO2 flag?
+    
+                pNew->RamRange.pvR3         = pvPages;
+    
+                uint32_t iPage = cPages;
+                while (iPage-- > 0)
+                {
+                    PGM_PAGE_INIT(&pNew->RamRange.aPages[iPage],
+                                  paPages[iPage].Phys & X86_PTE_PAE_PG_MASK, NIL_GMM_PAGEID,
+                                  PGMPAGETYPE_MMIO2, PGM_PAGE_STATE_ALLOCATED);
+                }
+    
+                /* update page count stats */
+                pVM->pgm.s.cAllPages     += cPages;
+                pVM->pgm.s.cPrivatePages += cPages;
+    
+                /*
+                 * Link it into the list.
+                 * Since there is no particular order, just push it.
+                 */
+                pNew->pNextR3 = pVM->pgm.s.pMmio2RangesR3;
+                pVM->pgm.s.pMmio2RangesR3 = pNew;
+    
+                *ppv = pvPages;
+                RTMemTmpFree(paPages);
+                return VINF_SUCCESS;
+            }
+    
+            SUPR3PageFreeEx(pvPages, cPages);
         }
-
-        SUPR3PageFreeEx(pvPages, cPages);
+        RTMemTmpFree(paPages);
+        MMR3AdjustFixedReservation(pVM, -(int32_t)cPages, pszDesc);
     }
-    RTMemTmpFree(paPages);
-    MMR3AdjustFixedReservation(pVM, -(int32_t)cPages, pszDesc);
+    if (pDevIns->iInstance > 0)
+        MMR3HeapFree((void *)pszDesc);
     return rc;
 }
 
