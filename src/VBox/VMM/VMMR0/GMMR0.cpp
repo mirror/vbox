@@ -396,7 +396,7 @@ typedef struct GMMCHUNK
     uint16_t            cFree;
     /** The GVM handle of the VM that first allocated pages from this chunk, this
      * is used as a preference when there are several chunks to choose from.
-     * When in legacy mode this isn't a preference any longer. */
+     * When in bound memory mode this isn't a preference any longer. */
     uint16_t            hGVM;
     /** The number of private pages. */
     uint16_t            cPrivate;
@@ -442,12 +442,12 @@ typedef struct GMMCHUNKTLB
 typedef GMMCHUNKTLB *PGMMCHUNKTLB;
 
 
-/** The number of lists in set. */
-#define GMM_CHUNK_FREE_SET_LISTS    16
 /** The GMMCHUNK::cFree shift count. */
 #define GMM_CHUNK_FREE_SET_SHIFT    4
 /** The GMMCHUNK::cFree mask for use when considering relinking a chunk. */
 #define GMM_CHUNK_FREE_SET_MASK     15
+/** The number of lists in set. */
+#define GMM_CHUNK_FREE_SET_LISTS    (GMM_CHUNK_NUM_PAGES >> GMM_CHUNK_FREE_SET_SHIFT)
 
 /**
  * A set of free chunks.
@@ -456,7 +456,7 @@ typedef struct GMMCHUNKFREESET
 {
     /** The number of free pages in the set. */
     uint64_t        cPages;
-    /**  */
+    /** Chunks ordered by increasing number of free pages. */
     PGMMCHUNK       apLists[GMM_CHUNK_FREE_SET_LISTS];
 } GMMCHUNKFREESET;
 
@@ -502,9 +502,14 @@ typedef struct GMM
     /** The number of current ballooned pages. */
     uint64_t            cBalloonedPages;
 
-    /** The legacy mode indicator.
+    /** The legacy allocation mode indicator.
      * This is determined at initialization time. */
-    bool                fLegacyMode;
+    bool                fLegacyAllocationMode;
+    /** The bound memory mode indicator.
+     * When set, the memory will be bound to a specific VM and never
+     * shared. This is always set if fLegacyAllocationMode is set.
+     * (Also determined at initialization time.) */
+    bool                fBoundMemoryMode;
     /** The number of registered VMs. */
     uint16_t            cRegisteredVMs;
 
@@ -564,8 +569,9 @@ static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pv
 /*static*/ DECLCALLBACK(int) gmmR0CleanupVMDestroyChunk(PAVLU32NODECORE pNode, void *pvGVM);
 DECLINLINE(void) gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet);
 DECLINLINE(void) gmmR0UnlinkChunk(PGMMCHUNK pChunk);
-static void gmmR0FreeChunk(PGMM pGMM, PGMMCHUNK pChunk);
+static void gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
 static void gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage);
+static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
 
 
 
@@ -607,11 +613,16 @@ GMMR0DECL(int) GMMR0Init(void)
             AssertRC(rc);
         }
         else if (rc == VERR_NOT_SUPPORTED)
-            pGMM->fLegacyMode = true;
+            pGMM->fLegacyAllocationMode = pGMM->fBoundMemoryMode = true;
         else
             SUPR0Printf("GMMR0Init: RTR0MemObjAllocPhysNC(,64K,Any) -> %d!\n", rc);
 #else
-        pGMM->fLegacyMode = true;
+# ifdef RT_OS_WINDOWS
+        pGMM->fLegacyAllocationMode = false;
+# else
+        pGMM->fLegacyAllocationMode = true;
+# endif
+        pGMM->fBoundMemoryMode = true;
 #endif
 
         /*
@@ -620,7 +631,7 @@ GMMR0DECL(int) GMMR0Init(void)
         pGMM->cMaxPages = UINT32_MAX; /** @todo IPRT function for query ram size and such. */
 
         g_pGMM = pGMM;
-        LogFlow(("GMMInit: pGMM=%p fLegacy=%RTbool\n", pGMM, pGMM->fLegacyMode));
+        LogFlow(("GMMInit: pGMM=%p fLegacyAllocationMode=%RTbool fBoundMemoryMode=%RTbool\n", pGMM, pGMM->fLegacyAllocationMode, pGMM->fBoundMemoryMode));
         return VINF_SUCCESS;
     }
 
@@ -799,8 +810,9 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
                 {
                     PGMMCHUNK pNext = pCur->pFreeNext;
                     if (    pCur->cFree == GMM_CHUNK_NUM_PAGES
-                        &&  (!pGMM->fLegacyMode || pCur->hGVM == pGVM->hSelf))
-                        gmmR0FreeChunk(pGMM, pCur);
+                        &&  (   !pGMM->fBoundMemoryMode
+                             || pCur->hGVM == pGVM->hSelf))
+                        gmmR0FreeChunk(pGMM, pGVM, pCur);
                     pCur = pNext;
                 }
             }
@@ -943,18 +955,18 @@ static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pv
         }
 
     /*
-     * If not in legacy mode, we should reset the hGVM field
+     * If not in bound memory mode, we should reset the hGVM field
      * if it has our handle in it.
      */
     if (pChunk->hGVM == pGVM->hSelf)
     {
-        if (!g_pGMM->fLegacyMode)
+        if (!g_pGMM->fBoundMemoryMode)
             pChunk->hGVM = NIL_GVM_HANDLE;
         else if (pChunk->cFree != GMM_CHUNK_NUM_PAGES)
         {
-            SUPR0Printf("gmmR0CleanupVMScanChunk: %p/%#x: cFree=%#x - it should be 0 in legacy mode!\n",
+            SUPR0Printf("gmmR0CleanupVMScanChunk: %p/%#x: cFree=%#x - it should be 0 in bound mode!\n",
                         pChunk, pChunk->Core.Key, pChunk->cFree);
-            AssertMsgFailed(("%p/%#x: cFree=%#x - it should be 0 in legacy mode!\n", pChunk, pChunk->Core.Key, pChunk->cFree));
+            AssertMsgFailed(("%p/%#x: cFree=%#x - it should be 0 in bound mode!\n", pChunk, pChunk->Core.Key, pChunk->cFree));
 
             gmmR0UnlinkChunk(pChunk);
             pChunk->cFree = GMM_CHUNK_NUM_PAGES;
@@ -1392,16 +1404,20 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
 /**
  * Registers a new chunk of memory.
  *
- * This is called by both gmmR0AllocateOneChunk and GMMR0SeedChunk.
+ * This is called by both gmmR0AllocateOneChunk and GMMR0SeedChunk. Will take
+ * the mutex, the caller must not own it.
  *
  * @returns VBox status code.
  * @param   pGMM        Pointer to the GMM instance.
  * @param   pSet        Pointer to the set.
  * @param   MemObj      The memory object for the chunk.
- * @param   hGVM        The hGVM value. (Only used by GMMR0SeedChunk.)
+ * @param   hGVM        The affinity of the chunk. NIL_GVM_HANDLE for no
+ *                      affinity.
  */
 static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemObj, uint16_t hGVM)
 {
+    Assert(hGVM != NIL_GVM_HANDLE || pGMM->fBoundMemoryMode);
+
     int rc;
     PGMMCHUNK pChunk = (PGMMCHUNK)RTMemAllocZ(sizeof(*pChunk));
     if (pChunk)
@@ -1423,20 +1439,27 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
 
         /*
          * Allocate a Chunk ID and insert it into the tree.
-         * It doesn't cost anything to be careful here.
+         * This has to be done behind the mutex of course.
          */
-        pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
-        if (    pChunk->Core.Key != NIL_GMM_CHUNKID
-            &&  pChunk->Core.Key <= GMM_CHUNKID_LAST
-            &&  RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
+        rc = RTSemFastMutexRequest(pGMM->Mtx);
+        if (RT_SUCCESS(rc))
         {
-            pGMM->cChunks++;
-            gmmR0LinkChunk(pChunk, pSet);
-            LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
-            return VINF_SUCCESS;
-        }
+            pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
+            if (    pChunk->Core.Key != NIL_GMM_CHUNKID
+                &&  pChunk->Core.Key <= GMM_CHUNKID_LAST
+                &&  RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
+            {
+                pGMM->cChunks++;
+                gmmR0LinkChunk(pChunk, pSet);
+                LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
+                RTSemFastMutexRelease(pGMM->Mtx);
+                return VINF_SUCCESS;
+            }
 
-        rc = VERR_INTERNAL_ERROR;
+            /* bail out */
+            rc = VERR_INTERNAL_ERROR;
+            RTSemFastMutexRelease(pGMM->Mtx);
+        }
         RTMemFree(pChunk);
     }
     else
@@ -1451,8 +1474,11 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
  * @returns VBox status code.
  * @param   pGMM        Pointer to the GMM instance.
  * @param   pSet        Pointer to the set.
+ * @param   hGVM        The affinity of the new chunk.
+ *
+ * @remarks Called without owning the mutex.
  */
-static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet)
+static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, uint16_t hGVM)
 {
     /*
      * Allocate the memory.
@@ -1461,7 +1487,7 @@ static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet)
     int rc = RTR0MemObjAllocPhysNC(&MemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
     if (RT_SUCCESS(rc))
     {
-        rc = gmmR0RegisterChunk(pGMM, pSet, MemObj, NIL_GVM_HANDLE);
+        rc = gmmR0RegisterChunk(pGMM, pSet, MemObj, hGVM);
         if (RT_FAILURE(rc))
             RTR0MemObjFree(MemObj, false /* fFreeMappings */);
     }
@@ -1476,38 +1502,85 @@ static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet)
  *
  * @returns VBox status code.
  * @param   pGMM        Pointer to the GMM instance data.
+ * @param   pGVM        The calling VM.
  * @param   pSet        Pointer to the free set to grow.
  * @param   cPages      The number of pages needed.
+ *
+ * @remarks Called owning the mutex, but will leave it temporarily while
+ *          allocating the memory!
  */
-static int gmmR0AllocateMoreChunks(PGMM pGMM, PGMMCHUNKFREESET pSet, uint32_t cPages)
+static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, uint32_t cPages)
 {
-    Assert(!pGMM->fLegacyMode);
+    Assert(!pGMM->fLegacyAllocationMode);
 
-    /*
-     * Try steal free chunks from the other set first. (Only take 100% free chunks.)
-     */
-    PGMMCHUNKFREESET pOtherSet = pSet == &pGMM->Private ? &pGMM->Shared : &pGMM->Private;
-    while (     pSet->cPages < cPages
-           &&   pOtherSet->cPages >= GMM_CHUNK_NUM_PAGES)
+    if (!pGMM->fBoundMemoryMode)
     {
-        PGMMCHUNK pChunk = pOtherSet->apLists[GMM_CHUNK_FREE_SET_LISTS - 1];
-        while (pChunk && pChunk->cFree != GMM_CHUNK_NUM_PAGES)
-            pChunk = pChunk->pFreeNext;
-        if (!pChunk)
-            break;
+        /*
+         * Try steal free chunks from the other set first. (Only take 100% free chunks.)
+         */
+        PGMMCHUNKFREESET pOtherSet = pSet == &pGMM->Private ? &pGMM->Shared : &pGMM->Private;
+        while (     pSet->cPages < cPages
+               &&   pOtherSet->cPages >= GMM_CHUNK_NUM_PAGES)
+        {
+            PGMMCHUNK pChunk = pOtherSet->apLists[GMM_CHUNK_FREE_SET_LISTS - 1];
+            while (pChunk && pChunk->cFree != GMM_CHUNK_NUM_PAGES)
+                pChunk = pChunk->pFreeNext;
+            if (!pChunk)
+                break;
 
-        gmmR0UnlinkChunk(pChunk);
-        gmmR0LinkChunk(pChunk, pSet);
+            gmmR0UnlinkChunk(pChunk);
+            gmmR0LinkChunk(pChunk, pSet);
+        }
+
+        /*
+         * If we need still more pages, allocate new chunks.
+         * Note! We will leave the mutex while doing the allocation,
+         *       gmmR0AllocateOneChunk will re-take it temporarily while registering the chunk.
+         */
+        while (pSet->cPages < cPages)
+        {
+            RTSemFastMutexRelease(pGMM->Mtx);
+            int rc = gmmR0AllocateOneChunk(pGMM, pSet, NIL_GVM_HANDLE);
+            int rc2 = RTSemFastMutexRequest(pGMM->Mtx);
+            AssertRCReturn(rc2, rc2);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
     }
-
-    /*
-     * If we need still more pages, allocate new chunks.
-     */
-    while (pSet->cPages < cPages)
+    else
     {
-        int rc = gmmR0AllocateOneChunk(pGMM, pSet);
-        if (RT_FAILURE(rc))
-            return rc;
+        /*
+         * The memory is bound to the VM allocating it, so we have to count
+         * the free pages carefully as well as making sure we set brand it
+         * with our VM handle.
+         *
+         * Note! We will leave the mutex while doing the allocation,
+         *       gmmR0AllocateOneChunk will re-take it temporarily while registering the chunk.
+         */
+        uint16_t const hGVM = pGVM->hSelf;
+        for (;;)
+        {
+            /* Count and see if we've reached the goal. */
+            uint32_t cPagesFound = 0;
+            for (unsigned i = 0; i < RT_ELEMENTS(pSet->apLists); i++)
+                for (PGMMCHUNK pCur = pSet->apLists[i]; pCur; pCur = pCur->pFreeNext)
+                    if (pCur->hGVM == hGVM)
+                    {
+                        cPagesFound += pCur->cFree;
+                        if (cPagesFound >= cPages)
+                            break;
+                    }
+            if (cPagesFound >= cPages)
+                break;
+
+            /* Allocate more. */
+            RTSemFastMutexRelease(pGMM->Mtx);
+            int rc = gmmR0AllocateOneChunk(pGMM, pSet, hGVM);
+            int rc2 = RTSemFastMutexRequest(pGMM->Mtx);
+            AssertRCReturn(rc2, rc2);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
     }
 
     return VINF_SUCCESS;
@@ -1567,7 +1640,8 @@ static void gmmR0AllocatePage(PGMM pGMM, uint32_t hGVM, PGMMCHUNK pChunk, PGMMPA
  *
  * @returns VBox status code:
  * @retval  VINF_SUCCESS on success.
- * @retval  VERR_GMM_SEED_ME if seeding via GMMR0SeedChunk is necessary.
+ * @retval  VERR_GMM_SEED_ME if seeding via GMMR0SeedChunk or
+ *          gmmR0AllocateMoreChunks is necessary.
  * @retval  VERR_GMM_HIT_GLOBAL_LIMIT if we've exhausted the available pages.
  * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
  *          that is we're trying to allocate more than we've reserved.
@@ -1618,21 +1692,13 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
     }
 
     /*
-     * Check if we need to allocate more memory or not. In legacy mode this is
-     * a bit extra work but it's easier to do it upfront than bailing out later.
+     * Check if we need to allocate more memory or not. In bound memory mode this
+     * is a bit extra work but it's easier to do it upfront than bailing out later.
      */
     PGMMCHUNKFREESET pSet = &pGMM->Private;
     if (pSet->cPages < cPages)
-    {
-        if (pGMM->fLegacyMode)
-            return VERR_GMM_SEED_ME;
-
-        int rc = gmmR0AllocateMoreChunks(pGMM, pSet, cPages);
-        if (RT_FAILURE(rc))
-            return rc;
-        Assert(pSet->cPages >= cPages);
-    }
-    else if (pGMM->fLegacyMode)
+        return VERR_GMM_SEED_ME;
+    if (pGMM->fBoundMemoryMode)
     {
         uint16_t hGVM = pGVM->hSelf;
         uint32_t cPagesFound = 0;
@@ -1650,20 +1716,22 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
 
     /*
      * Pick the pages.
+     * Try make some effort keeping VMs sharing private chunks.
      */
     uint16_t hGVM = pGVM->hSelf;
     uint32_t iPage = 0;
+
+    /* first round, pick from chunks with an affinity to the VM. */
     for (unsigned i = 0; i < RT_ELEMENTS(pSet->apLists) && iPage < cPages; i++)
     {
-        /* first round, pick from chunks with an affinity to the VM. */
+        PGMMCHUNK pCurFree = NULL;
         PGMMCHUNK pCur = pSet->apLists[i];
         while (pCur && iPage < cPages)
         {
             PGMMCHUNK pNext = pCur->pFreeNext;
 
             if (    pCur->hGVM == hGVM
-                &&  (   pCur->cFree <= GMM_CHUNK_NUM_PAGES
-                     || pGMM->fLegacyMode))
+                &&  pCur->cFree < GMM_CHUNK_NUM_PAGES)
             {
                 gmmR0UnlinkChunk(pCur);
                 for (; pCur->cFree && iPage < cPages; iPage++)
@@ -1673,14 +1741,47 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
 
             pCur = pNext;
         }
+    }
 
-        /* second round, take all free pages in this list. */
-        if (!pGMM->fLegacyMode)
+    if (iPage < cPages)
+    {
+        /* second round, pick pages from the 100% empty chunks we just skipped above. */
+        PGMMCHUNK pCurFree = NULL;
+        PGMMCHUNK pCur = pSet->apLists[RT_ELEMENTS(pSet->apLists) - 1];
+        while (pCur && iPage < cPages)
         {
+            PGMMCHUNK pNext = pCur->pFreeNext;
+
+            if (    pCur->cFree == GMM_CHUNK_NUM_PAGES
+                &&  (   pCur->hGVM == hGVM
+                     || !pGMM->fBoundMemoryMode))
+            {
+                gmmR0UnlinkChunk(pCur);
+                for (; pCur->cFree && iPage < cPages; iPage++)
+                    gmmR0AllocatePage(pGMM, hGVM, pCur, &paPages[iPage]);
+                gmmR0LinkChunk(pCur, pSet);
+            }
+
+            pCur = pNext;
+        }
+    }
+
+    if (    iPage < cPages
+        &&  !pGMM->fBoundMemoryMode)
+    {
+        /* third round, disregard affinity. */
+        unsigned i = RT_ELEMENTS(pSet->apLists);
+        while (i-- > 0 && iPage < cPages)
+        {
+            PGMMCHUNK pCurFree = NULL;
             PGMMCHUNK pCur = pSet->apLists[i];
             while (pCur && iPage < cPages)
             {
                 PGMMCHUNK pNext = pCur->pFreeNext;
+
+                if (    pCur->cFree >  GMM_CHUNK_NUM_PAGES / 2
+                    &&  cPages      >= GMM_CHUNK_NUM_PAGES / 2)
+                    pCur->hGVM = hGVM; /* change chunk affinity */
 
                 gmmR0UnlinkChunk(pCur);
                 for (; pCur->cFree && iPage < cPages; iPage++)
@@ -1706,7 +1807,7 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
     pGVM->gmm.s.cPrivatePages += iPage;
     pGMM->cAllocatedPages     += iPage;
 
-    AssertMsgReturn(iPage == cPages, ("%d != %d\n", iPage, cPages), VERR_INTERNAL_ERROR);
+    AssertMsgReturn(iPage == cPages, ("%u != %u\n", iPage, cPages), VERR_INTERNAL_ERROR);
 
     /*
      * Check if we've reached some threshold and should kick one or two VMs and tell
@@ -1885,9 +1986,16 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
 
         /*
          * Join paths with GMMR0AllocatePages for the allocation.
+         * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
          */
-        if (RT_SUCCESS(rc))
+        while (RT_SUCCESS(rc))
+        {
             rc = gmmR0AllocatePages(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE);
+            if (    rc != VERR_GMM_SEED_ME
+                ||  pGMM->fLegacyAllocationMode)
+                break;
+            rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPagesToAlloc);
+        }
     }
     else
         rc = VERR_WRONG_ORDER;
@@ -1956,10 +2064,23 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPages
     AssertRC(rc);
 
     /* No allocations before the initial reservation has been made! */
-    if (    pGVM->gmm.s.Reserved.cBasePages
-        &&  pGVM->gmm.s.Reserved.cFixedPages
-        &&  pGVM->gmm.s.Reserved.cShadowPages)
-        rc = gmmR0AllocatePages(pGMM, pGVM, cPages, paPages, enmAccount);
+    if (RT_LIKELY(    pGVM->gmm.s.Reserved.cBasePages
+                  &&  pGVM->gmm.s.Reserved.cFixedPages
+                  &&  pGVM->gmm.s.Reserved.cShadowPages))
+    {
+        /*
+         * gmmR0AllocatePages seed loop.
+         * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
+         */
+        while (RT_SUCCESS(rc))
+        {
+            rc = gmmR0AllocatePages(pGMM, pGVM, cPages, paPages, enmAccount);
+            if (    rc != VERR_GMM_SEED_ME
+                ||  pGMM->fLegacyAllocationMode)
+                break;
+            rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPages);
+        }
+    }
     else
         rc = VERR_WRONG_ORDER;
 
@@ -1998,11 +2119,20 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
  * Frees a chunk, giving it back to the host OS.
  *
  * @param   pGMM        Pointer to the GMM instance.
+ * @param   pGVM        This is set when called from GMMR0CleanupVM so we can
+ *                      unmap and free the chunk in one go.
  * @param   pChunk      The chunk to free.
  */
-static void gmmR0FreeChunk(PGMM pGMM, PGMMCHUNK pChunk)
+static void gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
 {
     Assert(pChunk->Core.Key != NIL_GMM_CHUNKID);
+
+    /*
+     * Cleanup hack! Unmap the chunk from the callers address space.
+     */
+    if (    pChunk->cMappings
+        &&  pGVM)
+        gmmR0UnmapChunk(pGMM, pGVM, pChunk);
 
     /*
      * If there are current mappings of the chunk, then request the
@@ -2012,7 +2142,6 @@ static void gmmR0FreeChunk(PGMM pGMM, PGMMCHUNK pChunk)
     if (pChunk->cMappings)
     {
         /** @todo R0 -> VM request */
-
     }
     else
     {
@@ -2110,8 +2239,8 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PG
         if (RT_UNLIKELY(   pChunk->cFree == GMM_CHUNK_NUM_PAGES
                         && pChunk->pFreeNext
                         && pChunk->pFreePrev
-                        && !pGMM->fLegacyMode))
-            gmmR0FreeChunk(pGMM, pChunk);
+                        && !pGMM->fLegacyAllocationMode))
+            gmmR0FreeChunk(pGMM, NULL, pChunk);
     }
 }
 
@@ -2560,7 +2689,7 @@ GMMR0DECL(int) GMMR0DeflatedBalloon(PVM pVM, uint32_t cPages)
  */
 static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
 {
-    if (!pGMM->fLegacyMode)
+    if (!pGMM->fLegacyAllocationMode)
     {
         /*
          * Find the mapping and try unmapping it.
@@ -2609,7 +2738,7 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
     /*
      * If we're in legacy mode this is simple.
      */
-    if (pGMM->fLegacyMode)
+    if (pGMM->fLegacyAllocationMode)
     {
         if (pChunk->hGVM != pGVM->hSelf)
         {
@@ -2646,7 +2775,7 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
         if ((pChunk->cMappings & 1 /*7*/) == 0)
         {
             void *pvMappings = RTMemRealloc(pChunk->paMappings, (pChunk->cMappings + 2 /*8*/) * sizeof(pChunk->paMappings[0]));
-            if (RT_UNLIKELY(pvMappings))
+            if (RT_UNLIKELY(!pvMappings))
             {
                 rc = RTR0MemObjFree(MapObj, false /* fFreeMappings (NA) */);
                 AssertRC(rc);
@@ -2805,9 +2934,9 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3)
     AssertPtrReturn(pvR3, VERR_INVALID_POINTER);
     AssertReturn(!(PAGE_OFFSET_MASK & pvR3), VERR_INVALID_POINTER);
 
-    if (!pGMM->fLegacyMode)
+    if (!pGMM->fLegacyAllocationMode)
     {
-        Log(("GMMR0SeedChunk: not in legacy mode!\n"));
+        Log(("GMMR0SeedChunk: not in legacy allocation mode!\n"));
         return VERR_NOT_SUPPORTED;
     }
 
@@ -2819,15 +2948,9 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Take the semaphore and add a new chunk with our hGVM.
+         * Add a new chunk with our hGVM.
          */
-        int rc = RTSemFastMutexRequest(pGMM->Mtx);
-        AssertRC(rc);
-
         rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, MemObj, pGVM->hSelf);
-
-        RTSemFastMutexRelease(pGMM->Mtx);
-
         if (RT_FAILURE(rc))
             RTR0MemObjFree(MemObj, false /* fFreeMappings */);
     }
