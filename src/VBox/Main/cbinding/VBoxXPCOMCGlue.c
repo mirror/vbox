@@ -68,8 +68,6 @@ char g_szVBoxErrMsg[256];
 PCVBOXXPCOM g_pVBoxFuncs = NULL;
 /** Pointer to VBoxGetXPCOMCFunctions for the loaded VBoxXPCOMC so/dylib/dll. */
 PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions = NULL;
-/** boolean for checking if the VBOX_APP_HOME is already set by the users */
-int g_bVAHSet = 0;
 
 
 /**
@@ -78,38 +76,42 @@ int g_bVAHSet = 0;
  *
  * @returns 0 on success, -1 on failure.
  * @param   pszHome         The director where to try load VBoxXPCOMC from. Can be NULL.
+ * @param   fSetAppHome     Whether to set the VBOX_APP_HOME env.var. or not (boolean).
  */
-static int tryLoadOne(const char *pszHome)
+static int tryLoadOne(const char *pszHome, int fSetAppHome)
 {
     size_t      cchHome = pszHome ? strlen(pszHome) : 0;
-    size_t      cbReq;
+    size_t      cbBufNeeded;
     char        szBuf[4096];
     int         rc = -1;
 
     /*
      * Construct the full name.
      */
-    cbReq = cchHome + sizeof("/" DYNLIB_NAME);
-    if (cbReq > sizeof(szBuf))
+    cbBufNeeded = cchHome + sizeof("/" DYNLIB_NAME);
+    if (cbBufNeeded > sizeof(szBuf))
     {
-        sprintf(g_szVBoxErrMsg, "path buffer too small: %u bytes required", (unsigned)cbReq);
+        sprintf(g_szVBoxErrMsg, "path buffer too small: %u bytes needed", (unsigned)cbBufNeeded);
         return -1;
     }
-    memcpy(szBuf, pszHome, cchHome);
-    szBuf[cchHome] = '/';
-    cchHome++;
+    if (cchHome)
+    {
+        memcpy(szBuf, pszHome, cchHome);
+        szBuf[cchHome] = '/';
+        cchHome++;
+    }
     memcpy(&szBuf[cchHome], DYNLIB_NAME, sizeof(DYNLIB_NAME));
 
     /*
      * Try load it by that name, setting the VBOX_APP_HOME first (for now).
      * Then resolve and call the function table getter.
      */
-    if (!g_bVAHSet)
+    if (fSetAppHome)
     {
-        /* Override it as we know that user didn't set it
-         * and that we only did it in previous iteration
-         */
-        setenv("VBOX_APP_HOME", pszHome, 1);
+        if (pszHome)
+            setenv("VBOX_APP_HOME", pszHome, 1 /* always override */);
+        else
+            unsetenv("VBOX_APP_HOME");
     }
     g_hVBoxXPCOMC = dlopen(szBuf, RTLD_NOW | RTLD_LOCAL);
     if (g_hVBoxXPCOMC)
@@ -162,26 +164,23 @@ int VBoxCGlueInit(void)
      */
     const char *pszHome = getenv("VBOX_APP_HOME");
     if (pszHome)
-    {
-        g_bVAHSet = 1;
-        return tryLoadOne(pszHome);
-    }
+        return tryLoadOne(pszHome, 0);
 
     /*
      * Try the known standard locations.
      */
 #if defined(__gnu__linux__) || defined(__linux__)
-    if (tryLoadOne("/opt/VirtualBox") == 0)
+    if (tryLoadOne("/opt/VirtualBox", 1) == 0)
         return 0;
-    if (tryLoadOne("/usr/lib/virtualbox") == 0)
+    if (tryLoadOne("/usr/lib/virtualbox", 1) == 0)
         return 0;
 #elif defined(__sun__)
-    if (tryLoadOne("/opt/VirtualBox/amd64") == 0)
+    if (tryLoadOne("/opt/VirtualBox/amd64", 1) == 0)
         return 0;
-    if (tryLoadOne("/opt/VirtualBox/i386") == 0)
+    if (tryLoadOne("/opt/VirtualBox/i386", 1) == 0)
         return 0;
 #elif defined(__APPLE__)
-    if (tryLoadOne("/Application/VirtualBox.app/Contents/MacOS") == 0)
+    if (tryLoadOne("/Application/VirtualBox.app/Contents/MacOS", 1) == 0)
         return 0;
 #else
 # error "port me"
@@ -190,7 +189,7 @@ int VBoxCGlueInit(void)
     /*
      * Finally try the dynamic linker search path.
      */
-    if (tryLoadOne(NULL) == 0)
+    if (tryLoadOne(NULL, 1) == 0)
         return 0;
 
     /* No luck, return failure. */
