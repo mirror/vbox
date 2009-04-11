@@ -406,12 +406,13 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
 
             /*uniq*/
             RTUtf16ToUtf8(addr->DnsSuffix, &suffix);
-            
-            if (strlen(suffix) == 0) {
+
+            if (!suffix || strlen(suffix) == 0) {
                 /* dhcpcd client very sad if no domain name is passed */
+                RTStrFree(suffix);
                 if (fzerro_len_added)
                     goto next_dns;
-                fzerro_len_added = 1; 
+                fzerro_len_added = 1;
                 suffix = RTStrDup(" ");
             }
 
