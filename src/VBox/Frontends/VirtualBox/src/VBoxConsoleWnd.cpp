@@ -2076,10 +2076,10 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         bool virtEnabled = cconsole.GetDebugger().GetHWVirtExEnabled();
         bool nestEnabled = cconsole.GetDebugger().GetHWVirtExNestedPagingEnabled();
 
-        QString tip ("<qt>Indicates the status of the hardware virtualization "
-                     "features used by this virtual machine:<br>"
-                     "<nobr><b>%1:</b>&nbsp;%2</nobr><br>"
-                     "<nobr><b>%3:</b>&nbsp;%4</nobr></qt>");
+        QString tip (tr("<qt>Indicates the status of the hardware virtualization "
+                        "features used by this virtual machine:<br>"
+                        "<nobr><b>%1:</b>&nbsp;%2</nobr><br>"
+                        "<nobr><b>%3:</b>&nbsp;%4</nobr></qt>"));
         QString virtualization = virtEnabled ?
             VBoxGlobal::tr ("Enabled", "details report (VT-x/AMD-V)") :
             VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)");
