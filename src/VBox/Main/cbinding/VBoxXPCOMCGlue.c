@@ -63,8 +63,6 @@
 /** The dlopen handle for VBoxXPCOMC. */
 void *g_hVBoxXPCOMC = NULL;
 /** The last load error. */
-char g_szVBoxErrMsg[256];
-/** Pointer to the VBoxXPCOMC function table.  */
 PCVBOXXPCOM g_pVBoxFuncs = NULL;
 /** Pointer to VBoxGetXPCOMCFunctions for the loaded VBoxXPCOMC so/dylib/dll. */
 PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions = NULL;
@@ -91,7 +89,6 @@ static int tryLoadOne(const char *pszHome, int fSetAppHome)
     cbBufNeeded = cchHome + sizeof("/" DYNLIB_NAME);
     if (cbBufNeeded > sizeof(szBuf))
     {
-        sprintf(g_szVBoxErrMsg, "path buffer too small: %u bytes needed", (unsigned)cbBufNeeded);
         return -1;
     }
     if (cchHome)
@@ -127,21 +124,13 @@ static int tryLoadOne(const char *pszHome, int fSetAppHome)
                 g_pfnGetFunctions = pfnGetFunctions;
                 rc = 0;
             }
-            else
-                sprintf(g_szVBoxErrMsg, "%.80s: pfnGetFunctions(%#x) failed",
-                        szBuf, VBOX_XPCOMC_VERSION);
         }
-        else
-            sprintf(g_szVBoxErrMsg, "dlsym(%.80s/%.32s): %128s",
-                    szBuf, VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME, dlerror());
         if (rc != 0)
         {
             dlclose(g_hVBoxXPCOMC);
             g_hVBoxXPCOMC = NULL;
         }
     }
-    else
-        sprintf(g_szVBoxErrMsg, "dlopen(%.80s): %128s", szBuf, dlerror());
     return rc;
 }
 
@@ -211,6 +200,5 @@ void VBoxCGlueTerm(void)
     }
     g_pVBoxFuncs = NULL;
     g_pfnGetFunctions = NULL;
-    memset(g_szVBoxErrMsg, 0, sizeof(g_szVBoxErrMsg));
 }
 
