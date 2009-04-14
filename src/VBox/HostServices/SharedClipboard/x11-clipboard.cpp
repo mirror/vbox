@@ -76,6 +76,9 @@ int VBoxX11ClipboardReadVBoxData (VBOXCLIPBOARDCONTEXT *pCtx,
     volatile VBOXCLIPBOARDCLIENTDATA *pClient = pCtx->pClient;
 
     LogFlowFunc(("u32Format=%02X\n", u32Format));
+    /* Zero our output parameters */
+    *ppv = NULL;
+    *pcb = 0;
     if (pClient == NULL)
     {
         /* This can legitimately happen if we disconnect during a request for
