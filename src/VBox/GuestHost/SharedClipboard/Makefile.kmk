@@ -34,7 +34,8 @@ ifdef VBOX_WITH_TESTCASES
 # waiting for any thread synchronisation.
    tstClipboardX11_DEFS     = VBOX_WITH_HGCM TESTCASE
    tstClipboardX11_SOURCES  = x11-clipboard.cpp clipboard-helper.cpp
-   tstClipboardX11_LIBS     = $(LIB_RUNTIME) Xt
+   tstClipboardX11_LIBPATH  = $(VBOX_LIBPATH_X11)
+   tstClipboardX11_LIBS     = $(LIB_RUNTIME) X11 Xt
 
 # Set this in LocalConfig.kmk if you are working on the X11 clipboard service
 # to automatically run the testcase at build time.
