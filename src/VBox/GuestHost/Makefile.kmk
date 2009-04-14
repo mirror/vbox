@@ -31,5 +31,9 @@ ifdef VBOX_WITH_HGSMI
  include $(PATH_SUB_CURRENT)/HGSMI/Makefile.kmk
 endif
 
+ifdef VBOX_WITH_HGCM
+ include $(PATH_SUB_CURRENT)/SharedClipboard/Makefile.kmk
+endif
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
